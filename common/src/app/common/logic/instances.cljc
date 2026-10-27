@@ -122,7 +122,16 @@
   (let [shape (ctn/get-shape container shape-id)]
     (cll/shape-log :debug shape-id container
                    :msg "Detach instance" :shape-id shape-id :container (:id container))
-    (generate-detach-recursive changes container libraries shape-id true (true? (:component-root shape)))))
+    (let [changes  (generate-detach-recursive changes container libraries shape-id true (true? (:component-root shape)))
+          objects  (pcb/get-objects changes)
+          advanced (into []
+                         (filter (fn [id]
+                                   (let [before (get-in container [:objects id])
+                                         after  (get objects id)]
+                                     (and (ctk/swapped? after)
+                                          (not= (:shape-ref before) (:shape-ref after))))))
+                         (cfh/get-children-ids (:objects container) shape-id))]
+      (cll/generate-sync-advanced-placement changes container libraries advanced))))
 
 (defn- generate-detach-recursive
   [changes container libraries shape-id first component-root?]
@@ -154,16 +163,32 @@
 
 (defn rehead-swapped
   "Make a swapped head a plain copy of its own component, for when it leaves
-  every copy level."
-  [shape root-id]
-  (-> shape
-      (assoc :shape-ref root-id)
-      (ctk/remove-swap-group)))
+  every copy level. Keep placement inherited from the old position as
+  overrides when it differs from the new main."
+  [shape main]
+  (let [placement-groups (disj cll/placement-groups :geometry-group)
+        value            (fn [source attr]
+                           (case attr
+                             :constraints-h (or (:constraints-h source) (gsh/default-constraints-h shape))
+                             :constraints-v (or (:constraints-v source) (gsh/default-constraints-v shape))
+                             :fixed-scroll (boolean (:fixed-scroll source))
+                             (get source attr)))
+        groups           (into #{}
+                               (keep (fn [attr]
+                                       (let [group (ctk/resolve-sync-group (:type shape) attr)]
+                                         (when (and (contains? placement-groups group)
+                                                    (not= (value shape attr) (value main attr)))
+                                           group))))
+                               (keys ctk/sync-attrs))]
+    (cond-> (-> shape
+                (assoc :shape-ref (:id main))
+                (ctk/remove-swap-group))
+      (seq groups) (update :touched (fnil into #{}) groups))))
 
 (defn- generate-rehead-swapped
   [changes container libraries shape]
-  (if-let [root-id (cll/swap-content-root-id libraries shape)]
-    (pcb/update-shapes changes [(:id shape)] #(rehead-swapped % root-id))
+  (if-let [main (ctf/find-content-ref-shape nil container libraries shape :include-deleted? true)]
+    (pcb/update-shapes changes [(:id shape)] #(rehead-swapped % main))
     (generate-detach-immediate changes container (:id shape) (atom #{}))))
 
 (defn swapped-descendant-ids

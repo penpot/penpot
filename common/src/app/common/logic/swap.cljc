@@ -89,7 +89,7 @@
            (grc/rect->center selrect)
            (or (:transform shape) (gmt/matrix)))))))
 
-(defn- switch-fixed-layout-geom-change-value
+(defn- switch-size-change-value
   [prev-shape           ; The shape before the switch
    current-shape        ; The shape after the switch (a clean copy)
    origin-shape         ; The original shape
@@ -97,9 +97,9 @@
   ;; Each dimension keeps the copy's size when both variants agree on it,
   ;; and takes the new variant's otherwise (selrect and points follow)
   (let [size   (fn [dimension]
-                 (let [prev    (-> prev-shape :selrect dimension)
-                       current (-> current-shape :selrect dimension)
-                       origin  (-> origin-shape :selrect dimension)]
+                 (let [prev    (get prev-shape dimension)
+                       current (get current-shape dimension)
+                       origin  (get origin-shape dimension)]
                    (if (mth/close? origin current) prev current)))
         width  (size :width)
         height (size :height)]
@@ -107,17 +107,6 @@
       :width  width
       :height height
       (sized-geometry-value current-shape width height attr))))
-
-
-(defn- switch-geom-change-value
-  [prev-shape current-shape attr]
-  ;; Composite geometry stores absolute coordinates. When preserving a size
-  ;; override across variants, keep the target variant's position and only carry
-  ;; the previous dimensions; otherwise :x/:y can disagree with :selrect/:points.
-  (sized-geometry-value current-shape
-                        (-> prev-shape :selrect :width)
-                        (-> prev-shape :selrect :height)
-                        attr))
 
 
 (defn- equal-geometry?
@@ -239,21 +228,7 @@
         skip?
         (or skip-attr?
             ;; If we are going to reset the position data, skip the selrect attr
-            (and reset-pos-data? (= attr :selrect))
-            ;; Avoid copying composite geometry attrs (:selrect/:points) when the
-            ;; variant dimensions differ but neither sizing is :fix. Without this,
-            ;; :width/:height are correctly skipped by the check above
-            ;; but :selrect/:points would still carry the old override dimensions,
-            ;; leaving the shape in an inconsistent state. When :fix sizing is
-            ;; present, switch-fixed-layout-geom-change-value handles the composite
-            ;; attrs and must NOT be bypassed. Path shapes are also handled
-            ;; separately via switch-path-change-value.
-            (and (contains? #{:selrect :points} attr)
-                 (not path-change?)
-                 (not (or (= :fix (:layout-item-h-sizing previous-shape))
-                          (= :fix (:layout-item-v-sizing previous-shape))))
-                 (or (not (mth/close? (:width origin-ref-shape) (:width current-shape)))
-                     (not (mth/close? (:height origin-ref-shape) (:height current-shape))))))
+            (and reset-pos-data? (= attr :selrect)))
 
         attr-val
         (when-not skip?
@@ -278,14 +253,10 @@
                                       origin-ref-shape
                                       attr)
 
-            (and (or (= :fix (:layout-item-h-sizing previous-shape))
-                     (= :fix (:layout-item-v-sizing previous-shape)))
-                 (contains? #{:points :selrect :width :height} attr))
-            (switch-fixed-layout-geom-change-value previous-shape current-shape origin-ref-shape attr)
-
-            (and (contains? #{:points :selrect} attr)
-                 (not path-change?))
-            (switch-geom-change-value previous-shape current-shape attr)
+            ;; Both scalar dimensions and composite geometry must describe
+            ;; the same result when only one dimension carries an override.
+            (contains? #{:points :selrect :width :height} attr)
+            (switch-size-change-value previous-shape current-shape origin-ref-shape attr)
 
             :else
             (get previous-shape attr)))]

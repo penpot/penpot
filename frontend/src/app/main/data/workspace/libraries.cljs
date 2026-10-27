@@ -1053,7 +1053,8 @@
          (if-let [shape (get objects (:id shape))]
            (let [ldata      (dsh/lookup-file-data state file-id)
                  undo-id    (js/Symbol)
-                 undo-group (uuid/next)
+                 undo-group (or (get-in state [:workspace-undo :transaction :undo-group])
+                                (uuid/next))
 
                  [new-shape changes update-layout-ids]
                  (-> (pcb/empty-changes it (:id page))
@@ -1080,7 +1081,8 @@
                       (dwtp/propagate-workspace-tokens {:page-id (:id page) :root-ids [(:id new-shape)]})
                       (when (and (features/active-feature? state "render-wasm/v1")
                                  (seq new-text-ids))
-                        (dwwt/resize-wasm-text-all new-text-ids {:skip-component-sync? true})))
+                        (dwwt/resize-wasm-text-all new-text-ids {:skip-component-sync? true
+                                                                 :undo-group undo-group})))
                (not skip-layout?)
                (rx/concat (rx/of (ptk/data-event :layout/update
                                                  {:ids update-layout-ids :undo-group undo-group})))
