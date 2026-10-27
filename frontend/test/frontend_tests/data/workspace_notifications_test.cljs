@@ -42,6 +42,8 @@
         state  (ptk/update show {})]
     (t/is (= [::dch/commit ::ntf/show] types))
     (t/is (= :info (get-in state [:notification :level])))
+    (t/is (nil? (get-in state [:notification :timeout]))
+          "the toast stays until the user closes it")
     (t/is (= (i18n/tr "workspace.notifications.file-repaired")
              (get-in state [:notification :content])))))
 
