@@ -68,8 +68,7 @@
     {:dir dir
      :record-path record-path
      :log-path log-path
-     :run-id run-id
-     :managed? (some? managed)}))
+     :run-id run-id}))
 
 (defn write-record!
   "Validates and atomically replaces the saved RunRecord."

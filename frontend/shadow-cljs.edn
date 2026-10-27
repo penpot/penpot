@@ -212,6 +212,24 @@
      :elide-asserts true
      :anon-fn-naming-policy :off}}}
 
+  :bench-render-wasm-commands
+  {:target :node-library
+   :output-to "target/performance/render-wasm/commands.cjs"
+   :output-dir "target/performance/render-wasm/commands/"
+   :exports {:execute benches.render-wasm.node.commands/execute}
+   :devtools {:autoload false}
+
+   :compiler-options
+   {:output-feature-set :es2020
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}
+
+   :release
+   {:compiler-options
+    {:fn-invoke-direct true
+     :elide-asserts true
+     :anon-fn-naming-policy :off}}}
+
   :bench-render-wasm-browser
   {:target :esm
    :output-dir #shadow/env ["RENDER_BENCH_BROWSER_DIR" :default "target/performance/render-wasm/browser/"]

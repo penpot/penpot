@@ -702,12 +702,13 @@
           (catch :default record-cause
             (safe-log state (str "run: could not record cleanup failure: "
                                  (message-of record-cause) "\n")))))
-      (let [run           (try
+      (let [saved-run     (try
                             (finish-run state)
                             (catch :default cause
                               (reset! error cause)
-                              @(:run-ref state)))
-            removal-error (when (:remove? opts)
+                              nil))
+            run           (or saved-run @(:run-ref state))
+            removal-error (when (and (:remove? opts) saved-run)
                             (try
                               (remove-build root selected-build)
                               nil
