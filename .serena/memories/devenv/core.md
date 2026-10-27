@@ -107,10 +107,7 @@ Two Dockerfile trees, both multi-arch (`linux/amd64,linux/arm64`):
   per-platform one.
 - Every hand-pinned checksum is per architecture; one wrong value breaks half
   of the multi-arch build.
-- `SERENA_UPDATE_VERSION` in `docker-compose.main.yml` must stay empty. Any
-  value makes `start-tmux.sh` reinstall that Serena release on every start,
-  overriding the `SERENA_VERSION` baked into the image (it silently replaced
-  1.7.0 with 1.6.1). Set it only to test one specific release on purpose.
+- `SERENA_UPDATE_VERSION` in `docker-compose.main.yml` must never be lower than the Dockerfile's `SERENA_VERSION`. Any value makes `start-tmux.sh` install that Serena release on start, overriding the version baked into the image; a stale value silently downgrades Serena (it once replaced 1.7.0 with 1.6.1). If the image already has that version the install is an offline no-op; otherwise it downloads on every start (`run-devenv` recreates the container) and, offline, fails after ~25s and keeps the image version. Bump both together; empty means use the image version.
 - Infra images live in `docker-compose.infra.yml`: `rustfs/rustfs` (owns the
   S3 data volume), `axllent/mailpit` (SQLite in a volume), `valkey/valkey`,
   `postgres:18.6`, `rroemhild/test-openldap`. Keep the volume names stable

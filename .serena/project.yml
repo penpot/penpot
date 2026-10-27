@@ -44,6 +44,12 @@ language_servers:
   - typescript
   - rust
 
+# same list for Serena 1.x, which only reads this key; keep both lists equal
+languages:
+  - clojure
+  - typescript
+  - rust
+
 # the encoding used by text files in the project
 # For a list of possible encodings, see https://docs.python.org/3.11/library/codecs.html#standard-encodings
 encoding: "utf-8"
