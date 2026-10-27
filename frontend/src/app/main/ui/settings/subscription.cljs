@@ -55,6 +55,7 @@
        (when card-title-icon
          [:span {:class (stl/css :plan-title-icon)}
           [:> icon* {:icon-id card-title-icon
+                     :class (stl/css :plan-title-letter)
                      :size "s"}]])
        [:h4 {:class (stl/css :plan-card-title)} card-title]
        (when recommended
@@ -94,6 +95,7 @@
        [:button {:class (stl/css :cta-button :more-info)
                  :on-click cta-link-with-icon} cta-text-with-icon
         [:> icon* {:icon-id "open-link"
+                   :class (stl/css :cta-icon)
                    :size "s"}]])
      (when has-cta-link
        [:button {:class (stl/css-case :cta-button true
@@ -138,7 +140,7 @@
      [:button {:class (stl/css :cta-button :show-editors-button) :on-click handle-click}
       (tr "subscription.settings.management.dialog.editors")
       [:> icon* {:icon-id (if show-editors-list i/arrow-up i/arrow-down)
-                 :class (stl/css :icon-dropdown)
+                 :class (stl/css :cta-icon)
                  :size "s"}]]
      (when show-editors-list
        [:*
