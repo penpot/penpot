@@ -9,6 +9,8 @@
   (:require
    [app.common.types.text.cjk-layout :as cjk]
    [app.main.ui.ds.controls.select :refer [select*]]
+   [app.main.ui.ds.controls.switch :refer [switch*]]
+   [app.main.ui.workspace.sidebar.options.common :refer [radio-selected]]
    [app.main.ui.workspace.sidebar.options.menus.text-japanese-layout :as tjl]
    [app.util.i18n :refer [tr]]
    [app.util.text.layout :as tl]
@@ -130,6 +132,24 @@
              (mf/spread-props props {:values ruby-values
                                      :on-change on-ruby-presentation-change})]))])]))
 
+(mf/defc distribute-option*
+  "Distributed alignment (均等割り付け, 分散对齐, 배분 정렬): spreads the
+  characters of every line over the box. Turning it off aligns the text to
+  the start."
+  [{:keys [values on-change on-blur]}]
+  (let [label (tr "workspace.options.text-options.text-align-distribute")
+        handle-change
+        (mf/use-fn
+         (mf/deps on-change on-blur)
+         (fn [checked?]
+           (on-change {:text-align (if checked? "distribute" "left")})
+           (when (some? on-blur) (on-blur))))]
+    [:div {:class (stl/css :distribute-option)}
+     [:span {:class (stl/css :option-label)} label]
+     [:> switch* {:default-checked (= "distribute" (radio-selected (:text-align values)))
+                  :aria-label      label
+                  :on-change       handle-change}]]))
+
 (mf/defc language-layout-options*
   [{:keys [language values ruby-values text-selection-active reading-selection-active zhuyin-selection-active
            on-change on-ruby-presentation-change on-blur]}]
@@ -149,6 +169,8 @@
                    :aria-label (tr "workspace.options.text-options.language-profile")
                    :options options
                    :on-change handle-profile-change}]]
+     (when matches?
+       [:> distribute-option* props])
      (if (and (= :japanese language) matches?)
        [:> tjl/japanese-layout-options*
         (mf/spread-props props {:ruby-values ruby-values

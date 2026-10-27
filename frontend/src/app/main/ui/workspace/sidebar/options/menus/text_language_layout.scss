@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "ds/typography.scss" as t;
+@use "ds/_sizes.scss" as *;
 
 .language-layout-options {
   display: flex;
@@ -18,6 +19,14 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
   align-items: center;
   gap: var(--sp-s);
+}
+
+.distribute-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-s);
+  min-block-size: $sz-32;
 }
 
 .option-label {
