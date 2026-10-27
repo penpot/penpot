@@ -145,6 +145,12 @@ first can split two positions 7e-7 px apart across a 0.005 boundary (F150).
 Scalar values and touched stay exact. comp/undo-check/same-state? supplies
 the shared comparison; its undo default remains 1e-10.
 
+Measured auto-width/auto-height text compares its oriented first corner,
+not the unrotated selrect x/y, which can move as height/width changes
+(F220). Canonical comparison and requested geometry both retain that
+anchor at the existing 0.01 tolerance. Layout-owned positions remain
+derived; fixed text dimensions and raw undo geometry remain checked.
+
 Swapped-head dimensions use the content main; position, rotation, flips,
 constraints and layout-item inputs use the position source (F151).
 When sizes differ, expected geometry keeps the position source's

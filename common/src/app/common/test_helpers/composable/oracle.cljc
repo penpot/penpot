@@ -106,6 +106,12 @@
                                                            (assoc moved
                                                                   :transform (matrix-effect shape (:transform moved) derived)
                                                                   :transform-inverse (matrix-effect shape (:transform-inverse moved) derived))))
+                                             ;; Measurement preserves the oriented first
+                                             ;; corner, not the unrotated rectangle's x/y.
+                                             (cond-> (and (= :text (:type shape))
+                                                          (#{:auto-width :auto-height} (:grow-type shape)))
+                                               (as-> moved (assoc moved :x (:x (first (:points moved)))
+                                                                  :y (:y (first (:points moved))))))
                                              (as-> shape (apply dissoc shape
                                                                 (cond-> (derived-attributes objects shape)
                                                                   (and free-head-placement (:component-id shape) (:shape-ref shape)
@@ -273,6 +279,9 @@
       (not= (boolean (:flip-y shape)) (boolean (:flip-y expected))) (conj :flip-y)
       (and (not width-owned) (not (mth/close? (:width shape) (:width expected) 0.01))) (conj :width)
       (and (not height-owned) (not (mth/close? (:height shape) (:height expected) 0.01))) (conj :height)
+      (and (not layout-child) auto-height
+           (not (gsh/close-attrs? :points [(first (:points shape))]
+                                  [(first (:points expected))] 0.01))) (conj :position)
       (and (not layout-child) (not auto-width) (not auto-height)
            (not (gsh/close-attrs? :points (:points shape) (:points expected) 0.01))) (conj :points))))
 

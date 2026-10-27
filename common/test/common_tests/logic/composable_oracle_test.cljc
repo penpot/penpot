@@ -409,6 +409,43 @@
       (t/is (= equal? (oracle/equivalent? (oracle/canonical (tm/make-situation file))
                                           (oracle/canonical (tm/make-situation changed))))))))
 
+(t/deftest measured-text-comparison-keeps-the-oriented-first-corner
+  (doseq [grow-type [:auto-height :auto-width]
+          angle [0 45 90 135]
+          reflected? [false true]]
+    (let [file (-> (thf/sample-file :file)
+                   (ths/add-sample-shape :text :type :text :grow-type grow-type
+                                         :width 70 :height 25))
+          page-id (:id (thf/current-page file))
+          path [:data :pages-index page-id :objects (thi/id :text)]
+          orient (fn [shape]
+                   (cond-> (gsh/transform-shape shape (n/geometry-modifiers shape :rotate angle))
+                     reflected? (as-> shape (gsh/transform-shape shape (n/geometry-modifiers shape :flip-x nil)))))
+          file (update-in file path orient)
+          original (get-in file path)
+          measured (update-in file path
+                              (fn [shape]
+                                (let [resized (gsh/transform-shape
+                                               shape (ctm/change-size shape
+                                                                      (if (= :auto-width grow-type) 55 70) 17))]
+                                  (gsh/move resized (gpt/subtract (first (:points shape))
+                                                                  (first (:points resized)))))))
+          shifted (update-in measured path gsh/move (gpt/point 1 0))
+          wrong-width (assoc-in measured (conj path :width) 60)
+          design #(oracle/canonical (tm/make-situation %) {:free-head-placement false})]
+      (t/testing (str grow-type ", angle " angle ", reflected " reflected?)
+        (t/is (oracle/equivalent? (design file) (design measured))))
+      (t/is (not (oracle/equivalent? (design file) (design shifted))))
+      (t/is (not= (oracle/snapshot (tm/make-situation file))
+                  (oracle/snapshot (tm/make-situation measured))))
+      (t/is (nil? (oracle/check-requested-geometry (:objects (thf/current-page measured))
+                                                   (get-in measured path) original)))
+      (t/is (thrown? #?(:clj Exception :cljs js/Error)
+                     (oracle/check-requested-geometry (:objects (thf/current-page shifted))
+                                                      (get-in shifted path) original)))
+      (when (= :auto-height grow-type)
+        (t/is (not (oracle/equivalent? (design file) (design wrong-width))))))))
+
 (t/deftest matrix-comparison-does-not-reintroduce-derived-text-dimensions
   (doseq [grow-type [:auto-height :auto-width]]
     (let [file (-> (thf/sample-file :file)
@@ -423,8 +460,10 @@
           changed (assoc-in measured (conj path :transform) (gmt/matrix 1 0 0 1 2 0))
           stretched (assoc-in measured (conj path :transform) (gmt/matrix 1 0 0 1.1 0 0))
           fixed-width (assoc-in measured (conj path :width) 60)
-          turn #(gsh/absolute-move (gsh/transform-shape % (n/geometry-modifiers % :rotate 45))
-                                   (gpt/point 0 0))
+          ;; Both measured versions use the renderer's oriented corner anchor.
+          turn (fn [shape]
+                 (let [turned (gsh/transform-shape shape (n/geometry-modifiers shape :rotate 45))]
+                   (gsh/move turned (gpt/negate (first (:points turned))))))
           rotated (update-in file path turn)
           rotated-measured (update-in measured path turn)
           design #(oracle/canonical (tm/make-situation %))]
