@@ -164,6 +164,27 @@
                  (thf/validate-file!))]
     (t/is (= :right (:constraints-h (ths/get-shape file :copy-star))))))
 
+(t/deftest swapped-head-content-sync-keeps-the-replaced-childs-placement
+  (let [file      (-> (setup)
+                      (ths/update-shape :card-star :constraints-h :right)
+                      (ths/update-shape :card-star :constraints-v :bottom)
+                      (ths/update-shape :card-star :fixed-scroll true)
+                      (ths/update-shape :heart-main :constraints-h :scale)
+                      (ths/update-shape :heart-main :constraints-v :scale)
+                      (ths/update-shape :heart-main :fixed-scroll false)
+                      (ths/update-shape :heart-main :opacity 0.4)
+                      (propagate :card))
+        placement #(select-keys (ths/get-shape % :copy-star)
+                                [:constraints-h :constraints-v :fixed-scroll])
+        expected  {:constraints-h :right :constraints-v :bottom :fixed-scroll true}
+        synced    (-> file (propagate :heart) thf/validate-file!)
+        reversed  (-> file (propagate :heart :card) thf/validate-file!)]
+    (t/is (= expected (placement file)))
+    (t/is (= expected (placement synced)))
+    (t/is (= (placement synced) (placement reversed)))
+    (t/is (= 0.4 (:opacity (ths/get-shape synced :copy-star))))
+    (t/is (= #{:swap-group} (:touched (ths/get-shape synced :copy-star))))))
+
 (t/deftest moved-swapped-head-keeps-its-position
   (let [file  (-> (setup)
                   (move-shape :copy-star 5 5))
@@ -305,6 +326,29 @@
                            (tho/update-color :heart-rect "#333333")
                            (propagate :heart)
                            (tho/bottom-fill-color :copy-star))))))
+
+(t/deftest detach-keeps-a-swapped-heads-inherited-placement-as-overrides
+  (let [initial  (-> (setup)
+                     (ths/update-shape :card-star :constraints-h :right)
+                     (ths/update-shape :card-star :fixed-scroll true)
+                     (propagate :card))
+        detached (detach initial :copy)
+        synced   (-> detached (propagate :heart) thf/validate-file!)
+        head     (ths/get-shape synced :copy-star)]
+    (t/is (= :right (:constraints-h head)))
+    (t/is (true? (:fixed-scroll head)))
+    (t/is (= #{:constraints-group} (:touched (ths/get-shape detached :copy-star))))
+    (t/is (= (:touched (ths/get-shape detached :copy-star)) (:touched head)))))
+
+(t/deftest copied-swapped-head-keeps-its-placement-ownership
+  (let [initial (-> (setup)
+                    (ths/update-shape :card-star :fixed-scroll true)
+                    (propagate :card))
+        objects (copy-objects initial :copy-star)
+        head    (get objects (thi/id :copy-star))]
+    (t/is (true? (:fixed-scroll head)))
+    (t/is (= (thi/id :heart-main) (:shape-ref head)))
+    (t/is (= #{:constraints-group} (:touched head)))))
 
 (t/deftest detach-advances-a-deeper-swapped-head-by-position
   (let [file  (setup-two-levels)

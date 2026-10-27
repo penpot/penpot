@@ -995,7 +995,8 @@
             ldata       (dsh/lookup-file-data state file-id)
 
             undo-id (js/Symbol)
-            undo-group (uuid/next)
+            undo-group (or (get-in state [:workspace-undo :transaction :undo-group])
+                           (uuid/next))
 
             [new-shape changes update-layout-ids]
             (-> (pcb/empty-changes it (:id page))
@@ -1020,7 +1021,8 @@
          (dwtp/propagate-workspace-tokens)  ;; Make the new instance get the token values from the current file, not from the component's library
          (when (and (features/active-feature? state "render-wasm/v1")
                     (seq new-text-ids))
-           (dwwt/resize-wasm-text-all new-text-ids {:skip-component-sync? true}))
+           (dwwt/resize-wasm-text-all new-text-ids {:skip-component-sync? true
+                                                    :undo-group undo-group}))
          (ptk/data-event :layout/update {:ids update-layout-ids :undo-group undo-group})
          (dwu/commit-undo-transaction undo-id)
          (dws/select-shape (:id new-shape) false))))))

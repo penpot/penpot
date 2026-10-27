@@ -334,9 +334,10 @@
       changes)))
 
 (defn generate-sync-transformed-placement
-  "Settle untouched swapped heads carried through a parent turn in the
-   same change group. Their position frame can have a different size from
-   their content, so a rigid turn alone does not settle their placement."
+  "Settle copy descendants after a reflection and untouched swapped heads
+   after a parent turn, in the transform's change group. Reflection can
+   leave descendant flip flags in another decomposition; swapped content
+   can have a different size from its position frame."
   [changes file libraries page before ids]
   (let [objects     (pcb/get-objects changes)
         orientation (fn [shape]
@@ -344,11 +345,18 @@
                        (:rotation shape) (boolean (:flip-x shape)) (boolean (:flip-y shape))])
         roots       (into (d/ordered-set)
                           (keep (fn [id]
-                                  (let [shape (get objects id)]
-                                    (when (and (ctk/swapped? shape)
-                                               (not (ctk/touched-group? shape :geometry-group))
-                                               (not= (orientation (get before id)) (orientation shape)))
-                                      (:id (ctn/get-component-shape objects shape))))))
+                                  (let [shape (get objects id)
+                                        root (when (:component-id shape) (ctn/get-component-shape objects shape))
+                                        old (get before id)
+                                        reflected-head? (and (:component-id shape)
+                                                             (:shape-ref shape)
+                                                             (or (not= (boolean (:flip-x old)) (boolean (:flip-x shape)))
+                                                                 (not= (boolean (:flip-y old)) (boolean (:flip-y shape)))))]
+                                    (when (or reflected-head?
+                                              (and (ctk/swapped? shape)
+                                                   (not (ctk/touched-group? shape :geometry-group))
+                                                   (not= (orientation old) (orientation shape))))
+                                      (:id root)))))
                           ids)]
     (reduce (fn [changes id]
               (let [objects   (pcb/get-objects changes)
@@ -1344,12 +1352,20 @@
         ;; the dest root before syncing.
         ;; In case of subinstances, the comparison is always done with the
         ;; near component, because this is that we are syncing with.
-        origin-shape (reposition-shape origin-shape origin-root dest-root)
-        touched      (get dest-shape :touched #{})
+        origin-shape  (reposition-shape origin-shape origin-root dest-root)
+        touched       (get dest-shape :touched #{})
+        ;; Direct sync of a swapped head reads its content main. Its
+        ;; placement comes from the replaced child in the enclosing main.
+        content-only? (and omit-touched?
+                           (ctk/swapped? dest-shape)
+                           (= (:id dest-shape) (:id dest-root)))
+        valid-attrs   (when content-only?
+                        (set/difference (set (keys ctk/sync-attrs)) placement-attrs))
 
         [roperations uoperations]
         (attr-operations dest-shape
-                         #(sync-attr-operations dest-shape origin-shape touched omit-touched? %))]
+                         #(when-not (and content-only? (contains? placement-attrs %))
+                            (sync-attr-operations dest-shape origin-shape touched omit-touched? %)))]
 
     (cond-> changes
       (seq roperations)
@@ -1359,7 +1375,7 @@
       :always
       (check-swapped-main dest-shape origin-shape)
       :always
-      (generate-update-tokens container dest-shape origin-shape touched omit-touched? nil))))
+      (generate-update-tokens container dest-shape origin-shape touched omit-touched? valid-attrs))))
 
 (defn- propagate-attrs
   "Helper that puts the origin attributes (attrs) into dest but only if
@@ -1427,6 +1443,28 @@
                             (some? orient) (orient)
                             move?          (gsh/move delta))
                          {:ignore-touched true}))))
+
+(defn generate-sync-advanced-placement
+  "Settle the placement of swapped heads whose position reference advanced.
+   Read only the position frame; content may still use an older library."
+  [changes container libraries ids]
+  (reduce
+   (fn [changes id]
+     (let [objects      (pcb/get-objects changes)
+           container    (assoc container :objects objects)
+           shape        (get objects id)
+           parent       (get objects (:parent-id shape))
+           main         (ctf/find-ref-shape nil container libraries shape
+                                            :include-deleted? true :with-context? true)
+           main-objects (:objects (:container (meta main)))
+           main-parent  (get main-objects (:parent-id main))]
+       (if (and parent main-parent)
+         (let [placed (get (placed-like main-objects main-parent parent) (:id main))]
+           (generate-take-placement changes shape placed objects
+                                    (and (ctsl/any-layout-immediate-child? objects shape)
+                                         (not (ctsl/position-absolute? shape)))))
+         changes)))
+   changes ids))
 
 (defn- update-swapped-placement
   "Synchronizes a swapped copy head with the main shape it replaces, in the

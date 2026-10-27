@@ -252,9 +252,7 @@ synchronously); an async hop without a pending task makes steps resolve early. T
 `frontend-tests.composable-tests.completion-contract-test` (slowed-down sync via a mocked
 `dwl/sync-file`), `frontend-tests.data.workspace-sync-barrier-test`. Re-reads `:file` each step
 so the shared accessors keep working.
-WASM-SHAPE IMMUNITY: a test that starts the WASM renderer leaves `cts/wasm-enabled?` on, which
-makes every later shape a proxy that leaves out nil and false attributes; `fixture` turns it off
-for the composable tests and restores it after, so they run on records in any order.
+WASM-SHAPE IMMUNITY: renderer tests can leave `cts/wasm-enabled?` on; `fixture` disables it and restores it afterward, so composable cases use records in any order. Proxy boundary tests opt in explicitly. Fresh proxies retain every Shape base field, including nil flips, matching record construction/dissoc and preserving exact undo (F203).
 STORE-SWAP IMMUNITY: other test namespaces `set!` `st/state`/`st/stream` and never restore, while
 the `app.main.refs` lenses stay bound to the ORIGINAL atoms — propagation then dies silently. The
 interpreter captures the atoms at namespace-load time and re-`set!`s them per variant.

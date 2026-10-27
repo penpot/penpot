@@ -17,7 +17,9 @@
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.tokens :as cfo]
+   [app.common.geom.rect :as grc]
    [app.common.logic.shapes :as cls]
+   [app.common.test-helpers.composable.comp.files :as cf]
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.undo-check :as uc]
    [app.common.test-helpers.composable.core :as tm]
@@ -82,9 +84,8 @@
 (declare uninstall!)
 
 ;; Whether shapes were WASM shape proxies before the running test. A test that
-;; starts the WASM renderer leaves `cts/wasm-enabled?` on for the tests after
-;; it, and a proxy leaves out the attributes that are nil or false, so the
-;; cases run on shape records whatever ran before them.
+;; starts the WASM renderer can leave `cts/wasm-enabled?` on for later tests.
+;; Cases use records; renderer boundary tests opt into proxies explicitly.
 (defonce ^:private wasm-shapes-before (atom nil))
 
 (def fixture
@@ -161,12 +162,16 @@
           id                     (tm/target-shape-id situation target)
           shape                  (tm/shape-by-id situation id)
           {:keys [content name]} (n/text-edit-commit shape edit value)]
-      [(dwtx/v2-update-text-shape-content id content
-                                          :update-name? (some? name)
-                                          :name name
-                                          :finalize? true
-                                          :save-undo? true
-                                          :original-content (:content shape))])
+      (if-let [{typography-id :id file-id :file-id} (:typography op)]
+        [(dwtx/apply-typography #{id}
+                                (get-in (cf/all-files situation) [file-id :data :typographies typography-id])
+                                file-id)]
+        [(dwtx/v2-update-text-shape-content id content
+                                            :update-name? (some? name)
+                                            :name name
+                                            :finalize? true
+                                            :save-undo? true
+                                            :original-content (:content shape))]))
 
     (instance? n/Rotate op)
     ;; A node turns by its angle, including after an earlier rotation.
@@ -177,7 +182,7 @@
     ;; the sidebar position, in page coordinates
     (let [{:keys [target dx dy]} op
           id                     (tm/target-shape-id situation target)
-          {:keys [x y]}          (:selrect (tm/shape-by-id situation id))]
+          {:keys [x y]}          (grc/points->rect (:points (tm/shape-by-id situation id)))]
       [(dwt/update-position id {:x (+ x dx) :y (+ y dy)} {:absolute? true})])
 
     (instance? n/ChangeHeight op)
@@ -185,10 +190,23 @@
     (let [{:keys [target value]} op]
       [(dwt/update-dimensions [(tm/target-shape-id situation target)] :height value)])
 
+    (instance? n/TransformShape op)
+    (let [{:keys [target action value]} op
+          id (tm/target-shape-id situation target)
+          shape (tm/shape-by-id situation id)]
+      (case action
+        :move (let [[dx dy] value
+                    {:keys [x y]} (grc/points->rect (:points shape))]
+                [(dwt/update-position id {:x (+ x dx) :y (+ y dy)} {:absolute? true})])
+        (:width :height) [(dwt/update-dimensions [id] action value)]
+        :rotate [(dwt/increase-rotation [id] value {:delta? true})]
+        :flip-x [(dwt/flip-horizontal-selected [id])]
+        :flip-y [(dwt/flip-vertical-selected [id])]))
+
     (instance? n/SwapShape op)
     (let [{:keys [target to keep-touched?]} op]
       [(dwl/component-swap (tm/shape-by-id situation (tm/target-shape-id situation target))
-                           (:id (tm/file situation))
+                           (n/swap-target-file-id situation to)
                            (n/swap-target-id situation to)
                            (boolean keep-touched?))])
 
@@ -308,7 +326,7 @@
 
     (instance? n/SyncFromLibrary op)
     ;; the library update the "library updated" dialog runs
-    [(dwl/sync-file (:current-file-id @st/state) (n/library-id situation))]
+    [(dwl/sync-file (:current-file-id @st/state) (or (:source op) (n/library-id situation)))]
 
     (instance? n/Undo op)
     (vec (repeat (:times op) dwu/undo))
@@ -456,6 +474,9 @@
                       (record-choices op))
         op        (unwrap op)
         record    (cond-> (dissoc (into {} op) ::tm/id)
+                    (and (instance? n/SyncFromLibrary op) (nil? (:source op)))
+                    (dissoc :source)
+
                     (satisfies? n/IAppliedResult op)
                     (merge (n/applied-result op before (tm/file situation))))]
     (tm/record-application situation op record)))

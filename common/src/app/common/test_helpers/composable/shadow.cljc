@@ -8,20 +8,48 @@
   "Authored overrides, kept independently of production touched writes.
    Each shape id maps groups to the attribute values the user authored."
   (:require
+   [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.test-helpers.composable.comp.nodes :as n]
-   [app.common.test-helpers.texts :as thtx]))
+   [app.common.test-helpers.composable.geometry :as geom]
+   [app.common.test-helpers.texts :as thtx]
+   [app.common.types.container :as ctn]))
 
 ;; This table is a specification, deliberately not ctk/sync-attrs.
 (def groups
-  {:fills :fill-group :opacity :layer-effects-group :name :name-group})
+  {:fills :fill-group :opacity :layer-effects-group :name :name-group
+   :strokes :stroke-group :hidden :visibility-group :blocked :modifiable-group
+   :r1 :radius-group :blend-mode :layer-effects-group :hide-fill-on-export :fill-group
+   :show-content :show-content :fixed-scroll :constraints-group
+   :constraints-h :constraints-group :constraints-v :constraints-group
+   :layout-item-margin :layout-item-margin :layout-gap :layout-gap
+   :layout-padding :layout-padding :layout-align-items :layout-align-items})
+
+(defn attribute-applicable?
+  "The clipping and background-export controls belong to frames."
+  [shape attr]
+  (case attr
+    (:show-content :hide-fill-on-export) (= :frame (:type shape))
+    true))
 
 (def attributes
   {:fill-group [:fills :hide-fill-on-export]
    :layer-effects-group [:opacity :blend-mode]
    :name-group [:name]
+   :stroke-group [:strokes]
+   :radius-group [:r1 :r2 :r3 :r4]
+   :visibility-group [:hidden]
+   :modifiable-group [:blocked]
+   :shadow-group [:shadow]
+   :blur-group [:blur :background-blur]
+   :mask-group [:masked-group]
+   :exports-group [:exports]
+   :grids-group [:grids]
+   :show-content [:show-content]
+   :content-group [:bool-type :bool-content]
    :geometry-group [:width :height :rotation :flip-x :flip-y :content-scale]
-   :text-font-group [:grow-type]
+   :text-font-group [:grow-type :font-family :font-size :font-style :font-weight]
+   :text-display-group [:letter-spacing :line-height :text-align]
    :constraints-group [:constraints-h :constraints-v :fixed-scroll]
    :layout-container [:layout]
    :layout-grid-dir [:layout-grid-dir]
@@ -46,6 +74,15 @@
    :layout-item-z-index [:layout-item-z-index]
    :layout-item-align-self [:layout-item-align-self]})
 
+;; These fields need geometry, content or cell-reference comparisons instead
+;; of raw equality. Keep the inventory explicit so new production attrs cannot
+;; silently fall outside the oracle's specification.
+(def specialized-attributes
+  {:geometry-group [:type :selrect :points :locked :proportion :proportion-lock
+                    :x :y :transform :transform-inverse :content]
+   :content-group [:content :position-data]
+   :layout-grid-cells [:layout-grid-cells]})
+
 (def text-groups
   {:text-content-text :letters :text-content-family :family :text-content-weight :weight
    :text-content-size :size :text-content-line-height :line-height :text-content-spacing :spacing
@@ -59,30 +96,55 @@
     {:content (:content shape)}
     (into {} (map #(vector % (get shape %))) (get attributes group))))
 
+(defn author-geometry
+  [shape parent]
+  (cond-> (values shape :geometry-group)
+    parent (with-meta {::position {:shape shape :parent parent}})))
+
+(defn- authored-placement
+  [expected parent]
+  (when-let [{authored :shape origin :parent} (::position (meta expected))]
+    ;; Placement of this child does not depend on its siblings' identities.
+    ;; Keep the expected tree self-contained across frontend ID allocation.
+    (geom/child-placement authored origin parent
+                          {(:id authored) (assoc authored :parent-id (:id origin) :shapes [])
+                           (:id origin) (assoc origin :shapes [(:id authored)])})))
+
 (defn same-value?
-  [shape group expected]
-  (if-let [unit (get text-groups group)]
-    (not (contains? (thtx/override-units (:content expected) (:content shape)) unit))
-    (if (= group :geometry-group)
-      (every? (fn [[key value]]
-                (let [actual (get shape key)]
-                  (cond
-                    (#{:flip-x :flip-y} key) (= (boolean value) (boolean actual))
-                    (and (number? value) (number? actual)) (mth/close? value actual 1e-10)
-                    :else (= value actual)))) expected)
-      (= expected (values shape group)))))
+  ([shape group expected] (same-value? shape group expected nil))
+  ([shape group expected objects]
+   (if (and (= :text (:type shape)) (= :content-group group))
+     ;; Text values are checked per style/letter unit. The parent group is
+     ;; only a marker; boolean content uses the ordinary attribute table.
+     true
+     (if-let [unit (get text-groups group)]
+       (not (contains? (thtx/override-units (:content expected) (:content shape)) unit))
+       (if (= group :geometry-group)
+         (and (if-let [placed (when objects
+                                (authored-placement expected (get objects (:parent-id shape))))]
+                (gsh/close-attrs? :points (:points shape) (:points placed) 0.01)
+                true)
+              (every? (fn [[key value]]
+                        (let [actual (get shape key)]
+                          (cond
+                            (#{:flip-x :flip-y} key) (= (boolean value) (boolean actual))
+                            (and (number? value) (number? actual)) (mth/close? value actual 1e-10)
+                            :else (= value actual)))) expected))
+         (= expected (values shape group)))))))
 
 (defn edit-text
-  [model before content]
-  (if (:shape-ref before)
-    (let [units (thtx/override-units (:content before) content)]
-      (reduce (fn [model [group unit]]
-                (cond-> model
-                  (contains? units unit)
-                  (assoc-in [(:id before) group] {:content content})))
-              (cond-> model (seq units) (assoc-in [(:id before) :content-group] {}))
-              text-groups))
-    model))
+  ([model before content] (edit-text model before content false))
+  ([model before content typography]
+   (if (:shape-ref before)
+     (let [units (cond-> (thtx/override-units (:content before) content)
+                   typography (into #{:family :weight :size :line-height :spacing :case :typography}))]
+       (reduce (fn [model [group unit]]
+                 (cond-> model
+                   (contains? units unit)
+                   (assoc-in [(:id before) group] {:content content})))
+               (cond-> model (seq units) (assoc-in [(:id before) :content-group] {}))
+               text-groups))
+     model)))
 
 (defn duplicate
   [model before source-id after copy-id]
@@ -149,11 +211,27 @@
                              (= (:shape-ref shape) (:shape-ref (get before id)))
                              (get model id)
                              (and (contains? (get model id) :swap-group)
+                                  (= 1 (count (ctn/get-parent-copy-heads after shape)))
                                   (= (:component-id shape)
                                      (:component-id (get after (:shape-ref shape)))))
-                             ;; Leaving the enclosing copy makes this a plain
-                             ;; copy of its own main, without position inheritance.
-                             (dissoc (get model id) :swap-group)
+                             ;; The old position no longer supplies placement.
+                             ;; Predict retained ownership from the before-state.
+                             (let [old (get before id)
+                                   main (get before (:shape-ref shape))
+                                   normalized (fn [source]
+                                                (-> source
+                                                    (update :constraints-h #(or % (gsh/default-constraints-h old)))
+                                                    (update :constraints-v #(or % (gsh/default-constraints-v old)))
+                                                    (update :fixed-scroll boolean)))]
+                               (reduce (fn [groups group]
+                                         (if (= (values (normalized old) group)
+                                                (values (normalized main) group))
+                                           groups
+                                           (assoc groups group (values old group))))
+                                       (dissoc (get model id) :swap-group)
+                                       (filter #(or (= :constraints-group %)
+                                                    (.startsWith (name %) "layout-item-"))
+                                               (keys attributes))))
                              :else (inherit (get before id))))
                   result (cond-> (dissoc result id) (seq groups) (assoc id groups))]
               (reduce visit result (:shapes (get before id)))))]
@@ -234,7 +312,10 @@
            new-parent (get after (:parent-id shape))]
        (if (and (:geometry-group groups) old shape
                 (= (:parent-id old) (:parent-id shape)) parent new-parent)
-         (update-in result [id :geometry-group] in-orientation parent new-parent)
+         (if-let [expected (authored-placement (:geometry-group groups) new-parent)]
+           (assoc-in result [id :geometry-group]
+                     (with-meta (values expected :geometry-group) (meta (:geometry-group groups))))
+           (update-in result [id :geometry-group] in-orientation parent new-parent))
          result)))
    model model))
 
@@ -319,19 +400,26 @@
                        old-main (or old-main (get old-by-path path))]
                    (reduce-kv
                     (fn [result group _]
-                      (let [attrs (get attributes group)
-                            carried (filter (fn [attr]
-                                              (let [old-value (get old-main attr)
-                                                    new-value (get main attr)
-                                                    agree? (if (and (= group :geometry-group)
-                                                                    (number? old-value) (number? new-value))
-                                                             (mth/close? old-value new-value)
-                                                             (= old-value new-value))]
-                                                (and agree? (not= (get old attr) new-value)))) attrs)]
+                      (if-let [unit (get text-groups group)]
                         (cond-> result
-                          (seq carried)
-                          (assoc-in [(:id shape) group]
-                                    (merge (values main group) (select-keys old carried))))))
+                          (and (not (contains? (thtx/override-units (:content old-main) (:content main)) unit))
+                               (not (same-value? main group {:content (:content old)})))
+                          (-> (assoc-in [(:id shape) group] {:content (:content old)})
+                              (assoc-in [(:id shape) :content-group] {})))
+                        (let [attrs (get attributes group)
+                              carried (filter (fn [attr]
+                                                (let [old-value (get old-main attr)
+                                                      new-value (get main attr)
+                                                      agree? (if (and (= group :geometry-group)
+                                                                      (number? old-value) (number? new-value))
+                                                               (mth/close? old-value new-value)
+                                                               (= old-value new-value))]
+                                                  (and (attribute-applicable? main attr)
+                                                       agree? (not= (get old attr) new-value)))) attrs)]
+                          (cond-> result
+                            (seq carried)
+                            (assoc-in [(:id shape) group]
+                                      (merge (values main group) (select-keys old carried)))))))
                     result (dissoc groups :swap-group)))
                  result)))
            cleared (subtree-shapes after root-id)))

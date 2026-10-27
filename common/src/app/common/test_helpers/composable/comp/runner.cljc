@@ -54,8 +54,10 @@
    Throws when the file is invalid."
   [situation]
   (let [files (cf/all-files situation)]
-    (doseq [file (vals files)]
-      (thf/validate-file! file files))
+    (doseq [[id file] files]
+      (thf/validate-file! file (cf/libraries (-> situation
+                                                 (tm/with-file file)
+                                                 (tm/with-aux-files (dissoc files id))))))
     situation))
 
 (defn sync-cascade
@@ -79,7 +81,7 @@
 (defn- sync-file
   [situation before changes]
   (let [{:keys [situation syncs]}
-        (cf/sync-world situation (cf/changed-components before changes))]
+        (cf/sync-world situation (cf/changed-components before situation changes))]
     [(validate-settled! situation) syncs]))
 
 (defn- push-undo-group
@@ -194,6 +196,15 @@
   [situation]
   (count (get situation ::redo-stack)))
 
+(defn history
+  "The undo/redo state of one editor, without its loaded file snapshots."
+  [situation]
+  (select-keys situation [::undo-stack ::redo-stack]))
+
+(defn with-history
+  [situation history]
+  (merge (dissoc situation ::undo-stack ::redo-stack) history))
+
 (defn- snapshot
   [situation]
   (let [file (tm/file situation)]
@@ -286,7 +297,7 @@
                 (cond-> (push-undo-group situation (into [changes] syncs))
                   (not sync?)
                   (update ::pending-components (fnil into #{})
-                          (cf/changed-components before-situation changes)))))
+                          (cf/changed-components before-situation situation changes)))))
       (and undo-check? (= kind :user))
       (check-step op before depth)
 

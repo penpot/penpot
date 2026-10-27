@@ -85,9 +85,23 @@
 
     (reduce check-shape changes mod-obj-changes)))
 
+(defn touch-text-typography
+  "Applying a typography authors every unit it sets, even equal values.
+   Merely editing text content keeps the ordinary changed-unit rule."
+  [shape]
+  (if (and (= :text (:type shape)) (ctk/in-component-copy? shape))
+    (-> shape
+        (update :touched (fnil into #{})
+                #{:content-group :text-content-typography :text-content-family
+                  :text-content-weight :text-content-size :text-content-line-height
+                  :text-content-spacing :text-content-case})
+        (dissoc :remote-synced))
+    shape))
+
 (defn generate-update-shapes
   [changes ids update-fn objects {:keys [attrs changed-sub-attr changed-item-index ignore-tree ignore-touched with-objects? translation? skip-grid-reassignment?]}]
-  (let [changes   (reduce
+  (let [before    (or objects (pcb/lookup-objects changes))
+        changes   (reduce
                    (fn [changes id]
                      ;; a shape the transform leaves untouched changes only
                      ;; as a consequence of it: no attribute touches
@@ -103,10 +117,27 @@
         ;; explicitly.
         grid-ids (when-not (or translation? skip-grid-reassignment?)
                    (->> ids (filter (partial ctl/grid-layout? objects))))
+        hidden-grid-ids
+        (when-not (or translation? skip-grid-reassignment?)
+          (let [after (pcb/get-objects changes)]
+            (into (d/ordered-set)
+                  (keep (fn [id]
+                          (let [old (get before id)
+                                new (get after id)
+                                parent-id (:parent-id new)]
+                            (when (and (not= (boolean (:hidden old)) (boolean (:hidden new)))
+                                       (ctl/grid-layout? after parent-id))
+                              parent-id))))
+                  ids)))
         changes (cond-> changes
                   (seq grid-ids)
                   (-> (pcb/update-shapes grid-ids ctl/assign-cell-positions {:with-objects? true})
                       (pcb/reorder-grid-children ids))
+
+                  (seq hidden-grid-ids)
+                  (-> (pcb/update-shapes hidden-grid-ids ctl/assign-cells
+                                         {:with-objects? true :ignore-touched true})
+                      (pcb/reorder-grid-children hidden-grid-ids))
 
                   (not (true? ignore-touched))
                   (generate-unapply-tokens objects changed-sub-attr changed-item-index))]

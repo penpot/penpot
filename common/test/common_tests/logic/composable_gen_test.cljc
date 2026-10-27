@@ -6,7 +6,13 @@
 
 (ns common-tests.logic.composable-gen-test
   (:require
+   [app.common.files.changes-builder :as pcb]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
+   [app.common.logic.shapes :as cls]
+   [app.common.logic.variants :as clv]
    [app.common.schema.test :as smt]
+   [app.common.test-helpers.composable.comp.files :as cf]
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.runner :as r]
    [app.common.test-helpers.composable.comp.setups :as setup]
@@ -14,11 +20,514 @@
    [app.common.test-helpers.composable.gen :as cg]
    [app.common.test-helpers.composable.oracle :as oracle]
    [app.common.test-helpers.composable.shadow :as shadow]
+   [app.common.test-helpers.composable.variants :as variants]
+   [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
+   [app.common.test-helpers.texts :as thtx]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest nesting-a-swapped-copy-in-a-blocked-main-authors-its-lock
+  (t/is (map? (cg/run {:world [2 0 {:library true :variants true :rich-variants true
+                                    :text true :text-styles true :layout nil :layout-copies true}]
+                       :ops [[:style 3 2 1] [:swap 0 0 0 0] [:nest 0 0 0 0]
+                             [:undo] [:redo]]}))))
+
+(t/deftest nesting-lock-expectations-reject-a-missing-lock-or-override
+  (let [state (reduce cg/step
+                      (cg/initial-state [2 0 {:library true :variants true :rich-variants true
+                                              :text true :text-styles true :layout nil :layout-copies true}])
+                      [[:style 3 2 1] [:swap 0 0 0 0]])
+        id (get-in (cg/resolve-op (:situation state) (:model state) [:nest 0]) [:shape :id])
+        nested (-> state (cg/step [:nest 0]) cg/settle-state)
+        situation (:situation nested)
+        model (:model nested)
+        file (tm/file situation)
+        path [:data :pages-index (:id (thf/current-page file)) :objects id]
+        invariant (fn [file]
+                    (try (oracle/check (tm/with-file situation file) model) nil
+                         (catch #?(:clj Exception :cljs js/Error) error
+                           (:invariant (ex-data error)))))]
+    (t/is (= {:blocked true} (get-in model [id :modifiable-group])))
+    (t/is (= :I9 (invariant (assoc-in file (conj path :blocked) false))))
+    (t/is (= :I3 (invariant (update-in file (conj path :touched) disj :modifiable-group))))))
+
+(t/deftest generated-swap-can-target-a-loaded-library-component
+  (t/is (map? (cg/run {:world [2 0 {:library true :stale-libraries true
+                                    :library-variants true :variants true}]
+                       :ops [[:delete 0] [:swap 3]]}))))
+
+(t/deftest scalar-style-edits-author-their-own-group-and-propagate-from-mains
+  (doseq [property (range 14)]
+    (let [result (cg/run {:world [2 1 {:layout :flex}]
+                          :ops [[:style 0 property 1 1] [:style 1 property 1 0]
+                                [:sync] [:undo] [:redo]]})]
+      (t/is (pos? (get-in result [:coverage :random :style :changed] 0))
+            (str "style property " property)))))
+
+(t/deftest frame-only-styles-target-frames-in-each-edit-scope
+  (let [situation (cg/world [2 1 {:library true :text true}])]
+    (doseq [property [5 6] scope [0 1 2]]
+      (let [resolved (cg/resolve-op situation {} [:style 1 property 1 scope])]
+        (t/is (= :frame (get-in resolved [:shape :type]))
+              (str "property " property ", scope " scope))))))
+
+(t/deftest text-style-edits-cover-every-style-unit
+  (doseq [[unit group] (map-indexed vector
+                                    [:text-content-family :text-content-weight :text-content-size
+                                     :text-content-line-height :text-content-spacing :text-content-decoration
+                                     :text-content-case :text-content-fills :text-content-typography
+                                     :text-content-align :text-content-direction :text-content-valign])]
+    (let [result (cg/run {:world [2 1 {:text true :text-styles true}]
+                          :ops [[:text-style 1 unit 1] [:sync] [:undo] [:redo]]})
+          id (thi/id :copy-child)]
+      (t/is (= 1 (get-in result [:coverage :random :text-style :changed])) (str group))
+      (t/is (contains? (get (:model result) id) group) (str group)))))
+
+(t/deftest text-style-intent-rejects-a-dropped-main-commit
+  (doseq [unit (range 12)]
+    (let [initial (cg/initial-state [2 1 {:text true :text-styles true}])]
+      (t/is (= {:invariant :I9 :phase :requested-text}
+               (try (with-redefs [r/step (fn [situation _] situation)]
+                      (cg/step initial [:text-style 0 unit 1]))
+                    nil
+                    (catch #?(:clj Exception :cljs js/Error) error
+                      (select-keys (ex-data error) [:invariant :phase]))))
+            (str "text unit " unit)))))
+
+(t/deftest library-dependencies-wait-for-each-consumers-acceptance
+  (let [initial (cg/initial-state [2 0 {:library true :stale-libraries true :library-dependency true}])
+        situation (:situation initial)
+        files (tm/aux-files situation)
+        source-id (some (fn [[id file]] (when (= "random-library" (:name file)) id)) files)
+        dependent-id (some (fn [[id file]] (when (= "dependent-library" (:name file)) id)) files)
+        source-shape (some #(when (and (= :rect (get-in % [:shape :type]))
+                                       (nil? (get-in % [:shape :shape-ref]))) (:shape %))
+                           (cg/tree (tm/with-file situation (get files source-id))))
+        source-index (some #(when (= (:id source-shape)
+                                     (:id (:shape (cg/resolve-op situation {} [:library-edit % 0 1])))) %) (range 20))
+        dependent-child (some #(when (= (:id source-shape) (get-in % [:shape :shape-ref])) (:shape %))
+                              (cg/tree (tm/with-file situation (get files dependent-id))))
+        copy-id (some #(when (= (:id dependent-child) (get-in % [:shape :shape-ref]))
+                         (get-in % [:shape :id])) (cg/tree situation))
+        edited (-> initial (cg/step [:library-edit source-index 0 1]) cg/settle-state)
+        dependent-accepted (-> edited (cg/step [:library-accept 0]) cg/settle-state)
+        accepted (-> dependent-accepted (cg/step [:library-sync 0]) cg/settle-state)
+        fill #(get-in (tm/shape-by-id (:situation %) copy-id) [:fills 0 :fill-color])]
+    (t/is (some? dependent-child))
+    (t/is (some? copy-id))
+    (t/is (= setup/labeled-fill (fill edited)))
+    (t/is (= setup/labeled-fill (fill dependent-accepted)))
+    (t/is (= "#ff0000" (fill accepted)))
+    (t/is (map? (cg/run {:world [2 0 {:library true :stale-libraries true :library-dependency true}]
+                         :ops [[:library-edit source-index 0 1] [:library-accept 0] [:library-sync 0]
+                               [:library-undo 0] [:library-redo 0] [:undo] [:redo]]})))))
+
+(t/deftest a-local-cascade-keeps-an-unaccepted-swaps-library-inputs
+  (let [program {:world [2 1 {:library true :stale-libraries true :library-dependency true}]
+                 :ops [[:swap 1] [:swap 18] [:library-add-child 16] [:edit 0 1 1 :copy-head]]}
+        result (cg/run program)
+        situation (:situation result)
+        head-at #(some (fn [{:keys [path shape]}] (when (= [2 0] path) shape)) (cg/tree %))
+        head (head-at situation)
+        owner (:component-file head)
+        main-id (get-in (cf/all-files situation) [owner :data :components (:component-id head) :main-instance-id])
+        main #(tm/shape-by-id (tm/with-file situation (get % owner)) main-id)
+        advanced (cf/remember-subtree situation (:id (tm/file situation)) (:id head) (cf/all-files situation))]
+    (t/is (= 1 (count (:shapes head))))
+    (t/is (= 1 (count (:shapes (main (cf/reference-libraries situation head))))))
+    (t/is (= 2 (count (:shapes (main (cf/all-files situation))))))
+    (t/is (= :I4 (try (oracle/check advanced (:model result)) nil
+                      (catch #?(:clj Exception :cljs js/Error) error (:invariant (ex-data error))))))
+    (let [accepted (cg/run (update program :ops conj [:library-sync 1]))]
+      (t/is (= 2 (count (:shapes (head-at (:situation accepted)))))))))
+
+(t/deftest geometry-edits-cover-mains-copy-children-and-nested-copies
+  (doseq [action (range 6) scope (range 5)]
+    (let [result (cg/run {:world [2 2]
+                          :ops [[:transform 0 action 3 scope] [:sync] [:undo] [:redo]]})]
+      (t/is (= 1 (get-in result [:coverage :random :transform :changed] 0))
+            (str "geometry action " action ", scope " scope)))))
+
+(t/deftest hiding-a-grid-main-child-then-moving-its-main-stays-synced
+  (t/is (map? (cg/run {:world [2 1 {:text true :text-styles true :layout :grid}]
+                       :ops [[:style 3 1 3 0] [:transform 0 0 0 0]]}))))
+
+(t/deftest showing-a-hidden-grid-main-child-assigns-it-a-cell-again
+  (let [result (cg/run {:world [2 1 {:text true :text-styles true :layout :grid}]
+                        :ops [[:style 3 1 1 0] [:style 3 1 0 0]]})
+        situation (:situation result)
+        shape (:shape (cg/resolve-op situation (:model result) [:style 3 1 0 0]))
+        parent (tm/shape-by-id situation (:parent-id shape))]
+    (t/is (false? (:hidden shape)))
+    (t/is (some #(some #{(:id shape)} (:shapes %)) (vals (:layout-grid-cells parent))))))
+
+(t/deftest hiding-a-grid-copy-child-keeps-derived-cells-consistent
+  (t/is (map? (cg/run {:world [2 1 {:text true :text-styles true :layout :grid}]
+                       :ops [[:style 6 1 3 0] [:transform 0 0 0 0]
+                             [:undo] [:redo]]}))))
+
+(t/deftest applying-a-typography-after-a-swap-is-already-fully-synced
+  (t/is (map? (cg/run {:world [2 0 {:library true :variants true :rich-variants true
+                                    :text true :text-styles true :layout nil :layout-copies true}]
+                       :ops [[:swap 2] [:text-style 4 8 1] [:add-child 0] [:undo] [:undo] [:undo] [:redo] [:redo] [:redo]]}))))
+
+(t/deftest detaching-after-a-nested-switch-keeps-placement-stable-through-sync
+  (t/is (map? (cg/run {:world [2 2 {:library true :variants true :rich-variants true
+                                    :text true :text-styles true :layout :flex :layout-copies true}]
+                       :ops [[:nest 7 0 0 0] [:switch 3 0 0 0] [:style 3 7 1] [:detach 6 0 0 0]
+                             [:undo] [:undo] [:undo] [:undo] [:redo] [:redo] [:redo] [:redo]]}))))
+
+(t/deftest applying-typography-to-a-main-drops-a-mixed-copys-link-without-an-override
+  (t/is (map? (cg/run {:world [2 0 {:library true :variants true :rich-variants true
+                                    :text true :text-styles true :layout nil :layout-copies true}]
+                       :ops [[:swap 0 0 0 0] [:text 23 3 1 0] [:text-style 22 8 1]
+                             [:undo] [:undo] [:undo] [:redo] [:redo] [:redo]]}))))
+
+(t/deftest typography-reference-oracle-rejects-wrong-retention-and-missing-inheritance
+  (doseq [mixed? [true false]]
+    (let [state     (cond-> (cg/initial-state [2 0 {:text true :text-styles true}])
+                      mixed? (cg/step [:text 1 1 1]))
+          state     (-> state (cg/step [:text-style 0 8 1]) (update :situation r/settle))
+          situation (:situation state)
+          file      (tm/file situation)
+          page      (thf/current-page file)
+          copy      (ths/get-shape file :copy-child)
+          content   (-> (thtx/view (:content copy))
+                        (thtx/restyle :typography (when mixed? :generated-typography))
+                        thtx/content)
+          corrupted (tm/with-file situation
+                      (assoc-in file [:data :pages-index (:id page) :objects (:id copy) :content] content))]
+      (t/is (nil? (oracle/check situation (:model state))))
+      (t/is (= :I4 (try (oracle/check corrupted (:model state)) nil
+                        (catch #?(:clj Exception :cljs js/Error) error (:invariant (ex-data error)))))
+            (if mixed? "mixed styles must lose the reference" "fully inherited styles must keep the reference")))))
+
+(t/deftest detaching-a-rotated-switched-copy-keeps-nested-placement-stable
+  (doseq [angle (range 4)]
+    (t/is (map? (cg/run {:world [2 0 {:library true :variants true :rich-variants true
+                                      :text true :text-styles true :layout nil :layout-copies true}]
+                         :ops [[:duplicate 1 0 0 0] [:duplicate 1 0 0 0] [:switch 3 0 0 0]
+                               [:rotate 5 0 0 angle] [:detach 5 0 0 0]
+                               [:undo] [:undo] [:undo] [:undo] [:undo]
+                               [:redo] [:redo] [:redo] [:redo] [:redo]]})))))
+
+(t/deftest detaching-settles-new-placement-without-pulling-stale-content
+  (let [state     (-> (reduce cg/step
+                              (cg/initial-state [2 0 {:library true :variants true :rich-variants true
+                                                      :text true :text-styles true :layout nil :layout-copies true}])
+                              [[:duplicate 1 0 0 0] [:duplicate 1 0 0 0] [:switch 3 0 0 0] [:rotate 5]])
+                      cg/settle-state)
+        situation (:situation state)
+        copy      (:shape (first (filter #(= [:file 0 :page 0 5 0] (:path %)) (cg/forest situation))))
+        near      (tm/shape-by-id situation (:shape-ref copy))
+        source-id (:shape-ref near)
+        stale     (tm/with-file situation (ths/update-shape-by-id (tm/file situation) source-id :opacity 0.25))
+        detached  (r/step stale (:op (cg/resolve-op stale (:model state) [:detach 5])))
+        head      (tm/shape-by-id detached (:id copy))
+        swapped   (tm/shape-by-id detached (first (:shapes head)))]
+    (t/is (= 0.25 (:opacity (tm/shape-by-id detached source-id))))
+    (t/is (= (:opacity copy) (:opacity head)) "detach must not accept the main's new content")
+    (t/is (= #{:swap-group} (:touched swapped)) "the placement correction stays inherited")))
+
+(t/deftest applying-an-inherited-typography-authors-even-equal-units
+  (let [state (-> (cg/initial-state [2 0 {:text true :text-styles true}])
+                  (cg/step [:text-style 0 8 1]) cg/settle-state)
+        before (tm/shape-by-id (:situation state) (thi/id :copy-child))
+        result (-> state (cg/step [:text-style 1 8 1]) cg/settle-state)
+        after (tm/shape-by-id (:situation result) (thi/id :copy-child))
+        groups #{:content-group :text-content-typography :text-content-family
+                 :text-content-weight :text-content-size :text-content-line-height
+                 :text-content-spacing :text-content-case}]
+    (t/is (= (thtx/view (:content before)) (thtx/view (:content after))))
+    (t/is (empty? (:touched before)))
+    (t/is (= groups (:touched after)))
+    (t/is (= groups (set (keys (get (:model result) (:id after))))))
+    (let [undone (-> result (cg/step [:undo]) cg/settle-state)]
+      (t/is (= (oracle/snapshot (:situation state)) (oracle/snapshot (:situation undone)))))
+    (t/is (= 2 (get-in result [:coverage :random :text-style :changed] 0))
+          "both the main's value edit and the copy's authorship count as mutations")))
+
+(t/deftest deleted-variant-content-keeps-its-size-when-the-position-resizes
+  (t/is (map? (cg/run {:world [2 2 {:variants true :variant-diff false}]
+                       :ops [[:switch 1] [:delete 0] [:restore 0] [:delete 1]
+                             [:resize 0] [:undo] [:redo]]}))))
+
+(defn- translate-result
+  [situation id]
+  (let [file (tm/file situation)
+        page (thf/current-page file)
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page)) [id]
+                                            #(gsh/move % (gpt/point 5 0)) (:objects page)
+                                            {:ignore-touched true})]
+    (tm/with-file situation (thf/apply-changes file changes))))
+
+(t/deftest geometry-expectations-do-not-read-the-primary-result
+  (doseq [tuple [[:resize 0 0 1] [:rotate 0 0 1] [:transform 0 0 1 0]]]
+    (let [initial (cg/initial-state [2 1])
+          original r/step
+          invariant (try
+                      (with-redefs [r/step (fn [situation op]
+                                             (let [result (original situation op)]
+                                               (if (:target op)
+                                                 (translate-result result (tm/target-shape-id situation (:target op)))
+                                                 result)))]
+                        (cg/step initial tuple))
+                      nil
+                      (catch #?(:clj Exception :cljs js/Error) error
+                        (select-keys (ex-data error) [:invariant :phase])))]
+      (t/is (= {:invariant :I9 :phase :requested-geometry} invariant)))))
+
+(t/deftest authored-child-position-follows-its-parent-and-rejects-drift
+  (let [initial (cg/initial-state [2 1])
+        id (get-in (cg/resolve-op (:situation initial) {} [:transform 0 0 1 2]) [:shape :id])
+        authored (-> initial (cg/step [:transform 0 0 1 2]) cg/settle-state)
+        moved (-> authored (cg/step [:transform 0 0 1 4]) cg/settle-state)
+        broken (translate-result (:situation moved) id)]
+    (t/is (nil? (oracle/check (:situation moved) (:model moved))))
+    (t/is (= :I9 (try (oracle/check broken (:model moved) false) nil
+                      (catch #?(:clj Exception :cljs js/Error) error (:invariant (ex-data error))))))))
+
+(t/deftest pushed-authored-child-position-uses-the-main-frame
+  (t/is (map? (cg/run {:world [2 2 {:variants true :variant-diff false}]
+                       :ops [[:transform 0 0 0 3] [:edit 1 0 1 1] [:update-main 1]]}))))
+
+(t/deftest accepting-an-upstream-library-after-its-dependent-was-refreshed
+  (t/is (map? (cg/run {:world [2 0 {:library true :stale-libraries true :library-dependency true}]
+                       :ops [[:library-edit 3 0 1] [:library-accept 0] [:library-sync 1]]}))))
+
+(t/deftest detached-inherited-child-position-uses-the-copy-parent-frame
+  (t/is (map? (cg/run {:world [3 2 {:text true :layout nil}]
+                       :ops [[:transform 1 0 0 2] [:nest 3] [:detach 2]]}))))
+
+(t/deftest reflecting-a-rotated-copy-settles-descendant-flips
+  (t/is (map? (cg/run {:world [2 1 {:text true :layout :grid}]
+                       :ops [[:rotate 1] [:transform 2 16 0 9]]}))))
+
+(t/deftest swapping-after-a-resized-variant-keeps-child-placement
+  (t/is (map? (cg/run {:world [2 2 {:variants true :variant-diff false :rich-variants true
+                                    :text true :layout nil :layout-copies true}]
+                       :ops [[:resize 0] [:switch 0] [:swap 0]]}))))
+
+(t/deftest switching-after-a-main-move-and-child-removal-stays-settled
+  (t/is (map? (cg/run {:world [2 0 {:library true :variants true :rich-variants true :text true
+                                    :layout :flex :layout-copies true}]
+                       :ops [[:delete 0] [:restore 0] [:transform 4 0 0 0] [:remove-child 8]
+                             [:style 5 7 0 0] [:switch 4] [:rotate 0 2 0 0]]}))))
+
+(t/deftest reflecting-a-rotated-nested-copy-settles-descendant-flips
+  (t/is (map? (cg/run {:world [2 1 {:text true :layout :grid}]
+                       :ops [[:nest 11] [:rotate 1] [:transform 2 16 0 18]]}))))
+
+(t/deftest detach-keeps-an-authored-swap-inside-a-surviving-copy
+  (t/is (map? (cg/run {:world [2 2 {:variants true :variant-diff false}]
+                       :ops [[:switch 10] [:switch 0] [:detach 2]]}))))
+
+(t/deftest reflecting-a-parent-keeps-an-authored-childs-relative-orientation
+  (t/is (map? (cg/run {:world [2 1]
+                       :ops [[:transform 0 0 1 2] [:rotate 0] [:transform 0 4 0 4]
+                             [:undo] [:redo]]}))))
+
+(t/deftest variant-worlds-contain-distinct-structure-size-text-and-properties
+  (let [situation (cg/world [2 2 {:variants true :rich-variants true :text true
+                                  :layout :grid :layout-copies true}])
+        members (:members (n/variant-set situation "random-variants"))
+        roots (map #(tm/shape-by-id situation (thi/id (:root-label %))) members)
+        components (map #(get-in (tm/file situation) [:data :components (:component-id %)]) members)]
+    (t/is (= 4 (count members)))
+    (t/is (true? (every? #(= 3 (count (:variant-properties %))) components)))
+    (t/is (> (count (set (map (juxt :width :height) roots))) 1))
+    (t/is (> (count (set (map (comp count :shapes) roots))) 1))
+    (t/is (true? (every? (fn [root] (some #(= :text (:type (tm/shape-by-id situation %))) (:shapes root))) roots)))
+    (t/is (boolean (some #(and (:layout (:shape %))
+                               (some (fn [id] (:component-id (tm/shape-by-id situation id)))
+                                     (:shapes (:shape %)))) (cg/tree situation))))))
+
+(t/deftest nearest-variant-prefers-earlier-properties-and-rejects-a-wrong-choice
+  (let [initial (cg/initial-state [2 2 {:variants true :rich-variants true}])
+        situation (:situation initial)
+        file (tm/file situation)
+        members (:members (n/variant-set situation "random-variants"))
+        [a b _ d] (map #(get-in file [:data :components (:component-id %)]) members)
+        shape {:component-file (:id file) :component-id (:id a)}
+        items (cg/candidates situation {} :switch nil)
+        index (some (fn [[index entry]]
+                      (when (and (= (:id a) (get-in entry [:shape :component-id]))
+                                 (= 0 (:variant-pos entry))
+                                 (= (:id b) (get-in entry [:destination :shape :component-id]))) index))
+                    (map-indexed vector items))]
+    (t/is (= (:id b) (:id (variants/nearest file shape 0 "Large"))))
+    (t/is (some? index))
+    (t/is (= {:invariant :I9 :phase :requested-component}
+             (try (with-redefs [clv/find-switch-target (constantly d)]
+                    (cg/step initial [:switch index]))
+                  nil
+                  (catch #?(:clj Exception :cljs js/Error) error
+                    (select-keys (ex-data error) [:invariant :phase])))))))
+
+(t/deftest switch-shadow-carries-compatible-text-style-units
+  (doseq [[new-size carry?] [[14 true] [22 false]]]
+    (let [content #(thtx/content [[["Same text" {:size %}]]])
+          root {:type :frame :name "Board" :width 100 :height 100 :rotation 0}
+          old-main (assoc root :id :old :shapes [:old-text])
+          new-main (assoc root :id :new :shapes [:new-text])
+          text {:type :text :name "Caption" :width 70 :height 25 :rotation 0}
+          before {:old old-main :old-text (assoc text :id :old-text :parent-id :old :content (content 14))
+                  :copy (assoc root :id :copy :shape-ref :old :shapes [:copy-text])
+                  :copy-text (assoc text :id :copy-text :shape-ref :old-text :parent-id :copy :content (content 18))}
+          after {:new new-main :new-text (assoc text :id :new-text :parent-id :new :content (content new-size))
+                 :copy (assoc root :id :copy :shape-ref :new :shapes [:result-text])
+                 :result-text (assoc text :id :result-text :shape-ref :new-text :parent-id :copy :content (content new-size))}
+          model {:copy-text {:content-group {} :text-content-size {:content (content 18)}}}
+          result (shadow/swap model before after :copy :old :new true)
+          expected (get-in result [:result-text :text-content-size])]
+      (t/is (= carry? (some? expected)))
+      (when carry?
+        (t/is (= {} (get-in result [:result-text :content-group])))
+        (t/is (false? (shadow/same-value? (:result-text after) :text-content-size expected)))))))
+
+(t/deftest source-library-edits-wait-for-explicit-consumer-acceptance
+  (let [initial (cg/initial-state [2 1 {:library true :stale-libraries true}])
+        situation (:situation initial)
+        library (first (vals (tm/aux-files situation)))
+        source (:shape (first (filter #(and (= :rect (get-in % [:shape :type]))
+                                            (nil? (get-in % [:shape :shape-ref])))
+                                      (cg/tree (tm/with-file situation library)))))
+        copies (filter #(= (:id source) (get-in % [:shape :shape-ref])) (cg/tree situation))
+        copy-id (get-in (first copies) [:shape :id])
+        edited (-> initial (cg/step [:library-edit 0 0 1]) cg/settle-state)
+        source-after (get-in (cf/all-files (:situation edited))
+                             [(:id library) :data :pages-index (first (get-in library [:data :pages]))
+                              :objects (:id source)])
+        accepted (-> edited (cg/step [:library-sync]) cg/settle-state)
+        undone (-> accepted (cg/step [:undo]) cg/settle-state)
+        redone (-> undone (cg/step [:redo]) cg/settle-state)
+        fill #(get-in (tm/shape-by-id (:situation %) copy-id) [:fills 0 :fill-color])]
+    (t/is (seq copies))
+    (t/is (= "#ff0000" (get-in source-after [:fills 0 :fill-color])))
+    (t/is (= (get (oracle/snapshot situation) (:id (tm/file situation)))
+             (get (oracle/snapshot (:situation edited)) (:id (tm/file situation)))))
+    (t/is (= setup/labeled-fill (fill edited)))
+    (t/is (= "#ff0000" (fill accepted)))
+    (t/is (= setup/labeled-fill (fill undone)))
+    (t/is (= "#ff0000" (fill redone)))
+    (t/is (= 1 (get-in accepted [:coverage :random :library-sync :changed])))))
+
+(t/deftest independent-source-edits-and-acceptance-have-cross-file-inverses
+  (let [result (cg/run {:world [2 1 {:library true :stale-libraries true}]
+                        :ops [[:library-edit 0 0 1] [:library-undo] [:library-redo]
+                              [:library-sync] [:undo] [:redo]]})]
+    (t/is (= 1 (get-in result [:coverage :random :library-edit :changed])))
+    (t/is (= 1 (get-in result [:coverage :random :library-sync :changed])))
+    (t/is (= 1 (count (tm/aux-files (:situation result)))))))
+
+(t/deftest stale-copy-edits-survive-acceptance-and-reset-uses-the-loaded-main
+  (let [spec [2 1 {:library true :stale-libraries true}]
+        initial (cg/initial-state spec)
+        situation (:situation initial)
+        library-id (first (keys (tm/aux-files situation)))
+        candidates (cg/candidates situation {} :edit 2)
+        [index entry] (first (keep-indexed (fn [index entry]
+                                             (when (= :rect (get-in entry [:shape :type])) [index entry]))
+                                           candidates))
+        id (get-in entry [:shape :id])
+        parent (get-in entry [:shape :parent-id])
+        reset-index (first (keep-indexed #(when (= parent (get-in %2 [:shape :id])) %1)
+                                         (cg/candidates situation {} :reset nil)))
+        edited (-> initial (cg/step [:library-edit 0 0 1])
+                   (cg/step [:edit index 0 2 2]) cg/settle-state)
+        accepted (-> edited (cg/step [:library-sync]) cg/settle-state)
+        reset (-> edited (cg/step [:reset reset-index]) cg/settle-state)
+        reset-accepted (-> reset (cg/step [:library-sync]) cg/settle-state)
+        fill #(get-in (tm/shape-by-id (:situation %) id) [:fills 0 :fill-color])]
+    (t/is (some? library-id))
+    (t/is (some? reset-index))
+    (t/is (= "#00ff00" (fill accepted)))
+    (t/is (= #{:fill-group} (set (:touched (tm/shape-by-id (:situation accepted) id)))))
+    (t/is (= "#ff0000" (fill reset)))
+    (t/is (= "#ff0000" (fill reset-accepted)))
+    (t/is (map? (cg/run {:world spec
+                         :ops [[:library-edit 0 0 1] [:edit index 0 2 2]
+                               [:reset reset-index] [:library-sync] [:undo] [:redo]]})))))
+
+(t/deftest stale-copy-can-swap-before-accepting-the-library-update
+  (let [spec [2 1 {:library true :stale-libraries true}]
+        initial (cg/initial-state spec)
+        situation (:situation initial)
+        library-id (first (keys (tm/aux-files situation)))
+        index (first (keep-indexed #(when (= library-id (get-in %2 [:shape :component-file])) %1)
+                                   (cg/candidates situation {} :swap nil)))
+        result (cg/run {:world spec
+                        :ops [[:library-edit 0 0 1] [:swap index]
+                              [:library-sync] [:undo] [:redo]]})]
+    (t/is (some? index))
+    (t/is (= 1 (get-in result [:coverage :random :swap :changed])))
+    (t/is (= 1 (get-in result [:coverage :random :library-sync :changed])))))
+
+(t/deftest pushing-a-local-override-does-not-accept-unrelated-source-edits
+  (let [spec [2 1 {:library true :stale-libraries true :library-variants true}]
+        initial (cg/initial-state spec)
+        situation (:situation initial)
+        {:keys [shape library-id]} (cg/resolve-op situation {} [:library-edit 1 0 1])
+        copy-id (some #(when (= (:id shape) (get-in % [:shape :shape-ref]))
+                         (get-in % [:shape :id])) (cg/tree situation))
+        pushed (-> initial (cg/step [:library-edit 1 0 1])
+                   (cg/step [:edit 0 1 1 2]) (cg/step [:update-main 0]) cg/settle-state)
+        after (:situation pushed)
+        source (tm/with-file after (get (tm/aux-files after) library-id))
+        reference (get (cf/reference-libraries after (:id (tm/file after)) copy-id) library-id)]
+    (t/is (some? copy-id))
+    (t/is (= setup/labeled-fill (get-in (tm/shape-by-id after copy-id) [:fills 0 :fill-color])))
+    (t/is (= setup/labeled-fill
+             (get-in (tm/shape-by-id (tm/with-file after reference) (:id shape)) [:fills 0 :fill-color])))
+    (t/is (= "#ff0000" (get-in (tm/shape-by-id source (:id shape)) [:fills 0 :fill-color])))
+    (t/is (= 1 (get-in pushed [:coverage :random :update-main :changed])))))
+
+(t/deftest source-history-does-not-undo-consumer-edits
+  (t/is (map? (cg/run {:world [2 1 {:library true :stale-libraries true}]
+                       :ops [[:library-edit 0 0 1] [:edit 0 1 1 2]
+                             [:library-sync] [:library-undo] [:library-redo]
+                             [:undo] [:undo] [:redo] [:redo]]}))))
+
+(t/deftest no-op-acceptance-does-not-rewrite-an-earlier-edits-undo-baseline
+  (t/is (map? (cg/run {:world [2 0 {:library true :stale-libraries true}]
+                       :ops [[:edit 1 0 2 2] [:library-edit 0 0 1]
+                             [:library-sync] [:undo] [:undo] [:redo] [:redo]]}))))
+
+(t/deftest coverage-distinguishes-random-changes-no-ops-and-skips
+  (let [result (cg/run {:world [2 0]
+                        :ops [[:edit 0 0 1 1] [:edit 0 0 1 1]
+                              [:restore 0] [:sync 0]]})]
+    (t/is (= {:attempted 2 :eligible 2 :changed 1 :no-op 1}
+             (select-keys (get-in result [:coverage :random :edit])
+                          [:attempted :eligible :changed :no-op])))
+    (t/is (= {:attempted 1 :eligible 0 :skipped 1}
+             (select-keys (get-in result [:coverage :random :restore])
+                          [:attempted :eligible :skipped])))
+    (t/is (= 1 (get-in result [:coverage :random :sync :no-op])))))
+
+(t/deftest setup-does-not-count-as-random-mutation-coverage
+  (let [result (cg/run {:world [2 0]
+                        :prefix [[:edit 0 0 1 1]]
+                        :ops [[:restore 0] [:sync 0]]})]
+    (t/is (= 1 (get-in result [:coverage :setup :edit :changed])))
+    (t/is (nil? (get-in result [:coverage :random :edit])))
+    (t/is (= 1 (get-in result [:coverage :random :restore :skipped])))))
+
+(t/deftest coverage-rejects-vacuous-random-tails-and-underrepresented-kinds
+  (doseq [counts [{:attempted 100 :eligible 0 :skipped 100}
+                  {:attempted 100 :eligible 100 :no-op 100}]]
+    (t/is (seq (cg/coverage-errors {:setup {:edit {:changed 100}}
+                                    :random {:edit counts}}
+                                   [:edit]))))
+  (t/is (seq (cg/coverage-errors {:random {:edit {:attempted 1000 :changed 1000}
+                                           :reset {:attempted 1000 :changed 1 :no-op 999}}}
+                                 [:edit :reset])))
+  (t/is (empty? (cg/coverage-errors {:random {:edit {:attempted 10 :changed 10}
+                                              :sync {:attempted 10 :no-op 10}}}
+                                    [:edit :sync]))))
 
 (t/deftest oracle-rejects-phantom-and-missing-overrides
   (let [situation (setup/simple-component-with-labeled-copy)
@@ -89,9 +598,9 @@
      (smt/for [program cg/program-gen]
        (cg/check-program program coverage failure))
      :max-size 30)
-    (println "Executed component operations:" (pr-str @coverage))
-    (doseq [kind [:edit :reset :update-main :detach :sync :undo :redo]]
-      (t/is (pos? (get @coverage kind 0)) (str "No executed " kind)))))
+    (println "Component operation coverage:" (pr-str @coverage))
+    (t/is (empty? (cg/coverage-errors @coverage [:edit :reset :update-main :detach :sync :undo :redo]))
+          (pr-str (cg/coverage-errors @coverage [:edit :reset :update-main :detach :sync :undo :redo])))))
 
 (t/deftest random-structure-compositions
   (let [coverage (atom {})
@@ -100,9 +609,9 @@
      (smt/for [program cg/structure-program-gen]
        (cg/check-program program coverage failure))
      :max-size 30)
-    (println "Executed structure operations:" (pr-str @coverage))
-    (doseq [kind cg/structure-kinds]
-      (t/is (pos? (get @coverage kind 0)) (str "No executed " kind)))))
+    (println "Structure operation coverage:" (pr-str @coverage))
+    (t/is (empty? (cg/coverage-errors @coverage cg/structure-kinds))
+          (pr-str (cg/coverage-errors @coverage cg/structure-kinds)))))
 
 (t/deftest partial-sync-keeps-independent-components-pending
   (let [situation (cg/world [3 0])
@@ -149,9 +658,9 @@
      (smt/for [program cg/swap-program-gen]
        (cg/check-program program coverage failure))
      :max-size 30)
-    (println "Executed swap operations:" (pr-str @coverage))
-    (doseq [kind [:swap :switch :edit :reset :undo :redo]]
-      (t/is (pos? (get @coverage kind 0)) (str "No executed " kind)))))
+    (println "Swap operation coverage:" (pr-str @coverage))
+    (t/is (empty? (cg/coverage-errors @coverage cg/swap-kinds))
+          (pr-str (cg/coverage-errors @coverage cg/swap-kinds)))))
 
 (t/deftest random-renames-leave-variant-management-to-its-own-operations
   (let [situation (cg/world [2 2 {:variants true}])
@@ -188,9 +697,31 @@
      (smt/for [program cg/library-program-gen]
        (cg/check-program program coverage failure))
      :max-size 30)
-    (println "Executed library operations:" (pr-str @coverage))
-    (doseq [kind [:edit :update-main :library-sync :undo :redo]]
-      (t/is (pos? (get @coverage kind 0)) (str "No executed " kind)))))
+    (println "Library operation coverage:" (pr-str @coverage))
+    (t/is (empty? (cg/coverage-errors @coverage cg/library-kinds))
+          (pr-str (cg/coverage-errors @coverage cg/library-kinds)))))
+
+(t/deftest random-stale-library-compositions
+  (let [coverage (atom {})
+        failure (atom nil)]
+    (smt/check!
+     (smt/for [program cg/stale-library-program-gen]
+       (cg/check-program program coverage failure))
+     :max-size 30)
+    (println "Stale library operation coverage:" (pr-str @coverage))
+    (t/is (empty? (cg/coverage-errors @coverage cg/stale-library-kinds #{:sync}))
+          (pr-str (cg/coverage-errors @coverage cg/stale-library-kinds #{:sync})))))
+
+(t/deftest random-library-dependency-compositions
+  (let [coverage (atom {})
+        failure (atom nil)]
+    (smt/check!
+     (smt/for [program cg/dependency-program-gen]
+       (cg/check-program program coverage failure))
+     :max-size 30)
+    (println "Library dependency operation coverage:" (pr-str @coverage))
+    (t/is (empty? (cg/coverage-errors @coverage cg/dependency-kinds #{:sync}))
+          (pr-str (cg/coverage-errors @coverage cg/dependency-kinds #{:sync})))))
 
 (t/deftest update-main-moves-an-authored-swap-to-the-replaced-main-shape
   (let [result (cg/run {:world [2 1 {:library true :variants true}]

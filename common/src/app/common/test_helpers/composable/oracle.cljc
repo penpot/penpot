@@ -9,13 +9,13 @@
    from the shadow and near main, never from the sync implementation."
   (:require
    [app.common.geom.matrix :as gmt]
-   [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.test-helpers.composable.comp.files :as cf]
    [app.common.test-helpers.composable.comp.undo-check :as uc]
    [app.common.test-helpers.composable.core :as tm]
+   [app.common.test-helpers.composable.geometry :as geom]
    [app.common.test-helpers.composable.shadow :as shadow]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.normalize :as thn]
@@ -58,123 +58,120 @@
 
 (defn- matrix-effect
   "Matrix coefficients have no pixel unit. Compare their effect over the
-   shape's local bounds, so the geometry tolerance has the same unit."
-  [shape matrix]
-  (let [half-width (/ (:width shape) 2)
-        half-height (/ (:height shape) 2)]
-    (mapv #(gpt/transform % (or matrix (gmt/matrix)))
-          [(gpt/point (- half-width) (- half-height))
-           (gpt/point half-width (- half-height))
-           (gpt/point half-width half-height)
-           (gpt/point (- half-width) half-height)])))
+   shape's local bounds. Keep the inputs for paired derived-axis comparison."
+  [shape matrix derived]
+  (let [bounds (select-keys shape [:width :height])
+        half-width (/ (:width bounds) 2)
+        half-height (/ (:height bounds) 2)]
+    (with-meta
+      (mapv #(gpt/transform % (or matrix (gmt/matrix)))
+            [(gpt/point (- half-width) (- half-height))
+             (gpt/point half-width (- half-height))
+             (gpt/point half-width half-height)
+             (gpt/point (- half-width) half-height)])
+      {::matrix matrix ::bounds bounds ::derived derived})))
+
+(declare free-head-reference-origins)
 
 (defn design-snapshot
   "Design inputs without derived placement, dimensions and bookkeeping.
    Geometry remains unrounded; equivalent? applies its tolerance directly."
-  [situation]
-  (walk/postwalk
-   (fn [value]
-     (if (and (map? value) (contains? value :parent-id))
-       (cond-> (-> value
-                   (dissoc :remote-synced)
-                   (update :flip-x boolean)
-                   (update :flip-y boolean))
-         (= :text (:type value)) (update :content thtx/view))
-       value))
-   (walk/postwalk
-    (fn [value]
-      (if (and (map? value) (:objects value))
-        (update value :objects
-                (fn [objects]
-                  (into {} (map (fn [[id shape]]
-                                  [id (-> (gsh/move shape
-                                                    (gpt/point (- (get-in objects [(:parent-id shape) :x] 0))
-                                                               (- (get-in objects [(:parent-id shape) :y] 0))))
-                                          (as-> moved (assoc moved
-                                                             :transform (matrix-effect shape (:transform moved))
-                                                             :transform-inverse (matrix-effect shape (:transform-inverse moved))))
-                                          (as-> shape (apply dissoc shape
-                                                             (cond-> (derived-attributes objects shape)
-                                                               (and (:component-id shape) (:shape-ref shape))
-                                                               (into #{:x :y :points :selrect}))))
-                                          (update :constraints-h #(or % (gsh/default-constraints-h shape)))
-                                          (update :constraints-v #(or % (gsh/default-constraints-v shape))))])) objects)))
-        value))
-    (snapshot situation))))
+  ([situation] (design-snapshot situation {}))
+  ([situation {:keys [free-head-placement relative-free-head-placement]
+               :or {free-head-placement true}}]
+   (let [origins (when (and free-head-placement relative-free-head-placement)
+                   (free-head-reference-origins situation))]
+     (walk/postwalk
+      (fn [value]
+        (if (and (map? value) (contains? value :parent-id))
+          (cond-> (-> value
+                      (dissoc :remote-synced)
+                      (update :flip-x boolean)
+                      (update :flip-y boolean)
+                      (update :fixed-scroll boolean))
+            (= :text (:type value)) (update :content thtx/view))
+          value))
+      (walk/postwalk
+       (fn [value]
+         (if (and (map? value) (:objects value))
+           (update value :objects
+                   (fn [objects]
+                     (into {} (map (fn [[id shape]]
+                                     [id (-> (gsh/move shape
+                                                       (gpt/negate
+                                                        (or (get origins id)
+                                                            (gpt/point (get-in objects [(:parent-id shape) :x] 0)
+                                                                       (get-in objects [(:parent-id shape) :y] 0)))))
+                                             (as-> moved (let [derived (derived-attributes objects shape)]
+                                                           (assoc moved
+                                                                  :transform (matrix-effect shape (:transform moved) derived)
+                                                                  :transform-inverse (matrix-effect shape (:transform-inverse moved) derived))))
+                                             (as-> shape (apply dissoc shape
+                                                                (cond-> (derived-attributes objects shape)
+                                                                  (and free-head-placement (:component-id shape) (:shape-ref shape)
+                                                                       (= 1 (count (ctn/get-parent-copy-heads objects shape))))
+                                                                  (into #{:x :y :points :selrect}))))
+                                             (update :constraints-h #(or % (gsh/default-constraints-h shape)))
+                                             (update :constraints-v #(or % (gsh/default-constraints-v shape))))])) objects)))
+           value))
+       (snapshot situation))))))
 
 (defn canonical
   "Design data with shape, component and grid-cell IDs named by tree path.
    Pure and frontend backends allocate different IDs for the same action."
-  [situation]
-  (let [files (sort-by (comp str key) (snapshot situation))
-        ids (atom {#uuid "00000000-0000-0000-0000-000000000000" :root})]
-    (letfn [(name-tree [objects id path]
-              (when-let [shape (get objects id)]
-                (swap! ids assoc id path)
-                (doseq [[cell-id cell] (:layout-grid-cells shape)]
-                  (swap! ids assoc cell-id [path :cell (:row cell) (:column cell)]))
-                (doseq [[index child] (map-indexed vector (:shapes shape))]
-                  (name-tree objects child (conj path index)))))]
-      (doseq [[file-index [file-id file]] (map-indexed vector files)]
-        (swap! ids assoc file-id [:file file-index])
-        (doseq [[page-index page-id] (map-indexed vector (get-in file [:data :pages]))
-                :let [page (get-in file [:data :pages-index page-id])]]
-          (swap! ids assoc page-id [:file file-index :page page-index])
-          (doseq [[index child] (map-indexed vector (get-in page [:objects #uuid "00000000-0000-0000-0000-000000000000" :shapes]))]
-            (name-tree (:objects page) child [:file file-index :page page-index index])))
-        (doseq [[index [component-id component]]
-                (map-indexed vector (sort-by (comp str key) (get-in file [:data :components])))
-                :let [path [:file file-index :component index]]]
-          (swap! ids assoc component-id path)
-          (when (:objects component)
-            (name-tree (:objects component) (:main-instance-id component) (conj path :main)))))
-      (walk/postwalk #(if (uuid? %) (get @ids % %) %) (design-snapshot situation)))))
+  ([situation] (canonical situation {}))
+  ([situation opts]
+   (let [files (sort-by (comp str key) (snapshot situation))
+         ids (atom {#uuid "00000000-0000-0000-0000-000000000000" :root})]
+     (letfn [(name-tree [objects id path]
+               (when-let [shape (get objects id)]
+                 (swap! ids assoc id path)
+                 (doseq [[cell-id cell] (:layout-grid-cells shape)]
+                   (swap! ids assoc cell-id [path :cell (:row cell) (:column cell)]))
+                 (doseq [[index child] (map-indexed vector (:shapes shape))]
+                   (name-tree objects child (conj path index)))))]
+       (doseq [[file-index [file-id file]] (map-indexed vector files)]
+         (swap! ids assoc file-id [:file file-index])
+         (doseq [[page-index page-id] (map-indexed vector (get-in file [:data :pages]))
+                 :let [page (get-in file [:data :pages-index page-id])]]
+           (swap! ids assoc page-id [:file file-index :page page-index])
+           (doseq [[index child] (map-indexed vector (get-in page [:objects #uuid "00000000-0000-0000-0000-000000000000" :shapes]))]
+             (name-tree (:objects page) child [:file file-index :page page-index index])))
+         (doseq [[index [component-id component]]
+                 (map-indexed vector (sort-by (comp str key) (get-in file [:data :components])))
+                 :let [path [:file file-index :component index]]]
+           (swap! ids assoc component-id path)
+           (when (:objects component)
+             (name-tree (:objects component) (:main-instance-id component) (conj path :main)))))
+       (walk/postwalk #(if (uuid? %) (get @ids % %) %) (design-snapshot situation opts))))))
+
+(defn- paired-matrix-effects
+  [shape other]
+  (reduce
+   (fn [shape attr]
+     (let [{:keys [::matrix ::bounds ::derived]} (meta (get shape attr))
+           other-bounds (::bounds (meta (get other attr)))]
+       (if (or (not-any? derived [:width :height]) (= bounds other-bounds))
+         shape
+         (let [bounds (reduce (fn [bounds axis]
+                                (cond-> bounds
+                                  (contains? derived axis)
+                                  (assoc axis (max (get bounds axis) (get other-bounds axis)))))
+                              bounds [:width :height])]
+           (assoc shape attr (matrix-effect bounds matrix derived))))))
+   shape [:transform :transform-inverse]))
 
 (defn equivalent?
-  "Compare canonical data, allowing 0.01 only within shape geometry."
+  "Compare design data, allowing 0.01 only within shape geometry. Compare
+   matrices over common derived dimensions, retaining each fixed dimension."
   [expected actual]
-  (uc/same-state? expected actual 0.01))
-
-(defn- orientation-matrix
-  "Resize uses constraints and dimensions. Parent placement supplies axis
-   directions, without applying residual minimum-size scale a second time."
-  [shape]
-  (let [{:keys [a b c d]} (or (:transform shape) (gmt/matrix))
-        horizontal (gpt/unit (gpt/point a b))
-        vertical (gpt/unit (gpt/point c d))]
-    (gmt/matrix (:x horizontal) (:y horizontal) (:x vertical) (:y vertical) 0 0)))
-
-(defn- child-placement
-  "Place a main child against its expected copy parent. Only lower-level
-   constraint and matrix math is shared with production, not sync code."
-  [main main-parent parent objects]
-  (let [resized (if (and (mth/close? (:width main-parent) (:width parent) 0.01)
-                         (mth/close? (:height main-parent) (:height parent) 0.01))
-                  objects
-                  (let [tree (gm/set-objects-modifiers
-                              {(:id main-parent)
-                               {:modifiers (ctm/change-size main-parent (:width parent) (:height parent))}}
-                              objects)]
-                    (reduce-kv (fn [objects id {:keys [modifiers]}]
-                                 (update objects id gsh/transform-shape modifiers)) objects tree)))
-        main (get resized (:id main))
-        main-parent (get resized (:id main-parent))
-        center (gsh/shape->center main-parent)
-        turn (gmt/multiply (orientation-matrix parent)
-                           (gmt/inverse (orientation-matrix main-parent)))
-        placed (if (gmt/unit? turn) main
-                   (gsh/apply-transform main (gmt/transform-in center turn)))
-        ;; Flip flags follow the parent's composition history. A single
-        ;; large turn can toggle both flags where several small turns do not.
-        flipped? (fn [key]
-                   (odd? (count (filter identity [(get main key) (get main-parent key)
-                                                  (get parent key)]))))]
-    (-> placed
-        (gsh/move (gpt/subtract (gsh/shape->center parent) center))
-        (assoc :rotation (mod (+ (or (:rotation main) 0)
-                                 (- (or (:rotation parent) 0) (or (:rotation main-parent) 0))) 360)
-               :flip-x (flipped? :flip-x)
-               :flip-y (flipped? :flip-y)))))
+  (if (and (map? expected) (map? actual))
+    (and (= (set (keys expected)) (set (keys actual)))
+         (if (and (contains? expected :parent-id) (contains? actual :parent-id))
+           (uc/same-state? (paired-matrix-effects expected actual)
+                           (paired-matrix-effects actual expected) 0.01)
+           (every? #(equivalent? (get expected %) (get actual %)) (keys expected))))
+    (uc/same-state? expected actual 0.01)))
 
 (defn- with-derived-geometry
   [objects shape expected]
@@ -190,50 +187,76 @@
                          (if (contains? derived :y) (- (:y shape) (:y expected)) 0)))))
 
 (defn expected-geometry
-  [file container libraries shape]
-  (let [objects (:objects container)]
-    (letfn [(expected [shape visited]
-              (when (contains? visited (:id shape))
-                (fail :I1 {:shape (:name shape) :reason :parent-cycle}))
-              (if (contains? (:touched shape) :geometry-group)
-                shape
-                (let [main (ctf/find-ref-shape file container libraries shape :with-context? true)
-                      parent (get objects (:parent-id shape))
-                      main-objects (get-in (meta main) [:container :objects])
-                      main-parent (get main-objects (:parent-id main))
-                      placed (cond
-                               (nil? main) shape
-                               (and (:shape-ref parent) main-parent)
-                               (child-placement main main-parent (expected parent (conj visited (:id shape)))
-                                                main-objects)
-                               :else
-                               ;; Ordinary parents left by detach still place their nested copies.
-                               (let [turn (gmt/multiply (or (:transform shape) (gmt/matrix))
-                                                        (or (:transform-inverse main) (gmt/matrix)))
-                                     placed (if (gmt/unit? turn) main
-                                                (gsh/apply-transform main (gmt/transform-in (gsh/shape->center main) turn)))]
-                                 (-> placed
-                                     (gsh/move (gpt/subtract (gsh/shape->center shape) (gsh/shape->center placed)))
-                                     ;; This is the placement matrix just applied.
-                                     ;; Re-decomposing a .01px frame can add scale
-                                     ;; noise that grows in its larger children.
-                                     (assoc :transform (:transform shape)
-                                            :transform-inverse (:transform-inverse shape)
-                                            :rotation (:rotation shape)
-                                            :flip-x (:flip-x shape) :flip-y (:flip-y shape)))))
-                      content (when (ctk/swapped? shape)
-                                (ctf/find-content-ref-shape file container libraries shape))
-                      placed (if content
-                               ;; Content supplies size; the position source
-                               ;; still owns the untransformed top-left anchor.
-                               (-> placed
-                                   (gsh/transform-shape
-                                    (ctm/change-size placed (:width content) (:height content)))
-                                   (gsh/absolute-move (gpt/point (get-in placed [:selrect :x])
-                                                                 (get-in placed [:selrect :y]))))
-                               placed)]
-                  (with-derived-geometry objects shape placed))))]
-      (expected shape #{}))))
+  ([file container libraries shape]
+   (expected-geometry file container libraries shape (constantly libraries)))
+  ([file container libraries shape libraries-for-shape]
+   (let [objects (:objects container)]
+     (letfn [(expected [shape visited]
+               (when (contains? visited (:id shape))
+                 (fail :I1 {:shape (:name shape) :reason :parent-cycle}))
+               (if (contains? (:touched shape) :geometry-group)
+                 shape
+                 (let [libraries (libraries-for-shape shape)
+                       main (ctf/find-ref-shape file container libraries shape :include-deleted? true :with-context? true)
+                       parent (get objects (:parent-id shape))
+                       main-objects (get-in (meta main) [:container :objects])
+                       main-parent (get main-objects (:parent-id main))
+                       placed (cond
+                                (nil? main) shape
+                                (and (:shape-ref parent) main-parent)
+                                (geom/child-placement main main-parent (expected parent (conj visited (:id shape)))
+                                                      main-objects)
+                                :else
+                                ;; Ordinary parents left by detach still place their nested copies.
+                                (let [turn (gmt/multiply (or (:transform shape) (gmt/matrix))
+                                                         (or (:transform-inverse main) (gmt/matrix)))
+                                      placed (if (gmt/unit? turn) main
+                                                 (gsh/apply-transform main (gmt/transform-in (gsh/shape->center main) turn)))]
+                                  (-> placed
+                                      (gsh/move (gpt/subtract (gsh/shape->center shape) (gsh/shape->center placed)))
+                                      ;; This is the placement matrix just applied.
+                                      ;; Re-decomposing a .01px frame can add scale
+                                      ;; noise that grows in its larger children.
+                                      (assoc :transform (:transform shape)
+                                             :transform-inverse (:transform-inverse shape)
+                                             :rotation (:rotation shape)
+                                             :flip-x (:flip-x shape) :flip-y (:flip-y shape)))))
+                       content (when (ctk/swapped? shape)
+                                 (ctf/find-content-ref-shape file container libraries shape :include-deleted? true))
+                       placed (if content
+                                ;; Content supplies size; the position source
+                                ;; still owns the untransformed top-left anchor.
+                                (-> placed
+                                    (gsh/transform-shape
+                                     (ctm/change-size placed (:width content) (:height content)))
+                                    (gsh/absolute-move (gpt/point (get-in placed [:selrect :x])
+                                                                  (get-in placed [:selrect :y]))))
+                                placed)]
+                   (with-derived-geometry objects shape placed))))]
+       (expected shape #{})))))
+
+(defn- free-head-reference-origins
+  "Backend parity permits a free head's placement to differ after reflow.
+   Its untouched images compare offsets from their expected source frame,
+   so inherited placement can differ while a drifted image still fails.
+   Strict same-run sync comparison never uses these origins."
+  [situation]
+  (into {}
+        (for [[file-id file] (cf/all-files situation)
+              page (vals (get-in file [:data :pages-index]))
+              [id shape] (:objects page)
+              :when (and (:component-id shape) (:shape-ref shape)
+                         (not (ctk/touched-group? shape :geometry-group))
+                         (> (count (ctn/get-parent-copy-heads (:objects page) shape)) 1))
+              :let [libraries (cf/reference-libraries situation file-id id)
+                    source (ctf/find-ref-shape file page libraries shape
+                                               :include-deleted? true :with-context? true)
+                    source-objects (get-in (meta source) [:container :objects])]
+              :when (and (:component-id source) (:shape-ref source)
+                         (= 1 (count (ctn/get-parent-copy-heads source-objects source))))
+              :let [expected (expected-geometry file page libraries shape
+                                                #(cf/reference-libraries situation file-id (:id %)))]]
+          [id (gpt/point (:x expected) (:y expected))])))
 
 (defn- geometry-differences
   [objects shape expected]
@@ -253,10 +276,16 @@
       (and (not layout-child) (not auto-width) (not auto-height)
            (not (gsh/close-attrs? :points (:points shape) (:points expected) 0.01))) (conj :points))))
 
+(defn check-requested-geometry
+  [objects actual expected]
+  (when-let [attrs (seq (geometry-differences objects actual expected))]
+    (fail :I9 {:phase :requested-geometry :attrs (set attrs)
+               :shape (:name actual) :expected expected :actual actual})))
+
 (defn- comparable-values
   [shape context group]
   (let [shape (if (= group :constraints-group)
-                (cond-> shape
+                (cond-> (update shape :fixed-scroll boolean)
                   (nil? (:constraints-h shape)) (assoc :constraints-h (gsh/default-constraints-h context))
                   (nil? (:constraints-v shape)) (assoc :constraints-v (gsh/default-constraints-v context)))
                 shape)]
@@ -270,15 +299,84 @@
          (sort-by (juxt :row :column))
          vec)))
 
+(defn- expected-grid-cells
+  "Source cells with the copy's hidden/absolute children removed. A gap,
+   manual cell or span ends the automatic prefix; visible children without
+   a source cell take free cells in grid order. No production assignment
+   helper supplies these expectations."
+  [objects shape main]
+  (let [flow-order (if (= :row (:layout-grid-dir main))
+                     (juxt :row :column)
+                     (juxt :column :row))
+        participating (into #{}
+                            (keep-indexed (fn [index id]
+                                            (let [child (get objects id)]
+                                              (when-not (or (:hidden child) (:layout-item-absolute child))
+                                                index))))
+                            (:shapes shape))
+        end-auto-prefix
+        (fn [cells]
+          (second
+           (reduce (fn [[ended result] cell]
+                     (let [span (or (not= 1 (:row-span cell)) (not= 1 (:column-span cell)))
+                           occupied (seq (:shapes cell))
+                           manual (or (= :manual (:position cell)) span
+                                      (and ended occupied (= :auto (:position cell))))]
+                       [(or ended manual (not occupied))
+                        (conj result (cond-> cell
+                                       (and manual (= :auto (:position cell)))
+                                       (assoc :position :manual)))]))
+                   [false []] cells)))
+        cells (->> (grid-cells main)
+                   (sort-by flow-order)
+                   (mapv #(update % :shapes (fn [ids] (filterv participating ids))))
+                   end-auto-prefix)
+        assigned (into #{} (mapcat :shapes) cells)
+        missing (remove assigned (sort participating))
+        [cells _] (reduce (fn [[result pending] cell]
+                            (if (and (seq pending) (empty? (:shapes cell)))
+                              [(conj result (assoc cell :position :auto :shapes [(first pending)]))
+                               (rest pending)]
+                              [(conj result cell) pending]))
+                          [[] missing] cells)]
+    (->> cells end-auto-prefix (sort-by (juxt :row :column)) vec)))
+
 (defn- check-structure
   [objects shape main]
   (let [refs (mapv #(get-in objects [% :shape-ref]) (:shapes shape))]
     (when-not (= (vec (:shapes main)) refs)
       (fail :I4 {:shape (:name shape) :group :structure
                  :expected (:shapes main) :actual refs}))
-    (when (and (= :grid (:layout main)) (not= (grid-cells shape) (grid-cells main)))
-      (fail :I4 {:shape (:name shape) :group :layout-grid-cells
-                 :expected (grid-cells main) :actual (grid-cells shape)}))))
+    (when (= :grid (:layout main))
+      (let [expected (expected-grid-cells objects shape main)
+            actual (grid-cells shape)]
+        (when-not (= expected actual)
+          (fail :I4 {:shape (:name shape) :group :layout-grid-cells
+                     :expected expected :actual actual}))))))
+
+(defn- inherited-layout-item?
+  "A root's placement in an unrelated flex/grid belongs to that placement.
+   Layout child attrs inherit only through corresponding layout parents;
+   intrinsic fix/auto sizing also belongs to the component itself."
+  [file container libraries shape group]
+  (let [source (ctf/find-ref-shape file container libraries shape :include-deleted? true :with-context? true)
+        source-objects (get-in (meta source) [:container :objects])
+        parent (get (:objects container) (:parent-id shape))
+        source-parent (get source-objects (:parent-id source))]
+    (or (ctk/swapped? shape)
+        (and (#{:layout-item-h-sizing :layout-item-v-sizing} group)
+             (#{:auto :fix} (get source group)))
+        (and (:layout source-parent) (:layout parent)
+             (= (:id source-parent) (:shape-ref parent))))))
+
+(defn- mixed-typography-ownership?
+  "A reference cannot describe styles split between the copy and main."
+  [touched]
+  (let [copy-reference? (contains? touched :text-content-typography)]
+    (boolean
+     (some #(not= copy-reference? (contains? touched %))
+           [:text-content-family :text-content-weight :text-content-size
+            :text-content-line-height :text-content-spacing :text-content-case]))))
 
 (defn- check-file
   "I1–I4 and I9. Before settlement only authored groups/values are checked;
@@ -286,32 +384,34 @@
   ([situation model] (check-file situation model true))
   ([situation model settled]
    (let [file (tm/file situation)
-         libraries (assoc (tm/aux-files situation) (:id file) file)]
+         libraries (cf/libraries situation)]
      (when settled (thf/validate-file! file libraries))
      (doseq [page (vals (get-in file [:data :pages-index]))
              :let [container (ctn/make-container page :page)]
              shape (vals (:objects page))
-             :when (:shape-ref shape)
-             :let [expected (get model (:id shape) {})
+             :let [libraries (cf/reference-libraries situation shape)
+                   expected (if (:shape-ref shape) (get model (:id shape) {}) {})
                    touched (set (:touched shape))]]
        (when-not (= (set (keys expected)) touched)
          (fail (if (some #(not (contains? expected %)) touched) :I2 :I3)
                {:shape (:name shape) :expected (set (keys expected)) :actual touched}))
        (doseq [[group value] expected]
-         (when-not (shadow/same-value? shape group value)
+         (when-not (shadow/same-value? shape group value (:objects page))
            (fail :I9 {:shape (:name shape) :group group
                       :expected value :actual (shadow/values shape group)})))
-       (when settled
-         (when-let [main (ctf/find-content-ref-shape file container libraries shape)]
+       (when (and settled (:shape-ref shape))
+         (when-let [main (ctf/find-content-ref-shape file container libraries shape :include-deleted? true)]
            (check-structure (:objects page) shape main)
            (doseq [group (keys shadow/attributes)
                    :when (and (not= group :geometry-group) (not (contains? touched group)))
                    :when (not (and (= group :name-group) (= :text (:type shape))
                                    (= (:name main) (txt/generate-shape-name (txt/content->text (:content main))))))
+                   :when (or (not (.startsWith (name group) "layout-item-"))
+                             (inherited-layout-item? file container libraries shape group))
                    ;; A copy root's name follows component renaming too.
                    :let [source (if (or (= group :constraints-group)
                                         (.startsWith (name group) "layout-item-"))
-                                  (or (ctf/find-ref-shape file container libraries shape) main)
+                                  (or (ctf/find-ref-shape file container libraries shape :include-deleted? true) main)
                                   main)
                          expected (comparable-values source shape group)
                          actual (comparable-values shape shape group)]]
@@ -319,12 +419,20 @@
                (fail :I4 {:shape (:name shape) :group group
                           :expected expected :actual actual})))
            (when (= :text (:type shape))
-             (doseq [unit (thtx/override-units (:content main) (:content shape))
-                     :let [group (some (fn [[group candidate]] (when (= unit candidate) group)) shadow/text-groups)]
-                     :when (not (contains? touched group))]
-               (fail :I4 {:shape (:name shape) :group group :unit unit}))))
+             (let [drop-reference? (mixed-typography-ownership? touched)]
+               (when (and drop-reference?
+                          (some #(or (:typography-ref-id %) (:typography-ref-file %))
+                                (tree-seq map? :children (:content shape))))
+                 (fail :I4 {:shape (:name shape) :group :text-content-typography
+                            :unit :typography :expected nil}))
+               (doseq [unit (thtx/override-units (:content main) (:content shape))
+                       :when (not (and drop-reference? (= :typography unit)))
+                       :let [group (some (fn [[group candidate]] (when (= unit candidate) group)) shadow/text-groups)]
+                       :when (not (contains? touched group))]
+                 (fail :I4 {:shape (:name shape) :group group :unit unit})))))
          (when-not (contains? touched :geometry-group)
-           (let [expected (expected-geometry file container libraries shape)
+           (let [expected (expected-geometry file container libraries shape
+                                             #(cf/reference-libraries situation %))
                  attrs (geometry-differences (:objects page) shape expected)]
              (when (seq attrs)
                (fail :I4 {:shape (:name shape) :group :geometry-group :attrs attrs

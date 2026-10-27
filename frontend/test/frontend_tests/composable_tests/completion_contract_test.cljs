@@ -11,25 +11,174 @@
   down on purpose, so a step that resolved early would see a half-synced
   file."
   (:require
+   [app.common.files.changes-builder :as pcb]
+   [app.common.logic.shapes :as cls]
    [app.common.math :as mth]
+   [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.composable.comp.nodes :as n]
+   [app.common.test-helpers.composable.comp.runner :as r]
    [app.common.test-helpers.composable.comp.setups :as setup]
    [app.common.test-helpers.composable.comp.undo-check :as uc]
    [app.common.test-helpers.composable.core :as tm]
+   [app.common.test-helpers.composable.gen :as cg]
+   [app.common.test-helpers.composable.oracle :as oracle]
+   [app.common.test-helpers.compositions :as tho]
+   [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
+   [app.common.test-helpers.texts :as thtx]
+   [app.common.time :as ct]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.thumbnails-wasm :as dwthw]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.store :as st]
+   [app.render-wasm.api :as wasm]
+   [app.util.text-editor :as ted]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [clojure.test.check.generators :as gen]
    [frontend-tests.composable-tests.interpreter :as ftm]
+   [frontend-tests.helpers.async :as ha]
    [frontend-tests.helpers.mock :as mock]
+   [frontend-tests.helpers.wasm :as thw]
    [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each ftm/fixture)
+
+(t/deftest ^:async swapping-growing-text-undoes-with-the-component-choice
+  (let [features (:features @st/state)]
+    (thw/setup-wasm-mocks!)
+    (try
+      (await
+       (mock/with-mocks*
+         {wasm/text-editor-has-focus? (mock/stub (constantly false))
+          dwthw/render-thumbnail (mock/stub (fn [& _] (ptk/data-event ::thumbnail-skipped)))}
+         (doseq [action [:swap :switch :multi-swap]]
+           (let [file (-> (thf/sample-file :file)
+                          (tho/add-frame :root-a)
+                          (thc/make-component :a :root-a)
+                          (tho/add-frame-with-text :root-b :text-b "hello")
+                          (ths/update-shape :text-b :grow-type :auto-height)
+                          (thc/make-component :b :root-b)
+                          (thc/instantiate-component :a :copy)
+                          (thc/instantiate-component :a :copy2))
+                 situation (ftm/install! (tm/make-situation file))
+                 before (ftm/snapshot)]
+             (st/emit! #(update % :features (fnil conj #{}) "render-wasm/v1"))
+             (t/is (= :settled
+                      (await (ftm/await-step
+                              [(if (= action :multi-swap)
+                                 (dwl/component-multi-swap [(ths/get-shape file :copy)
+                                                            (ths/get-shape file :copy2)]
+                                                           (:id file) (thi/id :b))
+                                 (dwl/component-swap (ths/get-shape file :copy)
+                                                     (:id file) (thi/id :b) (= action :switch)))]))))
+             (let [after (ftm/snapshot)
+                   root (ths/get-shape (ftm/current-file) :copy)
+                   text (tm/shape-by-id (ftm/refresh-generated situation) (first (:shapes root)))]
+               (t/is (= (thi/id :b) (:component-id root)))
+               (t/is (mth/close? 20 (:height text)))
+               (t/is (empty? (:touched text)))
+               (t/is (= :settled (await (ftm/await-step [dwu/undo]))))
+               (t/is (uc/same-state? before (ftm/snapshot)) "one undo restores the old component")
+               (t/is (= :settled (await (ftm/await-step [dwu/redo]))))
+               (t/is (uc/same-state? after (ftm/snapshot)) "one redo restores the measured result"))))))
+      (finally
+        (thw/teardown-wasm-mocks!)
+        (st/emit! #(assoc % :features features))))))
+
+(t/deftest ^:async applying-typography-settles-the-reference-and-undoes-in-one-step
+  (doseq [mode [:partial :inherited :editing-inherited]]
+    (let [expected [[{:line-height 1.6}
+                     ["Read the guide" {:family "Roboto" :weight 700 :italic true :size 22
+                                        :spacing 2 :case "uppercase" :typography :heading}]]]
+          file (-> (thf/sample-file :file1)
+                   (ths/add-sample-typography :heading :font-id "gfont-roboto" :font-family "Roboto"
+                                              :font-variant-id "700italic" :font-weight "700"
+                                              :font-style "italic" :font-size "22"
+                                              :line-height "1.6" :letter-spacing "2"
+                                              :text-transform "uppercase" :path "Saved styles")
+                   (thtx/add-text-component-with-copy (if (= mode :partial)
+                                                        [[["Read the guide" {:size 22}]]]
+                                                        expected)))
+          _ (ftm/install! (tm/make-situation file))
+          before (ftm/snapshot)
+          typography (get-in file [:data :typographies (thi/id :heading)])]
+      (when (= mode :editing-inherited)
+        (st/emit! #(assoc-in % [:workspace-editor-state (thi/id :copy-child)]
+                             (-> (ths/get-shape file :copy-child) :content ted/import-content
+                                 ted/create-editor-state ted/editor-select-all))))
+      (t/is (= :settled
+               (await (ftm/await-step [(dwt/apply-typography #{(thi/id :copy-child)} typography (:id file))]))))
+      (let [after (ftm/snapshot)
+            after-file (ftm/current-file)
+            shape (ths/get-shape after-file :copy-child)
+            design #(oracle/canonical (tm/make-situation %) {:free-head-placement false})
+            main-edit (dwt/update-text-attrs {:id (thi/id :main-child) :attrs {:font-size "30"}})]
+        (t/is (= expected (thtx/view (:content shape))))
+        (t/is (= #{:content-group :text-content-typography :text-content-family
+                   :text-content-weight :text-content-size :text-content-line-height
+                   :text-content-spacing :text-content-case}
+                 (:touched shape)))
+        (t/is (= :settled (await (ftm/await-step [dwu/undo]))))
+        (t/is (uc/same-state? before (ftm/snapshot)))
+        (t/is (= :settled (await (ftm/await-step [dwu/redo]))))
+        (t/is (uc/same-state? after (ftm/snapshot)))
+        (t/is (= :settled
+                 (await (ftm/await-step [(dwl/sync-file (:id file) (:id file) :components (thi/id :component1))]))))
+        (t/is (oracle/equivalent? (design after-file) (design (ftm/current-file))))
+        (t/is (= :settled (await (ftm/await-step [main-edit]))))
+        (t/is (= expected (thtx/text-of (ftm/current-file) :copy-child))
+              "the applied typography keeps its size when the main changes")))))
+
+(t/deftest ^:async sidebar-font-size-and-wasm-measurement-undo-together
+  (let [features (:features @st/state)
+        measured (atom nil)
+        font-size #(get-in % [:content :children 0 :children 0 :children 0 :font-size])]
+    (thw/setup-wasm-mocks!)
+    (try
+      (await
+       (mock/with-mocks*
+         {wasm/text-editor-has-focus? (mock/stub (constantly false))
+          wasm/set-shape-text-content (mock/stub (fn [_ content] (reset! measured content)))
+          wasm/get-text-dimensions (mock/stub (fn [] {:x 0 :y 0 :width 100 :max-width 100
+                                                      :height (if (= "18" (font-size {:content @measured})) 29 35)}))
+          dwthw/render-thumbnail (mock/stub (fn [& _] (ptk/data-event ::thumbnail-skipped)))}
+         (let [text [[{:line-height 1.6}
+                      ["Read the guide" {:family "Roboto" :weight 700 :italic true :size 22
+                                         :spacing 2 :case "uppercase" :typography :heading}]]]
+               file (-> (thf/sample-file :file1)
+                        (ths/add-sample-typography :heading :font-id "gfont-roboto" :font-family "Roboto"
+                                                   :font-variant-id "700italic" :font-weight "700"
+                                                   :font-style "italic" :font-size "22"
+                                                   :line-height "1.6" :letter-spacing "2" :text-transform "uppercase")
+                        (thtx/add-text-component-with-copy text))
+               _ (ftm/install! (tm/make-situation file))
+               typography (get-in file [:data :typographies (thi/id :heading)])]
+           (st/emit! #(update % :features (fnil conj #{}) "render-wasm/v1"))
+           (t/is (= :settled
+                    (await (ftm/await-step [(dwwt/resize-wasm-text-all [(thi/id :main-child) (thi/id :copy-child)])
+                                            (dwt/apply-typography #{(thi/id :copy-child)} typography (:id file))]))))
+           (let [before (ftm/snapshot)]
+             (t/is (= :settled
+                      (await (ftm/await-step [(dwt/update-all-attrs [(thi/id :main-child)]
+                                                                    {:font-size "18" :typography-ref-id nil
+                                                                     :typography-ref-file nil})]))))
+             (let [after (ftm/snapshot)]
+               (t/is (= "18" (font-size (ths/get-shape (ftm/current-file) :main-child))))
+               (t/is (= "22" (font-size (ths/get-shape (ftm/current-file) :copy-child))))
+               (t/is (mth/close? 35 (:height (ths/get-shape (ftm/current-file) :copy-child))))
+               (t/is (= :settled (await (ftm/await-step [dwu/undo]))))
+               (t/is (uc/same-state? before (ftm/snapshot)) "one undo restores styles and measured geometry")
+               (t/is (= :settled (await (ftm/await-step [dwu/redo]))))
+               (t/is (uc/same-state? after (ftm/snapshot)) "one redo restores styles and measured geometry"))))))
+      (finally
+        (thw/teardown-wasm-mocks!)
+        (st/emit! #(assoc % :features features))))))
 
 (t/deftest ^:async rotation-nodes-compose-successive-turns
   (let [initial (ftm/start-generated (setup/simple-component-with-labeled-copy))
@@ -38,6 +187,17 @@
         shape (ths/get-shape (ftm/current-file) :copy-root)]
     (t/is (mth/close? 135 (:rotation shape) 0.01))
     (t/is (empty? (uc/failures second-turn)))))
+
+(t/deftest ^:async hiding-a-grid-main-child-then-moving-its-main-stays-synced
+  (loop [live (ftm/start-generated (cg/world [2 1 {:text true :text-styles true :layout :grid}]))
+         tuples [[:style 3 1 3 0] [:transform 0 0 0 0]]]
+    (when-let [tuple (first tuples)]
+      (let [resolved (cg/resolve-op live {} tuple)
+            next-live (await (ftm/run-generated-step live (:op resolved)))]
+        (t/is (some? next-live))
+        (t/is (empty? (uc/failures next-live)))
+        (t/is (nil? (oracle/check next-live {})))
+        (recur next-live (rest tuples))))))
 
 (def ^:private original "#abcdef")
 (def ^:private red "#ff0000")
@@ -71,6 +231,105 @@
   [color]
   (dwsh/update-shapes #{(thi/id :main-child)}
                       #(assoc % :fills (ths/sample-fills-color :fill-color color))))
+
+(defn- ^:async pending-sync-burst
+  [seed undo-before-release]
+  (let [sync-file dwl/sync-file
+        release (rx/behavior-subject false)
+        tail (gen/generate (gen/vector (gen/tuple (gen/return :edit)
+                                                  (gen/choose 0 30) (gen/choose 0 1)
+                                                  (gen/choose 1 2) (gen/return 0))
+                                       2 8) 20 seed)
+        tuples (into [[:edit 1 0 1 0]] tail)
+        initial (cg/initial-state [2 (mod seed 3)])]
+    (try
+      (await
+       (mock/with-mocks*
+         {dwl/sync-file (deferred-sync-file sync-file
+                                            (fn [event]
+                                              ;; The cascade is synchronous. Hold
+                                              ;; completion, not its input state.
+                                              (rx/concat (rx/of event)
+                                                         (->> release (rx/filter true?)
+                                                              (rx/take 1) (rx/ignore)))))}
+         (let [live (ftm/start-generated (:situation initial))
+               result (reduce (fn [{:keys [state operations]} tuple]
+                                (let [resolved (cg/resolve-op (:situation state) (:model state) tuple)]
+                                  {:state (-> state (cg/step tuple) cg/settle-state)
+                                   :operations (conj operations (:op resolved))}))
+                              {:state initial :operations []} tuples)
+               operations (:operations result)]
+           (doseq [event (ftm/op->events (first operations) live)] (st/emit! event))
+           (await (ha/wait-for #(seq (wrf/pending)) "first edit opens the held sync"))
+           (doseq [op (rest operations)
+                   event (ftm/op->events op live)]
+             (st/emit! event))
+           (t/is (seq (wrf/pending)) "later edits arrived while sync was pending")
+           (when undo-before-release (st/emit! dwu/undo))
+           (let [expected (cond-> (:state result)
+                            undo-before-release (-> (cg/step [:undo]) cg/settle-state))]
+             (rx/push! release true)
+             (t/is (= :settled (await (ftm/await-step []))))
+             (oracle/check (ftm/refresh-generated live) (:model expected))
+             (t/is (uc/same-state? (oracle/snapshot (:situation expected))
+                                   (:files (ftm/snapshot)))
+                   (str "seed " seed ", undo-before-release " undo-before-release))
+             (let [depth (r/undo-depth (:situation expected))
+                   undone (loop [state expected remaining depth]
+                            (if (zero? remaining)
+                              state
+                              (let [state (-> state (cg/step [:undo]) cg/settle-state)]
+                                (t/is (= :settled (await (ftm/await-step [dwu/undo]))))
+                                (t/is (uc/same-state? (oracle/snapshot (:situation state))
+                                                      (:files (ftm/snapshot)))
+                                      (str "burst undo seed " seed ", remaining " remaining))
+                                (recur state (dec remaining)))))]
+               (loop [state undone remaining depth]
+                 (when (pos? remaining)
+                   (let [state (-> state (cg/step [:redo]) cg/settle-state)]
+                     (t/is (= :settled (await (ftm/await-step [dwu/redo]))))
+                     (oracle/check (ftm/refresh-generated live) (:model state))
+                     (t/is (uc/same-state? (oracle/snapshot (:situation state))
+                                           (:files (ftm/snapshot)))
+                           (str "burst redo seed " seed ", remaining " remaining))
+                     (recur state (dec remaining))))))))))
+      (finally
+        (ftm/uninstall!)
+        (rx/end! release)))))
+
+(t/deftest ^:async seeded-edits-arrive-during-pending-sync
+  (doseq [seed (range 12)]
+    (await (pending-sync-burst seed false))))
+
+(t/deftest ^:async seeded-undo-arrives-during-pending-sync
+  (doseq [seed (range 12)]
+    (await (pending-sync-burst seed true))))
+
+(t/deftest ^:async library-notification-keeps-copies-stale-but-reset-uses-the-new-main
+  (let [situation (cg/world [2 1 {:library true}])
+        library (first (vals (tm/aux-files situation)))
+        page (thf/current-page library)
+        child (:shape (first (filter #(and (= :rect (get-in % [:shape :type]))
+                                           (nil? (get-in % [:shape :shape-ref])))
+                                     (cg/tree (tm/with-file situation library)))))
+        root (get-in page [:objects (:parent-id child)])
+        copies (filter #(= (:id child) (get-in % [:shape :shape-ref])) (cg/tree situation))
+        first-copy (:shape (first copies))
+        other-copy (:shape (second copies))
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page)) [(:id child)]
+                                            #(n/set-property % :fills red) (:objects page) {})
+        edited (thf/apply-changes library changes)
+        cascaded (r/sync-cascade edited {} [(:component-id root)])
+        changes (reduce pcb/concat-changes changes (:syncs cascaded))
+        live (ftm/start-generated situation)
+        fill (fn [id] (get-in (tm/shape-by-id (ftm/refresh-generated live) id) [:fills 0 :fill-color]))]
+    (t/is (= :settled (await (ftm/await-step [(dwl/ext-library-changed (:id library) (ct/now) 1
+                                                                       (:redo-changes changes))]))))
+    (t/is (= setup/labeled-fill (fill (:id first-copy))))
+    (t/is (= setup/labeled-fill (fill (:id other-copy))))
+    (t/is (= :settled (await (ftm/await-step [(dwl/reset-component (:parent-id first-copy))]))))
+    (t/is (= red (fill (:id first-copy))))
+    (t/is (= setup/labeled-fill (fill (:id other-copy))))))
 
 (t/deftest ^:async edit-step-waits-for-slow-sync
   (let [sync-file dwl/sync-file]

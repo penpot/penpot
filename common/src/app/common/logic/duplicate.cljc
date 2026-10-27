@@ -479,8 +479,8 @@
 
                               ;; the copy leaves every copy level
                               (ctk/swapped? shape)
-                              (if-let [root-id (cll/swap-content-root-id libraries shape)]
-                                (update objects (:id shape) cli/rehead-swapped root-id)
+                              (if-let [main (ctf/find-content-ref-shape file container libraries shape :include-deleted? true)]
+                                (update objects (:id shape) cli/rehead-swapped main)
                                 (detach-copy objects shape))
 
                               :else
