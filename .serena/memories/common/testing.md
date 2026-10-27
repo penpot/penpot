@@ -120,6 +120,15 @@ Settlement also checks partial/full sync equivalence, idempotence and exact
 undo/redo snapshots. Library routing in `comp/files` applies both the working
 file and auxiliary file changes, then cascades both in the same undo group.
 
+Stale-library and dependency generation includes source transforms on main
+roots/children, letters and all twelve text style units. `:library-text true`
+adds a separate source text component without reusing consumer shape IDs.
+Source edits keep consumer history separate and copies stale until an
+acceptance or command that explicitly refreshes that subtree. Requested
+source geometry/text checks use the source editor's before-state and intent;
+dropped source edits must fail I9. `common-tests.logic.source-gen-test`
+covers the action matrix and independent source/consumer undo histories.
+
 Backend parity uses `oracle/canonical` and `oracle/equivalent?`: IDs become
 file/page/tree paths, flip
 nil/false values become booleans, and derived layout/text dimensions and text

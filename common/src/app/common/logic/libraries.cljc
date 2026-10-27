@@ -333,11 +333,17 @@
         changes)
       changes)))
 
+(def ^:private placement-geometry-attrs
+  #{:x :y :width :height :selrect :points :transform :transform-inverse
+    :rotation :flip-x :flip-y :content-scale})
+
 (defn generate-sync-transformed-placement
   "Settle copy descendants after a reflection and untouched swapped heads
    after a parent turn, in the transform's change group. Reflection can
    leave descendant flip flags in another decomposition; swapped content
-   can have a different size from its position frame."
+   can have a different size from its position frame. Keep this correction
+   within existing geometry: transforming a stale library copy must not
+   accept pending content, style or structural changes."
   [changes file libraries page before ids]
   (let [objects     (pcb/get-objects changes)
         orientation (fn [shape]
@@ -362,11 +368,21 @@
               (let [objects   (pcb/get-objects changes)
                     page      (assoc page :objects objects)
                     file      (assoc-in file [:data :pages-index (:id page) :objects] objects)
-                    container (ctn/make-container page :page)]
-                (-> changes
-                    (pcb/with-container container)
-                    (generate-sync-shape-direct file (assoc libraries (:id file) file)
-                                                container id false))))
+                    container (ctn/make-container page :page)
+                    changes   (pcb/with-container changes container)
+                    proposal  (generate-sync-shape-direct changes file (assoc libraries (:id file) file)
+                                                          container id false)
+                    placed    (pcb/get-objects proposal)]
+                (pcb/update-shapes
+                 changes (cfh/get-children-ids-with-self objects id)
+                 (fn [shape]
+                   (let [expected (get placed (:id shape))
+                         attrs (cond-> placement-geometry-attrs
+                                 (= :path (:type shape)) (conj :content))]
+                     (if (= (:type shape) (:type expected))
+                       (merge shape (select-keys expected attrs))
+                       shape)))
+                 {:ignore-touched true})))
             changes roots)))
 
 (defn- sync-copy-shape

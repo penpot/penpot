@@ -62,6 +62,9 @@ Intended semantics of copies, `:touched` and component sync. This is the spec: w
 - Children of a resized or transformed shape: derived (expected geometry), untouched, and still follow later main edits. Code: a transform touches only the shapes the user transformed (`clp/calculate-ignore-tree` takes their ids; the frontend keeps them in `:workspace-modifiers-ids`); sync places the main subtree of a copy shape with its own geometry like that shape before walking its children.
 - Layout-owned (never touched; sync writes, then reflow): x/y of non-absolute children of flex/grid frames; width/height on axes sized fill, or auto on a layout frame.
 - Grow-owned (never touched; sync writes, then re-measure on SVG and WASM): width+height of auto-width text, height of auto-height text. Every editor and resize path writes the measured size as derived; on WASM `sync-file` re-measures the auto-grow texts of the current page it wrote (texts on other pages keep the synced size until measured).
+- Transform settlement corrects geometry on the existing copy subtree
+  (F223). Its sync proposal must not pull pending library content, styles
+  or structure. Path content can carry geometry; text content cannot.
 - `set-shape-attr`'s `ignore-geometry` does not cover `:width`/`:height`; a derived size write needs `ignore-touched` (transforms get it from the ignore tree).
 - Repairs are not overrides: `files/repair` writes with `ignore-touched`; only the text repairs set groups, explicitly.
 

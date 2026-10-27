@@ -25,6 +25,7 @@
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.normalize :as thn]
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.texts :as thtx]
    [app.common.time :as ct]
@@ -35,6 +36,7 @@
    [app.main.data.workspace.thumbnails-wasm :as dwthw]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.wasm-text :as dwwt]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.render-wasm.api :as wasm]
    [app.render-wasm.api.fonts :as wasm.fonts]
@@ -394,6 +396,75 @@
     (t/is (= :settled (await (ftm/await-step [(dwl/reset-component (:parent-id first-copy))]))))
     (t/is (= red (fill (:id first-copy))))
     (t/is (= setup/labeled-fill (fill (:id other-copy))))))
+
+(defn- ^:async source-acceptance-history
+  [tuple transform-tuple]
+  (let [initial (cg/initial-state [2 1 {:library true :stale-libraries true :library-text true}])
+        situation (:situation initial)
+        owner (:library-id (cg/resolve-op situation {} tuple))
+        transform-tuple (when transform-tuple
+                          (assoc transform-tuple 1
+                                 (first (keep-indexed
+                                         (fn [index entry]
+                                           (when (= (thi/id :library-text-component)
+                                                    (get-in entry [:shape :component-id])) index))
+                                         (cg/candidates situation {} :transform 4)))))
+        edited (-> initial (cg/step tuple) cg/settle-state)
+        group (peek (get-in edited [:situation :library-histories owner :runner ::r/undo-stack]))
+        changes (mapcat :redo-changes group)
+        ;; The notification envelope advances the loaded library revision.
+        edited (update edited :situation
+                       #(tm/with-aux-files % (update (tm/aux-files %) owner assoc :revn 1)))
+        _ (ftm/start-generated situation)
+        current-id (:id (tm/file situation))
+        before (get-in (ftm/snapshot) [:files current-id])]
+    (t/is (seq changes) (str "source edit changes " tuple))
+    (t/is (= :settled (await (ftm/await-step [(dwl/ext-library-changed owner (ct/now) 1 changes)]))))
+    (t/is (= before (get-in (ftm/snapshot) [:files current-id])) "notification keeps consumer copies stale")
+    (t/is (empty? (get-in @st/state [:workspace-undo :items])) "notification creates no consumer history")
+    (when transform-tuple
+      (let [before-transform (ftm/snapshot)
+            resolved (cg/resolve-op situation {} transform-tuple)
+            content (fn []
+                      (into {} (map (fn [{:keys [shape]}]
+                                      [(:id shape) (select-keys shape [:content :name :fills :strokes :shapes :opacity])]))
+                            (cg/tree (ftm/refresh-generated situation))))
+            before-content (content)]
+        (t/is (= :settled (await (ftm/await-step (ftm/op->events (:op resolved) situation)))))
+        (t/is (= before-content (content)) "a transform keeps pending source content and structure stale")
+        (let [after-transform (ftm/snapshot)]
+          (t/is (= :settled (await (ftm/await-step [dwu/undo]))))
+          (t/is (uc/same-state? before-transform (ftm/snapshot)))
+          (t/is (= :settled (await (ftm/await-step [dwu/redo]))))
+          (t/is (uc/same-state? after-transform (ftm/snapshot))))))
+    (let [edited (cond-> edited transform-tuple (cg/step transform-tuple))
+          before-accept (ftm/snapshot)
+          expected (-> edited (cg/step [:library-sync]) cg/settle-state)]
+      (t/is (= :settled (await (ftm/await-step [(dwl/sync-file current-id owner)]))))
+      (let [actual (ftm/refresh-generated (:situation expected))
+            after-accept (ftm/snapshot)
+            expected-design (oracle/canonical (:situation expected))
+            actual-design (oracle/canonical actual)]
+        (t/is (true? (oracle/equivalent? expected-design actual-design))
+              (str "consumer acceptance " tuple ": " (pr-str (thn/diff expected-design actual-design))))
+        (t/is (nil? (oracle/check actual (:model expected))))
+        (t/is (= :settled (await (ftm/await-step [dwu/undo]))))
+        (t/is (uc/same-state? before-accept (ftm/snapshot)) "undo restores the stale consumer only")
+        (t/is (= :settled (await (ftm/await-step [dwu/redo]))))
+        (t/is (uc/same-state? after-accept (ftm/snapshot)) "redo restores accepted geometry and text")))))
+
+(t/deftest ^:async source-geometry-and-text-wait-for-consumer-acceptance
+  (await
+   (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
+     (doseq [tuple (concat (map #(vector :library-transform 0 % 4 1) (range 6))
+                           [[:library-text 0 0 1]]
+                           (map #(vector :library-text-style 0 % 1) (range 12)))]
+       (await (source-acceptance-history tuple nil))))))
+
+(t/deftest ^:async a-transform-keeps-library-text-stale-until-acceptance
+  (await
+   (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
+     (await (source-acceptance-history [:library-text 0 1 1] [:transform 8 3 3 4])))))
 
 (t/deftest ^:async edit-step-waits-for-slow-sync
   (let [sync-file dwl/sync-file]

@@ -75,6 +75,20 @@
   [files]
   (sort-by (fn [[id file]] [(:name file) (str (thi/label id))]) files))
 
+(defn- with-source-text
+  [file]
+  (-> file
+      (tho/add-frame-with-text :library-text-root :library-text-child "Library text"
+                               :child-params {:grow-type :auto-height})
+      (thc/make-component :library-text-component :library-text-root)
+      (thc/instantiate-component :library-text-component :library-text-copy)
+      (ths/add-sample-typography :generated-typography
+                                 :font-id "gfont-roboto" :font-family "Roboto"
+                                 :font-variant-id "700italic" :font-weight "700"
+                                 :font-style "italic" :font-size "22"
+                                 :line-height "1.6" :letter-spacing "2"
+                                 :text-transform "uppercase")))
+
 (defn- with-library
   [situation opts]
   (let [library (-> (tm/make-situation (thf/sample-file :random-library :name "random-library" :is-shared true))
@@ -87,7 +101,8 @@
                               s))
                     (as-> s (if (and (:library-variants opts) (:rich-variants opts))
                               (variants/diversify s "library-variants") s))
-                    tm/file)
+                    tm/file
+                    (cond-> (:library-text opts) with-source-text))
         dependent (when (:library-dependency opts)
                     (-> (tm/make-situation (thf/sample-file :dependent-library :name "dependent-library" :is-shared true))
                         (as-> s (tm/apply-to (n/create-component "library-dependent" setup/labeled-fill :size 100) s))
@@ -269,10 +284,10 @@
 
 (def library-source-kinds
   #{:library-edit :library-add-child :library-remove-child :library-delete :library-restore
-    :library-undo :library-redo :library-accept})
+    :library-undo :library-redo :library-accept :library-transform :library-text :library-text-style})
 
 (defn- library-candidates
-  [situation kind]
+  [situation kind scope]
   (vec
    (for [[library-index [library-id library]]
          (map-indexed vector (ordered-files (tm/aux-files situation)))
@@ -299,6 +314,15 @@
                            (case kind
                              (:library-edit :library-remove-child)
                              (and (= :rect (:type shape)) (nil? (:shape-ref shape)))
+                             :library-transform
+                             (and (not= :text (:type shape)) (nil? (:shape-ref shape))
+                                  (if (even? (or scope 0))
+                                    (ctk/main-instance? shape)
+                                    (and (not (ctk/main-instance? shape))
+                                         (some ctk/main-instance?
+                                               (cfh/get-parents (:objects (thf/current-page library)) (:id shape))))))
+                             (:library-text :library-text-style)
+                             (and (= :text (:type shape)) (nil? (:shape-ref shape)))
                              (:library-add-child :library-delete) (ctk/main-instance? shape)))
                          (tree (tm/with-file situation library))))]
      (-> entry
@@ -360,7 +384,7 @@
   (let [index (or index 0)
         [style-property style-values] (nth style-edits (mod (or property 0) (count style-edits)))
         items (cond->> (if (contains? library-source-kinds kind)
-                         (library-candidates situation kind)
+                         (library-candidates situation kind scope)
                          (candidates situation model (if (= kind :style) :edit kind) scope))
                 (= kind :style)
                 (filter (fn [{:keys [shape]}]
@@ -399,15 +423,15 @@
              (when target
                (case kind
                  (:edit :style) (n/change-property target property value)
-                 :transform (let [action (nth [:move :width :height :rotate :flip-x :flip-y]
-                                              (mod (or (nth tuple 2 nil) 0) 6))
-                                  value (or (nth tuple 3 nil) 0)]
-                              (n/transform-shape target action
-                                                 (case action
-                                                   :move [(* 5 (inc (mod value 4))) (* -3 (inc (mod value 3)))]
-                                                   (:width :height) (+ 80 (* 20 (mod value 6)))
-                                                   :rotate (* 45 (inc (mod value 4)))
-                                                   nil)))
+                 (:transform :library-transform) (let [action (nth [:move :width :height :rotate :flip-x :flip-y]
+                                                                   (mod (or (nth tuple 2 nil) 0) 6))
+                                                       value (or (nth tuple 3 nil) 0)]
+                                                   (n/transform-shape target action
+                                                                      (case action
+                                                                        :move [(* 5 (inc (mod value 4))) (* -3 (inc (mod value 3)))]
+                                                                        (:width :height) (+ 80 (* 20 (mod value 6)))
+                                                                        :rotate (* 45 (inc (mod value 4)))
+                                                                        nil)))
                  :library-edit (n/change-property target property value)
                  :library-add-child (n/add-child target (keyword (str "library-generated-" (count (:applied situation))))
                                                  :width 20 :height 20 :x 10 :y 10)
@@ -419,17 +443,21 @@
                  :detach (n/detach target)
                  :resize (n/change-height target (+ 80 (* 20 (mod (or (nth tuple 3 nil) 0) 6))))
                  :rotate (n/rotate target (* 45 (inc (mod (or (nth tuple 3 nil) 0) 4))))
-                 :text (let [text (thtx/view (:content (:shape selected)))
-                             text (if (even? (or (nth tuple 2 nil) 0))
-                                    (thtx/set-letters text (nth ["Hello world" "Hello there" "Hello\nworld"] (mod (or (nth tuple 3 nil) 0) 3)))
-                                    (thtx/restyle text :size (nth [14 18 24] (mod (or (nth tuple 3 nil) 0) 3))))]
-                         (n/edit-text target :content text))
-                 :text-style (n/edit-text target :content
-                                          (edit-text-style (:shape selected) (nth tuple 2 nil) (nth tuple 3 nil))
-                                          (when (and (= 8 (mod (or (nth tuple 2 nil) 0) (count text-style-edits)))
-                                                     (odd? (or (nth tuple 3 nil) 0)))
-                                            {:typography {:id (thi/id :generated-typography)
-                                                          :file-id (:id (tm/file situation))}}))
+                 (:text :library-text) (let [text (thtx/view (:content (:shape selected)))
+                                             text (if (even? (or (nth tuple 2 nil) 0))
+                                                    (thtx/set-letters text (nth ["Hello world" "Hello there" "Hello\nworld"] (mod (or (nth tuple 3 nil) 0) 3)))
+                                                    (thtx/restyle text :size (nth [14 18 24] (mod (or (nth tuple 3 nil) 0) 3))))]
+                                         (n/edit-text target :content text))
+                 (:text-style :library-text-style)
+                 (let [typography? (and (= 8 (mod (or (nth tuple 2 nil) 0) (count text-style-edits)))
+                                        (odd? (or (nth tuple 3 nil) 0)))
+                       file-id (or (:library-id selected) (:id (tm/file situation)))
+                       content (cond-> (edit-text-style (:shape selected) (nth tuple 2 nil) (nth tuple 3 nil))
+                                 (and typography? (:library-id selected))
+                                 (thtx/restyle :typography-ref-file file-id))]
+                   (n/edit-text target :content content
+                                (when typography?
+                                  {:typography {:id (thi/id :generated-typography) :file-id file-id}})))
                  :add-child (n/add-child target (keyword (str "generated-" (count (:applied situation))))
                                          :width 20 :height 20 :x 10 :y 10)
                  :remove-child (n/remove-child target)
@@ -589,7 +617,7 @@
         modifiers (case kind
                     :resize (ctm/change-size shape nil (:value op))
                     :rotate (n/geometry-modifiers shape :rotate (:angle op))
-                    :transform (n/geometry-modifiers shape (:action op) (:value op)))
+                    (:transform :library-transform) (n/geometry-modifiers shape (:action op) (:value op)))
         tree (gm/set-objects-modifiers {(:id shape) {:modifiers modifiers}} objects)]
     (gsh/transform-shape shape (get-in tree [(:id shape) :modifiers]))))
 
@@ -688,16 +716,19 @@
                                    (> (r/undo-depth after) (r/undo-depth situation)))
                         (update-in (conj coverage-path :undo-only) (fnil inc 0)))
                       (update-in [:executed kind] (fnil inc 0)))]
-        (when (#{:resize :rotate :transform} kind)
-          (oracle/check-requested-geometry (:objects (thf/current-page (tm/file after)))
-                                           (tm/shape-by-id after (get-in resolved [:shape :id]))
-                                           (requested-geometry situation resolved kind)))
+        (when (#{:resize :rotate :transform :library-transform} kind)
+          (let [before (if library-id (source-context situation library-id) situation)
+                after (if library-id (source-context after library-id) after)]
+            (oracle/check-requested-geometry (:objects (thf/current-page (tm/file after)))
+                                             (tm/shape-by-id after (get-in resolved [:shape :id]))
+                                             (requested-geometry before resolved kind))))
         (when (#{:swap :switch} kind)
           (let [head (tm/shape-by-id after (get-in resolved [:shape :id]))]
             (when-not (= (get-in resolved [:destination :component-id]) (:component-id head))
               (oracle/fail :I9 {:phase :requested-component :kind kind}))))
-        (when (#{:text :text-style} kind)
-          (let [actual (tm/shape-by-id after (get-in resolved [:shape :id]))
+        (when (#{:text :text-style :library-text :library-text-style} kind)
+          (let [after (if library-id (source-context after library-id) after)
+                actual (tm/shape-by-id after (get-in resolved [:shape :id]))
                 expected (thtx/normalize (:value op))]
             (when-not (= expected (thtx/view (:content actual)))
               (oracle/fail :I9 {:phase :requested-text :expected expected
@@ -845,6 +876,14 @@
                     (contains? (set kinds) :text-style)
                     (conj [2 (gen/fmap (fn [[index unit]] [[:text-style index unit 1]])
                                        (gen/tuple gen/nat (gen/choose 0 (dec (count text-style-edits)))))])
+                    (contains? (set kinds) :library-transform)
+                    (conj [2 (gen/fmap (fn [[index action scope]] [[:library-transform index action 4 scope]])
+                                       (gen/tuple gen/nat (gen/choose 0 5) (gen/choose 0 1)))])
+                    (contains? (set kinds) :library-text-style)
+                    (conj [2 (gen/fmap (fn [[index unit]] [[:library-text-style index unit 1]])
+                                       (gen/tuple gen/nat (gen/choose 0 (dec (count text-style-edits)))))])
+                    (contains? (set kinds) :library-text)
+                    (conj [2 (gen/fmap (fn [index] [[:library-text index 0 1]]) gen/nat)])
                     (every? (set kinds) [:undo :redo])
                     (conj [1 (gen/return [[:undo] [:redo]])])
                     (contains? (set kinds) :text)
@@ -928,17 +967,18 @@
             library-depth (gen/choose 1 2)
             layout (gen/elements [nil :flex :grid])
             ops (operation-gen stale-library-kinds)]
-    {:world [2 depth {:library true :stale-libraries true :library-variants true
+    {:world [2 depth {:library true :stale-libraries true :library-variants true :library-text true
                       :library-depth library-depth :variants true :rich-variants true :text true :text-styles true
                       :layout layout :layout-copies true}]
      :ops ops}))
 
 (def dependency-kinds
   [:edit :reset :swap :sync :undo :redo :library-sync :library-edit :library-accept
-   :library-add-child :library-remove-child :library-delete :library-restore :library-undo :library-redo])
+   :library-add-child :library-remove-child :library-delete :library-restore :library-undo :library-redo
+   :library-transform :library-text :library-text-style])
 
 (def dependency-program-gen
   (gen/let [depth (gen/choose 0 1)
             ops (operation-gen dependency-kinds)]
-    {:world [2 depth {:library true :stale-libraries true :library-dependency true}]
+    {:world [2 depth {:library true :stale-libraries true :library-dependency true :library-text true}]
      :ops ops}))
