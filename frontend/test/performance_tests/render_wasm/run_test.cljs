@@ -468,3 +468,34 @@
     (t/is (not (fs/existsSync dir)))
     (t/is (= :completed (get-in result [:run :termination :reason])))
     (t/is (zero? (:exit-code result)))))
+
+(t/deftest ^:async failed-final-record-write-retains-the-selected-build
+  (let [root       @temporary-root
+        id         "retained-after-write-failure"
+        dir        (path/join (artifacts/managed-root root) "builds" id)
+        _          (fs/mkdirSync dir #js {:recursive true})
+        _          (fs/writeFileSync (path/join dir "index.html") "<!doctype html>")
+        out        (output-dir)
+        record     (path/join out "run.transit")
+        prior      (path/join out "run.before-finish.transit")
+        base       (fake-browser {})
+        close      (:close (:service base))
+        fake       (assoc base :service
+                          (assoc (:service base) :close
+                                 (fn [owner]
+                                   (close owner)
+                                   ;; Make the final atomic rename fail after all
+                                   ;; attempts have reached the saved record.
+                                   (fs/renameSync record prior)
+                                   (fs/mkdirSync record))))
+        response   (await (run/execute root (selected-build dir id)
+                                       [(collected :case/a :fresh)]
+                                       (assoc (options fake out) :remove true)
+                                       (.-signal (js/AbortController.)) nil nil))
+        saved      (result/decode (fs/readFileSync prior "utf8"))]
+    (t/is (= :running (get-in saved [:termination :reason])))
+    (t/is (= 1 (count (:attempts saved))))
+    (t/is (every? zero? (vals (get-in saved [:remaining :case/a]))))
+    (t/is (some? (:error response)))
+    (t/is (= 1 (:exit-code response)))
+    (t/is (fs/existsSync dir))))

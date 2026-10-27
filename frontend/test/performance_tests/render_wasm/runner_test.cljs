@@ -6,7 +6,7 @@
 
 (ns performance-tests.render-wasm.runner-test
   (:require
-   [benches.render-wasm.node.process :as process]
+   [benches.render-wasm.node.options :as options]
    [benches.render-wasm.node.runner :as runner]
    [cljs.test :as t :include-macros true]
    [clojure.string :as str]))
@@ -15,7 +15,7 @@
   (let [{:keys [command options]} (runner/parse-args ["build"])]
     (t/is (= "build" command))
     (t/is (true? (:default-features options)))
-    (t/is (= process/default-build-timeout-ms (:build-timeout-ms options))))
+    (t/is (= options/default-build-timeout-ms (:build-timeout-ms options))))
   (let [{:keys [command options]} (runner/parse-args
                                    ["--" "build" "--no-default-features"
                                     "--features" "functional_b,functional-a,functional_b"
@@ -78,7 +78,7 @@
       (t/is (str/includes? help "runner run"))
       (t/is (str/includes? help "runner compare"))
       (t/is (str/includes? help "--build-timeout-ms"))
-      (t/is (str/includes? help "--compare-cases"))))
+      (t/is (str/includes? help "--cases"))))
   (t/is (thrown-with-msg? js/Error #"expected build, purge, run or compare"
                           (runner/parse-args [])))
   (doseq [args [["unknown"] ["build" "purge"] ["build" "--unknown"]
@@ -130,24 +130,28 @@
         (runner/parse-args ["compare" "baseline.transit" "candidate.transit"])]
     (t/is (= "compare" command))
     (t/is (= ["compare" "baseline.transit" "candidate.transit"] arguments))
-    (t/is (nil? (:compare-cases options)))
+    (t/is (nil? (:cases options)))
     (t/is (not (:force options))))
   (let [{:keys [options]}
         (runner/parse-args ["compare" "a.transit" "b.transit"
-                            "--compare-cases" "rects/pan,paths/pan" "--force"])]
-    (t/is (= "rects/pan,paths/pan" (:compare-cases options)))
+                            "--cases" "rects/pan,paths/pan" "--force"])]
+    (t/is (= "rects/pan,paths/pan" (:cases options)))
+    (t/is (true? (:force options))))
+  (let [{:keys [options]}
+        (runner/parse-args ["compare" "a.transit" "b.transit" "--force"])]
+    (t/is (nil? (:cases options)))
     (t/is (true? (:force options)))))
 
 (t/deftest commands-reject-flags-owned-by-other-commands
   (doseq [[args message]
           [[["run" "--only-builds"] #"purge category flags require purge"]
-           [["run" "--compare-cases" "a,b"] #"compare options require compare"]
+           [["run" "--cases" "a,b"] #"compare options require compare"]
            [["compare" "a" "b" "--seed" "1"] #"run options require run"]
            [["compare" "a" "b" "--features" "functional"] #"build options require build"]
            [["build" "--build" "retained"] #"run options require run"]
            [["build" "--only-runs"] #"purge category flags require purge"]
            [["purge" "--seed" "1"] #"run options require run"]
-           [["purge" "--compare-cases" "a,b"] #"compare options require compare"]]]
+           [["purge" "--cases" "a,b"] #"compare options require compare"]]]
     (t/is (thrown-with-msg? js/Error message (runner/parse-args args)))))
 
 (t/deftest numeric-and-path-options-reject-invalid-bounds

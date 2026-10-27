@@ -47,7 +47,6 @@
   (let [home (runs/create-home {:root @temporary-root :run-id "run-1"})]
     (t/is (= (path/join (artifacts/managed-root @temporary-root) "runs" "run-1")
              (:dir home)))
-    (t/is (true? (:managed? home)))
     (t/is (.isDirectory (fs/statSync (:dir home))))
     (t/is (= "" (fs/readFileSync (:log-path home) "utf8")))
     (t/is (not (fs/existsSync (:record-path home))))))
@@ -61,7 +60,6 @@
                                     :run-id "run-2"
                                     :output-dir relative})]
         (t/is (= (path/join @temporary-root relative) (:dir home)))
-        (t/is (false? (:managed? home)))
         (t/is (.isDirectory (fs/statSync (:dir home))))
         (t/is (not (fs/existsSync (path/join (artifacts/managed-root @temporary-root)
                                              "runs" "run-2")))))
