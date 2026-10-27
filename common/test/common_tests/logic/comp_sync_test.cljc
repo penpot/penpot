@@ -18,6 +18,7 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
    [app.common.types.shape-tree :as ctst]
    [clojure.test :as t]))
 
@@ -756,3 +757,41 @@
     (t/is (not= (geometry copy-group) (geometry copy-group')))
     (t/is (= (:shapes copy-group) (:shapes copy-group'')))
     (t/is (= (geometry copy-group) (geometry copy-group'')))))
+
+(t/deftest test-sync-inverse-undo-group-after-add-and-update
+  (let [;; ==== Setup
+        ;; Penpot does not let users move shapes into a copy, but files can
+        ;; still hold copies with shapes the main lacks, so build the data
+        ;; directly. The new shape goes first in the copy group, so the
+        ;; inverse sync handles it before the updated sibling.
+        file         (-> (thf/sample-file :file1)
+                         (add-group-component-with-copy)
+                         (ths/add-sample-shape :free-shape :parent-label :copy-group
+                                               :x 160 :y 160 :width 10 :height 10)
+                         (ths/update-shape :copy-group :shapes [(thi/id :free-shape)
+                                                                (thi/id :copy-child1)
+                                                                (thi/id :copy-child2)]))
+        main-group   (ths/get-shape file :main-group)
+
+        ;; ==== Action
+        updated-file (update-fill file :copy-child1 "#fabada")
+        page         (thf/current-page updated-file)
+        container    (ctn/make-container page :page)
+        changes      (-> (pcb/empty-changes)
+                         (pcb/with-container container)
+                         (cll/generate-sync-shape-inverse (:data updated-file)
+                                                          {(:id updated-file) updated-file}
+                                                          container
+                                                          (thi/id :copy-root)))
+        file'        (thf/apply-changes updated-file changes)
+        file''       (thf/apply-undo-changes file' changes)
+
+        ;; ==== Get
+        main-group'  (ths/get-shape file' :main-group)
+        main-group'' (ths/get-shape file'' :main-group)]
+
+    ;; ==== Check
+    (t/is (= 3 (count (:shapes main-group'))))
+    (t/is (not= (geometry main-group) (geometry main-group')))
+    (t/is (= (:shapes main-group) (:shapes main-group'')))
+    (t/is (= (geometry main-group) (geometry main-group'')))))
