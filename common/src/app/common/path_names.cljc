@@ -66,13 +66,6 @@ Some naming conventions:
                (not (str/blank? clean-name)))
       clean-name)))
 
-(defn valid-path-name?
-  "True when `name` can be stored as a path-style entity name.
-   Trims the string, rejects a trailing slash, and requires a non-blank
-   result after `clean-path`."
-  [name]
-  (some? (normalize-path-name name)))
-
 (defn merge-path-item
   "Put the item at the end of the path."
   [path name]

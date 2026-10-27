@@ -796,13 +796,8 @@
                undo-id      (js/Symbol)]
 
            (cond
-             ;; A variant main is edited as a formula. Never store that
-             ;; text as the layer or component name.
-             (ctc/variant-formula-rename? shape name)
-             (rx/of (rename-variant-main (:current-file-id state) shape name))
-
-             ;; A variant main that is not ready (no formula yet, or a
-             ;; blank edit) must not fall through to a plain rename.
+             ;; Variant formula edits go through rename-shape-or-variant.
+             ;; A variant main must not fall through to a plain rename.
              (ctc/is-variant-main? shape)
              (rx/empty)
 
@@ -834,6 +829,7 @@
                          (get id))
              name    (str/trim name)]
          (if (ctc/variant-formula-rename? shape name)
+           ;; update-properties-names-and-values clears :shape-for-rename.
            (rx/of (rename-variant-main file-id shape name))
            (rx/of (end-rename-shape id name))))))))
 

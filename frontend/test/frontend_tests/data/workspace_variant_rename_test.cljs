@@ -44,14 +44,21 @@
   (-> component :variant-properties first :value))
 
 (defn- run
-  [file events done assert-fn]
+  "Run workspace events, then validate the file before assertions.
+
+   Pass `:validate? false` only when the fixture is intentionally incomplete
+   (e.g. a variant main without `:variant-name`)."
+  [file events done assert-fn & {:keys [validate?] :or {validate? true}}]
   (ths/run-store
    (ths/setup-store file)
    done
    events
-   assert-fn))
+   (fn [state]
+     (when validate?
+       (cthf/validate-file! (ths/get-file-from-state state)))
+     (assert-fn state))))
 
-(t/deftest end-rename-shape-updates-variant-value-and-keeps-layer-name
+(t/deftest end-rename-shape-does-not-apply-variant-formula
   (t/async
     done
     (let [file (variant-file)
@@ -68,8 +75,9 @@
              (let [file (ths/get-file-from-state state)
                    shape (cths/get-shape file :root1)
                    component (cthc/get-component file :comp1)]
-               (t/is (= "another 21" (prop-value component)))
-               (t/is (= "another 21" (:variant-name shape)))
+               ;; Formula updates belong to rename-shape-or-variant.
+               (t/is (= "Value1" (prop-value component)))
+               (t/is (= "Value1" (:variant-name shape)))
                (t/is (= "Button" (:name shape)))
                (t/is (= "Button" (:name (cths/get-shape file :variant))))
                (t/is (= original-name (:name component)))
@@ -168,9 +176,11 @@
                (t/is (= "Value1" (prop-value component)))
                (t/is (= original-name (:name component)))
                (t/is (= original-path (:path component)))
-               (t/is (= root2-id (:shape-for-rename (:workspace-local state))))))))))
+               (t/is (= root2-id (:shape-for-rename (:workspace-local state))))))
+           ;; Fixture starts without :variant-name, so the file is incomplete.
+           :validate? false))))
 
-(t/deftest end-rename-shape-keeps-malformed-formula-off-the-layer-name
+(t/deftest end-rename-shape-keeps-formula-text-off-the-layer-name
   (t/async
     done
     (run (variant-file)
@@ -181,8 +191,9 @@
            (let [file (ths/get-file-from-state state)
                  shape (cths/get-shape file :root1)]
              (t/is (= "Button" (:name shape)))
-             (t/is (= "not-a-formula" (:variant-error shape)))
-             (t/is (= "" (prop-value (cthc/get-component file :comp1))))
+             (t/is (= "Value1" (:variant-name shape)))
+             (t/is (= "Value1" (prop-value (cthc/get-component file :comp1))))
+             (t/is (nil? (:variant-error shape)))
              (t/is (nil? (:shape-for-rename (:workspace-local state)))))))))
 
 (t/deftest end-rename-shape-renames-variant-container

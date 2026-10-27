@@ -32,15 +32,11 @@
     (t/is (= (second path) "subgroup"))
     (t/is (= (nth path 2) "name"))))
 
-(t/deftest valid-and-normalize-path-name
-  (t/is (true? (cpn/valid-path-name? "Button")))
-  (t/is (true? (cpn/valid-path-name? "  Group / Button  ")))
-  (t/is (false? (cpn/valid-path-name? nil)))
-  (t/is (false? (cpn/valid-path-name? "")))
-  (t/is (false? (cpn/valid-path-name? "   ")))
-  (t/is (false? (cpn/valid-path-name? "Button/")))
-  (t/is (false? (cpn/valid-path-name? "Group / ")))
+(t/deftest normalize-path-name
   (t/is (= "Button" (cpn/normalize-path-name "  Button  ")))
   (t/is (= "Group / Button" (cpn/normalize-path-name "Group / Button")))
+  (t/is (nil? (cpn/normalize-path-name nil)))
+  (t/is (nil? (cpn/normalize-path-name "")))
+  (t/is (nil? (cpn/normalize-path-name "   ")))
   (t/is (nil? (cpn/normalize-path-name "Button/")))
-  (t/is (nil? (cpn/normalize-path-name nil))))
+  (t/is (nil? (cpn/normalize-path-name "Group / "))))
