@@ -104,6 +104,88 @@ pub(crate) fn render_tree_to_svg(
     collect_font_aliases(tree, id, &mut aliases);
     let font_css = shared.fonts.font_face_css_for_aliases(&aliases);
 
+    Ok(emit_svg_document(page_w, page_h, &font_css, &defs, &body))
+}
+
+/// Multi-root SVG export: one document whose viewBox covers every visible root,
+/// with relative placement preserved (inspect / copy-as-svg multi-select).
+pub fn render_to_svg_multi(
+    shared: &mut RenderResources,
+    ids: &[Uuid],
+    tree: ShapesPoolRef,
+    scale: f32,
+) -> Result<Vec<u8>> {
+    render_trees_to_svg(shared, ids, tree, scale)
+}
+
+/// Core multi-root SVG export for headless tests and the WASM bridge.
+pub(crate) fn render_trees_to_svg(
+    shared: &mut RenderResources,
+    ids: &[Uuid],
+    tree: ShapesPoolRef,
+    scale: f32,
+) -> Result<Vec<u8>> {
+    if ids.is_empty() {
+        return Ok(emit_svg_document(0.0, 0.0, "", "", ""));
+    }
+
+    let mut joined: Option<skia::Rect> = None;
+    let mut roots: Vec<Uuid> = Vec::with_capacity(ids.len());
+    for id in ids {
+        let Some(shape) = tree.get(id) else {
+            continue;
+        };
+        if shape.hidden {
+            continue;
+        }
+        let bounds = svg_page_bounds(shape, tree, scale);
+        match &mut joined {
+            None => joined = Some(bounds),
+            Some(acc) => {
+                acc.join(bounds);
+            }
+        }
+        roots.push(*id);
+    }
+
+    // Missing or hidden-only roots: empty document (same as empty `ids`), not
+    // CriticalError — inspect/copy must not crash the host when nothing is drawable.
+    let Some(bounds) = joined else {
+        return Ok(emit_svg_document(0.0, 0.0, "", "", ""));
+    };
+
+    let page_w = bounds.width() * scale;
+    let page_h = bounds.height() * scale;
+    let rect = skia::Rect::from_xywh(0., 0., page_w, page_h);
+    let tx = -bounds.left();
+    let ty = -bounds.top();
+
+    let mut builder = SvgLayerCanvas::new(scale, rect, tx, ty);
+    for id in &roots {
+        if let Some(shape) = tree.get(id) {
+            builder.nested_fills.push(shape.inherited_fills(tree));
+        }
+        render_tree(&mut builder, shared, id, tree, scale)?;
+        builder.nested_fills.pop();
+    }
+    builder.flush();
+
+    let mut aliases = HashSet::new();
+    for id in &roots {
+        collect_font_aliases(tree, id, &mut aliases);
+    }
+    let font_css = shared.fonts.font_face_css_for_aliases(&aliases);
+
+    Ok(emit_svg_document(
+        page_w,
+        page_h,
+        &font_css,
+        &builder.defs,
+        &builder.out,
+    ))
+}
+
+fn emit_svg_document(page_w: f32, page_h: f32, font_css: &str, defs: &str, body: &str) -> Vec<u8> {
     let mut out = String::with_capacity(body.len() + defs.len() + font_css.len() + 256);
     out.push_str("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n");
     out.push_str(&format!(
@@ -118,14 +200,13 @@ pub(crate) fn render_tree_to_svg(
                 "<style type=\"text/css\"><![CDATA[{font_css}]]></style>"
             ));
         }
-        out.push_str(&defs);
+        out.push_str(defs);
         out.push_str("</defs>");
     }
 
-    out.push_str(&body);
+    out.push_str(body);
     out.push_str("</svg>");
-
-    Ok(out.into_bytes())
+    out.into_bytes()
 }
 
 mod background_blur;
