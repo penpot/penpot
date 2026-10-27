@@ -279,7 +279,10 @@
                            :redo-changes (vec changes)
                            :undo-changes []}))
        (if (:repaired msg)
-         (rx/of (ntf/info (tr "workspace.notifications.file-repaired")))
+         (rx/of (ntf/show {:content (tr "workspace.notifications.file-repaired")
+                           :type :toast
+                           :level :info
+                           :timeout nil}))
          (rx/empty))))))
 
 (defn handle-file-deleted
