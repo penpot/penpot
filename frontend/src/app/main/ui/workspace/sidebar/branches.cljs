@@ -44,6 +44,9 @@
 (def ^:private branches
   (l/derived :workspace-branches st/state))
 
+(def ^:private branch-diff
+  (l/derived :workspace-branch-diff st/state))
+
 (def ^:private branch-context
   ;; see refs/branch-context: the state entry wraps the row under :info
   (l/derived #(get-in % [:workspace-branch-context :info]) st/state))
@@ -205,6 +208,16 @@
   (let [archive?* (mf/use-state false)
         archive?  (deref archive?*)
 
+        ;; what goes in and what stays out, when the compare dialog of this
+        ;; branch is the one that asked for the merge
+        diff-st   (mf/deref branch-diff)
+        changes   (when (and (= (:id branch) (:branch-id diff-st))
+                             (= :loaded (:status diff-st)))
+                    (filterv #(contains? #{:added :modified :deleted} (:status %))
+                             (get-in diff-st [:diff :changes])))
+        left-out  (count (filter #(contains? (or excluded #{}) (:key %)) changes))
+        going-in  (- (count changes) left-out)
+
         ;; The branch name and "main" are highlighted (foreground-primary)
         ;; within the otherwise secondary-colored prompt. We wrap each of
         ;; them with a sentinel in the `tr` args and split on it, so the
@@ -241,14 +254,28 @@
            [:span {:key idx :class (stl/css :modal-message-emphasis)} part]
            [:span {:key idx} part]))]
 
+      (when (seq changes)
+        [:ul {:class (stl/css :merge-summary)}
+         [:li (tr "workspace.branches.merge.summary-in" (i18n/c going-in))]
+         (when (pos? left-out)
+           [:li (tr "workspace.branches.merge.summary-out" (i18n/c left-out))])])
+
       [:> checkbox* {:id "merge-archive-branch"
                      :label (tr "workspace.branches.merge.archive-label")
                      :checked archive?
                      :on-change on-toggle-archive}]
 
-      (if archive?
+      (cond
+        archive?
         [:> context-notification* {:level :warning :type :context}
          (tr "workspace.branches.merge.archive-warning")]
+
+        ;; deleting the branch takes the changes left out with it
+        (pos? left-out)
+        [:> context-notification* {:level :warning :type :context}
+         (tr "workspace.branches.merge.left-out-lost" (i18n/c left-out))]
+
+        :else
         [:> context-notification* {:level :info :type :context}
          (tr "workspace.branches.merge.delete-info")])]
 

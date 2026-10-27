@@ -169,6 +169,17 @@
   color: var(--color-foreground-primary);
 }
 
+.merge-summary {
+  @include use-typography("body-small");
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin: 0;
+  padding-inline-start: var(--sp-l);
+  color: var(--color-foreground-primary);
+  list-style: disc;
+}
 
 .field {
   display: flex;

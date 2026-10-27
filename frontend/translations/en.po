@@ -11556,8 +11556,23 @@ msgstr "Main's %s:"
 msgid "workspace.branches.resolve.drops.branch-short"
 msgstr "The branch's %s:"
 
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.merge.summary-in"
+msgid_plural "workspace.branches.merge.summary-in"
+msgstr[0] "1 change goes into main."
+msgstr[1] "%s changes go into main."
 
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.merge.summary-out"
+msgid_plural "workspace.branches.merge.summary-out"
+msgstr[0] "1 change is left out."
+msgstr[1] "%s changes are left out."
 
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.merge.left-out-lost"
+msgid_plural "workspace.branches.merge.left-out-lost"
+msgstr[0] "The change you left out is lost when the branch is deleted. Archive the branch to keep it."
+msgstr[1] "The %s changes you left out are lost when the branch is deleted. Archive the branch to keep them."
 
 #: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs
 msgid "workspace.branches.review.view.expand"
