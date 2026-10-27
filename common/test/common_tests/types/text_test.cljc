@@ -540,3 +540,25 @@
     (t/is (< (:y first-normal) (:y last-normal)))
     (t/is (> (:x tone) (:x last-normal)))
     (t/is (< (:y tone) (:y last-normal)))))
+
+(t/deftest merge-equal-spans-joins-neighbours-with-the-same-style
+  (t/testing "a missing attr equals its default, CJK defaults included"
+    (t/is (= [{:text "2027" :text-combine-upright "all"}]
+             (cttx/merge-equal-spans [{:text "2" :text-combine-upright "all"}
+                                      {:text "027" :text-combine-upright "all"}])))
+    (t/is (= [{:text "abcd" :font-size 14}]
+             (cttx/merge-equal-spans [{:text "ab" :font-size 14}
+                                      {:text "cd" :text-combine-upright "none" :ruby nil}]))))
+
+  (t/testing "spans with different styles stay apart"
+    (t/is (= [{:text "ab"} {:text "cd" :font-weight "700"} {:text "ef"}]
+             (cttx/merge-equal-spans [{:text "ab"} {:text "cd" :font-weight "700"} {:text "ef"}]))))
+
+  (t/testing "readings and warichu notes are never joined, even when equal"
+    (let [spans [{:text "人" :ruby "hito"} {:text "々" :ruby "hito"} {:text "x"}]]
+      (t/is (= spans (cttx/merge-equal-spans spans))))
+    (let [spans [{:text "注" :warichu "warichu"} {:text "釈" :warichu "warichu"}]]
+      (t/is (= spans (cttx/merge-equal-spans spans)))))
+
+  (t/testing "no spans give no spans"
+    (t/is (= [] (cttx/merge-equal-spans [])))))
