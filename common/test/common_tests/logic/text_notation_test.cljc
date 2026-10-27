@@ -30,6 +30,60 @@
     (t/is (= [[["Library text" {:fills nil :size 18}]]] styled))
     (t/is (nil? (get-in (thtx/content styled) [:children 0 :children 0 :children 0 :fills])))))
 
+(defn- get-run
+  [text]
+  (first (txt/node-seq txt/is-text-node? (thtx/content text))))
+
+(t/deftest font-family-edit-replaces-the-raw-family-identity
+  (let [text (thtx/normalize [[["Custom font" {:family "Roboto" :font-id "custom-font"
+                                               :weight 700 :font-style "oblique"
+                                               :font-variant-id "opaque-variant" :size 18 :color :blue}]]])
+        before (get-run text)
+        after (get-run (thtx/restyle text :family "Inter"))]
+    (t/is (= {:font-family "Inter" :font-id "gfont-inter"}
+             (select-keys after [:font-family :font-id])))
+    (t/is (= (select-keys before [:font-weight :font-style :font-variant-id])
+             (select-keys after [:font-weight :font-style :font-variant-id]))
+          "a family edit preserves the weight unit's opaque identity")
+    (t/is (= (select-keys before [:text :font-size :fills])
+             (select-keys after [:text :font-size :fills])))))
+
+(t/deftest font-weight-edit-replaces-the-raw-variant-identity
+  (let [text (thtx/normalize [[["Custom font" {:family "Roboto" :font-id "custom-font"
+                                               :font-variant-id "opaque-variant" :italic true
+                                               :size 18 :color :blue}]]])
+        before (get-run text)
+        after (get-run (thtx/restyle text :weight 700))]
+    (t/is (= {:font-weight "700" :font-style "italic" :font-variant-id "700italic"}
+             (select-keys after [:font-weight :font-style :font-variant-id])))
+    (t/is (= (select-keys before [:font-family :font-id])
+             (select-keys after [:font-family :font-id])))
+    (t/is (= (select-keys before [:text :font-size :fills])
+             (select-keys after [:text :font-size :fills])))))
+
+(t/deftest font-style-edit-replaces-the-raw-style-and-variant-identities
+  (doseq [[italic style variant] [[true "italic" "700italic"] [false "normal" "700"]]]
+    (let [text (thtx/normalize [[["Custom font" {:family "Roboto" :font-id "custom-font"
+                                                 :weight 700 :font-style "oblique"
+                                                 :font-variant-id "opaque-variant" :size 18 :color :blue}]]])
+          before (get-run text)
+          after (get-run (thtx/restyle text :italic italic))]
+      (t/is (= {:font-weight "700" :font-style style :font-variant-id variant}
+               (select-keys after [:font-weight :font-style :font-variant-id])))
+      (t/is (= (select-keys before [:font-family :font-id])
+               (select-keys after [:font-family :font-id])))
+      (t/is (= (select-keys before [:text :font-size :fills])
+               (select-keys after [:text :font-size :fills]))))))
+
+(t/deftest other-text-edits-keep-opaque-font-identities
+  (let [text (thtx/normalize [[["Custom font" {:family "Roboto" :font-id "custom-font"
+                                               :weight 700 :font-style "oblique"
+                                               :font-variant-id "opaque-variant" :size 18 :color :blue}]]])
+        before (get-run text)
+        after (get-run (thtx/restyle text :size 24))]
+    (t/is (= "24" (:font-size after)))
+    (t/is (= (dissoc before :font-size) (dissoc after :font-size)))))
+
 (t/deftest content-is-written-as-the-editors-write-it
   (let [content    (thtx/content [[["Price: "] ["$10" {:weight 700 :color :red}]]])
         paragraph  (first (txt/node-seq txt/is-paragraph-node? content))

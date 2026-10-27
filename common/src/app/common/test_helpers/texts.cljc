@@ -332,14 +332,18 @@
 
 (defn restyle
   "Set the run style `k` to `v` on every run of `text`.
-  Named colors and explicit fills replace each other."
+  Named colors and explicit fills replace each other. Font edits replace
+  stale raw identities while preserving the other font unit."
   [text k v]
   (update-paragraphs text
                      (fn [[style runs]]
                        [style (map (fn [[letters run-style]]
                                      [letters (cond-> (assoc run-style k v)
                                                 (= k :color) (dissoc :fills)
-                                                (= k :fills) (dissoc :color))])
+                                                (= k :fills) (dissoc :color)
+                                                (= k :family) (dissoc :font-family :font-id)
+                                                (= k :weight) (dissoc :font-weight :font-variant-id)
+                                                (= k :italic) (dissoc :font-style :font-variant-id))])
                                    (detach-typography runs k))])))
 
 (defn restyle-paragraphs
