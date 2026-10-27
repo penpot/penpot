@@ -4727,9 +4727,10 @@ export interface Text extends ShapeBase {
 
   /**
    * Tate-chu-yoko: sets text upright as one block in vertical writing. `all`
-   * combines the whole span; `digits` combines runs of 2-4 digits
-   * (`digits2`/`digits3` cap the run at 2/3); `none` (the default) turns it
-   * off. Returns 'mixed' if text spans use different values.
+   * combines the whole span; `digits` combines runs of up to 4 digits, so a
+   * lone digit stands upright (`digits2`/`digits3` cap the run at 2/3);
+   * `none` (the default) turns it off. Returns 'mixed' if text spans use
+   * different values.
    */
   textCombineUpright:
     'none' | 'all' | 'digits' | 'digits2' | 'digits3' | 'mixed';

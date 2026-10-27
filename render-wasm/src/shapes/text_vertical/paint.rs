@@ -8,7 +8,7 @@ use crate::math::Rect;
 use crate::shapes::{Stroke, StrokeKind, TextContent, VerticalAlign};
 
 use super::annotations::{emphasis_mark_center, EmphasisMark, RubyCell};
-use super::font_tables::upright_baseline;
+use super::font_tables::{upright_baseline, upright_centre_metrics};
 use super::layout::{column_base_center, CellKind, VerticalCell, VerticalLayout};
 use super::shaping::{single_glyph_blob, ShapedRun};
 
@@ -174,10 +174,11 @@ fn cell_draws(layout: &VerticalLayout, cell: &VerticalCell, origin: (f32, f32)) 
         } => {
             let composite = &layout.runs[run_start..run_start + run_count];
             let combined_advance: f32 = composite.iter().map(|run| run.advance).sum();
-            // Vertical centring uses the tallest run's ascent/descent.
+            // Vertical centring uses the tallest run's em box, the metrics
+            // upright glyphs use, so the composite shares their baseline.
             let (ascent, descent) = composite.iter().fold((0.0f32, 0.0f32), |(a, d), run| {
-                let (_, metrics) = run.font.metrics();
-                (a.min(metrics.ascent), d.max(metrics.descent))
+                let (ascent, descent) = upright_centre_metrics(&run.font);
+                (a.min(ascent), d.max(descent))
             });
             let x0 = x_center - (combined_advance * h_scale) / 2.0;
             let baseline = y_top + cell.font_size / 2.0 - (ascent + descent) / 2.0;
@@ -739,7 +740,7 @@ fn decoration_bar(
 mod tests {
     use super::super::test_support::*;
     use super::*;
-    use crate::shapes::{StrokeStyle, TextEmphasis, TextOrientation, TextSpan};
+    use crate::shapes::{StrokeStyle, TextCombineUpright, TextEmphasis, TextOrientation, TextSpan};
 
     #[test]
     fn glyph_draws_are_built_once_and_follow_the_origin() {
@@ -932,6 +933,32 @@ mod tests {
                 draw.offset.y
             );
         }
+    }
+
+    #[test]
+    fn tate_chu_yoko_digits_share_the_upright_glyph_baseline() {
+        // The hhea ascent of a CJK face exceeds the em; centring the
+        // composite on it set digits about 0.07em below the kanji beside them.
+        let mut content = make_content_with_spans(&["く12く"], 400.0);
+        content.paragraphs_mut()[0].children_mut()[0].text_combine_upright =
+            TextCombineUpright::Digits;
+        let layout = layout_with(&provider(VMTX_TEST_FONT), &content);
+        let cell = layout
+            .cells
+            .iter()
+            .find(|cell| matches!(cell.kind, CellKind::TateChuYoko { .. }))
+            .expect("the digit run combines");
+        let CellKind::TateChuYoko { run_start, .. } = cell.kind else {
+            unreachable!()
+        };
+        let draws = cell_draws(&layout, cell, (0.0, 0.0));
+        let transform = draws[0].transform.expect("a composite is transformed");
+        let expected = cell.top + upright_baseline(&layout.runs[run_start].font, cell.font_size);
+        assert!(
+            (transform.translate_y() - expected).abs() < 0.01,
+            "baseline {} instead of {expected}",
+            transform.translate_y()
+        );
     }
 
     #[test]

@@ -184,14 +184,15 @@
 
 (defn digit-combine-segments
   "Text split for a `digits` tate-chu-yoko value: `[text combine?]` pairs,
-   where runs of two up to the value's maximum ASCII or full-width digits
-   combine and longer runs stay ordinary text. Nil for other values."
+   where runs of up to the value's maximum ASCII or full-width digits
+   combine, a lone digit included as in CSS `digits`, and longer runs stay
+   ordinary text. Nil for other values."
   [text value]
   (when-let [max-len (get digit-combine-max-lengths value)]
     (->> (partition-by digit? (seq text))
          (mapv (fn [chars]
                  (let [run (apply str chars)]
-                   [run (and (digit? (first chars)) (<= 2 (count chars) max-len))]))))))
+                   [run (and (digit? (first chars)) (<= (count chars) max-len))]))))))
 
 (defn warichu-text?
   "True when a text node renders as warichu, which needs at least two
