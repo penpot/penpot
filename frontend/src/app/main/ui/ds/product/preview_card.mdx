@@ -1,0 +1,49 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as PreviewCard from "./preview_card.stories";
+
+<Meta title="Product/Branching/PreviewCard" />
+
+# PreviewCard
+
+A framed preview of one side of a comparison, labelled with the side
+it shows.
+
+<Canvas of={PreviewCard.Default} />
+
+## Variants
+
+The side colours the frame and the label: base neutral, main purple, the
+branch the accent, the merged result green.
+
+<Canvas of={PreviewCard.Sides} />
+
+`caption` sits under the preview; `is-warning` draws it in the error
+colour.
+
+<Canvas of={PreviewCard.WithCaption} />
+
+`is-large` gives the preview a taller stage, for a view with room to
+spare (the expanded comparison).
+
+<Canvas of={PreviewCard.Large} />
+
+## Technical notes
+
+The stage is 100 px high, 320 px with `is-large`. A container that
+knows how much room it has can set `--preview-card-stage-block-size`
+and `--preview-card-stage-large-block-size` to change them.
+
+The children fill the dark stage in the middle, centred.
+
+```clj
+[:> preview-card* {:label (tr "workspace.branches.review.side.main")
+                   :side "main"
+                   :detail main-ago}
+ [:> entity-preview* {:kind :shape :value main}]]
+```

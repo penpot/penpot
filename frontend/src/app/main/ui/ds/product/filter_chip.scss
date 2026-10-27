@@ -1,0 +1,90 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
+
+.filter-chip {
+  --chip-fg-color: var(--color-foreground-secondary);
+  --chip-bg-color: var(--color-background-quaternary);
+  --chip-border-color: transparent;
+  --chip-selected-color: var(--color-accent-primary);
+
+  @include use-typography("body-small");
+
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--sp-xs);
+
+  // the box of a small DS icon (16) plus the padding and the border, so
+  // chips with and without an icon share one height
+  min-block-size: calc(#{$sz-16} + var(--sp-xxs) * 2 + #{$b-1} * 2);
+  padding: var(--sp-xxs) var(--sp-s);
+  border: $b-1 solid var(--chip-border-color);
+  border-radius: $br-12;
+  background-color: var(--chip-bg-color);
+  color: var(--chip-fg-color);
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    --chip-border-color: var(--color-foreground-secondary);
+  }
+
+  &:focus-visible {
+    outline: $b-1 solid var(--color-accent-primary);
+  }
+
+  &.tone-accent {
+    --chip-fg-color: var(--color-accent-primary);
+    --chip-selected-color: var(--color-accent-primary);
+    --chip-bg-color: var(--color-accent-primary-muted);
+  }
+
+  &.tone-info {
+    --chip-fg-color: var(--color-accent-info);
+    --chip-selected-color: var(--color-accent-info);
+    --chip-bg-color: var(--color-background-info);
+  }
+
+  &.tone-warning {
+    --chip-fg-color: var(--color-accent-warning);
+    --chip-selected-color: var(--color-accent-warning);
+    --chip-bg-color: var(--color-background-warning);
+  }
+
+  &.tone-error {
+    --chip-fg-color: var(--color-accent-error);
+    --chip-selected-color: var(--color-accent-error);
+    --chip-bg-color: var(--color-background-error);
+  }
+
+  &.tone-success {
+    --chip-fg-color: var(--color-accent-success);
+    --chip-selected-color: var(--color-accent-success);
+    --chip-bg-color: var(--color-background-success);
+  }
+
+  &.tone-purple {
+    --chip-fg-color: var(--color-accent-secondary);
+    --chip-selected-color: var(--color-accent-secondary);
+
+    // TODO: no DS background token pairs with the secondary accent
+    --chip-bg-color: color-mix(in srgb, var(--color-accent-secondary) 18%, transparent);
+  }
+
+  // the selected chip reads in its outline colour, text and icon too
+  &.is-selected {
+    --chip-border-color: var(--chip-selected-color);
+    --chip-fg-color: var(--chip-selected-color);
+  }
+}
+
+.icon {
+  flex-shrink: 0;
+}

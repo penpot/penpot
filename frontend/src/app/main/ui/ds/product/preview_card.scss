@@ -1,0 +1,85 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/mixins.scss" as *;
+
+.preview-card {
+  --card-side-color: var(--color-foreground-secondary);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  min-inline-size: 0;
+  padding: var(--sp-m);
+  border: $b-1 solid var(--card-side-color);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+
+  &.side-main {
+    --card-side-color: var(--color-accent-secondary);
+  }
+
+  &.side-branch {
+    --card-side-color: var(--color-accent-primary);
+  }
+
+  &.side-result {
+    --card-side-color: var(--color-accent-success);
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
+}
+
+.label {
+  flex-shrink: 0;
+  color: var(--card-side-color);
+}
+
+.detail {
+  @include text-ellipsis;
+
+  color: var(--color-foreground-secondary);
+}
+
+.stage {
+  // the checkerboard of a transparent background, the same in both
+  // themes (the DS swatch draws its transparency the same way), so
+  // white, black and grey shapes all stand out from it
+  --stage-check-color: color-mix(in srgb, var(--color-canvas) 70%, var(--color-static-white));
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  // a container that knows its room sets these two
+  block-size: var(--preview-card-stage-block-size, #{px2rem(100)});
+  padding: var(--sp-s);
+  overflow: hidden;
+  border-radius: $br-6;
+  background-color: var(--color-static-white);
+  background-image: repeating-conic-gradient(var(--stage-check-color) 0% 25%, transparent 0% 50%);
+  background-size: px2rem(20) px2rem(20);
+
+  &.is-large {
+    block-size: var(--preview-card-stage-large-block-size, #{px2rem(320)});
+  }
+}
+
+.caption {
+  color: var(--color-foreground-secondary);
+
+  &.is-warning {
+    color: var(--color-accent-error);
+  }
+}

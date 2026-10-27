@@ -37,14 +37,18 @@
    [app.main.ui.ds.product.branch-pill :refer [branch-pill*]]
    [app.main.ui.ds.product.branch-row :refer [branch-row*]]
    [app.main.ui.ds.product.branch-status :refer [branch-status*]]
+   [app.main.ui.ds.product.change-row :refer [change-row*]]
    [app.main.ui.ds.product.cta :refer [cta*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
+   [app.main.ui.ds.product.filter-chip :refer [filter-chip*]]
    [app.main.ui.ds.product.input-with-meta :refer [input-with-meta*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.ds.product.milestone :refer [milestone*]]
    [app.main.ui.ds.product.milestone-group :refer [milestone-group*]]
    [app.main.ui.ds.product.panel-title :refer [panel-title*]]
+   [app.main.ui.ds.product.preview-card :refer [preview-card*]]
+   [app.main.ui.ds.product.tag :refer [tag*]]
    [app.main.ui.ds.storybook :as sb]
    [app.main.ui.ds.tooltip.tooltip :refer [tooltip*]]
    [app.main.ui.ds.utilities.date :refer [date*]]
@@ -89,6 +93,10 @@
     :BranchPill branch-pill*
     :BranchRow branch-row*
     :BranchStatus branch-status*
+    :ChangeRow change-row*
+    :FilterChip filter-chip*
+    :PreviewCard preview-card*
+    :Tag tag*
     :Milestone milestone*
     :MilestoneGroup milestone-group*
     :Date date*

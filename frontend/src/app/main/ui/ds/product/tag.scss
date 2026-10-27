@@ -1,0 +1,71 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
+
+.tag {
+  --tag-fg-color: var(--color-foreground-secondary);
+  --tag-bg-color: var(--color-background-quaternary);
+
+  @include use-typography("code-font");
+
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--sp-xxs);
+
+  // the box of a small DS icon (16) plus the padding, so a tag with an
+  // icon and one without stand the same height side by side
+  min-block-size: calc(#{$sz-16} + var(--sp-xxs) * 2);
+  padding: var(--sp-xxs) var(--sp-xs);
+  border-radius: $br-4;
+  background-color: var(--tag-bg-color);
+  color: var(--tag-fg-color);
+  font-size: px2rem(10);
+  white-space: nowrap;
+
+  &.is-pill {
+    @include use-typography("body-small");
+
+    padding: var(--sp-xxs) var(--sp-s);
+    border-radius: $br-12;
+  }
+
+  &.tone-accent {
+    --tag-fg-color: var(--color-accent-primary);
+    --tag-bg-color: var(--color-accent-primary-muted);
+  }
+
+  &.tone-info {
+    --tag-fg-color: var(--color-accent-info);
+    --tag-bg-color: var(--color-background-info);
+  }
+
+  &.tone-warning {
+    --tag-fg-color: var(--color-accent-warning);
+    --tag-bg-color: var(--color-background-warning);
+  }
+
+  &.tone-error {
+    --tag-fg-color: var(--color-accent-error);
+    --tag-bg-color: var(--color-background-error);
+  }
+
+  &.tone-success {
+    --tag-fg-color: var(--color-accent-success);
+    --tag-bg-color: var(--color-background-success);
+  }
+
+  &.tone-purple {
+    --tag-fg-color: var(--color-accent-secondary);
+
+    // TODO: no DS background token pairs with the secondary accent
+    --tag-bg-color: color-mix(in srgb, var(--color-accent-secondary) 18%, transparent);
+  }
+}

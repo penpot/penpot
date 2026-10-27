@@ -1,0 +1,43 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as FilterChip from "./filter_chip.stories";
+
+<Meta title="Product/Branching/FilterChip" />
+
+# FilterChip
+
+A rounded toggle that filters a list by one category.
+
+<Canvas of={FilterChip.Default} />
+
+## Variants
+
+The selected chip draws its outline, text and icon in one colour: its
+tone when it has one, the accent colour when it is neutral.
+
+<Canvas of={FilterChip.Selected} />
+
+`icon` goes before the label, to tell neutral chips apart without
+colour.
+
+<Canvas of={FilterChip.WithIcon} />
+
+A row of chips filters the same list.
+
+<Canvas of={FilterChip.Bar} />
+
+## Technical notes
+
+It renders a `button` with `aria-pressed`. `label` is mandatory; any
+other prop goes to the button.
+
+```clj
+[:> filter-chip* {:label "Copy (1)" :icon i/text
+                  :is-selected (= filter :copy)
+                  :on-click on-filter}]
+```

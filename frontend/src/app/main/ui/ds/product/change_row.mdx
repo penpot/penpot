@@ -1,0 +1,44 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as ChangeRow from "./change_row.stories";
+
+<Meta title="Product/Branching/ChangeRow" />
+
+# ChangeRow
+
+One entry of a change list: a coloured bar for its status, an icon, a
+title over a one-line summary, and a slot at each end.
+
+<Canvas of={ChangeRow.Default} />
+
+## Variants
+
+`end` takes a tag or a count.
+
+<Canvas of={ChangeRow.WithTag} />
+
+`start` takes a checkbox or a chevron. `is-muted` dims a row that is
+left out.
+
+<Canvas of={ChangeRow.WithCheckbox} />
+
+## Technical notes
+
+The row acts as a button (`role="button"`, Enter and Space call
+`on-click`). Controls in the slots must stop the click from reaching
+the row.
+
+```clj
+[:> change-row* {:title (:label item)
+                 :subtitle summary
+                 :icon i/board
+                 :tone "info"
+                 :is-selected selected?
+                 :end (mf/html [:> tag* {:variant "pill"} "Added"])
+                 :on-click on-select}]
+```

@@ -1,0 +1,119 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/mixins.scss" as *;
+
+.change-row {
+  --row-bar-color: var(--color-foreground-secondary);
+  --row-bg-color: var(--color-background-tertiary);
+  --row-title-color: var(--color-foreground-primary);
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xxs);
+  cursor: pointer;
+
+  &:hover,
+  &.is-selected {
+    --row-bg-color: var(--color-background-quaternary);
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  &:focus-visible .card {
+    outline: $b-1 solid var(--color-accent-primary);
+  }
+
+  &.is-muted {
+    --row-title-color: var(--color-foreground-secondary);
+  }
+
+  &.tone-accent {
+    --row-bar-color: var(--color-accent-primary);
+  }
+
+  &.tone-info {
+    --row-bar-color: var(--color-accent-info);
+  }
+
+  &.tone-warning {
+    --row-bar-color: var(--color-accent-warning);
+  }
+
+  &.tone-error {
+    --row-bar-color: var(--color-accent-error);
+  }
+
+  &.tone-success {
+    --row-bar-color: var(--color-accent-success);
+  }
+
+  &.tone-purple {
+    --row-bar-color: var(--color-accent-secondary);
+  }
+}
+
+.bar {
+  flex-shrink: 0;
+  inline-size: px2rem(3);
+  block-size: px2rem(30);
+  border-radius: px2rem(2);
+  background-color: var(--row-bar-color);
+}
+
+.card {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--sp-s);
+  min-inline-size: 0;
+  min-block-size: px2rem(46);
+  padding-block: var(--sp-xs);
+  padding-inline: var(--sp-s);
+  border-radius: $br-8;
+  background-color: var(--row-bg-color);
+}
+
+.start {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.icon {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.title {
+  @include text-ellipsis;
+
+  color: var(--row-title-color);
+}
+
+.subtitle {
+  @include two-line-text-ellipsis;
+
+  color: var(--color-foreground-secondary);
+}
+
+.end {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--sp-xs);
+}

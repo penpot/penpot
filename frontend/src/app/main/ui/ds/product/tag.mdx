@@ -1,0 +1,47 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as Tag from "./tag.stories";
+
+<Meta title="Product/Branching/Tag" />
+
+# Tag
+
+A short, static status word that says what something is or where it
+stands.
+
+<Canvas of={Tag.Default} />
+
+## Variants
+
+`label` (the default) is a small code-font tag that names a type or a
+state: Board, Main component, Verified, Clash.
+
+`pill` is a rounded word or count at the end of a row: Choose, Decided,
+3 edits, 14 shapes.
+
+<Canvas of={Tag.Pill} />
+
+The tone colours the text and its background. Text keeps the case it
+is written in; the tag never turns it uppercase.
+
+<Canvas of={Tag.Tones} />
+
+`icon` goes before the text.
+
+<Canvas of={Tag.WithIcon} />
+
+## Technical notes
+
+```clj
+[:> tag* {:tone "warning"} (tr "workspace.branches.review.tag.clash")]
+[:> tag* {:tone "success" :variant "pill"} (tr "workspace.branches.review.decided")]
+```
+
+## Usage guidelines (design)
+
+Use it for a word that does not act. For a filter, use `FilterChip`.
