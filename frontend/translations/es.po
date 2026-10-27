@@ -2458,7 +2458,10 @@ msgstr "Espaciado de letras"
 msgid "inspect.attributes.typography.line-height"
 msgstr "Interlineado"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:638
+msgid "inspect.attributes.typography.list-style-type.disc"
+msgstr "Disco"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:594
 msgid "inspect.attributes.typography.mixed-font-family"
 msgstr "Varias Familias tipográficas"
 
