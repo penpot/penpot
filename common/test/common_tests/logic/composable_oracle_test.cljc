@@ -95,6 +95,36 @@
     (t/is (not (oracle/equivalent? (oracle/canonical initial strict) (oracle/canonical inherited strict))))
     (t/is (not (oracle/equivalent? (oracle/canonical initial) (oracle/canonical inherited))))))
 
+(t/deftest backend-parity-follows-layout-sources-for-hidden-copies-without-hiding-drift
+  (let [base      (setup/simple-component-with-labeled-copy)
+        file      (-> (tm/file base)
+                      (ths/update-shape :main-root :layout :flex)
+                      (ths/update-shape :copy-root :layout :flex)
+                      (ths/update-shape :copy-root :touched nil))
+        initial   (-> (tm/with-file base file)
+                      (r/step (n/change-property :copy-child :hidden true)) r/settle)
+        move      (fn [situation labels]
+                    (let [file (tm/file situation)
+                          page (thf/current-page file)]
+                      (tm/with-file situation
+                        (thf/apply-changes file
+                                           (cls/generate-update-shapes
+                                            (pcb/empty-changes nil (:id page))
+                                            (map thi/id labels)
+                                            #(gsh/move % (gpt/point 30 0))
+                                            (:objects page) {:ignore-touched true})))))
+        inherited (move initial [:main-child :copy-child])
+        drifted   (move initial [:copy-child])
+        authored  (tm/with-file initial (ths/update-shape (tm/file initial) :copy-child :touched
+                                                          #{:visibility-group :geometry-group}))
+        parity    {:relative-free-head-placement true}
+        strict    {:free-head-placement false}]
+    (t/is (oracle/equivalent? (oracle/canonical initial parity) (oracle/canonical inherited parity)))
+    (t/is (not (oracle/equivalent? (oracle/canonical initial parity) (oracle/canonical drifted parity))))
+    (t/is (not (oracle/equivalent? (oracle/canonical initial strict) (oracle/canonical inherited strict))))
+    (t/is (not (oracle/equivalent? (oracle/canonical authored parity)
+                                   (oracle/canonical (move authored [:main-child :copy-child]) parity))))))
+
 (t/deftest oracle-rejects-unmarked-differences-in-all-scalar-groups
   (let [situation (setup/simple-component-with-labeled-copy)
         file (tm/file situation)]

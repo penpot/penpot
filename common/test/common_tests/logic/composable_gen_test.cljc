@@ -29,6 +29,11 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
+(t/deftest nesting-a-copy-alongside-a-hidden-layout-child-stays-settled
+  (t/is (map? (cg/run {:world [3 0 {:text true :text-styles true :layout :flex}]
+                       :ops [[:delete 9 9 1 2] [:text 5 9 1 3] [:style 3 1 1]
+                             [:restore 5 8 1 6] [:nest 5 6 0 2] [:undo] [:redo]]}))))
+
 (t/deftest swapping-a-copy-with-authored-position-constraints-stays-settled
   (t/is (map? (cg/run {:world [2 1 {:library true :variants true :rich-variants true
                                     :text true :text-styles true :layout :flex :layout-copies true}]

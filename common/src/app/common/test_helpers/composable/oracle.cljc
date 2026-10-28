@@ -71,7 +71,7 @@
              (gpt/point (- half-width) half-height)])
       {::matrix matrix ::bounds bounds ::derived derived})))
 
-(declare free-head-reference-origins)
+(declare get-derived-reference-origins)
 
 (defn design-snapshot
   "Design inputs without derived placement, dimensions and bookkeeping.
@@ -80,7 +80,7 @@
   ([situation {:keys [free-head-placement relative-free-head-placement]
                :or {free-head-placement true}}]
    (let [origins (when (and free-head-placement relative-free-head-placement)
-                   (free-head-reference-origins situation))]
+                   (get-derived-reference-origins situation))]
      (walk/postwalk
       (fn [value]
         (if (and (map? value) (contains? value :parent-id))
@@ -241,25 +241,29 @@
                    (with-derived-geometry objects shape placed))))]
        (expected shape #{})))))
 
-(defn- free-head-reference-origins
-  "Backend parity permits a free head's placement to differ after reflow.
-   Its untouched images compare offsets from their expected source frame,
-   so inherited placement can differ while a drifted image still fails.
+(defn- get-derived-reference-origins
+  "Backend parity permits source placement derived by reflow to differ.
+   Untouched images compare offsets from their expected source frame,
+   including hidden/absolute children of visible layout sources. Inherited
+   placement can differ while a drifted image still fails.
    Strict same-run sync comparison never uses these origins."
   [situation]
   (into {}
         (for [[file-id file] (cf/all-files situation)
               page (vals (get-in file [:data :pages-index]))
               [id shape] (:objects page)
-              :when (and (:component-id shape) (:shape-ref shape)
-                         (not (ctk/touched-group? shape :geometry-group))
-                         (> (count (ctn/get-parent-copy-heads (:objects page) shape)) 1))
+              :when (and (:shape-ref shape)
+                         (not (ctk/touched-group? shape :geometry-group)))
               :let [libraries (cf/reference-libraries situation file-id id)
                     source (ctf/find-ref-shape file page libraries shape
                                                :include-deleted? true :with-context? true)
                     source-objects (get-in (meta source) [:container :objects])]
-              :when (and (:component-id source) (:shape-ref source)
-                         (= 1 (count (ctn/get-parent-copy-heads source-objects source))))
+              :when (or (and (:component-id shape)
+                             (> (count (ctn/get-parent-copy-heads (:objects page) shape)) 1)
+                             (:component-id source) (:shape-ref source)
+                             (= 1 (count (ctn/get-parent-copy-heads source-objects source))))
+                        (and (not (contains? (derived-attributes (:objects page) shape) :x))
+                             (contains? (derived-attributes source-objects source) :x)))
               :let [expected (expected-geometry file page libraries shape
                                                 #(cf/reference-libraries situation file-id (:id %)))]]
           [id (gpt/point (:x expected) (:y expected))])))
