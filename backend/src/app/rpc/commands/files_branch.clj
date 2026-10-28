@@ -1831,14 +1831,14 @@
                                {:id branch-file-id}
                                {::db/return-keys false})
 
-            ;; a branch carries no file roles; as an ordinary file it
-            ;; gets the owner role its maker would get on creation
-            (fcreate/create-file-role! conn {:file-id branch-file-id
-                                             :profile-id profile-id
-                                             :role :owner})
+                   ;; a branch carries no file roles; as an ordinary file it
+                   ;; gets the owner role its maker would get on creation
+                   (fcreate/create-file-role! conn {:file-id branch-file-id
+                                                    :profile-id profile-id
+                                                    :role :owner})
 
-            ;; the payload replaced the log
-            (db/delete! conn :file-branch-change {:branch-id (:id branch)})
+                   ;; the payload replaced the log
+                   (db/delete! conn :file-branch-change {:branch-id (:id branch)})
 
                    ;; a review sandbox over a file that is no longer a branch
                    ;; has nothing left to review
