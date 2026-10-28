@@ -210,7 +210,7 @@
     [:> modal* {:is-open true
                 :on-open-change (on-dismiss on-close)
                 :size "large"}
-     [:> dialog-header* {:icon i/git-pull-request-arrow
+     [:> dialog-header* {:icon i/git-pull-request-create-arrow
                          :title (tr "workspace.pull-requests.create.title")
                          :subtitle (tr "workspace.pull-requests.create.subtitle" (or (:name branch) ""))}]
 
@@ -255,7 +255,7 @@
       [:> button* {:variant "secondary" :on-click on-close}
        (tr "labels.cancel")]
       [:> button* {:variant "primary"
-                   :icon i/git-pull-request-arrow
+                   :icon i/git-pull-request-create-arrow
                    :disabled (not valid?)
                    :on-click on-submit}
        (tr "workspace.pull-requests.create.submit")]]]))

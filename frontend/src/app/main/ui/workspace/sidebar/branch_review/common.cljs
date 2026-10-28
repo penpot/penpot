@@ -25,8 +25,9 @@
 
 (defn confirm-merge!
   "Open the merge dialog for `branch` (merge into main is irreversible; the
-  dialog also lets the user choose whether to keep the branch archived).
-  `excluded` is the compare dialog's per-change selection, if any."
+  dialog asks for a comment for the merge's record and lets the user choose
+  whether to keep the branch archived). `excluded` is the compare dialog's
+  per-change selection, if any."
   ([branch] (confirm-merge! branch nil))
   ([branch excluded]
    (modal/show! :merge-branch {:branch branch :excluded excluded})))

@@ -42,6 +42,7 @@
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files-branch-policies :as bp]
+   [app.rpc.commands.files-create :as fcreate]
    [app.rpc.commands.files-update :as fupd]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
@@ -470,6 +471,36 @@
                :profile-id profile-id
                :session-id session-id}}))
 
+;; --- Helpers: merge record
+
+(def ^:private sql:get-open-branch-pull-request
+  "SELECT id, title
+     FROM file_pull_request
+    WHERE file_branch_id = ?
+      AND status = 'open'
+      AND deleted_at IS NULL")
+
+(defn- record-merge!
+  "Insert the record of a merge of `branch` into its source file (see the
+  `file_branch_merge` migration). The open pull request of the branch is
+  the design review the merge accepts, so it is read here, before the
+  merge closes it. A blank comment is stored as no comment. Must run
+  inside the merge transaction."
+  [conn {:keys [id source-file-id name]} {:keys [profile-id comment created-at]}]
+  (let [pr      (db/exec-one! conn [sql:get-open-branch-pull-request id])
+        comment (when-not (str/blank? comment) (str/trim comment))]
+    (db/insert! conn :file-branch-merge
+                {:id (uuid/next)
+                 :created-at created-at
+                 :file-id source-file-id
+                 :file-branch-id id
+                 :branch-name name
+                 :merged-by profile-id
+                 :comment comment
+                 :pull-request-id (:id pr)
+                 :pull-request-title (:title pr)}
+                {::db/return-keys false})))
+
 ;; --- COMMAND: create-file-branch
 
 (defn- check-branch-name!
@@ -576,23 +607,16 @@
 
                     ;; 3. Mark the new file row as a branch so it is
                     ;; hidden from the project/team file listings.
+                    ;; No file role is granted: a branch takes its
+                    ;; permissions from the team (and project) roles
+                    ;; alone, so every editor of main can open and edit
+                    ;; it, and its creator gets no extra rights.
                     (db/update! conn :file
                                 {:is-branch true}
                                 {:id branch-id}
                                 {::db/return-keys false})
 
-                    ;; 4. Grant the creator ownership (same grant
-                    ;; duplicate-file used to make).
-                    (when (uuid? profile-id)
-                      (db/insert! conn :file-profile-rel
-                                  {:file-id branch-id
-                                   :profile-id profile-id
-                                   :is-owner true
-                                   :is-admin true
-                                   :can-edit true}
-                                  {::db/return-keys false}))
-
-                    ;; 5. The branch resolves libraries exactly like
+                    ;; 4. The branch resolves libraries exactly like
                     ;; main (component instances from shared libraries
                     ;; must keep resolving on the derived state).
                     (doseq [rel (bfc/get-files-rels cfg #{file-id})]
@@ -606,7 +630,7 @@
                                                         :library-file-id (:library-file-id rel)
                                                         :synced-at (or (:synced-at rel) ts)})))
 
-                    ;; 6. Persist the branch metadata. `base-revn`
+                    ;; 5. Persist the branch metadata. `base-revn`
                     ;; tracks MAIN's revision counter and
                     ;; `base-branch-revn` the BRANCH file's one. Each
                     ;; starts at its own side's revn (main's current
@@ -1051,6 +1075,9 @@
    ;; deselected, which the merge resolves to the target side
    [:excluded {:optional true} [::sm/set :string]]
    [:expected-main-revn {:optional true} ::sm/int]
+   ;; what the user says about the merge; kept in its record
+   ;; (`file_branch_merge`), shown in the list of merges of main
+   [:comment {:optional true} [:string {:max 4000}]]
    ;; when false (the default) the branch and its file are logically
    ;; deleted right after a successful merge, in the SAME transaction (so
    ;; merged copies do not pile up); when true the branch is kept as
@@ -1067,15 +1094,16 @@
   kinds the engine cannot translate (`bm/unsupported-kinds`) make it return
   `{:status :unsupported}` so no change is silently dropped. Otherwise it
   takes a safety snapshot of main, applies the merge to main through the
-  production change pipeline, marks the branch merged and notifies open
-  clients via msgbus."
+  production change pipeline, records the merge with its `comment`
+  (`file_branch_merge`), deletes the branch and its file unless
+  `keep-branch` asks to keep it, and notifies open clients via msgbus."
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:merge-file-branch
    ::climit/id [[:merge-file-branch/by-profile ::rpc/profile-id]
                 [:merge-file-branch/global]]}
   [{:keys [::mbus/msgbus] :as cfg}
-   {:keys [::rpc/profile-id ::rpc/session-id branch-id resolutions expected-main-revn keep-branch excluded]}]
+   {:keys [::rpc/profile-id ::rpc/session-id branch-id resolutions expected-main-revn comment keep-branch excluded]}]
   (bp/with-policies
     (check-branching-enabled!)
     (let [branch (db/get* cfg :file-branch {:id branch-id})]
@@ -1104,7 +1132,7 @@
            ;; advisory lock the normal update-file path takes; stable order
            ;; to avoid deadlocks): without the branch lock, edits saved to
            ;; the branch while the merge runs would be silently lost when
-           ;; the branch is marked merged (and possibly deleted) below.
+           ;; the branch is marked merged and deleted below.
            (run! (partial db/xact-lock! conn) (sort [main-id branch-file-id]))
 
            ;; the row read before the lock is stale by now: a competing
@@ -1165,15 +1193,19 @@
 
                    finish-branch!
                    (fn [ts]
-                     ;; mark merged. The pinned base snapshot stays for a
-                     ;; KEPT branch (its state is derived from that
-                     ;; snapshot and the op log, so releasing the pin
-                     ;; would leave it unreadable once the snapshot GC
-                     ;; runs); delete-branch! releases it on the delete
+                     ;; record the merge and mark the branch merged. The
+                     ;; pinned base snapshot stays for a KEPT branch (its
+                     ;; state is derived from that snapshot and the op
+                     ;; log); delete-branch! releases it on the delete
                      ;; path. Unless the user chose to keep it the branch
                      ;; and its file are deleted in this same transaction
                      ;; (no client-driven second call, no window where a
-                     ;; crash leaves a stale copy).
+                     ;; crash leaves a stale copy). The record is written
+                     ;; first: it reads the open pull request the lines
+                     ;; below close.
+                     (record-merge! conn branch {:profile-id profile-id
+                                                 :comment comment
+                                                 :created-at ts})
                      (db/update! conn :file-branch
                                  {:status "merged"
                                   :merged-at ts
@@ -1777,8 +1809,14 @@
                                {:id branch-file-id}
                                {::db/return-keys false})
 
-                   ;; the payload replaced the log
-                   (db/delete! conn :file-branch-change {:branch-id (:id branch)})
+            ;; a branch carries no file roles; as an ordinary file it
+            ;; gets the owner role its maker would get on creation
+            (fcreate/create-file-role! conn {:file-id branch-file-id
+                                             :profile-id profile-id
+                                             :role :owner})
+
+            ;; the payload replaced the log
+            (db/delete! conn :file-branch-change {:branch-id (:id branch)})
 
                    ;; a review sandbox over a file that is no longer a branch
                    ;; has nothing left to review
@@ -1905,6 +1943,49 @@
                (-> (db/exec-one! conn [sql:get-file-branch-count file-id file-id])
                    (select-keys [:count]))))
     {:count 0}))
+
+;; --- COMMAND QUERY: get-file-branch-merges
+
+(def ^:private schema:get-file-branch-merges
+  [:map {:title "get-file-branch-merges"}
+   [:file-id ::sm/uuid]])
+
+(def ^:private sql:resolve-source-file
+  "SELECT coalesce((SELECT b.source_file_id
+                      FROM file_branch AS b
+                     WHERE b.branch_file_id = ?
+                       AND b.deleted_at IS NULL),
+                   ?) AS id")
+
+(def ^:private sql:get-file-branch-merges
+  "SELECT fbm.id,
+          fbm.created_at,
+          fbm.file_id,
+          fbm.file_branch_id,
+          fbm.branch_name,
+          fbm.merged_by,
+          fbm.comment,
+          fbm.pull_request_id,
+          fbm.pull_request_title
+     FROM file_branch_merge AS fbm
+    WHERE fbm.file_id = ?
+    ORDER BY fbm.created_at DESC")
+
+(sv/defmethod ::get-file-branch-merges
+  "List the merges into a file, newest first: each one names the merged
+  branch, who merged it and when, the comment left with it and the design
+  review it accepted, if any. When the file is itself a branch, the
+  merges into its source (main) are listed. The records outlive the
+  branches they name (see the `file_branch_merge` migration)."
+  {::doc/added "2.16"
+   ::sm/params schema:get-file-branch-merges}
+  [cfg {:keys [::rpc/profile-id file-id]}]
+  (check-branching-enabled!)
+  (db/run! cfg
+           (fn [{:keys [::db/conn] :as cfg}]
+             (let [main-id (:id (db/exec-one! conn [sql:resolve-source-file file-id file-id]))]
+               (files/check-read-permissions! cfg profile-id main-id)
+               (db/exec! conn [sql:get-file-branch-merges main-id])))))
 
 ;; --- COMMAND: update-file-branch (rename / description)
 

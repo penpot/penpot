@@ -23,23 +23,47 @@
 (mf/defc branch-row*
   "A branch in a short list, as a button that opens it. The current one is
   marked and cannot be opened again. `children` go to the end of the row:
-  usually a `branch-status*`."
+  usually a `branch-status*`. A label cut short by the row's width shows
+  in full on hover."
   {::mf/schema schema:branch-row}
   [{:keys [class label is-current children] :rest props}]
-  (let [is-current (d/nilv is-current false)
-        props      (mf/spread-props props
-                                    {:class [class (stl/css-case :branch-row true
-                                                                 :is-current is-current)]
-                                     :type "button"
-                                     :disabled is-current
-                                     :aria-current (when is-current "true")})]
+  (let [is-current  (d/nilv is-current false)
+
+        label-ref   (mf/use-ref nil)
+        truncated*  (mf/use-state false)
+        truncated?  (deref truncated*)
+
+        check-truncated
+        (mf/use-fn
+         (fn []
+           (when-let [node (mf/ref-val label-ref)]
+             (reset! truncated* (> (.-scrollWidth node) (.-clientWidth node))))))
+
+        ;; the title goes on the button, not the label: the current row is
+        ;; disabled and still has to show it
+        props       (mf/spread-props props
+                                     {:class [class (stl/css-case :branch-row true
+                                                                  :is-current is-current)]
+                                      :type "button"
+                                      :title (when truncated? label)
+                                      :disabled is-current
+                                      :aria-current (when is-current "true")})]
+
+    (mf/with-effect [label]
+      (check-truncated)
+      (when-let [node (mf/ref-val label-ref)]
+        (let [observer (js/ResizeObserver. check-truncated)]
+          (.observe observer node)
+          #(.disconnect observer))))
+
     [:> :button props
      [:> icon* {:icon-id (if is-current i/tick i/git-branch)
                 :size "s"
                 :class (stl/css :icon)}]
      [:> text* {:as "span"
                 :typography t/body-small
-                :class (stl/css :label)}
+                :class (stl/css :label)
+                :ref label-ref}
       label]
      (when (some? children)
        [:span {:class (stl/css :aside)}

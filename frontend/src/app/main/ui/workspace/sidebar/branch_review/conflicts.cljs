@@ -389,7 +389,7 @@
 (mf/defc branch-conflicts-dialog*
   {::mf/register modal/components
    ::mf/register-as :branch-conflicts}
-  [{:keys [branch mode conflicts excluded]}]
+  [{:keys [branch mode conflicts excluded comment]}]
   (let [{:keys [diff resolutions status]} (mf/deref branch-diff)
 
         loading?    (= status :loading)
@@ -464,7 +464,8 @@
                                            order)]
                          (when next-ix (reset! selected* next-ix)))))
         on-apply    (mf/use-fn
-                     (mf/deps branch resolutions mode keep? excluded conflicts)
+                     ;; a merge sends again the comment of the merge dialog
+                     (mf/deps branch resolutions mode keep? excluded comment conflicts)
                      (fn []
                        (let [ids (into #{} (map :id) conflicts)
                              res (into {} (filter (fn [[id _]] (contains? ids id))) resolutions)]
@@ -473,6 +474,7 @@
                                                                           :excluded excluded})
                                      (dwb/merge-branch branch {:resolutions res
                                                                :keep-branch keep?
+                                                               :comment comment
                                                                :excluded excluded}))))))]
 
     ;; the fetched diff backs both the fallback conflict set and the side

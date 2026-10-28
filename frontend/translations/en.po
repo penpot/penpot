@@ -6433,6 +6433,14 @@ msgstr "Text Transform"
 msgid "workspace.assets.ungroup"
 msgstr "Ungroup"
 
+msgid "workspace.branches.archive.message"
+msgstr ""
+"Archive branch \"%s\"? It becomes read-only and leaves the active list. You "
+"can restore it later."
+
+msgid "workspace.branches.archive.title"
+msgstr "Archive branch"
+
 #: src/app/main/ui/workspace/sidebar/branches.cljs:836
 msgid "workspace.branches.archived"
 msgstr "Archived"
@@ -6987,10 +6995,6 @@ msgstr "e.g. redesign-checkout"
 msgid "workspace.branches.create.submit"
 msgstr "Create branch"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:276
-msgid "workspace.branches.create.subtitle"
-msgstr "Derived from main · %s"
-
 #: src/app/main/data/workspace/branches.cljs:201
 msgid "workspace.branches.create.success"
 msgstr "Branch \"%s\" created"
@@ -7249,13 +7253,12 @@ msgstr "Main"
 msgid "workspace.branches.main-advanced"
 msgstr "Main has new changes. You can update this branch"
 
+msgid "workspace.branches.main-library-note"
+msgstr "Read by library consumers"
+
 #: src/app/main/ui/workspace/sidebar/branches.cljs:659
 msgid "workspace.branches.main-subtitle"
 msgstr "Default branch"
-
-#: src/app/main/ui/workspace/branch_switcher.cljs:88
-msgid "workspace.branches.main-subtitle-library"
-msgstr "Default branch (read by library consumers)"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:779
 msgid "workspace.branches.materialize.accept"
@@ -7303,15 +7306,8 @@ msgstr "Restore"
 msgid "workspace.branches.merge.action"
 msgstr "Merge into main"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:370, src/app/main/ui/workspace/sidebar/branches.cljs:1526
-msgid "workspace.branches.merge.archive-label"
-msgstr "Archive this branch"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:376
-msgid "workspace.branches.merge.archive-warning"
-msgstr ""
-"Archived branches keep a full copy of the file so they can be restored "
-"later. Keeping many archived branches can take up a lot of storage."
+msgid "workspace.branches.merge.comment-label"
+msgstr "Merge comment"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:386
 msgid "workspace.branches.merge.confirm-accept"
@@ -7326,6 +7322,16 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/branches.cljs:356
 msgid "workspace.branches.merge.confirm-title"
 msgstr "Merge into main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:370, src/app/main/ui/workspace/sidebar/branches.cljs:1526
+msgid "workspace.branches.merge.archive-label"
+msgstr "Archive this branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:376
+msgid "workspace.branches.merge.archive-warning"
+msgstr ""
+"Archived branches keep a full copy of the file so they can be restored "
+"later. Keeping many archived branches can take up a lot of storage."
 
 #: src/app/main/data/workspace/branches.cljs:415
 #, unused
@@ -7362,13 +7368,65 @@ msgstr ""
 "This branch changes elements that can't be merged automatically yet "
 "(components, pages or tokens)"
 
-#: src/app/main/ui/workspace/branch_switcher.cljs:208, src/app/main/ui/workspace/sidebar/branches.cljs:943
-msgid "workspace.branches.merged"
-msgstr "Merged"
-
 #, unused
 msgid "workspace.branches.new"
 msgstr "New"
+
+msgid "workspace.branches.rename.title"
+msgstr "Rename branch"
+
+msgid "workspace.branches.restore.message"
+msgstr ""
+"Restore branch \"%s\"? It goes back to the active list and you can edit it "
+"again."
+
+msgid "workspace.branches.restore.title"
+msgstr "Restore branch"
+
+msgid "workspace.branches.reviews.design.empty"
+msgstr "No design reviews yet"
+
+msgid "workspace.branches.reviews.error"
+msgstr "Couldn't load the merges"
+
+msgid "workspace.branches.reviews.from-review"
+msgstr "From the design review \"%s\""
+
+msgid "workspace.branches.reviews.loading"
+msgstr "Loading reviews…"
+
+msgid "workspace.branches.reviews.merged"
+msgstr "Merged"
+
+msgid "workspace.branches.reviews.merges.empty"
+msgstr "No branch has been merged into main yet"
+
+msgid "workspace.branches.reviews.no-comment"
+msgstr "No comment"
+
+msgid "workspace.branches.reviews.no-results"
+msgstr "No reviews match your search"
+
+msgid "workspace.branches.reviews.search"
+msgstr "Search review…"
+
+msgid "workspace.branches.reviews.see-less"
+msgstr "See less"
+
+msgid "workspace.branches.reviews.see-more"
+msgstr "See more"
+
+msgid "workspace.branches.reviews.tab.design"
+msgstr "Design reviews"
+
+msgid "workspace.branches.reviews.tab.merges"
+msgstr "Merge reviews"
+
+msgid "workspace.branches.reviews.title"
+msgstr "Reviews"
+
+msgid "workspace.branches.reviews.unknown-author"
+msgstr "Unknown user"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:787
 msgid "workspace.branches.search.placeholder"
@@ -7409,6 +7467,9 @@ msgstr "New branch"
 #: src/app/main/ui/workspace/sidebar/branches.cljs:1010
 msgid "workspace.branches.switcher.new-from-main"
 msgstr "Branches are created from main"
+
+msgid "workspace.branches.switcher.reviews"
+msgstr "Reviews"
 
 #: src/app/main/ui/workspace/branch_switcher.cljs:309
 msgid "workspace.branches.switcher.tooltip"
@@ -9491,7 +9552,7 @@ msgstr "TRY PLUGIN"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:426, src/app/main/ui/workspace/sidebar/pull_requests.cljs:505, src/app/main/ui/workspace/sidebar/pull_requests.cljs:564
 msgid "workspace.pull-requests.actions.close"
-msgstr "Cancel pull request"
+msgstr "Cancel design review"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:440, src/app/main/ui/workspace/sidebar/pull_requests.cljs:561, src/app/main/ui/workspace/sidebar/pull_requests.cljs:754
 msgid "workspace.pull-requests.actions.merge"
@@ -9503,7 +9564,7 @@ msgstr "Open review"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:430, src/app/main/ui/workspace/sidebar/pull_requests.cljs:567
 msgid "workspace.pull-requests.actions.reopen"
-msgstr "Reopen pull request"
+msgstr "Reopen design review"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:359, src/app/main/ui/workspace/sidebar/pull_requests.cljs:537, src/app/main/ui/workspace/sidebar/pull_requests.cljs:722
 msgid "workspace.pull-requests.badge.conflicts"
@@ -9531,7 +9592,7 @@ msgstr "Review"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:710
 msgid "workspace.pull-requests.banner.reviewing"
-msgstr "Reviewing pull request"
+msgstr "Reviewing the design review"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:504
 msgid "workspace.pull-requests.close.message"
@@ -9541,11 +9602,11 @@ msgstr ""
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:503
 msgid "workspace.pull-requests.close.title"
-msgstr "Cancel pull request"
+msgstr "Cancel design review"
 
 #: src/app/main/data/workspace/pull_requests.cljs:142, src/app/main/data/workspace/pull_requests.cljs:255
 msgid "workspace.pull-requests.create.already-exists"
-msgstr "This branch already has an open pull request"
+msgstr "This branch already has an open design review"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:167
 msgid "workspace.pull-requests.create.description-label"
@@ -9557,7 +9618,7 @@ msgstr "What changed, and what needs review or validation?"
 
 #: src/app/main/data/workspace/pull_requests.cljs:143
 msgid "workspace.pull-requests.create.error"
-msgstr "An error occurred while creating the pull request"
+msgstr "An error occurred while creating the design review"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:193
 msgid "workspace.pull-requests.create.info"
@@ -9584,7 +9645,7 @@ msgstr "Reviewers"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:202
 msgid "workspace.pull-requests.create.submit"
-msgstr "Create pull request"
+msgstr "Create design review"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:152
 msgid "workspace.pull-requests.create.subtitle"
@@ -9592,15 +9653,15 @@ msgstr "Request a review of the changes on \"%s\""
 
 #: src/app/main/data/workspace/pull_requests.cljs:137
 msgid "workspace.pull-requests.create.success"
-msgstr "Pull request \"%s\" created"
+msgstr "Design review \"%s\" created"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:150
 msgid "workspace.pull-requests.create.title"
-msgstr "Create pull request"
+msgstr "Create design review"
 
 #: src/app/main/ui/workspace/left_header.cljs:163
 msgid "workspace.pull-requests.header-badge-tooltip"
-msgstr "Reviewing pull request: %s"
+msgstr "Reviewing the design review: %s"
 
 #: src/app/main/ui/workspace/left_header.cljs:177
 msgid "workspace.pull-requests.header-label"
@@ -9636,19 +9697,19 @@ msgstr "Review updated"
 
 #: src/app/main/data/workspace/pull_requests.cljs:252
 msgid "workspace.pull-requests.lifecycle.branch-gone"
-msgstr "The pull request's branch is no longer open"
+msgstr "The design review's branch is no longer open"
 
 #: src/app/main/data/workspace/pull_requests.cljs:230
 msgid "workspace.pull-requests.lifecycle.closed"
-msgstr "Pull request closed"
+msgstr "Design review closed"
 
 #: src/app/main/data/workspace/pull_requests.cljs:160, src/app/main/data/workspace/pull_requests.cljs:187, src/app/main/data/workspace/pull_requests.cljs:213, src/app/main/data/workspace/pull_requests.cljs:237, src/app/main/data/workspace/pull_requests.cljs:257
 msgid "workspace.pull-requests.lifecycle.error"
-msgstr "An error occurred while updating the pull request"
+msgstr "An error occurred while updating the design review"
 
 #: src/app/main/data/workspace/pull_requests.cljs:246
 msgid "workspace.pull-requests.lifecycle.reopened"
-msgstr "Pull request reopened"
+msgstr "Design review reopened"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:555, src/app/main/ui/workspace/sidebar/pull_requests.cljs:731
 msgid "workspace.pull-requests.menu.info"
@@ -9672,7 +9733,7 @@ msgstr "New"
 
 #: src/app/main/data/workspace/pull_requests.cljs:396
 msgid "workspace.pull-requests.preview.unavailable"
-msgstr "The review sandbox is not available (the pull request may be closed)"
+msgstr "The review sandbox is not available (the design review may be closed)"
 
 #: src/app/main/data/workspace/pull_requests.cljs:182
 msgid "workspace.pull-requests.publish.success"
@@ -9740,7 +9801,7 @@ msgstr "Submit review"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:632
 msgid "workspace.pull-requests.section.empty"
-msgstr "No pull requests yet. Create one from a branch to request a review."
+msgstr "No design reviews yet. Create one from a branch to request a review."
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:639
 msgid "workspace.pull-requests.section.history"
@@ -9748,7 +9809,7 @@ msgstr "Finished"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:611
 msgid "workspace.pull-requests.section.title"
-msgstr "Pull requests"
+msgstr "Design reviews"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:100
 #, unused

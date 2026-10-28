@@ -14,6 +14,7 @@
 .branches-empty {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--sp-xxxl);
   margin: var(--sp-xxxl) auto;
   inline-size: $sz-200;
@@ -154,8 +155,8 @@
 }
 
 // Merge-dialog confirmation prompt: a regular-weight, secondary-color
-// paragraph sitting between the title and the archive controls, with a
-// touch more breathing room before the checkbox.
+// paragraph sitting between the title and the comment field, with a
+// touch more breathing room before it.
 .modal-message {
   @include use-typography("body-large");
 
@@ -373,7 +374,7 @@
 
 .branch-banner {
   position: absolute;
-  inset-block-end: var(--sp-m);
+  inset-block-end: var(--sp-xs);
   inset-inline-start: 50%;
   transform: translateX(-50%);
   max-inline-size: 90vw;
@@ -514,8 +515,7 @@
 }
 
 .branches-list-search {
-  inline-size: $sz-224;
-  margin-inline-start: auto;
+  inline-size: $sz-192;
 }
 
 .branches-list-entries {
