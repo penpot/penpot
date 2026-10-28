@@ -44,6 +44,22 @@
           bounds (rect->bounds (grc/make-rect 0 0 200 200))]
       (t/is (= [] (:layout-lines (fld/calc-layout-data frame bounds [] {} {})))))))
 
+(t/deftest space-between-distributes-gap-only-between-several-children
+  (doseq [direction [:row :row-reverse :column :column-reverse]
+          children [1 2]]
+    (let [row?   (#{:row :row-reverse} direction)
+          frame  (make-col-frame :layout-flex-dir direction
+                                 :layout-justify-content :space-between
+                                 :layout-gap {:row-gap 11 :column-gap 7})
+          bounds (rect->bounds (grc/make-rect 0 0 200 200))
+          line   (fld/add-line-spacing frame bounds false
+                                       {:num-children children
+                                        :line-width (if row? (* 50 children) 50)
+                                        :line-height (if row? 30 (* 30 children))})
+          gap    (get line (if row? :layout-gap-col :layout-gap-row))]
+      (t/is (== (if (= children 1) (if row? 7 11) (if row? 100 140)) gap))
+      (t/is (every? mth/finite? (map line [:layout-gap-col :layout-gap-row :margin-x :margin-y]))))))
+
 ;; ---- get-base-line (around? branch) ----
 ;;
 ;; Bug: in positions.cljc the col? + around? branch had a mis-parenthesised
