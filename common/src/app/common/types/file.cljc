@@ -90,7 +90,8 @@
    [:plugin-data {:optional true} schema:plugin-data]
    [:tokens-source {:optional true} ::sm/uuid]                ;; The tokens-lib may be in this file or in an external library
    [:tokens-lib {:optional true} ctob/schema:tokens-lib]
-   [:tokens-status {:optional true} ctos/schema:tokens-status]])
+   [:tokens-status {:optional true} ctos/schema:tokens-status]
+   [:own-tokens-status {:optional true} ctos/schema:tokens-status]])  ;; Kept aside while the tokens source is an external library
 
 (def schema:file-metadata
   [:map {:title "Metadata"}
@@ -534,12 +535,13 @@
              shape-meta (meta ref-shape)
              ref-file (:file shape-meta)
              ref-container (:container shape-meta)]
-         (when ref-shape
+         (if ref-shape
            (if-let [swap-slot (ctk/get-swap-slot ref-shape)]
              swap-slot
              (if (ctk/main-instance? ref-shape)
                (:id shape)
-               (find-swap-slot ref-shape ref-container ref-file libraries (conj viewed-ids (:id shape)))))))))))
+               (find-swap-slot ref-shape ref-container ref-file libraries (conj viewed-ids (:id shape)))))
+           (:id shape))))))) ;; If cannot locate ref-shape (e.g. in an unlinked external library), use what we have
 
 (defn match-swap-slot?
   [shape-main shape-inst container-inst container-main file libraries]
@@ -681,7 +683,8 @@
 
 (defn find-asset-type-usages
   "Find all usages of an asset in a file (may be in pages or in the components
-  of the local library).
+  of the local library, deleted ones included, since they keep their shapes
+  to be restored and to resolve their remaining copies).
 
   Returns a list ((asset ((container shapes) (container shapes)...))...)"
   [file-data library-data asset-type]
@@ -697,12 +700,17 @@
             (when (d/not-empty? instances)
               [[container instances]])))
 
+        containers
+        (concat (containers-seq file-data)
+                (map #(ctn/make-container % :component)
+                     (ctkl/deleted-components-seq file-data)))
+
         find-asset-usages
-        (fn [file-data asset]
-          (mapcat #(find-usages-in-container % asset) (containers-seq file-data)))]
+        (fn [asset]
+          (mapcat #(find-usages-in-container % asset) containers))]
 
     (mapcat (fn [asset]
-              (let [instances (find-asset-usages file-data asset)]
+              (let [instances (find-asset-usages asset)]
                 (when (d/not-empty? instances)
                   [[asset instances]])))
             assets)))
@@ -1241,7 +1249,7 @@
 
     (cond-> (update-in file [:data :pages-index] detach-pages)
       (not (cfo/effective-tokens-source? (:data file) file-id))
-      (update :data dissoc :tokens-source :tokens-status))))
+      (update :data cfo/detach-tokens-source))))
 
 ;; Base font size
 

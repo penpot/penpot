@@ -47,6 +47,7 @@
    [frontend-tests.helpers-shapes-test]
    [frontend-tests.logic.bool-move-test]
    [frontend-tests.logic.comp-remove-swap-slots-test]
+   [frontend-tests.logic.comp-watcher-test]
    [frontend-tests.logic.components-and-tokens]
    [frontend-tests.logic.copy-paste-typography-test]
    [frontend-tests.logic.copying-and-duplicating-test]
@@ -105,6 +106,7 @@
    [frontend-tests.tokens.logic.token-actions-test]
    [frontend-tests.tokens.logic.token-data-test]
    [frontend-tests.tokens.logic.token-remapping-test]
+   [frontend-tests.tokens.logic.tokens-source-test]
    [frontend-tests.tokens.logic.tokens-status-test]
    [frontend-tests.tokens.referenced-token-value-test]
    [frontend-tests.tokens.style-dictionary-test]
@@ -212,6 +214,7 @@
    'frontend-tests.helpers-shapes-test
    'frontend-tests.logic.bool-move-test
    'frontend-tests.logic.comp-remove-swap-slots-test
+   'frontend-tests.logic.comp-watcher-test
    'frontend-tests.logic.components-and-tokens
    'frontend-tests.logic.copy-paste-typography-test
    'frontend-tests.logic.copying-and-duplicating-test
@@ -274,6 +277,7 @@
    'frontend-tests.tokens.token-errors-test
    'frontend-tests.tokens.token-path-test
    'frontend-tests.tokens.tokenscript-test
+   'frontend-tests.tokens.logic.tokens-source-test
    'frontend-tests.tokens.logic.tokens-status-test
    'frontend-tests.tokens.workspace-tokens-remap-test
    'frontend-tests.ui.check-updates-test

@@ -2200,10 +2200,6 @@ msgstr "Изаберите ставке користећи овај стил"
 msgid "shortcuts.add-comment"
 msgstr "Коментари"
 
-#: src/app/main/data/workspace/path/shortcuts.cljs:61
-msgid "shortcuts.add-node"
-msgstr "Додај чвор"
-
 #: src/app/main/data/workspace/shortcuts.cljs:532
 msgid "shortcuts.align-bottom"
 msgstr "Поравнај на дно"

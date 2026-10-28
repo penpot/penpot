@@ -7,6 +7,7 @@
 (ns app.main.ui.shortcuts
   (:require-macros [app.main.style :as stl])
   (:require
+   ["@penpot/mousetrap$default" :as mousetrap]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.config :as cf]
@@ -33,10 +34,6 @@
 
 (def ^:private modifier-keys
   #{"Control" "Shift" "Alt" "Meta"})
-
-(def ^:private punctuation-codes
-  #{"Minus" "Equal" "BracketLeft" "BracketRight" "Backslash"
-    "Semicolon" "Quote" "Backquote" "Comma" "Period" "Slash"})
 
 (def ^:private key-name-map
   {"ArrowUp"    "up"
@@ -202,71 +199,16 @@
                     (fn? (.-getModifierState native)))
            (.getModifierState native "AltGraph"))))))
 
-(defn- numpad-code?
-  [code]
-  (and (string? code)
-       (str/starts-with? code "Numpad")
-       (= 1 (count (subs code 6)))))
-
-(defn- numpad-alias
-  [code]
-  (let [suffix (subs code 6)]
-    (when (re-matches #"[0-9]" suffix)
-      (str "num" suffix))))
-
-(defn- punctuation-alias
-  "Resolves punctuation by physical position through the shared layout
-   map (`app.main.data.shortcuts/layout-map`, also pushed into Mousetrap),
-   so recording and dispatch use the same token. Without a map the typed
-   glyph applies, which keeps both sides consistent."
-  [code key]
-  (let [mapped (when (some? @ds/layout-map)
-                 (.get ^js @ds/layout-map code))]
-    (if (string? mapped)
-      (str/lower mapped)
-      (str/lower key))))
-
-(defn- digit-code?
-  [code]
-  (and (string? code)
-       (boolean (re-matches #"Digit[0-9]" code))))
-
-(defn- digit-alias
-  "Shifted digits resolve to the digit itself: with Shift held, Digit0
-   types ) on US layouts but 0 on AZERTY, so shift+0 must mean the
-   physical digit key everywhere, like shift+z means z."
-  [^js event code key]
-  (when (and (.-shiftKey ^js event)
-             (digit-code? code)
-             (= 1 (count key)))
-    (subs code 5)))
-
 (defn- normalize-key
-  "Normalizes `event.key` to the lowercase canonical token mousetrap
-   matches on. Letters and unshifted digits resolve by glyph (`a`, not
-   `q` on AZERTY); a digit row key held with Shift resolves to the digit
-   itself (`shift+0`, never `shift+)`); punctuation resolves by physical
-   position through the layout map, so `Shift+*` on a Spanish layout
-   records `shift++`, the primary key the user sees."
+  "Returns the key token Mousetrap matches for `event`, asking Mousetrap
+   itself (`keyForRecording`) so a recorded shortcut always fires: letters
+   and digits with a modifier by keyCode (`shift+1`, `alt+m`), punctuation
+   by position when the browser has a layout map, the typed glyph
+   otherwise."
   [^js event]
-  (let [native (event->native event)
-        key    (.-key ^js event)
-        code   (.-code ^js native)]
+  (let [key (.-key event)]
     (when (and (string? key) (not (contains? modifier-keys key)))
-      (cond
-        ;; Numpad digits keep their own `numN` bindings, like mousetrap.
-        (numpad-code? code)
-        (numpad-alias code)
-
-        ;; Punctuation: primary key of the physical position.
-        (contains? punctuation-codes code)
-        (punctuation-alias code key)
-
-        :else
-        (or (get key-name-map key)
-            ;; Shifted digit row: the digit itself, on every layout.
-            (digit-alias event code key)
-            (str/lower key))))))
+      (.keyForRecording ^js mousetrap (event->native event)))))
 
 (defn- event->modifier-parts
   [^js event]
@@ -281,7 +223,8 @@
            (cf/check-platform? :macos))
       (conj "command")
 
-      (.-altKey event)
+      (and (.-altKey event)
+           (not alt-graph?))
       (conj "alt")
 
       (.-shiftKey event)

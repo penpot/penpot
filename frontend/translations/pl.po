@@ -1856,10 +1856,6 @@ msgstr "Mieszane"
 msgid "shortcuts.add-comment"
 msgstr "Komentarze"
 
-#: src/app/main/data/workspace/path/shortcuts.cljs:61
-msgid "shortcuts.add-node"
-msgstr "Dodaj węzeł"
-
 #: src/app/main/data/workspace/shortcuts.cljs:532
 msgid "shortcuts.align-bottom"
 msgstr "Wyrównaj do dołu"

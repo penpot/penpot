@@ -6,7 +6,6 @@
 
 (ns app.srepl.procs.file-repair
   (:require
-   [app.common.files.changes :as cfc]
    [app.common.files.repair :as cfr]
    [app.common.files.validate :as cfv]
    [app.common.logging :as l]))
@@ -17,44 +16,28 @@
 
 (defn repair-file
   "Internal helper for validate and repair the file. The operation is
-  applied multiple times untile file is fixed or max iteration counter
+  applied multiple times until file is fixed or max iteration counter
   is reached (default 10).
 
-  This function should not be used directly, it is used throught the
+  This function should not be used directly, it is used through the
   app.srepl.main/repair-file! helper. In practical terms this function
   is private and implementation detail."
   [file libs & {:keys [max-iterations] :or {max-iterations 10}}]
 
-  (let [validate-and-repair
-        (fn [file libs iteration]
-          (when-let [errors (not-empty (cfv/validate-file file libs))]
-            (l/trc :hint "repairing file"
-                   :file-id (str (:id file))
-                   :iteration iteration
-                   :errors (count errors))
-            (let [changes (cfr/repair-file file libs errors)]
-              (-> file
-                  (update :revn inc)
-                  (update :data cfc/process-changes changes)))))
+  (let [orig-revn (:revn file)
+        result    (cfr/repair-file-until-valid
+                   file libs
+                   (fn [file _]
+                     (cfv/validate-file file libs))
+                   :max-iterations max-iterations)
+        file'     (update (:file result) :revn (fnil + 0) (:iterations result))]
 
-        process-file
-        (fn [file libs]
-          (loop [file      file
-                 iteration 0]
-            (if (< iteration max-iterations)
-              (if-let [file (validate-and-repair file libs iteration)]
-                (recur file (inc iteration))
-                file)
-              (do
-                (l/wrn :hint "max retry num reached on repairing file"
-                       :file-id (str (:id file))
-                       :iteration iteration)
-                file))))
+    (when (>= (:iterations result) max-iterations)
+      (l/wrn :hint "max retry num reached on repairing file"
+             :file-id (str (:id file))
+             :iteration (:iterations result)))
 
-        file'
-        (process-file file libs)]
-
-    (when (not= (:revn file) (:revn file'))
+    (when (not= orig-revn (:revn file'))
       (l/trc :hint "file repaired" :file-id (str (:id file))))
 
     file'))

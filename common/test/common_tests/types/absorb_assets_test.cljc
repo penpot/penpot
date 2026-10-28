@@ -7,6 +7,9 @@
 (ns common-tests.types.absorb-assets-test
   (:require
    [app.common.data :as d]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.validate :as cfv]
+   [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
@@ -56,6 +59,50 @@
     (t/is (ctk/instance-of? copy-root' (:id file') (:id component')))
     (t/is (ctk/is-main-of? main-root' copy-root'))
     (t/is (ctk/main-instance-of? (:id main-root') (:id (second pages')) component'))))
+
+(t/deftest absorb-components-used-in-deleted-components
+  ;; A deleted component keeps its shapes in `:objects`, to be able to
+  ;; restore it and to resolve its remaining copies. When those shapes
+  ;; use library components, they must also be remapped to the local
+  ;; file, or they will not match the copies in the pages.
+  (let [;; Setup
+        library (-> (thf/sample-file :library :is-shared true)
+                    (tho/add-simple-component :icon :icon-main :icon-rect))
+
+        file    (-> (thf/sample-file :file)
+                    (tho/add-frame :card-main :name "Card")
+                    (thc/instantiate-component :icon :card-icon
+                                               :library library
+                                               :parent-label :card-main)
+                    (thc/make-component :card :card-main)
+                    (thc/instantiate-component :card :card-copy))
+
+        page    (thf/current-page file)
+        changes (-> (pcb/empty-changes nil (:id page))
+                    (cls/generate-delete-shapes file page (:objects page)
+                                                #{(thi/id :card-main)} {})
+                    (second))
+        file    (thf/apply-changes file changes :validate? false)
+        errors  (cfv/validate-file file {(:id library) library})
+
+        ;; Action
+        file'   (ctf/update-file-data
+                 file
+                 #(ctf/absorb-assets % (:data library)))
+
+        ;; Get
+        data'          (ctf/file-data file')
+        card'          (ctkl/get-deleted-component data' (thi/id :card))
+        shapes'        (concat (mapcat (comp vals :objects) (ctpl/pages-seq data'))
+                               (mapcat (comp vals :objects) (vals (:components data'))))
+        library-refs'  (filter #(= (thi/id :library) (:component-file %)) shapes')
+        errors'        (cfv/validate-file file' {})]
+
+    ;; Check
+    (t/is (nil? errors) "the file is valid before absorbing the library")
+    (t/is (some? (:objects card')) "the deleted component keeps its shapes")
+    (t/is (empty? library-refs') "no shape points to the library")
+    (t/is (nil? errors'))))
 
 (t/deftest absorb-colors
   (let [;; Setup

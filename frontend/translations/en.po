@@ -4809,10 +4809,6 @@ msgstr "Select items using this style"
 msgid "shortcuts.add-comment"
 msgstr "Comments"
 
-#: src/app/main/data/workspace/path/shortcuts.cljs:61
-msgid "shortcuts.add-node"
-msgstr "Add node"
-
 #: src/app/main/data/workspace/shortcuts.cljs:532
 msgid "shortcuts.align-bottom"
 msgstr "Align bottom"
@@ -5088,13 +5084,6 @@ msgstr "Join nodes"
 #: src/app/main/ui/shortcuts.cljs:624
 msgid "shortcuts.key-combo"
 msgstr "Press the new keys"
-
-#: src/app/main/ui/settings/shortcuts.cljs:484
-msgid "shortcuts.layout-map-missing"
-msgstr ""
-"This browser does not expose the keyboard layout, so shortcuts that "
-"combine Shift with punctuation (for example Shift+,) may not work here. "
-"They keep working in Chromium browsers."
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:249
 msgid "shortcuts.line-through"
@@ -7056,6 +7045,12 @@ msgstr "UPDATES"
 #: src/app/main/ui/ds/notifications/shared/notification_pill.cljs:61
 msgid "workspace.notification-pill.detail"
 msgstr "Details"
+
+#: src/app/main/data/workspace/notifications.cljs:282
+msgid "workspace.notifications.file-repaired"
+msgstr ""
+"We fixed some issues in this file. You can find a copy of the original version in "
+"the version history."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
 msgid "workspace.options.add-interaction"

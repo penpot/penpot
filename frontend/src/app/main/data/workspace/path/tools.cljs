@@ -121,9 +121,6 @@
                            (fn [ht] (reduce #(assoc %1 %2 type) (or ht {}) nodes)))))
           state)))))
 
-(defn add-node []
-  (process-path-tool (fn [content points] (path/split-segments content points 0.5))))
-
 (defn remove-node
   "Removes nodes and heals the gap with a fitted curve."
   ([]
