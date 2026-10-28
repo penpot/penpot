@@ -18,8 +18,10 @@
    [app.common.render-wasm.mem :as mem]
    [app.common.render-wasm.wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.api.fonts :as wasm.fonts]
    [beicon.v2.core :as rx]
-   [cljs.test :as t :include-macros true]))
+   [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as async]))
 
 ;; ---------------------------------------------------------------------------
 ;; Helpers
@@ -110,6 +112,22 @@
     ;; process-pending fires update-text-layouts, it covers shape-b too.
     (t/is (= 2 (count (:shapes @captured)))
           "Both shapes are in process-pending so font-load covers all of them")))
+
+(t/deftest ^:async process-pending-waits-for-faces-fetched-for-other-shapes
+  "A text whose face is already being fetched for another shape gets no fetch
+   callback. process-pending must still wait for that face, so the relayout
+   that follows uses the real font instead of the fallback."
+  (let [face      "face-key"
+        shape     (assoc (make-shape :text) :grow-type :fixed)
+        completed (atom false)]
+    (wasm.api/process-pending [shape] [] []
+                              {:font-index {face #{(:id shape)}}
+                               :pending-faces #{face}}
+                              #(reset! completed true))
+    (await (async/settle))
+    (t/is (not @completed) "the shape waits for its pending face")
+    (rx/push! wasm.fonts/font-stored-stream face)
+    (await (async/wait-for #(deref completed) "storing the face completes the wait"))))
 
 (t/deftest empty-grid-tracks-do-not-allocate-zero-bytes
   (let [calls  (atom [])
