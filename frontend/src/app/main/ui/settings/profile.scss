@@ -17,11 +17,10 @@
   inline-size: 100%;
   justify-content: center;
   align-items: center;
+}
 
-  // The links have no class of their own.
-  a {
-    color: var(--color-foreground-secondary);
-  }
+.link {
+  color: var(--color-foreground-secondary);
 }
 
 .form-container {
@@ -32,17 +31,14 @@
   margin-block: px2rem(80) px2rem(120);
   margin-inline: auto;
   justify-content: center;
+}
 
-  // The page title has no class of its own.
-  h2 {
-    @include use-typography("title-large");
-
-    color: var(--color-foreground-primary);
-    display: flex;
-    align-items: center;
-    margin-block: var(--sp-l);
-    margin-inline: 0;
-  }
+.page-title {
+  color: var(--color-foreground-primary);
+  display: flex;
+  align-items: center;
+  margin-block: var(--sp-l);
+  margin-inline: 0;
 }
 
 .fields-row {
@@ -71,15 +67,14 @@
   block-size: px2rem(148);
   margin-block: var(--sp-l);
   margin-inline: 0;
+}
 
-  // The profile photo has no class of its own.
-  img {
-    border-radius: $br-circle;
-    flex-shrink: 0;
-    block-size: 100%;
-    margin-inline-end: var(--sp-l);
-    inline-size: 100%;
-  }
+.avatar-image {
+  border-radius: $br-circle;
+  flex-shrink: 0;
+  block-size: 100%;
+  margin-inline-end: var(--sp-l);
+  inline-size: 100%;
 }
 
 .image-change-field {
@@ -95,17 +90,6 @@
     .delete-overlay {
       opacity: 1;
     }
-  }
-
-  // The shared file uploader renders the input without a class.
-  input[type="file"] {
-    inline-size: 100%;
-    block-size: 100%;
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-    inset-block-start: 0;
-    z-index: var(--z-index-set);
   }
 }
 
