@@ -361,7 +361,7 @@
               (and row? space-around?)
               (/ (max layout-gap-col (/ (- width line-width) num-children)) 2)
 
-              (and row? space-between? (not auto-width?))
+              (and row? space-between? (not auto-width?) (> num-children 1))
               (max layout-gap-col (/ (- width line-width) (dec num-children)))
 
               :else
@@ -374,7 +374,7 @@
               (and col? space-around?)
               (/ (max layout-gap-row (/ (- height line-height) num-children)) 2)
 
-              (and col? space-between? (not auto-height?))
+              (and col? space-between? (not auto-height?) (> num-children 1))
               (max layout-gap-row (/ (- height line-height) (dec num-children)))
 
               :else
