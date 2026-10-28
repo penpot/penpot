@@ -758,7 +758,9 @@
   ;; With objects-map enabled, encoding a save must not load the
   ;; fragments of pages the change does not touch: each fragment was
   ;; already wrapped when it was written. A three-page file with a
-  ;; one-page edit loads exactly one fragment (the edited page).
+  ;; one-page edit loads exactly one fragment (the edited page), keeps
+  ;; the fragments of the other pages, and reloads equal to the edit
+  ;; applied to the file before the save.
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
                                     :project-id (:default-project-id profile)
@@ -767,7 +769,10 @@
         f0      (bfc/get-file th/*system* file-id)
         page-1  (first (:pages (:data f0)))
         page-2  (uuid/random)
-        page-3  (uuid/random)]
+        page-3  (uuid/random)
+        shape   (uuid/random)
+        realize (fn []
+                  (:data (bfc/get-file th/*system* file-id :realize? true)))]
 
     (update-file! :profile-id (:id profile)
                   :file-id file-id
@@ -776,22 +781,36 @@
                             {:type :add-page :name "c" :id page-3}
                             (first (add-rect-change page-2 (uuid/random)))])
 
-    (let [loads (atom 0)
-          load  fdata/load-pointer]
+    (let [ids-before  (page-pointer-ids file-id)
+          data-before (realize)
+          loaded      (atom [])
+          load        fdata/load-pointer]
       (with-redefs [fdata/load-pointer
                     (fn [cfg file-id id]
-                      (swap! loads inc)
+                      (swap! loaded conj id)
                       (load cfg file-id id))]
         (update-file! :profile-id (:id profile)
                       :file-id file-id
                       :revn 1
-                      :changes (add-rect-change page-2 (uuid/random))))
+                      :changes (add-rect-change page-2 shape)))
 
-      (t/is (= 1 @loads))
+      (t/is (= [(get ids-before page-2)] @loaded))
 
-      (let [ids (page-pointer-ids file-id)]
-        (t/is (some? (get ids page-1)))
-        (t/is (some? (get ids page-3)))))))
+      (let [ids-after (page-pointer-ids file-id)]
+        (t/is (= (get ids-before page-1) (get ids-after page-1)))
+        (t/is (= (get ids-before page-3) (get ids-after page-3)))
+        (t/is (not= (get ids-before page-2) (get ids-after page-2)))
+        (t/is (omap/objects-map? (fragment-objects file-id (get ids-after page-2)))))
+
+      (let [data-after (realize)]
+        (t/is (= (update data-before :pages-index dissoc page-2)
+                 (update data-after :pages-index dissoc page-2)))
+        (t/is (= (-> (get-in data-before [:pages-index page-2 :objects])
+                     (keys) (set) (conj shape))
+                 (-> (get-in data-after [:pages-index page-2 :objects])
+                     (keys) (set))))
+        (t/is (= (dissoc (get-in data-before [:pages-index page-2]) :objects)
+                 (dissoc (get-in data-after [:pages-index page-2]) :objects)))))))
 
 (t/deftest restore-does-not-load-shared-pages
   ;; Restoring a snapshot reuses the shared fragments; encoding the
