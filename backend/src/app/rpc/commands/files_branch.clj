@@ -48,7 +48,6 @@
    [app.rpc.quotes :as quotes]
    [app.util.blob :as blob]
    [app.util.cache :as ucache]
-   [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [clojure.set :as set]
    [clojure.string :as str]))
@@ -85,7 +84,8 @@
 
 (defn- check-file-size-limits!
   "Refuse an operation on a file whose realized state is beyond what the
-  feature was measured to survive. `file` must already be realized."
+  feature was measured to survive. A `file` that still holds fragment
+  pointers needs the loader of its own id bound (`fdata/with-pointers`)."
   [{:keys [data] :as file} operation]
   (let [max-shapes (branching-limit :branching-max-shapes 50000)
         max-pages  (branching-limit :branching-max-pages 500)
@@ -273,6 +273,32 @@
 
 ;; --- Helpers: merge base snapshot
 
+(defn- read-main-for-write
+  "Read main for a command that writes a snapshot naming main's fragments
+  or persists main itself. Returns `[stored file]`: `stored` keeps main's
+  fragment pointers, and `file` is the same document realized and
+  checked against the size limits.
+
+  The row is read FOR SHARE. File-gc takes it FOR UPDATE and marks every
+  fragment that neither main nor a committed snapshot names, so a
+  snapshot that copies main's pointers must commit before the next pass
+  can read the row."
+  [cfg main-id operation]
+  (let [stored (bfc/get-file cfg main-id :lock-for-share? true)
+        file   (-> (fdata/realize cfg stored)
+                   (check-file-size-limits! operation))]
+    [stored file]))
+
+(defn- reattach-main-pointers
+  "`file` with main's stored fragment pointers put back on every page
+  whose value still equals main's, so a base or a merged main shares
+  those fragments instead of writing copies, and an unchanged page keeps
+  its fragment id. `stored` is the first value `read-main-for-write`
+  returns."
+  [cfg main-id stored file]
+  (fdata/with-pointers cfg main-id
+    (fdata/reattach-unchanged (fdata/original-pointers (:data stored)) file)))
+
 (defn- get-base-data
   "The merge-base `:data` from the branch's base snapshot, migrated to
   the current data version (`bfc/migrate-branch-base`): `bfc/get-file`
@@ -298,6 +324,7 @@
               :hint "the branch has no merge-base snapshot"
               :branch-id (:id branch)))
   (when-some [data (some->> (fsnap/get-snapshot cfg source-file-id base-snapshot-id)
+                            (bfc/realize-branch-base cfg)
                             (bfc/migrate-branch-base cfg))]
     (bm/remap-refs data (branch-media-pairs cfg branch-file-id source-file-id))))
 
@@ -470,13 +497,17 @@
                       (quotes/check! {::quotes/id ::quotes/branches-per-file}
                                      {::quotes/id ::quotes/branches-per-team}))
 
-                  ;; 1. Materialize the merge base: a system snapshot of
-                  ;; main, kept long-lived so it is not pruned by the
-                  ;; snapshot GC while the branch is open (it is
-                  ;; released when the branch is deleted or its base
-                  ;; moves).
-                  (let [file (-> (bfc/get-file cfg file-id :realize? true)
-                                 (check-file-size-limits! :create-branch))
+                  ;; 1. Pin the merge base: a system snapshot of main,
+                  ;; kept long-lived so it is not pruned by the snapshot
+                  ;; GC while the branch is open (it is released when the
+                  ;; branch is deleted or its base moves). The snapshot
+                  ;; stores main's fragment pointers, not its pages, so
+                  ;; main's row is read FOR SHARE: file-gc takes it FOR
+                  ;; UPDATE, and a pass that ran between this read and
+                  ;; the commit could mark a fragment the base names.
+                  (let [file (bfc/get-file cfg file-id :lock-for-share? true)
+                        _    (fdata/with-pointers cfg file-id
+                               (check-file-size-limits! file :create-branch))
                         base (fsnap/create! cfg file
                                             {:label (str "branch-base/" name)
                                              :profile-id profile-id
@@ -1026,8 +1057,7 @@
                                (ex/raise :type :validation
                                          :code :branch-not-open
                                          :branch-id branch-id))
-                 main-file   (-> (bfc/get-file cfg main-id :realize? true)
-                                 (check-file-size-limits! :merge))
+                 [main-stored main-file] (read-main-for-write cfg main-id :merge)
                  _           (check-oplog-depth-limit! (bfc/get-branch-oplog-depth cfg branch-file-id)
                                                        branch-file-id
                                                        :merge)
@@ -1136,77 +1166,81 @@
                      (let [team  (teams/get-team conn :profile-id profile-id :file-id main-id)
                            delay (ldel/get-deletion-delay team)
                            ts    (ct/now)]
-                       (binding [pmap/*tracked* (pmap/create-tracked)
-                                 pmap/*load-fn*  (partial fdata/load-pointer cfg main-id)
-                                 cfeat/*current*  (:features main-file)
-                                 cfeat/*previous* (:features main-file)]
+                       (fdata/with-tracked-pointers cfg main-id
+                         (binding [cfeat/*current*  (:features main-file)
+                                   cfeat/*previous* (:features main-file)]
 
-                         ;; Safety snapshot of pre-merge main (rollback via versions).
-                         (fsnap/create! cfg main-file
-                                        {:label (str "pre-merge/" (:name branch))
-                                         :created-by "system"
-                                         :deleted-at (ct/in-future delay)
-                                         :profile-id profile-id})
+                           ;; Safety snapshot of pre-merge main (rollback via
+                           ;; versions). It names main's fragments rather than
+                           ;; copying its pages.
+                           (fsnap/create! cfg main-stored
+                                          {:label (str "pre-merge/" (:name branch))
+                                           :created-by "system"
+                                           :deleted-at (ct/in-future delay)
+                                           :profile-id profile-id})
 
-                         ;; media added on the branch: copy its rows into main
-                         ;; under the pre-allocated ids the changes reference
-                         (copy-media-rows! conn main-id fresh-map new-media)
+                           ;; media added on the branch: copy its rows into main
+                           ;; under the pre-allocated ids the changes reference
+                           (copy-media-rows! conn main-id fresh-map new-media)
 
-                         (let [merged (-> main-file
-                                          (update :revn inc)
-                                          (update :data #(cpc/process-changes % changes)))
-                               libs   (bfc/get-resolved-file-libraries cfg merged)
-                               errors (not-empty (cfv/validate-file merged libs))
-                               repair (if errors
-                                        (cfr/repair-file merged libs errors)
-                                        [])
-                               merged (cond-> merged
-                                        (seq repair)
-                                        (update :data cpc/process-changes repair))
+                           (let [merged (-> main-file
+                                            (update :revn inc)
+                                            (update :data #(cpc/process-changes % changes)))
+                                 libs   (bfc/get-resolved-file-libraries cfg merged)
+                                 errors (not-empty (cfv/validate-file merged libs))
+                                 repair (if errors
+                                          (cfr/repair-file merged libs errors)
+                                          [])
+                                 merged (cond-> merged
+                                          (seq repair)
+                                          (update :data cpc/process-changes repair))
 
-                               ;; the validator, not the merge, decides
-                               ;; validity: the repaired result goes back
-                               ;; to it, and whatever stays broken refuses
-                               ;; the merge and rolls the transaction back
-                               errors (when errors
-                                        (not-empty (cfv/validate-file merged libs)))]
-                           (when errors
-                             (ex/raise :type :validation
-                                       :code :merge-result-invalid
-                                       :hint "the merge result still has validation errors after the repair"
-                                       :codes (into [] (comp (map :code) (distinct)) errors)))
+                                 ;; the validator, not the merge, decides
+                                 ;; validity: the repaired result goes back
+                                 ;; to it, and whatever stays broken refuses
+                                 ;; the merge and rolls the transaction back
+                                 errors (when errors
+                                          (not-empty (cfv/validate-file merged libs)))]
+                             (when errors
+                               (ex/raise :type :validation
+                                         :code :merge-result-invalid
+                                         :hint "the merge result still has validation errors after the repair"
+                                         :codes (into [] (comp (map :code) (distinct)) errors)))
 
-                           ;; Change log (xlog), GC-eligible after the delay.
-                           (db/insert! conn :file-change
-                                       {:id (uuid/next)
-                                        :session-id session-id
-                                        :profile-id profile-id
-                                        :created-at ts
-                                        :updated-at ts
-                                        :deleted-at (ct/in-future {:hours 1})
-                                        :file-id main-id
-                                        :revn (:revn merged)
-                                        :version (:version merged)
-                                        :features (into-array (:features merged))
-                                        :changes (blob/encode (into (vec changes) repair))}
-                                       {::db/return-keys false})
+                             ;; Change log (xlog), GC-eligible after the delay.
+                             (db/insert! conn :file-change
+                                         {:id (uuid/next)
+                                          :session-id session-id
+                                          :profile-id profile-id
+                                          :created-at ts
+                                          :updated-at ts
+                                          :deleted-at (ct/in-future {:hours 1})
+                                          :file-id main-id
+                                          :revn (:revn merged)
+                                          :version (:version merged)
+                                          :features (into-array (:features merged))
+                                          :changes (blob/encode (into (vec changes) repair))}
+                                         {::db/return-keys false})
 
-                           (fupd/persist-file! (assoc cfg ::fupd/timestamp ts) merged)
+                             ;; a page the merge left as it was keeps its
+                             ;; fragment instead of being written again
+                             (fupd/persist-file! (assoc cfg ::fupd/timestamp ts)
+                                                 (reattach-main-pointers cfg main-id main-stored merged))
 
-                           (when (contains? cf/flags :redis-cache)
-                             (fupd/invalidate-caches! cfg merged))
+                             (when (contains? cf/flags :redis-cache)
+                               (fupd/invalidate-caches! cfg merged))
 
-                           (finish-branch! ts)
+                             (finish-branch! ts)
 
-                           (vswap! messages conj
-                                   {:topic main-id
-                                    :message {:type :file-merged
-                                              :file-id main-id
-                                              :session-id session-id
-                                              :revn (:revn merged)}})
+                             (vswap! messages conj
+                                     {:topic main-id
+                                      :message {:type :file-merged
+                                                :file-id main-id
+                                                :session-id session-id
+                                                :revn (:revn merged)}})
 
-                           (audited {:status :merged :revn (:revn merged) :source-file-id main-id}
-                                    tpoint :merge)))))))))))))))
+                             (audited {:status :merged :revn (:revn merged) :source-file-id main-id}
+                                      tpoint :merge))))))))))))))))
 
 ;; --- COMMAND: update-branch-from-main
 
@@ -1316,8 +1350,7 @@
                                (ex/raise :type :validation
                                          :code :branch-not-open
                                          :branch-id branch-id))
-                 main-file   (-> (bfc/get-file cfg main-id :realize? true)
-                                 (check-file-size-limits! :update-from-main))
+                 [main-stored main-file] (read-main-for-write cfg main-id :update-from-main)
                  _           (when (and (some? expected-main-revn)
                                         (not= expected-main-revn (:revn main-file)))
                                (ex/raise :type :conflict
@@ -1387,8 +1420,11 @@
                    ;; id space, so a base naming main's rows would make every
                    ;; paired media read as deleted+added on the next squash. The
                    ;; comparisons normalize it back to main's id space on read
-                   ;; (`get-base-data`/`branch-base-data`).
-                   (let [new-base (fsnap/create! cfg (assoc main-file :data base-data)
+                   ;; (`get-base-data`/`branch-base-data`). A page the remap
+                   ;; left equal to main's names main's fragment.
+                   (let [new-base (fsnap/create! cfg (reattach-main-pointers
+                                                      cfg main-id main-stored
+                                                      (assoc main-file :data base-data))
                                                  {:label (str "branch-base/" (:name branch))
                                                   :created-by "system"
                                                   :deleted-at (ct/in-future {:days 3650})
@@ -1492,106 +1528,105 @@
 
                    :else
                    (let [ts (ct/now)]
-                     (binding [pmap/*tracked* (pmap/create-tracked)
-                               pmap/*load-fn*  (partial fdata/load-pointer cfg branch-file-id)
-                               cfeat/*current*  (:features branch-file)
-                               cfeat/*previous* (:features branch-file)]
+                     (fdata/with-tracked-pointers cfg branch-file-id
+                       (binding [cfeat/*current*  (:features branch-file)
+                                 cfeat/*previous* (:features branch-file)]
 
-                       (fsnap/create! cfg branch-file
-                                      {:label (str "pre-update/" (:name branch))
-                                       :created-by "system"
-                                       :deleted-at (ct/in-future delay)
-                                       :profile-id profile-id})
+                         (fsnap/create! cfg branch-file
+                                        {:label (str "pre-update/" (:name branch))
+                                         :created-by "system"
+                                         :deleted-at (ct/in-future delay)
+                                         :profile-id profile-id})
 
-                       ;; media added on main: copy its rows into the branch
-                       ;; under the pre-allocated ids the changes reference
-                       (copy-media-rows! conn branch-file-id fresh-map new-media)
+                         ;; media added on main: copy its rows into the branch
+                         ;; under the pre-allocated ids the changes reference
+                         (copy-media-rows! conn branch-file-id fresh-map new-media)
 
-                       (let [applied (bm/remap-changes changes apply-map)
-                             ;; the write lands in the branch's id space, so
-                             ;; the document is moved there first — its paired
-                             ;; media refs re-pointed at the branch's own
-                             ;; rows — or the remapped changes would name ids
-                             ;; it does not hold and apply to nothing (a
-                             ;; `:del-media` of a paired copy would keep it)
-                             updated (-> branch-file
-                                         (update :revn inc)
-                                         (update :data #(cpc/process-changes
-                                                         (bm/remap-refs % media-map)
-                                                         applied)))
-                             libs    (bfc/get-resolved-file-libraries cfg updated)
-                             errors  (not-empty (cfv/validate-file updated libs))
-                             repair  (if errors
-                                       (cfr/repair-file updated libs errors)
-                                       [])
-                             updated (cond-> updated
-                                       (seq repair)
-                                       (update :data cpc/process-changes repair))
+                         (let [applied (bm/remap-changes changes apply-map)
+                               ;; the write lands in the branch's id space, so
+                               ;; the document is moved there first — its paired
+                               ;; media refs re-pointed at the branch's own
+                               ;; rows — or the remapped changes would name ids
+                               ;; it does not hold and apply to nothing (a
+                               ;; `:del-media` of a paired copy would keep it)
+                               updated (-> branch-file
+                                           (update :revn inc)
+                                           (update :data #(cpc/process-changes
+                                                           (bm/remap-refs % media-map)
+                                                           applied)))
+                               libs    (bfc/get-resolved-file-libraries cfg updated)
+                               errors  (not-empty (cfv/validate-file updated libs))
+                               repair  (if errors
+                                         (cfr/repair-file updated libs errors)
+                                         [])
+                               updated (cond-> updated
+                                         (seq repair)
+                                         (update :data cpc/process-changes repair))
 
-                             ;; the validator, not the update, decides
-                             ;; validity: the repaired result goes back to
-                             ;; it, and whatever stays broken refuses the
-                             ;; update and rolls the transaction back
-                             errors  (when errors
-                                       (not-empty (cfv/validate-file updated libs)))]
-                         (when errors
-                           (ex/raise :type :validation
-                                     :code :update-result-invalid
-                                     :hint "the update result still has validation errors after the repair"
-                                     :codes (into [] (comp (map :code) (distinct)) errors)))
-
-                         (db/insert! conn :file-change
-                                     {:id (uuid/next)
-                                      :session-id session-id
-                                      :profile-id profile-id
-                                      :created-at ts
-                                      :updated-at ts
-                                      :deleted-at (ct/in-future {:hours 1})
-                                      :file-id branch-file-id
-                                      :revn (:revn updated)
-                                      :version (:version updated)
-                                      :features (into-array (:features updated))
-                                      :changes (blob/encode (into (vec applied) repair))}
-                                     {::db/return-keys false})
-
-                         ;; SQUASH: the new base (main's current state)
-                         ;; already carries everything main contributed,
-                         ;; so the op log is replaced with the net
-                         ;; branch-only changes computed against the new
-                         ;; base. Refuse if that net cannot be translated
-                         ;; into replayable ops; nothing has been
-                         ;; persisted yet, so the transaction rollback
-                         ;; undoes the snapshot and media copies above.
-                         (let [{net-changes :changes
-                                unsupported :unsupported}
-                               (bm/compute-changes main-data main-data (:data updated) {})]
-                           (when (seq unsupported)
+                               ;; the validator, not the update, decides
+                               ;; validity: the repaired result goes back to
+                               ;; it, and whatever stays broken refuses the
+                               ;; update and rolls the transaction back
+                               errors  (when errors
+                                         (not-empty (cfv/validate-file updated libs)))]
+                           (when errors
                              (ex/raise :type :validation
-                                       :code :unsupported-update-squash
-                                       :hint "the update produces branch-only changes that cannot be replayed"
-                                       :kinds (vec unsupported)))
-                           ;; the net row carries the media id map the
-                           ;; update applied: the log it replaces was
-                           ;; written against the OLD merge base, and
-                           ;; the squash is what names the branch's
-                           ;; pairing with main from now on
-                           (persist-branch-update! cfg updated ts branch-id
-                                                   net-changes media-map))
+                                       :code :update-result-invalid
+                                       :hint "the update result still has validation errors after the repair"
+                                       :codes (into [] (comp (map :code) (distinct)) errors)))
 
-                         (when (contains? cf/flags :redis-cache)
-                           (fupd/invalidate-caches! cfg updated))
-                         (reposition-base! ts (:revn updated)
-                                           (bm/remap-refs main-raw media-map))
+                           (db/insert! conn :file-change
+                                       {:id (uuid/next)
+                                        :session-id session-id
+                                        :profile-id profile-id
+                                        :created-at ts
+                                        :updated-at ts
+                                        :deleted-at (ct/in-future {:hours 1})
+                                        :file-id branch-file-id
+                                        :revn (:revn updated)
+                                        :version (:version updated)
+                                        :features (into-array (:features updated))
+                                        :changes (blob/encode (into (vec applied) repair))}
+                                       {::db/return-keys false})
 
-                         (vswap! messages conj
-                                 {:topic branch-file-id
-                                  :message {:type :file-merged
-                                            :file-id branch-file-id
-                                            :session-id session-id
-                                            :revn (:revn updated)}})
+                           ;; SQUASH: the new base (main's current state)
+                           ;; already carries everything main contributed,
+                           ;; so the op log is replaced with the net
+                           ;; branch-only changes computed against the new
+                           ;; base. Refuse if that net cannot be translated
+                           ;; into replayable ops; nothing has been
+                           ;; persisted yet, so the transaction rollback
+                           ;; undoes the snapshot and media copies above.
+                           (let [{net-changes :changes
+                                  unsupported :unsupported}
+                                 (bm/compute-changes main-data main-data (:data updated) {})]
+                             (when (seq unsupported)
+                               (ex/raise :type :validation
+                                         :code :unsupported-update-squash
+                                         :hint "the update produces branch-only changes that cannot be replayed"
+                                         :kinds (vec unsupported)))
+                             ;; the net row carries the media id map the
+                             ;; update applied: the log it replaces was
+                             ;; written against the OLD merge base, and
+                             ;; the squash is what names the branch's
+                             ;; pairing with main from now on
+                             (persist-branch-update! cfg updated ts branch-id
+                                                     net-changes media-map))
 
-                         (audited {:status :updated :revn (:revn updated)}
-                                  tpoint :update-from-main))))))))))))))
+                           (when (contains? cf/flags :redis-cache)
+                             (fupd/invalidate-caches! cfg updated))
+                           (reposition-base! ts (:revn updated)
+                                             (bm/remap-refs main-raw media-map))
+
+                           (vswap! messages conj
+                                   {:topic branch-file-id
+                                    :message {:type :file-merged
+                                              :file-id branch-file-id
+                                              :session-id session-id
+                                              :revn (:revn updated)}})
+
+                           (audited {:status :updated :revn (:revn updated)}
+                                    tpoint :update-from-main)))))))))))))))
 
 ;; --- COMMAND: materialize-file-branch
 
@@ -1644,73 +1679,72 @@
                  delay (ldel/get-deletion-delay team)
                  ts    (ct/now)]
 
-             (binding [pmap/*tracked* (pmap/create-tracked)
-                       pmap/*load-fn*  (partial fdata/load-pointer cfg branch-file-id)
-                       cfeat/*current*  (:features file)
-                       cfeat/*previous* (:features file)]
+             (fdata/with-tracked-pointers cfg branch-file-id
+               (binding [cfeat/*current*  (:features file)
+                         cfeat/*previous* (:features file)]
 
-               (let [libs   (bfc/get-resolved-file-libraries cfg file)
-                     errors (not-empty (cfv/validate-file file libs))
-                     repair (if errors
-                              (cfr/repair-file file libs errors)
-                              [])
-                     file   (cond-> file
-                              (seq repair)
-                              (update :data cpc/process-changes repair))
+                 (let [libs   (bfc/get-resolved-file-libraries cfg file)
+                       errors (not-empty (cfv/validate-file file libs))
+                       repair (if errors
+                                (cfr/repair-file file libs errors)
+                                [])
+                       file   (cond-> file
+                                (seq repair)
+                                (update :data cpc/process-changes repair))
 
-                     ;; the exit door never strands a user: the repaired
-                     ;; result goes back to the validator, and whatever
-                     ;; stays broken is logged, never refused
-                     errors (when errors
-                              (not-empty (cfv/validate-file file libs)))]
+                       ;; the exit door never strands a user: the repaired
+                       ;; result goes back to the validator, and whatever
+                       ;; stays broken is logged, never refused
+                       errors (when errors
+                                (not-empty (cfv/validate-file file libs)))]
 
-                 (when errors
-                   (l/wrn :hint "materialised file still has validation errors"
-                          :file-id (str branch-file-id)
-                          :codes (into [] (comp (map :code) (distinct)) errors)))
+                   (when errors
+                     (l/wrn :hint "materialised file still has validation errors"
+                            :file-id (str branch-file-id)
+                            :codes (into [] (comp (map :code) (distinct)) errors)))
 
-                 ;; the derived state becomes the file's own payload
-                 (fupd/persist-file! (assoc cfg ::fupd/timestamp ts) file)
+                   ;; the derived state becomes the file's own payload
+                   (fupd/persist-file! (assoc cfg ::fupd/timestamp ts) file)
 
-                 (when (contains? cf/flags :redis-cache)
-                   (fupd/invalidate-caches! cfg file))
+                   (when (contains? cf/flags :redis-cache)
+                     (fupd/invalidate-caches! cfg file))
 
-                 ;; from here the ordinary paths apply
-                 (db/update! conn :file
-                             {:is-branch false}
-                             {:id branch-file-id}
-                             {::db/return-keys false})
+                   ;; from here the ordinary paths apply
+                   (db/update! conn :file
+                               {:is-branch false}
+                               {:id branch-file-id}
+                               {::db/return-keys false})
 
-                 ;; the payload replaced the log
-                 (db/delete! conn :file-branch-change {:branch-id (:id branch)})
+                   ;; the payload replaced the log
+                   (db/delete! conn :file-branch-change {:branch-id (:id branch)})
 
-                 ;; a review sandbox over a file that is no longer a branch
-                 ;; has nothing left to review
-                 (close-branch-pull-requests! cfg (:id branch)
-                                              {:profile-id profile-id
-                                               :status "closed"
-                                               :deleted-at (ct/in-future delay)})
+                   ;; a review sandbox over a file that is no longer a branch
+                   ;; has nothing left to review
+                   (close-branch-pull-requests! cfg (:id branch)
+                                                {:profile-id profile-id
+                                                 :status "closed"
+                                                 :deleted-at (ct/in-future delay)})
 
-                 ;; nothing derives from the base any more, so the pin goes
-                 (release-base-snapshot! cfg branch (ct/in-future delay))
+                   ;; nothing derives from the base any more, so the pin goes
+                   (release-base-snapshot! cfg branch (ct/in-future delay))
 
-                 ;; The branch row is archived rather than deleted: its pull
-                 ;; requests reference it with ON DELETE CASCADE, so deleting
-                 ;; it would take the review history along, and `archived` is
-                 ;; a status the schema already allows.
-                 (db/update! conn :file-branch
-                             {:status "archived"
-                              :deleted-at (ct/in-future delay)
-                              :updated-at ts}
-                             {:id (:id branch)}
-                             {::db/return-keys false})
+                   ;; The branch row is archived rather than deleted: its pull
+                   ;; requests reference it with ON DELETE CASCADE, so deleting
+                   ;; it would take the review history along, and `archived` is
+                   ;; a status the schema already allows.
+                   (db/update! conn :file-branch
+                               {:status "archived"
+                                :deleted-at (ct/in-future delay)
+                                :updated-at ts}
+                               {:id (:id branch)}
+                               {::db/return-keys false})
 
-                 (audited
-                  {:status :materialized
-                   :file-id branch-file-id
-                   :changed true
-                   :revn (:revn file)}
-                  tpoint :materialize))))))))))
+                   (audited
+                    {:status :materialized
+                     :file-id branch-file-id
+                     :changed true
+                     :revn (:revn file)}
+                    tpoint :materialize)))))))))))
 
 ;; --- COMMAND QUERY: get-file-branch-info
 

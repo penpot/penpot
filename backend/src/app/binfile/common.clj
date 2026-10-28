@@ -354,9 +354,19 @@
   itself, the replayed branch and its merge base, and neither has a
   row to write back to."
   [cfg {:keys [id] :as file} migrate-fn]
-  (binding [pmap/*load-fn* (partial fdata/load-pointer cfg id)
-            pmap/*tracked* (pmap/create-tracked)]
+  (fdata/with-tracked-pointers cfg id
     (migrate-fn file (delay (get-resolved-file-libraries cfg file)))))
+
+(defn realize-branch-base
+  "Realize the `:data` of a branch's merge-base snapshot to plain maps.
+  The base is a snapshot of the source file and shares the source
+  file's fragments, and a fragment row is keyed by `(file_id, id)`, so
+  the pointers load with the snapshot's `:file-id`, the source file:
+  the loader of the branch file finds none of them.
+
+  `snapshot` is a snapshot row with its data decoded."
+  [cfg {:keys [file-id] :as snapshot}]
+  (update snapshot :data #(:data (fdata/realize cfg {:id file-id :data %}))))
 
 (defn migrate-branch-base
   "The `:data` of a branch's merge-base snapshot at the current data
@@ -449,6 +459,9 @@
 
         base (fdata/resolve-file-data cfg base)
         base (fdata/decode-file-data cfg base)
+        ;; the base shares the source file's fragments; past this point
+        ;; the replay, the migrations and every caller see plain data
+        base (realize-branch-base cfg base)
 
         rows (db/exec! conn [sql:get-branch-changes id])
 
