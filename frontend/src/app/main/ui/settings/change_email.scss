@@ -54,9 +54,8 @@
 
 .action-buttons {
   @extend %modal-action-btns;
+}
 
-  // The form submit button has no class of its own.
-  button {
-    @extend %modal-accept-btn;
-  }
+.submit-button {
+  @extend %modal-accept-btn;
 }

@@ -118,7 +118,8 @@
         [:div {:class (stl/css :action-buttons)
                :data-testid "change-email-submit"}
          [:> fm/submit-button*
-          {:label (tr "modals.change-email.submit")}]]]]]]))
+          {:label (tr "modals.change-email.submit")
+           :class (stl/css :submit-button)}]]]]]]))
 
 
 

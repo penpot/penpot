@@ -20,7 +20,7 @@
   block-size: 100%;
   padding-block-start: var(--sp-l);
   border-inline-end: $b-1 solid var(--color-background-quaternary);
-  z-index: var(--z-index-auto);
+  z-index: var(--z-index-panels);
   background-color: var(--color-background-primary);
 }
 
@@ -71,7 +71,6 @@
 // the label where it was (the drawing sits 2px to the right).
 .feedback-icon {
   flex-shrink: 0;
-  stroke-width: 1.33px;
   color: var(--settings-foreground-color);
   margin-inline-end: var(--sp-xs);
 }
@@ -97,7 +96,6 @@
 
 .arrow-icon {
   flex-shrink: 0;
-  stroke-width: 1px;
   color: var(--color-foreground-secondary);
   margin-inline-end: var(--sp-m);
 }
