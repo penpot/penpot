@@ -702,6 +702,7 @@
      JOIN file AS sf ON (sf.id = fb.source_file_id)
     WHERE fb.source_file_id = ?
       AND fb.deleted_at IS NULL
+      AND fb.status != 'merged'
       AND (?::boolean OR fb.status = 'open')
     ORDER BY fb.created_at DESC")
 
@@ -1091,12 +1092,7 @@
    [:expected-main-revn {:optional true} ::sm/int]
    ;; what the user says about the merge; kept in its record
    ;; (`file_branch_merge`), shown in the list of merges of main
-   [:comment {:optional true} [:string {:max 4000}]]
-   ;; when false (the default) the branch and its file are logically
-   ;; deleted right after a successful merge, in the SAME transaction (so
-   ;; merged copies do not pile up); when true the branch is kept as
-   ;; "merged", staying readable with status merged until it is deleted.
-   [:keep-branch {:optional true} ::sm/boolean]])
+   [:comment {:optional true} [:string {:max 4000}]]])
 
 (sv/defmethod ::merge-file-branch
   "Merge a branch into its source file (main).
@@ -1109,15 +1105,15 @@
   `{:status :unsupported}` so no change is silently dropped. Otherwise it
   takes a safety snapshot of main, applies the merge to main through the
   production change pipeline, records the merge with its `comment`
-  (`file_branch_merge`), deletes the branch and its file unless
-  `keep-branch` asks to keep it, and notifies open clients via msgbus."
+  (`file_branch_merge`), deletes the branch and its file and notifies
+  open clients via msgbus."
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:merge-file-branch
    ::climit/id [[:merge-file-branch/by-profile ::rpc/profile-id]
                 [:merge-file-branch/global]]}
   [{:keys [::mbus/msgbus] :as cfg}
-   {:keys [::rpc/profile-id ::rpc/session-id branch-id resolutions expected-main-revn comment keep-branch excluded]}]
+   {:keys [::rpc/profile-id ::rpc/session-id branch-id resolutions expected-main-revn comment excluded]}]
   (bp/with-policies
     (check-branching-enabled!)
     (let [branch (db/get* cfg :file-branch {:id branch-id})]
@@ -1207,16 +1203,13 @@
 
                    finish-branch!
                    (fn [ts]
-                     ;; record the merge and mark the branch merged. The
-                     ;; pinned base snapshot stays for a KEPT branch (its
-                     ;; state is derived from that snapshot and the op
-                     ;; log); delete-branch! releases it on the delete
-                     ;; path. Unless the user chose to keep it the branch
-                     ;; and its file are deleted in this same transaction
+                     ;; record the merge, mark the branch merged and
+                     ;; delete it and its file in this same transaction
                      ;; (no client-driven second call, no window where a
-                     ;; crash leaves a stale copy). The record is written
-                     ;; first: it reads the open pull request the lines
-                     ;; below close.
+                     ;; crash leaves a stale copy); delete-branch!
+                     ;; releases the pinned base snapshot. The record is
+                     ;; written first: it reads the open pull request the
+                     ;; lines below close.
                      (record-merge! conn branch {:profile-id profile-id
                                                  :comment comment
                                                  :created-at ts})
@@ -1235,10 +1228,9 @@
                                                     {:profile-id profile-id
                                                      :status "merged"
                                                      :deleted-at (ct/in-future delay)})
-                       (when-not keep-branch
-                         (vswap! messages conj
-                                 (delete-branch! cfg branch {:profile-id profile-id
-                                                             :session-id session-id})))))]
+                       (vswap! messages conj
+                               (delete-branch! cfg branch {:profile-id profile-id
+                                                           :session-id session-id}))))]
                (cond
                  (seq unresolved)
                  (audited {:status :conflicts :conflicts conflicts :main-revn (:revn main-file)}
@@ -1940,6 +1932,7 @@
   "SELECT count(*) AS count
      FROM file_branch AS fb
     WHERE fb.deleted_at IS NULL
+      AND fb.status != 'merged'
       AND fb.source_file_id = coalesce((SELECT b.source_file_id
                                           FROM file_branch AS b
                                          WHERE b.branch_file_id = ?
@@ -1947,8 +1940,8 @@
                                         ?)")
 
 (sv/defmethod ::get-file-branch-count
-  "How many branches the file has, archived and merged ones included, as
-  the listing with `:include-archived` returns them. When the file is
+  "How many branches the file has, archived ones included, as the
+  listing with `:include-archived` returns them. When the file is
   itself a branch, the branches of its source (main) are counted.
 
   The workspace header asks this on every file open to decide whether to

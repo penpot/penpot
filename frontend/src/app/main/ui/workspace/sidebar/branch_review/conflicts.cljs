@@ -18,7 +18,6 @@
    [app.main.data.workspace.branches :as dwb]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
-   [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
@@ -393,8 +392,6 @@
   (let [{:keys [diff resolutions status]} (mf/deref branch-diff)
 
         loading?    (= status :loading)
-        keep?*      (mf/use-state false)
-        keep?       (deref keep?*)
         selected*   (mf/use-state 0)
         selected    (deref selected*)
 
@@ -465,7 +462,7 @@
                          (when next-ix (reset! selected* next-ix)))))
         on-apply    (mf/use-fn
                      ;; a merge sends again the comment of the merge dialog
-                     (mf/deps branch resolutions mode keep? excluded comment conflicts)
+                     (mf/deps branch resolutions mode excluded comment conflicts)
                      (fn []
                        (let [ids (into #{} (map :id) conflicts)
                              res (into {} (filter (fn [[id _]] (contains? ids id))) resolutions)]
@@ -473,7 +470,6 @@
                                      (dwb/update-branch-from-main branch {:resolutions res
                                                                           :excluded excluded})
                                      (dwb/merge-branch branch {:resolutions res
-                                                               :keep-branch keep?
                                                                :comment comment
                                                                :excluded excluded}))))))]
 
@@ -552,12 +548,7 @@
        (if all-done?
          [:div {:class (stl/css :footer-start)}
           [:> text* {:as "span" :typography t/body-small :class (stl/css :footer-ready)}
-           (tr "workspace.branches.conflicts.footer-ready")]
-          (when (not= mode :update)
-            [:> checkbox* {:id "conflicts-archive-branch"
-                           :label (tr "workspace.branches.merge.archive-label")
-                           :checked keep?
-                           :on-change #(swap! keep?* not)}])]
+           (tr "workspace.branches.conflicts.footer-ready")]]
          [:> text* {:as "span" :typography t/body-small :class (stl/css :footer-blocked)}
           (tr "workspace.branches.resolve.footer.blocked" (i18n/c pending))]))
       :footer-end

@@ -15,7 +15,6 @@
    [app.common.data :as d]
    [app.common.features :as cfeat]
    [app.common.files.migrations :as fmg]
-   [app.common.time :as ct]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -1412,67 +1411,3 @@
             row (th/db-get :file-media-object {:id ref})]
         (t/is (some? row))
         (t/is (= main-id (:file-id row)))))))
-
-(t/deftest merge-with-keep-branch-leaves-the-branch-readable
-  (with-redefs [cf/flags (conj cf/flags :branching)]
-    (let [profile (th/create-profile* 1 {:is-active true})
-          proj-id (:default-project-id profile)
-          file    (th/create-file* 1 {:profile-id (:id profile)
-                                      :project-id proj-id
-                                      :is-shared false})
-          create  (create-branch* profile (:id file) "oplog-keep")
-          branch-file-id (:branch-file-id create)
-          branch-id      (:id create)
-          color-id (uuid/random)]
-
-      (apply-change* profile branch-file-id
-                     {:type :add-color
-                      :color {:id color-id :name "C" :color "#112233" :opacity 1}})
-
-      (let [out (th/command! {::th/type :merge-file-branch
-                              ::rpc/profile-id (:id profile)
-                              :branch-id branch-id
-                              :keep-branch true})]
-        (t/is (nil? (:error out)))
-        (t/is (= :merged (-> out :result :status))))
-
-      (t/testing "the kept branch still derives its state"
-        (let [out (th/command! {::th/type :get-file
-                                ::rpc/profile-id (:id profile)
-                                :id branch-file-id})]
-          (t/is (nil? (:error out)))
-          (t/is (contains? (-> out :result :data :colors) color-id))))
-
-      (t/testing "the base pin survives while the branch is kept"
-        (let [rows (->> (th/db-query :file-change {:file-id (:id file)})
-                        (filter #(some-> (:label %) (str/starts-with? "branch-base/"))))]
-          (t/is (seq rows))
-          (t/is (every? (fn [{:keys [deleted-at]}]
-                          (or (nil? deleted-at)
-                              (ct/is-after? deleted-at (ct/in-future {:days 400}))))
-                        rows)))))))
-
-(t/deftest a-kept-merged-branch-refuses-saves
-  (with-redefs [cf/flags (conj cf/flags :branching)]
-    (let [profile (th/create-profile* 1 {:is-active true})
-          proj-id (:default-project-id profile)
-          file    (th/create-file* 1 {:profile-id (:id profile)
-                                      :project-id proj-id
-                                      :is-shared false})
-          create  (create-branch* profile (:id file) "oplog-merged")
-          branch-file-id (:branch-file-id create)
-          branch-id      (:id create)]
-
-      (th/command! {::th/type :merge-file-branch
-                    ::rpc/profile-id (:id profile)
-                    :branch-id branch-id
-                    :keep-branch true})
-
-      (let [out (apply-change* profile branch-file-id
-                               {:type :add-color
-                                :color {:id (uuid/random) :name "C" :color "#112233" :opacity 1}})]
-        (t/is (th/ex-of-type? (:error out) :validation))
-        (t/is (th/ex-of-code? (:error out) :branch-merged)))
-
-      (t/testing "nothing reaches the op log"
-        (t/is (empty? (oplog-rows branch-file-id)))))))

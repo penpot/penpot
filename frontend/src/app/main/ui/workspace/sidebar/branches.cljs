@@ -17,7 +17,6 @@
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.menu :refer [menu* menu-item* menu-separator*]]
@@ -262,9 +261,7 @@
   {::mf/register modal/components
    ::mf/register-as :merge-branch}
   [{:keys [branch excluded]}]
-  (let [archive?* (mf/use-state false)
-        archive?  (deref archive?*)
-        comment*  (mf/use-state "")
+  (let [comment*  (mf/use-state "")
         comment   (deref comment*)
 
         ;; what goes in and what stays out, when the compare dialog of this
@@ -297,9 +294,6 @@
                       (str sep (tr "workspace.branches.main") sep))]
           (str/split msg sep))
 
-        on-toggle-archive
-        (mf/use-fn #(swap! archive?* not))
-
         on-comment-change
         (mf/use-fn #(reset! comment* (dom/get-target-val %)))
 
@@ -308,11 +302,9 @@
 
         on-submit
         (mf/use-fn
-         (mf/deps branch archive? comment excluded)
+         (mf/deps branch comment excluded)
          (fn [_]
-           (st/emit! (dwb/merge-branch branch {:keep-branch archive?
-                                               :comment comment
-                                               :excluded excluded})
+           (st/emit! (dwb/merge-branch branch {:comment comment :excluded excluded})
                      (modal/hide))))]
 
     [:> modal* {:is-open true
@@ -344,22 +336,10 @@
                    :on-change on-comment-change
                    :rows 3}]]
 
-      [:> checkbox* {:id "merge-archive-branch"
-                     :label (tr "workspace.branches.merge.archive-label")
-                     :checked archive?
-                     :on-change on-toggle-archive}]
-
-      (cond
-        archive?
-        [:> context-notification* {:level :warning :type :context}
-         (tr "workspace.branches.merge.archive-warning")]
-
+      (if (pos? left-out)
         ;; deleting the branch takes the changes left out with it
-        (pos? left-out)
         [:> context-notification* {:level :warning :type :context}
          (tr "workspace.branches.merge.left-out-lost" (i18n/c left-out))]
-
-        :else
         [:> context-notification* {:level :info :type :context}
          (tr "workspace.branches.merge.delete-info")])]
 

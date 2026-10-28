@@ -745,19 +745,14 @@
 
 (defn merge-branch
   "Merge `branch` (a branch row/context map with at least `:id`) into main.
-  On success the server records the merge and, unless the branch is kept,
-  deletes the branch and its file; open clients reload main via the
-  `:file-merged` msgbus event.
+  On success the server records the merge and deletes the branch and its
+  file, and open clients reload main via the `:file-merged` msgbus event.
 
   Options:
    - `:resolutions` — optional `{entity-id (:main|:branch)}` map used to
      resolve conflicts before integrating.
    - `:comment` — what the user says about the merge, kept with its
      record and shown in the reviews dialog.
-   - `:keep-branch` — when true the merged branch is kept (it shows up
-     under \"Archived\"); when false (default) the server deletes the
-     branch and its file in the same transaction, so merged copies do not
-     pile up and eat disk space.
    - `:excluded` — the per-change selection (change keys,
      `app.common.files.branch-merge/change-key`) naming the changes the
      user deselected, which main keeps its own value for.
@@ -769,7 +764,7 @@
   before that diff has loaded carry the revn of the conflict answer instead
   (`conflict-main-revn`). Unresolved conflicts open the resolution modal."
   ([branch] (merge-branch branch nil))
-  ([branch {:keys [resolutions comment keep-branch excluded]}]
+  ([branch {:keys [resolutions comment excluded]}]
    (assert (uuid? (:id branch)) "expected a branch row with a valid `:id`")
    (ptk/reify ::merge-branch
      ptk/WatchEvent
@@ -787,7 +782,6 @@
                           (seq resolutions)  (assoc :resolutions resolutions)
                           (seq excluded)     (assoc :excluded excluded)
                           (not (str/blank? comment)) (assoc :comment (str/trim comment))
-                          keep-branch        (assoc :keep-branch true)
                           (some? main-revn)  (assoc :expected-main-revn main-revn)))
                (rx/mapcat
                 (fn [{:keys [status source-file-id conflicts] :as answer}]
@@ -795,8 +789,8 @@
                     ;; the merged result lives in main: take the user there
                     ;; to see it (navigate if elsewhere, hard-reload if
                     ;; already on main). Other clients reload via the
-                    ;; `:file-merged` event; the branch deletion (when not
-                    ;; kept) already happened server-side.
+                    ;; `:file-merged` event; the branch deletion already
+                    ;; happened server-side.
                     :merged      (rx/of (ntf/success (tr "workspace.branches.merge.success"))
                                         (show-merge-result source-file-id))
                     :conflicts   (rx/of (open-conflict-resolutions {:branch branch
