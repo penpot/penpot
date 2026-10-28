@@ -1106,7 +1106,13 @@
   takes a safety snapshot of main, applies the merge to main through the
   production change pipeline, records the merge with its `comment`
   (`file_branch_merge`), deletes the branch and its file and notifies
-  open clients via msgbus."
+  open clients via msgbus.
+
+  Copies follow the merged components: a copy attr no side overrode is
+  no conflict, and after the merge (and its repair) applies, the copies
+  of every local component whose main it changed are synced on main
+  (`bm/sync-copies`). The sync changes go into the same `file_change`
+  row and the same validation as the merge."
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:merge-file-branch
@@ -1283,24 +1289,39 @@
                            ;; under the pre-allocated ids the changes reference
                            (copy-media-rows! conn main-id fresh-map new-media)
 
-                           (let [merged (-> main-file
-                                            (update :revn inc)
-                                            (update :data #(cpc/process-changes % changes)))
-                                 libs   (bfc/get-resolved-file-libraries cfg merged)
-                                 errors (not-empty (cfv/validate-file merged libs))
-                                 repair (if errors
-                                          (cfr/repair-file merged libs errors)
-                                          [])
-                                 merged (cond-> merged
-                                          (seq repair)
-                                          (update :data cpc/process-changes repair))
+                           (let [applied (-> main-file
+                                             (update :revn inc)
+                                             (update :data #(cpc/process-changes % changes)))
+                                 libs    (bfc/get-resolved-file-libraries cfg applied)
+                                 errors  (not-empty (cfv/validate-file applied libs))
+                                 repair  (if errors
+                                           (cfr/repair-file applied libs errors)
+                                           [])
+                                 merged  (cond-> applied
+                                           (seq repair)
+                                           (update :data cpc/process-changes repair))
+
+                                 ;; copies follow the integrated components:
+                                 ;; the copies of every local component whose
+                                 ;; main the merge (or the repair) changed are
+                                 ;; synced, as the workspace syncs them after
+                                 ;; an edit (`bm/sync-copies`)
+                                 {synced :data sync :changes}
+                                 (bm/sync-copies main-id (:data merged)
+                                                 (into (bm/changed-components (:data main-file) changes)
+                                                       (bm/changed-components (:data applied) repair)))
+                                 merged  (assoc merged :data synced)
+                                 libs    (if (seq sync)
+                                           (bfc/get-resolved-file-libraries cfg merged)
+                                           libs)
 
                                  ;; the validator, not the merge, decides
-                                 ;; validity: the repaired result goes back
-                                 ;; to it, and whatever stays broken refuses
-                                 ;; the merge and rolls the transaction back
-                                 errors (when errors
-                                          (not-empty (cfv/validate-file merged libs)))]
+                                 ;; validity: the repaired and synced result
+                                 ;; goes back to it, and whatever stays broken
+                                 ;; refuses the merge and rolls the
+                                 ;; transaction back
+                                 errors  (when (or errors (seq sync))
+                                           (not-empty (cfv/validate-file merged libs)))]
                              (when errors
                                (ex/raise :type :validation
                                          :code :merge-result-invalid
@@ -1319,7 +1340,9 @@
                                           :revn (:revn merged)
                                           :version (:version merged)
                                           :features (into-array (:features merged))
-                                          :changes (blob/encode (into (vec changes) repair))}
+                                          :changes (blob/encode (-> (vec changes)
+                                                                    (into repair)
+                                                                    (into sync)))}
                                          {::db/return-keys false})
 
                              ;; a page the merge left as it was keeps its
@@ -1408,7 +1431,12 @@
   `{:status :unsupported}` for change kinds not yet translatable. On
   success it applies main's changes (and any conflicts resolved to main)
   to the branch, takes a safety snapshot, and repositions the merge base
-  to the current state of main."
+  to the current state of main.
+
+  Copies follow the integrated components as in a merge: after main's
+  changes apply, the copies of every local component whose main they
+  changed are synced on the branch, in the branch's id space
+  (`bm/sync-copies`), before the squash records the branch's net."
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:update-branch-from-main
@@ -1649,25 +1677,41 @@
                                ;; rows — or the remapped changes would name ids
                                ;; it does not hold and apply to nothing (a
                                ;; `:del-media` of a paired copy would keep it)
-                               updated (-> branch-file
+                               before  (bm/remap-refs (:data branch-file) media-map)
+                               written (-> branch-file
                                            (update :revn inc)
-                                           (update :data #(cpc/process-changes
-                                                           (bm/remap-refs % media-map)
-                                                           applied)))
-                               libs    (bfc/get-resolved-file-libraries cfg updated)
-                               errors  (not-empty (cfv/validate-file updated libs))
+                                           (assoc :data (cpc/process-changes before applied)))
+                               libs    (bfc/get-resolved-file-libraries cfg written)
+                               errors  (not-empty (cfv/validate-file written libs))
                                repair  (if errors
-                                         (cfr/repair-file updated libs errors)
+                                         (cfr/repair-file written libs errors)
                                          [])
-                               updated (cond-> updated
+                               updated (cond-> written
                                          (seq repair)
                                          (update :data cpc/process-changes repair))
 
+                               ;; copies follow the integrated components: the
+                               ;; copies of every local component whose main
+                               ;; the update (or the repair) changed are
+                               ;; synced, in the branch's id space the write
+                               ;; runs in (`bm/sync-copies`). The squash below
+                               ;; diffs `updated`, so it records the sync as
+                               ;; branch work
+                               {synced :data sync :changes}
+                               (bm/sync-copies branch-file-id (:data updated)
+                                               (into (bm/changed-components before applied)
+                                                     (bm/changed-components (:data written) repair)))
+                               updated (assoc updated :data synced)
+                               libs    (if (seq sync)
+                                         (bfc/get-resolved-file-libraries cfg updated)
+                                         libs)
+
                                ;; the validator, not the update, decides
-                               ;; validity: the repaired result goes back to
-                               ;; it, and whatever stays broken refuses the
-                               ;; update and rolls the transaction back
-                               errors  (when errors
+                               ;; validity: the repaired and synced result
+                               ;; goes back to it, and whatever stays broken
+                               ;; refuses the update and rolls the
+                               ;; transaction back
+                               errors  (when (or errors (seq sync))
                                          (not-empty (cfv/validate-file updated libs)))]
                            (when errors
                              (ex/raise :type :validation
@@ -1686,7 +1730,9 @@
                                         :revn (:revn updated)
                                         :version (:version updated)
                                         :features (into-array (:features updated))
-                                        :changes (blob/encode (into (vec applied) repair))}
+                                        :changes (blob/encode (-> (vec applied)
+                                                                  (into repair)
+                                                                  (into sync)))}
                                        {::db/return-keys false})
 
                            ;; SQUASH: the new base (main's current state)

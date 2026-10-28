@@ -21,8 +21,12 @@
   reported payload names the DOCUMENTS either way (see `compute-merge`)."
   (:require
    [app.common.data :as d]
+   [app.common.files.changes :as cfc]
+   [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.logic.libraries :as cll]
    [app.common.types.component :as ctk]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.tokens-lib :as ctob]
@@ -333,6 +337,138 @@
   [results]
   {:changes   (into [] (mapcat :changes) results)
    :conflicts (into [] (mapcat :conflicts) results)})
+
+;; --- Component copies ---
+;;
+;; A copy's attributes follow its component through Penpot's component
+;; sync unless the copy overrides them by hand, which the copy records as
+;; a sync group in its `:touched` set (`app.common.types.component`). The
+;; merge honours that per attribute of a copy both sides changed:
+;;   - no side overrode it: it follows the merged component, so the
+;;     target keeps its value and the sync run after the integration
+;;     (`sync-copies`) sets it;
+;;   - one side overrode it: that side's value wins;
+;;   - both sides overrode it: a real conflict.
+;; The sides are the comparison roles: `:main` is `theirs` (the target),
+;; `:branch` is `ours` (the source).
+
+(def ^:private text-content-groups
+  "The groups a text `:content` change marks on top of `:content-group`
+  (`app.common.types.text/get-diff-type`)."
+  #{:text-content-text :text-content-attribute :text-content-structure})
+
+(defn- overrode?
+  "True when `touched` holds the sync `group` of `attr` and `shape` moved
+  the attr off its `base` value: the side overrode it by hand."
+  [group touched base shape attr]
+  (and (contains? touched group)
+       (not= (get base attr) (get shape attr))))
+
+(defn- copy-conflict-sides
+  "How the copy rule settles a shape both sides changed differently, or
+  nil when the shape is not such a copy. `sb`/`st`/`so` are the
+  classification shapes (stripped, see `strip-shapes`) of the base,
+  `theirs` and `ours`; `t`/`o` the full ones, which carry `:touched`.
+
+  Returns `{:auto {attr side} :open #{attr}}` over the attrs that differ
+  between the two sides: `:auto` holds the side the rule picks for each
+  sync attr no more than one side overrode (`:main` when none did), and
+  `:open` the attrs left to the user, the ones both sides overrode and
+  the ones outside every sync group."
+  [sb st so t o]
+  (when (and (some? sb) (some? st) (some? so)
+             (ctk/in-component-copy? t)
+             (ctk/in-component-copy? o)
+             (not= sb st) (not= sb so))
+    (let [sb (strip-nil-attrs sb)
+          st (strip-nil-attrs st)
+          so (strip-nil-attrs so)
+          tt (set (:touched t))
+          ot (set (:touched o))]
+      (when (and (not= sb st) (not= sb so) (not= st so))
+        (reduce-kv
+         (fn [acc attr _]
+           (let [group (ctk/resolve-sync-group (:type so) attr)
+                 t?    (and (some? group) (overrode? group tt sb st attr))
+                 o?    (and (some? group) (overrode? group ot sb so attr))]
+             (cond
+               (or (nil? group) (and t? o?)) (update acc :open conj attr)
+               o?                            (assoc-in acc [:auto attr] :branch)
+               :else                         (assoc-in acc [:auto attr] :main))))
+         {:auto {} :open #{}}
+         (shallow-attr-diff st so))))))
+
+(defn- settle-copy-conflicts
+  "Apply the copy rule to the `:modify-modify` shape conflicts of one
+  page's comparison `res`. A conflict whose attrs the rule settles
+  entirely leaves `:conflicts`; it comes back as a `:modified` change
+  over the attrs the source wins, if any, since the merge applies them.
+  A conflict with open attrs stays, its `:changed-attrs` narrowed to
+  them: the merge applies the settled ones whatever the user picks."
+  [{:keys [conflicts] :as res} sbo sto soo to oo]
+  (reduce
+   (fn [acc {:keys [id reason changed-attrs] :as c}]
+     (if-let [{:keys [auto open]} (when (= :modify-modify reason)
+                                    (copy-conflict-sides (get sbo id) (get sto id) (get soo id)
+                                                         (get to id) (get oo id)))]
+       (let [won (into [] (keep (fn [[attr side]] (when (= :branch side) attr))) auto)]
+         (cond
+           (seq open)
+           (update acc :conflicts conj (assoc c :changed-attrs (select-keys changed-attrs open)))
+
+           (seq won)
+           (update acc :changes conj (-> c
+                                         (dissoc :reason :base :main :branch)
+                                         (assoc :status :modified
+                                                :changed-attrs (select-keys changed-attrs won))))
+
+           :else
+           acc))
+       (update acc :conflicts conj c)))
+   (assoc res :conflicts [])
+   conflicts))
+
+(defn- copy-resolution
+  "The per-attr resolution of a copy the rule settled (`sides`, see
+  `copy-conflict-sides`): the user's `res` over the open attrs, a side
+  keyword standing for every one of them, and the rule's side for the
+  rest."
+  [{:keys [auto open]} res]
+  (merge (cond
+           (keyword? res) (zipmap open (repeat res))
+           (map? res)     res
+           :else          {})
+         auto))
+
+(defn- copy-touched-ops
+  "Operations that write the copy `t` from the source shape `o` without
+  marking overrides the source does not have: every `:set` carries
+  `:ignore-touched`, and one `:set-touched` gives the copy the source's
+  sync groups for the attrs the operations take (all of them under
+  `whole?`, when the source shape wins entirely) and its own for the
+  rest. A plain `:set` on a copy marks the attr's group touched, which
+  would freeze an attr the source merely synced from its component."
+  [ops t o whole?]
+  (let [ops     (into []
+                      (comp (remove #(= :touched (:attr %)))
+                            (map #(assoc % :ignore-touched true)))
+                      ops)
+        taken   (into #{}
+                      (mapcat (fn [{:keys [attr]}]
+                                (when-let [group (ctk/resolve-sync-group (:type o) attr)]
+                                  (if (and (= :content attr) (= :text (:type o)))
+                                    (conj text-content-groups group)
+                                    [group]))))
+                      ops)
+        own     (set (:touched t))
+        touched (if whole?
+                  (set (:touched o))
+                  (into (into #{} (remove taken) own)
+                        (filter taken)
+                        (:touched o)))]
+    (cond-> ops
+      (and (seq ops) (not= touched own))
+      (conj {:type :set-touched :touched (not-empty touched)}))))
 
 (defn- presence-only
   "Keep only the existence-level results of a CONTENT-valued presence diff:
@@ -881,7 +1017,11 @@
                                                :deleted (assoc e :shape (or (get bo (:id e))
                                                                             (get to (:id e))))
                                                e))
-                                passed (tree-policy-pass res bo to oo sbo sto reorders pid modes)]
+                                passed (-> (tree-policy-pass res bo to oo sbo sto reorders pid modes)
+                                           ;; a copy's attrs no more than one
+                                           ;; side overrode are not conflicts
+                                           ;; (see `copy-conflict-sides`)
+                                           (settle-copy-conflicts sbo sto soo to oo))]
                             {:changes   (mapv (fn [e]
                                                 ;; a `:refuse` entry names the
                                                 ;; container it could not place
@@ -1409,7 +1549,14 @@
 
   The `:tokens-lib` is diffed as well (`diff-tokens`), so token changes
   are reported here with their own kinds. The file's tokens source is
-  reported under kind `:tokens-source`, entity id `:tokens-source`."
+  reported under kind `:tokens-source`, entity id `:tokens-source`.
+
+  A component copy both sides changed is settled per attr by the copy
+  rule (see `copy-conflict-sides`): only the attrs both sides overrode
+  by hand, and the ones outside every sync group, stay in its conflict.
+  A copy the rule settles entirely leaves `:conflicts`, and comes back
+  as a `:modified` change over the attrs the source overrode, which the
+  merge takes from it."
   ([base main branch dir] (compute-merge* base main branch dir nil))
   ([base main branch dir {:keys [only-pages]}]
    (compute-merge* base main branch dir only-pages)))
@@ -1771,20 +1918,39 @@
                        own-drop)
         keep?    (complement drop-ids)
 
+        ;; a copy both sides changed takes, per attr, the side the copy
+        ;; rule picks (`copy-conflict-sides`) and the user's resolution
+        ;; only over the attrs the rule leaves open. Only the attr pass
+        ;; reads these; moves and restores keep the user's entity choice
+        shape-res (reduce (fn [acc id]
+                            (if-let [sides (copy-conflict-sides (get sbo id) (get sto id) (get soo id)
+                                                                (get to id) (get oo id))]
+                              (assoc acc id (copy-resolution sides (get resolutions id)))
+                              acc))
+                          resolutions
+                          (filter keep? (keys sbo)))
+
         ;; modifications + deletions (additions handled below, ordered)
         mod-del
         (->> (flat-changes (into {} (filter (fn [[id _]] (keep? id))) sbo)
                            (into {} (filter (fn [[id _]] (keep? id))) sto)
                            (into {} (filter (fn [[id _]] (keep? id))) soo)
-                           resolutions
+                           shape-res
                            (fn [_ _] nil)
                            (fn [id _]
-                             (let [res (get resolutions id)
-                                   ops (if (and (map? res)
-                                                (not= (get sto id) (get sbo id))) ; genuine conflict -> per-attr
-                                         (shape-resolved-ops (get sto id) (get soo id)
-                                                             (get to id) (get oo id) res)
-                                         (shape-set-ops (get to id) (get oo id)))]
+                             (let [res    (get shape-res id)
+                                   t      (get to id)
+                                   o      (get oo id)
+                                   whole? (not (and (map? res)
+                                                    (not= (get sto id) (get sbo id)))) ; genuine conflict -> per-attr
+                                   ops    (if whole?
+                                            (shape-set-ops t o)
+                                            (shape-resolved-ops (get sto id) (get soo id) t o res))
+                                   ;; a copy keeps the overrides of the side
+                                   ;; each attr comes from, never new ones
+                                   ops    (if (or (ctk/in-component-copy? t) (ctk/in-component-copy? o))
+                                            (copy-touched-ops ops t o whole?)
+                                            ops)]
                                (when (seq ops)
                                  {:type :mod-obj :page-id page-id :id id :operations ops})))
                            (fn [id]
@@ -1992,7 +2158,15 @@
   shape it reparented there), so no emitted change can reference a parent
   the merge does not create; the alternative policy, refusing the
   exclusion and naming those shapes instead, stays documented and is not
-  the working default."
+  the working default.
+
+  A component copy takes, per attr, the side the copy rule picks
+  (`copy-conflict-sides`) whatever `resolutions` says, which only
+  decides the attrs the rule leaves open. The operations written on a
+  copy never mark an override the source does not have
+  (`copy-touched-ops`). The attrs the rule leaves at the target's value
+  follow the component through `sync-copies`, which the caller runs
+  after applying these changes."
   ([base main branch]
    (compute-changes base main branch {}))
   ([base main branch resolutions]
@@ -2335,3 +2509,57 @@
                                 set-presence set-rename-changes set-order-changes
                                 token-vals themes
                                 active-changes))})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; COPIES FOLLOW THE INTEGRATED COMPONENTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn changed-components
+  "Ids of the local components whose main instance `changes` modify,
+  read against `data`, the document before they apply: the detection the
+  workspace runs on every commit to sync copies
+  (`app.common.files.changes/components-changed`). A deleted component
+  has no copies left to follow it and is left out."
+  [data changes]
+  (into #{}
+        (comp (mapcat #(cfc/components-changed data %))
+              (filter #(some? (ctkl/get-component data %))))
+        changes))
+
+(defn sync-copies
+  "Sync the copies of the local components `component-ids` in the
+  document `data` of the file `file-id`, with Penpot's component sync
+  (`app.common.logic.libraries/generate-sync-file-changes`): every attr a
+  copy does not override takes its component's value. A sync that writes
+  inside the main of another local component (a nested copy) makes that
+  component sync in turn, as the workspace does, until no sync changes
+  anything.
+
+  Returns `{:data <synced data> :changes [<applied changes>]}`. The
+  merge and the update run it after integrating, so the copies the
+  comparison left with the target's value, or never saw (one added on
+  the other side), match the integrated components."
+  [file-id data component-ids]
+  (let [limit (inc (count (:components data)))]
+    (loop [pending (set component-ids)
+           data    data
+           out     []
+           round   0]
+      (if (or (empty? pending) (> round limit))
+        {:data data :changes out}
+        (let [[data out queued]
+              (reduce (fn [[data out queued] component-id]
+                        (let [libraries {file-id {:id file-id :data data}}
+                              redo      (-> (pcb/empty-changes)
+                                            (cll/generate-sync-file-changes nil :components file-id
+                                                                            component-id file-id
+                                                                            libraries file-id)
+                                            :redo-changes)]
+                          (if (empty? redo)
+                            [data out queued]
+                            [(cfc/process-changes data redo)
+                             (into out redo)
+                             (into queued (changed-components data redo))])))
+                      [data out #{}]
+                      pending)]
+          (recur queued data out (inc round)))))))

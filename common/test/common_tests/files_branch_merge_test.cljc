@@ -8,7 +8,13 @@
   (:require
    [app.common.files.branch-merge :as bm]
    [app.common.files.changes :as cfc]
+   [app.common.files.changes-builder :as pcb]
    [app.common.files.tokens :as cfo]
+   [app.common.logic.shapes :as cls]
+   [app.common.test-helpers.compositions :as tho]
+   [app.common.test-helpers.files :as thf]
+   [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.shapes :as ths]
    [app.common.types.page :as ctp]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
@@ -1897,3 +1903,125 @@
     (t/testing "replaying the squashed net over the new base reproduces the branch"
       (t/is (= (tree-objects updated)
                (tree-objects (cfc/process-changes new-base net)))))))
+
+;; --- copies follow their component (the copy rule) ---
+
+(defn- copy-shape
+  "A copy rect of the main `:m`: `fill` and an optional `:touched` set."
+  [fill & {:keys [touched opacity]}]
+  (cond-> {:id :k :name "K" :type :rect :shape-ref :m :fills [{:fill-color fill}]}
+    (some? touched) (assoc :touched touched)
+    (some? opacity) (assoc :opacity opacity)))
+
+(defn- copy-ops
+  "The operations `compute-changes` writes on the copy `:k`."
+  [changes]
+  (->> changes
+       (filter #(and (= :mod-obj (:type %)) (= :k (:id %))))
+       (mapcat :operations)
+       (vec)))
+
+(t/deftest copy-attr-no-side-overrode-follows-the-component
+  ;; both sides synced K from their own edit of the component: the attr
+  ;; follows the merged component, so the target keeps its value until
+  ;; the sync after the merge sets it
+  (let [base   (mkdata {:k (copy-shape "red")})
+        main   (mkdata {:k (copy-shape "blue")})
+        branch (mkdata {:k (copy-shape "green")})
+        r      (bm/compute-merge base main branch :branch->main)]
+    (t/is (empty? (:conflicts r)))
+    (t/is (empty? (:changes r)))
+    (t/is (empty? (copy-ops (:changes (bm/compute-changes base main branch {} r)))))))
+
+(t/deftest copy-attr-the-source-overrode-wins
+  (let [base   (mkdata {:k (copy-shape "red")})
+        main   (mkdata {:k (copy-shape "blue")})
+        branch (mkdata {:k (copy-shape "green" :touched #{:fill-group})})
+        r      (bm/compute-merge base main branch :branch->main)
+        ops    (copy-ops (:changes (bm/compute-changes base main branch {} r)))]
+    (t/is (empty? (:conflicts r)))
+    (t/testing "the summary reports the override as a change the merge applies"
+      (t/is (= [[:k :modified #{:fills}]]
+               (mapv (juxt :id :status (comp set keys :changed-attrs)) (:changes r)))))
+    (t/testing "the copy takes the value and the override mark"
+      (t/is (= [{:type :set :attr :fills :val [{:fill-color "green"}] :ignore-touched true}
+                {:type :set-touched :touched #{:fill-group}}]
+               ops)))))
+
+(t/deftest copy-attr-the-target-overrode-stays
+  (let [base   (mkdata {:k (copy-shape "red")})
+        main   (mkdata {:k (copy-shape "blue" :touched #{:fill-group})})
+        branch (mkdata {:k (copy-shape "green")})
+        r      (bm/compute-merge base main branch :branch->main)]
+    (t/is (empty? (:conflicts r)))
+    (t/is (empty? (:changes r)))
+    (t/is (empty? (copy-ops (:changes (bm/compute-changes base main branch {} r)))))))
+
+(t/deftest copy-attr-both-sides-overrode-is-a-conflict
+  (let [base   (mkdata {:k (copy-shape "red")})
+        main   (mkdata {:k (copy-shape "blue" :touched #{:fill-group})})
+        branch (mkdata {:k (copy-shape "green" :touched #{:fill-group})})
+        r      (bm/compute-merge base main branch :branch->main)]
+    (t/is (= [:k] (mapv :id (:conflicts r))))
+    (t/is (= #{:fills} (set (keys (:changed-attrs (first (:conflicts r)))))))
+    (t/testing "resolved to the branch, the copy takes its value and override"
+      (t/is (= [{:type :set :attr :fills :val [{:fill-color "green"}] :ignore-touched true}]
+               (copy-ops (:changes (bm/compute-changes base main branch {:k :branch} r))))))))
+
+(t/deftest copy-conflict-narrows-to-the-attrs-both-sides-overrode
+  ;; both overrode the fill; only the branch overrode the opacity: the
+  ;; conflict asks about the fill, and the opacity comes from the branch
+  ;; whatever the user picks
+  (let [base   (mkdata {:k (copy-shape "red" :opacity 1)})
+        main   (mkdata {:k (copy-shape "blue" :opacity 1 :touched #{:fill-group})})
+        branch (mkdata {:k (copy-shape "green" :opacity 0.5
+                                       :touched #{:fill-group :layer-effects-group})})
+        r      (bm/compute-merge base main branch :branch->main)
+        ops    (copy-ops (:changes (bm/compute-changes base main branch {:k :main} r)))]
+    (t/is (= #{:fills} (set (keys (:changed-attrs (first (:conflicts r)))))))
+    (t/is (= [{:type :set :attr :opacity :val 0.5 :ignore-touched true}
+              {:type :set-touched :touched #{:fill-group :layer-effects-group}}]
+             ops))))
+
+(t/deftest copy-rule-holds-updating-from-main
+  ;; the update direction: main is the source, the branch the target
+  (let [base   (mkdata {:k (copy-shape "red")})
+        main   (mkdata {:k (copy-shape "blue" :touched #{:fill-group})})
+        branch (mkdata {:k (copy-shape "green")})
+        r      (bm/compute-merge base main branch :main->branch)
+        ops    (copy-ops (:changes (bm/compute-changes base branch main {} r)))]
+    (t/is (empty? (:conflicts r)))
+    (t/is (= [{:type :set :attr :fills :val [{:fill-color "blue"}] :ignore-touched true}
+              {:type :set-touched :touched #{:fill-group}}]
+             ops))))
+
+(t/deftest clean-copy-change-marks-no-override
+  ;; the branch synced K from its component and main left K alone: the
+  ;; merge writes the value without marking it overridden
+  (let [base   (mkdata {:k (copy-shape "red")})
+        branch (mkdata {:k (copy-shape "green")})]
+    (t/is (= [{:type :set :attr :fills :val [{:fill-color "green"}] :ignore-touched true}]
+             (copy-ops (:changes (bm/compute-changes base base branch)))))))
+
+(t/deftest sync-copies-follows-nested-components
+  ;; a change to component1's main syncs its nested copy inside
+  ;; component2's main, which in turn syncs component2's copy
+  (thi/test-fixture
+   (fn []
+     (let [file    (-> (thf/sample-file :file1)
+                       (tho/add-nested-component-with-copy :component1 :main1-root :main1-child
+                                                           :component2 :main2-root :nested2-head
+                                                           :copy2-root))
+           page    (thf/current-page file)
+           changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                               #{(:id (ths/get-shape file :main1-child))}
+                                               #(assoc % :fills (ths/sample-fills-color :fill-color "#fabada"))
+                                               (:objects page)
+                                               {})
+           edited  (thf/apply-changes file changes)
+           scope   (bm/changed-components (:data file) (:redo-changes changes))
+           {:keys [data]} (bm/sync-copies (:id edited) (:data edited) scope)
+           synced  (assoc edited :data data)]
+       (t/is (= #{(thi/id :component1)} scope))
+       (t/is (= "#fabada" (tho/bottom-fill-color synced :nested2-head)))
+       (t/is (= "#fabada" (tho/bottom-fill-color synced :copy2-root)))))))
