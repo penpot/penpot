@@ -24,6 +24,7 @@
    [common-tests.files-migrations-0025-test]
    [common-tests.files-migrations-0026-test]
    [common-tests.files-migrations-test]
+   [common-tests.files-ref-paths-test]
    [common-tests.files.comp-processors-test]
    [common-tests.files.helpers-test]
    [common-tests.files.repair-test]
@@ -131,6 +132,7 @@
    'common-tests.files-migrations-0025-test
    'common-tests.files-migrations-0026-test
    'common-tests.files-migrations-test
+   'common-tests.files-ref-paths-test
    'common-tests.files.comp-processors-test
    'common-tests.files.helpers-test
    'common-tests.files.repair-test

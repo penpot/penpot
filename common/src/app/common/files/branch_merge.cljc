@@ -1086,11 +1086,10 @@
 
 (defn remap-refs
   "Rewrite cross-file references in `data` through `id-map`
-  ({old-id -> new-id}): the file refs `cfh/relink-refs` rewrites
-  (`:component-file`, `:fill-color-ref-file`, `:stroke-color-ref-file`,
-  `:typography-ref-file`, shadow/grid `:file-id`) plus the media refs
-  (shape `:metadata`/`:fill-image`/`:stroke-image` ids, the `:media`
-  collection keys and library-color `:image` ids). It is the same surface
+  ({old-id -> new-id}): the file and media refs every shape holds
+  (`cfh/shape-ref-paths` and `cfh/legacy-shape-ref-paths`) and the page
+  default grid colours (`cfh/relink-containers`), plus the `:media`
+  collection keys and library-color `:image` ids. It is the same surface
   `binfile.common/process-file` remaps when it copies a file. The
   document's own `:id` and its `:tokens-source` are rewritten too, so a
   document moved into another file's id space names that file as itself,
@@ -1115,8 +1114,7 @@
       (-> data
           (d/update-when :id #(if (uuid? %) (lookup %) %))
           (d/update-when :tokens-source lookup)
-          (d/update-when :pages-index #(cfh/relink-refs % lookup))
-          (d/update-when :components #(cfh/relink-refs % lookup))
+          (cfh/relink-containers lookup)
           (d/update-when :media
                          (fn [media]
                            (reduce-kv (fn [res k v]
@@ -1137,28 +1135,17 @@
                                       colors
                                       colors)))))))
 
-(def ^:private reference-attrs
-  "Shape attrs whose value IS a reference to the file that owns the entity.
-  `relink-refs` finds them inside a shape map, where the attr and the value
-  travel together. An operation that sets one of them carries the id alone."
-  #{:component-file :fill-color-ref-file :stroke-color-ref-file :typography-ref-file})
-
 (defn- remap-op
-  "Rewrite the reference of one `:mod-obj` operation through `id-map`.
-  `shape-set-ops` emits one `:set` per differing attr, so a reference can
-  arrive either as the attr's own value or, for an image shape, as the media
-  map under `:metadata`."
-  [op id-map]
-  (let [attr (:attr op)
-        val  (:val op)]
-    (cond
-      (and (contains? reference-attrs attr) (uuid? val))
-      (assoc op :val (get id-map val val))
-
-      (and (= :metadata attr) (uuid? (:id val)))
-      (assoc op :val (update val :id #(get id-map % %)))
-
-      :else op)))
+  "Rewrite the references of one `:mod-obj` operation through `lookup`.
+  `shape-set-ops` emits one `:set` per differing attr, so the value is
+  relinked as that attr of a shape: a reference arrives as the attr's own
+  value (`:component-file`) or nested in it (`:fills`, `:metadata`, …)."
+  [{:keys [attr val] :as op} lookup]
+  (if (and (= :set (:type op)) (some? val))
+    (let [shape  {attr val}
+          shape' (cfh/relink-shape shape lookup)]
+      (if (identical? shape shape') op (assoc op :val (get shape' attr))))
+    op))
 
 (defn remap-changes
   "Rewrite the cross-file references of a change vector through `id-map`,
@@ -1168,41 +1155,66 @@
   fill whose `:fill-color-ref-file` names another file loses its link, and so
   does an instance whose `:component-file` does.
 
-  Every payload `compute-changes` can emit is covered. `relink-refs` walks a
-  whole map, so `:obj`, `:page`, `:params`, and a component's `:objects` are
-  complete on their own. The payloads it cannot see are the values that ARE
-  the reference: a media object's `:id` (its `:media-id` is a storage key and
-  must not be touched), a library color's `:image` id, a `:del-media`'s
-  top-level `:id`, a `:set-tokens-source`'s `:library-id`, and an operation
-  value that is the reference itself. A `:set-tokens-source`'s `:file-id` is
-  a `:file-id` key, which `relink-refs` rewrites. The top-level `:id` of the
-  other delete changes (`:del-color`, `:del-typography`, `:del-component`,
-  `:del-obj`, `:del-page`) is NOT such a value: those name entities the two
-  files share by id, never a media row, so they are left alone — only a
-  media id or the file id is ever a key of `id-map`. The other token changes
-  are left alone: no id in `id-map` is a token id."
+  Each change type that can carry a reference is relinked where it does:
+
+  - `:add-obj`: the `:obj` shape (`cfh/relink-shape`);
+  - `:mod-obj`: the value of each `:set` operation (`remap-op`);
+  - `:add-page`: the `:page`, its shapes and default grids
+    (`cfh/relink-page`);
+  - `:set-default-grid`: the grid colour of `:params`
+    (`cfh/relink-grid-params`);
+  - `:add-component`, `:mod-component`: the `:objects` a deleted
+    component keeps (`cfh/relink-objects`);
+  - `:add-color`, `:mod-color`: the library color's `:image` id;
+  - `:add-media`, `:mod-media`: the media object's `:id` and `:file-id`
+    (its `:media-id` is a storage key and must not be touched);
+  - `:del-media`: the top-level `:id`;
+  - `:set-tokens-source`: `:file-id` and `:library-id`.
+
+  The top-level `:id` of the other delete changes (`:del-color`,
+  `:del-typography`, `:del-component`, `:del-obj`, `:del-page`) is left
+  alone: those name entities the two files share by id, never a media
+  row, and only a media id or the file id is ever a key of `id-map`. The
+  token changes are left alone too: no id in `id-map` is a token id."
   [changes id-map]
   (if (empty? id-map)
     changes
-    (let [lookup #(get id-map % %)
-          relink #(cfh/relink-refs % lookup)]
+    (let [lookup #(get id-map % %)]
       (mapv (fn [change]
-              (cond-> (relink change)
-                (= :del-media (:type change))
-                (update :id lookup)
+              (case (:type change)
+                :add-obj
+                (d/update-when change :obj cfh/relink-shape lookup)
 
-                (uuid? (:id (:object change)))
-                (update-in [:object :id] lookup)
+                :mod-obj
+                (d/update-when change :operations
+                               (fn [ops] (mapv #(remap-op % lookup) ops)))
 
-                (and (= :set-tokens-source (:type change))
-                     (uuid? (:library-id change)))
-                (update :library-id lookup)
+                :add-page
+                (d/update-when change :page cfh/relink-page lookup)
 
-                (uuid? (get-in change [:color :image :id]))
-                (update-in [:color :image :id] lookup)
+                :set-default-grid
+                (d/update-when change :params cfh/relink-grid-params lookup)
 
-                (seq (:operations change))
-                (update :operations #(mapv (fn [op] (remap-op op id-map)) %))))
+                (:add-component :mod-component)
+                (d/update-when change :objects cfh/relink-objects lookup)
+
+                (:add-color :mod-color)
+                (d/update-in-when change [:color :image :id] lookup)
+
+                (:add-media :mod-media)
+                (-> change
+                    (d/update-in-when [:object :id] lookup)
+                    (d/update-in-when [:object :file-id] lookup))
+
+                :del-media
+                (d/update-when change :id lookup)
+
+                :set-tokens-source
+                (-> change
+                    (d/update-when :file-id lookup)
+                    (d/update-when :library-id lookup))
+
+                change))
             changes))))
 
 (defn- strip-modified-at

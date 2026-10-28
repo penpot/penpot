@@ -656,91 +656,172 @@
       (into xform:collect-media-refs (vals (:components data)))
       (into (keys (:media data)))))
 
-(defn relink-refs
-  "A function responsible to analyze the file data or shape for references
-  and apply lookup-index on it.
+(def shape-ref-paths
+  "Every place a shape holds a reference to another file (`:file`) or to
+  a media object (`:media`) at the current data version.
 
-  It visits every map in `data` but rebuilds a collection only when
-  something inside it changed: a branch derive runs it over the whole
-  document on every read, and a copying walk spent seconds on a file of
-  90,000 shapes where most shapes hold no reference at all."
-  [data lookup-index]
-  (letfn [(relink-key [form k]
-            (let [v  (get form k)
-                  v' (lookup-index v)]
-              (if (= v v') form (assoc form k v'))))
+  `:path` is relative to the shape. A keyword step is a map key, `:*`
+  steps into every element of a vector, and `::tree` stands for the node
+  and every descendant reached through `:children` (the text `:content`
+  tree). The last step names the key holding the uuid.
 
-          (relink-id-in [form k]
-            (let [inner  (get form k)
-                  inner' (relink-key inner :id)]
-              (if (identical? inner inner') form (assoc form k inner'))))
+  The shape schema declares every path, and
+  `common-tests.files-ref-paths-test` fails when the schema gains a uuid
+  path that is neither listed here nor classified as no reference."
+  [{:path [:component-file] :kind :file}
+   {:path [:metadata :id] :kind :media}
+   {:path [:fills :* :fill-color-ref-file] :kind :file}
+   {:path [:fills :* :fill-image :id] :kind :media}
+   {:path [:strokes :* :stroke-color-ref-file] :kind :file}
+   {:path [:strokes :* :stroke-image :id] :kind :media}
+   {:path [:shadow :* :color :ref-file] :kind :file}
+   {:path [:grids :* :params :color :ref-file] :kind :file}
+   {:path [:content ::tree :fills :* :fill-color-ref-file] :kind :file}
+   {:path [:content ::tree :fills :* :fill-image :id] :kind :media}
+   {:path [:content ::tree :typography-ref-file] :kind :file}
+   {:path [:position-data :* :fills :* :fill-color-ref-file] :kind :file}
+   {:path [:position-data :* :fills :* :fill-image :id] :kind :media}])
 
-          (process-map-form [form]
-            (cond-> form
-              ;; Relink image shapes
-              (and (map? (:metadata form))
-                   (= :image (:type form)))
-              (relink-id-in :metadata)
+(def legacy-shape-ref-paths
+  "References in places older data versions used, in the format of
+  `shape-ref-paths`. Binfile import relinks before it migrates, because
+  the migrations resolve `:component-file` against the importing file's
+  libraries, so it can meet any of them:
 
-              ;; Relink paths with fill image
-              (map? (:fill-image form))
-              (relink-id-in :fill-image)
+  - top-level fill and stroke colour refs, moved into `:fills` and
+    `:strokes` by migration `legacy-16`, which skips text shapes;
+  - a top-level `:fill-image`, once set on many shape types;
+  - the shadow and grid colour `:file-id`, renamed `:ref-file` by
+    migration `0015-clean-shadow-color`;
+  - text nodes holding fill attrs directly, moved into `:fills` by
+    migration `0006-fix-old-texts-fills`."
+  [{:path [:fill-color-ref-file] :kind :file}
+   {:path [:stroke-color-ref-file] :kind :file}
+   {:path [:fill-image :id] :kind :media}
+   {:path [:shadow :* :color :file-id] :kind :file}
+   {:path [:grids :* :params :color :file-id] :kind :file}
+   {:path [:content ::tree :fill-color-ref-file] :kind :file}])
 
-              (map? (:stroke-image form))
-              (relink-id-in :stroke-image)
+(defn- relink-vector
+  "Apply `f` to every element of vector `v`, rebuilding it only when an
+  element changed."
+  [v f lookup]
+  (reduce-kv (fn [acc i x]
+               (let [x' (f x lookup)]
+                 (if (identical? x x') acc (assoc acc i x'))))
+             v
+             v))
 
-              ;; This covers old shapes and the new :fills.
-              (uuid? (:fill-color-ref-file form))
-              (relink-key :fill-color-ref-file)
+(defn- relink-vals
+  "Apply `f` to every value of map `m`, rebuilding it only when a value
+  changed."
+  [m f lookup]
+  (reduce-kv (fn [acc k x]
+               (let [x' (f x lookup)]
+                 (if (identical? x x') acc (assoc acc k x'))))
+             m
+             m))
 
-              ;; This covers the old shapes and the new :strokes
-              (uuid? (:stroke-color-ref-file form))
-              (relink-key :stroke-color-ref-file)
+(defn- paths->trie
+  "Merge `paths` into a nested map step -> subtrie, `::leaf` at the key
+  holding the uuid."
+  [paths]
+  (reduce (fn [trie path]
+            (assert (not= ::leaf (get-in trie (pop path)))
+                    (str "ref path under another: " path))
+            (assert (not (map? (get-in trie path)))
+                    (str "ref path ends inside another: " path))
+            (assoc-in trie path ::leaf))
+          {}
+          paths))
 
-              ;; This covers all text shapes that have typography referenced
-              (uuid? (:typography-ref-file form))
-              (relink-key :typography-ref-file)
+(defn- compile-trie
+  "Compile a trie of ref paths into `(fn [node lookup] node')`, which
+  rebuilds only what changed."
+  [trie]
+  (let [fs (mapv (fn [[k sub]]
+                   (cond
+                     (= ::leaf sub)
+                     (fn [node lookup]
+                       (let [v (get node k)]
+                         (if (uuid? v)
+                           (let [v' (lookup v)]
+                             (if (= v v') node (assoc node k v')))
+                           node)))
 
-              ;; This covers the component instance links
-              (uuid? (:component-file form))
-              (relink-key :component-file)
+                     (= :* k)
+                     (let [f (compile-trie sub)]
+                       (fn [coll lookup]
+                         (if (vector? coll) (relink-vector coll f lookup) coll)))
 
-              ;; This covers the shadows and grids: their colour names the
-              ;; library in `:ref-file` (migration 0015 renamed the legacy
-              ;; `:file-id`, still relinked for unmigrated data)
-              (uuid? (:ref-file form))
-              (relink-key :ref-file)
+                     (= ::tree k)
+                     (let [f (compile-trie sub)]
+                       (fn walk [node lookup]
+                         (let [node     (f node lookup)
+                               children (get node :children)]
+                           (if (vector? children)
+                             (let [children' (relink-vector children walk lookup)]
+                               (if (identical? children children')
+                                 node
+                                 (assoc node :children children')))
+                             node))))
 
-              (uuid? (:file-id form))
-              (relink-key :file-id)))
+                     :else
+                     (let [f (compile-trie sub)]
+                       (fn [node lookup]
+                         (let [v (get node k)]
+                           (if (nil? v)
+                             node
+                             (let [v' (f v lookup)]
+                               (if (identical? v v') node (assoc node k v')))))))))
+                 trie)]
+    (fn [node lookup]
+      (reduce (fn [node f] (f node lookup)) node fs))))
 
-          (walk-children [form]
-            (cond
-              (or (map? form) (vector? form))
-              (reduce-kv (fn [acc k v]
-                           (let [v' (walk v)]
-                             (if (identical? v v') acc (assoc acc k v'))))
-                         form
-                         form)
+(def ^:private relink-shape*
+  (->> (concat shape-ref-paths legacy-shape-ref-paths)
+       (map :path)
+       (paths->trie)
+       (compile-trie)))
 
-              (coll? form)
-              (let [items (map walk form)]
-                (cond
-                  (every? true? (map identical? form items)) form
-                  (list? form)                               (apply list items)
-                  (seq? form)                                (doall items)
-                  :else                                      (into (empty form) items)))
+(defn relink-shape
+  "Rewrite every reference `shape-ref-paths` and `legacy-shape-ref-paths`
+  name through `lookup` (uuid -> uuid, identity for unknown ids).
+  Returns `shape` itself when nothing changed."
+  [shape lookup]
+  (relink-shape* shape lookup))
 
-              :else
-              form))
+(defn relink-objects
+  "`relink-shape` over every shape of an objects map. Returns `objects`
+  itself when nothing changed."
+  [objects lookup]
+  (relink-vals objects relink-shape* lookup))
 
-          (walk [form]
-            (let [form (walk-children form)]
-              (if (map? form)
-                (process-map-form form)
-                form)))]
+(def relink-grid-params
+  "`(fn [params lookup])`: relink the colour of one grid's params, its
+  `:ref-file` or the legacy `:file-id` (see `legacy-shape-ref-paths`).
+  Returns `params` itself when nothing changed."
+  (compile-trie (paths->trie [[:color :ref-file] [:color :file-id]])))
 
-    (walk data)))
+(defn relink-page
+  "Relink the references of a page through `lookup`: its shapes and the
+  colours of its default grids, also under `:options :saved-grids`, where
+  they lived before migration `legacy-55` moved them."
+  [page lookup]
+  (let [relink-grids #(relink-vals %1 relink-grid-params %2)]
+    (-> page
+        (d/update-when :objects relink-objects lookup)
+        (d/update-when :default-grids relink-grids lookup)
+        (d/update-in-when [:options :saved-grids] relink-grids lookup))))
+
+(defn relink-containers
+  "Relink the references of every page and component of file `data`
+  through `lookup`. Leaves the `:media` and `:colors` collections alone."
+  [data lookup]
+  (let [relink-component #(d/update-when %1 :objects relink-objects %2)]
+    (-> data
+        (d/update-when :pages-index relink-vals relink-page lookup)
+        (d/update-when :components relink-vals relink-component lookup))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SHAPES ORGANIZATION

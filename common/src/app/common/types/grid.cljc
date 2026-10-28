@@ -17,7 +17,10 @@
 (def schema:grid-color
   [:map {:title "GridColor"}
    [:color clr/schema:hex-color]
-   [:opacity ::sm/safe-number]])
+   [:opacity ::sm/safe-number]
+   ;; library colour the grid follows, as `attach-grid-color` writes it
+   [:ref-id {:optional true} ::sm/uuid]
+   [:ref-file {:optional true} ::sm/uuid]])
 
 (def schema:grid-count
   [:and {:gen/gen (sg/small-double :min 1)}

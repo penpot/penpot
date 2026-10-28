@@ -306,7 +306,12 @@
                           :s2 {:id :s2 :component-file ext-lib}
                           :s3 {:id :s3}
                           :s4 {:id :s4 :fill-color-ref-file branch-id
-                               :typography-ref-file branch-id}
+                               :content {:type "root"
+                                         :children [{:type "paragraph-set"
+                                                     :children [{:type "paragraph"
+                                                                 :typography-ref-file branch-id
+                                                                 :children [{:text "x"
+                                                                             :typography-ref-file branch-id}]}]}]}}
                           :s5 {:id :s5 :type :image :metadata {:id media-old}
                                :fill-image {:id media-old}}})
                  (assoc :media {media-old {:id media-old :name "img"}})
@@ -318,7 +323,8 @@
     (t/is (= ext-lib (get-in objs [:s2 :component-file])))
     (t/is (not (contains? (get objs :s3) :component-file)))
     (t/is (= main-id (get-in objs [:s4 :fill-color-ref-file])))
-    (t/is (= main-id (get-in objs [:s4 :typography-ref-file])))
+    (t/is (= main-id (get-in objs [:s4 :content :children 0 :children 0 :typography-ref-file])))
+    (t/is (= main-id (get-in objs [:s4 :content :children 0 :children 0 :children 0 :typography-ref-file])))
     (t/is (= media-new (get-in objs [:s5 :metadata :id])))
     (t/is (= media-new (get-in objs [:s5 :fill-image :id])))
     (t/is (= {media-new {:id media-new :name "img"}} (:media data')))
@@ -1320,7 +1326,7 @@
   ;; plus the fresh ids of the copied rows). Of the change types
   ;; `compute-changes` emits with a top-level `:id`, only `:del-media`'s
   ;; names a media object, a reference through that map; its `:id` is the
-  ;; whole payload and `relink-refs` cannot see it. The others name
+  ;; whole payload and no shape relink can see it. The others name
   ;; entities the two files share by id (colour, typography, component,
   ;; shape, page), never a media row, so they must come out untouched —
   ;; re-pointing one through a media-pair map would corrupt it.

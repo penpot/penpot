@@ -900,7 +900,7 @@
 
         update-shapes
         (fn [data {:keys [page-id shape-id]}]
-          (d/update-in-when data [:pages-index page-id :objects shape-id] cfh/relink-refs lookup-index))
+          (d/update-in-when data [:pages-index page-id :objects shape-id] cfh/relink-shape lookup-index))
 
         file
         (update file :data #(reduce update-shapes % media-refs))]
@@ -967,13 +967,6 @@
 (defn remap-thumbnail-object-id
   [object-id file-id]
   (str/replace-first object-id #"^(.*?)/" (str file-id "/")))
-
-(defn- relink-shapes
-  "A function responsible to analyze all file data and
-  replace the old :component-file reference with the new
-  ones, using the provided file-index."
-  [data]
-  (cfh/relink-refs data lookup-index))
 
 (defn- relink-media
   "A function responsible of process the :media attr of file data and
@@ -1061,10 +1054,12 @@
                         (-> fdata
                             (assoc :id id)
                             (dissoc :recent-colors))))
+        ;; relink before migrating: migrations resolve `:component-file`
+        ;; against this file's libraries, so the data may still hold
+        ;; legacy refs (`cfh/legacy-shape-ref-paths`)
         (update :data (fn [fdata]
                         (-> fdata
-                            (update :pages-index relink-shapes)
-                            (update :components relink-shapes)
+                            (cfh/relink-containers lookup-index)
                             (update :media relink-media)
                             (update :colors relink-colors)
                             (d/without-nils))))

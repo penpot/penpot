@@ -1242,7 +1242,7 @@
   (import-storage-objects cfg)
 
   ;; Pre-resolve external libraries and add their id mappings to the index
-  ;; BEFORE importing files. This allows relink-refs (inside process-file)
+  ;; BEFORE importing files. This allows relink-containers (inside process-file)
   ;; to correctly remap :component-file references to the destination library.
   ;; Only remap when a link will actually be created (single match + can-edit).
   (let [decisions (compute-link-decisions cfg)]
