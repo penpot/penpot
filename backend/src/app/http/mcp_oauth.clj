@@ -15,6 +15,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.http.errors :as errors]
    [app.http.middleware :as mw]
    [app.http.session :as session]
    [app.mcp.oauth-clients :as clients]
@@ -295,13 +296,17 @@
     (response 201 (clients/register! cfg metadata))))
 
 (defn- wrap-errors
+  "Answer every failure with an OAuth error body. Unexpected failures also go
+  through the shared HTTP error handler, only for its logging; these routes
+  never set request params, so codes and credentials stay out of the log."
   [handler]
   (fn [request]
     (try (handler request)
          (catch Exception cause
            (let [{:keys [oauth-error status]} (ex-data cause)
                  status                       (or status (if (and oauth-error (not= oauth-error "temporarily_unavailable")) 400 503))]
-             ;; Deliberately avoid logging request data, codes or credentials.
+             (when-not oauth-error
+               (errors/handle cause request))
              (cond-> (response status {:error (or oauth-error "temporarily_unavailable")})
                (and (= status 401) (= oauth-error "invalid_client"))
                (assoc-in [::yres/headers "www-authenticate"] "Basic realm=\"Penpot MCP\"")))))))
@@ -339,7 +344,10 @@
     ["/authorize" (endpoint cfg authorize :get false)]
     ["/register" (endpoint cfg register :post true)]
     ["/token" (endpoint cfg token :post true)]
-    ["" {:middleware [[mw/auth {:cookie (partial session/decode-token cfg)}]
+    ;; Error handling wraps the session middleware too, so its failures also
+    ;; get OAuth error bodies and logging.
+    ["" {:middleware [{:compile (constantly wrap-errors)}
+                      [mw/auth {:cookie (partial session/decode-token cfg)}]
                       [session/authz cfg]]}
      ["/request" (endpoint cfg approval-request :get false)]
      ["/decision" (endpoint cfg decision :post false)]]]])

@@ -30,6 +30,7 @@
 ## Approval and exchange
 
 - `backend/src/app/http/mcp_oauth.clj`: separate router branch from ordinary RPC middleware; preserve OAuth snake_case JSON and form encoding. Session auth applies to approval request/decision only. Public metadata/register/token endpoints allow noncredentialed CORS; MCP transport CORS was not added.
+- Errors: every failure answers with an OAuth `{"error": ...}` body, never the shared Penpot error shape. Failures without `:oauth-error` are also passed to `app.http.errors/handle` for logging only; its response is discarded. `wrap-errors` also wraps the session middleware of `/request` and `/decision`. Safe to log because these routes never set request `:params`.
 - `/authorize`: validate client/callback, `code`, PKCE S256, scope/resource/state; store pending request for 600 seconds; redirect to `?screen=mcp-authorize&request=<opaque handle>`.
 - `frontend/src/app/main/ui/mcp_authorize.cljs`: existing login with return URL; show application and account details; submit explicit Allow/Cancel. No fixed MCP token in frontend state or browser redirect. Approval refreshes profile and broadcasts MCP enablement; does not connect a plugin automatically.
 - `/request`: first authenticated read binds request to profile plus hashed login-session ID and CSRF value, using compare-and-replace. Re-read after the attempt: concurrent GETs may win/lose binding; only the matching session may proceed.

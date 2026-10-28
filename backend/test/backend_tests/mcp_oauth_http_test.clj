@@ -10,11 +10,13 @@
    [app.config :as cf]
    [app.db :as db]
    [app.http :as http]
+   [app.http.errors :as errors]
    [app.http.mcp-oauth :as oauth]
    [app.http.session :as session]
    [app.mcp.oauth-clients :as clients]
    [app.mcp.oauth-state :as state]
    [app.rpc.commands.access-token :as access-token]
+   [app.setup.clock :as clock]
    [app.util.json :as json]
    [backend-tests.helpers :as th]
    [clojure.string :as str]
@@ -217,6 +219,30 @@
                                             :redirect_uri "https://example.com/callback"}))]
       (t/is (= 400 (::yres/status reply)))
       (t/is (= "invalid_grant" (:error (body reply)))))))
+
+(t/deftest unexpected-errors-are-logged
+  (let [logged  (atom [])
+        cookies (login-cookie (th/create-profile* 1 {:is-active true}))
+        fail    (fn [& _] (throw (RuntimeException. "unexpected")))]
+    (with-redefs [errors/handle         (fn [cause _] (swap! logged conj (ex-message cause)))
+                  clients/register!     fail
+                  clock/get-clock       fail]
+      (t/testing "endpoint failures"
+        (let [reply (request "/api/mcp/oauth/register" :method :post
+                             :headers {"content-type" "application/json"}
+                             :body-bytes (json/encode-str {:redirect_uris ["https://example.com/callback"]}))]
+          (t/is (= 503 (::yres/status reply)))
+          (t/is (= {:error "temporarily_unavailable"} (body reply)))
+          (t/is (= "*" (get-in reply [::yres/headers "access-control-allow-origin"])))))
+      (t/testing "session middleware failures"
+        (let [reply (request "/api/mcp/oauth/request" :query (form {:request "x"}) :cookies cookies)]
+          (t/is (= 503 (::yres/status reply)))
+          (t/is (= {:error "temporarily_unavailable"} (body reply)))))
+      (t/testing "OAuth rejections are not logged"
+        (t/is (= 400 (::yres/status (request "/api/mcp/oauth/token" :method :post
+                                             :headers {"content-type" "application/x-www-form-urlencoded"}
+                                             :body-bytes "code=a&code=b"))))))
+    (t/is (= ["unexpected" "unexpected"] @logged))))
 
 (t/deftest authorization-rejects-unregistered-callback
   (let [client (clients/register! th/*system* {:redirect_uris ["https://example.com/callback"]})
