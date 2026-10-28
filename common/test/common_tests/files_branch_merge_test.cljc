@@ -2019,6 +2019,77 @@
     (t/is (= [{:type :set :attr :fills :val [{:fill-color "green"}] :ignore-touched true}]
              (copy-ops (:changes (bm/compute-changes base base branch)))))))
 
+;; --- the copy rule per applied-token slot ---
+
+(defn- tokens-copy
+  "A copy rect of the main `:m` with `applied-tokens`, an optional
+  `:touched` set, and the fill a token on `:fill` resolves to."
+  [applied-tokens & {:keys [touched]}]
+  (cond-> {:id :k :name "K" :type :rect :shape-ref :m
+           :fills [{:fill-color (get applied-tokens :fill "none")}]}
+    (seq applied-tokens) (assoc :applied-tokens applied-tokens)
+    (some? touched)      (assoc :touched touched)))
+
+(t/deftest copy-token-no-side-overrode-follows-the-component
+  (let [base   (mkdata {:k (tokens-copy {})})
+        main   (mkdata {:k (tokens-copy {:fill "blue"})})
+        branch (mkdata {:k (tokens-copy {:fill "green"})})
+        r      (bm/compute-merge base main branch :branch->main)]
+    (t/is (empty? (:conflicts r)))
+    (t/is (empty? (:changes r)))
+    (t/is (empty? (copy-ops (:changes (bm/compute-changes base main branch {} r)))))))
+
+(t/deftest copy-token-slots-settle-one-at-a-time
+  ;; main applied a fill token by hand, the branch a radius token by hand:
+  ;; each side's slot wins, and the copy carries both
+  (let [base   (mkdata {:k (tokens-copy {})})
+        main   (mkdata {:k (tokens-copy {:fill "yellow"} :touched #{:fill-group})})
+        branch (mkdata {:k (tokens-copy {:r1 "round"} :touched #{:radius-group})})
+        r      (bm/compute-merge base main branch :branch->main)]
+    (t/is (empty? (:conflicts r)))
+    (t/is (= [[:k :modified #{:applied-tokens}]]
+             (mapv (juxt :id :status (comp set keys :changed-attrs)) (:changes r))))
+    (t/is (= [{:type :set :attr :applied-tokens :val {:fill "yellow" :r1 "round"} :ignore-touched true}
+              {:type :set-touched :touched #{:fill-group :radius-group}}]
+             (copy-ops (:changes (bm/compute-changes base main branch {} r)))))))
+
+(t/deftest copy-token-slot-both-sides-overrode-is-a-conflict
+  ;; both applied a fill token by hand; only the branch a radius token:
+  ;; the conflict asks about `:applied-tokens`, and the user's side
+  ;; decides the fill slot only
+  (let [base   (mkdata {:k (tokens-copy {})})
+        main   (mkdata {:k (tokens-copy {:fill "yellow"} :touched #{:fill-group})})
+        branch (mkdata {:k (tokens-copy {:fill "red" :r1 "round"}
+                                        :touched #{:fill-group :radius-group})})
+        r      (bm/compute-merge base main branch :branch->main)]
+    (t/is (= [:k] (mapv :id (:conflicts r))))
+    (t/is (contains? (:changed-attrs (first (:conflicts r))) :applied-tokens))
+    (t/testing "resolved to main, the radius slot still comes from the branch"
+      (t/is (= {:fill "yellow" :r1 "round"}
+               (->> (copy-ops (:changes (bm/compute-changes base main branch
+                                                            {:k {:applied-tokens :main :fills :main}}
+                                                            r)))
+                    (filter #(= :applied-tokens (:attr %)))
+                    first :val))))
+    (t/testing "resolved to the branch, both slots come from it"
+      (t/is (= {:fill "red" :r1 "round"}
+               (->> (copy-ops (:changes (bm/compute-changes base main branch {:k :branch} r)))
+                    (filter #(= :applied-tokens (:attr %)))
+                    first :val))))))
+
+(t/deftest copy-token-rule-holds-updating-from-main
+  ;; main (the source) applied a fill token to the copy by hand; the
+  ;; branch synced its own component edit
+  (let [base   (mkdata {:k (tokens-copy {})})
+        main   (mkdata {:k (tokens-copy {:fill "red"} :touched #{:fill-group})})
+        branch (mkdata {:k (tokens-copy {:fill "green"})})
+        r      (bm/compute-merge base main branch :main->branch)]
+    (t/is (empty? (:conflicts r)))
+    (t/is (= {:fill "red"}
+             (->> (copy-ops (:changes (bm/compute-changes base branch main {} r)))
+                  (filter #(= :applied-tokens (:attr %)))
+                  first :val)))))
+
 (t/deftest sync-copies-follows-nested-components
   ;; a change to component1's main syncs its nested copy inside
   ;; component2's main, which in turn syncs component2's copy

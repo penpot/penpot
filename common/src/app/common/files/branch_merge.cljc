@@ -29,6 +29,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
+   [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
@@ -349,6 +350,10 @@
 ;;     (`sync-copies`) sets it;
 ;;   - one side overrode it: that side's value wins;
 ;;   - both sides overrode it: a real conflict.
+;; A copy's `:applied-tokens` follows the same rule one token attr (slot)
+;; at a time, as Penpot's own sync does (`generate-update-tokens` in
+;; `app.common.logic.libraries`): a slot follows the component unless
+;; the sync group of the shape attr it drives is touched.
 ;; The sides are the comparison roles: `:main` is `theirs` (the target),
 ;; `:branch` is `ours` (the source).
 
@@ -364,17 +369,57 @@
   (and (contains? touched group)
        (not= (get base attr) (get shape attr))))
 
+(defn- token-slot-group
+  "The sync group a copy marks touched when a token is applied by hand
+  to its `token-attr` (`app.common.types.container/set-shape-attr`):
+  the group of the shape attr the token drives, or `:content-group` for
+  a token a text shape keeps in its content (the typography ones)."
+  [type token-attr]
+  (or (ctk/resolve-sync-group type (ctt/token-attr->shape-attr token-attr))
+      (when (and (= :text type) (contains? ctt/attrs-in-text-content token-attr))
+        :content-group)))
+
+(defn- token-slot-sides
+  "The copy rule over the token attrs (slots) of `:applied-tokens` whose
+  token differs between `st` and `so`. A side overrode a slot when the
+  slot's group (`token-slot-group`) is in its `touched` set and its token
+  moved off the base one. Returns `{:slots {token-attr side}
+  :open-slots #{token-attr}}`: the rule's side for each slot no more than
+  one side overrode, and the slots both overrode or that drive no synced
+  attr."
+  [type sb st so tt ot]
+  (let [base-tokens   (:applied-tokens sb)
+        theirs-tokens (:applied-tokens st)
+        ours-tokens   (:applied-tokens so)]
+    (reduce
+     (fn [acc slot]
+       (let [group (token-slot-group type slot)
+             base  (get base-tokens slot)
+             t?    (and (some? group) (contains? tt group) (not= base (get theirs-tokens slot)))
+             o?    (and (some? group) (contains? ot group) (not= base (get ours-tokens slot)))]
+         (cond
+           (or (nil? group) (and t? o?)) (update acc :open-slots conj slot)
+           o?                            (assoc-in acc [:slots slot] :branch)
+           :else                         (assoc-in acc [:slots slot] :main))))
+     {:slots {} :open-slots #{}}
+     (sort-by name (filter #(not= (get theirs-tokens %) (get ours-tokens %))
+                           (set/union (set (keys theirs-tokens)) (set (keys ours-tokens))))))))
+
 (defn- copy-conflict-sides
   "How the copy rule settles a shape both sides changed differently, or
   nil when the shape is not such a copy. `sb`/`st`/`so` are the
   classification shapes (stripped, see `strip-shapes`) of the base,
   `theirs` and `ours`; `t`/`o` the full ones, which carry `:touched`.
 
-  Returns `{:auto {attr side} :open #{attr}}` over the attrs that differ
-  between the two sides: `:auto` holds the side the rule picks for each
-  sync attr no more than one side overrode (`:main` when none did), and
-  `:open` the attrs left to the user, the ones both sides overrode and
-  the ones outside every sync group."
+  Returns `{:auto {attr side} :open #{attr} :slots {token-attr side}
+  :open-slots #{token-attr}}` over the attrs that differ between the two
+  sides: `:auto` holds the side the rule picks for each sync attr no
+  more than one side overrode (`:main` when none did), and `:open` the
+  attrs left to the user, the ones both sides overrode and the ones
+  outside every sync group. `:applied-tokens` is settled per slot
+  (`token-slot-sides`): it is open while any slot is, the user's side
+  then deciding the open slots only, and otherwise auto, on `:branch`
+  when the source wins any slot."
   [sb st so t o]
   (when (and (some? sb) (some? st) (some? so)
              (ctk/in-component-copy? t)
@@ -388,14 +433,22 @@
       (when (and (not= sb st) (not= sb so) (not= st so))
         (reduce-kv
          (fn [acc attr _]
-           (let [group (ctk/resolve-sync-group (:type so) attr)
-                 t?    (and (some? group) (overrode? group tt sb st attr))
-                 o?    (and (some? group) (overrode? group ot sb so attr))]
-             (cond
-               (or (nil? group) (and t? o?)) (update acc :open conj attr)
-               o?                            (assoc-in acc [:auto attr] :branch)
-               :else                         (assoc-in acc [:auto attr] :main))))
-         {:auto {} :open #{}}
+           (if (= :applied-tokens attr)
+             (let [{:keys [slots open-slots]} (token-slot-sides (:type so) sb st so tt ot)]
+               (cond-> (assoc acc :slots slots :open-slots open-slots)
+                 (seq open-slots)
+                 (update :open conj attr)
+
+                 (empty? open-slots)
+                 (assoc-in [:auto attr] (if (some #{:branch} (vals slots)) :branch :main))))
+             (let [group (ctk/resolve-sync-group (:type so) attr)
+                   t?    (and (some? group) (overrode? group tt sb st attr))
+                   o?    (and (some? group) (overrode? group ot sb so attr))]
+               (cond
+                 (or (nil? group) (and t? o?)) (update acc :open conj attr)
+                 o?                            (assoc-in acc [:auto attr] :branch)
+                 :else                         (assoc-in acc [:auto attr] :main)))))
+         {:auto {} :open #{} :slots {} :open-slots #{}}
          (shallow-attr-diff st so))))))
 
 (defn- settle-copy-conflicts
@@ -432,23 +485,49 @@
   "The per-attr resolution of a copy the rule settled (`sides`, see
   `copy-conflict-sides`): the user's `res` over the open attrs, a side
   keyword standing for every one of them, and the rule's side for the
-  rest."
-  [{:keys [auto open]} res]
-  (merge (cond
-           (keyword? res) (zipmap open (repeat res))
-           (map? res)     res
-           :else          {})
-         auto))
+  rest. Token slots ride under `::token-slots` (`{token-attr side}`):
+  the rule's side for the settled ones and the user's `:applied-tokens`
+  side for the open ones; `:applied-tokens` itself is `:branch` exactly
+  when some slot comes from the source, so the attr pass writes it."
+  [{:keys [auto open slots open-slots]} res]
+  (let [res (merge (cond
+                     (keyword? res) (zipmap open (repeat res))
+                     (map? res)     res
+                     :else          {})
+                   auto)]
+    (if (or (seq slots) (seq open-slots))
+      (let [user  (if (= :branch (get res :applied-tokens)) :branch :main)
+            slots (merge (zipmap open-slots (repeat user)) slots)]
+        (assoc res
+               :applied-tokens (if (some #{:branch} (vals slots)) :branch :main)
+               ::token-slots slots))
+      res)))
+
+(defn- merged-tokens
+  "The `:applied-tokens` of the copy: the target's tokens `tt`, with each
+  slot `slots` resolves to `:branch` taken from the source's `ot`."
+  [tt ot slots]
+  (not-empty
+   (reduce-kv (fn [acc slot side]
+                (if (= :branch side)
+                  (if-some [token (get ot slot)]
+                    (assoc acc slot token)
+                    (dissoc acc slot))
+                  acc))
+              (or tt {})
+              slots)))
 
 (defn- copy-touched-ops
   "Operations that write the copy `t` from the source shape `o` without
   marking overrides the source does not have: every `:set` carries
   `:ignore-touched`, and one `:set-touched` gives the copy the source's
-  sync groups for the attrs the operations take (all of them under
-  `whole?`, when the source shape wins entirely) and its own for the
-  rest. A plain `:set` on a copy marks the attr's group touched, which
-  would freeze an attr the source merely synced from its component."
-  [ops t o whole?]
+  sync groups for the attrs the operations take, and for the token
+  slots `slots` takes from the source (see `copy-resolution`), all of
+  them under `whole?`, when the source shape wins entirely, and its own
+  for the rest. A plain `:set` on a copy marks the attr's group touched,
+  which would freeze an attr the source merely synced from its
+  component."
+  [ops t o whole? slots]
   (let [ops     (into []
                       (comp (remove #(= :touched (:attr %)))
                             (map #(assoc % :ignore-touched true)))
@@ -460,6 +539,10 @@
                                     (conj text-content-groups group)
                                     [group]))))
                       ops)
+        taken   (into taken
+                      (keep (fn [[slot side]]
+                              (when (= :branch side) (token-slot-group (:type o) slot))))
+                      slots)
         own     (set (:touched t))
         touched (if whole?
                   (set (:touched o))
@@ -1554,9 +1637,11 @@
   A component copy both sides changed is settled per attr by the copy
   rule (see `copy-conflict-sides`): only the attrs both sides overrode
   by hand, and the ones outside every sync group, stay in its conflict.
-  A copy the rule settles entirely leaves `:conflicts`, and comes back
-  as a `:modified` change over the attrs the source overrode, which the
-  merge takes from it."
+  Its `:applied-tokens` is settled one token attr at a time, and stays
+  in the conflict, whole, while any token attr is open. A copy the rule
+  settles entirely leaves `:conflicts`, and comes back as a `:modified`
+  change over the attrs the source overrode, which the merge takes from
+  it."
   ([base main branch dir] (compute-merge* base main branch dir nil))
   ([base main branch dir {:keys [only-pages]}]
    (compute-merge* base main branch dir only-pages)))
@@ -1946,10 +2031,22 @@
                                    ops    (if whole?
                                             (shape-set-ops t o)
                                             (shape-resolved-ops (get sto id) (get soo id) t o res))
+                                   ;; a copy's tokens are merged slot by slot
+                                   ;; (see `copy-resolution`)
+                                   slots  (when-not whole? (::token-slots res))
+                                   ops    (if (seq slots)
+                                            (mapv (fn [op]
+                                                    (if (= :applied-tokens (:attr op))
+                                                      (assoc op :val (merged-tokens (:applied-tokens t)
+                                                                                    (:applied-tokens o)
+                                                                                    slots))
+                                                      op))
+                                                  ops)
+                                            ops)
                                    ;; a copy keeps the overrides of the side
                                    ;; each attr comes from, never new ones
                                    ops    (if (or (ctk/in-component-copy? t) (ctk/in-component-copy? o))
-                                            (copy-touched-ops ops t o whole?)
+                                            (copy-touched-ops ops t o whole? slots)
                                             ops)]
                                (when (seq ops)
                                  {:type :mod-obj :page-id page-id :id id :operations ops})))
@@ -2162,11 +2259,13 @@
 
   A component copy takes, per attr, the side the copy rule picks
   (`copy-conflict-sides`) whatever `resolutions` says, which only
-  decides the attrs the rule leaves open. The operations written on a
-  copy never mark an override the source does not have
-  (`copy-touched-ops`). The attrs the rule leaves at the target's value
-  follow the component through `sync-copies`, which the caller runs
-  after applying these changes."
+  decides the attrs the rule leaves open. A copy's `:applied-tokens` is
+  written as one map merged token attr by token attr: the rule's side
+  for the settled ones, the user's side for the open ones
+  (`copy-resolution`). The operations written on a copy never mark an
+  override the source does not have (`copy-touched-ops`). The attrs the
+  rule leaves at the target's value follow the component through
+  `sync-copies`, which the caller runs after applying these changes."
   ([base main branch]
    (compute-changes base main branch {}))
   ([base main branch resolutions]
