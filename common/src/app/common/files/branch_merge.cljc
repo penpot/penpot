@@ -1089,9 +1089,11 @@
   ({old-id -> new-id}): the file and media refs every shape holds
   (`cfh/shape-ref-paths` and `cfh/legacy-shape-ref-paths`) and the page
   default grid colours (`cfh/relink-containers`), plus the `:media`
-  collection keys and library-color `:image` ids. It is the same surface
-  `binfile.common/process-file` remaps when it copies a file. The
-  document's own `:id` and its `:tokens-source` are rewritten too, so a
+  collection keys and library-color `:image` ids, the surface
+  `binfile.common/process-file` remaps when it copies a file. Each media
+  object's owning `:file-id` is rewritten as well, as `remap-changes`
+  does for `:add-media` and `:mod-media`. The document's own `:id` and
+  its `:tokens-source` are rewritten too, so a
   document moved into another file's id space names that file as itself,
   and a tokens source that named the old file names the new one, which
   `set-tokens-source` and `get-effective-tokens-source` read as self.
@@ -1118,10 +1120,15 @@
           (d/update-when :media
                          (fn [media]
                            (reduce-kv (fn [res k v]
-                                        (let [id (lookup k)]
-                                          (if (= id k)
+                                        (let [id      (lookup k)
+                                              file-id (:file-id v)
+                                              owner   (some-> file-id lookup)]
+                                          (if (and (= id k) (= owner file-id))
                                             res
-                                            (-> res (dissoc k) (assoc id (assoc v :id id))))))
+                                            (-> res
+                                                (dissoc k)
+                                                (assoc id (cond-> (assoc v :id id)
+                                                            (some? file-id) (assoc :file-id owner)))))))
                                       media
                                       media)))
           (d/update-when :colors
@@ -1137,14 +1144,22 @@
 
 (defn- remap-op
   "Rewrite the references of one `:mod-obj` operation through `lookup`.
-  `shape-set-ops` emits one `:set` per differing attr, so the value is
-  relinked as that attr of a shape: a reference arrives as the attr's own
-  value (`:component-file`) or nested in it (`:fills`, `:metadata`, …)."
-  [{:keys [attr val] :as op} lookup]
-  (if (and (= :set (:type op)) (some? val))
-    (let [shape  {attr val}
-          shape' (cfh/relink-shape shape lookup)]
-      (if (identical? shape shape') op (assoc op :val (get shape' attr))))
+  A `:set` value is relinked as that attr of a shape: a reference arrives
+  as the attr's own value (`:component-file`) or nested in it (`:fills`,
+  `:metadata`, …). An `:assign` value is a partial shape already."
+  [{:keys [attr val value] :as op} lookup]
+  (case (:type op)
+    :set
+    (if (some? val)
+      (let [shape  {attr val}
+            shape' (cfh/relink-shape shape lookup)]
+        (if (identical? shape shape') op (assoc op :val (get shape' attr))))
+      op)
+
+    :assign
+    (let [value' (cfh/relink-shape value lookup)]
+      (if (identical? value value') op (assoc op :value value')))
+
     op))
 
 (defn remap-changes
@@ -1158,7 +1173,8 @@
   Each change type that can carry a reference is relinked where it does:
 
   - `:add-obj`: the `:obj` shape (`cfh/relink-shape`);
-  - `:mod-obj`: the value of each `:set` operation (`remap-op`);
+  - `:mod-obj`: the value of each `:set` and `:assign` operation
+    (`remap-op`);
   - `:add-page`: the `:page`, its shapes and default grids
     (`cfh/relink-page`);
   - `:set-default-grid`: the grid colour of `:params`
