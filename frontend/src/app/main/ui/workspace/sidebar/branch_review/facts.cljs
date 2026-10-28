@@ -306,17 +306,28 @@
   [copy]
   (or (seq (brc/copy-keeps copy)) (seq (brc/copy-open-slots copy))))
 
+(defn- component-name
+  "The name of component `id`: its own `:copies` entry, else the open
+  file's components, else a short id."
+  [copies data id]
+  (or (some #(when (= id (:component-id %)) (:component-name %)) copies)
+      (get-in data [:components id :name])
+      (subs (str id) 0 8)))
+
 (mf/defc copies-facts*
   "The copies of a component the integration changes (`entry`, one of the
-  summary's `:copies`), folded under how many follow it: each with its
-  page and what it keeps of its own."
-  [{:keys [entry data]}]
+  summary's `copies`), folded under how many follow it: each with its
+  page and what it keeps of its own. An entry with `:via` changes only
+  through a copy its main holds of another changed component, which
+  the head line names."
+  [{:keys [entry copies data]}]
   (let [open*     (mf/use-state false)
         open?     (deref open*)
         on-toggle (mf/use-fn #(swap! open* not))
-        copies    (:copies entry)
-        n         (count copies)
-        keeping   (count (filter keeps-own? copies))]
+        via       (:via entry)
+        own       (:copies entry)
+        n         (count own)
+        keeping   (count (filter keeps-own? own))]
     (when (pos? n)
       [:div {:class (stl/css :section)}
        [:> brl/group-head*
@@ -325,9 +336,13 @@
                   (dm/str " - " (tr "workspace.branches.review.copies.keeping" (i18n/c keeping))))
          :is-open open?
          :on-toggle on-toggle}]
+       (when via
+         [:> text* {:as "p" :typography t/body-small :class (stl/css :copy-via)}
+          (tr "workspace.branches.review.copies.via"
+              (:component-name entry) (component-name copies data via))])
        (when open?
          [:div {:class (stl/css :copy-list)}
-          (for [copy copies]
+          (for [copy own]
             [:div {:class (stl/css :copy) :key (str (:id copy))}
              [:div {:class (stl/css :copy-head)}
               [:> i/icon* {:icon-id i/component-copy :size "s" :class (stl/css :copy-icon)}]

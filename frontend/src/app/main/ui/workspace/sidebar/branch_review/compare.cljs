@@ -455,7 +455,7 @@
      (when (and conflict? (:copies-affected item))
        [:> brf/copies-affected* {:n (:copies-affected item)}])
      (when copies-of
-       [:> brf/copies-facts* {:entry copies-of :data data}])
+       [:> brf/copies-facts* {:entry copies-of :copies copies :data data}])
 
      ;; an entry without a before and after says what it is, where it
      ;; lands and what it affects instead

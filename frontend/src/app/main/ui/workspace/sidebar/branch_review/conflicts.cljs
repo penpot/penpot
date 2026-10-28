@@ -363,7 +363,7 @@
      (when (:copies-affected conflict)
        [:> brf/copies-affected* {:n (:copies-affected conflict)}])
      (when copies-of
-       [:> brf/copies-facts* {:entry copies-of :data data}])
+       [:> brf/copies-facts* {:entry copies-of :copies copies :data data}])
 
      ;; once decided, one quiet block says what the merge leaves behind,
      ;; with the way back; until then, a note says how the choice works

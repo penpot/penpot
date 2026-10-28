@@ -11966,3 +11966,7 @@ msgid "workspace.branches.review.copies.affected"
 msgid_plural "workspace.branches.review.copies.affected"
 msgstr[0] "Choosing a side here also decides 1 copy."
 msgstr[1] "Choosing a side here also decides %s copies."
+
+#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
+msgid "workspace.branches.review.copies.via"
+msgstr "%s follows the change through its copy of %s"

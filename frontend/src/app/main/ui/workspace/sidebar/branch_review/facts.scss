@@ -108,3 +108,8 @@
   align-items: center;
   gap: var(--sp-s);
 }
+
+.copy-via {
+  padding-inline-start: calc(var(--sp-xs) + $sz-16);
+  color: var(--color-foreground-secondary);
+}
