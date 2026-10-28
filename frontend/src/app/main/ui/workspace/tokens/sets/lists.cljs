@@ -134,6 +134,7 @@
 
         on-collapse-click
         (mf/use-fn
+         (mf/deps path on-toggle-collapse)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
