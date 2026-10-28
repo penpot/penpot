@@ -814,6 +814,18 @@ test.describe("Dashboard headers", () => {
     await expect(header(page)).toHaveScreenshot(shot);
   });
 
+  test("Libraries page and search placeholder", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.goToLibraries();
+    await expect(page).toHaveScreenshot(shot);
+
+    await dashboardPage.goToSearch();
+    const placeholder = page.locator("[class*='grid-empty-placeholder']");
+    await expect(placeholder).toBeVisible();
+    await expect(placeholder).toHaveScreenshot(shot);
+  });
+
   test("Account header", async ({ page }) => {
     const dashboardPage = new DashboardPage(page);
     await dashboardPage.goToDashboard();
