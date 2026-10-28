@@ -141,7 +141,9 @@
            (on-toggle-collapse path)))
 
         on-double-click
-        (mf/use-fn (mf/deps id) #(on-start-edition id))
+        (mf/use-fn
+         (mf/deps id on-start-edition)
+         #(on-start-edition id))
 
         on-checkbox-click
         (mf/use-fn
