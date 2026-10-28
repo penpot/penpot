@@ -118,6 +118,61 @@
            (t/is false (str "Unexpected test error: " cause))
            (done))))
 
+(t/deftest ^:async renderer-facts-retain-string-environment-keys-and-missing-evidence
+  (let [bin           (path/join @temporary-root "bin")
+        original-path (.. js/process -env -PATH)]
+    (fs/mkdirSync bin)
+    (fs/writeFileSync (path/join bin "clojure") "#!/bin/sh\nexit 24\n" #js {:mode 493})
+    (try
+      (set! (.. js/process -env -PATH) (str bin path/delimiter original-path))
+      (doseq [environment [::missing {} {"RUSTFLAGS" "-C\u001fopt-level=3" "CFLAGS" ""}]]
+        (let [facts (cond-> {:features [] :profile {:opt_level "3" :debug_assertions false}}
+                      (not= ::missing environment) (assoc :environment environment))]
+          (install-renderer
+           (str "const fs = require('node:fs');\n"
+                "fs.writeFileSync(process.env.RENDER_WASM_BUILD_INFO, "
+                (js/JSON.stringify (js/JSON.stringify (clj->js facts))) ");\n"))
+          (let [cause    (await (rejected (build/prepare {:root (frontend-root)
+                                                          :build-timeout-ms 10000
+                                                          :on-created record-created})))
+                manifest (read-manifest (retained-build cause))]
+            (t/is (= :cljs (:phase (ex-data cause))))
+            (t/is (= 24 (:exit-code (ex-data (ex-cause cause)))))
+            (if (= ::missing environment)
+              (t/is (not (contains? manifest :environment)))
+              (t/is (= environment (:environment manifest)))))))
+      (finally
+        (set! (.. js/process -env -PATH) original-path)))))
+
+(t/deftest ^:async explicit-selection-preserves-disabled-cargo-defaults
+  (let [bin           (path/join @temporary-root "bin")
+        original-path (.. js/process -env -PATH)]
+    (fs/mkdirSync bin)
+    (fs/writeFileSync (path/join bin "clojure") "#!/bin/sh\nexit 24\n" #js {:mode 493})
+    (try
+      (set! (.. js/process -env -PATH) (str bin path/delimiter original-path))
+      (install-renderer
+       (str "const fs = require('node:fs');\n"
+            "fs.writeFileSync(process.env.RENDER_WASM_BUILD_INFO, "
+            (js/JSON.stringify
+             (js/JSON.stringify
+              (clj->js {:features ["a"]
+                        :profile {:opt_level "3" :debug_assertions false}})))
+            ");\n"))
+      (let [cause    (await (rejected (build/prepare
+                                       {:root (frontend-root)
+                                        :selection {:default-features? false :features ["a"]}
+                                        :build-timeout-ms 10000
+                                        :on-created record-created})))
+            manifest (read-manifest (retained-build cause))]
+        (t/is (= :cljs (:phase (ex-data cause))))
+        (t/is (= {:default-features? false :features ["a"]}
+                 (get-in manifest [:provenance :feature-selection])))
+        (t/is (= ["a"] (get-in manifest [:functional :features])))
+        (t/is (false? (get-in manifest [:functional :default-features?]))))
+      (finally
+        (set! (.. js/process -env -PATH) original-path)))))
+
 (t/deftest real-git-outside-a-repository-has-unknown-provenance
   (t/async done
     (complete

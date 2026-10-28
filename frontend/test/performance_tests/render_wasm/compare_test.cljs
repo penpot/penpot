@@ -45,7 +45,7 @@
    :preparation {}})
 
 (defn- make-run
-  [run-id case-id value & {:keys [environment functional fingerprint scene]
+  [run-id case-id value & {:keys [environment functional fingerprint scene case-settings]
                            :or {environment {:node "v24" :browser "Fake"}
                                 functional {:mode :release}
                                 fingerprint (apply str (repeat 64 "a"))
@@ -54,7 +54,7 @@
         run (result/create-run
              {:run-id run-id
               :started-at "2026-10-26T00:00:00.000Z"
-              :plan {:cases [(case-definition case-id scene)]
+              :plan {:cases [(merge (case-definition case-id scene) case-settings)]
                      :warmups 0
                      :repetitions 1
                      :timeout-policy {:attempt-ms 30000}}
@@ -103,6 +103,11 @@
       (let [{:keys [comparison text]} (compare/execute "baseline.transit"
                                                        "candidate.transit" {})]
         (t/is (= :comparison (:type comparison)))
+        (t/is (= {:allow-build-differences false
+                  :allow-scene-differences false
+                  :allow-all-differences false}
+                 (:permissions comparison)))
+        (t/is (empty? (get-in comparison [:pairs 0 :mismatches])))
         (t/is (= 2 (get-in comparison [:pairs 0 :metrics :elapsed :absolute :value])))
         (t/is (str/includes? text "Baseline"))
         (t/is (str/includes? text "Candidate"))
@@ -120,21 +125,88 @@
                                         {:cases "a/pan,b/pan"})]
     (t/is (str/includes? text "Pair a/pan,b/pan"))))
 
-(t/deftest cases-requires-force-for-different-scenes
+(t/deftest cases-requires-scene-permission-for-different-scenes
   (let [baseline  (write-run (path/join @temporary-root "baseline.transit")
                              (make-run "baseline" :a/load 10))
         candidate (write-run (path/join @temporary-root "candidate.transit")
-                             (make-run "candidate" :b/load 12 :scene :other))
+                             (make-run "candidate" :b/load 12 :scene :other
+                                       :fingerprint (apply str (repeat 64 "b"))))
         selector  {:cases "a/load,b/load"}]
     (t/is (= ::report-compare/incompatible
              (:type (ex-data (failure #(compare/execute baseline candidate selector))))))
+    (t/is (= ::report-compare/incompatible
+             (:type (ex-data (failure #(compare/execute baseline candidate
+                                                        (assoc selector :allow-build-differences true)))))))
     (let [{:keys [comparison text]}
-          (compare/execute baseline candidate (assoc selector :force true))]
-      (t/is (true? (:forced? comparison)))
-      (t/is (str/includes? text "MISMATCHES"))
+          (compare/execute baseline candidate (assoc selector :allow-scene-differences true))]
+      (t/is (= {:allow-build-differences false
+                :allow-scene-differences true
+                :allow-all-differences false}
+               (:permissions comparison)))
+      (t/is (= #{:scene :fingerprint}
+               (set (map :field (get-in comparison [:pairs 0 :mismatches])))))
+      (t/is (every? #(and (:waived? %) (= :scene (:rule %)))
+                    (get-in comparison [:pairs 0 :mismatches])))
+      (t/is (str/includes? text "ACKNOWLEDGED DIFFERENCE"))
       (t/is (str/includes? text "Pair a/load,b/load")))))
 
-(t/deftest force-bypasses-differences-and-displays-them
+(t/deftest build-permission-allows-build-differences-only
+  (let [baseline  (write-run (path/join @temporary-root "baseline.transit")
+                             (make-run "baseline" :case/load 10))
+        candidate (write-run (path/join @temporary-root "candidate.transit")
+                             (make-run "candidate" :case/load 12
+                                       :functional {:mode :debug :features ["fixture"]}))]
+    (doseq [options [{} {:allow-scene-differences true}]]
+      (t/is (= ::report-compare/incompatible
+               (:type (ex-data (failure #(compare/execute baseline candidate options)))))))
+    (let [{:keys [comparison text]}
+          (compare/execute baseline candidate {:allow-build-differences true})]
+      (t/is (= {:allow-build-differences true
+                :allow-scene-differences false
+                :allow-all-differences false}
+               (:permissions comparison)))
+      (t/is (= #{:functional-build :effective-features}
+               (set (map :field (get-in comparison [:pairs 0 :mismatches])))))
+      (t/is (every? #(and (:waived? %) (= :build (:rule %)))
+                    (get-in comparison [:pairs 0 :mismatches])))
+      (t/is (str/includes? text ":rule :build")))))
+
+(t/deftest build-and-scene-permissions-combine
+  (let [baseline  (write-run (path/join @temporary-root "baseline.transit")
+                             (make-run "baseline" :case/load 10))
+        candidate (write-run (path/join @temporary-root "candidate.transit")
+                             (make-run "candidate" :case/load 12 :scene :other
+                                       :functional {:mode :debug}))]
+    (doseq [options [{:allow-build-differences true} {:allow-scene-differences true}]]
+      (t/is (= ::report-compare/incompatible
+               (:type (ex-data (failure #(compare/execute baseline candidate options)))))))
+    (let [{:keys [comparison]}
+          (compare/execute baseline candidate {:allow-build-differences true
+                                               :allow-scene-differences true})]
+      (t/is (= {:allow-build-differences true
+                :allow-scene-differences true
+                :allow-all-differences false}
+               (:permissions comparison)))
+      (t/is (= {:scene :scene :functional-build :build}
+               (into {} (map (juxt :field :rule))
+                     (get-in comparison [:pairs 0 :mismatches])))))))
+
+(t/deftest scoped-permissions-keep-operation-and-runtime-checks-strict
+  (let [baseline (write-run (path/join @temporary-root "baseline.transit")
+                            (make-run "baseline" :case/load 10))]
+    (doseq [[field settings]
+            [[:execution {:case-settings {:operation {:id :pan :args {:distance 20}}}}]
+             [:environment {:environment {:node "v25" :browser "Fake"}}]]]
+      (let [candidate (write-run (path/join @temporary-root "candidate.transit")
+                                 (apply make-run "candidate" :case/load 12 (mapcat identity settings)))
+            cause     (failure #(compare/execute baseline candidate
+                                                 {:allow-build-differences true
+                                                  :allow-scene-differences true}))]
+        (t/is (= ::report-compare/incompatible (:type (ex-data cause))))
+        (t/is (= [field] (mapv :field (:mismatches (ex-data cause)))))
+        (t/is (every? (comp not :waived?) (:mismatches (ex-data cause))))))))
+
+(t/deftest all-permission-allows-runtime-differences-and-displays-them
   (let [baseline  (write-run (path/join @temporary-root "baseline.transit")
                              (make-run "baseline" :case/load 10))
         candidate (write-run (path/join @temporary-root "candidate.transit")
@@ -142,9 +214,22 @@
                                        :environment {:node "v25" :browser "Fake"}))]
     (t/is (= ::report-compare/incompatible
              (:type (ex-data (failure #(compare/execute baseline candidate {}))))))
-    (let [{:keys [text]} (compare/execute baseline candidate {:force true})]
-      (t/is (str/starts-with? text "FORCED COMPARISON"))
-      (t/is (str/includes? text "MISMATCHES")))))
+    (t/is (= ::report-compare/incompatible
+             (:type (ex-data (failure #(compare/execute baseline candidate {:force true}))))))
+    (let [{:keys [comparison text]}
+          (compare/execute baseline candidate {:allow-all-differences true})]
+      (t/is (= {:allow-build-differences false
+                :allow-scene-differences false
+                :allow-all-differences true}
+               (:permissions comparison)))
+      (t/is (= [{:field :environment
+                 :baseline {:node "v24" :browser "Fake"}
+                 :candidate {:node "v25" :browser "Fake"}
+                 :waived? true :rule :all}]
+               (get-in comparison [:pairs 0 :mismatches])))
+      (t/is (str/starts-with? text "Permissions "))
+      (t/is (str/includes? text "ACKNOWLEDGED DIFFERENCE"))
+      (t/is (str/includes? text ":rule :all")))))
 
 (t/deftest invalid-selectors-and-unreadable-records-fail-at-the-boundary
   (let [baseline  (write-run (path/join @temporary-root "baseline.transit")
@@ -161,10 +246,11 @@
                                              {})))
     (fs/writeFileSync (path/join @temporary-root "malformed.transit")
                       (transit/encode-str (dissoc (make-run "malformed" :case/load 12) :plan)))
-    (t/is (= ::result/invalid-record
-             (:type (ex-data (failure #(compare/execute baseline
-                                                        (path/join @temporary-root "malformed.transit")
-                                                        {}))))))
+    (doseq [options [{} {:allow-all-differences true}]]
+      (t/is (= ::result/invalid-record
+               (:type (ex-data (failure #(compare/execute baseline
+                                                          (path/join @temporary-root "malformed.transit")
+                                                          options)))))))
     (t/is (thrown? js/Error (compare/execute baseline
                                              (path/join @temporary-root "missing.transit")
                                              {})))))

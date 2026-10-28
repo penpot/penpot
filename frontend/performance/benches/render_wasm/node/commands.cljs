@@ -10,6 +10,8 @@
    [app.common.transit :as transit]
    [benches.render-wasm.node.artifacts :as artifacts]
    [benches.render-wasm.node.build :as build]
+   [benches.render-wasm.node.feature-comparison :as feature-comparison]
+   [benches.render-wasm.node.feature-plan :as feature-plan]
    [benches.render-wasm.node.process :as process]
    [benches.render-wasm.node.run :as run]))
 
@@ -63,6 +65,46 @@
       0
       (finally (remove-signals)))))
 
+(defn- ^:async ab-command
+  [root options]
+  (let [controller     (js/AbortController.)
+        signal         (.-signal controller)
+        interrupted    (atom nil)
+        remove-signals (process/on-signals
+                        (fn [name]
+                          (when-not (.-aborted signal)
+                            (reset! interrupted name)
+                            (.abort controller name))))]
+    (try
+      (let [prepared (await (feature-plan/prepare root options signal))]
+        (if (:dry-run options)
+          (do
+            (.write (.-stdout js/process) (feature-plan/format-plan prepared))
+            0)
+          (let [result (await (feature-comparison/execute
+                               root prepared signal
+                               {:on-created
+                                (fn [home record]
+                                  (println (:comparison-id record))
+                                  (println (:dir home)))
+                                :on-progress
+                                #(.write (.-stderr js/process) %)}))]
+            (when-let [error (:error result)]
+              (print-error error))
+            (or (case @interrupted
+                  "SIGINT" 130
+                  "SIGTERM" 143
+                  nil)
+                (:exit-code result)))))
+      (catch :default cause
+        (print-error cause)
+        (case @interrupted
+          "SIGINT" 130
+          "SIGTERM" 143
+          1))
+      (finally
+        (remove-signals)))))
+
 (defn ^:async execute
   "Accepts a validated Transit command from the CLI and returns its exit code.
   Each compiled module owns its CLJS values; only the string crosses modules.
@@ -76,6 +118,7 @@
         (do
           (artifacts/purge root (cond (:only-builds options) :builds
                                       (:only-runs options) :runs
+                                      (:only-comparisons options) :comparisons
                                       :else :all))
           0)
 
@@ -83,7 +126,10 @@
         (await (build-command root options))
 
         "run"
-        (await (run-command root options))))
+        (await (run-command root options))
+
+        "ab"
+        (await (ab-command root options))))
     (catch :default cause
       (print-error cause)
       1)))

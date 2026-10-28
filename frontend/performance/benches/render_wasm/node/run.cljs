@@ -67,7 +67,7 @@
   (when (and signal (.-aborted ^js signal))
     (let [reason (.-reason ^js signal)
           data   (ex-data reason)]
-      {:signal (or (:signal data) "SIGINT")
+      {:signal (if (string? reason) reason (or (:signal data) "SIGINT"))
        :cause reason})))
 
 (defn- interrupted?
@@ -76,7 +76,11 @@
 
 (defn- log
   [state text]
-  (runs/append-log! (:home state) text)
+  (try
+    (runs/append-log! (:home state) text)
+    (catch :default cause
+      (reset! (:storage-error-ref state) cause)
+      (throw cause)))
   (when-let [progress (:on-progress state)]
     (progress text)))
 
@@ -90,7 +94,11 @@
 
 (defn- persist
   [state]
-  (runs/write-record! (:home state) @(:run-ref state)))
+  (try
+    (runs/write-record! (:home state) @(:run-ref state))
+    (catch :default cause
+      (reset! (:storage-error-ref state) cause)
+      (throw cause))))
 
 (defn- record-preparation
   [state preparation]
@@ -618,9 +626,11 @@
 (defn- metadata
   [root selected-build opts]
   {:git (git-facts selected-build)
-   :build {:functional (or (get-in selected-build [:manifest :functional]) {})
-           :provenance (assoc (get-in selected-build [:manifest :provenance])
-                              :build-id (:id selected-build))}
+   :build (cond-> {:functional (or (get-in selected-build [:manifest :functional]) {})
+                   :provenance (assoc (get-in selected-build [:manifest :provenance])
+                                      :build-id (:id selected-build))}
+            (contains? (:manifest selected-build) :environment)
+            (assoc :environment (get-in selected-build [:manifest :environment])))
    :environment (environment root selected-build)
    :scored? true
    :diagnostics {:seed (:seed opts)
@@ -651,7 +661,8 @@
   Options are resolved CLI options. root is the frontend checkout. The record
   exists before on-created runs, so a browser startup failure still leaves a
   valid partial record. Returns {:run schema:run :home home :exit-code n
-  :error cause-or-nil}."
+  :error cause-or-nil :storage-error cause-or-nil}. A storage error reports any
+  failed record or log write, including a failure followed by a successful write."
   [root home selected-build cases options signal on-progress on-created]
   (let [opts  (assoc (normalize-options options) :run-id (:run-id home))
         run   (result/create-run
@@ -670,6 +681,7 @@
                :on-progress on-progress
                :home home
                :run-ref (atom run)
+               :storage-error-ref (atom nil)
                :owner-ref (atom nil)
                :page-ref (atom nil)
                :host-ref (atom nil)
@@ -732,6 +744,7 @@
               exit        (if (= :interrupted reason)
                             base
                             (if (or @error
+                                    @(:storage-error-ref state)
                                     (and (= :completed reason)
                                          @(:harness-failed? state)))
                               1
@@ -739,7 +752,8 @@
           {:run run
            :home home
            :exit-code exit
-           :error @error})))))
+           :error @error
+           :storage-error @(:storage-error-ref state)})))))
 
 (defn ^:async run
   "Prepares or loads a build, collects matching cases and executes one run.
