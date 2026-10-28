@@ -5,7 +5,7 @@ use crate::{
     math::Rect,
     shapes::{
         add_horizontal_span, calculate_text_layout_data, set_paint_fill, text_vertical,
-        vertical_align_offset, HorizontalOffsets, Paragraph as TextParagraph,
+        vertical_align_offset, HorizontalOffsets, HorizontalSpanRange, Paragraph as TextParagraph,
         ParagraphBuilderGroup, ParagraphLayout, Stroke, StrokeKind, TextContent,
         TextDecorationSegment,
     },
@@ -1374,9 +1374,15 @@ fn draw_decoration_segment(canvas: &Canvas, deco: &TextDecorationSegment) {
     canvas.draw_rect(deco.rect(), &decoration_paint);
 }
 
-/// One decorated span clipped to a line: UTF-16 range, decoration and the
-/// Skia style run it falls in (paint + font metrics).
-type LineDecoration<'a> = (usize, usize, TextDecoration, &'a StyleMetrics<'a>);
+/// One decorated span clipped to a line: UTF-16 range, decoration, the span's
+/// offsets and the Skia style run it falls in (paint + font metrics).
+type LineDecoration<'a> = (
+    usize,
+    usize,
+    TextDecoration,
+    &'a HorizontalSpanRange,
+    &'a StyleMetrics<'a>,
+);
 
 /// UTF-16 ranges of the spans that ask for a decoration we draw.
 /// Builder-text range of every underlined or struck span. Warichu spans
@@ -1402,15 +1408,28 @@ fn decorated_span_ranges(
         .collect()
 }
 
-/// Style run covering `offset`; runs are keyed by their start index.
+/// Builder-text range of the span holding UTF-16 `offset`.
+fn span_range_at(offsets: &HorizontalOffsets, offset: usize) -> Option<&HorizontalSpanRange> {
+    let index = offsets
+        .ranges
+        .partition_point(|range| range.builder_start <= offset)
+        .saturating_sub(1);
+    offsets.ranges.get(index)
+}
+
+/// Style run of a line covering the UTF-8 `byte_anchor`. Runs are keyed by
+/// their UTF-8 start, unlike the UTF-16 line indices. An anchor before the
+/// first run belongs to a span continued from an earlier line, which the
+/// line's first run carries on.
 fn style_metric_at<'a>(
     style_metrics: &[(usize, &'a StyleMetrics<'a>)],
-    offset: usize,
+    byte_anchor: usize,
 ) -> Option<&'a StyleMetrics<'a>> {
     style_metrics
         .iter()
         .rev()
-        .find(|(start, _)| *start <= offset)
+        .find(|(start, _)| *start <= byte_anchor)
+        .or_else(|| style_metrics.first())
         .map(|(_, metrics)| *metrics)
 }
 
@@ -1433,10 +1452,7 @@ pub fn decoration_segments(
 
     let mut segments = Vec::new();
     for line in &skia_paragraph.get_line_metrics() {
-        let style_metrics: Vec<_> = line
-            .get_style_metrics(line.start_index..line.end_index)
-            .into_iter()
-            .collect();
+        let style_metrics = line.get_style_metrics(0..usize::MAX);
         let line_baseline = y_accum + line.baseline as f32;
 
         let line_decorations: Vec<LineDecoration<'_>> = decorated
@@ -1447,15 +1463,16 @@ pub fn decoration_segments(
                 if seg_start >= seg_end {
                     return None;
                 }
-                let metrics = style_metric_at(&style_metrics, seg_start)?;
-                Some((seg_start, seg_end, kind, metrics))
+                let range = span_range_at(offsets, seg_start)?;
+                let metrics = style_metric_at(&style_metrics, range.style_anchor_start)?;
+                Some((seg_start, seg_end, kind, range, metrics))
             })
             .collect();
 
         let (max_underline_thickness, underline_y, max_strike_thickness, strike_y) =
             calculate_decoration_metrics(&line_decorations, line_baseline);
 
-        for (seg_start, seg_end, kind, metrics) in line_decorations {
+        for (seg_start, seg_end, kind, range, metrics) in line_decorations {
             let rects = skia_paragraph.get_rects_for_range(
                 seg_start..seg_end,
                 skia::textlayout::RectHeightStyle::Tight,
@@ -1474,14 +1491,9 @@ pub fn decoration_segments(
                 (underline_y, max_underline_thickness)
             };
             if kind == TextDecoration::UNDERLINE {
-                let index = offsets
-                    .ranges
-                    .partition_point(|range| range.builder_start <= seg_start)
-                    .saturating_sub(1);
-                if let Some(span) = offsets
-                    .ranges
-                    .get(index)
-                    .and_then(|range| text_paragraph.children().get(range.span))
+                if let Some(span) = text_paragraph
+                    .children()
+                    .get(range.span)
                     .filter(|span| span.underline_below_ink())
                 {
                     let bottom = rects
@@ -1515,7 +1527,7 @@ fn calculate_decoration_metrics(
     let mut underline_y = None;
     let mut max_strike_thickness: f32 = 0.0;
     let mut strike_y = None;
-    for (_seg_start, _seg_end, kind, style_metric) in line_decorations.iter() {
+    for (_seg_start, _seg_end, kind, _range, style_metric) in line_decorations.iter() {
         let font_metrics = style_metric.font_metrics;
         let font_size = font_metrics
             .cap_height

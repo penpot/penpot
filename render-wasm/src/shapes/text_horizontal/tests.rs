@@ -1470,6 +1470,45 @@ fn chinese_underline_stays_below_the_base_ink() {
 }
 
 #[test]
+fn cjk_underline_takes_the_paint_of_its_own_span() {
+    use crate::shapes::text_vertical::test_support::{provider, EM};
+    init_state();
+    let provider = provider(include_bytes!("../../fonts/cjk-locl-test.ttf"));
+    let mut fonts = skia::textlayout::FontCollection::new();
+    fonts.set_asset_font_manager(Some(provider.into()));
+    let dark = skia::Color::from_rgb(0x15, 0x10, 0x35);
+    let pink = skia::Color::from_rgb(0xf2, 0x3a, 0xe5);
+    let spans = [
+        ("文文", dark, false),
+        ("文文", pink, true),
+        ("文", dark, false),
+    ]
+    .into_iter()
+    .map(|(text, color, underline)| {
+        let mut span = make_span(text, 0.0);
+        span.font_size = EM;
+        span.fills = vec![crate::shapes::Fill::Solid(crate::shapes::SolidColor(color))];
+        if underline {
+            span.text_decoration = Some(skia::textlayout::TextDecoration::UNDERLINE);
+        }
+        span
+    })
+    .collect();
+    let mut paragraph = make_paragraph(spans, 0.0);
+    paragraph.set_language("zh-Hans-CN".to_owned());
+    // Three ems per line: the underlined span starts mid-line and wraps.
+    let (plan, layout) = cjk_layout_paragraph(&paragraph, EM * 3.0, &fonts);
+    assert_eq!(layout.get_line_metrics().len(), 2);
+
+    let segments =
+        crate::render::text::decoration_segments(&layout, &paragraph, &plan.offsets, 0.0, 0.0);
+    assert_eq!(segments.len(), 2);
+    for segment in segments {
+        assert_eq!(segment.text_style.foreground().color(), pink);
+    }
+}
+
+#[test]
 fn below_emphasis_clears_an_underline_on_the_same_side() {
     let span = TextSpan {
         language: "zh-Hans".to_string(),
