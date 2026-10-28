@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
+   [app.common.files.branch-merge :as bm]
    [app.common.files.changes :as cpc]
    [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as fmg]
@@ -401,6 +402,15 @@
   `get-file*` migrates the rest of the way in memory, and a log with no
   upgrade since the base (the steady state) never migrates at all.
 
+  The derived document names the branch file: its `:data :id` and every
+  reference to the source file (component instances, library colour and
+  typography refs, the tokens source) carry the branch's id, so the
+  branch's own components and tokens resolve in the branch itself. The
+  base keeps the source's ids, because it shares the source's fragments,
+  and the re-route runs after the replay so it also covers op log rows
+  that named the source. A comparison maps the branch's id back to the
+  source's (`files_branch.clj::branch-id-map`).
+
   Returns the file with `:data` decoded (plain maps); callers that asked
   for `:decode? false` get it re-encoded as bytes so the update-file
   pipeline (which always blob-decodes) is unaffected.
@@ -471,9 +481,11 @@
 
         ;; the document the replay works on: the merge base at the
         ;; base's data version, under the branch file's identity, so a
-        ;; migration on the way resolves the branch's libraries
+        ;; migration on the way resolves the branch's libraries, and a
+        ;; change or migration that compares a reference with the
+        ;; document's own `:id` sees the branch
         doc (-> file
-                (assoc :data (:data base))
+                (assoc :data (assoc (:data base) :id id))
                 (assoc :version (or (:version base) (:version file)))
                 (assoc :migrations (:migrations base)))
 
@@ -497,7 +509,10 @@
                 [doc 0]
                 rows)
 
-        data (cond-> (:data doc)
+        ;; every reference to the source file becomes a reference to the
+        ;; branch: the base names the source, and so do op log rows
+        ;; written while the derive still handed out the source's ids
+        data (cond-> (bm/remap-refs (:data doc) {(:source-file-id branch) id})
                (not decode?) (blob/encode))
 
         ;; the comparison's `base` is the merge base before the replay,

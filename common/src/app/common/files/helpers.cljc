@@ -11,7 +11,6 @@
    [app.common.geom.shapes.common :as gco]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
-   [clojure.walk :as walk]
    [cuerdas.core :as str]))
 
 #?(:clj (set! *warn-on-reflection* true))
@@ -659,49 +658,89 @@
 
 (defn relink-refs
   "A function responsible to analyze the file data or shape for references
-  and apply lookup-index on it."
+  and apply lookup-index on it.
+
+  It visits every map in `data` but rebuilds a collection only when
+  something inside it changed: a branch derive runs it over the whole
+  document on every read, and a copying walk spent seconds on a file of
+  90,000 shapes where most shapes hold no reference at all."
   [data lookup-index]
-  (letfn [(process-map-form [form]
+  (letfn [(relink-key [form k]
+            (let [v  (get form k)
+                  v' (lookup-index v)]
+              (if (= v v') form (assoc form k v'))))
+
+          (relink-id-in [form k]
+            (let [inner  (get form k)
+                  inner' (relink-key inner :id)]
+              (if (identical? inner inner') form (assoc form k inner'))))
+
+          (process-map-form [form]
             (cond-> form
               ;; Relink image shapes
               (and (map? (:metadata form))
                    (= :image (:type form)))
-              (update-in [:metadata :id] lookup-index)
+              (relink-id-in :metadata)
 
               ;; Relink paths with fill image
               (map? (:fill-image form))
-              (update-in [:fill-image :id] lookup-index)
+              (relink-id-in :fill-image)
 
               (map? (:stroke-image form))
-              (update-in [:stroke-image :id] lookup-index)
+              (relink-id-in :stroke-image)
 
               ;; This covers old shapes and the new :fills.
               (uuid? (:fill-color-ref-file form))
-              (update :fill-color-ref-file lookup-index)
+              (relink-key :fill-color-ref-file)
 
               ;; This covers the old shapes and the new :strokes
               (uuid? (:stroke-color-ref-file form))
-              (update :stroke-color-ref-file lookup-index)
+              (relink-key :stroke-color-ref-file)
 
               ;; This covers all text shapes that have typography referenced
               (uuid? (:typography-ref-file form))
-              (update :typography-ref-file lookup-index)
+              (relink-key :typography-ref-file)
 
               ;; This covers the component instance links
               (uuid? (:component-file form))
-              (update :component-file lookup-index)
+              (relink-key :component-file)
 
-              ;; This covers the shadows and grids (they have directly
-              ;; the :file-id prop)
+              ;; This covers the shadows and grids: their colour names the
+              ;; library in `:ref-file` (migration 0015 renamed the legacy
+              ;; `:file-id`, still relinked for unmigrated data)
+              (uuid? (:ref-file form))
+              (relink-key :ref-file)
+
               (uuid? (:file-id form))
-              (update :file-id lookup-index)))
+              (relink-key :file-id)))
 
-          (process-form [form]
-            (if (map? form)
-              (process-map-form form)
-              form))]
+          (walk-children [form]
+            (cond
+              (or (map? form) (vector? form))
+              (reduce-kv (fn [acc k v]
+                           (let [v' (walk v)]
+                             (if (identical? v v') acc (assoc acc k v'))))
+                         form
+                         form)
 
-    (walk/postwalk process-form data)))
+              (coll? form)
+              (let [items (map walk form)]
+                (cond
+                  (every? true? (map identical? form items)) form
+                  (list? form)                               (apply list items)
+                  (seq? form)                                (doall items)
+                  :else                                      (into (empty form) items)))
+
+              :else
+              form))
+
+          (walk [form]
+            (let [form (walk-children form)]
+              (if (map? form)
+                (process-map-form form)
+                form)))]
+
+    (walk data)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SHAPES ORGANIZATION
