@@ -57,7 +57,7 @@
   [:map {:title "initialize"}
    [:file-id ::sm/uuid]
    [:share-id {:optional true} [:maybe ::sm/uuid]]
-   [:page-id {:optional true} ::sm/uuid]])
+   [:page-id {:optional true} [:maybe ::sm/uuid]]])
 
 (defn initialize
   [{:keys [file-id share-id] :as params}]
@@ -116,7 +116,7 @@
 (def ^:private
   schema:fetch-bundle
   [:map {:title "fetch-bundle"}
-   [:page-id ::sm/uuid]
+   [:page-id {:optional true} ::sm/uuid]
    [:file-id ::sm/uuid]
    [:share-id {:optional true} ::sm/uuid]])
 
@@ -305,19 +305,27 @@
               index    (some-> (rt/get-query-param qparams :index) parse-long)
               frame-id (some-> (:frame-id qparams) uuid/parse)
               page-id (some-> (rt/get-query-param qparams :page-id) uuid/parse)
-              file-id (some-> (rt/get-query-param qparams :file-id) uuid/parse)]
+              file-id (some-> (rt/get-query-param qparams :file-id) uuid/parse)
+              first-page-id (-> file :data :pages first)]
 
-          (rx/merge
-           (rx/of (case (:zoom qparams)
-                    "fit" zoom-to-fit
-                    "fill" zoom-to-fill
-                    nil))
-           (rx/of
-            (update-page-position-data file-id page-id)
-            (cond
-              (some? frame-id) (go-to-frame frame-id)
-              (some? index) (go-to-frame-by-index index)
-              :else (go-to-frame-auto)))))))))
+          (if (and (nil? page-id) (some? first-page-id))
+            ;; Every viewer event reads the page from the route, so a URL
+            ;; without page-id names the first page; the viewer then
+            ;; initializes again on the completed route.
+            (rx/of (rt/nav :viewer
+                           (assoc (rt/get-params state) :page-id first-page-id)
+                           {::rt/replace true}))
+            (rx/merge
+             (rx/of (case (:zoom qparams)
+                      "fit" zoom-to-fit
+                      "fill" zoom-to-fill
+                      nil))
+             (rx/of
+              (update-page-position-data file-id page-id)
+              (cond
+                (some? frame-id) (go-to-frame frame-id)
+                (some? index) (go-to-frame-by-index index)
+                :else (go-to-frame-auto))))))))))
 
 (defn fetch-comment-threads
   [{:keys [file-id page-id share-id] :as params}]
