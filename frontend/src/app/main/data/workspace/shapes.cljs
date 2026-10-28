@@ -402,19 +402,22 @@
              objects       (:objects page)
              deleted-ids   (into #{} (mapcat #(cfh/get-children-ids-with-self objects %)) ids)
 
-             undo-id (or (:undo-id options) (js/Symbol))
+             undo-id    (or (:undo-id options) (js/Symbol))
+             undo-group (or (:undo-group options)
+                            (get-in state [:workspace-undo :transaction :undo-group])
+                            (uuid/next))
              [all-parents changes]
              (-> (pcb/empty-changes it (:id page))
+                 (pcb/set-undo-group undo-group)
                  (cls/generate-delete-shapes fdata page objects ids
                                              {:ignore-touched (:allow-altering-copies options)
-                                              :undo-group (:undo-group options)
                                               :undo-id undo-id}))]
 
          (wrf/cancel-shapes! deleted-ids)
          (rx/of (dwu/start-undo-transaction undo-id)
                 (dc/detach-comment-thread ids)
                 (dch/commit-changes changes)
-                (ptk/data-event :layout/update {:ids all-parents :undo-group (:undo-group options)})
+                (ptk/data-event :layout/update {:ids all-parents :undo-group undo-group})
                 (dwu/commit-undo-transaction undo-id)))))))
 
 (defn create-and-add-shape

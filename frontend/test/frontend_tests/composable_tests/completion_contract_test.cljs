@@ -30,6 +30,7 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.texts :as thtx]
    [app.common.time :as ct]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.shapes :as dwsh]
@@ -52,6 +53,46 @@
    [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each ftm/fixture)
+
+(t/deftest ^:async deleting-a-flex-child-undoes-with-its-delayed-reflow
+  (await
+   (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
+     (doseq [mode [:standalone :explicit-group :outer-transaction]]
+       (let [file     (-> (thf/sample-file :file)
+                          (tho/add-frame :main-root (merge cls/initial-flex-layout
+                                                           {:width 300 :height 100
+                                                            :layout-gap {:row-gap 5 :column-gap 9}}))
+                          (tho/add-rect :child-a :parent-label :main-root :width 50 :height 30)
+                          (tho/add-rect :child-b :parent-label :main-root :width 50 :height 30)
+                          (tho/add-rect :child-c :parent-label :main-root :width 50 :height 30)
+                          (thc/make-component :component :main-root)
+                          (thc/instantiate-component :component :copy))
+             _        (ftm/install! (tm/make-situation file))
+             group    (uuid/next)
+             outer-id (js/Symbol)]
+         (t/is (= :settled (await (ftm/await-step
+                                   [(ptk/data-event :layout/update {:ids [(thi/id :main-root) (thi/id :copy)]})]))))
+         (let [before (ftm/snapshot)
+               x      (:x (ths/get-shape (ftm/current-file) :child-a))
+               events (cond-> []
+                        (= mode :outer-transaction)
+                        (into [(dwu/start-undo-transaction outer-id)
+                               (dwsh/update-shapes #{(thi/id :main-root)} #(assoc % :opacity 0.4)
+                                                   {:undo-group group})])
+                        true
+                        (conj (dwsh/delete-shapes nil #{(thi/id :child-b)}
+                                                  (if (= mode :explicit-group) {:undo-group group} {})))
+                        (= mode :outer-transaction)
+                        (conj (dwu/commit-undo-transaction outer-id)))]
+           (t/is (= :settled (await (ftm/await-step events))))
+           (let [after (ftm/snapshot)]
+             (t/is (nil? (ths/get-shape (ftm/current-file) :child-b)))
+             (t/is (= 2 (count (:shapes (ths/get-shape (ftm/current-file) :copy)))))
+             (t/is (not= x (:x (ths/get-shape (ftm/current-file) :child-a))))
+             (t/is (= :settled (await (ftm/await-step [dwu/undo]))))
+             (t/is (uc/same-state? before (ftm/snapshot)) (str "one undo restores " mode))
+             (t/is (= :settled (await (ftm/await-step [dwu/redo]))))
+             (t/is (uc/same-state? after (ftm/snapshot)) (str "one redo restores " mode)))))))))
 
 (t/deftest ^:async swapping-growing-text-undoes-with-the-component-choice
   (let [features (:features @st/state)]
