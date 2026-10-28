@@ -498,15 +498,11 @@
   (ptk/reify ::rename-component-and-main-instance
     ptk/WatchEvent
     (watch [_ state _]
-      (let [name        (str/trim name)
-            clean-name  (cpn/clean-path name)
-            valid?      (and (not (str/ends-with? name "/"))
-                             (string? clean-name)
-                             (not (str/blank? clean-name)))
+      (let [clean-name (cpn/normalize-path-name name)
             data       (dsh/lookup-file-data state)
             component  (dm/get-in data [:components component-id])]
 
-        (when (and valid? component)
+        (when (and (some? clean-name) component)
           (let [shape-id (:main-instance-id component)
                 page-id  (:main-instance-page component)]
 
