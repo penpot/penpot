@@ -324,6 +324,34 @@
     (t/is (= {media-new {:id media-new :name "img"}} (:media data')))
     (t/is (= media-new (get-in data' [:colors :c1 :image :id])))))
 
+(t/deftest remap-refs-remaps-document-id-and-tokens-source
+  (let [branch-id (uuid/next)
+        main-id   (uuid/next)
+        ext-lib   (uuid/next)
+        media-old (uuid/next)]
+    (t/testing "the file id map moves the document and its self-named source"
+      (let [data' (bm/remap-refs (assoc (mkdata {}) :id branch-id :tokens-source branch-id)
+                                 {branch-id main-id})]
+        (t/is (= main-id (:id data')))
+        (t/is (= main-id (:tokens-source data')))
+        (t/is (cfo/effective-tokens-source? data' main-id))))
+    (t/testing "a library tokens source outside the map stays"
+      (let [data' (bm/remap-refs (assoc (mkdata {}) :id branch-id :tokens-source ext-lib)
+                                 {branch-id main-id})]
+        (t/is (= main-id (:id data')))
+        (t/is (= ext-lib (:tokens-source data')))))
+    (t/testing "a media-only map leaves the document id alone"
+      (let [data' (bm/remap-refs (assoc (mkdata {}) :id branch-id) {media-old (uuid/next)})]
+        (t/is (= branch-id (:id data')))
+        (t/is (not (contains? data' :tokens-source)))))
+    (t/testing "remap-changes maps a set-tokens-source change"
+      (t/is (= [{:type :set-tokens-source :file-id branch-id :library-id branch-id}]
+               (bm/remap-changes [{:type :set-tokens-source :file-id main-id :library-id main-id}]
+                                 {main-id branch-id})))
+      (t/is (= [{:type :set-tokens-source :file-id branch-id :library-id nil}]
+               (bm/remap-changes [{:type :set-tokens-source :file-id main-id :library-id nil}]
+                                 {main-id branch-id}))))))
+
 (t/deftest merge-component-keeps-head-and-remaps-file
   ;; a component created on a branch must merge into main as a VALID head:
   ;; its main instance keeps component-id/main-instance and its
@@ -795,6 +823,95 @@
     (t/is (= 2 (count (:changes r))))
     (t/is (= "bar" (get-in data' [:plugin-data :my-plugin "foo"])))
     (t/is (= "20px" (get-in data' [:options :base-font-size])))))
+
+;; --- tokens source
+
+(def ^:private main-file-id (uuid/custom 0 100))
+(def ^:private lib-a (uuid/custom 0 101))
+(def ^:private lib-b (uuid/custom 0 102))
+
+(defn- source-data
+  "File-level data of main's file whose tokens source is `source` (nil =
+  the file itself)."
+  [source]
+  (cond-> (assoc (file-level-data) :id main-file-id)
+    (some? source) (assoc :tokens-source source)))
+
+(t/deftest compute-merge-tokens-source-one-side
+  (let [base   (source-data nil)
+        branch (source-data lib-a)
+        r      (bm/compute-merge base base branch :branch->main)
+        c      (first (:changes r))]
+    (t/is (= {:added 0 :modified 1 :deleted 0 :conflicts 0} (:stats r)))
+    (t/is (= :tokens-source (:kind c)))
+    (t/is (= :tokens-source (:id c)))
+    (t/is (= "tokens-source//tokens-source" (:key c)))))
+
+(t/deftest compute-changes-tokens-source-one-side
+  (t/testing "the branch points the file at a library"
+    (let [base   (source-data nil)
+          branch (source-data lib-a)
+          {:keys [changes unsupported]} (bm/compute-changes base base branch)]
+      (t/is (empty? unsupported))
+      (t/is (= [{:type :set-tokens-source :file-id main-file-id :library-id lib-a}] changes))
+      (t/is (= lib-a (:tokens-source (cfc/process-changes base changes))))))
+  (t/testing "the branch points the file back at itself"
+    (let [base   (source-data lib-a)
+          branch (source-data nil)
+          {:keys [changes]} (bm/compute-changes base base branch)]
+      (t/is (= [{:type :set-tokens-source :file-id main-file-id :library-id nil}] changes))
+      (t/is (not (contains? (cfc/process-changes base changes) :tokens-source)))))
+  (t/testing "main's change stays when the branch leaves the source alone"
+    (let [base (source-data nil)
+          main (source-data lib-a)]
+      (t/is (empty? (:changes (bm/compute-merge base main base :branch->main))))
+      (t/is (empty? (:changes (bm/compute-changes base main base)))))))
+
+(t/deftest compute-merge-tokens-source-self-id-reads-as-self
+  ;; a source naming the file itself is the same as no source
+  (let [base   (source-data nil)
+        branch (source-data main-file-id)]
+    (t/is (empty? (:changes (bm/compute-merge base base branch :branch->main))))
+    (t/is (empty? (:changes (bm/compute-changes base base branch))))))
+
+(t/deftest tokens-source-merges-after-branch-remap
+  ;; a branch that named its own file id merges into main as "self"
+  (let [branch-id (uuid/custom 0 103)
+        base      (source-data lib-a)
+        branch    (-> (source-data nil)
+                      (assoc :id branch-id :tokens-source branch-id)
+                      (bm/remap-refs {branch-id main-file-id}))
+        {:keys [changes]} (bm/compute-changes base base branch)]
+    (t/is (= [{:type :set-tokens-source :file-id main-file-id :library-id nil}] changes))
+    (t/is (not (contains? (cfc/process-changes base changes) :tokens-source)))))
+
+(t/deftest compute-merge-tokens-source-conflict
+  (let [base   (source-data nil)
+        main   (source-data lib-a)
+        branch (source-data lib-b)
+        r      (bm/compute-merge base main branch :branch->main)
+        c      (first (:conflicts r))
+        apply* (fn [resolutions]
+                 (:tokens-source
+                  (cfc/process-changes main (:changes (bm/compute-changes base main branch resolutions)))))]
+    (t/is (= 1 (-> r :stats :conflicts)))
+    (t/is (= {:kind :tokens-source :id :tokens-source :reason :modify-modify
+              :base nil :main lib-a :branch lib-b}
+             (select-keys c [:kind :id :reason :base :main :branch])))
+    (t/is (bm/conflict-resolved? c :branch))
+    (t/testing "unresolved: main keeps its source"
+      (t/is (= lib-a (apply* {}))))
+    (t/testing "resolved to the branch: the branch's source lands"
+      (t/is (= lib-b (apply* {:tokens-source :branch}))))))
+
+(t/deftest compute-changes-tokens-source-update-from-main
+  (let [base (source-data nil)
+        main (source-data lib-a)
+        r    (bm/compute-merge base main base :main->branch)
+        {:keys [changes unsupported]} (bm/compute-changes base base main {} r)]
+    (t/is (= [:tokens-source] (map :kind (:changes r))))
+    (t/is (empty? unsupported))
+    (t/is (= lib-a (:tokens-source (cfc/process-changes base changes))))))
 
 ;; --- components
 

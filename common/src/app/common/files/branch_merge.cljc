@@ -428,6 +428,24 @@
   (case option
     :base-font-size {:type :set-base-font-size :base-font-size value}))
 
+(defn- tokens-source
+  "The file's tokens source as the merge compares it, keyed by
+  `:tokens-source`: the RAW `:tokens-source` value, nil meaning the file
+  itself. A value naming one of `self-ids` (the `:id`s of the compared
+  documents, all ids of the same logical file) also reads as nil, so a
+  side that names itself explicitly does not differ from one that leaves
+  the attribute out. The effective source is not compared: it falls back
+  to the document's own `:id`, and that differs between a branch and its
+  source."
+  [data self-ids]
+  (let [source (:tokens-source data)]
+    {:tokens-source (when-not (contains? self-ids source) source)}))
+
+(defn- self-ids
+  "The data `:id`s of the compared documents."
+  [& datas]
+  (into #{} (keep :id) datas))
+
 ;; --- Shape tree ---
 ;;
 ;; `three-way-entities` classifies shapes one by one, while containment
@@ -1073,7 +1091,11 @@
   `:typography-ref-file`, shadow/grid `:file-id`) plus the media refs
   (shape `:metadata`/`:fill-image`/`:stroke-image` ids, the `:media`
   collection keys and library-color `:image` ids). It is the same surface
-  `binfile.common/process-file` remaps when it copies a file.
+  `binfile.common/process-file` remaps when it copies a file. The
+  document's own `:id` and its `:tokens-source` are rewritten too, so a
+  document moved into another file's id space names that file as itself,
+  and a tokens source that named the old file names the new one, which
+  `set-tokens-source` and `get-effective-tokens-source` read as self.
 
   A branch stores no data of its own: its state is its source's base
   snapshot with the branch's op log replayed over it
@@ -1091,6 +1113,8 @@
     data
     (let [lookup #(get id-map % %)]
       (-> data
+          (d/update-when :id #(if (uuid? %) (lookup %) %))
+          (d/update-when :tokens-source lookup)
           (d/update-when :pages-index #(cfh/relink-refs % lookup))
           (d/update-when :components #(cfh/relink-refs % lookup))
           (d/update-when :media
@@ -1149,12 +1173,14 @@
   complete on their own. The payloads it cannot see are the values that ARE
   the reference: a media object's `:id` (its `:media-id` is a storage key and
   must not be touched), a library color's `:image` id, a `:del-media`'s
-  top-level `:id`, and an operation value that is the reference itself. The
-  top-level `:id` of the other delete changes (`:del-color`,
-  `:del-typography`, `:del-component`, `:del-obj`, `:del-page`) is NOT such a
-  value: those name entities the two files share by id, never a media row,
-  so they are left alone — only a media id or the file id is ever a key of
-  `id-map`. Token changes are left alone: no id in `id-map` is a token id."
+  top-level `:id`, a `:set-tokens-source`'s `:library-id`, and an operation
+  value that is the reference itself. A `:set-tokens-source`'s `:file-id` is
+  a `:file-id` key, which `relink-refs` rewrites. The top-level `:id` of the
+  other delete changes (`:del-color`, `:del-typography`, `:del-component`,
+  `:del-obj`, `:del-page`) is NOT such a value: those name entities the two
+  files share by id, never a media row, so they are left alone — only a
+  media id or the file id is ever a key of `id-map`. The other token changes
+  are left alone: no id in `id-map` is a token id."
   [changes id-map]
   (if (empty? id-map)
     changes
@@ -1167,6 +1193,10 @@
 
                 (uuid? (:id (:object change)))
                 (update-in [:object :id] lookup)
+
+                (and (= :set-tokens-source (:type change))
+                     (uuid? (:library-id change)))
+                (update :library-id lookup)
 
                 (uuid? (get-in change [:color :image :id]))
                 (update-in [:color :image :id] lookup)
@@ -1294,6 +1324,11 @@
                                       {:kind :file-plugin})
                   (three-way-entities (file-options base) (file-options theirs) (file-options ours)
                                       {:kind :file-option})
+                  ;; the tokens source: a kind of its own, compared raw
+                  (let [ids (self-ids base theirs ours)]
+                    (three-way-entities (tokens-source base ids) (tokens-source theirs ids)
+                                        (tokens-source ours ids)
+                                        {:kind :tokens-source}))
                   (diff-pages base theirs ours only-pages dir)
                   (diff-tokens base theirs ours)]
         {:keys [changes conflicts]} (merge-results results)
@@ -1345,7 +1380,8 @@
   there would hide them.
 
   The `:tokens-lib` is diffed as well (`diff-tokens`), so token changes
-  are reported here with their own kinds."
+  are reported here with their own kinds. The file's tokens source is
+  reported under kind `:tokens-source`, entity id `:tokens-source`."
   ([base main branch dir] (compute-merge* base main branch dir nil))
   ([base main branch dir {:keys [only-pages]}]
    (compute-merge* base main branch dir only-pages)))
@@ -1373,7 +1409,7 @@
   #{:color :typography :media :shape :token :token-set :token-set-rename :token-set-order
     :token-theme :token-active-themes :token-active-sets
     :page :page-order :page-guide :page-flow :page-grid :page-plugin :component
-    :file-plugin :file-option})
+    :file-plugin :file-option :tokens-source})
 
 (defn unsupported-kinds
   "Set of change kinds present in `changes` that `compute-changes`
@@ -1999,6 +2035,16 @@
                          (file-options base) (file-options main) (file-options branch)
                          set-option-change set-option-change (fn [_] nil))
 
+         ;; tokens source: always present on every side (nil = self), so
+         ;; never added or deleted. The change names the target document.
+         ids       (self-ids base main branch)
+         set-source (fn [_ library-id]
+                      {:type :set-tokens-source :file-id (:id main) :library-id library-id})
+         source-changes (flat :tokens-source {}
+                              (tokens-source base ids) (tokens-source main ids)
+                              (tokens-source branch ids)
+                              set-source set-source (fn [_] nil))
+
          ;; pages: add (full page incl. objects) / delete + rename (mod-page)
          bpi (:pages-index base) mpi (:pages-index main) opi (:pages-index branch)
          bpids (set (keys bpi)) mpids (set (keys mpi)) opids (set (keys opi))
@@ -2257,6 +2303,7 @@
       :changes     (vec (concat page-presence components shapes page-meta-changes
                                 page-guides page-flows page-grids page-plugins page-order-changes
                                 colors typos media file-plugins (filterv some? file-opts)
+                                (filterv some? source-changes)
                                 set-presence set-rename-changes set-order-changes
                                 token-vals themes
                                 active-changes))})))

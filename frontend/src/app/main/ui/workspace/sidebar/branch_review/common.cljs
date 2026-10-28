@@ -69,7 +69,8 @@
    :token-set-order     i/tokens
    :token-theme         i/tokens
    :token-active-themes i/tokens
-   :token-active-sets   i/tokens})
+   :token-active-sets   i/tokens
+   :tokens-source       i/tokens})
 
 (def ^:private shape-type->icon
   {:frame "board" :rect "rectangle" :line "rectangle" :circle "ellipse"
@@ -114,7 +115,8 @@
    :token-set-order     "workspace.branches.review.type.token-set-order"
    :token-theme         "workspace.branches.review.type.theme"
    :token-active-themes "workspace.branches.review.type.active-themes"
-   :token-active-sets   "workspace.branches.review.type.active-sets"})
+   :token-active-sets   "workspace.branches.review.type.active-sets"
+   :tokens-source       "workspace.branches.review.type.tokens-source"})
 
 (def ^:private shape-type->label
   {:frame "workspace.branches.compare.shape.board"
@@ -308,7 +310,7 @@
       (or (= :component kind) (:component? item) (:component-copy? item))
       :components
       (contains? #{:token :token-set :token-set-rename :token-set-order :token-theme
-                   :token-active-themes :token-active-sets} kind)
+                   :token-active-themes :token-active-sets :tokens-source} kind)
       :tokens
       (contains? #{:color} kind) :colour
       (contains? #{:typography} kind) :copy

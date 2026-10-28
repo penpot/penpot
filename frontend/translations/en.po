@@ -11623,6 +11623,10 @@ msgstr "Active themes"
 msgid "workspace.branches.review.type.active-sets"
 msgstr "Active token sets"
 
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.type.tokens-source"
+msgstr "Tokens source"
+
 #: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
 msgid "workspace.branches.review.facts.contents"
 msgstr "Contents"
