@@ -168,3 +168,74 @@
                 [3 (assoc (deleted :other :icon) :page-id :elsewhere)]]]
     (t/is (= {} (brc/fold-cascades rows))
           "an addition, a layer whose parent stays and one on another page stay apart")))
+
+;; --- What goes with an added or deleted layer
+
+(def ^:private home-id   (uuid/next))
+(def ^:private screen-id (uuid/next))
+(def ^:private cta-id    (uuid/next))
+(def ^:private button-id (uuid/next))
+(def ^:private icon-id   (uuid/next))
+(def ^:private label-id  (uuid/next))
+
+(def ^:private proto-objects
+  "Main's page: a button with a flex layout on Home, and a Screen the
+  CTA leads to."
+  {uuid/zero {:id uuid/zero :type :frame :shapes [home-id screen-id]}
+   home-id   {:id home-id :type :frame :name "Home" :parent-id uuid/zero}
+   screen-id {:id screen-id :type :frame :name "Screen" :parent-id uuid/zero}
+   cta-id    {:id cta-id :type :rect :name "CTA" :parent-id home-id}
+   button-id {:id button-id :type :frame :name "Button" :parent-id home-id
+              :layout :flex :width 163 :height 48}
+   icon-id   {:id icon-id :type :group :name "icon" :parent-id button-id}
+   label-id  {:id label-id :type :text :name "label" :parent-id button-id}})
+
+(defn- gone
+  [id]
+  {:kind :shape :status :deleted :id id :page-id page-id})
+
+(defn- edit
+  [id attrs]
+  {:kind :shape :status :modified :id id :page-id page-id :label (name id)
+   :changed-attrs attrs})
+
+(t/deftest a-board-with-a-layout-resizes-with-the-layer
+  (let [items [(gone icon-id)
+               (edit button-id {:width {:main 163 :branch 131}})]
+        fx    (brc/shape-effects (gone icon-id) items proto-objects [] false)]
+    (t/is (= [{:id button-id :name "Button" :layout :flex :from [163 48] :to [131 48]}]
+             (:layouts fx)))
+    (t/is (= [] (:interactions fx)))
+    (t/is (= [] (:flows fx)))))
+
+(t/deftest an-update-reads-the-sides-the-other-way-round
+  (let [items [(gone icon-id)
+               (edit button-id {:width {:main 131 :branch 163}})]
+        fx    (brc/shape-effects (gone icon-id) items proto-objects [] true)]
+    (t/is (= [[163 48] [131 48]] ((juxt :from :to) (first (:layouts fx)))))))
+
+(t/deftest a-fixed-board-moves-its-other-layers
+  (let [items [(gone icon-id)
+               (edit label-id {:x {:main 40 :branch 20}})]
+        fx    (brc/shape-effects (gone icon-id) items proto-objects [] false)]
+    (t/is (= [{:id button-id :name "Button" :layout :flex :moved 1}] (:layouts fx)))))
+
+(t/deftest prototype-links-into-a-deleted-board-go-with-it
+  (let [link  {:event-type :click :action-type :navigate :destination screen-id}
+        items [(gone screen-id)
+               (assoc (edit cta-id {:interactions {:main [link] :branch []}}) :label "CTA")
+               {:kind :page-flow :status :deleted :id :f1 :page-id page-id :label "f1"
+                :flow {:id :f1 :name "Onboarding" :starting-frame screen-id}}
+               {:kind :page-flow :status :deleted :id :f2 :page-id page-id :label "f2"
+                :flow {:id :f2 :name "Other" :starting-frame home-id}}]
+        fx    (brc/shape-effects (gone screen-id) items proto-objects [] false)]
+    (t/is (= [{:id cta-id :label "CTA" :count 1}] (:interactions fx)))
+    (t/is (= ["Onboarding"] (:flows fx)))
+    (t/is (= [] (:layouts fx)) "the page root is not a layout")))
+
+(t/deftest an-added-layer-breaks-no-links
+  (let [link  {:event-type :click :action-type :navigate :destination screen-id}
+        added (assoc (gone screen-id) :status :added)
+        items [added (edit cta-id {:interactions {:main [] :branch [link]}})]
+        fx    (brc/shape-effects added items proto-objects [] false)]
+    (t/is (= [] (:interactions fx)))))

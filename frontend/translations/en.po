@@ -11536,6 +11536,36 @@ msgid_plural "workspace.branches.review.facts.deleted-used"
 msgstr[0] "1 layer in this file loses its link to it."
 msgstr[1] "%s layers in this file lose their link to it."
 
+#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
+msgid "workspace.branches.review.effects.title-deleted"
+msgstr "What goes with it"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
+msgid "workspace.branches.review.effects.title-added"
+msgstr "What comes with it"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
+msgid "workspace.branches.review.effects.interactions"
+msgid_plural "workspace.branches.review.effects.interactions"
+msgstr[0] "1 prototype interaction leads here and goes too"
+msgstr[1] "%s prototype interactions lead here and go too"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
+msgid "workspace.branches.review.effects.interactions-from"
+msgstr "On %s"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
+msgid "workspace.branches.review.effects.flows"
+msgid_plural "workspace.branches.review.effects.flows"
+msgstr[0] "1 prototype flow starts here and goes too"
+msgstr[1] "%s prototype flows start here and go too"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
+msgid "workspace.branches.review.effects.moved"
+msgid_plural "workspace.branches.review.effects.moved"
+msgstr[0] "1 other layer moves"
+msgstr[1] "%s other layers move"
+
 #: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
 msgid "workspace.branches.review.group.pages"
 msgstr "Pages"

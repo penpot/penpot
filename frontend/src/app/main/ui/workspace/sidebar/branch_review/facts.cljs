@@ -32,13 +32,22 @@
         "workspace.branches.review.side.main"
         "workspace.branches.review.side.branch")))
 
+(defn- names-line
+  "`names` joined, the first `max-names` of them and a count of the rest."
+  [names]
+  (dm/str (str/join ", " (take max-names names))
+          (when (> (count names) max-names)
+            (dm/str " " (tr "workspace.branches.review.summary.more"
+                            (i18n/c (- (count names) max-names)))))))
+
 (mf/defc fact-list*
   "Label and value rows, one per fact."
   {::mf/private true}
   [{:keys [rows]}]
   [:div {:class (stl/css :facts)}
-   (for [[label value] (remove nil? rows)]
-     [:div {:class (stl/css :fact) :key label}
+   ;; keyed by place: a label may repeat (a layout row per board)
+   (for [[idx [label value]] (map-indexed vector (remove nil? rows))]
+     [:div {:class (stl/css :fact) :key idx}
       [:> text* {:as "span" :typography t/body-small :class (stl/css :fact-label)} label]
       [:div {:class (stl/css :fact-value)} value]])])
 
@@ -74,10 +83,7 @@
                             (tr "workspace.branches.review.facts.layers" (i18n/c layers))))]
                  (when (seq names)
                    [(tr "workspace.branches.review.facts.board-names")
-                    (dm/str (str/join ", " (take max-names names))
-                            (when (> (count names) max-names)
-                              (dm/str " " (tr "workspace.branches.review.summary.more"
-                                              (i18n/c (- (count names) max-names))))))])]}]
+                    (names-line names)])]}]
         (when (and deleted? (pos? layers))
           [:> brl/notice* {:level :warning
                            :title (tr "workspace.branches.review.facts.page-goes")}
@@ -134,6 +140,57 @@
       component
       (conj [(tr "workspace.branches.compare.attr.component") component]))))
 
+;; --- What goes with a layer
+
+(defn- size-line
+  [[w h]]
+  (dm/str (brc/display-val w) " × " (brc/display-val h)))
+
+(defn- layout-row
+  "A board with a layout around the layer: how it resizes, or how many
+  of its other layers move."
+  [{:keys [name layout from to moved]}]
+  [(tr "workspace.branches.review.category.layout")
+   (dm/str name " (" (tr (if (= :grid layout) "labels.grid-layout" "labels.flex-layout")) ") - "
+           (if moved
+             (tr "workspace.branches.review.effects.moved" (i18n/c moved))
+             (dm/str (size-line from) " → " (size-line to))))])
+
+(mf/defc effects*
+  "What else changes with an added or deleted layer (`brc/shape-effects`):
+  the prototype links and flows that go with it first, as warnings, then
+  the layouts around it that adapt and the layers it holds. Nothing
+  shows when none of it applies."
+  {::mf/private true}
+  [{:keys [item items objects inner incoming]}]
+  (let [{:keys [interactions flows layouts]}
+        (mf/with-memo [item items objects inner incoming]
+          (brc/shape-effects item items objects inner incoming))
+        names    (mapv (comp :label second) inner)
+        deleted? (= :deleted (:status item))
+        rows     (cond-> (mapv layout-row layouts)
+                   (seq names)
+                   (conj [(tr "workspace.branches.review.facts.contents") (names-line names)]))]
+    (when (or (seq interactions) (seq flows) (seq rows))
+      [:div {:class (stl/css :section)}
+       [:> section-title* {}
+        (tr (if deleted?
+              "workspace.branches.review.effects.title-deleted"
+              "workspace.branches.review.effects.title-added"))]
+       (when (seq interactions)
+         [:> brl/notice* {:level :warning
+                          :title (tr "workspace.branches.review.effects.interactions"
+                                     (i18n/c (reduce + (map :count interactions))))}
+          (tr "workspace.branches.review.effects.interactions-from"
+              (names-line (map :label interactions)))])
+       (when (seq flows)
+         [:> brl/notice* {:level :warning
+                          :title (tr "workspace.branches.review.effects.flows"
+                                     (i18n/c (count flows)))}
+          (names-line flows)])
+       (when (seq rows)
+         [:> fact-list* {:rows rows}])])))
+
 (mf/defc shape-facts*
   "A new or deleted layer: where it lands (or was), what it is and, for a
   deleted main component, the copies it leaves behind. `inner` are the
@@ -162,18 +219,16 @@
                              "workspace.branches.review.facts.where-was"
                              "workspace.branches.review.facts.where-lands"))
                        (str/join " › " (cons page (brc/shape-path objects (:id item))))]]
-                     (cond-> (shape-rows shape data type-lbl)
-                       (seq inner)
-                       (conj [(tr "workspace.branches.review.facts.contents")
-                              (tr "workspace.branches.review.facts.layers"
-                                  (i18n/c (count inner)))])))}]
+                     (shape-rows shape data type-lbl))}]
        (when (and copies (pos? copies))
          [:> brl/notice* {:level :warning
                           :title (tr "workspace.branches.review.facts.copies-orphaned-title")}
           (tr (if incoming
                 "workspace.branches.review.facts.copies-orphaned-update"
                 "workspace.branches.review.facts.copies-orphaned-merge")
-              (i18n/c copies))])])))
+              (i18n/c copies))])
+       [:> effects* {:item item :items items :objects objects
+                     :inner inner :incoming incoming}]])))
 
 ;; --- Library entries other layers depend on
 

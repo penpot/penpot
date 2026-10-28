@@ -170,6 +170,20 @@
     (t/is (= {:id :s2 :name "B" :selrect {:x 2}} (get-in update [:s2 :shape])))
     (t/is (= {:id :s3 :name "C" :selrect {:x 3}} (get-in update [:s3 :shape])))))
 
+(t/deftest a-deleted-flow-carries-the-board-it-starts-on
+  (let [flow   {:id :f1 :name "Onboarding" :starting-frame :b1}
+        base   (assoc-in (mkdata {:b1 {:id :b1 :name "Home"}})
+                         [:pages-index :p1 :flows] {:f1 flow})
+        branch (assoc-in base [:pages-index :p1 :flows] {})
+        merge  (first (filter #(= :page-flow (:kind %))
+                              (:changes (bm/compute-merge base base branch :branch->main))))
+        update (first (filter #(= :page-flow (:kind %))
+                              (:changes (bm/compute-merge base branch base :main->branch))))]
+    (t/is (= :deleted (:status merge)))
+    (t/is (= flow (:flow merge)))
+    (t/is (= :deleted (:status update)))
+    (t/is (= flow (:flow update)))))
+
 (t/deftest modified-carries-no-shape
   (let [base   (mkdata {:s1 {:id :s1 :name "A" :fill "red"}})
         branch (mkdata {:s1 {:id :s1 :name "A" :fill "blue"}})
