@@ -241,24 +241,30 @@
 
 (defn- migrate-file
   [{:keys [::db/conn] :as cfg} {:keys [read-only?]} {:keys [id] :as file}]
-  (binding [pmap/*load-fn* (partial fdata/load-pointer cfg id)
-            pmap/*tracked* (pmap/create-tracked)]
-    (let [libs (delay (get-resolved-file-libraries cfg file))
-          ;; For avoid unnecesary overhead of creating multiple
-          ;; pointers and handly internally with objects map in their
-          ;; worst case (when probably all shapes and all pointers
-          ;; will be readed in any case), we just realize/resolve them
-          ;; before applying the migration to the file.
-          file (-> (fdata/realize cfg file)
-                   (fmg/migrate-file libs))]
+  (fdata/with-tracked-pointers cfg id
+    (let [libs                (delay (get-resolved-file-libraries cfg file))
+          ;; Capture the pointer layout before realizing: the migration
+          ;; runs on plain data, and unchanged positions must keep their
+          ;; original fragment ids instead of being re-wrapped with new
+          ;; ones on persist.
+          original            (fdata/original-pointers (:data file))
+          objects-map-before? (contains? (:features file) "fdata/objects-map")
+          realized            (-> (fdata/realize cfg file)
+                                  (fmg/migrate-file libs))
+          objects-map-added?  (and (not objects-map-before?)
+                                   (contains? (:features realized) "fdata/objects-map"))]
 
       (if (or read-only? (db/read-only? conn))
-        file
-        (do ;; When file is migrated, we break the rule of no
-          ;; perform mutations on get operations and update the
-          ;; file with all migrations applied
+        realized
+        (let [file (if objects-map-added?
+                     realized
+                     (fdata/reattach-unchanged original realized))]
+          ;; When the file is migrated, we break the rule of not
+          ;; performing mutations on get operations and update the file
+          ;; with all migrations applied. The caller still receives the
+          ;; realized file: the read contract is plain data.
           (update-file! cfg file)
-          (fmigr/resolve-applied-migrations cfg file))))))
+          (fmigr/resolve-applied-migrations cfg realized))))))
 
 ;; --- Branch files: derived data --------------------------------------
 ;;
@@ -544,7 +550,7 @@
 
   (assert (db/connection? conn) "expected cfg with valid connection")
   (when (and (not load-data?)
-             (or lock-for-share? lock-for-share? skip-locked?))
+             (or lock-for-share? lock-for-update? skip-locked?))
     (throw (IllegalArgumentException. "locking is incompatible when `load-data?` is false")))
 
   (let [sql
@@ -1268,7 +1274,12 @@
   (let [library-ids (->> (get-file-libraries conn (:id file))
                          (map :id)
                          (cons (:id file)))
-        load-fn     #(get-file cfg % :migrate? false)]
+        ;; Fragment rows are file-local and callers bind the loader of
+        ;; the file they work on, so each library realizes its pointers
+        ;; here, with its own id, before anything walks its data.
+        load-fn     (fn [library-id]
+                      (->> (get-file cfg library-id :migrate? false)
+                           (fdata/realize-pointers cfg)))]
     (weak/loadable-weak-value-map library-ids load-fn {id file})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
