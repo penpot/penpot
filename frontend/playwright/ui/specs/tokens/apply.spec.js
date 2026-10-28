@@ -259,6 +259,36 @@ test.describe("Tokens: Apply token", () => {
     await expect(opacityLowPill).toBeVisible();
   });
 
+  test("Token dropdown of a scrubbable numeric input shows the default cursor", async ({
+    page,
+  }) => {
+    const { workspacePage } = await setupTokensFileRender(page);
+
+    await page.getByRole("tab", { name: "Layers" }).click();
+    await workspacePage.layers.getByTestId("layer-row").nth(1).click();
+
+    const layerMenuSection = page.getByRole("region", {
+      name: "Layer menu section",
+    });
+    const opacityWrapper = layerMenuSection
+      .getByTestId("numeric-input-wrapper")
+      .first();
+    await expect(opacityWrapper).toHaveCSS("cursor", "ew-resize");
+
+    await layerMenuSection
+      .getByRole("button", { name: "Open token list" })
+      .click();
+
+    // The scrub cursor belongs to the input, not to the dropdown it opens.
+    const tokenList = layerMenuSection.getByRole("listbox");
+    await expect(tokenList).toBeVisible();
+    await expect(tokenList).toHaveCSS("cursor", "default");
+    await expect(tokenList.getByRole("option").first()).toHaveCSS(
+      "cursor",
+      "default",
+    );
+  });
+
   test("User applies typography token to a text shape", async ({ page }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
       await setupTypographyTokensFileRender(page);
