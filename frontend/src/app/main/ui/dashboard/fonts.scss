@@ -280,6 +280,10 @@
   max-inline-size: px2rem(1000);
   inline-size: 100%;
 
+  .placeholder-icon {
+    color: var(--color-foreground-secondary);
+  }
+
   .label {
     @include use-typography("body-medium");
 

@@ -519,8 +519,9 @@
        :else
        (if ^boolean can-edit
          [:div {:class (stl/css :fonts-placeholder)}
-          [:div {:class (stl/css :icon)}
-           [:> icon* {:icon-id i/text :size "xl"}]]
+          [:> icon* {:icon-id i/text
+                     :size "xl"
+                     :class (stl/css :placeholder-icon)}]
           [:div {:class (stl/css :label)} (tr "dashboard.fonts.empty-placeholder")]]
 
          [:> empty-placeholder*
