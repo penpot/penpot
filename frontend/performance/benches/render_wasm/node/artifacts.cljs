@@ -5,12 +5,11 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns benches.render-wasm.node.artifacts
-  "Managed renderer builds under frontend/target/performance/render-wasm.
+  "Outputs of renderer builds managed under
+  frontend/target/performance/render-wasm.
 
-  create-build writes the initial manifest and log before returning. A build
-  helper can then publish its :on-created output, compile into the returned
-  paths, and write a :ready or :failed manifest. Failed builds retain their
-  files and logs until an idle caller explicitly removes them."
+  Here, 'managed' means that the runner owns the build directory and its
+  contents, which can be deleted by means of the `purge` command."
   (:require
    ["fs" :as fs]
    ["path" :as path]
@@ -28,6 +27,7 @@
    [:status [:enum :building :ready :failed]]
    [:created-at :string]
    [:updated-at :string]
+   [:environment {:optional true} [:map-of :string :string]]
    [:functional :map]
    [:provenance :map]])
 
@@ -123,9 +123,12 @@
 (defn create-build
   "Allocates a UUID build and saves its :building build.transit and empty log.
 
-  root is the frontend checkout. selection is {:default-features? boolean
-  :features vector}; provenance is {:git {:sha string-or-nil
-  :dirty boolean-or-nil}}. This function does not compile or remove builds."
+  - root: the frontend checkout.
+  - selection: {:default-features? boolean :features vector}
+  - provenance: {:git {:sha string-or-nil :dirty boolean-or-nil}}.
+
+  Returns a build reference.
+  "
   [root selection provenance]
   (let [id       (str (random-uuid))
         now      (.toISOString (js/Date.))
@@ -272,19 +275,55 @@
               (recur (into pending (map #(path/join dir %) names))
                      (conj visited real)))))))))
 
-(defn purge
-  "Unlinks known outputs from :builds, :runs or both (:all).
+(defn- purge-feature-comparisons
+  "Unlinks feature-comparison records, configuration run evidence and edge
+  reports from the output directory.
 
-  The caller must be idle: no build, server or run may still own these paths.
-  Follows directory symlinks; keeps directories and unrelated files."
+  Keeps directories, builds and unrelated files."
+  [root]
+  (loop [pending [root]
+         visited #{}]
+    (when-let [dir (peek pending)]
+      (let [pending (pop pending)
+            real    (when (directory? dir) (fs/realpathSync dir))]
+        (if (or (nil? real) (contains? visited real))
+          (recur pending visited)
+          (let [parent (path/basename (path/dirname dir))
+                base   (path/basename dir)
+                names  (array-seq (fs/readdirSync dir))]
+            (when (= "feature-comparisons" parent)
+              (unlink-if-present (path/join dir "feature-comparison.transit")))
+            (when (= "configs" parent)
+              (unlink-if-present (path/join dir "run.log"))
+              (unlink-if-present (path/join dir "run.transit")))
+            (when (= "comparisons" base)
+              (doseq [file names
+                      :when (str/ends-with? (str/lower-case file) ".transit")]
+                (unlink-if-present (path/join dir file))))
+            (doseq [file names
+                    :when (str/ends-with? (str/lower-case file) ".png")]
+              (unlink-if-present (path/join dir file)))
+            (recur (into pending (map #(path/join dir %) names))
+                   (conj visited real))))))))
+
+(defn purge
+  "Unlinks known outputs from :builds, :runs, :comparisons or all of them (:all).
+
+  The caller must be idle: no build, server, run or comparison may still own
+  these paths. Follows directory symlinks; keeps directories and unrelated
+  files."
   [root category]
   (let [managed (managed-root root)]
     (case category
       :builds (purge-builds (path/join managed "builds"))
       :runs (purge-runs (path/join managed "runs"))
+      :comparisons (purge-feature-comparisons
+                    (path/join managed "feature-comparisons"))
       :all (do
              (purge-builds (path/join managed "builds"))
-             (purge-runs (path/join managed "runs")))
+             (purge-runs (path/join managed "runs"))
+             (purge-feature-comparisons
+              (path/join managed "feature-comparisons")))
       (throw (ex-info "invalid renderer artifact category"
                       {:type ::invalid-category :category category})))))
 

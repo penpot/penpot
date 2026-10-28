@@ -8,7 +8,7 @@
   "Text formatting for run summaries and saved comparisons.
 
   Text leads with observed median, bootstrap interval and distinct counts.
-  Full statistics and forced differences retain units and observation bases."
+  Full statistics and acknowledged differences retain units and observation bases."
   (:require
    [benches.render-wasm.result :as result]
    [clojure.string :as str]))
@@ -83,10 +83,17 @@
        (apply str (map (fn [[id metric]] (str "\n" (metric->text id metric))) metrics))))
 
 (defn format-comparison
-  "Formats changes, exploratory intervals and every recorded mismatch.
-  Forced output displays both saved definitions and original metric definitions."
-  [{:keys [baseline candidate analysis forced? source-coverage interpretation pairs]}]
-  (str (when forced? "FORCED COMPARISON: compatibility differences bypassed\n")
+  "Formats selected permissions, acknowledged/unacknowledged differences and changes.
+  Both saved definitions remain visible. Edge labels describe actual feature
+  evidence, including equal effective sets, without predicting a timing effect."
+  [{:keys [baseline candidate analysis permissions edge source-coverage interpretation pairs]}]
+  (str "Permissions " (pr-str permissions) "\n"
+       (when edge
+         (str "Edge " (:from edge) " -> " (:to edge) " feature " (:feature edge)
+              (when (= (set (:baseline-features edge)) (set (:candidate-features edge)))
+                " (effective feature sets identical)")
+              "\n  effective features " (pr-str (select-keys edge [:baseline-features :candidate-features :added :removed]))
+              "\n"))
        (when (some #(get-in % [:effective-graphics :software])
                    (mapcat (fn [pair] (concat (get-in pair [:baseline :preparations])
                                               (get-in pair [:candidate :preparations]))) pairs))
@@ -100,7 +107,10 @@
               (map (fn [{:keys [baseline candidate mismatches metrics]}]
                      (str "\n\nPair " (result/case-name (:case-id baseline)) ","
                           (result/case-name (:case-id candidate))
-                          (when (seq mismatches) (str "\nMISMATCHES " (pr-str mismatches)))
+                          (apply str
+                                 (map (fn [mismatch]
+                                        (str "\n" (if (:waived? mismatch) "ACKNOWLEDGED" "UNACKNOWLEDGED")
+                                             " DIFFERENCE " (pr-str mismatch))) mismatches))
                           (side->text "Baseline" baseline)
                           (side->text "Candidate" candidate)
                           (str/join "\n"

@@ -241,6 +241,23 @@
     (t/is (= ::artifacts/unsupported-manifest
              (:type (ex-data (failure #(artifacts/load-build @temporary-root (:id build)))))))))
 
+(t/deftest build-environment-roundtrips-without-inventing-missing-evidence
+  (t/is (not (contains? (:manifest (create-build)) :environment)))
+  (doseq [environment [{} {"CFLAGS" "" "RUSTFLAGS" "-C\u001fopt-level=3"}]]
+    (let [build (complete-files (create-build))
+          ready (artifacts/write-manifest build (assoc (:manifest build)
+                                                       :status :ready :environment environment))
+          saved (artifacts/load-build @temporary-root (:id ready))]
+      (t/is (= environment (get-in saved [:manifest :environment]))))))
+
+(t/deftest build-environment-rejects-non-string-keys-and-values
+  (doseq [environment [nil [] {:CFLAGS ""} {"CFLAGS" nil} {"CFLAGS" 0}]]
+    (let [build (create-build)
+          saved (fs/readFileSync (:manifest-path build) "utf8")
+          cause (failure #(artifacts/write-manifest build (assoc (:manifest build) :environment environment)))]
+      (t/is (= ::artifacts/invalid-manifest (:type (ex-data cause))))
+      (t/is (= saved (fs/readFileSync (:manifest-path build) "utf8"))))))
+
 (t/deftest ids-cannot-select-or-delete-outside-paths
   (let [build   (ready-build)
         outside (path/join @temporary-root "outside.txt")]
@@ -328,6 +345,60 @@
       (t/is (= "boot executable" (fs/readFileSync boot "utf8")))
       (t/is (= "unmanaged" (fs/readFileSync outside "utf8")))
       (artifacts/purge root category))))
+
+(t/deftest comparison-purge-unlinks-only-feature-comparison-evidence
+  (doseq [category [:comparisons :all]]
+    (let [root       (fs/mkdtempSync (path/join @temporary-root (str (name category) "-")))
+          managed    (artifacts/managed-root root)
+          build-file (path/join managed "builds" "saved" "build.transit")
+          ab-dir     (path/join managed "feature-comparisons" "ab-1")
+          config-dir (path/join ab-dir "configs" "00")
+          edge-dir   (path/join ab-dir "comparisons")
+          run-dir    (path/join managed "runs" "saved")
+          outside    (path/join root "unmanaged" "feature-comparison.transit")
+          outputs   [["feature-comparison.transit" ab-dir]
+                     ["run.log" config-dir]
+                     ["run.transit" config-dir]
+                     ["shot.PNG" config-dir]
+                     ["00__10.transit" edge-dir]]
+          kept      [["notes.txt" ab-dir]
+                     ["keep.txt" config-dir]
+                     ["keep.txt" edge-dir]]]
+      (doseq [[file dir] outputs
+              :let [path (path/join dir file)]]
+        (write-file path "comparison output"))
+      (doseq [[file dir] kept]
+        (write-file (path/join dir file) "unrelated"))
+      (write-file (path/join managed "feature-comparisons" "keep.txt")
+                  "unrelated root")
+      (write-file (path/join managed "feature-comparisons" "ab-1" "directory.PNG"
+                             "keep.txt")
+                  "keep directory")
+      (write-file build-file "retained build")
+      (write-file (path/join run-dir "run.transit") "standalone run")
+      (write-file outside "unmanaged")
+      (artifacts/purge root category)
+      (doseq [[file dir] outputs]
+        (t/is (not (fs/existsSync (path/join dir file))) (str category " " file)))
+      (doseq [[file dir] kept]
+        (t/is (fs/existsSync (path/join dir file)) (str category " " file)))
+      (t/is (= "unrelated root"
+               (fs/readFileSync (path/join managed "feature-comparisons" "keep.txt")
+                                "utf8")))
+      (t/is (fs/existsSync (path/join ab-dir "directory.PNG" "keep.txt")))
+      (t/is (.isDirectory (fs/statSync ab-dir)))
+      (t/is (.isDirectory (fs/statSync config-dir)))
+      (t/is (.isDirectory (fs/statSync edge-dir)))
+      (t/is (= (= category :comparisons)
+               (fs/existsSync (path/join run-dir "run.transit")))
+            (str category " standalone run"))
+      (t/is (= (= category :comparisons) (fs/existsSync build-file))
+            (str category " retained build"))
+      (when (= category :comparisons)
+        (t/is (= "standalone run"
+                 (fs/readFileSync (path/join run-dir "run.transit") "utf8")))
+        (t/is (= "retained build" (fs/readFileSync build-file "utf8"))))
+      (t/is (= "unmanaged" (fs/readFileSync outside "utf8"))))))
 
 (t/deftest purge-follows-category-and-nested-directory-symlinks-and-stops-cycles
   (let [managed (artifacts/managed-root @temporary-root)]

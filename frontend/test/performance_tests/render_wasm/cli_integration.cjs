@@ -97,8 +97,11 @@ function createFrontend(t) {
     managed,
     runner,
     compiler: path.join(renderer, "build"),
+    rendererRoot: renderer,
     builds: path.join(managed, "builds"),
     runs: path.join(managed, "runs"),
+    comparisons: path.join(managed, "feature-comparisons"),
+    env: {},
   };
 }
 
@@ -113,6 +116,7 @@ async function runCli(fixture, args) {
         timeout: 15000,
         killSignal: "SIGKILL",
         maxBuffer: 1024 * 1024,
+        env: { ...process.env, ...fixture.env },
       },
     );
     return { exitCode: 0, ...output };
@@ -172,11 +176,73 @@ function seedRuns(fixture) {
   }
 }
 
+function seedComparisons(fixture) {
+  const id = randomUUID();
+  const directory = path.join(fixture.comparisons, id);
+  const config = path.join(directory, "configs", "00");
+  const edges = path.join(directory, "comparisons");
+  fs.mkdirSync(config, { recursive: true });
+  fs.mkdirSync(edges, { recursive: true });
+  fs.mkdirSync(path.join(config, "shot.PNG"), { recursive: true });
+  fs.writeFileSync(
+    path.join(directory, "feature-comparison.transit"),
+    "comparison\n",
+  );
+  fs.writeFileSync(path.join(directory, "keep.txt"), "keep\n");
+  for (const file of ["run.transit", "run.log", "case-load.PNG"]) {
+    fs.writeFileSync(path.join(config, file), "configuration output\n");
+  }
+  fs.writeFileSync(path.join(config, "keep.txt"), "keep\n");
+  fs.writeFileSync(path.join(config, "shot.PNG", "keep.txt"), "keep\n");
+  for (const file of ["00__10.transit", "keep.txt"]) {
+    fs.writeFileSync(path.join(edges, file), "edge output\n");
+  }
+  fs.writeFileSync(path.join(fixture.comparisons, "keep.txt"), "keep\n");
+}
+
+function installCargoMetadata(fixture, definitions) {
+  const manifest = path.join(fixture.rendererRoot, "Cargo.toml");
+  const bin = path.join(path.dirname(fixture.rendererRoot), "fixture-bin");
+  const metadata = path.join(fixture.rendererRoot, "metadata.json");
+  const cargo = path.join(bin, "cargo");
+  fs.writeFileSync(
+    manifest,
+    "[package]\nname = 'fixture'\nversion = '0.1.0'\n",
+  );
+  fs.writeFileSync(
+    path.join(fixture.rendererRoot, "Cargo.lock"),
+    "version = 4\n",
+  );
+  fs.mkdirSync(bin, { recursive: true });
+  fs.writeFileSync(
+    metadata,
+    JSON.stringify({
+      packages: [{ manifest_path: manifest, features: definitions }],
+    }),
+  );
+  fs.writeFileSync(
+    cargo,
+    `#!/usr/bin/env node\nconst fs = require("node:fs");\nprocess.stdout.write(fs.readFileSync(process.env.CARGO_METADATA_FIXTURE, "utf8"));\n`,
+    { mode: 0o755 },
+  );
+  fixture.env.PATH = `${bin}${path.delimiter}${process.env.PATH}`;
+  fixture.env.CARGO_METADATA_FIXTURE = metadata;
+  return cargo;
+}
+
 function runFixtureText({
   runId,
   caseId,
   value,
   environment = { node: "v24" },
+  mode = "release",
+  features = [],
+  scene = "case",
+  sceneSeed = 7,
+  count = 10,
+  fingerprint = "a".repeat(64),
+  operation = "load",
+  operationArgs = { distance: 10 },
 }) {
   const k = transit.keyword;
   const map = (pairs) => transit.map(pairs);
@@ -200,7 +266,7 @@ function runFixtureText({
     k("case-id"),
     k(caseId),
     k("fingerprint"),
-    map([k("algorithm"), k("sha-256"), k("digest"), "a".repeat(64)]),
+    map([k("algorithm"), k("sha-256"), k("digest"), fingerprint]),
     k("effective-graphics"),
     map([k("webgl2"), true]),
     k("diagnostics"),
@@ -234,7 +300,30 @@ function runFixtureText({
     k("plan"),
     map([
       k("cases"),
-      [map([k("id"), k(caseId)])],
+      [
+        map([
+          k("id"),
+          k(caseId),
+          k("scene"),
+          k(scene),
+          k("scene-seed"),
+          sceneSeed,
+          k("params"),
+          map([k("count"), count]),
+          k("operation"),
+          map([
+            k("id"),
+            k(operation),
+            k("args"),
+            map(
+              Object.entries(operationArgs).flatMap(([key, entry]) => [
+                k(key),
+                entry,
+              ]),
+            ),
+          ]),
+        ]),
+      ],
       k("warmups"),
       0,
       k("repetitions"),
@@ -247,7 +336,10 @@ function runFixtureText({
       k("git"),
       map([k("sha"), runId, k("dirty"), false]),
       k("build"),
-      map([k("functional"), map([k("mode"), k("release")])]),
+      map([
+        k("functional"),
+        map([k("mode"), k(mode), k("features"), features]),
+      ]),
       k("environment"),
       map(
         Object.entries(environment).flatMap(([key, entry]) => [k(key), entry]),
@@ -371,12 +463,78 @@ test(
   },
 );
 
+test(
+  "ab dry-run prints the Gray plan without creating comparison output",
+  testOptions,
+  async (t) => {
+    const fixture = createFrontend(t);
+    installCargoMetadata(fixture, { default: [], a: [], b: ["a"] });
+    const retained = tree(fixture.managed);
+
+    const result = await runCli(fixture, [
+      "ab",
+      "--features",
+      "b,a",
+      "--filter",
+      "rects/load",
+      "--dry-run",
+    ]);
+
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.stderr, "");
+    assert.match(result.stdout, /^Feature comparison plan/);
+    for (const part of [
+      "Features: a, b",
+      "00: ",
+      "01: b",
+      "11: a, b",
+      "10: a",
+      "00 -> 10: a",
+      "00 -> 01: b",
+      "01 -> 11: a",
+      "10 -> 11: b",
+      "Cases: 1",
+    ]) {
+      assert.ok(result.stdout.includes(part), part);
+    }
+    assert.equal(fs.existsSync(fixture.comparisons), false);
+    assert.deepEqual(tree(fixture.managed), retained);
+  },
+);
+
+test(
+  "ab validates requested features before creating comparison output",
+  testOptions,
+  async (t) => {
+    const fixture = createFrontend(t);
+    installCargoMetadata(fixture, { default: [], a: [] });
+    const retained = tree(fixture.managed);
+
+    const result = await runCli(fixture, [
+      "ab",
+      "--features",
+      "missing",
+      "--filter",
+      "rects/load",
+      "--dry-run",
+    ]);
+
+    assert.equal(result.exitCode, 1);
+    assert.equal(result.stdout, "");
+    assert.match(result.stderr, /unknown requested Cargo features/);
+    assert.equal(fs.existsSync(fixture.comparisons), false);
+    assert.deepEqual(tree(fixture.managed), retained);
+  },
+);
+
 test("purge deletes only the selected artifacts", testOptions, async (t) => {
   const fixture = createFrontend(t);
   const retained = tree(fixture.managed);
   seedBuilds(fixture);
   seedRuns(fixture);
+  seedComparisons(fixture);
   const runs = tree(fixture.runs);
+  const comparisons = tree(fixture.comparisons);
 
   assert.deepEqual(await runCli(fixture, ["purge", "--only-builds"]), {
     exitCode: 0,
@@ -389,9 +547,10 @@ test("purge deletes only the selected artifacts", testOptions, async (t) => {
     ]);
   }
   assert.deepEqual(tree(fixture.runs), runs);
+  assert.deepEqual(tree(fixture.comparisons), comparisons);
   assert.deepEqual(
     tree(fixture.managed).filter(
-      ([name]) => !["runs", "builds"].includes(name),
+      ([name]) => !["runs", "builds", "feature-comparisons"].includes(name),
     ),
     retained,
   );
@@ -407,14 +566,51 @@ test("purge deletes only the selected artifacts", testOptions, async (t) => {
     assert.deepEqual(fs.readdirSync(path.join(fixture.runs, id)), ["keep.txt"]);
   }
   assert.deepEqual(tree(fixture.builds), builds);
+  assert.deepEqual(tree(fixture.comparisons), comparisons);
   assert.deepEqual(
     tree(fixture.managed).filter(
-      ([name]) => !["runs", "builds"].includes(name),
+      ([name]) => !["runs", "builds", "feature-comparisons"].includes(name),
+    ),
+    retained,
+  );
+
+  const buildsBeforeComparisonPurge = tree(fixture.builds);
+  const runsBeforeComparisonPurge = tree(fixture.runs);
+  assert.deepEqual(await runCli(fixture, ["purge", "--only-comparisons"]), {
+    exitCode: 0,
+    stdout: "",
+    stderr: "",
+  });
+  const [comparisonId] = fs.readdirSync(fixture.comparisons);
+  const comparison = path.join(fixture.comparisons, comparisonId);
+  for (const file of [
+    "feature-comparison.transit",
+    "configs/00/run.transit",
+    "configs/00/run.log",
+    "configs/00/case-load.PNG",
+    "comparisons/00__10.transit",
+  ]) {
+    assert.equal(fs.existsSync(path.join(comparison, file)), false, file);
+  }
+  for (const file of [
+    "keep.txt",
+    "configs/00/keep.txt",
+    "configs/00/shot.PNG/keep.txt",
+    "comparisons/keep.txt",
+  ]) {
+    assert.equal(fs.existsSync(path.join(comparison, file)), true, file);
+  }
+  assert.deepEqual(tree(fixture.builds), buildsBeforeComparisonPurge);
+  assert.deepEqual(tree(fixture.runs), runsBeforeComparisonPurge);
+  assert.deepEqual(
+    tree(fixture.managed).filter(
+      ([name]) => !["runs", "builds", "feature-comparisons"].includes(name),
     ),
     retained,
   );
 
   seedRuns(fixture);
+  seedComparisons(fixture);
   assert.deepEqual(await runCli(fixture, ["purge"]), {
     exitCode: 0,
     stdout: "",
@@ -425,9 +621,23 @@ test("purge deletes only the selected artifacts", testOptions, async (t) => {
       assert.deepEqual(fs.readdirSync(path.join(root, id)), ["keep.txt"]);
     }
   }
+  for (const id of fs.readdirSync(fixture.comparisons)) {
+    const directory = path.join(fixture.comparisons, id);
+    if (id === "keep.txt") continue;
+    for (const file of [
+      "feature-comparison.transit",
+      "configs/00/run.transit",
+      "configs/00/run.log",
+      "configs/00/case-load.PNG",
+      "comparisons/00__10.transit",
+    ]) {
+      assert.equal(fs.existsSync(path.join(directory, file)), false, file);
+    }
+    assert.equal(fs.existsSync(path.join(directory, "keep.txt")), true);
+  }
   assert.deepEqual(
     tree(fixture.managed).filter(
-      ([name]) => !["runs", "builds"].includes(name),
+      ([name]) => !["runs", "builds", "feature-comparisons"].includes(name),
     ),
     retained,
   );
@@ -535,6 +745,8 @@ test(
 
     for (const args of [
       ["purge", "--only-builds", "--only-runs"],
+      ["purge", "--only-builds", "--only-comparisons"],
+      ["purge", "--only-runs", "--only-comparisons"],
       ["purge", "--only-ready-builds"],
       ["purge", "--only-builds", "ready"],
     ]) {
@@ -662,9 +874,36 @@ test(
     const help = await runCli(fixture, ["--help"]);
     assert.equal(help.exitCode, 0, help.stderr);
     assert.match(help.stdout, /runner compare/);
+    const abHelp = await runCli(fixture, ["ab", "--help"]);
+    assert.equal(abHelp.exitCode, 0, abHelp.stderr);
+    assert.match(abHelp.stdout, /runner ab --features/);
+    assert.match(abHelp.stdout, /--only-comparisons/);
+    for (const args of [["ab"], ["ab", "--dry-run"]]) {
+      const invalid = await runCli(fixture, args);
+      assert.equal(invalid.exitCode, 1, invalid.stderr);
+      assert.match(invalid.stderr, /at least one requested feature/);
+      assert.doesNotMatch(
+        invalid.stderr,
+        /execution dependency|Cannot find module/,
+      );
+    }
     const comparison = await runCli(fixture, ["compare", baseline, candidate]);
     assert.equal(comparison.exitCode, 0, comparison.stderr);
     assert.match(comparison.stdout, /median change/);
+    for (const flag of [
+      "--allow-build-differences",
+      "--allow-scene-differences",
+      "--allow-all-differences",
+    ]) {
+      const allowed = await runCli(fixture, [
+        "compare",
+        baseline,
+        candidate,
+        flag,
+      ]);
+      assert.equal(allowed.exitCode, 0, allowed.stderr);
+      assert.match(allowed.stdout, /median change/);
+    }
     assert.equal(fs.existsSync(path.join(temporary, "commands.cjs")), false);
   },
 );
@@ -682,6 +921,10 @@ test(
     assert.match(result.stdout, /runner run/);
     assert.match(result.stdout, /runner compare/);
     assert.match(result.stdout, /--cases/);
+    assert.match(result.stdout, /--allow-build-differences/);
+    assert.match(result.stdout, /--allow-scene-differences/);
+    assert.match(result.stdout, /--allow-all-differences/);
+    assert.doesNotMatch(result.stdout, /--force/);
     assert.deepEqual(tree(fixture.managed), original);
   },
 );
@@ -714,7 +957,7 @@ test(
 );
 
 test(
-  "compare supports explicit pairs and force from the CLI",
+  "compare supports explicit pairs and all-differences from the CLI",
   testOptions,
   async (t) => {
     const fixture = createFrontend(t);
@@ -743,17 +986,20 @@ test(
     assert.equal(incompatible.exitCode, 1);
     assert.deepEqual(tree(fixture.managed), original);
 
-    const forced = await runCli(fixture, [
-      "compare",
-      baseline,
-      candidate,
-      "--cases",
-      "a/pan,b/pan",
-      "--force",
+    const selected = ["compare", baseline, candidate, "--cases", "a/pan,b/pan"];
+    const strict = await runCli(fixture, selected);
+    assert.equal(strict.exitCode, 1);
+    assert.match(strict.stderr, /incompatible saved runs/);
+
+    const allowed = await runCli(fixture, [
+      ...selected,
+      "--allow-all-differences",
     ]);
-    assert.equal(forced.exitCode, 0);
-    assert.match(forced.stdout, /FORCED COMPARISON/);
-    assert.match(forced.stdout, /Pair a\/pan,b\/pan/);
+    assert.equal(allowed.exitCode, 0, allowed.stderr);
+    assert.match(allowed.stdout, /:allow-all-differences true/);
+    assert.match(allowed.stdout, /ACKNOWLEDGED DIFFERENCE/);
+    assert.match(allowed.stdout, /:rule :all/);
+    assert.match(allowed.stdout, /Pair a\/pan,b\/pan/);
     assert.deepEqual(tree(fixture.managed), original);
 
     fs.writeFileSync(
@@ -769,10 +1015,164 @@ test(
       "compare",
       baseline,
       candidate,
-      "--force",
+      "--allow-all-differences",
     ]);
-    assert.equal(automatic.exitCode, 0);
-    assert.match(automatic.stdout, /FORCED COMPARISON/);
+    assert.equal(automatic.exitCode, 0, automatic.stderr);
+    assert.match(automatic.stdout, /:allow-all-differences true/);
+    assert.match(automatic.stdout, /ACKNOWLEDGED DIFFERENCE/);
     assert.match(automatic.stdout, /Pair a\/pan,a\/pan/);
   },
 );
+
+test(
+  "compare applies build and scene permissions separately and together",
+  testOptions,
+  async (t) => {
+    const fixture = createFrontend(t);
+    const baseline = path.join(fixture.managed, "baseline.transit");
+    const candidate = path.join(fixture.managed, "candidate.transit");
+    fs.writeFileSync(
+      baseline,
+      runFixtureText({ runId: "baseline", caseId: "case/load", value: 10 }),
+    );
+
+    const build = "--allow-build-differences";
+    const scene = "--allow-scene-differences";
+    for (const scenario of [
+      {
+        changes: { mode: "debug", features: ["fixture"] },
+        allowed: [build],
+        denied: [[], [scene]],
+        fields: ["functional-build", "effective-features"],
+        rules: ["build"],
+      },
+      {
+        changes: {
+          scene: "other",
+          sceneSeed: 8,
+          count: 20,
+          fingerprint: "b".repeat(64),
+        },
+        allowed: [scene],
+        denied: [[], [build]],
+        fields: ["scene", "fingerprint"],
+        rules: ["scene"],
+      },
+      {
+        changes: { mode: "debug", count: 20 },
+        allowed: [build, scene],
+        denied: [[], [build], [scene]],
+        fields: ["functional-build", "scene"],
+        rules: ["build", "scene"],
+      },
+    ]) {
+      fs.writeFileSync(
+        candidate,
+        runFixtureText({
+          runId: "candidate",
+          caseId: "case/load",
+          value: 12,
+          ...scenario.changes,
+        }),
+      );
+      const original = tree(fixture.managed);
+      for (const flags of scenario.denied) {
+        const rejected = await runCli(fixture, [
+          "compare",
+          baseline,
+          candidate,
+          ...flags,
+        ]);
+        assert.equal(rejected.exitCode, 1, rejected.stderr);
+        assert.match(rejected.stderr, /incompatible saved runs/);
+      }
+      const allowed = await runCli(fixture, [
+        "compare",
+        baseline,
+        candidate,
+        ...scenario.allowed,
+      ]);
+      assert.equal(allowed.exitCode, 0, allowed.stderr);
+      assert.match(allowed.stdout, /:allow-all-differences false/);
+      assert.match(allowed.stdout, /ACKNOWLEDGED DIFFERENCE/);
+      for (const flag of scenario.allowed) {
+        assert.ok(allowed.stdout.includes(`:${flag.slice(2)} true`));
+      }
+      for (const field of scenario.fields) {
+        assert.ok(allowed.stdout.includes(`:field :${field}`));
+      }
+      for (const rule of scenario.rules) {
+        assert.ok(allowed.stdout.includes(`:rule :${rule}`));
+      }
+      assert.deepEqual(tree(fixture.managed), original);
+    }
+  },
+);
+
+test(
+  "scoped compare permissions keep operation arguments and runtime environment strict",
+  testOptions,
+  async (t) => {
+    const fixture = createFrontend(t);
+    const baseline = path.join(fixture.managed, "baseline.transit");
+    const candidate = path.join(fixture.managed, "candidate.transit");
+    fs.writeFileSync(
+      baseline,
+      runFixtureText({ runId: "baseline", caseId: "case/load", value: 10 }),
+    );
+    for (const [field, changes] of [
+      ["execution", { operation: "pan" }],
+      ["execution", { operationArgs: { distance: 20 } }],
+      ["environment", { environment: { node: "v25" } }],
+    ]) {
+      fs.writeFileSync(
+        candidate,
+        runFixtureText({
+          runId: "candidate",
+          caseId: "case/load",
+          value: 12,
+          ...changes,
+        }),
+      );
+      const original = tree(fixture.managed);
+      const rejected = await runCli(fixture, [
+        "compare",
+        baseline,
+        candidate,
+        "--allow-build-differences",
+        "--allow-scene-differences",
+      ]);
+      assert.equal(rejected.exitCode, 1);
+      assert.match(rejected.stderr, /incompatible saved runs/);
+      assert.ok(rejected.stderr.includes(`:field :${field}`));
+
+      const allowed = await runCli(fixture, [
+        "compare",
+        baseline,
+        candidate,
+        "--allow-all-differences",
+      ]);
+      assert.equal(allowed.exitCode, 0, allowed.stderr);
+      assert.ok(allowed.stdout.includes(`:field :${field}`));
+      assert.match(allowed.stdout, /:rule :all/);
+      assert.deepEqual(tree(fixture.managed), original);
+    }
+  },
+);
+
+test("compare rejects --force without an alias", testOptions, async (t) => {
+  const fixture = createFrontend(t);
+  const original = tree(fixture.managed);
+  for (const flags of [["--force"], ["--force", "--allow-all-differences"]]) {
+    const rejected = await runCli(fixture, [
+      "compare",
+      "missing-baseline.transit",
+      "missing-candidate.transit",
+      ...flags,
+    ]);
+    assert.equal(rejected.exitCode, 1);
+    assert.match(rejected.stderr, /Unknown option.*--force/);
+    assert.doesNotMatch(rejected.stderr, /ENOENT/);
+    assert.deepEqual(tree(fixture.managed), original);
+  }
+});

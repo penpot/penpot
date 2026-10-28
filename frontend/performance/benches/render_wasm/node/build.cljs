@@ -66,17 +66,17 @@
 (defn ^:async prepare
   "Returns a ready build reference after compilation and identity validation.
 
-  Options: frontend :root, :features, :build-timeout-ms (300000), AbortSignal
-  :signal, and optional :on-created callback. The callback runs once after
-  directory, log and initial manifest creation. CLI callers print the ID there.
-  Storage errors have no recorded ID. Later errors carry :build-id and :phase.
-  A retry always creates a new attempt."
-  [{:keys [root features build-timeout-ms signal on-created]
+  Options: frontend :root, :selection or :features, :build-timeout-ms
+  (300000), AbortSignal :signal, and optional :on-created callback. The callback
+  runs once after directory, log and initial manifest creation. CLI callers
+  print the ID there. Storage errors have no recorded ID. Later errors carry
+  :build-id and :phase. A retry always creates a new attempt."
+  [{:keys [root features selection build-timeout-ms signal on-created]
     :or {build-timeout-ms options/default-build-timeout-ms}}]
   (when-not (and (js/Number.isSafeInteger build-timeout-ms) (pos? build-timeout-ms))
     (throw (ex-info "build timeout must be a positive integer" {:type ::invalid-timeout})))
   (let [root      (or root (artifacts/frontend-root))
-        selection (options/feature-selection features)
+        selection (options/feature-selection (or selection features))
         deadline  (process/deadline build-timeout-ms)
         bounds    {:deadline deadline :signal signal}
         initial   (artifacts/create-build root selection {:git {:sha nil :dirty nil}
@@ -105,18 +105,21 @@
                                           "FRONTEND_SHARED_DEST" (path/join root "src" "app" "render_wasm" "api" "shared.js")
                                           "RENDER_WASM_SHARED_ARTIFACT" (path/join (:renderer-dir build) "shared.js")
                                           "RENDER_WASM_BUILD_INFO" facts-path}})))
-        (let [facts    (js->clj (js/JSON.parse (fs/readFileSync facts-path "utf8")) :keywordize-keys true)
-              resolved (:features (options/feature-selection {:features (:features facts)
+        (let [facts    (js/JSON.parse (fs/readFileSync facts-path "utf8"))
+              profile  (js->clj (.-profile facts) :keywordize-keys true)
+              resolved (:features (options/feature-selection {:features (js->clj (.-features facts))
                                                               :default-features? (:default-features? selection)}))]
-          (when-not (and (= "3" (get-in facts [:profile :opt_level]))
-                         (false? (get-in facts [:profile :debug_assertions])))
+          (when-not (and (= "3" (:opt_level profile))
+                         (false? (:debug_assertions profile)))
             (throw (ex-info "Cargo did not produce an optimized renderer"
-                            {:type ::renderer-profile :profile (:profile facts)})))
+                            {:type ::renderer-profile :profile profile})))
           (swap! build-ref #(artifacts/write-manifest
-                             % (-> (:manifest %)
-                                   (assoc-in [:functional :features] resolved)
-                                   (assoc-in [:functional :default-features?] (boolean (some #{"default"} resolved)))
-                                   (assoc-in [:provenance :cargo-profile] (:profile facts)))))))
+                             % (cond-> (-> (:manifest %)
+                                           (assoc-in [:functional :features] resolved)
+                                           (assoc-in [:functional :default-features?] (boolean (some #{"default"} resolved)))
+                                           (assoc-in [:provenance :cargo-profile] profile))
+                                 (js/Object.hasOwn facts "environment")
+                                 (assoc :environment (js->clj (.-environment facts))))))))
       (reset! phase :cljs)
       (let [build @build-ref]
         (await (process/run (merge bounds

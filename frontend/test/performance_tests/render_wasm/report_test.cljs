@@ -76,6 +76,13 @@
      (reduce #(add %1 %2 false)
              (reduce #(add %1 %2 true) run (repeat warmups 1000)) values))))
 
+(defn- run-with-features
+  "Adds independent effective-feature evidence and a saved requested selection."
+  [values features selection]
+  (run-with values {:facts (-> metadata
+                               (assoc-in [:build :functional :features] features)
+                               (assoc-in [:build :provenance :feature-selection] selection))}))
+
 (defn- approximately?
   "Compares computed numbers with a tolerance for floating point arithmetic."
   [a b]
@@ -458,16 +465,16 @@
     (t/is (= 1 (get-in report [:cases 0 :metrics :bad :counts :invalid])))
     (t/is (= :no-valid-observations (get-in report [:cases 0 :metrics :bad :statistics :median :reason])))))
 
-(t/deftest definition-drift-is-visible-and-force-compares-raw-values
-  (let [run (assoc-in (run-with [1 2]) [:attempts 1 :metrics metric-id :basis]
-                      {:kind :per-call-average :calls 2})
-        report (summary/summarize run)
-        forced (compare/compare-runs run run {:force true})]
+(t/deftest definition-drift-is-visible-and-all-differences-compares-raw-values
+  (let [run        (assoc-in (run-with [1 2]) [:attempts 1 :metrics metric-id :basis]
+                             {:kind :per-call-average :calls 2})
+        report     (summary/summarize run)
+        comparison (compare/compare-runs run run {:allow-all-differences true})]
     (t/is (= :inconsistent-metric-definitions (get-in report [:cases 0 :metrics metric-id :statistics :reason])))
     (t/is (= ::compare/incompatible (:type (error-data #(compare/compare-runs run run)))))
-    (t/is (= 0 (get-in forced [:pairs 0 :metrics metric-id :absolute :value])))
-    (t/is (= 1.5 (get-in forced [:pairs 0 :baseline :metrics metric-id :statistics :median :value])))
-    (t/is (true? (get-in forced [:pairs 0 :baseline :metrics metric-id :mixed-definitions?])))))
+    (t/is (= 0 (get-in comparison [:pairs 0 :metrics metric-id :absolute :value])))
+    (t/is (= 1.5 (get-in comparison [:pairs 0 :baseline :metrics metric-id :statistics :median :value])))
+    (t/is (true? (get-in comparison [:pairs 0 :baseline :metrics metric-id :mixed-definitions?])))))
 
 (t/deftest failed-invalid-and-warmup-definitions-do-not-suppress-valid-statistics
   (let [run (-> (run-with [1 :failed js/NaN] {:warmups 1})
@@ -492,7 +499,7 @@
     (t/is (= 1.5 (get-in comparison [:pairs 0 :metrics metric-id :absolute :value])))
     (t/is (= comparison (-> comparison result/encode result/decode)))))
 
-(t/deftest strict-and-forced-compatibility
+(t/deftest strict-and-all-differences-compatibility
   (let [base (run-with [1 2])]
     (doseq [[field changed]
             [[:fingerprint (run-with [3] {:prep (assoc-in preparation [:fingerprint :digest] (apply str (repeat 64 "b")))})]
@@ -503,24 +510,29 @@
              [:execution (run-with [3] {:definition (assoc saved-case :completion :await)})]
              [:execution (run-with [3] {:definition (assoc saved-case :preparation {:settle-ms 25})})]
              [:environment (run-with [3] {:facts (assoc-in metadata [:environment :browser] "other")})]
-             [:functional-build (run-with [3] {:facts (assoc-in metadata [:build :functional :features] #{:other})})]
+             [:effective-features (run-with [3] {:facts (assoc-in metadata [:build :functional :features] #{:other})})]
+             [:functional-build (run-with [3] {:facts (assoc-in metadata [:build :functional :mode] :debug)})]
+             [:scene (run-with [3] {:definition (assoc saved-case :scene :other)})]
+             [:scene (run-with [3] {:definition (assoc saved-case :scene-seed 43)})]
+             [:scene (run-with [3] {:definition (assoc saved-case :params {:count 20})})]
              [:warmups (run-with [3] {:warmups 1})]
              [:effective-graphics (run-with [3] {:prep (assoc preparation :effective-graphics {:renderer "software" :software true})})]
              [:timeout-policy (assoc-in (run-with [3]) [:plan :timeout-policy :attempt-ms] 100)]]]
       (let [changed    (-> changed result/encode result/decode)
             rejected   (error-data #(compare/compare-runs base changed))
             selected   (error-data #(compare/compare-runs base changed {:pairs [[:saved/pan :saved/pan]]}))
-            forced     (compare/compare-runs base changed {:force true})
-            mismatches (get-in forced [:pairs 0 :mismatches])
-            text       (format/format-comparison forced)]
+            comparison (compare/compare-runs base changed {:allow-all-differences true})
+            mismatches (get-in comparison [:pairs 0 :mismatches])
+            text       (format/format-comparison comparison)]
         (t/is (= ::compare/incompatible (:type rejected)))
         (t/is (= rejected selected))
-        (t/is (:forced? forced))
+        (t/is (= {:allow-build-differences false :allow-scene-differences false :allow-all-differences true}
+                 (:permissions comparison)))
         (t/is (= [field] (mapv :field mismatches)))
-        (t/is (= (:mismatches rejected) mismatches))
-        (t/is (every? #(false? (:waived? %)) mismatches))
-        (t/is (str/includes? text "FORCED COMPARISON"))
-        (t/is (str/includes? text "MISMATCHES"))
+        (t/is (= (mapv #(assoc % :waived? true :rule :all) (:mismatches rejected)) mismatches))
+        (t/is (every? #(and (false? (:waived? %)) (not (contains? % :rule))) (:mismatches rejected)))
+        (t/is (str/includes? text "Permissions"))
+        (t/is (str/includes? text "ACKNOWLEDGED DIFFERENCE"))
         (t/is (str/includes? text (str ":field " (pr-str field))))))))
 
 (t/deftest explicit-pairs-select-cases-without-waiving-compatibility
@@ -533,23 +545,24 @@
                            result/decode)
         pairs          (compare/selector-pair base other "saved/pan,different/zoom")
         rejected       (error-data #(compare/compare-runs base other {:pairs pairs}))
-        comparison     (-> (compare/compare-runs base other {:pairs pairs :force true})
+        comparison     (-> (compare/compare-runs base other {:pairs pairs :allow-all-differences true})
                            result/encode result/decode)
         execution      (first (filter #(= :execution (:field %)) (get-in comparison [:pairs 0 :mismatches])))
-        execution-keys [:scene :operation :batch-size :completion :preparation]]
+        execution-keys [:operation :batch-size :completion :preparation]]
     (t/is (= [[:saved/pan :different/zoom]] pairs))
     (t/is (= 1 (get-in comparison [:pairs 0 :metrics metric-id :absolute :value])))
     (t/is (= ::compare/incompatible (:type rejected)))
-    (t/is (= #{:execution :fingerprint} (set (map :field (:mismatches rejected)))))
-    (t/is (= (:mismatches rejected) (get-in comparison [:pairs 0 :mismatches])))
-    (t/is (every? #(false? (:waived? %)) (get-in comparison [:pairs 0 :mismatches])))
-    (t/is (str/includes? (format/format-comparison comparison) "FORCED COMPARISON"))
+    (t/is (= #{:scene :execution :fingerprint} (set (map :field (:mismatches rejected)))))
+    (t/is (= (mapv #(assoc % :waived? true :rule :all) (:mismatches rejected))
+             (get-in comparison [:pairs 0 :mismatches])))
+    (t/is (every? :waived? (get-in comparison [:pairs 0 :mismatches])))
+    (t/is (str/includes? (format/format-comparison comparison) "ACKNOWLEDGED DIFFERENCE"))
     (t/is (str/includes? (format/format-comparison comparison) ":field :execution"))
     (t/is (str/includes? (format/format-comparison comparison) ":field :fingerprint"))
-    (t/is (= {:scene :saved :operation {:steps 3}
+    (t/is (= {:operation {:steps 3}
               :batch-size 1 :completion :render-full :preparation {}}
              (select-keys (:baseline execution) execution-keys)))
-    (t/is (= {:scene :different :operation {:steps 8}
+    (t/is (= {:operation {:steps 8}
               :batch-size 20 :completion :call :preparation {:settle-ms 25}}
              (select-keys (:candidate execution) execution-keys)))
     (t/is (= ::compare/incompatible
@@ -557,16 +570,15 @@
                                                        {:pairs pairs})))))
     (let [unscored   (assoc-in other [:metadata :scored?] false)
           rejected   (error-data #(compare/compare-runs base unscored {:pairs pairs}))
-          forced     (compare/compare-runs base unscored {:pairs pairs :force true})
-          mismatches (get-in forced [:pairs 0 :mismatches])
-          text       (format/format-comparison forced)]
+          comparison (compare/compare-runs base unscored {:pairs pairs :allow-all-differences true})
+          mismatches (get-in comparison [:pairs 0 :mismatches])
+          text       (format/format-comparison comparison)]
       (t/is (= ::compare/incompatible (:type rejected)))
-      (t/is (:forced? forced))
-      (t/is (= (:mismatches rejected) mismatches))
-      (t/is (= #{:execution :fingerprint :scored?} (set (map :field mismatches))))
-      (t/is (every? #(false? (:waived? %)) mismatches))
-      (t/is (str/includes? text "FORCED COMPARISON"))
-      (t/is (str/includes? text "MISMATCHES"))
+      (t/is (true? (get-in comparison [:permissions :allow-all-differences])))
+      (t/is (= (mapv #(assoc % :waived? true :rule :all) (:mismatches rejected)) mismatches))
+      (t/is (= #{:scene :execution :fingerprint :scored?} (set (map :field mismatches))))
+      (t/is (every? :waived? mismatches))
+      (t/is (str/includes? text "ACKNOWLEDGED DIFFERENCE"))
       (t/is (str/includes? text ":field :scored?")))
     (t/is (= ["saved/pan"] (:available (error-data #(compare/resolve-case base "pan")))))
     (t/is (= ::compare/invalid-selector (:type (error-data #(compare/selector-pair base other "saved/pan")))))))
@@ -577,23 +589,24 @@
                        result/encode result/decode)
         comparison (-> (compare/compare-runs base other {:pairs [[:saved/pan :different/zoom]]})
                        result/encode result/decode)]
-    (t/is (false? (:forced? comparison)))
+    (t/is (= {:allow-build-differences false :allow-scene-differences false :allow-all-differences false}
+             (:permissions comparison)))
     (t/is (true? (get-in comparison [:pairs 0 :explicit?])))
     (t/is (empty? (get-in comparison [:pairs 0 :mismatches])))
     (t/is (= 1 (get-in comparison [:pairs 0 :metrics metric-id :absolute :value])))))
 
-(t/deftest force-preserves-metric-definitions-and-excludes-failed-values
+(t/deftest all-differences-preserves-metric-definitions-and-excludes-failed-values
   (let [base (run-with [1 :failed])
         changed (assoc-in (run-with [2]) [:attempts 0 :metrics metric-id]
                           (entry 2 {:unit :seconds :basis {:kind :per-call-average :calls 50}}))
-        comparison (compare/compare-runs base changed {:force true})]
+        comparison (compare/compare-runs base changed {:allow-all-differences true})]
     (t/is (= 1 (get-in comparison [:pairs 0 :metrics metric-id :absolute :value])))
     (t/is (= :seconds (get-in comparison [:pairs 0 :candidate :metrics metric-id :definitions 0 :unit])))
     (t/is (= 1 (get-in comparison [:pairs 0 :baseline :metrics metric-id :counts :failed])))
     (t/is (= ::compare/no-shared-metrics
              (:type (error-data #(compare/compare-runs base
                                                        (assoc-in changed [:attempts 0 :metrics] {:other (entry 2)})
-                                                       {:force true})))))))
+                                                       {:allow-all-differences true})))))))
 
 (t/deftest comparison-boundary-validates-nested-evidence
   (let [run (run-with [1 2])
@@ -609,12 +622,445 @@
                      (assoc-in comparison [:analysis :confidence] 1)]]
       (t/is (= ::result/invalid-record (:type (error-data #(result/decode (transit/encode-str changed)))))))))
 
-(t/deftest force-keeps-invalid-measurements-unusable
+(t/deftest all-differences-keeps-invalid-measurements-unusable
   (let [baseline (run-with [js/NaN js/Infinity :absent :failed] {:repetitions 5})
         candidate (run-with [2] {:facts (assoc-in metadata [:environment :cpu] "other")})
-        comparison (compare/compare-runs baseline candidate {:force true})]
+        comparison (compare/compare-runs baseline candidate {:allow-all-differences true})]
     (t/is (= {:valid 0 :invalid 2 :absent 1 :failed 1 :unattempted 1 :warmup 0}
              (get-in comparison [:pairs 0 :baseline :metrics metric-id :counts])))
     (t/is (= :no-valid-observations (get-in comparison [:pairs 0 :metrics metric-id :absolute :reason])))
     (t/is (= :no-valid-observations (get-in comparison [:pairs 0 :metrics metric-id :percentage-ci :reason])))
     (t/is (= comparison (result/decode (result/encode comparison))))))
+
+(t/deftest build-permission-acknowledges-only-recorded-build-differences
+  (let [baseline (run-with [1])]
+    (doseq [[key value field] [[:mode :debug :functional-build]
+                               [:features ["other"] :effective-features]
+                               [:default-features? false :functional-build]
+                               [:instrumentation {:stats true} :functional-build]
+                               [:env {"PROFILE" "1"} :functional-build]]]
+      (let [candidate  (run-with [2] {:facts (assoc-in metadata [:build :functional key] value)})
+            comparison (compare/compare-runs baseline candidate {:allow-build-differences true})
+            mismatches (get-in comparison [:pairs 0 :mismatches])]
+        (t/is (= ::compare/incompatible (:type (error-data #(compare/compare-runs baseline candidate)))))
+        (t/is (= ::compare/incompatible
+                 (:type (error-data #(compare/compare-runs baseline candidate {:allow-scene-differences true})))))
+        (t/is (= [field] (mapv :field mismatches)))
+        (t/is (every? #(and (:waived? %) (= :build (:rule %))) mismatches))
+        (t/is (= {:allow-build-differences true :allow-scene-differences false :allow-all-differences false}
+                 (:permissions comparison)))
+        (t/is (= comparison (-> comparison result/encode result/decode)))))))
+
+(t/deftest run-build-environment-validates-strings-and-preserves-absence
+  (let [missing (-> (run-with [1]) result/encode result/decode)]
+    (t/is (not (contains? (get-in missing [:metadata :build]) :environment)))
+    (doseq [environment [{} {"CFLAGS" "" "RUSTFLAGS" "-C\u001fopt-level=3"}]]
+      (let [run (run-with [1] {:facts (assoc-in metadata [:build :environment] environment)})]
+        (t/is (= environment (get-in (-> run result/encode result/decode) [:metadata :build :environment])))))
+    (doseq [environment [nil [] {:CFLAGS ""} {"CFLAGS" nil} {"CFLAGS" 0}]]
+      (t/is (= ::result/invalid-record
+               (:type (error-data #(result/decode
+                                    (transit/encode-str
+                                     (assoc-in missing [:metadata :build :environment] environment))))))))))
+
+(t/deftest build-environment-differences-require-build-or-all-permission
+  (doseq [[before after] [[::missing {}] [{} ::missing]
+                          [{} {"CFLAGS" ""}]
+                          [{"CFLAGS" "-O2"} {"CFLAGS" "-O3"}]]]
+    (let [baseline  (run-with [1] {:facts (cond-> metadata
+                                            (not= ::missing before) (assoc-in [:build :environment] before))})
+          candidate (run-with [2] {:facts (cond-> metadata
+                                            (not= ::missing after) (assoc-in [:build :environment] after))})]
+      (t/is (empty? (get-in (compare/compare-runs baseline baseline) [:pairs 0 :mismatches])))
+      (doseq [permissions [{} {:allow-scene-differences true}]]
+        (t/is (= ::compare/incompatible
+                 (:type (error-data #(compare/compare-runs baseline candidate permissions))))))
+      (doseq [[permissions rule] [[{:allow-build-differences true} :build]
+                                  [{:allow-all-differences true} :all]]]
+        (let [comparison (compare/compare-runs baseline candidate permissions)]
+          (t/is (= [{:field :build-environment
+                     :baseline (when-not (= ::missing before) before)
+                     :candidate (when-not (= ::missing after) after)
+                     :waived? true :rule rule}]
+                   (get-in comparison [:pairs 0 :mismatches])))
+          (t/is (= comparison (-> comparison result/encode result/decode))))))))
+
+(t/deftest feature-toggle-does-not-acknowledge-build-environment-changes
+  (let [baseline   (assoc-in (run-with-features [1] [] {:default-features? false :features []})
+                             [:metadata :build :environment] {"CFLAGS" "-O2"})
+        candidate  (assoc-in (run-with-features [2] ["toggle"] {:default-features? false :features ["toggle"]})
+                             [:metadata :build :environment] {"CFLAGS" "-O3"})
+        expected   {:feature "toggle" :baseline-features [] :candidate-features ["toggle"]
+                    :added ["toggle"] :removed []}
+        diagnostic (compare/compare-runs baseline candidate {:expected-feature-change expected
+                                                             :on-unallowed-difference :record})]
+    (t/is (= ::compare/incompatible
+             (:type (error-data #(compare/compare-runs baseline candidate {:expected-feature-change expected})))))
+    (t/is (= [[:effective-features true :feature-toggle] [:build-environment false nil]]
+             (mapv (juxt :field :waived? :rule) (get-in diagnostic [:pairs 0 :mismatches]))))
+    (let [allowed (compare/compare-runs baseline candidate {:expected-feature-change expected
+                                                            :allow-build-differences true})]
+      (t/is (= [[:effective-features true :feature-toggle] [:build-environment true :build]]
+               (mapv (juxt :field :waived? :rule) (get-in allowed [:pairs 0 :mismatches])))))))
+
+(t/deftest scene-permission-acknowledges-scene-inputs-and-fingerprint-content
+  (let [baseline (run-with [1])]
+    (doseq [[field options] [[:scene {:definition (assoc saved-case :scene :other)}]
+                             [:scene {:definition (assoc saved-case :scene-seed 43)}]
+                             [:scene {:definition (assoc saved-case :params {:count 2000})}]
+                             [:fingerprint {:prep (assoc-in preparation [:fingerprint :digest]
+                                                            (apply str (repeat 64 "b")))}]]]
+      (let [candidate  (run-with [2] options)
+            comparison (compare/compare-runs baseline candidate {:allow-scene-differences true})
+            mismatches (get-in comparison [:pairs 0 :mismatches])]
+        (t/is (= ::compare/incompatible (:type (error-data #(compare/compare-runs baseline candidate)))))
+        (t/is (= ::compare/incompatible
+                 (:type (error-data #(compare/compare-runs baseline candidate {:allow-build-differences true})))))
+        (t/is (= [field] (mapv :field mismatches)))
+        (t/is (every? #(and (:waived? %) (= :scene (:rule %))) mismatches))
+        (t/is (= 1 (get-in comparison [:pairs 0 :metrics metric-id :absolute :value])))
+        (t/is (= comparison (-> comparison result/encode result/decode)))))))
+
+(t/deftest build-and-scene-permissions-combine-by-union
+  (let [baseline   (run-with [1])
+        candidate  (run-with [2] {:definition (assoc saved-case :id :other/load :params {:count 2000})
+                                  :facts (assoc-in metadata [:build :functional :mode] :debug)
+                                  :prep (assoc-in preparation [:fingerprint :digest] (apply str (repeat 64 "b")))})
+        pairs      [[:saved/pan :other/load]]
+        options    {:pairs pairs :allow-build-differences true :allow-scene-differences true}
+        comparison (compare/compare-runs baseline candidate options)
+        mismatches (get-in comparison [:pairs 0 :mismatches])]
+    (doseq [permissions [{} {:allow-build-differences true} {:allow-scene-differences true}]]
+      (t/is (= ::compare/incompatible
+               (:type (error-data #(compare/compare-runs baseline candidate (assoc permissions :pairs pairs)))))))
+    (t/is (= #{[:scene :scene] [:functional-build :build] [:fingerprint :scene]}
+             (set (map (juxt :field :rule) mismatches))))
+    (t/is (every? :waived? mismatches))
+    (t/is (= {:allow-build-differences true :allow-scene-differences true :allow-all-differences false}
+             (:permissions comparison)))
+    (t/is (= comparison (-> comparison result/encode result/decode)))))
+
+(t/deftest scoped-permissions-retain-execution-runtime-and-measurement-checks
+  (let [baseline (run-with [1])
+        scoped   {:allow-build-differences true :allow-scene-differences true}]
+    (doseq [[field candidate]
+            [[:execution (run-with [2] {:definition (assoc saved-case :operation {:steps 30})})]
+             [:execution (run-with [2] {:definition (assoc saved-case :operation {:steps 3 :args {:distance 20}})})]
+             [:execution (run-with [2] {:definition (assoc saved-case :view {:scale 2 :x 0 :y 0})})]
+             [:execution (run-with [2] {:definition (assoc saved-case :context :fresh)})]
+             [:execution (run-with [2] {:definition (assoc saved-case :completion :call)})]
+             [:execution (run-with [2] {:definition (assoc saved-case :batch-size 10)})]
+             [:execution (run-with [2] {:definition (assoc saved-case :preparation {:settle-ms 25})})]
+             [:environment (run-with [2] {:facts (assoc-in metadata [:environment :cpu] "other")})]
+             [:effective-graphics (run-with [2] {:prep (assoc-in preparation [:effective-graphics :dpr] 1)})]
+             [:warmups (run-with [2] {:warmups 1})]
+             [:timeout-policy (assoc-in (run-with [2]) [:plan :timeout-policy :attempt-ms] 100)]
+             [:scored? (run-with [2] {:facts (assoc metadata :scored? false)})]
+             [[:metric metric-id] (assoc-in (run-with [2]) [:attempts 0 :metrics metric-id :unit] :seconds)]]]
+      (let [candidate  (-> candidate result/encode result/decode)
+            rejected   (error-data #(compare/compare-runs baseline candidate scoped))
+            comparison (compare/compare-runs baseline candidate (assoc scoped :allow-all-differences true))]
+        (t/is (= ::compare/incompatible (:type rejected)))
+        (t/is (= [field] (mapv :field (:mismatches rejected))))
+        (t/is (every? #(and (false? (:waived? %)) (not (contains? % :rule))) (:mismatches rejected)))
+        (t/is (= (mapv #(assoc % :waived? true :rule :all) (:mismatches rejected))
+                 (get-in comparison [:pairs 0 :mismatches])))))))
+
+(t/deftest scene-permission-never-waives-incomplete-or-varying-evidence
+  (let [baseline (run-with [1])
+        varying  (result/record-preparation
+                  (run-with [2])
+                  (-> preparation
+                      (assoc :preparation-id :prep/two)
+                      (assoc-in [:fingerprint :digest] (apply str (repeat 64 "b")))))
+        missing  (-> (run-with [:failed])
+                     (assoc :preparations [])
+                     (assoc-in [:attempts 0 :preparation-id] nil)
+                     (assoc-in [:attempts 0 :metrics metric-id] (entry 2)))
+        scoped   {:allow-scene-differences true :allow-build-differences true}]
+    (doseq [candidate [varying missing]]
+      (let [candidate  (-> candidate result/encode result/decode)
+            rejected   (error-data #(compare/compare-runs baseline candidate scoped))
+            diagnostic (compare/compare-runs baseline candidate (assoc scoped :on-unallowed-difference :record))
+            mismatches (get-in diagnostic [:pairs 0 :mismatches])
+            evidence   (first (filter #(= [:fingerprint :incomplete-or-varying-evidence] (:field %)) mismatches))]
+        (t/is (= ::compare/incompatible (:type rejected)))
+        (t/is (= (:mismatches rejected) mismatches))
+        (t/is (false? (:waived? evidence)))
+        (t/is (not (contains? evidence :rule)))
+        (t/is (= :scene (:rule (first (filter #(= :fingerprint (:field %)) mismatches)))))
+        (t/is (every? :waived?
+                      (get-in (compare/compare-runs baseline candidate {:allow-all-differences true})
+                              [:pairs 0 :mismatches])))
+        (t/is (= diagnostic (-> diagnostic result/encode result/decode)))))))
+
+(t/deftest diagnostic-record-retains-unacknowledged-differences-and-selected-rules
+  (let [baseline   (run-with [1])
+        candidate  (run-with [2] {:definition (assoc saved-case :params {:count 2000} :operation {:steps 30})
+                                  :facts (assoc-in metadata [:build :functional :mode] :debug)})
+        options    {:allow-build-differences true :on-unallowed-difference :record}
+        diagnostic (compare/compare-runs baseline candidate options)
+        mismatches (get-in diagnostic [:pairs 0 :mismatches])
+        text       (format/format-comparison diagnostic)]
+    (t/is (= (:mismatches (error-data #(compare/compare-runs baseline candidate (dissoc options :on-unallowed-difference))))
+             mismatches))
+    (t/is (= [[:scene false nil] [:execution false nil] [:functional-build true :build]]
+             (mapv (juxt :field :waived? :rule) mismatches)))
+    (t/is (= 1 (get-in diagnostic [:pairs 0 :metrics metric-id :absolute :value])))
+    (t/is (str/includes? text "Permissions {:allow-build-differences true"))
+    (t/is (str/includes? text "ACKNOWLEDGED DIFFERENCE {:field :functional-build"))
+    (t/is (str/includes? text "UNACKNOWLEDGED DIFFERENCE {:field :scene"))
+    (t/is (str/includes? text ":rule :build"))
+    (t/is (= diagnostic (-> diagnostic result/encode result/decode)))))
+
+(t/deftest diagnostic-record-keeps-strict-definition-statistics
+  (let [baseline          (run-with [1 2])
+        mixed             (assoc-in (run-with [3 4]) [:attempts 1 :metrics metric-id :basis]
+                                    {:kind :per-call-average :calls 2})
+        differing         (assoc-in (run-with [3 4]) [:attempts 0 :metrics metric-id :unit] :seconds)
+        single-definition (-> (run-with [3 4])
+                              (assoc-in [:attempts 0 :metrics metric-id :unit] :seconds)
+                              (assoc-in [:attempts 1 :metrics metric-id :unit] :seconds))]
+    (doseq [candidate [mixed differing single-definition]]
+      (let [diagnostic (compare/compare-runs baseline candidate {:allow-build-differences true
+                                                                 :allow-scene-differences true
+                                                                 :on-unallowed-difference :record})
+            allowed    (compare/compare-runs baseline candidate {:allow-all-differences true})
+            changes    (get-in diagnostic [:pairs 0 :metrics metric-id])]
+        (t/is (every? #(= {:reason :inconsistent-metric-definitions} %) (vals changes)))
+        (t/is (= 2 (get-in diagnostic [:pairs 0 :candidate :metrics metric-id :counts :valid])))
+        (t/is (every? #(false? (:waived? %)) (get-in diagnostic [:pairs 0 :mismatches])))
+        (t/is (= 2 (get-in allowed [:pairs 0 :metrics metric-id :absolute :value])))
+        (t/is (= 3.5 (get-in allowed [:pairs 0 :candidate :metrics metric-id :statistics :median :value])))
+        (if (= candidate single-definition)
+          (t/is (= 3.5 (get-in diagnostic [:pairs 0 :candidate :metrics metric-id :statistics :median :value])))
+          (t/is (= :inconsistent-metric-definitions
+                   (get-in diagnostic [:pairs 0 :candidate :metrics metric-id :statistics :reason]))))
+        (t/is (= diagnostic (-> diagnostic result/encode result/decode)))))))
+
+(t/deftest feature-toggle-acknowledges-only-exact-effective-feature-evidence
+  (let [baseline   (run-with-features [1] ["base" "old"] {:default-features? false :features ["base"]})
+        candidate  (run-with-features [2] ["base" "toggle" "transitive"]
+                                      {:default-features? false :features ["base" "toggle"]})
+        expected   {:feature "toggle" :baseline-features ["base" "old"]
+                    :candidate-features ["base" "toggle" "transitive"]
+                    :added ["toggle" "transitive"] :removed ["old"]}
+        edge       (assoc expected :from "0" :to "1")
+        comparison (compare/compare-runs baseline candidate {:expected-feature-change expected :edge edge})
+        mismatch   (get-in comparison [:pairs 0 :mismatches 0])]
+    (t/is (= :effective-features (:field mismatch)))
+    (t/is (true? (:waived? mismatch)))
+    (t/is (= :feature-toggle (:rule mismatch)))
+    (t/is (= edge (:edge comparison)))
+    (t/is (= {:allow-build-differences false :allow-scene-differences false :allow-all-differences false}
+             (:permissions comparison)))
+    (t/is (= comparison (-> comparison result/encode result/decode)))
+    (doseq [invalid [nil
+                     (assoc expected :feature "base")
+                     (assoc expected :feature :toggle)
+                     (assoc expected :baseline-features ["base"])
+                     (assoc expected :candidate-features ["base" "toggle"])
+                     (assoc expected :added ["toggle"])
+                     (assoc expected :removed [])
+                     (assoc expected :added #{"toggle" "transitive"})
+                     (dissoc expected :baseline-features)]]
+      (let [options    {:expected-feature-change invalid}
+            rejected   (error-data #(compare/compare-runs baseline candidate options))
+            diagnostic (compare/compare-runs baseline candidate (assoc options :on-unallowed-difference :record))]
+        (t/is (= ::compare/incompatible (:type rejected)))
+        (t/is (false? (get-in diagnostic [:pairs 0 :mismatches 0 :waived?])))
+        (t/is (not (contains? (get-in diagnostic [:pairs 0 :mismatches 0]) :rule)))))
+    (let [changed    (-> candidate
+                         (assoc-in [:metadata :build :functional :mode] :debug)
+                         (assoc-in [:plan :cases 0 :params] {:count 2000})
+                         (assoc-in [:plan :cases 0 :operation] {:steps 30}))
+          diagnostic (compare/compare-runs baseline changed {:expected-feature-change expected
+                                                             :on-unallowed-difference :record})]
+      (t/is (= [[:scene false nil] [:execution false nil]
+                [:effective-features true :feature-toggle] [:functional-build false nil]]
+               (mapv (juxt :field :waived? :rule) (get-in diagnostic [:pairs 0 :mismatches])))))))
+
+(t/deftest edge-context-roundtrips-and-labels-identical-effective-sets
+  (let [run        (run-with-features [1] ["base" "alias"] {:default-features? false :features ["base"]})
+        candidate  (run-with-features [2] ["alias" "base"] {:default-features? false :features ["base" "toggle"]})
+        expected   {:feature "toggle" :baseline-features ["base" "alias"]
+                    :candidate-features ["alias" "base"] :added [] :removed []}
+        edge       (assoc expected :from "0" :to "1")
+        comparison (compare/compare-runs run candidate {:expected-feature-change expected :edge edge})]
+    (t/is (empty? (get-in comparison [:pairs 0 :mismatches])))
+    (t/is (= edge (:edge comparison)))
+    (t/is (= comparison (-> comparison result/encode result/decode)))
+    (t/is (str/includes? (format/format-comparison comparison) "Edge 0 -> 1 feature toggle"))
+    (t/is (str/includes? (format/format-comparison comparison) "effective feature sets identical"))
+    (let [contradictory (assoc edge :candidate-features ["base" "alias" "toggle"] :added ["toggle"])]
+      (doseq [opts [{:edge contradictory}
+                    {:edge contradictory
+                     :expected-feature-change (dissoc contradictory :from :to)}]]
+        (t/is (= ::compare/invalid-edge
+                 (:type (error-data #(compare/compare-runs run candidate opts)))))))))
+
+(t/deftest comparison-schema-validates-permissions-rules-and-edge-context
+  (let [baseline   (run-with [1])
+        candidate  (run-with [2] {:facts (assoc-in metadata [:build :functional :mode] :debug)})
+        comparison (compare/compare-runs baseline candidate {:allow-build-differences true})
+        edge       {:from "0" :to "1" :feature "toggle" :baseline-features []
+                    :candidate-features ["toggle"] :added ["toggle"] :removed []}]
+    (doseq [changed [(dissoc comparison :permissions)
+                     (assoc-in comparison [:permissions :allow-build-differences] :yes)
+                     (update comparison :permissions dissoc :allow-scene-differences)
+                     (assoc comparison :forced? true)
+                     (assoc-in comparison [:pairs 0 :mismatches 0 :rule] :other)
+                     (assoc-in comparison [:pairs 0 :mismatches 0 :rule] nil)
+                     (assoc-in comparison [:pairs 0 :mismatches 0 :waived?] false)
+                     (update-in comparison [:pairs 0 :mismatches 0] dissoc :rule)
+                     (assoc comparison :edge (dissoc edge :removed))
+                     (assoc comparison :edge (assoc edge :feature :toggle))
+                     (assoc comparison :edge (assoc edge :added #{"toggle"}))]]
+      (t/is (= ::result/invalid-record (:type (error-data #(result/decode (transit/encode-str changed)))))))
+    (doseq [rule [:feature-toggle :build :scene :all]]
+      (let [record (-> comparison (assoc :edge edge) (assoc-in [:pairs 0 :mismatches 0 :rule] rule))]
+        (t/is (= record (-> record result/encode result/decode)))
+        (t/is (= ::result/invalid-record
+                 (:type (error-data #(result/decode (transit/encode-str
+                                                     (update-in record [:pairs 0 :mismatches 0] dissoc :rule)))))))))))
+
+(t/deftest every-permission-keeps-invalid-measurements-and-no-shared-metrics-unusable
+  (let [baseline  (run-with [js/NaN js/Infinity 0 -1 :absent :failed] {:warmups 1 :repetitions 7})
+        candidate (run-with [2] {:warmups 1})]
+    (doseq [permissions [{}
+                         {:allow-build-differences true}
+                         {:allow-scene-differences true}
+                         {:allow-build-differences true :allow-scene-differences true}
+                         {:allow-all-differences true}
+                         {:on-unallowed-difference :record}]]
+      (let [comparison (compare/compare-runs baseline candidate permissions)]
+        (t/is (= {:valid 0 :invalid 4 :absent 1 :failed 1 :unattempted 1 :warmup 1}
+                 (get-in comparison [:pairs 0 :baseline :metrics metric-id :counts])))
+        (t/is (= :no-valid-observations (get-in comparison [:pairs 0 :metrics metric-id :absolute :reason])))
+        (t/is (= :no-valid-observations (get-in comparison [:pairs 0 :metrics metric-id :percentage-ci :reason])))
+        (t/is (= comparison (-> comparison result/encode result/decode)))
+        (t/is (= ::compare/no-shared-metrics
+                 (:type (error-data #(compare/compare-runs baseline
+                                                           (update candidate :attempts
+                                                                   (fn [attempts]
+                                                                     (mapv (fn [attempt]
+                                                                             (assoc attempt :metrics {:other (entry 2)})) attempts)))
+                                                           permissions)))))))))
+
+(t/deftest missing-nil-and-empty-effective-feature-evidence-stay-distinct-through-transit
+  (let [empty-run (run-with-features [1] [] {:default-features? false :features []})
+        missing   (-> empty-run
+                      (update-in [:metadata :build :functional] dissoc :features)
+                      result/encode result/decode)
+        nil-run   (-> empty-run
+                      (assoc-in [:metadata :build :functional :features] nil)
+                      result/encode result/decode)]
+    (t/is (empty? (get-in (compare/compare-runs empty-run empty-run) [:pairs 0 :mismatches])))
+    (doseq [[baseline candidate bfeatures cfeatures]
+            [[missing empty-run ::compare/missing-features #{}]
+             [nil-run empty-run nil #{}]
+             [missing nil-run ::compare/missing-features nil]
+             [empty-run missing #{} ::compare/missing-features]
+             [empty-run nil-run #{} nil]]]
+      (let [rejected   (error-data #(compare/compare-runs baseline candidate))
+            diagnostic (compare/compare-runs baseline candidate {:on-unallowed-difference :record})
+            mismatch   {:field :effective-features :baseline bfeatures :candidate cfeatures :waived? false}]
+        (t/is (= ::compare/incompatible (:type rejected)))
+        (t/is (= [mismatch] (:mismatches rejected)))
+        (t/is (= [mismatch] (get-in diagnostic [:pairs 0 :mismatches])))
+        (t/is (= diagnostic (-> diagnostic result/encode result/decode)))))))
+
+(t/deftest automatic-feature-acknowledgment-requires-saved-effective-vectors-of-strings
+  (let [baseline  (run-with-features [1] [] {:default-features? false :features []})
+        candidate (run-with-features [2] ["toggle"] {:default-features? false :features ["toggle"]})
+        expected  {:feature "toggle" :baseline-features [] :candidate-features ["toggle"]
+                   :added ["toggle"] :removed []}]
+    (t/is (= :feature-toggle
+             (get-in (compare/compare-runs baseline candidate {:expected-feature-change expected})
+                     [:pairs 0 :mismatches 0 :rule])))
+    (doseq [[b c] [[(update-in baseline [:metadata :build :functional] dissoc :features) candidate]
+                   [(assoc-in baseline [:metadata :build :functional :features] nil) candidate]
+                   [(assoc-in baseline [:metadata :build :functional :features] #{}) candidate]
+                   [baseline (assoc-in candidate [:metadata :build :functional :features] #{"toggle"})]
+                   [baseline (assoc-in candidate [:metadata :build :functional :features] [:toggle])]]]
+      (let [b          (-> b result/encode result/decode)
+            c          (-> c result/encode result/decode)
+            options    {:expected-feature-change expected}
+            rejected   (error-data #(compare/compare-runs b c options))
+            diagnostic (compare/compare-runs b c (assoc options :on-unallowed-difference :record))]
+        (t/is (= ::compare/incompatible (:type rejected)))
+        (t/is (= [:effective-features] (mapv :field (get-in diagnostic [:pairs 0 :mismatches]))))
+        (t/is (false? (get-in diagnostic [:pairs 0 :mismatches 0 :waived?])))
+        (t/is (not (contains? (get-in diagnostic [:pairs 0 :mismatches 0]) :rule)))
+        (t/is (= diagnostic (-> diagnostic result/encode result/decode)))))))
+
+(t/deftest automatic-feature-acknowledgment-checks-saved-requested-selections
+  (let [b-request {:default-features? false :features ["base"]}
+        c-request {:default-features? false :features ["base" "toggle"]}
+        expected  {:feature "toggle" :baseline-features ["base" "old"]
+                   :candidate-features ["base" "toggle" "transitive"]
+                   :added ["toggle" "transitive"] :removed ["old"]}]
+    (doseq [default-features? [false true]]
+      (let [baseline   (run-with-features [1] (:baseline-features expected)
+                                          (assoc b-request :default-features? default-features?))
+            candidate  (run-with-features [2] (:candidate-features expected)
+                                          {:default-features? default-features? :features ["toggle" "base"]})
+            comparison (compare/compare-runs (-> baseline result/encode result/decode)
+                                             (-> candidate result/encode result/decode)
+                                             {:expected-feature-change expected})]
+        (t/is (= [:feature-toggle] (mapv :rule (get-in comparison [:pairs 0 :mismatches]))))
+        (t/is (every? :waived? (get-in comparison [:pairs 0 :mismatches])))))
+    (doseq [[b c] [[::missing c-request]
+                   [b-request ::missing]
+                   [nil c-request]
+                   [b-request nil]
+                   [{} c-request]
+                   [b-request {}]
+                   [[] c-request]
+                   [(dissoc b-request :default-features?) c-request]
+                   [b-request (dissoc c-request :default-features?)]
+                   [(assoc b-request :default-features? :false) c-request]
+                   [b-request (assoc c-request :default-features? true)]
+                   [(dissoc b-request :features) c-request]
+                   [b-request (dissoc c-request :features)]
+                   [(assoc b-request :features #{"base"}) c-request]
+                   [b-request (assoc c-request :features ["base" :toggle])]
+                   [c-request c-request]
+                   [b-request b-request]
+                   [b-request (assoc c-request :features ["base" "extra" "toggle"])]
+                   [(assoc b-request :features ["base" "old"]) c-request]]]
+      (let [baseline   (cond-> (run-with-features [1] (:baseline-features expected) b)
+                         (= ::missing b) (update-in [:metadata :build :provenance] dissoc :feature-selection))
+            candidate  (cond-> (run-with-features [2] (:candidate-features expected) c)
+                         (= ::missing c) (update-in [:metadata :build :provenance] dissoc :feature-selection))
+            baseline   (-> baseline result/encode result/decode)
+            candidate  (-> candidate result/encode result/decode)
+            options    {:expected-feature-change expected}
+            rejected   (error-data #(compare/compare-runs baseline candidate options))
+            diagnostic (compare/compare-runs baseline candidate (assoc options :on-unallowed-difference :record))]
+        (t/is (= ::compare/incompatible (:type rejected)))
+        (t/is (= [:effective-features] (mapv :field (get-in diagnostic [:pairs 0 :mismatches]))))
+        (t/is (false? (get-in diagnostic [:pairs 0 :mismatches 0 :waived?])))
+        (t/is (not (contains? (get-in diagnostic [:pairs 0 :mismatches 0]) :rule)))
+        (t/is (= diagnostic (-> diagnostic result/encode result/decode)))))))
+
+(t/deftest edge-option-retains-context-and-rejects-conflicting-expected-facts
+  (let [baseline   (run-with-features [1] [] {:default-features? false :features []})
+        candidate  (run-with-features [2] ["toggle" "transitive"] {:default-features? false :features ["toggle"]})
+        expected   {:feature "toggle" :baseline-features [] :candidate-features ["toggle" "transitive"]
+                    :added ["toggle" "transitive"] :removed []}
+        edge       (assoc expected :from "0" :to "1")
+        comparison (compare/compare-runs baseline candidate {:expected-feature-change expected :edge edge})]
+    (t/is (= edge (:edge comparison)))
+    (t/is (= comparison (-> comparison result/encode result/decode)))
+    (t/is (str/includes? (format/format-comparison comparison) "Edge 0 -> 1 feature toggle"))
+    (t/is (not (str/includes? (format/format-comparison comparison) "effective feature sets identical")))
+    (doseq [changed [(assoc edge :feature "other")
+                     (assoc edge :baseline-features ["base"])
+                     (assoc edge :candidate-features ["toggle"])
+                     (assoc edge :added ["toggle"])
+                     (assoc edge :removed ["base"])]]
+      (t/is (= ::compare/invalid-edge
+               (:type (error-data #(compare/compare-runs baseline candidate
+                                                         {:expected-feature-change expected :edge changed
+                                                          :on-unallowed-difference :record}))))))))

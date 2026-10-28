@@ -83,16 +83,18 @@
    (case-attempts run case-id)))
 
 (defn summarize-metric
-  "Computes statistics for one dynamic metric with its definitions and counts."
+  "Computes statistics for one dynamic metric with its definitions and counts.
+  The optional allow-all-differences flag permits mixed-definition statistics;
+  scoped comparison permissions never change this summary policy."
   ([run case-id metric-id analysis] (summarize-metric run case-id metric-id analysis false))
-  ([run case-id metric-id analysis force?]
+  ([run case-id metric-id analysis allow-all-differences]
    (let [{:keys [values counts]} (observations run case-id metric-id)
-         definitions (definitions run case-id metric-id)
-         mixed? (> (count (observation-definitions run case-id metric-id)) 1)]
+         definitions             (definitions run case-id metric-id)
+         mixed?                  (> (count (observation-definitions run case-id metric-id)) 1)]
      {:definitions definitions
       :counts counts
       :mixed-definitions? mixed?
-      :statistics (if (and mixed? (not force?))
+      :statistics (if (and mixed? (not allow-all-differences))
                     {:reason :inconsistent-metric-definitions :count (count values)}
                     (analysis/statistics values analysis))})))
 

@@ -10,7 +10,9 @@
    ["os" :as os]
    ["path" :as path]
    [app.common.transit :as transit]
+   [benches.render-wasm.feature-plan :as feature-plan]
    [benches.render-wasm.node.artifacts :as artifacts]
+   [benches.render-wasm.node.feature-comparison :as feature-comparison]
    [benches.render-wasm.node.run :as run]
    [benches.render-wasm.node.runs :as runs]
    [benches.render-wasm.result :as result]
@@ -395,9 +397,7 @@
                             :close
                             (fn [owner]
                               (when-not (.-aborted (.-signal controller))
-                                (.abort controller
-                                        (ex-info "run interrupted"
-                                                 {:type ::interrupted :signal signal})))
+                                (.abort controller signal))
                               (close owner)))
           fake       (assoc base :service service)
           result     (await (execute fake [(collected :case/a :fresh)]
@@ -455,6 +455,25 @@
     (t/is (map? (:runner-git diag)))
     (t/is (= :unverified (:runtime-helper-identity diag)))))
 
+(t/deftest ^:async run-metadata-copies-only-saved-build-environment-evidence
+  (doseq [environment [::missing {} {"CFLAGS" "" "NODE_ENV" "recorded-build-value"}]]
+    (let [fake       (fake-browser {})
+          root       (artifacts/frontend-root)
+          opts       (options fake (output-dir))
+          build      (cond-> (selected-build (build-dir) "test-build")
+                       (not= ::missing environment) (assoc-in [:manifest :environment] environment))
+          home       (runs/create-home {:root root :run-id (:run-id opts) :output-dir (:output-dir opts)})
+          controller (js/AbortController.)
+          executed   (await (run/execute root home build [(collected :case/a :fresh)]
+                                         opts (.-signal controller) nil nil))
+          saved      (saved-record executed)
+          facts      (get-in saved [:metadata :build])]
+      (t/is (zero? (:exit-code executed)))
+      (t/is (= saved (:run executed)))
+      (if (= ::missing environment)
+        (t/is (not (contains? facts :environment)))
+        (t/is (= environment (:environment facts)))))))
+
 (t/deftest ^:async remove-deletes-the-used-build-after-the-record-is-saved
   (let [root   @temporary-root
         id     "removable-build"
@@ -508,3 +527,47 @@
     (t/is (= 1 (:exit-code response)))
     (t/is (= "<!doctype html>"
              (fs/readFileSync (path/join dir "index.html") "utf8")))))
+
+(t/deftest ^:async comparison-stops-after-run-record-or-log-storage-fails
+  (doseq [filename ["run.transit" "run.log"]]
+    (let [root     @temporary-root
+          out      (output-dir)
+          cases    [(collected :case/a :fresh)]
+          prepared {:plan (feature-plan/plan ["a"] {:dry-run true})
+                    :cases cases
+                    :output-dir out
+                    :options (dissoc (options nil out) :run-id :browser)}
+          response (await
+                    (feature-comparison/execute
+                     root prepared nil
+                     {:services
+                      {:prepare-build
+                       (fn [{:keys [selection on-created]}]
+                         (let [dir   (build-dir)
+                               build (-> (selected-build dir (str (random-uuid)))
+                                         (assoc :manifest-path (path/join dir "build.transit"))
+                                         (assoc-in [:manifest :functional :default-features?] false)
+                                         (assoc-in [:manifest :functional :features] (:features selection))
+                                         (assoc-in [:manifest :provenance :feature-selection] selection))]
+                           (on-created build)
+                           (js/Promise.resolve build)))
+                       :collect-catalog (fn [_ _] cases)
+                       :execute-run
+                       (fn [root home selected cases opts signal on-progress on-created]
+                         (let [base    (fake-browser {})
+                               close   (:close (:service base))
+                               file    (path/join (:dir home) filename)
+                               service (assoc (:service base) :close
+                                              (fn [owner]
+                                                (close owner)
+                                                (fs/renameSync file (str file ".saved"))
+                                                (fs/mkdirSync file)))]
+                           (run/execute root home selected cases (assoc opts :browser service)
+                                        signal on-progress on-created)))}}))
+          saved    (result/decode (fs/readFileSync (get-in response [:home :record-path]) "utf8"))
+          evidence (path/join out "configs" "0"
+                              (if (= filename "run.transit") "run.transit.saved" "run.transit"))]
+      (t/is (= 1 (count (:attempts (result/decode (fs/readFileSync evidence "utf8"))))))
+      (t/is (= 1 (:exit-code response)))
+      (t/is (= :failed (get-in saved [:configurations 0 :status])))
+      (t/is (= :unattempted (get-in saved [:configurations 1 :status]))))))

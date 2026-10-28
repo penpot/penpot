@@ -97,11 +97,12 @@ function cargoOutput(records) {
   return records.map((record) => JSON.stringify(record)).join("\n") + "\n";
 }
 
-function run(f, records) {
+function run(f, records, env = {}) {
   return spawnSync(process.execPath, [helper, f.info, f.manifest], {
     cwd: f.root,
     input: cargoOutput(records),
     encoding: "utf8",
+    env,
   });
 }
 
@@ -126,6 +127,7 @@ for (const fresh of [false, true]) {
       package_id: f.artifact.package_id,
       features: f.artifact.features,
       profile: f.artifact.profile,
+      environment: {},
       out_dir: f.outDir,
       artifact_dir: f.artifactDir,
       shared_file: path.join(f.outDir, "render_wasm_shared.js"),
@@ -136,6 +138,127 @@ for (const fresh of [false, true]) {
     );
   });
 }
+
+test("records only allowlisted values from the helper process environment", (t) => {
+  const f = fixture(t);
+  const environment = {
+    RUSTFLAGS: "-C target-feature=+simd128",
+    RUSTC_WRAPPER: "",
+    CARGO_TARGET_DIR: "/tmp/target with spaces",
+    CARGO_HOME: "/opt/cargo",
+    CC: "emcc",
+    CFLAGS: "-O3\n-g0",
+    CXXFLAGS: "-std=c++17",
+    LDFLAGS: "-sALLOW_MEMORY_GROWTH=1",
+    PENPOT_WASM_FUNCTION_NAMES: "1",
+    CARGO_ENCODED_RUSTFLAGS: "-C\u001fopt-level=3",
+    CARGO_BUILD_TARGET: "wasm32-unknown-emscripten",
+    BUILD_MODE: "release",
+    EMCC_CFLAGS: "-O3 -sASSERTIONS=0",
+    CARGO_PROFILE_RELEASE_LTO: "true",
+    CARGO_PROFILE_CUSTOM_OPT_LEVEL: "z",
+    EMSDK: "/opt/emsdk",
+    EMSDK_NODE: "/opt/emsdk/node/bin/node",
+    EM_INITIAL_HEAP: "268435456",
+    EM_MEMORY_GROWTH_GEOMETRIC_STEP: "0.8",
+    EM_MALLOC: "dlmalloc",
+    EM_CACHE: "/tmp/emsdk_cache",
+    NODE_ENV: "production",
+    CARGO_NET_OFFLINE: "true",
+  };
+  const result = run(f, [f.artifact, f.buildScript, finished], {
+    ...environment,
+    SECRET_TOKEN: "must not be saved",
+    PATH: "/private/path",
+    HOME: "/private/home",
+    CARGO_REGISTRIES_PRIVATE_TOKEN: "must not be saved",
+    CARGO_PROFILE: "not the prefix",
+    RUSTFLAGS_EXTRA: "not an exact key",
+    EM_UNRELATED: "not allowlisted",
+    VERSION_TAG: "build-identity",
+    RENDER_BENCH_BUILD_ID: "build-identity",
+    FRONTEND_DEST: "/per-build/renderer",
+    EXPORT_DEST: "/per-build/export",
+    FRONTEND_SHARED_DEST: "/per-build/shared.js",
+    EXPORT_SHARED_DEST: "/per-build/export-shared.js",
+    RENDER_WASM_SHARED_ARTIFACT: "/per-build/shared.js",
+    RENDER_WASM_BUILD_INFO: f.info,
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(
+    JSON.parse(fs.readFileSync(f.info, "utf8")).environment,
+    environment,
+  );
+});
+
+test("preserves unset versus empty environment values", (t) => {
+  const f = fixture(t);
+  for (const environment of [{}, { CFLAGS: "" }, { CFLAGS: "-O3" }]) {
+    const result = run(f, [f.artifact, f.buildScript, finished], environment);
+    assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(
+      JSON.parse(fs.readFileSync(f.info, "utf8")).environment,
+      environment,
+    );
+  }
+});
+
+test("captures exported setup values after sourcing the actual build environment", (t) => {
+  const f = fixture(t);
+  const result = spawnSync(
+    "bash",
+    [
+      "--noprofile",
+      "--norc",
+      "-c",
+      'source "$1" frontend --offline; export EMSDK_NODE="/setup/node"; CFLAGS="not exported"; shift; exec "$@"',
+      "cargo-build-test",
+      path.resolve(__dirname, "..", "_build_env"),
+      process.execPath,
+      helper,
+      f.info,
+      f.manifest,
+    ],
+    {
+      cwd: f.root,
+      input: cargoOutput([f.artifact, f.buildScript, finished]),
+      encoding: "utf8",
+      env: {
+        NODE_ENV: "production",
+        CARGO_NET_OFFLINE: "true",
+        RUSTFLAGS: "-C debuginfo=0",
+        RUSTC_WRAPPER: "",
+        EMCC_CFLAGS: "must be replaced by setup",
+        EM_INITIAL_HEAP: "1",
+        SECRET_TOKEN: "must not be saved",
+        VERSION_TAG: "per-build-identity",
+        FRONTEND_DEST: "/per-build/renderer",
+      },
+    },
+  );
+  assert.equal(result.status, 0, result.stderr);
+  const environment = JSON.parse(fs.readFileSync(f.info, "utf8")).environment;
+  assert.deepEqual(environment, {
+    NODE_ENV: "production",
+    CARGO_NET_OFFLINE: "true",
+    RUSTFLAGS: "-C debuginfo=0 -C target-feature=+simd128",
+    RUSTC_WRAPPER: "",
+    CARGO_BUILD_TARGET: "wasm32-unknown-emscripten",
+    CARGO_TARGET_DIR: "target/frontend",
+    BUILD_MODE: "release",
+    CARGO_PROFILE_DIR: "release",
+    EMSDK_NODE: "/setup/node",
+    EM_INITIAL_HEAP: "268435456",
+    EM_MEMORY_GROWTH_GEOMETRIC_STEP: "0.8",
+    EM_MALLOC: "dlmalloc",
+    EM_CACHE: "/tmp/emsdk_cache",
+    EMCC_CFLAGS: environment.EMCC_CFLAGS,
+  });
+  assert.match(environment.EMCC_CFLAGS, /^-O3 -sASSERTIONS=0 /);
+  assert.match(environment.EMCC_CFLAGS, /-sINITIAL_HEAP=268435456/);
+  assert.match(environment.EMCC_CFLAGS, /-sMEMORY_GROWTH_GEOMETRIC_STEP=0\.8/);
+  assert.match(environment.EMCC_CFLAGS, /-sMALLOC=dlmalloc/);
+});
 
 test("records an empty actual feature set", (t) => {
   const f = fixture(t);
