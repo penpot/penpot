@@ -14,7 +14,8 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
@@ -88,8 +89,11 @@
         [:h2 {:class (stl/css :modal-title)
               :data-testid "change-email-title"}
          (tr "modals.change-email.title")]
-        [:button {:class (stl/css :modal-close-btn)
-                  :on-click modal/hide!} deprecated-icon/close]]
+        [:> icon-button* {:variant "ghost"
+                          :tooltip-class (stl/css :modal-close-btn)
+                          :aria-label (tr "labels.close")
+                          :icon i/close
+                          :on-click modal/hide!}]]
 
        [:div {:class (stl/css :modal-content)}
         [:& context-notification
@@ -114,7 +118,8 @@
         [:div {:class (stl/css :action-buttons)
                :data-testid "change-email-submit"}
          [:> fm/submit-button*
-          {:label (tr "modals.change-email.submit")}]]]]]]))
+          {:label (tr "modals.change-email.submit")
+           :class (stl/css :submit-button)}]]]]]]))
 
 
 
