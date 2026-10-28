@@ -9,6 +9,8 @@ pub(crate) struct HorizontalEmphasisPlacement {
     pub(crate) mark: char,
     /// Base character rect in the laid-out paragraph.
     pub(crate) rect: skia::Rect,
+    /// Top of the base character's em box (`horizontal_base_em_top`).
+    pub(crate) em_top: f32,
 }
 
 /// Place one emphasis mark beside each eligible character, from the laid-out
@@ -19,6 +21,7 @@ pub(crate) fn horizontal_emphasis_placements(
     laid_out: &LayoutParagraph,
 ) -> Vec<HorizontalEmphasisPlacement> {
     let offset_map = &offsets.offset_map;
+    let lines = laid_out.get_line_metrics();
     let mut placements = Vec::new();
 
     for range in offsets.ranges.iter().filter(|range| !range.warichu) {
@@ -57,6 +60,13 @@ pub(crate) fn horizontal_emphasis_placements(
                         range: local_utf16..next_utf16,
                         mark,
                         rect,
+                        em_top: horizontal_base_em_top(
+                            laid_out,
+                            &lines,
+                            builder_start,
+                            span.font_size,
+                            rect,
+                        ),
                     });
                 }
             }
@@ -74,9 +84,7 @@ pub(crate) fn horizontal_emphasis_mark_box(
 ) -> skia::Rect {
     let size = span.font_size * EMPHASIS_FONT_SCALE;
     let top = if span.emphasis_side(false) == RubySide::Over {
-        horizontal_annotation_over_top(placement.rect, span.font_size)
-            - span.emphasis_outside_offset(false)
-            - size
+        placement.em_top - span.emphasis_outside_offset(false) - size
     } else {
         placement.rect.bottom() + span.emphasis_outside_offset(false)
     };
@@ -137,9 +145,7 @@ pub(crate) fn paint_horizontal_emphasis(
         {
             let mark_x = x + placement.rect.center_x() - mark_width / 2.0;
             let mark_y = y + if span.emphasis_side(false) == RubySide::Over {
-                horizontal_annotation_over_top(placement.rect, span.font_size)
-                    - mark_ink_bottom
-                    - span.emphasis_outside_offset(false)
+                placement.em_top - mark_ink_bottom - span.emphasis_outside_offset(false)
             } else {
                 placement.rect.bottom() - mark_ink_top + span.emphasis_outside_offset(false)
             };

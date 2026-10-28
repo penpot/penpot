@@ -455,11 +455,26 @@ pub(crate) fn horizontal_span_style(
         .map(|(_, metric)| metric.text_style.clone())
 }
 
-/// Top of the horizontal base em inside SkParagraph's typographic rect, less
-/// a 3/14-em clearance (12 px at 56 px). The tight rect includes ascender-side
-/// padding, so anchoring an over annotation to its top leaves a gap above CJK
-/// ink; the em is bottom-aligned to the rect.
-pub(crate) fn horizontal_annotation_over_top(rect: skia::Rect, font_size: f32) -> f32 {
-    let font_size = font_size.max(0.0);
-    rect.top.max(rect.bottom - font_size) - font_size * (3.0 / 14.0)
+/// Top of the em box of a horizontal base laid out in `rect`, whose builder
+/// text starts at UTF-16 `base_start`. Annotations attach to this box: the
+/// ideographic em box (OS/2 typo metrics) of the font that shaped the base,
+/// centred on the line baseline. Skia's tight rect spans the hhea ascent and
+/// descent instead, which in CJK faces reach past the em box.
+pub(crate) fn horizontal_base_em_top(
+    laid_out: &LayoutParagraph,
+    lines: &[skia::textlayout::LineMetrics],
+    base_start: usize,
+    font_size: f32,
+    rect: skia::Rect,
+) -> f32 {
+    let middle = rect.center_y();
+    let Some(line) = lines.iter().find(|line| {
+        let baseline = line.baseline as f32;
+        middle >= baseline - line.ascent as f32 && middle <= baseline + line.descent as f32
+    }) else {
+        return rect.top.max(rect.bottom - font_size);
+    };
+    let font = laid_out.font_at_utf16(base_start.max(line.start_index));
+    let (ascent, descent) = super::text_vertical::upright_centre_metrics(&font);
+    line.baseline as f32 + (ascent + descent - font_size) / 2.0
 }

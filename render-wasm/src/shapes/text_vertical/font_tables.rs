@@ -170,7 +170,7 @@ impl TypoMetrics {
 /// (ascent negative, descent positive) at the font's size. Uses the OS/2
 /// typographic metrics, which match the browser's vertical central baseline
 /// in the SVG/foreignObject export, or `Font::metrics` without an OS/2 table.
-pub(super) fn upright_centre_metrics(font: &Font) -> (f32, f32) {
+pub(crate) fn upright_centre_metrics(font: &Font) -> (f32, f32) {
     if let Some(typo) = cached_table(&TYPO_METRICS, font, TypoMetrics::from_font) {
         let size = font.size();
         return (-typo.ascender * size, -typo.descender * size);

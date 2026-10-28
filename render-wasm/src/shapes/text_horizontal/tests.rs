@@ -885,13 +885,6 @@ fn horizontal_ruby_is_atomic() {
 }
 
 #[test]
-fn horizontal_annotation_uses_the_base_em_not_typographic_leading() {
-    let rect = skia::Rect::from_xywh(0.0, 66.0, 56.0, 90.0);
-
-    assert_eq!(horizontal_annotation_over_top(rect, 56.0), 88.0);
-}
-
-#[test]
 fn horizontal_warichu_collapses_to_one_builder_position() {
     init_state();
     let mut warichu = make_span("割注入り", 0.0);
@@ -1200,6 +1193,7 @@ fn horizontal_emphasis_mark_stacks_outside_auto_clearance_ruby() {
         range: 0..1,
         mark: '•',
         rect: skia::Rect::from_xywh(10.0, 40.0, 16.0, 20.0),
+        em_top: 40.0,
     };
     let plain = make_span("漢", 0.0);
     let mut stacked = make_span("漢", 0.0);
@@ -1322,6 +1316,7 @@ fn horizontal_ruby_glyphs_share_one_baseline() {
             shaped: &shaped,
             glyphs,
             base,
+            em_top: base.top(),
             leading_gap: 0.0,
             room: (0.0, 0.0),
         }
@@ -1381,6 +1376,7 @@ fn latin_readings_share_one_baseline_whatever_their_letters() {
                 shaped: &shaped,
                 glyphs: &glyphs,
                 base,
+                em_top: base.top(),
                 leading_gap: 0.0,
                 room: (0.0, 0.0),
             };
@@ -1398,7 +1394,7 @@ fn latin_readings_share_one_baseline_whatever_their_letters() {
                 .font
                 .get_bounds(&shaped[0].glyphs[..1], &mut bounds, None);
             assert!(
-                descender + bounds[0].bottom <= horizontal_annotation_over_top(base, EM) + 0.01,
+                descender + bounds[0].bottom <= base.top() + 0.01,
                 "the descender of y reaches into the base"
             );
         }
@@ -1412,6 +1408,7 @@ fn emphasis_position_overrides_the_language_and_stacks_on_its_own_side() {
         range: 0..1,
         mark: '•',
         rect: skia::Rect::from_xywh(0.0, 20.0, 20.0, 20.0),
+        em_top: 20.0,
     };
     for (language, position, under) in [
         ("ja", TextEmphasisPosition::Auto, false),
@@ -1523,6 +1520,7 @@ fn below_emphasis_clears_an_underline_on_the_same_side() {
         range: 0..1,
         mark: '•',
         rect: skia::Rect::from_xywh(0.0, 20.0, 16.0, 18.0),
+        em_top: 20.0,
     };
     let mark = super::emphasis::horizontal_emphasis_mark_box(&span, &placement);
     assert!(mark.top() > placement.rect.bottom() + span.font_size / 9.0);
@@ -1540,6 +1538,7 @@ fn chinese_horizontal_emphasis_defaults_below_the_base() {
         range: 0..1,
         mark: '•',
         rect: skia::Rect::from_xywh(0.0, 20.0, 16.0, 18.0),
+        em_top: 20.0,
     };
     let mark = super::emphasis::horizontal_emphasis_mark_box(&span, &placement);
     assert!(mark.top() >= placement.rect.bottom());
@@ -1587,6 +1586,7 @@ fn horizontal_pinyin_tones_keep_canonical_shaping_and_group_alignment() {
             shaped: &shaped,
             glyphs: &glyphs,
             base,
+            em_top: base.top(),
             leading_gap: 0.0,
             room: (0.0, 0.0),
         }
@@ -1640,6 +1640,7 @@ fn horizontal_western_ruby_keeps_its_word_whole() {
         shaped: &shaped,
         glyphs: &glyphs,
         base,
+        em_top: base.top(),
         leading_gap: 0.0,
         room: (0.0, 0.0),
     }
@@ -1835,10 +1836,41 @@ fn horizontal_zhuyin_reserves_its_right_strip_without_changing_line_leading() {
         assert_eq!(spacing.adjustments[0], vec![(0, span.font_size * 0.6)]);
         assert_eq!(span.annotation_room_em(), 0.0);
         let rect = skia::Rect::from_xywh(0.0, 0.0, span.font_size * 1.6, span.font_size);
-        let origin = horizontal_zhuyin_origin(&span, rect);
+        let origin = horizontal_zhuyin_origin(&span, rect, 0.0);
         assert!((origin.x - span.font_size).abs() < 0.001);
         assert_eq!(origin.y, 0.0);
     }
+}
+
+#[test]
+fn horizontal_annotations_attach_to_the_ideographic_em_box() {
+    use crate::shapes::text_vertical::test_support::{provider, EM, VMTX_TEST_FONT};
+    init_state();
+    // Noto metrics: hhea ascent/descent 1.16/0.288 em, em box 0.88/0.12 em.
+    let mut fonts = skia::textlayout::FontCollection::new();
+    fonts.set_asset_font_manager(Some(provider(VMTX_TEST_FONT).into()));
+    // The em box depends on the base alone; a reading would shape it through
+    // the global font resources.
+    let mut span = make_span("中", 0.0);
+    span.font_size = EM;
+    span.text_emphasis = TextEmphasis::FilledDot;
+    let paragraph = make_paragraph(vec![span], 0.0);
+    let (plan, layout) = cjk_layout_paragraph(&paragraph, EM * 10.0, &fonts);
+    let range = &plan.offsets.ranges[0];
+    let rect = layout.get_rects_for_range(
+        range.builder_start..range.builder_end,
+        RectHeightStyle::Tight,
+        RectWidthStyle::Tight,
+    )[0]
+    .rect;
+    let lines = layout.get_line_metrics();
+    let em_top = horizontal_base_em_top(&layout, &lines, range.builder_start, EM, rect);
+    let baseline = lines[0].baseline as f32;
+    assert!((em_top - (baseline - 0.88 * EM)).abs() < 0.01);
+
+    let placements = horizontal_emphasis_placements(&paragraph, &plan.offsets, &layout);
+    assert_eq!(placements.len(), 1);
+    assert!((placements[0].em_top - em_top).abs() < 0.01);
 }
 
 #[test]
