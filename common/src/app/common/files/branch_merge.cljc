@@ -379,14 +379,24 @@
       (when (and (= :text type) (contains? ctt/attrs-in-text-content token-attr))
         :content-group)))
 
+(defn- copy-reason
+  "Why the copy rule took a side for an attr or token slot no more than
+  one side overrode: `t?`/`o?` say whether the target/source did. Named
+  in the comparison roles (`:main` = target), as the sides are."
+  [t? o?]
+  (cond o?    :override-branch
+        t?    :override-main
+        :else :follows-component))
+
 (defn- token-slot-sides
   "The copy rule over the token attrs (slots) of `:applied-tokens` whose
   token differs between `st` and `so`. A side overrode a slot when the
   slot's group (`token-slot-group`) is in its `touched` set and its token
   moved off the base one. Returns `{:slots {token-attr side}
-  :open-slots #{token-attr}}`: the rule's side for each slot no more than
-  one side overrode, and the slots both overrode or that drive no synced
-  attr."
+  :slot-reasons {token-attr reason} :open-slots #{token-attr}}`: the
+  rule's side for each slot no more than one side overrode, why it took
+  that side (`copy-reason`), and the slots both overrode or that drive
+  no synced attr."
   [type sb st so tt ot]
   (let [base-tokens   (:applied-tokens sb)
         theirs-tokens (:applied-tokens st)
@@ -397,11 +407,12 @@
              base  (get base-tokens slot)
              t?    (and (some? group) (contains? tt group) (not= base (get theirs-tokens slot)))
              o?    (and (some? group) (contains? ot group) (not= base (get ours-tokens slot)))]
-         (cond
-           (or (nil? group) (and t? o?)) (update acc :open-slots conj slot)
-           o?                            (assoc-in acc [:slots slot] :branch)
-           :else                         (assoc-in acc [:slots slot] :main))))
-     {:slots {} :open-slots #{}}
+         (if (or (nil? group) (and t? o?))
+           (update acc :open-slots conj slot)
+           (-> acc
+               (assoc-in [:slots slot] (if o? :branch :main))
+               (assoc-in [:slot-reasons slot] (copy-reason t? o?))))))
+     {:slots {} :slot-reasons {} :open-slots #{}}
      (sort-by name (filter #(not= (get theirs-tokens %) (get ours-tokens %))
                            (set/union (set (keys theirs-tokens)) (set (keys ours-tokens))))))))
 
@@ -411,15 +422,16 @@
   classification shapes (stripped, see `strip-shapes`) of the base,
   `theirs` and `ours`; `t`/`o` the full ones, which carry `:touched`.
 
-  Returns `{:auto {attr side} :open #{attr} :slots {token-attr side}
+  Returns `{:auto {attr side} :reasons {attr reason} :open #{attr}
+  :slots {token-attr side} :slot-reasons {token-attr reason}
   :open-slots #{token-attr}}` over the attrs that differ between the two
   sides: `:auto` holds the side the rule picks for each sync attr no
-  more than one side overrode (`:main` when none did), and `:open` the
-  attrs left to the user, the ones both sides overrode and the ones
-  outside every sync group. `:applied-tokens` is settled per slot
-  (`token-slot-sides`): it is open while any slot is, the user's side
-  then deciding the open slots only, and otherwise auto, on `:branch`
-  when the source wins any slot."
+  more than one side overrode (`:main` when none did), `:reasons` why
+  (`copy-reason`), and `:open` the attrs left to the user, the ones both
+  sides overrode and the ones outside every sync group.
+  `:applied-tokens` is settled per slot (`token-slot-sides`): it is open
+  while any slot is, the user's side then deciding the open slots only,
+  and otherwise auto, on `:branch` when the source wins any slot."
   [sb st so t o]
   (when (and (some? sb) (some? st) (some? so)
              (ctk/in-component-copy? t)
@@ -434,8 +446,8 @@
         (reduce-kv
          (fn [acc attr _]
            (if (= :applied-tokens attr)
-             (let [{:keys [slots open-slots]} (token-slot-sides (:type so) sb st so tt ot)]
-               (cond-> (assoc acc :slots slots :open-slots open-slots)
+             (let [{:keys [slots slot-reasons open-slots]} (token-slot-sides (:type so) sb st so tt ot)]
+               (cond-> (assoc acc :slots slots :slot-reasons slot-reasons :open-slots open-slots)
                  (seq open-slots)
                  (update :open conj attr)
 
@@ -444,39 +456,70 @@
              (let [group (ctk/resolve-sync-group (:type so) attr)
                    t?    (and (some? group) (overrode? group tt sb st attr))
                    o?    (and (some? group) (overrode? group ot sb so attr))]
-               (cond
-                 (or (nil? group) (and t? o?)) (update acc :open conj attr)
-                 o?                            (assoc-in acc [:auto attr] :branch)
-                 :else                         (assoc-in acc [:auto attr] :main)))))
-         {:auto {} :open #{} :slots {} :open-slots #{}}
+               (if (or (nil? group) (and t? o?))
+                 (update acc :open conj attr)
+                 (-> acc
+                     (assoc-in [:auto attr] (if o? :branch :main))
+                     (assoc-in [:reasons attr] (copy-reason t? o?)))))))
+         {:auto {} :reasons {} :open #{} :slots {} :slot-reasons {} :open-slots #{}}
          (shallow-attr-diff st so))))))
+
+(defn- settled-sides
+  "The `:settled` map of a summary entry for a copy the rule settled
+  (`sides`, see `copy-conflict-sides`): each attr and token slot the
+  rule decided, with its side and reason, and what the user still
+  decides. `:applied-tokens` is reported through its slots only, and
+  is among `:open-attrs` exactly when some slot is open. Named in the
+  comparison roles; `doc-sides` renames it."
+  [{:keys [auto reasons open slots slot-reasons open-slots]}]
+  {:attrs            (into {}
+                           (keep (fn [[attr side]]
+                                   (when (not= :applied-tokens attr)
+                                     [attr {:side side :reason (get reasons attr)}])))
+                           auto)
+   :token-slots      (into {}
+                           (map (fn [[slot side]]
+                                  [slot {:side side :reason (get slot-reasons slot)}]))
+                           slots)
+   :open-attrs       open
+   :open-token-slots open-slots})
 
 (defn- settle-copy-conflicts
   "Apply the copy rule to the `:modify-modify` shape conflicts of one
   page's comparison `res`. A conflict whose attrs the rule settles
   entirely leaves `:conflicts`; it comes back as a `:modified` change
-  over the attrs the source wins, if any, since the merge applies them.
-  A conflict with open attrs stays, its `:changed-attrs` narrowed to
-  them: the merge applies the settled ones whatever the user picks."
+  over the attrs the source wins, if any, since the merge applies them,
+  and as a `:settled` entry otherwise, which applies nothing and only
+  shows what the rule decided. A conflict with open attrs stays, its
+  `:changed-attrs` narrowed to them: the merge applies the settled ones
+  whatever the user picks. Every entry the rule touched carries
+  `:settled` (`settled-sides`)."
   [{:keys [conflicts] :as res} sbo sto soo to oo]
   (reduce
    (fn [acc {:keys [id reason changed-attrs] :as c}]
-     (if-let [{:keys [auto open]} (when (= :modify-modify reason)
-                                    (copy-conflict-sides (get sbo id) (get sto id) (get soo id)
-                                                         (get to id) (get oo id)))]
-       (let [won (into [] (keep (fn [[attr side]] (when (= :branch side) attr))) auto)]
+     (if-let [{:keys [auto open] :as sides}
+              (when (= :modify-modify reason)
+                (copy-conflict-sides (get sbo id) (get sto id) (get soo id)
+                                     (get to id) (get oo id)))]
+       (let [won     (into [] (keep (fn [[attr side]] (when (= :branch side) attr))) auto)
+             settled (settled-sides sides)
+             change  (fn [status attrs]
+                       (-> c
+                           (dissoc :reason :base :main :branch)
+                           (assoc :status status
+                                  :changed-attrs (select-keys changed-attrs attrs)
+                                  :settled settled)))]
          (cond
            (seq open)
-           (update acc :conflicts conj (assoc c :changed-attrs (select-keys changed-attrs open)))
+           (update acc :conflicts conj (assoc c
+                                              :changed-attrs (select-keys changed-attrs open)
+                                              :settled settled))
 
            (seq won)
-           (update acc :changes conj (-> c
-                                         (dissoc :reason :base :main :branch)
-                                         (assoc :status :modified
-                                                :changed-attrs (select-keys changed-attrs won))))
+           (update acc :changes conj (change :modified won))
 
            :else
-           acc))
+           (update acc :changes conj (change :settled (keys changed-attrs)))))
        (update acc :conflicts conj c)))
    (assoc res :conflicts [])
    conflicts))
@@ -1474,6 +1517,22 @@
               (transient {})
               (or index {}))))
 
+(def ^:private flip-doc
+  "The other document, for a side or a copy rule reason named after one;
+  anything else (`:open`, `:follows-component`) names none."
+  {:main            :branch
+   :branch          :main
+   :override-main   :override-branch
+   :override-branch :override-main})
+
+(defn- flip-decision
+  "A copy rule decision `{:side .. :reason ..}` named after the other
+  document."
+  [decision]
+  (-> decision
+      (update :side #(get flip-doc % %))
+      (update :reason #(get flip-doc % %))))
+
 (defn- doc-sides
   "Rewrite one summary entry from the comparison roles to the documents.
 
@@ -1482,16 +1541,22 @@
   `:main->branch` the engine runs with those roles fed the other way round
   (so the reported changes are main's), and this renames the payload back
   before `compute-merge` reports it: the two entity sides, the two values
-  inside every `:changed-attrs` pair, and the two delete reasons.
+  inside every `:changed-attrs` pair, the two delete reasons, and the
+  sides and reasons of the copy rule's `:settled` decisions.
   `:delete-modify` names the branch's deletion against main's modification
   and `:modify-delete` the branch's modification against main's deletion —
   the same meaning in both directions."
-  [{:keys [status changed-attrs] :as entry}]
+  [{:keys [status changed-attrs settled] :as entry}]
   (let [entry (cond-> entry
                 (map? changed-attrs)
                 (assoc :changed-attrs
                        (into {} (map (fn [[k v]] [k {:main (:branch v) :branch (:main v)}]))
-                             changed-attrs)))]
+                             changed-attrs))
+
+                (some? settled)
+                (assoc :settled (-> settled
+                                    (update :attrs update-vals flip-decision)
+                                    (update :token-slots update-vals flip-decision))))]
     (if (= :conflict status)
       (-> entry
           (assoc :main (:branch entry) :branch (:main entry))
@@ -1546,6 +1611,264 @@
     (cond-> (assoc entry :key (change-key entry))
       (some? owner) (merge owner))))
 
+;; --- Copies of the components the source changes ---
+;;
+;; The summary says, for every local component whose main the source
+;; changes, which copies the target holds after the integration and how
+;; each will take the change: `sync-copies` runs after integrating, and
+;; a copy follows the merged component except in the sync groups and
+;; token slots it overrides (see "Component copies" above). Derived from
+;; the three documents only: nothing here runs the sync. Named in the
+;; comparison roles; `doc-copies` renames them.
+
+(defn- main-shape-changes
+  "What the source changed on one shape of a component's main, base `b`
+  against source `o`: `{:groups #{group} :slots #{token-attr}}`, the
+  sync groups whose attrs moved (`:shapes-group` for its children, as
+  the sync names them) and the token slots whose token did, or nil when
+  the change moves nothing a copy syncs."
+  [b o]
+  (when (and (some? b) (some? o) (not= b o))
+    (let [b (strip-nil-attrs b)
+          o (strip-nil-attrs o)
+          {:keys [groups slots] :as res}
+          (reduce-kv
+           (fn [acc attr _]
+             (case attr
+               :shapes
+               (update acc :groups conj :shapes-group)
+
+               :applied-tokens
+               (let [bt (:applied-tokens b) ot (:applied-tokens o)]
+                 (update acc :slots into
+                         (filter #(not= (get bt %) (get ot %)))
+                         (set/union (set (keys bt)) (set (keys ot)))))
+
+               (if-let [group (ctk/resolve-sync-group (:type o) attr)]
+                 (update acc :groups conj group)
+                 acc)))
+           {:groups #{} :slots #{}}
+           (shallow-attr-diff b o))]
+      (when (or (seq groups) (seq slots))
+        res))))
+
+(defn- component-main-changes
+  "`{main-shape-id changes}` (`main-shape-changes`) over the main of
+  `component` the source `ours` changed against `base`, or nil when the
+  source changed nothing a copy syncs. A main the base lacks is new, and
+  no copy of it predates the change."
+  [base ours {:keys [main-instance-id main-instance-page]}]
+  (let [bo (get-in base [:pages-index main-instance-page :objects])
+        oo (get-in ours [:pages-index main-instance-page :objects])]
+    (when (and (contains? bo main-instance-id)
+               (contains? oo main-instance-id)
+               (not (identical? bo oo)))
+      (not-empty
+       (into {}
+             (keep (fn [id]
+                     (when-let [changes (main-shape-changes (get bo id) (get oo id))]
+                       [id changes])))
+             (subtree-ids oo main-instance-id))))))
+
+(defn- copy-heads
+  "`{component-id [[page-id head-id] ..]}`: the copies of `component-ids`
+  the target holds after the integration, those either side has minus
+  the ones either side deleted, nested copies included. Outside the
+  pages `keep?` admits, `ours` equals `base` (see `compute-merge`), so
+  the base stands in for it."
+  [base theirs ours keep? component-ids]
+  (let [objects (fn [data pid] (get-in data [:pages-index pid :objects]))
+        pages   (into (set (keys (:pages-index theirs)))
+                      (filter keep?)
+                      (keys (:pages-index ours)))]
+    (reduce
+     (fn [acc pid]
+       (let [bo    (objects base pid)
+             to    (objects theirs pid)
+             oo    (if (keep? pid) (objects ours pid) bo)
+             head? (fn [shape]
+                     (and (contains? component-ids (:component-id shape))
+                          (not (ctk/main-instance? shape))))
+             kept? (fn [id]
+                     (not (and (contains? bo id)
+                               (or (not (contains? to id)) (not (contains? oo id))))))]
+         (reduce (fn [acc shape]
+                   (let [id (:id shape)]
+                     (if (and (head? shape) (kept? id))
+                       (update acc (:component-id shape) (fnil conj #{}) [pid id])
+                       acc)))
+                 acc
+                 (concat (vals to) (when-not (identical? oo to) (vals oo))))))
+     {}
+     pages)))
+
+(defn- override-rank
+  "Precedence of a copy's token slot decision when shapes of the copy
+  decide it differently: an open slot over an override over following."
+  [{:keys [side reason]}]
+  (cond (= :open side)                 2
+        (= :follows-component reason) 0
+        :else                          1))
+
+(defn- copy-summary
+  "How the copy `head` of page `pid` takes the source's change to its
+  component, whose main shapes `changes` maps (`component-main-changes`)
+  and whose main shape ids are `main-ids`. Each shape of the copy pairs
+  with the main shape its `:shape-ref` chain reaches (`lookup` resolves
+  a ref on any page), and per changed sync group or token slot of that
+  main shape it follows the component unless a side's copy shape has
+  the group touched. When both sides have it touched, the side whose
+  value the integration keeps holds the override: the source's when it
+  changed the copy shape, the target's otherwise. A group can be both
+  followed and kept when the copy's shapes differ; a token slot takes
+  the strongest decision (`override-rank`). `::followed` holds the
+  `[main-shape-id group-or-slot]` pairs the copy follows, which
+  `with-copies-affected` reads and the summary leaves out."
+  [lookup main-ids changes pid head bo to oo]
+  (let [main-of (fn [shape]
+                  (loop [ref (:shape-ref shape) n 8]
+                    (cond
+                      (nil? ref)                 nil
+                      (contains? main-ids ref)   ref
+                      (pos? n)                   (recur (:shape-ref (lookup ref)) (dec n))
+                      :else                      nil)))
+        shape   (or (get oo head) (get to head))
+        ids     (distinct (concat (when (contains? oo head) (subtree-ids oo head))
+                                  (when (contains? to head) (subtree-ids to head))))
+        res
+        (reduce
+         (fn [acc id]
+           (let [ts (get to id)
+                 os (get oo id)
+                 s  (or os ts)
+                 m  (main-of s)
+                 {:keys [groups slots]} (get changes m)
+                 tt (set (:touched ts))
+                 ot (set (:touched os))
+                 both (fn [] (if (and (some? os) (not= (strip-nil-attrs (get bo id))
+                                                       (strip-nil-attrs os)))
+                               :branch
+                               :main))
+                 acc (reduce
+                      (fn [acc group]
+                        (let [t? (contains? tt group) o? (contains? ot group)]
+                          (if (or t? o?)
+                            (update acc :keeps #(if (contains? % group)
+                                                  %
+                                                  (assoc % group (cond (and t? o?) (both) o? :branch :else :main))))
+                            (-> acc
+                                (update :follows conj group)
+                                (update ::followed conj [m group])))))
+                      acc
+                      (sort groups))]
+             (reduce
+              (fn [acc slot]
+                (let [group    (token-slot-group (:type s) slot)
+                      t?       (and (some? group) (contains? tt group))
+                      o?       (and (some? group) (contains? ot group))
+                      decision (if (and t? o?)
+                                 {:side :open :reason :override-both}
+                                 {:side (if o? :branch :main) :reason (copy-reason t? o?)})]
+                  (cond-> (update acc :token-slots
+                                  #(let [prev (get % slot)]
+                                     (if (and (some? prev) (>= (override-rank prev) (override-rank decision)))
+                                       %
+                                       (assoc % slot decision))))
+                    (and (not t?) (not o?))
+                    (update ::followed conj [m slot]))))
+              acc
+              (sort-by name slots))))
+         {:follows #{} :keeps {} :token-slots {} ::followed #{}}
+         ids)]
+    (assoc res
+           :id      head
+           :page-id pid
+           :label   (entity-label :shape shape))))
+
+(defn- component-copies
+  "The `:copies` of the summary: one entry per local component whose
+  main the source `ours` changes against `base` in a way a copy syncs,
+  with every copy the target holds after the integration and how it
+  takes the change (`copy-summary`). Bounded to the pages `only-pages`
+  admits for the source's changes, as the page passes are; the copies
+  are looked up on every page. Ordered by component name, then id."
+  [base theirs ours only-pages]
+  (let [keep?   (if (some? only-pages) #(contains? only-pages %) (constantly true))
+        changed (into {}
+                      (keep (fn [component]
+                              (when (keep? (:main-instance-page component))
+                                (when-let [changes (component-main-changes base ours component)]
+                                  [(:id component) [component changes]]))))
+                      (ctkl/components-seq ours))]
+    (when (seq changed)
+      (let [heads  (copy-heads base theirs ours keep? (set (keys changed)))
+            lookup (fn [id]
+                     (some (fn [data]
+                             (some #(get-in % [:objects id]) (vals (:pages-index data))))
+                           [ours theirs base]))
+            objs   (fn [data pid] (get-in data [:pages-index pid :objects]))]
+        (->> changed
+             (map (fn [[cid [{cname :name :keys [main-instance-id main-instance-page]} changes]]]
+                    (let [main-ids (set (subtree-ids (objs ours main-instance-page) main-instance-id))]
+                      {:component-id   cid
+                       :component-name cname
+                       :main-id        main-instance-id
+                       :main-page-id   main-instance-page
+                       :copies         (->> (get heads cid)
+                                            (map (fn [[pid head]]
+                                                   (let [bo (objs base pid)]
+                                                     (copy-summary lookup main-ids changes pid head bo
+                                                                   (objs theirs pid)
+                                                                   (if (keep? pid) (objs ours pid) bo)))))
+                                            (sort-by (juxt :label (comp str :id)))
+                                            (vec))})))
+             (sort-by (juxt :component-name (comp str :component-id)))
+             (vec))))))
+
+(defn- doc-copies
+  "One `:copies` entry (`component-copies`) named after the documents
+  rather than the comparison roles (see `doc-sides`)."
+  [entry]
+  (update entry :copies
+          (partial mapv (fn [copy]
+                          (-> copy
+                              (update :keeps update-vals flip-doc)
+                              (update :token-slots update-vals flip-decision))))))
+
+(defn- conflict-sync-keys
+  "The sync groups and token slots the `:changed-attrs` of a shape
+  conflict drive: what a copy following the shape takes from the
+  conflict's resolution."
+  [{:keys [shape-type changed-attrs]}]
+  (into #{}
+        (mapcat (fn [[attr {:keys [main branch]}]]
+                  (case attr
+                    :shapes         [:shapes-group]
+                    :applied-tokens (filter #(not= (get main %) (get branch %))
+                                            (set/union (set (keys main)) (set (keys branch))))
+                    (some-> (ctk/resolve-sync-group shape-type attr) vector))))
+        changed-attrs))
+
+(defn- with-copies-affected
+  "A decorated conflict (`decorate-entry`) on a shape of a component's
+  main, its main instance or a shape inside it, with the number of the
+  component's copies `copies` (`component-copies`) lists that follow
+  the shape in a sync group or token slot the conflict drives
+  (`conflict-sync-keys`): the copies its resolution reaches through the
+  sync. A copy keeping an override of every one of them, on either
+  side, is not reached."
+  [copies {:keys [kind id component-id] :as entry}]
+  (if (and (= :shape kind) (some? component-id))
+    (let [driven   (conflict-sync-keys entry)
+          reached? (fn [copy] (some #(contains? driven (second %))
+                                    (filter #(= id (first %)) (::followed copy))))]
+      (assoc entry :copies-affected
+             (or (some #(when (= component-id (:component-id %))
+                          (count (filter reached? (:copies %))))
+                       copies)
+                 0)))
+    entry))
+
 (defn- compute-merge*
   "The comparison itself. Both arities of `compute-merge` land here rather
   than one delegating to the other through the var, so that a test which
@@ -1592,13 +1915,21 @@
         ;; every entry carries its `change-key` and, where it has one, its
         ;; owning component: the compare panel selects and groups by them
         decorate  (partial decorate-entry [ours theirs base])
+        ;; the copies the integration syncs, named after the documents
+        ;; like the entries
+        copies    (cond->> (or (component-copies base theirs ours only-pages) [])
+                    update? (mapv doc-copies))
         changes   (mapv decorate changes)
-        conflicts (mapv decorate conflicts)]
+        conflicts (mapv (comp (partial with-copies-affected copies) decorate) conflicts)]
     {:changes   changes
      :conflicts conflicts
+     :copies    (mapv (fn [entry]
+                        (update entry :copies (partial mapv #(dissoc % ::followed))))
+                      copies)
      ;; the tree-shape policies act per direction (`tree-modes`), so
      ;; `compute-changes` needs to know which one this summary is
      :dir       dir
+     ;; a `:settled` entry is no change: it counts nowhere
      :stats     {:added     (count (filterv #(= :added (:status %)) changes))
                  :modified  (count (filterv #(= :modified (:status %)) changes))
                  :deleted   (count (filterv #(= :deleted (:status %)) changes))
@@ -1610,7 +1941,8 @@
 
     {:changes   [<change descriptor> ...]   ; clean, branch -> main
      :conflicts [<conflict descriptor> ...] ; need resolution
-     :stats     {:added n :modified n :deleted n :conflicts n}}
+     :stats     {:added n :modified n :deleted n :conflicts n}
+     :copies    [<component copies> ...]}
 
   Every entry names the two DOCUMENTS, whatever `dir`: `:main` carries
   main's value, `:branch` the branch's, and each `:changed-attrs` pair
@@ -1641,10 +1973,49 @@
   in the conflict, whole, while any token attr is open. A copy the rule
   settles entirely leaves `:conflicts`, and comes back as a `:modified`
   change over the attrs the source overrode, which the merge takes from
-  it."
+  it, or as a `:settled` entry when the source overrode none. Every
+  entry the rule touched carries `:settled`:
+
+    {:attrs            {attr {:side s :reason r}}
+     :token-slots      {token-attr {:side s :reason r}}
+     :open-attrs       #{attr}        ; the user's choice decides these
+     :open-token-slots #{token-attr}}
+
+  with `r` one of `:follows-component` (no side overrode it: the target
+  keeps its value until the sync sets the component's, so `s` names the
+  target), `:override-main` and `:override-branch`. `:applied-tokens`
+  shows through its slots, and is among `:open-attrs` exactly when a
+  slot is open. A `:settled` entry applies nothing: it counts
+  in no `:stats`, `compute-changes` and `nothing-to-merge?` ignore it,
+  and excluding it excludes nothing (`settled?`).
+
+  `:copies` lists, per local component whose main the source changes in
+  a way a copy syncs, the copies the target holds after the integration
+  and how each takes the change, ordered by component name:
+
+    {:component-id id :component-name n :main-id id :main-page-id id
+     :copies [{:id id :page-id id :label l
+               :follows     #{group}       ; take the merged component's
+               :keeps       {group side}   ; keep an override
+               :token-slots {token-attr {:side s :reason r}}}]}
+
+  A token slot that follows the component names the target as its side,
+  as in `:settled`; one both sides override has side `:open`, reason
+  `:override-both`. A conflict on a shape of a component's main (its
+  main instance or a shape inside it) carries `:copies-affected`, the
+  number of the component's listed copies that follow that shape in a
+  sync group or token slot the conflict's attrs drive: a copy keeping
+  its override there, on either side, does not take the resolution."
   ([base main branch dir] (compute-merge* base main branch dir nil))
   ([base main branch dir {:keys [only-pages]}]
    (compute-merge* base main branch dir only-pages)))
+
+(defn settled?
+  "True for a summary entry that only shows a copy the copy rule settled
+  entirely (`:status :settled`): it applies nothing, so no count, gate
+  or selection treats it as a change."
+  [entry]
+  (= :settled (:status entry)))
 
 (defn nothing-to-merge?
   "True when the summary carries change entries and `excluded` covers
@@ -1654,7 +2025,7 @@
   change list). A summary with no entries is NOT a refusal: there the
   merge is a clean no-op that closes the branch."
   [merge-summary excluded]
-  (let [entries (concat (:changes merge-summary) (:conflicts merge-summary))]
+  (let [entries (remove settled? (concat (:changes merge-summary) (:conflicts merge-summary)))]
     (and (seq entries)
          (every? #(contains? excluded (change-key %)) entries))))
 
@@ -2275,11 +2646,19 @@
   ([base main branch resolutions merge-summary excluded]
    (let [merge-summary (or merge-summary (compute-merge base main branch :branch->main))
          resolutions   (or resolutions {})
-         excluded      (or excluded #{})
+         ;; a `:settled` entry applies nothing, so excluding it excludes
+         ;; nothing: its key names a copy the rule decides whatever the
+         ;; selection says
+         excluded      (into #{}
+                             (remove (into #{}
+                                           (comp (filter settled?) (map change-key))
+                                           (:changes merge-summary)))
+                             excluded)
          ;; a kind no pass can translate refuses the merge UNLESS the user
          ;; excluded the entry carrying it: an excluded change is dropped
          ;; on the user's word, never silently
          unsupported   (->> (concat (:changes merge-summary) (:conflicts merge-summary))
+                            (remove settled?)
                             (remove #(contains? excluded (change-key %)))
                             (unsupported-kinds))
 

@@ -1099,7 +1099,8 @@
 
   Conflicts that `resolutions` leaves unresolved make the command return
   `{:status :conflicts}`, with the `:main-revn` they were computed against
-  so the retry can pass it as `expected-main-revn`; a resolved conflict
+  so the retry can pass it as `expected-main-revn` and the summary's
+  `:copies` (`bm/compute-merge`); a resolved conflict
   merges the side its resolution picks, per entity or per attr. Change
   kinds the engine cannot translate (`bm/unsupported-kinds`) make it return
   `{:status :unsupported}` so no change is silently dropped. Otherwise it
@@ -1239,7 +1240,10 @@
                                                            :session-id session-id}))))]
                (cond
                  (seq unresolved)
-                 (audited {:status :conflicts :conflicts conflicts :main-revn (:revn main-file)}
+                 ;; `:copies` tells the conflict dialog which copies the
+                 ;; integration syncs (`bm/compute-merge`)
+                 (audited {:status :conflicts :conflicts conflicts :copies (:copies merge-summary)
+                           :main-revn (:revn main-file)}
                           tpoint :merge)
 
                  :else
@@ -1426,7 +1430,8 @@
 (sv/defmethod ::update-branch-from-main
   "Bring the changes main received since the merge base into the branch
   (the reverse direction of a merge). Returns `{:status :conflicts}` (with
-  the `:main-revn` they were computed against) when main and the branch
+  the `:main-revn` they were computed against and the summary's
+  `:copies`) when main and the branch
   diverged on the same entity and it is not resolved in `resolutions`, or
   `{:status :unsupported}` for change kinds not yet translatable. On
   success it applies main's changes (and any conflicts resolved to main)
@@ -1597,7 +1602,8 @@
 
              (cond
                (seq unresolved)
-               (audited {:status :conflicts :conflicts conflicts :main-revn (:revn main-file)}
+               (audited {:status :conflicts :conflicts conflicts :copies (:copies merge-summary)
+                         :main-revn (:revn main-file)}
                         tpoint :update-from-main)
 
                (bm/nothing-to-merge? merge-summary excluded)

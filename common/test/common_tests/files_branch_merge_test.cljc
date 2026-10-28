@@ -11,6 +11,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.tokens :as cfo]
    [app.common.logic.shapes :as cls]
+   [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -1930,7 +1931,10 @@
         branch (mkdata {:k (copy-shape "green")})
         r      (bm/compute-merge base main branch :branch->main)]
     (t/is (empty? (:conflicts r)))
-    (t/is (empty? (:changes r)))
+    (t/is (= [[:k :settled {:attrs {:fills {:side :main :reason :follows-component}}
+                            :token-slots {} :open-attrs #{} :open-token-slots #{}}]]
+             (mapv (juxt :id :status :settled) (:changes r))))
+    (t/is (= {:added 0 :modified 0 :deleted 0 :conflicts 0} (:stats r)))
     (t/is (empty? (copy-ops (:changes (bm/compute-changes base main branch {} r)))))))
 
 (t/deftest copy-attr-the-source-overrode-wins
@@ -1954,7 +1958,8 @@
         branch (mkdata {:k (copy-shape "green")})
         r      (bm/compute-merge base main branch :branch->main)]
     (t/is (empty? (:conflicts r)))
-    (t/is (empty? (:changes r)))
+    (t/is (= [[:k :settled {:fills {:side :main :reason :override-main}}]]
+             (mapv (juxt :id :status (comp :attrs :settled)) (:changes r))))
     (t/is (empty? (copy-ops (:changes (bm/compute-changes base main branch {} r)))))))
 
 (t/deftest copy-attr-both-sides-overrode-is-a-conflict
@@ -2036,7 +2041,8 @@
         branch (mkdata {:k (tokens-copy {:fill "green"})})
         r      (bm/compute-merge base main branch :branch->main)]
     (t/is (empty? (:conflicts r)))
-    (t/is (empty? (:changes r)))
+    (t/is (= [[:k :settled {:fill {:side :main :reason :follows-component}}]]
+             (mapv (juxt :id :status (comp :token-slots :settled)) (:changes r))))
     (t/is (empty? (copy-ops (:changes (bm/compute-changes base main branch {} r)))))))
 
 (t/deftest copy-token-slots-settle-one-at-a-time
@@ -2112,3 +2118,134 @@
        (t/is (= #{(thi/id :component1)} scope))
        (t/is (= "#fabada" (tho/bottom-fill-color synced :nested2-head)))
        (t/is (= "#fabada" (tho/bottom-fill-color synced :copy2-root)))))))
+
+;; --- the summary shows what the copy rule decides ---
+
+(defn- component-with-copy
+  []
+  (-> (thf/sample-file :file1)
+      (tho/add-simple-component-with-copy :c1 :main-root :main-child :copy1)))
+
+(defn- copies-of
+  "The copies the summary `r` lists for its one component, by id."
+  [r]
+  (into {}
+        (map (fn [copy] [(:id copy) (select-keys copy [:follows :keeps :token-slots])]))
+        (:copies (first (:copies r)))))
+
+(t/deftest copies-list-a-copy-the-other-side-added-as-following
+  ;; the branch edits the component, main adds a second copy: both
+  ;; copies follow the merged component's fill
+  (thi/test-fixture
+   (fn []
+     (let [file   (component-with-copy)
+           branch (tho/update-color file :main-child "#00ff00")
+           main   (thc/instantiate-component file :c1 :copy2)
+           r      (bm/compute-merge (:data file) (:data main) (:data branch) :branch->main)]
+       (t/is (= [{:component-id (thi/id :c1) :main-id (thi/id :main-root)}]
+                (mapv #(select-keys % [:component-id :main-id]) (:copies r))))
+       (t/is (= {(thi/id :copy1) {:follows #{:fill-group} :keeps {} :token-slots {}}
+                 (thi/id :copy2) {:follows #{:fill-group} :keeps {} :token-slots {}}}
+                (copies-of r)))))))
+
+(t/deftest copies-show-the-override-one-side-keeps
+  (thi/test-fixture
+   (fn []
+     (let [file     (component-with-copy)
+           edited   (tho/update-color file :main-child "#00ff00")
+           override (tho/update-bottom-color file :copy1 "#ff0000")]
+       (t/testing "merging: the branch edits the component, main overrides the copy"
+         (let [r (bm/compute-merge (:data file) (:data override) (:data edited) :branch->main)]
+           (t/is (= {(thi/id :copy1) {:follows #{} :keeps {:fill-group :main} :token-slots {}}}
+                    (copies-of r)))))
+       (t/testing "updating: main edits the component, the branch overrides the copy"
+         (let [r (bm/compute-merge (:data file) (:data edited) (:data override) :main->branch)]
+           (t/is (= {(thi/id :copy1) {:follows #{} :keeps {:fill-group :branch} :token-slots {}}}
+                    (copies-of r)))))))))
+
+(t/deftest a-conflict-on-a-main-counts-the-copies-it-affects
+  (thi/test-fixture
+   (fn []
+     (let [file (component-with-copy)]
+       (doseq [label [:main-root :main-child]]
+         (t/testing (name label)
+           (let [main   (tho/update-color file label "#0000ff")
+                 branch (tho/update-color file label "#00ff00")
+                 r      (bm/compute-merge (:data file) (:data main) (:data branch) :branch->main)]
+             (t/is (= [[(thi/id label) 1]]
+                      (mapv (juxt :id :copies-affected) (:conflicts r)))))))
+       (t/testing "a copy keeping its override of the conflict's group is not affected"
+         ;; main overrides copy1's child fill; copy2 follows everything
+         (let [base (thc/instantiate-component file :c1 :copy2)]
+           (doseq [[label affected] [[:main-child 1] [:main-root 2]]]
+             (t/testing (name label)
+               (let [main   (-> base
+                                (tho/update-bottom-color :copy1 "#ff0000")
+                                (tho/update-color label "#0000ff"))
+                     branch (tho/update-color base label "#00ff00")
+                     r      (bm/compute-merge (:data base) (:data main) (:data branch) :branch->main)]
+                 (t/is (= [[(thi/id label) affected]]
+                          (mapv (juxt :id :copies-affected) (:conflicts r)))))))))
+       (t/testing "no copy follows the conflict's group: none is affected"
+         (let [main   (-> file
+                          (tho/update-bottom-color :copy1 "#ff0000")
+                          (tho/update-color :main-child "#0000ff"))
+               branch (tho/update-color file :main-child "#00ff00")
+               r      (bm/compute-merge (:data file) (:data main) (:data branch) :branch->main)]
+           (t/is (= [[(thi/id :main-child) 0]]
+                    (mapv (juxt :id :copies-affected) (:conflicts r))))))))))
+
+(t/deftest a-settled-copy-shows-and-applies-nothing
+  ;; both sides synced K from their own edit of the component, and the
+  ;; branch edited S
+  (let [base     (mkdata {:k (copy-shape "red") :s {:id :s :name "S" :fill "red"}})
+        main     (mkdata {:k (copy-shape "blue") :s {:id :s :name "S" :fill "red"}})
+        branch   (mkdata {:k (copy-shape "green") :s {:id :s :name "S" :fill "blue"}})
+        r        (bm/compute-merge base main branch :branch->main)
+        settled  (filterv bm/settled? (:changes r))
+        k-key    (:key (first settled))
+        s-key    (:key (first (remove bm/settled? (:changes r))))
+        unshown  (update r :changes #(filterv (complement bm/settled?) %))
+        changes  (:changes (bm/compute-changes base main branch {} r))]
+    (t/is (= [[:k :settled]] (mapv (juxt :id :status) settled)))
+    (t/is (= {:added 0 :modified 1 :deleted 0 :conflicts 0} (:stats r)))
+    (t/testing "compute-changes ignores it, excluded or not"
+      (t/is (= changes (:changes (bm/compute-changes base main branch {} unshown))))
+      (t/is (= changes (:changes (bm/compute-changes base main branch {} r #{k-key})))))
+    (t/testing "nothing-to-merge? ignores it"
+      (t/is (not (bm/nothing-to-merge? r #{k-key})))
+      (t/is (true? (bm/nothing-to-merge? r #{s-key}))))))
+
+(t/deftest a-partly-settled-copy-conflict-names-what-stays-open
+  (t/testing "attrs: both override the fill, only the branch the opacity"
+    (let [base   (mkdata {:k (copy-shape "red" :opacity 1)})
+          main   (mkdata {:k (copy-shape "blue" :opacity 1 :touched #{:fill-group})})
+          branch (mkdata {:k (copy-shape "green" :opacity 0.5
+                                         :touched #{:fill-group :layer-effects-group})})
+          r      (bm/compute-merge base main branch :branch->main)]
+      (t/is (= {:attrs            {:opacity {:side :branch :reason :override-branch}}
+                :token-slots      {}
+                :open-attrs       #{:fills}
+                :open-token-slots #{}}
+               (:settled (first (:conflicts r)))))))
+  (t/testing "token slots: both apply a fill token, only the branch a radius one"
+    (let [base   (mkdata {:k (tokens-copy {})})
+          main   (mkdata {:k (tokens-copy {:fill "yellow"} :touched #{:fill-group})})
+          branch (mkdata {:k (tokens-copy {:fill "red" :r1 "round"}
+                                          :touched #{:fill-group :radius-group})})
+          r      (bm/compute-merge base main branch :branch->main)]
+      (t/is (= {:attrs            {}
+                :token-slots      {:r1 {:side :branch :reason :override-branch}}
+                :open-attrs       #{:applied-tokens :fills}
+                :open-token-slots #{:fill}}
+               (:settled (first (:conflicts r)))))))
+  (t/testing "updating from main, the sides name the documents"
+    (let [base   (mkdata {:k (tokens-copy {})})
+          main   (mkdata {:k (tokens-copy {:fill "red"} :touched #{:fill-group})})
+          branch (mkdata {:k (tokens-copy {:fill "green"})})
+          r      (bm/compute-merge base main branch :main->branch)]
+      (t/is (= [[:k :modified {:attrs            {:fills {:side :main :reason :override-main}}
+                               :token-slots      {:fill {:side :main :reason :override-main}}
+                               :open-attrs       #{}
+                               :open-token-slots #{}}]]
+               (mapv (juxt :id :status :settled) (:changes r)))))))

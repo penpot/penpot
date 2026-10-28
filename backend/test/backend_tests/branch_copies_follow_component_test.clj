@@ -260,7 +260,10 @@
 
           (let [out (merge-branch ctx)]
             (t/is (= :conflicts (-> out :result :status)))
-            (t/is (= #{mi-id} (conflict-ids out))))
+            (t/is (= #{mi-id} (conflict-ids out)))
+            (t/testing "the response names the copies the resolution reaches"
+              (t/is (= [[mi-id 1]] (mapv (juxt :id :copies-affected) (-> out :result :conflicts))))
+              (t/is (= [#{copy-id}] (mapv #(into #{} (map :id) (:copies %)) (-> out :result :copies))))))
 
           (let [out (merge-branch ctx :resolutions {mi-id side})]
             (t/is (nil? (:error out)))
@@ -281,7 +284,9 @@
 
           (let [out (update-branch ctx)]
             (t/is (= :conflicts (-> out :result :status)))
-            (t/is (= #{mi-id} (conflict-ids out))))
+            (t/is (= #{mi-id} (conflict-ids out)))
+            (t/is (= [[mi-id 1]] (mapv (juxt :id :copies-affected) (-> out :result :conflicts))))
+            (t/is (= [#{copy-id}] (mapv #(into #{} (map :id) (:copies %)) (-> out :result :copies)))))
 
           (let [out (update-branch ctx :resolutions {mi-id side})]
             (t/is (nil? (:error out)))
@@ -292,6 +297,26 @@
             (t/is (= color (fill branch page-id copy-id)))
             (t/is (empty? (:touched (shape branch page-id copy-id))))
             (t/is (empty? (validation-codes branch)))))))))
+
+(t/deftest the-diff-shows-a-copy-the-rule-settled
+  ;; both sides synced the copy from their own edit of the component:
+  ;; the compare summary shows the copy as settled, following the
+  ;; component, and lists it among the component's copies
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [{:keys [profile branch-id comp-id mi-id copy-id] :as ctx} (setup 1)]
+      (both-edit-component ctx)
+      (let [out   (th/command! {::th/type :get-branch-diff
+                                ::rpc/profile-id (:id profile)
+                                :branch-id branch-id})
+            diff  (:result out)
+            entry (first (filter #(= copy-id (:id %)) (:changes diff)))]
+        (t/is (nil? (:error out)))
+        (t/is (= :settled (:status entry)))
+        (t/is (= {:side :main :reason :follows-component} (get-in entry [:settled :attrs :fills])))
+        (t/is (= [[mi-id 1]] (mapv (juxt :id :copies-affected) (:conflicts diff))))
+        (t/is (= [[comp-id mi-id #{copy-id}]]
+                 (mapv (juxt :component-id :main-id #(into #{} (map :id) (:copies %)))
+                       (:copies diff))))))))
 
 ;; --- c: one side overrides the copy, the other edits the component
 
