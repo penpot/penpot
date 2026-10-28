@@ -4,50 +4,31 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .edit-wrapper {
-  border-radius: deprecated.$br-4;
+  border-radius: $br-4;
   display: flex;
-  padding-right: deprecated.$s-24;
+  padding-inline-end: var(--sp-xxl);
   position: relative;
-  margin-right: deprecated.$s-24;
+  margin-inline-end: var(--sp-xxl);
 }
 
-input.element-title {
-  background-color: var(--input-background-color-active);
-  border-radius: deprecated.$br-8;
+.element-title {
+  background-color: var(--color-background-primary);
+  border-radius: $br-8;
   color: var(--color-foreground-primary);
-  font-size: deprecated.$fs-16;
-  height: deprecated.$s-32;
+  font-size: px2rem(16);
+  block-size: $sz-32;
   margin: 0;
   border: none;
-  padding: deprecated.$s-6;
-  width: 100%;
+  padding: px2rem(6);
+  inline-size: 100%;
 
   &:focus-visible {
-    border: deprecated.$s-1 solid var(--color-accent-primary);
+    border: $b-1 solid var(--color-accent-primary);
     outline: none;
-  }
-}
-
-.close {
-  cursor: pointer;
-  position: absolute;
-  top: deprecated.$s-1;
-  right: calc(-1 * deprecated.$s-8);
-
-  svg {
-    fill: var(--color-foreground-secondary);
-    height: deprecated.$s-16;
-    transform: rotate(45deg) translateY(7px);
-    width: deprecated.$s-16;
-    margin: 0;
-  }
-
-  &:hover {
-    svg {
-      fill: var(--element-foreground-warning);
-    }
   }
 }
