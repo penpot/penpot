@@ -91,7 +91,8 @@
 ;; ---------------------------------------------------------------------------
 
 (def scalar-properties
-  #{:strokes :hidden :blocked :r1 :blend-mode :hide-fill-on-export :show-content
+  #{:strokes :shadow :blur :background-blur :hidden :blocked :r1 :r2 :r3 :r4
+    :blend-mode :hide-fill-on-export :show-content
     :fixed-scroll :constraints-h :constraints-v :layout-item-margin
     :layout-gap :layout-padding :layout-align-items})
 

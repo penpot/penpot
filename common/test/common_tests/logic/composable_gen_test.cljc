@@ -85,6 +85,74 @@
         (t/is (= :frame (get-in resolved [:shape :type]))
               (str "property " property ", scope " scope))))))
 
+(t/deftest generated-effect-and-corner-edits-have-distinct-inputs
+  (let [situation (cg/world [2 1 {}])]
+    (doseq [[index attr] [[14 :shadow] [15 :blur] [16 :background-blur]
+                          [17 :r2] [18 :r3] [19 :r4]]]
+      (let [resolved (cg/resolve-op situation {} [:style 0 index 1 1])]
+        (t/is (= attr (:property resolved)))
+        (t/is (some? (:op resolved)))
+        (when (= attr (:property resolved))
+          (t/is (not= (get (:shape resolved) attr) (:value resolved))))))))
+
+(t/deftest effect-and-corner-overrides-reject-lost-values-or-groups
+  (doseq [[index attr group] [[14 :shadow :shadow-group] [15 :blur :blur-group]
+                              [16 :background-blur :blur-group] [17 :r2 :radius-group]
+                              [18 :r3 :radius-group] [19 :r4 :radius-group]]]
+    (let [initial   (cg/initial-state [1 0 {}])
+          resolved  (cg/resolve-op (:situation initial) {} [:style 0 index 1 1])
+          shape     (:shape resolved)
+          expected  (shadow/values (assoc shape attr (:value resolved)) group)
+          edited    (-> initial (cg/step [:style 0 index 1 1]) cg/settle-state)
+          situation (:situation edited)
+          model     (:model edited)
+          file      (tm/file situation)
+          path      [:data :pages-index (:id (thf/current-page file)) :objects (:id shape)]
+          invariant (fn [file]
+                      (try (oracle/check (tm/with-file situation file) model) nil
+                           (catch #?(:clj Exception :cljs js/Error) error
+                             (:invariant (ex-data error)))))]
+      (t/is (= expected (get-in model [(:id shape) group])))
+      (t/is (= :I9 (invariant (update-in file path
+                                         #(merge (dissoc % attr) (select-keys shape [attr]))))))
+      (t/is (= :I3 (invariant (update-in file (conj path :touched) disj group)))))))
+
+(t/deftest main-effect-and-corner-edits-reach-clean-copies-and-spare-overrides
+  (doseq [property (range 14 20)]
+    (let [initial    (cg/initial-state [1 0 {}])
+          situation  (:situation initial)
+          resolved   (cg/resolve-op situation {} [:style 0 property 1 1])
+          copy       (:shape resolved)
+          attr       (:property resolved)
+          main-index (first (keep-indexed (fn [index entry]
+                                            (when (= (:shape-ref copy) (get-in entry [:shape :id])) index))
+                                          (cg/candidates situation {} :edit 0)))
+          main-edit  [:style main-index property 0 0]
+          copies     (filter #(= (:shape-ref copy) (get-in % [:shape :shape-ref])) (cg/tree situation))
+          inherited  (-> initial (cg/step main-edit) cg/settle-state)
+          overridden (-> inherited (cg/step [:style 0 property 1 1]) cg/settle-state)
+          updated    (-> overridden (cg/step (assoc main-edit 3 2)) cg/settle-state)
+          requested  (:value (cg/resolve-op situation {} (assoc main-edit 3 2)))]
+      (t/is (some? main-index))
+      (t/is (= 2 (count copies)))
+      (t/is (not= requested (:value resolved)))
+      (doseq [{:keys [shape]} copies]
+        (let [actual (tm/shape-by-id (:situation updated) (:id shape))]
+          (t/is (= (if (= (:id copy) (:id shape)) (:value resolved) requested) (get actual attr)))
+          (t/is (= (= (:id copy) (:id shape)) (boolean (seq (:touched actual)))))))
+      (t/is (map? (cg/run {:world [1 0 {}]
+                           :ops [main-edit [:style 0 property 1 1] (assoc main-edit 3 2)
+                                 [:undo] [:redo]]}))))))
+
+(t/deftest generated-effects-and-corners-survive-component-operations
+  (doseq [property (range 14 20)]
+    (t/is (map? (cg/run {:world [2 1 {:variants true :rich-variants true}]
+                         :ops [[:style 0 property 1 1] [:style 1 property 1 0]
+                               [:undo] [:redo] [:update-main 0]
+                               [:style 0 property 0 1] [:reset 0]
+                               [:style 0 property 1 1] [:detach 0]
+                               [:undo] [:redo]]})))))
+
 (t/deftest text-style-edits-cover-every-style-unit
   (doseq [[unit group] (map-indexed vector
                                     [:text-content-family :text-content-weight :text-content-size

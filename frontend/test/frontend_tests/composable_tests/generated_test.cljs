@@ -93,6 +93,15 @@
                   :ops [[:delete 9 9 1 2] [:text 5 9 1 3] [:style 3 1 1]
                         [:restore 5 8 1 6] [:nest 5 6 0 2] [:undo] [:redo]]})))
 
+(t/deftest ^:async generated-effects-and-corners-survive-component-operations
+  (doseq [property (range 14 20)]
+    (await (replay {:world [2 1 {:variants true :rich-variants true}]
+                    :ops [[:style 0 property 1 1] [:style 1 property 1 0]
+                          [:undo] [:redo] [:update-main 0]
+                          [:style 0 property 0 1] [:reset 0]
+                          [:style 0 property 1 1] [:detach 0]
+                          [:undo] [:redo]]}))))
+
 (t/deftest ^:async swapping-a-copy-with-authored-position-constraints-stays-settled
   (await (replay {:world [2 1 {:library true :variants true :rich-variants true
                                :text true :text-styles true :layout :flex :layout-copies true}]

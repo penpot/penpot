@@ -373,7 +373,28 @@
    [:layout-item-margin [{:m1 0 :m2 0 :m3 0 :m4 0} {:m1 4 :m2 4 :m3 4 :m4 4}]]
    [:layout-gap [{:row-gap 0 :column-gap 0} {:row-gap 8 :column-gap 8}]]
    [:layout-padding [{:p1 0 :p2 0 :p3 0 :p4 0} {:p1 8 :p2 8 :p3 8 :p4 8}]]
-   [:layout-align-items [:start :center :end]]])
+   [:layout-align-items [:start :center :end]]
+   [:shadow [[] [{:id #uuid "10000000-0000-0000-0000-000000000001"
+                  :style :drop-shadow :color {:color "#000000" :opacity 0.5}
+                  :offset-x 2 :offset-y 3 :blur 4 :spread 1 :hidden false}]
+             [{:id #uuid "10000000-0000-0000-0000-000000000001"
+               :style :inner-shadow :color {:color "#ff0000" :opacity 0.75}
+               :offset-x -2 :offset-y 4 :blur 8 :spread 2 :hidden false}]]]
+   [:blur [{:id #uuid "10000000-0000-0000-0000-000000000002"
+            :type :layer-blur :value 0 :hidden true}
+           {:id #uuid "10000000-0000-0000-0000-000000000002"
+            :type :layer-blur :value 4 :hidden false}
+           {:id #uuid "10000000-0000-0000-0000-000000000002"
+            :type :layer-blur :value 12 :hidden false}]]
+   [:background-blur [{:id #uuid "10000000-0000-0000-0000-000000000003"
+                       :type :background-blur :value 0 :hidden true}
+                      {:id #uuid "10000000-0000-0000-0000-000000000003"
+                       :type :background-blur :value 6 :hidden false}
+                      {:id #uuid "10000000-0000-0000-0000-000000000003"
+                       :type :background-blur :value 16 :hidden false}]]
+   [:r2 [0 8 16]]
+   [:r3 [0 8 16]]
+   [:r4 [0 8 16]]])
 
 (def text-style-edits
   "All twelve style units, independent of the production text group table."

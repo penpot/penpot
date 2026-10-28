@@ -19,7 +19,9 @@
 (def groups
   {:fills :fill-group :opacity :layer-effects-group :name :name-group
    :strokes :stroke-group :hidden :visibility-group :blocked :modifiable-group
-   :r1 :radius-group :blend-mode :layer-effects-group :hide-fill-on-export :fill-group
+   :r1 :radius-group :r2 :radius-group :r3 :radius-group :r4 :radius-group
+   :shadow :shadow-group :blur :blur-group :background-blur :blur-group
+   :blend-mode :layer-effects-group :hide-fill-on-export :fill-group
    :show-content :show-content :fixed-scroll :constraints-group
    :constraints-h :constraints-group :constraints-v :constraints-group
    :layout-item-margin :layout-item-margin :layout-gap :layout-gap
