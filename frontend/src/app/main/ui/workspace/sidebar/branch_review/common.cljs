@@ -190,11 +190,15 @@
 (defn- fmt-number
   "At most two decimals, trailing zeros stripped (89.99999 -> \"90\",
   439.4999 -> \"439.5\", 386 -> \"386\"), grouped and punctuated the way
-  the active locale writes numbers (\"439,5\" in Spanish)."
+  the active locale writes numbers (\"439,5\" in Spanish). It goes
+  through `Intl.NumberFormat`: once a plugin has loaded, the SES lockdown
+  turns `Number.prototype.toLocaleString` into `toString`, options and
+  all."
   [v]
-  (let [locale (-> i18n/*current-locale*
-                   (str/replace "_" "-"))]
-    (.toLocaleString v locale #js {:maximumFractionDigits 2})))
+  (let [locale (or (some-> i18n/*current-locale*
+                           (str/replace "_" "-"))
+                   js/undefined)]
+    (.format (js/Intl.NumberFormat. locale #js {:maximumFractionDigits 2}) v)))
 
 (defn- short-str
   [v]
