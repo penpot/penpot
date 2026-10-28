@@ -603,11 +603,12 @@
                 (dwsh/update-shapes
                  parent-ids
                  (fn [parent objects]
-                   (-> parent
-                       (fix-parent-sizing objects (set ids) attrs)
-                       (cond-> (ctl/grid-layout? parent)
-                         (ctl/assign-cells objects))))
-                 (merge options {:with-objects? true}))
+                   (fix-parent-sizing parent objects (set ids) attrs))
+                 (merge options {:with-objects? true :skip-grid-reassignment? true}))
+                (dwsh/update-shapes
+                 (filterv #(ctl/grid-layout? objects %) parent-ids)
+                 ctl/assign-cells
+                 (merge options {:with-objects? true :ignore-touched true}))
                 (ptk/data-event :layout/update {:ids ids})
                 (dwu/commit-undo-transaction undo-id)))))))
 

@@ -33,6 +33,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.reflow :as wrf]
+   [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.thumbnails-wasm :as dwthw]
@@ -53,6 +54,40 @@
    [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each ftm/fixture)
+
+(t/deftest ^:async making-a-grid-copy-child-absolute-keeps-parent-cells-derived
+  (await
+   (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
+     (let [situation (cg/world [1 0 {:layout :grid :layout-children true}])
+           copy-id   ((n/nth-copy-head-of "random-0" 0) situation)
+           child-id  (first (:shapes (tm/shape-by-id situation copy-id)))
+           main-id   (:shape-ref (tm/shape-by-id situation copy-id))
+           sibling   (first (remove #{child-id} (:shapes (tm/shape-by-id situation copy-id))))
+           source-id (:shape-ref (tm/shape-by-id situation sibling))
+           get-cell  (fn [parent id] (first (filter #(some #{id} (:shapes %))
+                                                    (vals (:layout-grid-cells parent)))))
+           _         (ftm/install! situation)]
+       (t/is (= :settled (await (ftm/await-step [(ptk/data-event :layout/update {:ids [main-id copy-id]})]))))
+       (let [before (ftm/snapshot)]
+         (t/is (= :settled (await (ftm/await-step [(dwsl/update-layout-child [child-id] {:layout-item-absolute true})]))))
+         (let [after (ftm/snapshot)
+               file  (ftm/current-file)]
+           (t/is (= #{:layout-item-absolute} (:touched (ths/get-shape-by-id file child-id))))
+           (t/is (empty? (:touched (ths/get-shape-by-id file copy-id))))
+           (t/is (nil? (get-cell (ths/get-shape-by-id file copy-id) child-id)))
+           (t/is (= :settled (await (ftm/await-step [dwu/undo]))))
+           (t/is (uc/same-state? before (ftm/snapshot)))
+           (t/is (= :settled (await (ftm/await-step [dwu/redo]))))
+           (t/is (uc/same-state? after (ftm/snapshot)))
+           (let [cell (get-cell (ths/get-shape-by-id (ftm/current-file) main-id) source-id)]
+             (t/is (some? cell))
+             (t/is (= :settled (await (ftm/await-step [(dwsl/update-grid-cells main-id [(:id cell)] {:align-self :end})]))))
+             (t/is (= :end (:align-self (get-cell (ths/get-shape-by-id (ftm/current-file) copy-id) sibling))))
+             (let [synced (ftm/snapshot)]
+               (t/is (= :settled (await (ftm/await-step [dwu/undo]))))
+               (t/is (uc/same-state? after (ftm/snapshot)))
+               (t/is (= :settled (await (ftm/await-step [dwu/redo]))))
+               (t/is (uc/same-state? synced (ftm/snapshot)))))))))))
 
 (t/deftest ^:async deleting-a-flex-child-undoes-with-its-delayed-reflow
   (await
