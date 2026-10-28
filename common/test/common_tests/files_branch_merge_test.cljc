@@ -2133,6 +2133,11 @@
         (map (fn [copy] [(:id copy) (select-keys copy [:follows :keeps :token-slots])]))
         (:copies (first (:copies r)))))
 
+(defn- merge-copies
+  "`bm/compute-merge` with the copies summary."
+  [base main branch dir]
+  (bm/compute-merge base main branch dir {:copies? true}))
+
 (t/deftest copies-list-a-copy-the-other-side-added-as-following
   ;; the branch edits the component, main adds a second copy: both
   ;; copies follow the merged component's fill
@@ -2141,12 +2146,15 @@
      (let [file   (component-with-copy)
            branch (tho/update-color file :main-child "#00ff00")
            main   (thc/instantiate-component file :c1 :copy2)
-           r      (bm/compute-merge (:data file) (:data main) (:data branch) :branch->main)]
+           r      (merge-copies (:data file) (:data main) (:data branch) :branch->main)]
        (t/is (= [{:component-id (thi/id :c1) :main-id (thi/id :main-root)}]
                 (mapv #(select-keys % [:component-id :main-id]) (:copies r))))
        (t/is (= {(thi/id :copy1) {:follows #{:fill-group} :keeps {} :token-slots {}}
                  (thi/id :copy2) {:follows #{:fill-group} :keeps {} :token-slots {}}}
-                (copies-of r)))))))
+                (copies-of r)))
+       (t/testing "without `:copies? true` the summary carries no copies"
+         (t/is (not (contains? (bm/compute-merge (:data file) (:data main) (:data branch) :branch->main)
+                               :copies))))))))
 
 (t/deftest copies-show-the-override-one-side-keeps
   (thi/test-fixture
@@ -2155,11 +2163,11 @@
            edited   (tho/update-color file :main-child "#00ff00")
            override (tho/update-bottom-color file :copy1 "#ff0000")]
        (t/testing "merging: the branch edits the component, main overrides the copy"
-         (let [r (bm/compute-merge (:data file) (:data override) (:data edited) :branch->main)]
+         (let [r (merge-copies (:data file) (:data override) (:data edited) :branch->main)]
            (t/is (= {(thi/id :copy1) {:follows #{} :keeps {:fill-group :main} :token-slots {}}}
                     (copies-of r)))))
        (t/testing "updating: main edits the component, the branch overrides the copy"
-         (let [r (bm/compute-merge (:data file) (:data edited) (:data override) :main->branch)]
+         (let [r (merge-copies (:data file) (:data edited) (:data override) :main->branch)]
            (t/is (= {(thi/id :copy1) {:follows #{} :keeps {:fill-group :branch} :token-slots {}}}
                     (copies-of r)))))))))
 
@@ -2171,7 +2179,7 @@
          (t/testing (name label)
            (let [main   (tho/update-color file label "#0000ff")
                  branch (tho/update-color file label "#00ff00")
-                 r      (bm/compute-merge (:data file) (:data main) (:data branch) :branch->main)]
+                 r      (merge-copies (:data file) (:data main) (:data branch) :branch->main)]
              (t/is (= [[(thi/id label) 1]]
                       (mapv (juxt :id :copies-affected) (:conflicts r)))))))
        (t/testing "a copy keeping its override of the conflict's group is not affected"
@@ -2183,7 +2191,7 @@
                                 (tho/update-bottom-color :copy1 "#ff0000")
                                 (tho/update-color label "#0000ff"))
                      branch (tho/update-color base label "#00ff00")
-                     r      (bm/compute-merge (:data base) (:data main) (:data branch) :branch->main)]
+                     r      (merge-copies (:data base) (:data main) (:data branch) :branch->main)]
                  (t/is (= [[(thi/id label) affected]]
                           (mapv (juxt :id :copies-affected) (:conflicts r)))))))))
        (t/testing "no copy follows the conflict's group: none is affected"
@@ -2191,9 +2199,44 @@
                           (tho/update-bottom-color :copy1 "#ff0000")
                           (tho/update-color :main-child "#0000ff"))
                branch (tho/update-color file :main-child "#00ff00")
-               r      (bm/compute-merge (:data file) (:data main) (:data branch) :branch->main)]
+               r      (merge-copies (:data file) (:data main) (:data branch) :branch->main)]
            (t/is (= [[(thi/id :main-child) 0]]
                     (mapv (juxt :id :copies-affected) (:conflicts r))))))))))
+
+(t/deftest copies-list-the-cascade-through-a-nested-copy
+  ;; the branch edits component1's main; component2's main holds a copy
+  ;; of component1, so the sync reaches component2's copy through it
+  (thi/test-fixture
+   (fn []
+     (let [file    (-> (thf/sample-file :file1)
+                       (tho/add-nested-component-with-copy :component1 :main1-root :main1-child
+                                                           :component2 :main2-root :nested2-head
+                                                           :copy2-root))
+           page    (thf/current-page file)
+           changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                               #{(:id (ths/get-shape file :main1-child))}
+                                               #(assoc % :fills (ths/sample-fills-color :fill-color "#fabada"))
+                                               (:objects page)
+                                               {})
+           edited  (thf/apply-changes file changes)
+           synced  (assoc edited :data (:data (bm/sync-copies (:id edited) (:data edited)
+                                                              #{(thi/id :component1)})))
+           summary (fn [branch]
+                     (into #{}
+                           (map (juxt :component-id :via #(into #{} (map :id) (:copies %))))
+                           (:copies (merge-copies (:data file) (:data file) (:data branch)
+                                                  :branch->main))))
+           expected #{[(thi/id :component1) nil #{(thi/id :nested2-head)}]
+                      [(thi/id :component2) (thi/id :component1) #{(thi/id :copy2-root)}]}]
+       (t/testing "the branch left its copies unsynced"
+         (t/is (= expected (summary edited))))
+       (t/testing "the branch synced its copies, as the workspace does"
+         (t/is (= expected (summary synced))))
+       (t/testing "component2's copy follows the fill"
+         (t/is (= #{:fill-group}
+                  (->> (:copies (merge-copies (:data file) (:data file) (:data edited) :branch->main))
+                       (filter #(= (thi/id :component2) (:component-id %)))
+                       first :copies first :follows))))))))
 
 (t/deftest a-settled-copy-shows-and-applies-nothing
   ;; both sides synced K from their own edit of the component, and the

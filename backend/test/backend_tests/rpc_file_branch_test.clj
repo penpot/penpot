@@ -1549,7 +1549,7 @@
                     (let [res (orig base main branch dir opts)]
                       (when (:only-pages opts)
                         (swap! pruned inc)
-                        (t/is (= (orig base main branch dir nil) res)
+                        (t/is (= (orig base main branch dir (dissoc opts :only-pages)) res)
                               "the pruned summary differs from the whole-file summary"))
                       res))]
       (f))

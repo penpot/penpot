@@ -1671,12 +1671,16 @@
              (subtree-ids oo main-instance-id))))))
 
 (defn- copy-heads
-  "`{component-id [[page-id head-id] ..]}`: the copies of `component-ids`
-  the target holds after the integration, those either side has minus
-  the ones either side deleted, nested copies included. Outside the
-  pages `keep?` admits, `ours` equals `base` (see `compute-merge`), so
-  the base stands in for it."
-  [base theirs ours keep? component-ids]
+  "`{component-id #{[page-id head-id]}}`: the copies of the components
+  `mains` names (`{component-id main-instance-id}`) the target holds
+  after the integration, those either side has minus the ones either
+  side deleted, copies nested in a component's main included. A copy
+  nested inside another copy counts when it refers to its component's
+  main itself (a swapped one). Otherwise it refers to the outer copy's
+  main, syncs through that component, and shows under it (see
+  `component-copies`). Outside the pages `keep?` admits, `ours` equals
+  `base` (see `compute-merge`), so the base stands in for it."
+  [base theirs ours keep? mains]
   (let [objects (fn [data pid] (get-in data [:pages-index pid :objects]))
         pages   (into (set (keys (:pages-index theirs)))
                       (filter keep?)
@@ -1686,19 +1690,24 @@
        (let [bo    (objects base pid)
              to    (objects theirs pid)
              oo    (if (keep? pid) (objects ours pid) bo)
-             head? (fn [shape]
-                     (and (contains? component-ids (:component-id shape))
-                          (not (ctk/main-instance? shape))))
+             head? (fn [objs {:keys [component-id shape-ref parent-id] :as shape}]
+                     (and (contains? mains component-id)
+                          (not (ctk/main-instance? shape))
+                          (or (not (ctk/in-component-copy? (get objs parent-id)))
+                              (= shape-ref (get mains component-id)))))
              kept? (fn [id]
                      (not (and (contains? bo id)
-                               (or (not (contains? to id)) (not (contains? oo id))))))]
-         (reduce (fn [acc shape]
-                   (let [id (:id shape)]
-                     (if (and (head? shape) (kept? id))
-                       (update acc (:component-id shape) (fnil conj #{}) [pid id])
-                       acc)))
-                 acc
-                 (concat (vals to) (when-not (identical? oo to) (vals oo))))))
+                               (or (not (contains? to id)) (not (contains? oo id))))))
+             scan  (fn [acc objs]
+                     (reduce (fn [acc shape]
+                               (let [id (:id shape)]
+                                 (if (and (head? objs shape) (kept? id))
+                                   (update acc (:component-id shape) (fnil conj #{}) [pid id])
+                                   acc)))
+                             acc
+                             (vals objs)))]
+         (cond-> (scan acc to)
+           (not (identical? oo to)) (scan oo))))
      {}
      pages)))
 
@@ -1723,7 +1732,10 @@
   followed and kept when the copy's shapes differ; a token slot takes
   the strongest decision (`override-rank`). `::followed` holds the
   `[main-shape-id group-or-slot]` pairs the copy follows, which
-  `with-copies-affected` reads and the summary leaves out."
+  `with-copies-affected` reads, and `::by-shape` the same per copy
+  shape, `{shape-id {:groups #{..} :slots #{..}}}`, which is what a
+  copy nested in another component's main changes there (see
+  `component-copies`). The summary leaves both out."
   [lookup main-ids changes pid head bo to oo]
   (let [main-of (fn [shape]
                   (loop [ref (:shape-ref shape) n 8]
@@ -1758,7 +1770,8 @@
                                                   (assoc % group (cond (and t? o?) (both) o? :branch :else :main))))
                             (-> acc
                                 (update :follows conj group)
-                                (update ::followed conj [m group])))))
+                                (update ::followed conj [m group])
+                                (update-in [::by-shape id :groups] (fnil conj #{}) group)))))
                       acc
                       (sort groups))]
              (reduce
@@ -1775,53 +1788,120 @@
                                        %
                                        (assoc % slot decision))))
                     (and (not t?) (not o?))
-                    (update ::followed conj [m slot]))))
+                    (-> (update ::followed conj [m slot])
+                        (update-in [::by-shape id :slots] (fnil conj #{}) slot)))))
               acc
               (sort-by name slots))))
-         {:follows #{} :keeps {} :token-slots {} ::followed #{}}
+         {:follows #{} :keeps {} :token-slots {} ::followed #{} ::by-shape {}}
          ids)]
     (assoc res
            :id      head
            :page-id pid
            :label   (entity-label :shape shape))))
 
+(defn- merge-main-changes
+  "Two `{main-shape-id {:groups #{..} :slots #{..}}}` maps as one."
+  [a b]
+  (merge-with (fn [x y]
+                {:groups (set/union (:groups x) (:groups y))
+                 :slots  (set/union (:slots x) (:slots y))})
+              a b))
+
 (defn- component-copies
-  "The `:copies` of the summary: one entry per local component whose
-  main the source `ours` changes against `base` in a way a copy syncs,
-  with every copy the target holds after the integration and how it
-  takes the change (`copy-summary`). Bounded to the pages `only-pages`
-  admits for the source's changes, as the page passes are; the copies
-  are looked up on every page. Ordered by component name, then id."
+  "The `:copies` of the summary: one entry per local component the sync
+  after the integration updates, with every copy the target holds after
+  it and how the copy takes the change (`copy-summary`).
+
+  A component the source changed directly (`component-main-changes`)
+  comes first. As `sync-copies` does, the sync of a copy nested in
+  another component's main changes that main in turn, in the groups and
+  slots the nested copy follows (`::by-shape`), so that component
+  cascades, round after round until nothing new changes. A component
+  whose changes all come from nested copies carries `:via`, the id of
+  the component whose copy first brought the change; one the source
+  changed elsewhere in its main too carries none.
+
+  The source's changes are bounded to the pages `only-pages` admits, as
+  the page passes are; the copies are looked up on every page. Ordered
+  by component name, then id."
   [base theirs ours only-pages]
-  (let [keep?   (if (some? only-pages) #(contains? only-pages %) (constantly true))
-        changed (into {}
-                      (keep (fn [component]
-                              (when (keep? (:main-instance-page component))
-                                (when-let [changes (component-main-changes base ours component)]
-                                  [(:id component) [component changes]]))))
-                      (ctkl/components-seq ours))]
-    (when (seq changed)
-      (let [heads  (copy-heads base theirs ours keep? (set (keys changed)))
-            lookup (fn [id]
-                     (some (fn [data]
-                             (some #(get-in % [:objects id]) (vals (:pages-index data))))
-                           [ours theirs base]))
-            objs   (fn [data pid] (get-in data [:pages-index pid :objects]))]
-        (->> changed
-             (map (fn [[cid [{cname :name :keys [main-instance-id main-instance-page]} changes]]]
-                    (let [main-ids (set (subtree-ids (objs ours main-instance-page) main-instance-id))]
-                      {:component-id   cid
-                       :component-name cname
-                       :main-id        main-instance-id
-                       :main-page-id   main-instance-page
-                       :copies         (->> (get heads cid)
-                                            (map (fn [[pid head]]
-                                                   (let [bo (objs base pid)]
-                                                     (copy-summary lookup main-ids changes pid head bo
-                                                                   (objs theirs pid)
-                                                                   (if (keep? pid) (objs ours pid) bo)))))
-                                            (sort-by (juxt :label (comp str :id)))
-                                            (vec))})))
+  (let [keep?      (if (some? only-pages) #(contains? only-pages %) (constantly true))
+        components (into {} (map (juxt :id identity)) (ctkl/components-seq ours))
+        direct     (into {}
+                         (keep (fn [{:keys [id main-instance-page] :as component}]
+                                 (when (keep? main-instance-page)
+                                   (when-let [changes (component-main-changes base ours component)]
+                                     [id changes]))))
+                         (vals components))]
+    (when (seq direct)
+      (let [heads     (copy-heads base theirs ours keep? (update-vals components :main-instance-id))
+            lookup    (fn [id]
+                        (some (fn [data]
+                                (some #(get-in % [:objects id]) (vals (:pages-index data))))
+                              [ours theirs base]))
+            objs      (fn [data pid] (get-in data [:pages-index pid :objects]))
+            target    (fn [pid] (if (keep? pid) (objs ours pid) (objs base pid)))
+            summarize (fn [cid changes]
+                        (let [{:keys [main-instance-id main-instance-page]} (get components cid)
+                              main-ids (set (subtree-ids (objs ours main-instance-page) main-instance-id))]
+                          (->> (get heads cid)
+                               (map (fn [[pid head]]
+                                      (copy-summary lookup main-ids changes pid head (objs base pid)
+                                                    (objs theirs pid) (target pid))))
+                               (sort-by (juxt :label (comp str :id)))
+                               (vec))))
+            ;; the component whose main holds the copy `id` of page `pid`
+            owner     (fn [pid id]
+                        (let [oo (target pid) to (objs theirs pid)
+                              look #(or (get oo %) (get to %))]
+                          (loop [id (:parent-id (look id)) n 1000]
+                            (when-let [shape (when (and (some? id) (not= id uuid/zero) (pos? n))
+                                               (look id))]
+                              (if (ctk/main-instance? shape)
+                                (:component-id shape)
+                                (recur (:parent-id shape) (dec n)))))))
+            limit     (inc (count components))
+            [copies _ cascaded via]
+            (loop [pending (set (keys direct))
+                   copies  {}
+                   changes direct
+                   casc    {}
+                   via     {}
+                   round   0]
+              (if (or (empty? pending) (> round limit))
+                [copies changes casc via]
+                (let [copies (reduce #(assoc %1 %2 (summarize %2 (get changes %2))) copies (sort pending))
+                      [changes casc via next]
+                      (reduce (fn [[changes casc via next :as acc] [cid copy]]
+                                (let [d (owner (:page-id copy) (:id copy))]
+                                  (if (and (some? d) (not= d cid) (contains? components d)
+                                           (seq (::by-shape copy)))
+                                    (let [merged (merge-main-changes (get changes d) (::by-shape copy))]
+                                      ;; the cascade is recorded even when the
+                                      ;; source already synced the nested copy
+                                      ;; there; `d` is summarized again only
+                                      ;; when its changes grew
+                                      [(assoc changes d merged)
+                                       (update casc d merge-main-changes (::by-shape copy))
+                                       (update via d #(or % cid))
+                                       (cond-> next (not= merged (get changes d)) (conj d))])
+                                    acc)))
+                              [changes casc via #{}]
+                              (for [cid (sort pending) copy (get copies cid)] [cid copy]))]
+                  (recur next copies changes casc via (inc round)))))]
+        (->> copies
+             (map (fn [[cid copies]]
+                    (let [{cname :name :keys [main-instance-id main-instance-page]} (get components cid)
+                          own (keys (get direct cid))]
+                      (cond-> {:component-id   cid
+                               :component-name cname
+                               :main-id        main-instance-id
+                               :main-page-id   main-instance-page
+                               :copies         copies}
+                        ;; changes only on the nested copies the cascade reached
+                        (and (contains? via cid)
+                             (every? #(contains? (get cascaded cid) %) own))
+                        (assoc :via (get via cid))))))
              (sort-by (juxt :component-name (comp str :component-id)))
              (vec))))))
 
@@ -1873,7 +1953,7 @@
   "The comparison itself. Both arities of `compute-merge` land here rather
   than one delegating to the other through the var, so that a test which
   counts engine calls counts comparisons and not dispatches."
-  [base main branch dir only-pages]
+  [base main branch dir only-pages copies?]
   (let [update?  (= dir :main->branch)
         [theirs ours] (if update? [branch main] [main branch])
         results  [(three-way-entities (strip-modified-at (:colors base))
@@ -1916,24 +1996,28 @@
         ;; owning component: the compare panel selects and groups by them
         decorate  (partial decorate-entry [ours theirs base])
         ;; the copies the integration syncs, named after the documents
-        ;; like the entries
-        copies    (cond->> (or (component-copies base theirs ours only-pages) [])
-                    update? (mapv doc-copies))
+        ;; like the entries; only on request, since it scans every page
+        copies    (when copies?
+                    (cond->> (or (component-copies base theirs ours only-pages) [])
+                      update? (mapv doc-copies)))
         changes   (mapv decorate changes)
-        conflicts (mapv (comp (partial with-copies-affected copies) decorate) conflicts)]
-    {:changes   changes
-     :conflicts conflicts
-     :copies    (mapv (fn [entry]
-                        (update entry :copies (partial mapv #(dissoc % ::followed))))
-                      copies)
-     ;; the tree-shape policies act per direction (`tree-modes`), so
-     ;; `compute-changes` needs to know which one this summary is
-     :dir       dir
-     ;; a `:settled` entry is no change: it counts nowhere
-     :stats     {:added     (count (filterv #(= :added (:status %)) changes))
-                 :modified  (count (filterv #(= :modified (:status %)) changes))
-                 :deleted   (count (filterv #(= :deleted (:status %)) changes))
-                 :conflicts (count conflicts)}}))
+        conflicts (cond->> (mapv decorate conflicts)
+                    copies? (mapv (partial with-copies-affected copies)))]
+    (cond-> {:changes   changes
+             :conflicts conflicts
+             ;; the tree-shape policies act per direction (`tree-modes`), so
+             ;; `compute-changes` needs to know which one this summary is
+             :dir       dir
+             ;; a `:settled` entry is no change: it counts nowhere
+             :stats     {:added     (count (filterv #(= :added (:status %)) changes))
+                         :modified  (count (filterv #(= :modified (:status %)) changes))
+                         :deleted   (count (filterv #(= :deleted (:status %)) changes))
+                         :conflicts (count conflicts)}}
+      copies?
+      (assoc :copies (mapv (fn [entry]
+                             (update entry :copies
+                                     (partial mapv #(dissoc % ::followed ::by-shape))))
+                           copies)))))
 
 (defn compute-merge
   "Compute the three-way diff between the merge `base`, `main` and
@@ -1942,7 +2026,7 @@
     {:changes   [<change descriptor> ...]   ; clean, branch -> main
      :conflicts [<conflict descriptor> ...] ; need resolution
      :stats     {:added n :modified n :deleted n :conflicts n}
-     :copies    [<component copies> ...]}
+     :copies    [<component copies> ...]}  ; with `:copies? true` only
 
   Every entry names the two DOCUMENTS, whatever `dir`: `:main` carries
   main's value, `:branch` the branch's, and each `:changed-attrs` pair
@@ -1952,6 +2036,10 @@
   branch's modification against main's deletion. The `:changes` do follow
   `dir` — `:branch->main` reports the branch's outgoing changes,
   `:main->branch` main's incoming ones.
+
+  `opts` may carry `:copies? true`, which adds `:copies` and each
+  conflict's `:copies-affected` (below): the scan it takes reads every
+  page of the target, so the callers that only count leave it out.
 
   `opts` may carry `:only-pages`, a set of page ids the page passes are
   bounded to. It is sound exactly when `ours` cannot differ from `base`
@@ -1989,11 +2077,17 @@
   in no `:stats`, `compute-changes` and `nothing-to-merge?` ignore it,
   and excluding it excludes nothing (`settled?`).
 
-  `:copies` lists, per local component whose main the source changes in
-  a way a copy syncs, the copies the target holds after the integration
-  and how each takes the change, ordered by component name:
+  `:copies` lists, per local component the sync after the integration
+  updates, the copies the target holds after it and how each takes the
+  change, ordered by component name. That is every component whose main
+  the source changes in a way a copy syncs, and every component whose
+  main holds a copy of one that follows it (the cascade `sync-copies`
+  runs), the latter with `:via`, the component it follows through, when
+  the source changed nothing else in its main. A copy nested inside
+  another copy shows under the outer copy's component:
 
     {:component-id id :component-name n :main-id id :main-page-id id
+     :via id                                ; cascade only
      :copies [{:id id :page-id id :label l
                :follows     #{group}       ; take the merged component's
                :keeps       {group side}   ; keep an override
@@ -2006,9 +2100,9 @@
   number of the component's listed copies that follow that shape in a
   sync group or token slot the conflict's attrs drive: a copy keeping
   its override there, on either side, does not take the resolution."
-  ([base main branch dir] (compute-merge* base main branch dir nil))
-  ([base main branch dir {:keys [only-pages]}]
-   (compute-merge* base main branch dir only-pages)))
+  ([base main branch dir] (compute-merge* base main branch dir nil false))
+  ([base main branch dir {:keys [only-pages copies?]}]
+   (compute-merge* base main branch dir only-pages (true? copies?))))
 
 (defn settled?
   "True for a summary entry that only shows a copy the copy rule settled

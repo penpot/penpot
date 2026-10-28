@@ -1050,7 +1050,7 @@
         ;; `:main-revn` so the client can do optimistic concurrency on merge
         ;; (`expected-main-revn`). The last editor's identity is intentionally
         ;; omitted: files do not store a reliable "modified-by".
-        (-> (bm/compute-merge base-data main-data branch-data dir opts)
+        (-> (bm/compute-merge base-data main-data branch-data dir (assoc opts :copies? true))
             (assoc :meta {:base-at   base-at
                           :main-at   (:modified-at main-file)
                           :branch-at (:modified-at branch-file)
@@ -1192,7 +1192,9 @@
                          :hint "main was modified, recompute the diff and retry"))
 
              (let [merge-summary (bm/compute-merge base-data (:data main-file)
-                                                   branch-data :branch->main)
+                                                   branch-data :branch->main
+                                                   ;; `:copies` for the conflict dialog
+                                                   {:copies? true})
                    conflicts  (:conflicts merge-summary)
                    ;; an excluded conflict is resolved: the exclusion IS the
                    ;; recorded choice, so it lands on the target side
@@ -1581,7 +1583,7 @@
                                  {::db/return-keys false})))
 
                  merge-summary
-                 (bm/compute-merge base-data main-raw branch-cmp :main->branch)
+                 (bm/compute-merge base-data main-raw branch-cmp :main->branch {:copies? true})
 
                  conflicts  (:conflicts merge-summary)
                  resolved?  (fn [c] (or (contains? excluded (:key c))
