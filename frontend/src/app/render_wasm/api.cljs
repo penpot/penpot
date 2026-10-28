@@ -1788,29 +1788,48 @@
           (sync-stale-text-selrects! affected-shapes))
         (update-text-layouts text-ids)))))
 
+(defn- await-pending-faces
+  "Completes once every face in `pending-faces` is stored or has failed.
+  Waits on the faces, not on fetch callbacks: a face whose URL is already
+  being fetched for another shape yields no callback for this one."
+  [pending-faces]
+  (if (empty? pending-faces)
+    (rx/empty)
+    (->> (rx/merge f/font-stored-stream f/font-storage-failed-stream)
+         (rx/filter pending-faces)
+         (rx/scan disj pending-faces)
+         (rx/filter empty?)
+         (rx/take 1)
+         (rx/ignore))))
+
 (defn process-pending
   [shapes thumbnails full text-font-state on-complete]
   (let [pending-thumbnails
         (d/index-by :key :callback thumbnails)
 
         pending-full
-        (d/index-by :key :callback full)]
+        (d/index-by :key :callback full)
+
+        pending-faces
+        (:pending-faces text-font-state)]
 
     ;; Run text layouts synchronously so shapes are immediately correct.
     (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)]
       (when (seq text-ids)
         (update-text-layouts text-ids)))
 
-    (if (or (seq pending-thumbnails) (seq pending-full))
-      (->> (rx/concat
-            (->> (rx/from (vals pending-thumbnails))
-                 (rx/merge-map (fn [callback] (if (fn? callback) (callback) (rx/empty))))
-                 (rx/reduce conj [])
-                 (rx/catch #(rx/empty)))
-            (->> (rx/from (vals pending-full))
-                 (rx/mapcat (fn [callback] (if (fn? callback) (callback) (rx/empty))))
-                 (rx/reduce conj [])
-                 (rx/catch #(rx/empty))))
+    (if (or (seq pending-thumbnails) (seq pending-full) (seq pending-faces))
+      (->> (rx/merge
+            (rx/concat
+             (->> (rx/from (vals pending-thumbnails))
+                  (rx/merge-map (fn [callback] (if (fn? callback) (callback) (rx/empty))))
+                  (rx/reduce conj [])
+                  (rx/catch #(rx/empty)))
+             (->> (rx/from (vals pending-full))
+                  (rx/mapcat (fn [callback] (if (fn? callback) (callback) (rx/empty))))
+                  (rx/reduce conj [])
+                  (rx/catch #(rx/empty))))
+            (await-pending-faces pending-faces))
            (rx/subs!
             noop-fn
             noop-fn
@@ -1818,7 +1837,7 @@
               (relayout-after-fonts! shapes text-font-state)
               (request-render "images-loaded")
               (when (fn? on-complete) (on-complete)))))
-      ;; No pending images — complete immediately.
+      ;; No pending images or faces: complete immediately.
       (when on-complete (on-complete)))))
 
 (defn process-objects
