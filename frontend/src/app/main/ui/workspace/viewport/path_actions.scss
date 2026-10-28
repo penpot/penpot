@@ -109,28 +109,6 @@
 }
 
 .topbar-btn {
-  --pathbar-icon-color: var(--color-foreground-secondary);
-  --button-tertiary-background-color-hover: var(--color-background-tertiary);
-
-  @extend %button-tertiary;
-
-  height: $sz-32;
-  width: $sz-32;
   flex-shrink: 0;
-  background-color: transparent;
-  border-radius: $br-8;
-  border: none;
   margin: 0 var(--sp-xxs);
-
-  &.is-toggled {
-    --pathbar-icon-color: var(--button-radio-foreground-color-active);
-
-    background-color: var(--button-radio-background-color-active);
-  }
-
-  .pathbar-icon {
-    @extend %button-icon;
-
-    stroke: var(--pathbar-icon-color);
-  }
 }
