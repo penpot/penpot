@@ -16,6 +16,7 @@ beforeEach(async () => {
     process.env.PENPOT_MCP_DEVENV = "false";
     process.env.PENPOT_MCP_REPL_ENABLE = "false";
     delete process.env.PENPOT_MCP_REDIS_URI;
+    delete process.env.PENPOT_MCP_AUTH_URI;
     server = new PenpotMcpServer(true);
     baseUrl = `http://127.0.0.1:${server.port}`;
     await server.start();
@@ -26,7 +27,7 @@ afterEach(async () => {
     process.env = previousEnv;
 });
 
-async function modernRequest(method: string, params: Record<string, unknown> = {}, query = "") {
+async function modernRequest(method: string, params: Record<string, unknown> = {}, query = "", bearer?: string) {
     return fetch(`${baseUrl}/mcp${query}`, {
         method: "POST",
         headers: {
@@ -34,6 +35,7 @@ async function modernRequest(method: string, params: Record<string, unknown> = {
             Accept: "application/json, text/event-stream",
             "MCP-Protocol-Version": "2026-07-28",
             "Mcp-Method": method,
+            ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
             ...(typeof params.name === "string" ? { "Mcp-Name": params.name } : {}),
         },
         body: JSON.stringify({
@@ -93,7 +95,8 @@ test("isolates user tokens across overlapping tool calls with the same request I
                     name: "execute_code",
                     arguments: { code: "return 1;" },
                 },
-                `?userToken=${token}`
+                token === "alice" ? "" : `?userToken=${token}`,
+                token === "alice" ? token : undefined
             );
             const body = (await response.json()) as { result: CallToolResult };
             assert.equal(response.status, 200, JSON.stringify(body));
@@ -133,5 +136,32 @@ test("supports older Streamable HTTP clients without allocating a session", asyn
         assert.ok(result.tools.some((tool) => tool.name === "execute_code"));
     } finally {
         await client.close();
+    }
+});
+
+test("OAuth challenges missing credentials and accepts bearer and query tokens", async () => {
+    await server.stop();
+    process.env.PENPOT_MCP_AUTH_URI = "https://penpot.example/api/mcp/oauth";
+    server = new PenpotMcpServer(true);
+    await server.start();
+
+    const missing = await modernRequest("tools/list");
+    assert.equal(missing.status, 401);
+    assert.match(missing.headers.get("www-authenticate") ?? "", /resource_metadata=/);
+
+    for (const useBearer of [true, false]) {
+        const client = new Client({ name: "oauth-test", version: "1" });
+        const transport = new StreamableHTTPClientTransport(
+            new URL(`${baseUrl}/mcp${useBearer ? "" : "?userToken=alice"}`),
+            useBearer ? { requestInit: { headers: { Authorization: "Bearer alice" } } } : undefined
+        );
+        try {
+            await client.connect(transport);
+            const result = await client.listTools();
+            const tool = result.tools.find((tool) => tool.name === "execute_code");
+            assert.ok(tool, "authenticated clients can discover execute_code");
+        } finally {
+            await client.close();
+        }
     }
 });

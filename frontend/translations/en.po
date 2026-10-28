@@ -9716,3 +9716,27 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/versions.cljs:462
 msgid "workspace.versions.warning.text"
 msgstr "Autosaved versions will be kept for %s days."
+
+msgid "mcp.oauth.title"
+msgstr "Connect to Penpot MCP"
+
+msgid "mcp.oauth.request"
+msgstr "%s wants to connect to Penpot."
+
+msgid "mcp.oauth.account"
+msgstr "You are signed in as %s."
+
+msgid "mcp.oauth.access"
+msgstr "This client can read and change designs through MCP connections established from Penpot."
+
+msgid "mcp.oauth.enable"
+msgstr "Allowing access enables the MCP integration and creates your MCP token if needed."
+
+msgid "mcp.oauth.approve"
+msgstr "Allow access"
+
+msgid "mcp.oauth.failed"
+msgstr "This request has expired, was already used, or could not be completed. Start the connection again from your MCP client."
+
+msgid "mcp.oauth.cancelled"
+msgstr "Connection cancelled"

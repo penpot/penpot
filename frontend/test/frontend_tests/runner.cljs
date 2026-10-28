@@ -131,6 +131,7 @@
    [frontend-tests.ui.inspect-stroke-tokens-test]
    [frontend-tests.ui.jobs-progress-test]
    [frontend-tests.ui.layout-container-multiple-test]
+   [frontend-tests.ui.mcp-authorize-test]
    [frontend-tests.ui.measurements-test]
    [frontend-tests.ui.measures-menu-props-test]
    [frontend-tests.ui.organization-team-switch-test]
@@ -152,6 +153,7 @@
    [frontend-tests.util-simple-math-test]
    [frontend-tests.util-text-clipboard-test]
    [frontend-tests.util-text-editor-test]
+   [frontend-tests.util-theme-test]
    [frontend-tests.util-webapi-test]
    [frontend-tests.util-zip-test]
    [frontend-tests.util.code-gen-markup-svg-wasm-test]
@@ -301,6 +303,7 @@
    'frontend-tests.ui.measurements-test
    'frontend-tests.ui.measures-menu-props-test
    'frontend-tests.ui.organization-team-switch-test
+   'frontend-tests.ui.mcp-authorize-test
    'frontend-tests.ui.routes-test
    'frontend-tests.render-dimensions-test
    'frontend-tests.text-editor-paste-guard-test
@@ -321,6 +324,7 @@
    'frontend-tests.util-simple-math-test
    'frontend-tests.util-text-clipboard-test
    'frontend-tests.util-text-editor-test
+   'frontend-tests.util-theme-test
    'frontend-tests.util-webapi-test
    'frontend-tests.util.code-gen-markup-svg-wasm-test
    'frontend-tests.util.dom.dnd-test
