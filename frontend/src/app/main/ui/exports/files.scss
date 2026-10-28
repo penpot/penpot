@@ -48,6 +48,12 @@
   flex-direction: column;
   gap: var(--sp-l);
   margin-block-end: var(--sp-xxl);
+
+  // like the import wizard: the rows scroll and the header and footer
+  // stay put, instead of the content pushing the footer out of the box
+  flex: 1;
+  min-block-size: 0;
+  overflow: hidden auto;
 }
 
 .modal-content-extended {
@@ -153,60 +159,153 @@
   margin: 0;
 }
 
-.file-entry {
-  --file-entry-color: var(--color-foreground-secondary);
+.phase-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
 
-  &.loading {
-    .file-name {
-      color: var(--color-foreground-secondary);
-    }
+.phase-title {
+  color: var(--color-foreground-primary);
+}
+
+.phase-message {
+  color: var(--color-foreground-secondary);
+  margin: 0;
+}
+
+.file-entry {
+  --file-entry-fg-color: var(--color-foreground-secondary);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+
+  &.success {
+    --file-entry-fg-color: var(--color-accent-success);
   }
 
   &.error {
-    .file-name {
-      color: var(--color-foreground-secondary);
+    --file-entry-fg-color: var(--color-accent-error);
 
-      .file-icon svg {
-        stroke: var(--color-foreground-secondary);
-      }
-    }
-  }
-
-  &.success {
-    .file-name {
-      color: var(--color-foreground-secondary);
-
-      .file-icon svg {
-        stroke: var(--color-foreground-secondary);
-      }
-    }
+    padding: var(--sp-m);
+    border-radius: $br-8;
+    background-color: var(--color-background-error);
   }
 }
 
-.file-name {
+.file-main {
   display: flex;
   align-items: center;
   gap: var(--sp-m);
+}
 
-  .file-icon {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    block-size: px2rem(16);
-    inline-size: px2rem(16);
-    color: var(--color-foreground-secondary);
-  }
+.file-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  block-size: px2rem(40);
+  inline-size: px2rem(40);
+  flex-shrink: 0;
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-secondary);
 
-  .file-name-label {
-    display: block;
-    max-inline-size: 99%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .error & {
+    background-color: var(--color-accent-error);
+    color: var(--color-background-error);
   }
 }
 
-.icon-status-tick {
-  fill: none;
-  stroke: var(--color-accent-primary);
+.file-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  flex: 1 1 auto;
+  min-inline-size: 0;
+
+  .error & {
+    color: var(--color-foreground-primary);
+  }
+}
+
+.file-name-label {
+  display: block;
+  max-inline-size: 99%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-foreground-primary);
+}
+
+.file-subtitle {
+  color: var(--color-foreground-secondary);
+
+  .error & {
+    color: var(--file-entry-fg-color);
+  }
+}
+
+.file-status {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  flex-shrink: 0;
+  color: var(--file-entry-fg-color);
+  white-space: nowrap;
+}
+
+.file-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.progress-message {
+  color: var(--color-foreground-secondary);
+}
+
+.progress-bar {
+  block-size: px2rem(4);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  overflow: hidden;
+}
+
+.progress-fill {
+  block-size: 100%;
+  border-radius: $br-8;
+  background-color: var(--color-accent-primary);
+
+  // the twin of the indeterminate bar of the import wizard: the stages
+  // of an export are not comparable one with another, so the fill slides
+  // through the bar while the job of the file runs
+  width: 40%;
+  animation: progress-slide 1.2s ease-in-out infinite;
+}
+
+@keyframes progress-slide {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(250%);
+  }
+}
+
+.file-error {
+  padding-inline-start: calc(px2rem(40) + var(--sp-m));
+
+  .error & {
+    padding-inline-start: 0;
+  }
+}
+
+.error-message {
+  display: flex;
+  align-items: flex-start;
+  color: var(--file-entry-fg-color);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }

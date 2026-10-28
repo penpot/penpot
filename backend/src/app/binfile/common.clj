@@ -1079,12 +1079,13 @@
     :else                     :detach-libraries))
 
 (defn export-cfg
-  "The domain cfg of an export: the frozen set of files and how their
-  libraries are handled."
-  [cfg {:keys [ids export-type]}]
+  "The domain cfg of an export: the frozen set of files, how their
+  libraries are handled, and where the package is written."
+  [cfg {:keys [file-ids export-type output]}]
   (-> cfg
-      (assoc ::ids ids)
-      (assoc ::export-type export-type)))
+      (assoc ::file-ids file-ids)
+      (assoc ::export-type export-type)
+      (assoc ::output output)))
 
 (defn import-cfg
   "The domain cfg of an import: the destination team/profile/project, the
