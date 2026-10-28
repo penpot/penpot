@@ -153,6 +153,162 @@
                                [:style 0 property 1 1] [:detach 0]
                                [:undo] [:redo]]})))))
 
+(t/deftest generated-layout-container-edits-have-distinct-inputs
+  (let [situation (cg/world [1 0 {:layout :flex}])]
+    (doseq [[index attr] [[20 :layout-flex-dir] [21 :layout-wrap-type]
+                          [22 :layout-justify-content] [23 :layout-align-content]
+                          [24 :layout-gap-type] [25 :layout-padding-type]]]
+      (let [resolved (cg/resolve-op situation {} [:style 0 index 1 1])]
+        (t/is (= attr (:property resolved)))
+        (t/is (some? (:op resolved)))
+        (t/is (not= (get (:shape resolved) attr) (:value resolved)))))))
+
+(t/deftest layout-container-fixture-has-several-children-before-copying
+  (doseq [layout [:flex :grid]]
+    (let [situation (cg/world [1 0 {:layout layout :layout-children true}])
+          main-id   ((n/main-head-of "random-0") situation)
+          entries   (cg/tree situation)
+          heads     (filter #(or (= main-id (get-in % [:shape :id]))
+                                 (= main-id (get-in % [:shape :shape-ref]))) entries)
+          ids       (map (comp :id :shape) entries)]
+      (t/is (= 3 (count heads)))
+      (t/is (= (count ids) (count (set ids))))
+      (doseq [{:keys [shape]} heads]
+        (t/is (= 3 (count (:shapes shape))))
+        (t/is (= {:row-gap 5 :column-gap 9} (:layout-gap shape)))
+        (t/is (= {:p1 3 :p2 6 :p3 9 :p4 12} (:layout-padding shape)))))))
+
+(def layout-container-cases
+  [[20 :layout-flex-dir :layout-flex-dir #{:flex}]
+   [21 :layout-wrap-type :layout-wrap-type #{:flex}]
+   [22 :layout-justify-content :layout-justify-content #{:flex :grid}]
+   [23 :layout-align-content :layout-align-content #{:flex :grid}]
+   [24 :layout-gap-type :layout-gap #{:flex :grid}]
+   [25 :layout-padding-type :layout-padding #{:flex :grid}]])
+
+(t/deftest multi-child-layout-fixtures-start-settled-before-user-actions
+  (doseq [layout [:flex :grid] depth [0 1]]
+    (let [situation (cg/world [2 depth {:layout layout :layout-copies true :layout-children true}])
+          main      (ths/get-shape (tm/file situation) :sync-random-0-head)]
+      (t/is (= {:row-gap 5 :column-gap 9} (:layout-gap main)))
+      (t/is (= {:p1 3 :p2 6 :p3 9 :p4 12} (:layout-padding main)))
+      (when (= layout :grid)
+        (let [assigned (mapcat :shapes (vals (:layout-grid-cells main)))]
+          (t/is (= (set (:shapes main)) (set assigned)))
+          (t/is (= (count (:shapes main)) (count assigned)))))
+      (t/is (= :valid (try (oracle/check situation {}) :valid
+                           (catch #?(:clj Exception :cljs js/Error) error
+                             (select-keys (ex-data error) [:invariant :group]))))))))
+
+(t/deftest moving-a-flow-layout-child-does-not-author-initial-reflow
+  (let [result (cg/run {:world [2 0 {:text true :text-styles true :layout :flex :layout-children true}]
+                        :ops [[:transform 0 0 0 2]]})]
+    (t/is (empty? (:model result)))
+    (t/is (every? #(empty? (get-in % [:shape :touched])) (cg/tree (:situation result))))))
+
+(t/deftest changing-source-margin-settles-copies-before-moving-a-flow-child
+  (let [result (cg/run {:world [2 0 {:text true :text-styles true :layout :flex :layout-children true}]
+                        :ops [[:style 0 10 1] [:transform 0 0 0 2]]})]
+    (t/is (every? #(not (contains? % :geometry-group)) (vals (:model result))))))
+
+(t/deftest justifying-a-single-flex-child-keeps-layout-finite
+  (t/is (map? (cg/run {:world [2 0 {:library true :variants true :rich-variants true
+                                    :text true :text-styles true :layout :flex :layout-copies true}]
+                       :ops [[:style 0 22 1]]}))))
+
+(t/deftest editing-library-copy-text-does-not-author-an-empty-typography
+  (let [result (cg/run {:world [2 0 {:variants true :text-styles true :library-variants true
+                                     :stale-libraries true :library-depth 1 :library true
+                                     :rich-variants true :library-text true :layout-copies true :text true}]
+                        :ops [[:text-style 14 0 0 0]]})]
+    (t/is (every? #(not (contains? % :text-content-typography)) (vals (:model result))))))
+
+(t/deftest layout-property-reflow-joins-the-primary-undo-group
+  (let [initial (cg/world [1 0 {:layout :flex :layout-children true}])
+        id      (thi/id :sync-random-0-copyhead-0)
+        ids     (:shapes (tm/shape-by-id initial id))
+        points  (fn [situation] (mapv #(:points (tm/shape-by-id situation %)) ids))
+        changed (r/step initial (n/change-property :sync-random-0-copyhead-0 :layout-gap
+                                                   {:row-gap 20 :column-gap 25}))
+        undone  (r/step changed (n/undo))
+        redone  (r/step undone (n/redo))]
+    (t/is (not= (points initial) (points changed)))
+    (t/is (= #{:layout-gap} (:touched (tm/shape-by-id changed id))))
+    (t/is (every? #(empty? (:touched (tm/shape-by-id changed %))) ids))
+    (t/is (= (oracle/snapshot initial) (oracle/snapshot undone)))
+    (t/is (= (oracle/snapshot changed) (oracle/snapshot redone)))))
+
+(t/deftest layout-container-edits-refuse-inapplicable-targets
+  (doseq [layout [nil :flex :grid] scope [0 1 2]]
+    (let [situation (cg/world [2 1 {:layout layout :layout-copies true :library true :text true}])]
+      (doseq [[property attr _ layouts] layout-container-cases]
+        (let [resolved (cg/resolve-op situation {} [:style 0 property 1 scope])]
+          (t/is (= attr (:property resolved)))
+          (if (and (contains? layouts layout) (not= scope 2))
+            (do
+              (t/is (some? (:op resolved)))
+              (t/is (= :frame (get-in resolved [:shape :type])))
+              (t/is (= layout (get-in resolved [:shape :layout]))))
+            (do
+              (t/is (nil? (:op resolved)))
+              (t/is (= :skip (get-in resolved [:trace :status]))))))))))
+
+(t/deftest layout-container-overrides-retain-values-and-companions
+  (doseq [[property attr group layouts] layout-container-cases
+          layout (sort layouts)]
+    (t/testing (str attr " in " layout)
+      (let [initial    (cg/initial-state [1 0 {:layout layout :layout-children true}])
+            situation  (:situation initial)
+            resolved   (cg/resolve-op situation {} [:style 0 property 1 1])
+            shape      (:shape resolved)
+            id         (:id shape)
+            expected   (case attr
+                         :layout-gap-type {:layout-gap-type (:value resolved) :layout-gap (:layout-gap shape)}
+                         :layout-padding-type {:layout-padding-type (:value resolved) :layout-padding (:layout-padding shape)}
+                         {attr (:value resolved)})
+            edited     (-> initial (cg/step [:style 0 property 1 1]) cg/settle-state)
+            after      (:situation edited)
+            file       (tm/file after)
+            path       [:data :pages-index (:id (thf/current-page file)) :objects id]
+            invariant  (fn [file]
+                         (try (oracle/check (tm/with-file after file) (:model edited)) nil
+                              (catch #?(:clj Exception :cljs js/Error) error
+                                (:invariant (ex-data error)))))
+            main-index (first (keep (fn [index]
+                                      (when (= (:shape-ref shape)
+                                               (get-in (cg/resolve-op situation {} [:style index property 0 0])
+                                                       [:shape :id])) index))
+                                    (range (count (cg/tree situation)))))
+            updated    (-> edited (cg/step [:style main-index property 1 0]) cg/settle-state
+                           (cg/step [:style main-index property 0 0]) cg/settle-state)
+            value      (:value (cg/resolve-op situation {} [:style main-index property 0 0]))
+            copies     (filter #(= (:shape-ref shape) (get-in % [:shape :shape-ref])) (cg/tree situation))]
+        (t/is (= expected (get-in edited [:model id group])))
+        (t/is (= #{group} (:touched (tm/shape-by-id after id))))
+        (t/is (= (select-keys shape [:layout-gap :layout-padding])
+                 (select-keys (tm/shape-by-id after id) [:layout-gap :layout-padding])))
+        (t/is (= :I9 (invariant (assoc-in file (conj path attr) (get shape attr)))))
+        (t/is (= :I3 (invariant (update-in file (conj path :touched) disj group))))
+        (t/is (some? main-index))
+        (t/is (= 2 (count copies)))
+        (doseq [{copy :shape} copies]
+          (let [actual (tm/shape-by-id (:situation updated) (:id copy))]
+            (t/is (= (if (= id (:id copy)) (:value resolved) value) (get actual attr)))
+            (t/is (= (if (= id (:id copy)) #{group} #{}) (set (:touched actual))))))
+        (t/is (= expected (get-in updated [:model id group])))))))
+
+(t/deftest layout-container-histories-survive-component-operations
+  (doseq [[property _ _ layouts] layout-container-cases
+          layout (sort layouts)]
+    (let [result (cg/run {:world [1 0 {:layout layout :layout-children true}]
+                          :ops [[:style 0 property 1 1] [:style 0 property 1 0]
+                                [:style 0 property 0 0] [:undo] [:redo] [:update-main 0]
+                                [:style 0 property 0 1] [:reset 0]
+                                [:style 0 property 0 1] [:detach 0] [:undo] [:redo]]})]
+      (doseq [kind [:style :update-main :reset :detach]]
+        (t/is (pos? (get-in result [:coverage :random kind :changed] 0))
+              (str kind " changes " property " in " layout))))))
+
 (t/deftest text-style-edits-cover-every-style-unit
   (doseq [[unit group] (map-indexed vector
                                     [:text-content-family :text-content-weight :text-content-size
@@ -468,6 +624,8 @@
         (t/is (false? (shadow/same-value? (:result-text after) :text-content-size expected)))))))
 
 (t/deftest switch-shadow-keeps-a-typography-only-with-its-style-ownership
+  (thi/new-id! :file1)
+  (thi/new-id! :heading)
   (doseq [[new-size keep-reference?] [[14 true] [22 false]]]
     (let [content #(thtx/content [[["Same text" {:size %}]]])
           applied (thtx/content

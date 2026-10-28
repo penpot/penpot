@@ -94,6 +94,57 @@
              (t/is (= :settled (await (ftm/await-step [dwu/redo]))))
              (t/is (uc/same-state? after (ftm/snapshot)) (str "one redo restores " mode)))))))))
 
+(t/deftest ^:async capped-history-keeps-a-primary-and-layout-entry-together
+  (await
+   (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
+     (let [initial (ftm/start-generated (cg/world [1 0 {:layout :flex :layout-children true}]))
+           filled  (loop [situation initial index 0]
+                     (if (< index (dec dwu/MAX-UNDO-SIZE))
+                       (recur (await (ftm/run-generated-step
+                                      situation
+                                      (n/change-property :sync-random-0-copyhead-0 :opacity
+                                                         (if (even? index) 0.4 0.7))))
+                              (inc index))
+                       situation))
+           capped  (await (ftm/run-generated-step filled (n/remove-child :random-0-layout-item-1)))
+           before  (ftm/snapshot)
+           checked (await (ftm/finish-generated capped))]
+       (t/is (empty? (uc/failures filled)))
+       (t/is (= dwu/MAX-UNDO-SIZE (count (get-in @st/state [:workspace-undo :items]))))
+       (t/is (empty? (uc/failures capped)))
+       (t/is (empty? (uc/failures checked)))
+       (t/is (uc/same-state? before (ftm/snapshot)))))))
+
+(t/deftest ^:async capped-history-keeps-checking-steps-and-rejects-missing-undo
+  (await
+   (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
+     (let [initial (ftm/start-generated (setup/simple-component-with-labeled-copy))
+           filled  (loop [situation initial index 0]
+                     (if (< index dwu/MAX-UNDO-SIZE)
+                       (let [next (await (ftm/run-generated-step situation
+                                                                 (n/change-property :copy-root :opacity
+                                                                                    (if (even? index) 0.4 0.7))))]
+                         (t/is (empty? (uc/failures next)))
+                         (recur next (inc index)))
+                       situation))
+           capped  (await (ftm/run-generated-step filled (n/detach :copy-root)))
+           before  (ftm/snapshot)
+           checked (await (ftm/finish-generated capped))]
+       (t/is (= dwu/MAX-UNDO-SIZE (count (get-in @st/state [:workspace-undo :items]))))
+       (t/is (empty? (uc/failures capped)))
+       (t/is (empty? (uc/failures checked)))
+       (t/is (uc/same-state? before (ftm/snapshot)))
+       (let [update-shapes dwsh/update-shapes
+             missing (await
+                      (mock/with-mocks*
+                        {dwsh/update-shapes (mock/stub
+                                             (fn [ids update-fn & [options]]
+                                               (update-shapes ids update-fn (assoc options :save-undo? false))))}
+                        (await (ftm/run-generated-step checked (n/change-property :copy-root :opacity 0.2)))))]
+         (t/is (= 0.2 (:opacity (ths/get-shape (ftm/current-file) :copy-root))))
+         (t/is (= :no-undo-entry (:phase (peek (uc/failures missing)))))
+         (t/is (= (inc (count (uc/failures checked))) (count (uc/failures missing)))))))))
+
 (t/deftest ^:async swapping-growing-text-undoes-with-the-component-choice
   (let [features (:features @st/state)]
     (thw/setup-wasm-mocks!)

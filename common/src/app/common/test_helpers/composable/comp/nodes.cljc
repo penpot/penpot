@@ -94,7 +94,9 @@
   #{:strokes :shadow :blur :background-blur :hidden :blocked :r1 :r2 :r3 :r4
     :blend-mode :hide-fill-on-export :show-content
     :fixed-scroll :constraints-h :constraints-v :layout-item-margin
-    :layout-gap :layout-padding :layout-align-items})
+    :layout-gap :layout-padding :layout-align-items :layout-flex-dir
+    :layout-wrap-type :layout-justify-content :layout-align-content
+    :layout-gap-type :layout-padding-type})
 
 (defn set-property
   "`shape` with `property` set to `value`. Public so the frontend interpreter
@@ -135,27 +137,71 @@
   [property value]
   (if (= :name property) (cpn/clean-path value) value))
 
+(def ^:private layout-container-properties
+  #{:layout-gap :layout-padding :layout-align-items :layout-flex-dir
+    :layout-wrap-type :layout-justify-content :layout-align-content
+    :layout-gap-type :layout-padding-type})
+
+(defn- with-layout-reflow
+  [changes id]
+  (let [objects   (pcb/get-objects changes)
+        tree      (gm/set-objects-modifiers {id {:modifiers (ctm/reflow-modifiers)}} objects)
+        transform (clp/modifiers-transform tree)]
+    (cls/generate-update-shapes changes (keys tree) transform objects
+                                {:ignore-touched true :attrs clp/transform-attrs})))
+
+(defn layout-reflow?
+  "Whether a property operation requires layout after its component sync."
+  [changes]
+  (::layout-reflow? changes))
+
+(defn get-layout-reflow-changes
+  "Derived layout changes on the current file's pages, after copy inputs sync."
+  [situation]
+  (reduce (fn [changes [_ page]]
+            (let [ids (into [] (keep #(when (:layout %) (:id %))) (vals (:objects page)))]
+              (if (empty? ids)
+                changes
+                (let [tree (gm/set-objects-modifiers
+                            (into {} (map #(vector % {:modifiers (ctm/reflow-modifiers)})) ids)
+                            (:objects page))
+                      next (cls/generate-update-shapes
+                            (pcb/empty-changes nil (:id page)) (keys tree)
+                            (clp/modifiers-transform tree) (:objects page)
+                            {:ignore-touched true :attrs clp/transform-attrs})]
+                  (pcb/concat-changes changes next)))))
+          (pcb/empty-changes)
+          (get-in (tm/file situation) [:data :pages-index])))
+
 (defrecord ChangeProperty [target property value]
   IComponentOperation
   (op-kind [_] :user)
 
   tm/IOperation
   (apply-to [this situation]
-    (let [the-file (tm/file situation)
-          shape-id (tm/target-shape-id situation target)
-          page     (thf/current-page the-file)
-          shape    (get-in page [:objects shape-id])
-          value'   (applied-value* property value)
-          changes  (cond-> (cls/generate-update-shapes
-                            (pcb/empty-changes nil (:id page))
-                            #{shape-id}
-                            (fn [shape] (set-property shape property value'))
-                            (:objects page)
-                            {})
-                     ;; renaming a main root renames its component too
-                     (and (= :name property) (ctk/main-instance? shape))
-                     (cll/generate-rename-component (:component-id shape) value' (:data the-file)))
-          file'    (thf/apply-changes the-file changes)]
+    (let [the-file  (tm/file situation)
+          shape-id  (tm/target-shape-id situation target)
+          page      (thf/current-page the-file)
+          shape     (get-in page [:objects shape-id])
+          value'    (applied-value* property value)
+          layout-id (cond
+                      (and (:layout shape) (contains? layout-container-properties property)) shape-id
+                      (and (= :layout-item-margin property)
+                           (:layout (get-in page [:objects (:parent-id shape)]))) (:parent-id shape))
+          changes   (cond-> (cls/generate-update-shapes
+                             (pcb/empty-changes nil (:id page))
+                             #{shape-id}
+                             (fn [shape] (set-property shape property value'))
+                             (:objects page)
+                             {})
+                      layout-id
+                      (-> (with-layout-reflow layout-id)
+                          (assoc ::layout-reflow? true))
+
+                      ;; renaming a main root renames its component too
+                      (and (= :name property) (ctk/main-instance? shape))
+                      (cll/generate-rename-component (:component-id shape) value' (:data the-file)))
+          file'     (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')
           (record-changes changes)

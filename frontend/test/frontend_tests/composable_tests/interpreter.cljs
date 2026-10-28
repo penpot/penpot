@@ -154,6 +154,11 @@
         :name
         [(dw/end-rename-shape id value)]
 
+        ;; Container controls use the sidebar transaction and reflow event.
+        (:layout-flex-dir :layout-wrap-type :layout-justify-content
+                          :layout-align-content :layout-gap-type :layout-padding-type)
+        [(dwsl/update-layout [id] {property value})]
+
         [(dwsh/update-shapes #{id} (fn [shape] (n/set-property shape property value)))]))
 
     (instance? n/EditText op)
@@ -550,14 +555,28 @@
 
 (defn- check-step
   "The round trip of user step `op`, given the snapshot `before` and the undo
-   index `index-before` taken before it. Resolves with the situation."
-  [situation op before index-before]
-  (let [step        (uc/step situation op)
+   history taken before it. Account for entries dropped by the history cap."
+  [situation op before index-before items-before]
+  (let [items-after (get-in @st/state [:workspace-undo :items])
+        evicted     (or (first (keep-indexed (fn [index item]
+                                               (when (= item (first items-after)) index))
+                                             (take (inc index-before) items-before)))
+                        0)
+        step        (uc/step situation op)
+        baseline    (uc/baseline situation)
+        situation   (cond-> situation
+                      (pos? evicted)
+                      (uc/mark-baseline (- (:depth baseline) evicted) (:snapshot baseline))
+                      (> evicted (inc (:depth baseline)))
+                      (uc/add-error step :expired-baseline "Undo entries expired before the segment was checked"))
         after       (snapshot)
         index-after (undo-index)]
-    (if (= index-before index-after)
+    (if (and (= index-before index-after)
+             (zero? evicted)
+             (= (:undo-group (get items-before index-before))
+                (:undo-group (get items-after index-after))))
       (js/Promise.resolve (uc/compare-states situation step :no-undo-entry before after))
-      (.then (round-trip-move situation dwu/undo step :undo before index-before)
+      (.then (round-trip-move situation dwu/undo step :undo before (- index-before evicted))
              (fn [[situation settled?]]
                (if settled?
                  (.then (round-trip-move situation dwu/redo step :redo after index-after)
@@ -580,8 +599,8 @@
     (step 0)))
 
 (defn- check-variant
-  "The end-of-variant round trip: undo back to the baseline, then redo as many
-   times. Resolves with the situation."
+  "Undo the retained history segment back to its baseline, then redo it.
+   Also runs before the cap drops entries, so every segment gets checked."
   [situation]
   (let [{:keys [depth] :as baseline} (uc/baseline situation)
         final       (snapshot)
@@ -707,12 +726,22 @@
           check-step?  (and (::undo-check? situation)
                             (contains? #{:user :frontend-only} kind))
           before       (when check-step? (snapshot))
-          index-before (undo-index)]
-      (if (sync-op? op)
+          index-before (undo-index)
+          items-before (when check-step? (get-in @st/state [:workspace-undo :items]))]
+      (cond
+        ;; Check the complete segment while its baseline is still reachable.
+        ;; Leave room for a primary commit and its delayed layout entry.
+        (and check-step?
+             (>= index-before (- dwu/MAX-UNDO-SIZE 2))
+             (< (:depth (uc/baseline situation)) index-before))
+        (.then (check-variant situation) #(run-ops (mark-baseline %) ops))
+
+        (sync-op? op)
         (let [situation (run-sync-op situation op)]
           (when (and (not (::generated situation)) (contains? golden-kinds kind))
             (observe-golden-step!))
           (run-ops situation (rest ops)))
+        :else
         (do
           (reset! step-errors [])
           (.then (await-step (op-events op situation) step-timeout-ms)
@@ -739,7 +768,7 @@
                          (cond
                            check-step?
                            ;; go on from the redone file, as the pure runner does
-                           (.then (check-step situation (unwrap op) before index-before)
+                           (.then (check-step situation (unwrap op) before index-before items-before)
                                   #(run-ops (refresh-generated %) (rest ops)))
 
                            ;; never undo past the state a case's own undo went back to

@@ -25,7 +25,10 @@
    :show-content :show-content :fixed-scroll :constraints-group
    :constraints-h :constraints-group :constraints-v :constraints-group
    :layout-item-margin :layout-item-margin :layout-gap :layout-gap
-   :layout-padding :layout-padding :layout-align-items :layout-align-items})
+   :layout-padding :layout-padding :layout-align-items :layout-align-items
+   :layout-flex-dir :layout-flex-dir :layout-wrap-type :layout-wrap-type
+   :layout-justify-content :layout-justify-content :layout-align-content :layout-align-content
+   :layout-gap-type :layout-gap :layout-padding-type :layout-padding})
 
 (defn attribute-applicable?
   "The clipping and background-export controls belong to frames."

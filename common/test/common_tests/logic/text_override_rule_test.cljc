@@ -15,6 +15,25 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
+(t/deftest absent-and-nil-typography-fields-do-not-author-a-reference
+  (let [base (thtx/content [[["Hello world"]]])
+        path [:children 0 :children 0 :children 0]
+        id   (thi/new-id! :typography)
+        file (thi/new-id! :file)
+        refs {:typography-ref-id id :typography-ref-file file}]
+    (doseq [[left right expected]
+            [[{} {:typography-ref-id nil :typography-ref-file nil} #{}]
+             [{:typography-ref-id nil :typography-ref-file nil} {} #{}]
+             [refs {} #{:typography}]
+             [refs (assoc refs :typography-ref-id (thi/new-id! :other-typography)) #{:typography}]
+             [refs (assoc refs :typography-ref-file (thi/new-id! :other-file)) #{:typography}]]]
+      (let [clear #(dissoc % :typography-ref-id :typography-ref-file)
+            main  (update-in base path #(merge (clear %) left))
+            copy  (update-in base path #(merge (clear %) right))]
+        (t/is (= expected (thtx/override-units main copy)))
+        (t/is (= (if (seq expected) #{:text-content-typography} #{})
+                 (txt/override-groups main copy)))))))
+
 (defn- overrides
   "The overrides of `copy` against `main` by the reference rule, checked
    against the production one (`txt/override-groups`)."

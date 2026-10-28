@@ -88,6 +88,16 @@
                             rx/timer mock/timer-mock}
            (await (replay-program program)))))
 
+(t/deftest ^:async layout-container-histories-survive-component-operations
+  (doseq [[property layouts] [[20 [:flex]] [21 [:flex]] [22 [:flex :grid]] [23 [:flex :grid]]
+                              [24 [:flex :grid]] [25 [:flex :grid]]]
+          layout layouts]
+    (await (replay {:world [1 0 {:layout layout :layout-children true}]
+                    :ops [[:style 0 property 1 1] [:style 0 property 1 0]
+                          [:style 0 property 0 0] [:undo] [:redo] [:update-main 0]
+                          [:style 0 property 0 1] [:reset 0]
+                          [:style 0 property 0 1] [:detach 0] [:undo] [:redo]]}))))
+
 (t/deftest ^:async nesting-a-copy-alongside-a-hidden-layout-child-stays-settled
   (await (replay {:world [3 0 {:text true :text-styles true :layout :flex}]
                   :ops [[:delete 9 9 1 2] [:text 5 9 1 3] [:style 3 1 1]

@@ -10,10 +10,12 @@
    Traces contain tree paths, never random UUIDs, and can be replayed."
   (:refer-clojure :exclude [flush])
   (:require
+   [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.modifiers :as gm]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.duplicate :as cld]
+   [app.common.logic.placement :as clp]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variants :as clv]
    [app.common.test-helpers.components :as thc]
@@ -59,6 +61,31 @@
           file (reduce-kv #(ths/update-shape %1 root %2 %3) (tm/file situation) defaults)
           file (cond-> file (= layout :grid) (tho/place-in-grid-columns root 2 {1 child}))]
       (tm/with-file situation file))))
+
+(defn- with-settled-layout
+  [situation name]
+  (let [file      (tm/file situation)
+        page      (thf/current-page file)
+        objects   (:objects page)
+        id        ((n/main-head-of name) situation)
+        tree      (gm/set-objects-modifiers {id {:modifiers (ctm/reflow-modifiers)}} objects)
+        transform (clp/modifiers-transform tree)
+        changes   (cls/generate-update-shapes
+                   (pcb/empty-changes nil (:id page)) (keys tree) transform objects
+                   {:ignore-touched true :attrs clp/transform-attrs})]
+    (tm/with-file situation (thf/apply-changes file changes))))
+
+(defn- with-layout-children
+  [situation name]
+  (let [parent (n/main-head-of name)]
+    (->> situation
+         (tm/apply-to (n/add-child parent (keyword (str name "-layout-item-1"))
+                                   :width 60 :height 30 :x 60 :y 0))
+         (tm/apply-to (n/add-child parent (keyword (str name "-layout-item-2"))
+                                   :width 60 :height 30 :x 120 :y 0))
+         (tm/apply-to (n/change-property parent :layout-gap {:row-gap 5 :column-gap 9}))
+         (tm/apply-to (n/change-property parent :layout-padding {:p1 3 :p2 6 :p3 9 :p4 12}))
+         (#(with-settled-layout % name)))))
 
 (defn- with-outer-layout
   [situation name layout]
@@ -172,9 +199,14 @@
                     (let [name (str "random-" index)]
                       (-> (tm/apply-to (n/create-component name setup/labeled-fill :size 100) s)
                           (with-layout name (when (zero? index) (:layout opts)))
+                          (cond-> (and (zero? index) (:layout opts) (:layout-children opts))
+                            (with-layout-children name))
                           (as-> s (reduce #(tm/apply-to %2 %1) s
                                           [(n/make-nested-component name depth)]))
-                          (with-outer-layout name (when (and (zero? index) (:layout-copies opts)) (:layout opts)))
+                          (with-outer-layout name (when (and (zero? index) (pos? depth) (:layout-copies opts)) (:layout opts)))
+                          (cond-> (and (zero? index) (pos? depth) (:layout opts)
+                                       (:layout-copies opts) (:layout-children opts))
+                            (with-settled-layout name))
                           (as-> s (reduce #(tm/apply-to %2 %1) s [(n/instantiate-copy name) (n/instantiate-copy name)])))))
                   (let [s (setup/empty-situation)
                         s (if (:variants opts)
@@ -394,7 +426,13 @@
                        :type :background-blur :value 16 :hidden false}]]
    [:r2 [0 8 16]]
    [:r3 [0 8 16]]
-   [:r4 [0 8 16]]])
+   [:r4 [0 8 16]]
+   [:layout-flex-dir [:row :column :row-reverse :column-reverse]]
+   [:layout-wrap-type [:nowrap :wrap]]
+   [:layout-justify-content [:start :space-between :center :end :space-around :space-evenly]]
+   [:layout-align-content [:stretch :center :end :start :space-between :space-around :space-evenly]]
+   [:layout-gap-type [:multiple :simple]]
+   [:layout-padding-type [:simple :multiple]]])
 
 (def text-style-edits
   "All twelve style units, independent of the production text group table."
@@ -438,7 +476,10 @@
                 (filter (fn [{:keys [shape]}]
                           (and (shadow/attribute-applicable? shape style-property)
                                (case style-property
-                                 (:layout-gap :layout-padding :layout-align-items) (some? (:layout shape))
+                                 (:layout-gap :layout-padding :layout-align-items
+                                              :layout-gap-type :layout-padding-type
+                                              :layout-justify-content :layout-align-content) (some? (:layout shape))
+                                 (:layout-flex-dir :layout-wrap-type) (= :flex (:layout shape))
                                  :layout-item-margin (some? (:layout (tm/shape-by-id situation (:parent-id shape))))
                                  true))))
                 (and (= kind :edit) (= 2 (mod (or property 0) 3)))
@@ -981,8 +1022,9 @@
   (gen/let [components (gen/choose 2 3)
             depth (gen/choose 0 2)
             layout (gen/elements [nil :flex :grid])
+            layout-children gen/boolean
             ops (operation-gen structure-kinds)]
-    {:world [components depth {:text true :text-styles true :layout layout}]
+    {:world [components depth {:text true :text-styles true :layout layout :layout-children layout-children}]
      :ops ops}))
 
 (def swap-kinds (into structure-kinds [:swap :switch]))
@@ -991,9 +1033,11 @@
   (gen/let [components (gen/choose 2 3)
             differ? gen/boolean
             layout (gen/elements [nil :flex :grid])
+            layout-children gen/boolean
             ops (operation-gen swap-kinds)]
     {:world [components 2 {:variants true :variant-diff differ? :rich-variants true
-                           :text true :text-styles true :layout layout :layout-copies true}]
+                           :text true :text-styles true :layout layout :layout-copies true
+                           :layout-children layout-children}]
      :ops ops}))
 
 (def library-kinds
@@ -1002,9 +1046,10 @@
 (def library-program-gen
   (gen/let [depth (gen/choose 0 2)
             layout (gen/elements [nil :flex :grid])
+            layout-children gen/boolean
             ops (operation-gen library-kinds)]
     {:world [2 depth {:library true :variants true :rich-variants true :text true :text-styles true
-                      :layout layout :layout-copies true}]
+                      :layout layout :layout-copies true :layout-children layout-children}]
      :ops ops}))
 
 (def stale-library-kinds
@@ -1014,10 +1059,11 @@
   (gen/let [depth (gen/choose 0 2)
             library-depth (gen/choose 1 2)
             layout (gen/elements [nil :flex :grid])
+            layout-children gen/boolean
             ops (operation-gen stale-library-kinds)]
     {:world [2 depth {:library true :stale-libraries true :library-variants true :library-text true
                       :library-depth library-depth :variants true :rich-variants true :text true :text-styles true
-                      :layout layout :layout-copies true}]
+                      :layout layout :layout-copies true :layout-children layout-children}]
      :ops ops}))
 
 (def dependency-kinds

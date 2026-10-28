@@ -474,7 +474,12 @@
 
 (defn- unit-value
   [node attrs]
-  (let [v (select-keys node attrs)]
+  (let [v (reduce (fn [value attr]
+                    (if (and (#{:typography-ref-id :typography-ref-file} attr)
+                             (nil? (get value attr)))
+                      (dissoc value attr)
+                      value))
+                  (select-keys node attrs) attrs)]
     ;; a default the editors leave out is the same as the default written
     (cond-> v
       (and (contains? (set attrs) :fills) (nil? (:fills v))) (assoc :fills nil))))

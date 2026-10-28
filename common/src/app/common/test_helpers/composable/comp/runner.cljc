@@ -78,10 +78,33 @@
      :syncs  (if (seq (:redo-changes changes)) [changes] [])
      :passes passes}))
 
+(defn- sync-with-layout
+  "Layout property edits also reflow their copies after sync. Keep each
+   derived pass so the primary action owns its full inverse."
+  [situation component-ids reflow?]
+  (loop [situation situation component-ids component-ids syncs [] passes 0]
+    (let [synced  (cf/sync-world situation component-ids)
+          before  (:situation synced)
+          syncs   (into syncs (:syncs synced))
+          changes (when reflow? (n/get-layout-reflow-changes before))]
+      (if (empty? (:redo-changes changes))
+        {:situation before :syncs syncs}
+        (let [after (cf/apply-changes before changes)]
+          ;; Grid order writers may record an already-correct order.
+          (if (= (:data (tm/file before)) (:data (tm/file after)))
+            {:situation before :syncs syncs}
+            (do
+              (when (>= passes 20)
+                (throw (ex-info "Layout did not settle after component sync"
+                                {:type ::layout-not-settled})))
+              (recur after (cf/changed-components before after changes)
+                     (conj syncs changes) (inc passes)))))))))
+
 (defn- sync-file
   [situation before changes]
   (let [{:keys [situation syncs]}
-        (cf/sync-world situation (cf/changed-components before situation changes))]
+        (sync-with-layout situation (cf/changed-components before situation changes)
+                          (n/layout-reflow? changes))]
     [(validate-settled! situation) syncs]))
 
 (defn- push-undo-group
@@ -295,6 +318,9 @@
                                         (sync-file situation before-situation changes)
                                         [situation []])]
                 (cond-> (push-undo-group situation (into [changes] syncs))
+                  (and (not sync?) (n/layout-reflow? changes))
+                  (assoc ::pending-layout? true)
+
                   (not sync?)
                   (update ::pending-components (fnil into #{})
                           (cf/changed-components before-situation situation changes)))))
@@ -382,9 +408,11 @@
   "Sync selected pending components in the latest user's undo group."
   ([situation] (settle situation (pending-components situation)))
   ([situation component-ids]
-   (let [{:keys [situation syncs]} (cf/sync-world situation component-ids)
+   (let [{:keys [situation syncs]} (sync-with-layout situation component-ids (::pending-layout? situation))
          stack (get situation ::undo-stack [])]
-     (cond-> (update situation ::pending-components #(apply disj (or % #{}) component-ids))
+     (cond-> (-> situation
+                 (dissoc ::pending-layout?)
+                 (update ::pending-components #(apply disj (or % #{}) component-ids)))
        (and (seq syncs) (seq stack))
        (assoc ::undo-stack (conj (pop stack) (into (peek stack) syncs)))))))
 
