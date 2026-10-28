@@ -8,7 +8,7 @@
   "What the detail pane says about an entry that has no before and after:
   a new or deleted page or layer, and the library entries other layers
   depend on. It answers what the entry is, where it lands and what it
-  affects, from the open file."
+  affects, from the open file and, for a layer it lacks, from the diff."
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
@@ -137,8 +137,17 @@
 (mf/defc shape-facts*
   "A new or deleted layer: where it lands (or was), what it is and, for a
   deleted main component, the copies it leaves behind."
-  [{:keys [item data incoming]}]
-  (let [objects  (get-in data [:pages-index (:page-id item) :objects])
+  [{:keys [item items data open-side incoming]}]
+  (let [open-objs (get-in data [:pages-index (:page-id item) :objects])
+        ;; a layer the open file lacks is read on the other side, where
+        ;; the changes of `items` put it and its deleted parents back
+        objects  (mf/with-memo [open-objs items item open-side]
+                   (if (or (contains? open-objs (:id item)) (nil? open-objs))
+                     open-objs
+                     (brp/side-objects open-objs
+                                       (filterv #(= (:page-id item) (:page-id %)) items)
+                                       (if (= open-side :main) :branch :main)
+                                       open-side)))
         shape    (get objects (:id item))
         page     (get-in data [:pages-index (:page-id item) :name])
         deleted? (= :deleted (:status item))

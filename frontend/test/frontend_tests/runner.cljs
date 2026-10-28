@@ -111,6 +111,7 @@
    [frontend-tests.tokens.token-errors-test]
    [frontend-tests.tokens.workspace-tokens-remap-test]
    [frontend-tests.ui.branch-review-common-test]
+   [frontend-tests.ui.branch-review-previews-test]
    [frontend-tests.ui.branches-compare-labels-test]
    [frontend-tests.ui.check-updates-test]
    [frontend-tests.ui.color-token-position-test]
@@ -270,6 +271,7 @@
    'frontend-tests.tokens.logic.tokens-status-test
    'frontend-tests.tokens.workspace-tokens-remap-test
    'frontend-tests.ui.branch-review-common-test
+   'frontend-tests.ui.branch-review-previews-test
    'frontend-tests.ui.branches-compare-labels-test
    'frontend-tests.ui.check-updates-test
    'frontend-tests.ui.color-token-position-test

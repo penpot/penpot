@@ -6,12 +6,13 @@
 
 (ns app.main.ui.workspace.sidebar.branch-review.previews
   "Visual previews of the two sides of a change. The diff carries whole
-  entities only for conflicts; for a clean change the open file holds one
-  side and the changed attrs give the other, which is enough to draw both
-  the layer and the board it sits in."
+  entities for conflicts and for added or deleted shapes; for a modified
+  entity the open file holds one side and the changed attrs give the
+  other, which is enough to draw both the layer and the board it sits in."
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.render :as render]
    [app.main.ui.ds.foundations.assets.icon :as i]
@@ -28,6 +29,11 @@
   icon instead."
   #{:rect :circle :frame :path :bool :text :group})
 
+(def ^:private box-shape-types
+  "Shape types whose geometry is their position and size; a path or a
+  boolean takes it from its content, a group from its children."
+  #{:rect :circle :frame :text :image :svg-raw})
+
 (defn open-side
   "Which document the open file is for `branch`: `:branch` when it is the
   branch file, `:main` otherwise."
@@ -41,7 +47,8 @@
   both; a clean change carries the attrs that differ, so the side the open
   file does not hold is the open entity with those attrs swapped in. An
   entry that does not exist on a side (added on the other one, or
-  deleted) has no entity there."
+  deleted) has no entity there. An added or deleted shape the open file
+  lacks comes whole in the entry's `:shape`."
   [item side open-side open-entity]
   (cond
     (= :conflict (:status item))
@@ -51,7 +58,7 @@
     open-entity
 
     (nil? open-entity)
-    nil
+    (:shape item)
 
     (and (= :added (:status item)) (= side :main))
     nil
@@ -60,18 +67,27 @@
     nil
 
     :else
-    (reduce-kv (fn [entity attr values]
-                 (let [v (get values side)]
-                   (if (nil? v)
-                     (dissoc entity attr)
-                     (assoc entity attr v))))
-               open-entity
-               (:changed-attrs item))))
+    (let [attrs  (:changed-attrs item)
+          entity (reduce-kv (fn [entity attr values]
+                              (let [v (get values side)]
+                                (if (nil? v)
+                                  (dissoc entity attr)
+                                  (assoc entity attr v))))
+                            open-entity
+                            attrs)]
+      ;; the diff leaves out `:selrect` and `:points` (they follow from
+      ;; position and size), so a box that moved or resized gets them
+      ;; again from its own, or it would draw with the open side's
+      (if (and (contains? box-shape-types (:type entity))
+               (some #(contains? attrs %) [:x :y :width :height]))
+        (cts/setup-rect (dissoc entity :selrect :points))
+        entity))))
 
 (defn side-objects
   "The page `objects` as they stand on `side`, with every shape change of
   `items` that lives on this page put on that side. A shape missing on
-  that side is taken out of its parent, so boards draw without it."
+  that side is taken out of its parent, so boards draw without it, and a
+  shape only that side holds is put into its parent, so boards draw it."
   [objects items side open-side]
   (reduce
    (fn [objects item]
@@ -80,7 +96,12 @@
        (let [id     (:id item)
              entity (side-entity item side open-side (get objects id))]
          (if (some? entity)
-           (assoc objects id entity)
+           (let [parent-id (:parent-id entity)]
+             (cond-> (assoc objects id entity)
+               (and (contains? objects parent-id)
+                    (not (contains? objects id))
+                    (not (some #(= id %) (get-in objects [parent-id :shapes]))))
+               (update-in [parent-id :shapes] (fnil conj []) id)))
            (let [parent-id (:parent-id (get objects id))]
              (cond-> (dissoc objects id)
                (contains? objects parent-id)
@@ -100,23 +121,47 @@
       (let [sr (:selrect shape)]
         {:x (:x sr 0) :y (:y sr 0) :width (:width sr 1) :height (:height sr 1)}))))
 
+(defn context-frame-id
+  "The nearest board that holds shape `id` in `objects`, the page root
+  left out: the stage an added or deleted layer is shown on."
+  [objects id]
+  (loop [parent-id (:parent-id (get objects id))
+         depth     0]
+    (let [parent (get objects parent-id)]
+      (cond
+        (or (nil? parent) (= parent-id uuid/zero) (>= depth 64)) nil
+        (= :frame (:type parent)) parent-id
+        :else (recur (:parent-id parent) (inc depth))))))
+
 (mf/defc shape-preview*
   "Renders `shape` to a fitted SVG with the real shape renderers. `objects`
-  supplies its children (a board or group draws them)."
+  supplies its children (a board or group draws them). `highlight`
+  (`{:id :status}`) outlines the layer an added or deleted change is
+  about, when `objects` holds it."
   {::mf/private true}
-  [{:keys [shape objects]}]
+  [{:keys [shape objects highlight]}]
   (let [{:keys [x y width height]} (shape-bounds shape)
         width   (max 1 width)
         height  (max 1 height)
         objects (mf/with-memo [shape objects]
                   (assoc (or objects {}) (:id shape) shape))
+        marked  (some->> (:id highlight) (get objects) shape-bounds)
         wrapper (mf/with-memo [objects] (render/shape-wrapper-factory objects))]
     [:svg {:class (stl/css :preview-svg)
            :viewBox (dm/str x " " y " " width " " height)
            :preserveAspectRatio "xMidYMid meet"
            :xmlns "http://www.w3.org/2000/svg"
            :fill "none"}
-     [:> wrapper {:shape shape}]]))
+     [:> wrapper {:shape shape}]
+     (when marked
+       [:rect {:class (stl/css-case :preview-highlight true
+                                    :is-added (= :added (:status highlight))
+                                    :is-deleted (= :deleted (:status highlight)))
+               :x (:x marked)
+               :y (:y marked)
+               :width (max 1 (:width marked))
+               :height (max 1 (:height marked))
+               :vector-effect "non-scaling-stroke"}])]))
 
 (mf/defc page-preview*
   "The whole page `objects` drawn to fit: every top-level layer, framed
@@ -192,8 +237,8 @@
   shapes render to SVG, library colors to a swatch, typographies to a text
   sample; everything else shows a type icon. A side with nothing to draw
   says why (`missing`: `{:reason :side :open-side}`, see
-  `missing-reason`)."
-  [{:keys [kind value objects missing]}]
+  `missing-reason`). A shape `highlight` is passed on to `shape-preview*`."
+  [{:keys [kind value objects missing highlight]}]
   (cond
     (nil? value)
     [:> missing-preview* {:reason (:reason missing :unavailable)
@@ -202,7 +247,7 @@
 
     (= kind :shape)
     (if (contains? renderable-shape-types (:type value))
-      [:> shape-preview* {:shape value :objects objects}]
+      [:> shape-preview* {:shape value :objects objects :highlight highlight}]
       [:div {:class (stl/css :preview-empty)}
        [:> i/icon* {:icon-id (brc/shape-icon-id {:shape-type (:type value)})}]])
 

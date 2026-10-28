@@ -226,7 +226,7 @@
   "MAIN and BRANCH, side by side, each with what it holds for the change."
   {::mf/private true}
   [{:keys [kind main-value branch-value main-objects branch-objects
-           main-detail branch-detail main-missing branch-missing large]}]
+           main-detail branch-detail main-missing branch-missing large highlight]}]
   [:div {:class (stl/css :cards)}
    [:> preview-card* {:label (tr "workspace.branches.review.side.main")
                       :side "main"
@@ -235,7 +235,8 @@
     [:> brp/entity-preview* {:kind kind
                              :value main-value
                              :objects main-objects
-                             :missing main-missing}]]
+                             :missing main-missing
+                             :highlight highlight}]]
    [:> preview-card* {:label (tr "workspace.branches.review.side.branch")
                       :side "branch"
                       :detail branch-detail
@@ -243,7 +244,8 @@
     [:> brp/entity-preview* {:kind kind
                              :value branch-value
                              :objects branch-objects
-                             :missing branch-missing}]]])
+                             :missing branch-missing
+                             :highlight highlight}]]])
 
 (mf/defc view-modes*
   "Side by side or overlay for the previews of a change, as icon toggles,
@@ -282,12 +284,23 @@
                      (when objects (brp/side-objects objects page-items :main open-side)))
         branch-objs (mf/with-memo [objects page-items open-side]
                       (when objects (brp/side-objects objects page-items :branch open-side)))
-        main-v    (if (= :shape kind)
-                    (or (get main-objs (:id item)) (get item :main))
-                    (brp/side-entity item :main open-side (library-entity data item)))
-        branch-v  (if (= :shape kind)
-                    (or (get branch-objs (:id item)) (get item :branch))
-                    (brp/side-entity item :branch open-side (library-entity data item)))
+        ;; an added or deleted layer inside a board is shown in it: the
+        ;; board on both sides, the layer outlined on the side that holds
+        ;; it, so the change reads as what the board gains or loses
+        stage     (when (and (= :shape kind) (contains? #{:added :deleted} (:status item)))
+                    (let [holder (if (contains? main-objs (:id item)) main-objs branch-objs)
+                          fid    (brp/context-frame-id holder (:id item))]
+                      (when (and (some? fid) (contains? main-objs fid) (contains? branch-objs fid))
+                        fid)))
+        highlight (when stage {:id (:id item) :status (:status item)})
+        main-v    (cond
+                    stage          (get main-objs stage)
+                    (= :shape kind) (or (get main-objs (:id item)) (get item :main))
+                    :else          (brp/side-entity item :main open-side (library-entity data item)))
+        branch-v  (cond
+                    stage          (get branch-objs stage)
+                    (= :shape kind) (or (get branch-objs (:id item)) (get item :branch))
+                    :else          (brp/side-entity item :branch open-side (library-entity data item)))
         main-detail   (some-> (:main-at diff-meta) ct/inst ct/timeago)
         branch-detail (some-> (:branch-at diff-meta) ct/inst ct/timeago)]
     (when (or main-v branch-v)
@@ -300,12 +313,15 @@
           [:div {:class (stl/css :overlay-stage)}
            (when main-v
              [:div {:class (stl/css :overlay-layer)}
-              [:> brp/entity-preview* {:kind kind :value main-v :objects main-objs}]])
+              [:> brp/entity-preview* {:kind kind :value main-v :objects main-objs
+                                       :highlight highlight}]])
            (when branch-v
              [:div {:class (stl/css :overlay-layer :is-top)}
-              [:> brp/entity-preview* {:kind kind :value branch-v :objects branch-objs}]])]]
+              [:> brp/entity-preview* {:kind kind :value branch-v :objects branch-objs
+                                       :highlight highlight}]])]]
          [:> side-cards* {:kind kind
                           :large large
+                          :highlight highlight
                           :main-value main-v
                           :branch-value branch-v
                           :main-objects main-objs
@@ -402,7 +418,8 @@
 
          :shape
          (when (contains? #{:added :deleted} (:status item))
-           [:> brf/shape-facts* {:item item :data data :incoming incoming}])
+           [:> brf/shape-facts* {:item item :items items :data data
+                                 :open-side open-side :incoming incoming}])
 
          (:component :color :typography :token)
          [:> brf/usage-facts* {:item item :data data}]
