@@ -11,7 +11,9 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes.flex-layout.bounds :as fb]
+   [app.common.geom.shapes.flex-layout.layout-data :as fld]
    [app.common.geom.shapes.grid-layout.bounds :as gb]
+   [app.common.geom.shapes.grid-layout.layout-data :as gld]
    [app.common.geom.shapes.min-size-layout :as msl]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
@@ -88,6 +90,27 @@
     (if (seq exclude-ids)
       (apply dissoc full exclude-ids)
       full)))
+
+(t/deftest layout-calculation-without-optional-padding
+  (doseq [layout-type [:flex :grid]
+          padding-type [nil :simple :multiple]]
+    (let [parent-id (uuid/next)
+          child-id  (uuid/next)
+          child     (make-rect child-id 10 10 50 50)
+          parent    (cond-> (dissoc (case layout-type
+                                      :flex (make-flex-frame parent-id [child-id])
+                                      :grid (make-grid-frame parent-id [child-id]))
+                                    :layout-padding :layout-padding-type)
+                      padding-type (assoc :layout-padding-type padding-type))
+          objects   (make-objects [parent child])
+          bounds    (bounds-map-from-objects objects)
+          calculate (case layout-type :flex fld/calc-layout-data :grid gld/calc-layout-data)
+          explicit  (assoc parent :layout-padding {:p1 0 :p2 0 :p3 0 :p4 0})]
+      (t/is (cts/valid-shape? parent))
+      (t/is (= (calculate explicit (:points parent) [[(:points child) child]] bounds
+                          (assoc objects parent-id explicit))
+               (calculate parent (:points parent) [[(:points child) child]] bounds objects))
+            (str "Absent padding must keep " layout-type " layout geometry")))))
 
 ;; ---- Tests for flex layout bounds with nil bounds ----
 

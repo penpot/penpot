@@ -354,6 +354,16 @@
                                  :layout-padding {:p1 8 :p2 10 :p3 99 :p4 99})]
       (t/is (= 16 (layout/v-padding shape))))))
 
+(t/deftest absent-layout-padding-means-zero
+  (doseq [layout-type [:flex :grid]
+          padding-type [nil :simple :multiple]]
+    (let [shape (cond-> (make-frame :layout layout-type)
+                  padding-type (assoc :layout-padding-type padding-type))]
+      (t/is (cts/valid-shape? shape) "Padding is optional in stored shapes")
+      (t/is (= [0 0 0 0] (layout/paddings shape)))
+      (t/is (zero? (layout/h-padding shape)))
+      (t/is (zero? (layout/v-padding shape))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; child-min/max-width/height
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

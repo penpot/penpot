@@ -328,24 +328,21 @@
 
 (defn paddings
   [{:keys [layout-padding-type layout-padding]}]
-  (let [{pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding]
+  (let [{pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4
+         :or {pad-top 0 pad-right 0 pad-bottom 0 pad-left 0}} layout-padding]
     (if (= :simple layout-padding-type)
       [pad-top pad-right pad-top pad-right]
       [pad-top pad-right pad-bottom pad-left])))
 
 (defn h-padding
-  [{:keys [layout-padding-type layout-padding]}]
-  (let [{pad-right :p2 pad-left :p4} layout-padding]
-    (if (= :simple layout-padding-type)
-      (+ pad-right pad-right)
-      (+ pad-right pad-left))))
+  [shape]
+  (let [[_ right _ left] (paddings shape)]
+    (+ right left)))
 
 (defn v-padding
-  [{:keys [layout-padding-type layout-padding]}]
-  (let [{pad-top :p1 pad-bottom :p3} layout-padding]
-    (if (= :simple layout-padding-type)
-      (+ pad-top pad-top)
-      (+ pad-top pad-bottom))))
+  [shape]
+  (let [[top _ bottom _] (paddings shape)]
+    (+ top bottom)))
 
 (defn padding-type-for
   "`:simple` when top≈bottom and left≈right, `:multiple` otherwise (nil sides = 0)."
