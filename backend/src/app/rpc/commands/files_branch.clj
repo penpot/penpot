@@ -241,24 +241,38 @@
 (def ^:private sql:media-rows-by-id
   "SELECT * FROM file_media_object WHERE id = ANY(?) AND deleted_at IS NULL")
 
+(defn- used-media-ids
+  "The media ids `data` references: `cfh/collect-used-media` plus the
+  library-color `:image` ids it does not see but `bm/remap-refs` rewrites."
+  [data]
+  (into (cfh/collect-used-media data)
+        (keep #(get-in % [:image :id]))
+        (vals (:colors data))))
+
+(defn- get-media-rows
+  "The live file_media_object rows with the given ids."
+  [cfg ids]
+  (if (seq ids)
+    (db/exec! cfg [sql:media-rows-by-id
+                   (db/create-array (db/get-connection cfg) "uuid" ids)])
+    []))
+
 (defn- unpaired-media-rows
   "Full file_media_object rows of `file-id` that are used by `data` but have
   no counterpart in `pairs` — media added on this side since branching.
-  They must be copied into the target file when the merge/update applies.
-
-  The used set is `cfh/collect-used-media` plus the library-color `:image`
-  ids it does not see but `bm/remap-refs` rewrites."
+  They must be copied into the target file when the merge/update applies."
   [cfg file-id data pairs]
-  (let [used (into #{}
-                   (remove pairs)
-                   (into (cfh/collect-used-media data)
-                         (keep #(get-in % [:image :id]))
-                         (vals (:colors data))))]
-    (if (seq used)
-      (->> (db/exec! cfg [sql:media-rows-by-id
-                          (db/create-array (db/get-connection cfg) "uuid" used)])
-           (filterv #(= file-id (:file-id %))))
-      [])))
+  (->> (get-media-rows cfg (into #{} (remove pairs) (used-media-ids data)))
+       (filterv #(= file-id (:file-id %)))))
+
+(defn- foreign-media-rows
+  "Full file_media_object rows used by `data` that another file owns. A
+  branch reads the images it inherited through its source's rows, and a
+  file that leaves the branch model must own copies: the source's
+  file-gc and the source's deletion take the source's rows along."
+  [cfg file-id data]
+  (->> (get-media-rows cfg (used-media-ids data))
+       (filterv #(not= file-id (:file-id %)))))
 
 (defn- copy-media-rows!
   "Insert copies of media `rows` into `file-id`, with the ids assigned in
@@ -1777,7 +1791,15 @@
                (binding [cfeat/*current*  (:features file)
                          cfeat/*previous* (:features file)]
 
-                 (let [libs   (bfc/get-resolved-file-libraries cfg file)
+                 (let [;; the images the branch reads through its source's
+                       ;; rows become its own: copies under fresh ids, and
+                       ;; the data re-pointed at them
+                       foreign (foreign-media-rows cfg branch-file-id (:data file))
+                       fresh   (into {} (map (fn [row] [(:id row) (uuid/next)])) foreign)
+                       _       (copy-media-rows! conn branch-file-id fresh foreign)
+                       file    (update file :data bm/remap-refs fresh)
+
+                       libs   (bfc/get-resolved-file-libraries cfg file)
                        errors (not-empty (cfv/validate-file file libs))
                        repair (if errors
                                 (cfr/repair-file file libs errors)

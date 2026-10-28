@@ -21,6 +21,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.rpc :as-alias rpc]
+   [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
@@ -240,3 +241,48 @@
         (t/is (= branch-file-id (:component-file (shape file page-id copy-id))))
         (t/is (empty? (validation-codes file)))))))
 
+(t/deftest materialize-owns-the-images-it-inherited
+  ;; a materialized file outlives its source's media rows only if it owns
+  ;; copies: main's file-gc and main's deletion take main's rows along
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)
+                                      :is-shared false})
+          main-id (:id file)
+          page-id (-> (get-file profile main-id) :data :pages first)
+          storage (-> (:app.storage/storage th/*system*)
+                      (assoc :app.storage/backend :fs))
+          sobj    (sto/put-object! storage {::sto/content (sto/content "photo")
+                                            :bucket :file-media-object
+                                            :content-type "image/png"})
+          fmo     (th/create-file-media-object* {:file-id main-id
+                                                 :name "photo.png"
+                                                 :mtype "image/png"
+                                                 :media-id (:id sobj)})
+          photo   (uuid/random)
+          _       (save profile main-id
+                        [(add-root page-id photo
+                                   (-> (cts/setup-shape {:id photo :name "Photo" :type :rect
+                                                         :x 0 :y 0 :width 100 :height 100
+                                                         :parent-id uuid/zero :frame-id uuid/zero})
+                                       (assoc :fills [{:fill-opacity 1
+                                                       :fill-image {:id (:id fmo) :width 100 :height 100
+                                                                    :mtype "image/png"}}])))])
+          branch-file-id (-> (th/command! {::th/type :create-file-branch
+                                           ::rpc/profile-id (:id profile)
+                                           :file-id main-id
+                                           :name "photos"})
+                             :result :branch-file-id)
+          out     (th/command! {::th/type :materialize-file-branch
+                                ::rpc/profile-id (:id profile)
+                                :branch-file-id branch-file-id})]
+      (t/is (nil? (:error out)))
+
+      (let [image-id (-> (get-file profile branch-file-id)
+                         (shape page-id photo)
+                         :fills first :fill-image :id)
+            row      (th/db-get :file-media-object {:id image-id})]
+        (t/is (not= (:id fmo) image-id))
+        (t/is (= branch-file-id (:file-id row)))
+        (t/is (= (:id sobj) (:media-id row)))))))
