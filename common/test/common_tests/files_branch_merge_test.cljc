@@ -1995,6 +1995,22 @@
               {:type :set-touched :touched #{:fill-group}}]
              ops))))
 
+(t/deftest reset-of-a-base-override-clears-it-on-the-target
+  ;; the base holds K's fill override; the branch reset it (the
+  ;; component's value, no `:fill-group`), main left K alone: the merge
+  ;; writes the value and clears the override, in that order, whatever
+  ;; order the attr diff yields
+  (let [base   (mkdata {:k (copy-shape "red" :touched #{:fill-group})})
+        branch (mkdata {:k (copy-shape "white")})]
+    (t/is (= [{:type :set :attr :fills :val [{:fill-color "white"}] :ignore-touched true}
+              {:type :set-touched :touched nil}]
+             (copy-ops (:changes (bm/compute-changes base base branch)))))
+    (t/testing "updating from main, the same reset on main reaches the branch"
+      (t/is (= [{:type :set :attr :fills :val [{:fill-color "white"}] :ignore-touched true}
+                {:type :set-touched :touched nil}]
+               (copy-ops (:changes (bm/compute-changes base base branch {}
+                                                       (bm/compute-merge base branch base :main->branch)))))))))
+
 (t/deftest clean-copy-change-marks-no-override
   ;; the branch synced K from its component and main left K alone: the
   ;; merge writes the value without marking it overridden

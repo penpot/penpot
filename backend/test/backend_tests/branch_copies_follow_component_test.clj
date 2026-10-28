@@ -20,7 +20,10 @@
   (:require
    [app.binfile.common :as bfc]
    [app.common.features :as cfeat]
+   [app.common.files.changes-builder :as pcb]
    [app.common.files.validate :as cfv]
+   [app.common.logic.libraries :as cll]
+   [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -97,8 +100,10 @@
 (defn- setup
   "Main holding a local component (main `:mi-id`) with one copy
   (`:copy-id`), branched once. `n` numbers the profile and the file, so
-  one test can build more than one."
-  [n]
+  one test can build more than one. With `:override`, the copy's fill is
+  overridden to that colour before branching, so the base holds the
+  override."
+  [n & {:keys [override]}]
   (let [profile (th/create-profile* n {:is-active true})
         file    (th/create-file* n {:profile-id (:id profile)
                                     :project-id (:default-project-id profile)
@@ -116,6 +121,8 @@
            {:type :add-component :id comp-id :name "Button" :path ""
             :main-instance-id mi-id :main-instance-page page-id}
            (copy-of page-id copy-id comp-id mi-id main-id)])
+    (when override
+      (save profile main-id [(set-fill page-id copy-id override)]))
     (let [branch (:result (th/command! {::th/type :create-file-branch
                                         ::rpc/profile-id (:id profile)
                                         :file-id main-id
@@ -302,3 +309,67 @@
       (let [out (update-branch ctx)]
         (t/is (= :conflicts (-> out :result :status)))
         (t/is (= #{copy-id} (conflict-ids out)))))))
+
+;; --- e: one side resets an override the base holds, the other leaves
+;; the copy alone
+
+(defn- reset-copy
+  "Reset the overrides of the copy `copy-id` in `file-id`, as the
+  workspace's \"reset overrides\" does (`cll/generate-reset-component`)."
+  [profile file-id page-id copy-id]
+  (let [file    (get-file profile file-id)
+        page    (ctn/make-container (get-in file [:data :pages-index page-id]) :page)
+        changes (cll/generate-reset-component (pcb/empty-changes) file {file-id file} page copy-id)]
+    (save profile file-id (:redo-changes changes))))
+
+(defn- follows-component?
+  "True when an edit of the component's fill on `file-id` reaches the
+  copy through the component sync the workspace runs after the edit
+  (`cll/generate-sync-file-changes`)."
+  [profile file-id page-id comp-id mi-id copy-id]
+  (save profile file-id [(set-fill page-id mi-id "#123456")])
+  (let [file    (get-file profile file-id)
+        changes (cll/generate-sync-file-changes (pcb/empty-changes) nil :components file-id
+                                                comp-id file-id {file-id file} file-id)]
+    (save profile file-id (:redo-changes changes))
+    (= "#123456" (fill (get-file profile file-id) page-id copy-id))))
+
+(t/deftest merge-keeps-a-reset-of-an-override-the-base-holds
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [{:keys [profile main-id branch-file-id page-id comp-id mi-id copy-id] :as ctx}
+          (setup 1 :override "#ff0000")]
+      (reset-copy profile branch-file-id page-id copy-id)
+      (t/testing "the reset clears the override on the branch"
+        (let [branch (get-file profile branch-file-id)]
+          (t/is (not (contains? (:touched (shape branch page-id copy-id)) :fill-group)))
+          (t/is (= (fill branch page-id mi-id) (fill branch page-id copy-id)))))
+
+      (let [out (merge-branch ctx)]
+        (t/is (nil? (:error out)))
+        (t/is (= :merged (-> out :result :status))))
+
+      (let [main (get-file profile main-id)]
+        (t/is (not (contains? (:touched (shape main page-id copy-id)) :fill-group)))
+        (t/is (= (fill main page-id mi-id) (fill main page-id copy-id)))
+        (t/is (empty? (validation-codes main))))
+      (t/is (follows-component? profile main-id page-id comp-id mi-id copy-id)))))
+
+(t/deftest update-keeps-a-reset-of-an-override-the-base-holds
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [{:keys [profile main-id branch-file-id page-id comp-id mi-id copy-id] :as ctx}
+          (setup 1 :override "#ff0000")]
+      (reset-copy profile main-id page-id copy-id)
+      (t/testing "the reset clears the override on main"
+        (let [main (get-file profile main-id)]
+          (t/is (not (contains? (:touched (shape main page-id copy-id)) :fill-group)))
+          (t/is (= (fill main page-id mi-id) (fill main page-id copy-id)))))
+
+      (let [out (update-branch ctx)]
+        (t/is (nil? (:error out)))
+        (t/is (= :updated (-> out :result :status))))
+
+      (let [branch (get-file profile branch-file-id)]
+        (t/is (not (contains? (:touched (shape branch page-id copy-id)) :fill-group)))
+        (t/is (= (fill branch page-id mi-id) (fill branch page-id copy-id)))
+        (t/is (empty? (validation-codes branch))))
+      (t/is (follows-component? profile branch-file-id page-id comp-id mi-id copy-id)))))
