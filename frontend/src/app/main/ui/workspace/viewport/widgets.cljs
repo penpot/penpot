@@ -181,7 +181,7 @@
            (let [name-input     (mf/ref-val ref)
                  name           (str/trim (dom/get-value name-input))]
              (reset! edition* false)
-             (st/emit! (dw/end-rename-shape frame-id name))
+             (st/emit! (dw/rename-shape-or-variant frame-id name))
              (on-frame-leave frame-id))))
 
         cancel-edit

@@ -31,3 +31,12 @@
     (t/is (= (first path) "group"))
     (t/is (= (second path) "subgroup"))
     (t/is (= (nth path 2) "name"))))
+
+(t/deftest normalize-path-name
+  (t/is (= "Button" (cpn/normalize-path-name "  Button  ")))
+  (t/is (= "Group / Button" (cpn/normalize-path-name "Group / Button")))
+  (t/is (nil? (cpn/normalize-path-name nil)))
+  (t/is (nil? (cpn/normalize-path-name "")))
+  (t/is (nil? (cpn/normalize-path-name "   ")))
+  (t/is (nil? (cpn/normalize-path-name "Button/")))
+  (t/is (nil? (cpn/normalize-path-name "Group / "))))
