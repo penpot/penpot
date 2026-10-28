@@ -275,9 +275,11 @@
     (when-not (state/consume! cfg :code (:code params) record)
       (clients/invalid! "invalid_grant"))
     ;; Regeneration deletes the old token row. Never substitute the profile's
-    ;; latest token for the one this approval authorized.
+    ;; latest token for the one this approval authorized, nor return it expired.
     (let [row (db/exec-one! (::db/pool cfg)
-                            ["SELECT token FROM access_token WHERE id = ? AND profile_id = ? AND type = 'mcp'"
+                            [(str "SELECT token FROM access_token"
+                                  " WHERE id = ? AND profile_id = ? AND type = 'mcp'"
+                                  " AND (expires_at IS NULL OR expires_at > now())")
                              (uuid/parse (:token-id value))
                              (uuid/parse (:profile-id value))])]
       (when-not row (clients/invalid! "invalid_grant"))

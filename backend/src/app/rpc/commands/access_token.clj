@@ -29,6 +29,14 @@
       AND id != ?
       AND type = 'mcp'")
 
+(def ^:private sql:get-valid-mcp-token
+  "SELECT * FROM access_token
+    WHERE profile_id = ?
+      AND type = 'mcp'
+      AND (expires_at IS NULL OR expires_at > now())
+    ORDER BY created_at DESC
+    LIMIT 1")
+
 (defn create-access-token
   "Create an access token with empty perms.
 
@@ -67,15 +75,14 @@
     (decode-row token)))
 
 (defn ensure-mcp-access!
-  "Enable MCP and return the profile's existing token, creating it only if absent.
+  "Enable MCP and return the profile's unexpired token, creating it if absent.
   Must run in a transaction. Lock the profile even when no token exists, so
   concurrent approvals and settings regeneration use the same lock. Enabling
-  MCP must not regenerate a token already held by a connected client."
+  MCP must not regenerate a token already held by a connected client; an
+  expired token is replaced because no client can use it."
   [{:keys [::db/conn] :as cfg} profile-id]
   (let [profile (profile/get-profile conn profile-id ::db/for-update true)
-        token   (first (db/query conn :access-token
-                                 {:profile-id profile-id :type "mcp"}
-                                 {:order-by [[:created-at :desc]]}))]
+        token   (db/exec-one! conn [sql:get-valid-mcp-token profile-id])]
     (when-not (:mcp-enabled (:props profile))
       (profile/update-profile-props cfg profile-id {:mcp-enabled true}))
     (if token

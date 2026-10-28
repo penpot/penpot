@@ -254,6 +254,16 @@
                           :name "From settings"})]
         (t/is (nil? error))
         (t/is (= (:token result) (:token (provision))))))
+    (t/testing "approval replaces an expired token"
+      (db/exec! th/*pool* [(str "UPDATE access_token SET expires_at = now() - interval '1 day'"
+                                " WHERE profile_id = ?")
+                           (:id prof)])
+      (let [expired (first (db/query th/*pool* :access-token {:profile-id (:id prof) :type "mcp"}))
+            token   (provision)]
+        (t/is (not= (:token expired) (:token token)))
+        (t/is (nil? (:expires-at token)))
+        (t/is (= [(:id token)]
+                 (map :id (db/query th/*pool* :access-token {:profile-id (:id prof) :type "mcp"}))))))
     (t/testing "concurrent approvals share one token"
       (db/delete! th/*pool* :access-token {:profile-id (:id prof)})
       (let [results (mapv deref (repeatedly 4 #(future (provision))))]

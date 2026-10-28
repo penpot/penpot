@@ -194,6 +194,30 @@
         (t/is (= 401 (::yres/status (redeem "wrong"))))
         (t/is (= (:token stored) (:access_token (body (redeem (:client_secret client))))))))))
 
+(t/deftest exchange-rejects-expired-token
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        stored   (db/tx-run! th/*system* access-token/ensure-mcp-access! (:id profile))
+        verifier (apply str (repeat 43 "a"))
+        client   (clients/register! th/*system* {:redirect_uris ["https://example.com/callback"]
+                                                 :token_endpoint_auth_method "none"})
+        code     (state/create! th/*system* :code
+                                {:client-id (:client_id client)
+                                 :redirect-uri "https://example.com/callback"
+                                 :resource (oauth/resource)
+                                 :challenge (state/digest verifier)
+                                 :profile-id (str (:id profile))
+                                 :token-id (str (:id stored))}
+                                120)]
+    (db/exec! th/*pool* ["UPDATE access_token SET expires_at = now() - interval '1 day' WHERE id = ?"
+                         (:id stored)])
+    (let [reply (request "/api/mcp/oauth/token" :method :post
+                         :headers {"content-type" "application/x-www-form-urlencoded"}
+                         :body-bytes (form {:grant_type "authorization_code" :code code
+                                            :client_id (:client_id client) :code_verifier verifier
+                                            :redirect_uri "https://example.com/callback"}))]
+      (t/is (= 400 (::yres/status reply)))
+      (t/is (= "invalid_grant" (:error (body reply)))))))
+
 (t/deftest authorization-rejects-unregistered-callback
   (let [client (clients/register! th/*system* {:redirect_uris ["https://example.com/callback"]})
         reply  (request "/api/mcp/oauth/authorize"
