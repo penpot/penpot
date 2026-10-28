@@ -77,6 +77,23 @@
     ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
 
+   :update-file-refused
+   {::mdef/name "penpot_rpc_update_file_refused_total"
+    ::mdef/help "Saves that raised out of update-file, by the furthest validation step reached and the error code."
+    ::mdef/labels ["stage" "code"]
+    ::mdef/type :counter}
+
+   :update-file-soft-failure
+   {::mdef/name "penpot_rpc_update_file_soft_failure_total"
+    ::mdef/help "Soft file validation failures, by the check that failed and a bounded reason."
+    ::mdef/labels ["check" "reason"]
+    ::mdef/type :counter}
+
+   :update-file-lagged
+   {::mdef/name "penpot_rpc_update_file_lagged_total"
+    ::mdef/help "Saves that passed the revision check with a revn behind the stored head."
+    ::mdef/type :counter}
+
    :rpc-main-timing
    {::mdef/name "penpot_rpc_main_timing"
     ::mdef/help "RPC command method call timing for main"
