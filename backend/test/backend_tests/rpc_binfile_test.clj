@@ -175,14 +175,14 @@
 
 (defn- import-file
   [profile path]
-  (let [out (th/command! {::th/type :import-binfile
-                          ::rpc/profile-id (:id profile)
-                          :project-id (:default-project-id profile)
-                          :name "imported"
-                          :file {:filename "imported.penpot"
-                                 :size (fs/size path)
-                                 :path path
-                                 :mtype "application/zip"}})]
+  (let [out (th/multipart-command! {::th/type :import-binfile
+                                    ::rpc/profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :name "imported"
+                                    :file {:filename "imported.penpot"
+                                           :size (fs/size path)
+                                           :path path
+                                           :mtype "application/zip"}})]
     (t/is (nil? (:error out)))
     (th/consume-sse (:result out))))
 
