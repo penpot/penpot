@@ -4,10 +4,16 @@ use std::collections::HashMap;
 
 use super::*;
 
-pub(crate) fn horizontal_zhuyin_origin(span: &TextSpan, rect: skia::Rect) -> skia::Point {
+/// Top-left of the Zhuyin strip beside a horizontal base whose em box starts
+/// at `em_top`.
+pub(crate) fn horizontal_zhuyin_origin(
+    span: &TextSpan,
+    rect: skia::Rect,
+    em_top: f32,
+) -> skia::Point {
     skia::Point::new(
         rect.right() - span.font_size * super::super::text_zhuyin::STRIP_WIDTH,
-        rect.top.max(rect.bottom - span.font_size),
+        em_top,
     )
 }
 
@@ -21,8 +27,10 @@ pub(crate) fn horizontal_zhuyin_entries(
     }
     let provider = get_resources().fonts.font_provider();
     let fallbacks = get_fallback_fonts();
+    let lines = laid_out.get_line_metrics();
     let mut entries = Vec::new();
     for (index, range) in horizontal_ruby_targets(paragraph, offsets) {
+        let base_start = range.start;
         let span = &paragraph.children()[index];
         let Some(syllable) = super::super::text_zhuyin::syllable(span) else {
             continue;
@@ -32,7 +40,9 @@ pub(crate) fn horizontal_zhuyin_entries(
         let Some(rect) = rects.first() else {
             continue;
         };
-        let origin = horizontal_zhuyin_origin(span, rect.rect);
+        let em_top =
+            horizontal_base_em_top(laid_out, &lines, base_start, span.font_size, rect.rect);
+        let origin = horizontal_zhuyin_origin(span, rect.rect, em_top);
         let size = span.ruby_font_size();
         for glyph in super::super::text_zhuyin::shape(span, &syllable, provider, fallbacks) {
             entries.push(crate::shapes::PositionData {
@@ -451,6 +461,7 @@ pub(crate) fn paint_horizontal_ruby(
 
     for (span_index, span_range) in horizontal_ruby_targets(paragraph, offsets) {
         let span = &paragraph.children()[span_index];
+        let base_start = span_range.start;
         let paint = horizontal_ruby_paint(
             laid_out,
             &offsets.ranges[span_index],
@@ -463,6 +474,9 @@ pub(crate) fn paint_horizontal_ruby(
         );
         if let Some(syllable) = super::super::text_zhuyin::syllable(span) {
             if let Some(rect) = rects.first() {
+                let em_top =
+                    horizontal_base_em_top(laid_out, &lines, base_start, span.font_size, rect.rect);
+                let origin = horizontal_zhuyin_origin(span, rect.rect, em_top);
                 for glyph in super::super::text_zhuyin::shape(
                     span,
                     &syllable,
@@ -472,7 +486,6 @@ pub(crate) fn paint_horizontal_ruby(
                     if let Some(blob) =
                         single_glyph_blob(&glyph.run.font, glyph.run.glyphs[glyph.glyph])
                     {
-                        let origin = horizontal_zhuyin_origin(span, rect.rect);
                         canvas.draw_text_blob(
                             &blob,
                             (x + origin.x + glyph.origin.x, y + origin.y + glyph.origin.y),
@@ -516,6 +529,13 @@ pub(crate) fn paint_horizontal_ruby(
                 shaped: &shaped,
                 glyphs: slice,
                 base: rect_box.rect,
+                em_top: horizontal_base_em_top(
+                    laid_out,
+                    &lines,
+                    base_start,
+                    span.font_size,
+                    rect_box.rect,
+                ),
                 leading_gap,
                 room,
             };
@@ -531,6 +551,8 @@ pub(super) struct RubyLine<'a> {
     pub glyphs: &'a [RubyGlyphRef],
     /// Base rect in the laid-out paragraph.
     pub base: skia::Rect,
+    /// Top of the base em box (`horizontal_base_em_top`).
+    pub em_top: f32,
     /// Spacing before the base, which sits on the previous character.
     pub leading_gap: f32,
     /// Overhang room (before, after) inside the line.
@@ -581,9 +603,7 @@ impl RubyLine<'_> {
         let over = self.span.ruby_side == RubySide::Over;
         let edge = ruby_line_ink_edge(self.shaped, self.glyphs, over);
         if over {
-            y + horizontal_annotation_over_top(self.base, self.span.font_size)
-                - edge
-                - self.span.ruby_decoration_offset(false)
+            y + self.em_top - edge - self.span.ruby_decoration_offset(false)
         } else {
             y + self.base.bottom() - edge + self.span.ruby_decoration_offset(false)
         }
