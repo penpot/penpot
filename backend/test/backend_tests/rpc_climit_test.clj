@@ -10,6 +10,8 @@
    [app.rpc.climit :as-alias climit]
    [app.util.services :as-alias sv]
    [backend-tests.helpers :as th]
+   [clojure.edn :as edn]
+   [clojure.java.io :as io]
    [clojure.test :as t]))
 
 (t/use-fixtures :once th/state-init)
@@ -156,3 +158,22 @@
   (t/is (= #{:a :b :c}
            (set (limit-order-cycle #{[:a :b] [:b :c] [:c :a]}))))
   (t/is (nil? (limit-order-cycle #{[:a :b] [:b :c]}))))
+
+(t/deftest every-declared-limit-has-an-entry-in-the-shipped-config
+  ;; `climit/wrap` logs a warning and runs the handler with no limiter at all
+  ;; when the config has no entry for a declared id, so the command runs on
+  ;; every thread that asks for it. The production file is maintained by hand
+  ;; outside the repository and mirrors this one, so a command declaring a limit
+  ;; the file does not list is the shape of an unbounded command in production.
+  (let [path     (io/resource "climit.edn")
+        config   (edn/read-string (slurp path))
+        declared (into #{}
+                       (mapcat (fn [[_ limits]] (declared-ids limits)))
+                       (method-limit-declarations))]
+
+    ;; the system wraps every command, so an empty set means the scan went stale
+    (t/is (seq declared))
+
+    (doseq [id declared]
+      (t/is (some? (get config id))
+            (str id " is declared by a command but has no entry in climit.edn")))))

@@ -10,8 +10,9 @@
 ;; limits it declares before the root ones, so the queue of a limit is where
 ;; its own pile-up waits. The root limits bound what runs at the same time,
 ;; not what waits for it.
-;; The production file lives outside this repository: mirror these values
-;; there.
+;; The production file lives outside this repository: mirror the shape there,
+;; not these numbers. It has to list every id a command declares: an id without
+;; an entry runs with no limiter at all.
 {:update-file/global
  {:permits 20 :queue 50 :timeout 60000}
  :update-file/by-profile
@@ -67,9 +68,6 @@
 
  :import-binfile/by-profile
  {:permits 1 :queue 2 :timeout 60000}
-
- :profile-plugin-ops/global
- {:permits 4 :queue 10 :timeout 30000}
 
  :profile-plugin-ops/by-profile
  {:permits 1 :queue 2 :timeout 30000}}
