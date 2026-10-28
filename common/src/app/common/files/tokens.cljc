@@ -747,6 +747,57 @@
             (d/ordered-map)
             ordered-active)))
 
+(defn- token-set-entries
+  "The tokens of `sets` as tokenscript takes them: `[[set-id tokens] ..]`
+  in the given order, later sets taking precedence."
+  [sets]
+  (mapv (fn [set] [(ctob/get-id set) (ctob/get-tokens- set)]) sets))
+
+(defn get-active-token-sets
+  "The active sets unmerged (see `token-set-entries`), the sets
+  `get-tokens-in-active-sets` merges."
+  [tokens-status tokens-lib]
+  (assert (ctos/tokens-status? tokens-status) "expected valid tokens-status")
+  (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
+  (let [active-set-ids (ctos/get-active-set-ids tokens-status)]
+    (-> (filter #(contains? active-set-ids (ctob/get-id %)) (ctob/get-sets tokens-lib))
+        (token-set-entries))))
+
+(defn get-active-token-sets-force
+  "Same as `get-active-token-sets` but force-including a set by id. A set
+  that is not active comes first, with the lowest precedence, as in
+  `get-tokens-in-active-sets-force`."
+  [tokens-status tokens-lib force-set-id]
+  (assert (uuid? force-set-id) "expected valid set id")
+  (let [forced (when-not (contains? (ctos/get-active-set-ids tokens-status) force-set-id)
+                 (ctob/get-set tokens-lib force-set-id))]
+    (cond->> (get-active-token-sets tokens-status tokens-lib)
+      forced (into (token-set-entries [forced])))))
+
+(defn get-token-sets-for-edit
+  "Every set of the library unmerged (see `token-set-entries`), with
+  `set-id` moved last so its tokens take precedence: the sets
+  `get-all-tokens-map` merges with the set of a token being edited on
+  top."
+  [tokens-lib set-id]
+  (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
+  (let [sets   (ctob/get-sets tokens-lib)
+        target (when set-id (d/seek #(= set-id (ctob/get-id %)) sets))]
+    (-> (cond-> (into [] (remove #(identical? % target)) sets)
+          target (conj target))
+        (token-set-entries))))
+
+(defn without-token
+  "`sets` (see `token-set-entries`) with the token `token-name` left out of
+  every set. A set without it stays the same object, so tokenscript skips
+  it as unchanged."
+  [sets token-name]
+  (mapv (fn [[set-id tokens :as entry]]
+          (if (contains? tokens token-name)
+            [set-id (dissoc tokens token-name)]
+            entry))
+        sets))
+
 (defn sync-tokens-status-with-lib
   "Synchronizes tokens status with the current tokens lib:
    - Delete any theme or set that no longer exists in the lib.
