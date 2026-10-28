@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.schema :as sm]
+   [app.common.types.profile :as types.profile]
    [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
@@ -62,17 +63,18 @@
         :label (tr "dashboard.your-name")}]]
 
      [:div {:class (stl/css :fields-row)
-            :on-click on-show-change-email}
+            :on-click (when-not (types.profile/oidc? profile) on-show-change-email)}
       [:& fm/input
        {:type "email"
         :name :email
         :disabled true
         :label (tr "dashboard.your-email")}]
 
-      [:div {:class (stl/css :options)}
-       [:div.change-email
-        [:a {:on-click on-show-change-email}
-         (tr "dashboard.change-email")]]]]
+      (when-not (types.profile/oidc? profile)
+        [:div {:class (stl/css :options)}
+         [:div.change-email
+          [:a {:on-click on-show-change-email}
+           (tr "dashboard.change-email")]]])]
 
      [:> fm/submit-button*
       {:label (tr "dashboard.save-settings")
