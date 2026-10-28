@@ -9,6 +9,7 @@
   (:require
    ["path" :as path]
    [app.common.transit :as transit]
+   [benches.render-wasm.feature-plan :as feature-plan]
    [benches.render-wasm.node.compare :as compare]
    [benches.render-wasm.node.options :as options]
    [clojure.string :as str]
@@ -49,6 +50,12 @@
    [nil "--[no-]default-features" "Enable Cargo defaults" :default true]
    [nil "--features FEATURES" "Comma-separated functional Cargo features"
     :parse-fn options/parse-feature-list]
+   [nil "--max-features N" "ab feature limit (1..6)"
+    :default feature-plan/default-max-features
+    :parse-fn parse-number
+    :validate [#(and (js/Number.isSafeInteger %) (<= 1 % 6)) "must be an integer from 1 to 6"]]
+   [nil "--confirm" "Confirm ab with >8 configurations or an empty filter" :default false]
+   [nil "--dry-run" "Validate and print the ab plan without executing" :default false]
    [nil "--build ID" "Reuse a ready build" :id :build-id
     :validate nonempty]
    [nil "--filter SUBSTR" "Select cases whose id contains SUBSTR"]
@@ -72,20 +79,40 @@
    [nil "--screenshots" "Capture one screenshot per case"]
    [nil "--only-builds" "Purge build attempts"]
    [nil "--only-runs" "Purge managed runs"]
+   [nil "--only-comparisons" "Purge managed feature comparisons"]
    [nil "--cases A,B" "Select one baseline,candidate pair"]
-   [nil "--force" "Bypass comparison compatibility checks"]])
+   [nil "--allow-build-differences" "Allow recorded build differences"]
+   [nil "--allow-scene-differences" "Allow scene inputs and fingerprint content differences"]
+   [nil "--allow-all-differences" "Allow all comparison compatibility differences"]])
 
 (defn usage
   [summary]
   (str "Usage: runner build [options]\n"
-       "       runner purge [--only-builds | --only-runs]\n"
+       "       runner purge [--only-builds | --only-runs | --only-comparisons]\n"
        "       runner run [options]\n"
-       "       runner compare BASELINE CANDIDATE [--cases A,B] [--force]\n\n"
+       "       runner ab --features A,B [--filter SUBSTR] [--max-features N]\n"
+       "              [--confirm] [--dry-run] [run and comparison options]\n"
+       "       runner compare BASELINE CANDIDATE [--cases A,B]\n"
+       "              [--allow-build-differences] [--allow-scene-differences]\n"
+       "              [--allow-all-differences]\n\n"
        "build prints one attempt ID after storage initialization. Exit 0 means\n"
        "ready; errors retain the build.transit and build.log for that ID.\n"
        "run prints one run ID on stdout. Progress, failures and the summary go\n"
        "to stderr. Builds and managed runs live under target/performance/render-wasm.\n"
-       "compare reads saved schema:run records and starts no build, host or browser.\n\n"
+       "compare reads saved schema:run records and starts no build, host or browser.\n"
+       "Build and scene permissions combine; operation and runtime checks stay strict.\n"
+       "All-differences permits every compatibility difference. Reports retain them.\n\n"
+       "ab uses every on/off configuration with Cargo defaults disabled; declared\n"
+       "defaults must be empty. --max-features defaults to 3 (range 1..6).\n"
+       "Use --confirm above eight configurations or with an empty filter.\n"
+       "--dry-run checks metadata, cases and output freshness without confirmation,\n"
+       "output creation, compilation or browser startup. ab accepts run budgets,\n"
+       "timeouts, seed, filter, output and screenshots, plus comparison permissions.\n"
+       "It rejects --build, --remove, --cases and --[no-]default-features.\n"
+       "ab prints the comparison UUID and output path on stdout; progress and\n"
+       "failures go to stderr. --dry-run prints only the plan without creating\n"
+       "the comparison home. Managed output lives under\n"
+       "feature-comparisons/<ab-id>/feature-comparison.transit.\n\n"
        "Preparation and runs require an idle checkout with dependencies installed.\n"
        "Keep renderer watchers stopped until preparation ends. purge assumes no\n"
        "experiment is using the managed paths.\n\n"
@@ -135,10 +162,14 @@
     "--startup-timeout-ms" "--output-dir" "--remove" "--screenshots"})
 
 (def ^:private purge-flags
-  #{"--only-builds" "--only-runs"})
+  #{"--only-builds" "--only-runs" "--only-comparisons"})
+
+(def ^:private ab-flags
+  #{"--max-features" "--confirm" "--dry-run"})
 
 (def ^:private compare-flags
-  #{"--cases" "--force"})
+  #{"--cases" "--allow-build-differences" "--allow-scene-differences"
+    "--allow-all-differences"})
 
 (defn- invalid-args
   [message]
@@ -150,6 +181,8 @@
 
 (defn- check-command-flags!
   [command flags]
+  (when (and (not= command "ab") (some-flags? flags ab-flags))
+    (invalid-args "ab planning options require ab"))
   (let [build?   (some-flags? flags build-flags)
         run?     (some-flags? flags run-flags)
         purge?   (some-flags? flags purge-flags)
@@ -171,6 +204,13 @@
       (do
         (when purge? (invalid-args "purge category flags require purge"))
         (when compare? (invalid-args "compare options require compare")))
+
+      "ab"
+      (do
+        (when purge? (invalid-args "purge category flags require purge"))
+        (when (some-flags? flags ["--build" "--remove" "--cases"
+                                  "--default-features" "--no-default-features"])
+          (invalid-args "ab rejects --build, --remove, --cases and --[no-]default-features")))
 
       "compare"
       (do
@@ -201,19 +241,25 @@
       (invalid-args (str/join "\n" errors)))
     (when-not (:help options)
       (when-not (and (= 1 (count (take 1 arguments)))
-                     (contains? #{"build" "purge" "run" "compare"} command))
-        (invalid-args "expected build, purge, run or compare; try --help"))
+                     (contains? #{"build" "purge" "run" "ab" "compare"} command))
+        (invalid-args "expected build, purge, run, ab or compare; try --help"))
       (check-command-flags! command flags)
       (check-arguments! command arguments)
-      (when (and (= command "purge") (:only-builds options) (:only-runs options))
-        (invalid-args "--only-builds and --only-runs are mutually exclusive"))
+      (when (and (= command "purge")
+                 (> (count (filter options [:only-builds :only-runs :only-comparisons])) 1))
+        (invalid-args "--only-builds, --only-runs and --only-comparisons are mutually exclusive"))
       (when (and (= command "run")
                  (:build-id options)
                  (some-flags? flags ["--default-features" "--no-default-features" "--features"]))
-        (invalid-args "--build cannot be combined with feature-selection flags")))
+        (invalid-args "--build cannot be combined with feature-selection flags"))
+      (when (= command "ab")
+        (try
+          (feature-plan/plan (:features options []) options)
+          (catch :default cause
+            (invalid-args (ex-message cause))))))
     {:command command
      :arguments arguments
-     :options options
+     :options (cond-> options (= command "ab") (assoc :default-features false))
      :summary summary}))
 
 (defn- print-error
@@ -232,7 +278,9 @@
 
         (= command "compare")
         (println (:text (compare/execute (second arguments) (nth arguments 2)
-                                         (select-keys options [:cases :force]))))
+                                         (select-keys options [:cases :allow-build-differences
+                                                               :allow-scene-differences
+                                                               :allow-all-differences]))))
 
         :else
         (let [^js commands (js/require (path/join js/__dirname "commands.cjs"))]

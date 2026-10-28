@@ -10,6 +10,7 @@
    [app.common.schema :as sm]
    [app.common.transit :as transit]
    [benches.render-wasm.codec :as codec]
+   [benches.render-wasm.feature-plan :as feature-plan]
    [benches.render-wasm.report.analysis :as analysis]))
 
 (def schema:basis
@@ -70,7 +71,10 @@
   "Git, functional build settings, environment and diagnostic provenance."
   [:map {:closed true}
    [:git [:map [:sha [:maybe string?]] [:dirty [:maybe boolean?]]]]
-   [:build [:map [:functional map?] [:provenance {:optional true} map?]]]
+   [:build [:map
+            [:functional map?]
+            [:provenance {:optional true} map?]
+            [:environment {:optional true} [:map-of :string :string]]]]
    [:environment map?]
    [:scored? boolean?]
    [:diagnostics {:optional true} map?]])
@@ -152,21 +156,77 @@
    [:run-id some?] [:started-at string?] [:ended-at [:maybe string?]]
    [:metadata schema:metadata] [:termination schema:termination]])
 
+(def schema:permissions
+  [:map {:closed true}
+   [:allow-build-differences boolean?]
+   [:allow-scene-differences boolean?]
+   [:allow-all-differences boolean?]])
+
+(def schema:feature-comparison
+  "Saved feature comparison progress. Case data and options remain ordinary
+  extensible maps; configuration/edge states and retained references are typed."
+  [:map {:closed true}
+   [:type [:= :feature-comparison]]
+   [:comparison-id string?]
+   [:started-at string?]
+   [:updated-at string?]
+   [:ended-at {:optional true} string?]
+   [:status [:enum :planned :running :completed :failed :interrupted]]
+   [:options :map]
+   [:permissions schema:permissions]
+   [:cases [:vector [:map [:id some?]]]]
+   [:features [:vector string?]]
+   [:configurations
+    [:vector
+     [:map
+      [:slug string?]
+      [:selection [:map {:closed true}
+                   [:default-features? boolean?]
+                   [:features [:vector string?]]]]
+      [:status [:enum :planned :building :ready :running :completed :failed :unattempted]]
+      [:build {:optional true} [:map [:id string?] [:manifest-path string?] [:log-path string?]]]
+      [:run {:optional true} [:map [:run-id string?] [:record-path string?] [:log-path string?]
+                              [:exit-code {:optional true} :int]]]
+      [:effective-features {:optional true} [:vector string?]]
+      [:failure {:optional true} :map]
+      [:reason {:optional true} string?]]]]
+   [:edges
+    [:vector
+     [:map
+      [:from string?] [:to string?] [:feature string?]
+      [:status [:enum :planned :completed :failed :unattempted]]
+      [:path {:optional true} string?]
+      [:failure {:optional true} :map]
+      [:reason {:optional true} string?]]]]
+   [:warnings [:vector string?]]])
+
 (def schema:comparison
-  "schema:comparison retains resolved analysis, differences and per-side reports."
+  "Resolved analysis, selected permissions, every mismatch and per-side reports.
+  Every acknowledged difference has a rule; unacknowledged differences have none.
+  Optional edge context records requested toggles and Cargo's actual effective
+  sets/deltas, including aliases."
   [:map {:closed true}
    [:type [:= :comparison]]
    [:analysis analysis/schema:settings]
    [:baseline schema:provenance]
    [:candidate schema:provenance]
-   [:forced? boolean?]
+   [:permissions schema:permissions]
+   [:edge {:optional true}
+    [:map {:closed true}
+     [:from string?] [:to string?] [:feature string?]
+     [:baseline-features [:vector string?]] [:candidate-features [:vector string?]]
+     [:added [:vector string?]] [:removed [:vector string?]]]]
    [:source-coverage string?]
    [:interpretation string?]
    [:pairs [:vector
             [:map {:closed true}
              [:explicit? boolean?]
-             [:mismatches [:vector [:map {:closed true}
-                                    [:field :any] [:baseline :any] [:candidate :any] [:waived? boolean?]]]]
+             [:mismatches [:vector
+                           [:and
+                            [:map {:closed true}
+                             [:field :any] [:baseline :any] [:candidate :any] [:waived? boolean?]
+                             [:rule {:optional true} [:enum :feature-toggle :build :scene :all]]]
+                            [:fn #(= (:waived? %) (contains? % :rule))]]]]
              [:baseline schema:comparison-side] [:candidate schema:comparison-side]
              [:metrics [:map-of :any [:map {:closed true}
                                       [:absolute schema:estimate] [:percentage schema:estimate]
@@ -322,14 +382,107 @@
   (check-completion run termination)
   (assoc run :ended-at ended-at :termination termination))
 
+(defn- check-feature-configuration
+  "Requires evidence that matches each saved configuration's progress."
+  [{:keys [status build run effective-features failure reason]}]
+  (when (#{:ready :running :completed} status)
+    (require-valid! (some? build) "feature comparison configuration needs a build" {:status status}))
+  (when (#{:ready :completed} status)
+    (require-valid! (some? effective-features)
+                    "feature comparison configuration needs effective features" {:status status}))
+  (when (#{:running :completed} status)
+    (require-valid! (some? run) "feature comparison configuration needs a run" {:status status}))
+  (when (= :completed status)
+    (require-valid! (some? (:exit-code run))
+                    "completed feature comparison configuration needs a run exit code" {})
+    (require-valid! (zero? (:exit-code run))
+                    "completed feature comparison configuration needs a successful run" {}))
+  (when (= :failed status)
+    (require-valid! (or (some? failure) (some? reason))
+                    "failed feature comparison configuration needs a failure or reason" {}))
+  (when (= :unattempted status)
+    (require-valid! (some? reason)
+                    "unattempted feature comparison configuration needs a reason" {})))
+
+(defn- check-feature-edge
+  "Requires a path for completed analysis and a reason for unattempted work."
+  [{:keys [status path failure reason]}]
+  (case status
+    :completed
+    (require-valid! (some? path) "completed feature comparison edge needs a report path" {})
+
+    :failed
+    (require-valid! (or (some? failure) (some? reason))
+                    "failed feature comparison edge needs a failure or reason" {})
+
+    :unattempted
+    (require-valid! (some? reason)
+                    "unattempted feature comparison edge needs a reason" {})
+
+    nil))
+
+(defn check-feature-comparison
+  "Validates saved feature-comparison progress against its planned experiment.
+  Configurations and edges must match the pure planner after status evidence is
+  attached. Terminal records cannot retain active work, and completed work must
+  retain its build, run, effective-feature and report evidence."
+  [record]
+  (require-valid! (sm/validate schema:feature-comparison record)
+                  "invalid schema:feature-comparison" {})
+  (let [features       (:features record)
+        configurations (:configurations record)
+        edges          (:edges record)
+        expected       (feature-plan/plan features
+                                          {:max-features (count features)
+                                           :dry-run true
+                                           :confirm true})
+        terminal?      (contains? #{:completed :failed :interrupted} (:status record))
+        active?        (comp #{:planned :building :ready :running} :status)]
+    (require-valid! (= features (:features expected))
+                    "feature comparison features disagree with normalized selection" {})
+    (require-valid! (= (mapv #(select-keys % [:slug :selection]) configurations)
+                       (:configurations expected))
+                    "feature comparison configurations disagree with planned features" {})
+    (require-valid! (= (mapv #(select-keys % [:from :to :feature]) edges)
+                       (:edges expected))
+                    "feature comparison edges disagree with planned configurations" {})
+    (require-valid! (= (count (:cases record)) (count (set (map :id (:cases record)))))
+                    "duplicate feature comparison case" {})
+    (when terminal?
+      (require-valid! (some? (:ended-at record))
+                      "terminal feature comparison needs an end time" {})
+      (require-valid! (not-any? active? configurations)
+                      "terminal feature comparison still has active configurations" {})
+      (require-valid! (not-any? active? edges)
+                      "terminal feature comparison still has active edges" {}))
+    (when-not terminal?
+      (require-valid! (nil? (:ended-at record))
+                      "unfinished feature comparison has an end time" {}))
+    (when (= :planned (:status record))
+      (require-valid! (every? (comp #{:planned} :status) configurations)
+                      "planned feature comparison has started configurations" {})
+      (require-valid! (every? (comp #{:planned} :status) edges)
+                      "planned feature comparison has started edges" {}))
+    (when (= :completed (:status record))
+      (require-valid! (every? (comp #{:completed} :status) configurations)
+                      "completed feature comparison has unfinished configurations" {})
+      (require-valid! (every? (comp #{:completed} :status) edges)
+                      "completed feature comparison has unfinished edges" {}))
+    (doseq [configuration configurations]
+      (check-feature-configuration configuration))
+    (doseq [edge edges]
+      (check-feature-edge edge)))
+  record)
+
 (defn check-record
-  "Validates schema:run or schema:comparison at a Transit boundary."
+  "Validates a run, comparison or feature-comparison at a Transit boundary."
   [record]
   (case (:type record)
     :run-record (check-run record)
     :comparison (do
                   (require-valid! (sm/validate schema:comparison record) "invalid schema:comparison" {})
                   record)
+    :feature-comparison (check-feature-comparison record)
     (throw (ex-info "unsupported benchmark format" {:type ::unsupported-format}))))
 
 (defn encode
