@@ -191,11 +191,15 @@
 (defn- fmt-number
   "At most two decimals, trailing zeros stripped (89.99999 -> \"90\",
   439.4999 -> \"439.5\", 386 -> \"386\"), grouped and punctuated the way
-  the active locale writes numbers (\"439,5\" in Spanish)."
+  the active locale writes numbers (\"439,5\" in Spanish). It goes
+  through `Intl.NumberFormat`: once a plugin has loaded, the SES lockdown
+  turns `Number.prototype.toLocaleString` into `toString`, options and
+  all."
   [v]
-  (let [locale (-> i18n/*current-locale*
-                   (str/replace "_" "-"))]
-    (.toLocaleString v locale #js {:maximumFractionDigits 2})))
+  (let [locale (or (some-> i18n/*current-locale*
+                           (str/replace "_" "-"))
+                   js/undefined)]
+    (.format (js/Intl.NumberFormat. locale #js {:maximumFractionDigits 2}) v)))
 
 (defn- short-str
   [v]
@@ -383,6 +387,133 @@
                                 frame-id
                                 (or frame-id (:parent-id shape))))
                  (inc depth)))))))
+
+(defn- cascade-entry?
+  "An added or deleted layer that carries its shape: one that can take
+  the layers added or deleted with it."
+  [item]
+  (and (= :shape (:kind item))
+       (contains? #{:added :deleted} (:status item))
+       (some? (:shape item))))
+
+(defn fold-cascades
+  "The added or deleted layers that only follow a container added or
+  deleted with them, folded under the outermost one: deleting a group
+  deletes its layers too, and listing each one apart would repeat the
+  same change. Takes `[index item]` pairs and returns a map from the
+  index of each outermost entry to the `[index item]` pairs it holds."
+  [indexed]
+  (let [by-id   (into {}
+                      (keep (fn [[idx item]]
+                              (when (cascade-entry? item)
+                                [[(:page-id item) (:id item)] [idx item]])))
+                      indexed)
+        root-of (fn [item]
+                  (loop [cur item root nil depth 0]
+                    (let [[pidx parent] (get by-id [(:page-id item) (get-in cur [:shape :parent-id])])]
+                      (if (and parent (= (:status parent) (:status item)) (< depth 64))
+                        (recur parent pidx (inc depth))
+                        root))))]
+    (reduce (fn [acc [_ item :as row]]
+              (if-let [root (when (cascade-entry? item) (root-of item))]
+                (update acc root (fnil conj []) row)
+                acc))
+            {}
+            indexed)))
+
+;; --- What goes with an added or deleted layer
+
+(defn- lost-interactions
+  "The interactions of modified entry `entry` that lead into `ids` on the
+  `from` side and are gone on the `to` side."
+  [entry ids from to]
+  (let [values (get-in entry [:changed-attrs :interactions])
+        kept   (set (get values to))]
+    (filterv #(and (contains? ids (:destination %)) (not (contains? kept %)))
+             (get values from))))
+
+(defn- size-of
+  "Width and height of `shape` on `side`, taking the changed ones from
+  diff entry `entry`."
+  [shape entry side]
+  (let [attrs (:changed-attrs entry)]
+    [(get-in attrs [:width side] (:width shape))
+     (get-in attrs [:height side] (:height shape))]))
+
+(defn shape-effects
+  "What else changes with the added or deleted layer `item`, read from
+  the other entries of the diff (`items`):
+
+    `:interactions` the layers whose prototype interactions led into it
+                    and go with it (`{:id :label :count}`);
+    `:flows`        the flows that started on it and go with it (names);
+    `:layouts`      the boards with a layout around it that resize
+                    (`{:id :name :layout :from [w h] :to [w h]}`) or
+                    whose other layers move (`{... :moved n}`).
+
+  Penpot makes these changes itself when a layer goes, so the diff lists
+  them as entries of their own; this ties them to their cause. `objects`
+  is the page as the side that holds the layer has it, `inner` the
+  layers folded under it (`fold-cascades`), and `incoming` says the
+  changes are main's, going to the branch, rather than the branch's
+  going to main."
+  [item items objects inner incoming]
+  (let [from     (if incoming :branch :main)
+        to       (if incoming :main :branch)
+        deleted? (= :deleted (:status item))
+        ids      (into #{(:id item)} (map (comp :id second)) inner)
+        page-id  (:page-id item)
+        on-page  (filterv #(= page-id (:page-id %)) items)
+        modified (into {}
+                       (comp (filter #(and (= :shape (:kind %)) (= :modified (:status %))))
+                             (map (juxt :id identity)))
+                       on-page)
+        ancestors (loop [id (:parent-id (get objects (:id item))) out [] depth 0]
+                    (let [shape (get objects id)]
+                      (if (and shape (not= id uuid/zero) (< depth 64))
+                        (recur (:parent-id shape) (conj out shape) (inc depth))
+                        out)))]
+    {:interactions
+     (if deleted?
+       (into []
+             (keep (fn [[id entry]]
+                     (when-not (contains? ids id)
+                       (let [lost (lost-interactions entry ids from to)]
+                         (when (seq lost)
+                           {:id id :label (:label entry) :count (count lost)})))))
+             modified)
+       [])
+
+     :flows
+     (if deleted?
+       (into []
+             (keep (fn [entry]
+                     (when (and (= :page-flow (:kind entry))
+                                (= :deleted (:status entry))
+                                (contains? ids (get-in entry [:flow :starting-frame])))
+                       (or (get-in entry [:flow :name]) (:label entry)))))
+             on-page)
+       [])
+
+     :layouts
+     (into []
+           (keep (fn [{:keys [id layout] :as shape}]
+                   (when (some? layout)
+                     (let [entry  (get modified id)
+                           before (size-of shape entry from)
+                           after  (size-of shape entry to)
+                           moved  (count (filter (fn [[sid e]]
+                                                   (and (= id (:parent-id (get objects sid)))
+                                                        (not (contains? ids sid))
+                                                        (some #(contains? (:changed-attrs e) %) [:x :y])))
+                                                 modified))]
+                       (cond
+                         (not= before after)
+                         {:id id :name (:name shape) :layout layout :from before :to after}
+
+                         (pos? moved)
+                         {:id id :name (:name shape) :layout layout :moved moved})))))
+           ancestors)}))
 
 (defn group-by-place
   "Group the clean changes (`[index item]` pairs) by page, and inside a

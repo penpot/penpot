@@ -13,6 +13,21 @@
   block-size: 100%;
 }
 
+// the outline of the layer an added or deleted change is about, drawn
+// over the board that holds it; the stroke keeps its width at any zoom
+.preview-highlight {
+  --preview-highlight-color: var(--color-accent-success);
+
+  fill: color-mix(in srgb, var(--preview-highlight-color) 12%, transparent);
+  stroke: var(--preview-highlight-color);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+
+  &.is-deleted {
+    --preview-highlight-color: var(--color-accent-error);
+  }
+}
+
 .preview-swatch {
   inline-size: 100%;
   block-size: 100%;

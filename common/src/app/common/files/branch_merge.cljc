@@ -783,11 +783,22 @@
                                                  (sub-of ours pid :guides)
                                                  {:kind :page-guide :page-id pid}))
                            common)
+         ;; an added or deleted flow carries itself whole as `:flow`, as
+         ;; for shapes: the compare panel names the board it starts on,
+         ;; which the open file may lack
          flows-diffs (map (fn [pid]
-                            (three-way-entities (sub-of base pid :flows)
-                                                (sub-of theirs pid :flows)
-                                                (sub-of ours pid :flows)
-                                                {:kind :page-flow :page-id pid}))
+                            (let [bf (sub-of base pid :flows)
+                                  of (sub-of ours pid :flows)]
+                              (update (three-way-entities bf
+                                                          (sub-of theirs pid :flows)
+                                                          of
+                                                          {:kind :page-flow :page-id pid})
+                                      :changes
+                                      (partial mapv (fn [e]
+                                                      (case (:status e)
+                                                        :added   (assoc e :flow (get of (:id e)))
+                                                        :deleted (assoc e :flow (get bf (:id e)))
+                                                        e))))))
                           common)
          ;; default-grids per common page (mergeable: :page-grid -> :set-default-grid)
          grids-diffs (map (fn [pid]
@@ -839,6 +850,19 @@
                                                    :base (get bo (:id e))
                                                    :main (get to (:id e))
                                                    :branch (get oo (:id e))))
+                                ;; an added or deleted shape is missing from
+                                ;; one of the two documents, and the compare
+                                ;; panel may have that one open: the entry
+                                ;; carries the FULL shape as the side that
+                                ;; holds it has it, so the panel can draw it
+                                ;; and say what it is. `:shape` names no side,
+                                ;; so `doc-sides` leaves it alone
+                                with-shape (fn [e]
+                                             (case (:status e)
+                                               :added   (assoc e :shape (get oo (:id e)))
+                                               :deleted (assoc e :shape (or (get bo (:id e))
+                                                                            (get to (:id e))))
+                                               e))
                                 passed (tree-policy-pass res bo to oo sbo sto reorders pid modes)]
                             {:changes   (mapv (fn [e]
                                                 ;; a `:refuse` entry names the
@@ -847,7 +871,7 @@
                                                 ;; display
                                                 (if (= :unsupported (:status e))
                                                   e
-                                                  (enrich e)))
+                                                  (-> e enrich with-shape)))
                                               (:changes passed))
                              :conflicts (mapv (comp rehydrate enrich) (:conflicts passed))}))
                         common)]

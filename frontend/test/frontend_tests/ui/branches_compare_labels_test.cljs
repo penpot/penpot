@@ -69,3 +69,17 @@
     (t/is (= "439.5" (display-val 439.5)))
     (t/is (= "90" (display-val 89.99999)) "at most two decimals")
     (t/is (= "386" (display-val 386)))))
+
+(t/deftest numbers-keep-two-decimals-under-the-plugin-lockdown
+  ;; a loaded plugin's SES lockdown turns `toLocaleString` into
+  ;; `toString`, which ignores the options
+  (let [proto    (.-prototype js/Number)
+        original (.-toLocaleString proto)]
+    (set! (.-toLocaleString proto) (.-toString proto))
+    (try
+      (binding [i18n/*current-locale* "en"]
+        (t/is (= "163" (display-val 162.99999952316284))))
+      (binding [i18n/*current-locale* nil]
+        (t/is (= "1.5" (display-val 1.5)) "no locale falls back to the default"))
+      (finally
+        (set! (.-toLocaleString proto) original)))))

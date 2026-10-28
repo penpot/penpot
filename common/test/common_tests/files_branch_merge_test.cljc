@@ -154,6 +154,42 @@
     (t/is (= :deleted (:status c)))
     (t/is (= :s2 (:id c)))))
 
+(t/deftest added-and-deleted-carry-the-shape
+  ;; the open file lacks the shape on one side, so the entry carries it
+  ;; whole, as the document that holds it has it, in both directions
+  (let [base   (mkdata {:s1 {:id :s1 :name "A" :selrect {:x 1}}
+                        :s2 {:id :s2 :name "B" :selrect {:x 2}}})
+        branch (mkdata {:s1 {:id :s1 :name "A" :selrect {:x 1}}
+                        :s3 {:id :s3 :name "C" :selrect {:x 3}}})
+        merge  (into {} (map (juxt :id identity))
+                     (:changes (bm/compute-merge base base branch :branch->main)))
+        update (into {} (map (juxt :id identity))
+                     (:changes (bm/compute-merge base branch base :main->branch)))]
+    (t/is (= {:id :s2 :name "B" :selrect {:x 2}} (get-in merge [:s2 :shape])))
+    (t/is (= {:id :s3 :name "C" :selrect {:x 3}} (get-in merge [:s3 :shape])))
+    (t/is (= {:id :s2 :name "B" :selrect {:x 2}} (get-in update [:s2 :shape])))
+    (t/is (= {:id :s3 :name "C" :selrect {:x 3}} (get-in update [:s3 :shape])))))
+
+(t/deftest a-deleted-flow-carries-the-board-it-starts-on
+  (let [flow   {:id :f1 :name "Onboarding" :starting-frame :b1}
+        base   (assoc-in (mkdata {:b1 {:id :b1 :name "Home"}})
+                         [:pages-index :p1 :flows] {:f1 flow})
+        branch (assoc-in base [:pages-index :p1 :flows] {})
+        merge  (first (filter #(= :page-flow (:kind %))
+                              (:changes (bm/compute-merge base base branch :branch->main))))
+        update (first (filter #(= :page-flow (:kind %))
+                              (:changes (bm/compute-merge base branch base :main->branch))))]
+    (t/is (= :deleted (:status merge)))
+    (t/is (= flow (:flow merge)))
+    (t/is (= :deleted (:status update)))
+    (t/is (= flow (:flow update)))))
+
+(t/deftest modified-carries-no-shape
+  (let [base   (mkdata {:s1 {:id :s1 :name "A" :fill "red"}})
+        branch (mkdata {:s1 {:id :s1 :name "A" :fill "blue"}})
+        r      (bm/compute-merge base base branch :branch->main)]
+    (t/is (not (contains? (first (:changes r)) :shape)))))
+
 (t/deftest fast-forward-main-untouched
   ;; main == base; branch changed -> all branch changes apply cleanly
   (let [base   (mkdata {:s1 {:id :s1 :name "A" :fill "red"}})
