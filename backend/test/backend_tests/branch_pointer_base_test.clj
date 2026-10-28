@@ -173,6 +173,14 @@
       (let [main-ids (set (vals (page-pointer-ids
                                  (:data (bfc/get-file th/*system* file-id)))))]
         (t/is (seq (remove main-ids pinned))))
+      ;; the save took an automatic snapshot of pre-edit main, which names
+      ;; the same fragments; drop every snapshot but the base so the base
+      ;; is what keeps them alive
+      (let [base-id (:base-snapshot-id (th/db-get :file-branch {:id (:id branch)}))]
+        (th/db-exec! ["delete from file_data where file_id = ? and type = 'snapshot' and id <> ?"
+                      file-id base-id])
+        (th/db-exec! ["delete from file_change where file_id = ? and label is not null and id <> ?"
+                      file-id base-id]))
 
       (t/is (true? (th/run-task! :file-gc {:file-id file-id})))
       (t/is (every? (live-fragment-ids file-id) pinned))
