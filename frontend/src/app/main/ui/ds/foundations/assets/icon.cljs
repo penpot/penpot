@@ -212,6 +212,7 @@
 (def ^:icon-id msg-warning "msg-warning")
 (def ^:icon-id number "number")
 (def ^:icon-id open-link "open-link")
+(def ^:icon-id orphan "orphan")
 (def ^:icon-id padding-bottom "padding-bottom")
 (def ^:icon-id padding-extended "padding-extended")
 (def ^:icon-id padding-left "padding-left")

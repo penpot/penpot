@@ -907,7 +907,7 @@
       (when ^boolean is-broken
         [:> tooltip* {:content (tr "workspace.options.component.broken")
                       :class (stl/css :pill-btn-broken)}
-         [:> icon* {:icon-id i/broken-link
+         [:> icon* {:icon-id i/orphan
                     :size "m"}]])]
 
      (when menu-entries?
