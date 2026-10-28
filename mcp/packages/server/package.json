@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "build:server": "pnpm exec esbuild ./src/index.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/index.js --external:@modelcontextprotocol/* --external:ws --external:express --external:class-transformer --external:class-validator --external:reflect-metadata --external:pino --external:pino-pretty --external:pino-loki --external:js-yaml --external:sharp --external:nrepl-client --external:ioredis",
+    "build:server": "pnpm exec esbuild ./src/index.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/index.js --external:@modelcontextprotocol/* --external:ws --external:express --external:class-transformer --external:class-validator --external:reflect-metadata --external:pino --external:pino-pretty --external:pino-loki --external:js-yaml --external:sharp --external:ioredis",
     "build": "pnpm run build:server && node ./scripts/copy-resources.js",
     "build:types": "tsc --emitDeclarationOnly --outDir dist",
     "start": "node dist/index.js",
@@ -36,7 +36,6 @@
     "express": "^5.2.1",
     "ioredis": "^6.0.0",
     "js-yaml": "^5.4.2",
-    "nrepl-client": "^0.3.0",
     "pino": "^10.4.0",
     "pino-loki": "^3.0.0",
     "pino-pretty": "^13.2.0",
