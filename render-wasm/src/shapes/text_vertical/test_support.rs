@@ -20,7 +20,7 @@ pub(crate) const TEST_FONT: &[u8] = include_bytes!("../../fonts/sourcesanspro-re
 pub(crate) const PINYIN_TEST_FONT: &[u8] = include_bytes!("../../fonts/pinyin-test.ttf");
 
 /// Noto Sans JP subset with `vmtx`/`vhea`: 〱 advances 2em vertically, あ/く 1em.
-pub(super) const VMTX_TEST_FONT: &[u8] = include_bytes!("../../fonts/notosansjp-vmtx-test.ttf");
+pub(crate) const VMTX_TEST_FONT: &[u8] = include_bytes!("../../fonts/notosansjp-vmtx-test.ttf");
 
 /// Noto Sans JP subset with GSUB `vert` and GPOS `vpal` for 、。「」あく.
 pub(crate) const VPAL_TEST_FONT: &[u8] = include_bytes!("../../fonts/notosansjp-vpal-test.ttf");

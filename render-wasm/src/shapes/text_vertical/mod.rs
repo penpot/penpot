@@ -41,6 +41,7 @@ mod shaping;
 #[cfg(test)]
 pub(crate) mod test_support;
 
+pub(crate) use font_tables::upright_centre_metrics;
 pub use layout::{block_axis_offset, layout_for_rect, VerticalLayout};
 pub(crate) use orientation::{is_emoji_char, is_upright_char};
 pub use paint::{

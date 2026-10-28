@@ -233,6 +233,21 @@ impl LayoutParagraph {
         self.inner.ideographic_baseline() + self.line_shift(0)
     }
 
+    /// Font that shaped the text at UTF-16 `offset`, fallbacks included.
+    pub fn font_at_utf16(&self, offset: usize) -> skia_safe::Font {
+        let mut utf16 = 0;
+        let byte = self
+            .text
+            .char_indices()
+            .find(|(_, ch)| {
+                let start = utf16;
+                utf16 += ch.len_utf16();
+                start >= offset
+            })
+            .map_or(self.text.len(), |(byte, _)| byte);
+        self.inner.get_font_at(byte)
+    }
+
     pub fn get_line_metrics(&self) -> Vec<LineMetrics<'_>> {
         let mut lines = self.inner.get_line_metrics();
         for (index, line) in lines.iter_mut().enumerate() {
