@@ -87,6 +87,17 @@
          (tm/apply-to (n/change-property parent :layout-padding {:p1 3 :p2 6 :p3 9 :p4 12}))
          (#(with-settled-layout % name)))))
 
+(defn- with-layout-item-margins
+  [situation name]
+  (let [ids (:shapes (tm/shape-by-id situation ((n/main-head-of name) situation)))]
+    (-> (reduce (fn [s id]
+                  (->> s
+                       (tm/apply-to (n/change-property (constantly id) :layout-item-margin
+                                                       {:m1 2 :m2 4 :m3 6 :m4 8}))
+                       (tm/apply-to (n/change-property (constantly id) :layout-item-margin-type :multiple))))
+                situation ids)
+        (with-settled-layout name))))
+
 (defn- with-outer-layout
   [situation name layout]
   (if-not layout
@@ -201,6 +212,8 @@
                           (with-layout name (when (zero? index) (:layout opts)))
                           (cond-> (and (zero? index) (:layout opts) (:layout-children opts))
                             (with-layout-children name))
+                          (cond-> (and (zero? index) (:layout opts) (:layout-item-margins opts))
+                            (with-layout-item-margins name))
                           (as-> s (reduce #(tm/apply-to %2 %1) s
                                           [(n/make-nested-component name depth)]))
                           (with-outer-layout name (when (and (zero? index) (pos? depth) (:layout-copies opts)) (:layout opts)))
@@ -432,7 +445,18 @@
    [:layout-justify-content [:start :space-between :center :end :space-around :space-evenly]]
    [:layout-align-content [:stretch :center :end :start :space-between :space-around :space-evenly]]
    [:layout-gap-type [:multiple :simple]]
-   [:layout-padding-type [:simple :multiple]]])
+   [:layout-padding-type [:simple :multiple]]
+   [:layout-justify-items [:start :center :end :stretch]]
+   [:layout-item-margin-type [:simple :multiple]]
+   [:layout-item-align-self [:start :center :end :stretch]]
+   [:layout-item-h-sizing [:fix :fill]]
+   [:layout-item-v-sizing [:fix :fill]]
+   [:layout-item-min-w [0 24 64]]
+   [:layout-item-max-w [256 96 64]]
+   [:layout-item-min-h [0 24 64]]
+   [:layout-item-max-h [256 96 64]]
+   [:layout-item-absolute [false true]]
+   [:layout-item-z-index [0 2 -1]]])
 
 (def text-style-edits
   "All twelve style units, independent of the production text group table."
@@ -480,7 +504,14 @@
                                               :layout-gap-type :layout-padding-type
                                               :layout-justify-content :layout-align-content) (some? (:layout shape))
                                  (:layout-flex-dir :layout-wrap-type) (= :flex (:layout shape))
-                                 :layout-item-margin (some? (:layout (tm/shape-by-id situation (:parent-id shape))))
+                                 :layout-justify-items (= :grid (:layout shape))
+                                 :layout-item-align-self (= :flex (:layout (tm/shape-by-id situation (:parent-id shape))))
+                                 (:layout-item-margin :layout-item-margin-type
+                                                      :layout-item-h-sizing :layout-item-v-sizing
+                                                      :layout-item-min-w :layout-item-max-w
+                                                      :layout-item-min-h :layout-item-max-h
+                                                      :layout-item-absolute :layout-item-z-index)
+                                 (some? (:layout (tm/shape-by-id situation (:parent-id shape))))
                                  true))))
                 (and (= kind :edit) (= 2 (mod (or property 0) 3)))
                 (remove (fn [{:keys [shape]}]
@@ -637,7 +668,7 @@
                   (shadow/parent-orientation (all-objects situation) (all-objects settled))
                   (shadow/settle (all-objects settled)))
         all (into (set (synchronizable-components situation)) (r/pending-components situation))
-        full-before (:situation (cf/sync-world situation all))
+        full-before (r/settle situation all)
         full (:situation (cf/sync-world settled all))
         opts {:free-head-placement false}
         settled-design (oracle/canonical settled opts)
@@ -1023,8 +1054,9 @@
             depth (gen/choose 0 2)
             layout (gen/elements [nil :flex :grid])
             layout-children gen/boolean
+            layout-item-margins gen/boolean
             ops (operation-gen structure-kinds)]
-    {:world [components depth {:text true :text-styles true :layout layout :layout-children layout-children}]
+    {:world [components depth {:text true :text-styles true :layout layout :layout-children layout-children :layout-item-margins layout-item-margins}]
      :ops ops}))
 
 (def swap-kinds (into structure-kinds [:swap :switch]))
@@ -1034,10 +1066,11 @@
             differ? gen/boolean
             layout (gen/elements [nil :flex :grid])
             layout-children gen/boolean
+            layout-item-margins gen/boolean
             ops (operation-gen swap-kinds)]
     {:world [components 2 {:variants true :variant-diff differ? :rich-variants true
                            :text true :text-styles true :layout layout :layout-copies true
-                           :layout-children layout-children}]
+                           :layout-children layout-children :layout-item-margins layout-item-margins}]
      :ops ops}))
 
 (def library-kinds
@@ -1047,9 +1080,10 @@
   (gen/let [depth (gen/choose 0 2)
             layout (gen/elements [nil :flex :grid])
             layout-children gen/boolean
+            layout-item-margins gen/boolean
             ops (operation-gen library-kinds)]
     {:world [2 depth {:library true :variants true :rich-variants true :text true :text-styles true
-                      :layout layout :layout-copies true :layout-children layout-children}]
+                      :layout layout :layout-copies true :layout-children layout-children :layout-item-margins layout-item-margins}]
      :ops ops}))
 
 (def stale-library-kinds
@@ -1060,10 +1094,11 @@
             library-depth (gen/choose 1 2)
             layout (gen/elements [nil :flex :grid])
             layout-children gen/boolean
+            layout-item-margins gen/boolean
             ops (operation-gen stale-library-kinds)]
     {:world [2 depth {:library true :stale-libraries true :library-variants true :library-text true
                       :library-depth library-depth :variants true :rich-variants true :text true :text-styles true
-                      :layout layout :layout-copies true :layout-children layout-children}]
+                      :layout layout :layout-copies true :layout-children layout-children :layout-item-margins layout-item-margins}]
      :ops ops}))
 
 (def dependency-kinds

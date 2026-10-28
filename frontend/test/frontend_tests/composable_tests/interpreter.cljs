@@ -150,13 +150,20 @@
           [(dwsl/update-layout-child [id] (select-keys shape [:layout-item-margin
                                                               :layout-item-margin-type]))])
 
+        (:layout-item-margin-type :layout-item-align-self
+                                  :layout-item-h-sizing :layout-item-v-sizing
+                                  :layout-item-min-w :layout-item-max-w
+                                  :layout-item-min-h :layout-item-max-h
+                                  :layout-item-absolute :layout-item-z-index)
+        [(dwsl/update-layout-child [id] {property value})]
+
         ;; the layers panel's rename, which renames a main's component too
         :name
         [(dw/end-rename-shape id value)]
 
         ;; Container controls use the sidebar transaction and reflow event.
         (:layout-flex-dir :layout-wrap-type :layout-justify-content
-                          :layout-align-content :layout-gap-type :layout-padding-type)
+                          :layout-align-content :layout-gap-type :layout-padding-type :layout-justify-items)
         [(dwsl/update-layout [id] {property value})]
 
         [(dwsh/update-shapes #{id} (fn [shape] (n/set-property shape property value)))]))

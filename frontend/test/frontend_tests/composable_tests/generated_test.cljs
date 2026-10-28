@@ -90,13 +90,28 @@
 
 (t/deftest ^:async layout-container-histories-survive-component-operations
   (doseq [[property layouts] [[20 [:flex]] [21 [:flex]] [22 [:flex :grid]] [23 [:flex :grid]]
-                              [24 [:flex :grid]] [25 [:flex :grid]]]
+                              [24 [:flex :grid]] [25 [:flex :grid]] [26 [:grid]]]
           layout layouts]
     (await (replay {:world [1 0 {:layout layout :layout-children true}]
                     :ops [[:style 0 property 1 1] [:style 0 property 1 0]
                           [:style 0 property 0 0] [:undo] [:redo] [:update-main 0]
                           [:style 0 property 0 1] [:reset 0]
                           [:style 0 property 0 1] [:detach 0] [:undo] [:redo]]}))))
+
+(t/deftest ^:async layout-item-histories-survive-component-operations
+  (doseq [property (range 27 37)
+          layout (if (= property 28) [:flex] [:flex :grid])]
+    (let [authored (if (= property 27) 0 1)
+          other    (if (= property 27) 1 0)]
+      (await (replay {:world [1 0 {:layout layout :layout-children true :layout-item-margins true}]
+                      :ops [[:style 0 property authored 1] [:style 0 property authored 0]
+                            [:style 0 property other 0] [:undo] [:redo] [:update-main 0]
+                            [:style 0 property other 1] [:reset 0]
+                            [:style 0 property other 1] [:detach 0] [:undo] [:redo]]})))))
+
+(t/deftest ^:async adding-a-flex-child-before-making-a-copy-child-absolute-stays-settled
+  (await (replay {:world [1 0 {:layout :flex :layout-children true}]
+                  :ops [[:add-child 0] [:style 2 35 1 1] [:undo] [:redo]]})))
 
 (t/deftest ^:async nesting-a-copy-alongside-a-hidden-layout-child-stays-settled
   (await (replay {:world [3 0 {:text true :text-styles true :layout :flex}]

@@ -96,7 +96,10 @@
     :fixed-scroll :constraints-h :constraints-v :layout-item-margin
     :layout-gap :layout-padding :layout-align-items :layout-flex-dir
     :layout-wrap-type :layout-justify-content :layout-align-content
-    :layout-gap-type :layout-padding-type})
+    :layout-gap-type :layout-padding-type :layout-justify-items
+    :layout-item-margin-type :layout-item-align-self :layout-item-h-sizing
+    :layout-item-v-sizing :layout-item-min-w :layout-item-max-w
+    :layout-item-min-h :layout-item-max-h :layout-item-absolute :layout-item-z-index})
 
 (defn set-property
   "`shape` with `property` set to `value`. Public so the frontend interpreter
@@ -140,7 +143,7 @@
 (def ^:private layout-container-properties
   #{:layout-gap :layout-padding :layout-align-items :layout-flex-dir
     :layout-wrap-type :layout-justify-content :layout-align-content
-    :layout-gap-type :layout-padding-type})
+    :layout-gap-type :layout-padding-type :layout-justify-items})
 
 (defn- with-layout-reflow
   [changes id]
@@ -186,7 +189,7 @@
           value'    (applied-value* property value)
           layout-id (cond
                       (and (:layout shape) (contains? layout-container-properties property)) shape-id
-                      (and (= :layout-item-margin property)
+                      (and (contains? ctl/layout-child-attrs property)
                            (:layout (get-in page [:objects (:parent-id shape)]))) (:parent-id shape))
           changes   (cond-> (cls/generate-update-shapes
                              (pcb/empty-changes nil (:id page))
@@ -194,6 +197,11 @@
                              (fn [shape] (set-property shape property value'))
                              (:objects page)
                              {})
+                      (and (= :layout-item-absolute property)
+                           (ctl/grid-layout? (get-in page [:objects layout-id])))
+                      (pcb/update-shapes [layout-id] ctl/assign-cells
+                                         {:with-objects? true :ignore-touched true})
+
                       layout-id
                       (-> (with-layout-reflow layout-id)
                           (assoc ::layout-reflow? true))

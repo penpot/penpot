@@ -184,7 +184,51 @@
    [22 :layout-justify-content :layout-justify-content #{:flex :grid}]
    [23 :layout-align-content :layout-align-content #{:flex :grid}]
    [24 :layout-gap-type :layout-gap #{:flex :grid}]
-   [25 :layout-padding-type :layout-padding #{:flex :grid}]])
+   [25 :layout-padding-type :layout-padding #{:flex :grid}]
+   [26 :layout-justify-items :layout-justify-items #{:grid}]])
+
+(def layout-item-cases
+  [[27 :layout-item-margin-type :layout-item-margin #{:flex :grid}]
+   [28 :layout-item-align-self :layout-item-align-self #{:flex}]
+   [29 :layout-item-h-sizing :layout-item-h-sizing #{:flex :grid}]
+   [30 :layout-item-v-sizing :layout-item-v-sizing #{:flex :grid}]
+   [31 :layout-item-min-w :layout-item-min-w #{:flex :grid}]
+   [32 :layout-item-max-w :layout-item-max-w #{:flex :grid}]
+   [33 :layout-item-min-h :layout-item-min-h #{:flex :grid}]
+   [34 :layout-item-max-h :layout-item-max-h #{:flex :grid}]
+   [35 :layout-item-absolute :layout-item-absolute #{:flex :grid}]
+   [36 :layout-item-z-index :layout-item-z-index #{:flex :grid}]])
+
+(t/deftest remaining-layout-inputs-resolve-only-in-their-own-context
+  (doseq [layout [nil :flex :grid]
+          [property attr _ layouts] (into [[26 :layout-justify-items :layout-justify-items #{:grid}]]
+                                          layout-item-cases)]
+    (let [situation (cg/world [1 0 {:layout layout :layout-children true}])
+          resolved  (cg/resolve-op situation {} [:style 0 property 1 1])
+          parent    (tm/shape-by-id situation (get-in resolved [:shape :parent-id]))]
+      (t/is (= attr (:property resolved)))
+      (if (contains? layouts layout)
+        (do
+          (t/is (some? (:op resolved)))
+          (t/is (not= (get (:shape resolved) attr) (:value resolved)))
+          (t/is (= layout (if (= property 26) (get-in resolved [:shape :layout]) (:layout parent)))))
+        (do
+          (t/is (nil? (:op resolved)))
+          (t/is (= :skip (get-in resolved [:trace :status]))))))))
+
+(t/deftest asymmetric-item-margins-are-settled-before-copying
+  (doseq [layout [:flex :grid]]
+    (let [situation (cg/world [1 0 {:layout layout :layout-children true :layout-item-margins true}])
+          main-id   ((n/main-rect-of "random-0") situation)
+          images    (filter #(or (= main-id (get-in % [:shape :id]))
+                                 (= main-id (get-in % [:shape :shape-ref]))) (cg/tree situation))]
+      (t/is (= 3 (count images)))
+      (doseq [{:keys [shape]} images]
+        (t/is (= {:m1 2 :m2 4 :m3 6 :m4 8} (:layout-item-margin shape)))
+        (t/is (= :multiple (:layout-item-margin-type shape))))
+      (t/is (= :valid (try (oracle/check situation {}) :valid
+                           (catch #?(:clj Exception :cljs js/Error) error
+                             (select-keys (ex-data error) [:invariant :group]))))))))
 
 (t/deftest multi-child-layout-fixtures-start-settled-before-user-actions
   (doseq [layout [:flex :grid] depth [0 1]]
@@ -305,6 +349,94 @@
                                 [:style 0 property 0 0] [:undo] [:redo] [:update-main 0]
                                 [:style 0 property 0 1] [:reset 0]
                                 [:style 0 property 0 1] [:detach 0] [:undo] [:redo]]})]
+      (doseq [kind [:style :update-main :reset :detach]]
+        (t/is (pos? (get-in result [:coverage :random kind :changed] 0))
+              (str kind " changes " property " in " layout))))))
+
+(t/deftest adding-a-flex-child-before-making-a-copy-child-absolute-stays-settled
+  (t/is (map? (cg/run {:world [1 0 {:layout :flex :layout-children true}]
+                       :ops [[:add-child 0] [:style 2 35 1 1]]}))))
+
+(t/deftest full-settlement-comparison-still-rejects-absolute-child-drift
+  (let [initial      (-> (cg/initial-state [1 0 {:layout :flex :layout-children true}])
+                         (cg/step [:add-child 0]) cg/settle-state)
+        id           (get-in (cg/resolve-op (:situation initial) {} [:style 2 35 1 1]) [:shape :id])
+        edited       (cg/step initial [:style 2 35 1 1])
+        settled      (assoc edited :situation (r/settle (:situation edited)) :checkpoint nil)
+        settle       r/settle
+        corrupt-full (fn [situation component-ids]
+                       (let [result (settle situation component-ids)
+                             file   (tm/file result)
+                             path   [:data :pages-index (:id (thf/current-page file)) :objects id]]
+                         (tm/with-file result (update-in file path gsh/move (gpt/point 0.25 0)))))
+        invariant    (with-redefs [r/settle (fn
+                                              ([situation] (settle situation (r/pending-components situation)))
+                                              ([situation ids] (corrupt-full situation ids)))]
+                       (try (cg/settle-state settled) nil
+                            (catch #?(:clj Exception :cljs js/Error) error
+                              (:invariant (ex-data error)))))]
+    (t/is (= :I6 invariant))))
+
+(t/deftest layout-item-overrides-retain-values-and-companions
+  (doseq [[property attr group layouts] layout-item-cases
+          layout (sort layouts)]
+    (t/testing (str attr " in " layout)
+      (let [initial    (cg/initial-state [1 0 {:layout layout :layout-children true :layout-item-margins true}])
+            situation  (:situation initial)
+            authored   (if (= property 27) 0 1)
+            other      (if (= property 27) 1 0)
+            resolved   (cg/resolve-op situation {} [:style 0 property authored 1])
+            shape      (:shape resolved)
+            id         (:id shape)
+            expected   (if (= property 27)
+                         {:layout-item-margin-type :simple :layout-item-margin {:m1 2 :m2 4 :m3 6 :m4 8}}
+                         {attr (:value resolved)})
+            edited     (-> initial (cg/step [:style 0 property authored 1]) cg/settle-state)
+            after      (:situation edited)
+            file       (tm/file after)
+            path       [:data :pages-index (:id (thf/current-page file)) :objects id]
+            invariant  (fn [file]
+                         (try (oracle/check (tm/with-file after file) (:model edited)) nil
+                              (catch #?(:clj Exception :cljs js/Error) error
+                                (:invariant (ex-data error)))))
+            reverted   (cond-> (if (contains? shape attr)
+                                 (assoc-in file (conj path attr) (get shape attr))
+                                 (update-in file path dissoc attr))
+                         (and (= property 35) (= layout :grid))
+                         (assoc-in (conj (pop path) (:parent-id shape) :layout-grid-cells)
+                                   (:layout-grid-cells (tm/shape-by-id situation (:parent-id shape)))))
+            main-index (first (keep (fn [index]
+                                      (when (= (:shape-ref shape)
+                                               (get-in (cg/resolve-op situation {} [:style index property other 0])
+                                                       [:shape :id])) index))
+                                    (range (count (cg/tree situation)))))
+            updated    (-> edited (cg/step [:style main-index property authored 0]) cg/settle-state
+                           (cg/step [:style main-index property other 0]) cg/settle-state)
+            value      (:value (cg/resolve-op situation {} [:style main-index property other 0]))
+            copies     (filter #(= (:shape-ref shape) (get-in % [:shape :shape-ref])) (cg/tree situation))]
+        (t/is (= expected (get-in edited [:model id group])))
+        (t/is (= #{group} (:touched (tm/shape-by-id after id))))
+        (t/is (= (:layout-item-margin shape) (:layout-item-margin (tm/shape-by-id after id))))
+        (t/is (= :I9 (invariant reverted)))
+        (t/is (= :I3 (invariant (update-in file (conj path :touched) disj group))))
+        (t/is (some? main-index))
+        (t/is (= 2 (count copies)))
+        (doseq [{copy :shape} copies]
+          (let [actual (tm/shape-by-id (:situation updated) (:id copy))]
+            (t/is (= (if (= id (:id copy)) (:value resolved) value) (get actual attr)))
+            (t/is (= (if (= id (:id copy)) #{group} #{}) (set (:touched actual))))))
+        (t/is (= expected (get-in updated [:model id group])))))))
+
+(t/deftest layout-item-histories-survive-component-operations
+  (doseq [[property _ _ layouts] layout-item-cases
+          layout (sort layouts)]
+    (let [authored (if (= property 27) 0 1)
+          other    (if (= property 27) 1 0)
+          result   (cg/run {:world [1 0 {:layout layout :layout-children true :layout-item-margins true}]
+                            :ops [[:style 0 property authored 1] [:style 0 property authored 0]
+                                  [:style 0 property other 0] [:undo] [:redo] [:update-main 0]
+                                  [:style 0 property other 1] [:reset 0]
+                                  [:style 0 property other 1] [:detach 0] [:undo] [:redo]]})]
       (doseq [kind [:style :update-main :reset :detach]]
         (t/is (pos? (get-in result [:coverage :random kind :changed] 0))
               (str kind " changes " property " in " layout))))))

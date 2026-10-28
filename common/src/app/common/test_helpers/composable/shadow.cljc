@@ -28,7 +28,14 @@
    :layout-padding :layout-padding :layout-align-items :layout-align-items
    :layout-flex-dir :layout-flex-dir :layout-wrap-type :layout-wrap-type
    :layout-justify-content :layout-justify-content :layout-align-content :layout-align-content
-   :layout-gap-type :layout-gap :layout-padding-type :layout-padding})
+   :layout-gap-type :layout-gap :layout-padding-type :layout-padding
+   :layout-justify-items :layout-justify-items
+   :layout-item-margin-type :layout-item-margin
+   :layout-item-align-self :layout-item-align-self
+   :layout-item-h-sizing :layout-item-h-sizing :layout-item-v-sizing :layout-item-v-sizing
+   :layout-item-min-w :layout-item-min-w :layout-item-max-w :layout-item-max-w
+   :layout-item-min-h :layout-item-min-h :layout-item-max-h :layout-item-max-h
+   :layout-item-absolute :layout-item-absolute :layout-item-z-index :layout-item-z-index})
 
 (defn attribute-applicable?
   "The clipping and background-export controls belong to frames."
