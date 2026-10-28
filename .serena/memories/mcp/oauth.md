@@ -11,6 +11,7 @@
 ## Deployment and discovery
 
 - MCP process: `PENPOT_MCP_AUTH_URI=https://penpot.example/api/mcp/oauth` with `--multi-user`. Unset/empty disables OAuth; configured OAuth requires multi-user. Absolute HTTPS, or HTTP on loopback for development; no userinfo, query, or fragment. Invalid configuration fails startup; startup logs OAuth status.
+- Devenv: `mcp/scripts/start-mcp-devenv-oauth` starts multi-user mode with `PENPOT_MCP_AUTH_URI` derived from `PENPOT_PUBLIC_URI`. Manual opt-in only: agentic tooling needs the single-user `start-mcp-devenv`.
 - Public MCP transport: `<Penpot public URI>/mcp/stream`, proxied to Node `/mcp`. Missing credentials with OAuth enabled: 401 plus `WWW-Authenticate` referencing `<auth base>/resource` and scope `mcp`.
 - Bearer header takes precedence over legacy `?userToken=`. Malformed headers do not fall back to the query token. Existing query-token clients remain supported.
 - Protected-resource metadata: `/api/mcp/oauth/resource`; issuer: `/api/mcp/oauth`; authorization-server metadata: `/.well-known/oauth-authorization-server/api/mcp/oauth`. All reach the backend. Bundled devenv/production nginx configs forward the well-known path; custom proxies must do likewise. Keep Penpot public URI and external URLs consistent.
