@@ -200,8 +200,12 @@
     [:div {:class (stl/css :dashboard-fonts-upload)}
      [:div {:class (stl/css :dashboard-fonts-hero)}
       [:div {:class (stl/css :desc)}
-       [:h2 (tr "labels.upload-custom-fonts")]
-       [:> i18n/tr-html* {:content (tr "dashboard.fonts.hero-text1")}]
+       [:> heading* {:level 2
+                     :typography t/title-large
+                     :class (stl/css :hero-title)}
+        (tr "labels.upload-custom-fonts")]
+       [:> i18n/tr-html* {:content (tr "dashboard.fonts.hero-text1")
+                          :class (stl/css :hero-text)}]
 
        [:> button* {:variant "primary"
                     :type "button"
@@ -250,6 +254,7 @@
                  :key (dm/str id)}
            [:div {:class (stl/css :table-field :family)}
             [:input {:type "text"
+                     :class (stl/css :name-input)
                      :data-id (dm/str id)
                      :on-blur on-blur-name
                      :on-change on-change-name
@@ -414,6 +419,7 @@
                                  :is-edition edition?)}
       (if ^boolean edition?
         [:input {:type "text"
+                 :class (stl/css :name-input)
                  :auto-focus true
                  :default-value font-family
                  :on-key-down on-key-down
@@ -492,7 +498,8 @@
          [:div {:class (stl/css :table-field :family)} (tr "labels.font-family")]
          [:div {:class (stl/css :table-field :variants)} (tr "labels.font-variants")]
          [:div {:class (stl/css :table-field :search-input)}
-          [:input {:placeholder (tr "labels.search-font")
+          [:input {:class (stl/css :search-font-input)
+                   :placeholder (tr "labels.search-font")
                    :default-value ""
                    :on-change on-change}]]]
         (for [[font-id variants] (->> (vals fonts)

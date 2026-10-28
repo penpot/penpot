@@ -65,27 +65,26 @@
   display: flex;
   flex-grow: 1;
   justify-content: flex-end;
+}
 
-  // The inputs have no class.
-  input {
-    @include use-typography("body-medium");
+.search-font-input {
+  @include use-typography("body-medium");
 
-    background-color: var(--color-background-tertiary);
-    border-radius: $br-8;
-    border: $b-1 solid transparent;
-    color: var(--color-foreground-primary);
-    block-size: $sz-32;
-    margin: 0;
-    padding: 0 var(--sp-s);
-    inline-size: px2rem(152);
+  background-color: var(--color-background-tertiary);
+  border-radius: $br-8;
+  border: $b-1 solid transparent;
+  color: var(--color-foreground-primary);
+  block-size: $sz-32;
+  margin: 0;
+  padding: 0 var(--sp-s);
+  inline-size: px2rem(152);
 
-    &:focus {
-      outline: $b-1 solid var(--color-accent-primary);
-    }
+  &:focus {
+    outline: $b-1 solid var(--color-accent-primary);
+  }
 
-    &::placeholder {
-      color: var(--color-foreground-secondary);
-    }
+  &::placeholder {
+    color: var(--color-foreground-secondary);
   }
 }
 
@@ -103,8 +102,7 @@
   padding: var(--sp-m) var(--sp-xxl);
   inline-size: 100%;
 
-  // The inputs have no class.
-  input {
+  .name-input {
     @include use-typography("body-medium");
     @include text-ellipsis;
 
@@ -258,13 +256,11 @@
     color: var(--color-background-secondary);
     inline-size: $sz-500;
 
-    // The hero title and text have no class.
-    h2 {
+    .hero-title {
       color: var(--color-foreground-primary);
-      font-weight: 400;
     }
 
-    p {
+    .hero-text {
       @include use-typography("body-large");
 
       color: var(--color-foreground-secondary);
