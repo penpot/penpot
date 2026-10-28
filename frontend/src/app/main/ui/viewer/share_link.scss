@@ -186,13 +186,12 @@
 
 .pages-selection {
   margin: 0;
+}
 
-  // The page rows have no class of their own.
-  li {
-    border-block-end: $b-1 solid var(--color-background-quaternary);
-  }
+.page-row {
+  border-block-end: $b-1 solid var(--color-background-quaternary);
 
-  li:last-child {
+  &:last-child {
     border-block-end: none;
   }
 }

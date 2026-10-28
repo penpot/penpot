@@ -283,7 +283,7 @@
 
                     [:ul {:class (stl/css :pages-selection)}
                      (for [{:keys [id name]} pages]
-                       [:li {:class (stl/css :checkbox-wrapper)
+                       [:li {:class (stl/css :checkbox-wrapper :page-row)
                              :key (dm/str id)}
                         [:label {:for (dm/str "page-" id)}
                          [:span {:class (stl/css-case :global/checked (contains? selected id))}
