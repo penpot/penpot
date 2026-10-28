@@ -7,11 +7,14 @@
 (ns app.main.ui.workspace.sidebar.branch-review.common
   "What the compare and conflict dialogs say about a diff entry, kept free
   of rendering: labels, values, categories, one-line summaries, the
-  page/board a change lives on, and how a conflict splits into the
-  properties that clash and the ones only one side touched."
+  page/board a change lives on, how a conflict splits into the
+  properties that clash and the ones only one side touched, and what the
+  copy rule decides for the copies of a changed component."
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.branch-merge :as bm]
    [app.common.time :as ct]
+   [app.common.types.component :as ctk]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
@@ -320,12 +323,14 @@
       :else :other)))
 
 (defn status-tone
-  "The colour of the bar on a change row: what happened to the entry."
+  "The colour of the bar on a change row: what happened to the entry. A
+  copy the copy rule settled is information, not a change."
   [status]
   (case status
     :added    "success"
     :deleted  "error"
     :conflict "warning"
+    :settled  "neutral"
     "info"))
 
 ;; --- One-line summaries
@@ -365,6 +370,7 @@
     (case status
       :added   (tr "workspace.branches.compare.subtitle-new" (or lbl ""))
       :deleted (tr "workspace.branches.review.summary.deleted" (or lbl ""))
+      :settled (tr "workspace.branches.review.copies.settled-row")
       (if (empty? phrases)
         (or lbl (tr "workspace.branches.review.summary.changed"))
         (cond-> (str/join ", " shown)
@@ -525,7 +531,8 @@
   `:pages` group for the pages added, deleted or reordered. Each
   group is `{:id :name :page-id :rows [[idx item]] :boards [{:id :name
   :rows}]}`, with `:rows` holding the entries outside any board. A board
-  groups its changes only when it holds two or more of `rows`."
+  groups its changes only when it holds two or more of `rows`. `:count`
+  leaves out the copies the copy rule settled (`bm/settled?`)."
   [rows pages-index pages]
   (let [by-page (group-by (fn [[_ item]] (:page-id item)) rows)
         page-group
@@ -558,7 +565,7 @@
              :name    (or (:name page) (tr "workspace.branches.review.unknown-page"))
              :rows    (into [] (comp (remove second) (map first)) placed)
              :boards  boards
-             :count   (count page-rows)}))
+             :count   (count (remove (comp bm/settled? second) page-rows))}))
         page-order (into {} (map-indexed (fn [idx id] [id idx])) pages)
         loose      (get by-page nil)
         page-kind  #(contains? #{:page :page-order} (:kind (second %)))
@@ -791,3 +798,143 @@
   (count (filter (fn [shape]
                    (some #(= token-name %) (vals (:applied-tokens shape))))
                  (all-shapes data))))
+
+;; --- Component copies: what follows a changed component
+
+(defn group-label
+  "Human-readable name of a sync group (`app.common.types.component/sync-attrs`):
+  the properties a copy overrides together. The layout groups read as the
+  layout or the element's place in it, a swap slot as a swapped
+  component."
+  [group]
+  (let [gname (name group)]
+    (case group
+      :name-group          (tr "workspace.branches.review.copies.group.name")
+      :fill-group          (tr "workspace.branches.review.copies.group.fill")
+      :stroke-group        (tr "workspace.branches.review.copies.group.stroke")
+      :content-group       (tr "workspace.branches.review.copies.group.content")
+      :geometry-group      (tr "workspace.branches.review.copies.group.geometry")
+      :radius-group        (tr "workspace.branches.review.copies.group.radius")
+      :visibility-group    (tr "workspace.branches.review.copies.group.visibility")
+      :modifiable-group    (tr "workspace.branches.review.copies.group.lock")
+      :text-font-group     (tr "workspace.branches.review.copies.group.font")
+      :text-display-group  (tr "workspace.branches.review.copies.group.text-display")
+      :layer-effects-group (tr "workspace.branches.review.copies.group.layer")
+      :shadow-group        (tr "workspace.branches.review.copies.group.shadow")
+      :blur-group          (tr "workspace.branches.review.copies.group.blur")
+      :mask-group          (tr "workspace.branches.review.copies.group.mask")
+      :constraints-group   (tr "workspace.branches.review.copies.group.constraints")
+      :exports-group       (tr "workspace.branches.review.copies.group.exports")
+      :grids-group         (tr "workspace.branches.review.copies.group.grids")
+      :show-content        (tr "workspace.branches.review.copies.group.clip")
+      (cond
+        (ctk/swap-slot? group)                 (tr "workspace.branches.review.copies.group.swap")
+        (str/starts-with? gname "layout-item") (tr "workspace.branches.review.copies.group.layout-item")
+        (str/starts-with? gname "layout")      (tr "workspace.branches.review.copies.group.layout")
+        :else (-> gname (str/replace #"-group$" "") (str/replace "-" " ") str/capital)))))
+
+(defn token-slot-label
+  "A token slot (token attr of `:applied-tokens`) in words: the property
+  the token drives."
+  [slot]
+  (tr "workspace.branches.review.copies.token-slot" (str/lower (attr-label slot))))
+
+(defn reason-label
+  "Why the copy rule gave a property to a side, in words."
+  [reason]
+  (case reason
+    :follows-component (tr "workspace.branches.review.copies.reason.follows-component")
+    :override-main     (tr "workspace.branches.review.copies.reason.override-main")
+    :override-branch   (tr "workspace.branches.review.copies.reason.override-branch")
+    (tr "workspace.branches.review.copies.reason.override-both")))
+
+(defn side-label
+  [side]
+  (if (= side :main)
+    (tr "workspace.branches.review.side.main")
+    (tr "workspace.branches.review.side.branch")))
+
+(defn copies-entry
+  "The `:copies` entry of the summary (`app.common.files.branch-merge/compute-merge`)
+  for the component diff entry `item` belongs to: the component itself,
+  its main instance, or a layer inside that main, found by walking up
+  `objects`, the page of `item` as the open file holds it. Nil when
+  `item` is about no changed component."
+  [copies item objects]
+  (when (seq copies)
+    (case (:kind item)
+      :component
+      (some #(when (= (:id item) (:component-id %)) %) copies)
+
+      :shape
+      (let [by-main (into {}
+                          (comp (filter #(= (:page-id item) (:main-page-id %)))
+                                (map (juxt :main-id identity)))
+                          copies)]
+        (loop [id (:id item) depth 0]
+          (cond
+            (contains? by-main id)                         (get by-main id)
+            (or (nil? id) (= id uuid/zero) (> depth 64))   nil
+            :else (recur (get-in objects [id :parent-id]) (inc depth)))))
+
+      nil)))
+
+(defn copy-follow-counts
+  "How many copies follow each changed component, keyed both by the
+  component id and by its main instance id, as the change rows know
+  either one."
+  [copies]
+  (reduce (fn [acc {:keys [component-id main-id] :as entry}]
+            (let [n (count (:copies entry))]
+              (assoc acc component-id n main-id n)))
+          {}
+          copies))
+
+(defn copy-keeps
+  "What copy `copy` (one of a `:copies` entry's copies) keeps of its own,
+  per side: `{side [label ...]}`, with the sync groups it keeps an
+  override of and the token slots that side overrode."
+  [copy]
+  (let [groups (reduce (fn [acc [group side]]
+                         (update acc side (fnil conj []) (group-label group)))
+                       {}
+                       (sort-by (comp group-label key) (:keeps copy)))]
+    (reduce (fn [acc [slot {:keys [side reason]}]]
+              (if (and (contains? #{:main :branch} side)
+                       (contains? #{:override-main :override-branch} reason))
+                (update acc side (fnil conj []) (token-slot-label slot))
+                acc))
+            groups
+            (sort-by (comp name key) (:token-slots copy)))))
+
+(defn copy-open-slots
+  "The token slots of copy `copy` both sides overrode: the user decides
+  them."
+  [copy]
+  (into []
+        (comp (filter (fn [[_ {:keys [side]}]] (= :open side)))
+              (map (comp token-slot-label key)))
+        (sort-by (comp name key) (:token-slots copy))))
+
+(defn settled-rows
+  "The attrs and token slots of `settled` (a copy entry's `:settled`)
+  the copy rule decided, each `{:label :side :reason}`, attrs first."
+  [settled]
+  (-> []
+      (into (map (fn [[attr {:keys [side reason]}]]
+                   {:label (attr-label attr) :side side :reason reason}))
+            (sort-by (comp attr-label key) (:attrs settled)))
+      (into (map (fn [[slot {:keys [side reason]}]]
+                   {:label (token-slot-label slot) :side side :reason reason}))
+            (sort-by (comp name key) (:token-slots settled)))))
+
+(defn settled-open
+  "What the user still decides on a copy conflict with `settled`: the
+  open attrs, `:applied-tokens` aside, then the open token slots, in
+  words."
+  [settled]
+  (-> []
+      (into (comp (remove #{:applied-tokens}) (map attr-label))
+            (sort-by attr-label (:open-attrs settled)))
+      (into (map token-slot-label)
+            (sort-by name (:open-token-slots settled)))))

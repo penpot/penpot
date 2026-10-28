@@ -11798,3 +11798,171 @@ msgstr "Expand preview"
 #: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs
 msgid "workspace.branches.review.view.collapse"
 msgstr "Collapse preview"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.settled-row"
+msgstr "Decided by the copy rule"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs
+msgid "workspace.branches.review.copies.settled-tag"
+msgstr "Copy rule"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
+msgid "workspace.branches.review.copies.follows-all"
+msgstr "Follows every change"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
+msgid "workspace.branches.review.copies.follows"
+msgstr "Follows the component for %s"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
+msgid "workspace.branches.review.copies.keeps-main"
+msgstr "Keeps its own %s, overridden on main"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
+msgid "workspace.branches.review.copies.keeps-branch"
+msgstr "Keeps its own %s, overridden on the branch"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
+msgid "workspace.branches.review.copies.slots-open"
+msgstr "Both sides override the %s: your choice decides"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
+msgid "workspace.branches.review.copies.settled-title"
+msgstr "Decided by the copy rule"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
+msgid "workspace.branches.review.copies.settled-notice"
+msgstr "The copy rule decides every change on this copy, so there is nothing to choose or leave out."
+
+#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
+msgid "workspace.branches.review.copies.open-note"
+msgstr "Your choice decides only %s. The copy rule decides the rest."
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.reason.follows-component"
+msgstr "follows the component"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.reason.override-main"
+msgstr "overridden on main"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.reason.override-branch"
+msgstr "overridden on the branch"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.reason.override-both"
+msgstr "overridden on both sides"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.token-slot"
+msgstr "Token for %s"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.name"
+msgstr "Name"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.fill"
+msgstr "Fill"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.stroke"
+msgstr "Stroke"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.content"
+msgstr "Content"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.geometry"
+msgstr "Size and position"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.radius"
+msgstr "Radius"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.visibility"
+msgstr "Visibility"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.lock"
+msgstr "Lock"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.font"
+msgstr "Font"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.text-display"
+msgstr "Text spacing and alignment"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.layer"
+msgstr "Opacity and blend mode"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.shadow"
+msgstr "Shadow"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.blur"
+msgstr "Blur"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.mask"
+msgstr "Mask"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.constraints"
+msgstr "Constraints"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.exports"
+msgstr "Exports"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.grids"
+msgstr "Guides"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.clip"
+msgstr "Clip content"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.swap"
+msgstr "Swapped component"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.layout"
+msgstr "Layout"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/common.cljs
+msgid "workspace.branches.review.copies.group.layout-item"
+msgstr "Layout element"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs
+msgid "workspace.branches.review.copies.row-follow"
+msgid_plural "workspace.branches.review.copies.row-follow"
+msgstr[0] "1 copy follows"
+msgstr[1] "%s copies follow"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
+msgid "workspace.branches.review.copies.follow"
+msgid_plural "workspace.branches.review.copies.follow"
+msgstr[0] "1 copy will follow this component"
+msgstr[1] "%s copies will follow this component"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
+msgid "workspace.branches.review.copies.keeping"
+msgid_plural "workspace.branches.review.copies.keeping"
+msgstr[0] "1 keeps overrides"
+msgstr[1] "%s keep overrides"
+
+#: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
+msgid "workspace.branches.review.copies.affected"
+msgid_plural "workspace.branches.review.copies.affected"
+msgstr[0] "Choosing a side here also decides 1 copy."
+msgstr[1] "Choosing a side here also decides %s copies."

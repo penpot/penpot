@@ -56,3 +56,55 @@
   flex-direction: column;
   gap: var(--sp-xxs);
 }
+
+.copy-list {
+  display: flex;
+  flex-direction: column;
+  padding-block: var(--sp-xs);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  padding: var(--sp-xs) var(--sp-m);
+}
+
+.copy-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
+}
+
+.copy-icon {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.copy-name {
+  @include text-ellipsis;
+
+  color: var(--color-foreground-primary);
+}
+
+.copy-page {
+  @include text-ellipsis;
+
+  margin-inline-start: auto;
+  color: var(--color-foreground-secondary);
+}
+
+.copy-line {
+  padding-inline-start: calc(var(--sp-xs) + $sz-16);
+  color: var(--color-foreground-secondary);
+}
+
+.settled-value {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+}

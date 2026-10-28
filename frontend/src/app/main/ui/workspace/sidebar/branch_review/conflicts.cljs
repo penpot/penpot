@@ -16,6 +16,7 @@
    [app.common.time :as ct]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.branches :as dwb]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
@@ -28,6 +29,7 @@
    [app.main.ui.ds.product.preview-card :refer [preview-card*]]
    [app.main.ui.ds.product.tag :refer [tag*]]
    [app.main.ui.workspace.sidebar.branch-review.common :as brc]
+   [app.main.ui.workspace.sidebar.branch-review.facts :as brf]
    [app.main.ui.workspace.sidebar.branch-review.layout :as brl]
    [app.main.ui.workspace.sidebar.branch-review.previews :as brp]
    [app.util.clipboard :as clipboard]
@@ -271,8 +273,11 @@
 
 (mf/defc conflict-detail*
   {::mf/private true}
-  [{:keys [conflict res diff-meta on-pick on-choose on-clear]}]
+  [{:keys [conflict res diff-meta copies data on-pick on-choose on-clear]}]
   (let [rows       (brc/conflict-attr-rows conflict)
+        copies-of  (mf/with-memo [copies conflict data]
+                     (brc/copies-entry copies conflict
+                                       (get-in data [:pages-index (:page-id conflict) :objects])))
         per-attr?  (brc/per-attr? conflict)
         text?      (text-clash? conflict)
         table-rows (if text? (filterv #(not= :content (:attr %)) rows) rows)
@@ -351,6 +356,15 @@
                        :on-click #(on-pick attr :branch)}
            (tr "workspace.branches.resolve.keep-branch" (brc/display-val branch))]]))
 
+     ;; the copy rule: what it decided on this copy, how many copies a
+     ;; choice on a main decides, and which copies follow the component
+     (when (:settled conflict)
+       [:> brf/settled-facts* {:settled (:settled conflict) :is-conflict true}])
+     (when (:copies-affected conflict)
+       [:> brf/copies-affected* {:n (:copies-affected conflict)}])
+     (when copies-of
+       [:> brf/copies-facts* {:entry copies-of :data data}])
+
      ;; once decided, one quiet block says what the merge leaves behind,
      ;; with the way back; until then, a note says how the choice works
      (if resolved?
@@ -390,6 +404,8 @@
    ::mf/register-as :branch-conflicts}
   [{:keys [branch mode conflicts excluded comment]}]
   (let [{:keys [diff resolutions status]} (mf/deref branch-diff)
+        data        (mf/deref refs/workspace-data)
+        copies      (:copies diff)
 
         loading?    (= status :loading)
         selected*   (mf/use-state 0)
@@ -540,6 +556,8 @@
                                :conflict sel
                                :res sel-res
                                :diff-meta diff-meta
+                               :copies copies
+                               :data data
                                :on-pick on-pick
                                :on-choose on-choose
                                :on-clear on-clear}]))

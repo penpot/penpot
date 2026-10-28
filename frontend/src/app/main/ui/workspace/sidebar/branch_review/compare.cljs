@@ -11,6 +11,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.branch-merge :as bm]
    [app.common.time :as ct]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.branches :as dwb]
@@ -77,6 +78,10 @@
                    :class (stl/css :row-warning)
                    :aria-label (tr "workspace.branches.review.row.choose")}]
 
+      ;; information, not a change: nothing to choose or leave out
+      (= :settled status)
+      [:> tag* {:variant "pill"} (tr "workspace.branches.review.copies.settled-tag")]
+
       excluded
       [:> tag* {:variant "pill"} (tr "workspace.branches.review.row.left-out")]
 
@@ -114,18 +119,30 @@
   (let [folded (into #{} (comp (mapcat val) (map first)) cascades)]
     (filterv (fn [[idx _]] (not (contains? folded idx))) rows)))
 
+(defn- follows-of
+  "How many copies follow the component `item` is, or the main instance
+  of (`brc/copy-follow-counts`), or nil."
+  [follow-counts item]
+  (when (or (= :component (:kind item)) (:component? item))
+    (get follow-counts (:id item))))
+
 (mf/defc item-row*
   "One change. `inner` are the layers added or deleted with it, folded
-  under it: the row counts them and its checkbox takes them along."
+  under it: the row counts them and its checkbox takes them along.
+  `follows` is how many copies follow the component the row changes."
   {::mf/private true}
-  [{:keys [index item inner selected excluded reviewed on-select on-toggle]}]
+  [{:keys [index item inner follows selected excluded reviewed on-select on-toggle]}]
   (let [selectable? (selectable-item? item)
         change-key  (:key item)
         toggle-keys (row-keys item inner)
         subtitle    (cond-> (brc/change-summary item)
                       (seq inner)
                       (dm/str " - " (tr "workspace.branches.review.facts.layers"
-                                        (i18n/c (count inner)))))
+                                        (i18n/c (count inner))))
+
+                      (and follows (pos? follows))
+                      (dm/str " - " (tr "workspace.branches.review.copies.row-follow"
+                                        (i18n/c follows))))
         on-click    (mf/use-fn (mf/deps index on-select) #(on-select {:kind :item :index index}))
         start       (when selectable?
                       (mf/html
@@ -159,7 +176,8 @@
     [:*
      [:> change-row* {:title (or (:name board) "")
                       :subtitle (tr "workspace.branches.review.board.inside"
-                                    (i18n/c (count (:rows board))))
+                                    (i18n/c (count (remove (comp bm/settled? second)
+                                                           (:rows board)))))
                       ;; a fold is not a change: no status colour
                       :tone "neutral"
                       :is-selected (= selected sel)
@@ -174,7 +192,7 @@
 
 (mf/defc change-list*
   {::mf/private true}
-  [{:keys [groups conflicts cascades selected excluded reviewed collapsed
+  [{:keys [groups conflicts cascades follow-counts selected excluded reviewed collapsed
            on-select on-toggle on-fold]}]
   [:*
    (when (seq conflicts)
@@ -187,6 +205,7 @@
         (when open?
           (for [[idx item] conflicts]
             [:> item-row* {:key idx :index idx :item item
+                           :follows (follows-of follow-counts item)
                            :selected selected
                            :reviewed (contains? reviewed (review-key item))
                            :on-select on-select :on-toggle on-toggle}]))]))
@@ -213,6 +232,7 @@
            (for [[idx item] rows]
              [:> item-row* {:key idx :index idx :item item
                             :inner (get cascades idx)
+                            :follows (follows-of follow-counts item)
                             :selected selected
                             :excluded (contains? excluded (:key item))
                             :reviewed (contains? reviewed (review-key item))
@@ -225,6 +245,7 @@
               (for [[idx item] (:rows board)]
                 [:> item-row* {:key idx :index idx :item item
                                :inner (get cascades idx)
+                               :follows (follows-of follow-counts item)
                                :selected selected
                                :excluded (contains? excluded (:key item))
                                :reviewed (contains? reviewed (review-key item))
@@ -361,13 +382,16 @@
 
 (mf/defc item-detail*
   {::mf/private true}
-  [{:keys [item items indexed cascades excluded excluded-keys reviewed selected open-side
+  [{:keys [item items indexed cascades copies excluded excluded-keys reviewed selected open-side
            incoming data diff-meta on-resolve on-select on-toggle expanded on-expand]}]
   (let [type-lbl (brc/type-label-key item)
         cat      (brc/category item)
         attrs    (:changed-attrs item)
         visible  (brc/visible-attrs attrs)
         conflict? (= :conflict (:status item))
+        copies-of (mf/with-memo [copies item data]
+                    (brc/copies-entry copies item
+                                      (get-in data [:pages-index (:page-id item) :objects])))
         mode*    (mf/use-state :side)
         mode     (deref mode*)]
     [:*
@@ -405,19 +429,33 @@
         (tr "workspace.branches.review.decision.body")])
 
      ;; the summary heads the property table; a decision puts its way in
-     ;; on the same line
-     [:div {:class (stl/css :detail-summary-row)}
-      [:> text* {:as "p" :typography t/body-small :class (stl/css :detail-summary)}
-       (brc/change-summary item)]
-      (when (and conflict? on-resolve)
-        [:> button* {:variant "secondary" :on-click on-resolve}
-         (tr "workspace.branches.review.row.choose")])]
-
-     (if (seq visible)
-       [:> brl/value-steps* {:attrs visible}]
-       (when (= :modified (:status item))
+     ;; on the same line. A copy the copy rule settled changes nothing:
+     ;; its section below says what the rule decided instead
+     (when-not (bm/settled? item)
+       [:*
+        [:div {:class (stl/css :detail-summary-row)}
          [:> text* {:as "p" :typography t/body-small :class (stl/css :detail-summary)}
-          (tr "workspace.branches.compare.no-props")]))
+          (brc/change-summary item)]
+         (when (and conflict? on-resolve)
+           [:> button* {:variant "secondary" :on-click on-resolve}
+            (tr "workspace.branches.review.row.choose")])]
+
+        (if (seq visible)
+          [:> brl/value-steps* {:attrs visible}]
+          (when (= :modified (:status item))
+            [:> text* {:as "p" :typography t/body-small :class (stl/css :detail-summary)}
+             (tr "workspace.branches.compare.no-props")]))])
+
+     ;; the copy rule: what it decided on this copy, how many copies a
+     ;; choice on a main decides, and which copies follow the component
+     (when (:settled item)
+       [:> brf/settled-facts* {:settled (:settled item)
+                               :is-conflict conflict?
+                               :is-settled (bm/settled? item)}])
+     (when (and conflict? (:copies-affected item))
+       [:> brf/copies-affected* {:n (:copies-affected item)}])
+     (when copies-of
+       [:> brf/copies-facts* {:entry copies-of :data data}])
 
      ;; an entry without a before and after says what it is, where it
      ;; lands and what it affects instead
@@ -431,7 +469,7 @@
                                   :data data
                                   :open-side open-side
                                   :incoming incoming
-                                  :change-count (count rows)}
+                                  :change-count (count (remove (comp bm/settled? second) rows))}
               (for [[idx it] rows]
                 [:> item-row* {:key idx :index idx :item it
                                :inner (get cascades idx)
@@ -537,8 +575,14 @@
                      (remove-folded indexed cascades))
         listed-items (mf/with-memo [listed]
                        (mapv second listed))
-        counts     (mf/with-memo [listed-items]
-                     (group-by brc/category listed-items))
+        ;; a copy the copy rule settled entirely is shown, never counted
+        counted    (mf/with-memo [listed-items]
+                     (filterv (complement bm/settled?) listed-items))
+        counts     (mf/with-memo [counted]
+                     (group-by brc/category counted))
+        copies     (:copies diff)
+        follow-counts (mf/with-memo [copies]
+                        (brc/copy-follow-counts copies))
 
         filter*    (mf/use-state :all)
         active-filter (deref filter*)
@@ -574,7 +618,7 @@
         row-keys*  (into #{} (comp (filter selectable-item?) (map :key)) listed-items)
         kept-count (count (remove excluded row-keys*))
         left-out   (count (filter excluded row-keys*))
-        reviewed-n (count (filter #(contains? reviewed (review-key %)) listed-items))
+        reviewed-n (count (filter #(contains? reviewed (review-key %)) counted))
 
         sel-index  (when (= :item (:kind selected)) (:index selected))
         sel-item   (when (and (some? sel-index) (< sel-index (count items)))
@@ -616,6 +660,7 @@
                  ahead   (concat (drop start order) (take start order))
                  next-ix (some (fn [idx]
                                  (when (and (not= idx (:index selected))
+                                            (not (bm/settled? (nth items idx)))
                                             (not (contains? reviewed (review-key (nth items idx)))))
                                    idx))
                                ahead)]
@@ -626,7 +671,8 @@
                     (fn []
                       (let [payload (clj->js {:stats (:stats diff)
                                               :changes (:changes diff)
-                                              :conflicts (:conflicts diff)})
+                                              :conflicts (:conflicts diff)
+                                              :copies (:copies diff)})
                             text    (js/JSON.stringify payload nil 2)
                             blob    (js/Blob. #js [text] #js {:type "application/json"})
                             url     (js/URL.createObjectURL blob)
@@ -673,7 +719,7 @@
       :filters (when (and (= status :loaded) (seq items) (not expanded))
                  (mf/html
                   [:*
-                   [:> filter-chip* {:label (dm/str (tr "labels.all") " (" (count listed-items) ")")
+                   [:> filter-chip* {:label (dm/str (tr "labels.all") " (" (count counted) ")")
                                      :is-selected (= active-filter :all)
                                      :on-click #(on-filter :all)}]
                    (for [[cat tone label icon] brc/categories
@@ -695,6 +741,7 @@
                [:> change-list* {:groups groups
                                  :conflicts conflicts
                                  :cascades cascades
+                                 :follow-counts follow-counts
                                  :selected selected
                                  :excluded excluded
                                  :reviewed reviewed
@@ -738,6 +785,7 @@
                            :items items
                            :indexed indexed
                            :cascades cascades
+                           :copies copies
                            :excluded (contains? excluded (:key sel-item))
                            :excluded-keys excluded
                            :reviewed reviewed
@@ -768,7 +816,7 @@
            (str/join " - "
                      (remove nil?
                              [(tr "workspace.branches.review.footer.reviewed"
-                                  (str reviewed-n) (str (count listed-items)))
+                                  (str reviewed-n) (str (count counted)))
                               (when (pos? decisions)
                                 (tr "workspace.branches.review.footer.blocked" (i18n/c decisions)))
                               (when (pos? left-out)
