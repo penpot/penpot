@@ -7323,16 +7323,6 @@ msgstr ""
 msgid "workspace.branches.merge.confirm-title"
 msgstr "Merge into main"
 
-#: src/app/main/ui/workspace/sidebar/branches.cljs:370, src/app/main/ui/workspace/sidebar/branches.cljs:1526
-msgid "workspace.branches.merge.archive-label"
-msgstr "Archive this branch"
-
-#: src/app/main/ui/workspace/sidebar/branches.cljs:376
-msgid "workspace.branches.merge.archive-warning"
-msgstr ""
-"Archived branches keep a full copy of the file so they can be restored "
-"later. Keeping many archived branches can take up a lot of storage."
-
 #: src/app/main/data/workspace/branches.cljs:415
 #, unused
 msgid "workspace.branches.merge.conflicts"
@@ -7340,9 +7330,7 @@ msgstr "This branch has conflicts that must be resolved before merging"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:378
 msgid "workspace.branches.merge.delete-info"
-msgstr ""
-"After merging, this branch and its file will be deleted to free up storage. "
-"Archive it if you might need to restore it later."
+msgstr "After merging, this branch and its file will be deleted to free up storage."
 
 #: src/app/main/data/workspace/branches.cljs:451, src/app/main/data/workspace/branches.cljs:459
 msgid "workspace.branches.merge.error"
@@ -11796,8 +11784,8 @@ msgstr[1] "%s changes are left out."
 #: src/app/main/ui/workspace/sidebar/branches.cljs
 msgid "workspace.branches.merge.left-out-lost"
 msgid_plural "workspace.branches.merge.left-out-lost"
-msgstr[0] "The change you left out is lost when the branch is deleted. Archive the branch to keep it."
-msgstr[1] "The %s changes you left out are lost when the branch is deleted. Archive the branch to keep them."
+msgstr[0] "The change you left out is lost when the branch is deleted."
+msgstr[1] "The %s changes you left out are lost when the branch is deleted."
 
 #: src/app/main/ui/workspace/sidebar/branch_review/compare.cljs
 msgid "workspace.branches.review.view.expand"
