@@ -378,6 +378,17 @@
        (into #{} (comp (filter pmap/pointer-map?)
                        (map pmap/get-id)))))
 
+(defn get-page-pointer-ids
+  "`{page-id fragment-id}` of every page of `fdata` held as a pointer. Two
+  documents whose page names the same fragment hold the same page,
+  because a fragment row never changes after it is written."
+  [fdata]
+  (into {}
+        (keep (fn [[page-id page]]
+                (when (pmap/pointer-map? page)
+                  [page-id (pmap/get-id page)])))
+        (:pages-index fdata)))
+
 (defn enable-pointer-map
   "Enable the fdata/pointer-map feature on the file."
   [file & _opts]

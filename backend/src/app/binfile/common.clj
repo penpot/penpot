@@ -459,6 +459,10 @@
 
         base (fdata/resolve-file-data cfg base)
         base (fdata/decode-file-data cfg base)
+        ;; the fragment ids the base names, read before the realize
+        ;; drops them: a comparison skips every page main still shares
+        base-ids (fdata/get-page-pointer-ids (:data base))
+
         ;; the base shares the source file's fragments; past this point
         ;; the replay, the migrations and every caller see plain data
         base (realize-branch-base cfg base)
@@ -526,7 +530,11 @@
         (cond-> (some? (:migrations doc))
           (assoc :migrations (:migrations doc)))
         (cond-> include-base-data?
-          (assoc ::base-data base-data))
+          (assoc ::base-data base-data
+                 ;; a migrated base no longer holds what its fragments
+                 ;; hold, so its ids say nothing about main
+                 ::base-page-pointers (when (identical? base-data (:data base))
+                                        base-ids)))
         ;; the numbers travel with the value, because the RPC audit event
         ;; of the read that paid for this derive reads `::audit/props` off
         ;; the result metadata

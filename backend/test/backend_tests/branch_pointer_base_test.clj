@@ -13,10 +13,12 @@
   (:require
    [app.binfile.common :as bfc]
    [app.common.features :as cfeat]
+   [app.common.files.branch-merge :as bm]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.fdata :as fdata]
    [app.features.file-snapshots :as fsnap]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files-branch :as fbranch]
@@ -223,3 +225,60 @@
         ;; the merged page is new, the untouched one keeps its fragment
         (t/is (not= (get before page-a) (get after page-a)))
         (t/is (= (get before page-b) (get after page-b)))))))
+
+(defn- rename-shape
+  [page-id shape-id name]
+  {:type :mod-obj
+   :page-id page-id
+   :id shape-id
+   :operations [{:type :set :attr :name :val name}]})
+
+(defn- eager-compare
+  "The comparison with every page of every side realized and no bound."
+  [file-id branch-file-id dir]
+  (db/run! th/*system*
+           (fn [cfg]
+             (let [main   (:data (bfc/get-file cfg file-id :realize? true))
+                   bfile  (bfc/get-file cfg branch-file-id :realize? true :include-base-data? true)
+                   base   (#'fbranch/branch-base-data cfg file-id bfile)
+                   branch (bm/remap-refs (:data bfile)
+                                         (#'fbranch/branch-id-map cfg branch-file-id file-id))]
+               (bm/compute-merge base main branch dir)))))
+
+(t/deftest compare-loads-only-the-pages-main-moved
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [{:keys [profile-id file-id]} (setup)
+          page-a  (first (:pages (realized-data file-id)))
+          others  (vec (repeatedly 5 uuid/random))
+          rect    (add-rect page-a)
+          shape   (:id rect)
+          _       (update-file! profile-id file-id
+                                (into [rect]
+                                      (map (fn [id] {:type :add-page :id id :name (str id)}))
+                                      others))
+          branch  (create-branch! profile-id file-id "lazy")
+          bfid    (:branch-file-id branch)
+          page-b  (first others)]
+      ;; the branch renames the shape main renames too, a conflict on
+      ;; page A, and adds a shape; main also adds a shape on page B, so
+      ;; main moved two of six pages
+      (update-file! profile-id bfid [(rename-shape page-a shape "branch") (add-rect page-a)])
+      (update-file! profile-id file-id [(rename-shape page-a shape "main") (add-rect page-b)])
+
+      (doseq [dir [:branch->main :main->branch]]
+        (let [loads (atom 0)
+              load  fdata/load-pointer
+              out   (with-redefs [fdata/load-pointer (fn [& args] (swap! loads inc) (apply load args))]
+                      (th/command! {::th/type :get-branch-diff
+                                    ::rpc/profile-id profile-id
+                                    :branch-id (:id branch)
+                                    :direction dir}))
+              eager (eager-compare file-id bfid dir)]
+          (t/is (nil? (:error out)))
+          (t/testing (str dir " gives the summary of the whole-file comparison")
+            (t/is (= (:stats eager) (:stats (:result out))))
+            (t/is (= (:changes eager) (:changes (:result out))))
+            (t/is (= (:conflicts eager) (:conflicts (:result out))))
+            (t/is (= 1 (count (:conflicts eager)))))
+          (t/testing (str dir " loads the base's six pages and main's two moved ones")
+            (t/is (= 8 @loads))))))))

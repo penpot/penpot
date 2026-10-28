@@ -349,6 +349,41 @@
                     :hint "the branch file was read without `:include-base-data? true`"))
       (bm/remap-refs (branch-media-pairs cfg id source-file-id))))
 
+(defn- moved-pages
+  "The pages on which main can differ from a branch's base: every page
+  whose fragment main does not share with the base. Nil when fragment ids
+  cannot tell, because main or the base holds no pointers, which leaves
+  the whole-file comparison in place. `stored` is main's `:data` with its
+  pointers unrealized, and `base-ids` the `::bfc/base-page-pointers` of
+  the branch read."
+  [stored base-ids]
+  (when (seq base-ids)
+    (let [main-ids (fdata/get-page-pointer-ids stored)]
+      (when (seq main-ids)
+        (into #{}
+              (remove (fn [page-id]
+                        (let [id (get main-ids page-id)]
+                          (and (some? id) (= id (get base-ids page-id))))))
+              (into (set (keys (:pages-index stored))) (keys base-ids)))))))
+
+(defn- comparison-main
+  "Main realized for a comparison with a branch, and the pages main moved
+  since the branch's base (`moved-pages`). Only the moved pages load:
+  every other page holds the same document as the base's, so the base's
+  page, which the derive already realized, stands in for it. `base-data`
+  is the comparison's base, in main's id space."
+  [cfg source-file-id branch-file base-data]
+  (let [stored (bfc/get-file cfg source-file-id)
+        moved  (moved-pages (:data stored) (::bfc/base-page-pointers branch-file))
+        shared (fn [pages page-id page]
+                 (if (contains? moved page-id)
+                   (assoc pages page-id page)
+                   (assoc pages page-id (get-in base-data [:pages-index page-id]))))
+        stored (cond-> stored
+                 (some? moved)
+                 (update-in [:data :pages-index] #(reduce-kv shared {} %)))]
+    [(fdata/realize cfg stored) moved]))
+
 (defn- release-base-snapshot!
   "Reschedule a branch's base snapshot for normal deletion: it is pinned
   ~10 years while the branch is open, and must be released when the branch
@@ -704,9 +739,10 @@
   branches of the same source; otherwise it is loaded on demand.
 
   The forward pass is bounded to the pages the branch's op log touched
-  when that set is complete (`branch-affected-pages`); the reverse pass
-  reports MAIN's changes and stays whole-file, because nothing here knows
-  what main touched.
+  when that set is complete (`branch-affected-pages`), and the reverse
+  pass, which reports MAIN's changes, to the pages whose fragment main no
+  longer shares with the base (`moved-pages`). Without a shared
+  `main-data`, main loads only those pages (`comparison-main`).
 
   Raises on failure instead of degrading: the caller decides whether the
   result is worth caching, and a value computed from an error must never
@@ -715,8 +751,7 @@
   (bp/with-policies
     (if (and (zero? ahead-revn) (zero? behind-revn))
       [0 0 0]
-      (let [main-data   (or main-data (:data (bfc/get-file cfg source-file-id :realize? true)))
-            ;; the derive hands back the merge base it replayed the log over,
+      (let [;; the derive hands back the merge base it replayed the log over,
             ;; so the comparison's `base` costs one decode of the snapshot
             ;; rather than two
             branch-file (bfc/get-file cfg branch-file-id :realize? true
@@ -725,6 +760,20 @@
                          (:data branch-file)
                          (branch-id-map cfg branch-file-id source-file-id))
             base-data   (branch-base-data cfg source-file-id branch-file)
+            base-ids    (::bfc/base-page-pointers branch-file)
+            [main-data moved]
+            (cond
+              (nil? main-data)
+              (let [[file moved] (comparison-main cfg source-file-id branch-file base-data)]
+                [(:data file) moved])
+
+              ;; the stored document is a handful of pointers, read only
+              ;; when the base holds pointers to compare them with
+              (seq base-ids)
+              [main-data (moved-pages (:data (bfc/get-file cfg source-file-id)) base-ids)]
+
+              :else
+              [main-data nil])
             clean-count (fn [m] (let [s (:stats m)]
                                   (+ (:added s) (:modified s) (:deleted s))))
             fwd (when (pos? ahead-revn)
@@ -732,7 +781,8 @@
                                     (when-let [pages (branch-affected-pages cfg branch-file-id)]
                                       {:only-pages pages})))
             bwd (when (pos? behind-revn)
-                  (bm/compute-merge base-data branch-data main-data :branch->main))]
+                  (bm/compute-merge base-data branch-data main-data :branch->main
+                                    (when moved {:only-pages moved})))]
         [(if fwd (clean-count fwd) 0)
          (if bwd (clean-count bwd) 0)
          ;; conflicts are symmetric; only possible when both sides diverged
@@ -917,19 +967,23 @@
 
       (let [tpoint      (ct/tpoint)
             dir         (or direction :branch->main)
-            main-file   (-> (bfc/get-file cfg (:source-file-id branch) :realize? true)
-                            (check-file-size-limits! :compare))
             _           (check-oplog-depth-limit! (bfc/get-branch-oplog-depth cfg (:branch-file-id branch))
                                                   (:branch-file-id branch)
                                                   :compare)
             log         (branch-log cfg (:branch-file-id branch))
             branch-file (bfc/get-file cfg (:branch-file-id branch)
                                       :realize? true :include-base-data? true)
+            base-data   (branch-base-data cfg (:source-file-id branch) branch-file)
+            ;; the size gate runs after the derive: main loads only the
+            ;; pages it moved since the base, so the base is needed first,
+            ;; and the derive's own cost is bounded by the gates the base
+            ;; passed when it was written
+            [main-file moved] (comparison-main cfg (:source-file-id branch) branch-file base-data)
+            _           (check-file-size-limits! main-file :compare)
             main-data   (:data main-file)
             branch-data (bm/remap-refs
                          (:data branch-file)
                          (branch-id-map cfg (:branch-file-id branch) (:source-file-id branch)))
-            base-data   (branch-base-data cfg (:source-file-id branch) branch-file)
             ;; when the CURRENT merge-base snapshot row was created: the
             ;; base moves whenever `update-branch-from-main` repositions it,
             ;; and a pinned base carries a future `deleted-at`
@@ -937,12 +991,15 @@
                                               {:id (:base-snapshot-id branch)}
                                               {::sql/columns [:created-at]
                                                ::db/remove-deleted false}))
-            ;; only the branch->main direction may be bounded to the pages
-            ;; the branch touched: the other direction is main's changes and
-            ;; nothing here knows which pages those are
-            opts        (when (= dir :branch->main)
+            ;; each direction is bounded to the pages the side it reports
+            ;; can have changed: the branch's to the pages its log
+            ;; touched, main's to the pages whose fragment it no longer
+            ;; shares with the base
+            opts        (if (= dir :branch->main)
                           (when-let [pages (affected-pages log)]
-                            {:only-pages pages}))]
+                            {:only-pages pages})
+                          (when moved
+                            {:only-pages moved}))]
         ;; `:meta` carries the "when" of each side so the resolution UI can show
         ;; how recent main/branch are (base is the snapshot its
         ;; `base-snapshot-id` currently points at), plus
