@@ -32,7 +32,7 @@ Backend: JVM Clojure; Integrant; PostgreSQL; Redis/Valkey; RPC; HTTP; storage; m
 
 RPC commands are defined with `app.util.services/defmethod` and schemas. Use `get-` prefixes for read operations. Command metadata usually includes auth, docs version, params schema, and result schema. Return plain maps/vectors or raise structured exceptions from `app.common.exceptions`.
 
-Backend RPC command areas without focused memories include access tokens, binfile, demo, feedback, file snapshots, fonts, management, Nitrate, and webhooks beyond the notes in `mem:backend/auth-permissions-product-domains`; inspect nearby command tests and command metadata before changing them.
+Backend RPC command areas without focused memories include access tokens (auth rules, incl. MCP tokens, in `mem:backend/auth-permissions-product-domains`), binfile, demo, feedback, file snapshots, fonts, management, Nitrate, and webhooks beyond the notes in `mem:backend/auth-permissions-product-domains`; inspect nearby command tests and command metadata before changing them.
 
 ## DB conventions
 

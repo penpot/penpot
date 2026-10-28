@@ -191,6 +191,10 @@ services:
       PENPOT_SMTP_TLS: "false"
       PENPOT_SMTP_SSL: "false"
 
+      ## Inbox for the feedback that MCP agents send. Set it together with
+      ## PENPOT_MCP_BACKEND_URI on the penpot-mcp service.
+      # PENPOT_MCP_FEEDBACK_EMAIL: mcp-feedback@example.com
+
   penpot-admin-console:
     image: "penpotapp/admin-console:${PENPOT_VERSION:-2.18}"
     restart: always
@@ -214,6 +218,11 @@ services:
     restart: always
     networks:
       - penpot
+
+    # environment:
+      ## Offers the submit_feedback tool, which emails agent feedback through the
+      ## backend. Set it together with PENPOT_MCP_FEEDBACK_EMAIL on the backend.
+      # PENPOT_MCP_BACKEND_URI: http://penpot-backend:6060/
 
   penpot-exporter:
     image: "penpotapp/exporter:${PENPOT_VERSION:-2.18}"

@@ -13,6 +13,9 @@
 - Logout may return an OIDC provider redirect URI when the session claims include provider/session data and the provider has a logout URI.
 - Invitation tokens are verified through token issuers and only accepted when the token member id/email matches the authenticated profile; otherwise login proceeds without consuming the invitation.
 - When public registration is disabled, invitation-based password registration also requires a matching, non-expired `team_invitation` row; registration revalidates it under a row lock before creating the profile.
+- Access tokens (`app.http.access-token`): personal tokens have JWT issuer `access-token` and DB type other than `mcp`; MCP tokens have issuer `urn:penpot:mcp-token` (`actoken/mcp-token-issuer`) and DB type `mcp`. Authentication requires issuer and type to agree, and the claim `uid` to match the row's profile; other issuers and undecryptable tokens are treated as anonymous.
+- Personal tokens need flag `:access-tokens`. MCP tokens need `:mcp` or `:access-tokens`, and only on routes whose `actoken/authz` gets `::actoken/allow-mcp true` (the RPC routes); elsewhere (e.g. assets) they are anonymous.
+- On RPC, an MCP token reaches only commands with `::rpc/token-type "mcp"` (`wrap-authentication` in `app.rpc`); every other command answers 403 `:token-auth-required`. A command with that metadata also rejects sessions and personal tokens. Currently only `send-mcp-feedback`. Blocking a profile invalidates sessions, not tokens, so such commands check `:is-blocked`/`:is-active` themselves.
 - HTTP/session parsing details such as cookie/header precedence, JWT session token versions, and SameSite behavior are in `mem:backend/subtleties`.
 
 ## Permission model
