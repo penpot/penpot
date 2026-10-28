@@ -176,3 +176,18 @@
                                        {(:id frame) bounds (:id child) child-bounds} objects false)]
       (t/is (= 1 (count lines)))
       (t/is (= 1 (:num-children (first lines)))))))
+
+(t/deftest flex-space-distribution-starts-at-the-minimum-and-stops-at-the-maximum
+  (t/is (= [{:min-size 20 :max-size 30 :size 30}
+            {:min-size 10 :max-size 100 :size 40}]
+           (fld/distribute-space :size :min-size :max-size 30 70
+                                 [{:min-size 20 :max-size 30}
+                                  {:min-size 10 :max-size 100}])))
+  (t/is (= [{:min-size 20 :max-size 30 :size 30}
+            {:min-size 10 :max-size 40 :size 40}]
+           (fld/distribute-space :size :min-size :max-size 30 100
+                                 [{:min-size 20 :max-size 30}
+                                  {:min-size 10 :max-size 40}])))
+  (t/is (= [[{:min-size 10 :max-size 10 :size 10}] 5]
+           (fld/add-space-to-items :size :min-size :max-size 5
+                                   [{:min-size 10 :max-size 10 :size 10}]))))

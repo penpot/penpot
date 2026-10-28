@@ -142,8 +142,10 @@
 (defn add-space-to-items
   ;; Distributes the remainder space between the lines
   [prop prop-min prop-max to-share items]
-  (let [num-items (->> items (remove #(mth/close? (get % prop) (get % prop-max))) count)
-        per-line-target (/ to-share num-items)]
+  (let [num-items       (->> items
+                             (remove #(mth/close? (or (get % prop) (get % prop-min) 0) (get % prop-max)))
+                             count)
+        per-line-target (if (pos? num-items) (/ to-share num-items) 0)]
 
     (loop [items (seq items)
            remainder to-share
