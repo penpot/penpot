@@ -1,0 +1,34 @@
+[
+  {
+    "~:id": "tokens-starter-kit",
+    "~:name": "Design tokens starter kit"
+  },
+  {
+    "~:id": "penpot-design-system",
+    "~:name": "Penpot Design System | Pencil"
+  },
+  {
+    "~:id": "wireframing-kit",
+    "~:name": "Wireframe library"
+  },
+  {
+    "~:id": "prototype-examples",
+    "~:name": "Prototype template"
+  },
+  {
+    "~:id": "plants-app",
+    "~:name": "UI mockup example"
+  },
+  {
+    "~:id": "tutorial-for-beginners",
+    "~:name": "Tutorial for beginners"
+  },
+  {
+    "~:id": "lucide-icons",
+    "~:name": "Lucide Icons"
+  },
+  {
+    "~:id": "font-awesome",
+    "~:name": "Font Awesome"
+  }
+]
