@@ -47,24 +47,12 @@
   margin-inline-start: var(--sp-s);
 }
 
-.subscription-member,
 .penpot-member {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  block-size: $sz-16;
-  inline-size: $sz-16;
-  color: transparent;
-  fill: none;
-  stroke-width: 1px;
-}
-
-.penpot-member {
-  stroke: var(--color-foreground-secondary);
+  color: var(--color-foreground-secondary);
 }
 
 .subscription-member {
-  stroke: var(--color-badge-premium);
+  color: var(--color-badge-premium);
 }
 
 .title-section {
@@ -117,12 +105,6 @@
   inline-size: var(--sp-xl);
   border-radius: $br-6;
   border: $b-2 solid var(--color-foreground-primary);
-}
-
-// The letter is drawn at 12px: with the default stroke it looks too thin
-// next to the 2px border.
-.plan-title-letter {
-  stroke-width: 2.25px;
 }
 
 .plan-card-title,
@@ -319,7 +301,7 @@
   }
 }
 
-.modal-start svg {
+.modal-start-logo {
   inline-size: 100%;
   block-size: auto;
 }

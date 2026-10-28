@@ -55,7 +55,6 @@
        (when card-title-icon
          [:span {:class (stl/css :plan-title-icon)}
           [:> icon* {:icon-id card-title-icon
-                     :class (stl/css :plan-title-letter)
                      :size "s"}]])
        [:h4 {:class (stl/css :plan-card-title)} card-title]
        (when recommended
@@ -394,7 +393,8 @@
                         :on-click handle-close-dialog}]
       [:div {:class (stl/css :modal-success-content)}
        [:div {:class (stl/css :modal-start)}
-        [:> raw-svg* {:id (if (= "light" (:theme profile)) "logo-subscription-light" "logo-subscription")}]]
+        [:> raw-svg* {:id (if (= "light" (:theme profile)) "logo-subscription-light" "logo-subscription")
+                      :class (stl/css :modal-start-logo)}]]
 
        [:div {:class (stl/css :modal-end)}
         [:div {:class (stl/css :modal-title)}
