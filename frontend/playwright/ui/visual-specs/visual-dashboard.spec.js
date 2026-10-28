@@ -559,6 +559,43 @@ test.describe("Team modals controls", () => {
   });
 });
 
+test.describe("Settings subscription controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Plans page and management dialog", async ({ page }) => {
+    await DashboardPage.mockConfigFlags(
+      page,
+      ["enable-subscriptions", "disable-onboarding"],
+      { penpotIsSaas: true },
+    );
+    await DashboardPage.mockRPC(
+      page,
+      "get-subscription-usage",
+      "subscription/get-subscription-usage.json",
+    );
+    await page.goto("/?screen=settings-subscription");
+    await expect(
+      page.getByRole("heading", { name: "Subscription", level: 2 }),
+    ).toBeVisible();
+
+    const trial = page
+      .getByRole("button", { name: "Try it free for 14 days" })
+      .first();
+    await expect(trial).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(page).toHaveScreenshot(shot);
+
+    await trial.click();
+    const dialog = page.locator("[class*='modal-dialog']");
+    await expect(dialog).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(dialog).toHaveScreenshot(shot);
+
+    await dialog.locator("button").first().hover();
+    await expect(dialog).toHaveScreenshot(shot);
+  });
+});
+
 test.describe("Dashboard sidebar controls", () => {
   const shot = { maxDiffPixelRatio: 0, threshold: 0 };
 
