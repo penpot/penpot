@@ -136,8 +136,9 @@
 
 (mf/defc shape-facts*
   "A new or deleted layer: where it lands (or was), what it is and, for a
-  deleted main component, the copies it leaves behind."
-  [{:keys [item items data open-side incoming]}]
+  deleted main component, the copies it leaves behind. `inner` are the
+  layers added or deleted with it (`brc/fold-cascades`)."
+  [{:keys [item items inner data open-side incoming]}]
   (let [open-objs (get-in data [:pages-index (:page-id item) :objects])
         ;; a layer the open file lacks is read on the other side, where
         ;; the changes of `items` put it and its deleted parents back
@@ -161,7 +162,11 @@
                              "workspace.branches.review.facts.where-was"
                              "workspace.branches.review.facts.where-lands"))
                        (str/join " › " (cons page (brc/shape-path objects (:id item))))]]
-                     (shape-rows shape data type-lbl))}]
+                     (cond-> (shape-rows shape data type-lbl)
+                       (seq inner)
+                       (conj [(tr "workspace.branches.review.facts.contents")
+                              (tr "workspace.branches.review.facts.layers"
+                                  (i18n/c (count inner)))])))}]
        (when (and copies (pos? copies))
          [:> brl/notice* {:level :warning
                           :title (tr "workspace.branches.review.facts.copies-orphaned-title")}

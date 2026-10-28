@@ -101,11 +101,31 @@
 
       :else nil)))
 
+(defn- row-keys
+  "The change keys a row stands for: its own and those of the layers
+  folded under it (`brc/fold-cascades`), which travel or stay with it."
+  [item inner]
+  (into #{(:key item)} (map (comp :key second)) inner))
+
+(defn- remove-folded
+  "`rows` (`[index item]` pairs) without the layers folded under another
+  row (`brc/fold-cascades`)."
+  [rows cascades]
+  (let [folded (into #{} (comp (mapcat val) (map first)) cascades)]
+    (filterv (fn [[idx _]] (not (contains? folded idx))) rows)))
+
 (mf/defc item-row*
+  "One change. `inner` are the layers added or deleted with it, folded
+  under it: the row counts them and its checkbox takes them along."
   {::mf/private true}
-  [{:keys [index item selected excluded reviewed on-select on-toggle]}]
+  [{:keys [index item inner selected excluded reviewed on-select on-toggle]}]
   (let [selectable? (selectable-item? item)
         change-key  (:key item)
+        toggle-keys (row-keys item inner)
+        subtitle    (cond-> (brc/change-summary item)
+                      (seq inner)
+                      (dm/str " - " (tr "workspace.branches.review.facts.layers"
+                                        (i18n/c (count inner)))))
         on-click    (mf/use-fn (mf/deps index on-select) #(on-select {:kind :item :index index}))
         start       (when selectable?
                       (mf/html
@@ -114,9 +134,9 @@
                                :on-click dom-stop}
                         [:> checkbox* {:id (dm/str "change-" change-key)
                                        :checked (not excluded)
-                                       :on-change #(on-toggle #{change-key})}]]))]
+                                       :on-change #(on-toggle toggle-keys)}]]))]
     [:> change-row* {:title (or (:label item) "")
-                     :subtitle (brc/change-summary item)
+                     :subtitle subtitle
                      :icon (brc/entry-icon item)
                      :tone (if (and excluded selectable?) "neutral" (brc/status-tone (:status item)))
                      :is-selected (= selected {:kind :item :index index})
@@ -154,7 +174,7 @@
 
 (mf/defc change-list*
   {::mf/private true}
-  [{:keys [groups conflicts selected excluded reviewed collapsed
+  [{:keys [groups conflicts cascades selected excluded reviewed collapsed
            on-select on-toggle on-fold]}]
   [:*
    (when (seq conflicts)
@@ -174,7 +194,7 @@
    (for [{:keys [id name rows boards count] :as group} groups]
      (let [open?     (not (contains? collapsed id))
            row-keys  (into #{} (comp (filter (fn [[_ it]] (selectable-item? it)))
-                                     (map (fn [[_ it]] (:key it))))
+                                     (mapcat (fn [[idx it]] (row-keys it (get cascades idx)))))
                            (concat rows (mapcat :rows boards)))
            included? (not-any? excluded row-keys)]
        [:div {:class (stl/css :group) :key id}
@@ -192,6 +212,7 @@
           [:*
            (for [[idx item] rows]
              [:> item-row* {:key idx :index idx :item item
+                            :inner (get cascades idx)
                             :selected selected
                             :excluded (contains? excluded (:key item))
                             :reviewed (contains? reviewed (review-key item))
@@ -203,6 +224,7 @@
                              :on-select on-select :on-fold on-fold}
               (for [[idx item] (:rows board)]
                 [:> item-row* {:key idx :index idx :item item
+                               :inner (get cascades idx)
                                :selected selected
                                :excluded (contains? excluded (:key item))
                                :reviewed (contains? reviewed (review-key item))
@@ -339,8 +361,8 @@
 
 (mf/defc item-detail*
   {::mf/private true}
-  [{:keys [item items indexed excluded excluded-keys reviewed selected open-side incoming
-           data diff-meta on-resolve on-select on-toggle expanded on-expand]}]
+  [{:keys [item items indexed cascades excluded excluded-keys reviewed selected open-side
+           incoming data diff-meta on-resolve on-select on-toggle expanded on-expand]}]
   (let [type-lbl (brc/type-label-key item)
         cat      (brc/category item)
         attrs    (:changed-attrs item)
@@ -403,7 +425,8 @@
        (case (:kind item)
          :page
          (when (contains? #{:added :deleted} (:status item))
-           (let [rows (filterv (fn [[_ it]] (= (:id item) (:page-id it))) indexed)]
+           (let [rows (filterv (fn [[_ it]] (= (:id item) (:page-id it))) indexed)
+                 rows (remove-folded rows cascades)]
              [:> brf/page-facts* {:item item
                                   :data data
                                   :open-side open-side
@@ -411,6 +434,7 @@
                                   :change-count (count rows)}
               (for [[idx it] rows]
                 [:> item-row* {:key idx :index idx :item it
+                               :inner (get cascades idx)
                                :selected selected
                                :excluded (contains? excluded-keys (:key it))
                                :reviewed (contains? reviewed (review-key it))
@@ -419,6 +443,7 @@
          :shape
          (when (contains? #{:added :deleted} (:status item))
            [:> brf/shape-facts* {:item item :items items :data data
+                                 :inner (get cascades (:index selected))
                                  :open-side open-side :incoming incoming}])
 
          (:component :color :typography :token)
@@ -428,8 +453,8 @@
 
 (mf/defc board-detail*
   {::mf/private true}
-  [{:keys [page-id board-id groups items open-side data diff-meta selected excluded reviewed
-           on-select on-toggle]}]
+  [{:keys [page-id board-id groups items cascades open-side data diff-meta selected excluded
+           reviewed on-select on-toggle]}]
   (let [group    (some #(when (= page-id (:page-id %)) %) groups)
         board    (some #(when (= board-id (:id %)) %) (:boards group))
         rows     (:rows board)
@@ -467,6 +492,7 @@
        [:div {:class (stl/css :inner-list)}
         (for [[idx item] rows]
           [:> item-row* {:key idx :index idx :item item
+                         :inner (get cascades idx)
                          :selected selected
                          :excluded (contains? excluded (:key item))
                          :reviewed (contains? reviewed (review-key item))
@@ -503,8 +529,16 @@
                      (into (vec (:changes diff)) (:conflicts diff)))
         indexed    (mf/with-memo [items]
                      (into [] (map-indexed vector) items))
-        counts     (mf/with-memo [items]
-                     (group-by brc/category items))
+        ;; the layers added or deleted with a container fold under it:
+        ;; the list, the filters and the counts show the container alone
+        cascades   (mf/with-memo [indexed]
+                     (brc/fold-cascades indexed))
+        listed     (mf/with-memo [indexed cascades]
+                     (remove-folded indexed cascades))
+        listed-items (mf/with-memo [listed]
+                       (mapv second listed))
+        counts     (mf/with-memo [listed-items]
+                     (group-by brc/category listed-items))
 
         filter*    (mf/use-state :all)
         active-filter (deref filter*)
@@ -518,13 +552,13 @@
         collapsed* (mf/use-state #{})
         collapsed  (deref collapsed*)
 
-        visible    (mf/with-memo [indexed active-filter excluded]
+        visible    (mf/with-memo [listed active-filter excluded]
                      (filterv (fn [[_ item]]
                                 (case active-filter
                                   :all      true
                                   :left-out (contains? excluded (:key item))
                                   (= active-filter (brc/category item))))
-                              indexed))
+                              listed))
         conflicts  (mf/with-memo [visible]
                      (filterv (fn [[_ it]] (= :conflict (:status it))) visible))
         decisions  (count (filter #(= :conflict (:status %)) items))
@@ -535,10 +569,12 @@
         order      (mf/with-memo [conflicts groups]
                      (display-order conflicts groups))
 
-        all-keys   (into #{} (comp (filter selectable-item?) (map :key)) items)
-        kept-count (count (remove excluded all-keys))
-        left-out   (count (filter excluded all-keys))
-        reviewed-n (count (filter #(contains? reviewed (review-key %)) items))
+        ;; a folded layer travels or stays with its container, so the
+        ;; counts are of the rows the list shows
+        row-keys*  (into #{} (comp (filter selectable-item?) (map :key)) listed-items)
+        kept-count (count (remove excluded row-keys*))
+        left-out   (count (filter excluded row-keys*))
+        reviewed-n (count (filter #(contains? reviewed (review-key %)) listed-items))
 
         sel-index  (when (= :item (:kind selected)) (:index selected))
         sel-item   (when (and (some? sel-index) (< sel-index (count items)))
@@ -637,7 +673,7 @@
       :filters (when (and (= status :loaded) (seq items) (not expanded))
                  (mf/html
                   [:*
-                   [:> filter-chip* {:label (dm/str (tr "labels.all") " (" (count items) ")")
+                   [:> filter-chip* {:label (dm/str (tr "labels.all") " (" (count listed-items) ")")
                                      :is-selected (= active-filter :all)
                                      :on-click #(on-filter :all)}]
                    (for [[cat tone label icon] brc/categories
@@ -658,6 +694,7 @@
               (mf/html
                [:> change-list* {:groups groups
                                  :conflicts conflicts
+                                 :cascades cascades
                                  :selected selected
                                  :excluded excluded
                                  :reviewed reviewed
@@ -685,6 +722,7 @@
                             :board-id (:board-id selected)
                             :groups groups
                             :items items
+                            :cascades cascades
                             :open-side open-side
                             :data data
                             :diff-meta diff-meta
@@ -699,6 +737,7 @@
                            :item sel-item
                            :items items
                            :indexed indexed
+                           :cascades cascades
                            :excluded (contains? excluded (:key sel-item))
                            :excluded-keys excluded
                            :reviewed reviewed
@@ -729,7 +768,7 @@
            (str/join " - "
                      (remove nil?
                              [(tr "workspace.branches.review.footer.reviewed"
-                                  (str reviewed-n) (str (count items)))
+                                  (str reviewed-n) (str (count listed-items)))
                               (when (pos? decisions)
                                 (tr "workspace.branches.review.footer.blocked" (i18n/c decisions)))
                               (when (pos? left-out)

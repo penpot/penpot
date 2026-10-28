@@ -142,3 +142,29 @@
   (t/is (= :components (brc/category {:kind :shape :status :modified :component? true})))
   (t/is (= #{"neutral"} (set (vals (dissoc brc/category->tone :decisions)))))
   (t/is (= "warning" (brc/category->tone :decisions))))
+
+(defn- deleted
+  [id parent-id]
+  {:kind :shape :status :deleted :id id :page-id page-id
+   :shape {:id id :parent-id parent-id}})
+
+(t/deftest a-deleted-group-takes-its-layers-along
+  (let [rows  [[0 (deleted :path-a :icon)]
+               [1 (deleted :bg :icon)]
+               [2 (deleted :path-b :inner)]
+               [3 (deleted :inner :icon)]
+               [4 (deleted :icon :button)]
+               [5 {:kind :shape :status :modified :id :label :page-id page-id}]]
+        folds (brc/fold-cascades rows)]
+    (t/is (= [4] (keys folds)) "the outermost deleted layer holds them all")
+    (t/is (= #{0 1 2 3} (set (map first (get folds 4)))))))
+
+(t/deftest only-the-same-change-folds
+  (let [added  {:kind :shape :status :added :id :new :page-id page-id
+                :shape {:id :new :parent-id :icon}}
+        rows   [[0 (deleted :icon :button)]
+                [1 added]
+                [2 (deleted :lone :button)]
+                [3 (assoc (deleted :other :icon) :page-id :elsewhere)]]]
+    (t/is (= {} (brc/fold-cascades rows))
+          "an addition, a layer whose parent stays and one on another page stay apart")))

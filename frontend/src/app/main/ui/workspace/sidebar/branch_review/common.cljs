@@ -383,6 +383,39 @@
                                 (or frame-id (:parent-id shape))))
                  (inc depth)))))))
 
+(defn- cascade-entry?
+  "An added or deleted layer that carries its shape: one that can take
+  the layers added or deleted with it."
+  [item]
+  (and (= :shape (:kind item))
+       (contains? #{:added :deleted} (:status item))
+       (some? (:shape item))))
+
+(defn fold-cascades
+  "The added or deleted layers that only follow a container added or
+  deleted with them, folded under the outermost one: deleting a group
+  deletes its layers too, and listing each one apart would repeat the
+  same change. Takes `[index item]` pairs and returns a map from the
+  index of each outermost entry to the `[index item]` pairs it holds."
+  [indexed]
+  (let [by-id   (into {}
+                      (keep (fn [[idx item]]
+                              (when (cascade-entry? item)
+                                [[(:page-id item) (:id item)] [idx item]])))
+                      indexed)
+        root-of (fn [item]
+                  (loop [cur item root nil depth 0]
+                    (let [[pidx parent] (get by-id [(:page-id item) (get-in cur [:shape :parent-id])])]
+                      (if (and parent (= (:status parent) (:status item)) (< depth 64))
+                        (recur parent pidx (inc depth))
+                        root))))]
+    (reduce (fn [acc [_ item :as row]]
+              (if-let [root (when (cascade-entry? item) (root-of item))]
+                (update acc root (fnil conj []) row)
+                acc))
+            {}
+            indexed)))
+
 (defn group-by-place
   "Group the clean changes (`[index item]` pairs) by page, and inside a
   page by the top-level board that holds them, reading names from the

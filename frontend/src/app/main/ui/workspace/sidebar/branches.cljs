@@ -211,10 +211,18 @@
         ;; what goes in and what stays out, when the compare dialog of this
         ;; branch is the one that asked for the merge
         diff-st   (mf/deref branch-diff)
+        ;; counted as the compare list shows them: the layers added or
+        ;; deleted with a container go with it (`brc/fold-cascades`)
         changes   (when (and (= (:id branch) (:branch-id diff-st))
                              (= :loaded (:status diff-st)))
-                    (filterv #(contains? #{:added :modified :deleted} (:status %))
-                             (get-in diff-st [:diff :changes])))
+                    (let [indexed (into [] (map-indexed vector) (get-in diff-st [:diff :changes]))
+                          folded  (into #{} (comp (mapcat val) (map first))
+                                        (brc/fold-cascades indexed))]
+                      (into []
+                            (comp (remove (fn [[idx _]] (contains? folded idx)))
+                                  (map second)
+                                  (filter #(contains? #{:added :modified :deleted} (:status %))))
+                            indexed)))
         left-out  (count (filter #(contains? (or excluded #{}) (:key %)) changes))
         going-in  (- (count changes) left-out)
 
