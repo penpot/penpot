@@ -949,7 +949,12 @@
   (let [library-ids (->> (get-file-libraries conn (:id file))
                          (map :id)
                          (cons (:id file)))
-        load-fn     #(get-file cfg % :migrate? false)]
+        ;; Fragment rows are file-local and callers bind the loader of
+        ;; the file they work on, so each library realizes its pointers
+        ;; here, with its own id, before anything walks its data.
+        load-fn     (fn [library-id]
+                      (->> (get-file cfg library-id :migrate? false)
+                           (fdata/realize-pointers cfg)))]
     (weak/loadable-weak-value-map library-ids load-fn {id file})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

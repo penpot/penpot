@@ -10,6 +10,7 @@
   (:require
    [app.binfile.common :as bfc]
    [app.common.features :as cfeat]
+   [app.common.files.changes-builder :as pcb]
    [app.common.files.migrations :as fmg]
    [app.common.time :as ct]
    [app.common.types.objects-map :as omap]
@@ -917,3 +918,39 @@
       (t/is (seq (th/db-query :file-migration
                               {:file-id file-id
                                :name "0031-migrate-stroke-width-token-attr"}))))))
+
+(t/deftest libraries-load-their-pages-with-their-own-loader
+  ;; Fragment rows are keyed by (file_id, id), and every caller binds the
+  ;; loader of the file it works on. A library's pages must therefore come
+  ;; back from the library loader already readable, or the first deref
+  ;; under the consumer's loader asks the wrong file for the fragment.
+  (let [profile  (th/create-profile* 1)
+        library  (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared true})
+        file     (th/create-file* 2 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared false})
+        lib-page (uuid/random)]
+
+    (th/link-file-to-library* {:file-id (:id file) :library-id (:id library)})
+    (update-file! :profile-id (:id profile)
+                  :file-id (:id library)
+                  :changes (-> (pcb/empty-changes nil)
+                               (pcb/with-library-data (:data library))
+                               (pcb/add-empty-page lib-page "library page")
+                               (:redo-changes)))
+
+    ;; Precondition: the library stores the page as a fragment pointer.
+    (t/is (contains? (page-pointer-ids (:id library)) lib-page))
+
+    (let [page (db/tx-run! th/*system*
+                           (fn [cfg]
+                             (fdata/with-pointers cfg (:id file)
+                               (let [consumer (bfc/get-file cfg (:id file))
+                                     libs     (bfc/get-resolved-file-libraries cfg consumer)]
+                                 (-> (get libs (:id library))
+                                     (get-in [:data :pages-index lib-page])
+                                     (fdata/realize-entry))))))]
+      (t/is (= lib-page (:id page)))
+      (t/is (contains? (:objects page) uuid/zero)))))
