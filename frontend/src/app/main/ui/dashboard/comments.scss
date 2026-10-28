@@ -35,7 +35,6 @@
 
 .comments-icon {
   flex-shrink: 0;
-  stroke-width: 1px;
   color: var(--color-foreground-secondary);
   margin-block-end: var(--sp-xxl);
 }
@@ -68,12 +67,6 @@
   overflow: hidden;
   inline-size: 100%;
   z-index: var(--z-index-dropdown);
-
-  // The separators have no class.
-  hr {
-    margin: 0;
-    border-color: var(--color-foreground-secondary);
-  }
 }
 
 .header {
