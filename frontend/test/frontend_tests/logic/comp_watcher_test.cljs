@@ -11,12 +11,11 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
-   [app.main.data.helpers :as dsh]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.thumbnails-wasm :as dwt.wasm]
-   [app.main.refs :as refs]
    [app.main.store :as st]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -25,7 +24,6 @@
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]
-   [okulary.core :as l]
    [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each
@@ -63,20 +61,20 @@
     (:shapes (cths/get-shape file :copy-root))))
 
 (t/deftest ^:async child-moved-out-of-main-leaves-copy-when-another-edit-follows
-  ;; The move and the fill change commit in the same tick, so the watcher
-  ;; inspects both in one batch. The move must be checked against the file
-  ;; data right before it, where the rect still sits in the main.
+  ;; The move and fill edit commit in the same tick. The move must use
+  ;; its prior data, where the rect still sits in the main. The edit
+  ;; watcher records undo before forwarding each transition to sync.
   (let [file  (setup-file)
         store (ths/setup-store file)]
     (await
      (mock/with-mocks*
-       {;; The watcher reads the file data through this lens.
-        refs/workspace-data      (l/derived dsh/lookup-file-data store)
-        ;; Thumbnail renders read the global store.
+       {;; Thumbnail renders read the global store.
         st/state                 store
         dwt.wasm/render-thumbnail noop-render-thumbnail}
 
-       (ptk/emit! store (dwl/watch-component-changes))
+       (ptk/emit! store
+                  (dw/initialize-edit-watchers)
+                  (dwl/watch-component-changes))
        (t/is (= 1 (count (copy-children store)))
              "the copy starts with its rect")
 
@@ -96,5 +94,7 @@
          (t/is (empty? (copy-children store))
                "the copy lost its rect"))
 
-       (ptk/emit! store (dwpg/finalize-page (:id file) (cthf/current-page-id file)))
+       (ptk/emit! store
+                  (dw/finalize-edit-watchers)
+                  (dwpg/finalize-page (:id file) (cthf/current-page-id file)))
        (await (async/settle))))))
