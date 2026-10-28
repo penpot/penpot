@@ -351,15 +351,20 @@
 
 (defn- moved-pages
   "The pages on which main can differ from a branch's base: every page
-  whose fragment main does not share with the base. Nil when fragment ids
-  cannot tell, because main or the base holds no pointers, which leaves
-  the whole-file comparison in place. `stored` is main's `:data` with its
-  pointers unrealized, and `base-ids` the `::bfc/base-page-pointers` of
-  the branch read."
-  [stored base-ids]
+  whose fragment main does not share with the base. Nil when that set
+  cannot bound a comparison, which leaves the whole-file comparison in
+  place: main or the base holds no pointers, or main ordered the pages
+  both hold differently from the base. The page order lives in the
+  document root rather than in a page's fragment, and a bounded
+  comparison only orders the pages it covers. `stored` is main's `:data`
+  with its pointers unrealized, `base` the comparison's base, and
+  `base-ids` the `::bfc/base-page-pointers` of the branch read."
+  [stored base base-ids]
   (when (seq base-ids)
-    (let [main-ids (fdata/get-page-pointer-ids stored)]
-      (when (seq main-ids)
+    (let [main-ids (fdata/get-page-pointer-ids stored)
+          both     (set/intersection (set (:pages stored)) (set (:pages base)))]
+      (when (and (seq main-ids)
+                 (= (filterv both (:pages stored)) (filterv both (:pages base))))
         (into #{}
               (remove (fn [page-id]
                         (let [id (get main-ids page-id)]
@@ -374,7 +379,7 @@
   is the comparison's base, in main's id space."
   [cfg source-file-id branch-file base-data]
   (let [stored (bfc/get-file cfg source-file-id)
-        moved  (moved-pages (:data stored) (::bfc/base-page-pointers branch-file))
+        moved  (moved-pages (:data stored) base-data (::bfc/base-page-pointers branch-file))
         shared (fn [pages page-id page]
                  (if (contains? moved page-id)
                    (assoc pages page-id page)
@@ -770,7 +775,7 @@
               ;; the stored document is a handful of pointers, read only
               ;; when the base holds pointers to compare them with
               (seq base-ids)
-              [main-data (moved-pages (:data (bfc/get-file cfg source-file-id)) base-ids)]
+              [main-data (moved-pages (:data (bfc/get-file cfg source-file-id)) base-data base-ids)]
 
               :else
               [main-data nil])

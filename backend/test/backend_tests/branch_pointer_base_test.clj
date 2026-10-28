@@ -282,3 +282,21 @@
             (t/is (= 1 (count (:conflicts eager)))))
           (t/testing (str dir " loads the base's six pages and main's two moved ones")
             (t/is (= 8 @loads))))))))
+
+(t/deftest compare-reports-a-page-reorder-on-main
+  ;; the page order lives in the document root, not in a page's fragment,
+  ;; so a reorder moves no fragment and must not bound the comparison
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [{:keys [profile-id file-id]} (setup)
+          page-b (uuid/random)
+          _      (update-file! profile-id file-id [{:type :add-page :id page-b :name "B"}])
+          branch (create-branch! profile-id file-id "reorder")]
+      (update-file! profile-id file-id [{:type :mov-page :id page-b :index 0}])
+      (let [out   (th/command! {::th/type :get-branch-diff
+                                ::rpc/profile-id profile-id
+                                :branch-id (:id branch)
+                                :direction :main->branch})
+            eager (eager-compare file-id (:branch-file-id branch) :main->branch)]
+        (t/is (nil? (:error out)))
+        (t/is (seq (:changes eager)))
+        (t/is (= (:changes eager) (:changes (:result out))))))))
