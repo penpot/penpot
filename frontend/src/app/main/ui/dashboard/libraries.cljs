@@ -13,6 +13,8 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid*]]
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -68,7 +70,10 @@
     [:*
      [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
       [:div#dashboard-libraries-title {:class (stl/css :dashboard-title)}
-       [:h1 (tr "dashboard.libraries-title")]]]
+       [:> heading* {:level 1
+                     :typography t/title-large
+                     :class (stl/css :dashboard-title-text)}
+        (tr "dashboard.libraries-title")]]]
 
      [:section {:class (stl/css :dashboard-container :no-bg :dashboard-shared)
                 :ref rowref}

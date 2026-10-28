@@ -23,6 +23,8 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
@@ -84,7 +86,10 @@
               :data-testid "dashboard-header"}
      (if (:is-default project)
        [:div#dashboard-drafts-title {:class (stl/css :dashboard-title)}
-        [:h1 (tr "labels.drafts")]]
+        [:> heading* {:level 1
+                      :typography t/title-large
+                      :class (stl/css :dashboard-title-text)}
+         (tr "labels.drafts")]]
 
        (if (and (:edition @local) can-edit)
          [:& inline-edition
@@ -97,9 +102,12 @@
                        (swap! local assoc :edition false)))
            :max-length 250}]
          [:div {:class (stl/css :dashboard-title)}
-          [:h1 {:on-double-click on-edit
-                :data-testid "project-title"
-                :id (:id project)}
+          [:> heading* {:level 1
+                        :typography t/title-large
+                        :class (stl/css :dashboard-title-text)
+                        :on-double-click on-edit
+                        :data-testid "project-title"
+                        :id (:id project)}
            (:name project)]]))
 
      [:div {:class (stl/css :dashboard-header-actions)}

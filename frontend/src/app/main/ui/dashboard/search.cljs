@@ -13,6 +13,8 @@
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -55,7 +57,10 @@
     [:*
      [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
       [:div#dashboard-search-title {:class (stl/css :dashboard-title)}
-       [:h1 (tr "dashboard.title-search")]]]
+       [:> heading* {:level 1
+                     :typography t/title-large
+                     :class (stl/css :dashboard-title-text)}
+        (tr "dashboard.title-search")]]]
 
      [:section {:class (stl/css :dashboard-container :search :no-bg)
                 :ref rowref}

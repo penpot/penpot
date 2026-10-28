@@ -13,9 +13,6 @@
 @use "ds/z-index.scss" as *;
 @use "ds/mixins.scss" as *;
 
-// The shared dashboard header styles move in their own change: they are
-// used by ten dashboard modules.
-@use "common/refactor/common-dashboard";
 
 // refactor/ stays for the menu placeholders (%menu-dropdown,
 // %menu-item-base) of the profile menu and its submenus.

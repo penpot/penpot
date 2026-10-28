@@ -5,7 +5,7 @@
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "refactor/common-refactor.scss" as deprecated;
-@use "common/refactor/common-dashboard";
+@use "dashboard/common/header";
 @use "./placeholder";
 
 .dashboard-container {

@@ -779,6 +779,50 @@ test.describe("Team pages controls", () => {
   });
 });
 
+test.describe("Dashboard headers", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+  const header = (page) => page.getByTestId("dashboard-header");
+
+  test("Page headers", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+
+    await dashboardPage.goToDashboard();
+    await expect(header(page)).toHaveScreenshot(shot);
+    await dashboardPage.goToDrafts();
+    await expect(header(page)).toHaveScreenshot(shot);
+    await dashboardPage.goToLibraries();
+    await expect(header(page)).toHaveScreenshot(shot);
+    await dashboardPage.goToFonts();
+    await expect(header(page)).toHaveScreenshot(shot);
+    await dashboardPage.goToDeleted();
+    await expect(header(page)).toHaveScreenshot(shot);
+    await dashboardPage.goToSearch();
+    await expect(dashboardPage.mainHeading).toBeVisible();
+    await expect(header(page)).toHaveScreenshot(shot);
+  });
+
+  test("Team header menu", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.goToSecondTeamMembersSection();
+    await expect(dashboardPage.mainHeading).toHaveText("Members");
+
+    await page.mouse.move(10, 700);
+    await expect(header(page)).toHaveScreenshot(shot);
+    await header(page).getByText("Invitations").hover();
+    await expect(header(page)).toHaveScreenshot(shot);
+  });
+
+  test("Account header", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.goToDashboard();
+    await dashboardPage.goToAccount();
+    await expect(page.getByTestId("account-title")).toBeVisible();
+    await expect(header(page)).toHaveScreenshot(shot);
+  });
+});
+
 test.describe("Settings controls", () => {
   const shot = { maxDiffPixelRatio: 0, threshold: 0 };
 
