@@ -224,7 +224,6 @@
 (def ^:icon size-horizontal (icon-xref :size-horizontal))
 (def ^:icon size-vertical (icon-xref :size-vertical))
 (def ^:icon snap (icon-xref :snap))
-(def ^:icon snap-nodes (icon-xref :snap-nodes))
 (def ^:icon status-alert (icon-xref :status-alert))
 (def ^:icon status-tick (icon-xref :status-tick))
 (def ^:icon status-update (icon-xref :status-update))
