@@ -1,5 +1,5 @@
-import { createMcpHandler, McpServer, type McpHttpHandler } from "@modelcontextprotocol/server";
-import { toNodeHandler } from "@modelcontextprotocol/node";
+import { createMcpHandler, isLegacyRequest, McpServer, type McpHttpHandler } from "@modelcontextprotocol/server";
+import { NodeStreamableHTTPServerTransport, toNodeHandler, toWebRequest } from "@modelcontextprotocol/node";
 import type { Server as HttpServer } from "node:http";
 import type { Express } from "express";
 import { z } from "zod";
@@ -111,6 +111,8 @@ export class PenpotMcpServer {
     private app!: Express;
     private httpServer?: HttpServer;
     private readonly mcpHandler: McpHttpHandler;
+    private readonly jsonLegacyTransports = new Set<NodeStreamableHTTPServerTransport>();
+    private readonly jsonResponse = process.env.PENPOT_MCP_JSON_RESPONSE === "true";
     public readonly pluginBridge: PluginBridge;
     private readonly replServer: ReplServer | null;
     private apiDocs: ApiDocs;
@@ -163,7 +165,9 @@ export class PenpotMcpServer {
         this.connectionInstructions = this.configLoader.getBaseInstructions();
 
         this.tools = this.initTools();
-        this.mcpHandler = createMcpHandler(() => this.createMcpServer());
+        this.mcpHandler = createMcpHandler(() => this.createMcpServer(), {
+            responseMode: this.jsonResponse ? "json" : "auto",
+        });
 
         // Enable multi-instance task routing when running in multi-user mode with a
         // configured Redis URI. Without it, the server operates in single-instance mode,
@@ -302,7 +306,26 @@ export class PenpotMcpServer {
             this.logger.info(
                 `Received MCP request: method=${req.body?.method ?? "<none>"}; userTokenFp=${PenpotMcpServer.tokenFingerprint(userToken)}`
             );
-            await this.sessionContext.run({ userToken }, () => handleMcpRequest(req, res, req.body));
+            await this.sessionContext.run({ userToken }, async () => {
+                // keep upstream's stateless legacy protocol, opting in only to JSON replies
+                if (this.jsonResponse && (await isLegacyRequest(await toWebRequest(req, req.body), req.body))) {
+                    const transport = new NodeStreamableHTTPServerTransport({
+                        sessionIdGenerator: undefined,
+                        enableJsonResponse: true,
+                    });
+                    const server = this.createMcpServer();
+                    this.jsonLegacyTransports.add(transport);
+                    try {
+                        await server.connect(transport);
+                        await transport.handleRequest(req, res, req.body);
+                    } finally {
+                        this.jsonLegacyTransports.delete(transport);
+                        await server.close();
+                    }
+                    return;
+                }
+                await handleMcpRequest(req, res, req.body);
+            });
         });
     }
 
@@ -353,9 +376,12 @@ export class PenpotMcpServer {
                   this.httpServer!.close((error) => (error ? reject(error) : resolve()));
               })
             : Promise.resolve();
+        // pending JSON responses may survive transport closure; fail their sockets
+        this.httpServer?.closeAllConnections();
+        await this.pluginBridge.close();
+        await Promise.all([...this.jsonLegacyTransports].map((transport) => transport.close()));
         await this.mcpHandler.close();
         await httpClosed;
-        await this.pluginBridge.close();
         await this.redisBridge?.close();
         if (this.replServer) {
             await this.replServer.stop();
