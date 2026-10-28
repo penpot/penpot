@@ -83,7 +83,9 @@ for (const multiUser of [false, true]) {
         assert.ok(tool);
         assert.deepEqual(tool.inputSchema.required, ["subject", "feedback"]);
         const result = await connected.callTool({ name: "submit_feedback", arguments: feedback });
-        assert.deepEqual(result.content, [{ type: "text", text: "Feedback queued." }]);
+        assert.deepEqual(result.content, [
+            { type: "text", text: "Feedback queued. It is emailed in the background, so delivery is not confirmed." },
+        ]);
         assert.deepEqual(requests, [
             {
                 url: "/penpot/api/main/methods/send-mcp-feedback",
@@ -117,6 +119,10 @@ test("rejects invalid input without contacting the backend", async () => {
         { ...feedback, subject: "" },
         { ...feedback, subject: " " },
         { ...feedback, subject: "a\r\nBcc: other@example.com" },
+        { ...feedback, subject: "a\tb" },
+        { ...feedback, subject: "a\u0085b" },
+        { ...feedback, feedback: "a\u0000b" },
+        { ...feedback, feedback: "a\u001bb" },
         { ...feedback, subject: "x".repeat(121) },
         { ...feedback, feedback: " \n" },
         { ...feedback, feedback: "x".repeat(5001) },
@@ -166,7 +172,7 @@ test("keeps credentials isolated across concurrent submissions", async () => {
     );
 });
 
-for (const status of [400, 401, 403, 429, 503, 500, 307]) {
+for (const status of [400, 401, 403, 404, 429, 503, 500, 307]) {
     test(`does not retry or expose response bodies on status ${status}`, async () => {
         responseStatus = status;
         const backendClient = new PenpotBackendClient(backendUri);

@@ -310,7 +310,7 @@ the following variables for the backend process:
 
 | Environment Variable | Description | Default |
 |----------------------|-------------|---------|
-| `PENPOT_MCP_FEEDBACK_EMAIL` | Selects the inbox for MCP feedback. Unset means the command rejects submissions. Requires `enable-access-tokens` and uses the backend's existing SMTP configuration. | (unset) |
+| `PENPOT_MCP_FEEDBACK_EMAIL` | Selects the inbox for MCP feedback. Unset means the command rejects submissions. Requires the `enable-mcp` or `enable-access-tokens` flag and uses the backend's existing SMTP configuration. | (unset) |
 
 
 ### Logging Configuration

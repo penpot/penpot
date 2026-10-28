@@ -12,13 +12,15 @@ export class SubmitFeedbackArgs implements Feedback {
             .min(1)
             .max(120)
             .regex(/\S/)
-            .regex(/^[^\r\n]*$/)
-            .describe("Short, specific summary without line breaks (max 120 characters)."),
+            .regex(/^\P{Cc}*$/u)
+            .describe("Short, specific summary without line breaks or other control characters (max 120 characters)."),
         feedback: z
             .string()
             .min(1)
             .max(5000)
             .regex(/\S/)
+            // line breaks and tabs are the only control characters allowed
+            .regex(/^[^\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]*$/)
             .describe("Concise plain-text feedback (max 5,000 characters)."),
     };
 
@@ -60,6 +62,6 @@ export class SubmitFeedbackTool extends Tool<SubmitFeedbackArgs> {
             throw new Error("Include userToken in the MCP server URL to submit feedback.");
         }
         await this.backend.submitFeedback(userToken, { subject: args.subject, feedback: args.feedback });
-        return new TextResponse("Feedback queued.");
+        return new TextResponse("Feedback queued. It is emailed in the background, so delivery is not confirmed.");
     }
 }

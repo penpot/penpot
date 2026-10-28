@@ -31,7 +31,9 @@
    io.prometheus.client.Counter
    io.prometheus.client.Counter$Child))
 
-(t/use-fixtures :once th/state-init)
+(t/use-fixtures :once (t/compose-fixtures
+                       (partial th/init-config [:enable-access-tokens])
+                       th/init-system))
 (t/use-fixtures :each (th/serial
                        th/database-reset
                        th/clean-storage))

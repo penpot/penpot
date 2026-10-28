@@ -67,15 +67,16 @@ export class PenpotBackendClient implements PenpotBackend {
 
         switch (response.status) {
             case 401:
-                throw new Error("The MCP user token is invalid or expired. Update userToken in the MCP server URL.");
+                throw new Error(
+                    "The backend did not accept the MCP user token. It may be outdated, " +
+                        "or the Penpot instance may not have access tokens enabled."
+                );
             case 403:
                 throw new Error("The MCP user token is not authorized for this backend operation.");
             case 400:
                 throw new Error("The backend rejected the request parameters or the operation is disabled.");
             case 429:
                 throw new Error("The backend request limit has been reached. Do not retry automatically.");
-            case 503:
-                throw new Error("The backend operation is unavailable on this Penpot instance.");
             default:
                 throw new Error(
                     `The backend operation could not be confirmed (HTTP ${response.status}). Do not retry automatically.`

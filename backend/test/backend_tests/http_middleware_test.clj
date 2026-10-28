@@ -34,7 +34,9 @@
    io.prometheus.client.CollectorRegistry
    io.undertow.server.RequestTooBigException))
 
-(t/use-fixtures :once th/state-init)
+(t/use-fixtures :once (t/compose-fixtures
+                       (partial th/init-config [:enable-access-tokens])
+                       th/init-system))
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest auth-middleware-1
@@ -130,6 +132,30 @@
     ;; Existing assertions still pass
     (t/is (= #{} (:app.http.access-token/perms response)))
     (t/is (= (:id profile) (:app.http.access-token/profile-id response)))))
+
+(t/deftest access-token-authz-follows-flags
+  (let [profile  (th/create-profile* 1)
+        create   #(db/tx-run! th/*system* app.rpc.commands.access-token/create-access-token
+                              (:id profile) "test" nil %)
+        request  (fn [{:keys [token]}]
+                   {::http/auth-data {:type :token :token token
+                                      :claims (tokens/verify th/*system* {:token token})}})
+        auth     (fn [flags token]
+                   (with-redefs [cf/flags flags]
+                     (let [handler (#'app.http.access-token/wrap-authz
+                                    identity (assoc th/*system* :app.http.access-token/allow-mcp true))]
+                       (:app.http.access-token/profile-id (handler (request token))))))
+        personal (create nil)
+        mcp      (create "mcp")]
+    (t/testing "only mcp: MCP tokens authenticate, personal tokens do not"
+      (t/is (= (:id profile) (auth #{:mcp} mcp)))
+      (t/is (nil? (auth #{:mcp} personal))))
+    (t/testing "only access-tokens: both authenticate"
+      (t/is (= (:id profile) (auth #{:access-tokens} mcp)))
+      (t/is (= (:id profile) (auth #{:access-tokens} personal))))
+    (t/testing "neither flag: the middleware is not installed"
+      (with-redefs [cf/flags #{}]
+        (t/is (nil? ((:compile app.http.access-token/authz))))))))
 
 (defrecord MethodAwareDummyRequest [req-method headers]
   yreq/IRequest

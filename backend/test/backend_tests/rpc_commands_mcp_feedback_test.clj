@@ -14,6 +14,7 @@
    [app.email :as email]
    [app.http :as http]
    [app.jobs :as jobs]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.access-token :as access-token]
    [app.tokens :as tokens]
    [backend-tests.helpers :as th]
@@ -109,7 +110,7 @@
                    {:deleted-at (ct/minus (ct/now) (ct/duration "1h"))}]]
     (let [{:keys [token profile]} (create-identity)]
       (db/update! th/*system* :profile changes {:id (:id profile)})
-      (t/is (= (if (:deleted-at changes) 404 401)
+      (t/is (= (if (:deleted-at changes) 404 403)
                (::yres/status (request (:token token)))))))
   (t/is (empty? (emails))))
 
@@ -119,6 +120,11 @@
                     (assoc feedback :subject "")
                     (assoc feedback :subject "  ")
                     (assoc feedback :subject "a\r\nBcc: victim@example.com")
+                    (assoc feedback :subject "a\tb")
+                    (assoc feedback :subject "a\u0085b")
+                    (assoc feedback :subject "a\u0000b")
+                    (assoc feedback :feedback "a\u0000b")
+                    (assoc feedback :feedback "a\u001bb")
                     (assoc feedback :subject (apply str (repeat 121 "x")))
                     (assoc feedback :feedback " \n")
                     (assoc feedback :feedback (apply str (repeat 5001 "x")))
@@ -129,7 +135,19 @@
     (t/is (empty? (emails)))
     (t/is (= 200 (::yres/status
                   (request (:token token) {:subject (apply str (repeat 120 "x"))
-                                           :feedback (apply str (repeat 5000 "x"))}))))))
+                                           :feedback (apply str (repeat 5000 "x"))}))))
+    (t/is (= 200 (::yres/status
+                  (request (:token token) {:subject "Tabs and breaks"
+                                           :feedback "line one\r\n\tline two\n"}))))))
+
+(t/deftest audit-event-omits-feedback-text
+  (let [{:keys [profile]} (create-identity)]
+    (with-redefs [cf/config (assoc cf/config :mcp-feedback-email "mcp@example.com")]
+      (let [result (th/command-raw! (merge feedback {::th/type :send-mcp-feedback
+                                                     ::rpc/profile-id (:id profile)
+                                                     ::rpc/auth-type :token
+                                                     ::rpc/token-type "mcp"}))]
+        (t/is (= {} (:app.loggers.audit/replace-props (meta result))))))))
 
 (t/deftest disabled-without-feedback-email
   (let [{:keys [token]} (create-identity)]
