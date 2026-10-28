@@ -78,7 +78,6 @@
   align-items: center;
   block-size: $sz-16;
   inline-size: $sz-16;
-  stroke-width: $b-1;
   margin: 0 auto;
   color: var(--color-foreground-secondary);
 }
@@ -125,7 +124,6 @@
 }
 
 .image-icon {
-  stroke-width: $b-1;
   color: var(--color-foreground-primary);
 }
 
@@ -571,7 +569,6 @@
   align-items: center;
   block-size: $sz-16;
   inline-size: $sz-16;
-  stroke-width: $b-1;
   color: var(--color-accent-success);
 }
 
@@ -581,7 +578,6 @@
   align-items: center;
   block-size: $sz-16;
   inline-size: $sz-16;
-  stroke-width: $b-1;
   color: var(--color-accent-warning);
 }
 
@@ -641,7 +637,6 @@
   align-items: center;
   block-size: $sz-16;
   inline-size: $sz-16;
-  stroke-width: $b-1;
   color: var(--color-foreground-secondary);
 }
 
@@ -976,7 +971,6 @@
   align-items: center;
   block-size: $sz-16;
   inline-size: $sz-16;
-  stroke-width: $b-1;
   color: var(--stroke-color);
 }
 

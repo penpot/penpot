@@ -68,7 +68,6 @@
 
   .arrow-svg {
     flex-shrink: 0;
-    stroke-width: 1.33px;
     color: var(--color-foreground-secondary);
   }
 }
@@ -105,7 +104,6 @@
       inline-size: $sz-16;
       block-size: $sz-16;
       stroke: currentcolor;
-      stroke-width: 1.33px;
       color: transparent;
     }
   }
