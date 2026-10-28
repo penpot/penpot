@@ -18,7 +18,8 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -118,8 +119,11 @@
           [:h2 {:class (stl/css :modal-title)}
            (tr "labels.create-team")])
 
-        [:button {:class (stl/css :modal-close-btn)
-                  :on-click modal/hide!} deprecated-icon/close]]
+        [:> icon-button* {:variant "ghost"
+                          :tooltip-class (stl/css :modal-close-btn)
+                          :aria-label (tr "labels.close")
+                          :icon i/close
+                          :on-click modal/hide!}]]
 
        [:div {:class (stl/css :modal-content)}
         [:& fm/input {:type "text"
@@ -162,7 +166,10 @@
      [:div {:class (stl/css :modal-container)}
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-title)} title]
-       [:button {:class (stl/css :modal-close-btn)
-                 :on-click modal/hide!} deprecated-icon/close]]
+       [:> icon-button* {:variant "ghost"
+                         :tooltip-class (stl/css :modal-close-btn)
+                         :aria-label (tr "labels.close")
+                         :icon i/close
+                         :on-click modal/hide!}]]
       [:div {:class (stl/css :modal-content)}
        [:div message]]]]))

@@ -15,6 +15,7 @@
    [app.main.data.profile :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -43,8 +44,9 @@
      [:div {:class (stl/css :action-buttons)}
 
       (when (some? on-prev)
-        [:button {:class (stl/css :prev-button)
-                  :on-click on-prev}
+        [:> button* {:variant "secondary"
+                     :type "button"
+                     :on-click on-prev}
          (tr "labels.previous")])
 
       [:> fm/submit-button*

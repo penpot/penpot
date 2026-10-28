@@ -418,7 +418,7 @@
 (defn- render-object-bytes
   [type id scale]
   (case type
-    :pdf (let [bytes (wasm/render-shape-pdf id scale)]
+    :pdf (let [bytes (wasm/render-shape-pdf id)]
            (l/dbg :hint "PDF generated via Skia (render-wasm headless)"
                   :object-id (str id)
                   :backend "skia-wasm"

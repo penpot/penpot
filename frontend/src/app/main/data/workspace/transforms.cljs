@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.geom.image-crop :as gic]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
@@ -213,10 +214,29 @@
                   ;; Resize origin point given the selected handler
                   selrect         (dm/get-prop shape :selrect)
                   handler-origin  (get-handler-resize-origin selrect handler)
+                  selrect-start   (gpt/point (dm/get-prop selrect :x) (dm/get-prop selrect :y))
+
+                  ;; Image crop (mod key): the shape is a window over a
+                  ;; picture that keeps its size and position. Dragging an
+                  ;; edge past the fixed one moves the window to the other
+                  ;; side instead of flipping it.
+                  crop-origin   (if ^boolean center?
+                                  (gpt/point (/ width 2) (/ height 2))
+                                  (gpt/subtract handler-origin selrect-start))
+                  [crop-dx crop-w] (gic/crop-axis width (dm/get-prop crop-origin :x) (dm/get-prop scalev :x))
+                  [crop-dy crop-h] (gic/crop-axis height (dm/get-prop crop-origin :y) (dm/get-prop scalev :y))
+
+                  scalev        (if ^boolean bounds-resize?
+                                  (gpt/point (/ crop-w width) (/ crop-h height))
+                                  scalev)
 
                   ;; If we want resize from center, displace the shape
                   ;; so it is still centered after resize.
-                  displacement  (when ^boolean center?
+                  displacement  (cond
+                                  ^boolean bounds-resize?
+                                  (gpt/transform (gpt/point crop-dx crop-dy) shape-transform)
+
+                                  ^boolean center?
                                   (-> shape-center
                                       (gpt/subtract handler-origin)
                                       (gpt/multiply scalev)
@@ -225,7 +245,10 @@
                                       (gpt/multiply (gpt/point -1 -1))
                                       (gpt/transform shape-transform)))
 
-                  resize-origin (gmt/transform-point-center handler-origin shape-center shape-transform)
+                  resize-origin (gmt/transform-point-center
+                                 (if ^boolean bounds-resize? selrect-start handler-origin)
+                                 shape-center
+                                 shape-transform)
                   resize-origin (if (some? displacement)
                                   (gpt/add resize-origin displacement)
                                   resize-origin)
@@ -243,57 +266,23 @@
                   change-height?
                   (not (mth/close? (dm/get-prop scalev :y) 1))
 
-                  ;; Calculate independent image bounds resize transform
-                  sx (dm/get-prop scalev :x)
-                  sy (dm/get-prop scalev :y)
-                  w-new (* width sx)
-                  h-new (* height sy)
-
-                  bounds-resize? (and ^boolean bounds-resize?
-                                      (pos? w-new)
-                                      (pos? h-new))
-
-                  [dx dy] (if ^boolean center?
-                            [(/ (* width (- 1.0 sx)) 2.0)
-                             (/ (* height (- 1.0 sy)) 2.0)]
-                            [(case handler
-                               (:left :bottom-left :top-left) (* width (- 1.0 sx))
-                               0.0)
-                             (case handler
-                               (:top :top-left :top-right) (* height (- 1.0 sy))
-                               0.0)])
+                  ;; Keep the picture in place inside the new crop window
+                  update-image
+                  (fn [img-fill]
+                    (update img-fill :transform gic/update-image-transform
+                            width height crop-dx crop-dy crop-w crop-h))
 
                   new-fills
-                  (when (and bounds-resize? (seq (:fills shape)))
+                  (when (and ^boolean bounds-resize? (seq (:fills shape)))
                     (mapv (fn [fill]
-                            (if-let [img-fill (:fill-image fill)]
-                              (let [tf (get img-fill :transform)
-                                    nx0 (get tf :x 0.0)
-                                    ny0 (get tf :y 0.0)
-                                    nw0 (get tf :width 1.0)
-                                    nh0 (get tf :height 1.0)
-                                    nx' (/ (- (* nx0 width) dx) w-new)
-                                    ny' (/ (- (* ny0 height) dy) h-new)
-                                    nw' (/ nw0 sx)
-                                    nh' (/ nh0 sy)]
-                                (assoc-in fill [:fill-image :transform]
-                                          {:x nx' :y ny' :width nw' :height nh'}))
-                              fill))
+                            (cond-> fill
+                              (some? (:fill-image fill))
+                              (update :fill-image update-image)))
                           (:fills shape)))
 
                   new-fill-image
-                  (when (and bounds-resize? (some? (:fill-image shape)))
-                    (let [img-fill (:fill-image shape)
-                          tf (get img-fill :transform)
-                          nx0 (get tf :x 0.0)
-                          ny0 (get tf :y 0.0)
-                          nw0 (get tf :width 1.0)
-                          nh0 (get tf :height 1.0)
-                          nx' (/ (- (* nx0 width) dx) w-new)
-                          ny' (/ (- (* ny0 height) dy) h-new)
-                          nw' (/ nw0 sx)
-                          nh' (/ nh0 sy)]
-                      (assoc img-fill :transform {:x nx' :y ny' :width nw' :height nh'})))]
+                  (when (and ^boolean bounds-resize? (some? (:fill-image shape)))
+                    (update-image (:fill-image shape)))]
 
               (cond-> (ctm/empty)
                 (some? displacement)

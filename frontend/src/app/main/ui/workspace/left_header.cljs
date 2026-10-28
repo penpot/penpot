@@ -16,7 +16,7 @@
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.branch-switcher :refer [branch-bar*]]
@@ -157,14 +157,7 @@
                           :saved (tr "workspace.header.saved")
                           :retrying (tr "workspace.header.retrying")
                           :error (tr "workspace.header.save-error")
-                          nil)}
-           (case persistence-status
-             :pending deprecated-icon/status-alert
-             :saving deprecated-icon/status-alert
-             :saved deprecated-icon/status-tick
-             :retrying deprecated-icon/status-alert
-             :error deprecated-icon/status-wrong
-             nil)]
+                          nil)}]
           (when ^boolean review?
             [:> tooltip* {:content (tr "workspace.pull-requests.header-badge-tooltip" pr-title)
                           :placement "bottom"}
@@ -178,7 +171,8 @@
               " " pr-title]
              display-name)]])]
       (when ^boolean shared?
-        [:span {:class (stl/css :shared-badge)} deprecated-icon/library])
+        [:span {:class (stl/css :shared-badge)}
+         [:> icon* {:icon-id i/library :class (stl/css :shared-badge-icon)}]])
       [:div {:class (stl/css :menu-section)}
        [:> main-menu/menu* {:layout layout
                             :file file}]]]

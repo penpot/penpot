@@ -189,6 +189,12 @@ Typical use cases: storing authentication tokens for a plugin login
 - <code class="language-js">allow:global</code>: Allows the plugin to keep running while the user moves between the dashboard and files, and to find and open their projects and files. Added automatically when the manifest sets <code class="language-js">"scope": "global"</code>.
 Typical use cases: assistants or integrations that work across several files.
 
+- <code class="language-js">manage:projects</code>: Allows a global plugin to create, rename, pin and duplicate projects.
+
+- <code class="language-js">manage:teams</code>: Allows a global plugin to list, create and rename the user's teams, and move projects between them.
+
+- <code class="language-js">manage:delete</code>: Allows a global plugin to delete files, projects and teams.
+
 _Note: Write permissions automatically includes its corresponding read permission (e.g., <code class="language-js">content:write</code> includes <code class="language-js">content:read</code>) because reading is required to perform write or modification actions._
 
 ### What are plugin.ts and plugin.js files?

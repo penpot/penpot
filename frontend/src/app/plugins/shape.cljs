@@ -66,7 +66,7 @@
    [app.plugins.strokes :as strokes]
    [app.plugins.system-events :as se]
    [app.plugins.text :as text]
-   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens expand-token-attrs token-attr-plugin->token-attr token-attr? valid-token-resolution?]]
+   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens expand-token-attrs per-side-stroke-attrs-restricted? per-side-stroke-widths-message token-attr? valid-token-resolution?]]
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
@@ -292,7 +292,7 @@
 
        (and (not (ctt/per-side-stroke-shape? (:type (u/proxy->shape self))))
             (some #(= :multiple (types.stroke/width-type %)) value))
-       (u/not-valid plugin-id :strokes "Per-side stroke widths require a board or rectangle")
+       (u/not-valid plugin-id :strokes per-side-stroke-widths-message)
 
        :else
        (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value) options))))))
@@ -1587,6 +1587,38 @@
                                                target-id
                                                true)))))
 
+           :updateMain
+           (fn []
+             (let [shape     (u/locate-shape file-id page-id id)
+                   objects   (u/locate-objects file-id page-id)
+                   component (when (:component-id shape)
+                               (u/locate-library-component (:component-file shape) (:component-id shape)))]
+               (cond
+                 (not (r/check-permission plugin-id "content:write"))
+                 (u/not-valid plugin-id :updateMain "Plugin doesn't have 'content:write' permission")
+
+                 (not (r/check-permission plugin-id "library:write"))
+                 (u/not-valid plugin-id :updateMain "Plugin doesn't have 'library:write' permission")
+
+                 (not= file-id (:current-file-id @st/state))
+                 (u/not-valid plugin-id :updateMain "Can only update a component from a copy in the current file")
+
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :updateMain "Cannot modify a page that is not currently active")
+
+                 (not (and (ctk/instance-head? shape) (ctk/in-component-copy? shape)))
+                 (u/not-valid plugin-id :updateMain "The shape is not a component copy head")
+
+                 (u/inside-component-copy? objects shape)
+                 (u/not-valid plugin-id :updateMain "Cannot update the main from a shape inside another component copy")
+
+                 (or (nil? component) (:deleted component))
+                 (u/not-valid plugin-id :updateMain "The main component does not exist or is deleted")
+
+                 :else
+                 (st/emit! (-> (dwl/update-component-sync id (:component-file shape))
+                               (se/add-event plugin-id))))))
+
            :resetOverrides
            (fn []
              (let [shape (u/locate-shape file-id page-id id)]
@@ -1807,6 +1839,11 @@
 
                       (some #(not (token-attr? %)) kw-attrs)
                       (u/not-valid plugin-id :applyToken attrs)
+
+                      ;; The uniform `strokeWidth` alias is exempt: it expands
+                      ;; to a uniform width on every side.
+                      (per-side-stroke-attrs-restricted? file-id page-id [id] attrs)
+                      (u/not-valid plugin-id :applyToken per-side-stroke-widths-message)
 
                       :else
                       (st/emit!

@@ -9,6 +9,7 @@
    [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes :as cpc]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
@@ -313,6 +314,22 @@
                                 :file-id file-id
                                 :team-id team-id)))))))
 
+(defn- restore-pending-changes
+  "Applies the edits still waiting to be saved to a freshly loaded `file`.
+  An edit that no longer applies to the loaded data leaves the file as the
+  server sent it; the save queue keeps the edits either way."
+  [state file]
+  (let [changes (dps/pending-file-changes state file)]
+    (if (empty? changes)
+      file
+      (try
+        (update file :data cpc/process-changes changes false)
+        (catch :default cause
+          (log/wrn :hint "unable to restore pending changes"
+                   :file-id (dm/str (:id file))
+                   :cause cause)
+          file)))))
+
 (defn- bundle-fetched
   [{:keys [file file-id thumbnails] :as bundle}]
   (ptk/reify ::bundle-fetched
@@ -322,9 +339,10 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (assoc :thumbnails (d/update-vals thumbnails (fn [uri] {:uri uri :rendered-at nil})))
-          (update :files assoc file-id file)))))
+      (let [file (restore-pending-changes state file)]
+        (-> state
+            (assoc :thumbnails (d/update-vals thumbnails (fn [uri] {:uri uri :rendered-at nil})))
+            (update :files assoc file-id file))))))
 
 (defn zoom-to-frame
   []

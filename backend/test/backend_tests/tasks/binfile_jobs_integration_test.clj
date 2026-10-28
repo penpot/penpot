@@ -67,14 +67,14 @@
                                      ::rpc/profile-id (:id profile)
                                      :total-chunks  1})
                        :result :session-id)
-        out        (th/command! {::th/type        :upload-chunk
-                                 ::rpc/profile-id (:id profile)
-                                 :session-id    session-id
-                                 :index         0
-                                 :content       {:filename "package.penpot"
-                                                 :path     (th/tempfile fixture)
-                                                 :mtype    "application/zip"
-                                                 :size     (.length source)}})]
+        out        (th/multipart-command! {::th/type        :upload-chunk
+                                           ::rpc/profile-id (:id profile)
+                                           :session-id    session-id
+                                           :index         0
+                                           :content       {:filename "package.penpot"
+                                                           :path     (th/tempfile fixture)
+                                                           :mtype    "application/zip"
+                                                           :size     (.length source)}})]
     (t/is (nil? (:error out)))
     session-id))
 

@@ -20,6 +20,7 @@
    [app.main.data.workspace.comments :as dwcm]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.drawing.common :as dwdc]
+   [app.main.data.workspace.history :as dwh]
    [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shape-layout :as dwsl]
@@ -95,6 +96,7 @@
                           :command (ds/c-mod "c")
                           :subsections [:edit]
                           :section [:workspace]
+                          :customizable false
                           :fn #(st/emit! (dw/copy-selected))}
 
    :copy-link            {:tooltip (ds/shift (ds/alt "C"))
@@ -179,6 +181,7 @@
                           :command "escape"
                           :subsections [:edit]
                           :section [:workspace]
+                          :customizable false
                           :fn #(st/emit! :interrupt (dwdc/clear-drawing) (dw/deselect-all true))}
 
    :find             {:tooltip (ds/meta "F") :command (ds/c-mod "f") :subsections [:edit]
@@ -568,8 +571,7 @@
 
    :toggle-guides        {:tooltip (ds/meta "'")
                           :label (fn [] (tr "shortcuts.toggle-guides"))
-                          ;;https://github.com/ccampbell/mousetrap/issues/85
-                          :command [(ds/c-mod "'") (ds/c-mod "219")]
+                          :command (ds/c-mod "'")
                           :show-command (ds/c-mod "'")
                           :subsections [:main-menu]
                           :section [:workspace]
@@ -620,8 +622,7 @@
 
    :toggle-snap-guides      {:tooltip (ds/meta-shift "'")
                              :label (fn [] (tr "shortcuts.toggle-snap-guides"))
-                             ;;https://github.com/ccampbell/mousetrap/issues/85
-                             :command [(ds/c-mod "shift+'") (ds/c-mod "shift+219")]
+                             :command (ds/c-mod "shift+'")
                              :show-command (ds/c-mod "shift+'")
                              :subsections [:main-menu]
                              :section [:workspace]
@@ -656,7 +657,8 @@
                           :subsections [:panels]
                           :section [:workspace]
                           :fn #(emit-when-no-readonly
-                                (dw/toggle-layout-flag :document-history))}
+                                (-> (dwh/initialize-history)
+                                    (vary-meta assoc ::ev/origin "workspace:shortcuts")))}
 
    :open-branches        {:tooltip (ds/meta-alt "B")
                           :label (fn [] (tr "shortcuts.open-branches"))
@@ -687,7 +689,8 @@
 
    :hide-ui              {:tooltip "\\"
                           :label (fn [] (tr "shortcuts.hide-ui"))
-                          :command "\\"
+                          :command ["\\" "alt+\\" "alt+º"]
+                          :show-command "\\"
                           :subsections [:panels :basics]
                           :section [:workspace :basics]
                           :fn #(st/emit! (toggle-layout-flag :hide-ui))}
@@ -724,7 +727,8 @@
 
    :zoom-selected        {:tooltip (ds/shift "2")
                           :label (fn [] (tr "shortcuts.zoom-selected"))
-                          :command ["shift+2" "shift+num2" "@" "\""]
+                          :command ["shift+2" "shift+num2" "shift+'" "shift+\""]
+                          :show-command "shift+2"
                           :subsections [:zoom-workspace]
                           :section [:workspace]
                           :fn #(st/emit! dw/zoom-to-selected-shape)}

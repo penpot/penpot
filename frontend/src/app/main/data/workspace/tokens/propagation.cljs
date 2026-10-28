@@ -6,7 +6,6 @@
 
 (ns app.main.data.workspace.tokens.propagation
   (:require
-   [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.tokens :as cfo]
@@ -217,8 +216,7 @@
         (when (and tokens-lib tokens-status)
           (when-let [tokens-tree (cfo/get-tokens-in-active-sets tokens-status tokens-lib)]
             (->> (if (contains? cf/flags :tokenscript)
-                   (rx/of (-> (ts/resolve-tokens tokens-tree)
-                              (d/update-vals #(update % :resolved-value ts/tokenscript-symbols->penpot-unit))))
+                   (rx/of (ts/resolve-tokens tokens-tree))
                    (sd/resolve-tokens tokens-tree))
                  (rx/mapcat
                   (fn [sd-tokens]

@@ -23,6 +23,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.branches :as dwb]
    [app.main.data.workspace.comments :as dwcm]
+   [app.main.data.workspace.history :as dwh]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.mcp :as mcp]
    [app.main.data.workspace.undo :as dwu]
@@ -605,9 +606,9 @@
 
         on-show-version-history
         (mf/use-fn
-         (mf/deps file-id)
          (fn [_]
-           (st/emit! (dw/toggle-layout-flag :document-history))))
+           (st/emit! (-> (dwh/initialize-history)
+                         (vary-meta assoc ::ev/origin "workspace:menu")))))
 
         on-show-version-history-key-down
         (mf/use-fn

@@ -10,7 +10,6 @@
    ["style-dictionary$default" :as sd]
    [app.common.files.tokens :as cfo]
    [app.common.logging :as l]
-   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
@@ -86,8 +85,7 @@
   (let [number? (or (number? value)
                     (numeric-string? value))
         parsed-value  (cfo/parse-token-value value)
-        out-of-bounds (or (>= (:value parsed-value) sm/max-safe-int)
-                          (<= (:value parsed-value) sm/min-safe-int))]
+        out-of-bounds (cto/number-out-of-bounds? (:value parsed-value))]
 
     (cond
       (and parsed-value (not out-of-bounds) number?)
@@ -112,8 +110,7 @@
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
   (let [parsed-value  (cfo/parse-token-value value)
-        out-of-bounds (or (>= (:value parsed-value) sm/max-safe-int)
-                          (<= (:value parsed-value) sm/min-safe-int))]
+        out-of-bounds (cto/number-out-of-bounds? (:value parsed-value))]
     (if (and parsed-value (not out-of-bounds))
       parsed-value
       (if out-of-bounds
@@ -185,7 +182,7 @@
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
   (let [normalized-value (str/lower (str/trim value))
-        valid? (contains? #{"none" "uppercase" "lowercase" "capitalize"} normalized-value)
+        valid? (contains? cto/text-case-values normalized-value)
         references (seq (cto/find-token-value-references value))]
     (cond
       valid?

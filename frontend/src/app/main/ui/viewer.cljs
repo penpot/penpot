@@ -22,9 +22,10 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.modal :refer [modal-container*]]
    [app.main.ui.viewer.comments :refer [comments-layer comments-sidebar*]]
    [app.main.ui.viewer.header :as header]
@@ -99,23 +100,33 @@
         go-first-frame (mf/use-fn #(st/emit! dv/select-first-frame))]
     [:*
      (when (pos? index)
-       [:button {:class (stl/css-case :viewer-go-prev true
-                                      :left-bar left-bar)
-                 :on-click go-prev-frame
-                 :aria-label (tr "labels.previous")}
-        deprecated-icon/arrow])
+       [:> icon-button* {:variant "secondary"
+                         :class (stl/css :viewer-go-button)
+                         :tooltip-class (stl/css-case :viewer-go-prev true
+                                                      :left-bar left-bar)
+                         :tooltip-placement "right"
+                         :aria-label (tr "labels.previous")
+                         :icon i/arrow-left
+                         :on-click go-prev-frame}])
      (when (< (+ index 1) num-frames)
-       [:button {:class (stl/css-case :viewer-go-next  true
-                                      :comment-sidebar comment-sidebar
-                                      :right-bar right-bar)
-                 :on-click go-next-frame
-                 :aria-label (tr "labels.next")}
-        deprecated-icon/arrow])
+       [:> icon-button* {:variant "secondary"
+                         :class (stl/css :viewer-go-button)
+                         :tooltip-class (stl/css-case :viewer-go-next true
+                                                      :comment-sidebar comment-sidebar
+                                                      :right-bar right-bar)
+                         :tooltip-placement "left"
+                         :aria-label (tr "labels.next")
+                         :icon i/arrow-right
+                         :on-click go-next-frame}])
      [:div {:class (stl/css-case :viewer-bottom true
                                  :left-bar left-bar)}
-      [:button {:on-click go-first-frame
-                :class (stl/css :reset-button)}
-       deprecated-icon/reload]
+      [:> icon-button* {:variant "secondary"
+                        :class (stl/css :reset-button)
+                        :tooltip-class (stl/css :reset-button-wrapper)
+                        :tooltip-placement "top-right"
+                        :aria-label (tr "viewer.go-to-first-board")
+                        :icon i/reload
+                        :on-click go-first-frame}]
       [:span {:class (stl/css :counter)}
        (str/join " / " [(+ index 1) num-frames])]
       [:span]]]))

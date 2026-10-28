@@ -384,15 +384,10 @@ PENPOT_PUBLIC_URI: https://mycompany.com/penpot/
 
 Your reverse proxy or Ingress must also:
 
-- Route requests under `/penpot/` to the Penpot frontend.
-- Remove the `/penpot` prefix before forwarding each request. The frontend
-  continues to serve its internal routes from `/`.
+- Route requests under `/penpot/` to the Penpot frontend without rewriting the
+  path. The frontend expects to receive the subpath.
 - Preserve WebSocket upgrade headers for notifications and other services that
   use WebSockets.
-
-Changing only `PENPOT_PUBLIC_URI` is not enough. Without the matching proxy
-rewrite, static assets, API calls, and WebSocket connections will use routes that
-the frontend does not recognize.
 
 #### Migrate an existing installation to a subpath
 
@@ -403,7 +398,7 @@ the existing storage.
 Before changing the public URL:
 
 1. Back up the database, assets, and current deployment configuration.
-2. Configure the proxy or Ingress route and prefix rewrite.
+2. Configure the proxy or Ingress route for the subpath.
 3. Update `PENPOT_PUBLIC_URI` for every Penpot component that uses it.
 4. Keep the existing `PENPOT_SECRET_KEY`, database, and asset storage
    configuration.
@@ -740,7 +735,7 @@ flags, and by whether `PENPOT_PUBLIC_URI` is served over HTTPS. See
 
 ### Database
 
-Penpot only supports PostgreSQL and we highly recommend >=13 version. If you are using official
+Penpot only supports PostgreSQL and we highly recommend >=15 version. If you are using official
 docker images this is already solved for you.
 
 Essential database configuration:
@@ -832,6 +827,8 @@ This also comes with an additional feature that allows offload the "inactive" fi
 PENPOT_FLAGS: [...] enable-tiered-file-data-storage
 PENPOT_FILE_DATA_BACKEND: db
 ```
+
+Once enabled, the offload job moves one file per run inside a single transaction: it locks the file row (skipping the run while the file is being edited) and migrates every live data row to the objects storage. You can follow it with `penpot_file_data_offload_rows_total` and `penpot_file_data_offload_bytes_total` (label `type="main|snapshot|fragment"`) and `penpot_file_data_offload_timing_ms` (label `result="ok|skip|error"`).
 
 ### Autosave
 
@@ -925,6 +922,15 @@ PENPOT_INTERNAL_URI: http://penpot-frontend:8080
   `PENPOT_PUBLIC_URI` if not set. The default value
   `http://penpot-frontend:8080` used in the docker-compose is a good default and
   it is recommended to keep it unchanged.
+
+**Beta, new render engine (WebGL):** when you run more than one exporter, give
+each one its own name and keep it across restarts and upgrades. An exporter
+uses it to cancel only its own unfinished exports when it restarts:
+
+```bash
+# Exporter
+PENPOT_EXPORTER_REPLICA_ID: exporter-1
+```
 
 ### MCP
 

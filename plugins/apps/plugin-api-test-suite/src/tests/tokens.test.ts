@@ -418,6 +418,31 @@ describe('Tokens', () => {
       expect(Object.keys(b.tokens)).toContain('paddingLeft');
     });
 
+    // The target is a text shape because the attribute set of a board excludes
+    // the font-family property, so the application is filtered out there and
+    // the assertions pass vacuously.
+    // The family comes from the bundled Google fonts catalog, available in every
+    // run. `Red` in its name reads as a color if the resolver parses the words.
+    test('applyToken binds a fontFamilies token to a text shape', async (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const font = ctx.penpot.fonts.findByName('Red Hat Display');
+      if (!font) throw new Error('Red Hat Display font not found');
+      const token = set.addToken({
+        type: 'fontFamilies',
+        name: unique('fontFamilies.'),
+        value: [font.fontFamily],
+      });
+
+      const t = ctx.penpot.createText('Hello Penpot');
+      if (!t) throw new Error('createText returned null');
+      ctx.board.appendChild(t);
+
+      t.applyToken(token, ['fontFamilies']);
+      await waitFor(() => t.fontFamily === font.fontFamily);
+      expect(Object.keys(t.tokens)).toContain('fontFamilies');
+      expect(t.fontFamily).toBe(font.fontFamily);
+    });
+
     test('applyToken accepts the uniform strokeWidth property', async (ctx) => {
       const set = activeSet(ctx, unique('set'));
       const token = set.addToken({
@@ -454,6 +479,55 @@ describe('Tokens', () => {
       const keys = Object.keys(rect.tokens);
       expect(keys).toContain('strokeWidthTop');
       expect(keys).not.toContain('strokeWidthRight');
+    });
+
+    // Issue #12319: per-side widths are only supported on boards and
+    // rectangles. `applyToken` used to bind them on any shape, leaving an
+    // ellipse in the per-side state the `strokes` setter rejects.
+    test('applyToken rejects an explicit per-side width on an ellipse', (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const token = set.addToken({
+        type: 'borderWidth',
+        name: unique('width.'),
+        value: '4',
+      });
+      const ellipse = ctx.penpot.createEllipse();
+      ctx.board.appendChild(ellipse);
+
+      expect(() => ellipse.applyToken(token, ['strokeWidthTop'])).toThrow();
+      expect(ellipse.tokens.strokeWidthTop).toBeUndefined();
+    });
+
+    test('applyToShapes rejects an explicit per-side width on an ellipse', (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const token = set.addToken({
+        type: 'borderWidth',
+        name: unique('width.'),
+        value: '4',
+      });
+      const ellipse = ctx.penpot.createEllipse();
+      ctx.board.appendChild(ellipse);
+
+      expect(() =>
+        token.applyToShapes([ellipse], ['strokeWidthLeft']),
+      ).toThrow();
+      expect(ellipse.tokens.strokeWidthLeft).toBeUndefined();
+    });
+
+    test('applyToken keeps accepting the uniform strokeWidth alias on an ellipse', async (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const token = set.addToken({
+        type: 'borderWidth',
+        name: unique('width.'),
+        value: '4',
+      });
+      const ellipse = ctx.penpot.createEllipse();
+      ctx.board.appendChild(ellipse);
+
+      ellipse.applyToken(token, ['strokeWidth']);
+
+      await waitFor(() => ellipse.tokens.strokeWidth === token.name);
+      expect(ellipse.tokens.strokeWidth).toBe(token.name);
     });
 
     for (const side of [
@@ -728,6 +802,39 @@ describe('Token types', () => {
     const resolved = token.resolvedValue;
     expect(Array.isArray(resolved)).toBe(true);
     expect(resolved as unknown as string[]).toContain('Arial');
+  });
+
+  // The resolver parses a family whose name has several words as a list of
+  // word symbols, so each family name must survive as a single entry. A
+  // single-word family takes the simpler path the test above covers.
+  test('fontFamilies token resolvedValue keeps multi-word families whole', (ctx) => {
+    const set = activeSet(ctx, unique('set'));
+    const token = set.addToken({
+      type: 'fontFamilies',
+      name: unique('fontFamilies.'),
+      value: ['Hanken Grotesk'],
+    });
+    // The stored value keeps the family whole, isolating resolution below.
+    expect(token.value).toEqual(['Hanken Grotesk']);
+
+    const resolved = token.resolvedValue as unknown as string[];
+    expect(Array.isArray(resolved)).toBe(true);
+    expect(resolved).toHaveLength(1);
+    expect(resolved[0]).toBe('Hanken Grotesk');
+  });
+
+  // Words like `Red` or `Black` read as colors and `2P` as a number and a word
+  // when the resolver parses the family name.
+  test('fontFamilies token resolvedValue keeps names with expression words', (ctx) => {
+    const set = activeSet(ctx, unique('set'));
+    const families = ['Red Hat Display', 'Archivo Black', 'Press Start 2P'];
+    const token = set.addToken({
+      type: 'fontFamilies',
+      name: unique('fontFamilies.'),
+      value: families,
+    });
+
+    expect(token.resolvedValue as unknown as string[]).toEqual(families);
   });
 
   test('shadow token exposes its composite value', (ctx) => {

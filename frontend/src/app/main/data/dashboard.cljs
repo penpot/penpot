@@ -325,6 +325,13 @@
 
 ;; --- EVENT: duplicate-project
 
+(defn project-with-file-count
+  "Loads the file count missing from a duplicated project's RPC response."
+  [{:keys [id] :as project}]
+  (->> (rp/cmd! :get-project-files {:project-id id})
+       (rx/map (fn [files]
+                 (assoc project :count (count files) :is-pinned false)))))
+
 (defn project-duplicated
   [{:keys [id] :as project}]
   (ptk/reify ::project-duplicated
@@ -355,6 +362,7 @@
                                       (str " " copy-count))))
             new-name (cfh/generate-unique-name name unames :suffix-fn suffix-fn)]
         (->> (rp/cmd! :duplicate-project {:project-id id :name new-name})
+             (rx/mapcat project-with-file-count)
              (rx/tap on-success)
              (rx/map project-duplicated)
              (rx/catch on-error))))))

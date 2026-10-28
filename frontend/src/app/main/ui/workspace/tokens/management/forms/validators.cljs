@@ -44,9 +44,7 @@
            (sd/resolve-tokens-interactive tokens'))
          (rx/mapcat
           (fn [resolved-tokens]
-            (let [resolved-token (cond-> (get resolved-tokens (:name token))
-                                   (contains? cf/flags :tokenscript)
-                                   (update :resolved-value ts/tokenscript-symbols->penpot-unit))]
+            (let [resolved-token (get resolved-tokens (:name token))]
               (cond
                 (:resolved-value resolved-token)
                 (rx/of resolved-token)

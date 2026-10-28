@@ -14,13 +14,11 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
-   [app.common.types.component :as ctk]
-   [app.common.types.container :as ctn]
-   [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.helpers :as dsh]
+   [app.main.data.workspace.clipboard :as dwc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.layout :as layout]))
 
@@ -225,34 +223,7 @@
             (if (= parent-frame-id uuid/zero)
               shape
               (let [frame (get objects parent-frame-id)]
-                (gsh/translate-to-frame shape frame))))
-
-          ;; When copying an instance that is nested inside another one, we need to
-          ;; advance the shape refs to one or more levels of remote mains.
-          (advance-copies [data]
-            (let [heads     (mapcat #(ctn/get-child-heads (:objects data) %) selected)]
-              (update data :objects
-                      #(reduce (partial advance-copy file libraries page)
-                               %
-                               heads))))
-
-          (advance-copy [file libraries page objects shape]
-            (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
-              (let [level-delta (if (nil? (ctk/get-swap-slot shape))
-                                  (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)
-                                  0)]
-                (if (pos? level-delta)
-                  (reduce (partial advance-shape file libraries page level-delta)
-                          objects
-                          (cfh/get-children-with-self objects (:id shape)))
-                  objects))
-              objects))
-
-          (advance-shape [file libraries page level-delta objects shape]
-            (let [new-shape-ref (ctf/advance-shape-ref file page libraries shape level-delta {:include-deleted? true})]
-              (cond-> objects
-                (and (some? new-shape-ref) (not= new-shape-ref (:shape-ref shape)))
-                (assoc-in [(:id shape) :shape-ref] new-shape-ref))))]
+                (gsh/translate-to-frame shape frame))))]
 
     (let [file-id  (:id file)
           frame-id (cfh/common-parent-frame objects selected)
@@ -273,4 +244,4 @@
            (map (partial prepare-object objects frame-id))
            (reduce collect-data initial)
            sort-selected
-           advance-copies))))
+           (dwc/advance-copies file libraries page selected)))))

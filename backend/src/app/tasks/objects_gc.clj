@@ -11,9 +11,11 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.config :as cf]
    [app.db :as db]
    [app.features.fdata :as fdata]
    [app.jobs :as jobs]
+   [app.loggers.audit :as audit]
    [app.storage :as sto]
    [app.tasks.delete-object :as dobj]
    [integrant.core :as ig]))
@@ -32,6 +34,22 @@
 ;; Every proc beats its job (`jobs/heartbeat`) after each processed chunk,
 ;; through the pool and never through the chunk transaction, so a long backlog
 ;; in a single proc cannot outrun the orphan lease.
+
+(defn- submit-hard-delete-event
+  "Emits one hard-delete audit event for the batch of rows just purged
+  by this task, so a projection of the audit stream can drop its local
+  rows. Each GC section purges in its own chunk transactions, so each
+  chunk carries only its own entity key (`:team-ids`, `:project-ids`
+  or `:file-ids`); a single event spanning sections could never share
+  their transactions. Runs inside the caller transaction, next to the
+  deletes: if the purge aborts, the event aborts with it."
+  [cfg ids-key ids]
+  (when (contains? cf/flags :audit-log)
+    (audit/submit cfg
+                  {:name "hard-delete-objects"
+                   :type "command"
+                   :props {ids-key (vec ids)}
+                   :context {:triggered-by "objects-gc"}})))
 
 (def ^:private sql:get-upload-sessions
   "SELECT us.id
@@ -191,23 +209,28 @@
   [cfg ids]
   (try
     (db/tx-run! cfg
-                (fn [{:keys [::db/conn ::threshold ::sto/storage]}]
+                (fn [{:keys [::db/conn ::threshold ::sto/storage] :as cfg}]
                   (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
-                  (let [ids (db/create-array conn "uuid" ids)]
-                    (->> (db/exec! conn [sql:lock-teams ids threshold])
-                         (reduce (fn [total {:keys [id photo-id deleted-at]}]
-                                   (l/trc :obj "team"
-                                          :id (str id)
-                                          :deleted-at (ct/format-inst deleted-at))
+                  (let [ids (db/create-array conn "uuid" ids)
+                        [total deleted-ids]
+                        (->> (db/exec! conn [sql:lock-teams ids threshold])
+                             (reduce (fn [[total deleted-ids] {:keys [id photo-id deleted-at]}]
+                                       (l/trc :obj "team"
+                                              :id (str id)
+                                              :deleted-at (ct/format-inst deleted-at))
 
-                                   ;; Mark as deleted the storage object
-                                   (some->> photo-id (sto/touch-object! storage))
+                                       ;; Mark as deleted the storage object
+                                       (some->> photo-id (sto/touch-object! storage))
 
-                                   ;; And finally, permanently delete the team.
-                                   (let [affected (-> (db/delete! conn :team {:id id})
-                                                      (db/get-update-count))]
-                                     (+ total affected)))
-                                 0)))))
+                                       ;; And finally, permanently delete the team.
+                                       (let [affected (-> (db/delete! conn :team {:id id})
+                                                          (db/get-update-count))]
+                                         [(+ total affected)
+                                          (cond-> deleted-ids (pos? affected) (conj id))]))
+                                     [0 []]))]
+                    (when (seq deleted-ids)
+                      (submit-hard-delete-event cfg :team-ids deleted-ids))
+                    total)))
     (catch Throwable cause
       (l/err :obj "team"
              :hint "error on chunk deletion, skipping it"
@@ -305,20 +328,25 @@
   [cfg ids]
   (try
     (db/tx-run! cfg
-                (fn [{:keys [::db/conn ::threshold]}]
+                (fn [{:keys [::db/conn ::threshold] :as cfg}]
                   (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
-                  (let [ids (db/create-array conn "uuid" ids)]
-                    (->> (db/exec! conn [sql:lock-projects ids threshold])
-                         (reduce (fn [total {:keys [id team-id deleted-at]}]
-                                   (l/trc :obj "project"
-                                          :id (str id)
-                                          :team-id (str team-id)
-                                          :deleted-at (ct/format-inst deleted-at))
+                  (let [ids (db/create-array conn "uuid" ids)
+                        [total deleted-ids]
+                        (->> (db/exec! conn [sql:lock-projects ids threshold])
+                             (reduce (fn [[total deleted-ids] {:keys [id team-id deleted-at]}]
+                                       (l/trc :obj "project"
+                                              :id (str id)
+                                              :team-id (str team-id)
+                                              :deleted-at (ct/format-inst deleted-at))
 
-                                   (let [affected (-> (db/delete! conn :project {:id id})
-                                                      (db/get-update-count))]
-                                     (+ total affected)))
-                                 0)))))
+                                       (let [affected (-> (db/delete! conn :project {:id id})
+                                                          (db/get-update-count))]
+                                         [(+ total affected)
+                                          (cond-> deleted-ids (pos? affected) (conj id))]))
+                                     [0 []]))]
+                    (when (seq deleted-ids)
+                      (submit-hard-delete-event cfg :project-ids deleted-ids))
+                    total)))
     (catch Throwable cause
       (l/err :obj "project"
              :hint "error on chunk deletion, skipping it"
@@ -357,20 +385,25 @@
   [cfg ids]
   (try
     (db/tx-run! cfg
-                (fn [{:keys [::db/conn ::threshold]}]
+                (fn [{:keys [::db/conn ::threshold] :as cfg}]
                   (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
-                  (let [ids (db/create-array conn "uuid" ids)]
-                    (->> (db/exec! conn [sql:lock-files ids threshold])
-                         (reduce (fn [total {:keys [id deleted-at project-id]}]
-                                   (l/trc :obj "file"
-                                          :id (str id)
-                                          :project-id (str project-id)
-                                          :deleted-at (ct/format-inst deleted-at))
+                  (let [ids (db/create-array conn "uuid" ids)
+                        [total deleted-ids]
+                        (->> (db/exec! conn [sql:lock-files ids threshold])
+                             (reduce (fn [[total deleted-ids] {:keys [id deleted-at project-id]}]
+                                       (l/trc :obj "file"
+                                              :id (str id)
+                                              :project-id (str project-id)
+                                              :deleted-at (ct/format-inst deleted-at))
 
-                                   (let [affected (-> (db/delete! conn :file {:id id})
-                                                      (db/get-update-count))]
-                                     (+ total affected)))
-                                 0)))))
+                                       (let [affected (-> (db/delete! conn :file {:id id})
+                                                          (db/get-update-count))]
+                                         [(+ total affected)
+                                          (cond-> deleted-ids (pos? affected) (conj id))]))
+                                     [0 []]))]
+                    (when (seq deleted-ids)
+                      (submit-hard-delete-event cfg :file-ids deleted-ids))
+                    total)))
     (catch Throwable cause
       (l/err :obj "file"
              :hint "error on chunk deletion, skipping it"

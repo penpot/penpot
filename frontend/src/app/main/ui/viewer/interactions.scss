@@ -4,94 +4,75 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+// Only for the shared menu placeholders, which move to the DS with the
+// menus and dropdowns.
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
+
+.view-options-wrapper {
+  position: relative;
+}
 
 .view-options {
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
   display: flex;
   align-items: center;
-  position: relative;
-  gap: deprecated.$s-4;
-  height: deprecated.$s-32;
-  border-radius: deprecated.$br-8;
-  background-color: var(--input-background-color);
-  padding: deprecated.$s-8;
+  border: none;
+  gap: var(--sp-xs);
+  block-size: $sz-32;
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  padding: var(--sp-s);
   cursor: pointer;
 }
 
 .dropdown-title {
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
   flex-grow: 1;
-  color: var(--input-foreground-color-active);
+  color: var(--color-foreground-primary);
 }
 
 .label {
   flex-grow: 1;
-  color: var(--input-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
 .dropdown {
   @extend %menu-dropdown;
 
-  right: deprecated.$s-2;
-  top: calc(deprecated.$s-2 + deprecated.$s-48);
-  width: deprecated.$s-272;
-  padding: deprecated.$s-6;
-  max-height: calc(100vh - 3 * (deprecated.$s-2 + deprecated.$s-48));
+  inset-inline-end: px2rem(2);
+  inset-block-start: px2rem(50);
+  inline-size: px2rem(272);
+  padding: px2rem(6);
+  max-block-size: calc(100vh - #{px2rem(150)});
   overflow: auto;
 }
 
 .dropdown-element {
   @extend %dropdown-element-base;
 
-  min-height: deprecated.$s-32;
-
-  .icon {
-    @include deprecated.flex-center;
-
-    height: 100%;
-    width: deprecated.$s-16;
-
-    svg {
-      @extend %button-icon-small;
-
-      stroke: var(--icon-foreground);
-    }
-  }
+  min-block-size: $sz-32;
 
   &:hover .label {
-    color: var(--input-foreground-color-active);
+    color: var(--color-foreground-primary);
   }
 }
 
 .dropdown-element.selected {
   .label {
-    color: var(--input-foreground-color-active);
-  }
-
-  .icon svg {
-    stroke: var(--input-foreground-color);
+    color: var(--color-foreground-primary);
   }
 }
 
 .icon,
 .icon-dropdown {
-  @include deprecated.flex-center;
-
-  height: 100%;
-  width: deprecated.$s-16;
-
-  svg {
-    @extend %button-icon-small;
-
-    stroke: var(--icon-foreground);
-  }
-}
-
-.icon-dropdown svg {
-  transform: rotate(90deg);
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
 }
 
 // breakpoint 1013px

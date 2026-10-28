@@ -12,9 +12,11 @@
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.loggers.audit :as-alias audit]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.util.services :as sv]))
 
 ;; --- MUTATION: Create Share Link
@@ -39,7 +41,11 @@
    ::db/transaction true}
   [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id] :as params}]
   (files/check-edition-permissions! conn profile-id file-id)
-  (create-share-link conn (assoc params :profile-id profile-id)))
+  (let [slink (create-share-link conn (assoc params :profile-id profile-id))]
+    ;; The consumers key share scope by file, so the event carries
+    ;; both ids; `:file-id` is already in params, `:share-id` is new.
+    (rph/with-meta slink
+      {::audit/props {:share-id (:id slink)}})))
 
 (defn create-share-link
   [conn {:keys [profile-id file-id pages who-comment who-inspect]}]
@@ -80,4 +86,8 @@
                   :hint "You can only delete share-links you created")))
 
     (db/delete! conn :share-link {:id id})
-    nil))
+    ;; The delete params carry only the link id, so resolve the file
+    ;; from the row fetched above before it is gone.
+    (rph/with-meta (rph/wrap)
+      {::audit/props {:file-id (:file-id slink)
+                      :share-id id}})))

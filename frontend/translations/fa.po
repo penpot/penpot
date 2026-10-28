@@ -1220,7 +1220,7 @@ msgstr "پروژه شما با موفقیت منتقل شد"
 #: src/app/main/data/common.cljs:266
 #, backend
 msgid "dashboard.team-belong-organization"
-msgstr "این تیم اکنون به %s تعلق دارد"
+msgstr "%s اکنون به %s تعلق دارد"
 
 #: src/app/main/ui/dashboard/team.cljs:1669
 msgid "dashboard.team-info"
@@ -1233,7 +1233,7 @@ msgstr "اعضای تیم"
 #: src/app/main/data/common.cljs:267
 #, backend
 msgid "dashboard.team-no-longer-belong-organization"
-msgstr "این تیم دیگر به سازمان %s تعلق ندارد"
+msgstr "%s دیگر به %s تعلق ندارد"
 
 #: src/app/main/ui/dashboard/team.cljs:1676
 msgid "dashboard.team-organization"

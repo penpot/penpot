@@ -137,5 +137,11 @@
                       {:id team-id}
                       {::db/return-keys false}))))
 
-    (-> (create-file cfg params)
-        (vary-meta assoc ::audit/props {:team-id team-id}))))
+    (let [file (create-file cfg params)]
+      (vary-meta file assoc ::audit/props {:id (:id file)
+                                           :project-id project-id
+                                           :team-id team-id
+                                           :name (:name file)
+                                           :created-at (:created-at file)
+                                           :modified-at (:modified-at file)
+                                           :revn (:revn file)}))))

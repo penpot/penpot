@@ -17,7 +17,8 @@
 - **Read `AGENTS.local.md` after this file whenever it exists.** It carries
   the developer's steering for this project and overrides this file on prose style and
   workflow, but not on project policy, where instructions here prevail.
-- **Commit message body lines MUST wrap at ≤76 chars** (subject ≤70 chars) and
+- **Commit message body lines MUST wrap at ≤80 chars** (subject ≤80 chars,
+  except `Merge`/`Revert`/`Reapply` which skip the subject length check) and
   the commit MUST pass `./scripts/check-commit` with exit code 0 before you
   consider it done. This is mechanically checked — do not eyeball it.
 - **Read the workflow memory BEFORE the corresponding action**:
@@ -31,7 +32,7 @@
 
 Do this **before planning, before coding, before touching any file**:
 
-1. Read `critical-info` (use `serena_read_memory critical-info` or read `.serena/memories/critical-info.md`).
+1. Read `critical-info` through Serena (see "Accessing memories" below) or read `.serena/memories/critical-info.md`.
    It describes the project structure and tells you which modules exist.
 2. From `critical-info`, identify which modules your task affects.
 3. Read each affected module's **core memory** — the name is `<module>/core`
@@ -102,9 +103,12 @@ When working on a task:
 
 ## Accessing memories
 
-- **If `serena_read_memory` / `serena_list_memories` tools are available**: use them.
-  `serena_read_memory` takes a memory name (e.g. `critical-info`, `frontend/core`).
-- **If tools are NOT available**: read the filesystem directly.
+- **If Serena's `serena_repl` tool is available** (Serena 2.x): call `s.mem.read_memory(name)`
+  and `s.mem.list_memories()` through it.
+- **If Serena's `read_memory` / `list_memories` tools are available** (Serena 1.x; some clients
+  show them as `serena_read_memory` / `serena_list_memories`): use them.
+- Either way, `read_memory` takes a memory name (e.g. `critical-info`, `frontend/core`).
+- **If Serena is NOT available**: read the filesystem directly.
   Memory name `mem:foo/bar` maps to file `.serena/memories/foo/bar.md`.
 
 ## Cross-reference convention

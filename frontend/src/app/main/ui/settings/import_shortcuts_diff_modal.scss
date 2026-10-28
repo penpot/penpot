@@ -165,3 +165,22 @@
   text-align: center;
   padding-block: var(--sp-xl);
 }
+
+.skipped-entries {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.skipped-entries-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.skipped-entry {
+  @include t.use-typography("code-font");
+
+  color: var(--color-foreground-secondary);
+  overflow-wrap: anywhere;
+}

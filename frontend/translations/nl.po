@@ -1230,7 +1230,7 @@ msgstr "Je project is succesvol verplaatst"
 #: src/app/main/data/common.cljs:266
 #, backend
 msgid "dashboard.team-belong-organization"
-msgstr "Dit team behoort nu tot %s"
+msgstr "%s behoort nu tot %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1669
 msgid "dashboard.team-info"
@@ -1243,7 +1243,7 @@ msgstr "Teamleden"
 #: src/app/main/data/common.cljs:267
 #, backend
 msgid "dashboard.team-no-longer-belong-organization"
-msgstr "Dit team behoort niet langer tot de organisatie %s"
+msgstr "%s behoort niet langer tot %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1676
 msgid "dashboard.team-organization"

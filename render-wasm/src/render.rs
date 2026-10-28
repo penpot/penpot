@@ -24,6 +24,7 @@ use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
 use options::RenderOptions;
+pub(crate) use strokes::per_side_stroke_outline;
 pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::error::{Error, Result};

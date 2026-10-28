@@ -71,22 +71,30 @@ desc: Use Penpot's libraries for reusable design elements! Learn to create, mana
   <img src="/img/libraries/libraries-open.webp" alt="Open libraries">
 </figure>
 
-<h4 id="import-tokens-from-library">Import tokens from a connected library</h4>
-<p>If a shared library you have connected includes design tokens, you can copy them into the current file from the <strong>Libraries</strong> modal.</p>
-<p>The <strong>Import tokens</strong> button appears only next to connected libraries that define tokens. Libraries without tokens do not show this control.</p>
+<h4 id="tokens-from-library">Use tokens from a shared library</h4>
+<p>A file can use the design tokens of a connected shared library instead of its own. This keeps one source of truth: tokens are defined once in the library, and every file that uses it gets the same tokens, sets and themes.</p>
+<p>A file uses one tokens source at a time: its own tokens or the tokens of one connected library.</p>
 <ol>
-  <li>Open the <strong>Libraries</strong> panel from the assets tab.</li>
-  <li>Under <strong>Libraries in this file</strong>, find the connected library that includes tokens and click <strong>Import tokens</strong> (beside the disconnect control).</li>
-  <li>Review the confirmation dialog. Importing brings in the library's full token data, including sets and themes when the library defines them.</li>
-  <li>Click <strong>Import tokens</strong> to apply, or <strong>Cancel</strong> to go back without changes.</li>
+  <li>Connect the library to the file (see <a href="#shared-libraries">Connect shared libraries</a>).</li>
+  <li>Open the <strong>Libraries</strong> panel from the assets tab. The <strong>This file</strong> tab lists the file library and the connected libraries, with how many tokens, sets and themes each one has.</li>
+  <li>Click <strong>Set as tokens source</strong> next to the library. The current source is labelled <strong>Tokens source</strong>.</li>
 </ol>
-<p class="advice">Importing tokens from a library replaces all tokens, sets and themes in the current file. Export your tokens first (from the Tokens tab → Tools → Export) if you need to keep a backup.</p>
-<p>This is separate from connecting the library for components, colors and typographies. You can use shared assets without importing tokens, and import tokens only when you want the file's token setup to match the library.</p>
 <figure>
-  <img src="/img/libraries/libraries-import-tokens-button.webp" alt="Import tokens button in the Libraries modal">
-  <figcaption>The Import tokens button on a connected library that includes tokens.</figcaption>
+  <img src="/img/libraries/libraries-tokens-source.webp" alt="This file tab of the Libraries modal with a connected library set as tokens source">
 </figure>
-<figure>
-  <img src="/img/libraries/libraries-import-tokens-confirm.webp" alt="Import tokens from library confirmation dialog">
-  <figcaption>Confirm before importing. All current tokens, sets and themes in this file will be replaced.</figcaption>
-</figure>
+<p>The button only appears for libraries that have tokens of their own. A library that already uses tokens from another library cannot be a tokens source.</p>
+<p>You can also change the source from the top of the <strong>Tokens</strong> tab, which shows <strong>Source:</strong> followed by <strong>This file</strong> or the library name. In the <strong>Assets</strong> tab, a tokens icon marks the library that is the current source.</p>
+
+<h5>What you can do with library tokens</h5>
+<ul>
+  <li><strong>Apply</strong> them to layers, as with local tokens.</li>
+  <li><strong>Activate themes and sets.</strong> The active themes and sets are saved in each file, so two files can use the same library with different themes. When you set a library as source, the file starts with the themes and sets active in the library.</li>
+  <li><strong>Edit them in the library.</strong> From a file that uses library tokens you cannot create, edit, rename or delete tokens, sets or themes. Use the open-in-new-tab button next to the source name, or <strong>Edit themes</strong> in the theme menu, to open the library on its Tokens tab.</li>
+</ul>
+
+<h5>How changes reach your file</h5>
+<p>Token changes in the library reach the files that use it right away. You do not need to accept them in <strong>Updates</strong>, which only lists components, colors and typographies. When sets or themes are added, removed or renamed in the library, Penpot shows a notice in the file.</p>
+<p class="advice">If a token applied in your file is renamed or deleted in the library, the layer keeps its value but the token appears as missing. Apply the new token again.</p>
+
+<h5>Switching back to the file's own tokens</h5>
+<p>Click <strong>Set as tokens source</strong> on the <strong>File library</strong> row. The file's own tokens were kept while the library was the source, so they come back. Tokens applied from the library appear as missing unless the file has tokens with the same names. Disconnecting a library that is the tokens source also switches the file back to its own tokens.</p>

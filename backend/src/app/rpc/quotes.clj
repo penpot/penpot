@@ -428,7 +428,7 @@
     WHERE fc.file_id = ?
       AND fc.created_by = 'user'
       AND fc.deleted_at IS NULL
-      AND fc.data IS NOT NULL")
+      AND fc.label IS NOT NULL")
 
 (defmethod check-quote ::snapshots-per-file
   [{:keys [::profile-id ::file-id ::team-id ::project-id ::target] :as cfg}]
@@ -461,7 +461,7 @@
     WHERE p.team_id = ?
       AND fc.created_by = 'user'
       AND fc.deleted_at IS NULL
-      AND fc.data IS NOT NULL")
+      AND fc.label IS NOT NULL")
 
 (defmethod check-quote ::snapshots-per-team
   [{:keys [::profile-id ::team-id ::target] :as cfg}]

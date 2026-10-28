@@ -52,10 +52,11 @@ describe('Pages', () => {
     const page = ctx.penpot.createPage();
     await ctx.penpot.openPage(page);
     page.remove();
-    // The switch to another page happens asynchronously; wait for it.
+    // The switch to another page happens asynchronously; wait for it. Until it
+    // lands the workspace is not ready, so `currentPage` can briefly be null.
     const start = Date.now();
     let active = ctx.penpot.currentPage;
-    while (active && active.id === page.id && Date.now() - start < 2000) {
+    while ((!active || active.id === page.id) && Date.now() - start < 2000) {
       await new Promise((resolve) => setTimeout(resolve, 50));
       active = ctx.penpot.currentPage;
     }

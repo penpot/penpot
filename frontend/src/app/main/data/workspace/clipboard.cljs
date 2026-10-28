@@ -56,6 +56,7 @@
    [app.render-wasm.text-paste :as text-paste]
    [app.util.clipboard :as clipboard]
    [app.util.code-gen.markup-svg :as svg]
+   [app.util.code-gen.markup-svg-wasm :as svg.wasm]
    [app.util.code-gen.style-css :as css]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -68,6 +69,43 @@
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]
    [promesa.core :as p]))
+
+(defn- advance-shape
+  [file libraries page level-delta head-id objects shape]
+  (let [new-shape-ref (ctf/advance-shape-ref file page libraries shape level-delta {:include-deleted? true})
+        container     (ctn/make-container page :page)
+        ;; The head becomes a root copy, which cannot carry a swap slot, so
+        ;; strip inherited slots only for it. Nested sub-heads keep them so
+        ;; they still pair with the children of the new near main.
+        head?         (= (:id shape) head-id)
+        new-touched   (ctf/get-touched-from-ref-chain-until-target-ref
+                       container libraries shape new-shape-ref :remove-slots? head?)]
+    (cond-> objects
+      (and (some? new-shape-ref) (not= new-shape-ref (:shape-ref shape)))
+      (update (:id shape) assoc :shape-ref new-shape-ref :touched new-touched))))
+
+(defn- advance-copy
+  [file libraries page objects shape]
+  (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
+    (let [level-delta (if (nil? (ctk/get-swap-slot shape))
+                        (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)
+                        0)]
+      (if (pos? level-delta)
+        (reduce (partial advance-shape file libraries page level-delta (:id shape))
+                objects
+                (cfh/get-children-with-self objects (:id shape)))
+        objects))
+    objects))
+
+(defn advance-copies
+  "When copying an instance that is nested inside another one, we need to
+   advance the shape refs to one or more levels of remote mains."
+  [file libraries page selected data]
+  (let [heads (mapcat #(ctn/get-child-heads (:objects data) %) selected)]
+    (update data :objects
+            #(reduce (partial advance-copy file libraries page)
+                     %
+                     heads))))
 
 (defn copy-selected
   []
@@ -150,39 +188,13 @@
               (let [frame (get objects parent-frame-id)]
                 (gsh/translate-to-frame shape frame))))
 
-          ;; When copying an instance that is nested inside another one, we need to
-          ;; advance the shape refs to one or more levels of remote mains.
-          (advance-copies [state selected data]
-            (let [file      (dsh/lookup-file state)
-                  libraries (:files state)
-                  ;; FIXME
-                  page      (dsh/lookup-page state)
-                  heads     (mapcat #(ctn/get-child-heads (:objects data) %) selected)]
-              (update data :objects
-                      #(reduce (partial advance-copy file libraries page)
-                               %
-                               heads))))
-
-          (advance-copy [file libraries page objects shape]
-            (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
-              (let [level-delta (if (nil? (ctk/get-swap-slot shape))
-                                  (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)
-                                  0)]
-                (if (pos? level-delta)
-                  (reduce (partial advance-shape file libraries page level-delta)
-                          objects
-                          (cfh/get-children-with-self objects (:id shape)))
-                  objects))
-              objects))
-
-          (advance-shape [file libraries page level-delta objects shape]
-            (let [new-shape-ref (ctf/advance-shape-ref file page libraries shape level-delta {:include-deleted? true})
-                  container     (ctn/make-container page :page)
-                  new-touched   (ctf/get-touched-from-ref-chain-until-target-ref container libraries shape new-shape-ref)]
-              (cond-> objects
-                (and (some? new-shape-ref) (not= new-shape-ref (:shape-ref shape)))
-                (-> (assoc-in [(:id shape) :shape-ref] new-shape-ref)
-                    (assoc-in [(:id shape) :touched] new-touched)))))
+          (advance-copies-from-state [state selected data]
+            (advance-copies (dsh/lookup-file state)
+                            (:files state)
+                            ;; FIXME
+                            (dsh/lookup-page state)
+                            selected
+                            data))
 
           (on-copy-error [error]
             (js/console.error "clipboard blocked:" error)
@@ -209,14 +221,18 @@
                   file     (dsh/lookup-file state file-id)
                   version  (get file :version)
 
-                  initial  {:type :copied-shapes
-                            :features features
-                            :version version
-                            :file-id file-id
-                            :team-id (:current-team-id state)
-                            :selected selected
-                            :objects {}
-                            :images #{}}
+                  geometry (dwtxt/copied-text-geometry state objects selected)
+
+                  initial  (cond-> {:type :copied-shapes
+                                    :features features
+                                    :version version
+                                    :file-id file-id
+                                    :team-id (:current-team-id state)
+                                    :selected selected
+                                    :objects {}
+                                    :images #{}}
+                             (some? geometry)
+                             (assoc :text-geometry geometry))
 
                   shapes   (->> (cfh/selected-with-children objects selected)
                                 (keep (d/getf objects)))]
@@ -235,7 +251,7 @@
                               (rx/merge-map (partial prepare-object objects frame-id))
                               (rx/reduce (partial collect-data state) initial)
                               (rx/map (partial sort-selected state))
-                              (rx/map (partial advance-copies state selected))
+                              (rx/map (partial advance-copies-from-state state selected))
                               (rx/map #(t/encode-str % {:type :json-verbose}))
                               (rx/map #(wapi/create-blob % "text/plain"))
                               (rx/subs! resolve reject))))]
@@ -250,7 +266,7 @@
                      (rx/merge-map (partial prepare-object objects frame-id))
                      (rx/reduce (partial collect-data state) initial)
                      (rx/map (partial sort-selected state))
-                     (rx/map (partial advance-copies state selected))
+                     (rx/map (partial advance-copies-from-state state selected))
                      (rx/map #(t/encode-str % {:type :json-verbose}))
                      (rx/map clipboard/to-clipboard)
                      (rx/catch on-copy-error)
@@ -377,7 +393,10 @@
                  (gsh/translate-to-frame % (get objects parent-frame-id)))
 
             shapes          (mapv maybe-translate selected)
-            svg-formatted   (svg/generate-formatted-markup objects shapes)]
+            ;; With render-wasm active, never call classic SVG codegen.
+            svg-formatted   (if (features/active-feature? state "render-wasm/v1")
+                              (svg.wasm/get-formatted-svg-markup (mapv :id shapes))
+                              (svg/generate-formatted-markup objects shapes))]
         (-> (clipboard/to-clipboard-multi
              {"image/svg+xml" svg-formatted
               "text/plain"    svg-formatted})
@@ -584,6 +603,7 @@
    [:objects
     [:map-of ::sm/uuid :map]]
    [:images [:set :map]]
+   [:text-geometry {:optional true} [:map-of ::sm/uuid :map]]
    [:position {:optional true} ::gpt/point]])
 
 (def ^:private
@@ -1075,9 +1095,11 @@
   (ptk/reify ::paste-html-text
     ptk/WatchEvent
     (watch [_ state  _]
-      (let [[text content]
+      (let [payload (when (v3-html-paste? state)
+                      (text-clipboard/html->payload html))
+            [text content]
             (if (v3-html-paste? state)
-              (if-let [payload (text-clipboard/html->payload html)]
+              (if (some? payload)
                 (let [content (dwtxt/payload-content state payload)]
                   [(txt/content->text content) content])
                 (when-let [fragment (some-> (text-clipboard/html->fragment html)
@@ -1109,7 +1131,8 @@
                     (dwsh/create-and-add-shape :text x y shape
                                                (when skip-edition? {:skip-edition? true})))
              (if skip-edition?
-               (rx/of (dwwt/resize-wasm-text-debounce id {:undo-group id
+               (rx/of (dwtxt/move-new-text-fills id payload)
+                      (dwwt/resize-wasm-text-debounce id {:undo-group id
                                                           :undo-id undo-id}))
                (rx/of (dwu/commit-undo-transaction undo-id))))))))))
 

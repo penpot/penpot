@@ -213,11 +213,64 @@
                  (:content (clipboard/html->payload
                             (str "<head><meta charset=\"UTF-8\"></head>" safari "Hello")))))))))
 
+(t/deftest payload-geometry-round-trip
+  (let [content  (text-content gradient-span)
+        geometry {:origins [[{:x 12.5 :y 0.2 :box {:width 200 :height 40}}]]}
+        hidden   (clipboard/payload->html content file-id team-id geometry)]
+    (t/testing "the payload keeps where the copied spans sat in their text box"
+      (t/is (= geometry (:geometry (clipboard/html->payload hidden)))))
+    (t/testing "the content stays as copied"
+      (t/is (= content (:content (clipboard/html->payload hidden)))))))
+
 (t/deftest html-without-payload
   (t/testing "HTML without a payload, or with a broken one, gives nil"
     (t/is (nil? (clipboard/html->payload "<p>Hello</p>")))
     (t/is (nil? (clipboard/html->payload "<span data-penpot-text=\"bm90IHRyYW5zaXQ=\"></span>")))
     (t/is (nil? (clipboard/html->payload nil)))))
+
+(defn- tampered-html
+  "Payload markup carrying `payload` as is, as a plugin could write it."
+  [{:keys [content file-id team-id geometry]}]
+  (clipboard/payload->html content file-id team-id geometry))
+
+(def ^:private valid-payload
+  {:content (text-content gradient-span) :file-id file-id :team-id team-id})
+
+(t/deftest invalid-payload
+  (t/testing "a valid payload is read"
+    (t/is (some? (clipboard/html->payload (tampered-html valid-payload)))))
+
+  (t/testing "a payload with a broken envelope is dropped"
+    (t/is (nil? (clipboard/html->payload (tampered-html (assoc valid-payload :file-id "file")))))
+    (t/is (nil? (clipboard/html->payload (tampered-html (assoc valid-payload :team-id 42))))))
+
+  (t/testing "a payload whose content a text shape cannot hold is dropped"
+    (t/is (nil? (clipboard/html->payload
+                 (tampered-html (assoc-in valid-payload [:content :children 0 :children] [])))))
+    (t/is (nil? (clipboard/html->payload
+                 (tampered-html (assoc valid-payload :content (text-content (assoc gradient-span :text 42)))))))
+    (t/is (nil? (clipboard/html->payload
+                 (tampered-html (assoc valid-payload :content
+                                       (text-content (assoc gradient-span :fills [{:fill-color "red"}]))))))))
+
+  (t/testing "a payload with geometry that is not plain numbers is dropped"
+    (let [origin {:x 12.5 :y 0.2 :box {:width 200 :height 40}}]
+      (t/is (some? (clipboard/html->payload
+                    (tampered-html (assoc valid-payload :geometry {:origins [[origin]]})))))
+      (t/is (nil? (clipboard/html->payload
+                   (tampered-html (assoc valid-payload :geometry {:origins [[(assoc origin :x "12")]]})))))
+      (t/is (nil? (clipboard/html->payload
+                   (tampered-html (assoc valid-payload :geometry {:origins [[(assoc origin :y ##NaN)]]})))))
+      (t/is (nil? (clipboard/html->payload
+                   (tampered-html (assoc valid-payload :geometry {:origins [[(assoc-in origin [:box :width] nil)]]})))))
+      (t/is (nil? (clipboard/html->payload
+                   (tampered-html (assoc valid-payload :geometry {:origins [[origin]] :extra 1}))))))))
+
+(t/deftest oversized-payload
+  (t/testing "HTML over the paste size limit is not decoded"
+    (let [hidden (clipboard/payload->html (text-content gradient-span) file-id team-id)]
+      (t/is (nil? (clipboard/html->payload
+                   (str hidden (apply str (repeat clipboard/max-paste-html-length "x")))))))))
 
 ;; --- Clean-up
 

@@ -59,7 +59,8 @@
 
    :add-node        {:tooltip (ds/shift "+")
                      :label (fn [] (tr "shortcuts.add-node"))
-                     :command "shift++"
+                     :command ["shift++" "shift+="]
+                     :show-command "shift++"
                      :subsections [:path-editor]
                      :section [:workspace]
                      :fn #(st/emit! (drp/add-node))}
@@ -117,8 +118,7 @@
 
    :snap-nodes      {:tooltip (ds/meta "'")
                      :label (fn [] (tr "shortcuts.snap-nodes"))
-                     ;;https://github.com/ccampbell/mousetrap/issues/85
-                     :command [(ds/c-mod "'") (ds/c-mod "219")]
+                     :command (ds/c-mod "'")
                      :subsections [:path-editor]
                      :section [:workspace]
                      :fn #(st/emit! (drp/toggle-snap))}
@@ -127,6 +127,7 @@
                      :label (fn [] (tr "shortcuts.copy"))
                      :command (ds/c-mod "c")
                      :subsections [:path-editor]
+                     :customizable false
                      :fn #(st/emit! (drp/copy-selected-nodes))}
 
    :cut             {:tooltip (ds/meta "X")
@@ -139,6 +140,7 @@
                      :label (fn [] (tr "shortcuts.paste"))
                      :command (ds/c-mod "v")
                      :subsections [:path-editor]
+                     :customizable false
                      :fn #(st/emit! (drp/paste-nodes))}
 
    :duplicate       {:tooltip (ds/meta "D")
@@ -176,6 +178,7 @@
                      :label (fn [] (tr "shortcuts.escape"))
                      :command ["escape" "v"]
                      :section [:workspace]
+                     :customizable false
                      :fn #(st/emit! (esc-pressed))}
 
    ;; Reuses the `:start-editing` key (instead of adding "enter" to
@@ -207,7 +210,8 @@
 
    :increase-zoom   {:tooltip "+"
                      :label (fn [] (tr "shortcuts.increase-zoom"))
-                     :command "+"
+                     :command ["+" "="]
+                     :show-command "+"
                      :section [:workspace]
                      :fn #(st/emit! (dw/increase-zoom nil))}
 

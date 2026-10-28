@@ -362,6 +362,10 @@ msgstr "Ver changelog completo"
 msgid "dashboard.check-updates.view-release-notes"
 msgstr "Ver notas de la versión"
 
+#: src/app/main/ui/dashboard/sidebar.cljs:228
+msgid "dashboard.clear-search"
+msgstr "Borrar búsqueda"
+
 #: src/app/main/ui/dashboard/deleted.cljs:322
 msgid "dashboard.clear-trash-button"
 msgstr "Vaciar papelera"
@@ -1236,7 +1240,7 @@ msgstr "Tu proyecto ha sido movido con éxito"
 #: src/app/main/data/common.cljs:266
 #, backend
 msgid "dashboard.team-belong-organization"
-msgstr "Este equipo ahora es parte de la organización %s"
+msgstr "%s ahora pertenece a %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1669
 msgid "dashboard.team-info"
@@ -1249,7 +1253,7 @@ msgstr "Integrantes del equipo"
 #: src/app/main/data/common.cljs:267
 #, backend
 msgid "dashboard.team-no-longer-belong-organization"
-msgstr "Este equipo ya no es parte de la organización %s"
+msgstr "%s ya no forma parte de %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1676
 msgid "dashboard.team-organization"
@@ -1570,7 +1574,15 @@ msgstr "El correo electrónico «%s» tiene varios reportes de rebote permanente
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "El email «%s» tiene reportes de spam o de rebote permanente."
 
-#: src/app/main/errors.cljs:828
+#: src/app/main/data/exports/assets.cljs
+msgid "errors.export-failed"
+msgstr "La exportación ha fallado. Inténtalo de nuevo en un momento."
+
+#: src/app/main/data/exports/assets.cljs:346
+msgid "errors.export-too-large"
+msgstr "El archivo es demasiado grande, prueba con otra escala"
+
+#: src/app/main/errors.cljs:974
 msgid "errors.feature-mismatch"
 msgstr ""
 "Parece que está abriendo un archivo que tiene la función '%s' habilitada, "
@@ -1756,9 +1768,12 @@ msgstr "El registro está actualmente desactivado."
 #: src/app/main/errors.cljs:538
 msgid "errors.save-failed"
 msgstr ""
-"El autoguardado se ha detenido debido a un error. Contacta soporte para "
-"informar del error y recarga para continuar desde los últimos cambios "
-"guardados."
+"El autoguardado se ha detenido en esta sesión, así que los cambios desde el último guardado correcto no se podrán guardar. Descarga el informe para ayudarnos a arreglarlo y recarga la página, o sal de este fichero y vuelve a abrirlo, para seguir editando."
+
+#: src/app/main/errors.cljs
+msgid "errors.save-still-retrying"
+msgstr ""
+"Tus cambios aún no se han guardado porque Penpot no puede conectar con el servidor. Se conservan y Penpot seguirá intentando guardarlos. Mantén esta pestaña abierta hasta que se guarden."
 
 #: src/app/main/data/persistence.cljs:307
 msgid "errors.save-retrying"
@@ -1826,6 +1841,10 @@ msgstr ""
 "El Line Height depende del Font Size. Añade un Font Size para obtener el "
 "valor computado."
 
+#: src/app/main/data/workspace/tokens/errors.cljs:62
+msgid "errors.tokens.division-by-zero"
+msgstr "Valor de token no válido: división por cero"
+
 #: src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:350, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:436
 msgid "errors.tokens.empty-field"
 msgstr "Este campo no puede estar vacío"
@@ -1838,9 +1857,17 @@ msgstr "El valor del token no puede estar vacío"
 msgid "errors.tokens.error-parse"
 msgstr "Error al importar: No se pudo procesar el JSON."
 
+#: src/app/main/data/workspace/tokens/errors.cljs:74
+msgid "errors.tokens.function-argument-out-of-range"
+msgstr "Valor de token no válido: el argumento de %s() está fuera de rango"
+
 #: src/app/main/data/workspace/tokens/errors.cljs:33, src/app/main/data/workspace/tokens/errors.cljs:38
 msgid "errors.tokens.import-error"
 msgstr "Error al importar:"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:66
+msgid "errors.tokens.incompatible-units"
+msgstr "Valor de token no válido: las unidades %s no se pueden combinar"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:54
 msgid "errors.tokens.invalid-color"
@@ -1935,6 +1962,10 @@ msgstr "La extensión (spread) de la sombra debe ser mayor o igual a 0."
 #: src/app/main/data/workspace/tokens/errors.cljs:92, src/app/main/data/workspace/tokens/warnings.cljs:19
 msgid "errors.tokens.stroke-width-range"
 msgstr "Stroke width debe ser mayor o igual a 0."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:70
+msgid "errors.tokens.unknown-function"
+msgstr "Valor de token no válido: función desconocida %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:84, ../common/src/app/common/files/tokens.cljc:52
 msgid "errors.tokens.value-with-percent"
@@ -2146,6 +2177,10 @@ msgstr ""
 msgid "files-export-modal.options.merge-libraries.title"
 msgstr "Incluir librerias compartidas dentro de las librerias del fichero"
 
+#: src/app/main/ui/exports/files.cljs
+msgid "files-download-modal.unsaved-changes"
+msgstr "Algunos de tus últimos cambios aún no se han guardado, así que esta descarga no los incluirá."
+
 #: src/app/main/ui/settings/password.cljs:45
 msgid "generic.error"
 msgstr "Ha ocurrido un error"
@@ -2173,6 +2208,10 @@ msgstr "Este archivo no es una exportación de atajos válida."
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:148
 msgid "import-shortcuts.no-changes"
 msgstr "No se encontraron diferencias entre los atajos actuales y los importados."
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:153
+msgid "import-shortcuts.skipped-entries"
+msgstr "Estas entradas no se pueden importar: no corresponden a ningún atajo de Penpot o usan una combinación reservada."
 
 #: src/app/main/ui/components/color_input.cljs:31
 msgid "inspect.attributes.color"
@@ -2281,6 +2320,10 @@ msgstr "Propiedades de la variante"
 #: src/app/main/ui/inspect/attributes/variant.cljs:44
 msgid "inspect.attributes.variants"
 msgstr "Propiedades de las variantes"
+
+#: src/app/main/ui/inspect/code.cljs:315, src/app/main/ui/inspect/code.cljs:358
+msgid "inspect.code.expand-panel"
+msgstr "Expandir panel"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:169
 msgid "inspect.color-space-label"
@@ -2950,6 +2993,10 @@ msgstr "Error"
 #: src/app/main/data/workspace/versions.cljs:314
 msgid "labels.exit"
 msgstr "Salir"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:96
+msgid "labels.expand"
+msgstr "Expandir"
 
 #: src/app/main/ui/dashboard/team.cljs:782
 msgid "labels.expired-invitation"
@@ -5006,6 +5053,10 @@ msgstr "Editar %s"
 msgid "shortcuts.edit-modal.conflict"
 msgstr "Ya asignado a \"%s\". Al guardar, pasará a esta acción."
 
+#: src/app/main/ui/shortcuts.cljs:836
+msgid "shortcuts.edit-modal.reserved"
+msgstr "Penpot reserva esta combinación y no se puede asignar."
+
 #: src/app/main/ui/shortcuts.cljs:636
 msgid "shortcuts.edit-modal.reset-pending"
 msgstr "Al guardar, este atajo volverá a su valor por defecto:"
@@ -5101,6 +5152,13 @@ msgstr "Unir nodos"
 #: src/app/main/ui/shortcuts.cljs:624
 msgid "shortcuts.key-combo"
 msgstr "Pulsa las nuevas teclas"
+
+#: src/app/main/ui/settings/shortcuts.cljs:484
+msgid "shortcuts.layout-map-missing"
+msgstr ""
+"Este navegador no expone el mapa de teclado, así que los atajos que "
+"combinan Shift con puntuación (por ejemplo Shift+,) pueden no funcionar "
+"aquí. Siguen funcionando en navegadores Chromium."
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:249
 msgid "shortcuts.line-through"
@@ -5890,7 +5948,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/subscription.cljs:714
 msgid "subscription.settings.member-since"
-msgstr "Miembro de penpot desde: %s"
+msgstr "Miembro de penpot desde: %s."
 
 #: src/app/main/ui/settings/subscription.cljs:736, src/app/main/ui/settings/subscription.cljs:751, src/app/main/ui/settings/subscription.cljs:767, src/app/main/ui/settings/subscription.cljs:787
 msgid "subscription.settings.more-information"
@@ -5961,6 +6019,9 @@ msgstr "Suscríbete"
 #: src/app/main/ui/settings/subscription.cljs:707
 msgid "subscription.settings.subscribed-since"
 msgstr "Llevas en el plan %s desde %s."
+
+msgid "subscription.settings.trial-ends-on"
+msgstr "Tu prueba gratuita acaba el %s."
 
 #: src/app/main/ui/settings/subscription.cljs:399
 msgid "subscription.settings.success.dialog.description"
@@ -6119,6 +6180,10 @@ msgstr "No se ha encontrado ningún tablero."
 msgid "viewer.frame-not-found"
 msgstr "No se encuentra el tablero."
 
+#: src/app/main/ui/viewer.cljs:127
+msgid "viewer.go-to-first-board"
+msgstr "Ir al primer tablero"
+
 #: src/app/main/ui/viewer/header.cljs:341
 msgid "viewer.header.comments-section"
 msgstr "Comentarios (%s)"
@@ -6158,6 +6223,14 @@ msgstr "Mostrar interacciones al hacer click"
 #: src/app/main/ui/viewer/header.cljs:236
 msgid "viewer.header.sitemap"
 msgstr "Mapa del sitio"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:70
+msgid "viewer.thumbnails.scroll-left"
+msgstr "Desplazar a la izquierda"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:76
+msgid "viewer.thumbnails.scroll-right"
+msgstr "Desplazar a la derecha"
 
 #: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:76
 msgid "webgl.modals.webgl-unavailable.cta-dashboard"
@@ -6584,7 +6657,11 @@ msgstr "Eliminar guía"
 msgid "workspace.debug.title"
 msgstr "Herramientas de depuración"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:885
+#: src/app/main/data/exports/assets.cljs
+msgid "workspace.export.unsaved-changes"
+msgstr "Algunos de tus últimos cambios aún no se han guardado, así que puede que esta exportación no los incluya."
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:907
 msgid "workspace.focus.focus-mode"
 msgstr "Modo foco"
 
@@ -6840,6 +6917,14 @@ msgstr "Pantalla completa"
 msgid "workspace.header.zoom-selected"
 msgstr "Zoom a selección"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.layout-grid.editor.columns"
+msgstr "Columnas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.layout-grid.editor.rows"
+msgstr "Filas"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:294, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:296, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:854
 msgid "workspace.layout-grid.editor.options.edit-grid"
 msgstr "Editar grid"
@@ -6875,6 +6960,18 @@ msgstr "Padding superior"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:383, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:394, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:400
 msgid "workspace.layout-grid.editor.padding.vertical"
 msgstr "Padding vertical"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.layout-grid.editor.select-column"
+msgstr "Seleccionar columna"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.layout-grid.editor.select-row"
+msgstr "Seleccionar fila"
+
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs
+msgid "workspace.layout-grid.editor.track-options"
+msgstr "Opciones de la pista"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:61
 msgid "workspace.layout-grid.editor.title"
@@ -7485,6 +7582,10 @@ msgstr "Columnas"
 msgid "workspace.options.grid.params.color"
 msgstr "Color"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:44
+msgid "workspace.options.grid.params.guide-defaults"
+msgstr "Valores por defecto de la guía"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:302
 msgid "workspace.options.grid.params.gutter"
 msgstr "Espaciado"
@@ -7884,6 +7985,10 @@ msgstr "Más colores de la biblioteca"
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:268
 msgid "workspace.options.more-token-colors"
 msgstr "Más tokens de color"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:502
+msgid "workspace.options.no-font-results"
+msgstr "No hay fuentes coincidentes"
 
 #: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:117, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:518
 msgid "workspace.options.no-size-preset-results"
@@ -8418,6 +8523,18 @@ msgstr "Leer la información de sus bibliotecas y recursos."
 msgid "workspace.plugins.permissions.library-write"
 msgstr "Leer y modificar la información de sus bibliotecas y recursos."
 
+#: src/app/main/ui/workspace/plugins.cljs:360
+msgid "workspace.plugins.permissions.manage-delete"
+msgstr "Eliminar tus archivos y proyectos."
+
+#: src/app/main/ui/workspace/plugins.cljs:346
+msgid "workspace.plugins.permissions.manage-projects"
+msgstr "Crear, renombrar, fijar y duplicar tus proyectos."
+
+#: src/app/main/ui/workspace/plugins.cljs:353
+msgid "workspace.plugins.permissions.manage-teams"
+msgstr "Ver, crear y renombrar tus equipos, y mover proyectos entre ellos."
+
 #: src/app/main/ui/workspace/plugins.cljs:387
 msgid "workspace.plugins.permissions.title"
 msgstr "LA EXTENSIÓN '%s' SOLICITA PERMISO PARA ACCEDER:"
@@ -8826,6 +8943,10 @@ msgstr "Formas"
 #: src/app/main/ui/workspace/sidebar/layers.cljs:653, src/app/main/ui/workspace/sidebar/layers.cljs:728
 msgid "workspace.sidebar.layers.texts"
 msgstr "Textos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:53
+msgid "workspace.sidebar.options.svg-attrs.remove"
+msgstr "Eliminar atributo"
 
 #: src/app/main/ui/inspect/attributes/svg.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:113
 msgid "workspace.sidebar.options.svg-attrs.title"
@@ -9469,6 +9590,10 @@ msgstr "Mover (%s)"
 msgid "workspace.toolbar.palette-bar"
 msgstr "Barra de paletas"
 
+#: src/app/main/ui/workspace/palette.cljs:211
+msgid "workspace.toolbar.palette-options"
+msgstr "Opciones de la paleta"
+
 #: src/app/main/ui/workspace/top_toolbar.cljs:72
 msgid "workspace.toolbar.path"
 msgstr "Ruta (%s)"
@@ -9517,6 +9642,10 @@ msgstr "Todavía no hay cambios en el histórico"
 #: src/app/main/ui/workspace/sidebar/history.cljs:364
 msgid "workspace.undo.entry.by"
 msgstr "por %s"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.show-details"
+msgstr "Mostrar detalles"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:154
 msgid "workspace.undo.entry.delete"

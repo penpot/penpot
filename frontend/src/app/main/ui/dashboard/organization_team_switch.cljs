@@ -69,6 +69,18 @@
        (nil? (dm/get-in team [:organization :id]))
        (contains? #{"unlimited" "enterprise"} (get-subscription-type (:subscription team)))))
 
+(def ^:private combining-marks-re (js/RegExp. "\\p{M}" "gu"))
+
+(defn- name-sort-key
+  "Key that sorts `label` alphabetically regardless of case and
+  accents: NFD splits an accented letter into its base letter plus a
+  combining mark, and dropping the marks makes \"Ábaco\" sort like
+  \"abaco\" instead of after \"z\"."
+  [label]
+  (-> (.normalize label "NFD")
+      (str/replace combining-marks-re "")
+      (str/lower)))
+
 (defn sort-organization-teams
   "Orders the teams of a single organization for the dropdown's second
   column: alphabetical, with the organization's default team
@@ -76,7 +88,7 @@
   `:is-default` and an explicit `false` into one comparator value."
   [teams]
   (sort-by (juxt (fn [team] (boolean (:is-default team)))
-                 (fn [team] (str/lower (:name team ""))))
+                 (fn [team] (name-sort-key (:name team ""))))
            teams))
 
 (defn sort-all-teams
@@ -89,7 +101,7 @@
    (sort-all-teams teams team-display-name))
   ([teams display-name]
    (sort-by (juxt (fn [team] (boolean (:is-default team)))
-                  (comp str/lower display-name))
+                  (comp name-sort-key display-name))
             teams)))
 
 (defn teams-for-organization
@@ -113,7 +125,7 @@
   stable."
   [organizations]
   (sort-by (juxt (fn [organization] (if (nil? (:id organization)) 1 0))
-                 (fn [organization] (str/lower (:name organization "")))
+                 (fn [organization] (name-sort-key (:name organization "")))
                  :id)
            organizations))
 

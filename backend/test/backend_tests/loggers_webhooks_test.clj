@@ -9,6 +9,7 @@
    [app.common.time :as ct]
    [app.common.transit :as transit]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.http :as http]
    [app.jobs :as jobs]
@@ -19,6 +20,12 @@
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
+
+(defn decode-row
+  [{:keys [props context] :as row}]
+  (cond-> row
+    (db/pgobject? props) (assoc :props (db/decode-transit-pgobject props))
+    (db/pgobject? context) (assoc :context (db/decode-transit-pgobject context))))
 
 (t/deftest process-event-handler-with-no-webhooks
   (with-mocks [submit-mock {:target 'app.jobs/submit :return nil}]

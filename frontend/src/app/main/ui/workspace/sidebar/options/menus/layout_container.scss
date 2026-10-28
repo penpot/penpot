@@ -4,13 +4,15 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-// TODO: When button replace remove this @use
 @use "ds/_utils.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_borders.scss" as *;
 @use "ds/typography.scss" as t;
 @use "ds/spacing.scss" as *;
 @use "ds/mixins.scss" as *;
+
+// Only for %input-element and %disabled-input (numeric inputs) and the
+// secondary and tertiary placeholders of the raw track header buttons.
 @use "refactor/common-refactor.scss" as deprecated;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
 
@@ -59,25 +61,6 @@
 
 .direction-row-flex {
   grid-column: span 4;
-}
-
-// TODO: Replace this buttons with DS buttons
-.wrap-button {
-  @extend %button-tertiary;
-
-  border-radius: $br-8;
-  block-size: $sz-32;
-  inline-size: $sz-32;
-
-  svg {
-    @extend %button-icon;
-
-    stroke: var(--color-foreground-secondary);
-  }
-
-  &.selected {
-    @extend %button-icon-selected;
-  }
 }
 
 .second-row,
@@ -155,25 +138,6 @@
   gap: var(--sp-xs);
 }
 
-// TODO: Replace this buttons with DS buttons
-.padding-toggle {
-  @extend %button-tertiary;
-
-  block-size: $sz-32;
-  inline-size: $sz-32;
-  border-radius: $br-8;
-
-  svg {
-    @extend %button-icon;
-
-    stroke: var(--color-foreground-secondary);
-  }
-
-  &.selected {
-    @extend %button-icon-selected;
-  }
-}
-
 .grid-layout-menu {
   @include sidebar.option-grid-structure;
 }
@@ -214,22 +178,14 @@
   grid-column: span 5;
 }
 
-// TODO: Replace this buttons with DS buttons
 .edit-mode-btn {
-  @extend %button-secondary;
-  @include t.use-typography("headline-small");
-
   inline-size: 100%;
-  padding: var(--sp-s);
+  justify-content: center;
   grid-column: span 7;
 }
 
-// TODO: Replace this buttons with DS buttons
 .exit-btn {
-  @extend %button-secondary;
-  @include t.use-typography("headline-small");
-
-  padding: var(--sp-s) var(--sp-xl);
+  justify-content: center;
   grid-column: span 2;
 }
 
@@ -275,22 +231,18 @@
   grid-column: 1 / span 7;
 }
 
-// TODO: Replace this buttons with DS buttons
 .track-info-dir-icon {
+  display: flex;
+  align-items: center;
   cursor: pointer;
+  border: none;
   border-radius: $br-8 0 0 $br-8;
   background-color: var(--color-background-tertiary);
   padding: 0 var(--sp-s);
+  color: var(--color-foreground-secondary);
 
-  svg {
-    @extend %button-icon;
-
-    stroke: var(--color-foreground-secondary);
-    block-size: 100%;
-  }
-
-  &:hover svg {
-    stroke: var(--color-foreground-primary);
+  &:hover {
+    color: var(--color-foreground-primary);
   }
 }
 
@@ -347,7 +299,8 @@
   color: var(--color-foreground-secondary);
 }
 
-// TODO: Replace this buttons with DS buttons
+// Raw buttons on purpose: they are 52px segments of the track header, not
+// DS buttons. The nested icon rules win over the placeholder svg colors.
 .expand-icon {
   @extend %button-secondary;
 
@@ -355,38 +308,23 @@
   border-radius: $br-8 0 0 $br-8;
   border-inline-end: $b-1 solid var(--color-background-primary);
 
-  svg {
-    @extend %button-icon;
-
+  .expand-icon-svg {
     stroke: var(--color-foreground-secondary);
-    fill: var(--color-foreground-secondary);
   }
 
-  &:hover,
-  &:active {
-    svg {
-      stroke: var(--color-accent-primary);
-      fill: var(--color-accent-primary);
-    }
+  &:hover .expand-icon-svg,
+  &:active .expand-icon-svg {
+    stroke: var(--color-accent-primary);
   }
 }
 
-// TODO: Replace this buttons with DS buttons
 .add-column {
   @extend %button-tertiary;
 
   block-size: px2rem(52);
 
-  svg {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: transparent;
-    stroke-width: px2rem(1);
-    block-size: $sz-12;
-    inline-size: $sz-12;
+  .add-column-svg {
     stroke: var(--color-foreground-secondary);
-    fill: var(--color-foreground-secondary);
   }
 }
 

@@ -663,7 +663,6 @@
      (fn []
        (#'climit/republish-waiting (th/metrics-stub) counters)
        (t/is (= [3] (waiting-value-of name)))))))
-
 (t/deftest halting-the-component-stops-the-republisher
   ;; The republisher is a daemon thread started with the component: halting it
   ;; has to stop the thread, or every restart leaves another one running.
