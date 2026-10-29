@@ -1249,3 +1249,58 @@ test.describe("Comments panel filter", () => {
     await expect(menu).toHaveScreenshot(shot);
   });
 });
+
+test.describe("Gradient type select", () => {
+  test("Shows the gradient type select closed, open and changed", async ({
+    page,
+  }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-not-empty.json");
+    await workspace.goToWorkspace({
+      fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+      pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+    });
+    await workspace.clickLeafLayer("Rectangle");
+    await page.getByRole("button", { name: "#B1B2B5" }).click();
+    await page.getByText("Solid").click();
+    await page.getByText("Gradient").click();
+
+    const typeSelect = workspace.colorpicker
+      .getByRole("combobox")
+      .filter({ hasText: "Linear" });
+    await expect(typeSelect).toBeVisible();
+    const pickerBox = await workspace.colorpicker.boundingBox();
+    const selectBox = await typeSelect.boundingBox();
+    // The gradient bar above the select and room below it for the open list.
+    const clip = {
+      x: Math.floor(pickerBox.x),
+      y: Math.floor(selectBox.y) - 60,
+      width: Math.ceil(pickerBox.width),
+      height: 200,
+    };
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await typeSelect.hover();
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await typeSelect.click();
+    const radial = page.getByRole("option", { name: "Radial" });
+    await expect(radial).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await radial.click();
+    await expect(
+      workspace.colorpicker.getByRole("combobox").filter({ hasText: "Radial" }),
+    ).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    // The whole gradient panel: preview bar, stops and the stop list.
+    const panel = workspace.colorpicker.locator("[class*='gradient-panel']");
+    await expect(panel).toHaveScreenshot(shot);
+  });
+});
