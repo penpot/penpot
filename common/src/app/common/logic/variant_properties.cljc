@@ -61,15 +61,18 @@
   [changes component-id pos value]
   (if-let [value (ctv/prepare-property-value value)]
     (let [data      (pcb/get-library-data changes)
+          objects   (pcb/get-objects changes)
           component (ctcl/get-component data component-id true)
-          main-id   (:main-instance-id component)
-          name      (-> (:variant-properties component)
-                        (update pos assoc :value value)
-                        ctv/properties-to-name)]
-      (-> changes
-          (pcb/update-component component-id #(assoc-in % [:variant-properties pos :value] value)
-                                {:apply-changes-local-library? true})
-          (pcb/update-shapes [main-id] #(assoc % :variant-name name))))
+          main-id   (:main-instance-id component)]
+      (if (contains? objects main-id)
+        (let [name (-> (:variant-properties component)
+                       (update pos assoc :value value)
+                       ctv/properties-to-name)]
+          (-> changes
+              (pcb/update-component component-id #(assoc-in % [:variant-properties pos :value] value)
+                                    {:apply-changes-local-library? true})
+              (pcb/update-shapes [main-id] #(assoc % :variant-name name))))
+        changes))
     changes))
 
 
