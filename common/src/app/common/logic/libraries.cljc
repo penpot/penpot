@@ -578,15 +578,19 @@
     (container-log :debug (:id container) :msg "Sync page in local file" :page-id (:id container))
     (container-log :debug (:id container) :msg "Sync component in local library" :component-id (:id container)))
 
-  (let [linked-shapes (->> (vals (:objects container))
-                           (filter #(uses-assets? asset-type asset-id % library-id)))]
+  (let [objects       (:objects container)
+        ;; Deepest first, so a copy places its swapped children after their own sync
+        linked-shapes (->> (vals objects)
+                           (filter #(uses-assets? asset-type asset-id % library-id))
+                           (sort-by #(- (count (cfh/get-parent-ids objects (:id %))))))]
     (loop [shapes (seq linked-shapes)
            changes (-> changes
                        (pcb/with-container container)
-                       (pcb/with-objects (:objects container)))]
+                       (pcb/with-objects objects))]
       (if-let [shape (first shapes)]
         (recur (next shapes)
-               (let [objects' (pcb/get-objects changes)
+               (let [changes  (pcb/apply-changes-local changes)
+                     objects' (pcb/get-objects changes)
                      shape'   (get objects' (:id shape))]
                  ;; The shape could have been deleted in previous changes, if this nested component
                  ;; comes from components-v1 era or if there has been some error with the swap slot.
@@ -595,7 +599,7 @@
                    (generate-sync-shape asset-type
                                         changes
                                         library-id
-                                        container
+                                        (assoc container :objects objects')
                                         shape'
                                         libraries
                                         current-file-id)

@@ -349,19 +349,39 @@
     ;; ==== Check
     (t/is (gpt/close? before (offset-in-slot file' :copy-slot :copy-nested-head)))))
 
+(defn- with-shapes-first
+  "Puts the shapes with the given labels first in the page objects, in that
+  order. The sync visits the shapes of a page in this order."
+  [file labels]
+  (let [page-id (:id (thf/current-page file))
+        ids     (mapv thi/id labels)]
+    (update-in file [:data :pages-index page-id :objects]
+               (fn [objects]
+                 (apply array-map (concat (mapcat #(vector % (get objects %)) ids)
+                                          (mapcat identity (apply dissoc objects ids))))))))
+
 (t/deftest test-sync-places-swapped-child-where-main-slot-occupant-is
   (let [;; ==== Setup
         library  (setup-library-with-icon-slot)
         file     (-> (instantiate-board library)
-                     (swap-to-library-component library :copy-nested-head :icon-b))
+                     (swap-to-library-component library :copy-nested-head :icon-b)
+                     ;; The copy comes before its swapped icon, which the sync also syncs on its own
+                     (with-shapes-first [:copy-board :copy-nested-head]))
 
         ;; ==== Action
-        library' (tho/move-shape-tree library :nested-head (gpt/point 4 4))
-        file'    (thf/apply-changes file (sync-file-from-library file library'))]
+        library' (-> library
+                     (tho/move-shape-tree :nested-head (gpt/point 4 4))
+                     (tho/change-shape :icon-b-root #(gsh/transform-shape % (ctm/change-size % 32 nil))))
+        file'    (thf/apply-changes file (sync-file-from-library file library'))
+
+        ;; ==== Get
+        icon'    (ths/get-shape file' :copy-nested-head)]
 
     ;; ==== Check
     (t/is (gpt/close? (offset-in-slot library' :slot :nested-head)
-                      (offset-in-slot file' :copy-slot :copy-nested-head)))))
+                      (offset-in-slot file' :copy-slot :copy-nested-head)))
+    (t/is (mth/close? (:width (ths/get-shape library' :icon-b-root)) (:width icon')))
+    (t/is (mth/close? (:x icon') (-> icon' :selrect :x)))))
 
 (defn- setup-library-with-root-icon
   "Library: icon A, and a 300px wide flex card whose `:close` child, placed
