@@ -1,4 +1,4 @@
-FROM dhi.io/node:24.22.1-debian13-dev@sha256:20cf36e12660c68b1e28887d1e71a7f2494bcea9d034709368e0afce77728eb0
+FROM dhi.io/node:24.22.2-debian13-dev@sha256:53af56f14166cffcf9c4b9ef6f7025d1b0534edddfa1f333c53bd54766f39e5c
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG=en_US.UTF-8 \
