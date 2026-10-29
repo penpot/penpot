@@ -14,7 +14,9 @@
 // The normal unit test build does not build this CLI.
 
 const assert = require("node:assert/strict");
-const { execFile } = require("node:child_process");
+const { execFile, spawn } = require("node:child_process");
+const { once } = require("node:events");
+const { setTimeout: pause } = require("node:timers/promises");
 const { randomUUID } = require("node:crypto");
 const fs = require("node:fs");
 const os = require("node:os");
@@ -188,6 +190,10 @@ function seedComparisons(fixture) {
     path.join(directory, "feature-comparison.transit"),
     "comparison\n",
   );
+  fs.writeFileSync(
+    path.join(directory, "feature-comparison.log"),
+    "progress\n",
+  );
   fs.writeFileSync(path.join(directory, "keep.txt"), "keep\n");
   for (const file of ["run.transit", "run.log", "case-load.PNG"]) {
     fs.writeFileSync(path.join(config, file), "configuration output\n");
@@ -228,6 +234,76 @@ function installCargoMetadata(fixture, definitions) {
   fixture.env.PATH = `${bin}${path.delimiter}${process.env.PATH}`;
   fixture.env.CARGO_METADATA_FIXTURE = metadata;
   return cargo;
+}
+
+function installPreparedCompiler(fixture, breakLog) {
+  const k = transit.keyword;
+  const m = (pairs) => transit.map(pairs);
+  const marker = "RENDER_FIXTURE_BUILD_ID";
+  const identity = transit
+    .writer("json")
+    .write(m([k("build-id"), marker, k("cljs-profile-marks"), false]));
+  const descriptor = m([
+    k("id"),
+    k("fixture/load"),
+    k("scene"),
+    k("fixture"),
+    k("scene-description"),
+    "fixture",
+    k("scene-seed"),
+    42,
+    k("params"),
+    m([]),
+    k("view"),
+    m([k("scale"), 1, k("x"), 0, k("y"), 0]),
+    k("context"),
+    k("fresh"),
+    k("completion"),
+    k("render-full"),
+    k("batch-size"),
+    1,
+    k("preparation"),
+    m([]),
+  ]);
+  const catalog = transit
+    .writer("json")
+    .write(m([k("build-id"), marker, k("cases"), [descriptor]]));
+  const frontend = path.resolve(fixture.managed, "../../..");
+  const host = path.join(
+    frontend,
+    "performance",
+    "benches",
+    "render_wasm",
+    "browser",
+  );
+  const bin = path.join(fixture.rendererRoot, "fixture-bin");
+  fs.mkdirSync(host, { recursive: true });
+  fs.mkdirSync(bin);
+  fs.writeFileSync(path.join(host, "index.html"), "<html></html>");
+  fs.writeFileSync(
+    fixture.compiler,
+    `#!/usr/bin/env node
+const fs = require('node:fs'); const path = require('node:path');
+fs.writeFileSync(process.env.RENDER_WASM_BUILD_INFO, JSON.stringify({features: ['default'], profile: {opt_level: '3', debug_assertions: false}}));
+for (const file of ['render-wasm.js', 'render-wasm.wasm', 'shared.js']) fs.writeFileSync(path.join(process.env.FRONTEND_DEST, file), 'fixture');
+`,
+    { mode: 0o755 },
+  );
+  fs.writeFileSync(
+    path.join(bin, "clojure"),
+    `#!/usr/bin/env node
+const fs = require('node:fs'); const path = require('node:path');
+const id = process.env.RENDER_BENCH_BUILD_ID;
+const identity = ${JSON.stringify(identity)}.replaceAll(${JSON.stringify(marker)}, id);
+const catalog = ${JSON.stringify(catalog)}.replaceAll(${JSON.stringify(marker)}, id);
+fs.writeFileSync(process.env.RENDER_BENCH_CASES_PATH, 'module.exports = {buildIdentity() {return ' + JSON.stringify(identity) + ';}, collectCases() {return ' + JSON.stringify(catalog) + ';}};');
+const log = path.join(path.dirname(process.env.RENDER_BENCH_CASES_PATH), 'build.log');
+const sabotage = ${breakLog ? "'fs.unlinkSync(' + JSON.stringify(log) + '); fs.mkdirSync(' + JSON.stringify(log) + ');'" : "''"};
+fs.writeFileSync(path.join(process.env.RENDER_BENCH_BROWSER_DIR, 'browser.js'), 'const fs = require("node:fs"); module.exports = {buildIdentity() {' + sabotage + 'return ' + JSON.stringify(identity) + ';}};');
+`,
+    { mode: 0o755 },
+  );
+  fixture.env.PATH = `${bin}${path.delimiter}${process.env.PATH}`;
 }
 
 function runFixtureText({
@@ -407,7 +483,7 @@ process.exitCode = 23;
 `;
 
 test(
-  "build retains failure evidence and prints only its UUID",
+  "build prints its allocation and one failure block with retained compiler evidence",
   testOptions,
   async (t) => {
     const fixture = createFrontend(t);
@@ -416,12 +492,16 @@ test(
     const args = ["build", "--build-timeout-ms", "10000"];
     const result = await runCli(fixture, args);
     assert.equal(result.exitCode, 1);
-    const id = result.stdout.trim();
+    const [buildLine] = result.stdout.trim().split("\n");
+    const id = buildLine.slice("Build ".length);
     assert.match(
       id,
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     );
-    assert.equal(result.stdout, `${id}\n`);
+    assert.equal(
+      result.stdout,
+      `Build ${id}\nOutput ${path.join(fixture.builds, id)}\n`,
+    );
     assert.deepEqual(fs.readdirSync(fixture.builds), [id]);
 
     const directory = path.join(fixture.builds, id);
@@ -450,16 +530,280 @@ test(
     for (const output of [log, result.stderr]) {
       assert.ok(output.includes("compiler stdout before failure\n"));
       assert.ok(output.includes("compiler stderr before failure\n"));
-      assert.ok(output.includes("Preparation failed:"));
     }
     assert.match(result.stderr, /renderer build preparation failed/);
     assert.match(
       result.stderr,
-      /:type :benches.render-wasm.node.build\/preparation-failed/,
+      /type\s+:benches.render-wasm.node.build\/preparation-failed/,
     );
-    assert.ok(result.stderr.includes(`:build-id "${id}"`));
-    assert.ok(result.stderr.includes(`:log-path ${JSON.stringify(logPath)}`));
-    assert.match(result.stderr, /:phase :renderer/);
+    assert.match(result.stderr, new RegExp(`build\\s+${id}`));
+    assert.ok(result.stderr.includes(logPath));
+    assert.match(result.stderr, /phase\s+:renderer/);
+    assert.equal(result.stderr.split("✖ ").length - 1, 1);
+    assert.doesNotMatch(result.stderr, /^compiler (stdout|stderr)/m);
+    assert.match(log, /✖ renderer build preparation failed/);
+  },
+);
+
+test(
+  "build failure diagnostics retain semantic and storage causes",
+  testOptions,
+  async (t) => {
+    for (const [source, reason, broken] of [
+      [
+        `#!/usr/bin/env node
+const fs = require('node:fs');
+fs.writeFileSync(process.env.RENDER_WASM_BUILD_INFO, JSON.stringify({features: [], profile: {opt_level: '0', debug_assertions: false}}));
+`,
+        /Cargo did not produce an optimized renderer/,
+      ],
+      [
+        failingCompiler +
+          "\nfs.unlinkSync(require('node:path').join(require('node:path').dirname(process.env.FRONTEND_DEST), 'build.transit'));\n",
+        /Command exited unsuccessfully/,
+        "manifest",
+      ],
+      [
+        `#!/usr/bin/env node
+const fs = require('node:fs');
+const path = require('node:path');
+const log = path.join(path.dirname(process.env.FRONTEND_DEST), 'build.log');
+fs.unlinkSync(log); fs.mkdirSync(log);
+process.stdout.write('compiler output\\n');
+`,
+        /cannot append benchmark log/,
+        "log",
+      ],
+    ]) {
+      const fixture = createFrontend(t);
+      fs.writeFileSync(fixture.compiler, source, { mode: 0o755 });
+      const result = await runCli(fixture, ["build"]);
+      const [id] = fs.readdirSync(fixture.builds);
+      assert.equal(result.exitCode, 1);
+      assert.match(result.stderr, /✖ renderer build preparation failed/);
+      assert.match(result.stderr, reason);
+      assert.ok(result.stderr.includes(id));
+      assert.ok(
+        result.stderr.includes(path.join(fixture.builds, id, "build.log")),
+      );
+      if (broken !== "log") {
+        const log = fs.readFileSync(
+          path.join(fixture.builds, id, "build.log"),
+          "utf8",
+        );
+        assert.match(log, /✖ renderer build preparation failed/);
+        assert.match(log, reason);
+      }
+      if (broken === "manifest") {
+        assert.match(result.stderr, /manifest-error\s+.*ENOENT/);
+      } else {
+        const manifest = readManifest(
+          path.join(fixture.builds, id, "build.transit"),
+        );
+        assert.equal(
+          manifest.get(transit.keyword("status")).toString(),
+          ":failed",
+        );
+      }
+    }
+  },
+);
+
+test(
+  "build completion retains a usable ready build or the original log failure",
+  testOptions,
+  async (t) => {
+    for (const breakLog of [false, true]) {
+      const fixture = createFrontend(t);
+      installPreparedCompiler(fixture, breakLog);
+      const result = await runCli(fixture, ["build"]);
+      const [id] = fs.readdirSync(fixture.builds);
+      const manifest = readManifest(
+        path.join(fixture.builds, id, "build.transit"),
+      );
+      assert.equal(result.exitCode, breakLog ? 1 : 0, result.stderr);
+      assert.equal(
+        manifest.get(transit.keyword("status")).toString(),
+        breakLog ? ":failed" : ":ready",
+      );
+      if (breakLog) {
+        assert.match(result.stderr, /cannot append benchmark log/);
+        assert.ok(
+          result.stderr.includes(path.join(fixture.builds, id, "build.log")),
+        );
+      } else {
+        assert.match(result.stderr, /ready/);
+      }
+    }
+  },
+);
+
+test(
+  "output flags control progress, raw output and console colors",
+  testOptions,
+  async (t) => {
+    for (const [flags, phases, raw, colors] of [
+      [[], true, false, false],
+      [["--verbose"], true, true, false],
+      [["--quiet"], false, false, false],
+      [["--color"], true, false, true],
+      [["--no-color"], true, false, false],
+    ]) {
+      const fixture = createFrontend(t);
+      fs.writeFileSync(fixture.compiler, failingCompiler, { mode: 0o755 });
+      const result = await runCli(fixture, ["build", ...flags]);
+      assert.equal(result.exitCode, 1, result.stderr);
+      assert.match(result.stdout, /^Build [^\n]+\nOutput \/[^\n]+\n$/);
+      assert.equal(
+        /^(?:\u001b\[[0-9;]*m)?Renderer compiling/m.test(result.stderr),
+        phases,
+      );
+      assert.equal(
+        result.stderr.includes("· compiler stdout before failure"),
+        raw,
+      );
+      assert.equal(result.stderr.includes("\u001b["), colors);
+      assert.match(result.stderr, /! Git provenance unavailable:/);
+      const [id] = fs.readdirSync(fixture.builds);
+      const log = fs.readFileSync(
+        path.join(fixture.builds, id, "build.log"),
+        "utf8",
+      );
+      assert.match(log, /^compiler stdout before failure$/m);
+      assert.match(log, /^Renderer compiling$/m);
+      assert.doesNotMatch(log, /\u001b\[/);
+    }
+  },
+);
+
+test(
+  "ab retains its log and names the nested build tail on failure",
+  testOptions,
+  async (t) => {
+    const fixture = createFrontend(t);
+    installCargoMetadata(fixture, { default: [], a: [] });
+    fs.writeFileSync(fixture.compiler, failingCompiler, { mode: 0o755 });
+    const result = await runCli(fixture, [
+      "ab",
+      "--features",
+      "a",
+      "--filter",
+      "rects/load",
+    ]);
+    assert.equal(result.exitCode, 1, result.stderr);
+    const [idLine, outputLine, statusLine] = result.stdout.trim().split("\n");
+    assert.match(idLine, /^Comparison [0-9a-f-]+$/);
+    const directory = outputLine.slice("Output ".length);
+    assert.equal(statusLine, "Status failed");
+    const logPath = path.join(directory, "feature-comparison.log");
+    assert.equal(result.stderr.split("✖ ").length - 1, 1);
+    assert.ok(result.stderr.includes(logPath));
+    assert.match(result.stderr, /tail-log\s+.*build\.log/);
+    assert.match(
+      fs.readFileSync(logPath, "utf8"),
+      /compiler stderr before failure/,
+    );
+    await runCli(fixture, ["purge", "--only-comparisons"]);
+    assert.equal(fs.existsSync(logPath), false);
+  },
+);
+
+test(
+  "ab prints status once and preserves the build failure when its log becomes unwritable",
+  testOptions,
+  async (t) => {
+    const fixture = createFrontend(t);
+    installCargoMetadata(fixture, { default: [], a: [] });
+    const output = path.join(fixture.managed, "comparison-output");
+    fixture.env.COMPARISON_LOG = path.join(output, "feature-comparison.log");
+    fs.writeFileSync(
+      fixture.compiler,
+      failingCompiler +
+        "\nfs.unlinkSync(process.env.COMPARISON_LOG); fs.mkdirSync(process.env.COMPARISON_LOG);\n",
+      { mode: 0o755 },
+    );
+    const result = await runCli(fixture, [
+      "ab",
+      "--features",
+      "a",
+      "--filter",
+      "rects/load",
+      "--output-dir",
+      output,
+    ]);
+    assert.equal(result.exitCode, 1);
+    assert.equal(result.stdout.split("Status failed\n").length - 1, 1);
+    assert.match(result.stderr, /✖ renderer build preparation failed/);
+  },
+);
+
+test(
+  "run and ab retain signal exit codes during preparation",
+  testOptions,
+  async (t) => {
+    for (const command of ["run", "ab"]) {
+      for (const [signal, code] of [
+        ["SIGINT", 130],
+        ["SIGTERM", 143],
+      ]) {
+        const fixture = createFrontend(t);
+        installCargoMetadata(fixture, { default: [], a: [] });
+        const marker = path.join(fixture.managed, "compiler-started");
+        fs.writeFileSync(
+          fixture.compiler,
+          `#!/usr/bin/env node\nconst fs = require('node:fs'); fs.writeFileSync(${JSON.stringify(marker)}, 'ready'); setInterval(() => {}, 1000);\n`,
+          { mode: 0o755 },
+        );
+        const args =
+          command === "ab"
+            ? ["ab", "--features", "a", "--filter", "rects/load"]
+            : ["run"];
+        const child = spawn(process.execPath, [fixture.runner, ...args], {
+          cwd: os.tmpdir(),
+          env: { ...process.env, ...fixture.env },
+          stdio: ["ignore", "pipe", "pipe"],
+        });
+        t.after(() => {
+          if (child.exitCode === null) child.kill("SIGKILL");
+        });
+        const exited = once(child, "exit");
+        let stderr = "";
+        child.stdout.resume();
+        child.stderr.on("data", (chunk) => {
+          stderr += chunk;
+        });
+        const deadline = Date.now() + 10000;
+        while (
+          !fs.existsSync(marker) &&
+          child.exitCode === null &&
+          Date.now() < deadline
+        )
+          await pause(10);
+        assert.ok(fs.existsSync(marker), stderr);
+        child.kill(signal);
+        assert.deepEqual(await exited, [code, null], stderr);
+      }
+    }
+  },
+);
+
+test(
+  "run records an early retained-build failure in its allocated log",
+  testOptions,
+  async (t) => {
+    const fixture = createFrontend(t);
+    const output = path.join(fixture.managed, "early-run");
+    const result = await runCli(fixture, [
+      "run",
+      "--build",
+      "missing",
+      "--output-dir",
+      output,
+    ]);
+    assert.equal(result.exitCode, 1);
+    const logPath = path.join(output, "run.log");
+    assert.ok(result.stderr.includes(logPath));
+    assert.match(fs.readFileSync(logPath, "utf8"), /✖ /);
   },
 );
 
@@ -584,6 +928,7 @@ test("purge deletes only the selected artifacts", testOptions, async (t) => {
   const [comparisonId] = fs.readdirSync(fixture.comparisons);
   const comparison = path.join(fixture.comparisons, comparisonId);
   for (const file of [
+    "feature-comparison.log",
     "feature-comparison.transit",
     "configs/00/run.transit",
     "configs/00/run.log",
@@ -664,7 +1009,10 @@ process.exit(23);
     const result = await runCli(fixture, ["run", "--output-dir", output]);
 
     assert.equal(result.exitCode, 1);
-    assert.equal(result.stdout, "");
+    assert.match(
+      result.stdout,
+      new RegExp(`^Run [0-9a-f-]+\\nOutput ${output}\\n$`),
+    );
     assert.equal(fs.readFileSync(marker, "utf8"), "reserved");
     assert.equal(fs.existsSync(path.join(output, "run.transit")), false);
   },
@@ -755,7 +1103,7 @@ test(
       assert.equal(result.stdout, "");
       assert.match(
         result.stderr,
-        /:type :benches.render-wasm.node.runner\/invalid-args/,
+        /type\s+:benches.render-wasm.node.runner\/invalid-args/,
       );
       assert.deepEqual(tree(fixture.managed), original, args.join(" "));
     }
@@ -924,6 +1272,9 @@ test(
     assert.match(result.stdout, /--allow-build-differences/);
     assert.match(result.stdout, /--allow-scene-differences/);
     assert.match(result.stdout, /--allow-all-differences/);
+    assert.match(result.stdout, /-q, --quiet/);
+    assert.match(result.stdout, /-v, --verbose/);
+    assert.match(result.stdout, /--\[no-\]color/);
     assert.doesNotMatch(result.stdout, /--force/);
     assert.deepEqual(tree(fixture.managed), original);
   },
@@ -1144,7 +1495,7 @@ test(
       ]);
       assert.equal(rejected.exitCode, 1);
       assert.match(rejected.stderr, /incompatible saved runs/);
-      assert.ok(rejected.stderr.includes(`:field :${field}`));
+      assert.match(rejected.stderr, new RegExp(`difference\\s+:${field}`));
 
       const allowed = await runCli(fixture, [
         "compare",

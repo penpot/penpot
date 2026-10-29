@@ -276,8 +276,8 @@
                      (conj visited real)))))))))
 
 (defn- purge-feature-comparisons
-  "Unlinks feature-comparison records, configuration run evidence and edge
-  reports from the output directory.
+  "Unlinks feature-comparison records and logs, configuration run evidence and
+  edge reports from the output directory.
 
   Keeps directories, builds and unrelated files."
   [root]
@@ -292,6 +292,7 @@
                 base   (path/basename dir)
                 names  (array-seq (fs/readdirSync dir))]
             (when (= "feature-comparisons" parent)
+              (unlink-if-present (path/join dir "feature-comparison.log"))
               (unlink-if-present (path/join dir "feature-comparison.transit")))
             (when (= "configs" parent)
               (unlink-if-present (path/join dir "run.log"))

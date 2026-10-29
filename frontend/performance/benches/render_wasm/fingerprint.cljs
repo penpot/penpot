@@ -5,10 +5,7 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.fingerprint
-  "Scene fingerprints identify validated starting snapshots by content.
-  Canonical production verbose Transit orders unordered representations,
-  preserves type tags and ordered collections, and hashes UTF-8 bytes.
-  Callers validate snapshots and compute fingerprints before upload and timers."
+  "Scene fingerprints to uniquely identify snapshots by their content."
   (:require
    [benches.render-wasm.codec :as codec]
    [goog.crypt :as crypt]
@@ -17,7 +14,7 @@
 (declare canonicalize)
 
 (defn- canonical-text
-  "Encodes an already canonical Transit representation as deterministic text."
+  "Encodes a Transit representation as text."
   [value]
   (js/JSON.stringify value))
 
@@ -65,14 +62,14 @@
   Realizing :objects removes ObjectsMap's serialized shape strings while keeping
   production shape, geometry and path tags in the values."
   [snapshot]
-  (-> (assoc snapshot :objects (into {} (:objects snapshot)))
+  (-> (update snapshot :objects into {})
       (codec/encode-str {:type :json-verbose})
       (js/JSON.parse)
       (canonicalize)
       (canonical-text)))
 
 (defn fingerprint
-  "Returns the SHA-256 algorithm and digest for a validated snapshot."
+  "Returns the SHA-256 and digest for a validated snapshot."
   [snapshot]
   (let [hash (goog.crypt.Sha256.)]
     (.update hash (crypt/stringToUtf8ByteArray (snapshot-text snapshot)))

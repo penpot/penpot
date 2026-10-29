@@ -30,3 +30,13 @@
 (defn parse-feature-list
   [text]
   (:features (feature-selection {:features (mapv str/trim (str/split text #"," -1))})))
+
+(defn console-level
+  "Returns the console level selected by quiet or verbose options."
+  [opts]
+  (cond (:quiet opts) :warn (:verbose opts) :debug :else :info))
+
+(defn color-mode
+  "Returns automatic, forced or disabled console coloring."
+  [opts]
+  (case (:color opts) true :always false :never :auto))
