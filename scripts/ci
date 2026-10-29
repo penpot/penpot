@@ -24,7 +24,7 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 # Available modules
-ALL_MODULES=("frontend" "backend" "common" "render-wasm" "exporter" "mcp" "plugins" "library")
+ALL_MODULES=("frontend" "backend" "common" "render-wasm" "exporter" "mcp" "plugins" "library" "media-processor")
 
 # Module commands
 declare -A LINT_CMD=(
@@ -36,6 +36,7 @@ declare -A LINT_CMD=(
   [mcp]=""
   [plugins]="pnpm run lint"
   [library]="pnpm run lint"
+  [media-processor]=""
 )
 
 declare -A TEST_CMD=(
@@ -47,6 +48,7 @@ declare -A TEST_CMD=(
   [mcp]="pnpm run test"
   [plugins]="pnpm run test"
   [library]="pnpm run test"
+  [media-processor]="pnpm run test"
 )
 
 declare -A FMT_CHECK_CMD=(
@@ -58,6 +60,7 @@ declare -A FMT_CHECK_CMD=(
   [mcp]="pnpm run fmt:check"
   [plugins]="pnpm run format:check"
   [library]="pnpm run check-fmt:clj"
+  [media-processor]="pnpm run fmt:check"
 )
 
 declare -A FMT_FIX_CMD=(
@@ -69,6 +72,19 @@ declare -A FMT_FIX_CMD=(
   [mcp]="pnpm run fmt"
   [plugins]="pnpm run format"
   [library]="pnpm run fmt:clj"
+  [media-processor]="pnpm run fmt"
+)
+
+declare -A BUILD_CMD=(
+  [frontend]="NODE_ENV=production pnpm run build:app:main && pnpm run build:app:libs && pnpm run build:app:assets"
+  [backend]="clojure -T:build jar"
+  [common]=""
+  [render-wasm]="./build"
+  [exporter]="NODE_ENV=production pnpm run build:app"
+  [mcp]="pnpm run build"
+  [plugins]="pnpm run build:runtime && pnpm run build:plugins && pnpm run build:styles-example && pnpm run build:doc"
+  [library]="NODE_ENV=production clojure -M:dev:shadow-cljs release library"
+  [media-processor]="pnpm run types:check && pnpm run build"
 )
 
 declare -A PAREN_REPAIR_CMD=(
@@ -80,6 +96,7 @@ declare -A PAREN_REPAIR_CMD=(
   [mcp]=""
   [plugins]=""
   [library]="find src test -name '*.clj' -o -name '*.cljs' -o -name '*.cljc' | xargs $PROJECT_ROOT/scripts/paren-repair"
+  [media-processor]=""
 )
 
 # Default options
@@ -197,6 +214,9 @@ run_module() {
           cmd="${FMT_CHECK_CMD[$module]:-}"
         fi
         ;;
+      build)
+        cmd="${BUILD_CMD[$module]:-}"
+        ;;
       paren-repair)
         cmd="${PAREN_REPAIR_CMD[$module]:-}"
         ;;
@@ -282,8 +302,8 @@ Usage: $(basename "$0") [OPTIONS] [MODULES...]
 CI orchestration script for Penpot monorepo.
 
 MODULES:
-  frontend, backend, common, render-wasm, exporter, mcp, plugins, library
-  Use --all to run all modules.
+  frontend, backend, common, render-wasm, exporter, mcp, plugins, library,
+  media-processor. Use --all to run all modules.
 
 OPTIONS:
   --all             Run all modules
@@ -294,6 +314,8 @@ OPTIONS:
   --no-test         Skip tests
   --fmt             Run format check only
   --no-fmt          Skip format check
+  --build           Run production build only
+  --no-build        Skip build
   --fix             Run format fix instead of check
   --paren-repair    Fix delimiter errors in Clojure/CLJS files
   --fail-fast       Stop on first failure
@@ -307,6 +329,8 @@ EXAMPLES:
   $(basename "$0") frontend backend          # Run lint, test, fmt on frontend and backend
   $(basename "$0") --all --no-test           # Run lint and fmt on all modules
   $(basename "$0") --lint common             # Run only lint on common
+  $(basename "$0") --build frontend          # Run only the production build of frontend
+  $(basename "$0") --build --all             # Build every module
   $(basename "$0") --fix frontend            # Fix formatting in frontend
   $(basename "$0") --paren-repair frontend   # Fix delimiter errors in frontend
   $(basename "$0") --paren-repair --all      # Fix delimiter errors in all Clojure modules
@@ -351,6 +375,14 @@ main() {
         ;;
       --no-fmt)
         TASKS=("${TASKS[@]/fmt/}")
+        shift
+        ;;
+      --build)
+        TASKS=("build")
+        shift
+        ;;
+      --no-build)
+        TASKS=("${TASKS[@]/build/}")
         shift
         ;;
       --paren-repair)

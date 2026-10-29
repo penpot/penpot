@@ -27,15 +27,15 @@
   "engines": {
     "node": ">=20"
   },
-  "packageManager": "pnpm@12.15.0+sha512.b3951d6d6ff4a9f13dc7cf56cd28d2b8eb37dbcc9c68e52e1e1191873ea9f82a017287ab50baadc5ccc494f036c67c0e47eb13608c2fa36f47711b61ea128e61",
+  "packageManager": "pnpm@12.16.1+sha512.091d1dee7927575661b25dab3c2ae31cafc1c54d6b71ed6a6600cf0c1cb10434a447eae14015f1b23e2e6bedeed79df94a932e2164d2832280dce3fb32f656d1",
   "dependencies": {
     "@modelcontextprotocol/node": "^2.1.1",
     "@modelcontextprotocol/server": "^2.3.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
-    "express": "^5.2.1",
+    "express": "^5.3.0",
     "ioredis": "^6.0.0",
-    "js-yaml": "^5.4.2",
+    "js-yaml": "^5.5.0",
     "nrepl-client": "^0.3.0",
     "pino": "^10.4.0",
     "pino-loki": "^3.0.0",
@@ -43,14 +43,14 @@
     "reflect-metadata": "^0.2.2",
     "sharp": "^0.35.5",
     "ws": "^8.22.0",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "^2.3.1",
     "@penpot/mcp-common": "workspace:../common",
     "@types/express": "^5.0.6",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.5",
     "@types/ws": "^8.18.2",
     "cross-env": "^10.1.0",
     "esbuild": "^0.28.1",
