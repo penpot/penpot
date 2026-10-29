@@ -898,15 +898,14 @@ them.
 In case you have a custom setup, you probably need to configure the following environment
 variables on the frontend container:
 
-To connect the frontend to the exporter and backend, you need to fill out these environment variables.
+To connect the frontend to the backend, you need to fill out this environment variable.
 
 ```bash
 # Frontend
 PENPOT_BACKEND_URI: http://your-penpot-backend:6060
-PENPOT_EXPORTER_URI: http://your-penpot-exporter:6061
 ```
 
-These variables are used for generate correct nginx.conf file on container startup.
+This variable is used to generate a correct nginx.conf file on container startup.
 
 ### Exporter
 
@@ -917,9 +916,10 @@ The exporter uses this variable:
 PENPOT_INTERNAL_URI: http://penpot-frontend:8080
 ```
 
-- `PENPOT_INTERNAL_URI`: The URI used by the exporter's headless browser to
-  communicate with the frontend (internal Docker network). Defaults to
-  `PENPOT_PUBLIC_URI` if not set. The default value
+- `PENPOT_INTERNAL_URI`: The URI the exporter uses to reach the backend
+  management API, where it claims, reports and settles its export jobs, and
+  the frontend that serves the assets it renders (internal Docker network).
+  Defaults to `PENPOT_PUBLIC_URI` if not set. The default value
   `http://penpot-frontend:8080` used in the docker-compose is a good default and
   it is recommended to keep it unchanged.
 

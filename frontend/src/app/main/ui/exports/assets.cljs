@@ -212,7 +212,8 @@
         error?            (:error state)
         ;; The exporter is at capacity: worth its own wording, so the user
         ;; knows retrying later is the thing to do.
-        busy?             (= :queue-full (:error-code state))
+        busy?             (contains? #{:queue-full :max-quote-reached}
+                                     (:error-code state))
         healthy?          (:healthy? state)
         detail-visible?   (:detail-visible state)
         widget-visible?   (:widget-visible state)
@@ -220,23 +221,37 @@
         items             (:exports state)
         job-id            (:job-id state)
         status            (:status state)
+        ;; The stages of the job, named: what the worker reports beats
+        ;; a single "exporting" wording.
+        stage-title       (case (:stage state)
+                            :preparing (tr "workspace.options.exporting-preparing")
+                            :packaging (tr "workspace.options.exporting-packaging")
+                            nil)
         queued?           (and (some? job-id) (= "queued" status))
         cancelling?       (and (some? job-id) (= "cancelling" status))
         cancelled?        (and (some? job-id) (= "cancelled" status))
-        ;; Server wasm jobs and local client-side exports can stop; a non-wasm
-        ;; browser render holds its pool slot until playwright gives up.
+        ;; Server export jobs and local client-side exports can stop; a
+        ;; non-wasm browser render holds its pool slot until playwright
+        ;; gives up.
         cancellable?      (and (:in-progress state)
                                (not cancelling?)
                                (or (= "local" (:backend state))
                                    (and (some? job-id)
-                                        (= "wasm" (:backend state)))))
+                                        (= "running" status))))
         total             (or (:total state) (count items))
         complete?         (= progress total)
+        ;; The figure the detail names: a percentage when the worker
+        ;; said how much there is, nothing when it has not said yet
+        ;; (queued, or a milestone without counters).
+        percent           (when (and (number? progress)
+                                     (number? total)
+                                     (pos? total))
+                            (js/Math.round (* 100 (/ progress total))))
         circ              (* 2 Math/PI 12)
         pct               (if (zero? total) circ (- circ (* circ (/ progress total))))
 
         pwidth
-        (if error?
+        (if (or error? (zero? total))
           280
           (/ (* progress 280) total))
 
@@ -263,6 +278,7 @@
           cancelled?     (tr "workspace.options.exporting-cancelled")
           queued?        (tr "workspace.options.exporting-queued")
           complete?      (tr "workspace.options.exporting-complete")
+          (and healthy? (some? stage-title)) stage-title
           healthy?       (tr "workspace.options.exporting-object")
           (not healthy?) (tr "workspace.options.exporting-object-slow"))
 
@@ -325,16 +341,22 @@
             [:button {:class (stl/css :retry-btn)
                       :on-click cancel-export}
              (tr "workspace.options.cancel-export")]
-            [:span {:class (stl/css :progress)}
-             (dm/str progress " / " total)]]
+            (when (some? percent)
+              [:span {:class (stl/css :progress)}
+               (dm/str percent "%")])]
 
-           ;; A counter for work that is being abandoned says nothing useful.
-           (or cancelling? cancelled?)
+           ;; A counter for work that is waiting, going away, or gone
+           ;; says nothing useful.
+           (or queued? cancelling? cancelled?)
            nil
 
-           :else
+           ;; The running figure, once the worker said how much there is.
+           (some? percent)
            [:span {:class (stl/css :progress)}
-            (dm/str progress " / " total)])]
+            (dm/str percent "%")]
+
+           :else
+           nil)]
 
         [:> icon-button* {:variant "action"
                           :tooltip-class (stl/css :progress-close-button)

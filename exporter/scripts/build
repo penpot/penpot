@@ -9,7 +9,7 @@ pnpm install || exit 1;
 pnpm run build:wasm;
 
 WASM_SRC="resources/wasm";
-WASM_SHARED="src/app/wasm/shared.js";
+WASM_SHARED="src/exporter/wasm/shared.js";
 if [ ! -f "$WASM_SRC/render-wasm.wasm" ] || [ ! -f "$WASM_SHARED" ]; then
     echo "ERROR: the render-wasm build did not produce:" >&2;
     echo "  $WASM_SRC/render-wasm.wasm" >&2;
