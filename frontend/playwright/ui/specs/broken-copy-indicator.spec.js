@@ -75,3 +75,47 @@ test("Shows the broken indicator when every selected copy is broken", async ({
 
   await expect(brokenIndicator(workspacePage)).toBeVisible();
 });
+
+// "Banner" is a main with a copy of "Icon" inside ("Nested in main"), and
+// "Banner copy" is a copy of it ("Nested in copy"). Deleting the "Icon" main
+// breaks both nested copies.
+const breakNestedCopies = async (workspacePage) => {
+  await workspacePage.clickLeafLayer("Icon");
+  await workspacePage.page.keyboard.press("Delete");
+
+  for (const parent of ["Banner", "Banner copy"]) {
+    await workspacePage.layers
+      .getByTestId("layer-row")
+      .filter({ has: workspacePage.page.getByText(parent, { exact: true }) })
+      .getByTestId("toggle-content")
+      .click();
+  }
+};
+
+const openComponentMenu = async (workspacePage) => {
+  await workspacePage.rightSidebar
+    .getByRole("button", { name: "Options" })
+    .click();
+};
+
+test("Offers detach on a broken copy nested in a main", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await breakNestedCopies(workspacePage);
+  await workspacePage.clickLeafLayer("Nested in main");
+
+  await expect(brokenIndicator(workspacePage)).toBeVisible();
+  await openComponentMenu(workspacePage);
+  await expect(page.getByText("Detach instance")).toBeVisible();
+});
+
+test("Offers no detach on a broken copy nested in a copy", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await breakNestedCopies(workspacePage);
+  await workspacePage.clickLeafLayer("Nested in copy");
+
+  await expect(brokenIndicator(workspacePage)).toBeVisible();
+  // A copy inside another copy has no menu entries, so no options button.
+  await expect(
+    workspacePage.rightSidebar.getByRole("button", { name: "Options" }),
+  ).toHaveCount(0);
+});
