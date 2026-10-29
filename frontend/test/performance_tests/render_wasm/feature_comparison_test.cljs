@@ -13,9 +13,11 @@
    [benches.render-wasm.cases :as cases]
    [benches.render-wasm.declarations :as decl]
    [benches.render-wasm.feature-plan :as feature-plan]
+   [benches.render-wasm.node.build :as build]
    [benches.render-wasm.node.feature-comparison :as feature-comparison]
    [benches.render-wasm.node.feature-plan :as node-plan]
    [benches.render-wasm.node.files :as files]
+   [benches.render-wasm.node.log :as log]
    [benches.render-wasm.node.process :as process]
    [benches.render-wasm.result :as result]
    [cljs.test :as t :include-macros true]
@@ -26,7 +28,9 @@
 
 (t/use-fixtures :each
   {:before #(reset! temporary-root (fs/mkdtempSync (path/join (os/tmpdir) "penpot-feature-plan-")))
-   :after #(fs/rmSync @temporary-root #js {:recursive true :force true})})
+   :after (fn []
+            (log/configure {})
+            (fs/rmSync @temporary-root #js {:recursive true :force true}))})
 
 (defn- frontend-root [] (path/join @temporary-root "frontend"))
 (defn- renderer-root [] (path/join @temporary-root "render-wasm"))
@@ -510,8 +514,7 @@
 
 (defn- execute-service
   [spec-or-fn]
-  (fn [_ run-home selected-build cases options _signal _on-progress on-created]
-    (when on-created (on-created (:run-id run-home)))
+  (fn [_ run-home selected-build cases options _signal]
     (let [spec      (if (fn? spec-or-fn) (spec-or-fn selected-build) spec-or-fn)
           run       (fake-run-record selected-build run-home cases options spec)
           exit-code (case (:kind spec)
@@ -554,7 +557,6 @@
   (let [prepared  (comparison-prepared ["a"] {})
         record    (path/join (:output-dir prepared) "feature-comparison.transit")
         observed  (atom nil)
-        created   (atom nil)
         services  (comparison-services
                    {:prepare-build (build-service
                                     {:inspect (fn [_]
@@ -564,11 +566,8 @@
                     :execute-run (execute-service {})})
         result    (await (feature-comparison/execute
                           (frontend-root) prepared nil
-                          {:services services
-                           :on-created (fn [home saved] (reset! created [home saved]))}))]
-    (t/is (= :running (get-in @created [1 :status])))
-    (t/is (every? #(= :planned (:status %)) (get-in @created [1 :configurations])))
-    (t/is (= (:dir (first @created)) (:dir (:home result))))
+                          {:services services}))]
+    (t/is (fs/existsSync (get-in result [:home :log-path])))
     (t/is (= :running (:status @observed)))
     (t/is (= :building (get-in @observed [:configurations 0 :status])))
     (t/is (nil? (get-in @observed [:configurations 0 :build])))
@@ -581,14 +580,30 @@
         result     (await (feature-comparison/execute
                            (frontend-root) prepared nil
                            {:services (comparison-services
-                                       {:prepare-build (build-service {})
-                                        :execute-run (execute-service {})})}))
+                                       {:prepare-build
+                                        (^:async fn [request]
+                                          (let [build (await ((build-service {}) request))]
+                                            (fs/mkdirSync (path/dirname (:log-path build)) #js {:recursive true})
+                                            (binding [log/*log-path* (:log-path build)]
+                                              (await (timers/setImmediate))
+                                              (log/debug "Build fixture"))
+                                            build))
+                                        :execute-run
+                                        (^:async fn [root home build cases options signal]
+                                          (binding [log/*log-path* (:log-path home)]
+                                            (let [response (await ((execute-service {}) root home build cases options signal))]
+                                              (log/debug "Run fixture")
+                                              response)))})}))
         record     (:comparison result)
         edge       (first (:edges record))
         path       (:path edge)
         comparison (result/decode (fs/readFileSync path "utf8"))]
     (t/is (= 0 (:exit-code result)))
     (t/is (= :completed (:status record)))
+    (let [text (fs/readFileSync (get-in result [:home :log-path]) "utf8")]
+      (doseq [slug ["0" "1"]
+              phase ["built" "running" "completed"]]
+        (t/is (str/includes? text (str "Configuration " slug " " phase "\n")))))
     (t/is (every? #(= :completed (:status %)) (:configurations record)))
     (t/is (every? #(= :completed (:status %)) (:edges record)))
     (t/is (= ["a"] (get-in record [:configurations 1 :effective-features])))
@@ -775,7 +790,8 @@
 
 (t/deftest ^:async persistence-failure-retains-the-last-saved-state
   (create-frontend-root)
-  (let [prepared    (comparison-prepared ["a"] {})
+  (let [stdout      (atom "")
+        prepared    (comparison-prepared ["a"] {})
         record-path (path/join (:output-dir prepared) "feature-comparison.transit")
         prepare     (fn [request]
                       (fs/rmSync record-path)
@@ -783,18 +799,61 @@
                       (let [build (fake-build (:selection request) [])]
                         ((:on-created request) build)
                         (js/Promise.resolve build)))
-        result      (await (feature-comparison/execute
-                            (frontend-root) prepared nil
-                            {:services (comparison-services
-                                        {:prepare-build prepare
-                                         :execute-run (execute-service {})})}))
+        result      (do
+                      (log/configure {:stdout #js {:write #(swap! stdout str %)}})
+                      (await (feature-comparison/execute
+                              (frontend-root) prepared nil
+                              {:services (comparison-services
+                                          {:prepare-build prepare
+                                           :execute-run (execute-service {})})})))
         record      (:comparison result)]
     (t/is (= 1 (:exit-code result)))
+    (t/is (str/ends-with? @stdout "Status failed\n"))
     (t/is (some? (:error result)))
     (t/is (= :running (:status record)))
     (t/is (= :building (get-in record [:configurations 0 :status])))
     (t/is (nil? (get-in record [:configurations 0 :build])))
     (t/is (= :planned (get-in record [:configurations 1 :status])))))
+
+(t/deftest ^:async comparison-storage-error-uses-comparison-evidence-after-a-failed-config
+  (create-frontend-root)
+  (let [prepared (comparison-prepared ["a"] {})
+        record   (path/join (:output-dir prepared) "feature-comparison.transit")
+        response (await (feature-comparison/execute
+                         (frontend-root) prepared nil
+                         {:services
+                          (comparison-services
+                           {:prepare-build
+                            (build-service
+                             {:inspect (fn [request]
+                                         (when (seq (get-in request [:selection :features]))
+                                           (fs/renameSync record (str record ".saved"))
+                                           (fs/mkdirSync record)))})
+                            :execute-run (execute-service {:kind :failed})})}))]
+    (t/is (= 1 (:exit-code response)))
+    (t/is (= :failed (get-in response [:comparison :configurations 0 :status])))
+    (t/is (= (get-in response [:home :log-path])
+             (or (:tail-log response) (:log-path response))))))
+
+(t/deftest ^:async comparison-storage-error-keeps-its-origin-through-build-preparation
+  (create-frontend-root)
+  (let [prepared (comparison-prepared ["a"] {})
+        record   (path/join (:output-dir prepared) "feature-comparison.transit")
+        response (await (feature-comparison/execute
+                         (frontend-root) prepared nil
+                         {:services
+                          {:prepare-build
+                           (^:async fn [request]
+                             (let [created (:on-created request)]
+                               (await (build/prepare
+                                       (assoc request :on-created
+                                              (fn [selected]
+                                                (fs/renameSync record (str record ".saved"))
+                                                (fs/mkdirSync record)
+                                                (created selected)))))))}}))]
+    (t/is (= 1 (:exit-code response)))
+    (t/is (= (get-in response [:home :log-path])
+             (or (:tail-log response) (:log-path response))))))
 
 (t/deftest ^:async pending-real-signals-stop-edge-analysis
   (create-frontend-root)

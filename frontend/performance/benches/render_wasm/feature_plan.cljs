@@ -7,8 +7,8 @@
 (ns benches.render-wasm.feature-plan
   "Requested-feature configurations and comparison edges."
   (:require
-    [benches.render-wasm.node.options :as options]
-    [clojure.string :as str]))
+   [benches.render-wasm.node.options :as options]
+   [clojure.string :as str]))
 
 (def ^:const default-max-features 3)
 
@@ -65,12 +65,12 @@
                                                                    feature)))
                                                               features)}})
                                gray-values)
-          edges (into []
-                      (for [bits gray-values
-                            [i feature] (map-indexed vector features)
-                            :let [bit (- n i 1)]
-                            :when (not (bit-test bits bit))]
-                        {:from (slug bits)
-                         :to (slug (bit-set bits bit))
-                         :feature feature}))]
+          edges (vec
+                 (for [bits gray-values
+                       [i feature] (map-indexed vector features)
+                       :let [bit (- n i 1)]
+                       :when (not (bit-test bits bit))]
+                   {:from (slug bits)
+                    :to (slug (bit-set bits bit))
+                    :feature feature}))]
       {:features features :configurations configurations :edges edges})))

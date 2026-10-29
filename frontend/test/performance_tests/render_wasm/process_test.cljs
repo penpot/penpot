@@ -235,6 +235,20 @@
     (t/is (= (select-keys result [:stdout :stderr]) @seen))
     (t/is (= "yes" (fs/readFileSync (file "done") "utf8")))))
 
+(t/deftest ^:async lines-keep-streams-separate-and-flush-final-fragments
+  (let [seen (atom {:stdout [] :stderr []})
+        source (str "process.stdout.write('out-'); process.stderr.write('err-');"
+                    "setTimeout(() => { process.stdout.write('done\\r');"
+                    "process.stderr.write('done\\nlast-err');"
+                    "setTimeout(() => process.stdout.write('\\nlast-out'), 20); }, 20);")
+        result (await (process/run
+                       (node-options source
+                                     {:capture-output? false
+                                      :on-line (fn [line stream]
+                                                 (swap! seen update stream conj line))})))]
+    (t/is (= {:stdout ["out-done" "last-out"] :stderr ["err-done" "last-err"]} @seen))
+    (t/is (= {:exit-code 0 :stdout "" :stderr ""} result))))
+
 (t/deftest ^:async decodes-utf8-across-real-pipe-chunks
   (let [source (str "const bytes = Buffer.from('Ω😀');\n"
                     "process.stdout.write(bytes.subarray(0, 1));\n"
@@ -343,23 +357,24 @@
     (await (assert-tree-stopped))))
 
 (t/deftest ^:async output-callback-failure-cleans-the-owned-group
-  (let [seen (atom "")
-        data (await
-              (rejected
-               (process/run
-                (node-options
-                 (str (spawn-descendant) "setInterval(() => {}, 1000);")
-                 {:on-output
-                  (fn [text stream]
-                    (when (= :stdout stream)
-                      (swap! seen str text)
-                      (when (str/includes? @seen "descendant-ready\n")
-                        (throw (js/Error. "Output consumer failed")))))}))))]
-    (t/is (= :process-output (:type data)))
-    (t/is (= :stdout (:stream data)))
-    (t/is (= "SIGTERM" (:signal data)))
-    (t/is (str/includes? (:stdout data) "descendant-ready\n"))
-    (await (assert-tree-stopped))))
+  (doseq [callback [:on-output :on-line]]
+    (let [seen (atom "")
+          data (await
+                (rejected
+                 (process/run
+                  (node-options
+                   (str (spawn-descendant) "setInterval(() => {}, 1000);")
+                   {callback
+                    (fn [text stream]
+                      (when (= :stdout stream)
+                        (swap! seen str text)
+                        (when (str/includes? @seen "descendant-ready")
+                          (throw (js/Error. "Output consumer failed")))))}))))]
+      (t/is (= :process-output (:type data)))
+      (t/is (= :stdout (:stream data)))
+      (t/is (= "SIGTERM" (:signal data)))
+      (t/is (str/includes? (:stdout data) "descendant-ready\n"))
+      (await (assert-tree-stopped)))))
 
 (t/deftest ^:async successful-owner-exit-cleans-descendants-that-hold-the-pipes
   (let [source (str (spawn-descendant)

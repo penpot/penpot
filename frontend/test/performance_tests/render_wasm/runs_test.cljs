@@ -86,15 +86,12 @@
       (t/is (= ::result/invalid-record (:type (ex-data error))))
       (t/is (= run (result/decode (fs/readFileSync (:record-path home) "utf8")))))))
 
-(t/deftest log-and-screenshot-paths-stay-in-the-run-home
-  (let [home (runs/create-home {:root @temporary-root :run-id "run-5"})]
-    (runs/append-log! home "first\n")
-    (runs/append-log! home "second\n")
-    (t/is (= "first\nsecond\n" (fs/readFileSync (:log-path home) "utf8")))
-    (let [shot (runs/screenshot-path home :rects/load)]
-      (t/is (= "rects-load.png" (:file shot)))
-      (t/is (= (path/join (:dir home) "rects-load.png") (:path shot)))
-      (t/is (= (path/dirname (:record-path home)) (path/dirname (:path shot)))))))
+(t/deftest screenshot-paths-stay-in-the-run-home
+  (let [home (runs/create-home {:root @temporary-root :run-id "run-5"})
+        shot (runs/screenshot-path home :rects/load)]
+    (t/is (= "rects-load.png" (:file shot)))
+    (t/is (= (path/join (:dir home) "rects-load.png") (:path shot)))
+    (t/is (= (path/dirname (:record-path home)) (path/dirname (:path shot))))))
 
 (t/deftest malformed-ids-and-empty-paths-fail-at-the-home-boundary
   (doseq [id ["../escape" "" "a/b" "a\\b"]]

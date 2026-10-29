@@ -11,6 +11,18 @@
    [cljs.test :as t :include-macros true]
    [clojure.string :as str]))
 
+(t/deftest output-options-apply-to-every-command
+  (doseq [args [["build"] ["run"] ["purge"] ["compare" "base" "candidate"]
+                ["ab" "--features" "a" "--filter" "rects/load"]]]
+    (t/is (= :info (options/console-level (:options (runner/parse-args args)))))
+    (t/is (= :auto (options/color-mode (:options (runner/parse-args args)))))
+    (t/is (= :warn (options/console-level (:options (runner/parse-args (conj args "-q"))))))
+    (t/is (= :debug (options/console-level (:options (runner/parse-args (conj args "-v"))))))
+    (t/is (= :always (options/color-mode (:options (runner/parse-args (conj args "--color"))))))
+    (t/is (= :never (options/color-mode (:options (runner/parse-args (conj args "--no-color")))))))
+  (t/is (thrown-with-msg? js/Error #"mutually exclusive"
+                          (runner/parse-args ["run" "-q" "-v"]))))
+
 (t/deftest build-parses-defaults-and-explicit-functional-feature-selection
   (let [{:keys [command options]} (runner/parse-args ["build"])]
     (t/is (= "build" command))
@@ -219,7 +231,7 @@
               :warmups 0 :repetitions 2 :timeout-ms 1000 :build-timeout-ms 2000
               :startup-timeout-ms 3000 :output-dir "new-home" :screenshots true
               :allow-build-differences true :allow-scene-differences true :allow-all-differences true
-              :max-features 3 :confirm false :dry-run false :default-features false}
+              :max-features 3 :confirm false :dry-run false :default-features false :color nil}
              options))))
 
 (t/deftest ab-rejects-missing-features-and-incompatible-flags-before-execution
