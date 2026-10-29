@@ -18,7 +18,9 @@
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.runner :as r]
    [app.common.test-helpers.composable.comp.setups :as setup]
+   [app.common.test-helpers.composable.comp.undo-check :as uc]
    [app.common.test-helpers.composable.core :as tm]
+   [app.common.test-helpers.composable.gen :as cg]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -32,6 +34,50 @@
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest grid-growth-fills-inherited-tracks-before-assigning-copy-children
+  (doseq [direction [:row :column]
+          turn-copy? [false true]]
+    (let [initial   (cg/world [1 0 {:layout :grid :layout-children true :grid-square true}])
+          main      (n/main-head-of "random-0")
+          copy      (n/nth-copy-head-of "random-0" 0)
+          other     (n/nth-copy-head-of "random-0" 1)
+          snapshot  #(uc/snapshot (tm/file %))
+          ops       (concat (when (= direction :column) [(n/edit-grid main :direction :column)])
+                            [(n/edit-grid copy :cell {:row 1 :column 1 :props {:align-self :end}})]
+                            (when turn-copy? [(n/edit-grid copy :direction (if (= direction :row) :column :row))])
+                            [(n/add-child main :extra-a :width 20 :height 20)
+                             (n/add-child main :extra-b :width 20 :height 20)])
+          grown     (reduce (fn [before op]
+                              (let [after  (-> before (r/step op) r/settle)
+                                    undone (r/step after (n/undo))
+                                    redone (r/step undone (n/redo))]
+                                (t/is (< (r/undo-depth before) (r/undo-depth after)))
+                                (t/is (uc/same-state? (snapshot before) (snapshot undone)))
+                                (t/is (uc/same-state? (snapshot after) (snapshot redone)))
+                                after)) initial ops)
+          shapes    (mapv #(tm/shape-by-id grown (% grown)) [main copy other])
+          dims      (if (= direction :row) [2 3] [3 2])
+          coords    (set (for [row (range 1 (inc (first dims)))
+                               column (range 1 (inc (second dims)))] [row column]))
+          objects   (:objects (thf/current-page (tm/file grown)))
+          main-ids  (set (:shapes (first shapes)))
+          component (:component-id (first shapes))
+          synced    (r/settle grown #{component})]
+      (doseq [shape shapes]
+        (t/is (= dims (mapv #(count (get shape %)) [:layout-grid-rows :layout-grid-columns])))
+        (t/is (= coords (set (map (juxt :row :column) (vals (:layout-grid-cells shape))))))
+        (t/is (= main-ids (set (map #(or (:shape-ref (get objects %)) %)
+                                    (mapcat :shapes (vals (:layout-grid-cells shape)))))))
+        (t/is (= (frequencies main-ids)
+                 (frequencies (map #(or (:shape-ref (get objects %)) %)
+                                   (mapcat :shapes (vals (:layout-grid-cells shape))))))))
+      (t/is (= :end (:align-self (first (filter #(= [1 1] [(:row %) (:column %)])
+                                                (vals (:layout-grid-cells (second shapes))))))))
+      (t/is (= (cond-> #{:layout-grid-cells} turn-copy? (conj :layout-grid-dir))
+               (:touched (second shapes))))
+      (t/is (empty? (:touched (nth shapes 2))))
+      (t/is (uc/same-state? (snapshot grown) (snapshot synced))))))
 
 (t/deftest sync-keeps-a-real-subpixel-position-change
   (let [initial (setup/simple-component-with-labeled-copy)
