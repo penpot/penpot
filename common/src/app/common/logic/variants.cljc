@@ -13,6 +13,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]))
 
@@ -77,8 +78,8 @@
    related-shape-in-new, fix its swap-slot if needed, and then delete
    related-shape-in-new.
 
-   If the user moved orig-swapped-child, it keeps its offset inside the parent;
-   otherwise it takes the place of related-shape-in-new."
+   orig-swapped-child follows its parent through its constraints and, if the
+   user didn't move it, takes the place of related-shape-in-new."
   [changes related-shape-in-new orig-swapped-child ldata page swap-ref-id]
   (let [;; Before to the swap, temporary move the previous
         ;; shape to the root panel to avoid problems when
@@ -94,13 +95,15 @@
         current-parent  (get objects (:parent-id related-shape-in-new))
         pos             (d/index-of (:shapes current-parent) (:id related-shape-in-new))
 
-        user-moved?     (-> (get page-objects (:id orig-swapped-child))
-                            (ctk/touched-group? :geometry-group))
-        delta           (if user-moved?
-                          (gpt/subtract (grc/rect->point (:selrect current-parent))
-                                        (grc/rect->point (:selrect (get page-objects (:parent-id orig-swapped-child)))))
+        orig-child      (get page-objects (:id orig-swapped-child))
+        modifiers       (cll/follow-parent-modifiers orig-child
+                                                     (get page-objects (:parent-id orig-child))
+                                                     current-parent)
+        child-after     (gsh/transform-shape orig-child modifiers)
+        delta           (if (ctk/touched-group? orig-child :geometry-group)
+                          (gpt/point 0 0)
                           (gpt/subtract (grc/rect->point (:selrect related-shape-in-new))
-                                        (grc/rect->point (:selrect orig-swapped-child))))]
+                                        (grc/rect->point (:selrect child-after))))]
 
     (-> (pcb/concat-changes before-changes changes)
 
@@ -108,9 +111,11 @@
         (pcb/change-parent (:parent-id related-shape-in-new) [orig-swapped-child] pos {:allow-altering-copies true})
 
         (cond->
-         (not (gpt/almost-zero? delta))
+         (or (not (ctm/empty? modifiers)) (not (gpt/almost-zero? delta)))
           (pcb/update-shapes (cfh/get-children-ids-with-self page-objects (:id orig-swapped-child))
-                             #(gsh/move % delta)
+                             #(-> %
+                                  (gsh/transform-shape modifiers)
+                                  (gsh/move delta))
                              {:ignore-touched true}))
 
         ;; We need to update the swap slot only when it pointed

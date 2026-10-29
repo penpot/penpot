@@ -12,6 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
+   [app.common.math :as mth]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
@@ -19,6 +20,7 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.variants :as thv]
    [app.common.types.component :as ctk]
+   [app.common.types.modifiers :as ctm]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
@@ -3216,3 +3218,82 @@
     ;; ==== Check
     (t/is (gpt/close? (offset-in-root file :m02 :m02-icon)
                       (offset-in-root file' :copy02 :copy-icon-b)))))
+
+(defn- resize-width
+  [shape width]
+  (gsh/transform-shape shape (ctm/change-size shape width nil)))
+
+(defn- setup-card-copy
+  "Variants of a 300x48 flex card whose `:m01-icon` / `:m02-icon` is an
+  absolute icon A copy placed directly in the root at x 270, with the given
+  horizontal constraint. A copy of the first variant fills 800px more, the
+  way the layout grows it."
+  [constraints-h]
+  (let [place-icon (fn [file root-label icon-label]
+                     (let [root (ths/get-shape file root-label)
+                           icon (ths/get-shape file icon-label)]
+                       (-> file
+                           (tho/move-shape-tree icon-label (gpt/point (- (+ (:x root) 270) (:x icon))
+                                                                      (- (+ (:y root) 12) (:y icon))))
+                           (tho/change-shape icon-label #(assoc % :layout-item-absolute true
+                                                                :constraints-h constraints-h)))))
+        card       (fn [file root-label]
+                     (tho/change-shape file root-label #(-> %
+                                                            (resize-width 300)
+                                                            (gsh/transform-shape (ctm/change-size % nil 48))
+                                                            (assoc :layout :flex :layout-flex-dir :row))))]
+    (-> (thf/sample-file :file1)
+        (tho/add-simple-component :icon-a :icon-a-root :icon-a-child
+                                  :root-params {:width 24 :height 24})
+        (tho/add-simple-component :icon-b :icon-b-root :icon-b-child
+                                  :root-params {:width 24 :height 24})
+        (thv/add-variant-with-copy :v01 :c01 :m01 :c02 :m02 :m01-icon :m02-icon :icon-a)
+        (card :m01)
+        (card :m02)
+        (place-icon :m01 :m01-icon)
+        (place-icon :m02 :m02-icon)
+        (thc/instantiate-component :c01 :copy01 :children-labels [:copy-icon])
+        (tho/change-shape :copy01 #(resize-width % 1100) :ignore-touched true)
+        (tho/move-shape-tree :copy-icon (gpt/point (case constraints-h :right 800 0) 0) :ignore-touched true))))
+
+(defn- setup-card-variant
+  "Same as `setup-card-copy`, with the icon of the copy swapped to icon B."
+  [constraints-h]
+  (-> (setup-card-copy constraints-h)
+      (thc/component-swap :copy-icon :icon-b :copy-icon-b)
+      ;; The production swap keeps the constraints; the test swap does not
+      (tho/change-shape :copy-icon-b #(assoc % :constraints-h constraints-h))))
+
+(defn- distance-to-right-edge
+  [file root-label child-label]
+  (let [root  (ths/get-shape file root-label)
+        child (ths/get-shape file child-label)]
+    (- (+ (:x root) (:width root)) (:x child))))
+
+(t/deftest test-switch-moved-swapped-child-follows-right-constraint
+  (let [;; ==== Setup
+        file   (-> (setup-card-variant :right)
+                   (tho/move-shape-tree :copy-icon-b (gpt/point 5 0)))
+        before (distance-to-right-edge file :copy01 :copy-icon-b)
+
+        ;; ==== Action
+        file'  (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02
+                                                               :keep-touched? true})]
+
+    ;; ==== Check
+    (t/is (mth/close? before (distance-to-right-edge file' :copy02 :copy-icon-b)))))
+
+(t/deftest test-switch-scales-swapped-child-back-with-root
+  (let [;; ==== Setup
+        file   (setup-card-variant :scale)
+        width  (:width (ths/get-shape file :copy-icon-b))
+        root-w (:width (ths/get-shape file :copy01))
+
+        ;; ==== Action
+        file'  (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02
+                                                               :keep-touched? true})
+        scale  (/ (:width (ths/get-shape file' :copy02)) root-w)]
+
+    ;; ==== Check
+    (t/is (mth/close? (* width scale)
+                      (:width (ths/get-shape file' :copy-icon-b))))))

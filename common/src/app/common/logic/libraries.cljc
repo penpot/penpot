@@ -875,7 +875,7 @@
   (gpt/subtract (grc/rect->point (:selrect (reposition-shape origin-shape origin-root dest-root)))
                 (grc/rect->point (:selrect dest-shape))))
 
-(defn- follow-parent-modifiers
+(defn follow-parent-modifiers
   "Modifiers that make `child` follow the change of its parent from
   `parent-before` to `parent-after`, through the child constraints."
   [child parent-before parent-after]
