@@ -72,6 +72,8 @@
 
         router      (mf/deref refs/router)
         recent-href (rt/resolve-uri router :dashboard-recent {:team-id (:team-id project)})
+        project-href (rt/resolve-uri router :dashboard-files {:team-id (:team-id project)
+                                                              :project-id project-id})
 
         go-back
         (mf/use-fn
@@ -83,13 +85,7 @@
              ;; FIXME: move set-mode to uri?
              (st/emit! :interrupt
                        (dw/set-options-mode :design)
-                       (dcm/go-to-dashboard-recent)))))
-
-        nav-to-project
-        (mf/use-fn
-         (mf/deps project-id)
-         #(st/emit! :interrupt
-                    (dcm/go-to-dashboard-files ::rt/new-window true :project-id project-id)))]
+                       (dcm/go-to-dashboard-recent)))))]
 
     (mf/with-effect [editing?]
       (when ^boolean editing?
@@ -103,9 +99,11 @@
                     :class (stl/css :logo)}]]
      [:div {:alt (tr "workspace.sitemap")
             :class (stl/css :project-tree)}
-      [:div
-       {:class (stl/css :project-name)
-        :on-click nav-to-project}
+      ;; Opens the project files in a new tab, as it always did.
+      [:a {:class (stl/css :project-name)
+           :href project-href
+           :target "_blank"
+           :rel "noopener"}
        (:name project)]
       (if ^boolean editing?
         [:input
