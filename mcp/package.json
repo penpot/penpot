@@ -23,9 +23,9 @@
     "type": "git",
     "url": "https://github.com/penpot/penpot.git"
   },
-  "packageManager": "pnpm@12.15.0+sha512.b3951d6d6ff4a9f13dc7cf56cd28d2b8eb37dbcc9c68e52e1e1191873ea9f82a017287ab50baadc5ccc494f036c67c0e47eb13608c2fa36f47711b61ea128e61",
+  "packageManager": "pnpm@12.16.1+sha512.091d1dee7927575661b25dab3c2ae31cafc1c54d6b71ed6a6600cf0c1cb10434a447eae14015f1b23e2e6bedeed79df94a932e2164d2832280dce3fb32f656d1",
   "devDependencies": {
-    "concurrently": "^10.0.5",
-    "prettier": "^3.9.9"
+    "concurrently": "^10.0.6",
+    "prettier": "^3.9.10"
   }
 }
