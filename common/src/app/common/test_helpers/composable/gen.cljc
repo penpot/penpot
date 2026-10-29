@@ -64,6 +64,18 @@
           file (cond-> file (= layout :grid) (tho/place-in-grid-columns root 2 {1 child}))]
       (tm/with-file situation file))))
 
+(defn- with-empty-grid
+  [situation name]
+  (let [situation (-> situation (r/step (n/remove-child (n/remote-rect-of name))) r/settle
+                      (r/with-history {}))
+        file      (tm/file situation)
+        page-id   (:id (thf/current-page file))
+        ids       (keep #(when (= :grid (get-in % [:shape :layout])) (get-in % [:shape :id])) (tree situation))
+        changes   (cls/generate-update-shapes
+                   (pcb/empty-changes nil page-id) ids #(merge % cls/initial-grid-layout)
+                   (:objects (thf/current-page file)) {:ignore-touched true :skip-grid-reassignment? true})]
+    (tm/with-file situation (thf/apply-changes file changes))))
+
 (defn- with-settled-layout
   [situation name]
   (let [file      (tm/file situation)
@@ -292,6 +304,7 @@
                                         (ths/update-shape :copy-child :grow-type :auto-height)
                                         (ths/update-shape :copy-child :touched nil)))))
                   (range components))
+    (and (= :grid (:layout opts)) (:grid-empty opts)) (with-empty-grid "random-0")
     (:library opts) (with-library opts)
     (:stale-libraries opts) (cf/freeze-libraries)
     (:rich-variants opts) (as-> s (assoc s :shape-budget (+ 80 (count (tree s)))))))
@@ -543,8 +556,9 @@
                          (library-candidates situation kind scope)
                          (candidates situation model (if (#{:style :grid-cell :grid-direction} kind) :edit kind) scope))
                 (#{:grid-cell :grid-direction} kind)
-                (filter #(and (= :grid (get-in % [:shape :layout]))
-                              (seq (get-in % [:shape :layout-grid-cells]))))
+                (filter #(= :grid (get-in % [:shape :layout])))
+                (= :grid-cell kind)
+                (filter #(seq (get-in % [:shape :layout-grid-cells])))
                 (= kind :style)
                 (filter (fn [{:keys [shape]}]
                           (and (shadow/attribute-applicable? shape style-property)

@@ -31,6 +31,44 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
+(t/deftest empty-grid-direction-edits-resolve-and-change-the-requested-shape
+  (doseq [depth [0 1]
+          scope [nil 1]]
+    (let [spec      [1 depth {:layout :grid :grid-empty true}]
+          initial   (cg/initial-state spec)
+          situation (:situation initial)
+          tuple     [:grid-direction 0 0 1 scope]
+          resolved  (cg/resolve-op situation {} tuple)
+          grids     (filter #(= :grid (get-in % [:shape :layout])) (cg/tree situation))
+          target-id (:id (:shape (first (filter #(= :grid (get-in % [:shape :layout]))
+                                                (cg/candidates situation {} :edit scope)))))
+          real      (r/settle (r/step situation (n/edit-grid (constantly target-id) :direction :column)))
+          stepped   (cg/step initial tuple)]
+      (t/is (some? (thf/validate-file! (tm/file situation) (cf/libraries situation))))
+      (t/is (seq grids))
+      (t/is (every? #(and (empty? (get-in % [:shape :shapes]))
+                          (= {} (get-in % [:shape :layout-grid-cells]))) grids))
+      (t/is (= :column (:layout-grid-dir (tm/shape-by-id real target-id))))
+      (t/is (= (oracle/snapshot situation) (oracle/snapshot (r/step real (n/undo)))))
+      (t/is (= :executed (get-in resolved [:trace :status])))
+      (t/is (= target-id (get-in resolved [:shape :id])))
+      (t/is (= 1 (get-in stepped [:coverage :random :grid-direction :changed])))
+      (t/is (nil? (:op (cg/resolve-op situation {} [:grid-cell 0 0 0 scope]))))
+      (t/is (true? (try (cg/run {:world spec :ops [tuple [:undo] [:redo]]}) true
+                        (catch #?(:clj Exception :cljs js/Error) error
+                          (select-keys (ex-data error) [:invariant :phase :group :failing-op]))))))))
+
+(t/deftest empty-grid-direction-intent-survives-component-histories
+  (doseq [depth [0 1]
+          tail [[[:grid-direction 0 0 0 1]] [[:update-main 0]] [[:reset 0]]
+                [[:duplicate 0]] [[:detach 0]] [[:add-child 0]]]]
+    (let [program {:world [1 depth {:layout :grid :grid-empty true}]
+                   :ops (into [[:grid-direction 0 0 1 1]] (concat tail [[:sync] [:undo] [:redo]]))}]
+      (t/is (true? (try (cg/run program) true
+                        (catch #?(:clj Exception :cljs js/Error) error
+                          (select-keys (ex-data error) [:invariant :phase :group :failing-op]))))
+            (pr-str program)))))
+
 (t/deftest generated-grid-growth-retains-authored-cells-through-sync-and-undo
   (doseq [direction [:row :column]
           turn-copy? [false true]]

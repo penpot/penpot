@@ -180,6 +180,20 @@
            (t/is (= :I9 (:invariant failure)) (pr-str failure))
            (t/is (= :requested-update-main (:phase failure)) (pr-str failure))))))))
 
+(t/deftest ^:async empty-grid-direction-edits-replay-through-the-frontend
+  (doseq [depth [0 1]
+          scope [nil 1]]
+    (await (replay {:world [1 depth {:layout :grid :grid-empty true}]
+                    :ops [[:grid-cell 0 0 0 scope] [:grid-direction 0 0 1 scope]
+                          [:undo] [:redo]]}))))
+
+(t/deftest ^:async empty-grid-direction-histories-replay-through-the-frontend
+  (doseq [depth [0 1]
+          tail [[[:grid-direction 0 0 0 1]] [[:update-main 0]] [[:reset 0]]
+                [[:duplicate 0]] [[:detach 0]] [[:add-child 0]]]]
+    (await (replay {:world [1 depth {:layout :grid :grid-empty true}]
+                    :ops (into [[:grid-direction 0 0 1 1]] (concat tail [[:sync] [:undo] [:redo]]))}))))
+
 (t/deftest ^:async grid-growth-replays-with-independent-cell-expectations
   (doseq [direction [:row :column]
           turn-copy? [false true]]
