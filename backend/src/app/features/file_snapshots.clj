@@ -22,7 +22,6 @@
    [app.jobs :as jobs]
    [app.storage :as sto]
    [app.util.blob :as blob]
-   [app.util.pointer-map :as pmap]
    [cuerdas.core :as str]))
 
 (def sql:snapshots
@@ -455,12 +454,11 @@
   pointer ids never trigger a load."
   [cfg file-id xform f init]
   (let [conn  (db/get-connection cfg)
-        load  (partial fdata/load-pointer cfg file-id)
         xform (comp
                (map (partial fdata/resolve-file-data cfg))
                (map (partial fdata/decode-file-data cfg))
                xform)]
 
-    (binding [pmap/*load-fn* load]
+    (fdata/with-pointers cfg file-id
       (->> (db/plan conn [sql:get-snapshots file-id] {:fetch-size 1})
            (transduce xform f init)))))
