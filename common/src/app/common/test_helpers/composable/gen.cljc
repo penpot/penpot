@@ -974,7 +974,8 @@
 
 (defn run
   "Run a program. A supplied trace must replay the same targets and skips.
-   Failures include the program and labelled trace for a regression."
+   Failures include the program and labelled trace for a regression.
+   Whole-program checks have no single failing operation."
   ([program] (run program nil))
   ([{:keys [prefix ops] world-spec :world :as program} replay-trace]
    (let [progress (atom (initial-state world-spec))]
@@ -984,6 +985,7 @@
          (swap! progress assoc :current tuple :phase phase)
          (swap! progress step tuple))
        (swap! progress settle-state)
+       (swap! progress dissoc :current)
        (check-sequence @progress)
        (check-source-sequences (:situation @progress))
        (when-not (pos? (reduce + 0 (vals (dissoc (:executed @progress) :sync))))

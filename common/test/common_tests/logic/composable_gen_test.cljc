@@ -29,6 +29,55 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
+(t/deftest whole-program-failures-keep-the-same-signature-without-a-skipped-tail
+  (doseq [[world ops source?]
+          [[[1 0] [[:edit 0 0 1 1] [:edit 0 1 1 1]] false]
+           [[1 0 {:library true}] [[:edit 0 0 1 1] [:edit 0 1 1 1]] false]
+           [[1 0 {:library true :stale-libraries true}]
+            [[:library-edit 0 0 1] [:library-edit 0 1 1]] true]]
+          direction [:undo :redo]]
+    (let [short-program {:world world :ops ops}
+          long-program  (update short-program :ops conj [:restore 0])
+          phase         (keyword (str (when source? "source-") "sequence-" (name direction)))
+          step          r/step
+          previous      (atom nil)
+          corrupt       (fn [situation]
+                          (let [file    (tm/file situation)
+                                page    (thf/current-page file)
+                                id      (get-in (first (filter #(get-in % [:shape :main-instance])
+                                                               (cg/tree situation))) [:shape :id])
+                                changes (cls/generate-update-shapes
+                                         (pcb/empty-changes nil (:id page)) [id]
+                                         #(assoc % :opacity 0.375) (:objects page) {:ignore-touched true})]
+                            (tm/with-file situation (thf/apply-changes file changes))))
+          failure       (fn [run]
+                          (try (reset! previous nil) (run) nil
+                               (catch #?(:clj Exception :cljs js/Error) error
+                                 (select-keys (ex-data error) [:invariant :phase :failing-op :trace]))))
+          coverage      (atom {})
+          signature     (atom nil)
+          real          (cg/run long-program)]
+      (t/is (map? (cg/run short-program)) "Real whole-program undo/redo passes")
+      (t/is (= 2 (get-in real [:executed (if source? :library-edit :edit)])))
+      (t/is (= :skip (:status (peek (:trace real)))))
+      (with-redefs [r/step (fn [situation op]
+                             (let [after (step situation op)
+                                   kind  (n/op-kind op)
+                                   prior @previous]
+                               (reset! previous kind)
+                               (if (= direction prior kind) (corrupt after) after)))]
+        (doseq [program [long-program short-program]]
+          (let [data (failure #(cg/run program))]
+            (t/is (= :I7 (:invariant data)))
+            (t/is (= phase (:phase data)))
+            (t/is (= [:executed :executed]
+                     (mapv :status (take 2 (:trace data)))))
+            (t/is (nil? (:failing-op data)) "The failure belongs to the whole history")))
+        (t/is (some? (failure #(cg/check-program long-program coverage signature))))
+        (t/is (= [:I7 nil phase nil] @signature))
+        (t/is (some? (failure #(cg/check-program short-program coverage signature)))
+              "Removing the skipped tail must preserve the whole-program failure")))))
+
 (t/deftest deferred-failures-name-the-executed-action-and-keep-the-shrink-signature
   (let [short-program {:world [1 0] :ops [[:edit 0 0 1 1] [:update-main 0]]}
         long-program  (update short-program :ops conj [:style 0 3 1 1])
