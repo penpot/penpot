@@ -604,3 +604,10 @@
   [p]
   (when-let [shape (proxy->shape p)]
     (ctk/main-instance? shape)))
+
+(defn non-main-into-variant-container?
+  "True when `parent` is a variant container and `child` (a shape proxy)
+   is not a main instance."
+  [parent child]
+  (and (ctk/is-variant-container? parent)
+       (not (is-main-component-proxy? child))))
