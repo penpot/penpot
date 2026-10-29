@@ -833,6 +833,42 @@ test.describe("Onboarding questions controls", () => {
   });
 });
 
+test.describe("Profile page controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Profile page avatar, form and links", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.goToDashboard();
+    await dashboardPage.goToAccount();
+
+    const container = page.locator(
+      "[class*='settings_profile__form-container']",
+    );
+    await expect(page.getByText("Change email")).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(container).toHaveScreenshot(shot);
+
+    // The "Update" overlay shows when the pointer is on the avatar.
+    await page.locator("[class*='image-change-field']").hover();
+    await expect(container).toHaveScreenshot(shot);
+
+    // Save turns enabled once the name changes.
+    await page.getByLabel("Your name").fill("Renamed user");
+    await page.mouse.move(10, 700);
+    await expect(container).toHaveScreenshot(shot);
+
+    await page.getByText("Change email").hover();
+    await expect(container).toHaveScreenshot(shot);
+
+    // The "Update" overlay is a button: it shows on keyboard focus too.
+    await page.mouse.move(10, 700);
+    await page.getByRole("button", { name: "Update" }).focus();
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Tab");
+    await expect(container).toHaveScreenshot(shot);
+  });
+});
+
 test.describe("Templates section controls", () => {
   const shot = { maxDiffPixelRatio: 0, threshold: 0 };
 
