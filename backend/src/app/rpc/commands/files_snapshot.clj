@@ -77,13 +77,11 @@
       ;; format. Apply the pending migrations in memory, the same pure
       ;; step a normal read runs, and never persist them: the stored
       ;; version keeps its data and restoring it re-migrates on the
-      ;; next read. `:migrations` is normalized to a set because the
-      ;; snapshot decoder keeps the pgarray as a vector and
-      ;; `set/difference` would compare indexes.
+      ;; next read. `decode-snapshot` hands an ordered set, which is
+      ;; what `need-migration?`/`migrate` require; a stored NULL is
+      ;; regenerated from the snapshot's version.
       (let [base-file (bfc/get-file cfg file-id :load-data? false)
-            snapshot  (-> snapshot
-                          (assoc :id file-id)
-                          (update :migrations #(into #{} %)))
+            snapshot  (assoc snapshot :id file-id)
             file      (if (fmg/need-migration? snapshot)
                         (let [file (fdata/realize cfg snapshot)]
                           (fmg/migrate-file
