@@ -149,6 +149,12 @@
   [situation opts]
   (let [library (-> (tm/make-situation (thf/sample-file :random-library :name "random-library" :is-shared true))
                     (as-> s (tm/apply-to (n/create-component "library-random" setup/labeled-fill :size 100) s))
+                    (as-> s (if (:library-grid opts)
+                              (-> s
+                                  (with-layout "library-random" :grid)
+                                  (with-layout-children "library-random")
+                                  (with-square-grid "library-random"))
+                              s))
                     (as-> s (tm/apply-to (n/make-nested-component "library-random" (or (:library-depth opts) 1)) s))
                     (as-> s (if (:library-variants opts)
                               (tm/apply-to (n/make-variant-container "library-variants"
@@ -696,6 +702,8 @@
 (defn settle-state
   [{:keys [situation model checkpoint] :as state}]
   (let [settled (r/settle situation)
+        _ (when-let [{:keys [before model root-id]} (:update-main-intent state)]
+            (oracle/check-requested-update-main before settled model root-id))
         model (-> model
                   (shadow/parent-orientation (all-objects situation) (all-objects settled))
                   (shadow/settle (all-objects settled)))
@@ -717,7 +725,7 @@
     (when-not (oracle/equivalent? settled-design full-design)
       (oracle/fail :I5 {:diff (thn/diff settled-design full-design)}))
     (when checkpoint (assert-round-trip checkpoint settled journal))
-    (cond-> (assoc state :situation settled :model model :checkpoint nil)
+    (cond-> (dissoc (assoc state :situation settled :model model :checkpoint nil) :update-main-intent)
       journal (assoc-in [:undo (dec (count (:undo state)))] (dissoc journal :reference-start)))))
 
 (defn- source-context
@@ -833,6 +841,11 @@
               :undo (restore-references situation (:reference-before (peek (:undo state))))
               :redo (restore-references situation (:reference-after (peek (:redo state))))
               situation)
+            ;; Retain file inputs, without runner history, through deferred sync.
+            intent (when (= kind :update-main)
+                     {:before (-> (tm/make-situation (tm/file situation))
+                                  (tm/with-aux-files (tm/aux-files situation)))
+                      :model model :root-id (get-in resolved [:shape :id])})
             after (cond
                     library-id (apply-source situation library-id op kind)
                     (= kind :sync)
@@ -849,6 +862,8 @@
                                         (get (oracle/snapshot after) owner))
                                   (assoc-in [:library-histories owner :foreign-write] true)))
                               after (keys (:library-histories situation))))
+            _ (when (= kind :update-main)
+                (oracle/check-requested-update-main (:before intent) after model (:root-id intent)))
             changed (not= (r/undo-depth situation) (r/undo-depth after))
             history (:undo state)
             redo (:redo state)
@@ -864,6 +879,7 @@
                                                 (oracle/design-snapshot after {:free-head-placement false})))
             state (-> state
                       (assoc :situation after :model next-model)
+                      (cond-> intent (assoc :update-main-intent intent))
                       (update-in (conj coverage-path (if meaningful :changed :no-op)) (fnil inc 0))
                       (cond-> (and (not meaningful)
                                    (> (r/undo-depth after) (r/undo-depth situation)))

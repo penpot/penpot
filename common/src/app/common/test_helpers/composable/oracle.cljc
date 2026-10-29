@@ -278,25 +278,26 @@
           [id (gpt/point (:x expected) (:y expected))])))
 
 (defn- geometry-differences
-  [objects shape expected]
-  (let [layout-child (and (ctl/any-layout-immediate-child? objects shape)
-                          (not (ctl/position-absolute? shape)))
-        auto-width (and (= :text (:type shape)) (= :auto-width (:grow-type shape)))
-        auto-height (and (= :text (:type shape)) (#{:auto-width :auto-height} (:grow-type shape)))
-        derived (derived-attributes objects shape)
-        width-owned (contains? derived :width)
-        height-owned (contains? derived :height)]
-    (cond-> #{}
-      (not (mth/close? (or (:rotation shape) 0) (or (:rotation expected) 0) 0.01)) (conj :rotation)
-      (not= (boolean (:flip-x shape)) (boolean (:flip-x expected))) (conj :flip-x)
-      (not= (boolean (:flip-y shape)) (boolean (:flip-y expected))) (conj :flip-y)
-      (and (not width-owned) (not (mth/close? (:width shape) (:width expected) 0.01))) (conj :width)
-      (and (not height-owned) (not (mth/close? (:height shape) (:height expected) 0.01))) (conj :height)
-      (and (not layout-child) auto-height
-           (not (gsh/close-attrs? :points [(first (:points shape))]
-                                  [(first (:points expected))] 0.01))) (conj :position)
-      (and (not layout-child) (not auto-width) (not auto-height)
-           (not (gsh/close-attrs? :points (:points shape) (:points expected) 0.01))) (conj :points))))
+  ([objects shape expected] (geometry-differences objects shape expected shape))
+  ([objects shape expected ownership]
+   (let [layout-child (and (ctl/any-layout-immediate-child? objects ownership)
+                           (not (ctl/position-absolute? ownership)))
+         auto-width   (and (= :text (:type ownership)) (= :auto-width (:grow-type ownership)))
+         auto-height  (and (= :text (:type ownership)) (#{:auto-width :auto-height} (:grow-type ownership)))
+         derived      (derived-attributes objects ownership)
+         width-owned  (contains? derived :width)
+         height-owned (contains? derived :height)]
+     (cond-> #{}
+       (not (mth/close? (or (:rotation shape) 0) (or (:rotation expected) 0) 0.01)) (conj :rotation)
+       (not= (boolean (:flip-x shape)) (boolean (:flip-x expected))) (conj :flip-x)
+       (not= (boolean (:flip-y shape)) (boolean (:flip-y expected))) (conj :flip-y)
+       (and (not width-owned) (not (mth/close? (:width shape) (:width expected) 0.01))) (conj :width)
+       (and (not height-owned) (not (mth/close? (:height shape) (:height expected) 0.01))) (conj :height)
+       (and (not layout-child) auto-height
+            (not (gsh/close-attrs? :points [(first (:points shape))]
+                                   [(first (:points expected))] 0.01))) (conj :position)
+       (and (not layout-child) (not auto-width) (not auto-height)
+            (not (gsh/close-attrs? :points (:points shape) (:points expected) 0.01))) (conj :points)))))
 
 (defn check-requested-geometry
   [objects actual expected]
@@ -312,6 +313,65 @@
                   (nil? (:constraints-v shape)) (assoc :constraints-v (gsh/default-constraints-v context)))
                 shape)]
     (shadow/values shape group)))
+
+(defn- get-world-objects
+  [situation]
+  (into {} (mapcat cf/object-trees) (vals (cf/all-files situation))))
+
+(defn check-requested-update-main
+  "Keep authored intent after the shadow clears the source copy's groups.
+   Only identities come from the result; expected values come from before."
+  [before after model root-id]
+  (let [source-objects (get-world-objects before)
+        objects        (get-world-objects after)
+        root           (get source-objects root-id)
+        main-id        (:shape-ref root)
+        subtree        (fn subtree [objects id]
+                         (cons id (mapcat #(subtree objects %) (:shapes (get objects id)))))
+        destination    (set (subtree objects main-id))
+        mismatch       (fn [id group expected actual]
+                         (fail :I9 {:phase :requested-update-main :shape-id id :group group
+                                    :expected expected :actual actual}))]
+    (doseq [id (subtree source-objects root-id)
+            :let [source (get source-objects id)
+                  kept   (get objects id)
+                  target (get objects (if (= id root-id) main-id (:shape-ref kept)))]
+            group (keys (get model id))]
+      (when-not (and kept target (contains? destination (:id target)))
+        (mismatch id group :destination-main (:id target)))
+      (cond
+        (= group :geometry-group)
+        ;; The source copy stays in its own frame. Existing geometry ownership
+        ;; and tolerance apply; I4 then checks its placement against the main.
+        (let [attrs (geometry-differences source-objects kept source source)]
+          (when (or (seq attrs)
+                    (not= (or (:content-scale source) 1) (or (:content-scale kept) 1)))
+            (mismatch id group (shadow/values source group) (shadow/values kept group))))
+
+        (= group :swap-group)
+        (when-not (= (select-keys source [:component-id :component-file])
+                     (select-keys target [:component-id :component-file]))
+          (mismatch id group (select-keys source [:component-id :component-file])
+                    (select-keys target [:component-id :component-file])))
+
+        :else
+        (let [source-parent (get source-objects (:parent-id source))
+              item-group    (.startsWith (name group) "layout-item-")
+              intrinsic     (and (:layout source)
+                                 (#{:layout-item-h-sizing :layout-item-v-sizing} group)
+                                 (#{:fix :auto} (get source group)))
+              push-item     (or intrinsic
+                                (and (not= id root-id) (:layout source-parent)))
+              target        (if (and item-group (not push-item)) kept target)
+              expected      (if (= group :layout-grid-cells)
+                              (get (grid/remap-groups {group (shadow/values source group)}
+                                                      (grid/get-child-map objects source target)) group)
+                              (comparable-values source target group))
+              actual        (comparable-values target target group)]
+          (when-not (if (contains? shadow/text-groups group)
+                      (shadow/same-value? target group expected)
+                      (= expected actual))
+            (mismatch id group expected actual)))))))
 
 (defn- grid-cells
   [shape]

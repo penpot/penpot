@@ -29,6 +29,71 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
+(t/deftest update-main-intent-rejects-losing-the-copy-value-while-every-copy-agrees
+  (doseq [program [{:world [1 0] :ops [[:edit 0 0 1 1] [:update-main 0]]}
+                   {:world [1 0 {:library true}] :ops [[:edit 0 0 1 2] [:update-main 0]]}
+                   {:world [1 0 {:library true :library-depth 0 :library-grid true}]
+                    :ops [[:grid-cell 0 0 0 2] [:update-main 0]]}
+                   {:world [1 0 {:layout :grid :layout-children true :grid-square true}]
+                    :ops [[:grid-cell 0 0 0 1] [:update-main 0]]}]]
+    (t/is (map? (cg/run program)) "Real update-main preserves the authored value")
+    (let [failure (with-redefs [n/update-main n/reset]
+                    (try (cg/run program) nil
+                         (catch #?(:clj Exception :cljs js/Error) error (ex-data error))))]
+      (t/is (= :I9 (:invariant failure)) (pr-str failure))
+      (t/is (= :requested-update-main (:phase failure)) (pr-str failure)))))
+
+(t/deftest update-main-checks-scalar-text-and-geometry-intent
+  (let [styles   (for [property (range (count cg/style-edits))]
+                   {:world [1 0 {:layout (if (= property 26) :grid :flex)
+                                 :layout-children true :layout-item-margins true}]
+                    :ops [[:style 0 property (if (= property 27) 0 1) 1] [:update-main 0]]})
+        texts    (for [unit (range (count cg/text-style-edits))]
+                   {:world [1 0 {:text true :text-styles true}]
+                    :ops [[:text-style 1 unit 1] [:update-main 0]]})
+        geometry (for [action (range 1 6)]
+                   {:world [1 0] :ops [[:transform 0 action 2 4] [:update-main 0]]})
+        programs (concat styles texts geometry
+                         [{:world [1 0 {:text true :text-styles true}]
+                           :ops [[:text 1 0 1] [:update-main 0]]}
+                          {:world [1 0] :ops [[:transform 0 0 1 2] [:update-main 0]]}])]
+    (doseq [program programs]
+      (let [result  (cg/run program)
+            failure (with-redefs [n/update-main n/reset]
+                      (try (cg/run program) nil
+                           (catch #?(:clj Exception :cljs js/Error) error (ex-data error))))]
+        (t/is (= 1 (get-in result [:coverage :random :update-main :changed])) (pr-str program))
+        (t/is (= :I9 (:invariant failure)) (pr-str [program failure]))
+        (t/is (= :requested-update-main (:phase failure)) (pr-str [program failure]))))))
+
+(t/deftest update-main-intent-survives-until-deferred-sync-finishes
+  (let [edited    (-> (cg/initial-state [1 0]) (cg/step [:edit 0 0 1 1]) cg/settle-state)
+        id        (get-in (cg/resolve-op (:situation edited) (:model edited) [:update-main 0]) [:shape :id])
+        source    (tm/shape-by-id (:situation edited) id)
+        main      (tm/shape-by-id (:situation edited) (:shape-ref source))
+        ids       (mapv (comp :id :shape) (filter #(= (:component-id source) (get-in % [:shape :component-id]))
+                                                  (cg/tree (:situation edited))))
+        updated   (cg/step edited [:update-main 0])
+        settle    r/settle
+        corrupt   (fn [situation]
+                    (let [file    (tm/file situation)
+                          page    (thf/current-page file)
+                          changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page)) ids
+                                                              #(assoc % :fills (:fills main)) (:objects page)
+                                                              {:ignore-touched true})]
+                      (tm/with-file situation (thf/apply-changes file changes))))
+        check     (fn [synchronize]
+                    (with-redefs [r/settle (fn
+                                             ([situation] (corrupt (settle situation (r/pending-components situation))))
+                                             ([situation components] (corrupt (settle situation components))))]
+                      (try (cg/settle-state (cond-> updated synchronize (cg/step [:sync]))) nil
+                           (catch #?(:clj Exception :cljs js/Error) error (ex-data error)))))]
+    (t/is (= (:fills source) (:fills (tm/shape-by-id (:situation updated) (:id main)))))
+    (doseq [synchronize [false true]]
+      (let [failure (check synchronize)]
+        (t/is (= :I9 (:invariant failure)) (pr-str failure))
+        (t/is (= :requested-update-main (:phase failure)) (pr-str failure))))))
+
 (t/deftest authored-grid-cell-values-are-checked-against-intent-instead-of-the-main
   (let [situation (cg/world [1 0 {:layout :grid :layout-children true}])
         id        ((n/nth-copy-head-of "random-0" 0) situation)

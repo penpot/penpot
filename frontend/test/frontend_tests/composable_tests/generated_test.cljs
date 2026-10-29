@@ -13,6 +13,7 @@
    [app.common.test-helpers.composable.oracle :as oracle]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.normalize :as thn]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.repo :as rp]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -60,6 +61,9 @@
                   next-state (-> state (cg/step tuple) (cg/settle-state))]
               (when-not next-live
                 (throw (ex-info "Frontend step failed" {:program program :tuple tuple})))
+              (when (and (:op actual) (= :update-main (first tuple)))
+                (oracle/check-requested-update-main live next-live (live-model state live)
+                                                    (get-in actual [:shape :id])))
               (when (and (:op actual) (#{:resize :rotate :transform} (first tuple)))
                 (oracle/check-requested-geometry
                  (:objects (cthf/current-page (tm/file next-live)))
@@ -87,14 +91,60 @@
             (ftm/uninstall!)))))
     (catch :default error
       (ftm/uninstall!)
-      (t/is false (str (ex-message error) "\nReplay: " (pr-str program)
-                       "\nDetails: " (pr-str (ex-data error)))))))
+      (throw error))))
 
 (defn ^:async replay
   [program]
   (await (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock
                             rx/timer mock/timer-mock}
-           (await (replay-program program)))))
+           (try (await (replay-program program))
+                (catch :default error
+                  (t/is false (str (ex-message error) "\nReplay: " (pr-str program)
+                                   "\nDetails: " (pr-str (ex-data error)))))))))
+
+(def update-main-intent-programs
+  [{:world [1 0] :ops [[:edit 0 0 1 1] [:update-main 0] [:undo] [:redo]]}
+   {:world [1 0 {:library true}] :ops [[:edit 0 0 1 2] [:update-main 0] [:undo] [:redo]]}
+   {:world [1 0 {:layout :grid :layout-children true :grid-square true}]
+    :ops [[:grid-cell 0 0 0 1] [:update-main 0] [:undo] [:redo]]}
+   {:world [1 0 {:library true :library-depth 0 :library-grid true}]
+    :ops [[:grid-cell 0 0 0 2] [:update-main 0] [:undo] [:redo]]}
+   {:world [1 0 {:text true :text-styles true}]
+    :ops [[:text-style 1 2 1] [:update-main 0] [:undo] [:redo]]}
+   {:world [1 0] :ops [[:transform 0 3 2 4] [:update-main 0] [:undo] [:redo]]}])
+
+(t/deftest ^:async update-main-preserves-authored-intent-in-the-destination
+  (doseq [program update-main-intent-programs]
+    (await (replay program))))
+
+(t/deftest ^:async update-main-intent-rejects-a-reset-dispatched-by-the-editor
+  (await
+   (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
+     (doseq [{:keys [world ops]} update-main-intent-programs]
+       (let [state   (cg/initial-state world)
+             live    (ftm/start-generated (:situation state))
+             edit    (first ops)
+             edited  (await (ftm/run-generated-step live (:op (cg/resolve-op live {} edit))))
+             state   (-> state (cg/step edit) cg/settle-state)
+             model   (live-model state edited)
+             request (cg/resolve-op edited model [:update-main 0])
+             result  (await (mock/with-mocks* {dwl/update-component-sync (fn [id _] (dwl/reset-component id))}
+                              (await (ftm/run-generated-step edited (:op request)))))
+             settled (try (oracle/check result {}) nil
+                          (catch :default error (ex-data error)))
+             failure (try (oracle/check-requested-update-main edited result model (get-in request [:shape :id])) nil
+                          (catch :default error (ex-data error)))]
+         (t/is (nil? settled) "The wrong main and every copy agree")
+         (t/is (= :I9 (:invariant failure)) (pr-str failure))
+         (t/is (= :requested-update-main (:phase failure)) (pr-str failure))
+         (let [checked (await (ftm/finish-generated result))]
+           (t/is (empty? (uc/failures checked)) (pr-str (uc/failures checked))))
+         (ftm/uninstall!)
+         (let [failure (await (mock/with-mocks* {dwl/update-component-sync (fn [id _] (dwl/reset-component id))}
+                                (try (await (replay-program {:world world :ops ops})) nil
+                                     (catch :default error (ex-data error)))))]
+           (t/is (= :I9 (:invariant failure)) (pr-str failure))
+           (t/is (= :requested-update-main (:phase failure)) (pr-str failure))))))))
 
 (t/deftest ^:async authored-grid-histories-use-independent-cell-expectations
   (doseq [ops [[[:grid-direction 0 0 1 1] [:grid-direction 0 0 1 0]
