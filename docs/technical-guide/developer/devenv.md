@@ -12,7 +12,7 @@ in order to correctly set up the development environment.
 
 You can [look here][1] for complete instructions.
 
-[1]: /technical-guide/getting-started/#install-with-docker
+[1]: /technical-guide/getting-started/docker
 
 
 Optionally, to improve performance, you can also increase the maximum number of
@@ -429,7 +429,7 @@ Warning: by default Cursor won't support HTTPS with a self-signed certificate. I
 
 An example of your cursor configuration can be:
 
-```javascript
+```json
 {
     "mcpServers": {
         "penpot-devenv": {
