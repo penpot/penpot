@@ -901,6 +901,17 @@
                                 (:points parent-before)
                                 (delay (:points parent-after))))))
 
+(defn- resize-with-parent
+  "Resizes `shape` the way its constraints do when its parent changes from
+  `parent-before` to `parent-after`, keeping its top-left."
+  [shape parent-before parent-after]
+  (let [modifiers (follow-parent-modifiers shape parent-before parent-after)]
+    (if (ctm/empty? modifiers)
+      shape
+      (let [shape' (gsh/transform-shape shape modifiers)]
+        (gsh/move shape' (gpt/subtract (grc/rect->point (:selrect shape))
+                                       (grc/rect->point (:selrect shape'))))))))
+
 (defn- update-geometry-with-parent
   "Applies `update-fn` to the shapes without marking them touched."
   [changes ids update-fn container]
@@ -2276,7 +2287,10 @@
   [changes current-shape previous-shape current-root prev-root origin-ref-shape container]
   (let [;; We need to sync only the position relative to the origin of the component.
         ;; (see update-attrs for a full explanation)
-        previous-shape (reposition-shape previous-shape prev-root current-root)
+        previous-shape (-> previous-shape
+                           (resize-with-parent (get (:objects container) (:parent-id previous-shape))
+                                               (get (pcb/get-objects changes) (:parent-id current-shape)))
+                           (reposition-shape prev-root current-root))
         touched        (get previous-shape :touched #{})
         text-auto?     (and (cfh/text-shape? current-shape)
                             (contains? #{:auto-height :auto-width} (:grow-type current-shape)))]

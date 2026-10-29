@@ -3297,3 +3297,26 @@
     ;; ==== Check
     (t/is (mth/close? (* width scale)
                       (:width (ths/get-shape file' :copy-icon-b))))))
+
+(t/deftest test-switch-scales-moved-child-back-with-root
+  (let [;; ==== Setup
+        card    (setup-card-copy :scale)
+        grow    (/ (:width (ths/get-shape card :copy01))
+                   (:width (ths/get-shape card :m01)))
+        file    (-> card
+                    ;; The layout scales the icon with the copy
+                    (tho/change-shape :copy-icon #(resize-width % (* grow (:width %))) :ignore-touched true)
+                    (tho/move-shape-tree :copy-icon (gpt/point 5 0)))
+        width   (:width (ths/get-shape file :copy-icon))
+        root-w  (:width (ths/get-shape file :copy01))
+
+        ;; ==== Action
+        file'   (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02
+                                                                :keep-touched? true})
+
+        ;; ==== Get
+        copy02' (ths/get-shape file' :copy02)
+        icon'   (get-in (thf/current-page file') [:objects (-> copy02' :shapes first)])]
+
+    ;; ==== Check
+    (t/is (mth/close? (* width (/ (:width copy02') root-w)) (:width icon')))))
