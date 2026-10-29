@@ -98,26 +98,22 @@
         (mf/use-fn
          (mf/deps on-import)
          (fn [event]
-           (on-import item event)))
-
-        on-key-down
-        (mf/use-fn
-         (mf/deps on-import)
-         (fn [event]
-           (when (kbd/enter? event)
-             (dom/stop-propagation event)
-             (on-import item event))))]
+           (on-import item event)))]
 
     [:div {:class (stl/css :card-container)
-           :tab-index (if (or (not is-visible) collapsed) "-1" "0")
            :id id
            :data-index index}
-     [:a {:class (stl/css :template-card)
-          :on-click on-click
-          :on-mouse-down dom/prevent-default
-          :on-mouse-enter #(reset! hover? true)
-          :on-mouse-leave #(reset! hover? false)
-          :on-key-down on-key-down}
+     ;; Importing the template is an action: a button, which already
+     ;; handles Enter and Space.
+     [:button {:type "button"
+               :class (stl/css :template-card)
+               :tab-index (if (or (not is-visible) collapsed) "-1" "0")
+               :on-click on-click
+               :on-mouse-down dom/prevent-default
+               :on-mouse-enter #(reset! hover? true)
+               :on-mouse-leave #(reset! hover? false)
+               :on-focus #(reset! hover? true)
+               :on-blur #(reset! hover? false)}
       [:div {:class (stl/css :img-container)}
        [:img {:src (dm/str href)
               :alt (:name item)

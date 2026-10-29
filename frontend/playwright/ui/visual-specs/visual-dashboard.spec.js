@@ -894,6 +894,13 @@ test.describe("Templates section controls", () => {
     await card.hover();
     await expect(card).toHaveScreenshot(shot);
 
+    // Focused from the keyboard, a card looks like on hover.
+    await page.mouse.move(640, 100);
+    await page.keyboard.press("Shift");
+    await card.focus();
+    await expect(card).toHaveScreenshot(shot);
+    await card.blur();
+
     const moveButtons = section.locator("[class*='move-button']");
     await moveButtons.last().hover();
     await expect(moveButtons.last()).toHaveScreenshot(shot);
