@@ -1,9 +1,11 @@
+use std::borrow::Cow;
+
 use skia_safe::{self as skia, Canvas, Paint, RRect};
 
 use crate::error::Result;
 use crate::shapes::{
     circle_segments_local, merge_fills, radius_to_sigma, rect_segments_local, stroke_to_path,
-    BlurType, Fill, Frame, Path, Rect, Shape, Stroke, StrokeKind, StrokeStyle, Type,
+    BlurType, Fill, Frame, Path, Rect, Shape, SolidColor, Stroke, StrokeKind, StrokeStyle, Type,
 };
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
@@ -29,6 +31,8 @@ pub(super) struct VectorRenderer<'a> {
     /// techniques that `SkSVGDevice` drops: draw fills individually and emit
     /// solid Inner/Outer strokes as filled outlines.
     compose_fills: bool,
+    /// Set when an enclosing layer already applies the shape's layer blur.
+    blur_in_layer: bool,
 }
 
 impl<'a> VectorRenderer<'a> {
@@ -43,6 +47,7 @@ impl<'a> VectorRenderer<'a> {
             shared,
             scale,
             compose_fills,
+            blur_in_layer: false,
         }
     }
 
@@ -50,9 +55,10 @@ impl<'a> VectorRenderer<'a> {
     ///
     /// SVG export (`compose_fills == false`) returns `None`: `SkSVGDevice` drops
     /// paint image-filters (the shape would vanish). Layer blur is re-emitted as
-    /// a native SVG `<filter>` wrapper instead.
+    /// a native SVG `<filter>` wrapper instead. Also `None` inside a layer
+    /// that already blurs, or the shape would blur twice.
     fn layer_blur_filter(&self, shape: &Shape) -> Option<skia::ImageFilter> {
-        if !self.compose_fills {
+        if !self.compose_fills || self.blur_in_layer {
             return None;
         }
         shape.image_filter(1.)
@@ -121,7 +127,7 @@ impl ShapeRenderer for VectorRenderer<'_> {
     fn draw_drop_shadows(&mut self, shape: &Shape) -> Result<()> {
         let layer_bounds = shape.layer_bounds();
         for shadow in shape.drop_shadows_visible() {
-            if let Some(filter) = shadow.get_drop_shadow_filter() {
+            if let Some(filter) = shadow.get_drop_shadow_blur_filter() {
                 let mut paint = Paint::default();
                 paint.set_image_filter(filter);
                 let layer_rec = skia::canvas::SaveLayerRec::default()
@@ -131,6 +137,12 @@ impl ShapeRenderer for VectorRenderer<'_> {
                 let mut fill_paint = Paint::default();
                 fill_paint.set_anti_alias(true);
                 fill_paint.set_color(skia::Color::BLACK);
+                // Spread as a mitered outline: Skia's dilate filter runs as
+                // SkSL per pixel on CPU canvases, which takes minutes.
+                if shadow.spread > 0.0 {
+                    fill_paint.set_style(skia::PaintStyle::StrokeAndFill);
+                    fill_paint.set_stroke_width(2.0 * shadow.spread);
+                }
                 draw_shape_geometry(self.canvas, shape, &fill_paint);
                 self.canvas.restore();
             }
@@ -186,9 +198,12 @@ impl ShapeRenderer for VectorRenderer<'_> {
         let blur_filter = self.layer_blur_filter(shape);
 
         // Text drop shadows: one filter layer per shadow over fill + stroke
-        // silhouettes (mirrors GPU `render_text_shadows`).
-        let drop_shadows = shape.drop_shadow_paints();
-        if !drop_shadows.is_empty() {
+        // silhouettes (mirrors GPU `render_text_shadows`). Spread grows the
+        // glyphs through strokes (`spread_shape`).
+        let layer_bounds = shape.layer_bounds();
+        for shadow in shape.drop_shadows_visible() {
+            let spread = spread_shape(shape, shadow.spread);
+            let shape: &Shape = &spread;
             let shadow_stroke_outset = Stroke::max_bounds_width(shape.visible_strokes(), false);
             let mut shadow_paragraphs = text_content.paragraph_builder_group_from_text(Some(true));
             let mut stroke_shadow_groups: Vec<(StrokeKind, _)> = shape
@@ -208,67 +223,66 @@ impl ShapeRenderer for VectorRenderer<'_> {
                 })
                 .collect();
 
-            let layer_bounds = shape.layer_bounds();
-            for shadow_paint in &drop_shadows {
-                self.canvas.save_layer(
-                    &skia::canvas::SaveLayerRec::default()
-                        .bounds(&layer_bounds)
-                        .paint(shadow_paint),
-                );
+            let mut shadow_paint = Paint::default();
+            shadow_paint.set_image_filter(shadow.get_drop_shadow_blur_filter());
+            self.canvas.save_layer(
+                &skia::canvas::SaveLayerRec::default()
+                    .bounds(&layer_bounds)
+                    .paint(&shadow_paint),
+            );
 
-                text::render_overlay_emoji(
-                    self.canvas,
-                    shape,
-                    &mut shadow_paragraphs,
-                    None,
-                    blur_filter.as_ref(),
-                    None,
-                    None,
-                )?;
+            text::render_overlay_emoji(
+                self.canvas,
+                shape,
+                &mut shadow_paragraphs,
+                None,
+                blur_filter.as_ref(),
+                None,
+                None,
+            )?;
 
-                for (kind, stroke_paragraphs) in &mut stroke_shadow_groups {
-                    if *kind == StrokeKind::Inner {
-                        // Inner stroke masked by the glyph fill (outset 0 here).
-                        let mut fill_builders =
-                            text_content.paragraph_builder_group_from_text(Some(true));
-                        text::render_inner_stroke(
-                            None,
-                            Some(self.canvas),
-                            shape,
-                            stroke_paragraphs,
-                            &mut fill_builders,
-                            None,
-                            blur_filter.as_ref(),
-                            0.0,
-                            None,
-                        )?;
-                    } else if *kind == StrokeKind::Outer {
-                        text::render_outer_stroke(
-                            None,
-                            Some(self.canvas),
-                            shape,
-                            stroke_paragraphs,
-                            None,
-                            blur_filter.as_ref(),
-                            0.0,
-                            None,
-                        )?;
-                    } else {
-                        text::render_with_bounds_outset_overlay_emoji(
-                            self.canvas,
-                            shape,
-                            stroke_paragraphs,
-                            None,
-                            blur_filter.as_ref(),
-                            shadow_stroke_outset,
-                            None,
-                            None,
-                        )?;
-                    }
+            for (kind, stroke_paragraphs) in &mut stroke_shadow_groups {
+                if *kind == StrokeKind::Inner {
+                    // Inner stroke masked by the glyph fill (outset 0 here).
+                    let mut fill_builders =
+                        text_content.paragraph_builder_group_from_text(Some(true));
+                    text::render_inner_stroke(
+                        None,
+                        Some(self.canvas),
+                        shape,
+                        stroke_paragraphs,
+                        &mut fill_builders,
+                        None,
+                        blur_filter.as_ref(),
+                        0.0,
+                        None,
+                    )?;
+                } else if *kind == StrokeKind::Outer {
+                    text::render_outer_stroke(
+                        None,
+                        Some(self.canvas),
+                        shape,
+                        stroke_paragraphs,
+                        None,
+                        blur_filter.as_ref(),
+                        0.0,
+                        None,
+                    )?;
+                } else {
+                    text::render_with_bounds_outset_overlay_emoji(
+                        self.canvas,
+                        shape,
+                        stroke_paragraphs,
+                        None,
+                        blur_filter.as_ref(),
+                        shadow_stroke_outset,
+                        None,
+                        None,
+                    )?;
                 }
-
-                self.canvas.restore();
             }
+
+            self.canvas.restore();
         }
 
         text::render_overlay_emoji(
@@ -427,6 +441,9 @@ struct TreeOpts<'a> {
     root_fills: &'a [Fill],
     /// Nearest group's fills, painted by fill-less leaves (GPU `nested_fills`).
     inherited_fills: &'a [Fill],
+    /// Set inside a container's drop-shadow pass: the spread to grow every
+    /// shape by.
+    silhouette: Option<f32>,
 }
 
 impl<'a> TreeOpts<'a> {
@@ -447,6 +464,7 @@ impl<'a> TreeOpts<'a> {
             skip: self.skip,
             root_fills: self.root_fills,
             inherited_fills,
+            silhouette: self.silhouette,
         }
     }
 }
@@ -500,6 +518,7 @@ fn render_tree_dispatch(
         skip: None,
         root_fills: &root_fills,
         inherited_fills: &root_fills,
+        silhouette: None,
     };
     render_tree_inner(shared, canvas, id, tree, scale, &opts)
 }
@@ -525,6 +544,10 @@ fn render_tree_inner(
     if element.hidden {
         return Ok(());
     }
+    let silhouette = opts
+        .silhouette
+        .map(|spread| silhouette_shape(element, spread));
+    let element: &Shape = silhouette.as_deref().unwrap_or(element);
 
     // Background blur samples already-drawn content behind the shape, so it must
     // run before the shape (and its subtree) paints. SVGRaw is excluded,
@@ -696,6 +719,7 @@ fn render_background_blur_image(
             skip: Some(&shape.id),
             root_fills: opts.root_fills,
             inherited_fills: opts.root_fills,
+            silhouette: None,
         };
         render_tree_inner(shared, oc, opts.root, tree, scale, &sub)?;
     }
@@ -952,6 +976,8 @@ fn render_frame(
         canvas.save();
         canvas.concat(&matrix);
         let mut renderer = VectorRenderer::new(canvas, shared, scale, true);
+        // The opacity/blend layer above carries the frame's layer blur.
+        renderer.blur_in_layer = needs_layer;
         renderer.draw_fills(element, &element.fills)?;
         renderer.draw_fill_inner_shadows(element)?;
         canvas.restore();
@@ -996,7 +1022,7 @@ fn render_container_drop_shadows(
 ) -> Result<()> {
     let subtree_bounds = element.extrect(tree, scale);
     for shadow in element.drop_shadows_visible() {
-        let Some(filter) = shadow.get_drop_shadow_filter() else {
+        let Some(filter) = shadow.get_drop_shadow_blur_filter() else {
             continue;
         };
         let mut paint = Paint::default();
@@ -1007,13 +1033,22 @@ fn render_container_drop_shadows(
                 .paint(&paint),
         );
 
+        // Spread grows every silhouette shape instead of dilating the layer.
+        let spread = opts.silhouette.unwrap_or(0.0) + shadow.spread.max(0.0);
         if draw_fills && !element.fills.is_empty() {
+            let mut background = Cow::Borrowed(element);
+            if spread > 0.0 {
+                background.to_mut().selrect.outset((spread, spread));
+            }
             let mut renderer = VectorRenderer::new(canvas, shared, scale, true);
-            renderer.draw_fills(element, &element.fills)?;
+            renderer.draw_fills(&background, &[Fill::Solid(SolidColor(skia::Color::BLACK))])?;
         }
 
         let children = children_paint_order(tree, element);
-        let child_opts = opts.for_children_of(element);
+        let child_opts = TreeOpts {
+            silhouette: Some(spread),
+            ..opts.for_children_of(element)
+        };
         if element.is_masked_group() {
             render_masked_children(shared, canvas, element, &children, tree, scale, &child_opts)?;
         } else {
@@ -1025,6 +1060,41 @@ fn render_container_drop_shadows(
         canvas.restore();
     }
     Ok(())
+}
+
+/// `shape` grown by a drop-shadow `spread` for its silhouette, through its own
+/// strokes and joins (as the GPU does for paths). Empty frames and containers
+/// have no outline of their own to grow.
+fn spread_shape(shape: &Shape, spread: f32) -> Cow<'_, Shape> {
+    let outline = match shape.shape_type {
+        Type::Group(_) | Type::SVGRaw(_) => false,
+        Type::Frame(_) => !shape.fills.is_empty() || !shape.strokes.is_empty(),
+        _ => true,
+    };
+    if spread <= 0.0 || !outline {
+        return Cow::Borrowed(shape);
+    }
+    let mut shape = shape.clone();
+    shape.apply_shadow_spread(spread);
+    Cow::Owned(shape)
+}
+
+/// `shape` as drawn in a container's drop-shadow pass: grown by `spread` and
+/// solid black, since fill and stroke opacity don't affect the shadow (GPU).
+fn silhouette_shape(shape: &Shape, spread: f32) -> Cow<'_, Shape> {
+    let mut shape = spread_shape(shape, spread);
+    if shape.has_fills() || !shape.strokes.is_empty() {
+        let black = Fill::Solid(SolidColor(skia::Color::BLACK));
+        let shape = shape.to_mut();
+        if shape.has_fills() {
+            shape.clear_fills();
+            shape.add_fill(black.clone());
+        }
+        for stroke in shape.strokes.iter_mut() {
+            stroke.fill = black.clone();
+        }
+    }
+    shape
 }
 
 // ---------------------------------------------------------------------------
@@ -1065,6 +1135,7 @@ fn render_leaf(
     } else {
         false
     };
+    renderer.blur_in_layer = blur_layer;
 
     renderer.draw_drop_shadows(element)?;
     render_leaf_content(&mut renderer, element, fills)?;
