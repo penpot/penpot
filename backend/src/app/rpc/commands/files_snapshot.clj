@@ -9,6 +9,7 @@
    [app.binfile.common :as bfc]
    [app.common.exceptions :as ex]
    [app.common.features :as-alias cfeat]
+   [app.common.files.migrations :as fmg]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.db :as db]
@@ -54,7 +55,7 @@
    ::sm/params schema:get-file-snapshot
    ::sm/result files/schema:file-with-permissions
    ::db/transaction true}
-  [cfg {:keys [::rpc/profile-id file-id id] :as params}]
+  [cfg {:keys [::rpc/profile-id file-id id features] :as params}]
   (let [perms (perms/get-file-read-permissions cfg profile-id file-id)]
     (files/check-read-permissions! perms)
     (let [snapshot (fsnap/get-snapshot cfg file-id id)]
@@ -71,13 +72,39 @@
       ;; file, so materialize them here: the preview UI applies the
       ;; response straight into state and cannot resolve pointers.
       ;; NOTE: the loader binds the live file-id, not the snapshot id.
+      ;;
+      ;; A snapshot taken while a migration was pending stores the old
+      ;; format. Apply the pending migrations in memory, the same pure
+      ;; step a normal read runs, and never persist them: the stored
+      ;; version keeps its data and restoring it re-migrates on the
+      ;; next read. `:migrations` is normalized to a set because the
+      ;; snapshot decoder keeps the pgarray as a vector and
+      ;; `set/difference` would compare indexes.
       (let [base-file (bfc/get-file cfg file-id :load-data? false)
-            data      (fdata/realize-pointers cfg file-id (:data snapshot))]
+            snapshot  (-> snapshot
+                          (assoc :id file-id)
+                          (update :migrations #(into #{} %)))
+            file      (if (fmg/need-migration? snapshot)
+                        (let [file (fdata/realize cfg snapshot)]
+                          (fmg/migrate-file
+                           file
+                           (delay (bfc/get-resolved-file-libraries cfg file))))
+                        (update snapshot :data
+                                #(fdata/realize-pointers cfg file-id %)))
+            ;; Works like in `get-file`: a client that does not declare
+            ;; `fdata/objects-map` gets plain objects. The historical
+            ;; feature set is deliberately not checked against the
+            ;; enabled one: a version may predate a feature change.
+            file      (if (and (contains? (:features file) "fdata/objects-map")
+                               (not (contains? features "fdata/objects-map")))
+                        (fdata/realize-objects cfg file)
+                        file)]
         (-> base-file
-            (assoc :data data)
-            (assoc :version (:version snapshot))
-            (assoc :features (:features snapshot))
-            (assoc :revn (:revn snapshot))
+            (assoc :data (:data file))
+            (assoc :version (:version file))
+            (assoc :features (:features file))
+            (assoc :migrations (:migrations file))
+            (assoc :revn (:revn file))
             (assoc :vern (rand-int 100000))
             (assoc :permissions perms))))))
 
