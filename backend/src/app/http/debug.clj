@@ -784,8 +784,12 @@
 
     (db/tx-run! (assoc cfg ::db/rollback true)
                 (fn [cfg]
-                  (let [file (bfc/get-file cfg file-id)
-                        libs (bfc/get-resolved-file-libraries cfg file-id)]
+                  ;; Validation walks every page and component, so the
+                  ;; file is read realized; the library map is built
+                  ;; from the file (not its id) and its own loader
+                  ;; resolves each library's pointers.
+                  (let [file (bfc/get-file cfg file-id :realize? true)
+                        libs (bfc/get-resolved-file-libraries cfg file)]
                     (if file
                       (let [errors (cfv/validate-file file libs)]
                         {::yres/status  200
