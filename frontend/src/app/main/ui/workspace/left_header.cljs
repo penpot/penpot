@@ -16,7 +16,7 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.foundations.assets.raw-svg :as raw-svg :refer [raw-svg*]]
    [app.main.ui.workspace.main-menu :as main-menu]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -70,14 +70,20 @@
          #(st/emit! (dc/stop-picker)
                     (modal/hide)))
 
+        router      (mf/deref refs/router)
+        recent-href (rt/resolve-uri router :dashboard-recent {:team-id (:team-id project)})
+
         go-back
         (mf/use-fn
-         (fn []
-           (close-modals)
-           ;; FIXME: move set-mode to uri?
-           (st/emit! :interrupt
-                     (dw/set-options-mode :design)
-                     (dcm/go-to-dashboard-recent))))
+         (fn [event]
+           ;; Ctrl/Cmd-click opens the href in a new tab, as any link.
+           (when-not (kbd/mod? event)
+             (dom/prevent-default event)
+             (close-modals)
+             ;; FIXME: move set-mode to uri?
+             (st/emit! :interrupt
+                       (dw/set-options-mode :design)
+                       (dcm/go-to-dashboard-recent)))))
 
         nav-to-project
         (mf/use-fn
@@ -90,8 +96,11 @@
         (dom/select-text! (mf/ref-val input-ref))))
 
     [:header {:class (dm/str class " " (stl/css :workspace-header-left))}
-     [:a {:on-click go-back
-          :class (stl/css :main-icon)} deprecated-icon/logo-icon]
+     [:a {:href recent-href
+          :on-click go-back
+          :class (stl/css :main-icon)}
+      [:> raw-svg* {:id raw-svg/penpot-logo-icon
+                    :class (stl/css :logo)}]]
      [:div {:alt (tr "workspace.sitemap")
             :class (stl/css :project-tree)}
       [:div
