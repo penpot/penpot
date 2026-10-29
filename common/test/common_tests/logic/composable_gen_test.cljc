@@ -27,9 +27,92 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.texts :as thtx]
    [app.common.uuid :as uuid]
-   [clojure.test :as t]))
+   [clojure.test :as t]
+   [clojure.walk :as walk]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest canonical-retained-references-survive-independent-uuid-allocation
+  (let [program     {:world [0 0 {:library true :library-depth 0 :library-grid true :stale-libraries true}]
+                     :ops [[:library-add-child 0] [:library-add-child 0] [:library-sync] [:library-undo 0]]}
+        situation   (:situation (cg/run program))
+        identifiers (atom #{})
+        _           (walk/postwalk #(do (when (uuid? %) (swap! identifiers conj %)) %) situation)
+        mapping     (into {uuid/zero uuid/zero}
+                          (map #(vector % (uuid/next))) (sort-by str (disj @identifiers uuid/zero)))
+        renamed     (walk/postwalk #(if (uuid? %) (get mapping %) %) situation)
+        expected    (oracle/canonical situation)
+        actual      (oracle/canonical renamed)]
+    (t/is (true? (oracle/equivalent? expected actual)))
+    (t/is (empty? (for [file (vals expected)
+                        objects (cf/object-trees file)
+                        shape (vals objects)
+                        :when (uuid? (:shape-ref shape))]
+                    (:shape-ref shape))))))
+
+(t/deftest canonical-retained-references-preserve-identity-and-reject-corruption
+  (let [situation (:situation
+                   (cg/run {:world [0 0 {:library true :library-depth 0 :library-grid true :stale-libraries true}]
+                            :ops [[:library-add-child 0] [:library-add-child 0] [:library-sync]
+                                  [:library-undo 0] [:library-undo 0] [:library-add-child 0]]}))
+        source-op (cg/resolve-op situation {} [:library-add-child 0])
+        owner     (:library-id source-op)
+        main-id   (get-in source-op [:shape :id])
+        source    (get (cf/all-files situation) owner)
+        current   (:shapes (tm/shape-by-id (tm/with-file situation source) main-id))
+        copy      (:shape (first (filter #(= main-id (get-in % [:shape :shape-ref])) (cg/tree situation))))
+        accepted  (get (cf/reference-libraries situation copy) owner)
+        prior     (:shapes (tm/shape-by-id (tm/with-file situation accepted) main-id))
+        retained  (set (remove (set current) prior))
+        objects   (:objects (thf/current-page (tm/file situation)))
+        images    (filterv #(contains? retained (:shape-ref (get objects %))) (:shapes copy))
+        id        (first images)
+        other     (second images)
+        canonical (oracle/canonical situation)
+        trees     (mapcat cf/object-trees (vals canonical))
+        live-ids  (into #{} (mapcat keys) trees)
+        missing   (remove live-ids (keep :shape-ref (mapcat vals trees)))
+        replaced  (first (remove (set prior) current))
+        corrupt   (fn [changes]
+                    (let [file    (tm/file situation)
+                          page-id (:id (thf/current-page file))]
+                      (oracle/canonical
+                       (tm/with-file situation
+                         (reduce-kv #(assoc-in %1 [:data :pages-index page-id :objects %2 :shape-ref] %3)
+                                    file changes)))))]
+    (t/is (= 2 (count retained)))
+    (t/is (= [2 2] (sort (vals (frequencies missing)))))
+    (t/is (not-any? uuid? missing))
+    (doseq [changes [{id (uuid/next)}
+                     {id (:shape-ref (get objects other))}
+                     {id (:shape-ref (get objects other)) other (:shape-ref (get objects id))}
+                     {id replaced}]]
+      (t/is (false? (oracle/equivalent? canonical (corrupt changes)))))
+    (let [file (first (filter #(= (:name source) (:name %)) (vals canonical)))
+          main (first (filter :main-instance (mapcat vals (cf/object-trees file))))]
+      (t/is (= (mapv #(conj (:id main) %) (range (count (:shapes main)))) (:shapes main))))))
+
+(t/deftest canonical-retained-versions-do-not-merge-replacements-at-the-same-path
+  (let [situation (:situation
+                   (cg/run {:world [0 0 {:library true :library-depth 0 :library-grid true :stale-libraries true}]
+                            :ops [[:library-add-child 0] [:reset 0] [:library-undo 0]
+                                  [:library-add-child 0] [:reset 1] [:library-undo 0]]}))
+        canonical (oracle/canonical situation)
+        trees     (mapcat cf/object-trees (vals canonical))
+        live-ids  (into #{} (mapcat keys) trees)
+        retained  (remove live-ids (keep :shape-ref (mapcat vals trees)))
+        objects   (:objects (thf/current-page (tm/file situation)))
+        missing   (vec (filter #(and (:shape-ref %) (not (some (fn [tree] (get tree (:shape-ref %)))
+                                                               (mapcat cf/object-trees (vals (cf/all-files situation))))))
+                               (vals objects)))
+        file      (tm/file situation)
+        page-id   (:id (thf/current-page file))
+        swapped   (-> file
+                      (assoc-in [:data :pages-index page-id :objects (:id (first missing)) :shape-ref] (:shape-ref (second missing)))
+                      (assoc-in [:data :pages-index page-id :objects (:id (second missing)) :shape-ref] (:shape-ref (first missing))))]
+    (t/is (= 2 (count retained) (count (set retained)) (count missing)))
+    (t/is (not-any? uuid? retained))
+    (t/is (false? (oracle/equivalent? canonical (oracle/canonical (tm/with-file situation swapped)))))))
 
 (t/deftest empty-grid-direction-edits-resolve-and-change-the-requested-shape
   (doseq [depth [0 1]

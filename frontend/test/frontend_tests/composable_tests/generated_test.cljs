@@ -20,7 +20,6 @@
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [clojure.test.check.generators :as gen]
-   [clojure.walk :as walk]
    [frontend-tests.composable-tests.interpreter :as ftm]
    [frontend-tests.helpers.mock :as mock]))
 
@@ -41,10 +40,8 @@
 (defn- ^:async replay-program
   "Replay a JVM-shrunk EDN program against the async frontend. The pure
    runner chooses targets independently and both must make the same choices."
-  [{:keys [world ops parity-failures] :as program}]
+  [{:keys [world ops] :as program}]
   (try
-    (when-not (every? (set ops) (keys parity-failures))
-      (throw (ex-info "A parity failure mark names no replay step" {:marks (keys parity-failures)})))
     (let [initial (cg/initial-state world)]
       (loop [state initial
              live (ftm/start-generated (:situation initial))
@@ -91,14 +88,9 @@
               (let [parity {:relative-free-head-placement true}
                     expected (oracle/canonical (:situation next-state) parity)
                     actual (oracle/canonical next-live parity)]
-                (if-let [{:keys [bug pinned]} (get parity-failures tuple)]
-                  (tm/known-failure bug [true [nil nil]] pinned
-                                    [(true? (oracle/equivalent? expected actual))
-                                     (walk/postwalk #(if (uuid? %) :unmapped-ref %)
-                                                    (thn/diff expected actual))])
-                  (t/is (true? (oracle/equivalent? expected actual))
-                        (str "Backend mismatch at " tuple "; replay " (pr-str program)
-                             "; diff " (pr-str (thn/diff expected actual))))))
+                (t/is (true? (oracle/equivalent? expected actual))
+                      (str "Backend mismatch at " tuple "; replay " (pr-str program)
+                           "; diff " (pr-str (thn/diff expected actual)))))
               (t/is (empty? (uc/failures next-live)) (pr-str (uc/failures next-live)))
               (recur next-state next-live (rest tuples))))
           (let [checked (await (ftm/finish-generated live))]
@@ -244,14 +236,9 @@
                     :ops ops}))))
 
 (t/deftest ^:async accepted-source-child-undo-keeps-backend-parity
-  (let [difference {[:file 0] {:data {:pages-index
-                                      {[:file 0 :page 0] {:objects
-                                                          {[:file 0 :page 0 0 2] {:shape-ref :unmapped-ref}
-                                                           [:file 0 :page 0 1 2] {:shape-ref :unmapped-ref}}}}}}}]
-    (await (replay {:world [0 0 {:library true :library-depth 0 :library-grid true :stale-libraries true}]
-                    :ops [[:library-add-child 0] [:library-add-child 0] [:library-sync]
-                          [:library-undo 0] [:undo] [:library-redo 0] [:redo]]
-                    :parity-failures {[:library-undo 0] {:bug :F251 :pinned [false [difference difference]]}}}))))
+  (await (replay {:world [0 0 {:library true :library-depth 0 :library-grid true :stale-libraries true}]
+                  :ops [[:library-add-child 0] [:library-add-child 0] [:library-sync]
+                        [:library-undo 0] [:undo] [:library-redo 0] [:redo]]})))
 
 (t/deftest ^:async transitive-library-acceptance-keeps-each-editors-reference-history
   (await (replay {:world [0 0 {:library true :library-depth 0 :library-dependency true :stale-libraries true}]
@@ -281,8 +268,7 @@
            before   (tm/file live)
            live     (await (ftm/run-generated-source-step live owner (n/undo)))
            source   (get (cf/all-files live) owner)
-           current  (:shapes (tm/shape-by-id (tm/with-file live source) main-id))
-           removed  (first (remove (set current) ids))]
+           current  (:shapes (tm/shape-by-id (tm/with-file live source) main-id))]
        (t/is (= 5 (count ids)))
        (t/is (= 4 (count current)))
        (t/is (= before (tm/file live)))
@@ -290,12 +276,11 @@
          (let [accepted (get (cf/reference-libraries live shape) owner)]
            (t/is (= ids (:shapes (tm/shape-by-id (tm/with-file live accepted) main-id))))))
        (t/is (nil? (oracle/check live {})))
-       (tm/known-failure :F251 [] [removed removed]
-                         (vec (for [file (vals (oracle/canonical live))
-                                    objects (cf/object-trees file)
-                                    shape (vals objects)
-                                    :when (uuid? (:shape-ref shape))]
-                                (:shape-ref shape))))
+       (t/is (= [] (vec (for [file (vals (oracle/canonical live))
+                              objects (cf/object-trees file)
+                              shape (vals objects)
+                              :when (uuid? (:shape-ref shape))]
+                          (:shape-ref shape)))))
        (t/is (empty? (uc/failures (await (ftm/finish-generated live)))))
        (ftm/uninstall!)))))
 

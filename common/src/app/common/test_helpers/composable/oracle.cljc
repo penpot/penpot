@@ -133,31 +133,54 @@
 
 (defn canonical
   "Design data with shape, component and grid-cell IDs named by tree path.
-   Pure and frontend backends allocate different IDs for the same action."
+   Pure and frontend backends allocate different IDs for the same action.
+   Missing references use retained source paths; live names take precedence."
   ([situation] (canonical situation {}))
   ([situation opts]
    (let [files (sort-by (comp str key) (snapshot situation))
-         ids (atom {#uuid "00000000-0000-0000-0000-000000000000" :root})]
-     (letfn [(name-tree [objects id path]
+         ids   (atom {#uuid "00000000-0000-0000-0000-000000000000" :root})]
+     (letfn [(name-tree [names objects id path]
                (when-let [shape (get objects id)]
-                 (swap! ids assoc id path)
+                 (swap! names assoc id path)
                  (doseq [[cell-id cell] (:layout-grid-cells shape)]
-                   (swap! ids assoc cell-id [path :cell (:row cell) (:column cell)]))
+                   (swap! names assoc cell-id [path :cell (:row cell) (:column cell)]))
                  (doseq [[index child] (map-indexed vector (:shapes shape))]
-                   (name-tree objects child (conj path index)))))]
-       (doseq [[file-index [file-id file]] (map-indexed vector files)]
-         (swap! ids assoc file-id [:file file-index])
-         (doseq [[page-index page-id] (map-indexed vector (get-in file [:data :pages]))
-                 :let [page (get-in file [:data :pages-index page-id])]]
-           (swap! ids assoc page-id [:file file-index :page page-index])
-           (doseq [[index child] (map-indexed vector (get-in page [:objects #uuid "00000000-0000-0000-0000-000000000000" :shapes]))]
-             (name-tree (:objects page) child [:file file-index :page page-index index])))
-         (doseq [[index [component-id component]]
-                 (map-indexed vector (sort-by (comp str key) (get-in file [:data :components])))
-                 :let [path [:file file-index :component index]]]
-           (swap! ids assoc component-id path)
-           (when (:objects component)
-             (name-tree (:objects component) (:main-instance-id component) (conj path :main)))))
+                   (name-tree names objects child (conj path index)))))
+             (name-file [names file path]
+               (swap! names assoc (:id file) path)
+               (doseq [[page-index page-id] (map-indexed vector (get-in file [:data :pages]))
+                       :let [page (get-in file [:data :pages-index page-id])
+                             path (conj path :page page-index)]]
+                 (swap! names assoc page-id path)
+                 (doseq [[index child] (map-indexed vector (get-in page [:objects #uuid "00000000-0000-0000-0000-000000000000" :shapes]))]
+                   (name-tree names (:objects page) child (conj path index))))
+               (doseq [[index [component-id component]]
+                       (map-indexed vector (sort-by (comp str key) (get-in file [:data :components])))
+                       :let [path (conj path :component index)]]
+                 (swap! names assoc component-id path)
+                 (when (:objects component)
+                   (name-tree names (:objects component) (:main-instance-id component) (conj path :main)))))]
+       (doseq [[file-index [_ file]] (map-indexed vector files)]
+         (name-file ids file [:file file-index]))
+       (when (:accepted-libraries situation)
+         (doseq [[file-id file objects shape]
+                 (sort-by #(pr-str (get @ids (:id (nth % 3))))
+                          (for [[file-id file] files
+                                objects (cf/object-trees file)
+                                shape (vals objects)
+                                :when (and (:shape-ref shape) (contains? @ids (:id shape)))]
+                            [file-id file objects shape]))
+                 :when (not (contains? @ids (:shape-ref shape)))]
+           (let [libraries (cf/reference-libraries situation file-id (:id shape))
+                 container (ctn/make-container {:objects objects} :page)]
+             (when-let [reference (ctf/find-ref-shape file container libraries shape
+                                                      :include-deleted? true :with-context? true)]
+               (let [source (:file (meta reference))]
+                 (when-let [source-path (get @ids (:id source))]
+                   (let [names (atom {})]
+                     (name-file names source source-path)
+                     (when-let [path (get @names (:shape-ref shape))]
+                       (swap! ids assoc (:shape-ref shape) [:retained-ref (get @ids (:id shape)) path])))))))))
        (walk/postwalk #(if (uuid? %) (get @ids % %) %) (design-snapshot situation opts))))))
 
 (defn- paired-matrix-effects
