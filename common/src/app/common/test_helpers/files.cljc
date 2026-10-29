@@ -75,6 +75,15 @@
     (validate-file! file')
     file'))
 
+(defn validates-shapes-last?
+  "Check that the last redo change in `changes` is a :validate-shapes change
+  for the page `page-id` and exactly the shapes `shape-ids`, in any order."
+  [changes page-id shape-ids]
+  (let [change (last (:redo-changes changes))]
+    (and (= :validate-shapes (:type change))
+         (= page-id (:page-id change))
+         (= (set shape-ids) (set (:shape-ids change))))))
+
 ;; ----- Pages
 
 (defn sample-page

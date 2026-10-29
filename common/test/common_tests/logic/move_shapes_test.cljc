@@ -8,11 +8,13 @@
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.shapes :as cls]
+   [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.tokens :as tht]
+   [app.common.test-helpers.variants :as thv]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
@@ -217,3 +219,68 @@
     (t/is (nil? (:layout-item-min-w circle')))
     (t/is (nil? (:layout-item-absolute circle')))
     (t/is (nil? (:layout-item-z-index circle')))))
+
+(defn- relocate-changes
+  [file shape-label parent-label]
+  (let [page (thf/current-page file)]
+    (cls/generate-relocate (-> (pcb/empty-changes nil)
+                               (pcb/with-page-id (:id page))
+                               (pcb/with-library-data (:data file))
+                               (pcb/with-objects (:objects page)))
+                           (thi/id parent-label)
+                           0
+                           #{(thi/id shape-label)})))
+
+(defn- add-two-variants
+  [file]
+  (-> file
+      (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+      (thv/add-variant :v02 :c03 :m03 :c04 :m04)
+      (ths/update-shape :v02 :name "Other")
+      (ths/update-shape :m03 :name "Other")
+      (ths/update-shape :m04 :name "Other")
+      (thc/update-component :c03 {:name "Other"})
+      (thc/update-component :c04 {:name "Other"})))
+
+(t/deftest test-relocate-component-into-variant-validates-container
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                    (tho/add-simple-component :c03 :m03 :r03))
+        page    (thf/current-page file)
+
+        ;; ==== Action
+        changes (relocate-changes file :m03 :v01)
+        file'   (thf/apply-changes file changes)]
+
+    ;; ==== Check
+    (t/is (= (thi/id :v01) (:variant-id (ths/get-shape file' :m03))))
+    (t/is (thf/validates-shapes-last? changes (:id page) [(thi/id :v01)]))))
+
+(t/deftest test-relocate-variant-into-other-variant-validates-both-containers
+  (let [;; ==== Setup
+        file    (add-two-variants (thf/sample-file :file1))
+        page    (thf/current-page file)
+
+        ;; ==== Action
+        changes (relocate-changes file :m01 :v02)
+        file'   (thf/apply-changes file changes)]
+
+    ;; ==== Check
+    (t/is (= (thi/id :v02) (:variant-id (ths/get-shape file' :m01))))
+    (t/is (thf/validates-shapes-last? changes (:id page) [(thi/id :v01) (thi/id :v02)]))))
+
+(t/deftest test-relocate-variant-out-validates-old-container
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                    (tho/add-frame :frame1))
+        page    (thf/current-page file)
+
+        ;; ==== Action
+        changes (relocate-changes file :m01 :frame1)
+        file'   (thf/apply-changes file changes)]
+
+    ;; ==== Check
+    (t/is (nil? (:variant-id (ths/get-shape file' :m01))))
+    (t/is (thf/validates-shapes-last? changes (:id page) [(thi/id :v01)]))))

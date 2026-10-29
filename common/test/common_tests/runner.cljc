@@ -29,6 +29,7 @@
    [common-tests.files.shapes-builder-test]
    [common-tests.files.tokens-test]
    [common-tests.files.validate-test]
+   [common-tests.files.variant-test]
    [common-tests.geom-align-test]
    [common-tests.geom-bounds-layout-nil-test]
    [common-tests.geom-bounds-map-test]
@@ -77,6 +78,7 @@
    [common-tests.logic.text-touched-test]
    [common-tests.logic.token-apply-test]
    [common-tests.logic.token-test]
+   [common-tests.logic.variant-properties-test]
    [common-tests.logic.variants-switch-test]
    [common-tests.logic.variants-test]
    [common-tests.math-test]
@@ -136,6 +138,7 @@
    'common-tests.files.shapes-builder-test
    'common-tests.files.tokens-test
    'common-tests.files.validate-test
+   'common-tests.files.variant-test
    'common-tests.geom-align-test
    'common-tests.geom-bounds-layout-nil-test
    'common-tests.geom-bounds-map-test
@@ -184,9 +187,11 @@
    'common-tests.logic.text-touched-test
    'common-tests.logic.token-apply-test
    'common-tests.logic.token-test
+   'common-tests.logic.variant-properties-test
    'common-tests.logic.variants-switch-test
    'common-tests.logic.variants-test
    'common-tests.math-test
+   'common-tests.types.variant-test
    'common-tests.media-test
    'common-tests.path-names-test
    'common-tests.path-names-tree-test
