@@ -329,52 +329,76 @@
 
 (defn- resolve-limit-key
   "The key of a limit, resolved the same way in every path: a keyword is
-  looked up in the params, a function is applied to them, any other value is
-  the key itself."
+  looked up in the params, any other function is applied to them, any other
+  value is the key itself."
   [key params]
   (cond
     (keyword? key) (get params key)
-    (fn? key)       (key params)
+    (ifn? key)       (key params)
     :else           key))
+
+(def ^:private no-key-hint
+  "the limit key could not be resolved, the limit is not applied")
 
 (defn wrap
   [cfg handler {label ::sv/name :as mdata}]
   (if-let [climit (::rpc/climit cfg)]
-    (reduce (fn [handler [limit-id key-fn]]
-              (if-let [config (get-config climit limit-id)]
-                (let [key-fn (or key-fn noop-fn)]
-                  (l/trc :hint "instrumenting method"
-                         :method label
-                         :limit (id->str limit-id)
-                         :timeout (:timeout config)
-                         :permits (:permits config)
-                         :queue (:queue config)
-                         :keyed (not= key-fn nil))
+    (let [declared     (get-limits mdata)
+          declared-ids (into #{} (map first) declared)]
+      (reduce (fn [handler [limit-id key-fn]]
+                (if-let [config (get-config climit limit-id)]
+                  (let [keyed?  (some? key-fn)
+                        key-fn  (or key-fn noop-fn)
+                        warned? (atom false)]
+                    (l/trc :hint "instrumenting method"
+                           :method label
+                           :limit (id->str limit-id)
+                           :timeout (:timeout config)
+                           :permits (:permits config)
+                           :queue (:queue config)
+                           :keyed keyed?)
 
-                  (if (and (= key-fn ::rpc/profile-id)
-                           (false? (::rpc/auth mdata true)))
+                    (if (and (= key-fn ::rpc/profile-id)
+                             (false? (::rpc/auth mdata true)))
 
-                    ;; We don't enforce by-profile limit on methods that does
-                    ;; not require authentication
-                    handler
+                      ;; We don't enforce by-profile limit on methods that does
+                      ;; not require authentication
+                      handler
 
-                    (fn [cfg params]
-                      (let [config (-> config
-                                       (assoc ::key (resolve-limit-key key-fn params))
-                                       (assoc ::label label)
-                                       ;; NOTE: only used for debugging output
-                                       (assoc ::params params))]
-                        (invoke climit config (partial handler cfg params))))))
+                      (fn [cfg params]
+                        (let [key (resolve-limit-key key-fn params)]
+                          (if (and keyed?
+                                   (contains? declared-ids limit-id)
+                                   (nil? key))
 
-                (do
-                  (l/wrn :hint "no config found for specified queue" :id (id->str limit-id))
-                  handler)))
-            handler
-            ;; The root limiters go first so they end up innermost: a command
-            ;; takes the limits it declares before the root ones. Every path
-            ;; meets the limiters in the same order, because every acquisition
-            ;; goes through this wrapper.
-            (concat global-limits (get-limits mdata)))
+                            ;; The key tells one profile from another: a limit
+                            ;; per profile without it would be a single limit
+                            ;; for every profile, and the one permit of it
+                            ;; would reject the traffic of all of them. The
+                            ;; limit is not applied instead, and the mistake
+                            ;; is said out loud.
+                            (do (when (compare-and-set! warned? false true)
+                                  (l/wrn :hint no-key-hint
+                                         :id (id->str limit-id)
+                                         :label label))
+                                (handler cfg params))
+
+                            (let [config (-> config
+                                             (assoc ::key key)
+                                             (assoc ::label label)
+                                             ;; NOTE: only used for debugging output
+                                             (assoc ::params params))]
+                              (invoke climit config (partial handler cfg params))))))))
+
+                  (do
+                    (l/wrn :hint "no config found for specified queue" :id (id->str limit-id))
+                    handler)))
+              handler
+              ;; The root limiters go first so they end up innermost: a command
+              ;; takes the limits it declares before the root ones. Every path
+              ;; meets the limiters in the same order, because every acquisition
+              ;; goes through this wrapper.
+              (concat global-limits declared)))
 
     handler))
 

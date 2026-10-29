@@ -49,6 +49,22 @@
                               ::climit/id (::climit/id cfg)})]
     (wrapped cfg params)))
 
+(defn- waiting-count
+  "Current waiting count of a limiter name, read from its component."
+  [climit name]
+  (.get ^java.util.concurrent.atomic.AtomicLong
+   (#'climit/waiting-counter (:counters climit) name)))
+
+(defn- wait-until
+  "Wait until `pred` holds, or give up."
+  [pred timeout]
+  (let [deadline (+ (System/currentTimeMillis) timeout)]
+    (loop []
+      (cond
+        (pred) true
+        (> (System/currentTimeMillis) deadline) false
+        :else (do (Thread/sleep 10) (recur))))))
+
 (defn- failed-type
   "Run `f` and return its value, or the type of the error it raised."
   [f]
@@ -145,6 +161,107 @@
       (deliver gate true)
       (t/is (= :ok (deref holder 5000 :timeout))))))
 
+(t/deftest a-limit-whose-key-cannot-be-resolved-is-not-applied
+  ;; The key of a limit tells one profile from another: a limit per profile
+  ;; without a key would be a single limit for every profile, and its one
+  ;; permit would reject the traffic of all of them. A limit whose key is not
+  ;; in the params is not applied instead, and the mistake is said out loud.
+  (let [records (atom [])]
+    (add-watch l/log-record ::capture
+               (fn [_ _ _ record] (swap! records conj record)))
+    (try
+      (th/with-climit [climit {:test-key/by-profile {:permits 1 :timeout 2000}}]
+        (let [pid     (uuid/next)
+              limits  [[:test-key/by-profile ::rpc/profile-id]]
+              cfg     {::rpc/climit climit
+                       ::climit/id limits}
+              mdata   {::sv/name "test-command" ::climit/id limits}
+              wrapped (climit/wrap cfg (fn [_ _] :ok) mdata)]
+
+          ;; the params do not carry the profile id, so the key is empty
+          (record-metrics (fn [] (t/is (= :ok (wrapped cfg {})))))
+
+          ;; the limit was not applied: only the root ones were taken
+          (t/is (= ["root/by-profile"
+                    "root/global"]
+                   (acquired-in-order)))
+
+          ;; and the mistake is in the log
+          (t/is (some #(= @#'climit/no-key-hint (get (::l/props %) :hint))
+                      @records))))
+      (finally
+        (remove-watch l/log-record ::capture)))))
+
+(t/deftest a-limit-with-a-key-that-resolves-is-applied
+  ;; The same limit with the profile id in the params is applied, and it is
+  ;; taken before the root ones.
+  (record-metrics
+   (fn []
+     (th/with-climit [climit {:test-key/by-profile {:permits 1 :timeout 2000}}]
+       (let [pid     (uuid/next)
+             limits  [[:test-key/by-profile ::rpc/profile-id]]
+             cfg     {::rpc/climit climit
+                      ::climit/id limits}
+             mdata   {::sv/name "test-command" ::climit/id limits}
+             wrapped (climit/wrap cfg (fn [_ _] :ok) mdata)]
+
+         (t/is (= :ok (wrapped cfg {::rpc/profile-id pid})))
+         (t/is (= ["test-key/by-profile"
+                   "root/by-profile"
+                   "root/global"]
+                  (acquired-in-order))))))))
+
+(t/deftest a-request-waiting-for-its-own-limit-does-not-hold-the-root-permits
+  ;; A request that waits for the limit of its own command does not hold the
+  ;; root permits of its profile, so the other commands of that profile still
+  ;; pass. With the root limits taken first, the waiting request held them and
+  ;; the other command answered 429.
+  ;; The timeout of the root limit is shorter than the one of the limit the
+  ;; request waits for: with the root limits taken first, the waiting request
+  ;; holds the root permits until its own limit gives up, and the other
+  ;; command runs out of time before it.
+  (th/with-climit [climit {:process-image/by-profile {:permits 1 :timeout 10000}
+                           :process-image/global {:permits 8 :timeout 3000}
+                           :root/by-profile {:permits 2 :timeout 2000}}]
+    (let [pid     (uuid/next)
+          limits  [[:process-image/by-profile ::rpc/profile-id]
+                   [:process-image/global]]
+          cfg     {::rpc/climit climit
+                   ::climit/id limits}
+          gate    (promise)
+          entered (promise)
+          calls   (atom 0)
+          wrapped (climit/wrap cfg
+                               (fn [_ params]
+                                 ;; only the first request of the profile waits
+                                 (when (= 1 (swap! calls inc))
+                                   (deliver entered true)
+                                   @gate)
+                                 :ok)
+                               {::sv/name "test-command" ::climit/id limits})
+          ;; a command with no limits of its own takes the root ones only
+          plain   (climit/wrap {::rpc/climit climit}
+                               (fn [_ _] :ok)
+                               {::sv/name "plain-command"})
+          holder  (future (wrapped cfg {::rpc/profile-id pid}))]
+
+      ;; the first request holds the only permit of the profile
+      (t/is (true? (deref entered 5000 false)))
+
+      ;; the second request of that profile waits for it
+      (let [waiter (future (failed-type #(wrapped cfg {::rpc/profile-id pid})))]
+        (t/is (true? (wait-until #(<= 1 (waiting-count climit "process-image/by-profile"))
+                                 5000)))
+
+        ;; and the command without limits of its own passes: the waiting
+        ;; request does not hold the root permits of the profile
+        (t/is (= :ok (deref (future (plain {::rpc/climit climit} {::rpc/profile-id pid}))
+                            5000 :timeout)))
+
+        (deliver gate true)
+        (t/is (= :ok (deref holder 5000 :timeout)))
+        (t/is (= :ok (deref waiter 5000 :timeout)))))))
+
 (t/deftest a-command-without-limits-takes-the-root-limits
   ;; A command that declares no limits of its own still takes the root ones,
   ;; and in the same order as the ones of a command that declares them.
@@ -216,22 +333,6 @@
   so this is what the assertions read."
   [name]
   (last (waiting-value-of name)))
-
-(defn- waiting-count
-  "Current waiting count of a limiter name, read from its component."
-  [climit name]
-  (.get ^java.util.concurrent.atomic.AtomicLong
-   (#'climit/waiting-counter (:counters climit) name)))
-
-(defn- wait-until
-  "Wait until `pred` holds, or give up."
-  [pred timeout]
-  (let [deadline (+ (System/currentTimeMillis) timeout)]
-    (loop []
-      (cond
-        (pred) true
-        (> (System/currentTimeMillis) deadline) false
-        :else (do (Thread/sleep 10) (recur))))))
 
 (defn- limiter-name
   "The name climit publishes for a limiter id: the keyword without the colon."
@@ -431,11 +532,9 @@
             (throw (ex-info "publishing is down" {})))
         (swap! calls conj {:id id :labels (vec labels) :val val})))))
 
-(t/deftest a-throwable-while-waiting-leaves-no-mark-and-no-count
+(t/deftest a-throwable-while-waiting-leaves-no-count-and-the-next-call-still-queues
   ;; `waiting-inc` sits inside the `try`: a throwable from the publishing path
-  ;; unwinds through the `finally`, so the thread neither keeps the limiter
-  ;; marked as held (it would skip that limiter for that key for ever) nor
-  ;; leaves the count up.
+  ;; unwinds through the `finally`, so the thread does not leave the count up.
   (th/with-climit [climit {:test-throw-waiting/by-profile {:permits 1 :timeout 3000}}]
     (let [name (limiter-name :test-throw-waiting/by-profile)
           cfg  (limiter-cfg climit :test-throw-waiting/by-profile "a")]
@@ -449,8 +548,8 @@
       (t/is (= 0 (waiting-count climit name)))
       (t/is (= [0] (waiting-value-of name)))
 
-      ;; and the thread dropped the mark: with it left behind, this call would
-      ;; run inline instead of waiting for the permit another thread holds.
+      ;; and the next call of that key still waits for the permit the holder
+      ;; thread owns, instead of running inline
       (let [entered (promise)
             gate    (promise)
             holder  (future (invoke! cfg

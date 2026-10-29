@@ -46,6 +46,19 @@
     :else
     [(first limits)]))
 
+(defn- declared-pairs
+  "The `[id key]` pairs a command declares, in the order it declares them."
+  [limits]
+  (cond
+    (keyword? limits)
+    [[limits nil]]
+
+    (vector? (first limits))
+    (mapv (fn [[id key]] [id key]) limits)
+
+    :else
+    [[(first limits) (second limits)]]))
+
 (defn- limit-order-edges
   "The pairs of limit ids the commands declare, as edges: the first one of the
   pair is taken before the second one."
@@ -177,3 +190,24 @@
     (doseq [id declared]
       (t/is (some? (get config id))
             (str id " is declared by a command but has no entry in climit.edn")))))
+
+(t/deftest every-by-profile-limit-is-keyed-by-the-profile-id
+  ;; The key of a limit tells one profile from another. A by-profile limit
+  ;; keyed by anything else (or by nothing) shares a single limiter between
+  ;; every profile, and its one permit rejects the traffic of all of them.
+  ;; A global limit takes no key at all: a key would turn it into one limiter
+  ;; per profile.
+  (let [pairs (mapcat (comp declared-pairs second) (method-limit-declarations))]
+
+    ;; the system wraps every command, so an empty list means the scan went stale
+    (t/is (seq pairs))
+
+    (doseq [[id key-fn] pairs
+            :when (= "by-profile" (name id))]
+      (t/is (= ::rpc/profile-id key-fn)
+            (str id " has to be keyed by the profile id")))
+
+    (doseq [[id key-fn] pairs
+            :when (= "global" (name id))]
+      (t/is (nil? key-fn)
+            (str id " is a global limit and cannot have a key")))))
