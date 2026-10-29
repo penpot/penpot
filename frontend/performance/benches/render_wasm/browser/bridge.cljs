@@ -141,16 +141,19 @@
                                          :factory-ms (- (now) t0)})))))))))
   @module-promise*)
 
-(defn- renderer-string
-  "Reads the unmasked renderer (SwiftShader/llvmpipe detection for the
-  software-renderer warning). The init helper forces the debug extension."
-  [context]
+(defn- graphics-string
+  [context parameter]
   (try
     (let [ext (.getExtension ^js context "WEBGL_debug_renderer_info")]
       (if (some? ext)
-        (str (.getParameter ^js context (unchecked-get ext "UNMASKED_RENDERER_WEBGL")))
+        (str (.getParameter ^js context (unchecked-get ext parameter)))
         "unknown"))
     (catch :default _ "unknown")))
+
+(defn- renderer-string
+  "Reads the unmasked WebGL renderer identity."
+  [context]
+  (graphics-string context "UNMASKED_RENDERER_WEBGL"))
 
 (defn- software-renderer?
   "Recognizes common software graphics implementations from their renderer text."
@@ -216,11 +219,7 @@
         attr  (fn [k]
                 (when (some? attrs)
                   (unchecked-get attrs k)))
-        vendor (try
-                 (if-let [ext (.getExtension ^js ctx "WEBGL_debug_renderer_info")]
-                   (str (.getParameter ^js ctx (unchecked-get ext "UNMASKED_VENDOR_WEBGL")))
-                   "unknown")
-                 (catch :default _ "unknown"))]
+        vendor (graphics-string ctx "UNMASKED_VENDOR_WEBGL")]
     {:css-width width
      :css-height height
      :drawing-buffer-width (.-drawingBufferWidth ^js ctx)

@@ -439,6 +439,8 @@
                                       exit-code     (:exit-code run-result)
                                       termination   (get-in run-record [:termination :reason])
                                       attempts      (:attempts run-record)
+                                      gpu-failure   (some #(when (= :gpu (:stage %)) %)
+                                                          (get-in run-record [:metadata :diagnostics :failures]))
                                       evidence-error
                                       (or (:storage-error run-result)
                                           (try
@@ -459,6 +461,9 @@
                                       run-failure   (cond
                                                       (some? evidence-error)
                                                       (failure-evidence :run-evidence evidence-error)
+
+                                                      (some? gpu-failure)
+                                                      gpu-failure
 
                                                       (map? (get-in run-record [:termination :failure]))
                                                       (get-in run-record [:termination :failure])
@@ -513,6 +518,14 @@
                                         {:stop? true
                                          :reason (str "not attempted after run evidence failure in configuration " slug)
                                          :error run-error}
+
+                                        (some? gpu-failure)
+                                        {:stop? true
+                                         :reason (str "not attempted after GPU failure in configuration " slug)
+                                         :error (ex-info (:message gpu-failure)
+                                                         {:type ::gpu-required
+                                                          :log-path (:log-path run-home)
+                                                          :configuration slug})}
 
                                         :else
                                         (if (empty? attempts)
