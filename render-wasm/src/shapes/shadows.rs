@@ -87,25 +87,30 @@ impl Shadow {
     }
 
     pub fn get_drop_shadow_filter(&self) -> Option<ImageFilter> {
+        let filter = self.get_drop_shadow_blur_filter()?;
+
+        if self.spread > 0. {
+            return image_filters::dilate((self.spread, self.spread), filter, None);
+        }
+
+        Some(filter)
+    }
+
+    /// [`Self::get_drop_shadow_filter`] without the spread dilate.
+    pub fn get_drop_shadow_blur_filter(&self) -> Option<ImageFilter> {
         if self.style == ShadowStyle::Inner {
             return None;
         }
 
         let sigma = radius_to_sigma(self.blur);
-        let mut filter = image_filters::drop_shadow_only(
+        image_filters::drop_shadow_only(
             (self.offset.0, self.offset.1),
             (sigma, sigma),
             self.color,
             None,
             None,
             None,
-        );
-
-        if self.spread > 0. {
-            filter = image_filters::dilate((self.spread, self.spread), filter, None);
-        }
-
-        filter
+        )
     }
 
     /// Same shadow as [`Self::get_drop_shadow_filter`], for a `merge` input.
