@@ -780,6 +780,30 @@ test.describe("Right header", () => {
   });
 });
 
+test.describe("Share button", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Share button in the right header", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    // A shared team where the user is admin, so the header shows Share.
+    await workspace.mockRPC("get-teams", "workspace/get-teams-shared.json");
+    await workspace.goToWorkspace();
+
+    const header = page.locator('[class*="workspace-header-right"]');
+    const share = header
+      .locator("[class*='share-btn']")
+      .or(header.getByRole("button", { name: "Share" }));
+    await expect(share).toBeVisible();
+    await page.mouse.move(640, 300);
+    await expect(header).toHaveScreenshot(shot);
+
+    await share.hover();
+    await page.waitForTimeout(1000);
+    await expect(header).toHaveScreenshot(shot);
+  });
+});
+
 test.describe("Undo history", () => {
   test("Shows the actions list with an entry expanded", async ({ page }) => {
     const workspace = new WorkspacePage(page);

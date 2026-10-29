@@ -9,8 +9,8 @@
 @use "ds/_utils.scss" as *;
 @use "ds/typography.scss" as *;
 
-// Only for the shared menu placeholders, and the button placeholders of
-// the share link until the DS has a share icon.
+// Only for the shared menu placeholders (%menu-dropdown, %menu-item-base,
+// %shortcut-*), which move with the menus group.
 @use "refactor/common-refactor.scss" as deprecated;
 
 .workspace-header-right {
@@ -118,31 +118,6 @@
 // Holds the unread dot.
 .comments-btn {
   position: relative;
-}
-
-// Raw link until the DS has a share icon.
-.share-btn {
-  @extend %button-tertiary;
-
-  border-radius: $br-8;
-  margin: 0;
-  inline-size: $sz-28;
-  block-size: $sz-28;
-  border: none;
-
-  // The legacy share icon has no class.
-  svg {
-    @extend %button-icon;
-
-    block-size: $sz-16;
-    inline-size: $sz-16;
-    stroke: var(--color-foreground-secondary);
-  }
-
-  &:hover {
-    background-color: transparent;
-    border: none;
-  }
 }
 
 .unread {

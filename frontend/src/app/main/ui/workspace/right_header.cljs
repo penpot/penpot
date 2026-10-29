@@ -25,7 +25,6 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.exports.assets :refer [progress-widget]]
    [app.main.ui.formats :as fmt]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.presence :refer [active-sessions*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -239,10 +238,11 @@
                           :on-click toggle-history}]])
 
      (when display-share-button?
-       [:a {:class (stl/css :share-btn)
-            :title (tr "workspace.header.share")
-            :on-click open-share-dialog}
-        deprecated-icon/share])
+       [:> icon-button* {:variant "action"
+                         :tooltip-placement "bottom-left"
+                         :aria-label (tr "workspace.header.share")
+                         :icon i/share
+                         :on-click open-share-dialog}])
 
      [:> icon-button* {:variant "action"
                        :tooltip-placement "bottom-left"
