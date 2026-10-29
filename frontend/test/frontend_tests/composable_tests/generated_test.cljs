@@ -6,6 +6,8 @@
 
 (ns frontend-tests.composable-tests.generated-test
   (:require
+   [app.common.test-helpers.composable.comp.files :as cf]
+   [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.undo-check :as uc]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.composable.gen :as cg]
@@ -53,11 +55,14 @@
                          expected
                          (cg/resolve-op live (live-model state live) tuple))]
             (t/is (= (:trace expected) (:trace actual)) (str "Replay changed a target: " tuple))
-            (let [next-live (if-let [op (:op actual)]
-                              (await (ftm/run-generated-step live op))
-                              (do
-                                (t/is (= :settled (await (ftm/await-step []))))
-                                (ftm/refresh-generated live)))
+            (let [next-live (try (if-let [op (:op actual)]
+                                   (await (ftm/run-generated-step live op))
+                                   (do
+                                     (t/is (= :settled (await (ftm/await-step []))))
+                                     (ftm/refresh-generated live)))
+                                 (catch :default error
+                                   (throw (ex-info (ex-message error)
+                                                   (assoc (ex-data error) :replay-tuple tuple) error))))
                   next-state (-> state (cg/step tuple) (cg/settle-state))]
               (when-not next-live
                 (throw (ex-info "Frontend step failed" {:program program :tuple tuple})))
@@ -102,6 +107,35 @@
                   (t/is false (str (ex-message error) "\nReplay: " (pr-str program)
                                    "\nDetails: " (pr-str (ex-data error)))))))))
 
+(defn- ^:async replay-known-source-routing-failure
+  [program]
+  (await
+   (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
+     (t/is (map? (cg/run program)))
+     ;; The same source edits are valid when the source owns the editor.
+     (let [situation (cg/world (:world program))
+           files     (cf/all-files situation)
+           owner     (first (keys (tm/aux-files situation)))
+           parent-id (get-in (cg/resolve-op situation {} [:library-add-child 0]) [:shape :id])
+           editor    (-> situation (tm/with-file (get files owner)) (tm/with-aux-files (dissoc files owner)))
+           initial   (ftm/start-generated editor)
+           before    (ftm/snapshot)
+           first     (await (ftm/run-generated-step initial (n/add-child (constantly parent-id) :source-a :width 20 :height 20)))
+           second    (await (ftm/run-generated-step first (n/add-child (constantly parent-id) :source-b :width 20 :height 20)))
+           shape     (tm/shape-by-id second parent-id)]
+       (t/is (= 5 (count (:shapes shape))))
+       (t/is (= [2 3] (mapv #(count (get shape %)) [:layout-grid-rows :layout-grid-columns])))
+       (t/is (= (dissoc (:files before) owner) (dissoc (:files (ftm/snapshot)) owner)))
+       (t/is (empty? (uc/failures (await (ftm/finish-generated second)))))
+       (ftm/uninstall!))
+     (let [actual (try (await (replay-program program)) :success
+                       (catch :default error
+                         (select-keys (ex-data error) [:type :code :hint :replay-tuple])))]
+       (tm/known-failure :F248 :success
+                         {:type :assertion :code :data-validation :hint "expected valid shape"
+                          :replay-tuple [:library-add-child 0]}
+                         actual)))))
+
 (def update-main-intent-programs
   [{:world [1 0] :ops [[:edit 0 0 1 1] [:update-main 0] [:undo] [:redo]]}
    {:world [1 0 {:library true}] :ops [[:edit 0 0 1 2] [:update-main 0] [:undo] [:redo]]}
@@ -145,6 +179,31 @@
                                      (catch :default error (ex-data error)))))]
            (t/is (= :I9 (:invariant failure)) (pr-str failure))
            (t/is (= :requested-update-main (:phase failure)) (pr-str failure))))))))
+
+(t/deftest ^:async grid-growth-replays-with-independent-cell-expectations
+  (doseq [direction [:row :column]
+          turn-copy? [false true]]
+    (await (replay {:world [1 0 {:layout :grid :layout-children true :grid-square true}]
+                    :ops (vec (concat (when (= direction :column) [[:grid-direction 0 0 1 0]])
+                                      [[:grid-cell 0 0 0 1]]
+                                      (when turn-copy? [[:grid-direction 0 0 (if (= direction :row) 1 0) 1]])
+                                      [[:add-child 0] [:add-child 0] [:sync] [:undo] [:redo]]))}))))
+
+(t/deftest ^:async grid-growth-context-replays-through-structural-and-library-operations
+  (doseq [program
+          (concat
+           (for [tail [[[:duplicate 0] [:undo] [:redo]] [[:update-main 0] [:undo] [:redo]]
+                       [[:reset 0] [:undo] [:redo]] [[:detach 0] [:undo] [:redo]]]]
+             {:world [1 0 {:layout :grid :layout-children true :grid-square true}]
+              :ops (into [[:grid-cell 0 0 0 1] [:add-child 0] [:add-child 0] [:sync 1]] tail)})
+           [{:world [1 1 {:layout :grid :layout-children true :grid-square true}]
+             :ops [[:grid-cell 0 0 0 1] [:add-child 0] [:add-child 0] [:sync 1] [:detach 0] [:undo] [:redo]]}
+            {:world [1 0 {:library true :library-depth 0 :library-grid true :stale-libraries true}]
+             :ops [[:grid-cell 0 0 0 2] [:library-add-child 0] [:library-add-child 0]
+                   [:edit 0 1 1 2] [:library-sync] [:undo] [:redo]]}])]
+    (if (get-in program [:world 2 :stale-libraries])
+      (await (replay-known-source-routing-failure program))
+      (await (replay program)))))
 
 (t/deftest ^:async authored-grid-histories-use-independent-cell-expectations
   (doseq [ops [[[:grid-direction 0 0 1 1] [:grid-direction 0 0 1 0]

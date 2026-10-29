@@ -18,6 +18,7 @@
    [app.common.test-helpers.composable.comp.setups :as setup]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.composable.gen :as cg]
+   [app.common.test-helpers.composable.grid :as grid]
    [app.common.test-helpers.composable.oracle :as oracle]
    [app.common.test-helpers.composable.shadow :as shadow]
    [app.common.test-helpers.composable.variants :as variants]
@@ -25,9 +26,101 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.texts :as thtx]
+   [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest generated-grid-growth-retains-authored-cells-through-sync-and-undo
+  (doseq [direction [:row :column]
+          turn-copy? [false true]]
+    (let [ops (vec (concat (when (= direction :column) [[:grid-direction 0 0 1 0]])
+                           [[:grid-cell 0 0 0 1]]
+                           (when turn-copy? [[:grid-direction 0 0 (if (= direction :row) 1 0) 1]])
+                           [[:add-child 0] [:add-child 0] [:sync] [:undo] [:redo]]))
+          program {:world [1 0 {:layout :grid :layout-children true :grid-square true}]
+                   :ops ops}]
+      (t/is (true? (try (cg/run program) true
+                        (catch #?(:clj Exception :cljs js/Error) error
+                          (select-keys (ex-data error) [:invariant :phase :group :failing-op]))))
+            (pr-str program)))))
+
+(t/deftest grown-grid-intent-ignores-result-cells-and-copy-track-bounds
+  (let [before    (-> (cg/initial-state [1 0 {:layout :grid :layout-children true :grid-square true}])
+                      (cg/step [:grid-cell 0 0 0 1]) cg/settle-state
+                      (cg/step [:add-child 0]) cg/settle-state)
+        id        (get-in (cg/resolve-op (:situation before) (:model before) [:grid-cell 0 0 0 1]) [:shape :id])
+        grown     (-> before (cg/step [:add-child 0]) cg/settle-state)
+        situation (:situation grown)
+        file      (tm/file situation)
+        page      (thf/current-page file)
+        objects   (:objects page)
+        shape     (get objects id)
+        source    (get objects (:shape-ref shape))
+        cell-id   (:id (first (filter #(= [1 3] [(:row %) (:column %)]) (vals (:layout-grid-cells shape)))))
+        extra-id  (uuid/next)
+        expected  (:model grown)
+        cells     (get-in expected [id :layout-grid-cells :layout-grid-cells])
+        predict   (fn [copy reference]
+                    (shadow/settle (:model before) (assoc objects id copy) {id reference}))
+        check     (fn [copy model]
+                    (let [file (assoc-in file [:data :pages-index (:id page) :objects id] copy)]
+                      (try (oracle/check (tm/with-file situation file) model) nil
+                           (catch #?(:clj Exception :cljs js/Error) error (:invariant (ex-data error))))))]
+    (t/is (= 6 (count cells)))
+    (t/is (= #{[1 1] [1 2] [1 3] [2 1] [2 2] [2 3]} (set (map (juxt :row :column) cells))))
+    (t/is (= (frequencies (:shapes shape)) (frequencies (mapcat :shapes cells))))
+    (t/is (nil? (check shape expected)))
+    (let [stale   (tm/shape-by-id (:situation before) id)
+          pending (predict stale source)]
+      (t/is (= (:model before) pending) "A source ahead of its pending copy cannot grow that copy's model")
+      (t/is (grid/matches-context? stale (get-in pending [id :layout-grid-cells :layout-grid-cells]))))
+    (t/is (= expected (predict shape (update source :layout-grid-cells
+                                             #(update-vals % (fn [cell] (assoc cell :align-self :end :shapes [])))))))
+    (doseq [corrupt [#(assoc-in % [:layout-grid-cells cell-id :align-self] :end)
+                     #(assoc-in % [:layout-grid-cells cell-id :justify-self] :center)
+                     #(assoc-in % [:layout-grid-cells cell-id :position] :manual)
+                     #(assoc-in % [:layout-grid-cells cell-id :shapes] [])
+                     #(assoc-in % [:layout-grid-cells cell-id :shapes] [(first (:shapes shape))])
+                     #(assoc-in % [:layout-grid-cells cell-id :column] 4)
+                     #(assoc-in % [:layout-grid-cells extra-id]
+                                {:id extra-id :row 2 :column 4 :row-span 1 :column-span 1
+                                 :position :auto :align-self :auto :justify-self :auto :shapes []})
+                     #(update % :layout-grid-columns conj {:type :flex :value 1})
+                     #(assoc % :layout-grid-dir :column)]]
+      (let [copy  (corrupt shape)
+            model (predict copy source)]
+        (t/is (= expected model) "Corrupt result values cannot supply expected cells")
+        (t/is (= :I9 (check copy model)))))
+    (t/is (= :I3 (check (update shape :touched disj :layout-grid-cells) expected)))
+    (let [remapped (grid/remap-groups (get expected id) (zipmap (:shapes shape) (reverse (:shapes shape))))
+          cells    (get-in remapped [:layout-grid-cells :layout-grid-cells])]
+      (t/is (false? (grid/matches-context? (update shape :layout-grid-columns conj {:type :flex :value 1}) cells))))
+    (let [prior    (get-in before [:model id :layout-grid-cells :layout-grid-cells])
+          ;; Both source and copy lose their track growth, while the new child remains.
+          dropped  (assoc shape :layout-grid-columns (vec (take 2 (:layout-grid-columns shape))))
+          context  (grid/get-context dropped)
+          cells    (grid/settle-cells prior dropped objects context)]
+      (t/is (= 6 (count cells)))
+      (t/is (= (frequencies (:shapes shape)) (frequencies (mapcat :shapes cells))))
+      (t/is (false? (grid/matches-context? dropped cells))))))
+
+(t/deftest grid-growth-context-survives-remapping-and-library-acceptance
+  (doseq [program
+          (concat
+           (for [tail [[[:duplicate 0] [:undo] [:redo]] [[:update-main 0] [:undo] [:redo]]
+                       [[:reset 0] [:undo] [:redo]] [[:detach 0] [:undo] [:redo]]]]
+             {:world [1 0 {:layout :grid :layout-children true :grid-square true}]
+              :ops (into [[:grid-cell 0 0 0 1] [:add-child 0] [:add-child 0] [:sync 1]] tail)})
+           [{:world [1 1 {:layout :grid :layout-children true :grid-square true}]
+             :ops [[:grid-cell 0 0 0 1] [:add-child 0] [:add-child 0] [:sync 1] [:detach 0] [:undo] [:redo]]}
+            {:world [1 0 {:library true :library-depth 0 :library-grid true :stale-libraries true}]
+             :ops [[:grid-cell 0 0 0 2] [:library-add-child 0] [:library-add-child 0]
+                   [:edit 0 1 1 2] [:library-sync] [:undo] [:redo]]}])]
+    (t/is (true? (try (cg/run program) true
+                      (catch #?(:clj Exception :cljs js/Error) error
+                        (select-keys (ex-data error) [:invariant :phase :group :failing-op]))))
+          (pr-str program))))
 
 (t/deftest whole-program-failures-keep-the-same-signature-without-a-skipped-tail
   (doseq [[world ops source?]

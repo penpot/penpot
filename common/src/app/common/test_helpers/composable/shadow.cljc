@@ -338,20 +338,25 @@
 (defn settle
   "A detached position turns its copies into ordinary shapes. Their former
    component choice stops applying; other authored groups stay in place."
-  [model objects]
-  (reduce-kv
-   (fn [result id groups]
-     (let [shape (get objects id)
-           position (get objects (:shape-ref shape))
-           ordinary? (and shape position
-                          (nil? (:component-id shape))
-                          (nil? (:component-id position)))
-           groups (cond-> groups
-                    ordinary? (dissoc :swap-group)
-                    (:layout-grid-cells groups)
-                    (update-in [:layout-grid-cells :layout-grid-cells] grid/settle-cells shape objects))]
-       (if (seq groups) (assoc result id groups) (dissoc result id))))
-   model model))
+  ([model objects] (settle model objects {}))
+  ([model objects references]
+   (reduce-kv
+    (fn [result id groups]
+      (let [shape (get objects id)
+            position (get objects (:shape-ref shape))
+            ordinary? (and shape position
+                           (nil? (:component-id shape))
+                           (nil? (:component-id position)))
+            source (get references id)
+            context (when source
+                      (grid/get-context (merge source (:layout-grid-rows groups)
+                                               (:layout-grid-columns groups) (:layout-grid-dir groups))))
+            groups (cond-> groups
+                     ordinary? (dissoc :swap-group)
+                     (:layout-grid-cells groups)
+                     (update-in [:layout-grid-cells :layout-grid-cells] grid/settle-cells shape objects context))]
+        (if (seq groups) (assoc result id groups) (dissoc result id))))
+    model model)))
 
 (defn- subtree-shapes
   [objects id]

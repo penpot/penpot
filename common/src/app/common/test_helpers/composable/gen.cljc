@@ -36,6 +36,7 @@
    [app.common.test-helpers.texts :as thtx]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]
    [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]
    [clojure.test.check.generators :as gen]))
@@ -226,6 +227,21 @@
   (reduce (fn [objects component] (merge (:objects component) objects))
           (into {} (map (juxt (comp :id :shape) :shape)) (forest situation))
           (mapcat #(vals (get-in % [:data :components])) (vals (cf/all-files situation)))))
+
+(defn- settle-model
+  [model situation]
+  (let [references (when (some :layout-grid-cells (vals model))
+                     (into {}
+                           (for [[file-id file] (cf/all-files situation)
+                                 container (concat (map #(ctn/make-container % :page) (vals (get-in file [:data :pages-index])))
+                                                   (map #(ctn/make-container % :component) (filter :deleted (vals (get-in file [:data :components])))))
+                                 shape (vals (:objects container))
+                                 :when (get-in model [(:id shape) :layout-grid-cells])
+                                 :let [libraries (cf/reference-libraries situation file-id (:id shape))
+                                       source (ctf/find-content-ref-shape file container libraries shape :include-deleted? true)]
+                                 :when source]
+                             [(:id shape) source])))]
+    (shadow/settle model (all-objects situation) references)))
 
 (defn world
   [[components depth opts]]
@@ -706,7 +722,7 @@
             (oracle/check-requested-update-main before settled model root-id))
         model (-> model
                   (shadow/parent-orientation (all-objects situation) (all-objects settled))
-                  (shadow/settle (all-objects settled)))
+                  (settle-model settled))
         all (into (set (synchronizable-components situation)) (r/pending-components situation))
         full-before (r/settle situation all)
         full (:situation (cf/sync-world settled all))
@@ -882,7 +898,7 @@
             next-model (cond-> (or next-model model)
                          (not (#{:undo :redo} kind))
                          (shadow/parent-orientation (all-objects situation) (all-objects after)))
-            next-model (shadow/settle next-model (all-objects after))
+            next-model (settle-model next-model after)
             meaningful (not (oracle/equivalent? (oracle/design-snapshot situation {:free-head-placement false})
                                                 (oracle/design-snapshot after {:free-head-placement false})))
             state (-> state

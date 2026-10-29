@@ -480,7 +480,9 @@
          (fail (if (some #(not (contains? expected %)) touched) :I2 :I3)
                {:shape (:name shape) :expected (set (keys expected)) :actual touched}))
        (doseq [[group value] expected]
-         (when-not (shadow/same-value? shape group value (:objects page))
+         (when-not (and (shadow/same-value? shape group value (:objects page))
+                        (or (not= group :layout-grid-cells)
+                            (grid/matches-context? shape (:layout-grid-cells value))))
            (fail :I9 {:shape (:name shape) :group group
                       :expected value :actual (shadow/values shape group)})))
        (when (and settled (:shape-ref shape))
