@@ -20,7 +20,9 @@
 }
 
 .link {
-  color: var(--color-foreground-secondary);
+  @include use-typography("body-medium");
+
+  color: var(--color-accent-primary);
 }
 
 .form-container {
@@ -49,8 +51,6 @@
 }
 
 .options {
-  @include use-typography("title-small");
-
   display: flex;
   justify-content: flex-end;
   margin-block-start: var(--sp-m);
