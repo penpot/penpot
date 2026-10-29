@@ -29,14 +29,16 @@
 (t/use-fixtures :each th/database-reset)
 
 (defn- update-file!
-  [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
+  [& {:keys [profile-id file-id changes revn features]
+      :or {revn 0
+           features cfeat/supported-features}}]
   (let [params {::th/type :update-file
                 ::rpc/profile-id profile-id
                 :id file-id
                 :session-id (uuid/random)
                 :revn revn
                 :vern 0
-                :features cfeat/supported-features
+                :features features
                 :changes changes}
         out    (th/command! params)]
     (t/is (nil? (:error out)))
@@ -516,7 +518,8 @@
       (t/is (contains? @pmap/*tracked* (pmap/get-id wrapped)))
       (t/is (contains? @pmap/*tracked* (pmap/get-id unloaded)))
       (t/is (= {:a 1} @wrapped))
-      (t/is (thrown? UnsupportedOperationException @unloaded))))) \n
+      (t/is (thrown? UnsupportedOperationException @unloaded)))))
+
 (t/deftest legacy-snapshot-does-not-break-liveness
   ;; Snapshots written before the feature carry materialized data in
   ;; file_change.data (backend "legacy-db") instead of a file_data row.
@@ -954,3 +957,49 @@
                                      (fdata/realize-entry))))))]
       (t/is (= lib-page (:id page)))
       (t/is (contains? (:objects page) uuid/zero)))))
+
+(t/deftest feature-off-keeps-plain-snapshots-and-gc
+  ;; The feature is disabled by default (`fdata/pointer-map` is not in
+  ;; `cfeat/default-features`, only an explicit flag or team feature
+  ;; enables it). Pin that the paths this branch touches stay plain for
+  ;; such a file: a save takes a snapshot without pointers, no fragment
+  ;; rows appear, file-gc writes nothing, and the preview still resolves.
+  (with-redefs [cfeat/get-enabled-features (fn [& _] cfeat/default-features)]
+    (let [features (disj cfeat/supported-features
+                         "fdata/pointer-map"
+                         "fdata/objects-map")
+          profile  (th/create-profile* 1)
+          file     (th/create-file* 1 {:profile-id (:id profile)
+                                       :project-id (:default-project-id profile)
+                                       :is-shared false})
+          file-id  (:id file)
+          page-id  (first (get-in file [:data :pages]))]
+
+      (t/is (not (contains? (:features file) "fdata/pointer-map")))
+      (t/is (not (contains? (:features file) "fdata/objects-map")))
+      (t/is (empty? (fragment-rows file-id)))
+
+      (update-file! :profile-id (:id profile)
+                    :file-id file-id
+                    :revn 0
+                    :features features
+                    :changes (add-rect-change page-id (uuid/random)))
+
+      (t/is (empty? (fragment-rows file-id)))
+
+      (let [snapshot (first (snapshots-by-revn file-id 0))
+            snap     (fsnap/get-snapshot th/*system* file-id (:id snapshot))]
+        (t/is (uuid? (:id snapshot)))
+        (t/is (empty? (fdata/get-used-pointer-ids (:data snap))))
+        (t/is (true? (th/run-task! :file-gc {:file-id file-id})))
+        (t/is (empty? (fragment-rows file-id)))
+
+        (let [out (th/command! {::th/type :get-file-snapshot
+                                ::rpc/profile-id (:id profile)
+                                :file-id file-id
+                                :id (:id snapshot)
+                                :features features})]
+          (t/is (nil? (:error out)))
+          (t/is (map? (get-in out [:result :data])))
+          (t/is (empty? (fdata/get-used-pointer-ids
+                         (get-in out [:result :data])))))))))
