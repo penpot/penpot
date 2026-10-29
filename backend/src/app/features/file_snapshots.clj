@@ -48,11 +48,19 @@
                                    AND fd.type = 'snapshot')
     WHERE c.label IS NOT NULL")
 
+;; `:migrations` is an ordered set everywhere (see `common.types.file`),
+;; and `need-migration?`/`migrate` use set semantics on it: the pgarray
+;; must never surface as a vector, where `contains?`/`set/difference`
+;; would compare indexes instead of names.
+(defn- decode-migrations
+  [value]
+  (into (d/ordered-set) (db/decode-pgarray value [])))
+
 (defn- decode-snapshot
   [snapshot]
   (some-> snapshot
           (-> (d/update-when :metadata fdata/decode-metadata)
-              (d/update-when :migrations db/decode-pgarray [])
+              (d/update-when :migrations decode-migrations)
               (d/update-when :features db/decode-pgarray #{}))))
 
 (def ^:private sql:get-minimal-file

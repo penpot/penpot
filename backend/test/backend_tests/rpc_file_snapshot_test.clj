@@ -7,7 +7,10 @@
 (ns backend-tests.rpc-file-snapshot-test
   (:require
    [app.binfile.common :as bfc]
+   [app.common.data :as d]
    [app.common.features :as cfeat]
+   [app.common.files.defaults :as cfd]
+   [app.common.files.migrations :as fmg]
    [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
@@ -686,3 +689,53 @@
            (get-in with-feature [:result :data :pages-index page-id :objects])))
     (t/is (not (omap/objects-map?
                 (get-in without-feature [:result :data :pages-index page-id :objects]))))))
+
+(t/deftest snapshot-preview-migrates-legacy-snapshots-without-migrations
+  ;; Snapshots written before the `migrations` column existed (SQL
+  ;; migration 0140) store NULL and the format version of their time.
+  ;; The decoder must hand an ordered set (a vector would make
+  ;; `need-migration?` compare indexes), and the preview must
+  ;; regenerate the applied set from the stored version, migrate the
+  ;; data in memory and leave the row untouched.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        file-id (:id file)
+        snap-id (:id (:result (th/command! {::th/type :create-file-snapshot
+                                            ::rpc/profile-id (:id profile)
+                                            :file-id file-id
+                                            :label "legacy"})))]
+
+    (t/is (d/ordered-set? (:migrations (fsnap/get-snapshot th/*system* file-id snap-id))))
+
+    ;; Turn the version into a pre-0140 snapshot: no applied set and an
+    ;; old format version.
+    (th/db-exec! ["UPDATE file_change SET migrations = NULL, version = 60 WHERE id = ?"
+                  snap-id])
+
+    (let [stored (fsnap/get-snapshot th/*system* file-id snap-id)
+          out    (th/command! {::th/type :get-file-snapshot
+                               ::rpc/profile-id (:id profile)
+                               :file-id file-id
+                               :id snap-id
+                               :features cfeat/supported-features})
+          result (:result out)]
+
+      (t/is (nil? (:migrations stored)))
+      (t/is (= 60 (:version stored)))
+
+      (t/is (nil? (:error out)))
+      (t/is (d/ordered-set? (:migrations result)))
+      ;; The preview regenerates everything the stored version lacks
+      ;; instead of trusting the absent applied set.
+      (t/is (= cfd/version (:version result)))
+      (t/is (= (into #{} fmg/available-migrations)
+               (set (:migrations result))))
+      (t/is (set/subset? (into #{} (fmg/generate-migrations-from-version cfd/version))
+                         (set (:migrations result))))
+
+      ;; Nothing is persisted.
+      (let [stored (fsnap/get-snapshot th/*system* file-id snap-id)]
+        (t/is (nil? (:migrations stored)))
+        (t/is (= 60 (:version stored)))))))
