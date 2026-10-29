@@ -490,7 +490,7 @@
   `:root-main`, and `:reset?`. The main shapes of the children of a copy
   shape that keeps its own geometry are placed like it first, so they get
   their expected geometry."
-  [changes {:keys [container main-container library component reset?] :as ctx} shape-inst shape-main]
+  [changes {:keys [container main-container component reset?] :as ctx} shape-inst shape-main]
   (shape-log :debug (:id shape-inst) container
              :msg "Sync shape direct recursive"
              :shape-inst (str (:name shape-inst) " " (pretty-uuid (:id shape-inst)))
@@ -500,6 +500,7 @@
     changes
     (let [;; a copy shape that keeps its own geometry passes it on to its
           ;; children, which follow it as they follow their main's
+          shape-before   shape-inst
           placed         (when (and (not reset?) (ctk/touched-group? shape-inst :geometry-group))
                            (in-main-frame shape-inst (:root-inst ctx) (:root-main ctx)))
           main-container (cond-> main-container
@@ -533,7 +534,7 @@
                   (reorder-copy-children shape-inst children-main container))
 
         (ctsl/grid-layout? shape-inst)
-        (update-grid-copy-attrs (:id shape-inst) shape-main library component (not reset?))))))
+        (update-grid-copy-attrs shape-before shape-main (not reset?))))))
 
 (defn generate-rename-component
   "Generate the changes for rename the component with the given id, in the current file library."
@@ -1542,13 +1543,30 @@
            %)
         {:ignore-touched true}))))
 
+(defn- add-inherited-grid-cells
+  "Add default cells in newly inherited tracks without replacing authored cells."
+  [shape before]
+  (let [old-rows (count (:layout-grid-rows before))
+        old-cols (count (:layout-grid-columns before))
+        rows     (count (:layout-grid-rows shape))
+        cols     (count (:layout-grid-columns shape))
+        added    (concat (for [row (range (inc old-rows) (inc rows))
+                               column (range 1 (inc cols))] [row column])
+                         (for [row (range 1 (inc (min old-rows rows)))
+                               column (range (inc old-cols) (inc cols))] [row column]))]
+    (reduce (fn [shape [row column]]
+              (if (ctsl/cell-by-row-column shape row column)
+                shape
+                (ctsl/create-cells shape [column row 1 1])))
+            shape added)))
+
 (defn- update-grid-copy-attrs
   "Synchronizes the `layout-grid-cells` property from the main shape to the copies"
-  [changes shape-copy-id shape-main _library _component omit-touched?]
+  [changes shape-before shape-main omit-touched?]
   (-> changes
       (pcb/apply-changes-local)
       (pcb/update-shapes
-       [shape-copy-id]
+       [(:id shape-before)]
        (fn [shape-copy objects]
          (let [ids-map
                (into {}
@@ -1570,14 +1588,15 @@
                         (fn [cell]
                           (update cell :shapes #(filterv child? %)))))))
                ;; Take cells from main and remap the shapes to assign it to the copy
-               copy-cells (-> shape-copy :layout-grid-cells (remove-orphan-cells shape-copy))
-               main-cells (-> shape-main (ctsl/remap-grid-cells ids-map) :layout-grid-cells)]
+               copy-cells  (-> shape-copy :layout-grid-cells (remove-orphan-cells shape-copy))
+               main-cells  (-> shape-main (ctsl/remap-grid-cells ids-map) :layout-grid-cells)
+               keep-cells? (and omit-touched? (contains? (:touched shape-copy) :layout-grid-cells))]
            (-> shape-copy
                (assoc :layout-grid-cells
-                      (if (and omit-touched?
-                               (contains? (:touched shape-copy) :layout-grid-cells))
+                      (if keep-cells?
                         copy-cells
                         main-cells))
+               (cond-> keep-cells? (add-inherited-grid-cells shape-before))
                (ctsl/assign-cells objects))))
        {:ignore-touched true :with-objects? true})))
 
