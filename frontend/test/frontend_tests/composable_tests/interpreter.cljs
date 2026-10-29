@@ -867,10 +867,76 @@
       (install!)
       (mark-baseline)))
 
-(defn run-generated-step
+(defn- get-generated-references
+  [situation]
+  (into {} (for [[file-id file] (cf/all-files situation)
+                 objects (cf/object-trees file)
+                 [id shape] objects
+                 :when (:shape-ref shape)]
+             [[file-id id] {:shape shape
+                            :sources (dissoc (cf/reference-libraries situation file-id id) file-id)}])))
+
+(defn- get-reference-patches
+  [before after]
+  (reduce (fn [patches key]
+            (if (= (get-in before [key :shape]) (get-in after [key :shape]))
+              patches
+              (-> patches
+                  (assoc-in [:before key] (get-in before [key :sources]))
+                  (assoc-in [:after key] (get-in after [key :sources])))))
+          {} (into (set (keys before)) (keys after))))
+
+(defn- restore-generated-references
+  [situation patches]
+  (reduce-kv (fn [situation [file-id id] sources]
+               (if sources
+                 (assoc-in situation [:shape-libraries file-id id] sources)
+                 (update-in situation [:shape-libraries file-id] dissoc id)))
+             situation (or patches {})))
+
+(defn ^:async run-generated-step
   "Drive a resolved node through real events, settlement and undo/redo."
   [situation op]
-  (run-ops situation [op]))
+  (let [index-before (undo-index)
+        items-before (get-in @st/state [:workspace-undo :items])
+        after        (await (run-ops situation [op]))]
+    (if-not (and after (:accepted-libraries situation))
+      after
+      (let [index-after (undo-index)
+            items       (get-in @st/state [:workspace-undo :items])]
+        (cond
+          (instance? n/Undo op)
+          (reduce (fn [s index]
+                    (restore-generated-references s
+                                                  (get-in situation [::reference-history (:undo-group (get items-before index)) :before])))
+                  after (range index-before index-after -1))
+
+          (instance? n/Redo op)
+          (reduce (fn [s index]
+                    (restore-generated-references s
+                                                  (get-in situation [::reference-history (:undo-group (get items index)) :after])))
+                  after (range (inc index-before) (inc index-after)))
+
+          :else
+          (let [file-id (:id (tm/file situation))
+                inputs  (cf/all-files situation)
+                ;; Expected inputs come from the requested pull and its before
+                ;; state. Result cell values never supply oracle references.
+                after   (if (instance? n/SyncFromLibrary op)
+                          (let [source (or (:source op) (n/library-id situation))]
+                            (-> after
+                                (assoc-in [:accepted-libraries file-id source] (get inputs source))
+                                (cf/remember-copies file-id source
+                                                    (set (keys (get-in inputs [source :data :components]))) inputs)))
+                          after)
+                patches (get-reference-patches (get-generated-references situation) (get-generated-references after))
+                group   (:undo-group (get items index-after))]
+            (cond-> after
+              (and group (seq (:before patches)))
+              (update-in [::reference-history group]
+                         (fn [prior]
+                           {:before (merge (:before patches) (:before prior))
+                            :after (merge (:after prior) (:after patches))})))))))))
 
 (defn- get-generated-editor
   [situation]
@@ -914,16 +980,18 @@
                                      (assoc ::undo-check? true ::generated true)
                                      (uc/with-runner :frontend))
                       :undo {}})
+        editor   (update editor :situation merge (select-keys situation [:accepted-libraries :shape-libraries]))
         source   (resume-generated-editor editor)
         before   (snapshot)
-        source   (await (run-ops source [op]))]
+        source   (await (run-generated-step source op))]
     (when-not source
       (throw (ex-info "Source editor step failed" {:owner owner})))
     (t/is (= (dissoc (:files before) owner) (dissoc (:files (snapshot)) owner))
           "A source editor must not write another file")
-    (let [source (await (check-variant source))
-          editor (get-generated-editor source)
-          live   (resume-generated-editor consumer)]
+    (let [source   (await (check-variant source))
+          editor   (get-generated-editor source)
+          consumer (update consumer :situation merge (select-keys source [:accepted-libraries :shape-libraries]))
+          live     (resume-generated-editor consumer)]
       (t/is (empty? (uc/failures source)) (pr-str (uc/failures source)))
       (-> live
           (assoc ::source-editors (assoc (::source-editors situation) owner editor))

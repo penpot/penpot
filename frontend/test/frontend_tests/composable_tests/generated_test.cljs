@@ -20,6 +20,7 @@
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [clojure.test.check.generators :as gen]
+   [clojure.walk :as walk]
    [frontend-tests.composable-tests.interpreter :as ftm]
    [frontend-tests.helpers.mock :as mock]))
 
@@ -40,8 +41,10 @@
 (defn- ^:async replay-program
   "Replay a JVM-shrunk EDN program against the async frontend. The pure
    runner chooses targets independently and both must make the same choices."
-  [{:keys [world ops] :as program}]
+  [{:keys [world ops parity-failures] :as program}]
   (try
+    (when-not (every? (set ops) (keys parity-failures))
+      (throw (ex-info "A parity failure mark names no replay step" {:marks (keys parity-failures)})))
     (let [initial (cg/initial-state world)]
       (loop [state initial
              live (ftm/start-generated (:situation initial))
@@ -88,9 +91,14 @@
               (let [parity {:relative-free-head-placement true}
                     expected (oracle/canonical (:situation next-state) parity)
                     actual (oracle/canonical next-live parity)]
-                (t/is (true? (oracle/equivalent? expected actual))
-                      (str "Backend mismatch at " tuple "; replay " (pr-str program)
-                           "; diff " (pr-str (thn/diff expected actual)))))
+                (if-let [{:keys [bug pinned]} (get parity-failures tuple)]
+                  (tm/known-failure bug [true [nil nil]] pinned
+                                    [(true? (oracle/equivalent? expected actual))
+                                     (walk/postwalk #(if (uuid? %) :unmapped-ref %)
+                                                    (thn/diff expected actual))])
+                  (t/is (true? (oracle/equivalent? expected actual))
+                        (str "Backend mismatch at " tuple "; replay " (pr-str program)
+                             "; diff " (pr-str (thn/diff expected actual))))))
               (t/is (empty? (uc/failures next-live)) (pr-str (uc/failures next-live)))
               (recur next-state next-live (rest tuples))))
           (let [checked (await (ftm/finish-generated live))]
@@ -109,7 +117,7 @@
                   (t/is false (str (ex-message error) "\nReplay: " (pr-str program)
                                    "\nDetails: " (pr-str (ex-data error)))))))))
 
-(defn- ^:async replay-known-library-reference-failure
+(defn- ^:async replay-library-grid-with-source-control
   [program]
   (await
    (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
@@ -130,12 +138,7 @@
        (t/is (= (dissoc (:files before) owner) (dissoc (:files (ftm/snapshot)) owner)))
        (t/is (empty? (uc/failures (await (ftm/finish-generated second)))))
        (ftm/uninstall!))
-     (let [actual (try (await (replay-program program)) :success
-                       (catch :default error
-                         (select-keys (ex-data error) [:type :code :hint :invariant :phase :group :replay-tuple])))]
-       (tm/known-failure :F249 :success
-                         {:invariant :I4 :group :structure :replay-tuple [:library-sync]}
-                         actual)))))
+     (await (replay-program program)))))
 
 (def update-main-intent-programs
   [{:world [1 0] :ops [[:edit 0 0 1 1] [:update-main 0] [:undo] [:redo]]}
@@ -217,13 +220,84 @@
              :ops [[:grid-cell 0 0 0 2] [:library-add-child 0] [:library-add-child 0]
                    [:edit 0 1 1 2] [:library-sync] [:undo] [:redo]]}])]
     (if (get-in program [:world 2 :stale-libraries])
-      (await (replay-known-library-reference-failure program))
+      (await (replay-library-grid-with-source-control program))
       (await (replay program)))))
 
 (t/deftest ^:async source-grid-additions-replay-without-accepting-the-library
   (await (replay {:world [1 0 {:library true :library-depth 0 :library-grid true :stale-libraries true}]
                   :ops [[:grid-cell 0 0 0 2] [:library-add-child 0] [:library-add-child 0]
                         [:edit 0 1 1 2] [:undo] [:redo]]})))
+
+(t/deftest ^:async accepting-source-grid-growth-keeps-oracle-references-through-undo
+  (await (replay {:world [1 0 {:library true :library-depth 0 :library-grid true :stale-libraries true}]
+                  :ops [[:grid-cell 0 0 0 2] [:library-add-child 0] [:library-add-child 0]
+                        [:edit 0 1 1 2] [:library-sync] [:undo] [:redo]]})))
+
+(t/deftest ^:async accepted-reference-history-keeps-newer-loaded-sources-independent
+  (doseq [ops [[[:library-add-child 0] [:library-sync] [:library-add-child 0]
+                [:library-sync] [:undo] [:undo] [:redo] [:redo]]
+               [[:library-add-child 0] [:library-sync] [:edit 0 1 1 2]
+                [:undo] [:undo] [:redo] [:redo]]
+               [[:library-edit 0 0 1] [:library-sync] [:library-edit 0 0 2]
+                [:undo] [:redo]]]]
+    (await (replay {:world [0 0 {:library true :library-depth 0 :library-grid true :stale-libraries true}]
+                    :ops ops}))))
+
+(t/deftest ^:async accepted-source-child-undo-keeps-backend-parity
+  (let [difference {[:file 0] {:data {:pages-index
+                                      {[:file 0 :page 0] {:objects
+                                                          {[:file 0 :page 0 0 2] {:shape-ref :unmapped-ref}
+                                                           [:file 0 :page 0 1 2] {:shape-ref :unmapped-ref}}}}}}}]
+    (await (replay {:world [0 0 {:library true :library-depth 0 :library-grid true :stale-libraries true}]
+                    :ops [[:library-add-child 0] [:library-add-child 0] [:library-sync]
+                          [:library-undo 0] [:undo] [:library-redo 0] [:redo]]
+                    :parity-failures {[:library-undo 0] {:bug :F251 :pinned [false [difference difference]]}}}))))
+
+(t/deftest ^:async transitive-library-acceptance-keeps-each-editors-reference-history
+  (await (replay {:world [0 0 {:library true :library-depth 0 :library-dependency true :stale-libraries true}]
+                  :ops [[:library-edit 1 0 1] [:library-sync 0] [:library-accept 0]
+                        [:library-sync 0] [:library-undo 0] [:undo]
+                        [:library-redo 0] [:redo]]})))
+
+(t/deftest ^:async a-source-undo-retains-the-consumers-accepted-child-reference
+  (await
+   (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
+     (let [world    [0 0 {:library true :library-depth 0 :library-grid true :stale-libraries true}]
+           ops      [[:library-add-child 0] [:library-add-child 0] [:library-sync]]
+           initial  (cg/world world)
+           resolved (cg/resolve-op initial {} (first ops))
+           owner    (:library-id resolved)
+           main-id  (get-in resolved [:shape :id])
+           live     (loop [live (ftm/start-generated initial) tuples ops]
+                      (if-let [tuple (first tuples)]
+                        (let [{:keys [op library-id]} (cg/resolve-op live {} tuple)]
+                          (recur (if library-id
+                                   (await (ftm/run-generated-source-step live library-id op))
+                                   (await (ftm/run-generated-step live op)))
+                                 (rest tuples)))
+                        live))
+           source   (get (cf/all-files live) owner)
+           ids      (:shapes (tm/shape-by-id (tm/with-file live source) main-id))
+           before   (tm/file live)
+           live     (await (ftm/run-generated-source-step live owner (n/undo)))
+           source   (get (cf/all-files live) owner)
+           current  (:shapes (tm/shape-by-id (tm/with-file live source) main-id))
+           removed  (first (remove (set current) ids))]
+       (t/is (= 5 (count ids)))
+       (t/is (= 4 (count current)))
+       (t/is (= before (tm/file live)))
+       (doseq [{:keys [shape]} (cg/tree live) :when (= main-id (:shape-ref shape))]
+         (let [accepted (get (cf/reference-libraries live shape) owner)]
+           (t/is (= ids (:shapes (tm/shape-by-id (tm/with-file live accepted) main-id))))))
+       (t/is (nil? (oracle/check live {})))
+       (tm/known-failure :F251 [] [removed removed]
+                         (vec (for [file (vals (oracle/canonical live))
+                                    objects (cf/object-trees file)
+                                    shape (vals objects)
+                                    :when (uuid? (:shape-ref shape))]
+                                (:shape-ref shape))))
+       (t/is (empty? (uc/failures (await (ftm/finish-generated live)))))
+       (ftm/uninstall!)))))
 
 (t/deftest ^:async source-editors-retain-their-own-undo-and-redo-histories
   (doseq [ops [[[:library-add-child 0] [:library-add-child 0] [:library-undo 0]
