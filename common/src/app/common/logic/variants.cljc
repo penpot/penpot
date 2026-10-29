@@ -13,7 +13,6 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
-   [app.common.types.modifiers :as ctm]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]))
 
@@ -96,14 +95,15 @@
         pos             (d/index-of (:shapes current-parent) (:id related-shape-in-new))
 
         orig-child      (get page-objects (:id orig-swapped-child))
-        modifiers       (cll/follow-parent-modifiers orig-child
-                                                     (get page-objects (:parent-id orig-child))
-                                                     current-parent)
-        child-after     (gsh/transform-shape orig-child modifiers)
+        modif-tree      (cll/follow-parent-modif-tree page-objects
+                                                      orig-child
+                                                      (get page-objects (:parent-id orig-child))
+                                                      current-parent)
+        follow          #(gsh/transform-shape % (get-in modif-tree [(:id %) :modifiers]))
         delta           (if (ctk/touched-group? orig-child :geometry-group)
                           (gpt/point 0 0)
                           (gpt/subtract (grc/rect->point (:selrect related-shape-in-new))
-                                        (grc/rect->point (:selrect child-after))))]
+                                        (grc/rect->point (:selrect (follow orig-child)))))]
 
     (-> (pcb/concat-changes before-changes changes)
 
@@ -111,11 +111,9 @@
         (pcb/change-parent (:parent-id related-shape-in-new) [orig-swapped-child] pos {:allow-altering-copies true})
 
         (cond->
-         (or (not (ctm/empty? modifiers)) (not (gpt/almost-zero? delta)))
+         (or (seq modif-tree) (not (gpt/almost-zero? delta)))
           (pcb/update-shapes (cfh/get-children-ids-with-self page-objects (:id orig-swapped-child))
-                             #(-> %
-                                  (gsh/transform-shape modifiers)
-                                  (gsh/move delta))
+                             #(gsh/move (follow %) delta)
                              {:ignore-touched true}))
 
         ;; We need to update the swap slot only when it pointed

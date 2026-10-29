@@ -390,9 +390,11 @@
   [constraints-h]
   (-> (thf/sample-file :library)
       (tho/add-simple-component :icon-a :icon-a-root :icon-a-child
-                                :root-params {:width 24 :height 24})
+                                :root-params {:width 24 :height 24}
+                                :child-params {:width 24 :height 24})
       (tho/add-simple-component :icon-b :icon-b-root :icon-b-child
-                                :root-params {:width 24 :height 24})
+                                :root-params {:width 24 :height 24}
+                                :child-params {:width 24 :height 24})
       (tho/add-frame :card-root {:name "Card"
                                  :layout :flex
                                  :layout-flex-dir :row
@@ -443,8 +445,11 @@
 
         ;; ==== Get
         scale   (/ (:width (ths/get-shape file' :copy-card))
-                   (:width (ths/get-shape file :copy-card)))]
+                   (:width (ths/get-shape file :copy-card)))
+        inner   #(ths/get-shape-by-id % (first (:shapes (ths/get-shape % :copy-close))))]
 
     ;; ==== Check
     (t/is (mth/close? (* scale (:width (ths/get-shape file :copy-close)))
-                      (:width (ths/get-shape file' :copy-close))))))
+                      (:width (ths/get-shape file' :copy-close))))
+    ;; The icon content follows the icon through its own (left) constraint
+    (t/is (mth/close? (:width (inner file)) (:width (inner file'))))))

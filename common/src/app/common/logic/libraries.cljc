@@ -13,6 +13,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
    [app.common.geom.matrix :as gmt]
+   [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
@@ -879,7 +880,7 @@
   (gpt/subtract (grc/rect->point (:selrect (reposition-shape origin-shape origin-root dest-root)))
                 (grc/rect->point (:selrect dest-shape))))
 
-(defn follow-parent-modifiers
+(defn- follow-parent-modifiers
   "Modifiers that make `child` follow the change of its parent from
   `parent-before` to `parent-after`, through the child constraints."
   [child parent-before parent-after]
@@ -900,6 +901,17 @@
                                 (:points child)
                                 (:points parent-before)
                                 (delay (:points parent-after))))))
+
+(defn follow-parent-modif-tree
+  "Modifiers that make `child` and its children follow the change of the
+  parent of `child` from `parent-before` to `parent-after`, each one through
+  its own constraints."
+  [objects child parent-before parent-after]
+  (let [modifiers (follow-parent-modifiers child parent-before parent-after)]
+    (if (ctm/empty? modifiers)
+      {}
+      (gm/set-objects-modifiers {(:id child) {:modifiers modifiers}}
+                                (select-keys objects (cfh/get-children-ids-with-self objects (:id child)))))))
 
 (defn- resize-with-parent
   "Resizes `shape` the way its constraints do when its parent changes from
@@ -1049,23 +1061,19 @@
                                :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
                     ;; A swapped child follows its parent if the user moved it, or
                     ;; goes to the place of the slot's occupant in the main
-                    (let [ids       (cfh/get-children-ids-with-self (:objects container) (:id child-inst))
-                          modifiers (follow-parent-modifiers child-inst shape-inst shape-after)]
+                    (let [ids        (cfh/get-children-ids-with-self (:objects container) (:id child-inst))
+                          modif-tree (follow-parent-modif-tree (:objects container) child-inst shape-inst shape-after)
+                          follow     #(gsh/transform-shape % (dm/get-in modif-tree [(:id %) :modifiers]))]
                       (if (ctk/touched-group? child-inst :geometry-group)
                         (cond-> changes
-                          (not (ctm/empty? modifiers))
-                          (update-geometry-with-parent ids #(gsh/transform-shape % modifiers) container))
+                          (seq modif-tree)
+                          (update-geometry-with-parent ids follow container))
                         ;; Undo the parent change through the constraints, then move to that place
-                        (let [child-after (gsh/transform-shape child-inst modifiers)
-                              delta       (gpt/add (geometry-sync-delta child-after child-main root-inst root-main)
-                                                   main-gap)]
+                        (let [delta (gpt/add (geometry-sync-delta (follow child-inst) child-main root-inst root-main)
+                                             main-gap)]
                           (cond-> changes
-                            (or (not (ctm/empty? modifiers)) (not (gpt/almost-zero? delta)))
-                            (update-geometry-with-parent ids
-                                                         #(-> %
-                                                              (gsh/transform-shape modifiers)
-                                                              (gsh/move delta))
-                                                         container))))))
+                            (or (seq modif-tree) (not (gpt/almost-zero? delta)))
+                            (update-geometry-with-parent ids #(gsh/move (follow %) delta) container))))))
 
           moved (fn [changes child-inst child-main]
                   (shape-log :trace (:id child-inst) container

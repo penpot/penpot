@@ -3244,9 +3244,11 @@
                                                             (assoc :layout :flex :layout-flex-dir :row))))]
     (-> (thf/sample-file :file1)
         (tho/add-simple-component :icon-a :icon-a-root :icon-a-child
-                                  :root-params {:width 24 :height 24})
+                                  :root-params {:width 24 :height 24}
+                                  :child-params {:width 24 :height 24})
         (tho/add-simple-component :icon-b :icon-b-root :icon-b-child
-                                  :root-params {:width 24 :height 24})
+                                  :root-params {:width 24 :height 24}
+                                  :child-params {:width 24 :height 24})
         (thv/add-variant-with-copy :v01 :c01 :m01 :c02 :m02 :m01-icon :m02-icon :icon-a)
         (card :m01)
         (card :m02)
@@ -3292,11 +3294,14 @@
         ;; ==== Action
         file'  (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02
                                                                :keep-touched? true})
-        scale  (/ (:width (ths/get-shape file' :copy02)) root-w)]
+        scale  (/ (:width (ths/get-shape file' :copy02)) root-w)
+        inner  #(ths/get-shape-by-id % (first (:shapes (ths/get-shape % :copy-icon-b))))]
 
     ;; ==== Check
     (t/is (mth/close? (* width scale)
-                      (:width (ths/get-shape file' :copy-icon-b))))))
+                      (:width (ths/get-shape file' :copy-icon-b))))
+    ;; The icon content follows the icon through its own (left) constraint
+    (t/is (mth/close? (:width (inner file)) (:width (inner file'))))))
 
 (t/deftest test-switch-scales-moved-child-back-with-root
   (let [;; ==== Setup
