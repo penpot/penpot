@@ -26,6 +26,23 @@
   {:before #(reset! temporary-root (fs/mkdtempSync (path/join (os/tmpdir) "penpot-browser-test-")))
    :after #(fs/rmSync @temporary-root #js {:recursive true :force true})})
 
+(t/deftest gpu-container-selects-the-vulkan-launch-backend
+  (let [env      (.-env js/process)
+        previous (.-PENPOT_GPU env)]
+    (try
+      (doseq [value [nil "0" "true" "1"]]
+        (if (nil? value)
+          (js-delete env "PENPOT_GPU")
+          (set! (.-PENPOT_GPU env) value))
+        (let [args (set (:args (browser/launch-settings)))]
+          (t/is (= (= value "1") (contains? args "--use-angle=vulkan")))
+          (t/is (= (= value "1") (contains? args "--use-gl=angle")))
+          (t/is (contains? args "--enable-unsafe-swiftshader"))))
+      (finally
+        (if (undefined? previous)
+          (js-delete env "PENPOT_GPU")
+          (set! (.-PENPOT_GPU env) previous))))))
+
 (defn- ^:async open-host
   [actual-id ready?]
   (let [identity-text (.stringify js/JSON (transit/encode-str {:build-id actual-id}))]

@@ -218,6 +218,17 @@
                 ["run" "--timeout-ms" " "]]]
     (t/is (thrown? js/Error (runner/parse-args args)))))
 
+(t/deftest gpu-policy-is-available-for-runs-and-feature-comparisons
+  (doseq [args [["run" "--require-gpu"]
+                ["ab" "--features" "a" "--filter" "rects/load" "--require-gpu"]
+                ["ab" "--features" "a" "--require-gpu" "--dry-run"]]]
+    (t/is (true? (get-in (runner/parse-args args) [:options :require-gpu]))))
+  (doseq [args [["build" "--require-gpu"]
+                ["purge" "--require-gpu"]
+                ["compare" "a" "b" "--require-gpu"]]]
+    (t/is (thrown-with-msg? js/Error #"run options require run" (runner/parse-args args))))
+  (t/is (re-find #"--require-gpu" (runner/usage ""))))
+
 (t/deftest ab-accepts-run-budgets-and-comparison-permissions
   (let [{:keys [command options]}
         (runner/parse-args ["ab" "--features" " b,a,b " "--filter" "rects/load"

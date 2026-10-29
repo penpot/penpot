@@ -79,6 +79,7 @@
     :validate nonempty]
    [nil "--remove" "Remove the used build after shutdown"]
    [nil "--screenshots" "Capture one screenshot per case"]
+   [nil "--require-gpu" "Fail when GPU rendering is unavailable"]
    [nil "--only-builds" "Purge build attempts"]
    [nil "--only-runs" "Purge managed runs"]
    [nil "--only-comparisons" "Purge managed feature comparisons"]
@@ -104,6 +105,9 @@
        "-v/--verbose includes raw build output. --[no-]color overrides terminal\n"
        "color detection. File logs receive all levels without logger colors.\n"
        "Builds and managed runs live under target/performance/render-wasm.\n"
+       "run and ab accept --require-gpu. Start the container with\n"
+       "./manage.sh run-devenv --gpu and use pnpm run render-bench -- run ...\n"
+       "to require hardware WebGL2 in preparation metadata. ab --dry-run skips it.\n"
        "compare reads saved schema:run records and starts no build, host or browser.\n"
        "Build and scene permissions combine; operation and runtime checks stay strict.\n"
        "All-differences permits every compatibility difference. Reports retain them.\n\n"
@@ -165,7 +169,7 @@
 
 (def ^:private run-flags
   #{"--build" "--filter" "--seed" "--warmups" "--repetitions" "--timeout-ms"
-    "--startup-timeout-ms" "--output-dir" "--remove" "--screenshots"})
+    "--startup-timeout-ms" "--output-dir" "--remove" "--screenshots" "--require-gpu"})
 
 (def ^:private purge-flags
   #{"--only-builds" "--only-runs" "--only-comparisons"})

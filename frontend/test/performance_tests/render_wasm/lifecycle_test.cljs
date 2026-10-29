@@ -220,26 +220,33 @@
   recorded in the shared call log. The context reports a drawing-buffer size
   distinct from any canvas size, so tests prove `read-graphics` reads it from
   the context rather than the canvas attributes."
-  [id]
-  (let [lose-ext #js {:loseContext (fn [] (record! ["lose" id]) nil)}
-        context  #js {:getExtension (fn [name]
-                                      (when (= name "WEBGL_lose_context")
-                                        lose-ext))
-                      :getContextAttributes (fn []
-                                              #js {"antialias" false
-                                                   "depth" true
-                                                   "stencil" false
-                                                   "alpha" false
-                                                   "preserveDrawingBuffer" false})
-                      :drawingBufferWidth 1234
-                      :drawingBufferHeight 5678}]
-    #js {:id id
-         :width 0
-         :height 0
-         :style #js {}
-         :getContext (fn [_ _] context)
-         :addEventListener (fn [_ _] nil)
-         :remove (fn [] (record! ["remove" id]) nil)}))
+  ([id]
+   (fake-canvas id nil))
+  ([id {:keys [vendor renderer]}]
+   (let [debug-ext (when (and vendor renderer)
+                     #js {:UNMASKED_VENDOR_WEBGL 1 :UNMASKED_RENDERER_WEBGL 2})
+         lose-ext #js {:loseContext (fn [] (record! ["lose" id]) nil)}
+         context  #js {:getExtension (fn [name]
+                                       (case name
+                                         "WEBGL_lose_context" lose-ext
+                                         "WEBGL_debug_renderer_info" debug-ext
+                                         nil))
+                       :getParameter (fn [parameter] (case parameter 1 vendor 2 renderer nil))
+                       :getContextAttributes (fn []
+                                               #js {"antialias" false
+                                                    "depth" true
+                                                    "stencil" false
+                                                    "alpha" false
+                                                    "preserveDrawingBuffer" false})
+                       :drawingBufferWidth 1234
+                       :drawingBufferHeight 5678}]
+     #js {:id id
+          :width 0
+          :height 0
+          :style #js {}
+          :getContext (fn [_ _] context)
+          :addEventListener (fn [_ _] nil)
+          :remove (fn [] (record! ["remove" id]) nil)})))
 
 (defn- install-fake-dom!
   "Installs fake DOM, import, clock and scenario globals and returns a
@@ -422,6 +429,25 @@
       (catch :default cause
         (cleanup)
         (throw cause)))))
+
+(t/deftest ^:async preparations-record-the-context-identity-and-software-status
+  (doseq [[identity software] [[{:vendor "NVIDIA" :renderer "ANGLE (NVIDIA, Vulkan)"} false]
+                               [{:vendor "Google" :renderer "ANGLE (SwiftShader)"} true]
+                               [{:vendor "Mesa" :renderer "llvmpipe (LLVM)"} true]
+                               [nil false]]]
+    (await
+     (with-entry-env
+       (^:async fn [cleanup]
+         (try
+           (set! (.-createElement js/document) (fn [_] (fake-canvas 1 identity)))
+           (let [response (transit/decode-str (await (browser/prepare-scene-request (scene-args 7 {}))))
+                 graphics (get-in response [:preparation :effective-graphics])]
+             (t/is (= "ok" (:status response)))
+             (t/is (= (or (:vendor identity) "unknown") (:vendor graphics)))
+             (t/is (= (or (:renderer identity) "unknown") (:renderer graphics)))
+             (t/is (= software (:software graphics))))
+           (finally
+             (cleanup))))))))
 
 (t/deftest successful-load-reaches-full
   (t/async done

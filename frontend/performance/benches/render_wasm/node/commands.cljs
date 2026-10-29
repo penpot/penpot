@@ -87,6 +87,12 @@
   (let [outcome
         (try
           (let [{:keys [command options]} (transit/decode-str request)
+                _ (when (and (:require-gpu options)
+                             (or (= command "run")
+                                 (and (= command "ab") (not (:dry-run options))))
+                             (not= "1" (.-PENPOT_GPU (.-env js/process))))
+                    (throw (ex-info "--require-gpu needs PENPOT_GPU=1. Start the container with ./manage.sh run-devenv --gpu and use pnpm run render-bench."
+                                    {:type ::gpu-required})))
                 root (artifacts/frontend-root)]
             (log/configure {:level (options/console-level options)
                             :color (options/color-mode options)})
