@@ -7,6 +7,7 @@
 (ns frontend-tests.errors-test
   (:require
    [app.main.errors :as errors]
+   [app.util.globals :as g]
    [cljs.test :as t :include-macros true]))
 
 (defn- make-error
@@ -148,3 +149,33 @@
     ;; V8 gives native rejections such as a failed fetch no frames at all.
     (let [cause (make-error "TypeError" "Failed to fetch" :stack "TypeError: Failed to fetch")]
       (t/is (false? (errors/is-ignorable-exception? cause))))))
+
+;; ---------------------------------------------------------------------------
+;; network-failure->error tests
+;; ---------------------------------------------------------------------------
+
+(defn- with-online
+  "Call `f` while `navigator.onLine` reads `online?`."
+  [online? f]
+  (js/Object.defineProperty g/navigator "onLine"
+                            #js {:value online? :configurable true})
+  (try
+    (f)
+    (finally
+      (js-delete g/navigator "onLine"))))
+
+(t/deftest test-network-failure-becomes-environment-error
+  (t/testing "A raw fetch failure is wrapped as an environment error"
+    (let [cause (make-error "TypeError" "Failed to fetch")
+          error (errors/network-failure->error cause)]
+      (t/is (true? (errors/environment-error? error)))
+      (t/is (= "Failed to fetch" (ex-message error)))
+      (t/is (identical? cause (ex-cause error))))))
+
+(t/deftest test-network-failure-type-follows-connection
+  (let [cause (make-error "TypeError" "Failed to fetch")
+        type  #(:type (ex-data (errors/network-failure->error cause)))]
+    (t/testing "Offline browsers report :offline"
+      (t/is (= :offline (with-online false type))))
+    (t/testing "Online browsers report :network"
+      (t/is (= :network (with-online true type))))))

@@ -29,6 +29,10 @@
   z-index: var(--z-index-dropdown);
   box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);
 
+  // Do not inherit the cursor of the control that opens it (e.g. the
+  // scrub cursor of the numeric input).
+  cursor: default;
+
   &:focus {
     outline: none;
   }

@@ -25,7 +25,7 @@
   },
   "packageManager": "pnpm@12.16.1+sha512.091d1dee7927575661b25dab3c2ae31cafc1c54d6b71ed6a6600cf0c1cb10434a447eae14015f1b23e2e6bedeed79df94a932e2164d2832280dce3fb32f656d1",
   "devDependencies": {
-    "concurrently": "^10.0.5",
-    "prettier": "^3.9.9"
+    "concurrently": "^10.0.6",
+    "prettier": "^3.9.10"
   }
 }
