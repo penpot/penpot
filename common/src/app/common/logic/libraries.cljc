@@ -1338,6 +1338,12 @@
                                                       container
                                                       {:type :reg-objects
                                                        :shapes all-parents}))
+        ;; Conj reg before the deletions, so undo recalculates the parents
+        ;; after removing the shapes.
+        changes' (update changes' :undo-changes conj (make-change
+                                                      container
+                                                      {:type :reg-objects
+                                                       :shapes all-parents}))
         changes' (reduce del-obj-change changes' new-shapes)]
 
     (if (and (ctk/touched-group? parent-shape :shapes-group) omit-touched?)
@@ -1444,6 +1450,12 @@
         changes' (update changes' :redo-changes conj {:type :reg-objects
                                                       :component-id (:id component)
                                                       :shapes all-parents})
+        ;; Conj reg before the other undo changes, so undo recalculates the
+        ;; parents after removing the shapes.
+        changes' (update changes' :undo-changes conj (make-change
+                                                      component-container
+                                                      {:type :reg-objects
+                                                       :shapes all-parents}))
         changes' (reduce mod-obj-change changes' updated-shapes)
         changes' (reduce del-obj-change changes' new-shapes)]
 
@@ -1491,6 +1503,12 @@
 
         changes' (-> (reduce add-redo-change changes ids)
                      (update :redo-changes conj (make-change
+                                                 container
+                                                 {:type :reg-objects
+                                                  :shapes (vec parents)}))
+                     ;; Conj reg before the additions, so undo recalculates
+                     ;; the parents after restoring the shapes.
+                     (update :undo-changes conj (make-change
                                                  container
                                                  {:type :reg-objects
                                                   :shapes (vec parents)})))
@@ -1693,15 +1711,19 @@
                                     container
                                     {:type :reg-objects
                                      :shapes all-parents}))
-        (update :undo-changes conj (make-change
-                                    container
-                                    {:type :mod-obj
-                                     :id (:id dest-shape)
-                                     :operations (vec uoperations)}))
-        (update :undo-changes concat [(make-change
-                                       container
-                                       {:type :reg-objects
-                                        :shapes all-parents})])
+        ;; Conj reg before mod, so undo restores the shape and then its
+        ;; parents. Do not append with concat: it nests one lazy seq per
+        ;; shape and overflows the stack on big syncs.
+        (update :undo-changes conj
+                (make-change
+                 container
+                 {:type :reg-objects
+                  :shapes all-parents})
+                (make-change
+                 container
+                 {:type :mod-obj
+                  :id (:id dest-shape)
+                  :operations (vec uoperations)}))
         (pcb/apply-changes-local))))
 
 
