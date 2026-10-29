@@ -27,8 +27,8 @@ file (never pipe tool output through filters).
   members) must carry a `packageManager` field with the identical
   `pnpm@<version>+sha512.<hash>` value. Do not let them drift.
   `external/` (vendored trees with their own lifecycles), `.opencode/`,
-  `.pnpm-store/`, `bundles/` and `docker/images/bundle-*` copies are
-  never stamped.
+  `.pnpm-store/`, `bundles/`, `target/` build output and
+  `docker/images/bundle-*` copies are never stamped.
 - pnpm is a system binary everywhere (devenv image, CI runners, Docker
   images). Nothing may call corepack: it is gone from Node 25+. pnpm
   auto-downloads the `packageManager` version on mismatch
@@ -60,6 +60,7 @@ file (never pipe tool output through filters).
 4. Run `scripts/sync-pnpm-version --install` (plain `pnpm install` in
    each of the 11 workspace roots) to refresh lockfile metadata, then
    fix any failing workspace (see gotchas) and re-run that directory.
+   For a version-only bump, `pnpm install --lockfile-only` in each root is enough: it rewrites only the pnpm self-reference entries and needs no node_modules. The repo-root `pnpm-lock.yaml` is rewritten by itself on the first `pnpm` call that self-installs the target version.
 
 ## Gotchas
 
