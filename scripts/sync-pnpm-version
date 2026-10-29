@@ -27,7 +27,8 @@ Options:
   -h, --help       Show this help.
 
 external/ (vendored trees with their own lifecycles), .opencode/,
-.pnpm-store/, bundles/ and docker build-context copies are never stamped.
+.pnpm-store/, bundles/, build output (target/) and docker build-context
+copies are never stamped.
 EOF
 }
 
@@ -91,7 +92,7 @@ mapfile -t files < <(
   find . \
     \( -name .git -o -name node_modules -o -name .pnpm-store \
        -o -name external -o -name .opencode -o -name bundles \
-       -o -name .angular \) -type d -prune \
+       -o -name target -o -name .angular \) -type d -prune \
     -o -path './docker/images/bundle-*' -prune \
     -o -name package.json -type f -print | sort
 )

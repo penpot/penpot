@@ -388,6 +388,48 @@
         (t/is (= [plugin-id :setVariantProperty "Plugin doesn't have 'library:write' permission"]
                  (first @errors)))))))
 
+(t/deftest variant-rename-property-sanitizes-name
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        id        (uuid/next)
+        renamed   (atom nil)
+        errors    (atom [])]
+    (with-redefs [r/check-permission (constantly true)
+                  u/not-valid        (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  library/get-variant-components (constantly [{:variant-properties [{:name "color" :value "red"}]}])
+                  dwv/update-property-name (fn [vid pos name opts]
+                                             (reset! renamed {:id vid :pos pos :name name :opts opts})
+                                             ::rename-event)
+                  st/emit!           mock/noop]
+      (let [proxy (library/variant-proxy plugin-id file-id id)]
+        (.renameProperty proxy 0 "a=b")
+        (t/is (empty? @errors))
+        (t/is (= "ab" (:name @renamed)))
+        (.renameProperty proxy 0 "=,=")
+        (t/is (= 1 (count @errors)))
+        (t/is (= :name (second (first @errors))))))))
+
+(t/deftest component-set-variant-property-sanitizes-value
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        id        (uuid/next)
+        updated   (atom nil)
+        errors    (atom [])]
+    (with-redefs [r/check-permission (constantly true)
+                  u/not-valid        (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  u/locate-library-component (constantly {:id id :variant-properties [{:name "color"}]})
+                  dwv/update-property-value (fn [cid pos value]
+                                              (reset! updated {:id cid :pos pos :value value})
+                                              ::value-event)
+                  st/emit!           mock/noop]
+      (let [proxy (library/lib-component-proxy plugin-id file-id id)]
+        (.setVariantProperty proxy 0 "a=b")
+        (t/is (empty? @errors))
+        (t/is (= "ab" (:value @updated)))
+        (.setVariantProperty proxy 0 "=,=")
+        (t/is (empty? @errors))
+        (t/is (= "" (:value @updated)))))))
+
 ;; ---------------------------------------------------------------------------
 ;; connectLibrary
 ;; ---------------------------------------------------------------------------

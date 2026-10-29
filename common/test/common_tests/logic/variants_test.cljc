@@ -16,7 +16,9 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.variants :as thv]
-   [clojure.test :as t]))
+   [app.common.types.variant :as ctv]
+   [clojure.test :as t]
+   [cuerdas.core :as str]))
 
 (t/use-fixtures :each thi/test-fixture)
 
@@ -233,6 +235,178 @@
     ;; ==== Check
     (t/is (= (-> comp01' :variant-properties first :value) "NewValue1"))
     (t/is (= (-> comp02' :variant-properties first :value) "NewValue2"))))
+
+(t/deftest test-update-property-value-sanitizes
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        page    (thf/current-page file)
+        comp01  (thc/get-component file :c01)
+        before  (-> comp01 :variant-properties first :value)
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-update-property-value (:id comp01) 0 "a=b,"))
+
+        file'   (thf/apply-changes file changes)
+        comp01' (thc/get-component file' :c01)
+        main'   (ths/get-shape file' :m01)
+
+        noop    (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-update-property-value (:id comp01) 0 42))
+        file-noop (thf/apply-changes file noop)
+        comp-noop (thc/get-component file-noop :c01)
+
+        cleared (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-update-property-value (:id comp01) 0 "=,="))
+        file-cleared (thf/apply-changes file cleared)
+        comp-cleared (thc/get-component file-cleared :c01)
+        main-cleared (ths/get-shape file-cleared :m01)
+
+        nilled  (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-update-property-value (:id comp01) 0 nil))
+        file-nilled (thf/apply-changes file nilled)
+        comp-nilled (thc/get-component file-nilled :c01)]
+
+    (t/is (= "ab" (-> comp01' :variant-properties first :value)))
+    (t/is (= "ab" (:variant-name main')))
+    (t/is (= before (-> comp-noop :variant-properties first :value)))
+    (t/is (= "" (-> comp-cleared :variant-properties first :value)))
+    (t/is (not (str/includes? (str (:variant-name main-cleared)) "=")))
+    (t/is (= "" (-> comp-nilled :variant-properties first :value)))))
+
+(t/deftest test-update-property-name-sanitizes-and-noops
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02))
+        v-id    (-> (ths/get-shape file :v01) :id)
+        page    (thf/current-page file)
+        before  (-> (thc/get-component file :c01) :variant-properties first :name)
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-update-property-name v-id 0 "Size=Big"))
+
+        file'   (thf/apply-changes file changes)
+
+        noop    (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-update-property-name v-id 0 "=,="))
+        file-noop (thf/apply-changes file noop)]
+
+    (t/is (= "SizeBig" (-> (thc/get-component file' :c01) :variant-properties first :name)))
+    (t/is (= before (-> (thc/get-component file-noop :c01) :variant-properties first :name)))))
+
+(t/deftest test-add-new-property-sanitizes
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        v-id    (-> (ths/get-shape file :v01) :id)
+        page    (thf/current-page file)
+        before-count (-> (thc/get-component file :c01) :variant-properties count)
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-add-new-property v-id {:property-name "Size=Big"
+                                                          :property-value "a=b,"}))
+
+        file'   (thf/apply-changes file changes)
+        comp01' (thc/get-component file' :c01)
+
+        noop    (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-add-new-property v-id {:property-name "=,="}))
+        file-noop (thf/apply-changes file noop)]
+
+    (t/is (= "SizeBig" (-> comp01' :variant-properties last :name)))
+    (t/is (= "ab" (-> comp01' :variant-properties last :value)))
+    (t/is (= before-count
+             (-> (thc/get-component file-noop :c01) :variant-properties count)))))
+
+(t/deftest test-add-new-property-blank-value-does-not-trail-separator
+  (let [file     (-> (thf/sample-file :file1)
+                     (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        v-id     (-> (ths/get-shape file :v01) :id)
+        page     (thf/current-page file)
+        main     (ths/get-shape file :m01)
+        before   (:variant-name main)
+        changes  (-> (pcb/empty-changes nil)
+                     (pcb/with-page-id (:id page))
+                     (pcb/with-library-data (:data file))
+                     (pcb/with-objects (:objects page))
+                     (clvp/generate-add-new-property v-id {:property-name "Size"
+                                                           :property-value "=,="}))
+        file'    (thf/apply-changes file changes)
+        comp01'  (thc/get-component file' :c01)
+        main'    (ths/get-shape file' :m01)]
+
+    (t/is (= before (:variant-name main')))
+    (t/is (not (str/ends-with? (str (:variant-name main')) ", ")))
+    (t/is (= "" (-> comp01' :variant-properties last :value)))
+    (t/is (= "Size" (-> comp01' :variant-properties last :name)))))
+
+(t/deftest test-update-property-value-from-formula-strips-equal-in-value
+  ;; Option A / M2: formula parse may leave `=` inside a value; write path strips it.
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        page    (thf/current-page file)
+        comp01  (thc/get-component file :c01)
+        parsed  (ctv/properties-formula->map "border=yes color=yes")
+        value   (-> parsed first :value)
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-update-property-value (:id comp01) 0 value))
+        file'   (thf/apply-changes file changes)
+        comp01' (thc/get-component file' :c01)
+        main'   (ths/get-shape file' :m01)]
+
+    (t/is (= "yes color=yes" value))
+    (t/is (= "yes coloryes" (-> comp01' :variant-properties first :value)))
+    (t/is (= "yes coloryes" (:variant-name main')))
+    (t/is (not= "yes color=yes" (-> comp01' :variant-properties first :value)))))
+
+(t/deftest test-make-shapes-variant-sanitizes-component-name-as-value
+  ;; create-new-properties-from-variant adds (:name component) as a value when
+  ;; moving a variant into a differently named container. Production always
+  ;; pairs generate-make-shapes-variant with change-parent.
+  (let [file      (-> (thf/sample-file :file1)
+                      (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                      (thv/add-variant :v02 :c03 :m03 :c04 :m04)
+                      (thc/update-component :c03 {:name "Big=red"}))
+        page      (thf/current-page file)
+        container (ths/get-shape file :v01)
+        shape     (ths/get-shape file :m03)
+        changes   (-> (pcb/empty-changes nil)
+                      (pcb/with-page-id (:id page))
+                      (pcb/with-library-data (:data file))
+                      (pcb/with-objects (:objects page))
+                      (clvp/generate-make-shapes-variant [shape] container)
+                      (pcb/change-parent (:id container) [shape] 0))
+        file'     (thf/apply-changes file changes)
+        values    (->> (thc/get-component file' :c03)
+                       :variant-properties
+                       (map :value)
+                       set)]
+
+    (t/is (contains? values "Bigred"))))
 
 
 (t/deftest test-duplicate-variant-container

@@ -17,6 +17,7 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
   - Before `gh pr create` / `gh pr edit` → `mem:workflow/creating-prs` (title format, body structure, "Note:" line)
 - Before a repo-wide pnpm version update → `mem:workflow/updating-pnpm` (workspace layout, `scripts/sync-pnpm-version` flow, the stamp-missing-field and ignored-builds gotchas, verification steps)
 - Before a Node version update → `mem:workflow/updating-node` (the six pin sites in `.nvmrc`, the devenv and image Dockerfiles and the plugins-deploy workflows, the DHI tag and digest rules, what to verify)
+- Before bumping a non-JS dependency pinned in `docker/images/` (JDK, ImageMagick) → `mem:workflow/docker-images`
 - **Never `git push`, force-push, or modify `git origin`** (or any other remote). The user pushes from their own shell; if a push is required, say so and wait. Never amend a commit that the user has already pushed unless explicitly asked.
 - **Never edit `CHANGES.md` by hand.** The changelog is generated from GitHub milestones during the release process; update it only via the `update-changelog` skill flow or on explicit user request.
 - You have access to the GitHub CLI `gh` or corresponding MCP tools.
@@ -25,6 +26,7 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
 - Align `let` binding values: when a `let` form has multiple bindings spanning several lines, align the value forms to the same column with spaces.
 - If you introduce delimiter errors (mismatched parens/brackets) in Clojure/CLJS files, fix them with `scripts/paren-repair` BEFORE running lint/format checks. See `mem:scripts/paren-repair` for usage.
 - Never run anything that destroys data without explicit permission, including `drop-devenv`, `docker compose down -v`, `docker volume rm ...`. The user's real work lives in the volumes of the shared infra.
+- **Never wait for background work with a sleep.** A long command moved to the background reports its own completion: do not poll it with `sleep 150` (or any other wait) inside a foreground command, and do not re-read its output file to check whether it finished. Keep working on something else, or end the response and wait for the notification.
 
 # Project modules
 
@@ -61,7 +63,7 @@ The memory is structured in a way that you can get the critical information abou
 - `scripts/error-reports.mjs` — Query error reports via RPC API with token authentication. Supports list/get operations with filtering and pagination. See `mem:scripts/error-reports`.
 - `scripts/clean-node-modules` — Remove stale `node_modules` from all pnpm workspaces (root, modules, member packages). Keeps the shared pnpm store at `<repo>/.pnpm-store` unless `--store`; ignores `external/` and `.opencode/`. Usage and reinstall steps: `mem:workflow/updating-pnpm`.
 - `scripts/setup-opencode` — Install the opencode CLI in-container as a global pnpm package in `$PNPM_HOME`. Not part of the devenv image; see `mem:devenv/core`.
-- `scripts/ci` — CI orchestration script: runs lint, tests, and format checks per module (`frontend backend common render-wasm exporter mcp plugins library`). Logs go to `.ci-logs/`; read the log file on failure. It is the preferred way to run the backend tests, and it exports `PENPOT_FLAGS` with `enable-backend-asserts`, which is what makes `clojure.core/assert` exist in the compiled test code. See `mem:scripts/ci`.
+- `scripts/ci` — CI orchestration script: runs lint, tests, and format checks per module, plus the production build on request (`--build`). Modules: `frontend backend common render-wasm exporter mcp plugins library media-processor`. Logs go to `.ci-logs/`; read the log file on failure. It is the preferred way to run the backend tests, and it exports `PENPOT_FLAGS` with `enable-backend-asserts`, which is what makes `clojure.core/assert` exist in the compiled test code. See `mem:scripts/ci`.
 
 # Dependency graph
 

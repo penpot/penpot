@@ -235,8 +235,7 @@
    :enable-stroke-per-side
    :enable-token-combobox
    :enable-custom-shortcuts
-   :enable-token-lib-sync
-   :enable-link-unfurl])
+   :enable-token-lib-sync])
 
 (defn parse
   [& flags]

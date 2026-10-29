@@ -38,20 +38,16 @@
        (mapcat :labels)
        (vec)))
 
-(defn- saw-call?
-  "Wait until a metrics call mentions `label`."
-  [label timeout]
-  (let [deadline (+ (System/currentTimeMillis) timeout)]
-    (loop []
-      (cond
-        (some (fn [call] (some #{label} (:labels call))) @calls)
-        true
-
-        (> (System/currentTimeMillis) deadline)
-        false
-
-        :else
-        (do (Thread/sleep 10) (recur))))))
+(defn- invoke!
+  "Run `f` under the limits the cfg declares, the way a command does: the key
+  of each limit comes from the params, and the root limiters come after the
+  ones the cfg declares."
+  [cfg f params]
+  (let [wrapped (climit/wrap cfg
+                             f
+                             {::sv/name "test-command"
+                              ::climit/id (::climit/id cfg)})]
+    (wrapped cfg params)))
 
 (defn- failed-type
   "Run `f` and return its value, or the type of the error it raised."
@@ -101,11 +97,10 @@
 ;; ACQUISITION ORDER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(t/deftest acquires-root-limits-before-the-command-own-limits
-  ;; A command declaring its own limits must meet the root limiters first.
-  ;; The nested `climit/invoke!` calls take only the command's own limits and
-  ;; run inside the root ones, so any other order lets two calls of the same
-  ;; profile hold the same limiters in opposite order and park for good.
+(t/deftest acquires-the-command-own-limits-before-the-root-limits
+  ;; A command declaring its own limits must meet them before the root
+  ;; limiters. No command enters climit from inside its handler any more, so
+  ;; every path takes the limiters in the same order.
   (record-metrics
    (fn []
      (th/with-climit [climit test-config]
@@ -113,124 +108,57 @@
              wrapped (climit/wrap {::rpc/climit climit} (fn [_ _] :ok) mdata)
              result  (wrapped {::rpc/climit climit} {::rpc/profile-id (uuid/next)})]
          (t/is (= :ok result))
-         (t/is (= ["root/by-profile"
-                   "root/global"
-                   "process-image/by-profile"
-                   "process-image/global"]
+         (t/is (= ["process-image/by-profile"
+                   "process-image/global"
+                   "root/by-profile"
+                   "root/global"]
                   (acquired-in-order))))))))
 
-(t/deftest nested-limits-do-not-deadlock-with-the-command-own-limits
-  ;; Two paths over one profile: a command declaring its own limits (like
-  ;; `upload-file-media-object`) and a command that takes the root limiters and
-  ;; then asks for the same limits from inside its handler (like
-  ;; `create-file-media-object-from-url`). Each path holds what the other one
-  ;; waits for the moment the order differs, and nothing releases.
+(t/deftest the-key-of-a-limit-comes-from-the-params
+  ;; The key of a limit is a function of the params: a keyword is looked up in
+  ;; them, and that is what tells one profile from another. Two calls with the
+  ;; same key share the limiter, and two calls with a different key do not.
+  (th/with-climit [climit {:test-key/by-profile {:permits 1 :timeout 2000}}]
+    (let [pid     (uuid/next)
+          limits  [[:test-key/by-profile ::rpc/profile-id]]
+          cfg     {::rpc/climit climit
+                   ::climit/id limits}
+          gate    (promise)
+          entered (promise)
+          wrapped (climit/wrap cfg
+                               (fn [_ params]
+                                 ;; only the call of the first profile waits
+                                 (when (= pid (::rpc/profile-id params))
+                                   (deliver entered true)
+                                   @gate)
+                                 :ok)
+                               {::sv/name "test-command" ::climit/id limits})
+          holder  (future (wrapped cfg {::rpc/profile-id pid}))]
+
+      ;; The call of the same profile waits for the permit this thread holds.
+      (t/is (true? (deref entered 5000 false)))
+      (t/is (= :timeout (deref (future (wrapped cfg {::rpc/profile-id pid})) 300 :timeout)))
+
+      ;; The call of another profile takes the permit of its own key.
+      (t/is (= :ok (deref (future (wrapped cfg {::rpc/profile-id (uuid/next)})) 5000 :timeout)))
+
+      (deliver gate true)
+      (t/is (= :ok (deref holder 5000 :timeout))))))
+
+(t/deftest a-command-without-limits-takes-the-root-limits
+  ;; A command that declares no limits of its own still takes the root ones,
+  ;; and in the same order as the ones of a command that declares them.
   (record-metrics
    (fn []
      (th/with-climit [climit test-config]
-       (let [pid     (uuid/next)
-             gate    (promise)
-             entered (promise)
+       (let [mdata   {::sv/name "test-command"}
+             wrapped (climit/wrap {::rpc/climit climit} (fn [_ _] :ok) mdata)
+             result  (wrapped {::rpc/climit climit} {::rpc/profile-id (uuid/next)})]
+         (t/is (= :ok result))
+         (t/is (= ["root/by-profile"
+                   "root/global"]
+                  (acquired-in-order))))))))
 
-             handler-b (fn [cfg params]
-                         (deliver entered true)
-                         @gate
-                         (-> cfg
-                             (assoc ::climit/id [[:process-image/by-profile pid]
-                                                 [:process-image/global]])
-                             (assoc ::climit/label "path-b")
-                             (climit/invoke! (fn [_ _] :nested-ok) params)))
-
-             wrapped-a (climit/wrap {::rpc/climit climit}
-                                    (fn [_ _] :ok)
-                                    {::sv/name "path-a" ::climit/id image-limits})
-
-             wrapped-b (climit/wrap {::rpc/climit climit}
-                                    handler-b
-                                    {::sv/name "path-b"})]
-
-         ;; Path B takes the root limiters and waits inside its handler.
-         (let [fb (future (failed-type #(wrapped-b {::rpc/climit climit}
-                                                   {::rpc/profile-id pid})))]
-           (t/is (true? (deref entered 5000 false)))
-
-           ;; Path A, started now, takes its own limiters and then waits for the
-           ;; root ones, which B holds. The recorded metrics are how the test
-           ;; knows A got that far instead of guessing with a sleep.
-           (reset! calls [])
-           (let [fa (future (failed-type #(wrapped-a {::rpc/climit climit}
-                                                     {::rpc/profile-id pid})))]
-             (t/is (true? (saw-call? "root/by-profile" 5000)))
-
-             ;; Let B ask for the limits A holds: if the order differs, each path
-             ;; now waits for a permit the other one holds.
-             (deliver gate true)
-
-             (t/is (= :ok (deref fa 15000 :timeout)))
-             (t/is (= :nested-ok (deref fb 15000 :timeout))))))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; REENTRANCY
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(t/deftest reentrant-invoke-does-not-consume-a-second-permit
-  ;; A handler entering climit for a limit it already holds must not queue
-  ;; behind itself: it runs inline and takes no second permit. Another thread
-  ;; asking for the same limiter still waits, so the limit stays in place.
-  (th/with-climit [climit {:process-image/by-profile
-                           {:permits 1 :timeout 2000}}]
-    (let [pid     (uuid/next)
-          cfg     {::rpc/climit climit
-                   ::climit/id [[:process-image/by-profile pid]]}
-          inner   (promise)
-          other   (promise)
-          handler (fn [cfg params]
-                    (deliver inner
-                             (failed-type #(climit/invoke! cfg (fn [_ _] :inner-ok) params)))
-                    (deliver other (future (climit/invoke! cfg (fn [_ _] :other-ok) params)))
-                    (t/is (= :waiting (deref @other 300 :waiting)))
-                    :outer-ok)
-
-          outcome (failed-type #(climit/invoke! cfg handler {}))]
-
-      ;; With no reentrancy handling the inner call waits for the permit this very
-      ;; thread holds and ends failing by timeout.
-      (t/is (= :inner-ok (deref inner 5000 :timeout)))
-      (t/is (= :outer-ok outcome))
-
-      ;; once the outer call releases, the other thread gets its permit
-      (t/is (= :other-ok (deref @other 5000 :timeout))))))
-
-(t/deftest reentrant-tracking-is-cleaned-up-when-the-handler-fails
-  ;; If the mark is not removed, the thread keeps believing it holds the
-  ;; limiter and every later call of that key would skip the limit.
-  (th/with-climit [climit {:process-image/by-profile
-                           {:permits 1 :timeout 1000}}]
-    (let [pid     (uuid/next)
-          cfg     {::rpc/climit climit
-                   ::climit/id [[:process-image/by-profile pid]]}
-          holding (promise)
-          gate    (promise)]
-
-      ;; The failing call runs on this thread, so this thread is the one that
-      ;; must forget it held the limiter.
-      (t/is (thrown? clojure.lang.ExceptionInfo
-                     (climit/invoke! cfg (fn [_ _] (throw (ex-info "boom" {}))) {})))
-
-      ;; another thread takes the only permit
-      (let [fb (future (climit/invoke! cfg (fn [_ _]
-                                             (deliver holding true)
-                                             @gate
-                                             :held)
-                                       {}))]
-        (t/is (true? (deref holding 5000 false)))
-
-        ;; this thread must wait for it, not skip the limiter
-        (t/is (= :concurrency-limit
-                 (failed-type #(climit/invoke! cfg (fn [_ _] :inner-ok) {}))))
-
-        (deliver gate true)
-        (t/is (= :held (deref fb 5000 :timeout)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SHIPPED CONFIG
@@ -239,14 +167,19 @@
 (t/deftest example-config-bounds-every-wait
   ;; A limiter without `:timeout` parks the calling thread forever, which is
   ;; how a limit nobody releases turns into lost worker threads and days of
-  ;; silent 429s. Every entry of the shipped config must carry one.
+  ;; silent 429s. Every entry of the shipped config must carry one. A limiter
+  ;; without `:queue` lets its waiters pile up without bound, and a command
+  ;; takes its own limits before the root ones, so the queue of a limit is
+  ;; where its own pile-up waits.
   (let [path (io/resource "climit.edn")]
     (t/is (some? path))
     (let [data (edn/read-string (slurp path))]
       (t/is (seq data))
       (doseq [[id config] data]
         (t/is (int? (:timeout config))
-              (str id " must declare a timeout"))))))
+              (str id " must declare a timeout"))
+        (t/is (int? (:queue config))
+              (str id " must declare a queue"))))))
 
 (t/deftest warns-when-a-limiter-has-no-timeout
   ;; The config that production loads lives outside the repository and is
@@ -321,17 +254,17 @@
        (let [name    (limiter-name :test-waiting/by-profile)
              entered (promise)
              gate    (promise)
-             holder  (future (climit/invoke! (limiter-cfg climit :test-waiting/by-profile "a")
-                                             (fn [_ _] (deliver entered true) @gate :held)
-                                             {}))]
+             holder  (future (invoke! (limiter-cfg climit :test-waiting/by-profile "a")
+                                      (fn [_ _] (deliver entered true) @gate :held)
+                                      {}))]
 
          (t/is (true? (deref entered 5000 false)))
 
          ;; the holder is running, not waiting
          (reset! calls [])
-         (let [waiter (future (climit/invoke! (limiter-cfg climit :test-waiting/by-profile "a")
-                                              (fn [_ _] :waited)
-                                              {}))]
+         (let [waiter (future (invoke! (limiter-cfg climit :test-waiting/by-profile "a")
+                                       (fn [_ _] :waited)
+                                       {}))]
            (t/is (true? (wait-until #(= 1 (waiting-last name)) 5000)))
            (t/is (= 1 (waiting-count climit name)))
 
@@ -350,30 +283,30 @@
    (fn []
      (th/with-climit [climit {:test-waiting-keys/by-profile {:permits 1 :timeout 3000}}]
        (let [name  (limiter-name :test-waiting-keys/by-profile)
-             gates {:a (promise) :b (promise)}
+             gates {"a" (promise) "b" (promise)}
              holders
              (into {}
                    (map (fn [k]
                           (let [entered (promise)]
                             [k {:entered entered
-                                :future  (future (climit/invoke! (limiter-cfg climit :test-waiting-keys/by-profile k)
-                                                                 (fn [_ _]
-                                                                   (deliver entered true)
-                                                                   @(gates k)
-                                                                   :held)
-                                                                 {}))}])))
-                   [:a :b])]
+                                :future  (future (invoke! (limiter-cfg climit :test-waiting-keys/by-profile k)
+                                                          (fn [_ _]
+                                                            (deliver entered true)
+                                                            @(gates k)
+                                                            :held)
+                                                          {}))}])))
+                   ["a" "b"])]
 
-         (doseq [k [:a :b]]
+         (doseq [k ["a" "b"]]
            (t/is (true? (deref (:entered (holders k)) 5000 false))))
 
          ;; one call per key, waiting behind its own holder
          (let [waiters (into {}
                              (map (fn [k]
-                                    [k (future (climit/invoke! (limiter-cfg climit :test-waiting-keys/by-profile k)
-                                                               (fn [_ _] :waited)
-                                                               {}))]))
-                             [:a :b])]
+                                    [k (future (invoke! (limiter-cfg climit :test-waiting-keys/by-profile k)
+                                                        (fn [_ _] :waited)
+                                                        {}))]))
+                             ["a" "b"])]
 
            (t/is (true? (wait-until #(= 2 (waiting-count climit name)) 5000)))
            ;; the increment that reaches 2 always publishes 2, whichever waiter
@@ -381,9 +314,9 @@
            ;; contract, the value is.
            (t/is (some #(= 2 %) (waiting-value-of name)))
 
-           (doseq [k [:a :b]] (deliver (gates k) true))
+           (doseq [k ["a" "b"]] (deliver (gates k) true))
 
-           (doseq [k [:a :b]]
+           (doseq [k ["a" "b"]]
              (t/is (= :waited (deref (waiters k) 5000 :timeout)))
              (t/is (= :held (deref (:future (holders k)) 5000 :timeout))))
 
@@ -413,17 +346,17 @@
              cfg     (limiter-cfg climit :test-rejected/by-profile "a")
              entered (promise)
              gate    (promise)
-             holder  (future (climit/invoke! cfg
-                                             (fn [_ _] (deliver entered true) @gate :held)
-                                             {}))]
+             holder  (future (invoke! cfg
+                                      (fn [_ _] (deliver entered true) @gate :held)
+                                      {}))]
 
          (t/is (true? (deref entered 5000 false)))
          (reset! calls [])
 
          ;; the queue holds one waiter, so the next call is rejected right away
-         (let [queued (future (failed-type #(climit/invoke! cfg (fn [_ _] :queued) {})))]
+         (let [queued (future (failed-type #(invoke! cfg (fn [_ _] :queued) {})))]
            (t/is (true? (wait-until #(= 1 (waiting-last name)) 5000)))
-           (t/is (= :concurrency-limit (failed-type #(climit/invoke! cfg (fn [_ _] :extra) {}))))
+           (t/is (= :concurrency-limit (failed-type #(invoke! cfg (fn [_ _] :extra) {}))))
            (t/is (= [[name "queue-full"]] (rejections)))
 
            (deliver gate true)
@@ -436,13 +369,13 @@
              cfg     (limiter-cfg climit :test-timeout/by-profile "a")
              entered (promise)
              gate    (promise)
-             holder  (future (climit/invoke! cfg
-                                             (fn [_ _] (deliver entered true) @gate :held)
-                                             {}))]
+             holder  (future (invoke! cfg
+                                      (fn [_ _] (deliver entered true) @gate :held)
+                                      {}))]
 
          (t/is (true? (deref entered 5000 false)))
          (reset! calls [])
-         (t/is (= :concurrency-limit (failed-type #(climit/invoke! cfg (fn [_ _] :late) {}))))
+         (t/is (= :concurrency-limit (failed-type #(invoke! cfg (fn [_ _] :late) {}))))
          (t/is (= [[name "timeout"]] (rejections)))
 
          (deliver gate true)
@@ -458,14 +391,14 @@
              cfg     (limiter-cfg climit :test-rejected-baseline/by-profile "a")
              entered (promise)
              gate    (promise)
-             holder  (future (climit/invoke! cfg
-                                             (fn [_ _] (deliver entered true) @gate :held)
-                                             {}))]
+             holder  (future (invoke! cfg
+                                      (fn [_ _] (deliver entered true) @gate :held)
+                                      {}))]
 
          (t/is (true? (deref entered 5000 false)))
          (reset! calls [])
 
-         (t/is (= :concurrency-limit (failed-type #(climit/invoke! cfg (fn [_ _] :extra) {}))))
+         (t/is (= :concurrency-limit (failed-type #(invoke! cfg (fn [_ _] :extra) {}))))
          (t/is (= 0 (waiting-count climit name)))
          (t/is (true? (wait-until #(= 0 (waiting-last name)) 5000)))
 
@@ -482,7 +415,7 @@
 
          (reset! calls [])
          (t/is (thrown? clojure.lang.ExceptionInfo
-                        (climit/invoke! cfg (fn [_ _] (throw (ex-info "boom" {}))) {})))
+                        (invoke! cfg (fn [_ _] (throw (ex-info "boom" {}))) {})))
 
          (t/is (= 0 (waiting-count climit name)))
          (t/is (true? (wait-until #(= 0 (waiting-last name)) 5000))))))))
@@ -510,7 +443,7 @@
       (reset! calls [])
       (with-redefs [mtx/run! (failing-first-waiting-publish calls)]
         (t/is (thrown? clojure.lang.ExceptionInfo
-                       (climit/invoke! cfg (fn [_ _] :never) {}))))
+                       (invoke! cfg (fn [_ _] :never) {}))))
 
       ;; the count came back down instead of staying up for good
       (t/is (= 0 (waiting-count climit name)))
@@ -520,11 +453,11 @@
       ;; run inline instead of waiting for the permit another thread holds.
       (let [entered (promise)
             gate    (promise)
-            holder  (future (climit/invoke! cfg
-                                            (fn [_ _] (deliver entered true) @gate :held)
-                                            {}))]
+            holder  (future (invoke! cfg
+                                     (fn [_ _] (deliver entered true) @gate :held)
+                                     {}))]
         (t/is (true? (deref entered 5000 false)))
-        (t/is (= :concurrency-limit (failed-type #(climit/invoke! cfg (fn [_ _] :inline) {}))))
+        (t/is (= :concurrency-limit (failed-type #(invoke! cfg (fn [_ _] :inline) {}))))
         (deliver gate true)
         (t/is (= :held (deref holder 5000 :timeout)))))))
 
@@ -549,13 +482,13 @@
       (let [cfg     (limiter-cfg climit :test-registry/by-profile "a")
             entered (promise)
             gate    (promise)
-            holder  (future (climit/invoke! cfg
-                                            (fn [_ _] (deliver entered true) @gate :held)
-                                            {}))]
+            holder  (future (invoke! cfg
+                                     (fn [_ _] (deliver entered true) @gate :held)
+                                     {}))]
 
         (t/is (true? (deref entered 5000 false)))
 
-        (let [waiter (future (climit/invoke! cfg (fn [_ _] :waited) {}))]
+        (let [waiter (future (invoke! cfg (fn [_ _] :waited) {}))]
           (t/is (true? (wait-until #(= 1.0 (gauge-value metrics name)) 5000)))
           (deliver gate true)
           (t/is (= :waited (deref waiter 5000 :timeout)))
@@ -592,20 +525,20 @@
                  cfg     (limiter-cfg climit :test-log/by-profile "a")
                  entered (promise)
                  gate    (promise)
-                 holder  (future (climit/invoke! cfg
-                                                 (fn [_ _] (deliver entered true) @gate :held)
-                                                 {}))]
+                 holder  (future (invoke! cfg
+                                          (fn [_ _] (deliver entered true) @gate :held)
+                                          {}))]
 
              (t/is (true? (deref entered 5000 false)))
              (reset! calls [])
 
-             (let [q1 (future (climit/invoke! cfg (fn [_ _] :q1) {}))
-                   q2 (future (climit/invoke! cfg (fn [_ _] :q2) {}))]
+             (let [q1 (future (invoke! cfg (fn [_ _] :q1) {}))
+                   q2 (future (invoke! cfg (fn [_ _] :q2) {}))]
 
                ;; the two of them fill the queue, so the next one is rejected
                (t/is (true? (wait-until #(= 2 (waiting-count climit name)) 5000)))
                (t/is (some #(= 2 %) (waiting-value-of name)))
-               (t/is (= :concurrency-limit (failed-type #(climit/invoke! cfg (fn [_ _] :x) {}))))
+               (t/is (= :concurrency-limit (failed-type #(invoke! cfg (fn [_ _] :x) {}))))
 
                (let [props (::l/props (rejected-record records "queue-full"))]
                  (t/is (= 1 (get props :permits)))
@@ -630,14 +563,14 @@
                  gate    (promise)
                  capture (fn [_ action _req-id _stats _elapsed code reason]
                            (swap! lines conj [action code reason]))
-                 holder  (future (climit/invoke! cfg
-                                                 (fn [_ _] (deliver entered true) @gate :held)
-                                                 {}))]
+                 holder  (future (invoke! cfg
+                                          (fn [_ _] (deliver entered true) @gate :held)
+                                          {}))]
 
              (t/is (true? (deref entered 5000 false)))
 
              (with-redefs [climit/log capture]
-               (t/is (= :concurrency-limit (failed-type #(climit/invoke! cfg (fn [_ _] :late) {}))))
+               (t/is (= :concurrency-limit (failed-type #(invoke! cfg (fn [_ _] :late) {}))))
                (t/is (= [["rejected" :capacity-limit-reached "timeout"]]
                         (filterv #(= "rejected" (first %)) @lines))))
 
