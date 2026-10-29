@@ -4,12 +4,16 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/mixins.scss" as *;
+@use "ds/typography.scss" as *;
 
 .viewer-layout {
-  height: 100vh;
+  block-size: 100vh;
   display: grid;
-  grid-template-rows: deprecated.$s-48 auto;
+  grid-template-rows: $sz-48 auto;
   grid-template-columns: 1fr;
   user-select: none;
 }
@@ -18,41 +22,41 @@
   overflow: hidden;
   grid-row: 2 / span 1;
   display: grid;
-  grid-template-rows: deprecated.$s-252 auto;
+  grid-template-rows: $sz-252 auto;
   grid-template-columns: 1fr;
-  background-color: var(--viewer-background-color);
+  background-color: var(--color-background-secondary);
 }
 
 .empty-state {
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
-  color: var(--empty-message-foreground-color);
+  color: var(--color-foreground-secondary);
   display: grid;
   place-items: center;
-  height: 100%;
-  width: 100%;
-}
-
-.viewer-header {
-  grid-row: 1 / span 1;
+  block-size: 100%;
+  inline-size: 100%;
 }
 
 .inspect-layout {
   display: grid;
-  grid-template-rows: deprecated.$s-48 auto;
+  grid-template-rows: $sz-48 auto;
   grid-template-columns: 1fr;
-  height: 100vh;
-  margin-top: 0;
+  block-size: 100vh;
+  margin-block-start: 0;
   user-select: none;
 }
 
 .thumbnails-close {
-  @include deprecated.button-style;
-
+  border: none;
+  background: none;
+  cursor: pointer;
   grid-row: 1 / span 2;
   grid-column: 1 / span 1;
-  z-index: deprecated.$z-index-10;
-  background-color: var(--overlay-color);
+
+  // TODO: no DS z-index token for 10; it keeps the backdrop above the
+  // viewer content (z-index 2), level with the thumbnails panel.
+  z-index: 10;
+  background-color: var(--color-overlay-default);
 }
 
 .thumbnails-close.invisible {
@@ -60,98 +64,104 @@
 }
 
 .viewer-section {
-  @extend %new-scrollbar;
+  @include custom-scrollbar($include-selection: false, $include-placeholder: false);
 
   grid-row: 1 / span 2;
   grid-column: 1 / span 1;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  height: calc(100vh - deprecated.$s-48);
+  block-size: calc(100vh - #{$sz-48});
   overflow: auto;
+
+  // The comments layer renders inside the section: its text selection and
+  // placeholders keep the styles they had.
+  ::selection {
+    background: var(--color-accent-background-select);
+    color: var(--color-static-white);
+  }
+
+  ::placeholder {
+    @include use-typography("body-small");
+
+    color: var(--color-foreground-secondary);
+  }
 }
 
 .inspect-layout .viewer-section {
   flex-wrap: nowrap;
-  margin-top: 0;
-  height: 100%;
+  margin-block-start: 0;
+  block-size: 100%;
   overflow: hidden;
 }
 
+// Tooltip wrappers of the previous and next buttons.
 .viewer-go-prev,
 .viewer-go-next {
-  @extend %button-secondary;
-  @include deprecated.flex-center;
-
   position: absolute;
-  right: deprecated.$s-8;
-  height: deprecated.$s-64;
-  width: deprecated.$s-32;
-  top: calc(50vh - deprecated.$s-32);
-  z-index: deprecated.$z-index-2;
-  background-color: var(--viewer-controls-background-color);
+  inset-inline-end: var(--sp-s);
+  inset-block-start: calc(50vh - #{$sz-32});
+
+  // TODO: no DS z-index token for 2; it keeps the controls above the
+  // viewer section.
+  z-index: 2;
   transition: transform 400ms ease 300ms;
+}
 
-  svg {
-    @extend %button-icon;
-
-    stroke: var(--icon-foreground);
-  }
+.viewer-go-button {
+  --button-height: #{$sz-64};
+  --button-bg-color: var(--color-background-primary);
+  --button-border-color: var(--color-background-tertiary);
 }
 
 .viewer-go-next.comment-sidebar {
-  right: deprecated.$s-280;
+  inset-inline-end: #{px2rem(280)};
 }
 
 .viewer-go-prev {
-  left: deprecated.$s-8;
-  right: unset;
-
-  svg {
-    transform: rotate(180deg);
-  }
+  inset-inline-start: var(--sp-s);
+  inset-inline-end: unset;
 }
 
 .viewer-bottom {
   position: fixed;
-  bottom: 0;
+  inset-block-end: 0;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  width: 100%;
-  height: deprecated.$s-40;
-  padding-right: 0 deprecated.$s-8 deprecated.$s-40 deprecated.$s-8;
+  inline-size: 100%;
+  block-size: $sz-40;
   transition: transform 400ms ease 300ms;
-  z-index: deprecated.$z-index-2;
+
+  // TODO: no DS z-index token for 2; it keeps the controls above the
+  // viewer section.
+  z-index: 2;
   pointer-events: none;
 }
 
+.reset-button-wrapper {
+  margin-inline-start: var(--sp-s);
+}
+
 .reset-button {
-  @extend %button-secondary;
-  @include deprecated.flex-center;
+  --button-width: #{$sz-28};
+  --button-bg-color: var(--color-background-primary);
+  --button-border-color: var(--color-background-tertiary);
 
-  height: deprecated.$s-32;
-  width: deprecated.$s-28;
-  margin-left: deprecated.$s-8;
-  background-color: var(--viewer-controls-background-color);
   pointer-events: all;
-
-  svg {
-    @extend %button-icon;
-
-    stroke: var(--icon-foreground);
-  }
 }
 
 .counter {
-  @include deprecated.flex-center;
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
-  border-radius: deprecated.$br-8;
-  width: deprecated.$s-64;
-  height: deprecated.$s-32;
-  color: var(--viewer-thumbnails-control-foreground-color);
-  background-color: var(--viewer-controls-background-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: $br-8;
+  inline-size: $sz-64;
+  block-size: $sz-32;
+  color: var(--color-foreground-secondary);
+  background-color: var(--color-background-primary);
 }
 
 .viewer-wrapper {
@@ -169,8 +179,8 @@
 
 .viewer-overlay-background {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset-block-start: 0;
+  inset-inline-start: 0;
 
   &.visible {
     background-color: rgb(0 0 0 / 0.2);
@@ -185,24 +195,11 @@
   clip-path: inset(0 0 0 0);
   grid-column: 1 / 1;
   grid-row: 1 / 1;
-
-  .not-fixed {
-    position: absolute;
-  }
-
-  .fixed {
-    position: fixed;
-    pointer-events: none;
-
-    .frame-children g {
-      pointer-events: auto;
-    }
-  }
 }
 
 /** FULLSCREEN */
 [data-fullscreen="true"] .viewer-bottom {
-  transform: translateY(deprecated.$s-40);
+  transform: translateY($sz-40);
 }
 
 [data-force-visible="true"] .viewer-bottom {
@@ -210,20 +207,20 @@
 }
 
 [data-fullscreen="true"] .viewer-go-next {
-  transform: translateX(deprecated.$s-40);
+  transform: translateX($sz-40);
 }
 
 [data-fullscreen="true"] .viewer-go-prev {
-  transform: translateX(-#{deprecated.$s-40});
+  transform: translateX(-#{$sz-40});
 }
 
 [data-fullscreen="true"] .viewer-content {
-  transform: translateY(-#{deprecated.$s-48});
-  height: 100vh;
+  transform: translateY(-#{$sz-48});
+  block-size: 100vh;
 }
 
 [data-fullscreen="true"] .viewer-section {
-  height: 100vh;
+  block-size: 100vh;
 }
 
 [data-force-visible="true"] .viewer-go-next {

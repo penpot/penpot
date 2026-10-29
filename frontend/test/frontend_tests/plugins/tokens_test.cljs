@@ -545,6 +545,23 @@
     (t/is (= #{:fill} (ptok/expand-token-attrs #{:fill})))
     (t/is (= #{} (ptok/expand-token-attrs nil)))))
 
+(t/deftest per-side-stroke-attrs?-distinguishes-sides-from-the-uniform-alias
+  (t/testing "the uniform alias is not per-side"
+    (t/is (false? (ptok/per-side-stroke-attrs? #{:stroke-width})))
+    (t/is (false? (ptok/per-side-stroke-attrs? #{"stroke-width"}))))
+
+  (t/testing "each explicit side is per-side, as keyword or string"
+    (t/is (true? (ptok/per-side-stroke-attrs? #{:stroke-width-top})))
+    (t/is (true? (ptok/per-side-stroke-attrs? #{:stroke-width-right})))
+    (t/is (true? (ptok/per-side-stroke-attrs? #{:stroke-width-bottom})))
+    (t/is (true? (ptok/per-side-stroke-attrs? #{:stroke-width-left})))
+    (t/is (true? (ptok/per-side-stroke-attrs? #{"stroke-width-left"}))))
+
+  (t/testing "unrelated and empty attrs are not per-side"
+    (t/is (false? (ptok/per-side-stroke-attrs? #{:fill})))
+    (t/is (false? (ptok/per-side-stroke-attrs? #{})))
+    (t/is (false? (ptok/per-side-stroke-attrs? nil)))))
+
 (t/deftest shape-apply-token-accepts-padding-top
   (t/async
     done
@@ -645,6 +662,76 @@
                              :objects shape-id :applied-tokens :font-family])))
            (done)))
        0))))
+
+;; Regression coverage for issue #12319.
+;;
+;; Per-side stroke widths are only supported on boards and rectangles, and the
+;; `strokes` setter already rejects them elsewhere. The token path did not:
+;; `shape.applyToken` / `token.applyToShapes` / `token.applyToSelected` bound a
+;; per-side width token to an ellipse and left the stroke in the per-side state
+;; the strokes setter refuses. The token path now rejects the four explicit side
+;; properties on unsupported shapes while keeping the uniform `strokeWidth`
+;; alias working.
+
+(t/deftest ^:async apply-token-rejects-per-side-stroke-width-on-unsupported-shape
+  (let [plugin-id   "00000000-0000-0000-0000-000000000000"
+        set-id      (cthi/new-id! :token-set)
+        token-id    (cthi/new-id! :stroke-width-token)
+        theme-id    (cthi/new-id! :theme)
+        file        (-> (ctht/sample-file-with-tokens
+                         :file-id :file1
+                         :lib-fn #(-> %
+                                      (ctob/add-set
+                                       (ctob/make-token-set :id set-id
+                                                            :name "widths"))
+                                      (ctob/add-theme
+                                       (ctob/make-token-theme :id theme-id
+                                                              :name "theme"
+                                                              :sets #{"widths"}))
+                                      (ctob/add-token
+                                       set-id
+                                       (ctob/make-token :id token-id
+                                                        :name "width.sm"
+                                                        :type :stroke-width
+                                                        :value 10)))
+                         :status-fn #(ctos/set-tokens-status % #{theme-id} #{set-id})))
+        store       (ths/setup-store file)
+        _           (set! st/state store)
+        _           (set! st/stream (ptk/input-stream store))
+        ^js context (api/create-context plugin-id)
+        ^js ellipse (.createEllipse context)
+        id          (obj/get ellipse "$id")
+        ^js library (.-library context)
+        ^js local   (.-local library)
+        ^js catalog (.-tokens local)
+        ^js token-set (.getSetById catalog (str set-id))
+        ^js token     (.getTokenById token-set (str token-id))
+        path        [:files (:id file) :data :pages-index (cthf/current-page-id file)
+                     :objects id :applied-tokens]]
+
+    (swap! store assoc-in [:plugins :flags plugin-id :throw-validation-errors] true)
+
+    (t/testing "shape.applyToken rejects an explicit per-side width"
+      (t/is (thrown? js/Error (.applyToken ellipse token #js ["strokeWidthTop"])))
+      (t/is (nil? (get-in @store path))))
+
+    (t/testing "token.applyToShapes rejects an explicit per-side width"
+      (t/is (thrown? js/Error (.applyToShapes token #js [ellipse] #js ["strokeWidthLeft"])))
+      (t/is (nil? (get-in @store path))))
+
+    (t/testing "token.applyToSelected rejects an explicit per-side width"
+      (swap! store assoc-in [:workspace-local :selected] #{id})
+      (t/is (thrown? js/Error (.applyToSelected token #js ["strokeWidthRight"])))
+      (t/is (nil? (get-in @store path))))
+
+    ;; The uniform alias stays valid: it expands to the four sides with the same
+    ;; token and resolves to a uniform width, which the strokes setter accepts.
+    (t/testing "the uniform strokeWidth alias is still accepted"
+      (.applyToken ellipse token #js ["strokeWidth"])
+      (await (async/wait-for
+              #(= "width.sm" (get-in @store (conj path :stroke-width-top)))
+              "uniform stroke width token applied"))
+      (t/is (= "width.sm" (get-in @store (conj path :stroke-width-top)))))))
 
 (t/deftest token-attr?-rejects-unknown-input
   (t/is (false? (boolean (ptok/token-attr? :not-a-real-attr))))

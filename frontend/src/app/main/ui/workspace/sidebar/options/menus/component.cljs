@@ -175,9 +175,7 @@
                                   :editing editing?
                                   :creating creating?)}
        [:div {:class (stl/css-case :annotation-title true
-                                   :expandeable (not (or editing? creating?))
-                                   :expanded expanded?)
-              :on-click on-toggle-expand}
+                                   :expanded expanded?)}
 
         (if (or editing? creating?)
           [:span {:class (stl/css :annotation-title-name)}
@@ -185,7 +183,12 @@
              (tr "workspace.options.component.edit-annotation")
              (tr "workspace.options.component.create-annotation"))]
 
-          [:*
+          ;; Only the arrow and the name toggle: the actions next to them
+          ;; are buttons too, and a button cannot hold other buttons.
+          [:button {:type "button"
+                    :class (stl/css :annotation-title-toggle)
+                    :aria-expanded (boolean expanded?)
+                    :on-click on-toggle-expand}
            [:> icon* {:icon-id (if expanded? i/arrow-down i/arrow-right)
                       :class (stl/css :annotation-title-icon-arrow)
                       :size "s"}]
@@ -622,9 +625,10 @@
   [{:keys [item on-enter-group]}]
   (let [group-name     (:name item)
         on-group-click #(on-enter-group group-name)]
-    [:div {:class (stl/css :swap-group)
-           :on-click on-group-click
-           :title group-name}
+    [:button {:type "button"
+              :class (stl/css :swap-group)
+              :on-click on-group-click
+              :title group-name}
 
      [:span {:class (stl/css :swap-group-name)}
       (cpn/last-path group-name)]

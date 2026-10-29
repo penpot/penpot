@@ -73,15 +73,27 @@
     border-bottom: $b-1 solid var(--color-background-quaternary);
   }
 
-  &.expandeable {
-    cursor: pointer;
-  }
-
   &:hover {
     .annotation-title-icon-action {
       display: flex;
     }
   }
+}
+
+// Takes the whole free width of the title, so the clickable area stays
+// as it was when the whole title toggled.
+.annotation-title-toggle {
+  display: flex;
+  flex-grow: 1;
+  align-items: center;
+  align-self: stretch;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
 }
 
 .annotation-title-name {
@@ -318,6 +330,11 @@
 .swap-group {
   @include t.use-typography("body-small");
 
+  inline-size: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: start;
   cursor: pointer;
   display: grid;
   grid-template-columns: 1fr var(--sp-m);

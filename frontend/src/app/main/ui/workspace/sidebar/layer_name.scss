@@ -4,16 +4,22 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
 
 .element-name {
-  --element-name-color: var(--context-hover-color, var(--layer-row-foreground-color));
-  --element-name-comp-color: var(--context-hover-color, var(--layer-row-component-foreground-color));
-  --element-name-opacity: var(--context-hover-opacity, deprecated.$op-7);
+  --element-name-color: var(--context-hover-color, var(--color-foreground-secondary));
+  --element-name-opacity: var(--context-hover-opacity, 0.7);
 
-  @include deprecated.text-ellipsis;
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
+  display: block;
+  max-inline-size: 99%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--element-name-color);
   flex-grow: 1;
   block-size: 100%;
@@ -21,15 +27,11 @@
   min-inline-size: var(--sp-xl);
 
   &.selected {
-    color: var(--layer-row-foreground-color-selected);
+    --element-name-color: var(--color-accent-primary);
   }
 
   &.type-comp {
-    color: var(--element-name-comp-color);
-
-    &.hidden {
-      opacity: var(--element-name-opacity);
-    }
+    --element-name-color: var(--context-hover-color, var(--color-accent-secondary));
   }
 
   &.hidden {
@@ -37,30 +39,26 @@
   }
 }
 
+// The rename input also carries .element-name, so it takes its typography,
+// ellipsis and color from there.
 .element-name-input {
-  --element-name-input-border-color: var(--input-border-color-focus);
-  --element-name-input-color: var(--layer-row-foreground-color);
+  --element-name-color: var(--color-foreground-secondary);
 
-  @include deprecated.text-ellipsis;
-  @include deprecated.body-small-typography;
-  @include deprecated.remove-input-style;
-
+  background: none;
+  outline: none;
   flex-grow: 1;
-  height: deprecated.$s-28;
+  block-size: $sz-28;
   max-inline-size: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
   margin: 0;
-  padding-inline-start: deprecated.$s-6;
-  border-radius: deprecated.$br-8;
-  border: deprecated.$s-1 solid var(--element-name-input-border-color);
-  color: var(--element-name-input-color);
+  padding-inline-start: px2rem(6);
+  border-radius: $br-8;
+  border: $b-1 solid var(--color-accent-primary);
 
   &.selected {
-    min-inline-size: deprecated.$s-100;
+    min-inline-size: px2rem(100);
   }
 }
 
 .element-name-touched {
-  --element-name-touched-color: var(--layer-row-component-foreground-color);
-
-  color: var(--element-name-touched-color);
+  color: var(--color-accent-secondary);
 }

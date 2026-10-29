@@ -483,8 +483,8 @@
                       (assoc params :throw-on-error? true)))
 
 (def ^:private audit-event-keys
-  [:id :name :type :profile-id :props :context
-   :created-at :tracked-at :source :ip-addr])
+  [:id :name :type :profile-id :profile-email :profile-name
+   :props :context :created-at :tracked-at :source :ip-addr])
 
 (defn- ->audit-event
   [event]

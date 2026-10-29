@@ -4,14 +4,21 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "ds/typography.scss" as t;
+@use "ds/typography.scss" as *;
 @use "ds/colors.scss" as *;
 @use "ds/spacing.scss" as *;
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_utils.scss" as *;
 @use "ds/z-index.scss" as *;
+@use "ds/mixins.scss" as *;
+
+// The shared dashboard header styles move in their own change: they are
+// used by ten dashboard modules.
 @use "common/refactor/common-dashboard";
+
+// refactor/ stays for the menu placeholders (%menu-dropdown,
+// %menu-item-base) of the profile menu and its submenus.
 @use "common/refactor/common-refactor.scss" as deprecated;
 
 // SIDEBAR COMPONENT
@@ -20,19 +27,19 @@
   grid-row: 1 / span 2;
   grid-column: 1 / span 2;
   grid-template-rows: auto 1fr auto;
-  height: 100%;
-  width: 100%;
+  block-size: 100%;
+  inline-size: 100%;
   margin: 0 var(--sp-l) 0 0;
-  border-right: $b-1 solid var(--panel-border-color);
-  background-color: var(--panel-background-color);
+  border-inline-end: $b-1 solid var(--color-background-quaternary);
+  background-color: var(--color-background-primary);
 }
 
 // SIDEBAR CONTENT COMPONENT
 .sidebar-content-wrapper {
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  height: 100%;
+  min-block-size: 0;
+  block-size: 100%;
   overflow: hidden;
 }
 
@@ -41,7 +48,7 @@
   grid-template-rows: auto auto auto auto 1fr;
   gap: var(--sp-xxl);
   flex: 1;
-  min-height: 0;
+  min-block-size: 0;
   padding: 0;
   overflow: hidden auto;
 }
@@ -52,17 +59,17 @@
 }
 
 .separator {
-  height: var(--sp-xxs);
-  width: 94%;
-  margin-left: 3%;
+  block-size: var(--sp-xxs);
+  inline-size: 94%;
+  margin-inline-start: 3%;
 }
 
 .overflow-separator {
-  border-bottom: $b-1 solid var(--color-background-quaternary);
+  border-block-end: $b-1 solid var(--color-background-quaternary);
 }
 
 .sidebar-section-title {
-  @include t.use-typography("headline-small");
+  @include use-typography("headline-small");
 
   padding: 0 var(--sp-s) var(--sp-s) var(--sp-xxl);
   color: var(--color-foreground-secondary);
@@ -82,31 +89,33 @@
   cursor: pointer;
 
   &:hover {
-    background-color: var(--sidebar-element-background-color-hover);
+    background-color: var(--color-background-secondary);
 
+    // The item labels have no class.
     span {
-      color: var(--sidebar-element-foreground-color-hover);
+      color: var(--color-accent-primary);
     }
   }
 
   &.current {
-    background-color: var(--sidebar-element-background-color-selected);
+    background-color: var(--color-background-quaternary);
 
     .element-title {
-      color: var(--sidebar-element-foreground-color-selected);
+      color: var(--color-accent-primary);
     }
   }
 }
 
+// The icon has no class.
 .recent-projects svg {
-  stroke: var(--main-icon-foreground);
+  stroke: var(--color-foreground-primary);
 }
 
 .sidebar-link {
   display: block;
   padding: var(--sp-s) var(--sp-s) var(--sp-s) var(--sp-xxl);
-  font-weight: deprecated.$fw400;
-  width: 100%;
+  font-weight: 400;
+  inline-size: 100%;
 
   &:hover {
     text-decoration: none;
@@ -118,31 +127,32 @@
 }
 
 .element-title {
-  @include deprecated.text-ellipsis;
+  @include text-ellipsis;
 
-  width: deprecated.$s-256;
+  inline-size: px2rem(256);
   color: var(--color-foreground-primary);
-  font-size: deprecated.$fs-14;
+  font-size: px2rem(14);
 }
 
 // Pinned projects
 
 .sidebar-empty-placeholder {
   padding: var(--sp-m);
-  color: var(--empty-message-foreground-color);
+  color: var(--color-foreground-secondary);
   display: flex;
   align-items: center;
 }
 
+// The DS small icon draws 12px inside a 16px box: 2px less margin on each
+// side keeps the drawing and the text where they were.
 .pin-icon {
-  @extend %button-icon-small;
-
-  stroke: var(--icon-foreground);
-  margin: 0 var(--sp-m);
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+  margin: 0 px2rem(10);
 }
 
 .empty-text {
-  font-size: deprecated.$fs-12;
+  font-size: px2rem(12);
 }
 
 // Search
@@ -155,55 +165,57 @@
   border: $b-1 solid transparent;
   margin: 0 var(--sp-l);
   border-radius: $br-8;
-  background-color: var(--search-bar-input-background-color);
+  background-color: var(--color-background-tertiary);
 }
 
 .input-text {
-  @include t.use-typography("title-small");
+  @include use-typography("title-small");
 
-  height: $sz-40;
-  width: 100%;
+  block-size: $sz-40;
+  inline-size: 100%;
   padding: $sz-6 var(--sp-m);
   margin: 0;
   border: transparent;
   border-radius: $br-8;
   background: transparent;
-  color: var(--search-bar-foreground-color);
+  color: var(--color-foreground-primary);
 
   &:focus,
   &:focus-within,
   &:focus-visible {
     outline: none;
-    border: $b-1 solid var(--search-bar-input-border-color-focus);
+    border: $b-1 solid var(--color-accent-primary);
   }
 
   ::placeholder {
-    color: var(--search-bar-placeholder-foreground-color);
+    color: var(--color-foreground-secondary);
   }
 }
 
 .search-btn {
-  @include deprecated.button-style;
-  @include deprecated.flex-center;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
+  --sidebar-search-foreground-color: var(--color-foreground-secondary);
+
+  color: var(--sidebar-search-foreground-color);
   position: absolute;
-  right: 0;
-  height: var(--sp-xxl);
-  width: var(--sp-xxxl);
+  inset-inline-end: 0;
+  block-size: var(--sp-xxl);
+  inline-size: var(--sp-xxxl);
   padding: 0 var(--sp-s);
 }
 
-.search-icon,
-.clear-search-btn {
-  @extend %button-icon;
-
-  --sidebar-search-foreground-color: var(--search-bar-icon-foreground-color);
-
-  stroke: var(--sidebar-search-foreground-color);
+.search-icon {
+  flex-shrink: 0;
 }
 
 .clear-search-btn:hover {
-  --sidebar-search-foreground-color: var(--search-bar-icon-foreground-color-hover);
+  --sidebar-search-foreground-color: var(--color-accent-primary);
 }
 
 // Profile
@@ -212,33 +224,32 @@
   display: grid;
   grid-template-columns: 1fr auto;
   padding: var(--sp-m) var(--sp-l);
-  border-top: $b-1 solid var(--panel-border-color);
-  background-color: var(--profile-section-background-color);
+  border-block-start: $b-1 solid var(--color-background-quaternary);
+  background-color: var(--color-background-tertiary);
   cursor: pointer;
 }
 
 .profile {
-  @include deprecated.button-style;
-
+  border: none;
+  background: none;
   display: grid;
   grid-template-columns: auto 1fr;
   gap: var(--sp-s);
   cursor: pointer;
-  text-align: left;
+  text-align: start;
 }
 
 .profile-fullname {
-  @include t.use-typography("title-small");
-  @include deprecated.text-ellipsis;
+  @include use-typography("title-small");
+  @include text-ellipsis;
 
   align-self: center;
-  max-width: var(--sp-l) 0;
-  color: var(--profile-foreground-color);
+  color: var(--color-foreground-primary);
 }
 
 .profile-img {
-  height: $sz-40;
-  width: $sz-40;
+  block-size: $sz-40;
+  inline-size: $sz-40;
   border-radius: $br-circle;
 }
 
@@ -247,14 +258,14 @@
 
   inset-inline-start: var(--sp-s);
   inset-block-end: px2rem(72); // 72 is the height of the profile button
-  min-width: calc(100% - var(--sp-s));
+  min-inline-size: calc(100% - var(--sp-s));
 
   // TODO ADD animation fadeInUp
 }
 
 .profile-dropdown-item {
   @extend %menu-item-base;
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   block-size: $sz-40;
   margin-block-end: var(--sp-xs);
@@ -262,29 +273,25 @@
   padding-inline-start: var(--sp-l);
 
   &:hover {
-    color: var(--menu-foreground-color-hover);
+    color: var(--color-foreground-primary);
 
     .open-arrow {
-      --icon-stroke-color: var(--menu-foreground-color-hover);
+      --icon-stroke-color: var(--color-foreground-primary);
     }
   }
 }
 
 .profile-dropdown-item .open-arrow {
-  @include deprecated.flex-center;
-}
-
-.profile-dropdown-item .open-arrow svg {
-  @extend %button-icon;
-
-  stroke: var(--icon-foreground);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .sub-menu {
   @extend %menu-dropdown;
 
-  inset-inline-start: calc(deprecated.$s-292 + var(--sp-s));
-  min-width: deprecated.$s-192;
+  inset-inline-start: calc(#{px2rem(292)} + var(--sp-s));
+  min-inline-size: $sz-192;
 }
 
 // Each submenu is positioned via its bottom edge; the visual top lands
@@ -293,11 +300,11 @@
 // its top edge sits one row above Community — aligning with the
 // "Help & Learning" trigger row in the parent menu.
 .sub-menu.help-learning {
-  inset-block-end: deprecated.$s-120;
+  inset-block-end: $sz-120;
 }
 
 .sub-menu.community {
-  inset-block-end: deprecated.$s-120;
+  inset-block-end: $sz-120;
 }
 
 .sub-menu.about {
@@ -306,7 +313,7 @@
 
 .submenu-item {
   @extend %menu-item-base;
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   block-size: $sz-40;
   margin-block-end: var(--sp-xs);
@@ -314,7 +321,7 @@
   padding-inline: var(--sp-l);
 
   &:hover {
-    color: var(--menu-foreground-color-hover);
+    color: var(--color-foreground-primary);
   }
 
   &.checking {
@@ -334,7 +341,7 @@
 }
 
 .submenu-separator {
-  border-top: $b-1 solid var(--color-background-quaternary);
+  border-block-start: $b-1 solid var(--color-background-quaternary);
   margin: 0;
 }
 
@@ -345,8 +352,8 @@
 }
 
 .menu-version {
-  @include t.use-typography("code-font");
-  @include deprecated.text-ellipsis;
+  @include use-typography("code-font");
+  @include text-ellipsis;
 
   color: var(--color-foreground-secondary);
   margin-inline-start: var(--sp-s);
@@ -354,8 +361,8 @@
 }
 
 .profile-separator {
-  height: $sz-6;
-  border-top: $b-1 solid var(--color-background-quaternary);
+  block-size: $sz-6;
+  border-block-start: $b-1 solid var(--color-background-quaternary);
 }
 
 .item-with-icon {
@@ -365,38 +372,5 @@
 }
 
 .exit-icon {
-  @extend %button-icon;
-
-  stroke: var(--icon-foreground);
-}
-
-.upgrade-plan-section {
-  @include deprecated.button-style;
-
-  display: flex;
-  justify-content: space-between;
-  border: $b-1 solid var(--color-background-quaternary);
-  border-radius: var(--sp-s);
-  padding: var(--sp-m);
-  margin: var(--sp-m);
   color: var(--color-foreground-secondary);
-  cursor: pointer;
-}
-
-.penpot-free {
-  @include t.use-typography("body-medium");
-
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-}
-
-.no-limits {
-  @include t.use-typography("body-small");
-}
-
-.power-up {
-  @include t.use-typography("body-small");
-
-  color: var(--color-accent-tertiary);
 }

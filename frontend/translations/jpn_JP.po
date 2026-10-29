@@ -4521,10 +4521,6 @@ msgstr "このスタイルを使用している要素を選択"
 msgid "shortcuts.add-comment"
 msgstr "コメント"
 
-#: src/app/main/data/workspace/path/shortcuts.cljs:61
-msgid "shortcuts.add-node"
-msgstr "ノードを追加"
-
 #: src/app/main/data/workspace/shortcuts.cljs:532
 msgid "shortcuts.align-bottom"
 msgstr "下揃え"

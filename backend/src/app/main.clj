@@ -22,6 +22,7 @@
    [app.http.debug :as-alias http.debug]
    [app.http.link-preview :as-alias http.link-preview]
    [app.http.management :as mgmt]
+   [app.http.mcp-oauth :as-alias http.mcp-oauth]
    [app.http.session :as session]
    [app.http.websocket :as http.ws]
    [app.jobs :as-alias jobs]
@@ -76,6 +77,12 @@
     ::mdef/labels ["step"]
     ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
+
+   :update-file-repair
+   {::mdef/name "penpot_rpc_update_file_repair_total"
+    ::mdef/help "update-file auto-repair attempts by outcome (repaired or unrepaired)."
+    ::mdef/labels ["outcome"]
+    ::mdef/type :counter}
 
    :rpc-main-timing
    {::mdef/name "penpot_rpc_main_timing"
@@ -534,8 +541,16 @@
     ::http.debug/routes  (ig/ref ::http.debug/routes)
     ::http.assets/routes (ig/ref ::http.assets/routes)
     ::http.link-preview/routes (ig/ref ::http.link-preview/routes)
+    ::http.mcp-oauth/routes (ig/ref ::http.mcp-oauth/routes)
     ::http.ws/routes     (ig/ref ::http.ws/routes)
     ::http.awsns/routes  (ig/ref ::http.awsns/routes)}
+
+   ::http.mcp-oauth/routes
+   {::db/pool (ig/ref ::db/pool)
+    ::rds/pool (ig/ref ::rds/pool)
+    ::setup/props (ig/ref ::setup/props)
+    ::session/manager (ig/ref ::session/manager)
+    ::http.client/client (ig/ref ::http.client/client)}
 
    ::http.link-preview/routes
    {::db/pool         (ig/ref ::db/pool)}

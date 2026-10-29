@@ -356,6 +356,10 @@ msgstr "View full changelog"
 msgid "dashboard.check-updates.view-release-notes"
 msgstr "View release notes"
 
+#: src/app/main/ui/dashboard/sidebar.cljs:228
+msgid "dashboard.clear-search"
+msgstr "Clear search"
+
 #: src/app/main/ui/dashboard/deleted.cljs:322
 msgid "dashboard.clear-trash-button"
 msgstr "Clear trash"
@@ -574,6 +578,10 @@ msgstr "Grid view"
 #: src/app/main/ui/dashboard/layout_toggle.cljs:28
 msgid "dashboard.files-layout.list"
 msgstr "List view"
+
+#: src/app/main/ui/dashboard/fonts.cljs:431
+msgid "dashboard.fonts.delete-variant"
+msgstr "Delete font style"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:608
 msgid "dashboard.fonts.deleted-placeholder"
@@ -2281,6 +2289,10 @@ msgstr "Variant properties"
 msgid "inspect.attributes.variants"
 msgstr "Variants properties"
 
+#: src/app/main/ui/inspect/code.cljs:315, src/app/main/ui/inspect/code.cljs:358
+msgid "inspect.code.expand-panel"
+msgstr "Expand panel"
+
 #: src/app/main/ui/inspect/right_sidebar.cljs:169
 msgid "inspect.color-space-label"
 msgstr "Select color space"
@@ -2947,6 +2959,10 @@ msgstr "Error"
 #: src/app/main/data/workspace/versions.cljs:314
 msgid "labels.exit"
 msgstr "Exit"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:96
+msgid "labels.expand"
+msgstr "Expand"
 
 #: src/app/main/ui/dashboard/team.cljs:782
 msgid "labels.expired-invitation"
@@ -4797,10 +4813,6 @@ msgstr "Select items using this style"
 msgid "shortcuts.add-comment"
 msgstr "Comments"
 
-#: src/app/main/data/workspace/path/shortcuts.cljs:61
-msgid "shortcuts.add-node"
-msgstr "Add node"
-
 #: src/app/main/data/workspace/shortcuts.cljs:532
 msgid "shortcuts.align-bottom"
 msgstr "Align bottom"
@@ -5076,13 +5088,6 @@ msgstr "Join nodes"
 #: src/app/main/ui/shortcuts.cljs:624
 msgid "shortcuts.key-combo"
 msgstr "Press the new keys"
-
-#: src/app/main/ui/settings/shortcuts.cljs:484
-msgid "shortcuts.layout-map-missing"
-msgstr ""
-"This browser does not expose the keyboard layout, so shortcuts that "
-"combine Shift with punctuation (for example Shift+,) may not work here. "
-"They keep working in Chromium browsers."
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:249
 msgid "shortcuts.line-through"
@@ -6087,6 +6092,10 @@ msgstr "No boards found on the page."
 msgid "viewer.frame-not-found"
 msgstr "Board not found."
 
+#: src/app/main/ui/viewer.cljs:127
+msgid "viewer.go-to-first-board"
+msgstr "Go to the first board"
+
 #: src/app/main/ui/viewer/header.cljs:341
 msgid "viewer.header.comments-section"
 msgstr "Comments (%s)"
@@ -6126,6 +6135,14 @@ msgstr "Show interactions on click"
 #: src/app/main/ui/viewer/header.cljs:236
 msgid "viewer.header.sitemap"
 msgstr "Sitemap"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:70
+msgid "viewer.thumbnails.scroll-left"
+msgstr "Scroll left"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:76
+msgid "viewer.thumbnails.scroll-right"
+msgstr "Scroll right"
 
 #: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:76
 msgid "webgl.modals.webgl-unavailable.cta-dashboard"
@@ -6747,6 +6764,14 @@ msgstr "Full screen"
 msgid "workspace.header.zoom-selected"
 msgstr "Zoom to selected"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.layout-grid.editor.columns"
+msgstr "Columns"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.layout-grid.editor.rows"
+msgstr "Rows"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:294, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:296, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:854
 msgid "workspace.layout-grid.editor.options.edit-grid"
 msgstr "Edit grid"
@@ -6782,6 +6807,18 @@ msgstr "Top padding"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:383, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:394, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:400
 msgid "workspace.layout-grid.editor.padding.vertical"
 msgstr "Vertical padding"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.layout-grid.editor.select-column"
+msgstr "Select column"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs
+msgid "workspace.layout-grid.editor.select-row"
+msgstr "Select row"
+
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs
+msgid "workspace.layout-grid.editor.track-options"
+msgstr "Track options"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:61
 msgid "workspace.layout-grid.editor.title"
@@ -7012,6 +7049,12 @@ msgstr "UPDATES"
 #: src/app/main/ui/ds/notifications/shared/notification_pill.cljs:61
 msgid "workspace.notification-pill.detail"
 msgstr "Details"
+
+#: src/app/main/data/workspace/notifications.cljs:282
+msgid "workspace.notifications.file-repaired"
+msgstr ""
+"We fixed some issues in this file. You can find a copy of the original version in "
+"the version history."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
 msgid "workspace.options.add-interaction"
@@ -9674,15 +9717,29 @@ msgstr ""
 msgid "workspace.versions.warning.text"
 msgstr "Autosaved versions will be kept for %s days."
 
-#, unused
-msgid "workspace.viewport.click-to-close-path"
-msgstr "Click to close the path"
+msgid "mcp.oauth.title"
+msgstr "Connect to Penpot MCP"
 
-msgid "labels.team-management"
-msgstr "Team management"
+msgid "mcp.oauth.request"
+msgstr "%s wants to connect to Penpot."
 
-msgid "dashboard.no-organizations-yet"
-msgstr "You don't belong to any organization yet"
+msgid "mcp.oauth.account"
+msgstr "You are signed in as %s."
+
+msgid "mcp.oauth.access"
+msgstr "This client can read and change designs through MCP connections established from Penpot."
+
+msgid "mcp.oauth.enable"
+msgstr "Allowing access enables the MCP integration and creates your MCP token if needed."
+
+msgid "mcp.oauth.approve"
+msgstr "Allow access"
+
+msgid "mcp.oauth.failed"
+msgstr "This request has expired, was already used, or could not be completed. Start the connection again from your MCP client."
+
+msgid "mcp.oauth.cancelled"
+msgstr "Connection cancelled"
 
 #: src/app/main/ui/workspace/main_menu.cljs
 msgid "workspace.export-selection"

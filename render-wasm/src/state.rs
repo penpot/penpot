@@ -130,6 +130,10 @@ impl State {
         crate::render::svg::render_to_svg(get_resources(), id, &self.shapes, scale)
     }
 
+    pub fn render_shapes_svg(&mut self, ids: &[Uuid], scale: f32) -> Result<Vec<u8>> {
+        crate::render::svg::render_to_svg_multi(get_resources(), ids, &self.shapes, scale)
+    }
+
     /// GPU-free counterpart of [`State::render_shape_pixels`]: encodes to
     /// `format` on a CPU raster surface, no GPU/WebGL.
     pub fn render_shape_raster(

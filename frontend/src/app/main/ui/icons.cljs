@@ -13,7 +13,6 @@
 
 ;; Keep the list of icons sorted
 (def ^:icon icon-verify (icon-xref :icon-verify))
-(def ^:icon loader (icon-xref :loader))
 (def ^:icon logo (icon-xref :penpot-logo))
 (def ^:icon logo-icon (icon-xref :penpot-logo-icon))
 (def ^:icon logo-error-screen (icon-xref :logo-error-screen))
@@ -224,7 +223,6 @@
 (def ^:icon size-horizontal (icon-xref :size-horizontal))
 (def ^:icon size-vertical (icon-xref :size-vertical))
 (def ^:icon snap (icon-xref :snap))
-(def ^:icon snap-nodes (icon-xref :snap-nodes))
 (def ^:icon status-alert (icon-xref :status-alert))
 (def ^:icon status-tick (icon-xref :status-tick))
 (def ^:icon status-update (icon-xref :status-update))

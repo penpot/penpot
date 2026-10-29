@@ -82,7 +82,10 @@ export class DashboardPage extends BaseWebSocketPage {
     this.fontsLink = this.sidebar.getByText("Fonts");
     this.librariesLink = this.sidebar.getByText("Libraries");
 
-    this.searchButton = page.getByRole("button", { name: "dashboard-search" });
+    this.searchButton = page.getByRole("button", {
+      name: "Search",
+      exact: true,
+    });
     this.searchInput = page.getByPlaceholder("Search…");
 
     this.teamDropdown = this.sidebar.getByRole("button", {

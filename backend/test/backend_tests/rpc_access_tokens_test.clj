@@ -11,6 +11,7 @@
    [app.http :as http]
    [app.http.access-token :as actoken]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.access-token :as access-token]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -232,3 +233,40 @@
             decoded (actoken/decode-token cfg access-token)]
         (t/is (some? decoded))
         (t/is (= (:id prof) (:uid decoded)))))))
+
+(t/deftest oauth-mcp-token-provisioning
+  (let [prof (th/create-profile* 1 {:is-active true})
+        cfg th/*system*
+        provision #(db/tx-run! cfg access-token/ensure-mcp-access! (:id prof))]
+    (t/testing "approval enables MCP and creates a fixed token"
+      (let [token (provision)
+            props (-> (th/db-get :profile {:id (:id prof)})
+                      :props db/decode-transit-pgobject)]
+        (t/is (string? (:token token)))
+        (t/is (nil? (:expires-at token)))
+        (t/is (true? (:mcp-enabled props)))
+        (t/is (= token (provision)))))
+    (t/testing "approval preserves a token generated in settings"
+      (let [{:keys [result error]}
+            (th/command! {::th/type :create-access-token
+                          ::rpc/profile-id (:id prof)
+                          :type "mcp"
+                          :name "From settings"})]
+        (t/is (nil? error))
+        (t/is (= (:token result) (:token (provision))))))
+    (t/testing "approval replaces an expired token"
+      (db/exec! th/*pool* [(str "UPDATE access_token SET expires_at = now() - interval '1 day'"
+                                " WHERE profile_id = ?")
+                           (:id prof)])
+      (let [expired (first (db/query th/*pool* :access-token {:profile-id (:id prof) :type "mcp"}))
+            token   (provision)]
+        (t/is (not= (:token expired) (:token token)))
+        (t/is (nil? (:expires-at token)))
+        (t/is (= [(:id token)]
+                 (map :id (db/query th/*pool* :access-token {:profile-id (:id prof) :type "mcp"}))))))
+    (t/testing "concurrent approvals share one token"
+      (db/delete! th/*pool* :access-token {:profile-id (:id prof)})
+      (let [results (mapv deref (repeatedly 4 #(future (provision))))]
+        (t/is (= 1 (count (set (map :token results)))))
+        (t/is (= 1 (count (db/query th/*pool* :access-token
+                                    {:profile-id (:id prof) :type "mcp"}))))))))

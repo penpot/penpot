@@ -29,8 +29,8 @@
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
    [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.formats :as fmt]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
@@ -918,9 +918,15 @@
             :on-key-down handle-keydown-track-input
             :on-blur handle-blur-track-input}]
           (when (and (not medium?) (not small?))
-            [:button {:class (stl/css :grid-editor-button)
+            ;; Raw button on purpose: it lives on the canvas and keeps a
+            ;; fixed screen size at any zoom.
+            [:button {:type "button"
+                      :class (stl/css :grid-editor-button)
                       :data-testid "grid-track-options-btn"
-                      :on-click handle-show-track-menu} deprecated-icon/menu])]])]
+                      :aria-label (tr "workspace.layout-grid.editor.track-options")
+                      :on-click handle-show-track-menu}
+             [:> icon* {:icon-id i/menu
+                        :class (stl/css :grid-editor-button-icon)}]])]])]
 
      [:g {:transform (when (= type :row) (dm/fmt "rotate(-90 % %)" (:x marker-p) (:y marker-p)))}
       [:& track-marker

@@ -917,6 +917,9 @@
           (not (r/check-permission plugin-id "library:write"))
           (u/not-valid plugin-id :restore "Plugin doesn't have 'library:write' permission")
 
+          (not= file-id (:current-file-id @st/state))
+          (u/not-valid plugin-id :restore "Can only restore components from the current file's library")
+
           (nil? component)
           (u/not-valid plugin-id :restore "Component does not exist")
 

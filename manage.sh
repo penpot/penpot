@@ -784,13 +784,16 @@ function start-instance {
 
     instance-compose "$instance" up -d main
 
-    # Wait briefly for main to be reachable; the tmux session lives inside.
+    # Running does not mean entrypoint setup has finished. Nginx starts only
+    # after ownership and Cargo setup, so wait for its local health endpoint
+    # before launching builds as penpot (especially on a fresh container).
     local container deadline
     container=$(devenv-main-container "$instance")
-    deadline=$(( SECONDS + 30 ))
-    while ! docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null | grep -q true; do
+    deadline=$(( SECONDS + 120 ))
+    while ! docker exec "$container" curl --fail --silent --max-time 2 \
+        --output /dev/null http://127.0.0.1:8082/stub_status 2>/dev/null; do
         [[ $SECONDS -ge $deadline ]] && {
-            echo "[${instance}] main container did not reach Running within 30s" >&2
+            echo "[${instance}] main container initialization did not finish within 120s; check docker logs $container" >&2
             return 1
         }
         sleep 1

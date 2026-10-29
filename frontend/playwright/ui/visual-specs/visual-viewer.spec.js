@@ -151,3 +151,341 @@ test("User opens Share modal", async ({ page }) => {
   ).toBeVisible();
   await expect(viewerPage.page).toHaveScreenshot();
 });
+
+test.describe("Thumbnails panel", () => {
+  test("Shows the thumbnails panel collapsed and expanded", async ({
+    page,
+  }) => {
+    const viewerPage = new ViewerPage(page);
+    await viewerPage.setupLoggedInUser();
+    await viewerPage.setupFileWithMultipleBoards();
+    await viewerPage.goToViewer({
+      fileId: "dd5cc0bb-91ff-81b9-8004-77df9cd3edb0",
+      pageId: "dd5cc0bb-91ff-81b9-8004-77df9cd3edb3",
+    });
+
+    await page.locator("#current-frame").click();
+    const panel = page.locator("section").filter({ hasText: /boards/i });
+    await expect(panel).toBeVisible();
+    await page.mouse.move(640, 600);
+    // Collapsed: the summary with its expand and close buttons.
+    await expect(panel).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    // The scroll handlers only show on hover.
+    await panel.locator("button").nth(3).hover();
+    await expect(panel).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await panel.locator("button").first().click();
+    await page.mouse.move(640, 700);
+    // Expanded: the expand arrow points up.
+    await expect(panel).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
+test.describe("Comments filter", () => {
+  test("Shows the comments filter closed and open", async ({ page }) => {
+    const viewerPage = new ViewerPage(page);
+    await viewerPage.setupLoggedInUser();
+    await viewerPage.setupFileWithComments();
+    await viewerPage.goToViewer({
+      fileId: singleBoardFileId,
+      pageId: singleBoardPageId,
+    });
+    await viewerPage.showComments();
+
+    const trigger = page.getByTestId("viewer-comments-dropdown");
+    await expect(trigger).toBeVisible();
+    await page.mouse.move(640, 600);
+    // Closed: the "Comments" trigger with its arrow.
+    await expect(trigger).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await trigger.click();
+    await expect(page.getByText("Show comments list")).toBeVisible();
+    await page.mouse.move(640, 600);
+    // Open: the filter menu with the selected option ticked.
+    const menu = page.getByText("Show comments list").locator("../..");
+    await expect(menu).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
+test.describe("Board navigation", () => {
+  test("Shows the previous, next and first board buttons", async ({ page }) => {
+    const viewerPage = new ViewerPage(page);
+    await viewerPage.setupLoggedInUser();
+    await viewerPage.setupFileWithMultipleBoards();
+    await viewerPage.goToViewer({
+      fileId: "dd5cc0bb-91ff-81b9-8004-77df9cd3edb0",
+      pageId: "dd5cc0bb-91ff-81b9-8004-77df9cd3edb3",
+    });
+
+    const next = page.getByRole("button", { name: "Next" });
+    await expect(next).toBeVisible();
+    await page.mouse.move(640, 300);
+    // Wait for the slide-in transition of the controls.
+    await page.waitForTimeout(800);
+    // First board: the next and first board buttons.
+    await expect(page).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await next.hover();
+    await expect(next).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await next.click();
+    const previous = page.getByRole("button", { name: "Previous" });
+    await previous.hover();
+    await expect(previous).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    const first = page.locator("[class*='viewer-bottom'] button");
+    await first.hover();
+    await expect(first).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
+test.describe("Viewer header", () => {
+  test("Shows the header buttons and its menus", async ({ page }) => {
+    const viewerPage = new ViewerPage(page);
+    await viewerPage.setupLoggedInUser();
+    await viewerPage.setupFileWithComments();
+    await viewerPage.goToViewer({
+      fileId: singleBoardFileId,
+      pageId: singleBoardPageId,
+    });
+
+    const header = page.locator("header").first();
+    await expect(header).toBeVisible();
+    await page.mouse.move(640, 600);
+    // Interactions section.
+    await expect(header).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    // Zoom menu.
+    await page.getByTitle("Zoom").click();
+    await expect(page.getByText("Fit - Scale down to fit")).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(page).toHaveScreenshot({
+      clip: { x: 760, y: 0, width: 520, height: 260 },
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+    await page.keyboard.press("Escape");
+    await page.mouse.click(640, 600);
+
+    // Sitemap menu.
+    await page
+      .locator("#current-frame")
+      .locator("..")
+      .locator("div")
+      .first()
+      .click();
+    await page.mouse.move(640, 600);
+    await expect(page).toHaveScreenshot({
+      clip: { x: 0, y: 0, width: 520, height: 200 },
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+    await page.mouse.click(640, 600);
+
+    // Comments section, with its button selected.
+    await viewerPage.showComments();
+    await page.mouse.move(640, 600);
+    await expect(header).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
+test.describe("Inspect code tab", () => {
+  test("Shows the code tab buttons, expanded and collapsed", async ({
+    page,
+  }) => {
+    const viewerPage = new ViewerPage(page);
+    await viewerPage.setupLoggedInUser();
+    await viewerPage.setupFileWithComments();
+    await viewerPage.goToViewer({
+      fileId: singleBoardFileId,
+      pageId: singleBoardPageId,
+    });
+    await viewerPage.showCode();
+    await page.getByRole("combobox").filter({ hasText: "Styles" }).click();
+    await page.getByRole("option", { name: "Code" }).click();
+
+    const copyAll = page.getByRole("button", { name: "Copy all code" });
+    await expect(copyAll).toBeVisible();
+    // The CSS block header, with its toggle, expand and copy buttons.
+    const cssToggle = page.locator('button[data-type="css"]');
+    const cssHeader = cssToggle.locator("..");
+    await page.mouse.move(0, 0);
+    await expect(copyAll).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+    await expect(cssHeader).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await cssToggle.click();
+    await page.mouse.move(0, 0);
+    // Collapsed: the arrow turns.
+    await expect(cssHeader).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
+test.describe("Interactions menu", () => {
+  test("Shows the interactions menu closed and open", async ({ page }) => {
+    const viewerPage = new ViewerPage(page);
+    await viewerPage.setupLoggedInUser();
+    await viewerPage.setupFileWithMultipleBoards();
+    await viewerPage.goToViewer({
+      fileId: "dd5cc0bb-91ff-81b9-8004-77df9cd3edb0",
+      pageId: "dd5cc0bb-91ff-81b9-8004-77df9cd3edb3",
+    });
+
+    const trigger = page
+      .getByText("Interactions", { exact: true })
+      .locator("..");
+    await expect(trigger).toBeVisible();
+    await page.mouse.move(640, 600);
+    // Closed: the "Interactions" trigger with its arrow.
+    await expect(trigger).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await trigger.click();
+    const menu = page.getByText("Show interactions", { exact: true });
+    await expect(menu).toBeVisible();
+    await page.mouse.move(640, 600);
+    // Open: the menu with the selected mode ticked.
+    await expect(menu.locator("../..")).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
+test.describe("Copy buttons", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  const openInspectTab = async (page, name) => {
+    const viewerPage = new ViewerPage(page);
+    await viewerPage.setupLoggedInUser();
+    await viewerPage.setupFileWithComments();
+    await viewerPage.goToViewer({
+      fileId: singleBoardFileId,
+      pageId: singleBoardPageId,
+    });
+    await viewerPage.showCode();
+    await page.getByRole("combobox").filter({ hasText: "Styles" }).click();
+    await page.getByRole("option", { name }).click();
+  };
+
+  test("Computed attribute rows", async ({ page }) => {
+    await openInspectTab(page, "Computed");
+    const row = page.locator("[class*='copy-wrapper']").first();
+    await expect(row).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(row).toHaveScreenshot(shot);
+
+    await row.hover();
+    await expect(row).toHaveScreenshot(shot);
+
+    await row.click();
+    await expect(row).toHaveAttribute("data-active", "true");
+    await expect(row).toHaveScreenshot(shot);
+  });
+
+  test("Code block copy button", async ({ page }) => {
+    await openInspectTab(page, "Code");
+    const copy = page.locator("[class*='css-copy-btn']");
+    await expect(copy).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(copy).toHaveScreenshot(shot);
+
+    await copy.hover();
+    await expect(copy).toHaveScreenshot(shot);
+
+    await copy.click();
+    await expect(copy).toHaveAttribute("data-active", "true");
+    await expect(copy).toHaveScreenshot(shot);
+  });
+});
+
+test.describe("Share link modal controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Get, copy and destroy link", async ({ page }) => {
+    const viewerPage = new ViewerPage(page);
+    await viewerPage.setupLoggedInUser();
+    await viewerPage.setupFileWithSingleBoard();
+    await viewerPage.mockRPC(
+      "create-share-link",
+      "viewer/create-share-link.json",
+    );
+    await viewerPage.goToViewer({
+      fileId: singleBoardFileId,
+      pageId: singleBoardPageId,
+    });
+
+    await page.getByRole("button", { name: "Share" }).click();
+    const getLink = page.getByRole("button", { name: "Get link" });
+    await expect(getLink).toBeVisible();
+    const modal = page.locator("[class*='share-link-dialog']");
+    await page.mouse.move(10, 700);
+    await expect(modal).toHaveScreenshot(shot);
+
+    await getLink.click();
+    const destroy = page.getByRole("button", { name: "Destroy link" });
+    await expect(destroy).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(modal).toHaveScreenshot(shot);
+
+    // A raw button with a title before, a DS icon button named "Copy link" after.
+    await modal
+      .getByTitle("Copy link")
+      .or(modal.getByRole("button", { name: "Copy link" }))
+      .hover();
+    await expect(modal).toHaveScreenshot(shot);
+
+    await page.getByText("Manage permissions").click();
+    await page.mouse.move(10, 700);
+    await expect(modal).toHaveScreenshot(shot);
+
+    await destroy.click();
+    await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(modal).toHaveScreenshot(shot);
+  });
+});

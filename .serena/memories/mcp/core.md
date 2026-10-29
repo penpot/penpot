@@ -13,19 +13,26 @@ enabling advanced AI-driven features in Penpot.
 - Build Tool: TypeScript Compiler (tsc) + esbuild
 - Package Manager: pnpm
 
-## General Principles
+## Principles & Code Style
 
 IMPORTANT: Use an idiomatic, object-oriented style.
-In particular, this implies that, for any non-trivial interfaces, you use interfaces that expect explicitly typed abstractions
-rather than mere functions (i.e. use the strategy pattern, for example).
+* You keep each concern in exactly one home.
+  A mechanism whose parts are only correct in combination is implemented as a single component/class, and its parts are private to it;
+  expose a minimal public surface. Java-like encapsulation: If helper functions and constants are only used by one abstraction,
+  make them internal to the respective class.
+* For any non-trivial interfaces, you use functions/methods that expect explicitly typed abstractions
+  rather than mere functions (i.e. use the strategy pattern, for example).
+* Prefer declaring and instantiating concrete classes over defining only interfaces and using object literals.
 
 Comments:
-When describing parameters, methods/functions and classes, you use a precise style, where the initial (elliptical) phrase
-clearly defines *what* it is. Any details then follow in subsequent sentences.
+* When describing parameters, methods/functions and classes, you use a precise style, where the initial (elliptical) phrase
+  clearly defines *what* it is. Any details then follow in subsequent sentences.
+* When describing what blocks of code do, you also use an elliptical style and start with a lower-case letter unless
+  the comment is a lengthy explanation with at least two sentences (in which case you start with a capital letter, as is
+  required for sentences).
 
-When describing what blocks of code do, you also use an elliptical style and start with a lower-case letter unless
-the comment is a lengthy explanation with at least two sentences (in which case you start with a capital letter, as is
-required for sentences).
+Syntax: 
+* Never use if blocks (or other blocks) without braces, even for single-line cases.
 
 ## Project Structure (Excerpt)
 
@@ -101,6 +108,10 @@ From the `mcp/` directory, run
   already resolved` for the file's root test). Inside tests the logger writes to
   stdout directly. `NODE_TEST_CONTEXT` is the env var `node --test` sets.
 * Cross-cutting testing principles and anti-patterns: `mem:testing`.
+
+## OAuth for remote MCP clients
+
+- Authorization/discovery URLs, self-contained client IDs, consent and PKCE/code binding, backend Redis state, deployment wiring, and compatibility limits: `mem:mcp/oauth`.
 
 ## Devenv plugin/server wiring
 

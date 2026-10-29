@@ -56,6 +56,7 @@
    [app.render-wasm.text-paste :as text-paste]
    [app.util.clipboard :as clipboard]
    [app.util.code-gen.markup-svg :as svg]
+   [app.util.code-gen.markup-svg-wasm :as svg.wasm]
    [app.util.code-gen.style-css :as css]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -392,7 +393,10 @@
                  (gsh/translate-to-frame % (get objects parent-frame-id)))
 
             shapes          (mapv maybe-translate selected)
-            svg-formatted   (svg/generate-formatted-markup objects shapes)]
+            ;; With render-wasm active, never call classic SVG codegen.
+            svg-formatted   (if (features/active-feature? state "render-wasm/v1")
+                              (svg.wasm/get-formatted-svg-markup (mapv :id shapes))
+                              (svg/generate-formatted-markup objects shapes))]
         (-> (clipboard/to-clipboard-multi
              {"image/svg+xml" svg-formatted
               "text/plain"    svg-formatted})

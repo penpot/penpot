@@ -1083,6 +1083,24 @@
          (update :undo-changes conj {:type :set-tokens-status :theme-ids prev-theme-ids :set-ids prev-set-ids})
          (apply-changes-local)))))
 
+(defn set-own-tokens-status
+  "Keep aside the tokens status of the file's own tokens-lib, or remove it
+   when `tokens-status` is nil."
+  [changes tokens-status]
+  (assert-library! changes)
+  (assert (or (ctos/tokens-status? tokens-status)
+              (nil? tokens-status)))
+  (let [library-data       (::library-data (meta changes))
+        prev-tokens-status (cfo/get-own-tokens-status library-data)
+        ->change           (fn [tokens-status]
+                             {:type :set-own-tokens-status
+                              :theme-ids (some-> tokens-status ctos/get-active-theme-ids)
+                              :set-ids (some-> tokens-status ctos/get-active-set-ids)})]
+    (-> changes
+        (update :redo-changes conj (->change tokens-status))
+        (update :undo-changes conj (->change prev-tokens-status))
+        (apply-changes-local))))
+
 (defn rename-token-set-group
   [changes set-group-path set-group-fname]
   (let [undo-path (ctob/replace-last-path-name set-group-path set-group-fname)
