@@ -9,6 +9,7 @@
    [app.common.test-helpers.composable.comp.undo-check :as uc]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.composable.gen :as cg]
+   [app.common.test-helpers.composable.grid :as grid]
    [app.common.test-helpers.composable.oracle :as oracle]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.normalize :as thn]
@@ -23,11 +24,14 @@
 
 (defn- live-model
   [state live]
-  (let [by-path (into {} (map (juxt :path (comp :id :shape))) (cg/forest live))]
+  (let [by-path (into {} (map (juxt :path (comp :id :shape))) (cg/forest live))
+        ids-map (into {} (keep (fn [{:keys [path shape]}]
+                                 (when-let [id (get by-path path)] [(:id shape) id])))
+                      (cg/forest (:situation state)))]
     (into {}
           (keep (fn [{:keys [path shape]}]
                   (when-let [groups (get (:model state) (:id shape))]
-                    (when-let [id (get by-path path)] [id groups]))))
+                    (when-let [id (get by-path path)] [id (grid/remap-groups groups ids-map)]))))
           (cg/forest (:situation state)))))
 
 (defn- ^:async replay-program
@@ -61,6 +65,10 @@
                  (:objects (cthf/current-page (tm/file next-live)))
                  (tm/shape-by-id next-live (get-in actual [:shape :id]))
                  (cg/requested-geometry live actual (first tuple))))
+              (when (and (:op actual) (#{:grid-cell :grid-direction} (first tuple)))
+                (oracle/check-requested-grid
+                 (tm/shape-by-id next-live (get-in actual [:shape :id])) (:shape actual)
+                 (get-in actual [:op :action]) (get-in actual [:op :value])))
               (try
                 (oracle/check next-live (live-model next-state next-live))
                 (catch :default error
@@ -87,6 +95,22 @@
   (await (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock
                             rx/timer mock/timer-mock}
            (await (replay-program program)))))
+
+(t/deftest ^:async authored-grid-histories-use-independent-cell-expectations
+  (doseq [ops [[[:grid-direction 0 0 1 1] [:grid-direction 0 0 1 0]
+                [:grid-direction 0 0 0 0] [:update-main 0]
+                [:grid-direction 0 0 0 1] [:reset 0] [:undo] [:redo]]
+               [[:grid-cell 0 0 0 1] [:grid-cell 0 1 1 0] [:grid-cell 0 0 2 0]
+                [:update-main 0] [:grid-cell 0 1 2 1] [:reset 0] [:undo] [:redo]]
+               [[:grid-cell 0 0 0 1] [:duplicate 0] [:undo] [:redo] [:update-main 0]]
+               [[:grid-direction 0 0 1 1] [:add-child 0] [:undo] [:redo]]
+               [[:grid-cell 0 0 0 1] [:remove-child 0] [:undo] [:redo]]
+               [[:grid-cell 0 0 0 1] [:detach 0] [:undo] [:redo]]]]
+    (await (replay {:world [1 0 {:layout :grid :layout-children true :grid-square true}] :ops ops}))))
+
+(t/deftest ^:async detaching-an-outer-copy-remaps-inherited-grid-cell-intent
+  (await (replay {:world [1 1 {:layout :grid :layout-children true :grid-square true}]
+                  :ops [[:grid-cell 0 0 0 1] [:detach 0] [:undo] [:redo]]})))
 
 (t/deftest ^:async layout-container-histories-survive-component-operations
   (doseq [[property layouts] [[20 [:flex]] [21 [:flex]] [22 [:flex :grid]] [23 [:flex :grid]]

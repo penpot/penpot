@@ -12,6 +12,7 @@
    [app.common.math :as mth]
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.geometry :as geom]
+   [app.common.test-helpers.composable.grid :as grid]
    [app.common.test-helpers.texts :as thtx]
    [app.common.types.container :as ctn]))
 
@@ -104,9 +105,11 @@
 
 (defn values
   [shape group]
-  (if (contains? text-groups group)
+  (cond
+    (= group :layout-grid-cells) {:layout-grid-cells (grid/get-cells shape)}
+    (contains? text-groups group)
     {:content (:content shape)}
-    (into {} (map #(vector % (get shape %))) (get attributes group))))
+    :else (into {} (map #(vector % (get shape %))) (get attributes group))))
 
 (defn author-geometry
   [shape parent]
@@ -161,7 +164,8 @@
 (defn duplicate
   [model before source-id after copy-id]
   (letfn [(copy-groups [result source-id copy-id]
-            (let [groups (get model source-id)
+            (let [groups (grid/remap-groups (get model source-id)
+                                            (zipmap (:shapes (get before source-id)) (:shapes (get after copy-id))))
                   result (cond-> result (seq groups) (assoc copy-id groups))]
               (reduce (fn [result [source child]] (copy-groups result source child)) result
                       (map vector (:shapes (get before source-id)) (:shapes (get after copy-id))))))]
@@ -202,7 +206,7 @@
               (loop [shape shape groups (get model (:id shape)) seen #{}]
                 (let [ref (:shape-ref shape)
                       source (get before ref)
-                      inherited (get model ref)
+                      inherited (grid/remap-groups (get model ref) (grid/get-child-map before source original))
                       inherited (cond-> inherited
                                   (:geometry-group inherited)
                                   (update :geometry-group in-orientation source original))]
@@ -305,7 +309,7 @@
                            (assoc id {:swap-group {}})
                            (and (:shape-ref ref) (seq groups))
                            (update (:id ref) merge
-                                   (cond-> groups
+                                   (cond-> (grid/remap-groups groups (grid/get-child-map after shape ref))
                                      (= (:component-id ref)
                                         (:component-id (get after (:shape-ref ref))))
                                      (dissoc :swap-group))))]
@@ -342,7 +346,10 @@
            ordinary? (and shape position
                           (nil? (:component-id shape))
                           (nil? (:component-id position)))
-           groups (cond-> groups ordinary? (dissoc :swap-group))]
+           groups (cond-> groups
+                    ordinary? (dissoc :swap-group)
+                    (:layout-grid-cells groups)
+                    (update-in [:layout-grid-cells :layout-grid-cells] grid/settle-cells shape objects))]
        (if (seq groups) (assoc result id groups) (dissoc result id))))
    model model))
 

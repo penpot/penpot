@@ -16,6 +16,7 @@
    [app.common.test-helpers.composable.comp.undo-check :as uc]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.composable.geometry :as geom]
+   [app.common.test-helpers.composable.grid :as grid]
    [app.common.test-helpers.composable.shadow :as shadow]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.normalize :as thn]
@@ -32,6 +33,14 @@
   [invariant details]
   (throw (ex-info (str "Component invariant " (name invariant) " failed")
                   (assoc details :invariant invariant))))
+
+(defn check-requested-grid
+  [shape before action value]
+  (let [expected (grid/get-intended-values before action value)
+        actual   (cond-> {:layout-grid-cells (grid/get-cells shape)}
+                   (= action :direction) (assoc :layout-grid-dir (:layout-grid-dir shape)))]
+    (when-not (= expected actual)
+      (fail :I9 {:phase :requested-grid :expected expected :actual actual}))))
 
 (defn snapshot
   [situation]
@@ -355,12 +364,14 @@
     (->> cells end-auto-prefix (sort-by (juxt :row :column)) vec)))
 
 (defn- check-structure
-  [objects shape main]
+  [objects shape main authored]
   (let [refs (mapv #(get-in objects [% :shape-ref]) (:shapes shape))]
     (when-not (= (vec (:shapes main)) refs)
       (fail :I4 {:shape (:name shape) :group :structure
                  :expected (:shapes main) :actual refs}))
-    (when (= :grid (:layout main))
+    ;; Authored cells have already been checked against independent intent
+    ;; by I9. Child structure still follows the main in every case.
+    (when (and (= :grid (:layout main)) (not (contains? authored :layout-grid-cells)))
       (let [expected (expected-grid-cells objects shape main)
             actual (grid-cells shape)]
         (when-not (= expected actual)
@@ -414,7 +425,7 @@
                       :expected value :actual (shadow/values shape group)})))
        (when (and settled (:shape-ref shape))
          (when-let [main (ctf/find-content-ref-shape file container libraries shape :include-deleted? true)]
-           (check-structure (:objects page) shape main)
+           (check-structure (:objects page) shape main expected)
            (doseq [group (keys shadow/attributes)
                    :when (and (not= group :geometry-group) (not (contains? touched group)))
                    :when (not (and (= group :name-group) (= :text (:type shape))

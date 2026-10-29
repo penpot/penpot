@@ -221,6 +221,39 @@
   [target property value]
   (tm/assign-id (->ChangeProperty target property value)))
 
+(defrecord EditGrid [target action value]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [file    (tm/file situation)
+          page    (thf/current-page file)
+          id      (tm/target-shape-id situation target)
+          edit    (fn [shape]
+                    (case action
+                      :direction (let [from (or (:layout-grid-dir shape) :row)]
+                                   (if (= from value)
+                                     (assoc shape :layout-grid-dir value)
+                                     (ctl/reflow-grid-auto-items-for-direction shape from value)))
+                      :cell (update shape :layout-grid-cells
+                                    (fn [cells]
+                                      (update-vals cells #(if (= [(:row value) (:column value)] [(:row %) (:column %)])
+                                                            (merge % (:props value)) %))))))
+          changes (-> (cls/generate-update-shapes (pcb/empty-changes nil (:id page)) [id]
+                                                  edit (:objects page)
+                                                  {:skip-grid-reassignment? (= action :direction)})
+                      (with-layout-reflow id)
+                      (assoc ::layout-reflow? true))]
+      (-> situation
+          (tm/with-file (thf/apply-changes file changes))
+          (record-changes changes)
+          (tm/record-application this {:target target :action action :value value})))))
+
+(defn edit-grid
+  [target action value]
+  (tm/assign-id (->EditGrid target action value)))
+
 (defprotocol IPropertyCheck
   "The check dual of an operation that changes a property: whether a shape the
    test supplies holds the value the operation set."

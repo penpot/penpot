@@ -29,6 +29,83 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
+(t/deftest authored-grid-cell-values-are-checked-against-intent-instead-of-the-main
+  (let [situation (cg/world [1 0 {:layout :grid :layout-children true}])
+        id        ((n/nth-copy-head-of "random-0" 0) situation)
+        shape     (tm/shape-by-id situation id)
+        cell-id   (:id (first (sort-by (juxt :row :column) (vals (:layout-grid-cells shape)))))
+        intended  (assoc-in shape [:layout-grid-cells cell-id :align-self] :end)
+        file      (tm/file situation)
+        page      (thf/current-page file)
+        changes   (cls/generate-update-shapes (pcb/empty-changes nil (:id page)) [id]
+                                              (constantly intended) (:objects page) {})
+        edited    (tm/with-file situation (thf/apply-changes file changes))
+        model     {id {:layout-grid-cells (shadow/values intended :layout-grid-cells)}}
+        failure   (try (oracle/check edited model) nil
+                       (catch #?(:clj Exception :cljs js/Error) error (ex-data error)))]
+    (t/is (= #{:layout-grid-cells} (:touched (tm/shape-by-id edited id))))
+    (t/is (nil? failure) (pr-str failure))))
+
+(t/deftest grid-overrides-survive-component-histories
+  (doseq [ops [[[:grid-direction 0 0 1 1] [:grid-direction 0 0 1 0]
+                [:grid-direction 0 0 0 0] [:update-main 0]
+                [:grid-direction 0 0 0 1] [:reset 0] [:undo] [:redo]]
+               [[:grid-cell 0 0 0 1] [:grid-cell 0 1 1 0] [:grid-cell 0 0 2 0]
+                [:update-main 0] [:grid-cell 0 1 2 1] [:reset 0] [:undo] [:redo]]
+               [[:grid-cell 0 0 0 1] [:duplicate 0] [:undo] [:redo] [:update-main 0]]
+               [[:grid-direction 0 0 1 1] [:add-child 0] [:undo] [:redo]]
+               [[:grid-cell 0 0 0 1] [:remove-child 0] [:undo] [:redo]]
+               [[:grid-cell 0 0 0 1] [:detach 0] [:undo] [:redo]]]]
+    (let [result (cg/run {:world [1 0 {:layout :grid :layout-children true :grid-square true}] :ops ops})]
+      (doseq [kind (set (map first ops))]
+        (t/is (zero? (get-in result [:coverage :random kind :skipped] 0)) (str kind " in " ops))
+        (when-not (#{:undo :redo} kind)
+          (t/is (pos? (get-in result [:coverage :random kind :changed] 0)) (str kind " in " ops)))))))
+
+(t/deftest grid-directions-track-both-groups-and-reject-dropped-main-edits
+  (let [initial  (cg/initial-state [1 0 {:layout :grid :layout-children true :grid-square true}])
+        resolved (cg/resolve-op (:situation initial) {} [:grid-direction 0 0 1 1])
+        id       (get-in resolved [:shape :id])
+        edited   (-> initial (cg/step [:grid-direction 0 0 1 1]) cg/settle-state)
+        file     (tm/file (:situation edited))
+        path     [:data :pages-index (:id (thf/current-page file)) :objects id]
+        check    (fn [file]
+                   (try (oracle/check (tm/with-file (:situation edited) file) (:model edited)) nil
+                        (catch #?(:clj Exception :cljs js/Error) error (:invariant (ex-data error)))))
+        main     (tm/shape-by-id (:situation initial) (:shape-ref (:shape resolved)))
+        dropped  (fn [action value]
+                   (try (oracle/check-requested-grid main main action value) nil
+                        (catch #?(:clj Exception :cljs js/Error) error (:invariant (ex-data error)))))]
+    (t/is (= #{:layout-grid-dir :layout-grid-cells} (set (keys (get (:model edited) id)))))
+    (t/is (= :I9 (check (assoc-in file (conj path :layout-grid-dir) :row))))
+    (t/is (= :I3 (check (update-in file (conj path :touched) disj :layout-grid-dir))))
+    (t/is (= :I3 (check (update-in file (conj path :touched) disj :layout-grid-cells))))
+    (t/is (= :I9 (dropped :direction :column)))))
+
+(t/deftest detaching-an-outer-copy-remaps-inherited-grid-cell-intent
+  (let [result (cg/run {:world [1 1 {:layout :grid :layout-children true :grid-square true}]
+                        :ops [[:grid-cell 0 0 0 1] [:detach 0] [:undo] [:redo]]})]
+    (t/is (= 1 (get-in result [:coverage :random :grid-cell :changed])))
+    (t/is (= 1 (get-in result [:coverage :random :detach :changed])))))
+
+(t/deftest grid-intent-rejects-corrupt-values-members-and-missing-groups
+  (let [initial   (cg/initial-state [1 0 {:layout :grid :layout-children true :grid-square true}])
+        resolved  (cg/resolve-op (:situation initial) {} [:grid-cell 0 0 0 1])
+        id        (get-in resolved [:shape :id])
+        cell-id   (:id (first (sort-by (juxt :row :column) (vals (get-in resolved [:shape :layout-grid-cells])))))
+        edited    (-> initial (cg/step [:grid-cell 0 0 0 1]) cg/settle-state)
+        situation (:situation edited)
+        file      (tm/file situation)
+        path      [:data :pages-index (:id (thf/current-page file)) :objects id]
+        invariant (fn [file]
+                    (try (oracle/check (tm/with-file situation file) (:model edited)) nil
+                         (catch #?(:clj Exception :cljs js/Error) error (:invariant (ex-data error)))))]
+    (t/is (= :I9 (invariant (assoc-in file (into path [:layout-grid-cells cell-id :align-self]) :start))))
+    (t/is (= :I9 (invariant (assoc-in file (into path [:layout-grid-cells cell-id :justify-self]) :end))))
+    (t/is (= :I9 (invariant (assoc-in file (into path [:layout-grid-cells cell-id :shapes]) []))))
+    (t/is (= :I4 (invariant (update-in file (conj path :shapes) #(vec (reverse %))))))
+    (t/is (= :I3 (invariant (update-in file (conj path :touched) disj :layout-grid-cells))))))
+
 (t/deftest nesting-a-copy-alongside-a-hidden-layout-child-stays-settled
   (t/is (map? (cg/run {:world [3 0 {:text true :text-styles true :layout :flex}]
                        :ops [[:delete 9 9 1 2] [:text 5 9 1 3] [:style 3 1 1]

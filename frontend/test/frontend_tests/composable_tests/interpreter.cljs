@@ -140,6 +140,16 @@
    built from `situation` and from the same helpers the common node uses."
   [op situation]
   (cond
+    (instance? n/EditGrid op)
+    (let [{:keys [target action value]} op
+          id                         (tm/target-shape-id situation target)
+          shape                      (tm/shape-by-id situation id)]
+      (case action
+        :direction [(dwsl/change-grid-direction [id] value)]
+        :cell (let [cell (first (filter #(= [(:row value) (:column value)] [(:row %) (:column %)])
+                                        (vals (:layout-grid-cells shape))))]
+                [(dwsl/update-grid-cells id [(:id cell)] (:props value))])))
+
     (instance? n/ChangeProperty op)
     (let [{:keys [target property value]} op
           id (tm/target-shape-id situation target)]

@@ -24,6 +24,7 @@
    [app.common.test-helpers.composable.comp.runner :as r]
    [app.common.test-helpers.composable.comp.setups :as setup]
    [app.common.test-helpers.composable.core :as tm]
+   [app.common.test-helpers.composable.grid :as grid]
    [app.common.test-helpers.composable.oracle :as oracle]
    [app.common.test-helpers.composable.shadow :as shadow]
    [app.common.test-helpers.composable.variants :as variants]
@@ -97,6 +98,23 @@
                        (tm/apply-to (n/change-property (constantly id) :layout-item-margin-type :multiple))))
                 situation ids)
         (with-settled-layout name))))
+
+(defn- with-square-grid
+  [situation name]
+  (let [id       ((n/main-head-of name) situation)
+        shape    (tm/shape-by-id situation id)
+        children (vec (reverse (:shapes shape)))
+        cells    (into {} (map-indexed (fn [index [row column]]
+                                         (let [id (uuid/next)]
+                                           [id {:id id :row row :column column :row-span 1 :column-span 1
+                                                :position :auto :align-self :auto :justify-self :auto
+                                                :shapes (if-let [child (get children index)] [child] [])}]))
+                                       [[1 1] [1 2] [2 1] [2 2]]))
+        file     (-> (tm/file situation)
+                     (ths/update-shape-by-id (:id shape) :layout-grid-rows [{:type :fixed :value 60} {:type :fixed :value 60}])
+                     (ths/update-shape-by-id (:id shape) :layout-grid-columns [{:type :fixed :value 80} {:type :fixed :value 80}])
+                     (ths/update-shape-by-id (:id shape) :layout-grid-cells cells))]
+    (with-settled-layout (tm/with-file situation file) name)))
 
 (defn- with-outer-layout
   [situation name layout]
@@ -214,6 +232,8 @@
                             (with-layout-children name))
                           (cond-> (and (zero? index) (:layout opts) (:layout-item-margins opts))
                             (with-layout-item-margins name))
+                          (cond-> (and (zero? index) (= :grid (:layout opts)) (:grid-square opts))
+                            (with-square-grid name))
                           (as-> s (reduce #(tm/apply-to %2 %1) s
                                           [(n/make-nested-component name depth)]))
                           (with-outer-layout name (when (and (zero? index) (pos? depth) (:layout-copies opts)) (:layout opts)))
@@ -473,6 +493,10 @@
    [:direction ["ltr" "rtl"]]
    [:valign ["top" "bottom"]]])
 
+(def grid-cell-edits
+  [{:align-self :end} {:justify-self :center} {:align-self :center :justify-self :end}
+   {:align-self :auto :justify-self :auto}])
+
 (defn- edit-text-style
   [shape unit value]
   (let [[style values] (nth text-style-edits (mod (or unit 0) (count text-style-edits)))
@@ -495,7 +519,10 @@
         [style-property style-values] (nth style-edits (mod (or property 0) (count style-edits)))
         items (cond->> (if (contains? library-source-kinds kind)
                          (library-candidates situation kind scope)
-                         (candidates situation model (if (= kind :style) :edit kind) scope))
+                         (candidates situation model (if (#{:style :grid-cell :grid-direction} kind) :edit kind) scope))
+                (#{:grid-cell :grid-direction} kind)
+                (filter #(and (= :grid (get-in % [:shape :layout]))
+                              (seq (get-in % [:shape :layout-grid-cells]))))
                 (= kind :style)
                 (filter (fn [{:keys [shape]}]
                           (and (shadow/attribute-applicable? shape style-property)
@@ -543,6 +570,11 @@
              (when target
                (case kind
                  (:edit :style) (n/change-property target property value)
+                 :grid-direction (n/edit-grid target :direction (nth [:row :column] (mod (or (nth tuple 3 nil) 0) 2)))
+                 :grid-cell (let [cells (grid/get-cells (:shape selected))
+                                  cell  (nth cells (mod (or (nth tuple 2 nil) 0) (count cells)))
+                                  props (nth grid-cell-edits (mod (or (nth tuple 3 nil) 0) (count grid-cell-edits)))]
+                              (n/edit-grid target :cell (assoc (select-keys cell [:row :column]) :props props)))
                  (:transform :library-transform) (let [action (nth [:move :width :height :rotate :flip-x :flip-y]
                                                                    (mod (or (nth tuple 2 nil) 0) 6))
                                                        value (or (nth tuple 3 nil) 0)]
@@ -747,6 +779,7 @@
         id (:id shape)]
     (case kind
       (:edit :style) (shadow/edit model shape property value)
+      (:grid-cell :grid-direction) (grid/edit model shape (:action op) (:value op))
       :reset (shadow/clear-subtree model objects id)
       :update-main (shadow/update-main model objects (all-objects after) id)
       :detach (shadow/detach model objects (all-objects after) id)
@@ -842,6 +875,9 @@
             (oracle/check-requested-geometry (:objects (thf/current-page (tm/file after)))
                                              (tm/shape-by-id after (get-in resolved [:shape :id]))
                                              (requested-geometry before resolved kind))))
+        (when (#{:grid-cell :grid-direction} kind)
+          (oracle/check-requested-grid (tm/shape-by-id after (get-in resolved [:shape :id]))
+                                       (:shape resolved) (:action op) (:value op)))
         (when (#{:swap :switch} kind)
           (let [head (tm/shape-by-id after (get-in resolved [:shape :id]))]
             (when-not (= (get-in resolved [:destination :component-id]) (:component-id head))
