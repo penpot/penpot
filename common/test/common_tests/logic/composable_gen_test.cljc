@@ -29,6 +29,63 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
+(t/deftest deferred-failures-name-the-executed-action-and-keep-the-shrink-signature
+  (let [short-program {:world [1 0] :ops [[:edit 0 0 1 1] [:update-main 0]]}
+        long-program  (update short-program :ops conj [:style 0 3 1 1])
+        settle        r/settle
+        corrupt       (fn [situation]
+                        (let [id   ((n/main-head-of "random-0") situation)
+                              main (tm/shape-by-id situation id)]
+                          (if (= "#ff0000" (get-in main [:fills 0 :fill-color]))
+                            (let [file    (tm/file situation)
+                                  page    (thf/current-page file)
+                                  ids     (mapv (comp :id :shape)
+                                                (filter #(= (:component-id main) (get-in % [:shape :component-id]))
+                                                        (cg/tree situation)))
+                                  changes (cls/generate-update-shapes
+                                           (pcb/empty-changes nil (:id page)) ids
+                                           #(assoc % :fills (ths/sample-fills-color :fill-color "#FFFFFF"))
+                                           (:objects page) {:ignore-touched true})]
+                              (tm/with-file situation (thf/apply-changes file changes)))
+                            situation)))
+        failure       (fn [run]
+                        (try (run) nil
+                             (catch #?(:clj Exception :cljs js/Error) error
+                               (select-keys (ex-data error) [:invariant :phase :failing-op :trace]))))
+        coverage      (atom {})
+        signature     (atom nil)]
+    (t/is (map? (cg/run long-program)) "The real program passes before corrupting settlement")
+    (with-redefs [r/settle (fn
+                             ([situation] (corrupt (settle situation (r/pending-components situation))))
+                             ([situation ids] (corrupt (settle situation ids))))]
+      (doseq [program [long-program short-program]]
+        (let [data (failure #(cg/run program))]
+          (t/is (= :I9 (:invariant data)))
+          (t/is (= :requested-update-main (:phase data)))
+          (t/is (= [:edit :update-main] (mapv :kind (:trace data))))
+          (t/is (= [:update-main 0] (:failing-op data)))))
+      (t/is (some? (failure #(cg/check-program long-program coverage signature))))
+      (t/is (= [:I9 nil :requested-update-main :update-main] @signature))
+      (t/is (some? (failure #(cg/check-program short-program coverage signature)))
+            "Removing an unexecuted tuple must preserve the failure"))
+    (with-redefs [n/change-property (fn [target _property _value] (n/reset target))]
+      (let [data (failure #(cg/run short-program))]
+        (t/is (= :I9 (:invariant data)))
+        (t/is (= :requested-scalar (:phase data)))
+        (t/is (= [:edit 0 0 1 1] (:failing-op data))))
+      (t/is (true? (cg/check-program short-program coverage signature))
+            "A genuinely different shrink failure remains rejected"))))
+
+(t/deftest immediate-failures-name-the-action-being-executed
+  (let [program {:world [1 0] :ops [[:edit 0 0 1 1] [:update-main 0]]}
+        failure (with-redefs [n/update-main n/reset]
+                  (try (cg/run program) nil
+                       (catch #?(:clj Exception :cljs js/Error) error (ex-data error))))]
+    (t/is (= :I9 (:invariant failure)))
+    (t/is (= :requested-update-main (:phase failure)))
+    (t/is (= [:edit] (mapv :kind (:trace failure))))
+    (t/is (= [:update-main 0] (:failing-op failure)))))
+
 (t/deftest update-main-intent-rejects-losing-the-copy-value-while-every-copy-agrees
   (doseq [program [{:world [1 0] :ops [[:edit 0 0 1 1] [:update-main 0]]}
                    {:world [1 0 {:library true}] :ops [[:edit 0 0 1 2] [:update-main 0]]}

@@ -824,7 +824,15 @@
 (defn step
   [state tuple]
   (let [[kind index] tuple
-        state (if (= kind :sync) state (settle-state state))
+        state (if (= kind :sync) state
+                  (try (settle-state state)
+                       (catch #?(:clj Throwable :cljs :default) cause
+                         ;; Settlement finishes the prior action before resolving this tuple.
+                         (let [previous (some #(when (= :executed (:status %)) (:tuple %))
+                                              (rseq (:trace state)))]
+                           (throw (ex-info (ex-message cause)
+                                           (merge {:failing-op previous} (ex-data cause))
+                                           cause))))))
         {:keys [situation model]} state
         {:keys [op trace opportunities library-id] :as resolved} (resolve-op situation model tuple)
         phase (or (:phase state) :random)
@@ -986,9 +994,9 @@
        (catch #?(:clj Throwable :cljs :default) cause
          (throw (ex-info (str (ex-message cause) "\nReplay: (cg/run " (pr-str program) ")"
                               "\nTrace: " (pr-str (:trace @progress)))
-                         (assoc (ex-data cause) :program program :trace (:trace @progress)
-                                :coverage (:coverage @progress)
-                                :failing-op (:current @progress))
+                         (merge {:failing-op (:current @progress)} (ex-data cause)
+                                {:program program :trace (:trace @progress)
+                                 :coverage (:coverage @progress)})
                          cause)))))))
 
 (defn check-program
