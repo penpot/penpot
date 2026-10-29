@@ -1,59 +1,124 @@
-import express, { type Express } from "express";
+import { Redis } from "ioredis";
+import { BackendClient } from "./backend-client.js";
 import { loadConfig } from "./config.js";
-import { initLogger, logger, logActiveTransports } from "./logger.js";
-import { healthRoutes } from "./routes/health.js";
-import { createImageRoutes } from "./routes/image.js";
-import { createFontRoutes } from "./routes/font.js";
-import { errorHandler } from "./middleware/error-handler.js";
-import { timeoutMiddleware } from "./middleware/timeout.js";
-import { sharedKeyAuth } from "./middleware/auth.js";
-import { createQueueMiddleware } from "./middleware/queue.js";
-import { loggingMiddleware } from "./middleware/logging.js";
-import { configureImageLimits } from "./services/image.js";
-import { configureFontLimits } from "./services/font.js";
-import { configureUploadLimits } from "./upload.js";
-import sharp from "sharp";
-
-// Auth is enforced via x-shared-key header (sharedKeyAuth middleware).
-// When no key is configured, all requests are rejected (403).
-// This service MUST be deployed on an internal Docker network only
-// — do NOT expose to the public internet.
-
-// Disable sharp/libvips caching to prevent unbounded memory growth
-sharp.cache(false);
+import { createHealthServer } from "./health.js";
+import { JobsClient } from "./jobs-client.js";
+import { JobsWorker, type RedisLike } from "./jobs-worker.js";
+import { makeMediaHandlers } from "./jobs/media.js";
+import { initLogger, logActiveTransports } from "./logger.js";
+import { configureRuntime } from "./runtime.js";
+import { configureSvgLimits } from "./services/svg.js";
+import { configureSvgPool, shutdownSvgPool } from "./svg-pool.js";
 
 const config = loadConfig();
-initLogger(config);
-const app: Express = express();
+const log = initLogger(config);
+logActiveTransports(log);
+configureRuntime(config);
 
-// Configure resource limits
-configureImageLimits({
-  maxPixels: config.imageMaxPixels,
-  maxWidth: config.imageMaxWidth,
-  maxHeight: config.imageMaxHeight,
+configureSvgLimits({ maxSize: config.svgMaxSize });
+configureSvgPool({
+  workers: config.svgWorkers,
+  maxOldGenerationSizeMb: config.svgWorkerMaxOldMb,
+  timeout: config.svgTimeout,
+  maxSize: config.svgMaxSize,
 });
 
-configureFontLimits({
-  mem: config.fontProcessMem,
-  cpuTime: config.fontProcessCpuTime,
-  timeout: config.fontTimeout,
+if (config.svgWorkers === 0) {
+  log.warn("SVG_WORKERS=0: sanitization runs inline and blocks the event loop");
+}
+
+const backend = new BackendClient({
+  backendUri: config.backendUri,
+  sharedKey: config.sharedKey,
+  maxFileSize: config.maxFileSize,
+  timeoutMs: config.backendTimeout,
 });
 
-configureUploadLimits({ maxFileSize: config.maxFileSize, memoryThreshold: config.memoryThreshold });
-
-const queueMiddleware = createQueueMiddleware(config.maxConcurrentRequests);
-
-app.use(timeoutMiddleware(config.requestTimeout));
-app.use(loggingMiddleware);
-
-app.get("/api/health", healthRoutes);
-app.use("/api/image", sharedKeyAuth(config.sharedKey), queueMiddleware, createImageRoutes());
-app.use("/api/font", sharedKeyAuth(config.sharedKey), queueMiddleware, createFontRoutes());
-app.use(errorHandler);
-
-app.listen(config.port, config.host, () => {
-  logActiveTransports(logger);
-  logger.info(`media-processor listening on ${config.host}:${config.port}`);
+const jobs = new JobsClient({
+  backendUri: config.backendUri,
+  sharedKey: config.sharedKey,
+  timeoutMs: config.backendTimeout,
 });
 
-export { app };
+let lastRedisError = 0;
+
+function logRedisError(cause: unknown): void {
+  const now = Date.now();
+  if (now - lastRedisError > 5000) {
+    lastRedisError = now;
+    log.error({ cause }, "redis connection error");
+  }
+}
+
+/**
+ * One connection per poller: the blocking `BLPOP` holds it for the wait and
+ * the poller awaits its handler before popping again, so the connections are
+ * the concurrency ceiling.
+ */
+function createConnection(): RedisLike {
+  const conn = new Redis(config.redisUri);
+  conn.on("error", logRedisError);
+  return conn as unknown as RedisLike;
+}
+
+const worker = new JobsWorker({
+  tenant: config.tenant,
+  client: jobs,
+  handlers: makeMediaHandlers({ backend, jobs }),
+  fastQueue: config.jobsFastQueue,
+  slowQueue: config.jobsQueue,
+  fastConcurrency: config.jobsFastConcurrency,
+  slowConcurrency: config.jobsConcurrency,
+  createConnection,
+});
+
+const health = createHealthServer();
+
+async function main(): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    const onError = (cause: Error): void => reject(cause);
+    health.once("error", onError);
+    health.listen(config.port, config.host, () => {
+      health.off("error", onError);
+      resolve();
+    });
+  });
+
+  await worker.start();
+  log.info(
+    {
+      host: config.host,
+      port: config.port,
+      tenant: config.tenant,
+      fastQueue: config.jobsFastQueue,
+      slowQueue: config.jobsQueue,
+      fastConcurrency: config.jobsFastConcurrency,
+      slowConcurrency: config.jobsConcurrency,
+    },
+    "media worker started"
+  );
+}
+
+let stopping = false;
+
+async function shutdown(signal: string): Promise<void> {
+  if (stopping) {
+    return;
+  }
+  stopping = true;
+  log.info({ signal }, "media worker shutting down");
+  await worker.stop();
+  await shutdownSvgPool();
+  await new Promise<void>((resolve) => health.close(() => resolve()));
+  await new Promise<void>((resolve) => log.flush(() => resolve()));
+  // pino transports keep handles alive; flush first, then exit deliberately.
+  process.exit(0);
+}
+
+process.on("SIGTERM", () => void shutdown("SIGTERM"));
+process.on("SIGINT", () => void shutdown("SIGINT"));
+
+main().catch((cause) => {
+  log.error({ cause }, "media worker failed to start");
+  process.exit(1);
+});

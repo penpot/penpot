@@ -33,6 +33,19 @@
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
+(defn- run-thumbnail-job!
+  "Run the pending thumbnail job of the media object, as the slow runner
+  would, so the rows get the thumbnail before the GC assertions."
+  [media-id]
+  (t/is (= 1 (th/run-pending-job! :media-thumbnail (str "media:" media-id)))))
+
+(defn- purge-tempfiles!
+  "Drop the temporary objects the media jobs leave behind, so the GC counts
+  only the domain artifacts."
+  []
+  (th/db-exec! ["DELETE FROM storage_object
+                  WHERE COALESCE(metadata->>'bucket', metadata->>'~:bucket') = 'tempfile'"]))
+
 (defn- update-file!
   [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
   (let [params {::th/type :update-file
@@ -295,8 +308,14 @@
                                       :project-id (:default-project-id profile)
                                       :is-shared false})
 
-          fmo1    (add-file-media-object :profile-id (:id profile) :file-id (:id file))
-          fmo2    (add-file-media-object :profile-id (:id profile) :file-id (:id file))
+          fmo1*   (add-file-media-object :profile-id (:id profile) :file-id (:id file))
+          fmo2*   (add-file-media-object :profile-id (:id profile) :file-id (:id file))
+          ;; the second upload is skipped by the job label: one job for the
+          ;; shared media object, so both rows get the same thumbnail
+          _       (run-thumbnail-job! (:media-id fmo1*))
+          _       (purge-tempfiles!)
+          fmo1    (th/db-get :file-media-object {:id (:id fmo1*)})
+          fmo2    (th/db-get :file-media-object {:id (:id fmo2*)})
           shid    (uuid/random)
 
           page-id (first (get-in file [:data :pages]))]
@@ -454,6 +473,9 @@
           fmo3    (add-file-media-object :profile-id (:id profile) :file-id (:id file))
           fmo4    (add-file-media-object :profile-id (:id profile) :file-id (:id file))
           fmo5    (add-file-media-object :profile-id (:id profile) :file-id (:id file))
+          ;; all five uploads share one media object: one thumbnail job
+          _       (run-thumbnail-job! (:media-id fmo1))
+          _       (purge-tempfiles!)
           s1-shid  (uuid/random)
           s2-shid  (uuid/random)
           t-shid  (uuid/random)

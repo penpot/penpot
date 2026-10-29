@@ -639,6 +639,10 @@ msgstr ""
 "te puede interesar leer más sobre licencias tipográficas: [font "
 "licensing](https://www.typography.com/faq)."
 
+#: src/app/main/ui/dashboard/fonts.cljs:439
+msgid "dashboard.fonts.processing"
+msgstr "Procesando…"
+
 #: src/app/main/ui/dashboard/fonts.cljs:231
 msgid "dashboard.fonts.upload-all"
 msgstr "Cargar todas"
@@ -1702,6 +1706,10 @@ msgid "errors.font-family-invalid-chars"
 msgstr ""
 "El nombre de la familia tipográfica solo puede contener letras, números, "
 "espacios, guiones, guiones bajos y puntos."
+
+#: src/app/main/data/fonts.cljs:376
+msgid "errors.font-processing-failed"
+msgstr "No se ha podido procesar la fuente \"%s\"."
 
 #: src/app/main/data/auth.cljs:352, src/app/main/errors.cljs:479, src/app/main/ui/auth/login.cljs:116, src/app/main/ui/auth/register.cljs:131, src/app/main/ui/auth/register.cljs:317, src/app/main/ui/auth/verify_token.cljs:131, src/app/main/ui/dashboard/fonts.cljs:386, src/app/main/ui/dashboard/team.cljs:250, src/app/main/ui/dashboard/team.cljs:1131, src/app/main/ui/onboarding/team_choice.cljs:125, src/app/main/ui/settings/feedback.cljs:84, src/app/main/ui/settings/integrations.cljs:143, src/app/main/ui/workspace/main_menu.cljs:966
 msgid "errors.generic"

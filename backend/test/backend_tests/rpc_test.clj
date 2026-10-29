@@ -893,6 +893,14 @@
     (t/is (th/ex-of-type? ex :test))
     (t/is (th/ex-of-code? ex :boom))))
 
+;; --- SHARED-KEY PROFILE FALLBACK
+
+(t/deftest shared-key-auth-uses-uuid-zero-profile
+  (let [handler (rpc/make-rpc-handler {:echo [{} echo-handler]})
+        body    (call-body handler {:path-params {:method-name "echo"}
+                                    :extras {:app.http/auth-key-id :media-processor}})]
+    (t/is (= uuid/zero (::rpc/profile-id body)))))
+
 ;; --- DEFAULT HANDLER
 
 (t/deftest default-handler-for-missing-method

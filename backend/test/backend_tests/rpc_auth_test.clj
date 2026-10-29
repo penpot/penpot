@@ -11,10 +11,15 @@
    [app.common.flags :as flags]
    [app.common.generic-pool :as gpool]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.http.session :as session]
+   [app.jobs :as jobs]
    [app.loggers.audit :as-alias audit]
+   [app.media :as media]
    [app.redis :as rds]
+   [app.rpc.commands.auth :as auth]
    [app.rpc.commands.ldap :as ldap-cmd]
+   [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [yetti.response :as yres])
@@ -253,3 +258,24 @@
               "session must not be bound to the typed-email profile")))))
 
 
+
+(defn- live-tempfiles
+  []
+  (th/db-exec! ["SELECT id FROM storage_object
+                  WHERE COALESCE(metadata->>'bucket', metadata->>'~:bucket') = 'tempfile'
+                    AND deleted_at IS NULL"]))
+
+(t/deftest import-profile-picture-stores-the-photo-and-releases-the-input
+  (let [storage (:app.storage/storage th/*system*)
+        path    (th/tempfile "backend_tests/test_files/sample.jpg")]
+    (with-redefs [media/download-image (fn [_ _] {:path path
+                                                  :mtype "image/jpeg"
+                                                  :size 312043})]
+      (let [id (auth/import-profile-picture th/*system* "http://example.com/avatar.jpg")]
+        (t/is (uuid? id))
+        (let [object (sto/get-object storage id)]
+          (t/is (some? object))
+          (t/is (= "profile" (-> object meta :bucket)))
+          (t/is (= "image/jpeg" (-> object meta :content-type))))))
+    (t/testing "the job input is released"
+      (t/is (empty? (live-tempfiles))))))

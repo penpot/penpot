@@ -1,20 +1,37 @@
+import type { WireError } from "./protocol.js";
+
 export type FileInput = Buffer | string;
+
+export type LogLevel = "fatal" | "error" | "warn" | "info" | "debug" | "trace" | "silent";
 
 export interface AppConfig {
   port: number;
   host: string;
-  maxConcurrentRequests: number;
-  requestTimeout: number;
+  /** Queue the synchronous media jobs (`media-info`, `profile-thumbnail`) are consumed from. */
+  jobsFastQueue: string;
+  /** Queue the asynchronous media jobs (`media-thumbnail`, `font-variants`) are consumed from. */
+  jobsQueue: string;
+  /** Pollers on the fast queue. */
+  jobsFastConcurrency: number;
+  /** Pollers on the slow queue. */
+  jobsConcurrency: number;
   maxFileSize: number;
-  memoryThreshold: number;
   imageMaxPixels: number;
   imageMaxWidth: number;
   imageMaxHeight: number;
+  svgMaxSize: number;
+  svgWorkers: number;
+  svgWorkerMaxOldMb: number;
+  svgTimeout: number;
   fontProcessMem: number;
   fontProcessCpuTime: number;
   fontTimeout: number;
-  sharedKey: string | null;
-  logLevel: string;
+  redisUri: string;
+  tenant: string;
+  backendUri: string;
+  backendTimeout: number;
+  sharedKey: string;
+  logLevel: LogLevel;
   lokiUri: string | null;
   lokiJob: string;
   lokiEnvironment: string | null;
@@ -37,8 +54,4 @@ export interface ThumbnailParams {
   mode: "fit" | "crop";
 }
 
-export interface AppError {
-  type: "validation" | "restriction" | "internal";
-  code: string;
-  hint?: string;
-}
+export type AppError = WireError;

@@ -26,8 +26,9 @@
    [app.util.services :as sv]))
 
 (def ^:private allowed-shared-key-ids
-  "Only the exporter worker claims and settles durable jobs today."
-  #{:exporter})
+  "The workers that claim and settle durable jobs: the exporter and the
+  media processor."
+  #{:exporter :media-processor})
 
 ;; ---- RPC METHOD: CLAIM-JOB
 
@@ -154,11 +155,15 @@
    [:job-id ::sm/uuid]
    ;; Rich error report: type/code/hint are required, the map stays
    ;; open to worker-defined details (see jobs/fail).
-   [:error jobs/schema:job-error]])
+   [:error jobs/schema:job-error]
+   ;; The worker decides whether the failure may be retried (a network
+   ;; timeout, a worker shutting down). The substrate still refuses a
+   ;; code that no retry can heal and a job without budget.
+   [:retriable? {:optional true} ::sm/boolean]])
 
 (def ^:private schema:fail-job-result
   [:map {:title "fail-job-result"}
-   [:action [:enum :run :skip]]])
+   [:action [:enum :run :retry :skip]]])
 
 (sv/defmethod ::fail-job
   {::doc/added "2.20"
@@ -166,7 +171,16 @@
    ::sm/result schema:fail-job-result
    ::rpc/auth false
    ::rpc/allowed-shared-keys allowed-shared-key-ids}
-  [cfg {:keys [job-id error]}]
-  (if (pos? (jobs/fail cfg job-id error))
-    {:action :run}
-    {:action :skip}))
+  [cfg {:keys [job-id error retriable?]}]
+  (let [job (when retriable? (jobs/get-job cfg job-id))]
+    (if (and job (jobs/retriable-error? job error))
+      (let [nretry (inc (long (:retry-num job)))
+            delay  (jobs/retry-delay nretry)
+            at     (-> (ct/plus (ct/now) (ct/duration {:millis delay}))
+                       (ct/truncate :millisecond))]
+        (if (pos? (jobs/retry-job cfg job-id nretry at error :backoff))
+          {:action :retry}
+          {:action :skip}))
+      (if (pos? (jobs/fail cfg job-id error))
+        {:action :run}
+        {:action :skip}))))

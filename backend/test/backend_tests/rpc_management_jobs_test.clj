@@ -33,10 +33,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- mk-job
-  [{:keys [name status params scheduled-at]
+  [{:keys [name status params scheduled-at retry-num max-retries]
     :or   {name "media-process"
            status "new"
            params {:x 1}
+           retry-num 0
+           max-retries 3
            scheduled-at (ct/now)}}]
   (let [id (uuid/next)]
     (th/db-insert! :job {:id            id
@@ -45,8 +47,8 @@
                          :queue         "media"
                          :params        (db/json params)
                          :priority      100
-                         :max-retries   3
-                         :retry-num     0
+                         :max-retries   max-retries
+                         :retry-num     retry-num
                          :status        status
                          :scheduled-at  scheduled-at
                          :created-at    (ct/now)
@@ -146,6 +148,12 @@
     (let [out (mgmt type {::rpc/auth-key-id :nexus})]
       (t/is (= :authorization (th/ex-type (:error out))) (name type))
       (t/is (= :shared-key-not-allowed (th/ex-code (:error out))) (name type)))))
+
+(t/deftest jobs-methods-accept-the-media-processor-key
+  (doseq [type [:claim-job :report-job-progress :complete-job :fail-job]]
+    (let [out (mgmt type {::rpc/auth-key-id :media-processor
+                          :job-id (uuid/next)})]
+      (t/is (not= :shared-key-not-allowed (th/ex-code (:error out))) (name type)))))
 
 (t/deftest complete-job-rejects-a-key-it-does-not-declare-without-side-effects
   (let [job-id         (mk-job {})
@@ -312,6 +320,58 @@
                 :code "processing-error"
                 :hint "bad image"}
                (:error row))))))
+
+(t/deftest fail-job-retries-a-retriable-failure-with-budget
+  (let [cfg    (make-cfg)
+        job-id (mk-job {})]
+    (jobs/claim cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
+    (let [out (mgmt :fail-job {:job-id    job-id
+                               :retriable? true
+                               :error     {:type :internal
+                                           :code "worker-shutdown"
+                                           :hint "worker is going away"}})]
+      (t/is (nil? (:error out)))
+      (t/is (= {:action :retry} (:result out)))
+
+      (let [row (th/db-get :job {:id job-id}
+                           :status :retry-num :scheduled-at :error)]
+        (t/is (= "retry" (:status row)))
+        (t/is (= 1 (:retry-num row)))
+        (t/is (= {:type :internal
+                  :code :worker-shutdown
+                  :hint "worker is going away"}
+                 (jobs/decode-job-error (:error row))))
+
+        (t/testing "the transition went through retry-job"
+          (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job_event
+                                               WHERE job_id = ? AND kind = 'retry'"
+                                             job-id])))))))))
+
+(t/deftest fail-job-fails-a-retriable-failure-without-budget
+  (let [cfg    (make-cfg)
+        job-id (mk-job {:retry-num 3 :max-retries 3})]
+    (jobs/claim cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
+    (let [out (mgmt :fail-job {:job-id    job-id
+                               :retriable? true
+                               :error     {:type :internal
+                                           :code "worker-shutdown"
+                                           :hint "worker is going away"}})]
+      (t/is (nil? (:error out)))
+      (t/is (= {:action :run} (:result out)))
+      (t/is (= "failed" (:status (get-row job-id)))))))
+
+(t/deftest fail-job-does-not-retry-an-unhealable-code
+  (let [cfg    (make-cfg)
+        job-id (mk-job {})]
+    (jobs/claim cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
+    (let [out (mgmt :fail-job {:job-id    job-id
+                               :retriable? true
+                               :error     {:type :validation
+                                           :code "data-validation"
+                                           :hint "invalid params"}})]
+      (t/is (nil? (:error out)))
+      (t/is (= {:action :run} (:result out)))
+      (t/is (= "failed" (:status (get-row job-id)))))))
 
 (t/deftest fail-job-validates-params
   (let [job-id (mk-job {})]

@@ -18,7 +18,7 @@
 (def ^:private expected-shared-keys
   {"app.rpc.management.exporter" #{:exporter :media-processor}
    "app.rpc.management.files"    #{:nexus}
-   "app.rpc.management.jobs"     #{:exporter}
+   "app.rpc.management.jobs"     #{:exporter :media-processor}
    "app.rpc.management.nitrate"  #{:admin-console}})
 
 (t/deftest every-management-method-declares-its-shared-keys

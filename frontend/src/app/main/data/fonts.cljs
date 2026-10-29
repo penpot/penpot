@@ -13,6 +13,7 @@
    [app.common.media :as cm]
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
+   [app.main.data.jobs :as dj]
    [app.main.data.notifications :as ntf]
    [app.main.data.uploads :as uploads]
    [app.main.fonts :as fonts]
@@ -350,22 +351,82 @@
 ;; Dashboard related events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn add-font
-  [font]
-  (ptk/reify ::add-font
+(defn font-variant-settled
+  "Stop painting the variant as pending."
+  [id]
+  (ptk/reify ::font-variant-settled
     ptk/UpdateEvent
     (update [_ state]
-      (update state :fonts assoc (:id font) font))
+      (update state :fonts-pending (fnil disj #{}) id))))
+
+(defn font-variant-job-failed
+  "Tell the user that the job of `id` ended without its missing formats.
+
+  Only while the variant still exists: deleting a variant cancels its job,
+  and that cancellation is not an error to show."
+  [id font-family]
+  (ptk/reify ::font-variant-job-failed
+    ptk/WatchEvent
+    (watch [_ state _]
+      (if (contains? (:fonts state) id)
+        (rx/of (ntf/error (tr "errors.font-processing-failed" font-family)))
+        (rx/empty)))))
+
+(defn- follow-font-variant-job
+  "Follow the job that generates the missing formats of `variant-id`.
+
+  On completion the variants are fetched again, so the row shows every
+  format and the custom fonts are registered with the new ones. On failure
+  or cancellation the variant stops being pending and, while it still
+  exists, the user gets an error. A read failure settles the variant and is
+  only logged: leaving it pending forever is worse than the missing retry."
+  [ws-conn team-id variant-id font-family job-id]
+  (->> (dj/watch-job ws-conn job-id)
+       (rx/mapcat
+        (fn [{:keys [status]}]
+          (cond
+            (= "completed" status)
+            (rx/of (font-variant-settled variant-id)
+                   (fetch-fonts team-id))
+
+            (contains? #{"failed" "cancelled"} status)
+            (rx/of (font-variant-settled variant-id)
+                   (font-variant-job-failed variant-id font-family))
+
+            :else
+            (rx/empty))))
+       (rx/catch
+        (fn [cause]
+          (log/error :msg "unable to follow the font variant job" :cause cause)
+          (rx/of (font-variant-settled variant-id))))))
+
+(defn font-variant-created
+  "Add an uploaded font variant to the list and follow its job.
+
+  `create-font-variant` answers the row with `:job-id` (nil when the upload
+  already carried every format). The row serves the uploaded formats right
+  away, and the variant stays pending until the job ends."
+  [{:keys [id job-id] :as font}]
+  (ptk/reify ::font-variant-created
+    ptk/UpdateEvent
+    (update [_ state]
+      (cond-> (update state :fonts assoc id font)
+        (some? job-id) (update :fonts-pending (fnil conj #{}) id)))
 
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (rx/of (ev/event {::ev/name "add-font"
-                          :team-id team-id
-                          :font-id (:id font)
-                          :font-family (:font-family font)
-                          :font-style (:font-style font)
-                          :font-weight (:font-weight font)}))))))
+        (rx/merge
+         (rx/of (ev/event {::ev/name "add-font"
+                           :team-id team-id
+                           :font-id id
+                           :font-family (:font-family font)
+                           :font-style (:font-style font)
+                           :font-weight (:font-weight font)}))
+         (if (some? job-id)
+           (follow-font-variant-job (:ws-conn state) team-id id
+                                    (:font-family font) job-id)
+           (rx/empty)))))))
 
 (defn update-font
   [{:keys [id name] :as params}]

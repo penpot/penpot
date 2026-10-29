@@ -42,15 +42,35 @@
 
    upload))
 
-(defn validate-media-size!
-  [upload]
-  (let [max-size (cf/get :media-max-file-size)]
-    (when (> (:size upload) max-size)
+(def ^:private svg-mtype "image/svg+xml")
+
+(defn check-svg-size
+  "Validate the byte size of an SVG against `:media-svg-max-file-size`."
+  [size]
+  (let [max-size (cf/get :media-svg-max-file-size)]
+    (when (> size max-size)
       (ex/raise :type :restriction
-                :code :media-max-file-size-reached
-                :hint (str/ffmt "the uploaded file size % is greater than the maximum %"
-                                (:size upload)
+                :code :svg-too-large
+                :hint (str/ffmt "the svg size % is greater than the maximum %"
+                                size
                                 max-size)))
+    size))
+
+(defn validate-media-size!
+  "Validate the size of a media `upload`. SVG uses its own, lower cap
+   (`:media-svg-max-file-size`) and reports `:svg-too-large`, the same code
+   media-processor returns; every other type uses `:media-max-file-size`."
+  [upload]
+  (let [svg? (= svg-mtype (:mtype upload))]
+    (if svg?
+      (check-svg-size (:size upload))
+      (let [max-size (cf/get :media-max-file-size)]
+        (when (> (:size upload) max-size)
+          (ex/raise :type :restriction
+                    :code :media-max-file-size-reached
+                    :hint (str/ffmt "the uploaded file size % is greater than the maximum %"
+                                    (:size upload)
+                                    max-size)))))
     upload))
 
 (defn validate-font-size!

@@ -1,7 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { getImageInfo, generateThumbnail, configureImageLimits } from "../src/services/image.js";
-import { parseQuality } from "../src/routes/image.js";
-import { ProcessingError } from "../src/middleware/error-handler.js";
+import { ProcessingError } from "../src/errors.js";
 import sharp from "sharp";
 import { writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
@@ -139,7 +138,7 @@ describe("getImageInfo", () => {
       expect.fail("should have thrown");
     } catch (err) {
       expect(err).toBeInstanceOf(ProcessingError);
-      const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+      const pe = err as import("../src/errors.js").ProcessingError;
       expect(pe.statusCode).toBe(413);
       expect(pe.errorBody.code).toBe("image-dimensions-exceeded");
     }
@@ -158,7 +157,7 @@ describe("getImageInfo", () => {
       expect.fail("should have thrown");
     } catch (err) {
       expect(err).toBeInstanceOf(ProcessingError);
-      const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+      const pe = err as import("../src/errors.js").ProcessingError;
       expect(pe.statusCode).toBe(413);
       expect(pe.errorBody.code).toBe("image-dimensions-exceeded");
     }
@@ -177,7 +176,7 @@ describe("getImageInfo", () => {
       expect.fail("should have thrown");
     } catch (err) {
       expect(err).toBeInstanceOf(ProcessingError);
-      const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+      const pe = err as import("../src/errors.js").ProcessingError;
       expect(pe.statusCode).toBe(413);
       expect(pe.errorBody.code).toBe("image-pixel-count-exceeded");
     }
@@ -209,7 +208,7 @@ describe("getImageInfo", () => {
       expect.fail("should have thrown");
     } catch (err) {
       expect(err).toBeInstanceOf(ProcessingError);
-      const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+      const pe = err as import("../src/errors.js").ProcessingError;
       expect(pe.errorBody.code).toBe("image-pixel-count-exceeded");
     }
   });
@@ -414,7 +413,7 @@ describe("generateThumbnail", () => {
       expect.fail("should have thrown");
     } catch (err) {
       expect(err).toBeInstanceOf(ProcessingError);
-      const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+      const pe = err as import("../src/errors.js").ProcessingError;
       expect(pe.statusCode).toBe(413);
     }
   });
@@ -584,7 +583,7 @@ describe("generateThumbnail", () => {
       expect.fail("should have thrown");
     } catch (err) {
       expect(err).toBeInstanceOf(ProcessingError);
-      const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+      const pe = err as import("../src/errors.js").ProcessingError;
       expect(pe.statusCode).toBe(400);
       expect(pe.errorBody.code).toBe("unsupported-image-format");
     }
@@ -606,7 +605,7 @@ describe("generateThumbnail", () => {
       expect.fail("should have thrown");
     } catch (err) {
       expect(err).toBeInstanceOf(ProcessingError);
-      const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+      const pe = err as import("../src/errors.js").ProcessingError;
       expect(pe.statusCode).toBe(400);
       expect(pe.errorBody.code).toBe("invalid-image");
     }
@@ -633,7 +632,7 @@ describe("generateThumbnail", () => {
       expect.fail("should have thrown");
     } catch (err) {
       expect(err).toBeInstanceOf(ProcessingError);
-      const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+      const pe = err as import("../src/errors.js").ProcessingError;
       expect(pe.statusCode).toBe(400);
       expect(pe.errorBody.code).toBe("invalid-image");
     }
@@ -719,7 +718,7 @@ describe("generateThumbnail", () => {
       expect.fail("should have thrown");
     } catch (err) {
       expect(err).toBeInstanceOf(ProcessingError);
-      const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+      const pe = err as import("../src/errors.js").ProcessingError;
       expect(pe.statusCode).toBe(413);
       expect(pe.errorBody.code).toBe("output-dimensions-exceeded");
     }
@@ -740,7 +739,7 @@ describe("generateThumbnail", () => {
       expect.fail("should have thrown");
     } catch (err) {
       expect(err).toBeInstanceOf(ProcessingError);
-      const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+      const pe = err as import("../src/errors.js").ProcessingError;
       expect(pe.statusCode).toBe(413);
       expect(pe.errorBody.code).toBe("output-dimensions-exceeded");
     }
@@ -761,7 +760,7 @@ describe("generateThumbnail", () => {
       expect.fail("should have thrown");
     } catch (err) {
       expect(err).toBeInstanceOf(ProcessingError);
-      const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+      const pe = err as import("../src/errors.js").ProcessingError;
       expect(pe.statusCode).toBe(413);
       expect(pe.errorBody.code).toBe("output-pixel-count-exceeded");
     }
@@ -866,44 +865,5 @@ describe("generateThumbnail", () => {
       expect(err).toBeInstanceOf(Error);
       expect((err as Error).message).toBe("Request cancelled");
     }
-  });
-});
-
-describe("parseQuality", () => {
-  it("returns default when value is undefined", () => {
-    expect(parseQuality(undefined)).toBe(85);
-  });
-
-  it("returns default when value is empty string", () => {
-    expect(parseQuality("")).toBe(85);
-  });
-
-  it("returns default when value is not a number", () => {
-    expect(parseQuality("abc")).toBe(85);
-  });
-
-  it("returns parsed value when valid", () => {
-    expect(parseQuality("50")).toBe(50);
-  });
-
-  it("clamps quality=0 to 1 (minimum valid)", () => {
-    expect(parseQuality("0")).toBe(1);
-  });
-
-  it("preserves quality=1 (minimum valid)", () => {
-    expect(parseQuality("1")).toBe(1);
-  });
-
-  it("clamps quality=101 to 100 (maximum valid)", () => {
-    expect(parseQuality("101")).toBe(100);
-  });
-
-  it("preserves quality=100 (maximum valid)", () => {
-    expect(parseQuality("100")).toBe(100);
-  });
-
-  it("uses custom default value", () => {
-    expect(parseQuality(undefined, 75)).toBe(75);
-    expect(parseQuality("abc", 75)).toBe(75);
   });
 });

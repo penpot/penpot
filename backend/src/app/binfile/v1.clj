@@ -624,7 +624,7 @@
                                             resource
                                             (with-open [istream (jio/input-stream resource)]
                                               (io/read istream)))
-                                      {:keys [bytes size]} (bfc/sanitize-imported-svg mdata raw)]
+                                      {:keys [bytes size]} (bfc/sanitize-imported-svg cfg mdata raw)]
                                   [bytes size])
                                 [resource size])
               hash            (sto/calculate-hash resource)

@@ -18,9 +18,11 @@
    [app.db.sql :as-alias sql]
    [app.features.logical-deletion :as ldel]
    [app.http :as-alias http]
+   [app.jobs :as jobs]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
+   [app.media.jobs :as media.jobs]
    [app.media.validation :as media.v]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
@@ -154,21 +156,15 @@
     (create-font-variant cfg (assoc params :profile-id profile-id))))
 
 (defn create-font-variant
+  "Store the uploaded variants and submit the job that generates the
+  missing ones.
+
+  The row already serves the uploaded formats; the rest arrive when the
+  `:font-variants` job completes. Answers the row with `:job-id` (nil when
+  the upload already carried every variant)."
   [{:keys [::sto/storage] :as cfg} {:keys [data] :as params}]
-  (letfn [(generate-missing [data]
-            (let [data (media/run cfg {:cmd :generate-fonts :input data})]
-              (when (and (not (contains? data "font/otf"))
-                         (not (contains? data "font/ttf"))
-                         (not (contains? data "font/woff"))
-                         (not (contains? data "font/woff2")))
-                (ex/raise :type :validation
-                          :code :invalid-font-upload
-                          :hint "invalid font upload, unable to generate missing font assets"))
-              data))
-
-          (prepare-font [data mtype]
+  (letfn [(prepare-font [data mtype]
             (when-let [resource (get data mtype)]
-
               (let [hash    (sto/calculate-hash resource)
                     content (-> (sto/content resource)
                                 (sto/wrap-with-hash hash))]
@@ -187,7 +183,7 @@
                    [:woff1 "font/woff"]
                    [:woff2 "font/woff2"]]))
 
-          (insert-font-variant! [conn {:keys [woff1 woff2 otf ttf]}]
+          (insert-font-variant! [conn {:keys [woff1 woff2 otf ttf] :as assets}]
             (db/insert! conn :team-font-variant
                         {:id (uuid/next)
                          :team-id (:team-id params)
@@ -206,19 +202,40 @@
           total-size (reduce-kv (fn [acc _ content]
                                   (+ acc (fs/size content)))
                                 0
-                                data)]
+                                data)
+          ;; the upload must carry at least one convertible variant
+          source     (or (some #(when (contains? data %) %) media.jobs/known-font-types)
+                         (ex/raise :type :validation
+                                   :code :invalid-font-upload
+                                   :hint "invalid font upload, no convertible font variant"))
+          targets    (vec (remove (set mtypes)
+                                  (media.jobs/missing-variants source)))
+          assets     (persist-fonts-files! data)
+          input      (when (seq targets)
+                       (media.jobs/materialize-input cfg {:path  (get data source)
+                                                          :mtype source}))]
 
       (l/dbg :hint "create-font-variant"
              :step "init"
              :font-family (:font-family params)
              :font-weight (:font-weight params)
              :font-style  (:font-style params)
+             :source      source
              :mtypes      (str/join mtypes ",")
+             :targets     (str/join targets ",")
              :size        total-size)
 
-      (let [data    (generate-missing data)
-            assets  (persist-fonts-files! data)
-            result  (db/tx-run! cfg #(insert-font-variant! (::db/conn %) assets))
+      (let [[result job-id]
+            (db/tx-run! cfg
+                        (fn [{:keys [::db/conn] :as tx-cfg}]
+                          (let [row (insert-font-variant! conn assets)]
+                            [row
+                             (when (seq targets)
+                               (media/submit-fonts tx-cfg
+                                                   {:input        input
+                                                    :variant-id   (:id row)
+                                                    :source-mtype source
+                                                    :targets      targets}))])))
             elapsed (tpoint)]
 
         (l/dbg :hint "create-font-variant"
@@ -227,10 +244,13 @@
                :font-weight (:font-weight params)
                :font-style  (:font-style params)
                :mtypes      (str/join mtypes ",")
+               :targets     (str/join targets ",")
                :size        total-size
                :elapsed     (ct/format-duration elapsed))
 
-        (vary-meta result assoc ::audit/replace-props (update params :data (comp vec keys)))))))
+        (-> result
+            (assoc :job-id job-id)
+            (vary-meta assoc ::audit/replace-props (update params :data (comp vec keys))))))))
 
 ;; --- UPDATE FONT FAMILY
 
@@ -299,7 +319,9 @@
       (db/update! conn :team-font-variant
                   {:deleted-at tnow}
                   {:id (:id font)}
-                  {::db/return-keys false}))
+                  {::db/return-keys false})
+      ;; a pending generation would resurrect a row nobody wants
+      (jobs/cancel-by-label cfg :font-variants (media.jobs/font-label (:id font))))
 
     (rph/with-meta (rph/wrap)
       {::audit/props {:id id
@@ -333,6 +355,9 @@
                 {:deleted-at (ct/in-future delay)}
                 {:id (:id variant)}
                 {::db/return-keys false})
+
+    ;; stop the generation of the variant that is being deleted
+    (jobs/cancel-by-label cfg :font-variants (media.jobs/font-label (:id variant)))
 
     (rph/with-meta (rph/wrap)
       {::audit/props {:font-family (:font-family variant)

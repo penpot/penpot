@@ -394,20 +394,28 @@
   [^String a ^String b]
   (MessageDigest/isEqual (.getBytes a "UTF-8") (.getBytes b "UTF-8")))
 
+(defn valid-shared-key?
+  "Parse the `x-shared-key` header (`<key-id> <secret>`) and return the key
+  id when the secret matches the configured keys map, nil otherwise. Shared
+  by the management middleware and the asset handler that serves a trusted
+  service."
+  [keys request]
+  (when-let [[key-id key] (some-> (yreq/get-header request "x-shared-key")
+                                  (str/split #"\s+" 2))]
+    (let [key-id (-> key-id str/lower keyword)]
+      (when (and (string? key)
+                 (contains? keys key-id)
+                 (constant-time-eq? key (get keys key-id)))
+        key-id))))
+
 (defn- wrap-shared-key-auth
   [handler keys]
   (if (seq keys)
     (fn [request]
-      (if-let [[key-id key] (some-> (yreq/get-header request "x-shared-key")
-                                    (str/split #"\s+" 2))]
-        (let [key-id (-> key-id str/lower keyword)]
-          (if (and (string? key)
-                   (contains? keys key-id)
-                   (constant-time-eq? key (get keys key-id)))
-            (-> request
-                (assoc ::http/auth-key-id key-id)
-                (handler))
-            {::yres/status 403}))
+      (if-let [key-id (valid-shared-key? keys request)]
+        (-> request
+            (assoc ::http/auth-key-id key-id)
+            (handler))
         {::yres/status 403}))
     (fn [_]
       {::yres/status 403})))

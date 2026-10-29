@@ -1,4 +1,4 @@
-import { ProcessingError } from "../middleware/error-handler.js";
+import { ProcessingError } from "../errors.js";
 import type { AppError } from "../types.js";
 
 export function throwValidation(code: string, hint?: string): never {

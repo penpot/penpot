@@ -29,6 +29,7 @@
    [app.jobs.gc :as-alias jobs.gc]
    [app.jobs.metrics :as jobs-metrics]
    [app.loggers.webhooks :as-alias webhooks]
+   [app.media.jobs :as-alias media.jobs]
    [app.metrics :as mtx]
    [app.metrics.definition :as-alias mdef]
    [app.msgbus :as-alias mbus]
@@ -556,12 +557,12 @@
    {::db/pool         (ig/ref ::db/pool)}
 
    ::http.debug/routes
-   {::db/pool         (ig/ref ::db/pool)
-    ::rds/pool        (ig/ref ::rds/pool)
-    ::session/manager (ig/ref ::session/manager)
-    ::mbus/msgbus     (ig/ref ::mbus/msgbus)
-    ::sto/storage     (ig/ref ::sto/storage)
-    ::setup/props     (ig/ref ::setup/props)}
+   {::db/pool           (ig/ref ::db/pool)
+    ::rds/pool          (ig/ref ::rds/pool)
+    ::session/manager   (ig/ref ::session/manager)
+    ::mbus/msgbus       (ig/ref ::mbus/msgbus)
+    ::sto/storage       (ig/ref ::sto/storage)
+    ::setup/props       (ig/ref ::setup/props)}
 
    ::http.ws/routes
    {::db/pool           (ig/ref ::db/pool)
@@ -579,6 +580,7 @@
     ::sto/storage                   (ig/ref ::sto/storage)
     ::session/manager               (ig/ref ::session/manager)
     ::setup/props                   (ig/ref ::setup/props)
+    ::setup/shared-keys             (ig/ref ::setup/shared-keys)
     ::db/pool                       (ig/ref ::db/pool)}
 
    ::rpc/climit
@@ -599,7 +601,8 @@
    :app.rpc/methods
    {::http.client/client (ig/ref ::http.client/client)
     ::jobs/defs           (ig/ref ::jobs/defs)
-    ::db/pool            (ig/ref ::db/pool)
+    ::jobs/request-pool   (ig/ref ::jobs/request-pool)
+    ::db/pool             (ig/ref ::db/pool)
     ::rds/pool           (ig/ref ::rds/pool)
     :app.nitrate/client  (ig/ref :app.nitrate/client)
     ::wrk/executor       (ig/ref ::wrk/executor)
@@ -670,6 +673,10 @@
     :storage-gc-touched             (ig/ref ::sto.gc-touched/job-def)
     :storage-pending-gc             (ig/ref ::sto.pending-gc/job-def)
     :jobs-gc                        (ig/ref :app.jobs.gc/job-def)
+    :media-info                     (ig/ref :app.media.jobs/media-info-job)
+    :media-thumbnail                (ig/ref :app.media.jobs/media-thumbnail-job)
+    :font-variants                  (ig/ref :app.media.jobs/font-variants-job)
+    :profile-thumbnail              (ig/ref :app.media.jobs/profile-thumbnail-job)
     :telemetry                      (ig/ref :app.tasks.telemetry/job-def)
     :session-gc                     (ig/ref ::session/job-def)
     :file-gc-scheduler              (ig/ref :app.tasks.file-gc-scheduler/job-def)
@@ -726,10 +733,10 @@
     ::mbus/msgbus  (ig/ref ::mbus/msgbus)}
 
    :app.tasks.import-binfile/job-def
-   {::db/pool      (ig/ref ::db/pool)
-    ::sto/storage  (ig/ref ::sto/storage)
-    ::mtx/metrics  (ig/ref ::mtx/metrics)
-    ::mbus/msgbus  (ig/ref ::mbus/msgbus)}
+   {::db/pool           (ig/ref ::db/pool)
+    ::sto/storage       (ig/ref ::sto/storage)
+    ::mtx/metrics       (ig/ref ::mtx/metrics)
+    ::mbus/msgbus       (ig/ref ::mbus/msgbus)}
 
    :app.storage.gc-deleted/job-def
    {::db/pool     (ig/ref ::db/pool)
@@ -748,6 +755,23 @@
    :app.jobs.gc/job-def
    {::db/pool     (ig/ref ::db/pool)
     ::mtx/metrics (ig/ref ::mtx/metrics)}
+
+   :app.media.jobs/media-info-job
+   {::sto/storage (ig/ref ::sto/storage)
+    ::wrk/executor (ig/ref ::wrk/executor)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
+
+   :app.media.jobs/media-thumbnail-job
+   {::sto/storage (ig/ref ::sto/storage)
+    ::wrk/executor (ig/ref ::wrk/executor)}
+
+   :app.media.jobs/font-variants-job
+   {::sto/storage (ig/ref ::sto/storage)
+    ::wrk/executor (ig/ref ::wrk/executor)}
+
+   :app.media.jobs/profile-thumbnail-job
+   {::sto/storage (ig/ref ::sto/storage)
+    ::wrk/executor (ig/ref ::wrk/executor)}
 
    :app.tasks.telemetry/job-def
    {::db/pool     (ig/ref ::db/pool)
@@ -945,6 +969,30 @@
    [::cron ::wrk/runner]
    {::wrk/parallelism (cf/get :worker-cron-parallelism 2)
     ::wrk/queue       :cron
+    ::wrk/tenant      (cf/get :tenant)
+    ::rds/client      (ig/ref ::rds/client)
+    ::jobs/defs       (ig/ref ::jobs/defs)
+    ::mtx/metrics     (ig/ref ::mtx/metrics)
+    ::db/pool         (ig/ref ::db/pool)
+    ::mbus/msgbus     (ig/ref ::mbus/msgbus)}
+
+   ;; The media jobs split in two queues: the synchronous ones (`media-info`
+   ;; and `profile-thumbnail`) cannot wait behind a font fan-out, so they get
+   ;; their own runner. Both run the local executor; the remote flag routes
+   ;; the same jobs to the worker instead.
+   [::media-fast ::wrk/runner]
+   {::wrk/parallelism (cf/get :worker-media-fast-parallelism 2)
+    ::wrk/queue       :media-local-fast
+    ::wrk/tenant      (cf/get :tenant)
+    ::rds/client      (ig/ref ::rds/client)
+    ::jobs/defs       (ig/ref ::jobs/defs)
+    ::mtx/metrics     (ig/ref ::mtx/metrics)
+    ::db/pool         (ig/ref ::db/pool)
+    ::mbus/msgbus     (ig/ref ::mbus/msgbus)}
+
+   [::media ::wrk/runner]
+   {::wrk/parallelism (cf/get :worker-media-parallelism 2)
+    ::wrk/queue       :media-local
     ::wrk/tenant      (cf/get :tenant)
     ::rds/client      (ig/ref ::rds/client)
     ::jobs/defs       (ig/ref ::jobs/defs)

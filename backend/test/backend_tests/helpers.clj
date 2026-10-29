@@ -27,6 +27,7 @@
    [app.metrics :as-alias metrics]
    [app.migrations]
    [app.msgbus :as-alias mbus]
+   [app.redis :as rds]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.auth :as cmd.auth]
@@ -38,6 +39,7 @@
    [app.rpc.helpers :as rph]
    [app.util.blob :as blob]
    [app.util.services :as sv]
+   [app.worker :as-alias wrk]
    [app.worker.runner]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
@@ -152,7 +154,20 @@
                            :app.loggers.metrics/reporter
                            :app.worker/cron
                            :app.worker/dispatcher)
-                   (remove-job-runners))
+                   (remove-job-runners)
+                   ;; The synchronous media jobs (`:media-info`) wait for a
+                   ;; runner. This one only consumes the fast media queue;
+                   ;; every other queue stays without a runner so the tests
+                   ;; can drive it by hand.
+                   (assoc [::media-runner ::wrk/runner]
+                          {::wrk/parallelism 1
+                           ::wrk/queue       :media-local-fast
+                           ::wrk/tenant      (cf/get :tenant)
+                           ::rds/client      (ig/ref ::rds/client)
+                           ::jobs/defs       (ig/ref ::jobs/defs)
+                           ::metrics/metrics (ig/ref ::metrics/metrics)
+                           ::db/pool         (ig/ref ::db/pool)
+                           ::mbus/msgbus     (ig/ref ::mbus/msgbus)}))
         _      (ig/load-namespaces system)
         system (-> (ig/expand system) (ig/init))]
     (try
@@ -622,6 +637,26 @@
   "select * from job
     where status = 'new'
     order by priority desc, scheduled_at")
+
+(defn run-pending-job!
+  "Claim, run and complete the pending job of `job-name` (and `label`, when
+  given), as a runner would. Answers how many jobs it completed."
+  ([job-name]
+   (run-pending-job! job-name nil))
+  ([job-name label]
+   (let [row (first (db/query *pool* :job
+                              (cond-> {:name (clojure.core/name job-name)}
+                                (some? label) (assoc :label label))))]
+     (if (nil? row)
+       0
+       (let [row    (db/get* *pool* :job {:id (:id row)})
+             job-id (:id row)]
+         (jobs/claim *system* job-id (:scheduled-at row))
+         (let [result (jobs/invoke (-> *system*
+                                       (assoc ::jobs/name (keyword (clojure.core/name job-name)))
+                                       (assoc ::jobs/params (:params row))
+                                       (assoc ::jobs/job-id job-id)))]
+           (jobs/complete *system* :job-id job-id :result result)))))))
 
 (defn run-pending-jobs
   "Execute the pending (status='new') `job` rows in-process (simulating

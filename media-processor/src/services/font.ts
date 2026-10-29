@@ -18,6 +18,10 @@ export function configureFontLimits(opts: { mem: number; cpuTime: number; timeou
   fontTimeout = opts.timeout;
 }
 
+export function getFontLimits(): { mem: number; cpuTime: number; timeout: number } {
+  return { mem: fontProcessMem, cpuTime: fontProcessCpuTime, timeout: fontTimeout };
+}
+
 export function execCommand(
   cmd: string,
   args: string[],

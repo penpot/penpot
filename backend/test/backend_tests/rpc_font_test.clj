@@ -84,20 +84,40 @@
           (t/is (nil? (:error out))))))
     session-id))
 
+(defn- settle-font!
+  "Run the pending generation of the variant and answer the refreshed row,
+  so the assertions see the same columns the old synchronous conversion
+  filled."
+  [result]
+  (th/run-pending-job! :font-variants (str "font:" (:id result)))
+  (th/db-get :team-font-variant {:id (:id result)}))
+
+(defn- settle-fonts!
+  "Run every pending font job and drop the temporary inputs, so the GC
+  counts only see the domain artifacts."
+  []
+  (doseq [row (th/db-query :job {:name "font-variants"})]
+    (th/run-pending-job! :font-variants (:label row)))
+  (th/db-exec! ["DELETE FROM storage_object
+                  WHERE COALESCE(metadata->>'bucket', metadata->>'~:bucket') = 'tempfile'"]))
+
 (defn- assert-font-variant-result
-  "Checks that a successful create-font-variant result has valid UUIDs and
-  the expected scalar fields matching `params`."
+  "Checks that a successful create-font-variant result carries an id and a
+  job, and that, once the job runs, the row has every generated variant and
+  the scalar fields of `params`."
   [params result]
   (t/is (uuid? (:id result)))
-  (t/is (uuid? (:ttf-file-id result)))
-  (t/is (uuid? (:otf-file-id result)))
-  (t/is (uuid? (:woff1-file-id result)))
-  (t/are [k] (= (get params k) (get result k))
-    :team-id
-    :font-id
-    :font-family
-    :font-weight
-    :font-style))
+  (t/is (uuid? (:job-id result)) "the RPC answers the generation job")
+  (let [row (settle-font! result)]
+    (t/is (uuid? (:ttf-file-id row)))
+    (t/is (uuid? (:otf-file-id row)))
+    (t/is (uuid? (:woff1-file-id row)))
+    (t/are [k] (= (get params k) (get result k))
+      :team-id
+      :font-id
+      :font-family
+      :font-weight
+      :font-style)))
 
 (t/deftest font-deletion-1
   (let [prof    (th/create-profile* 1 {:is-active true})
@@ -137,6 +157,8 @@
           out     (th/command! params)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out))))
+
+    (settle-fonts!)
 
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
@@ -207,6 +229,8 @@
       ;; (th/print-result! out)
       (t/is (nil? (:error out))))
 
+    (settle-fonts!)
+
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
       (t/is (= 8 (:freeze res))))
@@ -258,6 +282,8 @@
     (t/is (nil? (:error out2)))
 
     ;; freeze with hours 3 clock
+    (settle-fonts!)
+
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
       (t/is (= 8 (:freeze res))))
@@ -337,6 +363,39 @@
       (t/is (>= (:call-count @mock) 1))
       (t/is (nil? (:error out)))
       (assert-font-variant-result params (:result out)))))
+
+(t/deftest deleting-a-font-variant-cancels-its-generation-job
+  "The row is deleted before its variants are generated: the RPC cancels the
+  job by label, so no result is applied to a row that is gone."
+  (with-mocks [mock {:target 'app.rpc.quotes/check! :return nil}]
+    (let [prof       (th/create-profile* 1 {:is-active true})
+          team-id    (:default-team-id prof)
+          font-id    (uuid/custom 10 31)
+          font-bytes (-> (io/resource "backend_tests/test_files/font-1.ttf") (io/read*))
+          session-id (upload-font-chunked! prof font-bytes "font/ttf" (* 4 1024 1024))
+          out        (th/command! {::th/type    :create-font-variant
+                                   ::rpc/profile-id (:id prof)
+                                   :team-id     team-id
+                                   :font-id     font-id
+                                   :font-family "cancel-me"
+                                   :font-weight 400
+                                   :font-style  "normal"
+                                   :uploads     {"font/ttf" session-id}})
+          result     (:result out)
+          job-id     (:job-id result)]
+
+      (t/is (nil? (:error out)))
+      (t/is (uuid? job-id))
+      (t/is (= "new" (:status (th/db-get :job {:id job-id})))
+            "the generation waits for a runner")
+
+      (let [deleted (th/command! {::th/type        :delete-font-variant
+                                  ::rpc/profile-id (:id prof)
+                                  :id              (:id result)
+                                  :team-id         team-id})]
+        (t/is (nil? (:error deleted)))
+        (t/is (= "cancelled" (:status (th/db-get :job {:id job-id})))
+              "deleting the variant cancels the job that would fill it")))))
 
 (t/deftest create-font-variant-chunked-upload-otf
   "Upload an OTF via the new :uploads path."

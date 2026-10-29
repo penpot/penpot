@@ -18,6 +18,7 @@
    [app.common.features :as cfeat]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
@@ -56,7 +57,7 @@
   (String. data "UTF-8"))
 
 (t/deftest sanitize-imported-svg-removes-script
-  (let [result (bfc/sanitize-imported-svg {:content-type "image/svg+xml" :bucket "file-media-object"}
+  (let [result (bfc/sanitize-imported-svg th/*system* {:content-type "image/svg+xml" :bucket "file-media-object"}
                                           (utf8bytes evil-svg))]
     (t/is (some? result))
     (t/is (not (str/includes? (bytes-str (:bytes result)) "<script")))
@@ -65,7 +66,7 @@
 (t/deftest sanitize-imported-svg-removes-aliased-xhref
   (let [object {:content-type "image/svg+xml; charset=utf-8" :bucket "file-media-object"}
         object (update object :content-type bfc/normalize-content-type)
-        result (bfc/sanitize-imported-svg object (utf8bytes evil-xhref-svg))]
+        result (bfc/sanitize-imported-svg th/*system* object (utf8bytes evil-xhref-svg))]
     (t/is (some? result))
     (t/is (not (str/includes? (bytes-str (:bytes result)) "javascript:")))
     (t/is (not (str/includes? (bytes-str (:bytes result)) "PWNMARK_XHREF")))))
@@ -81,7 +82,7 @@
     (doseq [ctype ["IMAGE/SVG+XML" "Image/Svg+Xml" "  image/svg+xml  " "image/svg+xml; charset=utf-8"]]
       (let [object {:content-type ctype :bucket "file-media-object"}
             object (update object :content-type bfc/normalize-content-type)
-            result (bfc/sanitize-imported-svg object (utf8bytes evil-svg))]
+            result (bfc/sanitize-imported-svg th/*system* object (utf8bytes evil-svg))]
         (t/is (some? result) (str "expected sanitize for " (pr-str ctype)))
         (when (some? result)
           (t/is (not (str/includes? (bytes-str (:bytes result)) "<script"))
@@ -90,19 +91,46 @@
 (t/deftest sanitize-imported-svg-ignores-missing-or-blank-type
   (t/testing "ancient bundle entries without content-type pass through untouched"
     (let [raw (utf8bytes "not-an-svg")]
-      (t/is (nil? (bfc/sanitize-imported-svg {} raw)))
-      (t/is (nil? (bfc/sanitize-imported-svg {:content-type nil} raw)))
-      (t/is (nil? (bfc/sanitize-imported-svg {:content-type ""} raw)))
-      (t/is (nil? (bfc/sanitize-imported-svg {:content-type "   "} raw))))))
+      (t/is (nil? (bfc/sanitize-imported-svg th/*system* {} raw)))
+      (t/is (nil? (bfc/sanitize-imported-svg th/*system* {:content-type nil} raw)))
+      (t/is (nil? (bfc/sanitize-imported-svg th/*system* {:content-type ""} raw)))
+      (t/is (nil? (bfc/sanitize-imported-svg th/*system* {:content-type "   "} raw))))))
+
+(t/deftest sanitize-imported-svg-rejects-over-cap
+  (let [big (str "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\">"
+                 (apply str (repeat 90000 "<rect width=\"1\" height=\"1\"/>"))
+                 "</svg>")]
+    (try
+      (bfc/sanitize-imported-svg th/*system*
+                                 {:content-type "image/svg+xml" :bucket "file-media-object"}
+                                 (utf8bytes big))
+      (t/is false "should have thrown")
+      (catch Exception cause
+        (t/is (= :restriction (:type (ex-data cause))))
+        (t/is (= :svg-too-large (:code (ex-data cause))))))))
+
+(t/deftest sanitize-imported-svg-respects-the-configured-cap
+  (let [svg (str "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\">"
+                 (apply str (repeat 100 "<rect width=\"1\" height=\"1\"/>"))
+                 "</svg>")]
+    (with-redefs [cf/config (assoc cf/config :media-svg-max-file-size 1024)]
+      (try
+        (bfc/sanitize-imported-svg th/*system*
+                                   {:content-type "image/svg+xml" :bucket "file-media-object"}
+                                   (utf8bytes svg))
+        (t/is false "should have thrown")
+        (catch Exception cause
+          (t/is (= :restriction (:type (ex-data cause))))
+          (t/is (= :svg-too-large (:code (ex-data cause)))))))))
 
 (t/deftest sanitize-imported-svg-ignores-non-svg
   (t/testing "objects that are not SVG pass through untouched"
     (let [raw (utf8bytes "not-an-svg")]
-      (t/is (nil? (bfc/sanitize-imported-svg {:content-type "image/jpeg" :bucket "file-media-object"} raw)))
-      (t/is (nil? (bfc/sanitize-imported-svg {:content-type "image/png" :bucket "file-media-object"} raw))))))
+      (t/is (nil? (bfc/sanitize-imported-svg th/*system* {:content-type "image/jpeg" :bucket "file-media-object"} raw)))
+      (t/is (nil? (bfc/sanitize-imported-svg th/*system* {:content-type "image/png" :bucket "file-media-object"} raw))))))
 
 (t/deftest sanitize-imported-svg-reports-size-and-hash
-  (let [result (bfc/sanitize-imported-svg {:content-type "image/svg+xml" :bucket "file-media-object"}
+  (let [result (bfc/sanitize-imported-svg th/*system* {:content-type "image/svg+xml" :bucket "file-media-object"}
                                           (utf8bytes clean-svg))]
     (t/is (some? result))
     (t/is (= (alength ^bytes (:bytes result)) (:size result)))
@@ -112,7 +140,7 @@
 (t/deftest sanitize-imported-svg-rejects-broken-svg
   (t/testing "unparseable SVG raises the same validation error as the upload path"
     (t/is (thrown-with-msg? Exception #"SVG parsing failed during sanitization"
-                            (bfc/sanitize-imported-svg {:content-type "image/svg+xml" :bucket "file-media-object"}
+                            (bfc/sanitize-imported-svg th/*system* {:content-type "image/svg+xml" :bucket "file-media-object"}
                                                        (utf8bytes "<svg><not-closed>"))))))
 
 (t/deftest check-storage-content-type-allows-known-types
@@ -296,7 +324,7 @@
           _    (spit (str path) evil-svg :encoding "UTF-8")
           raw  (with-open [istream (jio/input-stream path)]
                  (io/read istream))
-          result (bfc/sanitize-imported-svg {:content-type "image/svg+xml"} raw)]
+          result (bfc/sanitize-imported-svg th/*system* {:content-type "image/svg+xml"} raw)]
       (t/is (some? result))
       (t/is (not (str/includes? (bytes-str (:bytes result)) "<script")))
       (t/is (not (str/includes? (bytes-str (:bytes result)) "PWNMARK_SCRIPT"))))))
@@ -415,14 +443,18 @@
     (t/is (= [(:id file)]
              (mapv :id (th/db-query :file {:project-id (:default-project-id profile)}))))))
 
-(def ^:private large-clean-svg
-  (let [pad (apply str (repeat 110000 "<!--0123456789ABCDEF-->"))]
+;; Small on purpose: the test lowers `bfc/temp-file-threshold` with
+;; `with-redefs` to reach the tempfile branch, because the SVG size cap (2MiB)
+;; is now the same as the real threshold and an SVG cannot exceed it.
+(def ^:private tempfile-branch-svg
+  (let [pad (apply str (repeat 100 "<!--0123456789ABCDEF-->"))]
     (str "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\">" pad "<circle r=\"20\"/></svg>")))
 
 (t/deftest import-binfile-v1-roundtrips-large-svg
   (t/testing "objects over the tempfile threshold (tempfile branch) import fine"
-    (t/is (> (alength (utf8bytes large-clean-svg)) bfc/temp-file-threshold))
     (let [profile       (th/create-profile* 5)
-          [file _seed]   (seed-file-with-svg-media profile 5 large-clean-svg "image/svg+xml")
-          [served _stored] (export-import-v1 profile file)]
-      (t/is (str/includes? served "circle")))))
+          [file _seed]   (seed-file-with-svg-media profile 5 tempfile-branch-svg "image/svg+xml")]
+      (with-redefs [bfc/temp-file-threshold 1024]
+        (t/is (> (alength (utf8bytes tempfile-branch-svg)) bfc/temp-file-threshold))
+        (let [[served _stored] (export-import-v1 profile file)]
+          (t/is (str/includes? served "circle")))))))

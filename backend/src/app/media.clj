@@ -5,37 +5,138 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.media
-  "Media & Font postprocessing.
+  "Media & Font postprocessing helpers.
 
-  This namespace is the dispatch layer only. Processing implementations
-  live in two separate namespaces, each owning their own defmulti:
+  The processing itself is a job: the handlers of `app.media.jobs` call the
+  local implementations in `app.media.local` (ImageMagick and FontForge).
+  SVG sanitization is the one operation that is not a job: it always runs
+  the local filter in `app.media.svg`, in this process.
 
-    app.media.local  — shell/ImageMagick/FontForge implementations
-    app.media.remote — HTTP delegation to media-processor service
-
-  Validation and schemas live in app.media.validation (leaf namespace,
-  no circular dep). When adding a new :cmd type, add defmethods in
-  BOTH local and remote."
+  Validation and schemas live in app.media.validation (leaf namespace, no
+  circular dep)."
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.time :as ct]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as-alias db]
    [app.http.client :as http]
-   [app.media.local :as media.local]
-   [app.media.remote :as media.remote]
+   [app.jobs :as jobs]
+   [app.media.jobs :as media.jobs]
    [app.media.sanitize :as sanitize]
+   [app.media.svg :as svg]
    [app.media.validation :as validation]
    [app.storage :as-alias sto]
    [app.storage.tmp :as tmp]
    [cuerdas.core :as str]
+   [datoteka.fs :as fs]
    [datoteka.io :as io]))
 
-(defn run
-  [system params]
-  (if (contains? cf/flags :remote-media-processing)
-    (media.remote/process system params)
-    (media.local/process system params)))
+(defn sanitize-svg
+  "Sanitize SVG `content` (a UTF-8 string) with the local filter and return
+  it as text.
+
+  SVG sanitization is deliberately local: it is not a job and the worker
+  never sees it. A failure propagates, so the upload or the import fails
+  instead of storing an unsanitized document."
+  [_system content]
+  (svg/sanitize-svg content))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; MEDIA JOBS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- svg-info
+  "Read the dimensions of an SVG from its `viewBox`, `width` and `height`.
+
+  The worker's image library cannot read an SVG, so this never becomes a
+  job: the file is parsed here, where it already is a local file, exactly
+  like the local executor does."
+  [{:keys [path mtype size]}]
+  (let [info (some-> path slurp svg/parse-svg svg/get-basic-info-from-svg)]
+    (when-not info
+      (ex/raise :type :validation
+                :code :invalid-svg-file
+                :hint "uploaded svg does not provides dimensions"))
+    (merge {:mtype mtype}
+           info
+           {:size (long (or size (fs/size path)))
+            :ts (ct/now)})))
+
+(defn info
+  "Resolve the info of a media `content`.
+
+  An SVG is parsed here: the worker cannot read it and a dimension header
+  does not deserve a round trip. Everything else runs `:media-info` as a
+  durable job and waits for its result.
+
+  The input is materialized to `tempfile` before the submit, in local and
+  remote mode, and released whatever the outcome: the caller owns the
+  reference and the job reads it. Answers the info map with `:ts`, the
+  moment the caller learned it."
+  [cfg content]
+  (if (= "image/svg+xml" (:mtype content))
+    (svg-info content)
+    (let [input (media.jobs/materialize-input cfg content)]
+      (try
+        (-> (jobs/submit-and-wait cfg
+                                  {::jobs/name   :media-info
+                                   ::jobs/params {:input input}
+                                   ::jobs/queue  (:fast (media.jobs/queue-pair))})
+            (assoc :ts (ct/now)))
+        (finally
+          (media.jobs/release-temporary! cfg (:id input)))))))
+
+(defn submit-thumbnail
+  "Submit the `:media-thumbnail` job of a media object and answer its id, or
+  nil when an active job of the same label already covers it.
+
+  The input must be already materialized to `tempfile`: the job outlives
+  the request. The caller releases it when the submit is skipped."
+  [cfg {:keys [input media-id format quality width height]}]
+  (jobs/submit cfg
+               {::jobs/name   :media-thumbnail
+                ::jobs/params {:input    input
+                               :media-id media-id
+                               :format   format
+                               :quality  quality
+                               :width    width
+                               :height   height}
+                ::jobs/queue  (:slow (media.jobs/queue-pair))
+                ::jobs/label  (media.jobs/object-label media-id)
+                ::jobs/skip-if-active true}))
+
+(defn profile-photo
+  "Run `:profile-thumbnail` and wait for the result.
+
+  With a `profile-id` the job owns the profile and its hook makes the new
+  photo the current one. Without it (profile creation imports the picture
+  before the row exists) the hook leaves the result in `tempfile` and the
+  caller stores it."
+  [cfg {:keys [input profile-id]}]
+  (jobs/submit-and-wait cfg
+                        (cond-> {::jobs/name   :profile-thumbnail
+                                 ::jobs/params {:input input}
+                                 ::jobs/queue  (:fast (media.jobs/queue-pair))}
+                          (uuid? profile-id)
+                          (assoc ::jobs/profile-id profile-id))))
+
+(defn submit-fonts
+  "Submit the `:font-variants` job of a variant row and answer its id.
+
+  The input must be already materialized. There is no `skip-if-active`: the
+  caller cancels the previous job of the row by label and submits the new
+  one, so a re-upload always wins."
+  [cfg {:keys [input variant-id source-mtype targets]}]
+  (jobs/submit cfg
+               {::jobs/name   :font-variants
+                ::jobs/params {:input        input
+                               :variant-id   variant-id
+                               :source-mtype source-mtype
+                               :targets      targets}
+                ::jobs/queue  (:slow (media.jobs/queue-pair))
+                ::jobs/label  (media.jobs/font-label variant-id)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMAGE HELPERS

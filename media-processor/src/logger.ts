@@ -1,6 +1,5 @@
 import pino, { type TransportTargetOptions } from "pino";
-import { loadConfig } from "./config.js";
-import type { AppConfig } from "./types.js";
+import { loadLogConfig, type LogConfig } from "./config.js";
 
 interface LogTransportProvider {
   getTarget(): TransportTargetOptions | null;
@@ -8,7 +7,7 @@ interface LogTransportProvider {
 }
 
 class ConsoleLogTransport implements LogTransportProvider {
-  public constructor(private readonly config: AppConfig) {}
+  public constructor(private readonly config: LogConfig) {}
 
   public getTarget(): TransportTargetOptions {
     return {
@@ -33,7 +32,7 @@ class LokiLogTransport implements LogTransportProvider {
   private readonly host: string | null;
 
   public constructor(
-    private readonly config: AppConfig,
+    private readonly config: LogConfig,
     lokiUri: string | null
   ) {
     this.host = lokiUri;
@@ -77,7 +76,7 @@ class LokiLogTransport implements LogTransportProvider {
   }
 }
 
-function buildLogger(config: AppConfig) {
+function buildLogger(config: LogConfig) {
   const consoleTransport = new ConsoleLogTransport(config);
   const lokiTransport = new LokiLogTransport(config, config.lokiUri);
   const transports: LogTransportProvider[] = [consoleTransport, lokiTransport];
@@ -98,7 +97,7 @@ function buildLogger(config: AppConfig) {
 let _instance: pino.Logger | null = null;
 let _transports: LogTransportProvider[] = [];
 
-export function initLogger(config: AppConfig): pino.Logger {
+export function initLogger(config: LogConfig): pino.Logger {
   const result = buildLogger(config);
   _instance = result.instance;
   _transports = result.transports;
@@ -107,7 +106,7 @@ export function initLogger(config: AppConfig): pino.Logger {
 
 function getInstance(): pino.Logger {
   if (_instance === null) {
-    return initLogger(loadConfig());
+    return initLogger(loadLogConfig());
   }
   return _instance;
 }
@@ -130,6 +129,18 @@ export function logActiveTransports(log: pino.Logger): void {
   }
 }
 
-export function createLogger(name: string) {
-  return logger.child({ name });
+// Returns a lazy proxy: `logger.child({ name })` (and therefore the pino
+// instance with its transport threads) is only created on the first log call.
+// This keeps importing a module cheap — notably inside a worker thread, where
+// an eager `createLogger` would spawn the transport workers of the main
+// process logger in every SVG worker.
+export function createLogger(name: string): pino.Logger {
+  let child: pino.Logger | null = null;
+  return new Proxy({} as pino.Logger, {
+    get(_, prop) {
+      child ??= logger.child({ name });
+      const value = (child as unknown as Record<string | symbol, unknown>)[prop];
+      return typeof value === "function" ? value.bind(child) : value;
+    },
+  });
 }

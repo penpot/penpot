@@ -81,8 +81,10 @@
    :jobs-retention (ct/duration {:days 7})
    :jobs-user-ttl (ct/duration {:days 7})
    :jobs-request-timeout (ct/duration {:minutes 2})
+   :media-wait-deadline (ct/duration {:seconds 60})
 
    :media-max-file-size (* 1024 1024 30) ; 30MiB
+   :media-svg-max-file-size (* 1024 1024 2) ; 2MiB
    :font-max-file-size  (* 1024 1024 30) ; 30MiB
 
    :font-process-mem 512    ;; 512 MiB address space ceiling
@@ -163,6 +165,7 @@
     [:auto-file-snapshot-timeout {:optional true} ::ct/duration]
 
     [:media-max-file-size {:optional true} ::sm/int]
+    [:media-svg-max-file-size {:optional true} ::sm/int]
     [:font-max-file-size  {:optional true} ::sm/int]
 
     ;; Font processing resource limits (PENPOT_FONT_PROCESS_*)
@@ -179,9 +182,6 @@
     [:imagemagick-time-limit {:optional true} :string]
     [:imagemagick-width-limit {:optional true} :string]
     [:imagemagick-height-limit {:optional true} :string]
-
-    [:media-processing-service-uri {:optional true} ::sm/uri]
-    [:media-processing-service-timeout {:optional true} ::sm/int]
 
     ;; Binfile import limits (PENPOT_BINFILE_IMPORT_*)
     [:binfile-import-max-binary-entry-size {:optional true} ::sm/int]
@@ -201,6 +201,7 @@
     [:jobs-retention {:optional true} ::ct/duration]
     [:jobs-user-ttl {:optional true} ::ct/duration]
     [:jobs-request-timeout {:optional true} ::ct/duration]
+    [:media-wait-deadline {:optional true} ::ct/duration]
     [:telemetry-enabled {:optional true} ::sm/boolean]
     [:default-blob-version {:optional true} ::sm/int]
     [:allow-demo-users {:optional true} ::sm/boolean]
@@ -220,6 +221,8 @@
     [:worker-webhook-parallelism {:optional true} ::sm/int]
     [:worker-cron-parallelism {:optional true} ::sm/int]
     [:worker-binfile-parallelism {:optional true} ::sm/int]
+    [:worker-media-fast-parallelism {:optional true} ::sm/int]
+    [:worker-media-parallelism {:optional true} ::sm/int]
 
     [:database-password {:optional true} [:maybe :string]]
     [:database-uri {:optional true} ::sm/uri]
@@ -471,6 +474,26 @@
   []
   (or (c/get config :jobs-request-timeout)
       (ct/duration {:minutes 2})))
+
+(def ^:private max-media-wait-deadline
+  "300 s is the nginx gateway timeout: a synchronous wait that reaches it
+  is already a lost answer."
+  (ct/duration {:seconds 300}))
+
+(defn get-media-wait-deadline
+  "Deadline of a synchronous job wait (`jobs/submit-and-wait`). It must stay
+  under the 300 s gateway timeout; the default 60 s also covers a retry with
+  a short backoff and stays well below the 5 min `reschedule-lost-jobs`
+  window."
+  []
+  (let [deadline (or (c/get config :media-wait-deadline)
+                     (ct/duration {:seconds 60}))]
+    (when (>= (inst-ms deadline) (inst-ms max-media-wait-deadline))
+      (ex/raise :type :validation
+                :code :invalid-media-wait-deadline
+                :hint "media-wait-deadline must be under 300 seconds"
+                :value (ct/format-duration deadline)))
+    deadline))
 
 (defn get-jobs-retention
   "How long terminal (completed/failed/cancelled/aborted) internal job rows are

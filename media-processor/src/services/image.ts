@@ -28,6 +28,10 @@ export function configureImageLimits(opts: { maxPixels: number; maxWidth: number
   imageMaxHeight = opts.maxHeight;
 }
 
+export function getImageLimits(): { maxPixels: number; maxWidth: number; maxHeight: number } {
+  return { maxPixels: imageMaxPixels, maxWidth: imageMaxWidth, maxHeight: imageMaxHeight };
+}
+
 function validateImageDimensions(width: number, height: number): void {
   if (width > imageMaxWidth || height > imageMaxHeight) {
     throwRestriction(
@@ -186,11 +190,9 @@ export async function generateThumbnail(
 
   let data: Buffer;
   try {
-    // Sharp 0.35.3 does not support cancellation of native libvips operations.
-    // toBuffer() only accepts { resolveWithObject: boolean }, no AbortSignal.
-    // We hold the queue slot until Sharp completes fully, then check signal
-    // to throw if the request was cancelled during processing. This prevents
-    // concurrency limit violations and handles timeouts gracefully.
+    // Cancellation checkpoint: Sharp/libvips cannot abort a running pipeline,
+    // so `toBuffer()` takes no signal. The job signal is checked before and
+    // after the call; when Sharp supports aborting, it plugs in here.
     data = await pipeline.toBuffer();
   } catch (err) {
     throwValidation("invalid-image", `Failed to process image: ${(err as Error).message}`);

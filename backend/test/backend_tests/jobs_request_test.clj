@@ -70,8 +70,14 @@
 (defn- test-fixture [next]
   (th/database-reset
    (fn []
+     ;; Clean before and after: a test that times out leaves its request in
+     ;; the shared `:media` queue, and the next namespace must not pop it as
+     ;; if it were its own.
      (clear-queues)
-     (next))))
+     (try
+       (next)
+       (finally
+         (clear-queues))))))
 
 (t/use-fixtures :each test-fixture)
 
@@ -200,6 +206,53 @@
                             (jobs/request cfg {::jobs/queue  :media
                                                ::jobs/cmd    :process
                                                ::jobs/params {:x 1}})))))
+
+(t/deftest request-propagates-the-error-type
+  (let [pool  (make-pool)
+        cfg   (make-cfg pool)
+        _     (with-responder pool
+                (fn [_params]
+                  {:error {:type "restriction"
+                           :code :payload-too-large
+                           :hint "too big"}}))
+        error (try
+                (jobs/request cfg {::jobs/queue  :media
+                                   ::jobs/cmd    :process
+                                   ::jobs/params {:x 1}})
+                (catch Exception cause cause))
+        data  (ex-data error)]
+    (t/is (= :restriction (:type data)))
+    (t/is (= :payload-too-large (:code data)))
+    (t/is (= "too big" (:hint data)))))
+
+(t/deftest request-defaults-an-unknown-error-type-to-internal
+  (let [pool  (make-pool)
+        cfg   (make-cfg pool)
+        _     (with-responder pool
+                (fn [_params]
+                  {:error {:type "boom"
+                           :code :processing-failed
+                           :hint "something went wrong"}}))
+        error (try
+                (jobs/request cfg {::jobs/queue  :media
+                                   ::jobs/cmd    :process
+                                   ::jobs/params {:x 1}})
+                (catch Exception cause cause))]
+    (t/is (= :internal (:type (ex-data error))))))
+
+(t/deftest request-defaults-a-missing-error-type-to-internal
+  (let [pool  (make-pool)
+        cfg   (make-cfg pool)
+        _     (with-responder pool
+                (fn [_params]
+                  {:error {:code :processing-failed
+                           :hint "something went wrong"}}))
+        error (try
+                (jobs/request cfg {::jobs/queue  :media
+                                   ::jobs/cmd    :process
+                                   ::jobs/params {:x 1}})
+                (catch Exception cause cause))]
+    (t/is (= :internal (:type (ex-data error))))))
 
 (t/deftest request-times-out-and-cleans-the-reply-key
   (let [pool (make-pool)

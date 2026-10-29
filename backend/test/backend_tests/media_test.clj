@@ -7,7 +7,10 @@
 (ns backend-tests.media-test
   (:require
    [app.common.exceptions :as ex]
+   [app.jobs :as jobs]
    [app.media :as media]
+   [app.media.jobs :as media.jobs]
+   [app.media.local :as media.local]
    [app.media.svg :as svg]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -18,9 +21,9 @@
 (t/deftest info-jpeg
   (t/testing "info on valid JPEG returns dimensions and mime type"
     (let [path  (th/tempfile "backend_tests/test_files/sample.jpg")
-          info  (media/run th/*system* {:cmd :info
-                                        :input {:path path
-                                                :mtype "image/jpeg"}})]
+          info  (media.local/process th/*system* {:cmd :info
+                                                  :input {:path path
+                                                          :mtype "image/jpeg"}})]
       (t/is (pos? (:width info)))
       (t/is (pos? (:height info)))
       (t/is (= "image/jpeg" (:mtype info)))
@@ -30,9 +33,9 @@
 (t/deftest info-png
   (t/testing "info on valid PNG returns dimensions and mime type"
     (let [path  (th/tempfile "backend_tests/test_files/sample.png")
-          info  (media/run th/*system* {:cmd :info
-                                        :input {:path path
-                                                :mtype "image/png"}})]
+          info  (media.local/process th/*system* {:cmd :info
+                                                  :input {:path path
+                                                          :mtype "image/png"}})]
       (t/is (pos? (:width info)))
       (t/is (pos? (:height info)))
       (t/is (= "image/png" (:mtype info))))))
@@ -40,9 +43,9 @@
 (t/deftest info-webp
   (t/testing "info on valid WebP returns dimensions and mime type"
     (let [path  (th/tempfile "backend_tests/test_files/sample.webp")
-          info  (media/run th/*system* {:cmd :info
-                                        :input {:path path
-                                                :mtype "image/webp"}})]
+          info  (media.local/process th/*system* {:cmd :info
+                                                  :input {:path path
+                                                          :mtype "image/webp"}})]
       (t/is (pos? (:width info)))
       (t/is (pos? (:height info)))
       (t/is (= "image/webp" (:mtype info))))))
@@ -50,11 +53,46 @@
 (t/deftest info-svg
   (t/testing "info on valid SVG returns dimensions from viewBox"
     (let [path  (th/tempfile "backend_tests/test_files/sample1.svg")
-          info  (media/run th/*system* {:cmd :info
-                                        :input {:path path
-                                                :mtype "image/svg+xml"}})]
+          info  (media.local/process th/*system* {:cmd :info
+                                                  :input {:path path
+                                                          :mtype "image/svg+xml"}})]
       (t/is (pos? (:width info)))
       (t/is (pos? (:height info))))))
+
+(t/deftest info-svg-is-resolved-locally
+  (t/testing "an SVG never becomes a :media-info job"
+    (let [path    (th/tempfile "backend_tests/test_files/sample1.svg")
+          content {:path path :mtype "image/svg+xml" :size (fs/size path)}
+          info    (with-redefs [jobs/submit-and-wait
+                                (fn [& _]
+                                  (throw (ex-info "the svg must not be a job" {})))]
+                    (media/info th/*system* content))]
+      (t/is (pos? (:width info)))
+      (t/is (pos? (:height info)))
+      (t/is (= "image/svg+xml" (:mtype info)))
+      (t/is (= (fs/size path) (:size info)))
+      (t/is (some? (:ts info))))))
+
+(t/deftest info-raster-goes-through-the-media-info-job
+  (t/testing "a raster image runs the durable job on the fast queue"
+    (let [path    (th/tempfile "backend_tests/test_files/sample.jpg")
+          content {:path path :mtype "image/jpeg" :size (fs/size path)}
+          job     (atom nil)
+          info    (with-redefs [jobs/submit-and-wait
+                                (fn [_ params]
+                                  (reset! job params)
+                                  {:width 8 :height 8
+                                   :mtype "image/jpeg"
+                                   :size (get-in params [::jobs/params :input :size])})]
+                    (media/info th/*system* content))
+          input   (get-in @job [::jobs/params :input])]
+
+      (t/is (= :media-info (::jobs/name @job)))
+      (t/is (= (:fast (media.jobs/queue-pair)) (::jobs/queue @job)))
+      (t/is (uuid? (:id input)))
+      (t/is (= "image/jpeg" (:mtype input)))
+      (t/is (= (fs/size path) (:size input)))
+      (t/is (some? (:ts info))))))
 
 (t/deftest sanitize-svg-script-tag
   (t/testing "sanitize-svg removes script tags"
@@ -209,9 +247,9 @@
       ;; Write garbage data
       (spit (str path) "not an image")
       (try
-        (media/run th/*system* {:cmd :info
-                                :input {:path path
-                                        :mtype "image/jpeg"}})
+        (media.local/process th/*system* {:cmd :info
+                                          :input {:path path
+                                                  :mtype "image/jpeg"}})
         (t/is false "should have thrown")
         (catch Exception e
           (let [data (ex-data e)]
@@ -223,15 +261,15 @@
 (t/deftest generic-thumbnail
   (t/testing "generic-thumbnail produces a file of expected format"
     (let [path  (th/tempfile "backend_tests/test_files/sample.jpg")
-          info  (media/run th/*system* {:cmd :info
-                                        :input {:path path
-                                                :mtype "image/jpeg"}})
-          thumb (media/run th/*system* {:cmd :generic-thumbnail
-                                        :input info
-                                        :format :jpeg
-                                        :quality 80
-                                        :width 200
-                                        :height 200})]
+          info  (media.local/process th/*system* {:cmd :info
+                                                  :input {:path path
+                                                          :mtype "image/jpeg"}})
+          thumb (media.local/process th/*system* {:cmd :generic-thumbnail
+                                                  :input info
+                                                  :format :jpeg
+                                                  :quality 80
+                                                  :width 200
+                                                  :height 200})]
       (t/is (some? (:data thumb)))
       (t/is (pos? (:size thumb)))
       (t/is (= :jpeg (:format thumb)))
@@ -242,15 +280,15 @@
 (t/deftest profile-thumbnail
   (t/testing "profile-thumbnail produces a center-cropped file"
     (let [path  (th/tempfile "backend_tests/test_files/sample.jpg")
-          info  (media/run th/*system* {:cmd :info
-                                        :input {:path path
-                                                :mtype "image/jpeg"}})
-          thumb (media/run th/*system* {:cmd :profile-thumbnail
-                                        :input info
-                                        :format :jpeg
-                                        :quality 85
-                                        :width 128
-                                        :height 128})]
+          info  (media.local/process th/*system* {:cmd :info
+                                                  :input {:path path
+                                                          :mtype "image/jpeg"}})
+          thumb (media.local/process th/*system* {:cmd :profile-thumbnail
+                                                  :input info
+                                                  :format :jpeg
+                                                  :quality 85
+                                                  :width 128
+                                                  :height 128})]
       (t/is (some? (:data thumb)))
       (t/is (pos? (:size thumb)))
       (t/is (= :jpeg (:format thumb)))
@@ -261,14 +299,14 @@
 (t/deftest generic-thumbnail-webp
   (t/testing "generic-thumbnail can produce WebP format"
     (let [path  (th/tempfile "backend_tests/test_files/sample.jpg")
-          info  (media/run th/*system* {:cmd :info
-                                        :input {:path path
-                                                :mtype "image/jpeg"}})
-          thumb (media/run th/*system* {:cmd :generic-thumbnail
-                                        :input info
-                                        :format :webp
-                                        :quality 80
-                                        :width 200
-                                        :height 200})]
+          info  (media.local/process th/*system* {:cmd :info
+                                                  :input {:path path
+                                                          :mtype "image/jpeg"}})
+          thumb (media.local/process th/*system* {:cmd :generic-thumbnail
+                                                  :input info
+                                                  :format :webp
+                                                  :quality 80
+                                                  :width 200
+                                                  :height 200})]
       (t/is (= :webp (:format thumb)))
       (t/is (= "image/webp" (:mtype thumb))))))

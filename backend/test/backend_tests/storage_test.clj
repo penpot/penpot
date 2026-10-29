@@ -46,6 +46,17 @@
                        th/database-reset
                        th/clean-storage))
 
+(defn- settle-jobs!
+  "Run the pending media jobs and drop the temporary inputs, so the GC
+  counts only see the domain artifacts."
+  []
+  (doseq [row (th/db-query :job {:name "media-thumbnail"})]
+    (th/run-pending-job! :media-thumbnail (:label row)))
+  (doseq [row (th/db-query :job {:name "font-variants"})]
+    (th/run-pending-job! :font-variants (:label row)))
+  (th/db-exec! ["DELETE FROM storage_object
+                  WHERE COALESCE(metadata->>'bucket', metadata->>'~:bucket') = 'tempfile'"]))
+
 (defn configure-storage-backend
   "Given storage map, returns a storage configured with the appropriate
   backend for assets."
@@ -256,6 +267,8 @@
     (t/is (nil? (:error out1)))
     (t/is (nil? (:error out2)))
 
+    (settle-jobs!)
+
     (let [result-1 (:result out1)
           result-2 (:result out2)]
 
@@ -365,6 +378,8 @@
     (t/is (nil? (:error out1)))
     (t/is (nil? (:error out2)))
 
+    (settle-jobs!)
+
     ;; run the touched gc task
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
@@ -429,6 +444,8 @@
 
     (t/is (nil? (:error out1)))
     (t/is (nil? (:error out2)))
+
+    (settle-jobs!)
 
     (let [result-1 (:result out1)
           result-2 (:result out2)]

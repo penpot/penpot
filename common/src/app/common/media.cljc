@@ -23,7 +23,11 @@
     "image/svg+xml"})
 
 (def tempfile-types
-  (conj image-types "application/pdf" "application/zip"))
+  "Temporary files: uploads and intermediate results of the trusted
+  services. Fonts are here because the media worker uploads the result of
+  `font-convert` to the `tempfile` bucket."
+  (into (conj image-types "application/pdf" "application/zip")
+        font-types))
 
 (def storage-object-types
   "Every content-type the system stores in storage objects: uploaded

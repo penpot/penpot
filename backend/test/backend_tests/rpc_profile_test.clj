@@ -13,10 +13,12 @@
    [app.email :as eml]
    [app.email.blacklist :as email.blacklist]
    [app.email.whitelist :as email.whitelist]
+   [app.jobs :as jobs]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams-invitations :as teams-invitations]
+   [app.storage :as sto]
    [app.tokens :as tokens]
    [backend-tests.helpers :as th]
    [clojure.java.io :as io]
@@ -1842,3 +1844,29 @@
                                   :path (fs/path "/etc/passwd")
                                   :mtype "image/jpeg"}})]
     (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+(defn- live-tempfiles
+  []
+  (th/db-exec! ["SELECT id FROM storage_object
+                  WHERE COALESCE(metadata->>'bucket', metadata->>'~:bucket') = 'tempfile'
+                    AND deleted_at IS NULL"]))
+
+(t/deftest update-profile-photo-attaches-the-photo-and-releases-the-input
+  (let [profile (th/create-profile* 1)
+        storage (:app.storage/storage th/*system*)
+        path    (th/tempfile "backend_tests/test_files/sample.jpg")
+        out     (th/command! (th/with-multipart {::th/type :update-profile-photo
+                                                 ::rpc/profile-id (:id profile)
+                                                 :file {:filename "sample.jpg"
+                                                        :size 123123
+                                                        :path path
+                                                        :mtype "image/jpeg"}}))]
+
+    (t/is (nil? (:error out)))
+
+    (let [row (th/db-get :profile {:id (:id profile)})]
+      (t/is (uuid? (:photo-id row)))
+      (t/is (some? (sto/get-object storage (:photo-id row)))))
+
+    (t/testing "the job input is released"
+      (t/is (empty? (live-tempfiles))))))

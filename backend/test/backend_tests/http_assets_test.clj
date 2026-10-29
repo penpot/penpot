@@ -20,8 +20,10 @@
    [app.metrics.definition :as-alias mdef]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.access-token :as access-token]
+   [app.setup :as-alias setup]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
+   [clojure.string :as str]
    [clojure.test :as t]
    [datoteka.fs :as fs]
    [integrant.core :as ig]
@@ -82,7 +84,9 @@
   [storage]
   {::sto/storage storage
    ::mtx/metrics (make-metrics)
-   ::assets/path "/assets"})
+   ::assets/path "/assets"
+   ::setup/shared-keys {:media-processor "media-key"
+                        :exporter "exporter-key"}})
 
 (defn- make-metrics-cfg
   "Build a handler cfg map with an isolated metrics instance."
@@ -310,6 +314,61 @@
 ;; Tests: objects-handler — serve-object response (FS backend)
 ;; ----------------------------------------------------------------
 
+(t/deftest objects-handler-tempfile-with-media-shared-key
+  ;; The media worker downloads the input of a request with its shared key.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        object   (create-storage-object! storage "tempfile" "input bytes")
+        request  {:path-params {:id (str (:id object))}
+                  :headers {"x-shared-key" "media-processor media-key"}}
+        response (assets/objects-handler cfg request)]
+    (t/is (= 204 (::yres/status response)))
+    (t/is (some? (get (::yres/headers response) "x-accel-redirect")))))
+
+(t/deftest objects-handler-tempfile-rejects-a-wrong-secret
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        object   (create-storage-object! storage "tempfile" "input bytes")
+        request  {:path-params {:id (str (:id object))}
+                  :headers {"x-shared-key" "media-processor wrong-secret"}}
+        response (assets/objects-handler cfg request)]
+    (t/is (= 401 (::yres/status response)))))
+
+(t/deftest objects-handler-tempfile-rejects-another-service-key
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        object   (create-storage-object! storage "tempfile" "input bytes")
+        request  {:path-params {:id (str (:id object))}
+                  :headers {"x-shared-key" "exporter exporter-key"}}
+        response (assets/objects-handler cfg request)]
+    (t/is (= 401 (::yres/status response)))))
+
+(t/deftest objects-handler-tempfile-ownerless-denies-session
+  ;; A new tempfile input has no owner; a session from another profile must
+  ;; not read it. The media shared key is the only reader.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        profile  (th/create-profile* 1)
+        object   (create-storage-object! storage "tempfile" "input bytes")
+        request  {:path-params {:id (str (:id object))}
+                  ::session/profile-id (:id profile)}
+        response (assets/objects-handler cfg request)]
+    (t/is (= 404 (::yres/status response)))))
+
+(t/deftest objects-handler-media-key-is-scoped-to-tempfile
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        object   (create-storage-object! storage "profile" "profile photo")
+        request  {:path-params {:id (str (:id object))}
+                  :headers {"x-shared-key" "media-processor media-key"}}
+        response (assets/objects-handler cfg request)]
+    (t/is (= 401 (::yres/status response)))))
+
 (t/deftest objects-handler-fs-backend-serves-object
   ;; Verify that the FS backend returns the correct response structure.
   (let [storage  (-> (:app.storage/storage th/*system*)
@@ -357,7 +416,9 @@
                     "file-thumbnail"
                     "file-change"]]
       (t/testing (str "bucket: " bucket)
-        (let [object   (create-storage-object! storage bucket "some data")
+        (let [object   (create-storage-object! storage bucket "some data"
+                                               (when (= bucket "tempfile")
+                                                 {:profile-id (:id profile)}))
               request  {:path-params {:id (str (:id object))}
                         ::session/profile-id (:id profile)}
               response (assets/objects-handler cfg request)]
@@ -876,18 +937,42 @@
         response  (assets/objects-handler cfg request)]
     (t/is (= 404 (::yres/status response)))))
 
-(t/deftest objects-handler-tempfile-no-stored-profile-id-serves
-  ;; Legacy tempfile objects without stored profile-id should be accessible
-  ;; to any authenticated user (backward compatibility).
+(t/deftest objects-handler-tempfile-without-owner-denies-session
+  ;; A legacy tempfile object without a stored profile-id (written before the
+  ;; export RPC started stamping its owner) is not readable by a session; the
+  ;; media worker reads it with the shared key.
   (let [storage   (-> (:app.storage/storage th/*system*)
                       (configure-storage-backend))
         cfg       (make-handler-cfg storage)
         stranger  (th/create-profile* 1)
-        object    (create-storage-object! storage "tempfile" "legacy temp data")
+        object    (create-storage-object! storage "tempfile" "temp data")
         request   {:path-params {:id (str (:id object))}
                    ::session/profile-id (:id stranger)}
         response  (assets/objects-handler cfg request)]
-    (t/is (= 204 (::yres/status response)))))
+    (t/is (= 404 (::yres/status response)))))
+
+(t/deftest objects-handler-export-binfile-zip-owner-can-access
+  ;; The export RPC stores its ZIP in `tempfile` with the caller as owner, so
+  ;; the session that asked for the export can download it.
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)})
+        out      (th/command! {::th/type :export-binfile
+                               ::rpc/profile-id (:id profile)
+                               :file-id (:id file)})
+        events   (th/consume-sse (:result out))
+        uri      (str (-> events last second))
+        id       (-> (u/parse uri) :path (str/split #"/") last)
+        storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        request  {:path-params {:id id}
+                  ::session/profile-id (:id profile)}
+        response (assets/objects-handler cfg request)]
+
+    (t/is (nil? (:error out)))
+    (t/is (= :end (-> events last first)))
+    (t/is (contains? #{204 307} (::yres/status response)))))
 
 ;; ----------------------------------------------------------------
 ;; Tests: objects-handler — job-resource bucket ownership

@@ -254,7 +254,7 @@
             (let [job    (-> result meta ::job)
                   nretry (+ (:retry-num job) inc-by)
                   now    (ct/now)
-                  delay  (->> (iterate #(* 2 %) delay-ms) (take (max 1 nretry)) (last))]
+                  delay  (jobs/retry-delay nretry :base-ms delay-ms)]
               (jobs/retry-job cfg
                               (:id job)
                               nretry

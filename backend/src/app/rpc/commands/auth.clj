@@ -27,6 +27,7 @@
    [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.media :as media]
+   [app.media.jobs :as media.jobs]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.profile :as profile]
@@ -370,19 +371,25 @@
 ;; ---- COMMAND: Register Profile
 
 (defn import-profile-picture
+  "Generate the photo of an imported profile picture and store it.
+
+  The profile row does not exist yet, so the `:profile-thumbnail` job has no
+  owner: its hook leaves the result in `tempfile` and this function moves it
+  to the `profile` bucket. Answers the storage object id, or nil on error."
   [cfg uri]
   (try
-    (let [storage (sto/resolve cfg)
-          input   (media/download-image cfg uri)
-          input   (media/run cfg {:cmd :info :input input})
-          hash    (sto/calculate-hash (:path input))
-          content (-> (sto/content (:path input) (:size input))
-                      (sto/wrap-with-hash hash))
-          sobject (sto/put-object! storage {::sto/content content
-                                            ::sto/deduplicate? true
-                                            :bucket "profile"
-                                            :content-type (:mtype input)})]
-      (:id sobject))
+    (let [input (media/download-image cfg uri)
+          input (media.jobs/materialize-input cfg input)]
+      (try
+        (let [result (media/profile-photo cfg {:input input})
+              photo  (get result :photo)
+              object (media.jobs/store-result cfg
+                                              (uuid/parse (:id photo))
+                                              "profile"
+                                              {:content-type (:mtype photo)})]
+          (:id object))
+        (finally
+          (media.jobs/release-temporary! cfg (:id input)))))
     (catch Throwable cause
       (l/wrn :hint "unable to import profile picture"
              :uri uri

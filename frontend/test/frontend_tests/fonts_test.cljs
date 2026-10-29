@@ -7,12 +7,16 @@
 (ns frontend-tests.fonts-test
   (:require
    [app.common.uuid :as uuid]
+   [app.main.data.event :as ev]
    [app.main.data.fonts :as df]
+   [app.main.data.notifications :as ntf]
    [app.main.fonts :as fonts]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.globals :as globals]
    [app.util.http :as http]
    [app.util.webapi :as wa]
+   [app.util.websocket :as ws]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
@@ -351,3 +355,139 @@
       (t/is (= 700 (:font-weight entry)))
       (t/is (= "normal" (:font-style entry))))
     (t/is (empty? @emitted))))
+
+;; --- font variant jobs -------------------------------------------------------
+;;
+;; `create-font-variant` creates the row with the uploaded formats and submits
+;; a `:font-variants` job for the missing ones. Until that job ends the variant
+;; shows as processing; a completion refetches the variants, a failure tells
+;; the user and clears the pending state either way.
+
+(defn- job-event
+  [job-id kind]
+  {:type :job-event
+   :job-id job-id
+   :kind kind
+   :payload {:outcome "completed"}})
+
+(defn- ws-message
+  [payload]
+  {:type :message :payload payload})
+
+(defn- font-variant
+  [team-id variant-id font-id job-id]
+  {:id variant-id
+   :team-id team-id
+   :font-id font-id
+   :font-family "Satoshi"
+   :font-weight "400"
+   :font-style "normal"
+   :variant-name "Regular"
+   :job-id job-id})
+
+(defn- variant-fetch
+  "The `get-font-variants` call of `reads`, when the list was reloaded."
+  [reads]
+  (first (filter (fn [read] (= :get-font-variants (:id read))) reads)))
+
+(defn- fake-job-backend
+  "The backend while a font variant job runs: `:get-job` answers the row
+  with the status of `status`, and `:get-font-variants` answers the variant
+  with the format the job generated."
+  [reads status variant]
+  (mock/stub
+   (fn [id params]
+     (swap! reads conj {:id id :params params})
+     (case id
+       :get-job
+       (rx/of {:id (:job-id variant) :status @status})
+
+       :get-font-variants
+       (rx/of [(assoc variant :otf-file-id (uuid/next))])
+
+       (rx/of nil)))))
+
+(t/deftest ^:async an-uploaded-variant-stays-pending-until-its-job-completes
+  (let [team-id    (uuid/next)
+        variant-id (uuid/next)
+        job-id     (uuid/next)
+        variant    (font-variant team-id variant-id (uuid/next) job-id)
+        ws-stream  (rx/subject)
+        status     (atom "running")
+        reads      (atom [])
+        store      (ptk/store {:state {:ws-conn nil
+                                       :current-team-id team-id}})]
+    (try
+      (await
+       (mock/with-mocks*
+         {st/state          store
+          ws/get-rcv-stream (mock/stub (fn [_] ws-stream))
+          rp/cmd!           (fake-job-backend reads status variant)
+          fonts/register!   (mock/stub (fn [& _] nil))
+          ev/event          (mock/stub (fn [_] (ptk/reify ::test-analytics)))}
+         (st/emit! (df/font-variant-created variant))
+
+         (await (async/wait-for #(contains? (:fonts-pending @store) variant-id)
+                                "the variant starts pending"))
+         (t/is (= variant (get (:fonts @store) variant-id))
+               "the row serves the uploaded formats right away")
+         (t/is (not-any? #(= :get-font-variants (:id %)) @reads)
+               "the list is not reloaded while the job runs")
+
+         (rx/push! ws-stream (ws-message (job-event job-id :progress)))
+         (await (async/settle))
+         (t/is (contains? (:fonts-pending @store) variant-id)
+               "progress keeps the variant pending")
+
+         (reset! status "completed")
+         (rx/push! ws-stream (ws-message (job-event job-id :end)))
+         (await (async/wait-for #(not (contains? (:fonts-pending @store) variant-id))
+                                "the variant settles"))
+         (await (async/wait-for #(some? (variant-fetch @reads))
+                                "the variants are fetched again"))
+         (t/is (= team-id (:team-id (:params (variant-fetch @reads)))))
+         (t/is (some? (:otf-file-id (get (:fonts @store) variant-id)))
+               "the list shows the generated format")))
+      (finally
+        (rx/dispose! store)))))
+
+(t/deftest ^:async a-failed-job-settles-the-variant-and-tells-the-user
+  (let [team-id    (uuid/next)
+        variant-id (uuid/next)
+        job-id     (uuid/next)
+        variant    (font-variant team-id variant-id (uuid/next) job-id)
+        ws-stream  (rx/subject)
+        status     (atom "running")
+        reads      (atom [])
+        notified   (atom [])
+        store      (ptk/store {:state {:ws-conn nil
+                                       :current-team-id team-id}})]
+    (try
+      (await
+       (mock/with-mocks*
+         {st/state          store
+          ws/get-rcv-stream (mock/stub (fn [_] ws-stream))
+          rp/cmd!           (fake-job-backend reads status variant)
+          ev/event          (mock/stub (fn [_] (ptk/reify ::test-analytics)))
+          ntf/error         (mock/stub (fn [& args]
+                                         (swap! notified conj args)
+                                         (ptk/reify ::test-notification)))}
+         (st/emit! (df/font-variant-created variant))
+         (await (async/wait-for #(contains? (:fonts-pending @store) variant-id)
+                                "the variant starts pending"))
+
+         (reset! status "failed")
+         (rx/push! ws-stream (ws-message (job-event job-id :end)))
+
+         (await (async/wait-for #(not (contains? (:fonts-pending @store) variant-id))
+                                "the variant settles"))
+         (await (async/settle))
+
+         (t/is (= 1 (count @notified))
+               "the user is told the font could not be processed")
+         (t/is (contains? (:fonts @store) variant-id)
+               "the row with the uploaded formats stays")
+         (t/is (not-any? #(= :get-font-variants (:id %)) @reads)
+               "a failed job does not reload the list")))
+      (finally
+        (rx/dispose! store)))))

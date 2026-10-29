@@ -394,6 +394,7 @@
         file    (prepare-simple-file profile)
         config  (assoc cf/config :public-uri "https://example.com/penpot")
         params  {:file-id (:id file)
+                 ::rpc/profile-id (:id profile)
                  ::bfc/export-type :detach-libraries}
         uri     (binding [cf/config config]
                   (#'binfile/export-binfile th/*system* params))]
@@ -2850,6 +2851,21 @@
                (vec (ctob/get-set-names
                      (get-in simple-imported [:data :tokens-lib]))))))))
 
+(t/deftest validate-media-tolerates-a-null-thumbnail
+  ;; `file_media_object.thumbnail_id` is nullable: an SVG, a small image or a
+  ;; thumbnail the job has not produced yet. The v3 import validates every
+  ;; media entry, so an explicit null must not reject the entry.
+  (let [media {:id (uuid/next)
+               :name "sample"
+               :width 100
+               :height 100
+               :mtype "image/svg+xml"
+               :media-id (uuid/next)
+               :thumbnail-id nil}]
+    (t/is (some? (v3/validate-media media)))
+    (t/is (nil? (:thumbnail-id (v3/validate-media media))))
+    (t/is (thrown? Throwable (v3/validate-media (assoc media :thumbnail-id "nope"))))))
+
 (t/deftest import-binfile-v3-restores-media-objects
   ;; storage objects, per-file media entries and object thumbnails
   ;; are classified through the entries index and restored end to end
@@ -2894,6 +2910,8 @@
       (t/is (= 1 (count result)))
       (t/is (pos? (count mobjs)))
       (t/is (every? some? (map :media-id mobjs)))
+      (t/is (every? nil? (map :thumbnail-id mobjs))
+            "a media object without a thumbnail survives the round trip")
 
       ;; the thumbnail is restored with its object-id rebuilt around
       ;; the new file id and a media-id that resolves to storage

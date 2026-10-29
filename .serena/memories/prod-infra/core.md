@@ -16,6 +16,8 @@ Async jobs are enqueued via `jobs/submit` (`app.jobs`), which inserts a row into
 
 Workers run on backends with `enable-backend-worker` in `PENPOT_FLAGS`. Each worker-enabled backend has a `dispatcher` (polls `job` with `FOR UPDATE SKIP LOCKED`, marks status='scheduled', RPUSHes the JSON `[id scheduled-at]` payloads into **its own** Redis list) and one or more `runner`s per queue (BLPOP from that same local list, execute, update the Postgres row). The Redis hand-off list is purely intra-backend — cross-backend coordination happens at the Postgres row level. The queues are `default`, `webhooks`, `cron` and `binfile`: the last one carries the heavy work of a user job (`:worker-binfile-parallelism`, default 1), so a long export or import does not block the default runner.
 
+The media worker is not a dispatcher queue: `app.jobs/request` RPUSHes directly to `penpot.worker.queue:<tenant>:media` and the external media worker BLPOPs it; no `job` row is involved.
+
 ## Cross-backend safety
 
 Postgres row locking is the only correctness primitive: `job` claims via `FOR UPDATE SKIP LOCKED`, cron firing via `FOR UPDATE SKIP LOCKED` on the `scheduled_task` row, plus job-handler-internal locks (e.g. `file_gc_scheduler` locks candidate file rows). This makes the work-claim path safe across any number of worker-enabled backends.

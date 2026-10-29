@@ -46,7 +46,7 @@
    [:embed-assets {:optional true} ::sm/boolean]])
 
 (defn- export-binfile
-  [{:keys [::sto/storage] :as cfg} {:keys [file-id] :as params}]
+  [{:keys [::sto/storage] :as cfg} {:keys [file-id ::rpc/profile-id] :as params}]
   (let [output (tmp/tempfile*)]
 
     (try
@@ -59,6 +59,7 @@
             object (sto/put-object! storage
                                     {::sto/content data
                                      ::sto/touched-at (ct/in-future {:minutes 60})
+                                     :profile-id profile-id
                                      :content-type "application/zip"
                                      :bucket sto/tempfile-bucket})]
 

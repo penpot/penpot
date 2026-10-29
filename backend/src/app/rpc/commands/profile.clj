@@ -24,6 +24,7 @@
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.media :as media]
+   [app.media.jobs :as media.jobs]
    [app.media.validation :as media.v]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
@@ -318,51 +319,25 @@
   (update-profile-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-profile-photo
-  [{:keys [::db/pool ::sto/storage] :as cfg} {:keys [profile-id file] :as params}]
+  "Generate the profile photo as a job and wait for it.
 
-  (let [photo   (upload-photo cfg params)
-        profile (db/get-by-id pool :profile profile-id ::sql/for-update true)]
-
-    ;; Schedule deletion of old photo
-    (when-let [id (:photo-id profile)]
-      (sto/touch-object! storage id))
-
-    ;; Save new photo
-    (db/update! pool :profile
-                {:photo-id (:id photo)}
-                {:id profile-id})
-
-    (-> (rph/wrap)
-        (rph/with-meta {::audit/replace-props
-                        {:file-name (:filename file)
-                         :file-size (:size file)
-                         :file-path (str (:path file))
-                         :file-mtype (:mtype file)}}))))
-
-(defn- generate-thumbnail
-  [cfg input]
-  (let [input   (media/run cfg {:cmd :info :input input})
-        thumb   (media/run cfg {:cmd :profile-thumbnail
-                                :format :jpeg
-                                :quality 85
-                                :width 256
-                                :height 256
-                                :input input})
-        hash    (sto/calculate-hash (:data thumb))
-        content (-> (sto/content (:data thumb) (:size thumb))
-                    (sto/wrap-with-hash hash))]
-    {::sto/content content
-     ::sto/deduplicate? true
-     :bucket "profile"
-     :content-type (:mtype thumb)}))
-
-(defn upload-photo
-  "Generate the thumbnail of a photo and store it.
-
-  The caller declares the `process-image` limits: this helper runs inside
-  them, so a command that calls it has to take them."
-  [{:keys [::sto/storage] :as cfg} {:keys [file]}]
-  (sto/put-object! storage (generate-thumbnail cfg file)))
+  The hook moves the artifact to the `profile` bucket, touches the previous
+  photo and updates `profile.photo_id`, so the photo is in place before the
+  RPC answers. The previous job of the profile is cancelled first: the last
+  upload wins."
+  [cfg {:keys [profile-id file] :as params}]
+  (let [input (media.jobs/materialize-input cfg file)]
+    (try
+      (jobs/cancel-by-label cfg :profile-thumbnail (media.jobs/profile-label profile-id))
+      (media/profile-photo cfg {:input input :profile-id profile-id})
+      (-> (rph/wrap)
+          (rph/with-meta {::audit/replace-props
+                          {:file-name (:filename file)
+                           :file-size (:size file)
+                           :file-path (str (:path file))
+                           :file-mtype (:mtype file)}}))
+      (finally
+        (media.jobs/release-temporary! cfg (:id input))))))
 
 ;; --- MUTATION: Delete Photo
 
@@ -371,8 +346,10 @@
    ::sm/params [:map]
    ::sm/result :nil
    ::db/transaction true}
-  [{:keys [::db/conn ::sto/storage]} {:keys [::rpc/profile-id]}]
+  [{:keys [::db/conn ::sto/storage] :as cfg} {:keys [::rpc/profile-id]}]
   (let [profile (get-profile conn profile-id ::db/for-update true)]
+    ;; a photo generation in flight would set a photo nobody asked for
+    (jobs/cancel-by-label cfg :profile-thumbnail (media.jobs/profile-label profile-id))
     (when-let [id (:photo-id profile)]
       (sto/touch-object! storage id))
 

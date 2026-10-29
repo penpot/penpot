@@ -628,6 +628,10 @@ msgstr ""
 "You also might want to read about [font "
 "licensing](https://www.typography.com/faq)."
 
+#: src/app/main/ui/dashboard/fonts.cljs:439
+msgid "dashboard.fonts.processing"
+msgstr "Processing…"
+
 #: src/app/main/ui/dashboard/fonts.cljs:231
 msgid "dashboard.fonts.upload-all"
 msgstr "Upload all"
@@ -1680,6 +1684,10 @@ msgid "errors.font-family-invalid-chars"
 msgstr ""
 "The font family name can only contain letters, numbers, spaces, hyphens, "
 "underscores, and dots."
+
+#: src/app/main/data/fonts.cljs:376
+msgid "errors.font-processing-failed"
+msgstr "The font \"%s\" could not be processed."
 
 #: src/app/main/data/auth.cljs:352, src/app/main/errors.cljs:479, src/app/main/ui/auth/login.cljs:116, src/app/main/ui/auth/register.cljs:131, src/app/main/ui/auth/register.cljs:317, src/app/main/ui/auth/verify_token.cljs:131, src/app/main/ui/dashboard/fonts.cljs:386, src/app/main/ui/dashboard/team.cljs:250, src/app/main/ui/dashboard/team.cljs:1131, src/app/main/ui/onboarding/team_choice.cljs:125, src/app/main/ui/settings/feedback.cljs:84, src/app/main/ui/settings/integrations.cljs:143, src/app/main/ui/workspace/main_menu.cljs:966
 msgid "errors.generic"

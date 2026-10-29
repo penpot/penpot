@@ -16,7 +16,7 @@
    [app.db :as db]
    [app.loggers.audit :as-alias audit]
    [app.media :as media]
-   [app.media.svg :as svg]
+   [app.media.jobs :as media.jobs]
    [app.media.validation :as media.v]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
@@ -135,15 +135,19 @@
 ;; inverse, soft referential integrity).
 
 (defn- process-main-image
-  [info]
+  [cfg info]
   (let [path  (:path info)
         mtype (:mtype info)
         path  (if (= mtype "image/svg+xml")
-                (let [content   (slurp path)
-                      sanitized (svg/sanitize-svg content)
-                      temp-path (tmp/tempfile :prefix "penpot-svg-" :suffix ".svg" :min-age "5m")]
-                  (spit (str temp-path) sanitized)
-                  temp-path)
+                (let [content  (slurp path)
+                      size     (alength (.getBytes ^String content "UTF-8"))]
+                  ;; The declared size is checked earlier; this is the real
+                  ;; one, so a client cannot smuggle a bigger SVG past the cap.
+                  (media.v/check-svg-size size)
+                  (let [sanitized (media/sanitize-svg cfg content)
+                        temp-path (tmp/tempfile :prefix "penpot-svg-" :suffix ".svg" :min-age "5m")]
+                    (spit (str temp-path) sanitized)
+                    temp-path))
                 path)
         hash  (sto/calculate-hash path)
         data  (-> (sto/content path)
@@ -154,30 +158,17 @@
      :content-type mtype
      :bucket "file-media-object"}))
 
-(defn- process-thumb-image
-  [cfg info]
-  (let [thumb (media/run cfg (assoc thumbnail-options
-                                    :cmd :generic-thumbnail
-                                    :input info))
-        hash  (sto/calculate-hash (:data thumb))
-        data  (-> (sto/content (:data thumb) (:size thumb))
-                  (sto/wrap-with-hash hash))]
-    {::sto/content data
-     ::sto/deduplicate? true
-     ::sto/touched-at (:ts info)
-     :content-type (:mtype thumb)
-     :bucket "file-media-object"}))
-
 (defn- process-image
+  "Resolve the image info through the `:media-info` job and prepare the
+  original object. The thumbnail is not generated here: it is a job of its
+  own, so the upload does not wait for it."
   [cfg content]
-  (let [info (media/run cfg {:cmd :info :input content})]
-    (cond-> info
-      (and (not (svg-image? info))
-           (big-enough-for-thumbnail? info))
-      (assoc ::thumb (process-thumb-image cfg info))
-
-      :always
-      (assoc ::image (process-main-image info)))))
+  (let [info  (media/info cfg content)
+        image (process-main-image cfg (assoc content :ts (:ts info)))]
+    (assoc info
+           ::image image
+           ::thumb-needed? (and (not (svg-image? info))
+                                (big-enough-for-thumbnail? info)))))
 
 (defn- create-file-media-object
   [{:keys [::sto/storage ::db/conn] :as cfg}
@@ -203,9 +194,30 @@
 
     (let [result  (process-image cfg content)
           image   (sto/put-object! storage (::image result))
-          thumb   (when-let [params (::thumb result)]
-                    (sto/put-object! storage params))
+          row     (db/exec-one! conn [sql:create-file-media-object
+                                      id
+                                      file-id is-local name
+                                      (:id image)
+                                      nil
+                                      (:width result)
+                                      (:height result)
+                                      (:mtype result)])
           elapsed (tpoint)]
+
+      (when (::thumb-needed? result)
+        (let [input (media.jobs/materialize-input cfg content)]
+          ;; A skipped submit means an active job of this media object is
+          ;; already on its way; the input we just made is not needed.
+          (when-not (media/submit-thumbnail cfg
+                                            {:input    input
+                                             :media-id (:id image)
+                                             :format   (media.jobs/normalize-thumbnail-format
+                                                        (:mtype result)
+                                                        (:format thumbnail-options))
+                                             :quality  (:quality thumbnail-options)
+                                             :width    (:width thumbnail-options)
+                                             :height   (:height thumbnail-options)})
+            (media.jobs/release-temporary! cfg (:id input)))))
 
       (l/dbg :hint "create file-media-object"
              :step "end"
@@ -216,14 +228,7 @@
              :origin origin
              :elapsed (ct/format-duration elapsed))
 
-      (db/exec-one! conn [sql:create-file-media-object
-                          id
-                          file-id is-local name
-                          (:id image)
-                          (:id thumb)
-                          (:width result)
-                          (:height result)
-                          (:mtype result)]))))
+      row)))
 
 ;; --- Create File Media Object (from URL)
 

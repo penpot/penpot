@@ -59,7 +59,9 @@
    [:mtype :string]
    [:media-id ::sm/uuid]
    [:file-id {:optional true} ::sm/uuid]
-   [:thumbnail-id {:optional true} ::sm/uuid]
+   ;; The column is nullable: an SVG, a small image or a thumbnail that the
+   ;; job has not produced yet has no thumbnail at all.
+   [:thumbnail-id {:optional true} [:maybe ::sm/uuid]]
    [:is-local {:optional true} :boolean]])
 
 (def schema:colors

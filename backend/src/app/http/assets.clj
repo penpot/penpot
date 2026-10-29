@@ -14,9 +14,11 @@
    [app.config :as cf]
    [app.db :as db]
    [app.http.access-token :as actoken]
+   [app.http.middleware :as mw]
    [app.http.session :as session]
    [app.metrics :as mtx]
    [app.rpc.permissions :as perms]
+   [app.setup :as-alias setup]
    [app.storage :as sto]
    [integrant.core :as ig]
    [yetti.response :as-alias yres]))
@@ -157,15 +159,11 @@
 
 (defn- owner-match?
   "Check that the request belongs to the profile that owns the object.
-  A missing owner is only tolerated in `tempfile`, where objects predate
-  the metadata; the `job-resource` bucket always carries one, so an
-  object without it fails closed."
+  An object without an owner fails closed: the media worker reads its
+  ownerless `tempfile` inputs with the shared key, not with a session."
   [obj request]
-  (let [stored  (-> obj meta :profile-id)
-        owner   (request-profile-id request)
-        legacy? (= sto/tempfile-bucket (-> obj meta :bucket))]
-    (or (and legacy? (nil? stored))
-        (= stored owner))))
+  (= (-> obj meta :profile-id)
+     (request-profile-id request)))
 
 (defn- serve-object-measured
   "Serve `obj`, recording one asset metric per outcome. A failure is
@@ -179,13 +177,24 @@
       (emit-asset! cfg route obj 500)
       (throw cause))))
 
+(defn- trusted-service?
+  "The media worker may read a temporary object. The shared key is scoped to
+  the tempfile bucket: another bucket or another service key keeps the
+  normal session and owner rules."
+  [cfg request obj]
+  (boolean
+   (and (= sto/tempfile-bucket (-> obj meta :bucket))
+        (= :media-processor
+           (mw/valid-shared-key? (::setup/shared-keys cfg) request)))))
+
 (defn objects-handler
   "Handler that serves storage objects by id.
    For non-public buckets (e.g. profile), requires authentication
    via session cookie or access token.
    For the owner-scoped buckets (tempfile, job-resource), also requires
    ownership: the request must come from the profile the object belongs
-   to."
+   to. The media-processor shared key may read tempfile objects: it is
+   the worker that downloads the input of a media request."
   [{:keys [::sto/storage] :as cfg} request]
   (let [id  (get-id request)
         obj (sto/get-object storage id)]
@@ -194,6 +203,9 @@
       (do
         (emit-asset! cfg "by-id" nil 404)
         {::yres/status 404})
+
+      (trusted-service? cfg request obj)
+      (serve-object-measured cfg "by-id" obj)
 
       (and (requires-auth? obj)
            (not (authenticated? request)))
@@ -257,6 +269,7 @@
   [_ params]
   (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage instance")
   (assert (session/manager? (::session/manager params)) "expected valid session manager")
+  (assert (map? (::setup/shared-keys params)) "expected a shared-keys map")
   (assert (string? (::path params))))
 
 (defmethod ig/init-key ::routes

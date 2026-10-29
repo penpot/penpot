@@ -15,7 +15,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.http :as http]
-   [app.rpc :as-alias rpc]
+   [app.rpc :as rpc]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [backend-tests.storage-test :refer [configure-storage-backend]]
@@ -24,7 +24,8 @@
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [datoteka.io :as io]
-   [mockery.core :refer [with-mocks]]))
+   [mockery.core :refer [with-mocks]]
+   [yetti.response :as yres]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -104,6 +105,47 @@
                              :mtype "image/png"
                              :size 7}})]
         (t/is (nil? (:error out)) (name key-id))))))
+
+(t/deftest upload-tempfile-accepts-font-types
+  ;; The media worker uploads the result of font-convert to tempfile.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        path    (fs/create-tempfile :dir "/tmp/penpot" :prefix "test-upload-tempfile-")
+        _       (io/write* path "fontdata")
+        params  {::th/type :upload-tempfile
+                 ::rpc/profile-id (:id profile)
+                 :content {:filename "font.ttf"
+                           :path path
+                           :mtype "font/ttf"
+                           :size 8}}
+        out     (th/multipart-management-command! params)]
+    (t/is (nil? (:error out)))
+    (t/is (some? (get-in out [:result :id])))))
+
+(t/deftest upload-tempfile-with-shared-key-stores-uuid-zero-owner
+  ;; The owner comes from the authenticated shared key, not from a body
+  ;; param: the test goes through the real RPC handler, which is what
+  ;; derives `::rpc/profile-id` from `::http/auth-key-id`.
+  (let [path     (fs/create-tempfile :dir "/tmp/penpot" :prefix "test-upload-tempfile-")
+        _        (io/write* path "content")
+        handler  (rpc/make-rpc-handler (:app.rpc/management-methods th/*system*))
+        request  (assoc (th/make-dummy-request
+                         {:method :post
+                          :headers {"content-type" "multipart/form-data; boundary=test"}})
+                        :path-params {:method-name "upload-tempfile"}
+                        :params {:content {:filename "thumb.png"
+                                           :path path
+                                           :mtype "image/png"
+                                           :size 7}}
+                        ::http/auth-key-id :media-processor)
+        response (handler request)
+        id       (get-in response [::yres/body :id])
+        storage  (:app.storage/storage th/*system*)
+        object   (some->> id (sto/get-object storage))]
+
+    (t/is (= 200 (::yres/status response)))
+    (t/is (uuid? id))
+    (t/is (some? object))
+    (t/is (= uuid/zero (-> object meta :profile-id)))))
 
 (t/deftest duplicate-file
   (let [storage (-> (:app.storage/storage th/*system*)

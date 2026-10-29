@@ -135,7 +135,7 @@
                   (rx/subs! (fn [[previous-id font]]
                               (swap! fonts* dissoc previous-id)
                               (swap! uploading* disj previous-id)
-                              (st/emit! (df/add-font font)))
+                              (st/emit! (df/font-variant-created font)))
                             (fn [cause]
                               (st/emit! (ntf/error (tr "errors.bad-font" (first (:names item)))))
                               (js/console.error "Unexpected error on uploading font" cause)))))))
@@ -189,7 +189,7 @@
                             (swap! fonts* dissoc previous-id)
                             (swap! uploading* disj previous-id)
                             (when font
-                              (st/emit! (df/add-font font))))))))
+                              (st/emit! (df/font-variant-created font))))))))
 
         on-dismis-all
         (mf/use-fn
@@ -312,7 +312,7 @@
 (mf/defc installed-font*
   {::mf/private true
    ::mf/wrap [mf/memo]}
-  [{:keys [font-id variants can-edit]}]
+  [{:keys [font-id variants can-edit pending]}]
   (let [font        (first variants)
 
         menu-open*  (mf/use-state false)
@@ -433,6 +433,10 @@
                :key (dm/str id)}
          [:span {:class (stl/css :label)}
           [:> font-variant-display-name* {:variant item}]]
+         (when (contains? pending id)
+           [:span {:class (stl/css :pending)
+                   :data-testid "font-variant-processing"}
+            (tr "dashboard.fonts.processing")])
          (when can-edit
            [:button {:type "button"
                      :class (stl/css :variant-delete)
@@ -474,7 +478,7 @@
             :on-edit on-edit}]]))]))
 
 (mf/defc installed-fonts*
-  [{:keys [fonts can-edit]}]
+  [{:keys [fonts can-edit pending]}]
   (let [sterm (mf/use-state "")
 
         matches?
@@ -508,6 +512,7 @@
           [:> installed-font* {:key (dm/str font-id "-installed")
                                :font-id font-id
                                :can-edit can-edit
+                               :pending pending
                                :variants variants}])]
 
        (nil? fonts)
@@ -532,9 +537,13 @@
 (def ^:private ref:fonts
   (l/derived :fonts st/state))
 
+(def ^:private ref:fonts-pending
+  (l/derived :fonts-pending st/state))
+
 (mf/defc fonts-page*
   [{:keys [team]}]
   (let [fonts       (mf/deref ref:fonts)
+        pending     (mf/deref ref:fonts-pending)
         permissions (:permissions team)
         can-edit    (:can-edit permissions)]
     [:*
@@ -543,7 +552,7 @@
       (when ^boolean can-edit
         [:> uploaded-fonts* {:team team :installed-fonts fonts}])
       [:> installed-fonts*
-       {:team team :fonts fonts :can-edit can-edit}]]]))
+       {:team team :fonts fonts :pending pending :can-edit can-edit}]]]))
 
 (mf/defc font-providers-page*
   [{:keys [team]}]

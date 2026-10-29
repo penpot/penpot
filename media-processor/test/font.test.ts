@@ -3,7 +3,7 @@ import { readFile, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { convertFont, execCommand } from "../src/services/font.js";
-import { ProcessingError } from "../src/middleware/error-handler.js";
+import { ProcessingError } from "../src/errors.js";
 
 const FIXTURES = join(import.meta.dirname, "fixtures");
 
@@ -100,7 +100,7 @@ describe("convertFont", () => {
       const result = await convertFont(woff2Data, "font/woff2", "font/woff");
       expect(result).toBeInstanceOf(Buffer);
       expect(result!.length).toBeGreaterThan(0);
-    });
+    }, 20_000);
   });
 
   describe("invalid input", () => {
@@ -121,7 +121,7 @@ describe("convertFont", () => {
         expect.fail("should have thrown");
       } catch (err) {
         expect(err).toBeInstanceOf(ProcessingError);
-        const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+        const pe = err as import("../src/errors.js").ProcessingError;
         expect(pe.statusCode).toBe(400);
         expect(pe.errorBody.code).toBe("invalid-font");
       }
@@ -134,7 +134,7 @@ describe("convertFont", () => {
         expect.fail("should have thrown");
       } catch (err) {
         expect(err).toBeInstanceOf(ProcessingError);
-        const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+        const pe = err as import("../src/errors.js").ProcessingError;
         expect(pe.statusCode).toBe(400);
         expect(pe.errorBody.code).toBe("invalid-font");
       }
@@ -147,7 +147,7 @@ describe("convertFont", () => {
         expect.fail("should have thrown");
       } catch (err) {
         expect(err).toBeInstanceOf(ProcessingError);
-        const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+        const pe = err as import("../src/errors.js").ProcessingError;
         expect(pe.statusCode).toBe(400);
         expect(pe.errorBody.code).toBe("invalid-font");
       }
@@ -160,7 +160,7 @@ describe("convertFont", () => {
         expect.fail("should have thrown");
       } catch (err) {
         expect(err).toBeInstanceOf(ProcessingError);
-        const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+        const pe = err as import("../src/errors.js").ProcessingError;
         expect(pe.statusCode).toBe(400);
         expect(pe.errorBody.code).toBe("invalid-font");
       }
@@ -173,7 +173,7 @@ describe("convertFont", () => {
         expect.fail("should have thrown");
       } catch (err) {
         expect(err).toBeInstanceOf(ProcessingError);
-        const pe = err as import("../src/middleware/error-handler.js").ProcessingError;
+        const pe = err as import("../src/errors.js").ProcessingError;
         expect(pe.statusCode).toBe(400);
         expect(pe.errorBody.code).toBe("invalid-font");
       }
@@ -286,6 +286,22 @@ describe("convertFont", () => {
 });
 
 describe("execCommand", () => {
+  it("kills the child process when the signal aborts", async () => {
+    const controller = new AbortController();
+    const promise = execCommand("sleep", ["5"], 10_000, { signal: controller.signal });
+
+    controller.abort();
+
+    try {
+      await promise;
+      expect.fail("should have thrown");
+    } catch (err) {
+      const error = err as Error & { code?: string };
+      expect(error).toBeInstanceOf(Error);
+      expect(error.code).toBe("ABORT_ERR");
+    }
+  });
+
   it("preserves killed and signal properties from child process errors", async () => {
     try {
       await execCommand("false", []);

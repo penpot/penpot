@@ -160,6 +160,13 @@
       &:hover {
         --variant-delete-color: var(--color-foreground-secondary);
       }
+
+      .pending {
+        @include use-typography("body-small");
+
+        color: var(--color-foreground-secondary);
+        white-space: nowrap;
+      }
     }
 
     .inhert-variant {

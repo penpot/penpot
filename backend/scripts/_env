@@ -26,7 +26,10 @@ if [[ "${PENPOT_BACKEND_WORKER:-true}" == "true" ]]; then
     __worker_flag="enable-backend-worker"
 fi
 
-export PENPOT_MEDIA_PROCESSING_SERVICE_URI=http://localhost:6065
+# Media worker (media-processor): internal entrypoint + shared Redis.
+export PENPOT_MEDIA_PROCESSOR_BACKEND_URI=https://localhost:3449
+export PENPOT_MEDIA_PROCESSOR_REDIS_URI=redis://valkey/0
+export PENPOT_MEDIA_PROCESSOR_TENANT=default
 
 export PENPOT_FLAGS="\
        $PENPOT_FLAGS \

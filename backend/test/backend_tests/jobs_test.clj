@@ -7,6 +7,7 @@
 (ns backend-tests.jobs-test
   (:require
    [app.common.exceptions :as ex]
+   [app.common.json :as json]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -15,6 +16,8 @@
    [app.jobs :as jobs]
    [app.metrics :as-alias mtx]
    [app.msgbus :as mbus]
+   [app.redis :as rds]
+   [app.worker :as wrk]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]
@@ -98,7 +101,8 @@
   [defs]
   {::jobs/defs   defs
    ::db/pool     th/*pool*
-   ::mtx/metrics (get th/*system* :app.metrics/metrics)})
+   ::mtx/metrics (get th/*system* :app.metrics/metrics)
+   ::rds/pool    (get th/*system* :app.redis/pool)})
 
 (defn- make-params
   []
@@ -1343,6 +1347,23 @@
     (t/testing "only the first claim left a start event"
       (t/is (= ["start"] (get-kinds job-id))))))
 
+(t/deftest retry-delay-doubles-per-consumed-attempt
+  (t/is (= [1000 2000 4000] (mapv #(jobs/retry-delay %) [1 2 3])))
+  (t/is (= 1000 (jobs/retry-delay 0)) "the first attempt always waits the base")
+  (t/is (= [500 1000 2000] (mapv #(jobs/retry-delay % :base-ms 500) [1 2 3]))))
+
+(t/deftest retriable-error-requires-budget-and-a-healable-code
+  (let [job {:retry-num 1 :max-retries 3}]
+    (t/is (true? (jobs/retriable-error? job {:code :processing-error})))
+    (t/testing "no budget left"
+      (t/is (false? (jobs/retriable-error? (assoc job :retry-num 3)
+                                           {:code :processing-error}))))
+    (t/testing "codes no retry can heal"
+      (t/is (false? (jobs/retriable-error? job {:code :data-validation})))
+      (t/is (false? (jobs/retriable-error? job {:code :no-job-definition}))))
+    (t/testing "a missing job is never retriable"
+      (t/is (false? (jobs/retriable-error? nil {:code :processing-error}))))))
+
 (t/deftest retry-job-records-a-retry-event-per-reason
   (let [cfg    (make-cfg (get-job-defs))
         job-id (mk-running cfg)]
@@ -1396,6 +1417,137 @@
     (t/testing "a terminal job gets no second end event"
       (t/is (= 0 (jobs/cancel cfg job-id)))
       (t/is (= ["cancelled"] (get-outcomes job-id))))))
+
+(t/deftest cancel-by-label-cancels-only-the-active-jobs-of-the-label
+  (let [cfg   (make-cfg (get-job-defs))
+        label "media:object-1"
+        done  (jobs/submit cfg {::jobs/name   :echo
+                                ::jobs/params (make-params)
+                                ::jobs/label  label})
+        live  (jobs/submit cfg {::jobs/name   :echo
+                                ::jobs/params (make-params)
+                                ::jobs/label  label})
+        other (jobs/submit cfg {::jobs/name   :echo
+                                ::jobs/params (make-params)
+                                ::jobs/label  "media:object-2"})]
+
+    (jobs/claim cfg done (:scheduled-at (jobs/get-job cfg done)))
+    (t/is (= 1 (jobs/complete cfg :job-id done :result {:value 1})))
+
+    (t/is (= 1 (jobs/cancel-by-label cfg :echo label)))
+
+    (t/testing "the job that was already terminal is left untouched"
+      (t/is (= "completed" (:status (jobs/get-job cfg done))))
+      (t/is (= ["completed"] (get-outcomes done))))
+
+    (t/testing "the active job of the label is cancelled with its end event"
+      (t/is (= "cancelled" (:status (jobs/get-job cfg live))))
+      (t/is (= ["cancelled"] (get-outcomes live))))
+
+    (t/testing "another label is not touched"
+      (t/is (= "new" (:status (jobs/get-job cfg other)))))
+
+    (t/testing "a label with no active jobs answers zero"
+      (t/is (= 0 (jobs/cancel-by-label cfg :echo label)))
+      (t/is (= 0 (jobs/cancel-by-label cfg :echo "media:none"))))
+
+    (t/testing "a blank label is rejected"
+      (t/is (some? (raised #(jobs/cancel-by-label cfg :echo " ")))))))
+
+;; --- ON-TERMINAL HOOK
+
+(defn- with-hook
+  "The test defs with an `::jobs/on-terminal` hook on the `:echo` def."
+  [hook]
+  (update (get-job-defs) :echo assoc ::jobs/on-terminal hook))
+
+(defn- mark-hook!
+  "A hook that records its arguments and writes an event marker in the
+  transaction it receives, so the test can tell a committed write from a
+  rolled back one."
+  [calls]
+  (fn [tx-cfg job params outcome]
+    (swap! calls conj [(:id job) (uuid? (:id params)) (:object params) outcome])
+    (db/insert! tx-cfg :job_event
+                {:job-id (:id job)
+                 :kind "progress"
+                 :payload (db/json {:stage "hook"})})))
+
+(t/deftest on-terminal-runs-only-when-the-job-is-completed
+  (let [calls  (atom [])
+        cfg    (make-cfg (with-hook (mark-hook! calls)))
+        job-id (mk-running cfg)]
+
+    (t/is (= 1 (jobs/complete cfg :job-id job-id :result {:value 1})))
+
+    (t/testing "the hook receives the row, the typed params and the outcome"
+      (t/is (= [[job-id true :snapshot {:outcome :completed
+                                        :result {:value 1}}]]
+               @calls)))
+
+    (t/testing "the hook write commits with the status change"
+      (t/is (= ["start" "progress" "end"] (get-kinds job-id))))
+
+    (t/testing "a terminal job does not run the hook again"
+      (t/is (= 0 (jobs/complete cfg :job-id job-id :result {:value 2})))
+      (t/is (= 1 (count @calls)))
+      (t/is (= ["start" "progress" "end"] (get-kinds job-id))))))
+
+(t/deftest on-terminal-runs-on-fail-and-cancel
+  (let [calls  (atom [])
+        cfg    (make-cfg (with-hook
+                           (fn [_tx-cfg job _params outcome]
+                             (swap! calls conj [(:id job) outcome]))))
+        failed (mk-running cfg)
+        cancelled (jobs/submit cfg {::jobs/name   :echo
+                                    ::jobs/params (make-params)})]
+
+    (t/is (= 1 (jobs/fail cfg failed test-error)))
+    (t/is (= 1 (jobs/cancel cfg cancelled)))
+
+    (t/is (= [[failed {:outcome :failed :error test-error}]
+              [cancelled {:outcome :cancelled}]]
+             @calls))))
+
+(t/deftest on-terminal-rolls-the-status-change-back-when-it-throws
+  (let [cfg    (make-cfg (with-hook
+                           (fn [tx-cfg job _params _outcome]
+                             (db/insert! tx-cfg :job_event
+                                         {:job-id (:id job)
+                                          :kind "progress"
+                                          :payload (db/json {:stage "hook"})})
+                             (ex/raise :type :internal
+                                       :code :hook-failed
+                                       :hint "hook failed"))))
+        job-id (mk-running cfg)]
+
+    (t/is (some? (raised #(jobs/complete cfg :job-id job-id :result {:value 1}))))
+
+    (t/testing "the status, the event and the hook write are all rolled back"
+      (t/is (= "running" (:status (jobs/get-job cfg job-id))))
+      (t/is (= ["start"] (get-kinds job-id)))
+      (t/is (= [] (get-outcomes job-id))))))
+
+(t/deftest complete-fails-the-job-when-the-result-is-expired
+  (let [cfg    (make-cfg (with-hook
+                           (fn [_tx-cfg _job _params {:keys [outcome]}]
+                             (when (= :completed outcome)
+                               (ex/raise :type :media-result-expired
+                                         :code :media-result-expired
+                                         :hint "the result object is gone")))))
+        job-id (mk-running cfg)]
+
+    (t/is (= 0 (jobs/complete cfg :job-id job-id :result {:value 1})))
+
+    (t/testing "the job fails instead of staying running until the lease"
+      (t/is (= "failed" (:status (jobs/get-job cfg job-id))))
+      (t/is (= ["failed"] (get-outcomes job-id))))
+
+    (t/testing "the stored error is the expired one"
+      (t/is (= {:type :internal
+                :code :media-result-expired
+                :hint "the result object is gone"}
+               (jobs/decode-job-error (:error (jobs/get-job cfg job-id))))))))
 
 (t/deftest get-job-decodes-the-result-with-the-schema-of-the-def
   "A result with a declared schema comes back typed. Without it, the plain
@@ -1780,3 +1932,165 @@
     (t/testing "and the msgbus on that cfg was reachable from the callback"
       (t/is (= 1 (count @messages)))
       (t/is (= "progress" (:kind (:message (first @messages))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; IMMEDIATE DISPATCH AND SUBMIT-AND-WAIT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- redis-cmd
+  "Run `f` with a dedicated redis connection, closed afterwards."
+  [f]
+  (let [conn (rds/connect {::rds/client  (get th/*system* :app.redis/client)
+                           ::mtx/metrics (get th/*system* :app.metrics/metrics)})]
+    (try
+      (f conn)
+      (finally
+        (rds/close conn)))))
+
+(defn- clear-queue!
+  [queue]
+  (redis-cmd (fn [conn] (rds/del conn (wrk/queue-key (cf/get :tenant) queue)))))
+
+(defn- pop-queue
+  ([queue] (pop-queue queue 2))
+  ([queue seconds]
+   (redis-cmd
+    (fn [conn]
+      (let [[_ payload] (rds/blpop conn
+                                   [(wrk/queue-key (cf/get :tenant) queue)]
+                                   (ct/duration {:seconds seconds}))]
+        (when payload (json/decode payload)))))))
+
+(defn- reply-key
+  [job-id]
+  (str/ffmt "%:%:%" jobs/reply-key-prefix (cf/get :tenant) job-id))
+
+(defn- pop-reply
+  ([job-id] (pop-reply job-id 2))
+  ([job-id seconds]
+   (redis-cmd
+    (fn [conn]
+      (let [[_ payload] (rds/blpop conn [(reply-key job-id)]
+                                   (ct/duration {:seconds seconds}))]
+        (when payload (json/decode payload :key-fn keyword)))))))
+
+(defn- with-notifies
+  "The test defs with a job-def that notifies its terminal outcome."
+  [defs]
+  (update defs :echo assoc ::jobs/notifies? true))
+
+(t/deftest immediate-submit-pushes-the-job-and-skips-the-dispatcher
+  (clear-queue! :media-immediate-test)
+  (let [cfg     (make-cfg (get-job-defs))
+        queue   :media-immediate-test
+        job-id  (jobs/submit cfg {::jobs/name       :echo
+                                  ::jobs/params     (make-params)
+                                  ::jobs/queue      queue
+                                  ::jobs/immediate? true})
+        row     (jobs/get-job cfg job-id)
+        [id at] (pop-queue queue)]
+
+    (t/is (= "scheduled" (:status row)))
+    (t/is (= (str job-id) id))
+
+    (t/testing "the payload carries the scheduled instant of the row"
+      (t/is (= (inst-ms (ct/inst at))
+               (inst-ms (:scheduled-at row))))))
+
+  (let [cfg    (make-cfg (get-job-defs))
+        queue  :media-immediate-test
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params (make-params)
+                                 ::jobs/queue  queue})]
+    (t/is (= "new" (:status (jobs/get-job cfg job-id))))
+    (t/is (nil? (pop-queue queue 1))
+          "a plain submit waits for the dispatcher")))
+
+(t/deftest terminal-writers-notify-the-reply-of-a-notifying-job
+  (let [cfg (make-cfg (with-notifies (get-job-defs)))]
+    (t/testing "a completed job answers its result"
+      (let [job-id (mk-running cfg)]
+        (t/is (= 1 (jobs/complete cfg :job-id job-id :result {:value 1})))
+        (t/is (= {:ok {:value 1}} (pop-reply job-id)))))
+
+    (t/testing "a failed job answers its error"
+      (let [job-id (mk-running cfg)]
+        (t/is (= 1 (jobs/fail cfg job-id test-error)))
+        (t/is (= {:error {:type "internal" :code "boom" :hint "boom"}}
+                 (pop-reply job-id)))))
+
+    (t/testing "a cancelled job answers a cancelled error"
+      (let [job-id (jobs/submit cfg {::jobs/name   :echo
+                                     ::jobs/params (make-params)})]
+        (t/is (= 1 (jobs/cancel cfg job-id)))
+        (t/is (= {:error {:type "internal"
+                          :code "cancelled"
+                          :hint "the job was cancelled"}}
+                 (pop-reply job-id)))))))
+
+(t/deftest a-retry-does-not-notify-the-waiter
+  (let [cfg    (make-cfg (with-notifies (get-job-defs)))
+        job-id (mk-running cfg)]
+    (t/is (= 1 (jobs/retry-job cfg job-id 1 (ct/now) test-error :backoff)))
+    (t/is (nil? (pop-reply job-id 1)))))
+
+(t/deftest a-def-without-notifies-writes-no-reply
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (mk-running cfg)]
+    (t/is (= 1 (jobs/complete cfg :job-id job-id :result {:value 1})))
+    (t/is (nil? (pop-reply job-id 1)))))
+
+(t/deftest a-failed-reply-does-not-change-the-job-state
+  (let [cfg    (make-cfg (with-notifies (get-job-defs)))
+        job-id (mk-running cfg)]
+    (with-redefs [rds/rpush (fn [& _] (throw (ex-info "redis down" {})))]
+      (t/is (= 1 (jobs/complete cfg :job-id job-id :result {:value 1}))))
+    (t/is (= "completed" (:status (jobs/get-job cfg job-id))))
+    (t/is (= ["completed"] (get-outcomes job-id)))))
+
+(t/deftest submit-and-wait-returns-the-result
+  (let [cfg   (make-cfg (with-notifies (get-job-defs)))
+        label (str "wait-" (uuid/next))
+        queue :media-immediate-test
+
+        worker
+        (future
+          (loop [n 0]
+            (let [row (first (th/db-query :job {:label label}))]
+              (cond
+                (= "scheduled" (:status row))
+                (do
+                  (jobs/claim cfg (:id row) (:scheduled-at row))
+                  (jobs/complete cfg :job-id (:id row) :result {:value 42}))
+
+                (< n 100)
+                (do (Thread/sleep 50) (recur (inc n)))
+
+                :else
+                (throw (ex-info "the job never appeared" {:label label}))))))]
+
+    (let [result (jobs/submit-and-wait cfg {::jobs/name   :echo
+                                            ::jobs/params (make-params)
+                                            ::jobs/label  label
+                                            ::jobs/queue  queue})]
+      (t/is (= {:value 42} result)))
+    @worker))
+
+(t/deftest submit-and-wait-times-out-and-cancels-the-job
+  (let [cfg   (make-cfg (with-notifies (get-job-defs)))
+        label (str "wait-timeout-" (uuid/next))
+        cause (with-redefs [cf/get-media-wait-deadline
+                            (constantly (ct/duration {:millis 200}))]
+                (raised #(jobs/submit-and-wait cfg {::jobs/name   :echo
+                                                    ::jobs/params (make-params)
+                                                    ::jobs/label  label})))]
+    (t/is (= :timeout (:type (ex-data cause))))
+    (t/is (= :request-timeout (:code (ex-data cause))))
+    (t/is (= "cancelled" (:status (first (th/db-query :job {:label label})))))))
+
+(t/deftest submit-and-wait-requires-a-notifying-def
+  (let [cfg   (make-cfg (get-job-defs))
+        cause (raised #(jobs/submit-and-wait cfg {::jobs/name   :echo
+                                                  ::jobs/params (make-params)}))]
+    (t/is (= :assertion (:type (ex-data cause))))
+    (t/is (= :job-does-not-notify (:code (ex-data cause))))))

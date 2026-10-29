@@ -16,7 +16,12 @@ JVM `clojure.test` (kaocha runner) under `backend/test/backend_tests/`.
 - The test system is `main/system-config` + `main/worker-config` with the
   components that must not run in the background dropped: HTTP, the srepl,
   cron, the dispatcher and **every** `[<profile> :app.worker/runner]`
-  (`helpers/remove-job-runners`). A live runner of any queue races the tests
+  (`helpers/remove-job-runners`). The only runner kept is one on
+  `:media-local-fast`, so the synchronous `:media-info` jobs answer
+  `jobs/submit-and-wait` in any test that uploads an image; every other queue
+  stays without a runner and the tests drive it by hand (`run-pending-job!`
+  runs one pending job to completion, `run-pending-jobs` only invokes the
+  handlers). A live runner of any queue races the tests
   that drive the loop by hand (`wdisp/run-batch` + `@#'wrkr/run-worker-loop`):
   it takes the job the test just dispatched and completes it behind the test's
   back, so the test's own assertions read a state it did not produce. Do not

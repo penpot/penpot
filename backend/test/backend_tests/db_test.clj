@@ -64,9 +64,23 @@
       (t/is (>= (:minimum-idle stats) 0)))
 
     (t/testing "total connections equals active + idle"
-      (t/is (= (:total-connections stats)
-               (+ (:active-connections stats)
-                  (:idle-connections stats)))))
+      ;; Hikari answers total, active and idle with three separate reads, so
+      ;; a connection being opened or closed at that exact instant makes them
+      ;; disagree. Retry for a moment instead of asserting a torn sample.
+      (t/is (loop [attempt 0]
+              (let [stats (db/pool-stats th/*pool*)]
+                (cond
+                  (= (:total-connections stats)
+                     (+ (:active-connections stats)
+                        (:idle-connections stats)))
+                  true
+
+                  (< attempt 20)
+                  (do (Thread/sleep 25)
+                      (recur (inc attempt)))
+
+                  :else
+                  false)))))
 
     (t/testing "maximum pool size is reasonable"
       (t/is (pos? (:maximum-pool-size stats))))))

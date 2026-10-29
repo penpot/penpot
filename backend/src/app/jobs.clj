@@ -140,6 +140,12 @@
   boundary), so `get-job-def` coerces back at that boundary."
   :keyword)
 
+;; Durable (`submit-and-wait`) and ephemeral (`request`) replies share the
+;; key namespace; a job id and a request id are both uuids, so they cannot
+;; collide. The TTL is a safety net for a late reply nobody reads.
+(def reply-key-prefix "penpot.worker.reply")
+(def ^:private reply-expire-seconds 60)
+
 (def ^:private schema:job-def
   [:map {:title "job-def"}
    [::name schema:job-name]
@@ -161,6 +167,19 @@
    [::handler ::sm/fn]
    [::decoder ::sm/fn]
    [::validator ::sm/fn]
+   ;; Optional domain effect of a terminal transition, called by the
+   ;; writers (`complete`, `fail`, `cancel`) inside the transaction that
+   ;; changes the status. It receives the transaction cfg (with
+   ;; `::db/conn`), the decoded row, the params decoded with the def's own
+   ;; decoder, and an outcome map: `{:outcome :completed :result ...}`,
+   ;; `{:outcome :failed :error ...}` or `{:outcome :cancelled}`. A throw
+   ;; rolls the status change back, so nothing is applied halfway.
+   [::on-terminal {:optional true} ::sm/fn]
+   ;; Publish the terminal outcome on `penpot.worker.reply:<tenant>:<job-id>`
+   ;; so a synchronous caller (`submit-and-wait`) wakes up. Only the job-def
+   ;; decides: a def without the flag writes no reply key, and a retry or a
+   ;; skip never notifies.
+   [::notifies? {:optional true} ::sm/boolean]
    ;; A result crosses a plain JSON column on its way out of the job, so a
    ;; uuid comes back as the text it is on disk and a uuid used as a map
    ;; key comes back as a keyword. A def that declares the schema of its
@@ -277,15 +296,84 @@
               :code :invalid-result))
   result)
 
+(defn- with-redis-conn
+  "Run `f` with a redis connection: the one the runner already holds, then
+  the shared pool, and only when the cfg carries a bare client (in-process
+  callers, tests) a connection opened and closed for the call."
+  [cfg f]
+  (cond
+    (::rds/conn cfg)
+    (f (::rds/conn cfg))
+
+    (::rds/pool cfg)
+    (rds/run! cfg (fn [{:keys [::rds/conn]}] (f conn)))
+
+    :else
+    (with-open [conn ^AutoCloseable (rds/connect cfg)]
+      (f conn))))
+
+(defn- push-queue!
+  "Push the payload of a job to its queue. Must run after the commit that
+  made the row durable, so a lost push is a `scheduled` row for
+  `reschedule-lost-jobs`, never a job claimed before it exists."
+  [cfg job]
+  (let [key   (wrk/queue-key (:tenant job) (:queue job))
+        value (json/encode [(str (:id job))
+                            (ct/format-inst (:scheduled-at job))])]
+    (with-redis-conn cfg
+      (fn [conn] (rds/rpush conn key [value])))))
+
+(defn- push-reply!
+  "Publish a terminal response on a reply key and set its TTL. The TTL is a
+  safety net for a reply nobody read (a caller that already timed out)."
+  [cfg key response]
+  (let [value (json/encode response)]
+    (with-redis-conn cfg
+      (fn [conn]
+        (rds/rpush conn key [value])
+        (rds/expire conn key reply-expire-seconds)))))
+
+(defn- run-on-terminal
+  "Run the `::on-terminal` hook of the job's def, if it has one.
+
+  Called by the terminal writers inside the transaction that changed the
+  status, so a hook that throws rolls the change back (no event, no
+  metric, no half-applied effect). A job-def without a hook, or a row
+  whose definition is gone, is a no-op."
+  [tx-cfg job outcome]
+  (when-let [job-def (get (get-defs tx-cfg) (keyword (:name job)))]
+    (when-let [hook (::on-terminal job-def)]
+      (hook tx-cfg job (decode-params job-def (:params job)) outcome))))
+
+(defn- notify-terminal!
+  "Publish the terminal outcome of a notifying job on its reply key, after
+  the commit that made it terminal.
+
+  Only a job-def with `::notifies?` has a waiter; a job without it writes
+  no key. A failed push is a `reply-failed` warning and never changes the
+  job state: the waiter times out and the row keeps its real outcome."
+  [tx-cfg job response]
+  (when-let [job-def (get (get-defs tx-cfg) (keyword (:name job)))]
+    (when (::notifies? job-def)
+      (let [key (str/ffmt "%:%:%" reply-key-prefix (:tenant job) (:id job))]
+        (db/after-commit
+         #(try
+            (push-reply! tx-cfg key response)
+            (catch Throwable cause
+              (l/wrn :hint "reply-failed"
+                     :job-id (str (:id job))
+                     :tenant (:tenant job)
+                     :cause cause))))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SUBMIT API
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private sql:insert-new-job
-  "insert into job (id, name, tenant, params, queue, label, priority,
+  "insert into job (id, name, tenant, status, params, queue, label, priority,
                     max_retries, profile_id, resource_id, expires_at,
                     created_at, modified_at, scheduled_at)
-   values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+   values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
    returning id")
 
 ;; `tenant` is part of the match, not an extra: without it this DELETE
@@ -336,7 +424,11 @@
    ;; Retention of the job: when it is set, the jobs GC deletes the row
    ;; (and reclaims its resource) once the instant has passed. User-facing
    ;; jobs set it at creation; internal jobs leave it nil.
-   [::expires-at {:optional true} ::ct/inst]])
+   [::expires-at {:optional true} ::ct/inst]
+   ;; The row is born `scheduled` and pushed to its queue after the commit,
+   ;; so a synchronous caller does not wait for the dispatcher turn. A
+   ;; failed push leaves the row for `reschedule-lost-jobs`.
+   [::immediate? {:optional true} ::sm/boolean]])
 
 (def check-options
   (sm/check-fn schema:options))
@@ -377,7 +469,7 @@
   covers the skip-if-active check: a race between backends can slip
   two inserts past the count."
   [cfg {:keys [::params ::name ::delay ::queue ::priority ::max-retries
-               ::dedupe ::skip-if-active ::label
+               ::dedupe ::skip-if-active ::label ::immediate?
                ::profile-id ::resource-id ::expires-at]
         :or   {delay 0 queue :default priority 100 max-retries 3 label ""}
         :as   options}]
@@ -413,6 +505,7 @@
         tenant       (cf/get :tenant)
         job-name     (d/name name)
         queue        (d/name queue)
+        status       (if immediate? "scheduled" "new")
         ;; Dedupe is best-effort: we delete not-started jobs of this
         ;; tenant with the same name/queue/label, then insert. A race
         ;; between backends could create duplicates, but this is
@@ -444,7 +537,7 @@
                                 :dedupe (boolean dedupe)
                                 :delay (ct/format-duration delay)
                                 :replace (or deleted 0))
-                         (db/exec-one! conn [sql:insert-new-job id job-name tenant payload queue
+                         (db/exec-one! conn [sql:insert-new-job id job-name tenant status payload queue
                                              label priority max-retries
                                              profile-id resource-id expires-at
                                              now now scheduled-at])))]
@@ -467,6 +560,20 @@
                     (let [result (insert! conn)]
                       (db/after-commit
                        #(metrics/record-submitted cfg job-name queue))
+                      (when immediate?
+                        (db/after-commit
+                         #(try
+                            (push-queue! cfg {:id id
+                                              :tenant tenant
+                                              :queue queue
+                                              :scheduled-at scheduled-at})
+                            (catch Throwable cause
+                              (l/wrn :hint "dispatch-failed"
+                                     :job-id (str id)
+                                     :tenant tenant
+                                     :queue queue
+                                     :scheduled-at (ct/format-inst scheduled-at)
+                                     :cause cause)))))
                       result
                       id))))))
 
@@ -1056,6 +1163,30 @@
 
 ;; --- RETRY
 
+(def ^:private retriable-error-codes
+  "Errors that no retry can heal: invalid params and a job-def missing on
+  this backend are a contract or deployment problem, not a transient one."
+  #{:data-validation :no-job-definition})
+
+(defn retry-delay
+  "Milliseconds to wait before the next attempt: the first retry waits
+  `base-ms` and every further consumed attempt doubles the wait. Shared by
+  the internal runner and the external worker so both apply the same
+  backoff."
+  [next-retry-num & {:keys [base-ms] :or {base-ms 1000}}]
+  (->> (iterate #(* 2 %) base-ms)
+       (take (max 1 next-retry-num))
+       (last)))
+
+(defn retriable-error?
+  "True when a failure may consume another attempt: the job is alive, it
+  has retry budget left and the error code is not one that no retry can
+  heal. The caller still decides whether it wants a retry at all."
+  [job error]
+  (and (some? job)
+       (< (:retry-num job) (:max-retries job))
+       (not (contains? retriable-error-codes (:code error)))))
+
 (def ^:private sql:retry-job
   "UPDATE job
       SET status='retry', modified_at=?, scheduled_at=?, retry_num=?, error=?
@@ -1108,6 +1239,10 @@
     WHERE id = ?
     FOR UPDATE")
 
+;; `complete` answers a result whose object is already gone by failing the
+;; job, and `fail` is defined below with the other terminal writers.
+(declare fail)
+
 (defn- check-resource-id
   "Validate a `resource-id` on its own, before any database work."
   [resource-id]
@@ -1151,34 +1286,50 @@
   [cfg & {:keys [job-id result resource-id]}]
   (assert (mtx/instance cfg) "missing ::mtx/metrics on the jobs cfg")
   (check-resource-id resource-id)
-  (let [n (db/tx-run! (own-transaction cfg)
-                      (fn [{:keys [::db/conn] :as tx-cfg}]
-                        (let [job    (some-> (db/exec-one! conn [sql:lock-job job-id])
-                                             decode-row)
-                              encoded (when (some? result)
-                                        (encode-result (:name job) result))]
-                          (if-not (contains? #{"running" "retry"} (:status job))
-                            0
-                            (do
-                              (when (and (some? resource-id)
-                                         (:resource-id job))
-                                (ex/raise :type :validation
-                                          :code :resource-already-associated
-                                          :hint "the job already has a resource, it cannot be replaced"
-                                          :job-id job-id
-                                          :resource-id (:resource-id job)))
-                              (check-result (get (get-defs tx-cfg)
-                                                 (keyword (:name job)))
-                                            result)
-                              (if (db/exec-one! conn [sql:complete-job (ct/now) (ct/now)
-                                                      encoded resource-id job-id])
-                                (do
-                                  (insert-event tx-cfg
-                                                job-id "end" {:outcome "completed"})
-                                  (db/after-commit
-                                   #(record-terminal tx-cfg job :completed))
-                                  1)
-                                0))))))]
+  (let [n (try
+            (db/tx-run! (own-transaction cfg)
+                        (fn [{:keys [::db/conn] :as tx-cfg}]
+                          (let [job    (some-> (db/exec-one! conn [sql:lock-job job-id])
+                                               decode-row)
+                                encoded (when (some? result)
+                                          (encode-result (:name job) result))]
+                            (if-not (contains? #{"running" "retry"} (:status job))
+                              0
+                              (do
+                                (when (and (some? resource-id)
+                                           (:resource-id job))
+                                  (ex/raise :type :validation
+                                            :code :resource-already-associated
+                                            :hint "the job already has a resource, it cannot be replaced"
+                                            :job-id job-id
+                                            :resource-id (:resource-id job)))
+                                (check-result (get (get-defs tx-cfg)
+                                                   (keyword (:name job)))
+                                              result)
+                                (if (db/exec-one! conn [sql:complete-job (ct/now) (ct/now)
+                                                        encoded resource-id job-id])
+                                  (do
+                                    (run-on-terminal tx-cfg job {:outcome :completed :result result})
+                                    (insert-event tx-cfg
+                                                  job-id "end" {:outcome "completed"})
+                                    (notify-terminal! tx-cfg job {:ok result})
+                                    (db/after-commit
+                                     #(record-terminal tx-cfg job :completed))
+                                    1)
+                                  0))))))
+            (catch Throwable cause
+              ;; The result object may be gone between the handler and this
+              ;; writer. Retrying cannot help, so turn the hook's signal into
+              ;; a terminal failure instead of leaving the job running until
+              ;; the lease fires.
+              (if (= :media-result-expired (:type (ex-data cause)))
+                (do
+                  (fail cfg job-id {:type :internal
+                                    :code :media-result-expired
+                                    :hint (or (:hint (ex-data cause))
+                                              "the job result is no longer available")})
+                  0)
+                (throw cause))))]
     (cleanup-throttle job-id)
     n))
 
@@ -1210,8 +1361,10 @@
                             (fn [{:keys [::db/conn] :as tx-cfg}]
                               (if (db/exec-one! conn [sql:fail-job (ct/now) encoded job-id])
                                 (do
+                                  (run-on-terminal tx-cfg job {:outcome :failed :error error})
                                   (insert-event tx-cfg
                                                 job-id "end" {:outcome "failed"})
+                                  (notify-terminal! tx-cfg job {:error error})
                                   (db/after-commit
                                    #(record-terminal tx-cfg job :failed))
                                   1)
@@ -1228,6 +1381,14 @@
       AND status IN ('new','scheduled','retry','running')
     RETURNING id")
 
+(def ^:private sql:select-active-jobs-by-label
+  "SELECT id FROM job
+    WHERE name = ?
+      AND tenant = ?
+      AND label = ?
+      AND status IN ('new','scheduled','retry','running')
+    ORDER BY created_at ASC, id ASC")
+
 (defn cancel
   "Cancel a pending or running job (new/scheduled/retry/running) and
   record the `end` event.
@@ -1243,8 +1404,13 @@
                             (fn [{:keys [::db/conn] :as tx-cfg}]
                               (if (db/exec-one! conn [sql:cancel-job (ct/now) job-id])
                                 (do
+                                  (run-on-terminal tx-cfg job {:outcome :cancelled})
                                   (insert-event tx-cfg
                                                 job-id "end" {:outcome "cancelled"})
+                                  (notify-terminal! tx-cfg job
+                                                    {:error {:type :internal
+                                                             :code :cancelled
+                                                             :hint "the job was cancelled"}})
                                   (db/after-commit
                                    #(record-terminal tx-cfg job :cancelled))
                                   1)
@@ -1253,17 +1419,68 @@
       (cleanup-throttle job-id))
     n))
 
+(defn cancel-by-label
+  "Cancel every active job of this tenant with the given `name` and `label`,
+  and answer how many were actually cancelled.
+
+  Used to stop work whose resource is gone or replaced without knowing the
+  job id: deleting a font variant or uploading a new profile photo. Each
+  cancellation runs `cancel`, so every one owns its transaction and writes
+  its `end` event with the `cancelled` outcome.
+
+  Active means `new`, `scheduled`, `retry` or `running`. A terminal row is
+  never touched, and one that turns terminal between the read and the
+  cancel simply is not counted. The label must be explicit and non-blank:
+  a blank one would cancel every unlabeled job of that name."
+  [cfg name label]
+  (assert (mtx/instance cfg) "missing ::mtx/metrics on the jobs cfg")
+  (when (or (not (string? label)) (str/blank? label))
+    (ex/raise :type :validation
+              :code :cancel-by-label-requires-label
+              :hint "cancel-by-label requires an explicit non-blank label"
+              :name (d/name name)))
+  (let [tenant (cf/get :tenant)
+        ids    (->> (db/exec! cfg [sql:select-active-jobs-by-label (d/name name) tenant label])
+                    (map :id))]
+    (reduce (fn [total id] (+ total (cancel cfg id))) 0 ids)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; REQUEST (ephemeral request/response, no row, no dispatcher)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; NOTE (2026-09-17): this path intentionally has no producer yet; it
-;; is kept for an upcoming phase. Do not re-raise as dead code until
-;; that phase wires a consumer.
+;; NOTE: the media worker was the first producer of this path (2026-10-30)
+;; and no longer is (2026-11-04): media is durable jobs now. The path stays
+;; as substrate API without a producer. The reply's `:type` is part of the
+;; contract, so a validation or restriction error from the worker does not
+;; become an internal error in the backend.
 
 (def ^:private request-command-timeout-margin (ct/duration {:seconds 30}))
-(def ^:private reply-expire-seconds 60)
 
-(def reply-key-prefix "penpot.worker.reply")
+(def ^:private request-error-types
+  #{:validation :restriction :authorization :internal})
+
+(defn- request-error-type
+  "The type of a reply error, coerced to a keyword and narrowed to the
+  known set. A missing or unknown type stays `:internal`: a worker that
+  does not name it must not change the caller's behavior."
+  [error]
+  (let [value (get error :type)
+        type  (cond
+                (keyword? value) value
+                (string? value)  (keyword value)
+                :else            nil)]
+    (if (contains? request-error-types type)
+      type
+      :internal)))
+
+(defn- request-error-code
+  "The code of a reply error, coerced to a keyword: JSON carries it as a
+  string and the backend exception vocabulary is keywords."
+  [error]
+  (let [value (get error :code)]
+    (cond
+      (keyword? value) value
+      (string? value)  (keyword value)
+      :else            value)))
 
 (defn get-request-context
   [cfg]
@@ -1378,8 +1595,8 @@
                 (if-let [error (:error response)]
                   (do
                     (vreset! outcome :error)
-                    (ex/raise :type :internal
-                              :code (get error :code)
+                    (ex/raise :type (request-error-type error)
+                              :code (request-error-code error)
                               :hint (or (get error :hint) "request failed")
                               :tenant tenant
                               :queue queue
@@ -1402,6 +1619,87 @@
                    :elapsed (inst-ms (tpoint)))
             (rds/del conn reply-key)
             (rds/reset-timeout conn)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SUBMIT-AND-WAIT (durable job, synchronous caller)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- wait-reply
+  "BLPOP on `key` with `timeout`, answering the decoded reply or nil. The
+  connection timeout is raised for the call, like `request` does, and the
+  key is deleted on every path."
+  [cfg key timeout]
+  (rds/run! cfg
+            (fn [{:keys [::rds/conn]}]
+              (rds/set-timeout conn (ct/plus timeout request-command-timeout-margin))
+              (try
+                (let [[_ reply] (rds/blpop conn [key] timeout)]
+                  (when reply
+                    (json/decode reply :key-fn keyword)))
+                (finally
+                  (rds/del conn key)
+                  (rds/reset-timeout conn))))))
+
+(defn submit-and-wait
+  "Submit a job with immediate dispatch and block until it reaches a
+  terminal state, answering its result.
+
+  The job-def must declare `::notifies?`: the terminal writers publish
+  `{ok result}` or `{error ...}` on
+  `penpot.worker.reply:<tenant>:<job-id>` after their commit. The job is
+  committed before the wait (the submission owns its transaction), so the
+  worker can claim it while the caller blocks. The wait uses
+  `:media-wait-deadline` (60 s by default, under the 300 s gateway
+  timeout).
+
+  On timeout the job is cancelled and `:request-timeout` is raised. An
+  error reply is raised with its type, code and hint. The reply key is
+  deleted on every path, so it cannot be read twice."
+  [cfg options]
+  (assert (mtx/instance cfg) "missing ::mtx/metrics on the jobs cfg")
+  (let [name    (::name options)
+        job-def (get-job-def (get-defs cfg) name)]
+    (when-not (::notifies? job-def)
+      (ex/raise :type :assertion
+                :code :job-does-not-notify
+                :hint "submit-and-wait requires a job-def with ::notifies?"
+                :name (d/name name)))
+
+    (let [job-id   (submit (own-transaction cfg) (assoc options ::immediate? true))
+          tenant   (cf/get :tenant)
+          timeout  (cf/get-media-wait-deadline)
+          reply    (when (uuid? job-id)
+                     (wait-reply cfg
+                                 (str/ffmt "%:%:%" reply-key-prefix tenant job-id)
+                                 timeout))]
+
+      (when-not (uuid? job-id)
+        (ex/raise :type :internal
+                  :code :job-not-submitted
+                  :hint "submit-and-wait requires a job that is actually submitted"
+                  :name (d/name name)))
+
+      (cond
+        (nil? reply)
+        (do
+          (cancel cfg job-id)
+          (ex/raise :type :timeout
+                    :code :request-timeout
+                    :hint "timeout waiting for the job result"
+                    :tenant tenant
+                    :job-id (str job-id)
+                    :timeout timeout))
+
+        (contains? reply :error)
+        (let [error (:error reply)]
+          (ex/raise :type (request-error-type error)
+                    :code (request-error-code error)
+                    :hint (or (get error :hint) "job failed")
+                    :job-id (str job-id)
+                    :response reply))
+
+        :else
+        (:ok reply)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IN-PROCESS INVOCATION

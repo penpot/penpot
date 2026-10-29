@@ -91,13 +91,14 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
 | `file-thumbnail` | File grid thumbnails in `file_thumbnail.media_id`. | Yes | Authentication required | Reference scan. |
 | `profile` | User and team profile photos. References: `profile.photo_id` and `team.photo_id`. | Yes | Authentication required | Reference scan. |
 | `organization` | Organization logos uploaded by the Nitrate management API. | Yes | Public | No reference scan. A touched object is deleted. |
-| `tempfile` | Export files and temporary font downloads. | No | Authentication required | No reference scan. A touched object uses a two-hour deletion delay. |
+| `tempfile` | Export files, temporary font downloads and media inputs/results. | No | Authentication required, owner-scoped; the `media-processor` shared key reads inputs and results | No reference scan. A touched object uses a two-hour deletion delay. |
 | `upload-session` | Chunked-upload chunks. References: `upload_session_chunk.object_id` and `upload_session_chunk.session_id` (both NO ACTION DEFERRABLE: restrict semantics, procedural deletion). | No | Authentication required | Reference scan on `upload_session_chunk.object_id`; a referenced chunk freezes, an orphan is deleted after the delay. Deferred rows keep their mappings until give-up. |
 | `file-data` | Encoded file data when `file-data-backend` is `storage`. Reference metadata has `storage-ref-id`, `file-id`, and the `file_data` row ID. | Yes | Authentication required | Reference scan. |
 | `file-data-fragment` | Compatibility value for file-data fragments. The current backend has no dedicated producer for this bucket. | No current write semantics | Public | No touched-object collector case. |
 | `file-change` | Compatibility value for file changes. Current snapshots store data in `file_data`, not this bucket. | No current write semantics | Authentication required | No touched-object collector case. |
 | `job-resource` | Storage objects owned by job rows (`job.resource_id`), written by `app.jobs.storage`. | No | Authentication required, owner-scoped | jobs-GC touch → reference scan. |
 
+- Media jobs (`app.media.jobs` own this data plane): the input is materialized to `tempfile` (ownerless, `touched-at` a 10-minute window, no dedup) and the handler downloads it to a local file. The result is uploaded to `tempfile` too (the worker through `upload-tempfile`, the local handler through `upload-result`) and the job's terminal hook moves it to its final bucket with `store-result`, which deletes the temporary. The hook releases the input on every outcome; a result object that is gone raises `:media-result-expired` and the job fails terminal instead of staying `running`. A hook that finds no domain row (or a column already filled) deletes the artifact it just moved, so nothing leaks.
 - The valid bucket set is `app.storage.schema/metadata-buckets` (derived from `bucket-requirements`, where a new bucket and its required metadata keys are one entry); `app.storage/valid-buckets` aliases it.
 - `file-media-object` is the default bucket for old rows without bucket metadata.
 - Do not assign a new bucket without adding its access and cleanup behavior.
@@ -110,7 +111,9 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
 - `app.http.assets` decides direct object authentication from the bucket.
 - Public buckets are `file-media-object`, `file-object-thumbnail`, `team-font-variant`, `file-data-fragment`, and `organization`.
 - Other valid buckets require a session or access-token profile ID.
-- `tempfile` and `job-resource` are owner-scoped: the request must come from the profile stored in the object metadata, and a mismatch answers 404 (counted as `unauthorized`). A missing owner is tolerated only in `tempfile`, where legacy objects predate the metadata; `job-resource` always carries one, so an object without it is never served.
+- `tempfile` and `job-resource` are owner-scoped: the request must come from the profile stored in the object metadata, and a mismatch answers 404 (counted as `unauthorized`). An object without an owner fails closed in both buckets.
+- The legacy `export-binfile` RPC stamps the caller as the owner of its ZIP, so the session that asked for the export can download it. An ownerless `tempfile` object fails closed for a session; that is the legacy case the assets test covers.
+- `tempfile` is the only bucket a shared key unlocks: `app.http.assets/trusted-service?` serves the object when `x-shared-key` (`media-processor <key>`) parses as a valid `media-processor` key via `mw/valid-shared-key?`, the same parser the management middleware uses, and skips the session and owner checks for it. Another key id, another bucket and a wrong secret keep the normal rules. Media inputs are written without an owner; `upload-tempfile` called with a shared key stores results with owner `uuid/zero`.
 - File-media routes also require file read permission.
 - Non-public direct responses set `content-disposition: attachment`.
 - FS responses use `x-accel-redirect` for the configured asset path.
