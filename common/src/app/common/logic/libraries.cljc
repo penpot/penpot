@@ -27,6 +27,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.library :as ctl]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.path.segment :as segment]
@@ -833,7 +834,7 @@
                                                 root-main
                                                 reset?
                                                 initial-root?
-                                                (gpt/point 0 0))
+                                                nil)
 
           ;; If the component is not found, because the master component has been
           ;; deleted or the library unlinked, do nothing.
@@ -874,20 +875,43 @@
   (gpt/subtract (grc/rect->point (:selrect (reposition-shape origin-shape origin-root dest-root)))
                 (grc/rect->point (:selrect dest-shape))))
 
-(defn- move-with-parent
-  "Moves the shapes by `delta` without marking them touched."
-  [changes ids delta container]
+(defn- follow-parent-modifiers
+  "Modifiers that make `child` follow the change of its parent from
+  `parent-before` to `parent-after`, through the child constraints."
+  [child parent-before parent-after]
+  (let [sr-before (:selrect parent-before)
+        sr-after  (:selrect parent-after)
+        modifiers (-> (ctm/empty)
+                      (ctm/resize (gpt/point (/ (:width sr-after) (max 0.01 (:width sr-before)))
+                                             (/ (:height sr-after) (max 0.01 (:height sr-before))))
+                                  (first (:points parent-before))
+                                  (:transform parent-before)
+                                  (:transform-inverse parent-before))
+                      (ctm/move (gpt/subtract (first (:points parent-after))
+                                              (first (:points parent-before)))))]
+    ;; A move doesn't need the constraints
+    (if (or (ctm/empty? modifiers) (ctm/only-move? modifiers))
+      modifiers
+      (gsh/calc-child-modifiers parent-before child modifiers false
+                                (:points child)
+                                (:points parent-before)
+                                (delay (:points parent-after))))))
+
+(defn- update-geometry-with-parent
+  "Applies `update-fn` to the shapes without marking them touched."
+  [changes ids update-fn container]
   (pcb/concat-changes
    changes
    (-> (pcb/empty-changes)
        (pcb/with-container container)
        (pcb/with-objects (:objects container))
-       (pcb/update-shapes ids #(gsh/move % delta) {:ignore-touched true}))))
+       (pcb/update-shapes ids update-fn {:ignore-touched true}))))
 
 (defn- generate-sync-shape-direct-recursive
-  "Syncs `shape-inst` and its children from `shape-main`. `parent-delta` is
-  the offset the sync applies to the parent of `shape-inst`."
-  [changes container shape-inst component library file libraries shape-main root-inst root-main reset? initial-root? parent-delta]
+  "Syncs `shape-inst` and its children from `shape-main`. `parent-change` is
+  the geometry of the parent of `shape-inst` before and after the sync, or
+  nil."
+  [changes container shape-inst component library file libraries shape-main root-inst root-main reset? initial-root? parent-change]
   (shape-log :debug (:id shape-inst) container
              :msg "Sync shape direct recursive"
              :shape-inst (str (:name shape-inst) " " (pretty-uuid (:id shape-inst)))
@@ -901,10 +925,17 @@
           set-remote-synced?   (and (not initial-root?) reset?)
           geometry-kept?       (and omit-touched?
                                     (ctk/touched-group? shape-inst :geometry-group))
-          sync-delta           (geometry-sync-delta shape-inst shape-main root-inst root-main)
-          delta                (if geometry-kept? parent-delta sync-delta)
+          main-geometry        (reposition-shape shape-main root-main root-inst)
+          follow-modifiers     (when (and geometry-kept? (some? parent-change))
+                                 (let [[parent-before parent-after] parent-change]
+                                   (follow-parent-modifiers shape-inst parent-before parent-after)))
+          shape-after          (cond
+                                 (not geometry-kept?)   main-geometry
+                                 (some? follow-modifiers) (gsh/transform-shape shape-inst follow-modifiers)
+                                 :else                  shape-inst)
           ;; Offset between where the sync leaves shape-inst and where the main puts it
-          main-gap             (gpt/subtract delta sync-delta)
+          main-gap             (gpt/subtract (grc/rect->point (:selrect shape-after))
+                                             (grc/rect->point (:selrect main-geometry)))
           changes
           (cond-> changes
             :always
@@ -915,8 +946,10 @@
                           container
                           omit-touched?)
 
-            (and geometry-kept? (not (gpt/almost-zero? parent-delta)))
-            (move-with-parent [(:id shape-inst)] parent-delta container)
+            (and (some? follow-modifiers) (not (ctm/empty? follow-modifiers)))
+            (update-geometry-with-parent [(:id shape-inst)]
+                                         #(gsh/transform-shape % follow-modifiers)
+                                         container)
 
             (ctsl/flex-layout? shape-main)
             (update-flex-child-copy-attrs shape-main
@@ -992,7 +1025,7 @@
                                                        root-main
                                                        reset?
                                                        initial-root?
-                                                       delta))
+                                                       [shape-inst shape-after]))
 
           swapped (fn [changes child-inst child-main]
                     (shape-log :trace (:id child-inst) container
@@ -1001,16 +1034,23 @@
                                :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
                     ;; A swapped child follows its parent if the user moved it, or
                     ;; goes to the place of the slot's occupant in the main
-                    (let [move (if (ctk/touched-group? child-inst :geometry-group)
-                                 delta
-                                 (gpt/add (geometry-sync-delta child-inst child-main root-inst root-main)
-                                          main-gap))]
-                      (cond-> changes
-                        (not (gpt/almost-zero? move))
-                        (move-with-parent (cfh/get-children-ids-with-self (:objects container)
-                                                                          (:id child-inst))
-                                          move
-                                          container))))
+                    (let [ids       (cfh/get-children-ids-with-self (:objects container) (:id child-inst))
+                          modifiers (follow-parent-modifiers child-inst shape-inst shape-after)]
+                      (if (ctk/touched-group? child-inst :geometry-group)
+                        (cond-> changes
+                          (not (ctm/empty? modifiers))
+                          (update-geometry-with-parent ids #(gsh/transform-shape % modifiers) container))
+                        ;; Undo the parent change through the constraints, then move to that place
+                        (let [child-after (gsh/transform-shape child-inst modifiers)
+                              delta       (gpt/add (geometry-sync-delta child-after child-main root-inst root-main)
+                                                   main-gap)]
+                          (cond-> changes
+                            (or (not (ctm/empty? modifiers)) (not (gpt/almost-zero? delta)))
+                            (update-geometry-with-parent ids
+                                                         #(-> %
+                                                              (gsh/transform-shape modifiers)
+                                                              (gsh/move delta))
+                                                         container))))))
 
           moved (fn [changes child-inst child-main]
                   (shape-log :trace (:id child-inst) container

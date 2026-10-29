@@ -18,6 +18,7 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
+   [app.common.types.modifiers :as ctm]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
@@ -361,3 +362,69 @@
     ;; ==== Check
     (t/is (gpt/close? (offset-in-slot library' :slot :nested-head)
                       (offset-in-slot file' :copy-slot :copy-nested-head)))))
+
+(defn- setup-library-with-root-icon
+  "Library: icon A, and a 300px wide flex card whose `:close` child, placed
+  directly in the root, is an absolute instance of icon A with the given
+  horizontal constraint."
+  [constraints-h]
+  (-> (thf/sample-file :library)
+      (tho/add-simple-component :icon-a :icon-a-root :icon-a-child
+                                :root-params {:width 24 :height 24})
+      (tho/add-simple-component :icon-b :icon-b-root :icon-b-child
+                                :root-params {:width 24 :height 24})
+      (tho/add-frame :card-root {:name "Card"
+                                 :layout :flex
+                                 :layout-flex-dir :row
+                                 :width 300
+                                 :height 48})
+      (thc/instantiate-component :icon-a :close {:parent-label :card-root})
+      (tho/change-shape :close #(assoc % :layout-item-absolute true :constraints-h constraints-h))
+      (thc/make-component :card :card-root)))
+
+(defn- instantiate-filled-card
+  "File with a copy of the card, widened by 800px and with its close icon
+  moved by `icon-shift`, the way the layout does when the copy fills a wider
+  parent."
+  [library icon-shift]
+  (-> (thf/sample-file :file)
+      (thc/instantiate-component :card
+                                 :copy-card
+                                 :library library
+                                 :children-labels [:copy-close])
+      (tho/change-shape :copy-card
+                        #(gsh/transform-shape % (ctm/change-size % (+ (:width %) 800) nil))
+                        :ignore-touched true)
+      (tho/move-shape-tree :copy-close (gpt/point icon-shift 0) :ignore-touched true)))
+
+(t/deftest test-sync-moved-root-child-follows-root-through-right-constraint
+  (let [;; ==== Setup
+        library (setup-library-with-root-icon :right)
+        file    (-> (instantiate-filled-card library 800)
+                    (tho/move-shape-tree :copy-close (gpt/point 5 0)))
+
+        ;; ==== Action
+        file'   (sync-after-unrelated-change file library :card-root)]
+
+    ;; ==== Check
+    (t/is (gpt/close? (gpt/add (offset-in-slot library :card-root :close) (gpt/point 5 0))
+                      (offset-in-slot file' :copy-card :copy-close)))))
+
+(t/deftest test-sync-scales-swapped-root-child-back-with-root
+  (let [;; ==== Setup
+        library (setup-library-with-root-icon :scale)
+        file    (-> (instantiate-filled-card library 0)
+                    (swap-to-library-component library :copy-close :icon-b)
+                    ;; The production swap keeps the constraints; the test swap does not
+                    (tho/change-shape :copy-close #(assoc % :constraints-h :scale)))
+
+        ;; ==== Action
+        file'   (sync-after-unrelated-change file library :card-root)
+
+        ;; ==== Get
+        scale   (/ (:width (ths/get-shape file' :copy-card))
+                   (:width (ths/get-shape file :copy-card)))]
+
+    ;; ==== Check
+    (t/is (mth/close? (* scale (:width (ths/get-shape file :copy-close)))
+                      (:width (ths/get-shape file' :copy-close))))))
