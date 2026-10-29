@@ -114,20 +114,20 @@ jobs:
           persist-credentials: false
 
       - name: Login to Docker Registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ${{ secrets.DOCKER_REGISTRY }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Login to DockerHub Registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           username: ${{ secrets.PUB_DOCKER_USERNAME }}
           password: ${{ secrets.PUB_DOCKER_PASSWORD }}
 
       - name: Login to Docker Hardened Images registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: dhi.io
           username: ${{ secrets.PUB_DOCKER_USERNAME }}
@@ -191,13 +191,13 @@ jobs:
           persist-credentials: false
 
       - name: Login to DockerHub Registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           username: ${{ secrets.PUB_DOCKER_USERNAME }}
           password: ${{ secrets.PUB_DOCKER_PASSWORD }}
 
       - name: Login to Docker Hardened Images registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: dhi.io
           username: ${{ secrets.PUB_DOCKER_USERNAME }}
@@ -242,7 +242,7 @@ jobs:
           persist-credentials: false
 
       - name: Login to Docker Hardened Images registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: dhi.io
           username: ${{ secrets.PUB_DOCKER_USERNAME }}
