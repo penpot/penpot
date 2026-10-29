@@ -36,6 +36,7 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.util.blob :as blob]
+   [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [clojure.set :as set]))
 
