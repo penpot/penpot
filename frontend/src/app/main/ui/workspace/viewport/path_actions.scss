@@ -11,6 +11,7 @@
   cursor: initial;
   pointer-events: initial;
   position: absolute;
+
   // top and height stay physical: the transition below names them.
   top: var(--sp-xl);
   inset-inline-start: 50%;
