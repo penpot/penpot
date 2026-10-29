@@ -47,22 +47,33 @@
    [app.util.dom :as dom]
    [app.util.forms :as uforms]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [app.util.timers :as tm]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
+(defn- nav-in-app
+  "Click handler for a link with href: a plain click navigates inside the
+  app; Ctrl/Cmd-click leaves the browser to open the href in a new tab."
+  [event nav-event]
+  (when-not (kbd/mod? event)
+    (dom/prevent-default event)
+    (st/emit! nav-event)))
+
 (mf/defc header*
   {::mf/wrap [mf/memo]}
   [{:keys [section team profile]}]
-  (let [on-nav-members       (mf/use-fn #(st/emit! (dcm/go-to-dashboard-members)))
-        on-nav-settings      (mf/use-fn #(st/emit! (dcm/go-to-dashboard-settings)))
-        on-nav-invitations   (mf/use-fn #(st/emit! (dcm/go-to-dashboard-invitations)))
-        on-nav-webhooks      (mf/use-fn #(st/emit! (dcm/go-to-dashboard-webhooks)))
+  (let [on-nav-members       (mf/use-fn #(nav-in-app % (dcm/go-to-dashboard-members)))
+        on-nav-settings      (mf/use-fn #(nav-in-app % (dcm/go-to-dashboard-settings)))
+        on-nav-invitations   (mf/use-fn #(nav-in-app % (dcm/go-to-dashboard-invitations)))
+        on-nav-webhooks      (mf/use-fn #(nav-in-app % (dcm/go-to-dashboard-webhooks)))
 
         route                (mf/deref refs/route)
+        router               (mf/deref refs/router)
         invite-email         (-> route :query-params :invite-email)
         team-id              (:id team)
+        section-href         #(rt/resolve-uri router % {:team-id team-id})
 
         members-section?     (= section :dashboard-team-members)
         settings-section?    (= section :dashboard-team-settings)
@@ -108,19 +119,27 @@
        [:li
         [:a {:class (stl/css-case :dashboard-header-link true
                                   :active members-section?)
+             :href (section-href :dashboard-members)
+             :aria-current (when members-section? "page")
              :on-click on-nav-members} (tr "labels.members")]]
        [:li
         [:a {:class (stl/css-case :dashboard-header-link true
                                   :active invitations-section?)
+             :href (section-href :dashboard-invitations)
+             :aria-current (when invitations-section? "page")
              :on-click on-nav-invitations} (tr "labels.invitations")]]
        (when (contains? cfg/flags :webhooks)
          [:li
           [:a {:class (stl/css-case :dashboard-header-link true
                                     :active webhooks-section?)
+               :href (section-href :dashboard-webhooks)
+               :aria-current (when webhooks-section? "page")
                :on-click on-nav-webhooks} (tr "labels.webhooks")]])
        [:li
         [:a {:class (stl/css-case :dashboard-header-link true
                                   :active settings-section?)
+             :href (section-href :dashboard-settings)
+             :aria-current (when settings-section? "page")
              :on-click on-nav-settings} (tr "labels.settings")]]]]
      [:div {:class (stl/css :dashboard-buttons)}
       (when (and (or invitations-section? members-section?) (not-empty invitations))
