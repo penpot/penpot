@@ -6,7 +6,6 @@
    [app.common.files.variant :as cfv]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
-   [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
@@ -95,26 +94,21 @@
         pos             (d/index-of (:shapes current-parent) (:id related-shape-in-new))
 
         orig-child      (get page-objects (:id orig-swapped-child))
-        modif-tree      (cll/follow-parent-modif-tree page-objects
-                                                      orig-child
-                                                      (get page-objects (:parent-id orig-child))
-                                                      current-parent)
-        follow          #(gsh/transform-shape % (get-in modif-tree [(:id %) :modifiers]))
-        delta           (if (ctk/touched-group? orig-child :geometry-group)
-                          (gpt/point 0 0)
-                          (gpt/subtract (grc/rect->point (:selrect related-shape-in-new))
-                                        (grc/rect->point (:selrect (follow orig-child)))))]
+        ;; If the user didn't move it, it goes to the place of related-shape-in-new
+        delta-fn        (when-not (ctk/touched-group? orig-child :geometry-group)
+                          #(gpt/subtract (grc/rect->point (:selrect related-shape-in-new))
+                                         (grc/rect->point (:selrect %))))]
 
     (-> (pcb/concat-changes before-changes changes)
 
         ;; Move the previous shape to the new parent
         (pcb/change-parent (:parent-id related-shape-in-new) [orig-swapped-child] pos {:allow-altering-copies true})
 
-        (cond->
-         (or (seq modif-tree) (not (gpt/almost-zero? delta)))
-          (pcb/update-shapes (cfh/get-children-ids-with-self page-objects (:id orig-swapped-child))
-                             #(gsh/move (follow %) delta)
-                             {:ignore-touched true}))
+        (cll/generate-follow-parent (ctn/make-container page :page)
+                                    orig-child
+                                    (get page-objects (:parent-id orig-child))
+                                    current-parent
+                                    delta-fn)
 
         ;; We need to update the swap slot only when it pointed
         ;; to the swap-ref-id. Oterwise this is a swapped item

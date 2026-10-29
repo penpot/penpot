@@ -3263,7 +3263,7 @@
   [constraints-h]
   (-> (setup-card-copy constraints-h)
       (thc/component-swap :copy-icon :icon-b :copy-icon-b)
-      ;; The production swap keeps the constraints; the test swap does not
+      ;; The swap drops the constraints; set them again so this path runs
       (tho/change-shape :copy-icon-b #(assoc % :constraints-h constraints-h))))
 
 (defn- distance-to-right-edge
