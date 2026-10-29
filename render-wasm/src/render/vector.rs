@@ -33,6 +33,8 @@ pub(super) struct VectorRenderer<'a> {
     compose_fills: bool,
     /// Set when an enclosing layer already applies the shape's layer blur.
     blur_in_layer: bool,
+    /// Set inside a container's drop-shadow pass: text glyphs paint opaque.
+    silhouette: bool,
 }
 
 impl<'a> VectorRenderer<'a> {
@@ -48,6 +50,7 @@ impl<'a> VectorRenderer<'a> {
             scale,
             compose_fills,
             blur_in_layer: false,
+            silhouette: false,
         }
     }
 
@@ -194,7 +197,8 @@ impl ShapeRenderer for VectorRenderer<'_> {
         };
 
         let text_content = text_content.new_bounds(shape.selrect());
-        let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
+        let mut paragraph_builders =
+            text_content.paragraph_builder_group_from_text(Some(self.silhouette));
         let blur_filter = self.layer_blur_filter(shape);
 
         // Text drop shadows: one filter layer per shadow over fill + stroke
@@ -584,7 +588,8 @@ fn render_tree_inner(
             } else {
                 element.fills.as_slice()
             };
-            render_leaf(shared, canvas, element, fills, scale)?;
+            let silhouette = opts.silhouette.is_some();
+            render_leaf(shared, canvas, element, fills, scale, silhouette)?;
         }
     }
 
@@ -1107,6 +1112,7 @@ fn render_leaf(
     element: &Shape,
     fills: &[Fill],
     scale: f32,
+    silhouette: bool,
 ) -> Result<()> {
     let needs_layer = element.needs_layer();
 
@@ -1136,6 +1142,7 @@ fn render_leaf(
         false
     };
     renderer.blur_in_layer = blur_layer;
+    renderer.silhouette = silhouette;
 
     renderer.draw_drop_shadows(element)?;
     render_leaf_content(&mut renderer, element, fills)?;
