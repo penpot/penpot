@@ -389,7 +389,7 @@
         (mf/use-fn
          (mf/deps component-ids)
          (fn [pos value]
-           (let [value (ctv/normalize-property-text (d/nilv value ""))]
+           (when-let [value (ctv/prepare-property-value value)]
              (doseq [id component-ids]
                (st/emit!
                 (ev/event {::ev/name "variant-edit-property-value" ::ev/origin "workspace:combo-design-tab"})
@@ -400,11 +400,11 @@
         (mf/use-fn
          (mf/deps variant-id)
          (fn [event]
-           (let [value (ctv/normalize-property-text (dom/get-target-val event))
+           (let [value (ctv/prepare-property-name (dom/get-target-val event))
                  pos   (-> (dom/get-current-target event)
                            (dom/get-data "position")
                            int)]
-             (when (ctv/valid-property-name? value)
+             (when value
                (st/emit!
                 (dwv/update-property-name variant-id pos value {:trigger "workspace:design-tab-variant"}))))))
 
@@ -1230,11 +1230,11 @@
         (mf/use-fn
          (mf/deps variant-id)
          (fn [event]
-           (let [value (ctv/normalize-property-text (dom/get-target-val event))
+           (let [value (ctv/prepare-property-name (dom/get-target-val event))
                  pos   (-> (dom/get-current-target event)
                            (dom/get-data "position")
                            int)]
-             (when (ctv/valid-property-name? value)
+             (when value
                (st/emit!
                 (dwv/update-property-name variant-id pos value {:trigger "workspace:design-tab-component"}))))))
 

@@ -16,22 +16,24 @@
 
 (defn generate-update-property-name
   [changes variant-id pos new-name]
-  (let [data               (pcb/get-library-data changes)
-        objects            (pcb/get-objects changes)
-        related-components (cfv/find-variant-components data objects variant-id)
+  (if-let [new-name (ctv/prepare-property-name new-name)]
+    (let [data               (pcb/get-library-data changes)
+          objects            (pcb/get-objects changes)
+          related-components (cfv/find-variant-components data objects variant-id)
 
-        props              (-> related-components last :variant-properties)
-        prop-names         (mapv :name props)
-        prop-names         (concat (subvec prop-names 0 pos) (subvec prop-names (inc pos)))
-        new-name           (ctv/update-number-in-repeated-item prop-names new-name)]
-    (reduce (fn [changes component]
-              (pcb/update-component
-               changes (:id component)
-               (fn [component]
-                 (d/update-in-when component [:variant-properties pos] #(assoc % :name new-name)))
-               {:apply-changes-local-library? true}))
-            changes
-            related-components)))
+          props              (-> related-components last :variant-properties)
+          prop-names         (mapv :name props)
+          prop-names         (concat (subvec prop-names 0 pos) (subvec prop-names (inc pos)))
+          new-name           (ctv/update-number-in-repeated-item prop-names new-name)]
+      (reduce (fn [changes component]
+                (pcb/update-component
+                 changes (:id component)
+                 (fn [component]
+                   (d/update-in-when component [:variant-properties pos] #(assoc % :name new-name)))
+                 {:apply-changes-local-library? true}))
+              changes
+              related-components))
+    changes))
 
 
 (defn generate-remove-property
@@ -57,16 +59,18 @@
 
 (defn generate-update-property-value
   [changes component-id pos value]
-  (let [data      (pcb/get-library-data changes)
-        component (ctcl/get-component data component-id true)
-        main-id   (:main-instance-id component)
-        name      (-> (:variant-properties component)
-                      (update pos assoc :value value)
-                      ctv/properties-to-name)]
-    (-> changes
-        (pcb/update-component component-id #(assoc-in % [:variant-properties pos :value] value)
-                              {:apply-changes-local-library? true})
-        (pcb/update-shapes [main-id] #(assoc % :variant-name name)))))
+  (if-let [value (ctv/prepare-property-value value)]
+    (let [data      (pcb/get-library-data changes)
+          component (ctcl/get-component data component-id true)
+          main-id   (:main-instance-id component)
+          name      (-> (:variant-properties component)
+                        (update pos assoc :value value)
+                        ctv/properties-to-name)]
+      (-> changes
+          (pcb/update-component component-id #(assoc-in % [:variant-properties pos :value] value)
+                                {:apply-changes-local-library? true})
+          (pcb/update-shapes [main-id] #(assoc % :variant-name name))))
+    changes))
 
 
 (defn generate-set-variant-error
@@ -108,40 +112,45 @@
 
         props              (-> related-components last :variant-properties)
         next-prop-num      (ctv/next-property-number props)
-        property-name      (or property-name (str ctv/property-prefix next-prop-num))
+        property-name      (if (some? property-name)
+                             (ctv/prepare-property-name property-name)
+                             (str ctv/property-prefix next-prop-num))]
+    (if (nil? property-name)
+      changes
+      (let [prop-names     (mapv :name props)
+            property-name  (ctv/update-number-in-repeated-item prop-names property-name)
+            property-value (not-empty
+                            (when property-value
+                              (ctv/prepare-property-value property-value)))
+            mdata          (if editing? {:editing? true} nil)
 
-        prop-names         (mapv :name props)
-        property-name      (ctv/update-number-in-repeated-item prop-names property-name)
+            [_ changes]
+            (reduce (fn [[num changes] component]
+                      (let [main-id      (:main-instance-id component)
 
-        mdata              (if editing? {:editing? true} nil)
+                            update-props #(-> (d/nilv % [])
+                                              (conj (with-meta {:name property-name
+                                                                :value (cond fill-values?   (str ctv/value-prefix num)
+                                                                             property-value property-value
+                                                                             :else          "")}
+                                                      mdata)))
 
-        [_ changes]
-        (reduce (fn [[num changes] component]
-                  (let [main-id      (:main-instance-id component)
-
-                        update-props #(-> (d/nilv % [])
-                                          (conj (with-meta {:name property-name
-                                                            :value (cond fill-values?   (str ctv/value-prefix num)
-                                                                         property-value property-value
-                                                                         :else          "")}
-                                                  mdata)))
-
-                        update-name #(cond fill-values?   (if (str/empty? %)
-                                                            (str ctv/value-prefix num)
-                                                            (str % ", " ctv/value-prefix num))
-                                           property-value (if (str/empty? %)
-                                                            property-value
-                                                            (str % ", " property-value))
-                                           :else %)]
-                    [(inc num)
-                     (-> changes
-                         (pcb/update-component (:id component)
-                                               #(update % :variant-properties update-props)
-                                               {:apply-changes-local-library? true})
-                         (pcb/update-shapes [main-id] #(update % :variant-name update-name)))]))
-                [1 changes]
-                related-components)]
-    changes))
+                            update-name #(cond fill-values?   (if (str/empty? %)
+                                                                (str ctv/value-prefix num)
+                                                                (str % ", " ctv/value-prefix num))
+                                               property-value (if (str/empty? %)
+                                                                property-value
+                                                                (str % ", " property-value))
+                                               :else %)]
+                        [(inc num)
+                         (-> changes
+                             (pcb/update-component (:id component)
+                                                   #(update % :variant-properties update-props)
+                                                   {:apply-changes-local-library? true})
+                             (pcb/update-shapes [main-id] #(update % :variant-name update-name)))]))
+                    [1 changes]
+                    related-components)]
+        changes))))
 
 (defn- generate-make-shape-no-variant
   [changes shape]
@@ -175,7 +184,7 @@
         props     (ctv/add-new-props props (repeat new-props ""))]
 
     (if add-name?
-      (ctv/add-new-prop props (:name component))
+      (ctv/add-new-prop props (or (ctv/sanitize-property-text (:name component)) ""))
       props)))
 
 (defn- create-new-properties-from-non-variant
