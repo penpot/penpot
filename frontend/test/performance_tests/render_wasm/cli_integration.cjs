@@ -812,6 +812,7 @@ test(
   testOptions,
   async (t) => {
     const fixture = createFrontend(t);
+    fixture.env.PENPOT_GPU = "0";
     installCargoMetadata(fixture, { default: [], a: [], b: ["a"] });
     const retained = tree(fixture.managed);
 
@@ -822,6 +823,7 @@ test(
       "--filter",
       "rects/load",
       "--dry-run",
+      "--require-gpu",
     ]);
 
     assert.equal(result.exitCode, 0);
@@ -1106,6 +1108,34 @@ test(
         /type\s+:benches.render-wasm.node.runner\/invalid-args/,
       );
       assert.deepEqual(tree(fixture.managed), original, args.join(" "));
+    }
+  },
+);
+
+test(
+  "required GPU access rejects run and ab before allocating output or checking builds",
+  testOptions,
+  async (t) => {
+    for (const command of [
+      ["run"],
+      ["ab", "--features", "a", "--filter", "rects/load"],
+    ]) {
+      const fixture = createFrontend(t);
+      fixture.env.PENPOT_GPU = "";
+      const original = tree(fixture.managed);
+      const result = await runCli(fixture, [
+        ...command,
+        "--require-gpu",
+        "--output-dir",
+        path.join(fixture.managed, "gpu-run"),
+      ]);
+
+      assert.equal(result.exitCode, 1);
+      assert.equal(result.stdout, "");
+      assert.match(result.stderr, /PENPOT_GPU=1/);
+      assert.match(result.stderr, /\.\/manage\.sh run-devenv --gpu/);
+      assert.match(result.stderr, /pnpm run render-bench/);
+      assert.deepEqual(tree(fixture.managed), original);
     }
   },
 );

@@ -9,8 +9,9 @@
 
   The caller owns exclusive preparation for this checkout. The renderer's
   lock protects Cargo and copying; CLJS compilation follows after it releases.
-  Preparation uses installed dependencies and offline Cargo. Every attempt
-  retains its manifest and compiler log, including failed attempts."
+  Preparation uses installed dependencies. Cargo may fetch missing crates and
+  the custom Skia binaries on a cold build. Every attempt retains its manifest
+  and compiler log, including failed attempts."
   (:require
    ["fs" :as fs]
    ["path" :as path]
@@ -89,7 +90,7 @@
         (log/info "Renderer compiling")
         (let [build @build-ref
               facts-path (path/join (:renderer-dir build) "cargo-build.json")
-              args (cond-> ["frontend" "--offline"]
+              args (cond-> ["frontend"]
                      (not (:default-features? selection)) (conj "--no-default-features")
                      (seq (:features selection)) (into ["--features" (str/join "," (:features selection))]))]
           (await (process/run (merge bounds
@@ -97,7 +98,7 @@
                                       :args args :cwd (path/resolve root ".." "render-wasm")
                                       :capture-output? false :on-line (fn [line _] (log/debug line))
                                       :env {"PENPOT_WASM_PREPARED" "1" "NODE_ENV" "production"
-                                            "BUILD_MODE" "release" "CARGO_NET_OFFLINE" "true"
+                                            "BUILD_MODE" "release"
                                             "VERSION_TAG" (:id build)
                                             "FRONTEND_DEST" (:renderer-dir build)
                                             "FRONTEND_SHARED_DEST" (path/join root "src" "app" "render_wasm" "api" "shared.js")

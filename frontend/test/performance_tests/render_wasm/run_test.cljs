@@ -79,10 +79,14 @@
     (throw (ex-info "browser service requires the page object"
                     {:phase :browser-page-startup}))))
 
+(def ^:private hardware-graphics
+  {:webgl2 true :vendor "NVIDIA" :renderer "ANGLE (NVIDIA, Vulkan, NVIDIA)" :software false})
+
 (defn- fake-browser
   [{:keys [launch-failure new-page-failure close-page-failure
            prepare-failure run-failure screenshot-failure
-           interruption controller]}]
+           interruption controller effective-graphics]
+    :or {effective-graphics (constantly {})}}]
   (let [state (atom {:launches 0 :pages 0 :close-pages 0 :closes 0
                      :host nil :runs {} :preparations {}})]
     {:state state
@@ -135,7 +139,7 @@
                                :case-id case-id
                                :fingerprint {:algorithm :sha-256
                                              :digest (apply str (repeat 64 "a"))}
-                               :effective-graphics {}
+                               :effective-graphics (effective-graphics case-id (:id page))
                                :diagnostics {}}]
               (swap! state assoc-in [:preparations preparation-id] case-id)
               {:status "ok" :preparation preparation}))))
@@ -384,6 +388,68 @@
     (t/is (= :browser-launch (:stage (last (get-in run [:metadata :diagnostics :failures])))))
     (t/is (= 1 (:exit-code result)))))
 
+(t/deftest ^:async hardware-preparations-complete-fresh-and-reuse-cases
+  (let [fake   (fake-browser {:effective-graphics (constantly hardware-graphics)})
+        opts   (assoc (options fake (output-dir)) :require-gpu true :warmups 1 :repetitions 2)
+        result (await (execute fake [(collected :case/fresh :fresh)
+                                     (collected :case/reuse :reuse)] opts))
+        run    (saved-record result)]
+    (t/is (= 0 (:exit-code result)))
+    (t/is (= :completed (get-in run [:termination :reason])))
+    (t/is (= 6 (count (:attempts run))))
+    (t/is (every? #(= hardware-graphics (:effective-graphics %)) (:preparations run)))
+    (t/is (true? (get-in run [:metadata :diagnostics :require-gpu?])))))
+
+(t/deftest ^:async required-gpu-failures-preserve-evidence-and-all-attempt-slots
+  (doseq [context [:fresh :reuse]
+          graphics [(assoc hardware-graphics :renderer "ANGLE (SwiftShader)" :software true)
+                    (assoc hardware-graphics :webgl2 false)
+                    (assoc hardware-graphics :renderer nil)
+                    (assoc hardware-graphics :renderer "  UnKnOwN  ")
+                    (assoc hardware-graphics :vendor "")
+                    {}]]
+    (let [fake    (fake-browser {:effective-graphics (constantly graphics)})
+          opts    (assoc (options fake (output-dir)) :require-gpu true :warmups 1)
+          result  (await (execute fake [(collected :case/a context)
+                                        (collected :case/b :reuse)] opts))
+          run     (saved-record result)
+          failure (get-in run [:termination :failure])
+          state   @(:state fake)]
+      (t/is (= 1 (:exit-code result)))
+      (t/is (= :incomplete (get-in run [:termination :reason])))
+      (t/is (= [graphics] (mapv :effective-graphics (:preparations run))))
+      (t/is (= [] (:attempts run)))
+      (t/is (= {:case/a {:warmups 1 :repetitions 1}
+                :case/b {:warmups 1 :repetitions 1}} (:remaining run)))
+      (t/is (= :gpu (:stage failure)))
+      (t/is (= graphics (get-in failure [:partial :graphics])))
+      (t/is (str/includes? (:message failure) (pr-str (:renderer graphics))))
+      (t/is (str/includes? (:message failure) "./manage.sh run-devenv --gpu"))
+      (t/is (str/includes? (:message failure) "pnpm run render-bench"))
+      (t/is (= 1 (:close-pages state)))
+      (t/is (= 1 (:closes state))))))
+
+(t/deftest ^:async graphics-rejection-preserves-earlier-attempts-and-stops-the-run
+  (doseq [context [:fresh :reuse]]
+    (let [software (assoc hardware-graphics :renderer "SwiftShader" :software true)
+          fake    (fake-browser {:effective-graphics (fn [_ page-id]
+                                                       (if (= page-id 1) hardware-graphics software))})
+          opts    (assoc (options fake (output-dir)) :require-gpu true :repetitions 2)
+          result  (await (execute fake [(collected :case/a context)
+                                        (collected :case/b context)] opts))
+          run     (saved-record result)
+          failure (get-in run [:termination :failure])]
+      (t/is (= 1 (:exit-code result)))
+      (t/is (= :gpu (:stage failure)))
+      (t/is (= software (get-in failure [:partial :graphics])))
+      (t/is (= (if (= context :fresh) 1 2) (count (:attempts run))))
+      (t/is (every? #(= :completed (:outcome %)) (:attempts run)))
+      (t/is (= [hardware-graphics software] (mapv :effective-graphics (:preparations run))))
+      (t/is (= {:case/a {:warmups 0 :repetitions (if (= context :fresh) 1 0)}
+                :case/b {:warmups 0 :repetitions 2}} (:remaining run)))
+      (t/is (= 2 (:close-pages @(:state fake))))
+      (t/is (= 1 (:closes @(:state fake)))))))
+
 (t/deftest ^:async sigint-and-sigterm-persist-partial-interrupted-records
   (doseq [[signal code] [["SIGINT" 130] ["SIGTERM" 143]]]
     (let [controller (js/AbortController.)
@@ -573,6 +639,57 @@
     (t/is (= "<!doctype html>"
              (fs/readFileSync (path/join dir "index.html") "utf8")))))
 
+(defn- prepare-comparison-build
+  [{:keys [selection on-created]}]
+  (let [dir   (build-dir)
+        build (-> (selected-build dir (str (random-uuid)))
+                  (assoc :manifest-path (path/join dir "build.transit"))
+                  (assoc-in [:manifest :functional :default-features?] false)
+                  (assoc-in [:manifest :functional :features] (:features selection))
+                  (assoc-in [:manifest :provenance :feature-selection] selection))]
+    (on-created build)
+    (js/Promise.resolve build)))
+
+(t/deftest ^:async gpu-rejection-stops-later-matrix-configurations
+  (doseq [[hardware-first close-fails] [[false false] [true false] [true true]]]
+    (let [root     @temporary-root
+          out      (output-dir)
+          cases    [(collected :case/a :fresh)]
+          software (assoc hardware-graphics :renderer "SwiftShader" :software true)
+          prepared {:plan (feature-plan/plan ["a"] {:dry-run true})
+                    :cases cases
+                    :output-dir out
+                    :options (assoc (dissoc (options nil out) :run-id :browser)
+                                    :require-gpu true :repetitions 2)}
+          response (await
+                    (feature-comparison/execute
+                     root prepared nil
+                     {:services
+                      {:prepare-build prepare-comparison-build
+                       :collect-catalog (fn [_ _] cases)
+                       :execute-run
+                       (fn [root home selected cases opts signal]
+                         (let [fake (fake-browser
+                                     {:close-page-failure (when close-fails #(= % 2))
+                                      :effective-graphics
+                                      (fn [_ page-id]
+                                        (if (and hardware-first (= page-id 1))
+                                          hardware-graphics
+                                          software))})]
+                           (run/execute root home selected cases
+                                        (assoc opts :browser (:service fake)) signal)))}}))
+          saved    (result/decode (fs/readFileSync (get-in response [:home :record-path]) "utf8"))
+          run      (result/decode (fs/readFileSync (get-in saved [:configurations 0 :run :record-path]) "utf8"))
+          failure  (some #(when (= :gpu (:stage %)) %)
+                         (get-in run [:metadata :diagnostics :failures]))]
+      (t/is (= 1 (:exit-code response)))
+      (t/is (= (if hardware-first 1 0) (count (:attempts run))))
+      (t/is (= software (get-in failure [:partial :graphics])))
+      (t/is (= (if close-fails :browser-close :gpu) (get-in run [:termination :failure :stage])))
+      (t/is (= :failed (get-in saved [:configurations 0 :status])))
+      (t/is (= :gpu (get-in saved [:configurations 0 :failure :stage])))
+      (t/is (= :unattempted (get-in saved [:configurations 1 :status]))))))
+
 (t/deftest ^:async comparison-stops-after-run-record-or-log-storage-fails
   (doseq [filename ["run.transit" "run.log"]]
     (let [executed (atom nil)
@@ -587,16 +704,7 @@
                     (feature-comparison/execute
                      root prepared nil
                      {:services
-                      {:prepare-build
-                       (fn [{:keys [selection on-created]}]
-                         (let [dir   (build-dir)
-                               build (-> (selected-build dir (str (random-uuid)))
-                                         (assoc :manifest-path (path/join dir "build.transit"))
-                                         (assoc-in [:manifest :functional :default-features?] false)
-                                         (assoc-in [:manifest :functional :features] (:features selection))
-                                         (assoc-in [:manifest :provenance :feature-selection] selection))]
-                           (on-created build)
-                           (js/Promise.resolve build)))
+                      {:prepare-build prepare-comparison-build
                        :collect-catalog (fn [_ _] cases)
                        :execute-run
                        (^:async fn [root home selected cases opts signal]

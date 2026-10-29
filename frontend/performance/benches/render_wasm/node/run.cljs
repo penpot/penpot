@@ -31,7 +31,8 @@
    [benches.render-wasm.node.server :as server]
    [benches.render-wasm.report.format :as format]
    [benches.render-wasm.report.summarize :as summary]
-   [benches.render-wasm.result :as result]))
+   [benches.render-wasm.result :as result]
+   [clojure.string :as str]))
 
 (defn- now
   []
@@ -252,6 +253,31 @@
         (write-log state log/debug (str "Browser " (:version owner)))
         owner)))
 
+(defn- usable-graphics-identity?
+  [value]
+  (and (string? value)
+       (not (contains? #{"" "unknown" "unavailable" "null" "undefined"}
+                       (str/lower-case (str/trim value))))))
+
+(defn- check-gpu
+  [state preparation]
+  (let [graphics (:effective-graphics preparation)
+        accepted (and (true? (:webgl2 graphics))
+                      (false? (:software graphics))
+                      (usable-graphics-identity? (:vendor graphics))
+                      (usable-graphics-identity? (:renderer graphics)))]
+    (if (and (:require-gpu? (:opts state)) (not accepted))
+      (do
+        (record-failure state (:case-id preparation) :gpu
+                        {:status "failed" :phase "gpu"
+                         :message (str "GPU check failed; renderer: " (pr-str (:renderer graphics))
+                                       ". Hardware WebGL2 with a usable vendor and renderer is required."
+                                       " Start the container with ./manage.sh run-devenv --gpu and use pnpm run render-bench.")
+                         :partial {:graphics graphics}})
+        (reset! (:abort-run? state) true)
+        :abort)
+      :ok)))
+
 (defn- ^:async open-page
   [state case]
   (if (interrupted? state)
@@ -304,28 +330,30 @@
           (let [preparation (:preparation response)
                 prep-id     (:preparation-id preparation)]
             (record-preparation state preparation)
-            (let [attempted (try
-                              {:evidence (await (run-attempt state page prep-id deadline))}
-                              (catch :default cause {:error cause}))]
-              (if-let [cause (:error attempted)]
-                (let [evidence (cause-evidence cause :attempt)]
-                  (record-attempt state
-                                  (measurement/attempt case-id prep-id warmup? evidence))
-                  (when final?
-                    (record-screenshot-skip state case-id :no-completed-measured-attempt))
-                  (if (interrupted? state) :interrupted :failed))
-                (let [attempt (measurement/attempt case-id prep-id warmup?
-                                                   (:evidence attempted))]
-                  (record-attempt state attempt)
-                  (if (= :completed (:outcome attempt))
-                    (do
-                      (when final? (await (screenshot-case state case page)))
-                      :ok)
-                    (do
-                      (when final?
-                        (record-screenshot-skip state case-id
-                                                :no-completed-measured-attempt))
-                      :failed))))))
+            (if (= :abort (check-gpu state preparation))
+              :abort
+              (let [attempted (try
+                                {:evidence (await (run-attempt state page prep-id deadline))}
+                                (catch :default cause {:error cause}))]
+                (if-let [cause (:error attempted)]
+                  (let [evidence (cause-evidence cause :attempt)]
+                    (record-attempt state
+                                    (measurement/attempt case-id prep-id warmup? evidence))
+                    (when final?
+                      (record-screenshot-skip state case-id :no-completed-measured-attempt))
+                    (if (interrupted? state) :interrupted :failed))
+                  (let [attempt (measurement/attempt case-id prep-id warmup?
+                                                     (:evidence attempted))]
+                    (record-attempt state attempt)
+                    (if (= :completed (:outcome attempt))
+                      (do
+                        (when final? (await (screenshot-case state case page)))
+                        :ok)
+                      (do
+                        (when final?
+                          (record-screenshot-skip state case-id
+                                                  :no-completed-measured-attempt))
+                        :failed)))))))
           (let [evidence (failure-evidence response :preparation)]
             (record-attempt state (measurement/attempt case-id nil warmup? evidence))
             (when final? (record-screenshot-skip state case-id :no-completed-measured-attempt))
@@ -388,6 +416,11 @@
                   (ensure-screenshot-status state case :case-abandoned)
                   :interrupted)
 
+                (= :abort outcome)
+                (do
+                  (ensure-screenshot-status state case :case-abandoned)
+                  :abort)
+
                 (not closed?)
                 (do
                   (ensure-screenshot-status state case :case-abandoned)
@@ -433,30 +466,33 @@
                 total       (count slots)]
             (record-preparation state preparation)
             (let [outcome
-                  (loop [index 0]
-                    (if (>= index total)
-                      :done
-                      (let [warmup? (nth slots index)
-                            result  (await (run-reuse-slot state case page prep-id warmup?))]
-                        (cond
-                          (= :ok result)
-                          (if (= index (dec total))
-                            (do (await (screenshot-case state case page)) :done)
-                            (recur (inc index)))
+                  (if (= :abort (check-gpu state preparation))
+                    :abort
+                    (loop [index 0]
+                      (if (>= index total)
+                        :done
+                        (let [warmup? (nth slots index)
+                              result  (await (run-reuse-slot state case page prep-id warmup?))]
+                          (cond
+                            (= :ok result)
+                            (if (= index (dec total))
+                              (do (await (screenshot-case state case page)) :done)
+                              (recur (inc index)))
 
-                          (= index (dec total))
-                          (do
-                            (record-screenshot-skip state (:id case)
-                                                    :no-completed-measured-attempt)
-                            result)
+                            (= index (dec total))
+                            (do
+                              (record-screenshot-skip state (:id case)
+                                                      :no-completed-measured-attempt)
+                              result)
 
-                          :else result))))
+                            :else result)))))
                   closed? (await (close-current-page state))]
               (ensure-screenshot-status state case :case-abandoned)
               (cond
                 (not closed?) :abandon
                 (= outcome :interrupted) :interrupted
                 :else outcome))))))))
+
 
 (defn- ^:async launch-initial
   [state]
@@ -625,7 +661,7 @@
      :arch (os/arch)
      :cpu {:models (vec (distinct (map #(.-model %) cpus)))
            :logical-count (count cpus)}
-     :launch browser/launch-settings}))
+     :launch (browser/launch-settings)}))
 
 (defn- metadata
   [root selected-build opts]
@@ -645,6 +681,8 @@
                  :build-timeout-ms (:build-timeout-ms opts)
                  :startup-timeout-ms (:startup-timeout-ms opts)
                  :screenshots? (boolean (:screenshots? opts))
+                 :require-gpu? (boolean (:require-gpu? opts))
+                 :penpot-gpu (or (.-PENPOT_GPU (.-env js/process)) nil)
                  :runner-git {:sha nil :dirty nil}
                  :runtime-helper-identity :unverified
                  :screenshots {}
@@ -656,8 +694,10 @@
       (assoc :screenshots? (boolean (or (:screenshots? options)
                                         (:screenshots options)))
              :remove? (boolean (or (:remove? options)
-                                   (:remove options))))
-      (dissoc :screenshots :remove)))
+                                   (:remove options)))
+             :require-gpu? (boolean (or (:require-gpu? options)
+                                        (:require-gpu options))))
+      (dissoc :screenshots :remove :require-gpu)))
 
 (defn ^:async execute
   "Executes a prepared selection in an allocated home and owns host and browser.

@@ -8,32 +8,40 @@
   "Owns Chromium through process/run from spawn, then attaches Playwright by CDP.
   Shutdown stops the owned process group before disconnecting the client."
   (:require
-   ["fs" :as fs]
-   ["os" :as os]
-   ["path" :as path]
-   ["playwright" :as playwright]
-   [app.common.transit :as transit]
-   [benches.render-wasm.failures :as failures]
-   [benches.render-wasm.identity :as identity]
-   [benches.render-wasm.node.options :as options]
-   [benches.render-wasm.node.process :as process]))
+    ["fs" :as fs]
+    ["os" :as os]
+    ["path" :as path]
+    ["playwright" :as playwright]
+    [app.common.transit :as transit]
+    [benches.render-wasm.failures :as failures]
+    [benches.render-wasm.identity :as identity]
+    [benches.render-wasm.node.options :as options]
+    [benches.render-wasm.node.process :as process]))
 
-(def launch-settings
-  "Static settings for the full Chromium executable; profile and port are owned."
+(defn gpu-active?
+  "Returns whether the development container enables GPU access."
+  []
+  (= "1" (.-PENPOT_GPU (.-env js/process))))
+
+(defn launch-settings
+  "Returns the resolved Chromium settings for this environment."
+  []
   {:headless true
    :transport :cdp
-   :args ["--headless"
-          "--no-sandbox"
-          "--disable-dev-shm-usage"
-          "--enable-gpu"
-          "--enable-unsafe-swiftshader"
-          "--no-first-run"
-          "--no-default-browser-check"
-          "--disable-background-networking"
-          "--disable-background-timer-throttling"
-          "--disable-renderer-backgrounding"
-          "--hide-scrollbars"
-          "--mute-audio"]})
+   :args (cond-> ["--headless"
+                  "--no-sandbox"
+                  "--disable-dev-shm-usage"
+                  "--enable-unsafe-swiftshader"
+                  "--no-first-run"
+                  "--no-default-browser-check"
+                  "--disable-background-networking"
+                  "--disable-background-timer-throttling"
+                  "--disable-renderer-backgrounding"
+                  "--hide-scrollbars"
+                  "--mute-audio"]
+           (gpu-active?) (into ["--enable-gpu"
+                                "--use-gl=angle"
+                                "--use-angle=vulkan"]))})
 
 (defn within
   "Calls work while its absolute deadline and optional AbortSignal allow it.
@@ -225,7 +233,7 @@
           controller    (js/AbortController.)
           endpoint      (endpoint-waiter)
           running       (process/run {:command command
-                                      :args (into (:args launch-settings)
+                                      :args (into (:args (launch-settings))
                                                   ["--remote-debugging-port=0"
                                                    "--remote-debugging-address=127.0.0.1"
                                                    (str "--user-data-dir=" user-data-dir)
