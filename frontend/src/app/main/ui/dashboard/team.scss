@@ -57,6 +57,26 @@
   text-wrap: nowrap;
 }
 
+// Opens the add to organization modal, so it is a button that keeps the
+// look of a text link.
+.add-to-organization {
+  font: inherit;
+  font-weight: 500;
+
+  // A button is a block in its line: the normal line height keeps the box of
+  // the inline link it replaces.
+  line-height: normal;
+  color: var(--color-accent-primary);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 .block-content {
   display: grid;
   grid-template-columns: var(--sp-xxxl) 1fr;
