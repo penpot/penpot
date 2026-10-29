@@ -287,10 +287,12 @@
                              :count (count abandoned)))
                    (->> abandoned
                         (map (fn [job]
-                               (store/persist! (assoc job
-                                                      :state "cancelled"
-                                                      :interrupted true
-                                                      :ended-at (now-ms)))))
+                               (let [job (assoc job
+                                                :state "cancelled"
+                                                :interrupted true
+                                                :ended-at (now-ms))]
+                                 (publish! job)
+                                 (store/persist! job))))
                         (p/all)))))
        (p/fmap (fn [result] (count result)))
        (p/merr (fn [cause]
