@@ -119,8 +119,9 @@ Container-internal ports stay fixed. Target a specific instance with
 accepts a **non-negative integer only** — `--ws main` or `--ws ws1` is
 rejected, keeping the flag shape uniform across commands. `run-devenv` is
 ws0-only and takes no workspace flag. `run-devenv` also accepts
-`--serena-context CTX` (used together with `--agentic`) and `--git-user-name NAME` / `--git-user-email
-EMAIL` (see below).
+`--serena-context CTX` (used together with `--agentic`), `--gpu` to enable
+hardware rendering in Chromium (e.g. for benchmarks), and `--git-user-name NAME` 
+/ `--git-user-email EMAIL` (see below).
 
 Configuration lives in one tracked file, `docker/devenv/defaults.env` (the
 ws0 baseline); `ws1+` values (offset ports, `wsN` container/volume names) are
@@ -165,6 +166,49 @@ other workspaces mount nothing. The directory is shared read-write with the
 container (same UID mapping as the source tree). Opencode's own state
 (sessions, `auth.json`) lives in `~/.local/share/opencode`, which stays in
 the container's data volume regardless of this flag.
+
+### NVIDIA GPU access
+
+On Linux, `run-devenv --gpu` grants the selected container access to NVIDIA
+GPUs. The host needs an NVIDIA driver, NVIDIA Container Toolkit configured
+with a Docker runtime named `nvidia`, and a readable Vulkan driver manifest
+at `/usr/share/vulkan/icd.d/nvidia_icd.json`. The option checks the runtime
+and manifest before provisioning.
+
+Build an image from this checkout to include `xauth` and the Vulkan loader
+(`libvulkan1`), then use the same tag when starting the container:
+
+```bash
+./manage.sh build-devenv --tag gpu-local
+DEVENV_TAG=gpu-local ./manage.sh run-devenv --gpu
+```
+
+`--gpu` works with `--ws N`, `--agentic`, `--attach`, and
+`--opencode-config-dir DIR`. For example:
+
+```bash
+DEVENV_TAG=gpu-local ./manage.sh run-devenv --gpu --ws 1 --agentic
+```
+
+The GPU overlay requests all NVIDIA devices and driver capabilities and
+mounts the host Vulkan manifest directory read-only. Processes inside the
+container inherit `PENPOT_GPU=1` and `NVIDIA_DRIVER_CAPABILITIES=all`.
+`PENPOT_GPU` signals GPU access to applications. The explicit `--gpu` flag
+selects the overlay.
+
+GPU mode applies at container creation and lasts for that container's
+lifetime. To change it, stop the selected instance and run it again with
+or without `--gpu`:
+
+```bash
+./manage.sh stop-devenv --ws 1
+DEVENV_TAG=gpu-local ./manage.sh run-devenv --ws 1
+```
+
+Run browser commands inside devenv. The Chromium ANGLE Vulkan backend
+needs an X display in this setup, so run those commands under
+`xvfb-run -a`. Each caller starts its own Xvfb display. Applications choose
+their rendering backend.
 
 ### Shared state and workers
 

@@ -236,6 +236,24 @@ function infra-compose {
             "$@"
 }
 
+function check-devenv-gpu-support {
+    local runtimes
+    if ! runtimes=$(env -i HOME="$HOME" PATH="$PATH" PWD="$PWD" \
+        docker info --format '{{range $name, $_ := .Runtimes}}{{$name}} {{end}}'); then
+        echo "run-devenv: cannot query Docker runtimes; check that Docker is running and accessible." >&2
+        return 1
+    fi
+    if [[ " $runtimes " != *" nvidia "* ]]; then
+        echo "run-devenv: --gpu requires Docker runtime 'nvidia'; install and configure NVIDIA Container Toolkit." >&2
+        return 1
+    fi
+    local icd=/usr/share/vulkan/icd.d/nvidia_icd.json
+    if [[ ! -f "$icd" || ! -r "$icd" ]]; then
+        echo "run-devenv: --gpu requires a readable $icd; install the host NVIDIA Vulkan driver." >&2
+        return 1
+    fi
+}
+
 function instance-compose {
     local instance="$1"; shift
     local source_path
@@ -257,6 +275,10 @@ function instance-compose {
     if [[ -n "${PENPOT_OPENCODE_CONFIG_DIR:-}" ]]; then
         compose_files+=(-f docker/devenv/docker-compose.opencode.yml)
         opencode_env=("PENPOT_OPENCODE_CONFIG_DIR=${PENPOT_OPENCODE_CONFIG_DIR}")
+    fi
+    # Bash dynamic scope exposes run-devenv's local option here.
+    if [[ "${devenv_gpu:-false}" == "true" ]]; then
+        compose_files+=(-f docker/devenv/docker-compose.gpu.yml)
     fi
 
     env -i HOME="$HOME" PATH="$PATH" PWD="$PWD" \
@@ -875,6 +897,7 @@ function run-devenv {
     local do_sync=false
     local do_attach=false
     local agentic=false
+    local devenv_gpu=false
     local serena_context="desktop-app"
     local git_user_name=""
     local git_user_email=""
@@ -889,6 +912,8 @@ function run-devenv {
                 do_sync=true; shift;;
             --agentic)
                 agentic=true; shift;;
+            --gpu)
+                devenv_gpu=true; shift;;
             --attach)
                 do_attach=true; shift;;
             --serena-context)
@@ -904,12 +929,13 @@ function run-devenv {
             -e*)
                 extra_env_args+=(-e "${1#-e}"); shift;;
             -h|--help)
-                echo "Usage: run-devenv [--ws N] [--sync] [--attach] [--agentic] [--serena-context CTX] [--opencode-config-dir DIR] [--git-user-name NAME] [--git-user-email EMAIL] [-e KEY=VAL]"
+                echo "Usage: run-devenv [--ws N] [--sync] [--attach] [--agentic] [--gpu] [--serena-context CTX] [--opencode-config-dir DIR] [--git-user-name NAME] [--git-user-email EMAIL] [-e KEY=VAL]"
                 echo "  Bring a single workspace up."
                 echo "  --ws N                target workspace (default: 0)."
                 echo "  --sync                re-seed the wsN clone from the live repo (forbidden on ws0)."
                 echo "  --attach              attach to the tmux session after startup."
                 echo "  --agentic             enable MCP + Serena (AI-agent mode)."
+                echo "  --gpu                 grant NVIDIA GPU access at container creation."
                 echo "  --serena-context CTX  context passed to Serena (default: desktop-app)."
                 echo "  --opencode-config-dir DIR  bind-mount DIR at ~/.config/opencode inside the"
                 echo "                        container (personal agents/prompts/skills kept in a"
@@ -961,6 +987,10 @@ function run-devenv {
     if devenv-main-running "$target"; then
         echo "run-devenv: instance '$target' is already running." >&2
         return 1
+    fi
+
+    if [[ "$devenv_gpu" == "true" ]]; then
+        check-devenv-gpu-support || return 1
     fi
 
     pull-devenv-if-not-exists
@@ -1485,6 +1515,7 @@ function usage {
     echo "                                                           start of a wsN with no on-disk workspace yet)."
     echo "                                     --attach              attach to the tmux session after startup."
     echo "                                     --agentic             enable MCP + Serena (AI-agent mode)."
+    echo "                                     --gpu                 grant NVIDIA GPU access at container creation."
     echo "                                     --serena-context CTX  passed to Serena (default: desktop-app)."
     echo "                                     --opencode-config-dir DIR"
     echo "                                                           bind-mount DIR over the container's"
