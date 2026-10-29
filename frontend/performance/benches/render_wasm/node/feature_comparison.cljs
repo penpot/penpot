@@ -15,6 +15,7 @@
    [benches.render-wasm.node.build :as build]
    [benches.render-wasm.node.catalog :as catalog]
    [benches.render-wasm.node.files :as files]
+   [benches.render-wasm.node.log :as log]
    [benches.render-wasm.node.run :as run]
    [benches.render-wasm.node.runs :as runs]
    [benches.render-wasm.report.compare :as compare]
@@ -62,10 +63,12 @@
       (invalid-home "feature comparison cannot use a directory inside builds" {:path dir}))
     (try
       (fs/mkdirSync dir #js {:recursive true})
+      (fs/writeFileSync (path/join dir "feature-comparison.log") "" #js {:encoding "utf8" :flag "wx"})
       (catch :default cause
         (invalid-home "cannot create feature comparison home"
                       {:path dir :cause (or (ex-message cause) (str cause))})))
     {:dir dir
+     :log-path (path/join dir "feature-comparison.log")
      :record-path (path/join dir record-file)}))
 
 (defn write-record
@@ -105,16 +108,23 @@
   [cause]
   (or (ex-message cause) (str cause)))
 
+(defn- with-log-path
+  [cause log-path]
+  (ex-info (message-of cause)
+           (assoc (data-of cause) :log-path (or (:log-path (data-of cause)) log-path))
+           cause))
+
 (defn- failure-evidence
   [phase cause]
-  {:phase (name phase)
-   :message (message-of cause)
-   :cause (failures/describe-cause cause)})
+  (cond-> {:phase (name phase)
+           :message (message-of cause)
+           :cause (failures/describe-cause cause)}
+    (:log-path (data-of cause)) (assoc :tail-log (:log-path (data-of cause)))))
 
 (defn- storage-error
-  [cause]
+  [cause log-path]
   (ex-info "cannot persist feature comparison"
-           {:type ::storage-error :cause (message-of cause)}
+           {:type ::storage-error :cause (message-of cause) :log-path log-path}
            cause))
 
 (defn- storage-error?
@@ -123,7 +133,7 @@
          depth 0]
     (cond
       (nil? cause) false
-      (= ::storage-error (:type (data-of cause))) true
+      (contains? #{::storage-error ::log/storage-error} (:type (data-of cause))) true
       (>= depth 8) false
       :else (recur (ex-cause cause) (inc depth)))))
 
@@ -157,7 +167,7 @@
         saved (try
                 (write-record (:home state) next)
                 (catch :default cause
-                  (throw (storage-error cause))))]
+                  (throw (storage-error cause (get-in state [:home :log-path])))))]
     (reset! (:record-ref state) saved)
     (reset! (:saved-ref state) saved)
     saved))
@@ -178,11 +188,6 @@
      :configurations (mapv #(assoc % :status :planned) (:configurations plan))
      :edges (mapv #(assoc % :status :planned) (:edges plan))
      :warnings warnings}))
-
-(defn- progress
-  [state text]
-  (when-let [on-progress (:on-progress state)]
-    (on-progress text)))
 
 (defn- fail-config
   [state slug phase cause]
@@ -231,6 +236,8 @@
   (let [record (persist state #(assoc % :status status :ended-at (now)))]
     {:comparison record
      :home (:home state)
+     :log-path (get-in state [:home :log-path])
+     :tail-log (:log-path (data-of error))
      :exit-code exit-code
      :error error
      :interrupted? interrupted?}))
@@ -333,6 +340,7 @@
               (if-not (and (= selection saved-selection) valid-features?)
                 (let [cause (ex-info "renderer build manifest disagrees with the planned selection"
                                      {:type ::invalid-build
+                                      :log-path (:log-path selected)
                                       :selection selection
                                       :saved-selection saved-selection})]
                   (fail-config state slug :build cause)
@@ -345,7 +353,7 @@
                              (change-config record slug
                                             #(assoc % :status :ready
                                                     :effective-features effective))))
-                  (progress state (str "comparison: configuration " slug " built\n"))
+                  (log/info (str "Configuration " slug " built"))
                   (let [catalog-result
                         (try
                           (let [collected ((:collect-catalog services)
@@ -358,7 +366,7 @@
                           (catch :default cause
                             (if (storage-error? cause)
                               (throw cause)
-                              {:error cause})))]
+                              {:error (with-log-path cause (:log-path selected))})))]
                     (cond
                       (:error catalog-result)
                       (if-let [interrupted (signal-name signal)]
@@ -380,6 +388,7 @@
                       (:mismatch catalog-result)
                       (let [cause (ex-info "build catalog disagrees with the prepared cases"
                                            {:type ::catalog-mismatch
+                                            :log-path (:log-path selected)
                                             :configuration slug})]
                         (fail-config state slug :catalog cause)
                         {:stop? true
@@ -413,17 +422,13 @@
                                                 :run {:run-id (:run-id run-home)
                                                       :record-path (:record-path run-home)
                                                       :log-path (:log-path run-home)}))))
-                            (progress state (str "comparison: configuration " slug " running\n"))
+                            (log/info (str "Configuration " slug " running"))
                             (let [run-result
                                   (try
                                     (await ((:execute-run services)
                                             root run-home selected cases
                                             (assoc options :build-id (:id selected))
-                                            signal
-                                            (fn [text] (progress state text))
-                                            (fn [id]
-                                              (progress state
-                                                        (str "comparison: run " id " started\n")))))
+                                            signal))
                                     (catch :default cause
                                       (if (storage-error? cause)
                                         (throw cause)
@@ -444,7 +449,8 @@
                                                                :configuration slug})))
                                             nil
                                             (catch :default cause cause)))
-                                      run-error     (or evidence-error (:error run-result))
+                                      run-error     (when-let [cause (or evidence-error (:error run-result))]
+                                                      (with-log-path cause (:log-path run-home)))
                                       interrupted   (or (signal-name signal)
                                                         (= :interrupted termination))
                                       completed     (and (nil? evidence-error)
@@ -482,14 +488,14 @@
                                       (if (empty? attempts)
                                         (let [cause (ex-info "configuration run made no attempts"
                                                              {:type ::zero-attempts
+                                                              :log-path (:log-path run-home)
                                                               :configuration slug})]
                                           {:stop? true
                                            :reason (str "not attempted after a run with no attempts in configuration "
                                                         slug)
                                            :error cause})
                                         (do
-                                          (progress state
-                                                    (str "comparison: configuration " slug " completed\n"))
+                                          (log/info (str "Configuration " slug " completed"))
                                           {:stop? false})))
                                     (do
                                       (persist state
@@ -506,23 +512,25 @@
                                         (some? evidence-error)
                                         {:stop? true
                                          :reason (str "not attempted after run evidence failure in configuration " slug)
-                                         :error evidence-error}
+                                         :error run-error}
 
                                         :else
                                         (if (empty? attempts)
                                           (let [cause (ex-info "configuration run made no attempts"
                                                                {:type ::zero-attempts
+                                                                :log-path (:log-path run-home)
                                                                 :configuration slug})]
                                             {:stop? true
                                              :reason (str "not attempted after a run with no attempts in configuration "
                                                           slug)
                                              :error cause})
                                           (do
-                                            (progress state
-                                                      (str "comparison: configuration " slug " failed\n"))
+                                            (log/warn (str "Configuration " slug " failed"))
                                             {:stop? false :error run-error}))))))
-                                (let [cause (ex-info "run executor returned no record"
-                                                     {:type ::missing-run})]
+                                (let [cause (with-log-path
+                                              (or (:error run-result)
+                                                  (ex-info "run executor returned no record" {:type ::missing-run}))
+                                              (:log-path run-home))]
                                   (fail-config state slug :run cause)
                                   {:stop? true
                                    :reason (str "not attempted after run failure in configuration " slug)
@@ -552,13 +560,13 @@
      :removed (vec (sort (set/difference baseline-set candidate-set)))}))
 
 (defn- save-comparison
-  [path comparison]
+  [path comparison log-path]
   (let [record (result/check-record comparison)
         text   (result/encode record)]
     (try
       (files/atomic-write path text)
       (catch :default cause
-        (throw (storage-error cause))))))
+        (throw (storage-error cause log-path))))))
 
 (defn- unacknowledged-count
   [comparison]
@@ -590,7 +598,7 @@
           path             (path/join (get-in state [:home :dir])
                                       "comparisons"
                                       (str (:from edge) "__" (:to edge) ".transit"))]
-      (save-comparison path comparison)
+      (save-comparison path comparison (get-in state [:home :log-path]))
       {:path path
        :unacknowledged (unacknowledged-count comparison)})
     (catch :default cause
@@ -606,7 +614,7 @@
       (try
         (fs/mkdirSync comparisons #js {:recursive true})
         (catch :default cause
-          (throw (storage-error cause))))
+          (throw (storage-error cause (get-in state [:home :log-path])))))
       (let [outcome
             (loop [edges (:edges @(:record-ref state))
                    error error]
@@ -631,10 +639,12 @@
                       (do
                         (mark-edge state edge :failed
                                    {:failure (failure-evidence :comparison (:error result))})
-                        (recur (rest edges) (:error result)))
+                        (recur (rest edges) (or error (:error result))))
 
                       (pos? (:unacknowledged result))
                       (do
+                        (log/warn (str "Comparison " (:from edge) " -> " (:to edge)
+                                       " has " (:unacknowledged result) " unacknowledged differences"))
                         (mark-edge state edge :failed
                                    {:path (:path result)
                                     :failure {:unacknowledged-differences (:unacknowledged result)}})
@@ -682,15 +692,13 @@
   "Executes a prepared feature comparison and owns builds, runs and reports.
 
   - prepared: node.feature-plan/prepare output.
-  - callbacks: accepts :on-created fn(home record), :on-progress fn(string) and
-    an optional :services map with :prepare-build, :collect-catalog,
+  - settings: accepts an optional :services map with :prepare-build, :collect-catalog,
     :create-run-home and :execute-run overrides.
 
   Operational failures are returned as :error. The saved record reflects the
   last successful atomic write."
-  [root prepared signal callbacks]
-  (let [callbacks     (or callbacks {})
-        services      (merge default-services (:services callbacks))
+  [root prepared signal settings]
+  (let [services      (merge default-services (:services settings))
         comparison-id (str (random-uuid))
         home          (try
                         (create-home root comparison-id (:output-dir prepared))
@@ -712,21 +720,31 @@
                         :cases (:cases prepared)
                         :signal signal
                         :services services
-                        :on-created (:on-created callbacks)
-                        :on-progress (:on-progress callbacks)
                         :record-ref record-ref
                         :saved-ref saved-ref}]
-        (try
-          (let [saved (write-record home initial)]
-            (reset! record-ref saved)
-            (reset! saved-ref saved))
-          (when-let [on-created (:on-created state)]
-            (on-created home @saved-ref))
-          (let [result (await (run-comparisons state))]
-            result)
-          (catch :default cause
-            {:comparison @saved-ref
-             :home home
-             :exit-code 1
-             :error cause
-             :interrupted? false}))))))
+        (binding [log/*log-path* (:log-path home)]
+          (let [outcome (try
+                          (log/result (str "Comparison " comparison-id))
+                          (log/result (str "Output " (:dir home)))
+                          (let [saved (write-record home initial)]
+                            (reset! record-ref saved)
+                            (reset! saved-ref saved))
+                          (await (run-comparisons state))
+                          (catch :default cause
+                            {:comparison @saved-ref
+                             :home home
+                             :log-path (:log-path home)
+                             :tail-log (:log-path (data-of cause))
+                             :exit-code 1
+                             :error cause
+                             :interrupted? false}))]
+            (try
+              (log/result (str "Status " (cond
+                                           (:interrupted? outcome) "interrupted"
+                                           (zero? (:exit-code outcome)) "completed"
+                                           :else "failed")))
+              outcome
+              (catch :default cause
+                (assoc outcome :error (or (:error outcome) cause)
+                       :storage-error cause
+                       :exit-code (if (:interrupted? outcome) (:exit-code outcome) 1))))))))))

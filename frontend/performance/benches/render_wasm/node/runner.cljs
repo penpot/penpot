@@ -11,11 +11,10 @@
    [app.common.transit :as transit]
    [benches.render-wasm.feature-plan :as feature-plan]
    [benches.render-wasm.node.compare :as compare]
+   [benches.render-wasm.node.log :as log]
    [benches.render-wasm.node.options :as options]
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]))
-
-(enable-console-print!)
 
 (def ^:private max-timeout-ms 2147483647)
 
@@ -47,6 +46,9 @@
 
 (def cli-options
   [["-h" "--help" "Print this help"]
+   ["-q" "--quiet" "Only warnings, errors and results"]
+   ["-v" "--verbose" "Show debug details and raw build output"]
+   [nil "--[no-]color" "Colorize terminal output; default auto" :default nil]
    [nil "--[no-]default-features" "Enable Cargo defaults" :default true]
    [nil "--features FEATURES" "Comma-separated functional Cargo features"
     :parse-fn options/parse-feature-list]
@@ -95,10 +97,13 @@
        "       runner compare BASELINE CANDIDATE [--cases A,B]\n"
        "              [--allow-build-differences] [--allow-scene-differences]\n"
        "              [--allow-all-differences]\n\n"
-       "build prints one attempt ID after storage initialization. Exit 0 means\n"
+       "build prints Build <id> and Output <absolute path> on stdout. Exit 0 means\n"
        "ready; errors retain the build.transit and build.log for that ID.\n"
-       "run prints one run ID on stdout. Progress, failures and the summary go\n"
-       "to stderr. Builds and managed runs live under target/performance/render-wasm.\n"
+       "run prints Run <id>, Output <absolute path> and Report on stdout.\n"
+       "Progress and diagnostics go to stderr. -q/--quiet hides progress;\n"
+       "-v/--verbose includes raw build output. --[no-]color overrides terminal\n"
+       "color detection. File logs receive all levels without logger colors.\n"
+       "Builds and managed runs live under target/performance/render-wasm.\n"
        "compare reads saved schema:run records and starts no build, host or browser.\n"
        "Build and scene permissions combine; operation and runtime checks stay strict.\n"
        "All-differences permits every compatibility difference. Reports retain them.\n\n"
@@ -109,7 +114,8 @@
        "output creation, compilation or browser startup. ab accepts run budgets,\n"
        "timeouts, seed, filter, output and screenshots, plus comparison permissions.\n"
        "It rejects --build, --remove, --cases and --[no-]default-features.\n"
-       "ab prints the comparison UUID and output path on stdout; progress and\n"
+       "ab prints Comparison <id>, Output <path> and Status <status> on stdout;\n"
+       "feature-comparison.log records comparison progress. Diagnostics and\n"
        "failures go to stderr. --dry-run prints only the plan without creating\n"
        "the comparison home. Managed output lives under\n"
        "feature-comparisons/<ab-id>/feature-comparison.transit.\n\n"
@@ -239,6 +245,8 @@
         flags   (supplied-flags args)]
     (when (seq errors)
       (invalid-args (str/join "\n" errors)))
+    (when (and (:quiet options) (:verbose options))
+      (invalid-args "--quiet and --verbose are mutually exclusive"))
     (when-not (:help options)
       (when-not (and (= 1 (count (take 1 arguments)))
                      (contains? #{"build" "purge" "run" "ab" "compare"} command))
@@ -262,25 +270,22 @@
      :options (cond-> options (= command "ab") (assoc :default-features false))
      :summary summary}))
 
-(defn- print-error
-  [cause]
-  (.error js/console (or (ex-message cause) (str cause)))
-  (when-let [data (ex-data cause)]
-    (.error js/console (pr-str data))))
-
 (defn ^:async -main
   [& args]
+  (log/configure {})
   (try
     (let [{:keys [command arguments options summary] :as request} (parse-args args)]
+      (log/configure {:level (options/console-level options)
+                      :color (options/color-mode options)})
       (cond
         (:help options)
-        (println (usage summary))
+        (log/result (usage summary))
 
         (= command "compare")
-        (println (:text (compare/execute (second arguments) (nth arguments 2)
-                                         (select-keys options [:cases :allow-build-differences
-                                                               :allow-scene-differences
-                                                               :allow-all-differences]))))
+        (log/result (:text (compare/execute (second arguments) (nth arguments 2)
+                                            (select-keys options [:cases :allow-build-differences
+                                                                  :allow-scene-differences
+                                                                  :allow-all-differences]))))
 
         :else
         (let [^js commands (js/require (path/join js/__dirname "commands.cjs"))]
@@ -288,7 +293,12 @@
                 (await (.execute commands
                                  (transit/encode-str (select-keys request [:command :options]))))))))
     (catch :default cause
-      (print-error cause)
-      (when (= ::invalid-args (:type (ex-data cause)))
-        (.error js/console "Try --help for usage."))
+      (let [data (ex-data cause)]
+        (log/error {:message (str (or (ex-message cause) (str cause))
+                                  "\nTry --help for usage.")
+                    :fields (into (filterv (comp some? second)
+                                           [[:type (:type data)] [:baseline (:baseline data)]
+                                            [:candidate (:candidate data)]])
+                                  (map #(vector :difference (:field %)) (:mismatches data)))
+                    :tail? false}))
       (set! (.-exitCode js/process) 1))))

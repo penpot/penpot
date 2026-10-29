@@ -73,11 +73,6 @@
   [home run]
   (files/atomic-write (:record-path home) (result/encode run)))
 
-(defn append-log!
-  "Appends runner diagnostics to the run log. Callers keep lines terminated."
-  [home text]
-  (fs/appendFileSync (:log-path home) (str text) "utf8"))
-
 (defn screenshot-file
   "Returns the relative PNG filename for a case, replacing path separators."
   [case-id]

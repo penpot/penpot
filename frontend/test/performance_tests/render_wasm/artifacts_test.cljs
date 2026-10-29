@@ -356,7 +356,8 @@
           edge-dir   (path/join ab-dir "comparisons")
           run-dir    (path/join managed "runs" "saved")
           outside    (path/join root "unmanaged" "feature-comparison.transit")
-          outputs   [["feature-comparison.transit" ab-dir]
+          outputs   [["feature-comparison.log" ab-dir]
+                     ["feature-comparison.transit" ab-dir]
                      ["run.log" config-dir]
                      ["run.transit" config-dir]
                      ["shot.PNG" config-dir]

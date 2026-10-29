@@ -13,6 +13,7 @@
    [benches.render-wasm.feature-plan :as feature-plan]
    [benches.render-wasm.node.artifacts :as artifacts]
    [benches.render-wasm.node.feature-comparison :as feature-comparison]
+   [benches.render-wasm.node.log :as log]
    [benches.render-wasm.node.run :as run]
    [benches.render-wasm.node.runs :as runs]
    [benches.render-wasm.result :as result]
@@ -24,7 +25,9 @@
 (t/use-fixtures :each
   {:before #(reset! temporary-root
                     (fs/mkdtempSync (path/join (os/tmpdir) "penpot-render-run-")))
-   :after #(fs/rmSync @temporary-root #js {:recursive true :force true})})
+   :after (fn []
+            (log/configure {})
+            (fs/rmSync @temporary-root #js {:recursive true :force true}))})
 
 (defn- output-dir
   []
@@ -187,7 +190,7 @@
                 (runs/create-home {:root (artifacts/frontend-root) :run-id (:run-id opts)
                                    :output-dir (:output-dir opts)})
                 (selected-build (build-dir) "test-build")
-                cases opts (.-signal controller) nil nil)))
+                cases opts (.-signal controller))))
 
 (defn- attempts-for
   [run case-id]
@@ -200,6 +203,48 @@
 (defn- saved-record
   [result]
   (result/decode (fs/readFileSync (get-in result [:home :record-path]) "utf8")))
+
+(t/deftest ^:async retained-run-prints-results-and-keeps-all-levels-in-its-log
+  (doseq [level [:info :warn :debug]]
+    (let [root   @temporary-root
+          cases  [(collected :case/a :fresh) (collected :case/b :reuse)]
+          build  (artifacts/create-build root {:default-features? true :features []}
+                                         {:git {:sha "fixture" :dirty false}})
+          stdout (atom "")
+          stderr (atom "")
+          fake   (fake-browser {})
+          out    (output-dir)]
+      (doseq [file [(:index-path build) (path/join (:browser-dir build) "browser.js")
+                    (path/join (:renderer-dir build) "render-wasm.js")
+                    (path/join (:renderer-dir build) "render-wasm.wasm")
+                    (path/join (:renderer-dir build) "shared.js")]]
+        (fs/writeFileSync file "fixture" "utf8"))
+      (fs/writeFileSync (:cases-path build)
+                        (str "module.exports = {buildIdentity() {return "
+                             (js/JSON.stringify (transit/encode-str {:build-id (:id build)}))
+                             ";}, collectCases() {return "
+                             (js/JSON.stringify (transit/encode-str {:build-id (:id build) :cases cases}))
+                             ";}};") "utf8")
+      (artifacts/write-manifest build (assoc (:manifest build) :status :ready))
+      (log/configure {:level level :color :never
+                      :stdout #js {:write #(swap! stdout str %)}
+                      :stderr #js {:write #(swap! stderr str %)}})
+      (let [response (await (run/run root (assoc (options fake out) :build-id (:id build)
+                                                 :warmups 1 :repetitions 2) nil))
+            saved    (saved-record response)
+            text     (fs/readFileSync (get-in response [:home :log-path]) "utf8")]
+        (t/is (= 0 (:exit-code response)))
+        (t/is (= (str "Run " (:run-id saved) "\nOutput " out "\nReport\n"
+                      (str/replace (:report response) #"\n$" "") "\n") @stdout))
+        (t/is (str/includes? text "▸ Case case/a (fresh)\n"))
+        (doseq [case-text (rest (str/split text #"▸ Case "))]
+          (t/is (str/includes? case-text "  attempt 1/3 completed (warmup)\n"))
+          (t/is (str/includes? case-text "  attempt 2/3 completed\n"))
+          (t/is (str/includes? case-text "  attempt 3/3 completed\n")))
+        (t/is (str/includes? text (:report response)))
+        (t/is (str/includes? text "Browser FakeBrowser/1"))
+        (t/is (= (not= :warn level) (str/includes? @stderr "▸ Case case/a")))
+        (t/is (= (= :debug level) (str/includes? @stderr "Browser FakeBrowser/1")))))))
 
 (t/deftest ^:async fresh-and-reuse-cases-follow-their-context-policies
   (let [fake    (fake-browser {})
@@ -465,7 +510,7 @@
           home       (runs/create-home {:root root :run-id (:run-id opts) :output-dir (:output-dir opts)})
           controller (js/AbortController.)
           executed   (await (run/execute root home build [(collected :case/a :fresh)]
-                                         opts (.-signal controller) nil nil))
+                                         opts (.-signal controller)))
           saved      (saved-record executed)
           facts      (get-in saved [:metadata :build])]
       (t/is (zero? (:exit-code executed)))
@@ -487,7 +532,7 @@
         result (await (run/execute root home (selected-build dir id)
                                    [(collected :case/a :fresh)]
                                    (assoc (options fake out) :remove? true)
-                                   (.-signal (js/AbortController.)) nil nil))]
+                                   (.-signal (js/AbortController.))))]
     (t/is (fs/existsSync (get-in result [:home :record-path])))
     (t/is (fs/existsSync dir))
     (t/is (not (fs/existsSync (path/join dir "index.html"))))
@@ -518,7 +563,7 @@
         response   (await (run/execute root home (selected-build dir id)
                                        [(collected :case/a :fresh)]
                                        (assoc (options fake out) :remove true)
-                                       (.-signal (js/AbortController.)) nil nil))
+                                       (.-signal (js/AbortController.))))
         saved      (result/decode (fs/readFileSync prior "utf8"))]
     (t/is (= :running (get-in saved [:termination :reason])))
     (t/is (= 1 (count (:attempts saved))))
@@ -530,7 +575,8 @@
 
 (t/deftest ^:async comparison-stops-after-run-record-or-log-storage-fails
   (doseq [filename ["run.transit" "run.log"]]
-    (let [root     @temporary-root
+    (let [executed (atom nil)
+          root     @temporary-root
           out      (output-dir)
           cases    [(collected :case/a :fresh)]
           prepared {:plan (feature-plan/plan ["a"] {:dry-run true})
@@ -553,7 +599,7 @@
                            (js/Promise.resolve build)))
                        :collect-catalog (fn [_ _] cases)
                        :execute-run
-                       (fn [root home selected cases opts signal on-progress on-created]
+                       (^:async fn [root home selected cases opts signal]
                          (let [base    (fake-browser {})
                                close   (:close (:service base))
                                file    (path/join (:dir home) filename)
@@ -561,13 +607,16 @@
                                               (fn [owner]
                                                 (close owner)
                                                 (fs/renameSync file (str file ".saved"))
-                                                (fs/mkdirSync file)))]
-                           (run/execute root home selected cases (assoc opts :browser service)
-                                        signal on-progress on-created)))}}))
+                                                (fs/mkdirSync file)))
+                               outcome (await (run/execute root home selected cases
+                                                           (assoc opts :browser service) signal))]
+                           (reset! executed outcome)
+                           outcome))}}))
           saved    (result/decode (fs/readFileSync (get-in response [:home :record-path]) "utf8"))
           evidence (path/join out "configs" "0"
                               (if (= filename "run.transit") "run.transit.saved" "run.transit"))]
       (t/is (= 1 (count (:attempts (result/decode (fs/readFileSync evidence "utf8"))))))
       (t/is (= 1 (:exit-code response)))
+      (t/is (re-find #"Case case/a" (or (:report @executed) "")))
       (t/is (= :failed (get-in saved [:configurations 0 :status])))
       (t/is (= :unattempted (get-in saved [:configurations 1 :status]))))))

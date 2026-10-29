@@ -12,16 +12,10 @@
    [benches.render-wasm.node.build :as build]
    [benches.render-wasm.node.feature-comparison :as feature-comparison]
    [benches.render-wasm.node.feature-plan :as feature-plan]
+   [benches.render-wasm.node.log :as log]
+   [benches.render-wasm.node.options :as options]
    [benches.render-wasm.node.process :as process]
    [benches.render-wasm.node.run :as run]))
-
-(enable-console-print!)
-
-(defn- print-error
-  [cause]
-  (.error js/console (or (ex-message cause) (str cause)))
-  (when-let [data (ex-data cause)]
-    (.error js/console (pr-str data))))
 
 (defn- ^:async run-command
   [root options]
@@ -36,18 +30,10 @@
                                     (ex-info "run interrupted"
                                              {:type ::interrupted :signal name})))))]
     (try
-      (let [result (await (run/run root options signal
-                                   #(.write (.-stderr js/process) %)
-                                   #(println %)))]
-        (when-let [error (:error result)]
-          (print-error error))
-        (:exit-code result))
+      (await (run/run root options signal))
       (catch :default cause
-        (print-error cause)
-        (case @interrupted
-          "SIGINT" 130
-          "SIGTERM" 143
-          1))
+        {:error cause :log-path (:log-path (ex-data cause))
+         :exit-code (case @interrupted "SIGINT" 130 "SIGTERM" 143 1)})
       (finally
         (remove-signals)))))
 
@@ -61,8 +47,10 @@
                                         :features (or (:features options) [])}
                              :build-timeout-ms (:build-timeout-ms options)
                              :signal (.-signal controller)
-                             :on-created #(println (:id %))}))
-      0
+                             :on-created (fn [build]
+                                           (log/result (str "Build " (:id build)))
+                                           (log/result (str "Output " (:dir build))))}))
+      {:exit-code 0}
       (finally (remove-signals)))))
 
 (defn- ^:async ab-command
@@ -79,29 +67,14 @@
       (let [prepared (await (feature-plan/prepare root options signal))]
         (if (:dry-run options)
           (do
-            (.write (.-stdout js/process) (feature-plan/format-plan prepared))
-            0)
-          (let [result (await (feature-comparison/execute
-                               root prepared signal
-                               {:on-created
-                                (fn [home record]
-                                  (println (:comparison-id record))
-                                  (println (:dir home)))
-                                :on-progress
-                                #(.write (.-stderr js/process) %)}))]
-            (when-let [error (:error result)]
-              (print-error error))
-            (or (case @interrupted
-                  "SIGINT" 130
-                  "SIGTERM" 143
-                  nil)
-                (:exit-code result)))))
+            (log/result (feature-plan/format-plan prepared))
+            {:exit-code 0})
+          (let [result (await (feature-comparison/execute root prepared signal {}))]
+            (cond-> result
+              @interrupted (assoc :exit-code (case @interrupted "SIGTERM" 143 130))))))
       (catch :default cause
-        (print-error cause)
-        (case @interrupted
-          "SIGINT" 130
-          "SIGTERM" 143
-          1))
+        {:error cause :log-path (:log-path (ex-data cause))
+         :exit-code (case @interrupted "SIGINT" 130 "SIGTERM" 143 1)})
       (finally
         (remove-signals)))))
 
@@ -110,26 +83,39 @@
   Each compiled module owns its CLJS values; only the string crosses modules.
   Execution errors are printed here before returning a numeric exit code."
   [request]
-  (try
-    (let [{:keys [command options]} (transit/decode-str request)
-          root (artifacts/frontend-root)]
-      (case command
-        "purge"
-        (do
-          (artifacts/purge root (cond (:only-builds options) :builds
-                                      (:only-runs options) :runs
-                                      (:only-comparisons options) :comparisons
-                                      :else :all))
-          0)
+  (log/configure {})
+  (let [outcome
+        (try
+          (let [{:keys [command options]} (transit/decode-str request)
+                root (artifacts/frontend-root)]
+            (log/configure {:level (options/console-level options)
+                            :color (options/color-mode options)})
+            (case command
+              "purge"
+              (do
+                (artifacts/purge root (cond (:only-builds options) :builds
+                                            (:only-runs options) :runs
+                                            (:only-comparisons options) :comparisons
+                                            :else :all))
+                {:exit-code 0})
 
-        "build"
-        (await (build-command root options))
+              "build"
+              (await (build-command root options))
 
-        "run"
-        (await (run-command root options))
+              "run"
+              (await (run-command root options))
 
-        "ab"
-        (await (ab-command root options))))
-    (catch :default cause
-      (print-error cause)
-      1)))
+              "ab"
+              (await (ab-command root options))))
+          (catch :default cause
+            {:error cause :log-path (:log-path (ex-data cause)) :exit-code 1}))]
+    (when-let [cause (or (:error outcome) (:storage-error outcome))]
+      (let [data (ex-data cause)]
+        (binding [log/*log-path* (:log-path outcome)]
+          (log/error {:message (or (ex-message cause) (str cause))
+                      :fields (filterv (comp some? second)
+                                       [[:type (:type data)] [:phase (:phase data)]
+                                        [:build (:build-id data)] [:reason (:reason data)]
+                                        [:manifest-error (:manifest-error data)]])
+                      :tail-log (:tail-log outcome)}))))
+    (:exit-code outcome)))

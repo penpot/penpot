@@ -20,6 +20,7 @@
    [benches.render-wasm.identity :as identity]
    [benches.render-wasm.node.artifacts :as artifacts]
    [benches.render-wasm.node.catalog :as catalog]
+   [benches.render-wasm.node.log :as log]
    [benches.render-wasm.node.options :as options]
    [benches.render-wasm.node.process :as process]
    [clojure.string :as str]))
@@ -36,7 +37,7 @@
       (if (contains? #{:process-timeout :process-cancelled} (:type (ex-data cause)))
         (throw cause)
         (do
-          (.error js/console (str "Git provenance unavailable: " (or (ex-message cause) (str cause))))
+          (log/warn (str "Git provenance unavailable: " (or (ex-message cause) (str cause))))
           {:sha nil :dirty nil})))))
 
 (defn- check-profile-marks
@@ -45,11 +46,6 @@
     (throw (ex-info "compiled benchmark enables profiling marks or omits its setting"
                     {:type ::profile-marks :compiled compiled})))
   compiled)
-
-(defn- output
-  [build text _stream]
-  (fs/appendFileSync (:log-path build) text "utf8")
-  (.write (.-stderr js/process) text))
 
 (defn- ^:async validate-browser
   "Imports the release bridge in Node without preparing a renderer.
@@ -83,70 +79,83 @@
                                                           :feature-selection selection})
         build-ref (atom initial)
         phase     (atom :storage)]
-    (try
-      (when on-created (on-created initial))
-      (reset! phase :provenance)
-      (let [git (await (git-provenance root bounds))]
-        (swap! build-ref #(artifacts/write-manifest % (assoc-in (:manifest %) [:provenance :git] git))))
-      (reset! phase :renderer)
-      (let [build @build-ref
-            facts-path (path/join (:renderer-dir build) "cargo-build.json")
-            args (cond-> ["frontend" "--offline"]
-                   (not (:default-features? selection)) (conj "--no-default-features")
-                   (seq (:features selection)) (into ["--features" (str/join "," (:features selection))]))]
-        (await (process/run (merge bounds
-                                   {:command (path/resolve root ".." "render-wasm" "build")
-                                    :args args :cwd (path/resolve root ".." "render-wasm")
-                                    :capture-output? false :on-output #(output build %1 %2)
-                                    :env {"PENPOT_WASM_PREPARED" "1" "NODE_ENV" "production"
-                                          "BUILD_MODE" "release" "CARGO_NET_OFFLINE" "true"
-                                          "VERSION_TAG" (:id build)
-                                          "FRONTEND_DEST" (:renderer-dir build)
-                                          "FRONTEND_SHARED_DEST" (path/join root "src" "app" "render_wasm" "api" "shared.js")
-                                          "RENDER_WASM_SHARED_ARTIFACT" (path/join (:renderer-dir build) "shared.js")
-                                          "RENDER_WASM_BUILD_INFO" facts-path}})))
-        (let [facts    (js/JSON.parse (fs/readFileSync facts-path "utf8"))
-              profile  (js->clj (.-profile facts) :keywordize-keys true)
-              resolved (:features (options/feature-selection {:features (js->clj (.-features facts))
-                                                              :default-features? (:default-features? selection)}))]
-          (when-not (and (= "3" (:opt_level profile))
-                         (false? (:debug_assertions profile)))
-            (throw (ex-info "Cargo did not produce an optimized renderer"
-                            {:type ::renderer-profile :profile profile})))
-          (swap! build-ref #(artifacts/write-manifest
-                             % (cond-> (-> (:manifest %)
-                                           (assoc-in [:functional :features] resolved)
-                                           (assoc-in [:functional :default-features?] (boolean (some #{"default"} resolved)))
-                                           (assoc-in [:provenance :cargo-profile] profile))
-                                 (js/Object.hasOwn facts "environment")
-                                 (assoc :environment (js->clj (.-environment facts))))))))
-      (reset! phase :cljs)
-      (let [build @build-ref]
-        (await (process/run (merge bounds
-                                   {:command "clojure" :cwd root
-                                    :args ["-M:dev:renderer-bench" "release"
-                                           "bench-render-wasm-catalog" "bench-render-wasm-browser"]
-                                    :capture-output? false :on-output #(output build %1 %2)
-                                    :env {"RENDER_BENCH_BUILD_ID" (:id build)
-                                          "RENDER_BENCH_CASES_PATH" (:cases-path build)
-                                          "RENDER_BENCH_BROWSER_DIR" (:browser-dir build)}})))
-        (fs/copyFileSync (path/join root "performance" "benches" "render_wasm" "browser" "index.html")
-                         (:index-path build))
-        (reset! phase :identity)
-        (check-profile-marks (catalog/build-identity build))
-        (catalog/collect build {:master-seed 42})
-        (await (validate-browser build root bounds))
-        (artifacts/check-files build)
-        (when (zero? (process/remaining deadline))
-          (throw (ex-info "preparation deadline expired" {:type :process-timeout})))
-        (let [ready (artifacts/write-manifest build (assoc (:manifest build) :status :ready))]
-          (reset! build-ref ready)
-          (artifacts/load-build root (:id ready))))
-      (catch :default cause
-        (let [build   @build-ref
-              failure {:phase @phase :cause (failures/describe-cause cause)}]
-          (output build (str "\nPreparation failed: " (pr-str failure) "\n") :stderr)
-          (artifacts/write-manifest build (assoc (:manifest build) :status :failed :failure failure))
-          (throw (ex-info "renderer build preparation failed"
-                          {:type ::preparation-failed :build-id (:id build)
-                           :phase @phase :log-path (:log-path build)} cause)))))))
+    (binding [log/*log-path* (:log-path initial)]
+      (try
+        (when on-created (on-created initial))
+        (reset! phase :provenance)
+        (let [git (await (git-provenance root bounds))]
+          (swap! build-ref #(artifacts/write-manifest % (assoc-in (:manifest %) [:provenance :git] git))))
+        (reset! phase :renderer)
+        (log/info "Renderer compiling")
+        (let [build @build-ref
+              facts-path (path/join (:renderer-dir build) "cargo-build.json")
+              args (cond-> ["frontend" "--offline"]
+                     (not (:default-features? selection)) (conj "--no-default-features")
+                     (seq (:features selection)) (into ["--features" (str/join "," (:features selection))]))]
+          (await (process/run (merge bounds
+                                     {:command (path/resolve root ".." "render-wasm" "build")
+                                      :args args :cwd (path/resolve root ".." "render-wasm")
+                                      :capture-output? false :on-line (fn [line _] (log/debug line))
+                                      :env {"PENPOT_WASM_PREPARED" "1" "NODE_ENV" "production"
+                                            "BUILD_MODE" "release" "CARGO_NET_OFFLINE" "true"
+                                            "VERSION_TAG" (:id build)
+                                            "FRONTEND_DEST" (:renderer-dir build)
+                                            "FRONTEND_SHARED_DEST" (path/join root "src" "app" "render_wasm" "api" "shared.js")
+                                            "RENDER_WASM_SHARED_ARTIFACT" (path/join (:renderer-dir build) "shared.js")
+                                            "RENDER_WASM_BUILD_INFO" facts-path}})))
+          (let [facts    (js/JSON.parse (fs/readFileSync facts-path "utf8"))
+                profile  (js->clj (.-profile facts) :keywordize-keys true)
+                resolved (:features (options/feature-selection {:features (js->clj (.-features facts))
+                                                                :default-features? (:default-features? selection)}))]
+            (when-not (and (= "3" (:opt_level profile))
+                           (false? (:debug_assertions profile)))
+              (throw (ex-info "Cargo did not produce an optimized renderer"
+                              {:type ::renderer-profile :profile profile})))
+            (swap! build-ref #(artifacts/write-manifest
+                               % (cond-> (-> (:manifest %)
+                                             (assoc-in [:functional :features] resolved)
+                                             (assoc-in [:functional :default-features?] (boolean (some #{"default"} resolved)))
+                                             (assoc-in [:provenance :cargo-profile] profile))
+                                   (js/Object.hasOwn facts "environment")
+                                   (assoc :environment (js->clj (.-environment facts))))))))
+        (reset! phase :cljs)
+        (log/info "Modules compiling")
+        (let [build @build-ref]
+          (await (process/run (merge bounds
+                                     {:command "clojure" :cwd root
+                                      :args ["-M:dev:renderer-bench" "release"
+                                             "bench-render-wasm-catalog" "bench-render-wasm-browser"]
+                                      :capture-output? false :on-line (fn [line _] (log/debug line))
+                                      :env {"RENDER_BENCH_BUILD_ID" (:id build)
+                                            "RENDER_BENCH_CASES_PATH" (:cases-path build)
+                                            "RENDER_BENCH_BROWSER_DIR" (:browser-dir build)}})))
+          (fs/copyFileSync (path/join root "performance" "benches" "render_wasm" "browser" "index.html")
+                           (:index-path build))
+          (reset! phase :identity)
+          (log/info "Validating")
+          (check-profile-marks (catalog/build-identity build))
+          (catalog/collect build {:master-seed 42})
+          (await (validate-browser build root bounds))
+          (artifacts/check-files build)
+          (when (zero? (process/remaining deadline))
+            (throw (ex-info "preparation deadline expired" {:type :process-timeout})))
+          (log/info "  ready")
+          (let [ready (artifacts/write-manifest build (assoc (:manifest build) :status :ready))]
+            (reset! build-ref ready)
+            (artifacts/load-build root (:id ready))))
+        (catch :default cause
+          (let [build   @build-ref
+                failure {:phase @phase :cause (failures/describe-cause cause)}
+                manifest-error
+                (when (= :building (get-in build [:manifest :status]))
+                  (try
+                    (artifacts/write-manifest build (assoc (:manifest build) :status :failed :failure failure))
+                    nil
+                    (catch :default save-cause
+                      (or (ex-message save-cause) (str save-cause)))))]
+            (throw (ex-info "renderer build preparation failed"
+                            (cond-> {:type ::preparation-failed :build-id (:id build)
+                                     :phase @phase :log-path (or (:log-path (ex-data cause)) (:log-path build))
+                                     :reason (str/join " -> " (keep :message (:cause failure)))}
+                              manifest-error (assoc :manifest-error manifest-error))
+                            cause))))))))

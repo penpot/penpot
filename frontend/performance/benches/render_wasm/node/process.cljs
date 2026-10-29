@@ -9,6 +9,7 @@
   (:require
    ["child_process" :as child-process]
    ["fs" :as fs]
+   ["node:readline" :as readline]
    [clojure.string :as str]))
 
 (def default-termination-grace-ms 5000)
@@ -128,8 +129,9 @@
   deadline is an absolute Date.now() timestamp; signal is an optional
   AbortSignal. An expired deadline or aborted signal starts no process.
 
-  on-output receives [UTF-8 text :stdout/:stderr] as data arrives. Output is
-  also collected unless capture-output? is false, in which case both result
+  on-output receives [UTF-8 text :stdout/:stderr] as data arrives. Optional
+  on-line receives [line :stdout/:stderr], including a final unterminated line.
+  Output is also collected unless capture-output? is false; then both result
   strings are empty. Returns a promise of
   {:exit-code 0 :stdout string :stderr string}.
 
@@ -141,7 +143,7 @@
   after a successful root exit. Cleanup sends SIGTERM then, after the grace,
   SIGKILL. Settlement waits for live group members to stop. It uses root exit,
   not child close, since descendants may inherit and retain the output pipes."
-  [{:keys [command args cwd env deadline signal termination-grace-ms on-output capture-output?]
+  [{:keys [command args cwd env deadline signal termination-grace-ms on-output on-line capture-output?]
     :or {termination-grace-ms default-termination-grace-ms capture-output? true}
     :as options}]
   (let [empty-result {:exit-code nil :signal nil :stdout "" :stderr ""}
@@ -173,6 +175,7 @@
           (let [stdout         (volatile! [])
                 stderr         (volatile! [])
                 output-failure (volatile! nil)
+                line-readers   (volatile! [])
                 complete       (volatile! nil)
                 timeout        (volatile! nil)
                 abort          (fn [_] (@complete (cancelled signal)))
@@ -220,6 +223,18 @@
               (.on (.-stderr child) "data" #(route stderr :stderr %))
               (.on (.-stdout child) "error" #(stream-error :stdout % "Could not read command output"))
               (.on (.-stderr child) "error" #(stream-error :stderr % "Could not read command output"))
+              (when on-line
+                (doseq [[stream input] [[:stdout (.-stdout child)] [:stderr (.-stderr child)]]]
+                  (let [reader (readline/createInterface
+                                #js {:input input :terminal false :crlfDelay js/Infinity})]
+                    (vswap! line-readers conj reader)
+                    (.on reader "line"
+                         (fn [line]
+                           (try
+                             (on-line line stream)
+                             (catch :default cause
+                               (stream-error stream cause "Command output callback failed")))))
+                    (.on reader "error" #(stream-error stream % "Could not read command output")))))
               ;; EPIPE is normal when a command exits without reading stdin.
               (.on (.-stdin child) "error"
                    (fn [cause]
@@ -251,6 +266,8 @@
                       (throw (process-error options result failure))
                       (dissoc result :signal)))))
               (finally
+                (doseq [reader @line-readers]
+                  (.close ^js reader))
                 (stop-waiting)))))
         (finally
           (when-let [stream (.-stdin child)]
