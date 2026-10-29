@@ -947,3 +947,24 @@ test.describe("Context notification", () => {
     await expect(warning).toHaveScreenshot(shot);
   });
 });
+
+test.describe("Team hero link", () => {
+  test("Shows the Team management link", async ({ page }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.mockRPC(
+      `get-projects?team-id=${DashboardPage.secondTeamId}`,
+      "dashboard/get-projects-second-team.json",
+    );
+    await dashboardPage.goToSecondTeamDashboard();
+    await expect(page.getByText("Team Up")).toBeVisible();
+
+    const link = page.getByText("Team management", { exact: true });
+    await page.mouse.move(10, 700);
+    await expect(link).toHaveScreenshot(shot);
+
+    await link.hover();
+    await expect(link).toHaveScreenshot(shot);
+  });
+});

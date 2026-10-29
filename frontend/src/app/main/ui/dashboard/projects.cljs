@@ -64,9 +64,16 @@
 (mf/defc team-hero*
   {::mf/wrap [mf/memo]}
   [{:keys [team on-close]}]
-  (let [on-nav-members-click
+  (let [router       (mf/deref refs/router)
+        members-href (rt/resolve-uri router :dashboard-members {:team-id (:id team)})
+
+        on-nav-members-click
         (mf/use-fn
-         #(st/emit! (dcm/go-to-dashboard-members)))
+         (fn [event]
+           ;; Ctrl/Cmd-click opens the href in a new tab, as any link.
+           (when-not (kbd/mod? event)
+             (dom/prevent-default event)
+             (st/emit! (dcm/go-to-dashboard-members)))))
 
         on-invite
         (mf/use-fn
@@ -90,7 +97,9 @@
       [:div {:class (stl/css :title)} (tr "dasboard.team-hero.title")]
       [:div {:class (stl/css :info)}
        [:span (tr "dasboard.team-hero.text")]
-       [:a {:on-click on-nav-members-click} (tr "dasboard.team-hero.management")]]
+       [:a {:href members-href
+            :on-click on-nav-members-click}
+        (tr "dasboard.team-hero.management")]]
       [:> button* {:variant "primary"
                    :on-click on-invite}
        (tr "onboarding.choice.team-up.invite-members")]]
