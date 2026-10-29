@@ -901,9 +901,10 @@
           set-remote-synced?   (and (not initial-root?) reset?)
           geometry-kept?       (and omit-touched?
                                     (ctk/touched-group? shape-inst :geometry-group))
-          delta                (if geometry-kept?
-                                 parent-delta
-                                 (geometry-sync-delta shape-inst shape-main root-inst root-main))
+          sync-delta           (geometry-sync-delta shape-inst shape-main root-inst root-main)
+          delta                (if geometry-kept? parent-delta sync-delta)
+          ;; Offset between where the sync leaves shape-inst and where the main puts it
+          main-gap             (gpt/subtract delta sync-delta)
           changes
           (cond-> changes
             :always
@@ -998,13 +999,18 @@
                                :msg "Match slot"
                                :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
                                :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
-                    ;; A swapped child is not synced, but it moves with its parent
-                    (cond-> changes
-                      (not (gpt/almost-zero? delta))
-                      (move-with-parent (cfh/get-children-ids-with-self (:objects container)
-                                                                        (:id child-inst))
-                                        delta
-                                        container)))
+                    ;; A swapped child follows its parent if the user moved it, or
+                    ;; goes to the place of the slot's occupant in the main
+                    (let [move (if (ctk/touched-group? child-inst :geometry-group)
+                                 delta
+                                 (gpt/add (geometry-sync-delta child-inst child-main root-inst root-main)
+                                          main-gap))]
+                      (cond-> changes
+                        (not (gpt/almost-zero? move))
+                        (move-with-parent (cfh/get-children-ids-with-self (:objects container)
+                                                                          (:id child-inst))
+                                          move
+                                          container))))
 
           moved (fn [changes child-inst child-main]
                   (shape-log :trace (:id child-inst) container

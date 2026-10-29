@@ -307,8 +307,9 @@
         library (setup-library-with-icon-slot)
         file    (-> (instantiate-board library)
                     (swap-to-library-component library :copy-nested-head :icon-b)
-                    ;; The layout moves the slot
-                    (tho/move-shape-tree :copy-slot (gpt/point 800 0) :ignore-touched true))
+                    ;; The layout moves the slot, and a previous sync moved the icon away
+                    (tho/move-shape-tree :copy-slot (gpt/point 800 0) :ignore-touched true)
+                    (tho/move-shape-tree :copy-nested-head (gpt/point 800 0) :ignore-touched true))
 
         ;; ==== Action
         file'   (sync-after-unrelated-change file library :board-root)]
@@ -331,3 +332,32 @@
 
     ;; ==== Check
     (t/is (gpt/close? before (offset-in-slot file' :copy-slot :copy-nested-head)))))
+
+(t/deftest test-sync-keeps-user-moved-swapped-child-in-moved-slot
+  (let [;; ==== Setup
+        library (setup-library-with-icon-slot)
+        file    (-> (instantiate-board library)
+                    (swap-to-library-component library :copy-nested-head :icon-b)
+                    (tho/move-shape-tree :copy-nested-head (gpt/point 5 0))
+                    (tho/move-shape-tree :copy-slot (gpt/point 800 0) :ignore-touched true))
+        before  (offset-in-slot file :copy-slot :copy-nested-head)
+
+        ;; ==== Action
+        file'   (sync-after-unrelated-change file library :board-root)]
+
+    ;; ==== Check
+    (t/is (gpt/close? before (offset-in-slot file' :copy-slot :copy-nested-head)))))
+
+(t/deftest test-sync-places-swapped-child-where-main-slot-occupant-is
+  (let [;; ==== Setup
+        library  (setup-library-with-icon-slot)
+        file     (-> (instantiate-board library)
+                     (swap-to-library-component library :copy-nested-head :icon-b))
+
+        ;; ==== Action
+        library' (tho/move-shape-tree library :nested-head (gpt/point 4 4))
+        file'    (thf/apply-changes file (sync-file-from-library file library'))]
+
+    ;; ==== Check
+    (t/is (gpt/close? (offset-in-slot library' :slot :nested-head)
+                      (offset-in-slot file' :copy-slot :copy-nested-head)))))

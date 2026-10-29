@@ -3181,3 +3181,38 @@
         (t/is (= (get-in synced-t font-size-path-0) "30"))
         (t/is (contains? (:touched synced-t) :content-group))
         (t/is (contains? (:touched synced-t) :text-content-text))))))
+
+;; ============================================================
+;; SWAPPED CHILD POSITION
+;; ============================================================
+
+(defn- setup-variant-with-swapped-icon
+  "Variants whose roots hold an icon A copy, placed 8px lower in the second
+  variant, and a copy of the first variant with its icon swapped to icon B."
+  []
+  (-> (thf/sample-file :file1)
+      (tho/add-simple-component :icon-a :icon-a-root :icon-a-child)
+      (tho/add-simple-component :icon-b :icon-b-root :icon-b-child)
+      (thv/add-variant-with-copy :v01 :c01 :m01 :c02 :m02 :m01-icon :m02-icon :icon-a)
+      (tho/move-shape-tree :m02-icon (gpt/point 0 8))
+      (thc/instantiate-component :c01 :copy01 :children-labels [:copy-icon])
+      (thc/component-swap :copy-icon :icon-b :copy-icon-b)))
+
+(defn- offset-in-root
+  [file root-label child-label]
+  (let [root  (ths/get-shape file root-label)
+        child (ths/get-shape file child-label)]
+    (gpt/point (- (:x child) (:x root))
+               (- (:y child) (:y root)))))
+
+(t/deftest test-switch-places-swapped-child-where-new-variant-occupant-is
+  (let [;; ==== Setup
+        file  (setup-variant-with-swapped-icon)
+
+        ;; ==== Action
+        file' (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02
+                                                              :keep-touched? true})]
+
+    ;; ==== Check
+    (t/is (gpt/close? (offset-in-root file :m02 :m02-icon)
+                      (offset-in-root file' :copy02 :copy-icon-b)))))
