@@ -832,7 +832,8 @@
                                                 root-inst
                                                 root-main
                                                 reset?
-                                                initial-root?)
+                                                initial-root?
+                                                (gpt/point 0 0))
 
           ;; If the component is not found, because the master component has been
           ;; deleted or the library unlinked, do nothing.
@@ -866,8 +867,27 @@
             (recur shape-inst' next-data component')
             nil))))))
 
+(defn- geometry-sync-delta
+  "Offset the sync applies to the top-left of `dest-shape` when it copies the
+  geometry of `origin-shape`."
+  [dest-shape origin-shape dest-root origin-root]
+  (gpt/subtract (grc/rect->point (:selrect (reposition-shape origin-shape origin-root dest-root)))
+                (grc/rect->point (:selrect dest-shape))))
+
+(defn- move-with-parent
+  "Moves the shapes by `delta` without marking them touched."
+  [changes ids delta container]
+  (pcb/concat-changes
+   changes
+   (-> (pcb/empty-changes)
+       (pcb/with-container container)
+       (pcb/with-objects (:objects container))
+       (pcb/update-shapes ids #(gsh/move % delta) {:ignore-touched true}))))
+
 (defn- generate-sync-shape-direct-recursive
-  [changes container shape-inst component library file libraries shape-main root-inst root-main reset? initial-root?]
+  "Syncs `shape-inst` and its children from `shape-main`. `parent-delta` is
+  the offset the sync applies to the parent of `shape-inst`."
+  [changes container shape-inst component library file libraries shape-main root-inst root-main reset? initial-root? parent-delta]
   (shape-log :debug (:id shape-inst) container
              :msg "Sync shape direct recursive"
              :shape-inst (str (:name shape-inst) " " (pretty-uuid (:id shape-inst)))
@@ -879,6 +899,11 @@
     (let [omit-touched?        (not reset?)
           clear-remote-synced? (and initial-root? reset?)
           set-remote-synced?   (and (not initial-root?) reset?)
+          geometry-kept?       (and omit-touched?
+                                    (ctk/touched-group? shape-inst :geometry-group))
+          delta                (if geometry-kept?
+                                 parent-delta
+                                 (geometry-sync-delta shape-inst shape-main root-inst root-main))
           changes
           (cond-> changes
             :always
@@ -888,6 +913,9 @@
                           root-main
                           container
                           omit-touched?)
+
+            (and geometry-kept? (not (gpt/almost-zero? parent-delta)))
+            (move-with-parent [(:id shape-inst)] parent-delta container)
 
             (ctsl/flex-layout? shape-main)
             (update-flex-child-copy-attrs shape-main
@@ -962,15 +990,21 @@
                                                        root-inst
                                                        root-main
                                                        reset?
-                                                       initial-root?))
+                                                       initial-root?
+                                                       delta))
 
           swapped (fn [changes child-inst child-main]
                     (shape-log :trace (:id child-inst) container
                                :msg "Match slot"
                                :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
                                :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
-                    ;; For now we don't make any sync here.
-                    changes)
+                    ;; A swapped child is not synced, but it moves with its parent
+                    (cond-> changes
+                      (not (gpt/almost-zero? delta))
+                      (move-with-parent (cfh/get-children-ids-with-self (:objects container)
+                                                                        (:id child-inst))
+                                        delta
+                                        container)))
 
           moved (fn [changes child-inst child-main]
                   (shape-log :trace (:id child-inst) container
