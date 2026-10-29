@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { Tool } from "../Tool";
+import { Tool } from "../../Tool";
 import "reflect-metadata";
-import type { ToolResponse } from "../ToolResponse";
-import { TextResponse } from "../ToolResponse";
-import type { PenpotMcpServer } from "../PenpotMcpServer";
+import type { ToolResponse } from "../../ToolResponse";
+import { TextResponse } from "../../ToolResponse";
+import type { PenpotMcpServer } from "../../PenpotMcpServer";
 import * as fs from "fs";
 
 /**

@@ -124,7 +124,8 @@
                              (cond-> (and (not (uuid? session-pid))
                                           (uuid? token-pid))
                                (-> (assoc ::auth-type :token)
-                                   (assoc ::token-perms (set (::actoken/perms request #{})))))
+                                   (assoc ::token-perms (set (::actoken/perms request #{})))
+                                   (assoc ::token-type (::actoken/type request))))
                              (cond-> key-id
                                (assoc ::auth-key-id key-id))
                              ;; Server-side only: request bodies cannot forge
@@ -171,10 +172,12 @@
   [_ f mdata]
   (let [required-auth?      (::auth mdata true)
         required-auth-type  (::auth-type mdata)
+        required-token-type (::token-type mdata)
         required-perms      (into #{} (::perms mdata))]
     (fn [cfg params]
       (let [profile-id  (::profile-id params)
             auth-type   (::auth-type params)
+            token-type  (::token-type params)
             token-perms (set (::token-perms params #{}))]
         (cond
           (and required-auth? (not (uuid? profile-id)))
@@ -182,8 +185,13 @@
                     :code :authentication-required
                     :hint "authentication required for this endpoint")
 
-          (and (= required-auth-type :token)
-               (not= auth-type :token))
+          (or (and (= required-auth-type :token)
+                   (not= auth-type :token))
+              (and required-token-type
+                   (or (not= auth-type :token)
+                       (not= required-token-type token-type)))
+              (and (= token-type "mcp")
+                   (not= required-token-type "mcp")))
           (ex/raise :type :authorization
                     :code :token-auth-required
                     :hint "access token authentication required for this endpoint")
@@ -522,7 +530,7 @@
      {:middleware [[mw/cors]
                    [sec/client-header-check]
                    [session/authz cfg]
-                   [actoken/authz cfg]]
+                   [actoken/authz (assoc cfg ::actoken/allow-mcp true)]]
       :handler (make-rpc-handler methods)}]
 
     (doc/routes :methods methods
@@ -540,5 +548,5 @@
     {:middleware [[mw/cors]
                   [sec/client-header-check]
                   [session/authz cfg]
-                  [actoken/authz cfg]]
+                  [actoken/authz (assoc cfg ::actoken/allow-mcp true)]]
      :handler (make-rpc-handler methods)}]])

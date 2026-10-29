@@ -113,6 +113,15 @@ From the `mcp/` directory, run
 
 - Authorization/discovery URLs, self-contained client IDs, consent and PKCE/code binding, backend Redis state, deployment wiring, and compatibility limits: `mem:mcp/oauth`.
 
+## Backend tools (`submit_feedback`)
+
+- Tools that call the Penpot backend directly (not through the plugin) register only when `PENPOT_MCP_BACKEND_URI` is nonblank (`PenpotMcpServer.initTools`). Currently only `SubmitFeedbackTool`.
+- `PenpotBackendClient` owns the HTTP call and the status-to-message mapping; it posts to `api/main/methods/send-mcp-feedback` with `Authorization: Token <MCP user token>`. The token comes from the session context (OAuth bearer or `?userToken=`); without one the tool fails before calling the backend.
+- Tool zod schemas mirror the backend malli schema (lengths, blank, control characters); keep both in sync. The backend is the authority.
+- Success means the mail job was queued, not delivered; the tool text says so. `formatArgs` hides the feedback from logs.
+- Backend side: `send-mcp-feedback` in `app.rpc.commands.feedback`, configured by `PENPOT_MCP_FEEDBACK_EMAIL`; MCP-token auth rules in `mem:backend/auth-permissions-product-domains`.
+- User docs: `mcp/README.md` (env tables), `docs/mcp/index.md` (tool list), `docs/technical-guide/configuration.md` (MCP feedback section).
+
 ## Devenv plugin/server wiring
 
 In the normal Penpot devenv MCP path, the browser plugin does not discover or route through Postgres. The frontend provides the plugin extension API with `mcp.getServerUrl()`, currently derived from `frontend/src/app/config.cljs` as `penpotMcpServerURI` if set, otherwise `<public-uri>/mcp/ws`. The MCP plugin opens a direct WebSocket to that URL and appends the current MCP access token as a query parameter.
