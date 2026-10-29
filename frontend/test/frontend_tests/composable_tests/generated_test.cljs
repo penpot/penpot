@@ -51,12 +51,14 @@
                 pure (:situation state)
                 live (ftm/refresh-generated live)
                 expected (cg/resolve-op pure (:model state) tuple)
-                actual (if (#{:undo :redo} (first tuple))
+                actual (if (#{:undo :redo :library-undo :library-redo} (first tuple))
                          expected
                          (cg/resolve-op live (live-model state live) tuple))]
             (t/is (= (:trace expected) (:trace actual)) (str "Replay changed a target: " tuple))
             (let [next-live (try (if-let [op (:op actual)]
-                                   (await (ftm/run-generated-step live op))
+                                   (if-let [owner (:library-id actual)]
+                                     (await (ftm/run-generated-source-step live owner op))
+                                     (await (ftm/run-generated-step live op)))
                                    (do
                                      (t/is (= :settled (await (ftm/await-step []))))
                                      (ftm/refresh-generated live)))
@@ -82,7 +84,7 @@
                 (oracle/check next-live (live-model next-state next-live))
                 (catch :default error
                   (throw (ex-info (str "Frontend oracle at " tuple ": " (ex-message error))
-                                  (ex-data error) error))))
+                                  (assoc (ex-data error) :replay-tuple tuple) error))))
               (let [parity {:relative-free-head-placement true}
                     expected (oracle/canonical (:situation next-state) parity)
                     actual (oracle/canonical next-live parity)]
@@ -107,7 +109,7 @@
                   (t/is false (str (ex-message error) "\nReplay: " (pr-str program)
                                    "\nDetails: " (pr-str (ex-data error)))))))))
 
-(defn- ^:async replay-known-source-routing-failure
+(defn- ^:async replay-known-library-reference-failure
   [program]
   (await
    (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
@@ -130,10 +132,9 @@
        (ftm/uninstall!))
      (let [actual (try (await (replay-program program)) :success
                        (catch :default error
-                         (select-keys (ex-data error) [:type :code :hint :replay-tuple])))]
-       (tm/known-failure :F248 :success
-                         {:type :assertion :code :data-validation :hint "expected valid shape"
-                          :replay-tuple [:library-add-child 0]}
+                         (select-keys (ex-data error) [:type :code :hint :invariant :phase :group :replay-tuple])))]
+       (tm/known-failure :F249 :success
+                         {:invariant :I4 :group :structure :replay-tuple [:library-sync]}
                          actual)))))
 
 (def update-main-intent-programs
@@ -216,8 +217,56 @@
              :ops [[:grid-cell 0 0 0 2] [:library-add-child 0] [:library-add-child 0]
                    [:edit 0 1 1 2] [:library-sync] [:undo] [:redo]]}])]
     (if (get-in program [:world 2 :stale-libraries])
-      (await (replay-known-source-routing-failure program))
+      (await (replay-known-library-reference-failure program))
       (await (replay program)))))
+
+(t/deftest ^:async source-grid-additions-replay-without-accepting-the-library
+  (await (replay {:world [1 0 {:library true :library-depth 0 :library-grid true :stale-libraries true}]
+                  :ops [[:grid-cell 0 0 0 2] [:library-add-child 0] [:library-add-child 0]
+                        [:edit 0 1 1 2] [:undo] [:redo]]})))
+
+(t/deftest ^:async source-editors-retain-their-own-undo-and-redo-histories
+  (doseq [ops [[[:library-add-child 0] [:library-add-child 0] [:library-undo 0]
+                [:edit 0 1 1 2] [:library-redo 0] [:undo] [:redo]]
+               [[:edit 0 1 1 2] [:library-edit 0 0 1] [:undo]
+                [:library-undo 0] [:redo] [:library-redo 0]]
+               [[:library-transform 0 0 1 0] [:edit 0 1 1 2]
+                [:library-undo 0] [:undo] [:library-redo 0] [:redo]]]]
+    (await (replay {:world [1 0 {:library true :library-depth 0 :library-grid true :stale-libraries true}]
+                    :ops ops}))))
+
+(t/deftest ^:async two-source-editors-keep-their-histories-separate
+  (await (replay {:world [1 0 {:library true :library-depth 0 :library-dependency true :stale-libraries true}]
+                  :ops [[:library-edit 0 0 1] [:library-edit 1 0 2]
+                        [:library-undo 0] [:library-undo 1]
+                        [:library-redo 0] [:library-redo 1]]})))
+
+(t/deftest ^:async source-grid-acceptance-preserves-authored-cells-and-undo
+  (await
+   (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
+     (let [initial (cg/world [1 0 {:library true :library-depth 0 :library-grid true :stale-libraries true}])
+           edit    (cg/resolve-op initial {} [:grid-cell 0 0 0 2])
+           id      (get-in edit [:shape :id])
+           props   (get-in edit [:op :value :props])
+           live    (ftm/start-generated initial)
+           live    (await (ftm/run-generated-step live (:op edit)))
+           live    (loop [live live tuples [[:library-add-child 0] [:library-add-child 0] [:edit 0 1 1 2]]]
+                     (if-let [tuple (first tuples)]
+                       (let [{:keys [op library-id]} (cg/resolve-op live {} tuple)
+                             after (if library-id
+                                     (await (ftm/run-generated-source-step live library-id op))
+                                     (await (ftm/run-generated-step live op)))]
+                         (recur after (rest tuples)))
+                       live))
+           live    (await (ftm/run-generated-step live (:op (cg/resolve-op live {} [:library-sync]))))
+           shape   (tm/shape-by-id live id)
+           cell    (first (filter #(= [1 1] [(:row %) (:column %)]) (vals (:layout-grid-cells shape))))]
+       (t/is (some? (cthf/validate-file! (tm/file live) (cf/libraries live))))
+       (t/is (= 5 (count (:shapes shape))))
+       (t/is (= [2 3] (mapv #(count (get shape %)) [:layout-grid-rows :layout-grid-columns])))
+       (t/is (= props (select-keys cell (keys props))))
+       (t/is (empty? (uc/failures (await (ftm/finish-generated live)))))
+       (ftm/uninstall!)))))
 
 (t/deftest ^:async authored-grid-histories-use-independent-cell-expectations
   (doseq [ops [[[:grid-direction 0 0 1 1] [:grid-direction 0 0 1 0]

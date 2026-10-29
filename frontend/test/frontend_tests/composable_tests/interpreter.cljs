@@ -872,6 +872,63 @@
   [situation op]
   (run-ops situation [op]))
 
+(defn- get-generated-editor
+  [situation]
+  {:situation (dissoc (refresh-generated situation) ::source-editors)
+   :undo (:workspace-undo @st/state)})
+
+(defn- resume-generated-editor
+  [{:keys [situation undo]}]
+  (let [file (tm/file situation)]
+    (uninstall!)
+    (st/emit! (ptk/reify ::resume-generated-editor
+                ptk/UpdateEvent
+                (update [_ state]
+                  (assoc state :current-file-id (:id file)
+                         :current-page-id (cthf/current-page-id file)
+                         :workspace-undo undo)))
+              (dw/initialize-edit-watchers)
+              (dwl/watch-library-changes)
+              (headless-text-measurement))
+    (let [situation (refresh-generated situation)
+          baseline  (uc/baseline situation)
+          current   (snapshot)]
+      (if baseline
+        ;; Another editor can change loaded libraries between this editor's
+        ;; steps. Keep its own undo baseline and refresh only foreign files.
+        (uc/mark-baseline situation (:depth baseline)
+                          (assoc current :files
+                                 (assoc (:files current) (:id file)
+                                        (get-in baseline [:snapshot :files (:id file)]))))
+        (mark-baseline situation)))))
+
+(defn ^:async run-generated-source-step
+  "Run a source edit in its owning editor and retain both undo histories.
+   Returning to the consumer loads source data without accepting it."
+  [situation owner op]
+  (let [consumer (get-generated-editor situation)
+        files    (cf/all-files situation)
+        editor   (or (get-in situation [::source-editors owner])
+                     {:situation (-> (tm/make-situation (get files owner))
+                                     (tm/with-aux-files (dissoc files owner))
+                                     (assoc ::undo-check? true ::generated true)
+                                     (uc/with-runner :frontend))
+                      :undo {}})
+        source   (resume-generated-editor editor)
+        before   (snapshot)
+        source   (await (run-ops source [op]))]
+    (when-not source
+      (throw (ex-info "Source editor step failed" {:owner owner})))
+    (t/is (= (dissoc (:files before) owner) (dissoc (:files (snapshot)) owner))
+          "A source editor must not write another file")
+    (let [source (await (check-variant source))
+          editor (get-generated-editor source)
+          live   (resume-generated-editor consumer)]
+      (t/is (empty? (uc/failures source)) (pr-str (uc/failures source)))
+      (-> live
+          (assoc ::source-editors (assoc (::source-editors situation) owner editor))
+          (tm/record-application op {:library-id owner})))))
+
 (defn finish-generated
   [situation]
   (check-variant situation))
