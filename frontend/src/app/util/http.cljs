@@ -146,6 +146,26 @@
    :body    (.-body ^js response)
    ::response response})
 
+;; Messages of the TypeError a failed `fetch` rejects with, or a failed
+;; read of its response body.
+(def ^:private network-failure-messages
+  #{"Failed to fetch"                                 ; Chrome
+    "NetworkError when attempting to fetch resource." ; Firefox
+    "Load failed"                                     ; Safari
+    "network error"                                   ; Chrome, body read
+    "Error in body stream"})                          ; Firefox, body read
+
+(defn network-failure?
+  "True when the error is the browser's TypeError for a request that never
+  got an answer. Other TypeErrors, such as reading a body twice, are bugs
+  and do not match."
+  [cause]
+  (and (= (.-name ^js cause) "TypeError")
+       (let [message (ex-message cause)]
+         (or (contains? network-failure-messages message)
+             ;; Newer Chrome versions append the host in parentheses
+             (str/starts-with? message "Failed to fetch (")))))
+
 (defn process-response-type
   [response-type response]
   (let [native-response (::response response)
@@ -156,7 +176,19 @@
                           :blob   (.blob ^js native-response))]
     (->> (rx/from body)
          (rx/map (fn [body]
-                   (assoc response :body body))))))
+                   (assoc response :body body)))
+         ;; The connection can drop while the body streams in, after
+         ;; `fetch` already resolved; the browser then rejects the read
+         ;; with a bare TypeError. Other errors, such as parse failures
+         ;; (SyntaxError), pass as is.
+         (rx/catch (fn [cause]
+                     (if (network-failure? cause)
+                       (rx/throw (ex-info (ex-message cause)
+                                          {:type :network
+                                           :hint "unable to read response body"
+                                           :uri (:uri response)}
+                                          cause))
+                       (rx/throw cause)))))))
 
 (defn send!
   [{:keys [response-type] :or {response-type :text} :as params}]

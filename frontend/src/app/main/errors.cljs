@@ -22,6 +22,7 @@
    [app.main.worker]
    [app.util.dom :as dom]
    [app.util.globals :as g]
+   [app.util.http :as http]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as ts]
    [app.util.webapi :as wapi]
@@ -1123,6 +1124,15 @@
         (and (= (.-name ^js cause) "NotFoundError")
              (str/includes? message "removeChild")))))
 
+(defn network-failure->error
+  "Wrap a raw network TypeError as a connectivity error, so it is reported
+  as an environment failure instead of an application crash."
+  [cause]
+  (ex-info (ex-message cause)
+           {:type (if (false? (.-onLine ^js g/navigator)) :offline :network)
+            :hint "unable to perform fetch operation"}
+           cause))
+
 (defn- from-plugin?
   "Check if the error is marked as originating from plugin code. The
   plugin runtime tracks plugin errors in a WeakMap, which works even
@@ -1148,6 +1158,10 @@
                 ;; Other ignorable exceptions: ignore silently
                 (is-ignorable-exception? cause)
                 nil
+
+                ;; Raw fetch failures: connectivity, not a crash
+                (http/network-failure? cause)
+                (on-error (network-failure->error cause))
 
                 ;; All other errors: show exception page
                 :else
@@ -1175,6 +1189,10 @@
                 ;; Other ignorable exceptions: ignore silently
                 (is-ignorable-exception? cause)
                 nil
+
+                ;; Raw fetch failures: connectivity, not a crash
+                (http/network-failure? cause)
+                (on-error (network-failure->error cause))
 
                 ;; All other errors: show exception page
                 :else
