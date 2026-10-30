@@ -187,8 +187,8 @@ export class PluginBridge implements TaskDispatchHost {
                 }
             });
 
-            ws.on("close", () => {
-                this.logger.info("WebSocket connection closed");
+            ws.on("close", (code: number, reason: Buffer) => {
+                this.logger.info("WebSocket connection closed (code %d%s)", code, reason.length ? `: ${reason}` : "");
                 clearTimeout(initializationTimeout);
                 this.removeConnection(ws);
             });
@@ -262,8 +262,9 @@ export class PluginBridge implements TaskDispatchHost {
      *
      * Clears the per-connection keep-alive interval and removes the connection from the
      * socket-keyed index and the user's session collection. The token-keyed index entry
-     * is removed only when the user's last local connection closes. Safe to call with a
-     * socket that is not (or no longer) registered.
+     * is removed only when the user's last local connection closes. Tasks sent over the
+     * connection and still awaiting a response fail at once. Safe to call with a socket
+     * that is not (or no longer) registered.
      *
      * @param ws - The WebSocket whose connection state should be removed
      */
@@ -277,6 +278,13 @@ export class PluginBridge implements TaskDispatchHost {
         this.connectionsBySocket.delete(ws);
         const connections = this.getUserConnections(connection.userToken)!;
         connections.remove(connection);
+        // a task sent over the closed socket can no longer be answered, since responses only count
+        // from the connection the task went to
+        for (const [taskId, taskConnection] of [...this.taskConnections]) {
+            if (taskConnection === connection) {
+                this.rejectPendingTask(taskId, new Error("The plugin connection closed before the task finished."));
+            }
+        }
         if (connection.userToken !== null && connections.size === 0) {
             this.userPenpotConnectionsByToken.delete(connection.userToken);
         }
