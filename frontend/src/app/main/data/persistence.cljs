@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.files.changes-merge :as mch]
    [app.common.logging :as log]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -806,8 +807,13 @@
   [buffer]
   (->> (rx/from (group-by :file-id buffer))
        (rx/map (fn [[_ [item :as commits]]]
-                 (let [uchg (into [] xf-mapcat-undo commits)
-                       rchg (into [] xf-mapcat-redo commits)]
+                 (let [;; The component sync emits a `reg-objects` per touched
+                       ;; shape, and a batched swap collects hundreds of them
+                       ;; for a handful of groups. Fusing them per container
+                       ;; keeps the batch equivalent and much smaller, both
+                       ;; here and in the undo stack.
+                       uchg (mch/merge-reg-objects (into [] xf-mapcat-undo commits))
+                       rchg (mch/merge-reg-objects (into [] xf-mapcat-redo commits))]
                    (-> item
                        (assoc :undo-changes uchg)
                        (assoc :redo-changes rchg)
