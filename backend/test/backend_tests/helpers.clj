@@ -547,13 +547,38 @@
       (method-fn params))))
 
 (defn management-command!
+  "Invokes a management RPC method.
+
+  Resolves the shared-key id from an explicit `::rpc/auth-key-id`, from
+  `:app.http/auth-key-id` on the data or on the supplied request, and falls
+  back to the first id the method declares. The fallback lets the existing
+  tests exercise the allowed path without repeating the key; a test that
+  checks a rejection declares the key explicitly, including `nil`."
   [{:keys [::type] :as data}]
-  (let [[_ method-fn] (get-in *system* [:app.rpc/management-methods type])]
+  (let [[mdata method-fn] (get-in *system* [:app.rpc/management-methods type])]
     (when-not method-fn
       (ex/raise :type :assertion
                 :code :rpc-method-not-found
                 :hint (str/ffmt "management rpc method '%' not found" (name type))))
-    (let [params (prepare-rpc-params data)]
+    (let [request (-> data meta :app.http/request)
+          key-id  (cond
+                    (contains? data ::rpc/auth-key-id)
+                    (::rpc/auth-key-id data)
+
+                    (contains? data :app.http/auth-key-id)
+                    (:app.http/auth-key-id data)
+
+                    (and (map? request)
+                         (contains? request :app.http/auth-key-id))
+                    (:app.http/auth-key-id request)
+
+                    :else
+                    (first (::rpc/allowed-shared-keys mdata)))
+          data    (if (or (contains? data ::rpc/auth-key-id)
+                          (nil? key-id))
+                    data
+                    (assoc data ::rpc/auth-key-id key-id))
+          params  (prepare-rpc-params data)]
       (try-on! (method-fn params)))))
 
 (def multipart-headers
