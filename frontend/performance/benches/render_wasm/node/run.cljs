@@ -35,6 +35,31 @@
    [benches.render-wasm.result :as result]
    [clojure.string :as str]))
 
+(def schema:run-options
+  "Resolved options for run preparation and execution."
+  (let [timeout-ms [:int {:min 1 :max 2147483647}]]
+    [:map {:closed true}
+     [:seed [:int {:min 0 :max 4294967295}]]
+     [:warmups [:int {:min 0 :max js/Number.MAX_SAFE_INTEGER}]]
+     [:repetitions [:int {:min 1 :max js/Number.MAX_SAFE_INTEGER}]]
+     [:timeout-ms timeout-ms]
+     [:build-timeout-ms timeout-ms]
+     [:startup-timeout-ms timeout-ms]
+     [:filter {:optional true} [:maybe :string]]
+     [:build-id {:optional true} [:string {:min 1}]]
+     [:output-dir {:optional true} [:maybe [:string {:min 1}]]]
+     [:default-features {:optional true} :boolean]
+     [:features {:optional true} [:vector [:string {:min 1}]]]
+     [:screenshots {:optional true} :boolean]
+     [:remove {:optional true} :boolean]
+     [:require-gpu {:optional true} :boolean]
+     [:browser {:optional true} [:map-of :keyword fn?]]]))
+
+(def ^:private check-options
+  (sm/check-fn schema:run-options
+               :hint "invalid run options"
+               :type ::invalid-options))
+
 (defn- now
   []
   (.toISOString (js/Date.)))
@@ -145,19 +170,19 @@
 
 (defn- record-screenshot-skip
   [state case-id reason]
-  (when (:screenshots? (:opts state))
+  (when (:screenshots (:opts state))
     (when-not (screenshot-status state case-id)
       (record-screenshot-status state case-id {:status :skipped :reason reason}))))
 
 (defn- ensure-screenshot-status
   [state case reason]
-  (when (:screenshots? (:opts state))
+  (when (:screenshots (:opts state))
     (when-not (screenshot-status state (:id case))
       (record-screenshot-skip state (:id case) reason))))
 
 (defn- ^:async screenshot-case
   [state case page]
-  (when (:screenshots? (:opts state))
+  (when (:screenshots (:opts state))
     (let [{:keys [file path]} (runs/screenshot-path (:home state) (:id case))
           opts   (:opts state)
           bounds {:deadline (process/deadline (:startup-timeout-ms opts))
@@ -276,7 +301,7 @@
                       (false? (:software graphics))
                       (usable-graphics-identity? (:vendor graphics))
                       (usable-graphics-identity? (:renderer graphics)))]
-    (if (and (:require-gpu? (:opts state)) (not accepted))
+    (if (and (:require-gpu (:opts state)) (not accepted))
       (do
         (record-failure state (:case-id preparation) :gpu
                         {:status "failed" :phase "gpu"
@@ -563,7 +588,7 @@
   [state]
   (let [termination (get-termination @(:run-ref state) (interruption (:signal state))
                                      @(:harness-failed? state))]
-    (when (:screenshots? (:opts state))
+    (when (:screenshots (:opts state))
       (swap! (:run-ref state) update-in [:metadata :diagnostics :screenshots]
              complete-screenshots (:cases state)))
     (swap! (:run-ref state) result/finish-run (now) termination)
@@ -637,29 +662,18 @@
                  :timeout-ms (:timeout-ms opts)
                  :build-timeout-ms (:build-timeout-ms opts)
                  :startup-timeout-ms (:startup-timeout-ms opts)
-                 :screenshots? (boolean (:screenshots? opts))
-                 :require-gpu? (boolean (:require-gpu? opts))
+                 :screenshots? (boolean (:screenshots opts))
+                 :require-gpu? (boolean (:require-gpu opts))
                  :penpot-gpu (or (.-PENPOT_GPU (.-env js/process)) nil)
                  :runner-git {:sha nil :dirty nil}
                  :runtime-helper-identity :unverified
                  :screenshots {}
                  :failures []}})
 
-(defn- normalize-options
-  [options]
-  (-> options
-      (assoc :screenshots? (boolean (or (:screenshots? options)
-                                        (:screenshots options)))
-             :remove? (boolean (or (:remove? options)
-                                   (:remove options)))
-             :require-gpu? (boolean (or (:require-gpu? options)
-                                        (:require-gpu options))))
-      (dissoc :screenshots :remove :require-gpu)))
-
 (defn- create-run-record
-  [root selected-build cases opts]
+  [root run-id selected-build cases opts]
   (result/create-run
-   {:run-id (:run-id opts)
+   {:run-id run-id
     :started-at (now)
     :plan {:cases cases
            :warmups (:warmups opts)
@@ -668,23 +682,22 @@
     :metadata (metadata root selected-build opts)}))
 
 (defn- create-run-state
-  [root home selected-build cases options signal]
-  (let [opts (assoc (normalize-options options) :run-id (:run-id home))]
-    {:root root
-     :selected-build selected-build
-     :cases cases
-     :opts opts
-     :signal signal
-     :home home
-     :run-ref (atom (create-run-record root selected-build cases opts))
-     :storage-error-ref (atom nil)
-     :owner-ref (atom nil)
-     :page-ref (atom nil)
-     :host-ref (atom nil)
-     :launch-deadline (atom nil)
-     :abort-run? (atom false)
-     :harness-failed? (atom false)
-     :services (merge browser/service (:browser opts))}))
+  [root home selected-build cases opts signal]
+  {:root root
+   :selected-build selected-build
+   :cases cases
+   :opts opts
+   :signal signal
+   :home home
+   :run-ref (atom (create-run-record root (:run-id home) selected-build cases opts))
+   :storage-error-ref (atom nil)
+   :owner-ref (atom nil)
+   :page-ref (atom nil)
+   :host-ref (atom nil)
+   :launch-deadline (atom nil)
+   :abort-run? (atom false)
+   :harness-failed? (atom false)
+   :services (merge browser/service (:browser opts))})
 
 (defn- record-session-failure
   [state stage cause]
@@ -719,7 +732,7 @@
 
 (defn- remove-run-build
   [state saved?]
-  (when (and saved? (:remove? (:opts state)))
+  (when (and saved? (:remove (:opts state)))
     (try
       (remove-build (:root state) (:selected-build state))
       nil
@@ -772,7 +785,7 @@
   - `home`: the reserved output home.
   - `selected-build`: the prepared build.
   - `cases`: the selected cases.
-  - `options`: resolved CLI options
+  - `options`: resolved options satisfying `schema:run-options`.
   - `signal`: an optional abort signal.
 
   A browser startup failure leaves a valid partial record.
@@ -781,6 +794,7 @@
   storage-error. A storage error reports any failed record or log write,
   including a failure followed by a successful write."
   [root home selected-build cases options signal]
+  (check-options options)
   (binding [log/*log-path* (:log-path home)]
     (let [state (create-run-state root home selected-build cases options signal)]
       (persist state)
@@ -824,17 +838,16 @@
 (defn ^:async run
   "Prepares or loads a build, collects matching cases and executes one run.
 
-  A build or catalog failure rethrows with build facts without writing to the
-  build output home
+  - `root`: the frontend checkout root.
+  - `options`: resolved options satisfying `schema:run-options`.
+  - `signal`: an optional abort signal.
 
-  - root: The root of the frontend code checkout
-  - options: see `schema:run-options`
-  - signal:
-  "
+  Validates options before allocating output. Returns the execution result.
+  A build or catalog failure throws with the run log path and build facts."
   [root options signal]
-  (let [opts (normalize-options options)
+  (let [opts (check-options options)
         home (runs/create-home {:root root :run-id (str (random-uuid))
-                                :output-dir (:output-dir opts) :remove (:remove? opts)})]
+                                :output-dir (:output-dir opts) :remove (:remove opts)})]
     (binding [log/*log-path* (:log-path home)]
       (try
         (log/result (str "Run " (:run-id home)))

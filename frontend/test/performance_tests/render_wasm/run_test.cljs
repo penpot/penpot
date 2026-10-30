@@ -85,8 +85,8 @@
 (defn- fake-browser
   [{:keys [launch-failure new-page-failure close-page-failure
            prepare-failure run-failure screenshot-failure
-           interruption controller effective-graphics]
-    :or {effective-graphics (constantly {})}}]
+           interruption controller effective-graphics metrics]
+    :or {effective-graphics (constantly {}) metrics {}}}]
   (let [state (atom {:launches 0 :pages 0 :close-pages 0 :closes 0
                      :host nil :runs {} :preparations {}})]
     {:state state
@@ -163,7 +163,7 @@
             :response
             {:status "failed" :phase "interact" :message "attempt rejected"}
 
-            {:status "ok" :metrics {} :trace {}})))
+            {:status "ok" :metrics metrics :trace {}})))
       :screenshot
       (fn [page file _]
         (check-page page)
@@ -173,8 +173,7 @@
 
 (defn- options
   [fake out]
-  {:run-id "test-run"
-   :output-dir out
+  {:output-dir out
    :seed 42
    :filter nil
    :warmups 0
@@ -191,7 +190,7 @@
    (execute fake cases opts (js/AbortController.)))
   ([_fake cases opts controller]
    (run/execute (artifacts/frontend-root)
-                (runs/create-home {:root (artifacts/frontend-root) :run-id (:run-id opts)
+                (runs/create-home {:root (artifacts/frontend-root) :run-id "test-run"
                                    :output-dir (:output-dir opts)})
                 (selected-build (build-dir) "test-build")
                 cases opts (.-signal controller))))
@@ -207,6 +206,45 @@
 (defn- saved-record
   [result]
   (result/decode (fs/readFileSync (get-in result [:home :record-path]) "utf8")))
+
+(t/deftest ^:async run-rejects-invalid-options-before-allocating-output
+  (doseq [invalid [{:seed 4294967296}
+                   {:warmups -1}
+                   {:repetitions 1.5}
+                   {:timeout-ms js/Infinity}
+                   {:build-timeout-ms 2147483648}
+                   {:startup-timeout-ms 0}
+                   {:screenshots "false"}
+                   {:remove nil}
+                   {:require-gpu 1}
+                   {:repetitons 1}]]
+    (let [out   (output-dir)
+          opts  (merge (dissoc (options nil out) :browser)
+                       {:build-id "unavailable"} invalid)
+          cause (try
+                  (await (run/run @temporary-root opts nil))
+                  nil
+                  (catch :default cause cause))]
+      (t/testing (pr-str invalid)
+        (t/is (= ::run/invalid-options (:type (ex-data cause))))
+        (t/is (not (fs/existsSync out)))))))
+
+(t/deftest ^:async execute-rejects-invalid-options-before-writing-evidence
+  (let [root       @temporary-root
+        fake       (fake-browser {})
+        home       (runs/create-home {:root root :run-id "invalid-options"
+                                      :output-dir (output-dir)})
+        files      (vec (fs/readdirSync (:dir home)))
+        log-text   (fs/readFileSync (:log-path home) "utf8")
+        opts       (assoc (options fake (:dir home)) :screenshots "false")
+        cause      (try
+                     (await (run/execute root home (selected-build (build-dir) "test-build")
+                                         [(collected :case/a :fresh)] opts nil))
+                     nil
+                     (catch :default cause cause))]
+    (t/is (= ::run/invalid-options (:type (ex-data cause))))
+    (t/is (= files (vec (fs/readdirSync (:dir home)))))
+    (t/is (= log-text (fs/readFileSync (:log-path home) "utf8")))))
 
 (t/deftest ^:async retained-run-prints-results-and-keeps-all-levels-in-its-log
   (doseq [level [:info :warn :debug]]
@@ -801,7 +839,7 @@
           opts       (options fake (output-dir))
           build      (cond-> (selected-build (build-dir) "test-build")
                        (not= ::missing environment) (assoc-in [:manifest :environment] environment))
-          home       (runs/create-home {:root root :run-id (:run-id opts) :output-dir (:output-dir opts)})
+          home       (runs/create-home {:root root :run-id "test-run" :output-dir (:output-dir opts)})
           controller (js/AbortController.)
           executed   (await (run/execute root home build [(collected :case/a :fresh)]
                                          opts (.-signal controller)))
@@ -825,7 +863,7 @@
                                   :output-dir out :remove true})
         result (await (run/execute root home (selected-build dir id)
                                    [(collected :case/a :fresh)]
-                                   (assoc (options fake out) :remove? true)
+                                   (assoc (options fake out) :remove true)
                                    (.-signal (js/AbortController.))))]
     (t/is (fs/existsSync (get-in result [:home :record-path])))
     (t/is (fs/existsSync dir))
@@ -878,6 +916,36 @@
     (on-created build)
     (js/Promise.resolve build)))
 
+(t/deftest ^:async feature-comparison-completes-with-managed-output
+  (let [root     @temporary-root
+        cases    [(collected :case/a :fresh)]
+        fake     (fake-browser {:metrics {:first-render-ms
+                                          (result/metric {:value 1 :unit :ms
+                                                          :semantics :prepared-scene-to-full
+                                                          :basis {:kind :attempt-total}
+                                                          :zero-policy :positive})}})
+        prepared {:plan (feature-plan/plan ["a"] {:dry-run true})
+                  :cases cases
+                  :output-dir nil
+                  :options (dissoc (options nil nil) :browser)}
+        response (await
+                  (feature-comparison/execute
+                   root prepared nil
+                   {:services
+                    {:prepare-build prepare-comparison-build
+                     :collect-catalog (fn [_ _] cases)
+                     :execute-run
+                     (fn [root home selected cases opts signal]
+                       (run/execute root home selected cases
+                                    (assoc opts :browser (:service fake)) signal))}}))
+        saved    (result/decode (fs/readFileSync (get-in response [:home :record-path]) "utf8"))]
+    (t/is (= 0 (:exit-code response)))
+    (t/is (= [:completed :completed] (mapv :status (:configurations saved))))
+    (doseq [configuration (:configurations saved)]
+      (let [run (result/decode (fs/readFileSync (get-in configuration [:run :record-path]) "utf8"))]
+        (t/is (= :completed (get-in run [:termination :reason])))
+        (t/is (= 1 (count (:attempts run))))))))
+
 (t/deftest ^:async gpu-rejection-stops-later-matrix-configurations
   (doseq [[hardware-first close-fails] [[false false] [true false] [true true]]]
     (let [root     @temporary-root
@@ -887,7 +955,7 @@
           prepared {:plan (feature-plan/plan ["a"] {:dry-run true})
                     :cases cases
                     :output-dir out
-                    :options (assoc (dissoc (options nil out) :run-id :browser)
+                    :options (assoc (dissoc (options nil out) :browser)
                                     :require-gpu true :repetitions 2)}
           response (await
                     (feature-comparison/execute
@@ -927,7 +995,7 @@
           prepared {:plan (feature-plan/plan ["a"] {:dry-run true})
                     :cases cases
                     :output-dir out
-                    :options (dissoc (options nil out) :run-id :browser)}
+                    :options (dissoc (options nil out) :browser)}
           response (await
                     (feature-comparison/execute
                      root prepared nil
