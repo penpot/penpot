@@ -9740,3 +9740,23 @@ msgstr "This request has expired, was already used, or could not be completed. S
 
 msgid "mcp.oauth.cancelled"
 msgstr "Connection cancelled"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.export-selection"
+msgstr "Export selection"
+
+#: src/app/main/data/workspace/shortcuts.cljs
+msgid "shortcuts.export-selection"
+msgstr "Export selection with saved settings"
+
+#: src/app/main/data/exports/assets.cljs
+msgid "workspace.export-selection.empty"
+msgstr "Select an object to export."
+
+#: src/app/main/data/exports/assets.cljs
+msgid "workspace.export-selection.no-settings"
+msgstr "Add an export setting in the right sidebar."
+
+#: src/app/main/data/exports/assets.cljs
+msgid "workspace.export-selection.busy"
+msgstr "An export is already in progress."
