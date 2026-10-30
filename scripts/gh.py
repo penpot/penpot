@@ -748,8 +748,10 @@ GQL_ISSUE_BY_NUMBER_QUERY_ITEM = """\
       number
       title
       state
+      body
       milestone {{ title }}
       issueType {{ name }}
+      parent {{ number issueType {{ name }} milestone {{ title }} }}
       labels(first: 20) {{ nodes {{ name }} }}
       assignees(first: 10) {{ nodes {{ login }} }}
       closedByPullRequestsReferences(first: 5) {{ nodes {{ number }} }}
@@ -771,12 +773,19 @@ def issue_node_to_dict(node: dict) -> dict:
     """Convert a GraphQL issue node to the shared issue dict shape."""
     issue_type = node.get("issueType")
     ms = node.get("milestone")
+    parent = node.get("parent")
     return {
         "number": node["number"],
         "title": node["title"],
         "state": node["state"],
+        "body": node.get("body"),
         "milestone": ms["title"] if ms else None,
         "issue_type": issue_type["name"] if issue_type else None,
+        "parent": {
+            "number": parent["number"],
+            "issue_type": (parent.get("issueType") or {}).get("name"),
+            "milestone": (parent.get("milestone") or {}).get("title"),
+        } if parent else None,
         "labels": [lbl["name"] for lbl in node["labels"]["nodes"]],
         "assignees": node_assignees(node),
         "closing_prs": [pr["number"] for pr in node["closedByPullRequestsReferences"]["nodes"]],

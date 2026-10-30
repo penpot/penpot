@@ -58,6 +58,30 @@ their linked issue's labels: `release blocker`, `no issue required`.
 Each entry carries `number`, `title`, `state`, `issue_type`, `labels`,
 `closing_prs`, and `project_status`.
 
+### 2b. Keep out bugs that never reached production
+
+Bugs found and fixed while building a feature of the same, unreleased
+release never affected end users. The team rarely labels them, so find them
+before step 2's fetch is used to write entries:
+
+```bash
+python3 scripts/changelog.py dev-only-bugs "2.16.0"          # list only
+python3 scripts/changelog.py dev-only-bugs "2.16.0" --apply  # label the sure ones
+```
+
+- **Sure:** a bug whose parent issue is a `Feature` or `Enhancement` of the
+  same milestone. Run with `--apply`: it adds the `no changelog` label on
+  GitHub, so the decision shows on the issue and survives a regeneration.
+  Then re-fetch step 2.
+- **Candidates:** a bug whose parent is an epic of the same milestone, that
+  carries the `regression` label, or whose "Affected versions" /
+  "Environment" field names only hourly, develop, staging, PRE or a version
+  of this milestone. `regression` also marks regressions users hit in
+  production, and the field says where the bug was seen, not since when it
+  exists, so never label these yourself: show
+  them to the user, who labels the ones they confirm. They also appear in
+  the step 9 report.
+
 ### 3. Identify missing entries (optional)
 
 ```bash
@@ -287,6 +311,10 @@ pairing is misleading and a human must judge intent):
 released X.Y.0 (patches never carry highlights); `:rocket:` entry without
 issue AND PR references. Gaps never count toward the anomaly total.
 
+**Bugs that may never have reached production are warnings too** (step 2b):
+sub-issues of a milestone feature still unlabelled (run `dev-only-bugs
+--apply`) and candidates for the user to confirm.
+
 **Anything else is a rule violation**, not a report item: fix it in step 6
 pre-flight. If one shows up in the report, re-run the workflow.
 
@@ -299,7 +327,8 @@ pre-flight. If one shows up in the report, re-run the workflow.
 - **User-facing descriptions** in imperative mood.
 - **Community attribution** uses the PR author, placed before the issue link.
 - **Only closed issues**; **Rejected** project status excludes.
-- **`no changelog` and `Task`** stay out.
+- **`no changelog` and `Task`** stay out. Bugs of a feature of the same
+  milestone get `no changelog` via `dev-only-bugs --apply` (step 2b).
 - **Multiple fix PRs** go comma-separated inline.
 - **Duplicates**: the earlier version section wins.
 - **Taiga references**: resolve to the GitHub issue via description text or
