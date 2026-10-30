@@ -17,6 +17,7 @@
    [app.main.data.profile :as du]
    [app.main.store :as st]
    [app.plugins.register :as preg]
+   [app.util.globals :as globals]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [beicon.v2.operators :as rxo]
@@ -135,6 +136,35 @@
     (effect [_ _ _]
       (stop-reconnect-watcher!))))
 
+(defn- extension-hello?
+  "Checks if a window message is a browser extension's request for the
+  MCP session, posted on this page by its content script."
+  [event]
+  (and (identical? (unchecked-get event "source") globals/window)
+       (= (unchecked-get event "origin") (.-origin globals/location))
+       (= "penpot-mcp-extension:hello"
+          (some-> (unchecked-get event "data") (unchecked-get "type")))))
+
+(defn extension-status
+  "Returns the connection status to announce to a browser extension. The
+  plugin also reports `disconnected` while it reconnects, so the
+  extension, which forgets a session on `disconnected`, only hears it
+  once the user has stopped the connection."
+  [status connection-requested?]
+  (if (and (= status "disconnected") connection-requested?)
+    "connecting"
+    status))
+
+(defn- announce-session
+  "Posts the MCP session of this page to a browser extension, which keeps
+  this tab from being discarded."
+  [status session-id]
+  (.postMessage globals/window
+                #js {:type "penpot-mcp:session"
+                     :sessionId session-id
+                     :status status}
+                (.-origin globals/location)))
+
 (defn- init-mcp-plugin
   "Waits the plugin runtime and initializes the bundled MCP plugin."
   [{:keys [token]}]
@@ -151,6 +181,19 @@
                        (rx/filter (ptk/type? ::init) stream))
 
             active?   (atom true)
+
+            ;; Whether a browser extension asked for the session; nothing is
+            ;; posted on the page before that.
+            announce? (atom false)
+
+            on-message
+            (fn [event]
+              (when (extension-hello? event)
+                (reset! announce? true)
+                (let [{:keys [connection-status connection-requested session-id]} (get @st/state :mcp)]
+                  (announce-session (extension-status connection-status connection-requested)
+                                    session-id))))
+
             extension #js {:getToken (constantly token)
                            :getServerUrl #(str cf/mcp-ws-uri)
                            :isConnectionRequested #(and @active?
@@ -162,6 +205,9 @@
                                           (get-in @st/state [:mcp :connection-requested]))
                                  (start-reconnect-watcher))
                                (st/emit! (update-mcp-connection-status status session-id))
+                               (when @announce?
+                                 (announce-session (extension-status status (get-in @st/state [:mcp :connection-requested]))
+                                                   session-id))
                                (log/info :hint "MCP STATUS" :status status)))
 
                            :on
@@ -182,8 +228,15 @@
              (rx/take 1)
              (rx/subs! (fn [_]
                          (reset! active? false)
+                         (.removeEventListener globals/window "message" on-message)
+                         (when @announce?
+                           (announce-session "disconnected" nil))
                          (stop-reconnect-watcher!)
                          (dp/close-plugin! default-manifest))))
+        (.addEventListener globals/window "message" on-message)
+        ;; A content script that said hello before this listener existed
+        ;; says it again
+        (.postMessage globals/window #js {:type "penpot-mcp:ready"} (.-origin globals/location))
         (dp/start-plugin! manifest #js {:mcp extension})))))
 
 (defn- stop-mcp-plugin

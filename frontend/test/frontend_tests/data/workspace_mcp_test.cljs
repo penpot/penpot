@@ -58,6 +58,18 @@
       (t/is (false? (get-in result [:profile :props :mcp-enabled])))
       (t/is (false? (get-in result [:mcp :enabled]))))))
 
+(t/deftest test-extension-status
+  (t/testing "keeps a session the plugin is reconnecting"
+    (t/is (= "connecting" (mcp/extension-status "disconnected" true))))
+
+  (t/testing "reports the disconnect once the user has stopped the connection"
+    (t/is (= "disconnected" (mcp/extension-status "disconnected" false)))
+    (t/is (= "disconnected" (mcp/extension-status "disconnected" nil))))
+
+  (t/testing "passes other statuses through"
+    (t/is (= "connected" (mcp/extension-status "connected" true)))
+    (t/is (= "error" (mcp/extension-status "error" true)))))
+
 (t/deftest test-update-mcp-connection-status
   (t/testing "sets connection status to connected"
     (let [state  {:mcp {:connection-requested true :connection-status "disconnected"}}
