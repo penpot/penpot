@@ -48,8 +48,8 @@
   So: quiet mode still records detailed diagnostics in files.
   Also, the console renderer adds headings, prefixes, and colors."
   (:require
-    ["fs" :as fs]
-    [clojure.string :as str]))
+   ["fs" :as fs]
+   [clojure.string :as str]))
 
 ;; Each high-level task binds its own path and awaits its work inside that scope:
 ;;   (binding [log/*log-path* (:log-path home)]

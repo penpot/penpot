@@ -8,15 +8,15 @@
   "Owns Chromium through process/run from spawn, then attaches Playwright by CDP.
   Shutdown stops the owned process group before disconnecting the client."
   (:require
-    ["fs" :as fs]
-    ["os" :as os]
-    ["path" :as path]
-    ["playwright" :as playwright]
-    [app.common.transit :as transit]
-    [benches.render-wasm.failures :as failures]
-    [benches.render-wasm.identity :as identity]
-    [benches.render-wasm.node.options :as options]
-    [benches.render-wasm.node.process :as process]))
+   ["fs" :as fs]
+   ["os" :as os]
+   ["path" :as path]
+   ["playwright" :as playwright]
+   [app.common.transit :as transit]
+   [benches.render-wasm.failures :as failures]
+   [benches.render-wasm.identity :as identity]
+   [benches.render-wasm.node.options :as options]
+   [benches.render-wasm.node.process :as process]))
 
 (defn gpu-active?
   "Returns whether the development container enables GPU access."
