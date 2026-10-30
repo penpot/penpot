@@ -25,6 +25,7 @@ let connectionRequestId: string | null = null;
 let connectionReady = false;
 
 const HEARTBEAT_INTERVAL_MS = 10_000;
+const CONNECTION_TIMEOUT_MS = 30_000;
 const RECONNECT_BASE_DELAY_MS = 1_000;
 const RECONNECT_MAX_DELAY_MS = 30_000;
 
@@ -35,6 +36,7 @@ let lastConnectionToken: string | undefined;
 let reconnectAttempts = 0;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+let connectionTimer: ReturnType<typeof setTimeout> | null = null;
 
 /**
  * indicates whether the plugin is running with the Penpot-integrated remote MCP server enabled
@@ -202,6 +204,14 @@ function cancelReconnect(): void {
     reconnectAttempts = 0;
 }
 
+/** Clears the active handshake deadline. */
+function clearConnectionTimeout(): void {
+    if (connectionTimer !== null) {
+        clearTimeout(connectionTimer);
+        connectionTimer = null;
+    }
+}
+
 /**
  * Establishes a WebSocket connection to the MCP server.
  */
@@ -226,15 +236,31 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
             wsUrl += `?userToken=${encodeURIComponent(token)}`;
         }
 
-        ws = new WebSocket(wsUrl);
-        const socket = ws;
+        const socket = new WebSocket(wsUrl);
+        clearConnectionTimeout();
+        stopHeartbeat();
+        ws = socket;
         connectionRequestId = crypto.randomUUID();
         connectionSessionId = null;
         connectionReady = false;
         updateConnectionStatus("connecting", "Connecting...");
+        connectionTimer = setTimeout(() => {
+            if (ws !== socket) return;
+            connectionTimer = null;
+            if (socket.readyState !== WebSocket.CONNECTING) return;
+            // Retire the attempt before close: browsers may delay its close event.
+            ws = null;
+            connectionRequestId = null;
+            connectionSessionId = null;
+            connectionReady = false;
+            socket.close();
+            updateConnectionStatus("error", "Connection timed out");
+            scheduleReconnect();
+        }, CONNECTION_TIMEOUT_MS);
 
         ws.onopen = () => {
             if (ws !== socket) return;
+            clearConnectionTimeout();
             parent.postMessage({ type: "connection-metadata-request", sessionId: connectionRequestId }, "*");
         };
 
@@ -266,6 +292,7 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
 
         ws.onclose = (event: CloseEvent) => {
             if (ws !== socket) return;
+            clearConnectionTimeout();
             stopHeartbeat();
             // keep the explicit error state if one was already shown
             if (!wsError) {
@@ -287,6 +314,7 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
         };
 
         ws.onerror = (error) => {
+            if (ws !== socket) return;
             console.error("WebSocket error:", error);
             wsError = error;
             // note: WebSocket error events typically don't contain detailed error messages
@@ -305,6 +333,7 @@ function disconnectFromMcpServer(): void {
     shouldReconnect = false;
     cancelReconnect();
     stopHeartbeat();
+    clearConnectionTimeout();
     const socket = ws;
     ws = null;
     connectionRequestId = null;
