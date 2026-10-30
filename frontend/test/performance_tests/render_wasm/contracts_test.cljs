@@ -9,7 +9,7 @@
    [app.common.schema :as sm]
    [app.common.transit :as transit]
    [benches.render-wasm.cases :as cases]
-   [benches.render-wasm.declarations :as decl :include-macros true]
+   [benches.render-wasm.declarations :as decl]
    [cljs.test :as t :include-macros true]))
 
 (defrecord Point [x y])
@@ -238,21 +238,23 @@
                                            :params-schema [:map]
                                            :build (fn [params] params)}))))))
 
-(t/deftest same-namespace-registration-replaces
-  (try
-    (decl/register-scene! {:id :contracts-replaced
-                           :ns "contracts-test"
-                           :description "first"
-                           :params-schema [:map]
-                           :build (fn [params] params)})
-    (decl/register-scene! {:id :contracts-replaced
-                           :ns "contracts-test"
-                           :description "second"
-                           :params-schema [:map]
-                           :build (fn [params] params)})
-    (t/is (= "second" (:description (decl/registered-scene :contracts-replaced))))
-    (finally
-      (decl/unregister-scene! :contracts-replaced))))
+(t/deftest scene-replacement-preserves-order-and-unregister-removes
+  (let [ids        [:contracts-first :contracts-middle :contracts-last]
+        scene      {:ns "contracts-test" :description "first"
+                    :params-schema [:map] :build identity}
+        get-scenes #(filterv (comp (set ids) :id) (decl/scenes))]
+    (try
+      (doseq [id ids]
+        (decl/register-scene! (assoc scene :id id)))
+      (decl/register-scene! (assoc scene :id :contracts-middle :description "second"))
+      (t/is (= ids (mapv :id (get-scenes))))
+      (t/is (= ["first" "second" "first"] (mapv :description (get-scenes))))
+      (decl/unregister-scene! :contracts-middle)
+      (t/is (= [:contracts-first :contracts-last] (mapv :id (get-scenes))))
+      (t/is (nil? (decl/registered-scene :contracts-middle)))
+      (finally
+        (doseq [id ids]
+          (decl/unregister-scene! id))))))
 
 (t/deftest duplicate-case-id-from-another-namespace-is-rejected
   (try
@@ -383,31 +385,25 @@
     (t/is (false? (decl/transit-round-trips? {:point point})))))
 
 (t/deftest case-replacement-preserves-order-and-unregister-removes
-  (try
-    (decl/register-scene! {:id :contracts-replacecase
-                           :ns "contracts-test"
-                           :description "x"
-                           :params-schema [:map]
-                           :build (fn [params] params)})
-    (decl/register-case! {:id :contracts-replacecase/case
-                          :scene :contracts-replacecase
-                          :ns "contracts-test"
-                          :params {}
-                          :view {:scale 1 :x 0 :y 0}
-                          :context :fresh})
-    (decl/register-case! {:id :contracts-replacecase/case
-                          :scene :contracts-replacecase
-                          :ns "contracts-test"
-                          :params {}
-                          :view {:scale 2 :x 0 :y 0}
-                          :context :fresh})
-    (t/is (= 1 (count (filter #(= :contracts-replacecase/case (:id %)) (decl/cases)))))
-    (t/is (= {:scale 2 :x 0 :y 0} (:view (decl/registered-case :contracts-replacecase/case))))
-    (decl/unregister-case! :contracts-replacecase/case)
-    (t/is (nil? (decl/registered-case :contracts-replacecase/case)))
-    (finally
-      (decl/unregister-case! :contracts-replacecase/case)
-      (decl/unregister-scene! :contracts-replacecase))))
+  (let [ids        [:contracts-replacecase/first :contracts-replacecase/middle :contracts-replacecase/last]
+        bench-case {:scene :contracts-replacecase :ns "contracts-test"
+                    :params {} :view {:scale 1 :x 0 :y 0} :context :fresh}
+        get-cases  #(filterv (comp (set ids) :id) (decl/cases))]
+    (try
+      (decl/register-scene! {:id :contracts-replacecase :ns "contracts-test"
+                             :description "x" :params-schema [:map] :build identity})
+      (doseq [id ids]
+        (decl/register-case! (assoc bench-case :id id)))
+      (decl/register-case! (assoc bench-case :id :contracts-replacecase/middle :view {:scale 2 :x 0 :y 0}))
+      (t/is (= ids (mapv :id (get-cases))))
+      (t/is (= [1 2 1] (mapv #(get-in % [:view :scale]) (get-cases))))
+      (decl/unregister-case! :contracts-replacecase/middle)
+      (t/is (= [:contracts-replacecase/first :contracts-replacecase/last] (mapv :id (get-cases))))
+      (t/is (nil? (decl/registered-case :contracts-replacecase/middle)))
+      (finally
+        (doseq [id ids]
+          (decl/unregister-case! id))
+        (decl/unregister-scene! :contracts-replacecase)))))
 
 (t/deftest invalid-master-seed-is-rejected
   (doseq [seed [-1 4294967296 "42" nil 0.5 js/NaN js/Infinity js/-Infinity]]
