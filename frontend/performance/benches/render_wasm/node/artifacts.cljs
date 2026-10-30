@@ -17,6 +17,7 @@
    [app.common.transit :as transit]
    [benches.render-wasm.codec :as codec]
    [benches.render-wasm.node.files :as files]
+   [benches.render-wasm.node.time :as time]
    [clojure.string :as str]))
 
 (def schema:build
@@ -68,21 +69,14 @@
 
 (defn- check-id
   [id]
-  (when-not (and (string? id) (re-matches #"[A-Za-z0-9][A-Za-z0-9_-]{0,127}" id))
+  (when-not (files/valid-id? id)
     (throw (ex-info "invalid renderer build id" {:type ::invalid-id :id id})))
   id)
-
-(defn- contained?
-  [root file]
-  (let [relative (path/relative root file)]
-    (and (not (path/isAbsolute relative))
-         (not= relative "..")
-         (not (str/starts-with? relative (str ".." path/sep))))))
 
 (defn- checked-path
   [root file]
   (let [resolved (fs/realpathSync file)]
-    (when-not (contained? root resolved)
+    (when-not (files/contained? root resolved)
       (throw (ex-info "renderer artifact path escapes its managed directory"
                       {:type ::unsafe-path :path file})))
     resolved))
@@ -104,8 +98,8 @@
 (defn inside-builds?
   "Checks the whole builds tree, resolving symlink ancestors of both paths."
   [frontend-root output-path]
-  (contained? (files/get-real-path (path/join (managed-root frontend-root) "builds"))
-              (files/get-real-path output-path)))
+  (files/contained? (files/get-real-path (path/join (managed-root frontend-root) "builds"))
+                    (files/get-real-path output-path)))
 
 (defn- build-reference
   [root id manifest]
@@ -131,7 +125,7 @@
   "
   [root selection provenance]
   (let [id       (str (random-uuid))
-        now      (.toISOString (js/Date.))
+        now      (time/now)
         manifest {:type :renderer-build
                   :id id
                   :status :building
@@ -172,7 +166,7 @@
                         {:type ::terminal-build
                          :id (:id build)
                          :status (:status current)})))
-      (let [manifest (assoc manifest :updated-at (.toISOString (js/Date.)))]
+      (let [manifest (assoc manifest :updated-at (time/now))]
         (files/atomic-write (:manifest-path build) (codec/encode-str manifest))
         (assoc build :manifest manifest)))))
 

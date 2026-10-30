@@ -81,16 +81,16 @@
   - `:last-input-to-full-ms` from the clock read before the last view update
     to the clock read after the final drain promise resolves."
   (:require
-   [app.common.render-wasm.wasm :as wasm]))
+   [app.common.render-wasm.wasm :as wasm]
+   [benches.render-wasm.errors :as errors]))
 
 
 (defn- partial-error
   "Attaches available trace evidence to a rejection without adding clock reads.
   Deeper failure evidence takes precedence over a caller's earlier state."
   [cause evidence]
-  (ex-info (or (ex-message cause) "renderer protocol failed")
-           (assoc (ex-data cause) :partial (merge evidence (:partial (ex-data cause))))
-           (if (some? (ex-data cause)) (ex-cause cause) cause)))
+  (errors/with-context cause (errors/message-of cause "renderer protocol failed")
+    {:partial evidence}))
 
 (defn- next-render-timestamp
   "Gets an immediate clock timestamp or awaits the next frame timestamp."

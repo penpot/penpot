@@ -9,7 +9,7 @@
   (:require
    ["path" :as path]
    [app.common.transit :as transit]
-   [benches.render-wasm.errors :as errors :include-macros true :refer [attempt failure?]]
+   [benches.render-wasm.errors :as errors :refer [attempt failure?]]
    [benches.render-wasm.feature-plan :as feature-plan]
    [benches.render-wasm.node.compare :as compare]
    [benches.render-wasm.node.log :as log]

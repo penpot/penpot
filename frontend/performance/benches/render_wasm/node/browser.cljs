@@ -15,8 +15,7 @@
    ["path" :as path]
    ["playwright" :as playwright]
    [app.common.transit :as transit]
-   [benches.render-wasm.errors :as errors :include-macros true :refer [attempt]]
-   [benches.render-wasm.failures :as failures]
+   [benches.render-wasm.errors :as errors :refer [attempt]]
    [benches.render-wasm.identity :as identity]
    [benches.render-wasm.node.options :as options]
    [benches.render-wasm.node.process :as process]))
@@ -265,7 +264,7 @@
               (throw (ex-info "browser shutdown failed after startup error"
                               {:type ::startup-cleanup
                                :endpoint @(:address endpoint) :user-data-dir user-data-dir
-                               :startup-failure (failures/describe-cause cause)}
+                               :startup-failure (errors/describe-cause cause)}
                               cleanup-cause))))
           (throw (ex-info (errors/message-of cause)
                           (assoc (ex-data cause) :endpoint @(:address endpoint) :user-data-dir user-data-dir)

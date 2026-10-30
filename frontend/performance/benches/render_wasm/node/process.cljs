@@ -14,6 +14,16 @@
 
 (def default-termination-grace-ms 5000)
 
+(defn signal-name
+  "Returns the signal name for an aborted AbortSignal, defaulting to SIGINT."
+  [signal]
+  (when (and signal (.-aborted ^js signal))
+    (let [reason (.-reason ^js signal)]
+      (cond
+        (string? reason) reason
+        (keyword? reason) (name reason)
+        :else (or (:signal (ex-data reason)) "SIGINT")))))
+
 (defn deadline
   "Returns an absolute Date.now() timestamp, in milliseconds. All commands
   in a preparation can share it, including commands waiting for a lock.
