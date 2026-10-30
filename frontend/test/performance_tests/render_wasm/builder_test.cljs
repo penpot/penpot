@@ -9,7 +9,7 @@
   Fixed random sequences preserve scene draws during generator extraction."
   (:require
    [app.common.uuid :as uuid]
-   [benches.render-wasm.builder :as b :include-macros true]
+   [benches.render-wasm.builder :as b]
    [benches.render-wasm.declarations :as decl]
    [benches.render-wasm.random :as random]
    [benches.render-wasm.scenes.rects]
@@ -100,6 +100,32 @@
         rect     (first (helpers/root-shapes instance))]
     (t/is (= 7 (:x rect)))
     (t/is (= [] (:fills rect)))))
+
+(t/deftest shapes-use-their-defaults-before-drawing-ids
+  (doseq [[type low high construct] [[:rect 0.1 0.2 #(b/rect %)]
+                                     [:path 0.3 0.4 #(b/path %)]
+                                     [:circle 0.5 0.6 #(b/circle %)]]
+          attrs [{} {:opacity 0.75}]]
+    (let [rng      (random/create 7)
+          opacity  (random/round3 (random/rng-float rng low high))
+          id       (random/rng-uuid rng)
+          instance (b/scene {:seed 7
+                             :defaults {:rect {:opacity (b/gen-float 0.1 0.2)}
+                                        :path {:opacity (b/gen-float 0.3 0.4)}
+                                        :circle {:opacity (b/gen-float 0.5 0.6)}}}
+                            (construct attrs))
+          shape    (first (helpers/root-shapes instance))]
+      (t/is (= {:type type :id id :opacity (get attrs :opacity opacity)}
+               (select-keys shape [:type :id :opacity]))))))
+
+(t/deftest scene-and-shape-expressions-evaluate-once-in-order
+  (let [events   (atom [])
+        instance (b/scene (do (swap! events conj :params) {:seed 1})
+                          (b/rect (do (swap! events conj :label) :hero)
+                                  (do (swap! events conj :attrs) {:x 11})))
+        hero     (get-in instance [:objects (get (:refs instance) :hero)])]
+    (t/is (= [:params :label :attrs] @events))
+    (t/is (= 11 (:x hero)))))
 
 (t/deftest ordinary-forms-work-inside-the-scope
   (let [instance (b/scene {:seed 1}
@@ -260,4 +286,3 @@
                           (b/circle {:x 0 :y 0 :width 20 :height 20 :rx 5 :ry 7}))
         circle   (first (helpers/root-shapes instance))]
     (t/is (= [5 7] [(:rx circle) (:ry circle)]))))
-
