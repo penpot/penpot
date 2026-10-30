@@ -1371,38 +1371,46 @@
     WHERE file_id = ANY(?::uuid[])")
 
 (def ^:private sql:restore-storage-objects
-  "WITH ids AS (SELECT unnest(?::uuid[]) AS file_id)
-
-   UPDATE storage_object
+  ;; Collect referenced storage ids first (UUID set), then join by PK.
+  ;; Casting `storage_object.id` to text (or OR-ing that with `id IN`) forces
+  ;; a scan of deleted rows; cast the JSON side instead.
+  "WITH ids AS (SELECT unnest(?::uuid[]) AS file_id),
+        refs AS (
+          SELECT fmo.media_id AS id
+            FROM file_media_object AS fmo
+            JOIN ids ON (ids.file_id = fmo.file_id)
+           WHERE fmo.deleted_at IS NULL
+             AND fmo.media_id IS NOT NULL
+          UNION
+          SELECT fmo.thumbnail_id
+            FROM file_media_object AS fmo
+            JOIN ids ON (ids.file_id = fmo.file_id)
+           WHERE fmo.deleted_at IS NULL
+             AND fmo.thumbnail_id IS NOT NULL
+          UNION
+          SELECT ft.media_id
+            FROM file_thumbnail AS ft
+            JOIN ids ON (ids.file_id = ft.file_id)
+           WHERE ft.deleted_at IS NULL
+             AND ft.media_id IS NOT NULL
+          UNION
+          SELECT fot.media_id
+            FROM file_tagged_object_thumbnail AS fot
+            JOIN ids ON (ids.file_id = fot.file_id)
+           WHERE fot.deleted_at IS NULL
+             AND fot.media_id IS NOT NULL
+          UNION
+          SELECT (fd.metadata->>'storage-ref-id')::uuid
+            FROM file_data AS fd
+            JOIN ids ON (ids.file_id = fd.file_id)
+           WHERE fd.deleted_at IS NULL
+             AND (fd.metadata->>'storage-ref-id') IS NOT NULL
+        )
+   UPDATE storage_object AS so
       SET deleted_at = null
-    WHERE deleted_at IS NOT NULL
-      AND (id IN (SELECT media_id
-                    FROM file_media_object AS fmo
-                    JOIN ids ON (ids.file_id = fmo.file_id)
-                   WHERE fmo.deleted_at IS NULL
-                     AND fmo.media_id IS NOT NULL
-                  UNION
-                  SELECT thumbnail_id
-                    FROM file_media_object AS fmo
-                    JOIN ids ON (ids.file_id = fmo.file_id)
-                   WHERE fmo.deleted_at IS NULL
-                     AND fmo.thumbnail_id IS NOT NULL
-                  UNION
-                  SELECT ft.media_id
-                    FROM file_thumbnail AS ft
-                    JOIN ids ON (ids.file_id = ft.file_id)
-                   WHERE ft.deleted_at IS NULL
-                     AND ft.media_id IS NOT NULL
-                  UNION
-                  SELECT fot.media_id
-                    FROM file_tagged_object_thumbnail AS fot
-                    JOIN ids ON (ids.file_id = fot.file_id)
-                   WHERE fot.deleted_at IS NULL
-                     AND fot.media_id IS NOT NULL)
-           OR id::text IN (SELECT fd.metadata->>'storage-ref-id'
-                             FROM file_data AS fd
-                             JOIN ids ON (ids.file_id = fd.file_id)
-                            WHERE fd.deleted_at IS NULL))")
+     FROM refs
+    WHERE so.id = refs.id
+      AND so.deleted_at IS NOT NULL")
 
 (defn- restore-files
   [conn file-ids]
