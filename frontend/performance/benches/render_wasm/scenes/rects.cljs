@@ -15,7 +15,7 @@
   (:require
    [app.common.schema :as sm]
    [benches.render-wasm.builder :as sb]
-   [benches.render-wasm.declarations :as decl :include-macros true]
+   [benches.render-wasm.declarations :as decl]
    [benches.render-wasm.runtime.camera :as camera]))
 
 ;; This namespace is also loaded by Node discovery. Keep operation helpers
