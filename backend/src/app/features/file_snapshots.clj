@@ -19,6 +19,7 @@
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.features.fdata :as fdata]
+   [app.features.file-changes :as fchanges]
    [app.storage :as sto]
    [app.util.blob :as blob]
    [app.worker :as wrk]
@@ -38,9 +39,8 @@
           c.migrations,
           c.version,
           c.file_id,
-          c.data AS legacy_data,
           fd.data AS data,
-          coalesce(fd.backend, 'legacy-db') AS backend,
+          coalesce(fd.backend, 'db') AS backend,
           fd.metadata AS metadata
      FROM file_change AS c
      LEFT JOIN file_data AS fd ON (fd.file_id = c.file_id
@@ -66,36 +66,52 @@
      LEFT JOIN file_data AS fd ON (fd.file_id = f.id AND fd.id = f.id)
     WHERE f.id = ?")
 
+(def ^:private sql:snapshot-columns
+  "c.id,
+   c.label,
+   c.revn,
+   c.created_at,
+   c.modified_at,
+   c.deleted_at,
+   c.profile_id,
+   c.created_by,
+   c.locked_by,
+   c.features,
+   c.metadata,
+   c.migrations,
+   c.version,
+   c.file_id")
+
+(def ^:private sql:snapshot-visible
+  "AND CASE WHEN c.created_by = 'user'
+            THEN c.deleted_at IS NULL
+            WHEN c.created_by = 'system'
+            THEN c.deleted_at IS NULL OR c.deleted_at >= ?::timestamptz
+        END")
+
 (def ^:private sql:get-snapshot-without-data
   (str "WITH snapshots AS (" sql:snapshots ")"
-       "SELECT c.id,
-               c.label,
-               c.revn,
-               c.created_at,
-               c.modified_at,
-               c.deleted_at,
-               c.profile_id,
-               c.created_by,
-               c.locked_by,
-               c.features,
-               c.metadata,
-               c.migrations,
-               c.version,
-               c.file_id
-         FROM snapshots AS c
-        WHERE c.id = ?
-          AND CASE WHEN c.created_by = 'user'
-                   THEN c.deleted_at IS NULL
-                   WHEN c.created_by = 'system'
-                   THEN c.deleted_at IS NULL OR c.deleted_at >= ?::timestamptz
-               END"))
+       "SELECT " sql:snapshot-columns
+       " FROM snapshots AS c
+         WHERE c.file_id = ?
+           AND c.id = ? " sql:snapshot-visible))
 
 (defn get-minimal-snapshot
-  [cfg snapshot-id]
+  "Get the minimal snapshot info (without the data blob). The query filters
+  by `file_id`, which lets the planner prune the partitions of `file_change`
+  when it chooses an index scan. Raises `:snapshot-not-found` when there is
+  no matching snapshot."
+  [cfg file-id snapshot-id]
   (let [now (ct/now)]
-    (-> (db/get-with-sql cfg [sql:get-snapshot-without-data snapshot-id now]
-                         {::db/remove-deleted false})
-        (decode-snapshot))))
+    (or (-> (db/get-with-sql cfg [sql:get-snapshot-without-data file-id snapshot-id now]
+                             {::db/remove-deleted false
+                              ::db/throw-if-not-exists false})
+            (decode-snapshot))
+        (ex/raise :type :not-found
+                  :code :snapshot-not-found
+                  :hint "unable to find snapshot with the provided id"
+                  :snapshot-id snapshot-id
+                  :file-id file-id))))
 
 (def ^:private sql:get-snapshot
   (str sql:snapshots
@@ -109,14 +125,16 @@
 
 (defn get-snapshot
   "Get a fully decoded snapshot for read-only preview or restoration.
-  Returns the snapshot map with decoded :data field."
+  Returns the snapshot map with decoded :data field, or nil when the file has
+  no snapshot with that id."
   [cfg file-id snapshot-id]
   (let [now (ct/now)]
-    (->> (db/get-with-sql cfg [sql:get-snapshot file-id snapshot-id now]
-                          {::db/remove-deleted false})
-         (decode-snapshot)
-         (fdata/resolve-file-data cfg)
-         (fdata/decode-file-data cfg))))
+    (some->> (db/get-with-sql cfg [sql:get-snapshot file-id snapshot-id now]
+                              {::db/remove-deleted false
+                               ::db/throw-if-not-exists false})
+             (decode-snapshot)
+             (fdata/resolve-file-data cfg)
+             (fdata/decode-file-data cfg))))
 
 (def ^:private sql:get-visible-snapshots
   (str "WITH "
@@ -259,6 +277,7 @@
                 (-> snapshot
                     (update :features into-array)
                     (update :migrations into-array)
+                    (assoc :kind fchanges/snapshot-kind)
                     (assoc :updated-at created-at)
                     (assoc :profile-id profile-id)
                     (assoc :session-id session-id)
@@ -338,7 +357,7 @@
       (when-not snapshot
         (ex/raise :type :not-found
                   :code :snapshot-not-found
-                  :hint "unable to find snapshot with the provided label"
+                  :hint "unable to find snapshot with the provided id"
                   :snapshot-id snapshot-id
                   :file-id file-id))
 
@@ -413,7 +432,8 @@
                               :file-id file-id
                               :id id}})
   (db/update! cfg :file-change
-              {:deleted-at deleted-at}
+              {:deleted-at deleted-at
+               :updated-at (ct/now)}
               {:id id :file-id file-id}
               {::db/return-keys false})
   true)
@@ -422,19 +442,25 @@
   (str sql:snapshots " AND c.file_id = ?"))
 
 (defn lock-by!
-  [conn id profile-id]
+  [conn file-id id profile-id]
+  (assert (uuid? file-id) "missing file-id")
+  (assert (uuid? id) "missing id")
   (-> (db/update! conn :file-change
-                  {:locked-by profile-id}
-                  {:id id}
+                  {:locked-by profile-id
+                   :updated-at (ct/now)}
+                  {:id id :file-id file-id}
                   {::db/return-keys false})
       (db/get-update-count)
       (pos?)))
 
 (defn unlock!
-  [conn id]
+  [conn file-id id]
+  (assert (uuid? file-id) "missing file-id")
+  (assert (uuid? id) "missing id")
   (-> (db/update! conn :file-change
-                  {:locked-by nil}
-                  {:id id}
+                  {:locked-by nil
+                   :updated-at (ct/now)}
+                  {:id id :file-id file-id}
                   {::db/return-keys false})
       (db/get-update-count)
       (pos?)))

@@ -637,41 +637,49 @@
                                       {:fetch-size 5}))))))
 
 (def ^:private sql:get-file-change
-  "SELECT id FROM file_change
+  "SELECT id, file_id FROM file_change
     WHERE deleted_at IS NOT NULL
       AND deleted_at <= ?
     ORDER BY deleted_at ASC")
 
 (def ^:private sql:lock-file-change
   "SELECT id, file_id, deleted_at FROM file_change
-    WHERE id = ANY(?::uuid[])
+    WHERE file_id = ?
+      AND id = ?
       AND deleted_at IS NOT NULL
       AND deleted_at <= ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-file-changes-chunk
-  [cfg ids]
+  [cfg rows]
   (try
     (db/tx-run! cfg
                 (fn [{:keys [::db/conn ::timestamp]}]
                   (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
-                  (let [ids (db/create-array conn "uuid" ids)]
-                    (->> (db/exec! conn [sql:lock-file-change ids timestamp])
-                         (reduce (fn [total {:keys [id file-id deleted-at]}]
-                                   (l/trc :obj "file-change"
-                                          :id (str id)
-                                          :file-id (str file-id)
-                                          :deleted-at (ct/format-inst deleted-at))
+                  (reduce (fn [total {:keys [id file-id]}]
+                            ;; the row is locked by its (file-id, id) pair, so
+                            ;; the lookup uses the primary key and prunes to
+                            ;; the partition that holds the file.
+                            (if-let [{:keys [deleted-at]}
+                                     (db/exec-one! conn [sql:lock-file-change
+                                                         file-id id timestamp])]
+                              (do
+                                (l/trc :obj "file-change"
+                                       :id (str id)
+                                       :file-id (str file-id)
+                                       :deleted-at (ct/format-inst deleted-at))
 
-                                   (let [affected (-> (db/delete! conn :file-change {:id id})
-                                                      (db/get-update-count))]
-                                     (+ total affected)))
-                                 0)))))
+                                (let [affected (-> (db/delete! conn :file-change
+                                                               {:id id :file-id file-id})
+                                                   (db/get-update-count))]
+                                  (+ total affected)))
+                              total))
+                          0 rows)))
     (catch Throwable cause
       (l/err :obj "file-change"
              :hint "error on chunk deletion, skipping it"
-             :chunk ids
+             :chunk rows
              :cause cause)
       0)))
 
@@ -681,7 +689,10 @@
              ([total chunk] (+ total (delete-file-changes-chunk cfg chunk))))]
     (db/tx-run! (assoc cfg ::db/read-only true)
                 (fn [{:keys [::db/conn]}]
-                  (transduce (comp (map :id) (partition-all chunk-size)) rf 0
+                  (transduce (comp (map (fn [row] {:id (:id row)
+                                                   :file-id (:file-id row)}))
+                                   (partition-all chunk-size))
+                             rf 0
                              (db/plan conn [sql:get-file-change timestamp]
                                       {:fetch-size 5}))))))
 

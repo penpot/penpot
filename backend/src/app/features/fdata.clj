@@ -83,17 +83,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmulti resolve-file-data
-  (fn [_cfg file] (get file :backend "legacy-db")))
-
-(defmethod resolve-file-data "legacy-db"
-  [_cfg {:keys [legacy-data] :as file}]
-  (-> file
-      (assoc :data legacy-data)
-      (dissoc :legacy-data)))
+  (fn [_cfg file] (get file :backend "db")))
 
 (defmethod resolve-file-data "db"
   [_cfg file]
-  (dissoc file :legacy-data))
+  file)
 
 (defmethod resolve-file-data "storage"
   [cfg {:keys [metadata] :as file}]
@@ -101,9 +95,7 @@
         ref-id  (:storage-ref-id metadata)
         data    (->> (sto/get-object storage ref-id)
                      (sto/get-object-bytes storage))]
-    (-> file
-        (assoc :data data)
-        (dissoc :legacy-data))))
+    (assoc file :data data)))
 
 (defn decode-file-data
   [_cfg {:keys [data] :as file}]
@@ -147,7 +139,7 @@
                        data])))
 
 (defn- handle-persistence
-  [cfg {:keys [type backend id file-id data] :as params}]
+  [cfg {:keys [backend id file-id data] :as params}]
 
   (cond
     (= backend "storage")
@@ -179,36 +171,6 @@
           params   (assoc params :metadata metadata)]
       (upsert-in-database cfg params))
 
-    (= backend "legacy-db")
-    (cond
-      (= type "main")
-      (do
-        (db/delete! cfg :file-data
-                    {:id id :file-id file-id :type "main"}
-                    {::db/return-keys false})
-        (db/update! cfg :file
-                    {:data data}
-                    {:id file-id}
-                    {::db/return-keys false}))
-
-      (= type "snapshot")
-      (do
-        (db/delete! cfg :file-data
-                    {:id id :file-id file-id :type "snapshot"}
-                    {::db/return-keys false})
-        (db/update! cfg :file-change
-                    {:data data}
-                    {:file-id file-id :id id}
-                    {::db/return-keys false}))
-
-      (= type "fragment")
-      (upsert-in-database cfg
-                          (-> (dissoc params :metadata)
-                              (assoc :backend "db")))
-
-      :else
-      (throw (RuntimeException. "not implemented")))
-
     :else
     (throw (IllegalArgumentException.
             (str "backend '" backend "' not supported")))))
@@ -234,7 +196,7 @@
    [:id ::sm/uuid]
    [:type [:enum "main" "snapshot" "fragment"]]
    [:file-id ::sm/uuid]
-   [:backend {:optional true} [:enum "db" "legacy-db" "storage"]]
+   [:backend {:optional true} [:enum "db" "storage"]]
    [:metadata {:optional true} ctf/schema:file-metadata]
    [:data {:optional true} bytes?]
    [:created-at {:optional true} ::ct/inst]

@@ -778,9 +778,10 @@ __Since version 2.11.0__
 
 You can change the default file data storage backend with `PENPOT_FILE_DATA_BACKEND` environment variable. Possible values are:
 
-- `legacy-db`: the current default backend, continues storing the file data of files and snapshots in the same location as previous versions of Penpot (< 2.11.0), this is a conservative default behaviour and will be changed to `db` in next versions.
-- `db`: stores the file data on an specific table (the future default backend).
+- `db`: the default backend, stores the file data of files and snapshots on a specific table.
 - `storage`: stores the file data using the objects storage system (S3 or FS, depending on which one is configured)
+
+The `legacy-db` backend (the default until now, which kept the file data of files and snapshots in the same location as the versions of Penpot previous to 2.11.0) is not available anymore, and the backend refuses to start with it. An instance that used it has to migrate its file data to the `db` backend before upgrading.
 
 This also comes with an additional feature that allows offload the "inactive" files on file storage backend and leaves the database only for the active files. To enable it, you should use the `enable-tiered-file-data-storage` flag and `db` as file data storage backend.
 
