@@ -17,6 +17,7 @@
    ["module" :as node-module]
    ["os" :as os]
    ["path" :as path]
+   [app.common.schema :as sm]
    [app.common.transit :as transit]
    [benches.render-wasm.declarations :as declarations]
    [benches.render-wasm.failures :as failures]
@@ -187,26 +188,35 @@
 
 (defn- ^:async prepare-case
   [state case page deadline]
-  (let [opts    (:opts state)
-        build-id (:id (:selected-build state))
-        request (transit/encode-str
-                 {:case case
-                  :preparation-id (str (random-uuid))
-                  :timeout-ms (:timeout-ms opts)
-                  :module-url (renderer-url build-id "render-wasm.js")
-                  :wasm-url (renderer-url build-id "render-wasm.wasm")})]
-    (await ((get-in state [:services :prepare])
-            page request
-            {:deadline deadline :signal (:signal state) :phase :preparation}))))
+  (try
+    (let [opts     (:opts state)
+          build-id (:id (:selected-build state))
+          request  (transit/encode-str
+                    {:case case
+                     :preparation-id (str (random-uuid))
+                     :timeout-ms (:timeout-ms opts)
+                     :module-url (renderer-url build-id "render-wasm.js")
+                     :wasm-url (renderer-url build-id "render-wasm.wasm")})
+          response (await ((get-in state [:services :prepare])
+                           page request
+                           {:deadline deadline :signal (:signal state) :phase :preparation}))]
+      (if (= "ok" (:status response))
+        {:preparation (:preparation response)}
+        {:failure (failure-evidence response :preparation)}))
+    (catch :default cause
+      {:failure (cause-evidence cause :preparation)})))
 
 (defn- ^:async run-attempt
   [state page preparation-id deadline]
-  (let [request (transit/encode-str
-                 {:preparation-id preparation-id
-                  :timeout-ms (max 1 (process/remaining deadline))})]
-    (await ((get-in state [:services :run])
-            page request
-            {:deadline deadline :signal (:signal state) :phase :attempt}))))
+  (try
+    (let [request (transit/encode-str
+                   {:preparation-id preparation-id
+                    :timeout-ms (max 1 (process/remaining deadline))})]
+      {:evidence (await ((get-in state [:services :run])
+                         page request
+                         {:deadline deadline :signal (:signal state) :phase :attempt}))})
+    (catch :default cause
+      {:evidence (cause-evidence cause :attempt) :error cause})))
 
 (defn- ^:async recycle-browser
   [state]
@@ -278,220 +288,161 @@
         :abort)
       :ok)))
 
+(defn- ^:async open-case-page
+  [state case owner]
+  (let [opened (try
+                 {:owner (await ((get-in state [:services :new-page])
+                                 owner @(:host-ref state)
+                                 {:viewport (declarations/resolve-viewport (:view case))
+                                  :startup-timeout-ms (:startup-timeout-ms (:opts state))
+                                  :signal (:signal state)}))}
+                 (catch :default cause {:error cause}))]
+    (if-let [cause (:error opened)]
+      (if (interrupted? state)
+        {:outcome :interrupted}
+        (do
+          (record-failure state (:id case) :browser-page (cause-evidence cause :browser-page))
+          (await (recycle-browser state))
+          {:outcome :abandon}))
+      (do
+        (reset! (:page-ref state) (:owner opened))
+        {:page (:page (:owner opened))}))))
+
 (defn- ^:async open-page
   [state case]
   (if (interrupted? state)
-    :interrupted
+    {:outcome :interrupted}
     (let [launch (try
                    {:owner (await (ensure-browser state))}
                    (catch :default cause {:error cause}))]
-      (if-let [cause (:error launch)]
-        (if (interrupted? state)
-          :interrupted
-          (do
-            (record-failure state (:id case) :browser-launch
-                            (cause-evidence cause :browser-launch))
-            (reset! (:abort-run? state) true)
-            :abort))
-        (let [opened (try
-                       {:page-owner (await ((get-in state [:services :new-page])
-                                            (:owner launch) @(:host-ref state)
-                                            {:viewport (declarations/resolve-viewport (:view case))
-                                             :startup-timeout-ms (:startup-timeout-ms (:opts state))
-                                             :signal (:signal state)}))}
-                       (catch :default cause {:error cause}))]
-          (if-let [cause (:error opened)]
-            (if (interrupted? state)
-              :interrupted
-              (do
-                (record-failure state (:id case) :browser-page
-                                (cause-evidence cause :browser-page))
-                (await (recycle-browser state))
-                :abandon))
-            (do
-              (reset! (:page-ref state) (:page-owner opened))
-              (:page (:page-owner opened)))))))))
+      (cond
+        (nil? (:error launch))
+        (await (open-case-page state case (:owner launch)))
+
+        (interrupted? state)
+        {:outcome :interrupted}
+
+        :else
+        (do
+          (record-failure state (:id case) :browser-launch
+                          (cause-evidence (:error launch) :browser-launch))
+          (reset! (:abort-run? state) true)
+          {:outcome :abort})))))
+
+(defn- accept-preparation
+  [state preparation]
+  (record-preparation state preparation)
+  (check-gpu state preparation))
+
+(defn- ^:async execute-slot
+  [state case page preparation-id warmup? deadline]
+  (let [{:keys [evidence error]} (await (run-attempt state page preparation-id deadline))
+        attempt                 (measurement/attempt (:id case) preparation-id warmup? evidence)]
+    (record-attempt state attempt)
+    (cond
+      (and error (interrupted? state)) :interrupted
+      (= :completed (:outcome attempt)) :ok
+      :else :failed)))
+
+(defn- ^:async finish-slot
+  [state case page outcome final?]
+  (when final?
+    (if (= :ok outcome)
+      (await (screenshot-case state case page))
+      (record-screenshot-skip state (:id case) :no-completed-measured-attempt)))
+  outcome)
 
 (defn- ^:async run-fresh-slot
   [state case page warmup? final?]
-  (let [opts     (:opts state)
-        deadline (process/deadline (:timeout-ms opts))
-        case-id  (:id case)
-        prepared (try
-                   {:response (await (prepare-case state case page deadline))}
-                   (catch :default cause {:error cause}))]
-    (if-let [cause (:error prepared)]
-      (let [evidence (cause-evidence cause :preparation)]
-        (record-attempt state (measurement/attempt case-id nil warmup? evidence))
-        (when final? (record-screenshot-skip state case-id :no-completed-measured-attempt))
-        (if (interrupted? state) :interrupted :failed))
-      (let [response (:response prepared)]
-        (if (= "ok" (:status response))
-          (let [preparation (:preparation response)
-                prep-id     (:preparation-id preparation)]
-            (record-preparation state preparation)
-            (if (= :abort (check-gpu state preparation))
-              :abort
-              (let [attempted (try
-                                {:evidence (await (run-attempt state page prep-id deadline))}
-                                (catch :default cause {:error cause}))]
-                (if-let [cause (:error attempted)]
-                  (let [evidence (cause-evidence cause :attempt)]
-                    (record-attempt state
-                                    (measurement/attempt case-id prep-id warmup? evidence))
-                    (when final?
-                      (record-screenshot-skip state case-id :no-completed-measured-attempt))
-                    (if (interrupted? state) :interrupted :failed))
-                  (let [attempt (measurement/attempt case-id prep-id warmup?
-                                                     (:evidence attempted))]
-                    (record-attempt state attempt)
-                    (if (= :completed (:outcome attempt))
-                      (do
-                        (when final? (await (screenshot-case state case page)))
-                        :ok)
-                      (do
-                        (when final?
-                          (record-screenshot-skip state case-id
-                                                  :no-completed-measured-attempt))
-                        :failed)))))))
-          (let [evidence (failure-evidence response :preparation)]
-            (record-attempt state (measurement/attempt case-id nil warmup? evidence))
-            (when final? (record-screenshot-skip state case-id :no-completed-measured-attempt))
-            (if (interrupted? state) :interrupted :failed)))))))
-
-(defn- ^:async run-reuse-slot
-  [state case page preparation-id warmup?]
   (let [deadline (process/deadline (:timeout-ms (:opts state)))
-        result   (try
-                   {:evidence (await (run-attempt state page preparation-id deadline))}
-                   (catch :default cause {:error cause}))]
-    (if-let [cause (:error result)]
-      (let [evidence (cause-evidence cause :attempt)]
-        (record-attempt state
-                        (measurement/attempt (:id case) preparation-id warmup? evidence))
-        (if (interrupted? state) :interrupted :failed))
-      (let [attempt (measurement/attempt (:id case) preparation-id warmup?
-                                         (:evidence result))]
-        (record-attempt state attempt)
-        (if (= :completed (:outcome attempt)) :ok :failed)))))
+        prepared (await (prepare-case state case page deadline))]
+    (if-let [evidence (:failure prepared)]
+      (do
+        (record-attempt state (measurement/attempt (:id case) nil warmup? evidence))
+        (await (finish-slot state case page
+                            (if (interrupted? state) :interrupted :failed) final?)))
+      (let [preparation (:preparation prepared)]
+        (if (= :abort (accept-preparation state preparation))
+          :abort
+          (let [outcome (await (execute-slot state case page (:preparation-id preparation)
+                                             warmup? deadline))]
+            (await (finish-slot state case page outcome final?))))))))
+
+(defn- ^:async run-fresh-page
+  [state case warmup? final?]
+  (let [{:keys [page outcome]} (await (open-page state case))]
+    (if page
+      (let [outcome (await (run-fresh-slot state case page warmup? final?))
+            closed? (await (close-current-page state))]
+        (cond
+          (#{:abort :interrupted} outcome) outcome
+          (not closed?) :abandon
+          :else outcome))
+      (or outcome :abandon))))
+
+(defn- ^:async run-fresh-slots
+  [state case slots]
+  (if-let [[warmup? & pending] (seq slots)]
+    (let [outcome (await (run-fresh-page state case warmup? (empty? pending)))]
+      (if (#{:ok :failed} outcome)
+        (run-fresh-slots state case pending)
+        outcome))
+    :done))
 
 (defn- ^:async run-fresh-case
   [state case]
-  (let [slots (case-slots (:opts state))
-        total (count slots)]
-    (loop [index 0]
-      (if (>= index total)
-        (do
-          (ensure-screenshot-status state case :case-abandoned)
-          :done)
-        (let [page (await (open-page state case))]
-          (cond
-            (= :interrupted page)
-            (do
-              (ensure-screenshot-status state case :case-abandoned)
-              :interrupted)
+  (let [outcome (await (run-fresh-slots state case (case-slots (:opts state))))]
+    (ensure-screenshot-status state case :case-abandoned)
+    outcome))
 
-            (= :abort page)
-            (do
-              (ensure-screenshot-status state case :case-abandoned)
-              :abort)
+(defn- ^:async run-reuse-slots
+  [state case page preparation-id slots]
+  (if-let [[warmup? & pending] (seq slots)]
+    (let [deadline (process/deadline (:timeout-ms (:opts state)))
+          outcome  (await (execute-slot state case page preparation-id warmup? deadline))]
+      (await (finish-slot state case page outcome (empty? pending)))
+      (if (= :ok outcome)
+        (run-reuse-slots state case page preparation-id pending)
+        outcome))
+    :done))
 
-            (= :abandon page)
-            (do
-              (ensure-screenshot-status state case :case-abandoned)
-              :abandon)
+(defn- ^:async abandon-preparation
+  [state case evidence]
+  (record-failure state (:id case) :preparation evidence)
+  (ensure-screenshot-status state case :no-completed-measured-attempt)
+  (await (close-current-page state))
+  (if (interrupted? state) :interrupted :abandon))
 
-            (nil? page)
-            (do
-              (ensure-screenshot-status state case :case-abandoned)
-              :abandon)
+(defn- ^:async run-reuse-prepared
+  [state case page preparation]
+  (let [accepted (accept-preparation state preparation)
+        outcome  (if (= :abort accepted)
+                   :abort
+                   (await (run-reuse-slots state case page (:preparation-id preparation)
+                                           (case-slots (:opts state)))))
+        closed?  (await (close-current-page state))]
+    (ensure-screenshot-status state case :case-abandoned)
+    (if closed? outcome :abandon)))
 
-            :else
-            (let [final?  (= index (dec total))
-                  outcome (await (run-fresh-slot state case page (nth slots index) final?))
-                  closed? (await (close-current-page state))]
-              (cond
-                (= :interrupted outcome)
-                (do
-                  (ensure-screenshot-status state case :case-abandoned)
-                  :interrupted)
-
-                (= :abort outcome)
-                (do
-                  (ensure-screenshot-status state case :case-abandoned)
-                  :abort)
-
-                (not closed?)
-                (do
-                  (ensure-screenshot-status state case :case-abandoned)
-                  :abandon)
-
-                :else
-                (recur (inc index))))))))))
+(defn- ^:async run-reuse-page
+  [state case page]
+  (let [deadline (process/deadline (:timeout-ms (:opts state)))
+        prepared (await (prepare-case state case page deadline))]
+    (if-let [evidence (:failure prepared)]
+      (await (abandon-preparation state case evidence))
+      (await (run-reuse-prepared state case page (:preparation prepared))))))
 
 (defn- ^:async run-reuse-case
   [state case]
-  (let [page (await (open-page state case))]
+  (let [{:keys [page outcome]} (await (open-page state case))]
     (cond
-      (= :interrupted page)
-      (do (ensure-screenshot-status state case :case-abandoned) :interrupted)
-
-      (= :abort page) :abort
-
-      (= :abandon page)
-      (do (ensure-screenshot-status state case :case-abandoned) :abandon)
-
-      (nil? page)
-      (do (ensure-screenshot-status state case :case-abandoned) :abandon)
+      page (await (run-reuse-page state case page))
+      (= :abort outcome) :abort
 
       :else
-      (let [opts     (:opts state)
-            deadline (process/deadline (:timeout-ms opts))
-            prepared (try
-                       {:response (await (prepare-case state case page deadline))}
-                       (catch :default cause {:error cause}))]
-        (if (or (:error prepared)
-                (not= "ok" (:status (:response prepared))))
-          (do
-            (record-failure state (:id case) :preparation
-                            (if-let [cause (:error prepared)]
-                              (cause-evidence cause :preparation)
-                              (failure-evidence (:response prepared) :preparation)))
-            (ensure-screenshot-status state case :no-completed-measured-attempt)
-            (await (close-current-page state))
-            (if (interrupted? state) :interrupted :abandon))
-          (let [preparation (:preparation (:response prepared))
-                prep-id     (:preparation-id preparation)
-                slots       (case-slots opts)
-                total       (count slots)]
-            (record-preparation state preparation)
-            (let [outcome
-                  (if (= :abort (check-gpu state preparation))
-                    :abort
-                    (loop [index 0]
-                      (if (>= index total)
-                        :done
-                        (let [warmup? (nth slots index)
-                              result  (await (run-reuse-slot state case page prep-id warmup?))]
-                          (cond
-                            (= :ok result)
-                            (if (= index (dec total))
-                              (do (await (screenshot-case state case page)) :done)
-                              (recur (inc index)))
-
-                            (= index (dec total))
-                            (do
-                              (record-screenshot-skip state (:id case)
-                                                      :no-completed-measured-attempt)
-                              result)
-
-                            :else result)))))
-                  closed? (await (close-current-page state))]
-              (ensure-screenshot-status state case :case-abandoned)
-              (cond
-                (not closed?) :abandon
-                (= outcome :interrupted) :interrupted
-                :else outcome))))))))
+      (do
+        (ensure-screenshot-status state case :case-abandoned)
+        (or outcome :abandon)))))
 
 
 (defn- ^:async launch-initial
@@ -507,65 +458,75 @@
                                          (cause-evidence cause :browser-launch))
                          false))))]
     (reset! (:launch-deadline state) nil)
+    (when-not launched
+      (reset! (:abort-run? state) true))
     launched))
+
+(defn- fail-startup
+  [state stage cause]
+  (when (interrupted? state)
+    (throw cause))
+  (record-failure state nil stage (cause-evidence cause stage))
+  (reset! (:abort-run? state) true)
+  false)
+
+(defn- ^:async record-provenance
+  [state deadline]
+  (try
+    (let [git (await (build/git-provenance (:root state)
+                                           {:deadline deadline :signal (:signal state)}))]
+      (swap! (:run-ref state) assoc-in [:metadata :diagnostics :runner-git] git)
+      (persist state)
+      true)
+    (catch :default cause
+      (fail-startup state :runner-git cause))))
+
+(defn- ^:async start-server
+  [state deadline]
+  (try
+    (let [remaining (process/remaining deadline)]
+      (when (zero? remaining)
+        (throw (ex-info "server startup timed out"
+                        {:type ::startup-timeout :phase :server-startup})))
+      (reset! (:host-ref state)
+              (await (server/open (:selected-build state)
+                                  {:startup-timeout-ms remaining :signal (:signal state)})))
+      true)
+    (catch :default cause
+      (fail-startup state :server-startup cause))))
+
+(defn- session-active?
+  [state]
+  (and (not @(:abort-run? state)) (not (interrupted? state))))
+
+(defn- ^:async run-cases
+  [state cases]
+  (when (and (seq cases) (session-active? state))
+    (let [case (first cases)]
+      (write-log state log/info (str "▸ Case " (result/case-name (:id case))
+                                     " (" (name (:context case)) ")"))
+      (let [outcome (if (= :fresh (:context case))
+                      (await (run-fresh-case state case))
+                      (await (run-reuse-case state case)))]
+        (if (#{:abort :interrupted} outcome)
+          (do
+            (reset! (:abort-run? state) true)
+            outcome)
+          (run-cases state (rest cases)))))))
 
 (defn- ^:async run-session
   [state]
-  (let [opts             (:opts state)
-        startup-deadline (process/deadline (:startup-timeout-ms opts))]
-    (reset! (:launch-deadline state) startup-deadline)
-    (try
-      (let [git (await (build/git-provenance (:root state)
-                                             {:deadline startup-deadline
-                                              :signal (:signal state)}))]
-        (swap! (:run-ref state) assoc-in [:metadata :diagnostics :runner-git] git)
-        (persist state))
-      (catch :default cause
-        (if (interrupted? state)
-          (throw cause)
-          (do
-            (record-failure state nil :runner-git (cause-evidence cause :runner-git))
-            (reset! (:abort-run? state) true)))))
-    (when-not @(:abort-run? state)
-      (try
-        (let [remaining (process/remaining startup-deadline)]
-          (when (zero? remaining)
-            (throw (ex-info "server startup timed out"
-                            {:type ::startup-timeout :phase :server-startup})))
-          (reset! (:host-ref state)
-                  (await (server/open (:selected-build state)
-                                      {:startup-timeout-ms remaining
-                                       :signal (:signal state)}))))
-        (catch :default cause
-          (if (interrupted? state)
-            (throw cause)
-            (do
-              (record-failure state nil :server-startup
-                              (cause-evidence cause :server-startup))
-              (reset! (:abort-run? state) true))))))
-    (when (and (not @(:abort-run? state)) (not (interrupted? state)))
-      (when-not (await (launch-initial state))
-        (reset! (:abort-run? state) true)))
-    (when (and (not @(:abort-run? state)) (not (interrupted? state)))
-      (loop [cases (:cases state)]
-        (when (and (seq cases)
-                   (not @(:abort-run? state))
-                   (not (interrupted? state)))
-          (let [case (first cases)]
-            (write-log state log/info (str "▸ Case " (result/case-name (:id case))
-                                           " (" (name (:context case)) ")"))
-            (let [outcome (if (= :fresh (:context case))
-                            (await (run-fresh-case state case))
-                            (await (run-reuse-case state case)))]
-              (when (#{:abort :interrupted} outcome)
-                (reset! (:abort-run? state) true))
-              (recur (rest cases)))))))))
+  (let [deadline (process/deadline (:startup-timeout-ms (:opts state)))]
+    (reset! (:launch-deadline state) deadline)
+    (let [provenance-ready? (await (record-provenance state deadline))
+          server-ready?     (and provenance-ready? (await (start-server state deadline)))
+          browser-ready?    (and server-ready? (session-active? state) (await (launch-initial state)))]
+      (when (and browser-ready? (session-active? state))
+        (await (run-cases state (:cases state)))))))
 
-(defn- finish-run
-  [state]
-  (let [run           @(:run-ref state)
-        interrupted   (interruption (:signal state))
-        all-attempted? (every? (fn [[_ slots]]
+(defn- get-termination
+  [run interrupted harness-failed?]
+  (let [all-attempted? (every? (fn [[_ slots]]
                                  (and (zero? (:warmups slots))
                                       (zero? (:repetitions slots))))
                                (:remaining run))
@@ -582,52 +543,48 @@
                         (assoc :signal (:signal interrupted))
 
                         (and (seq failures)
-                             (or (not= :completed reason)
-                                 @(:harness-failed? state)))
+                             (or (not= :completed reason) harness-failed?))
                         (assoc :failure (last failures))
 
                         (and (not= :completed reason)
                              (empty? failures)
                              (some? attempt-failure))
                         (assoc :failure attempt-failure))]
+    termination))
+
+(defn- complete-screenshots
+  [screenshots cases]
+  (let [defaults (into {} (map (fn [case]
+                                 [(result/case-name (:id case)) {:status :skipped :reason :not-run}]))
+                       cases)]
+    (merge defaults screenshots)))
+
+(defn- finish-run
+  [state]
+  (let [termination (get-termination @(:run-ref state) (interruption (:signal state))
+                                     @(:harness-failed? state))]
     (when (:screenshots? (:opts state))
       (swap! (:run-ref state) update-in [:metadata :diagnostics :screenshots]
-             (fn [screenshots]
-               (reduce (fn [saved case]
-                         (let [name (result/case-name (:id case))]
-                           (if (contains? saved name)
-                             saved
-                             (assoc saved name {:status :skipped :reason :not-run}))))
-                       (or screenshots {})
-                       (:cases state)))))
+             complete-screenshots (:cases state)))
     (swap! (:run-ref state) result/finish-run (now) termination)
     (persist state)
     @(:run-ref state)))
 
+(defn- ^:async release-resource
+  [reference close]
+  (try
+    (when-let [resource @reference]
+      (reset! reference nil)
+      (await (close resource)))
+    nil
+    (catch :default cause cause)))
+
 (defn- ^:async cleanup
   [state]
-  (let [page-failure
-        (try
-          (when-let [page @(:page-ref state)]
-            (reset! (:page-ref state) nil)
-            (await ((get-in state [:services :close-page]) page)))
-          nil
-          (catch :default cause cause))
-        browser-failure
-        (try
-          (when-let [owner @(:owner-ref state)]
-            (reset! (:owner-ref state) nil)
-            (await ((get-in state [:services :close]) owner)))
-          nil
-          (catch :default cause cause))
-        server-failure
-        (try
-          (when-let [host @(:host-ref state)]
-            (reset! (:host-ref state) nil)
-            (await (server/close host)))
-          nil
-          (catch :default cause cause))
-        failure (or page-failure browser-failure server-failure)]
+  (let [page-failure    (await (release-resource (:page-ref state) (get-in state [:services :close-page])))
+        browser-failure (await (release-resource (:owner-ref state) (get-in state [:services :close])))
+        server-failure  (await (release-resource (:host-ref state) server/close))
+        failure         (or page-failure browser-failure server-failure)]
     (when failure
       (warn-safely state (str "run: cleanup failed: " (message-of failure) "\n")))
     failure))
@@ -699,112 +656,181 @@
                                         (:require-gpu options))))
       (dissoc :screenshots :remove :require-gpu)))
 
+(defn- create-run-record
+  [root selected-build cases opts]
+  (result/create-run
+   {:run-id (:run-id opts)
+    :started-at (now)
+    :plan {:cases cases
+           :warmups (:warmups opts)
+           :repetitions (:repetitions opts)
+           :timeout-policy {:attempt-ms (:timeout-ms opts)}}
+    :metadata (metadata root selected-build opts)}))
+
+(defn- create-run-state
+  [root home selected-build cases options signal]
+  (let [opts (assoc (normalize-options options) :run-id (:run-id home))]
+    {:root root
+     :selected-build selected-build
+     :cases cases
+     :opts opts
+     :signal signal
+     :home home
+     :run-ref (atom (create-run-record root selected-build cases opts))
+     :storage-error-ref (atom nil)
+     :owner-ref (atom nil)
+     :page-ref (atom nil)
+     :host-ref (atom nil)
+     :launch-deadline (atom nil)
+     :abort-run? (atom false)
+     :harness-failed? (atom false)
+     :services (merge browser/service (:browser opts))}))
+
+(defn- record-session-failure
+  [state stage cause]
+  (try
+    (record-failure state nil stage (cause-evidence cause stage))
+    (catch :default record-cause
+      (warn-safely state (str "Could not record " (when (= :cleanup stage) "cleanup ")
+                              "failure: " (message-of record-cause) "\n")))))
+
+(defn- ^:async execute-session
+  [state]
+  (try
+    (await (run-session state))
+    nil
+    (catch :default cause
+      (when-not (interrupted? state)
+        (record-session-failure state :runner cause))
+      cause)))
+
+(defn- ^:async cleanup-session
+  [state]
+  (when-let [cause (await (cleanup state))]
+    (record-session-failure state :cleanup cause)
+    cause))
+
+(defn- save-run-outcome
+  [state error]
+  (try
+    {:run (finish-run state) :saved true :error error}
+    (catch :default cause
+      {:run @(:run-ref state) :saved false :error cause})))
+
+(defn- remove-run-build
+  [state saved?]
+  (when (and saved? (:remove? (:opts state)))
+    (try
+      (remove-build (:root state) (:selected-build state))
+      nil
+      (catch :default cause cause))))
+
+(defn- format-run-report
+  [state run]
+  (try
+    {:report (format/format-run (summary/summarize run))}
+    (catch :default cause
+      (warn-safely state (str "Report failed: " (message-of cause) "\n"))
+      {:error cause})))
+
+(defn- log-run-completion
+  [state run]
+  (try
+    (write-log state log/debug (str "Run " (name (get-in run [:termination :reason]))))
+    nil
+    (catch :default cause cause)))
+
+(defn- get-exit-code
+  [run error storage-error harness-failed?]
+  (case (get-in run [:termination :reason])
+    :interrupted (if (= "SIGTERM" (get-in run [:termination :signal])) 143 130)
+    :completed (if (or error storage-error harness-failed?) 1 0)
+    1))
+
+(defn- finish-execution
+  [state session-error]
+  (let [finished      (save-run-outcome state session-error)
+        run           (:run finished)
+        removal-error (remove-run-build state (:saved finished))
+        report-result (format-run-report state run)
+        log-error     (log-run-completion state run)
+        error         (or (:error finished) removal-error (:error report-result) log-error)
+        storage-error @(:storage-error-ref state)
+        home          (:home state)]
+    {:run run
+     :home home
+     :log-path (:log-path home)
+     :report (:report report-result)
+     :exit-code (get-exit-code run error storage-error @(:harness-failed? state))
+     :error error
+     :storage-error storage-error}))
+
 (defn ^:async execute
   "Executes a prepared selection in an allocated home and owns host and browser.
 
-  Options are resolved CLI options. root is the frontend checkout. A browser
-  startup failure leaves a valid partial record. Returns the run, home, report,
-  log path, exit code and optional error/storage-error. A storage error reports any
-  failed record or log write, including a failure followed by a successful write."
+  - `root`: the frontend checkout root.
+  - `home`: the reserved output home.
+  - `selected-build`: the prepared build.
+  - `cases`: the selected cases.
+  - `options`: resolved CLI options
+  - `signal`: an optional abort signal.
+
+  A browser startup failure leaves a valid partial record.
+
+  Returns the run, home, report, log path, exit code and optional error /
+  storage-error. A storage error reports any failed record or log write,
+  including a failure followed by a successful write."
   [root home selected-build cases options signal]
   (binding [log/*log-path* (:log-path home)]
-    (let [opts  (assoc (normalize-options options) :run-id (:run-id home))
-          run   (result/create-run
-                 {:run-id (:run-id opts)
-                  :started-at (now)
-                  :plan {:cases cases
-                         :warmups (:warmups opts)
-                         :repetitions (:repetitions opts)
-                         :timeout-policy {:attempt-ms (:timeout-ms opts)}}
-                  :metadata (metadata root selected-build opts)})
-          state {:root root
-                 :selected-build selected-build
-                 :cases cases
-                 :opts opts
-                 :signal signal
-                 :home home
-                 :run-ref (atom run)
-                 :storage-error-ref (atom nil)
-                 :owner-ref (atom nil)
-                 :page-ref (atom nil)
-                 :host-ref (atom nil)
-                 :launch-deadline (atom nil)
-                 :abort-run? (atom false)
-                 :harness-failed? (atom false)
-                 :services (merge browser/service (:browser opts))}]
+    (let [state (create-run-state root home selected-build cases options signal)]
       (persist state)
-      (let [error (atom nil)]
-        (try
-          (await (run-session state))
-          (catch :default cause
-            (reset! error cause)
-            (when-not (interrupted? state)
-              (try
-                (record-failure state nil :runner (cause-evidence cause :runner))
-                (catch :default record-cause
-                  (warn-safely state (str "Could not record failure: "
-                                          (message-of record-cause) "\n")))))))
-        (when-let [cleanup-error (await (cleanup state))]
-          (reset! error cleanup-error)
-          (try
-            (record-failure state nil :cleanup
-                            (cause-evidence cleanup-error :cleanup))
-            (catch :default record-cause
-              (warn-safely state (str "Could not record cleanup failure: "
-                                      (message-of record-cause) "\n")))))
-        (let [saved-run     (try
-                              (finish-run state)
-                              (catch :default cause
-                                (reset! error cause)
-                                nil))
-              run           (or saved-run @(:run-ref state))
-              removal-error (when (and (:remove? opts) saved-run)
-                              (try
-                                (remove-build root selected-build)
-                                nil
-                                (catch :default cause cause)))
-              report-result (try
-                              {:report (format/format-run (summary/summarize run))}
-                              (catch :default cause
-                                (warn-safely state (str "Report failed: "
-                                                        (message-of cause) "\n"))
-                                {:error cause}))
-              log-error     (try
-                              (write-log state log/debug
-                                         (str "Run " (name (get-in run [:termination :reason]))))
-                              nil
-                              (catch :default cause cause))]
-          (when-let [cause (or removal-error (:error report-result) log-error)]
-            (compare-and-set! error nil cause))
-          (let [reason      (get-in run [:termination :reason])
-                signal-exit (if (= "SIGTERM" (get-in run [:termination :signal]))
-                              143 130)
-                base        (cond
-                              (= :completed reason) 0
-                              (= :interrupted reason) signal-exit
-                              :else 1)
-                exit        (if (= :interrupted reason)
-                              base
-                              (if (or @error
-                                      @(:storage-error-ref state)
-                                      (and (= :completed reason)
-                                           @(:harness-failed? state)))
-                                1
-                                base))]
-            {:run run
-             :home home
-             :log-path (:log-path home)
-             :report (:report report-result)
-             :exit-code exit
-             :error @error
-             :storage-error @(:storage-error-ref state)}))))))
+      (let [session-error (await (execute-session state))
+            cleanup-error (await (cleanup-session state))]
+        (finish-execution state (or cleanup-error session-error))))))
+
+(defn- ^:async get-selected-build
+  [root opts signal]
+  (if-let [id (:build-id opts)]
+    (artifacts/load-build root id)
+    (await (build/prepare
+            {:root root
+             :features {:default-features? (:default-features opts true)
+                        :features (or (:features opts) [])}
+             :build-timeout-ms (:build-timeout-ms opts)
+             :signal signal}))))
+
+(defn- get-cases
+  [selected-build opts]
+  (try
+    (catalog/collect selected-build {:master-seed (:seed opts) :filter (:filter opts)})
+    (catch :default cause
+      (throw (ex-info (message-of cause)
+                      (assoc (ex-data cause) :build-id (:id selected-build)
+                             :log-path (:log-path selected-build))
+                      cause)))))
+
+(defn- publish-report
+  [outcome]
+  (try
+    (when-let [report (:report outcome)]
+      (log/result (str "Report\n" report)))
+    outcome
+    (catch :default cause
+      (assoc outcome :error (or (:error outcome) cause)
+             :storage-error cause
+             :exit-code (if (= :interrupted (get-in outcome [:run :termination :reason]))
+                          (:exit-code outcome) 1)))))
 
 (defn ^:async run
   "Prepares or loads a build, collects matching cases and executes one run.
 
-  The output home is reserved before build work so filesystem errors fail fast.
-  A build or catalog failure leaves the home without a run record and rethrows
-  with build facts."
+  A build or catalog failure rethrows with build facts without writing to the
+  build output home
+
+  - root: The root of the frontend code checkout
+  - options: see `schema:run-options`
+  - signal:
+  "
   [root options signal]
   (let [opts (normalize-options options)
         home (runs/create-home {:root root :run-id (str (random-uuid))
@@ -813,37 +839,11 @@
       (try
         (log/result (str "Run " (:run-id home)))
         (log/result (str "Output " (:dir home)))
-        (let [selected-build
-              (if-let [id (:build-id opts)]
-                (artifacts/load-build root id)
-                (await (build/prepare
-                        {:root root
-                         :features {:default-features? (:default-features opts true)
-                                    :features (or (:features opts) [])}
-                         :build-timeout-ms (:build-timeout-ms opts)
-                         :signal signal})))
-              cases (try
-                      (catalog/collect selected-build
-                                       {:master-seed (:seed opts)
-                                        :filter (:filter opts)})
-                      (catch :default cause
-                        (throw (ex-info (message-of cause)
-                                        (assoc (ex-data cause)
-                                               :build-id (:id selected-build)
-                                               :log-path (:log-path selected-build))
-                                        cause))))]
+        (let [selected-build (await (get-selected-build root opts signal))
+              cases          (get-cases selected-build opts)]
           (log/info (str "  build " (:id selected-build)))
           (log/info (str "  selected " (count cases) " cases"))
-          (let [outcome (await (execute root home selected-build cases opts signal))]
-            (try
-              (when-let [report (:report outcome)]
-                (log/result (str "Report\n" report)))
-              outcome
-              (catch :default cause
-                (assoc outcome :error (or (:error outcome) cause)
-                       :storage-error cause
-                       :exit-code (if (= :interrupted (get-in outcome [:run :termination :reason]))
-                                    (:exit-code outcome) 1))))))
+          (publish-report (await (execute root home selected-build cases opts signal))))
         (catch :default cause
           (throw (ex-info (message-of cause)
                           (assoc (ex-data cause) :log-path
