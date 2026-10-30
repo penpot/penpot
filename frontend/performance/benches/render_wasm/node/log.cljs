@@ -47,8 +47,11 @@
 
   So: quiet mode still records detailed diagnostics in files.
   Also, the console renderer adds headings, prefixes, and colors."
+  (:require-macros
+   [app.common.exceptions :as ex])
   (:require
    ["fs" :as fs]
+   [benches.render-wasm.errors :as errors]
    [clojure.string :as str]))
 
 ;; Each high-level task binds its own path and awaits its work inside that scope:
@@ -102,8 +105,9 @@
                     (fs/appendFileSync *log-path* (str text "\n") "utf8")
                     nil
                     (catch :default cause
-                      (ex-info "cannot append benchmark log"
-                               {:type ::storage-error :log-path *log-path*} cause))))
+                      (errors/fatal-error "cannot append benchmark log"
+                                          {:type ::storage-error :log-path *log-path*}
+                                          cause))))
         enabled (case level
                   :debug (= :debug console-level)
                   :info (contains? #{:info :debug} console-level)
@@ -126,18 +130,17 @@
 (defn- get-tail
   [path]
   (when path
-    (try
-      (let [fd (fs/openSync path "r")]
-        (try
-          (let [size   (.-size (fs/fstatSync fd))
-                length (min size 8192)
-                buffer (js/Buffer.alloc length)
-                read   (fs/readSync fd buffer 0 length (- size length))]
-            (->> (str/split-lines (.toString buffer "utf8" 0 read))
-                 (remove str/blank?)
-                 (take-last 20)))
-          (finally (fs/closeSync fd))))
-      (catch :default _ nil))))
+    (ex/ignoring
+     (let [fd (fs/openSync path "r")]
+       (try
+         (let [size   (.-size (fs/fstatSync fd))
+               length (min size 8192)
+               buffer (js/Buffer.alloc length)
+               read   (fs/readSync fd buffer 0 length (- size length))]
+           (->> (str/split-lines (.toString buffer "utf8" 0 read))
+                (remove str/blank?)
+                (take-last 20)))
+         (finally (fs/closeSync fd)))))))
 
 (defn error
   "Prints a terminal failure with ordered fields and an optional bounded log tail."

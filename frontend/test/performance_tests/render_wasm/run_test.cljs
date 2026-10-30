@@ -10,6 +10,7 @@
    ["os" :as os]
    ["path" :as path]
    [app.common.transit :as transit]
+   [benches.render-wasm.errors :as errors]
    [benches.render-wasm.feature-plan :as feature-plan]
    [benches.render-wasm.node.artifacts :as artifacts]
    [benches.render-wasm.node.feature-comparison :as feature-comparison]
@@ -695,7 +696,7 @@
       (t/is (= code (:exit-code result)))
       (t/is (= :interrupted (get-in result [:run :termination :reason])))
       (t/is (= signal (get-in result [:run :termination :signal])))
-      (t/is (some? (:error result))))))
+      (t/is (seq (:errors result))))))
 
 (t/deftest ^:async log-failure-still-closes-pages-browsers-and-hosts
   (let [out     (output-dir)
@@ -714,8 +715,7 @@
                                 (options fake out)))
         state   @(:state fake)
         host    (:host state)]
-    (t/is (some? (:error result)))
-    (t/is (some? (:storage-error result)))
+    (t/is (some errors/fatal? (:errors result)))
     (t/is (= 1 (:exit-code result)))
     (t/is (empty? (attempts-for (:run result) :case/a)))
     (t/is (= 1 (:close-pages state)))
@@ -746,8 +746,8 @@
           result  (await (execute fake [(collected :case/a :fresh)] (options fake out)))
           run     (saved-record result)]
       (t/is (= 1 (:exit-code result)))
-      (t/is (some? (:storage-error result)))
-      (t/is (str/includes? (ex-message (:error result))
+      (t/is (some errors/fatal? (:errors result)))
+      (t/is (str/includes? (ex-message (first (:errors result)))
                            (if cleanup-fails "cleanup rejected" "cannot append benchmark log")))
       (t/is (= :incomplete (get-in run [:termination :reason])))
       (t/is (str/includes? (fs/readFileSync file "utf8") "Run incomplete")))))
@@ -761,7 +761,7 @@
     (t/is (= [:completed] (mapv :outcome (:attempts run))))
     (t/is (= :completed (get-in run [:termination :reason])))
     (t/is (= :cleanup (get-in run [:termination :failure :stage])))
-    (t/is (= "cleanup rejected" (ex-message (:error result))))
+    (t/is (= "cleanup rejected" (ex-message (first (:errors result)))))
     (t/is (= 1 (:exit-code result)))))
 
 (t/deftest ^:async interruption-during-shutdown-is-persisted
@@ -900,7 +900,7 @@
     (t/is (= :running (get-in saved [:termination :reason])))
     (t/is (= 1 (count (:attempts saved))))
     (t/is (every? zero? (vals (get-in saved [:remaining :case/a]))))
-    (t/is (some? (:error response)))
+    (t/is (seq (:errors response)))
     (t/is (= 1 (:exit-code response)))
     (t/is (= "<!doctype html>"
              (fs/readFileSync (path/join dir "index.html") "utf8")))))

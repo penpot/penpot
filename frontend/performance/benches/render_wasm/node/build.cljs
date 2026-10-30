@@ -17,6 +17,7 @@
    ["path" :as path]
    ["url" :as url]
    [app.common.transit :as transit]
+   [benches.render-wasm.errors :as errors :include-macros true :refer [attempt failure?]]
    [benches.render-wasm.failures :as failures]
    [benches.render-wasm.identity :as identity]
    [benches.render-wasm.node.artifacts :as artifacts]
@@ -38,7 +39,7 @@
       (if (contains? #{:process-timeout :process-cancelled} (:type (ex-data cause)))
         (throw cause)
         (do
-          (log/warn (str "Git provenance unavailable: " (or (ex-message cause) (str cause))))
+          (log/warn (str "Git provenance unavailable: " (errors/message-of cause)))
           {:sha nil :dirty nil})))))
 
 (defn- check-profile-marks
@@ -67,7 +68,8 @@
   (300000), AbortSignal :signal, and optional :on-created callback. The callback
   runs once after directory, log and initial manifest creation. CLI callers
   print the ID there. Storage errors have no recorded ID. Later errors carry
-  :build-id and :phase. A retry always creates a new attempt."
+  :build-id and :phase. An error also carries :manifest-error and is fatal when
+  the failed manifest cannot be saved. A retry always creates a new attempt."
   [{:keys [root features selection build-timeout-ms signal on-created]
     :or {build-timeout-ms options/default-build-timeout-ms}}]
   (when-not (and (js/Number.isSafeInteger build-timeout-ms) (pos? build-timeout-ms))
@@ -145,18 +147,17 @@
             (reset! build-ref ready)
             (artifacts/load-build root (:id ready))))
         (catch :default cause
-          (let [build   @build-ref
-                failure {:phase @phase :cause (failures/describe-cause cause)}
-                manifest-error
-                (when (= :building (get-in build [:manifest :status]))
-                  (try
-                    (artifacts/write-manifest build (assoc (:manifest build) :status :failed :failure failure))
-                    nil
-                    (catch :default save-cause
-                      (or (ex-message save-cause) (str save-cause)))))]
-            (throw (ex-info "renderer build preparation failed"
-                            (cond-> {:type ::preparation-failed :build-id (:id build)
-                                     :phase @phase :log-path (or (:log-path (ex-data cause)) (:log-path build))
-                                     :reason (str/join " -> " (keep :message (:cause failure)))}
-                              manifest-error (assoc :manifest-error manifest-error))
-                            cause))))))))
+          (let [build          @build-ref
+                failure        {:phase @phase :cause (failures/describe-cause cause)}
+                saved          (when (= :building (get-in build [:manifest :status]))
+                                 (attempt :catch-fatal
+                                          (artifacts/write-manifest
+                                           build (assoc (:manifest build) :status :failed :failure failure))))
+                manifest-error (when (failure? saved) (errors/message-of saved))
+                data           (cond-> {:type ::preparation-failed :build-id (:id build)
+                                        :phase @phase :log-path (or (:log-path (ex-data cause)) (:log-path build))
+                                        :reason (str/join " -> " (keep :message (:cause failure)))}
+                                 manifest-error (assoc :manifest-error manifest-error))]
+            (throw (if manifest-error
+                     (errors/fatal-error "renderer build preparation failed" data cause)
+                     (ex-info "renderer build preparation failed" data cause)))))))))

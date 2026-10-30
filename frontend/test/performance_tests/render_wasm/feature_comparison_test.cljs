@@ -12,6 +12,7 @@
    ["path" :as path]
    [benches.render-wasm.cases :as cases]
    [benches.render-wasm.declarations :as decl]
+   [benches.render-wasm.errors :as errors]
    [benches.render-wasm.feature-plan :as feature-plan]
    [benches.render-wasm.node.build :as build]
    [benches.render-wasm.node.feature-comparison :as feature-comparison]
@@ -525,7 +526,7 @@
                       0)]
       (files/atomic-write (:record-path run-home)
                           (result/encode (result/check-record run)))
-      (js/Promise.resolve {:run run :home run-home :exit-code exit-code :error nil}))))
+      (js/Promise.resolve {:run run :home run-home :exit-code exit-code :errors []}))))
 
 (defn- comparison-services
   [{:keys [prepare-build collect-catalog execute-run]}]
@@ -622,8 +623,8 @@
                                             (let [response (await (execute root home build cases options signal-object))]
                                               (when signal (.abort controller signal))
                                               (assoc response :exit-code 1
-                                                     :error (js/Error. "executor failure")
-                                                     :storage-error (js/Error. "recovered write failure"))))})}))
+                                                     :errors [(js/Error. "executor failure")
+                                                              (errors/fatal-error "recovered write failure" {} nil)])))})}))
           record     (saved-comparison outcome)
           run        (result/decode (fs/readFileSync (get-in record [:configurations 0 :run :record-path]) "utf8"))]
       (t/is (= code (:exit-code outcome)))
@@ -632,7 +633,7 @@
       (t/is (= [:failed :unattempted] (mapv :status (:configurations record))))
       (t/is (= "run-evidence" (get-in record [:configurations 0 :failure :phase])))
       (t/is (= "recovered write failure" (get-in record [:configurations 0 :failure :message])))
-      (t/is (= "recovered write failure" (ex-message (:error outcome)))))))
+      (t/is (= "recovered write failure" (ex-message (first (:errors outcome))))))))
 
 (t/deftest ^:async pre-aborted-comparison-preserves-all-work-as-unattempted
   (create-frontend-root)
@@ -646,7 +647,6 @@
                                                               :execute-run (execute-service {})})}))
           record     (saved-comparison outcome)]
       (t/is (= code (:exit-code outcome)))
-      (t/is (true? (:interrupted? outcome)))
       (t/is (= :interrupted (:status record)))
       (t/is (some? (:ended-at record)))
       (t/is (every? #(= :unattempted (:status %)) (concat (:configurations record) (:edges record))))
@@ -679,7 +679,6 @@
                                                         {:services services}))
           record     (saved-comparison outcome)]
       (t/is (= code (:exit-code outcome)))
-      (t/is (true? (:interrupted? outcome)))
       (t/is (= :interrupted (:status record)))
       (t/is (= [:failed :unattempted] (mapv :status (:configurations record))))
       (t/is (= signal (get-in record [:configurations 0 :reason])))
@@ -705,7 +704,8 @@
     (t/is (every? #(= :completed (:status %)) (:configurations record)))
     (t/is (= [:failed :unattempted :unattempted :unattempted] (mapv :status (:edges record))))
     (t/is (= "comparison-storage" (get-in record [:edges 0 :failure :phase])))
-    (t/is (= (get-in outcome [:home :log-path]) (:tail-log outcome)))))
+    (t/is (= (get-in outcome [:home :log-path])
+             (:log-path (ex-data (first (:errors outcome))))))))
 
 (t/deftest ^:async edge-analysis-failures-allow-independent-comparisons-to-complete
   (create-frontend-root)
@@ -750,7 +750,8 @@
     (t/is (= :running (:status record)))
     (t/is (= [:running :planned] (mapv :status (:configurations record))))
     (t/is (= :completed (get-in run [:termination :reason])))
-    (t/is (= (get-in outcome [:home :log-path]) (:tail-log outcome)))))
+    (t/is (= (get-in outcome [:home :log-path])
+             (:log-path (ex-data (first (:errors outcome))))))))
 
 (t/deftest create-home-creates-only-a-fresh-home
   (create-frontend-root)
@@ -973,7 +974,6 @@
         record     (:comparison result)]
     (t/is (= 1 @calls))
     (t/is (= 130 (:exit-code result)))
-    (t/is (true? (:interrupted? result)))
     (t/is (= :interrupted (:status record)))
     (t/is (some? (:ended-at record)))
     (t/is (= "SIGINT" (get-in record [:configurations 0 :reason])))
@@ -1029,7 +1029,7 @@
         record      (:comparison result)]
     (t/is (= 1 (:exit-code result)))
     (t/is (str/ends-with? @stdout "Status failed\n"))
-    (t/is (some? (:error result)))
+    (t/is (seq (:errors result)))
     (t/is (= :running (:status record)))
     (t/is (= :building (get-in record [:configurations 0 :status])))
     (t/is (nil? (get-in record [:configurations 0 :build])))
@@ -1053,7 +1053,7 @@
     (t/is (= 1 (:exit-code response)))
     (t/is (= :failed (get-in response [:comparison :configurations 0 :status])))
     (t/is (= (get-in response [:home :log-path])
-             (or (:tail-log response) (:log-path response))))))
+             (:log-path (ex-data (first (:errors response))))))))
 
 (t/deftest ^:async comparison-storage-error-keeps-its-origin-through-build-preparation
   (create-frontend-root)
@@ -1073,7 +1073,7 @@
                                                 (created selected)))))))}}))]
     (t/is (= 1 (:exit-code response)))
     (t/is (= (get-in response [:home :log-path])
-             (or (:tail-log response) (:log-path response))))))
+             (:log-path (ex-data (first (:errors response))))))))
 
 (t/deftest ^:async pending-real-signals-stop-edge-analysis
   (create-frontend-root)
