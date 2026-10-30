@@ -50,6 +50,93 @@
 ;; Layout predicates
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(t/deftest fitting-grid-cells-keeps-occupied-placement-and-metadata
+  (let [a        (make-cell :row 1 :column 1 :shapes [(uuid/next)] :align-self :start)
+        b        (make-cell :row 3 :column 1 :row-span 2 :shapes [(uuid/next)]
+                            :position :area :area-name "Kept area" :align-self :end :justify-self :center)
+        empty    (make-cell :row 1 :column 2)
+        shape    (make-grid-frame :layout-grid-rows [layout/default-track-value]
+                                  :layout-grid-columns [layout/default-track-value layout/default-track-value]
+                                  :layout-grid-cells {(:id a) a (:id b) b (:id empty) empty})
+        after    (layout/fit-cells-to-tracks shape)
+        kept     (get-in after [:layout-grid-cells (:id b)])]
+    (t/is (= a (get-in after [:layout-grid-cells (:id a)])))
+    (t/is (= (assoc b :row 1 :column 2 :row-span 1) kept))
+    (t/is (= #{(:id a) (:id b)} (set (keys (:layout-grid-cells after)))))
+    (t/is (empty? (layout/overlapping-cells after)))
+    (t/is (= (:layout-grid-rows shape) (:layout-grid-rows after)))
+    (t/is (= (:layout-grid-columns shape) (:layout-grid-columns after)))
+    (t/is (= after (layout/fit-cells-to-tracks after)))))
+
+(t/deftest fitting-grid-cells-keeps-an-empty-authored-area
+  (let [area     (make-cell :row 2 :column 1 :position :area :area-name "Kept empty area" :align-self :end)
+        a        (make-cell :row 1 :column 1)
+        b        (make-cell :row 1 :column 2)
+        shape    (make-grid-frame :layout-grid-rows [layout/default-track-value]
+                                  :layout-grid-columns [layout/default-track-value layout/default-track-value]
+                                  :layout-grid-cells {(:id area) area (:id a) a (:id b) b})
+        after    (layout/fit-cells-to-tracks shape)]
+    (t/is (= (assoc area :row 1) (get-in after [:layout-grid-cells (:id area)])))
+    (t/is (= 2 (count (:layout-grid-cells after))))
+    (t/is (empty? (layout/overlapping-cells after)))
+    (t/is (= after (layout/fit-cells-to-tracks after)))))
+
+(t/deftest fitting-grid-cells-shortens-spans-around-retained-cells
+  (let [a        (make-cell :row 1 :column 1 :row-span 2 :shapes [(uuid/next)] :position :manual)
+        b        (make-cell :row 3 :column 1 :row-span 2 :column-span 2 :shapes [(uuid/next)]
+                            :position :manual :align-self :end)
+        shape    (make-grid-frame :layout-grid-rows [layout/default-track-value layout/default-track-value]
+                                  :layout-grid-columns [layout/default-track-value layout/default-track-value]
+                                  :layout-grid-cells {(:id a) a (:id b) b})
+        after    (layout/fit-cells-to-tracks shape)]
+    (t/is (= a (get-in after [:layout-grid-cells (:id a)])))
+    (t/is (= (assoc b :row 1 :column 2 :row-span 1 :column-span 1)
+             (get-in after [:layout-grid-cells (:id b)])))
+    (t/is (= #{[1 1] [1 2] [2 2]}
+             (set (map (juxt :row :column) (vals (:layout-grid-cells after))))))
+    (t/is (empty? (layout/overlapping-cells after)))
+    (t/is (= after (layout/fit-cells-to-tracks after)))))
+
+(t/deftest fitting-grid-cells-keeps-all-children-when-slots-run-out
+  (let [children [(make-shape) (make-shape)]
+        ids      (mapv :id children)
+        a        (make-cell :row 1 :column 1 :shapes [(first ids)] :align-self :end)
+        b        (make-cell :row 2 :column 1 :shapes [(second ids)] :position :manual :align-self :end)
+        shape    (make-grid-frame :layout-grid-rows [layout/default-track-value]
+                                  :layout-grid-columns [layout/default-track-value]
+                                  :shapes ids :layout-grid-cells {(:id a) a (:id b) b})
+        after    (layout/fit-cells-to-tracks shape)]
+    (t/is (= {(:id a) (assoc a :shapes ids :position :manual)} (:layout-grid-cells after)))
+    (t/is (= ids (vec (mapcat :shapes (vals (:layout-grid-cells after))))))
+    (t/is (= after (layout/assign-cells after (into {} (map (juxt :id identity)) children))))
+    (t/is (= after (layout/fit-cells-to-tracks after)))))
+
+(t/deftest fitting-grid-cells-uses-the-existing-flow-order
+  (doseq [direction [:row :column nil]]
+    (let [a     (make-cell :row 1 :column 1 :shapes [(uuid/next)] :position :manual)
+          b     (make-cell :row 2 :column 2 :shapes [(uuid/next)] :position :manual)
+          moved (make-cell :row 3 :column 3 :shapes [(uuid/next)] :position :manual)
+          shape (make-grid-frame :layout-grid-rows [layout/default-track-value layout/default-track-value]
+                                 :layout-grid-columns [layout/default-track-value layout/default-track-value]
+                                 :layout-grid-cells {(:id a) a (:id b) b (:id moved) moved})
+          shape (if direction (assoc shape :layout-grid-dir direction) (dissoc shape :layout-grid-dir))
+          after (layout/fit-cells-to-tracks shape)
+          cell  (get-in after [:layout-grid-cells (:id moved)])]
+      (t/is (= (if (= :row direction) [1 2] [2 1]) [(:row cell) (:column cell)]))
+      (t/is (empty? (layout/overlapping-cells after)))
+      (t/is (= after (layout/fit-cells-to-tracks after))))))
+
+(t/deftest fitting-a-grid-with-no-tracks-clears-empty-cells
+  (doseq [rows [0 1] columns [0 1] :when (or (zero? rows) (zero? columns))]
+    (let [cell  (make-cell :row 1 :column 1)
+          shape (make-grid-frame :layout-grid-rows (vec (repeat rows layout/default-track-value))
+                                 :layout-grid-columns (vec (repeat columns layout/default-track-value))
+                                 :layout-grid-cells {(:id cell) cell})
+          after (layout/fit-cells-to-tracks shape)]
+      (t/is (= {} (:layout-grid-cells after)))
+      (t/is (= (:layout-grid-rows shape) (:layout-grid-rows after)))
+      (t/is (= (:layout-grid-columns shape) (:layout-grid-columns after))))))
+
 (t/deftest flex-layout?-test
   (t/testing "returns true for flex frame"
     (t/is (layout/flex-layout? (make-flex-frame))))

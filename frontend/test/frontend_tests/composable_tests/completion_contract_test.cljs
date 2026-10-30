@@ -54,6 +54,93 @@
 
 (t/use-fixtures :each ftm/fixture)
 
+(t/deftest ^:async removing-a-main-grid-track-keeps-overridden-copy-cells-in-bounds
+  (await
+   (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
+     (let [initial   (cg/world [1 0 {:layout :grid :layout-children true :grid-square true}])
+           main-id   ((n/main-head-of "random-0") initial)
+           copy-id   ((n/nth-copy-head-of "random-0" 0) initial)
+           other-id  ((n/nth-copy-head-of "random-0" 1) initial)
+           get-shape #(ths/get-shape-by-id (ftm/current-file) %)
+           get-cell  (fn [shape id] (first (filter #(some #{id} (:shapes %))
+                                                   (vals (:layout-grid-cells shape)))))
+           copy      (tm/shape-by-id initial copy-id)
+           cell      (first (filter #(= [2 1] [(:row %) (:column %)])
+                                    (vals (:layout-grid-cells copy))))
+           child-id  (first (:shapes cell))
+           _         (ftm/install! initial)]
+       (t/is (some? child-id))
+       (t/is (= :settled (await (ftm/await-step [(ptk/data-event :layout/update {:ids [main-id copy-id other-id]})]))))
+       (let [before (ftm/snapshot)]
+         (t/is (= :settled (await (ftm/await-step [(dwsl/update-grid-cells copy-id [(:id cell)] {:align-self :end})]))))
+         (let [overridden (ftm/snapshot)]
+           (t/is (= :settled (await (ftm/await-step [dwu/undo]))))
+           (t/is (uc/same-state? before (ftm/snapshot)))
+           (t/is (= :settled (await (ftm/await-step [dwu/redo]))))
+           (t/is (uc/same-state? overridden (ftm/snapshot)))
+           (t/is (= :settled (await (ftm/await-step [(dwsl/remove-layout-track [main-id] :row 0 :with-shapes? true)]))))
+           (let [removed (ftm/snapshot)]
+             (t/is (= 1 (count (:layout-grid-rows (get-shape main-id)))))
+             (doseq [id [main-id copy-id other-id]
+                     :let [shape (get-shape id)
+                           rows (count (:layout-grid-rows shape))
+                           cols (count (:layout-grid-columns shape))]]
+               (t/is (every? #(and (<= 1 (:row %) (+ (:row %) (:row-span %) -1) rows)
+                                   (<= 1 (:column %) (+ (:column %) (:column-span %) -1) cols))
+                             (vals (:layout-grid-cells shape)))
+                     (pr-str {:id id :rows rows :columns cols
+                              :cells (mapv #(select-keys % [:row :column :row-span :column-span])
+                                           (vals (:layout-grid-cells shape)))})))
+             (t/is (= :end (:align-self (get-cell (get-shape copy-id) child-id))))
+             (t/is (= #{:layout-grid-cells} (:touched (get-shape copy-id))))
+             (t/is (= :settled (await (ftm/await-step [dwu/undo]))))
+             (t/is (uc/same-state? overridden (ftm/snapshot)))
+             (t/is (= :settled (await (ftm/await-step [dwu/redo]))))
+             (t/is (uc/same-state? removed (ftm/snapshot))))))
+       (ftm/uninstall!)))))
+
+(t/deftest ^:async removed-grid-tracks-shorten-spans-but-keep-authored-track-lists
+  (await
+   (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
+     (doseq [axis [:row :column] own-tracks? [false true]]
+       (let [initial  (cg/world [1 0 {:layout :grid :layout-children true :grid-square true}])
+             main-id  ((n/main-head-of "random-0") initial)
+             copy-id  ((n/nth-copy-head-of "random-0" 0) initial)
+             coord    (if (= axis :row) [1 2] [2 1])
+             track    (if (= axis :row) :layout-grid-rows :layout-grid-columns)
+             span     (if (= axis :row) :row-span :column-span)
+             copy     (tm/shape-by-id initial copy-id)
+             cell     (first (filter #(= coord [(:row %) (:column %)]) (vals (:layout-grid-cells copy))))
+             child-id (first (:shapes cell))
+             _        (ftm/install! initial)]
+         (t/is (= :settled (await (ftm/await-step [(ptk/data-event :layout/update {:ids [main-id copy-id]})]))))
+         (when own-tracks?
+           (t/is (= :settled (await (ftm/await-step [(dwsl/change-layout-track [copy-id] axis 0 {:value 137})])))))
+         (t/is (= :settled (await (ftm/await-step [(dwsl/update-grid-cell-position copy-id (:id cell) {span 2})]))))
+         (t/is (= :settled (await (ftm/await-step [(dwsl/update-grid-cells copy-id [(:id cell)]
+                                                                           {:align-self :end :justify-self :center})]))))
+         (let [before   (ftm/snapshot)
+               old-copy (ths/get-shape-by-id (ftm/current-file) copy-id)]
+           (t/is (= :settled (await (ftm/await-step [(dwsl/remove-layout-track [main-id] axis 1 :with-shapes? true)]))))
+           (let [after    (ftm/snapshot)
+                 copy     (ths/get-shape-by-id (ftm/current-file) copy-id)
+                 main     (ths/get-shape-by-id (ftm/current-file) main-id)
+                 retained (first (filter #(some #{child-id} (:shapes %)) (vals (:layout-grid-cells copy))))]
+             (t/is (= 1 (count (get main track))))
+             (t/is (= (if own-tracks? (get old-copy track) (get main track)) (get copy track)))
+             (t/is (= (if own-tracks? 2 1) (get retained span)))
+             (t/is (= coord [(:row retained) (:column retained)]))
+             (t/is (= (:id cell) (:id retained)))
+             (t/is (= [:end :center] [(:align-self retained) (:justify-self retained)]))
+             (t/is (= (cond-> #{:layout-grid-cells} own-tracks? (conj track)) (:touched copy)))
+             (t/is (= :settled (await (ftm/await-step [dwu/undo]))))
+             (t/is (uc/same-state? before (ftm/snapshot)))
+             (t/is (= :settled (await (ftm/await-step [dwu/redo]))))
+             (t/is (uc/same-state? after (ftm/snapshot)))
+             (t/is (= :settled (await (ftm/await-step [(dwl/sync-file (:id (ftm/current-file)) (:id (ftm/current-file)))]))))
+             (t/is (uc/same-state? after (ftm/snapshot)))))
+         (ftm/uninstall!))))))
+
 (t/deftest ^:async making-a-grid-copy-child-absolute-keeps-parent-cells-derived
   (await
    (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}

@@ -1725,6 +1725,30 @@
                 (ctsl/create-cells shape [column row 1 1])))
             shape added)))
 
+(defn- assign-inherited-grid-cells
+  [shape before objects]
+  (if-not (or (< (count (:layout-grid-rows shape)) (count (:layout-grid-rows before)))
+              (< (count (:layout-grid-columns shape)) (count (:layout-grid-columns before))))
+    (ctsl/assign-cells shape objects)
+    (let [active? (some #(not (ctsl/position-absolute? objects %)) (:shapes shape))
+          ;; Like assign-cells, a grid with participating children needs at
+          ;; least one track per axis, including an initially empty grid.
+          target  (cond-> shape
+                    (and active? (empty? (:layout-grid-rows shape)))
+                    (assoc :layout-grid-rows [ctsl/default-track-value])
+
+                    (and active? (empty? (:layout-grid-columns shape)))
+                    (assoc :layout-grid-columns [ctsl/default-track-value]))]
+      (-> target
+          (ctsl/check-deassigned-cells objects)
+          (ctsl/fit-cells-to-tracks)
+          (ctsl/assign-cells objects)
+          ;; New children can exhaust the remaining slots. Fit any overflow
+          ;; back into inherited tracks instead of deriving extra tracks.
+          (assoc :layout-grid-rows (:layout-grid-rows target)
+                 :layout-grid-columns (:layout-grid-columns target))
+          (ctsl/fit-cells-to-tracks)))))
+
 (defn- update-grid-copy-attrs
   "Synchronizes the `layout-grid-cells` property from the main shape to the copies"
   [changes shape-before shape-main omit-touched?]
@@ -1756,13 +1780,12 @@
                copy-cells  (-> shape-copy :layout-grid-cells (remove-orphan-cells shape-copy))
                main-cells  (-> shape-main (ctsl/remap-grid-cells ids-map) :layout-grid-cells)
                keep-cells? (and omit-touched? (contains? (:touched shape-copy) :layout-grid-cells))]
-           (-> shape-copy
-               (assoc :layout-grid-cells
-                      (if keep-cells?
-                        copy-cells
-                        main-cells))
-               (cond-> keep-cells? (add-inherited-grid-cells shape-before))
-               (ctsl/assign-cells objects))))
+           (let [shape-copy (assoc shape-copy :layout-grid-cells (if keep-cells? copy-cells main-cells))]
+             (if keep-cells?
+               (-> shape-copy
+                   (add-inherited-grid-cells shape-before)
+                   (assign-inherited-grid-cells shape-before objects))
+               (ctsl/assign-cells shape-copy objects)))))
        {:ignore-touched true :with-objects? true})))
 
 (defn- update-grid-main-attrs

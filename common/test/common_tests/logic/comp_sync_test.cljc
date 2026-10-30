@@ -34,9 +34,78 @@
    [app.common.types.file :as ctf]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.layout :as ctl]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest removed-main-grid-tracks-keep-overridden-copy-cells-in-bounds
+  (doseq [axis [:row :column]
+          span? [false true]]
+    (let [initial       (cg/world [1 0 {:layout :grid :layout-children true :grid-square true}])
+          main-id       ((n/main-head-of "random-0") initial)
+          copy-id       ((n/nth-copy-head-of "random-0" 0) initial)
+          other-id      ((n/nth-copy-head-of "random-0" 1) initial)
+          index         (if span? 1 0)
+          coord         (if (= (= axis :row) span?) [1 2] [2 1])
+          original      (tm/shape-by-id initial copy-id)
+          authored      (cond-> original
+                          span? (ctl/resize-cell-area (first coord) (second coord)
+                                                      (first coord) (second coord)
+                                                      (if (= axis :row) 2 1) (if (= axis :column) 2 1)))
+          cell-id       (:id (ctl/cell-by-row-column authored (first coord) (second coord)))
+          authored      (update-in authored [:layout-grid-cells cell-id] assoc :align-self :end :justify-self :center)
+          original-file (tm/file initial)
+          original-page (thf/current-page original-file)
+          override      (cls/generate-update-shapes
+                         (pcb/empty-changes nil (:id original-page)) #{copy-id}
+                         #(assoc % :layout-grid-cells (:layout-grid-cells authored))
+                         (:objects original-page) {})
+          file          (thf/apply-changes original-file override)
+          page          (thf/current-page file)
+          main          (get-in page [:objects main-id])
+          copy          (get-in page [:objects copy-id])
+          cell          (first (filter #(= coord [(:row %) (:column %)]) (vals (:layout-grid-cells copy))))
+          child-id      (first (:shapes cell))
+          ids           (set ((if (= axis :row) ctl/shapes-by-row ctl/shapes-by-column) main index))
+          [_ deletion]  (cls/generate-delete-shapes (pcb/empty-changes) (:data file) page (:objects page) ids {})
+          deleted       (thf/apply-changes file deletion)
+          objects       (:objects (thf/current-page deleted))
+          removal       (cls/generate-update-shapes
+                         (pcb/empty-changes nil (:id page)) #{main-id}
+                         (fn [shape objects]
+                           ((if (= axis :row) ctl/remove-grid-row ctl/remove-grid-column) shape index objects))
+                         objects {:with-objects? true})
+          removed       (thf/apply-changes deleted removal)
+          synced        (r/sync-cascade removed {} #{(:component-id main)})
+          after         (:file synced)
+          changes       (reduce pcb/concat-changes (pcb/concat-changes deletion removal) (:syncs synced))
+          undone        (thf/apply-undo-changes after changes)
+          redone        (thf/apply-changes undone changes)
+          get-shape     #(ths/get-shape-by-id after %)
+          retained      (first (filter #(some #{child-id} (:shapes %)) (vals (:layout-grid-cells (get-shape copy-id)))))
+          tracks        (if (= axis :row) :layout-grid-rows :layout-grid-columns)]
+      (t/is (some? child-id))
+      (t/is (= 1 (count (get (get-shape main-id) tracks))))
+      (t/is (= (get (get-shape main-id) tracks) (get (get-shape copy-id) tracks)))
+      (doseq [id [main-id copy-id other-id]
+              :let [shape (get-shape id)
+                    rows (count (:layout-grid-rows shape))
+                    cols (count (:layout-grid-columns shape))]]
+        (t/is (every? #(and (<= 1 (:row %) (+ (:row %) (:row-span %) -1) rows)
+                            (<= 1 (:column %) (+ (:column %) (:column-span %) -1) cols))
+                      (vals (:layout-grid-cells shape)))
+              (pr-str {:axis axis :id id :rows rows :columns cols})))
+      (t/is (= :end (:align-self retained)))
+      (t/is (= :center (:justify-self retained)))
+      (t/is (= cell-id (:id retained)))
+      (t/is (= (if span? coord [1 1]) [(:row retained) (:column retained)]))
+      (t/is (= [1 1] [(:row-span retained) (:column-span retained)]))
+      (t/is (= #{:layout-grid-cells} (:touched (get-shape copy-id))))
+      (t/is (uc/same-state? (uc/snapshot file) (uc/snapshot undone)))
+      (t/is (uc/same-state? (uc/snapshot after) (uc/snapshot redone)))
+      (t/is (uc/same-state? (uc/snapshot after)
+                            (uc/snapshot (:file (r/sync-cascade after {} #{(:component-id main)}))))))))
 
 (t/deftest grid-growth-fills-inherited-tracks-before-assigning-copy-children
   (doseq [direction [:row :column]
