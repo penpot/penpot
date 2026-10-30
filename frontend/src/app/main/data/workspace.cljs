@@ -82,6 +82,7 @@
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
+   [app.util.i18n :as i18n]
    [app.util.perf :as perf]
    [app.util.storage :as storage]
    [app.util.timers :as tm]
@@ -314,6 +315,24 @@
                                 :file-id file-id
                                 :team-id team-id)))))))
 
+(defn token-source-fallback-notification-message
+  [outcome]
+  (case outcome
+    :tokens-source-fallback-local
+    (i18n/tr "dashboard.import.tokens-source-fallback-local")
+
+    :tokens-source-deactivated
+    (i18n/tr "dashboard.import.tokens-source-deactivated")
+
+    nil))
+
+(defn token-source-fallback-notification-outcome
+  [response]
+  (when (map? response)
+    (let [outcome (:tokens-source-fallback-notification response)]
+      (when (#{:tokens-source-fallback-local :tokens-source-deactivated} outcome)
+        outcome))))
+
 (defn- restore-pending-changes
   "Applies the edits still waiting to be saved to a freshly loaded `file`.
   An edit that no longer applies to the loaded data leaves the file as the
@@ -342,7 +361,25 @@
       (let [file (restore-pending-changes state file)]
         (-> state
             (assoc :thumbnails (d/update-vals thumbnails (fn [uri] {:uri uri :rendered-at nil})))
-            (update :files assoc file-id file))))))
+            (update :files assoc file-id file))))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      ;; Consume after main-file bundle resolution, before async project/library loading.
+      (if (token-source-fallback-notification-outcome (:metadata file))
+        (->> (rp/cmd! :consume-tokens-source-fallback-notification
+                      {:file-id file-id})
+             (rx/take 1)
+             (rx/map token-source-fallback-notification-outcome)
+             (rx/map token-source-fallback-notification-message)
+             (rx/filter some?)
+             (rx/map ntf/info)
+             (rx/catch (fn [cause]
+                         (log/warn :hint "failed to consume token source fallback notification"
+                                   :file-id (dm/str file-id)
+                                   :cause cause)
+                         (rx/empty))))
+        (rx/empty)))))
 
 (defn zoom-to-frame
   []
@@ -376,9 +413,8 @@
              (rx/mapcat
               (fn [[file thumbnails]]
                 (->> (resolve-file file)
-                     (rx/map (fn [file]
-                               (log/trace :hint "file resolved" :file-id file-id)
-                               {:file file
+                     (rx/map (fn [resolved-file]
+                               {:file resolved-file
                                 :file-id file-id
                                 :features features
                                 :thumbnails thumbnails})))))

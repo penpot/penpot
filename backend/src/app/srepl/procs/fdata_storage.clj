@@ -6,8 +6,10 @@
 
 (ns app.srepl.procs.fdata-storage
   (:require
+   [app.common.data :as d]
    [app.common.logging :as l]
-   [app.db :as db]))
+   [app.db :as db]
+   [app.features.fdata :as fdata]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SNAPSHOTS
@@ -102,16 +104,19 @@
       (l/inf :hint "migrating file" :file-id (str id))
 
       (db/update! conn :file {:data nil} {:id id} ::db/return-keys false)
-      (db/insert! conn :file-data
-                  {:backend "db"
-                   :metadata nil
-                   :type "main"
-                   :data data
-                   :created-at created-at
-                   :modified-at modified-at
-                   :file-id id
-                   :id id}
-                  {::db/return-keys false}))
+      (fdata/upsert! cfg
+                     (d/without-nils
+                      {:backend "db"
+                       :metadata (some-> (db/get* conn :file-data {:id id :file-id id :type "main"}
+                                                  ::db/remove-deleted false)
+                                         :metadata
+                                         fdata/decode-metadata)
+                       :type "main"
+                       :data data
+                       :created-at created-at
+                       :modified-at modified-at
+                       :file-id id
+                       :id id})))
 
     (let [snapshots-sql
           (str "WITH snapshots AS (" sql:get-unmigrated-snapshots ") "
@@ -125,17 +130,21 @@
   "Migrate back to the file table storage."
   {:query sql:get-migrated-files}
   [{:keys [::db/conn] :as cfg} {:keys [id]} & {:as opts}]
-  (when-let [{:keys [id data]}
+  (db/get-by-id conn :file id ::db/for-update true ::db/remove-deleted false)
+  (when-let [row
              (db/get* conn :file-data {:id id :file-id id :type "main"}
                       ::db/for-update true
                       ::db/remove-deleted false)]
-    (l/inf :hint "rollback file" :file-id (str id))
-    (db/update! conn :file {:data data} {:id id} ::db/return-keys false)
-    (db/delete! conn :file-data {:file-id id :id id :type "main"} ::db/return-keys false)
+    (when (:data row)
+      (l/inf :hint "rollback file" :file-id (str id))
+      (fdata/upsert! cfg (-> (select-keys row [:id :file-id :type :data :created-at :modified-at :deleted-at :metadata])
+                             (assoc :backend "legacy-db")
+                             (update :metadata fdata/decode-metadata)
+                             (d/without-nils)))
 
-    (let [snapshots-sql
-          (str "WITH snapshots AS (" sql:get-migrated-snapshots ") "
-               "SELECT s.* FROM snapshots AS s WHERE s.file_id = ?")]
-      (run! (fn [params]
-              (rollback-snapshot-from-storage cfg params opts))
-            (db/plan cfg [snapshots-sql id])))))
+      (let [snapshots-sql
+            (str "WITH snapshots AS (" sql:get-migrated-snapshots ") "
+                 "SELECT s.* FROM snapshots AS s WHERE s.file_id = ?")]
+        (run! (fn [params]
+                (rollback-snapshot-from-storage cfg params opts))
+              (db/plan cfg [snapshots-sql id]))))))
