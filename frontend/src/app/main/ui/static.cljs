@@ -176,8 +176,10 @@
           [:div {:class (stl/css :change-section)}
            (tr "auth.register")
            " "
-           [:a {:data-section "register"
-                :on-click set-section}
+           [:button {:type "button"
+                     :class (stl/css :link)
+                     :data-section "register"
+                     :on-click set-section}
             (tr "auth.register-submit")]]]
 
          :register
@@ -190,8 +192,11 @@
           [:div {:class (stl/css :change-section)}
            (tr "auth.already-have-account")
            " "
-           [:a {:data-section "login"
-                :on-click set-section} (tr "auth.login-here")]]
+           [:button {:type "button"
+                     :class (stl/css :link)
+                     :data-section "login"
+                     :on-click set-section}
+            (tr "auth.login-here")]]
           [:div {:class (stl/css :links)}
            [:hr {:class (stl/css :separator)}]
            [:> register/terms-service-privacy-policy*]]]

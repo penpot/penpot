@@ -373,9 +373,22 @@
   inline-size: 100%;
   text-align: center;
 
-  // Native <a> inside change-section — no class available
-  a {
+  .link {
+    font: inherit;
+    font-weight: 500;
+
+    // A button is a block in its line: the normal line height keeps the box of
+    // the inline link it replaces.
+    line-height: normal;
     color: var(--color-accent-primary);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 }
 
