@@ -77,6 +77,12 @@
                      id])
        (mapv #(jobs/decode-progress (:payload %)))))
 
+(defn- count-job-events
+  [id]
+  (-> (th/db-exec! ["SELECT count(*) AS count FROM job_event WHERE job_id = ?" id])
+      first
+      :count))
+
 (defn- mgmt
   [type params]
   (th/management-command! (assoc params ::th/type type)))
@@ -135,13 +141,25 @@
   (let [out (mgmt :claim-job {:job-id (uuid/next)})]
     (t/is (= :validation (th/ex-type (:error out))))))
 
-(t/deftest claim-job-rejects-a-key-it-does-not-declare
-  (let [out (mgmt :claim-job {::rpc/auth-key-id :nexus
-                              :job-id (uuid/next)
-                              :scheduled-at (ct/now)})]
-    (t/is (some? (:error out)))
+(t/deftest jobs-methods-reject-a-key-they-do-not-declare
+  (doseq [type [:claim-job :report-job-progress :complete-job :fail-job]]
+    (let [out (mgmt type {::rpc/auth-key-id :nexus})]
+      (t/is (= :authorization (th/ex-type (:error out))) (name type))
+      (t/is (= :shared-key-not-allowed (th/ex-code (:error out))) (name type)))))
+
+(t/deftest complete-job-rejects-a-key-it-does-not-declare-without-side-effects
+  (let [job-id         (mk-job {})
+        before         (get-row job-id)
+        events-before  (count-job-events job-id)
+        out            (mgmt :complete-job {::rpc/auth-key-id :nexus
+                                            :job-id job-id
+                                            :result {:x 1}})
+        after          (get-row job-id)]
     (t/is (= :authorization (th/ex-type (:error out))))
-    (t/is (= :shared-key-not-allowed (th/ex-code (:error out))))))
+    (t/is (= :shared-key-not-allowed (th/ex-code (:error out))))
+    (t/is (= (:status before) (:status after)))
+    (t/is (nil? (:completed-at after)))
+    (t/is (= events-before (count-job-events job-id)))))
 
 (t/deftest report-job-progress-appends-a-progress-event
   (let [job-id (mk-job {})

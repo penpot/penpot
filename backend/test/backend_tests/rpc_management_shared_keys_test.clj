@@ -22,12 +22,28 @@
    "app.rpc.management.nitrate"  #{:admin-console}})
 
 (t/deftest every-management-method-declares-its-shared-keys
-  (let [methods (get th/*system* :app.rpc/management-methods)]
+  (let [methods (get th/*system* :app.rpc/management-methods)
+        seen    (into #{} (map (comp :ns first val)) methods)]
     (t/is (seq methods))
+    (t/is (= (set (keys expected-shared-keys)) seen)
+          "every management namespace must be scanned")
     (doseq [[method-name [mdata _]] methods]
       (let [ns-name  (:ns mdata)
             expected (get expected-shared-keys ns-name)]
         (t/is (some? expected)
               (str "unexpected management namespace for " method-name ": " ns-name))
-        (t/is (= expected (::rpc/shared-keys mdata))
-              (str "wrong ::rpc/shared-keys for " method-name " in " ns-name))))))
+        (t/is (= expected (::rpc/allowed-shared-keys mdata))
+              (str "wrong ::rpc/allowed-shared-keys for " method-name " in " ns-name))))))
+
+(t/deftest management-command-uses-the-key-from-the-request-metadata
+  (let [out (th/management-command!
+             (with-meta {::th/type :upload-tempfile}
+               {:app.http/request {:app.http/auth-key-id :nexus}}))]
+    (t/is (= :authorization (th/ex-type (:error out))))
+    (t/is (= :shared-key-not-allowed (th/ex-code (:error out))))))
+
+(t/deftest management-command-keeps-an-explicit-nil-key
+  (let [out (th/management-command! {::th/type :upload-tempfile
+                                     ::rpc/auth-key-id nil})]
+    (t/is (= :authorization (th/ex-type (:error out))))
+    (t/is (= :shared-key-not-allowed (th/ex-code (:error out))))))

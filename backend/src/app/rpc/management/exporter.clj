@@ -37,7 +37,7 @@
    ::sm/params schema:upload-tempfile-params
    ::rpc/multipart-only-params [:content]
    ::sm/result schema:upload-tempfile-result
-   ::rpc/shared-keys allowed-shared-key-ids}
+   ::rpc/allowed-shared-keys allowed-shared-key-ids}
   [cfg {:keys [::rpc/profile-id content]}]
   (media.v/validate-media-type! content cm/tempfile-types)
   (let [storage (sto/resolve cfg)

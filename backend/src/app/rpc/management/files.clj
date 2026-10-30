@@ -225,7 +225,7 @@
    ::sm/params schema:get-file-for-analysis-params
    ::sm/result schema:get-file-for-analysis-result
    ::rpc/auth false
-   ::rpc/shared-keys allowed-shared-key-ids}
+   ::rpc/allowed-shared-keys allowed-shared-key-ids}
   [cfg {:keys [file-id]}]
   ;; `realize?` loads the whole object tree eagerly: the projection
   ;; walks every shape, so lazy pointers (no `load-fn` bound here)
