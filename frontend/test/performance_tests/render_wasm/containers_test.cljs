@@ -7,7 +7,8 @@
 (ns performance-tests.render-wasm.containers-test
   (:require
    [app.common.uuid :as uuid]
-   [benches.render-wasm.builder :as builder :include-macros true]
+   [benches.render-wasm.builder :as builder]
+   [benches.render-wasm.random :as random]
    [cljs.test :as t :include-macros true]
    [performance-tests.render-wasm.test-helpers :as helpers]))
 
@@ -101,6 +102,35 @@
     (t/is (= (get refs :hero) (first (helpers/child-ids instance uuid/zero))))
     (t/is (= (get refs [:g 1]) (first (helpers/child-ids instance (get refs :hero)))))
     (t/is (= 1 (count (helpers/child-ids instance uuid/zero))))))
+
+(t/deftest container-expressions-evaluate-once-in-order
+  (let [events   (atom [])
+        instance (builder/scene {:seed 1}
+                                (builder/frame [:frame (do (swap! events conj :label) 3)]
+                                               (do (swap! events conj :attrs)
+                                                   {:x 0 :y 0 :width 20 :height 20})
+                                               (swap! events conj :body)
+                                               (builder/rect {:x 10})))
+        frame-id (get (:refs instance) [:frame 3])]
+    (t/is (= [:attrs :label :body] @events))
+    (t/is (= [10] (mapv :x (helpers/children-of instance frame-id))))))
+
+(t/deftest invalid-container-attrs-retain-seeded-construction-order
+  (doseq [construct [#(builder/frame :hero :invalid)
+                     #(builder/group :hero :invalid)
+                     #(builder/bool :hero :invalid)]]
+    (let [rng       (random/create 7)
+          failed-id (random/rng-uuid rng)
+          next-id   (random/rng-uuid rng)
+          failure   (volatile! nil)
+          state     (helpers/run-scope
+                     {:seed 7}
+                     (fn []
+                       (vreset! failure (helpers/failure-data construct))
+                       (builder/rect)))
+          instance  (builder/finish! state)]
+      (t/is (= {:type ::builder/invalid-attrs :id failed-id} @failure))
+      (t/is (= [next-id] (helpers/child-ids instance uuid/zero))))))
 
 (t/deftest empty-group-is-rejected
   (let [data (helpers/failure-data #(builder/scene {:seed 1} (builder/group {})))]

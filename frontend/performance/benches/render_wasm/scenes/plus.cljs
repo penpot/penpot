@@ -8,7 +8,7 @@
   "Plus signs made of two open line subpaths"
   (:require
    [app.common.types.path :as path]
-   [benches.render-wasm.builder :as sb :include-macros true]
+   [benches.render-wasm.builder :as sb]
    [benches.render-wasm.declarations :as decl :include-macros true]
    [benches.render-wasm.random :refer [rng-int]]
    [benches.render-wasm.runtime.camera :as camera]))
