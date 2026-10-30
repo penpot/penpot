@@ -73,10 +73,12 @@ python3 scripts/changelog.py dev-only-bugs "2.16.0" --apply  # label the sure on
   same milestone. Run with `--apply`: it adds the `no changelog` label on
   GitHub, so the decision shows on the issue and survives a regeneration.
   Then re-fetch step 2.
-- **Candidates:** a bug whose parent is an epic of the same milestone, or
-  whose "Affected versions" / "Environment" field names only hourly, develop,
-  staging, PRE or a version of this milestone. The field says where the bug
-  was seen, not since when it exists, so never label these yourself: show
+- **Candidates:** a bug whose parent is an epic of the same milestone, that
+  carries the `regression` label, or whose "Affected versions" /
+  "Environment" field names only hourly, develop, staging, PRE or a version
+  of this milestone. `regression` also marks regressions users hit in
+  production, and the field says where the bug was seen, not since when it
+  exists, so never label these yourself: show
   them to the user, who labels the ones they confirm. They also appear in
   the step 9 report.
 

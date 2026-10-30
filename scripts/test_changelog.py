@@ -80,10 +80,11 @@ class FindDevOnlyBugsTests(unittest.TestCase):
                 labels=["no changelog"]),
             {**bug(8, parent={"number": 10, "issue_type": "Feature", "milestone": "2.19.0"}),
              "issue_type": "Enhancement"},
+            bug(9, body="### Affected versions\n\n2.18.2\n", labels=["regression"]),
         ]
         auto, suggested = changelog.find_dev_only_bugs("2.19.0", issues)
         self.assertEqual([e["issue"] for e in auto], [1, 2])
-        self.assertEqual([e["issue"] for e in suggested], [3, 5])
+        self.assertEqual([e["issue"] for e in suggested], [3, 5, 9])
 
 
 if __name__ == "__main__":

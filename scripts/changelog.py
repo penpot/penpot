@@ -250,6 +250,12 @@ def find_dev_only_bugs(milestone: str, issues: list[dict]) -> tuple[list[dict], 
             entry["reason"] = f"sub-issue of {parent.get('issue_type')} #{parent['number']} in {milestone}"
             (auto if parent.get("issue_type") in AUTO_PARENT_TYPES else suggested).append(entry)
             continue
+        # `regression` says something that worked broke, not where: it
+        # also marks regressions users hit in production.
+        if "regression" in issue.get("labels", []):
+            entry["reason"] = "labelled `regression`"
+            suggested.append(entry)
+            continue
         text = version_field(issue.get("body"))
         if only_unreleased_envs(text, milestone):
             entry["reason"] = f'only seen on "{text[:80]}"'
