@@ -60,6 +60,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  column-gap: var(--sp-s);
   inline-size: 100%;
   min-block-size: $sz-32;
   padding: px2rem(6);
@@ -76,6 +77,16 @@
   flex: 1;
   min-inline-size: 0;
   text-align: start;
+}
+
+.command-label {
+  flex: 0 1 auto;
+}
+
+// The keys take the space the label leaves and wrap between groups.
+.shortcuts-name .shortcut-actions {
+  flex: 1 1 0;
+  justify-content: flex-end;
 }
 
 .not-customizable-label {
@@ -163,7 +174,14 @@
 
 .keys {
   display: flex;
-  justify-content: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--sp-xxs);
+}
+
+.key-group {
+  display: flex;
   align-items: center;
   gap: var(--sp-xxs);
 }
