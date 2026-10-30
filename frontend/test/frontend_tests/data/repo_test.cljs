@@ -6,7 +6,9 @@
 
 (ns frontend-tests.data.repo-test
   (:require
+   [app.common.transit :as transit]
    [app.common.uri :as u]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.event :as-alias ev]
    [app.main.repo :as repo]
@@ -14,22 +16,23 @@
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [cuerdas.core :as str]
-   [frontend-tests.helpers.async :as async]
-   [frontend-tests.helpers.http :as http-mock]
+   [debug :as dbg]
+   [frontend-tests.helpers.async :as hva]
+   [frontend-tests.helpers.http :as http]
    [frontend-tests.helpers.mock :as mock]))
 
 (defn- ^:async capture-request
   [command params]
   (let [request  (volatile! nil)
-        original (http-mock/install-fetch-mock!
+        original (http/install-fetch-mock!
                   (fn [url ^js options]
                     (vreset! request [url options])
-                    (js/Promise.resolve (http-mock/make-transit-response {}))))]
+                    (js/Promise.resolve (http/make-transit-response {}))))]
     (try
-      (await (async/->promise (repo/cmd! command params)))
+      (await (hva/->promise (repo/cmd! command params)))
       @request
       (finally
-        (http-mock/restore-fetch! original)))))
+        (http/restore-fetch! original)))))
 
 (t/deftest ^:async penpot-api-requests-send-the-page-origin
   (await (mock/with-mocks*
@@ -73,6 +76,121 @@
                      headers           (js/Headers. (.-headers options))]
                  (t/is (= path (.-pathname (js/URL. url))))
                  (t/is (not (.has headers "x-penpot-origin")))))))))
+
+(defn- ^:async with-captured-requests
+  [run]
+  (await
+   (mock/with-mocks*
+     {cf/public-uri (u/uri "https://example.test/")}
+     (let [requests (atom [])
+           fetch    (fn [url ^js opts]
+                      (let [uri         (js/URL. url)
+                            ^js query   (.-searchParams uri)
+                            body        (.-body opts)]
+                        (swap! requests conj
+                               {:path (.-pathname uri)
+                                :id (.get query "id")
+                                :method (.-method opts)
+                                :content-type (aget (.-headers opts) "content-type")
+                                :body (when (some? body) (transit/decode-str body))})
+                        (js/Promise.resolve (http/make-transit-response {:revn 4 :lagged []}))))
+           original (http/install-fetch-mock! fetch)]
+       (try
+         (await (run requests))
+         (finally
+           (http/restore-fetch! original)))))))
+
+(defn- make-save-params
+  []
+  (let [page-id (uuid/next)]
+    {:id (uuid/next)
+     :session-id (uuid/next)
+     :revn 3
+     :vern 0
+     :features #{}
+     :commits [{:commit-id (uuid/next)
+                :redo-changes [{:type :mod-page :id page-id :name "First edit"}]
+                :undo-changes []}
+               {:commit-id (uuid/next)
+                :redo-changes [{:type :mod-page :id page-id :name "Second edit"}]
+                :undo-changes [{:type :mod-page :id page-id :name "First edit"}]}]}))
+
+(t/deftest ^:async update-file-v2-posts-transit-with-id-in-query-and-body
+  (await
+   (with-captured-requests
+     (^:async fn [requests]
+       (let [params (make-save-params)]
+         (await (hva/observe (repo/cmd! :update-file-v2 params)))
+         (t/is (= [{:path "/api/main/methods/update-file-v2"
+                    :id (str (:id params))
+                    :method "POST"
+                    :content-type "application/transit+json"
+                    :body params}]
+                  @requests)))))))
+
+(t/deftest ^:async save-fault-marks-only-the-selected-redo-and-unhooks-after-use
+  (await
+   (with-captured-requests
+     (^:async fn [requests]
+       (let [params (make-save-params)
+             legacy {:id (:id params) :changes (get-in params [:commits 0 :redo-changes])}]
+         (try
+           (dbg/failNextSave #js {:fault "validation" :commit 1 :fileId (str (:id params))})
+           (await (hva/observe (repo/cmd! :update-file legacy)))
+           (t/testing "legacy flat saves keep their query and body even with a fault armed"
+             (t/is (= [{:path "/api/main/methods/update-file"
+                        :id (str (:id params))
+                        :method "POST"
+                        :content-type "application/transit+json"
+                        :body legacy}]
+                      @requests)))
+
+           (await (hva/observe (repo/cmd! :update-file-v2 params)))
+           (t/testing "only the second commit's redo changes"
+             (t/is (= (update-in params [:commits 1 :redo-changes] conj
+                                 {:type :set-plugin-data
+                                  :object-type :file
+                                  :namespace :penpot-debug
+                                  :key "save-fault:validation"
+                                  :value nil})
+                      (:body (second @requests)))))
+           (t/is (not (contains? (methods repo/cmd!) :update-file-v2))
+                 "the default method is no longer wrapped")
+           (await (hva/observe (repo/cmd! :update-file-v2 params)))
+           (t/is (= params (:body (last @requests))) "the next save is untouched")
+           (finally
+             (dbg/clearSaveFaults))))))))
+
+(t/deftest ^:async hold-saves-delays-only-v2-and-restores-the-explicit-method
+  (await
+   (with-captured-requests
+     (^:async fn [requests]
+       (let [params   (make-save-params)
+             legacy   {:id (:id params) :changes []}
+             original (get-method repo/cmd! :default)
+             answers  (atom [])]
+         (-add-method repo/cmd! :update-file-v2 original)
+         (try
+           (dbg/holdSaves 60)
+           (let [held (hva/observe (repo/cmd! :update-file-v2 params)
+                                   {:on-next #(swap! answers conj %)})]
+             (try
+               (await (hva/observe (repo/cmd! :update-file legacy)))
+               (await (hva/observe (repo/cmd! :get-comment-threads {:file-id (:id params)})))
+               (t/is (= ["/api/main/methods/update-file-v2"
+                         "/api/main/methods/update-file"
+                         "/api/main/methods/get-comment-threads"]
+                        (mapv :path @requests))
+                     "the held save reached the transport and other calls completed")
+               (t/is (empty? @answers) "the save answer is still held")
+               (finally
+                 (dbg/releaseSaves)
+                 (await held))))
+           (t/is (= [{:revn 4 :lagged []}] @answers))
+           (t/is (identical? original (get (methods repo/cmd!) :update-file-v2))
+                 "release restores the exact method table entry")
+           (finally
+             (remove-method repo/cmd! :update-file-v2))))))))
 
 ;; ---------------------------------------------------------------------------
 ;; retryable-error? tests (synchronous)

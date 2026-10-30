@@ -32,6 +32,7 @@
    [app.main.data.dashboard.shortcuts]
    [app.main.data.helpers :as dsh]
    [app.main.data.persistence :as dps]
+   [app.main.data.persistence.commits :as pcm]
    [app.main.data.preview :as dp]
    [app.main.data.viewer.shortcuts]
    [app.main.data.workspace :as dw]
@@ -447,9 +448,9 @@
   `seconds` it answers every matching call for that long, which is how to
   watch a save retry, warn, keep retrying and finally recover.
 
-  debug.simulateHttpError('update-file')
+  debug.simulateHttpError('update-file-v2')
   debug.simulateHttpError('get-comment-threads', 403)
-  debug.simulateHttpError('update-file', 524, 120)"
+  debug.simulateHttpError('update-file-v2', 524, 120)"
   ([method]
    (simulateHttpError method 524 nil))
   ([method status]
@@ -651,61 +652,58 @@
     (str "unknown fault " fault ", expected one of "
          (str/join ", " (sort faults)))))
 
-;; Armed `:hold` and `:faults` for update-file calls, and the `:original`
-;; method while they wrap it.
+;; Armed `:hold` and `:faults` for update-file-v2 calls, and the `:wrapper`
+;; and `:original` method table entry while the hook is installed.
 (defonce ^:private save-hook (atom {}))
 
 (defn- mark-save
   "Adds the fault armed for the file of `params` to the commit it names,
   and counts the save against it."
-  [params]
-  (let [file-id (:id params)
-        [old _] (swap-vals! save-hook
+  [{:keys [id commits] :as params}]
+  (let [[old _] (swap-vals! save-hook
                             (fn [{:keys [faults] :as hook}]
-                              (let [{:keys [times]} (get faults file-id)]
+                              (let [{:keys [times]} (get faults id)]
                                 (cond
                                   (nil? times) hook
-                                  (> times 1)  (update-in hook [:faults file-id :times] dec)
-                                  :else        (update hook :faults dissoc file-id)))))]
-    (if-let [{:keys [fault commit]} (get-in old [:faults file-id])]
-      (let [marker (save-fault-marker fault)
-            groups (:changes-with-metadata params)]
-        (if (seq groups)
-          (update-in params [:changes-with-metadata (min commit (dec (count groups))) :changes]
-                     conj marker)
-          (update params :changes (fnil conj []) marker)))
+                                  (> times 1)  (update-in hook [:faults id :times] dec)
+                                  :else        (update hook :faults dissoc id)))))]
+    (if-let [{:keys [fault commit]} (get-in old [:faults id])]
+      (update-in params [:commits (min commit (dec (count commits))) :redo-changes]
+                 conj (save-fault-marker fault))
       params)))
 
-(defn- hooked-update-file
-  "Sends an update-file call through `send` with the armed fault, and holds
-  its answer while saves are held."
-  [send id params]
-  (let [response (send id (mark-save params))]
-    (if-let [gate (dm/get-in @save-hook [:hold :gate])]
-      (rx/mapcat (fn [result]
-                   (rx/map (constantly result) (rx/from gate)))
-                 response)
-      response)))
-
 (defn- sync-save-hook
-  "Wraps update-file calls while a hold or a fault is armed, and unwraps
+  "Wraps update-file-v2 calls while a hold or a fault is armed, and unwraps
   them when none is."
   []
-  (let [{:keys [hold faults original]} @save-hook
+  (let [{:keys [hold faults original wrapper]} @save-hook
         armed? (or (some? hold) (seq faults))]
     (cond
-      (and armed? (nil? original))
-      (let [original (get-method rp/cmd! :update-file)]
-        (swap! save-hook assoc :original original)
-        (-add-method rp/cmd! :update-file
-                     (fn [id params] (hooked-update-file original id params))))
+      (and armed? (nil? wrapper))
+      (let [original (get (methods rp/cmd!) :update-file-v2)
+            send     (get-method rp/cmd! :update-file-v2)
+            wrapper  (fn [id params]
+                       (let [params (cond-> params
+                                      (seq (:commits params)) (mark-save))
+                             gate   (dm/get-in @save-hook [:hold :gate])]
+                         ;; A one-shot fault may have unarmed the hook.
+                         (sync-save-hook)
+                         (let [response (send id params)]
+                           (if (some? gate)
+                             (rx/mapcat (fn [result]
+                                          (rx/map (constantly result) (rx/from gate)))
+                                        response)
+                             response))))]
+        (swap! save-hook assoc :original original :wrapper wrapper)
+        (-add-method rp/cmd! :update-file-v2 wrapper))
 
-      (and (not armed?) (some? original))
+      (and (not armed?) (some? wrapper))
       (do
-        (if (identical? original (get-method rp/cmd! :default))
-          (remove-method rp/cmd! :update-file)
-          (-add-method rp/cmd! :update-file original))
-        (swap! save-hook dissoc :original)))))
+        (when (identical? wrapper (get (methods rp/cmd!) :update-file-v2))
+          (if (some? original)
+            (-add-method rp/cmd! :update-file-v2 original)
+            (remove-method rp/cmd! :update-file-v2)))
+        (swap! save-hook dissoc :original :wrapper)))))
 
 (defn ^:export releaseSaves
   "Answers the held saves now and stops holding new ones."
@@ -766,37 +764,21 @@
   (sync-save-hook)
   "no save fault armed")
 
-(defn- pending-of-file
-  "Applies `f` to the pending commits of `file-id`, queued and buffered."
-  [pstate file-id f]
-  (let [file?    #(= file-id (:file-id %))
-        queued   (filter #(file? (get-in pstate [:index %])) (:queue pstate))
-        buffered #(if (file? %) (f %) %)]
-    (as-> pstate $
-      (reduce (fn [pstate id] (update-in pstate [:index id :commits] #(mapv f %))) $ queued)
-      (update $ :buffer #(mapv buffered %)))))
-
 (defn ^:export failNextRollback
-  "Makes the undo of the commits pending now in the open file fail if a
-  rollback reverts them, so the rollback falls back to reloading the
-  file. Pair it with `debug.holdSaves` to have commits pending.
+  "Makes the next local rollback that reverts any currently pending commit
+  of the open file fail and reload the file. Does not change what is sent
+  to the backend. Pair it with `debug.holdSaves` to have commits pending.
 
   debug.holdSaves(); debug.commitInvalidChange(); debug.failNextRollback()"
   []
   (let [state   @st/state
-        file-id (:current-file-id state)]
-    (if (empty? (concat (:queue (:persistence state)) (:buffer (:persistence state))))
-      "nothing is pending: hold the saves and commit something first"
+        file-id (:current-file-id state)
+        ids     (into #{} (map :id) (pcm/pending-commits (:persistence state) file-id))]
+    (if (seq ids)
       (do
-        (st/emit!
-         (ptk/reify ::fail-next-rollback
-           ptk/UpdateEvent
-           (update [_ state]
-             ;; A change type with no handler, so applying it throws
-             (update state :persistence pending-of-file file-id
-                     #(update % :undo-changes (fn [changes]
-                                                (into [{:type :debug-fail}] changes)))))))
-        "the next rollback of the pending commits fails and reloads the file"))))
+        (st/emit! (dps/arm-rollback-failure file-id ids))
+        "the next rollback of the pending commits fails and reloads the file")
+      "nothing is pending: hold the saves and commit something first")))
 
 (defn- get-persistence-summary
   "What is pending in the tab and what could block the user."

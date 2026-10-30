@@ -164,7 +164,7 @@ test("Multiselection of text and typographies", async ({ page }) => {
   });
 
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-empty.json",
   );
 

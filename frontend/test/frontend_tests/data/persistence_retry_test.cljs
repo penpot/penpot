@@ -37,6 +37,11 @@
     (rx/subject)
     (rx/of :tick)))
 
+(defn- sent-commits
+  [requests]
+  (into [] (comp (filter #(= :update-file-v2 (first %)))
+                 (map (comp :commits second))) @requests))
+
 (defn- check-failed-save-response
   "Feeds `result` as the transport response and asserts the commit stays
   queued as a failed save instead of being treated as persisted. Retry
@@ -85,7 +90,7 @@
 ;; preceded by `wait-for` on its leading signal.
 
 ;; Scenario: the first send fails transiently, the retry succeeds. Both
-;; sends carry the same `:commit-id`; the save lands with an empty queue
+;; sends carry the same commits; the save lands with an empty queue
 ;; and the episode metadata is cleared. Proves: one transient failure
 ;; retries the same commit instead of erroring.
 (t/deftest ^:async transient-failure-retries-and-saves
@@ -96,15 +101,19 @@
          (await
           (mock/with-mocks*
             {rx/timer (mock/stub instant-backoff)}
-            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
-                                                     (empty? (get-in @store [:persistence :queue])))
-                                         "retry saves the file"))
+            (let [page-id (uuid/next)
+                  commit  (local-commit file-id {:redo-changes [{:type :mod-page :id page-id :name "Edited"}]
+                                                 :undo-changes [{:type :mod-page :id page-id :name "Original"}]})
+                  batch   [(-> (select-keys @commit [:redo-changes :undo-changes])
+                               (assoc :commit-id (:id @commit)))]]
+              (ptk/emit! store commit ::dps/force-persist)
+              (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                       (empty? (get-in @store [:persistence :queue])))
+                                           "retry saves the file"))
+              (t/is (= [batch batch] (sent-commits requests))
+                    "the retry sends the same id, redo, and undo"))
             (t/is (= :saved (get-in @store [:persistence :status])))
             (t/is (empty? (get-in @store [:persistence :queue])))
-            (t/is (= 2 (count @requests)) "failed send plus one retry")
-            (t/is (apply = (map (comp :commit-id second) @requests))
-                  "both sends carry the same commit id")
             (t/is (nil? (get-in @store [:persistence :attempts]))
                   "the episode metadata is cleared on success"))))
        (fn [_ _]
@@ -369,9 +378,12 @@
                                                      (empty? (get-in @store [:persistence :queue])))
                                          "both edits save"))
             (t/is (= 3 (count @requests)) "failed send, retry, then the new edit")
-            (let [[first-id retry-id edit-id] (map (comp :commit-id second) @requests)]
-              (t/is (= first-id retry-id) "the retry resends the head")
-              (t/is (not= retry-id edit-id) "the new edit is sent after the head"))
+            (let [[first-batch retry-batch edit-batch] (sent-commits requests)]
+              (t/is (every? #(uuid? (:commit-id (first %))) [first-batch retry-batch edit-batch]))
+              (t/is (= first-batch retry-batch) "the retry resends the head")
+              (t/is (not= (:commit-id (first retry-batch))
+                          (:commit-id (first edit-batch)))
+                    "the new edit is sent after the head"))
             (rx/end! timer-s))))
        (fn [_ _]
          (if (= 1 (swap! calls inc))
@@ -601,8 +613,8 @@
                                                      (empty? (get-in @store [:persistence :queue])))
                                          "the retry saves the file"))
             (t/is (= 2 (count @requests)) "hung send plus one retry")
-            (t/is (apply = (map (comp :commit-id second) @requests))
-                  "both sends carry the same commit id")
+            (t/is (apply = (sent-commits requests))
+                  "both sends carry the same commits")
             (t/is (= [420000 420000] @timeouts) "every send gets the 7 minute timeout"))))
        (fn [_ _]
          (if (= 1 (swap! calls inc))
@@ -666,8 +678,8 @@
                                                      (empty? (get-in @store [:persistence :queue])))
                                          "the slow attempt saves"))
             (t/is (= 6 (count @requests)))
-            (t/is (apply = (map (comp :commit-id second) @requests))
-                  "every attempt carries the same commit id")
+            (t/is (apply = (sent-commits requests))
+                  "every attempt carries the same commits")
             (t/is (nil? (get-in @store [:persistence :recovering])))
             (t/is (nil? (get-in @store [:persistence :failing-since])))
             (t/is (nil? (get @store :notification))
@@ -742,7 +754,7 @@
                                                        (empty? (get-in @store [:persistence :queue])))
                                            (str status " recovers on the slow cycle")))
               (t/is (= 5 (count @requests)))
-              (t/is (apply = (map (comp :commit-id second) @requests))
+              (t/is (apply = (sent-commits requests))
                     "the slow cycle saves the held commit"))))
          (fn [_ _]
            (if (<= (swap! calls inc) 4)
@@ -890,7 +902,7 @@
                                                      (empty? (get-in @store [:persistence :queue])))
                                          "recovery saves the held edit"))
             (t/is (= 5 (count @requests)))
-            (t/is (apply = (map (comp :commit-id second) @requests))
+            (t/is (apply = (sent-commits requests))
                   "recovery sends the same commit, not a released queue"))))
        (fn [_ _]
          (if (< (swap! calls inc) 5)
@@ -961,7 +973,7 @@
                                                      (empty? (get-in @store [:persistence :queue])))
                                          "opening a file saves the held edit"))
             (t/is (= 2 (count @requests)))
-            (t/is (apply = (map (comp :commit-id second) @requests))
+            (t/is (apply = (sent-commits requests))
                   "the same commit is sent again")
             (t/is (nil? (get-in @store [:persistence :suspended]))))))
        (fn [_ _]

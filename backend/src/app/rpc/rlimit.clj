@@ -296,13 +296,23 @@
   (when-let [limits (get-limits rlimit skey sname)]
     (rds/run! cfg process-request' limits params)))
 
+(defn- method-name
+  "The name of the method whose limits apply to `mdata`. A command that
+  replaces another one declares `::rlimit/method` with the same name, so
+  both share the bucket and its per-profile counter instead of doubling the
+  quota."
+  [mdata]
+  (or (::method mdata)
+      (->> mdata ::sv/spec name)))
+
 (defn wrap
   [{:keys [::rpc/rlimit] :as cfg} f mdata]
   (assert (or (nil? rlimit) (valid-rlimit-instance? rlimit)) "expected a valid rlimit instance")
 
   (if rlimit
-    (let [skey  (keyword (::rpc/module cfg) (->> mdata ::sv/spec name))
-          sname (str (::rpc/module cfg) "." (->> mdata ::sv/spec name))
+    (let [mname (method-name mdata)
+          skey  (keyword (::rpc/module cfg) mname)
+          sname (str (::rpc/module cfg) "." mname)
           cfg   (-> cfg
                     (assoc ::skey skey)
                     (assoc ::sname sname))]

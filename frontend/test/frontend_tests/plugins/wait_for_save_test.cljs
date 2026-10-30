@@ -41,12 +41,12 @@
   (some-> (:error outcome) .-code))
 
 (defn- saves
-  "The `update-file` commands the transport received. Every flow of the
+  "The `update-file-v2` commands the transport received. Every flow of the
   editor shares the mocked transport and a lingering one can still reach
   it, so a stray call must neither pass for a save nor release a wait on
   one."
   [requests]
-  (filterv #(= :update-file (first %)) @requests))
+  (filterv #(= :update-file-v2 (first %)) @requests))
 
 (t/deftest ^:async empty-persistence-resolves-after-intake
   (await
@@ -59,7 +59,7 @@
               (t/is (contains? outcome :ok)
                     "empty buffer and queue resolve after intake")
               (t/is (empty? (saves requests))
-                    "nothing to save sends no update-file")))))))))
+                    "nothing to save sends no save request")))))))))
 
 (t/deftest ^:async context-wait-for-save-resolves
   ;; Goes through the plugin context proxy, the only way plugins reach it.

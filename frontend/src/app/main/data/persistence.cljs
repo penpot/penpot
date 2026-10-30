@@ -808,13 +808,35 @@
          (rx/concat (reloaded-s stream (:current-file-id state) failed)
                     (rx/of event)))))))
 
+(defn arm-rollback-failure
+  "Arms a one-shot debug fault for a local rollback of the given pending
+  commits. Neither the pending commits nor their save request changes."
+  [file-id commit-ids]
+  (ptk/reify ::arm-rollback-failure
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state ::rollback-failure {:file-id file-id :commit-ids commit-ids}))))
+
 (defn- apply-rollback-plan
   "Events that revert the local data as `plan` says: pending commits are
   undone, saved ones undone by a new commit, and their groups leave the
   undo history."
   [origin state stream {:keys [files compensate groups undo-index]}]
-  (let [rebases (mapv (fn [[fid plan]] (dch/rebase-commits fid plan)) files)]
+  (let [{:keys [file-id commit-ids] :as fault} (::rollback-failure state)
+        fail?   (and fault
+                     (dsh/lookup-file-data state file-id)
+                     (some #(contains? commit-ids (:id %))
+                           (get-in files [file-id :reverted])))
+        rebases (mapv (fn [[fid plan]]
+                        (dch/rebase-commits
+                         fid (cond-> plan
+                               (and fail? (= file-id fid))
+                               (update-in [:undo 0 :undo-changes] conj {:type :debug-fail}))))
+                      files)]
     (rx/concat
+     (if fail?
+       (rx/of #(cond-> % (= fault (::rollback-failure %)) (dissoc ::rollback-failure)))
+       (rx/empty))
      (rx/from rebases)
      (rx/from (map (fn [[fid commits]] (compensate-commits origin state fid commits))
                    (group-by :file-id compensate)))
@@ -868,13 +890,13 @@
                           :hint hint)))))))
 
 (defn- update-file-request
-  "Issues the `update-file` request, tracked as active for its lifetime."
+  "Issues the `update-file-v2` request, tracked as active for its lifetime."
   [request-id params]
   (rx/create
    (fn [subscriber]
      (swap! active-requests conj request-id)
      (let [source       (try
-                          (rp/cmd! :update-file params)
+                          (rp/cmd! :update-file-v2 params)
                           (catch :default cause
                             (rx/throw cause)))
            subscription (.subscribe source subscriber)]
@@ -895,20 +917,20 @@
       (contains? @active-requests (::request-id commit))   :in-flight
       ;; Saved, waiting for the changes stored before it
       (::awaiting commit)                                  :in-flight
-      (stale-commit? state commit)                         :stale
+      (or (empty? (:commits commit))
+          (stale-commit? state commit))                    :stale
       (not (dm/get-in state [:permissions :can-edit]))     :permission-denied
       :else                                                :ready)))
 
-(defn- with-changes
-  "Adds the changes of a queue entry to the save params, one group per
-  commit so the backend can reject them one by one."
-  [params {:keys [commits]}]
-  (assoc params :changes-with-metadata
-         (mapv (fn [{:keys [id origin redo-changes]}]
-                 (cond-> {:commit-id id :changes (vec redo-changes)}
-                   (keyword? origin)
-                   (assoc :hint-origin origin)))
-               commits)))
+(defn- save-commits
+  "Projects the commits of a queue entry onto the save contract. The
+  backend combines the undo of the accepted commits in reverse order."
+  [commits]
+  (mapv (fn [{:keys [id redo-changes undo-changes]}]
+          {:commit-id id
+           :redo-changes (vec redo-changes)
+           :undo-changes (vec undo-changes)})
+        commits))
 
 (defn- save-attempt-failed
   "Routes a failed attempt to send `commit-id`, which took `elapsed-ms`. A
@@ -931,17 +953,14 @@
 
 (defn- send-queued-commit
   "Sends one queued commit and maps its outcome to persistence events."
-  [request-id session-id {:keys [id file-id file-revn file-vern features] :as commit}]
+  [request-id session-id {:keys [id file-id file-revn file-vern features commits] :as commit}]
   (let [sent-at (inst-ms (ct/now))
-        params  (-> {:id file-id
-                     :revn (max file-revn (get @revn-data file-id 0))
-                     :vern file-vern
-                     :session-id session-id
-                     :origin (:origin commit)
-                     :created-at (:created-at commit)
-                     :commit-id id
-                     :features features}
-                    (with-changes commit))]
+        params  {:id file-id
+                 :revn (max file-revn (get @revn-data file-id 0))
+                 :vern file-vern
+                 :session-id session-id
+                 :features features
+                 :commits (save-commits commits)}]
     ;; UI read-only mode does not invalidate already queued edits.
     (->> (update-file-request request-id params)
          ;; Fails an unanswered request as a transient network error, so the
@@ -1012,7 +1031,7 @@
               :acknowledged      (rx/of (commit-persisted commit))
               ;; The replacement runner listens for the original request's result.
               :in-flight         (rx/empty)
-              ;; Made on a version a restore replaced: never sent
+              ;; Made on a version a restore replaced, or already emptied by it
               :stale             (rx/of (commit-persisted commit))
               :permission-denied (fail :save-permission-denied "Edit permission was lost before changes could be saved")
               :ready             (send-queued-commit request-id (:session-id state) commit))))))))

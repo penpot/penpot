@@ -307,12 +307,10 @@ export class WorkspacePage extends BaseWebSocketPage {
       "get-font-variants?team-id=*": "workspace/get-font-variants-empty.json",
       "get-file-fragment?file-id=*": "workspace/get-file-fragment-blank.json",
       "get-file-libraries?file-id=*": "workspace/get-file-libraries-empty.json",
-      // Any shape mutation schedules a persistence flush. An unmocked
-      // update-file answers 404, which the persistence task rethrows as an
-      // unhandled error and the workspace is replaced by the Internal Error
-      // page. Tests that need a specific response mock this again afterwards;
-      // the last matching route wins.
-      "update-file?id=*": "workspace/update-file-empty.json",
+      // Any shape mutation schedules a save. An unmocked save answers 404
+      // and halts the persistence queue. Tests that need a specific response
+      // mock this again afterwards; the last matching route wins.
+      "update-file-v2?id=*": "workspace/update-file-empty.json",
     });
 
     // by default we mock the blank file.

@@ -526,6 +526,62 @@
 ;; `settle` tick when it asserts only absence). The fixture is
 ;; `with-persistence` (`frontend-tests.helpers.persistence`).
 
+(t/deftest ^:async a-save-sends-an-empty-undo-vector-when-there-is-no-inverse
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id session-id requests requests$ response store]}]
+       (let [commit (local-commit file-id)]
+         (ptk/emit! store commit ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests)) "the save is sent" {:signal requests$}))
+         (t/is (= [[:update-file-v2
+                    {:id file-id :session-id session-id :revn 0 :vern 0 :features #{}
+                     :commits [{:commit-id (:id @commit)
+                                :redo-changes (:redo-changes @commit)
+                                :undo-changes []}]}]]
+                  @requests))
+         (rx/push! response {:revn 1})
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "the save lands")))))))
+
+(t/deftest ^:async a-queue-entry-emptied-by-a-restore-is-not-sent
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id requests store]}]
+       ;; The file may no longer have a loaded version when this entry
+       ;; reaches the head of the queue.
+       (let [entry (pcm/queue-entry [@(local-commit file-id)])
+             id    (:id entry)]
+         (ptk/emit! store
+                    #(assoc % :persistence {:queue (conj #queue [] id)
+                                            :index {id (assoc entry :commits [])}
+                                            :status :saving})
+                    (dps/initialize-persistence))
+         (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                  (empty? (get-in @store [:persistence :queue])))
+                                      "the empty entry is acknowledged"))
+         (t/is (empty? @requests)))))))
+
+(t/deftest ^:async a-backend-without-the-new-save-command-does-not-lose-pending-edits
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id requests store]}]
+       (await
+        (mock/with-mocks*
+          {refs/persistence (l/derived :persistence store)}
+          (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+          (await (async/wait-for-store store #(= :error (get-in @store [:persistence :status]))
+                                       "the missing endpoint fails the save"))
+          (let [failure (atom nil)]
+            (await (async/observe (dps/wait-persisted-or-error)
+                                  :on-error #(reset! failure (ex-data %))))
+            (t/is (= :not-found (:cause-type @failure))))
+          (t/is (= 1 (count (get-in @store [:persistence :queue]))))
+          (t/is (= [:update-file-v2] (mapv first @requests))
+                "the save must not fall back to the old command"))))
+     (fn [_ _]
+       (rp/handle-response {:status 404 :body {:type :not-found}
+                            :uri "https://penpot.example.com/api/main/methods/update-file-v2"})))))
+
 ;; Scenario: edit permission is revoked with an edit queued. The save fails
 ;; without sending anything, the queue keeps the edit and the user is
 ;; notified once, so `wait-persisted-or-error` still rejects and nothing is
@@ -997,7 +1053,7 @@
                                             :index {id commit} :status :saving})
                     (dps/initialize-persistence))
          (await (async/wait-for #(= 1 (count @requests)) "the commit is sent again" {:signal requests$}))
-         (t/is (= id (:commit-id (second (first @requests)))))
+         (t/is (= [id] (mapv :commit-id (get-in @requests [0 1 :commits]))))
          (rx/push! response {:revn 1})
          (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
                                                   (empty? (get-in @store [:persistence :queue])))
@@ -1461,23 +1517,29 @@
 
 ;; Commit boundaries.
 
-;; Scenario: two edits are buffered and saved together. The request carries
-;; one group per edit, each with its commit id and its own changes, so the
-;; backend can accept or reject them one by one. Proves: merging a buffer
-;; for one request keeps the boundaries between commits.
-(t/deftest ^:async a-save-sends-each-commit-as-its-own-group
+;; The editor preserves commit boundaries and both orders. Only the
+;; backend decides which undo lists to concatenate and in which order.
+(t/deftest ^:async a-save-sends-each-commits-redo-and-undo-in-edit-order
   (await
    (with-persistence
-     (^:async fn [{:keys [file-id response requests requests$ store]}]
-       (let [commit1 (local-commit file-id)
-             commit2 (local-commit file-id)]
+     (^:async fn [{:keys [file-id session-id response requests requests$ store]}]
+       (let [page-id (uuid/next)
+             rename  (fn [name] {:type :mod-page :id page-id :name name})
+             commit1 (local-commit file-id {:redo-changes [(rename "B") (rename "C")]
+                                            :undo-changes [(rename "B") (rename "A")]})
+             commit2 (local-commit file-id {:redo-changes [(rename "D")]
+                                            :undo-changes [(rename "C")]})]
          (ptk/emit! store commit1 commit2 ::dps/force-persist)
          (await (async/wait-for #(= 1 (count @requests)) "both edits go in one save" {:signal requests$}))
-         (let [[_ params] (first @requests)]
-           (t/is (not (contains? params :changes)))
-           (t/is (= [{:commit-id (:id @commit1) :changes (:redo-changes @commit1)}
-                     {:commit-id (:id @commit2) :changes (:redo-changes @commit2)}]
-                    (:changes-with-metadata params))))
+         (t/is (= [[:update-file-v2
+                    {:id file-id :session-id session-id :revn 0 :vern 0 :features #{}
+                     :commits [{:commit-id (:id @commit1)
+                                :redo-changes [(rename "B") (rename "C")]
+                                :undo-changes [(rename "B") (rename "A")]}
+                               {:commit-id (:id @commit2)
+                                :redo-changes [(rename "D")]
+                                :undo-changes [(rename "C")]}]}]]
+                  @requests))
          (rx/push! response {:revn 1})
          (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
                                       "the save lands")))))))

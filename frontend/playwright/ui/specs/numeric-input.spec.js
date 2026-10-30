@@ -151,11 +151,11 @@ test("BUG 10638 - Invalid padding input on multi-selection must not persist stri
     "design/get-file-fragment-10638.json",
   );
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "design/update-file-9543.json",
   );
 
-  // Inspect every persisted change: layout padding and gap values must be
+  // Inspect only redo changes: layout padding and gap values must be
   // numbers (the backend rejects strings with a Malli validation error).
   // In the transit payload, :set operations carry the attr name and its
   // value as siblings: {"~:attr": "~:layout-padding", "~:val": {...}}.
@@ -180,12 +180,17 @@ test("BUG 10638 - Invalid padding input on multi-selection must not persist stri
       collectLayoutValues(value);
     }
   };
+  const isSaveRequest = (request) =>
+    request.method() === "POST" &&
+    new URL(request.url()).pathname === "/api/main/methods/update-file-v2";
+
   page.on("request", (request) => {
-    if (request.url().includes("/api/main/methods/update-file")) {
-      const body = request.postData();
-      if (body) {
-        collectLayoutValues(JSON.parse(body));
-      }
+    if (!isSaveRequest(request)) {
+      return;
+    }
+    const body = JSON.parse(request.postData() ?? "{}");
+    for (const commit of body["~:commits"] ?? []) {
+      collectLayoutValues(commit["~:redo-changes"]);
     }
   });
 
@@ -215,12 +220,7 @@ test("BUG 10638 - Invalid padding input on multi-selection must not persist stri
   const leftPaddingInput = workspacePage.page.getByRole("textbox", {
     name: "Left padding",
   });
-  const updateRequest = page.waitForRequest(
-    "**/api/main/methods/update-file?*",
-    {
-      timeout: 15000,
-    },
-  );
+  const updateRequest = page.waitForRequest(isSaveRequest, { timeout: 15000 });
   await leftPaddingInput.fill("5");
   await leftPaddingInput.press("Enter");
   await updateRequest;

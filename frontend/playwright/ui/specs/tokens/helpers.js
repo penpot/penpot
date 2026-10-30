@@ -41,7 +41,7 @@ const setupEmptyTokensFile = async (page, options = {}) => {
   );
 
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-create-rect.json",
   );
 
@@ -80,7 +80,7 @@ const setupEmptyTokensFileRender = async (page, options = {}) => {
   );
 
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-create-rect.json",
   );
 
@@ -125,7 +125,7 @@ const setupTokensFile = async (page, options = {}) => {
   await workspacePage.mockRPC(/get\-file\?/, file);
   await workspacePage.mockRPC(/get\-file\-fragment\?/, fileFragment);
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-create-rect.json",
   );
 
@@ -170,7 +170,7 @@ const setupTokensFileRender = async (page, options = {}) => {
   await workspacePage.mockRPC(/get\-file\?/, file);
   await workspacePage.mockRPC(/get\-file\-fragment\?/, fileFragment);
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-create-rect.json",
   );
 

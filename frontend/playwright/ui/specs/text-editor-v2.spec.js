@@ -33,7 +33,10 @@ test("Create a new text shape from pasting text", async ({ page }) => {
     textEditor: true,
   });
   await workspace.setupEmptyFile();
-  await workspace.mockRPC("update-file?id=*", "text-editor/update-file.json");
+  await workspace.mockRPC(
+    "update-file-v2?id=*",
+    "text-editor/update-file.json",
+  );
   await workspace.goToWorkspace();
   await workspace.moveButton.click();
 
@@ -236,7 +239,10 @@ test("Update text font size selecting a part of it (starting)", async ({
   });
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("text-editor/get-file-lorem-ipsum.json");
-  await workspace.mockRPC("update-file?id=*", "text-editor/update-file.json");
+  await workspace.mockRPC(
+    "update-file-v2?id=*",
+    "text-editor/update-file.json",
+  );
   await workspace.goToWorkspace();
   await workspace.clickLeafLayer("Lorem ipsum");
   await workspace.textEditor.startEditing();
@@ -256,7 +262,10 @@ test("Update text line height selecting a part of it (starting)", async ({
   });
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("text-editor/get-file-lorem-ipsum.json");
-  await workspace.mockRPC("update-file?id=*", "text-editor/update-file.json");
+  await workspace.mockRPC(
+    "update-file-v2?id=*",
+    "text-editor/update-file.json",
+  );
   await workspace.goToWorkspace();
   await workspace.clickLeafLayer("Lorem ipsum");
   await workspace.textEditor.startEditing();
@@ -276,7 +285,10 @@ test.skip("Update text letter spacing selecting a part of it (starting)", async 
   });
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("text-editor/get-file-lorem-ipsum.json");
-  await workspace.mockRPC("update-file?id=*", "text-editor/update-file.json");
+  await workspace.mockRPC(
+    "update-file-v2?id=*",
+    "text-editor/update-file.json",
+  );
   await workspace.goToWorkspace();
   await workspace.clickLeafLayer("Lorem ipsum");
   await workspace.textEditor.startEditing();
@@ -294,7 +306,10 @@ test("BUG 14098 - Fix text editor having 0 width or height", async ({ page }) =>
   const workspace = new WasmWorkspacePage(page);
 
   await workspace.setupEmptyFile();
-  await workspace.mockRPC("update-file?id=*", "text-editor/update-file.json");
+  await workspace.mockRPC(
+    "update-file-v2?id=*",
+    "text-editor/update-file.json",
+  );
   await workspace.goToWorkspace();
 
   await workspace.textShapeButton.click();
@@ -311,7 +326,10 @@ test("Preserves empty fill after editing text without changes", async ({ page })
   });
 
   await workspace.setupEmptyFile();
-  await workspace.mockRPC("update-file?id=*", "text-editor/update-file.json");
+  await workspace.mockRPC(
+    "update-file-v2?id=*",
+    "text-editor/update-file.json",
+  );
   await workspace.goToWorkspace();
 
   await workspace.createTextShape(190, 150, 300, 200, initialText);

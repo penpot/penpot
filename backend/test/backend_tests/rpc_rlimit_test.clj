@@ -11,6 +11,7 @@
    [app.loggers.mattermost]
    [app.redis :as rds]
    [app.rpc.rlimit :as rlimit]
+   [app.util.services :as-alias sv]
    [clojure.test :as t]))
 
 (t/deftest bucket-reset-supports-fractional-milliseconds
@@ -64,3 +65,13 @@
           headers (::rlimit/headers result)]
       (t/is (true? (::rlimit/allowed result)))
       (t/is (nil? (get headers "retry-after"))))))
+
+(t/deftest a-command-can-share-the-limits-of-another-one
+  (let [mdata {::sv/name "update-file-v2"
+               ::sv/spec :app.rpc.commands.files-update/update-file-v2}]
+    (t/testing "a command without the metadata keeps its own limits"
+      (t/is (= "update-file-v2" (#'rlimit/method-name mdata))))
+
+    (t/testing "the declared method gives both commands the same bucket"
+      (t/is (= "update-file"
+               (#'rlimit/method-name (assoc mdata ::rlimit/method "update-file")))))))

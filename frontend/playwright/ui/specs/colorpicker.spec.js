@@ -21,7 +21,7 @@ async function openRectangleFill(page) {
     "workspace/get-file-not-empty.json",
   );
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-create-rect.json",
   );
   await workspacePage.goToWorkspace(RECTANGLE_FILE);
@@ -191,7 +191,7 @@ test("Color picker color list", async ({ page }) => {
     "workspace/get-file-not-empty.json",
   );
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-create-rect.json",
   );
 

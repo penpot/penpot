@@ -401,7 +401,8 @@
                                                      :vern 0
                                                      :file file
                                                      :features (:features file)
-                                                     :changes changes
+                                                     :redo-changes changes
+                                                     :undo-changes []
                                                      :session-id session-id
                                                      :profile-id profile-id})))))))
 

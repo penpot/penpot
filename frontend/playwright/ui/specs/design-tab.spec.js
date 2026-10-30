@@ -185,7 +185,7 @@ test("BUG 7760 - Layout losing properties when changing parents", async ({
     "workspace/get-file-fragment-7760.json",
   );
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-create-rect.json",
   );
 
@@ -221,7 +221,10 @@ test("BUG 9061 - Group blur visibility toggle icon not updating", async ({
     "get-file-fragment?file-id=*&fragment-id=*",
     "design/get-file-fragment-9061.json",
   );
-  await workspace.mockRPC("update-file?id=*", "design/update-file-9061.json");
+  await workspace.mockRPC(
+    "update-file-v2?id=*",
+    "design/update-file-9061.json",
+  );
 
   await workspace.goToWorkspace({
     fileId: "61cfa81d-8cb2-81df-8005-8f3005841116",
@@ -418,7 +421,10 @@ test("BUG 9543 - Layout padding inputs not showing 'mixed' when needed", async (
     "get-file-fragment?file-id=*&fragment-id=*",
     "design/get-file-fragment-9543.json",
   );
-  await workspace.mockRPC("update-file?id=*", "design/update-file-9543.json");
+  await workspace.mockRPC(
+    "update-file-v2?id=*",
+    "design/update-file-9543.json",
+  );
 
   await workspace.goToWorkspace({
     fileId: "525a5d8b-028e-80e7-8005-aa6cad42f27d",

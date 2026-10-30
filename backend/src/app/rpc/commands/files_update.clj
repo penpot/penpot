@@ -36,6 +36,7 @@
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
+   [app.rpc.rlimit :as-alias rlimit]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
@@ -52,7 +53,6 @@
 (declare ^:private invalidate-caches!)
 
 ;; PUBLIC API; intended to be used outside of this module
-(declare update-file!)
 (declare update-file-data!)
 (declare persist-file!)
 (declare get-file)
@@ -75,6 +75,22 @@
               [:hint-origin {:optional true} :keyword]
               [:hint-events {:optional true} [:vector [:string {:max 250}]]]]]]
    [:skip-validate {:optional true} ::sm/boolean]])
+
+(def ^:private
+  schema:update-file-v2
+  [:map {:title "update-file-v2" :closed true}
+   [:id ::sm/uuid]
+   [:session-id ::sm/uuid]
+   [:revn {:min 0} ::sm/int]
+   [:vern {:min 0} ::sm/int]
+   [:features {:optional true} ::cfeat/features]
+   [:skip-validate {:optional true} ::sm/boolean]
+   [:commits
+    [:vector {:min 1}
+     [:map {:closed true}
+      [:commit-id ::sm/uuid]
+      [:redo-changes [:vector cpc/schema:change]]
+      [:undo-changes [:vector cpc/schema:change]]]]]])
 
 (def ^:private
   schema:update-file-result
@@ -172,22 +188,38 @@
 ;; set is different than the persisted one, update it on the
 ;; database.
 
-(sv/defmethod ::update-file
-  {::rpc/id-type :file
-   ::climit/id [[:update-file/by-profile ::rpc/profile-id]
-                [:update-file/global]]
+(defn- legacy-params
+  "Normalizes the params of `update-file`: the flat list and the groups of
+  `:changes-with-metadata` are the forward changes of the save. The command
+  keeps its old contract and carries no inverse."
+  [{:keys [changes changes-with-metadata] :as params}]
+  (let [groups (when (some? changes-with-metadata)
+                 (mapv (fn [{:keys [commit-id] :as group}]
+                         {:commit-id commit-id
+                          :redo-changes (vec (:changes group))})
+                       changes-with-metadata))
+        redo-changes (if (some? groups)
+                       (into [] (mapcat :redo-changes) groups)
+                       (vec changes))]
+    (assoc params
+           :redo-changes redo-changes
+           ;; Saved commit by commit only when every group names its commit
+           :commits (when (and (seq groups) (every? :commit-id groups))
+                      groups))))
 
-   ::webhooks/event? true
-   ::webhooks/batch-timeout (ct/duration "2m")
-   ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
+(defn- commit-params
+  "Flattens the forward changes in edit order for `update-file-v2`.
+  Keeps both lists on each commit until validation selects what to save."
+  [{:keys [commits] :as params}]
+  (assoc params :redo-changes (into [] (mapcat :redo-changes) commits)))
 
-   ::sm/params schema:update-file
-   ::sm/result schema:update-file-result
-   ::doc/module :files
-   ::doc/added "1.17"
-   ::db/transaction true}
+(defn- update-file
+  "The body of the `update-file` and `update-file-v2` commands. `params`
+  carries the changes already normalized: the forward list in
+  `:redo-changes` and the per-commit groups, when present, in `:commits`.
+  Only v2 carries `:undo-changes` on each commit."
   [{:keys [::mtx/metrics ::db/conn] :as cfg}
-   {:keys [::rpc/profile-id id changes changes-with-metadata] :as params}]
+   {:keys [::rpc/profile-id id redo-changes] :as params}]
 
   (files/check-edition-permissions! conn profile-id id)
   (db/xact-lock! conn id)
@@ -201,22 +233,11 @@
                      (cfeat/check-client-features! (:features params))
                      (cfeat/check-file-features! (:features file)))
 
-        changes  (if changes-with-metadata
-                   (->> changes-with-metadata (mapcat :changes) vec)
-                   (vec changes))
-
-        ;; Saved commit by commit only when every group names its commit
-        commits  (when (and (seq changes-with-metadata)
-                            (every? :commit-id changes-with-metadata))
-                   changes-with-metadata)
-
         params   (-> params
                      (assoc :profile-id profile-id)
                      (assoc :features (set/difference features cfeat/frontend-only-features))
                      (assoc :team team)
-                     (assoc :file file)
-                     (assoc :changes changes)
-                     (assoc :commits commits))
+                     (assoc :file file))
 
         cfg      (assoc cfg ::timestamp (ct/now)
                         ::validation-timings (atom {}))
@@ -255,7 +276,7 @@
                     {::db/return-keys false})))
 
 
-    (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
+    (mtx/run! metrics {:id :update-file-changes :inc (count redo-changes)})
 
     (binding [l/*context* (some-> (meta params)
                                   (get :app.http/request)
@@ -298,6 +319,90 @@
                    :reprocess-changes-ms (get timings :reprocess-changes-ms)))
           (throw cause))))))
 
+(sv/defmethod ::update-file
+  {::rpc/id-type :file
+   ::climit/id [[:update-file/by-profile ::rpc/profile-id]
+                [:update-file/global]]
+
+   ::webhooks/event? true
+   ::webhooks/batch-timeout (ct/duration "2m")
+   ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
+
+   ::sm/params schema:update-file
+   ::sm/result schema:update-file-result
+   ::doc/module :files
+   ::doc/added "1.17"
+   ::db/transaction true}
+  [cfg params]
+  (update-file cfg (legacy-params params)))
+
+(sv/defmethod ::update-file-v2
+  {::rpc/id-type :file
+   ::climit/id [[:update-file/by-profile ::rpc/profile-id]
+                [:update-file/global]]
+
+   ;; The command replaces `update-file`: the rate limits keep one bucket and
+   ;; one counter per profile for both, so moving a client does not double
+   ;; the quota.
+   ::rlimit/method "update-file"
+
+   ::webhooks/event? true
+   ::webhooks/batch-timeout (ct/duration "2m")
+   ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
+
+   ::sm/params schema:update-file-v2
+   ::sm/result schema:update-file-result
+   ::doc/module :files
+   ::doc/added "2.21"
+   ::db/transaction true}
+  [cfg params]
+  ;; The audit log, the webhooks and the telemetry keep the name of the
+  ;; command this one replaces.
+  (-> (update-file cfg (commit-params params))
+      (rph/with-meta {::audit/name "update-file"})))
+
+(defn- encode-revision
+  "The payload stored for a revision: the forward changes of the save and
+  the undo supplied by the client for those changes. The server does not
+  compute or apply that undo."
+  [redo-changes undo-changes]
+  (blob/encode {:redo-changes redo-changes
+                :undo-changes (vec undo-changes)}))
+
+(defn- insert-revision!
+  "Writes the revision row of a save and its payload.
+
+  The payload lives in `file_data` with `type = \"revision\"`, the same id
+  as the `file_change` row and the same deletion schedule. It is the place
+  where the changes are heading: `file_change.changes` stays written for
+  the readers deployed today, and a later step can read the payload with a
+  fallback to the column."
+  [{:keys [::db/conn] :as cfg}
+   {:keys [id session-id profile-id created-at deleted-at file-id revn
+           version redo-changes undo-changes]}]
+  (db/insert! conn :file-change
+              {:id id
+               :kind fchanges/revision-kind
+               :session-id session-id
+               :profile-id profile-id
+               :created-at created-at
+               :updated-at created-at
+               :deleted-at deleted-at
+               :file-id file-id
+               :revn revn
+               :version version
+               :changes (blob/encode redo-changes)}
+              {::db/return-keys false})
+
+  (fdata/upsert! cfg {:id id
+                      :file-id file-id
+                      :type "revision"
+                      :created-at created-at
+                      :deleted-at deleted-at
+                      ;; A revision payload is a new row every save
+                      :storage-object-id nil
+                      :data (encode-revision redo-changes undo-changes)}))
+
 (defn- update-file*
   "Internal function, part of the update-file process, that encapsulates
   the changes application offload to a separated thread and emit all
@@ -307,7 +412,8 @@
 
   Only intended for internal use on this module."
   [{:keys [::db/conn ::timestamp] :as cfg}
-   {:keys [profile-id file team features changes commits session-id skip-validate] :as params}]
+   {:keys [profile-id file team features redo-changes commits session-id
+           skip-validate] :as params}]
 
   (fdata/with-tracked-pointers cfg (:id file)
 
@@ -325,16 +431,16 @@
                     cfeat/*previous* (:features file)]
             (update-file-data! cfg file
                                process-changes-and-validate
-                               changes commits skip-validate))
+                               redo-changes commits skip-validate))
 
           ;; Only the accepted changes are stored and broadcast
-          changes  (::changes file)
-          rejected (::rejected file)
-          params   (assoc params :changes changes)
-          file     (dissoc file ::changes ::rejected)
+          redo-changes (::redo-changes file)
+          rejected     (::rejected file)
+          params       (assoc params :redo-changes redo-changes)
+          file         (dissoc file ::redo-changes ::rejected)
 
           ;; A request whose first commit is rejected leaves the file as is
-          saved?   (or (nil? rejected) (seq changes))
+          saved?   (or (nil? rejected) (seq redo-changes))
           snapshot (when saved? (::snapshot file))
 
           deleted-at
@@ -376,19 +482,19 @@
 
       (when saved?
         (when repair
-          (db/insert! conn :file-change
-                      {:id (uuid/next)
-                       :kind fchanges/revision-kind
-                       :session-id repair-session-id
-                       :profile-id profile-id
-                       :created-at timestamp
-                       :updated-at timestamp
-                       :deleted-at deleted-at
-                       :file-id (:id file)
-                       :revn (:revn repair)
-                       :version (:version file)
-                       :changes (blob/encode (:changes repair))}
-                      {::db/return-keys false})
+          ;; The repair computes only the forward changes; its inverse is the
+          ;; internal snapshot, not a list of changes.
+          (insert-revision! cfg
+                            {:id (uuid/next)
+                             :session-id repair-session-id
+                             :profile-id profile-id
+                             :created-at timestamp
+                             :deleted-at deleted-at
+                             :file-id (:id file)
+                             :revn (:revn repair)
+                             :version (:version file)
+                             :redo-changes (:changes repair)
+                             :undo-changes []})
           (l/wrn :hint "file auto-repaired"
                  :file-id (str (:id file))
                  :error-codes (error-codes (:errors repair))
@@ -401,20 +507,26 @@
         ;;
         ;; The revision carries only the delta of the save: the features of the
         ;; file are not repeated here (nobody reads them from a revision, and
-        ;; they are duplicated on every save).
-        (db/insert! conn :file-change
-                    {:id file-change-id
-                     :kind fchanges/revision-kind
-                     :session-id session-id
-                     :profile-id profile-id
-                     :created-at change-created-at
-                     :updated-at change-created-at
-                     :deleted-at deleted-at
-                     :file-id (:id file)
-                     :revn (:revn file)
-                     :version (:version file)
-                     :changes (blob/encode changes)}
-                    {::db/return-keys false})
+        ;; they are duplicated on every save). The payload with the forward
+        ;; changes and their inverse lives in `file_data` next to the row.
+        (let [;; The rejection describes a suffix, so keep the prefix by
+              ;; position. Undo it newest commit first, without changing
+              ;; the order within each commit.
+              accepted-commits (cond-> commits
+                                 rejected (subvec 0 (- (count commits)
+                                                       (count (:commit-ids rejected)))))
+              undo-changes     (into [] (mapcat :undo-changes) (some-> accepted-commits rseq))]
+          (insert-revision! cfg
+                            {:id file-change-id
+                             :session-id session-id
+                             :profile-id profile-id
+                             :created-at change-created-at
+                             :deleted-at deleted-at
+                             :file-id (:id file)
+                             :revn (:revn file)
+                             :version (:version file)
+                             :redo-changes redo-changes
+                             :undo-changes undo-changes}))
 
         (persist-file! cfg (dissoc file ::repair))
 
@@ -736,10 +848,10 @@
   [{:keys [cfg file libs commits skip-validate state tracked]} n]
   (reset! pmap/*tracked* tracked)
   (reset! state {})
-  (let [changes (into [] (comp (take n) (mapcat :changes)) commits)]
+  (let [redo-changes (into [] (comp (take n) (mapcat :redo-changes)) commits)]
     (try
-      (let [file (apply-changes cfg file libs changes skip-validate)]
-        {:file    (assoc file ::changes changes)
+      (let [file (apply-changes cfg file libs redo-changes skip-validate)]
+        {:file    (assoc file ::redo-changes redo-changes)
          :tracked @pmap/*tracked*
          :refs    @state})
       (catch Throwable cause
@@ -753,7 +865,7 @@
   failure of all of them together. Takes about log2 of the commits
   attempts; a commit that repairs an earlier one can keep both. Leaves the
   pointers and media refs of the kept prefix in place and returns its file,
-  with the accepted changes in `::changes` and the rejection in
+  with the accepted changes in `::redo-changes` and the rejection in
   `::rejected`, which tells whether the data the first rejected commit
   touches was already invalid. The whole search is timed as the `retry`
   step of `cfg`."
@@ -773,7 +885,7 @@
               (recur mid hi cause (inc attempts) result)))
           (let [rejected (subvec commits lo)
                 base     (:file accepted file)
-                damaged  (preexisting-damage? base libs (:changes (first rejected))
+                damaged  (preexisting-damage? base libs (:redo-changes (first rejected))
                                               skip-validate)]
             (reset! pmap/*tracked* (:tracked accepted tracked))
             (reset! state (:refs accepted {}))
@@ -786,7 +898,7 @@
                      :preexisting-damage damaged
                      :elapsed (ct/format-duration (tpoint))
                      :cause cause)
-            (assoc (:file accepted (assoc file ::changes []))
+            (assoc (:file accepted (assoc file ::redo-changes []))
                    ::rejected (rejection rejected cause damaged))))))))
 
 (defn- fail-repair
@@ -849,7 +961,7 @@
 
             (-> repaired
                 (assoc :revn (+ (:revn original) 2))
-                (assoc ::changes changes)
+                (assoc ::redo-changes changes)
                 (assoc ::repair {:changes repair-changes
                                  :errors  pre-errors
                                  :revn    (inc (:revn original))
@@ -945,7 +1057,7 @@
             (decode-objects file changes))
           (try
             (-> (apply-changes cfg file libs changes skip-validate)
-                (assoc ::changes changes))
+                (assoc ::redo-changes changes))
             (catch Throwable cause
               (repair-or-reject cfg original file libs changes commits
                                 skip-validate tracked cause))))]
@@ -1011,8 +1123,8 @@
                            :changes lchanges}))))
 
 (defn- send-notifications!
-  [cfg {:keys [team changes session-id] :as params} file]
-  (let [lchanges (filter library-change? changes)
+  [cfg {:keys [team redo-changes session-id] :as params} file]
+  (let [lchanges (filter library-change? redo-changes)
         msgbus   (::mbus/msgbus cfg)]
 
     (mbus/pub! msgbus
@@ -1023,7 +1135,7 @@
                          :session-id (:session-id params)
                          :revn (:revn file)
                          :vern (:vern file)
-                         :changes changes})
+                         :changes redo-changes})
 
     (when (and (:is-shared file) (seq lchanges))
       (mbus/pub! msgbus

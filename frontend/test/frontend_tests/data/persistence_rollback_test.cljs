@@ -17,13 +17,16 @@
    [app.main.data.changes :as dch]
    [app.main.data.modal :as-alias modal]
    [app.main.data.persistence :as dps]
+   [app.main.data.persistence.commits :as pcm]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.data.workspace.undo :as dwu]
    [app.main.errors :as errors]
+   [app.main.store :as st]
    [app.util.i18n :as i18n]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [debug :as dbg]
    [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.persistence :as thp]
@@ -51,9 +54,9 @@
                    :undo-changes [{:type :del-obj :id id :page-id page-id}]}))
 
 (defn- sent-changes
-  "The changes of each group of the `n`th save request."
+  "The redo of each commit in the `n`th save request."
   [requests n]
-  (mapv :changes (get-in (nth @requests n) [1 :changes-with-metadata])))
+  (mapv :redo-changes (get-in @requests [n 1 :commits])))
 
 ;; Scenario: the first save carries two commits; while it is in flight a
 ;; third one is queued, an edit of another file is queued too, and a fourth
@@ -420,24 +423,26 @@
                     (dwu/commit-undo-transaction tx-id)
                     ::dps/force-persist)
          (await (async/wait-for #(= 1 (count @requests)) "the action is sent" {:signal requests$}))
-         (let [groups (get-in (first @requests) [1 :changes-with-metadata])]
-           (t/is (= 3 (count groups)) "the save carries the three commits")
-           (rx/push! response (thp/rejection (:commit-id (nth groups 2)))))
-         (await (async/wait-for-store store #(seq (get-in @store [:persistence :buffer]))
-                                      "a new commit undoes the kept ones"))
-         (ptk/emit! store ::dps/force-persist)
-         (await (async/wait-for #(= 2 (count @requests)) "the new commit is sent" {:signal requests$}))
+         (let [[cmd params] (first @requests)
+               commits      (:commits params)
+               kept         (subvec commits 0 2)]
+           (t/is (= :update-file-v2 cmd))
+           (t/is (= 3 (count commits)) "the save carries the three commits")
+           (rx/push! response (thp/rejection (:commit-id (nth commits 2))))
+           (await (async/wait-for-store store #(seq (get-in @store [:persistence :buffer]))
+                                        "a new commit undoes the kept ones"))
+           (ptk/emit! store ::dps/force-persist)
+           (await (async/wait-for #(= 2 (count @requests)) "the new commit is sent" {:signal requests$}))
+           (let [[compensation] (get-in @requests [1 1 :commits])]
+             (t/is (= (into [] (mapcat :undo-changes) (reverse kept))
+                      (:redo-changes compensation))
+                   "the new commit reverts the accepted edits on the server")
+             (t/is (= (into [] (mapcat :redo-changes) kept)
+                      (:undo-changes compensation))
+                   "the inverse of compensation replays the accepted edits")))
          (doseq [id shape-ids]
            (t/is (= 1 (thp/shape-attr store file-id page-id id :opacity)))
            (t/is (nil? (thp/shape-attr store file-id page-id id :applied-tokens))))
-         (t/is (= #{1}
-                  (into #{}
-                        (comp (mapcat :changes)
-                              (mapcat :operations)
-                              (filter #(= :opacity (:attr %)))
-                              (map :val))
-                        (get-in (second @requests) [1 :changes-with-metadata])))
-               "the new commit puts the kept opacity back on the server")
          (rx/push! response {:revn 1})
          (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
                                       "the queue drains")))))))
@@ -569,7 +574,7 @@
          (ptk/emit! store ::dps/force-persist)
          (await (async/wait-for #(= 1 (count @requests)) "the undo is sent" {:signal requests$}))
          (rx/push! response (thp/rejection
-                             (get-in (first @requests) [1 :changes-with-metadata 0 :commit-id])))
+                             (get-in @requests [0 1 :commits 0 :commit-id])))
          (await (async/wait-for-store store #(= "B" (thp/shape-name store file-id page-id shape-id))
                                       "the rename is back"))
          (t/is (= [item] (get-in @store [:workspace-undo :items])) "the history stays")
@@ -587,10 +592,9 @@
                         :file-id file-id
                         :thumbnails {}}))
 
-;; Scenario: the undo of a rejected rename cannot be applied, so the
-;; rollback reloads the file. Proves: `::rolled-back` waits for the
-;; reloaded data, so a listener that reads the listed shapes sees the
-;; server data, never the rejected one.
+;; The diagnostic is armed before sending a rename. A rollback that only
+;; reapplies the armed rename must not consume it. When the rename itself
+;; is rejected, the local rollback fails and ::rolled-back waits for reload.
 (t/deftest ^:async a-rollback-that-reloads-the-file-is-reported-after-the-reload
   (let [reloads  (atom 0)
         original (get-method ptk/resolve ::dw/reload-current-file)]
@@ -604,10 +608,11 @@
          (^:async fn [{:keys [file-id response requests requests$ store]}]
            (let [page-id  (uuid/next)
                  shape-id (uuid/next)
-                 ;; A change type with no handler, so its undo throws
-                 commit   (ptk/data-event ::dch/commit
-                                          (update @(thp/rename-commit file-id page-id shape-id "A" "B")
-                                                  :undo-changes #(into [{:type :debug-fail}] %)))
+                 other-id (uuid/next)
+                 group    (uuid/next)
+                 first-save (grouped (thp/local-commit other-id) group)
+                 commit   (thp/rename-commit file-id page-id shape-id "A" "B")
+                 later    (grouped (thp/rename-commit file-id page-id shape-id "B" "C") group)
                  seen     (atom [])
                  sub      (->> (ptk/input-stream store)
                                (rx/filter (ptk/type? ::dps/rolled-back))
@@ -615,19 +620,47 @@
                                            (swap! seen conj
                                                   [(:shape-ids @event)
                                                    (thp/shape-name store file-id page-id shape-id)]))))]
-             (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "B")))
-             (ptk/emit! store commit ::dps/force-persist)
-             (await (async/wait-for #(= 1 (count @requests)) "the rename is sent" {:signal requests$}))
-             (rx/push! response (thp/rejection (:id @commit)))
+             (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "C"))
+                        first-save ::dps/force-persist)
+             (await (async/wait-for #(= 1 (count @requests)) "the other file is sent" {:signal requests$}))
+             (ptk/emit! store commit)
+             (await (async/wait-for-store store #(seq (get-in @store [:persistence :buffer]))
+                                          "the rename is buffered"))
+             (let [pending (pcm/pending-commits (:persistence @store) file-id)]
+               (await
+                (mock/with-mocks*
+                  {st/state store}
+                  (dbg/failNextRollback)
+                  (await (async/wait-for-store store #(contains? @store ::dps/rollback-failure)
+                                               "the local diagnostic is armed"))))
+               (t/is (= pending (pcm/pending-commits (:persistence @store) file-id))
+                     "arming does not change the pending commits"))
+             (ptk/emit! store later ::dps/force-persist)
+             (await (async/wait-for-store store #(= 2 (count (get-in @store [:persistence :queue])))
+                                          "both renames are queued"))
+             (rx/push! response (thp/rejection (:id @first-save)))
+             (await (async/wait-for #(= 2 (count @requests)) "the kept rename is sent" {:signal requests$}))
+             (t/is (= [[#{shape-id} "B"]] @seen) "the armed rename was reapplied without a reload")
+             (t/is (zero? @reloads))
+             (let [[cmd params] (second @requests)]
+               (t/is (= :update-file-v2 cmd))
+               (t/is (= [{:commit-id (:id @commit)
+                          :redo-changes (:redo-changes @commit)
+                          :undo-changes (:undo-changes @commit)}]
+                        (:commits params))
+                     "the local fault does not travel to the server")
+               (rx/push! response (thp/rejection (get-in params [:commits 0 :commit-id]))))
              (await (async/wait-for #(= 1 @reloads) "the rollback reloads the file"))
              (await (async/settle))
-             (t/is (empty? @seen) "nothing is reported before the reload")
+             (t/is (= [[#{shape-id} "B"]] @seen) "nothing new is reported before the reload")
+             (t/is (not (contains? @store ::dps/rollback-failure)) "a matching rollback disarms the fault")
              (ptk/emit! store (#'dw/bundle-fetched {:file {:id file-id :revn 0
                                                            :data (thp/file-data page-id shape-id "A")}
                                                     :file-id file-id
                                                     :thumbnails {}}))
-             (await (async/wait-for #(seq @seen) "the rollback is reported"))
-             (t/is (= [[#{shape-id} "A"]] @seen) "the listener reads the reloaded data")
+             (await (async/wait-for #(= 2 (count @seen)) "the second rollback is reported"))
+             (t/is (= [[#{shape-id} "B"] [#{shape-id} "A"]] @seen)
+                   "the listener reads the reloaded data")
              (rx/dispose! sub)))))
       (finally
         (-add-method ptk/resolve ::dw/reload-current-file original)))))
@@ -716,7 +749,7 @@
 (t/deftest ^:async a-rollback-puts-comment-pins-back-and-detaches-them-from-removed-boards
   (let [answer   (rx/subject)
         respond  (fn [cmd _]
-                   (if (= :update-file cmd)
+                   (if (= :update-file-v2 cmd)
                      (->> answer (rx/take 1) (rx/observe-on :async))
                      (rx/of nil)))]
     (await
@@ -758,7 +791,7 @@
                       #(assoc % :comment-threads {(:id thread-1) thread-1 (:id thread-2) thread-2})
                       (dwcm/watch-comment-thread-position-changes (rx/subject)))
            (ptk/emit! store move pin draw ::dps/force-persist)
-           (await (async/wait-for #(seq (sent :update-file)) "the edits are sent"))
+           (await (async/wait-for #(seq (sent :update-file-v2)) "the edits are sent"))
            (rx/push! answer (thp/rejection (:id @move)))
            (await (async/wait-for #(seq (sent :update-comment-thread-frame))
                                   "the rollback updates the comments"))

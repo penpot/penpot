@@ -261,8 +261,8 @@ test.describe("Design tab", () => {
       "workspace/get-file-fragment-7760.json",
     );
     await workspace.mockRPC(
-      "update-file?id=*",
-      "workspace/update-file-create-rect.json",
+      "update-file-v2?id=*",
+      "workspace/update-file-empty.json",
     );
     await workspace.goToWorkspace({
       fileId: "cd90e028-326a-80b4-8004-7cdec16ffad5",
@@ -331,8 +331,8 @@ test.describe("Design tab", () => {
       "workspace/get-file-fragment-7760.json",
     );
     await workspace.mockRPC(
-      "update-file?id=*",
-      "workspace/update-file-create-rect.json",
+      "update-file-v2?id=*",
+      "workspace/update-file-empty.json",
     );
     await workspace.goToWorkspace({
       fileId: "cd90e028-326a-80b4-8004-7cdec16ffad5",
@@ -649,7 +649,7 @@ test.describe("Layers", () => {
     await workspace.setupEmptyFile();
     await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
     await workspace.mockRPC(
-      "update-file?id=*",
+      "update-file-v2?id=*",
       "workspace/update-file-empty.json",
     );
     await workspace.goToWorkspace({
@@ -824,8 +824,8 @@ test.describe("Left header", () => {
     await workspace.setupEmptyFile();
     await workspace.mockRPC(/get\-file\?/, "workspace/get-file-library.json");
     await workspace.mockRPC(
-      "update-file?id=*",
-      "workspace/update-file-create-rect.json",
+      "update-file-v2?id=*",
+      "workspace/update-file-empty.json",
     );
     await workspace.goToWorkspace({
       fileId: "c1249a66-fce0-8175-8004-7433fe4be8bc",
@@ -934,7 +934,7 @@ test.describe("Undo history", () => {
     const workspace = new WorkspacePage(page);
     await workspace.setupEmptyFile();
     await workspace.mockRPC(
-      "update-file?id=*",
+      "update-file-v2?id=*",
       "workspace/update-file-empty.json",
     );
     await workspace.mockRPC(

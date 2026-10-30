@@ -11,7 +11,7 @@ test("BUG 13305 - Fix resize board to fit content", async ({ page }) => {
   await workspacePage.setupEmptyFile();
   await workspacePage.mockGetFile("workspace/get-file-13305.json");
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-13305.json",
   );
 
@@ -70,7 +70,7 @@ test("BUG 13382 - Fix problem with flex layout", async ({ page }) => {
   );
 
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-empty.json",
   );
 
@@ -117,7 +117,7 @@ test("BUG 13468 - Fix problem with flex propagation", async ({ page }) => {
   );
 
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-empty.json",
   );
 
@@ -157,7 +157,7 @@ test("BUG 13272 - Fix problem with snap to pixel", async ({ page }) => {
   );
 
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-empty.json",
   );
 
@@ -207,7 +207,7 @@ test("BUG 13755 - Fix problem with text change modiifers", async ({ page }) => {
   );
 
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-empty.json",
   );
 

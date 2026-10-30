@@ -66,7 +66,7 @@ test("User draws a rect", async ({ page }) => {
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-create-rect.json",
   );
 
@@ -134,7 +134,7 @@ test("Selection size badge shows unrotated dimensions for rotated single selecti
     "workspace/get-file-not-empty.json",
   );
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-create-rect.json",
   );
 
@@ -164,7 +164,7 @@ test("Selection size badge measures paths and straight lines", async ({
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-empty.json",
   );
 
@@ -223,7 +223,7 @@ test("User makes a group", async ({ page }) => {
     "workspace/get-file-not-empty.json",
   );
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-create-rect.json",
   );
 
@@ -259,7 +259,7 @@ test("Bug 7525 - User moves a scrollbar and no selection rectangle appears", asy
     "workspace/get-file-not-empty.json",
   );
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-create-rect.json",
   );
 
@@ -362,7 +362,7 @@ test("Bug 9066 - Problem with grid layout", async ({ page }) => {
   await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
 
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-create-rect.json",
   );
 
@@ -595,7 +595,7 @@ test("BUG 13415 - Grid layout overlay is not removed when deleting a board", asy
   await workspacePage.setupEmptyFile(page);
   await workspacePage.mockGetFile("workspace/get-file-13415.json");
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-13415.json",
   );
 
@@ -628,7 +628,7 @@ test("BUG 14239 - Fix default path thickness", async ({ page }) => {
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-empty.json",
   );
   await workspacePage.goToWorkspace();

@@ -17,7 +17,7 @@ test("Save and restore version", async ({ page }) => {
   );
 
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-create-rect.json",
   );
 
@@ -122,7 +122,7 @@ test("BUG 13385 - Fix viewport not updating when restoring version", async ({ pa
   await workspacePage.mockRPC("get-profiles-for-file-comments?file-id=*", "workspace/get-profiles-for-file-comments-13385.json");
 
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-empty.json",
   );
 

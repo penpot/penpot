@@ -25,7 +25,7 @@ const setupVariantsFile = async (workspacePage) => {
     "workspace/get-file-not-empty.json",
   );
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-create-rect.json",
   );
 

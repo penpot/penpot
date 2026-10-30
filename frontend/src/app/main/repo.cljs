@@ -186,6 +186,7 @@
 
 (def default-options
   {:update-file {:query-params [:id]}
+   :update-file-v2 {:query-params [:id]}
    :get-raw-file {:rename-to :get-file :raw-transit? true}
 
    :create-file-object-thumbnail
