@@ -30,6 +30,14 @@
        reverse
        (map #(get objects %))))
 
+(defn- shapes-for-group-or-mask
+  "Shapes allowed for Group and Mask after the shared variant gates.
+
+   `ids-for-structure-op` drops mains before `clean-loops` so a selected
+   variant main does not swallow nested children."
+  [objects ids]
+  (shapes-for-grouping objects (ctn/ids-for-structure-op objects ids)))
+
 (defn- get-empty-groups-after-group-creation
   "An auxiliary function that finds and returns a set of ids that
   corresponds to groups that should be deleted after a group creation.
@@ -188,18 +196,11 @@
   (ptk/reify ::group-shapes
     ptk/WatchEvent
     (watch [it state _]
-      (let [id (d/nilv id (uuid/next))
-            page-id  (:current-page-id state)
-            objects  (dsh/lookup-page-objects state page-id)
-
-            shapes
-            (->> ids
-                 (cfh/clean-loops objects)
-                 (remove #(ctn/has-any-copy-parent? objects (get objects %)))
-                 (shapes-for-grouping objects)
-                 (remove ctk/is-variant?))
-
-            parents  (into #{} (map :parent-id) shapes)]
+      (let [id      (d/nilv id (uuid/next))
+            page-id (:current-page-id state)
+            objects (dsh/lookup-page-objects state page-id)
+            shapes  (shapes-for-group-or-mask objects ids)
+            parents (into #{} (map :parent-id) shapes)]
         (when-not (empty? shapes)
           (let [[group changes]
                 (prepare-create-group (pcb/empty-changes it) id objects page-id shapes "Group" false)]
@@ -213,7 +214,9 @@
   (ptk/reify ::group-selected
     ptk/WatchEvent
     (watch [_ state _]
-      (let [selected (dsh/lookup-selected state)]
+      ;; Raw ids: lookup-selected already clean-loops, which would drop
+      ;; nested children of a selected variant main before we can.
+      (let [selected (dsh/get-selected-ids state)]
         (rx/of (group-shapes nil selected :change-selection? true))))))
 
 (defn ungroup-shapes
@@ -287,11 +290,9 @@
      (watch [it state _]
        (let [page-id     (:current-page-id state)
              objects     (dsh/lookup-page-objects state page-id)
-             selected    (->> (or ids (dsh/lookup-selected state))
-                              (cfh/clean-loops objects)
-                              (remove #(ctn/has-any-copy-parent? objects (get objects %))))
-             shapes      (->> (shapes-for-grouping objects selected)
-                              (remove ctk/is-variant?))
+             shapes      (shapes-for-group-or-mask
+                          objects
+                          (or ids (dsh/get-selected-ids state)))
              first-shape (first shapes)]
          (when-not (empty? shapes)
            (let [;; If the selected shape is a group, we can use it. If not,

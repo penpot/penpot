@@ -475,16 +475,14 @@
    (ptk/reify ::create-artboard-from-selection
      ptk/WatchEvent
      (watch [_ state _]
-       (let [page-id      (:current-page-id state)
-             objects      (dsh/lookup-page-objects state page-id)
-             selected     (->> (dsh/lookup-selected state)
-                               (cfh/clean-loops objects)
-                               (remove #(ctn/has-any-copy-parent? objects (get objects %)))
-                               (remove #(->> %
-                                             (get objects)
-                                             (ctc/is-variant?))))]
+       (let [page-id  (:current-page-id state)
+             objects  (dsh/lookup-page-objects state page-id)
+             selected (vec (ctn/ids-for-structure-op
+                            objects
+                            (dsh/get-selected-ids state)))]
 
-         (rx/of (create-artboard-from-shapes selected id parent-id index name delta)))))))
+         (when (seq selected)
+           (rx/of (create-artboard-from-shapes selected id parent-id index name delta))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shape Flags

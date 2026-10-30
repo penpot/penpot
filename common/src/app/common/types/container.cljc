@@ -426,6 +426,52 @@
         true
         (has-any-copy-parent? objects (:parent-id shape))))))
 
+(defn get-variant-boundary-id
+  "Id of the nearest variant main or variant container for this shape, or nil
+   when the shape is outside any variant set.
+
+   Nested children resolve to their enclosing main (not the container), so two
+   shapes under different variants are treated as different boundaries even
+   when they share a set."
+  [objects shape]
+  (some (fn [s]
+          (cond
+            (ctk/is-variant? s) (:id s)
+            (ctk/is-variant-container? s) (:id s)
+            :else nil))
+        (cfh/get-parents-with-self objects (:id shape))))
+
+(defn crosses-variant-set-boundary?
+  "True when the selection mixes shapes that belong to different variant
+   boundaries — including outside vs in-set, two different variant mains
+   (even in the same set), or two different variant containers.
+
+   Structure commands (group, mask, board-from-selection, layout) must not
+   reparent across that boundary."
+  [objects shapes]
+  (let [ids (into #{} (map #(get-variant-boundary-id objects %)) shapes)]
+    (> (count ids) 1)))
+
+(defn ids-for-structure-op
+  "Ids allowed for Group, Mask, and Create board from selection.
+
+   Drops copy-children and variant mains, refuses a cross-boundary or
+   container selection, then removes descendants whose ancestor is
+   still selected. Mains are dropped before loop-cleaning so a
+   selected main does not swallow nested children. Layout does not
+   use this helper."
+  [objects ids]
+  (let [shapes (->> ids
+                    (remove #(has-any-copy-parent? objects (get objects %)))
+                    (keep (d/getf objects)))]
+    (if (or (crosses-variant-set-boundary? objects shapes)
+            (some ctk/is-variant-container? shapes))
+      []
+      (->> shapes
+           (remove ctk/is-variant?)
+           (map :id)
+           (cfh/clean-loops objects)))))
+
 (defn has-any-main?
   "Check if the shape is a main component or has any children or parent that is a main component."
   [objects shape]
