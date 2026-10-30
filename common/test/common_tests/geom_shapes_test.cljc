@@ -39,6 +39,25 @@
              :height 20}
             params)))))
 
+(t/deftest regrouping-preserves-the-representation-of-unflipped-axes
+  (doseq [horizontal [{} {:flip-x nil} {:flip-x false}]
+          vertical   [{} {:flip-y nil} {:flip-y false}]]
+    (let [group (merge (dissoc (create-test-shape :group) :flip-x :flip-y) horizontal vertical)
+          child (create-test-shape :rect)
+          after (gsh/update-group-selrect group [child])]
+      (t/is (= (select-keys group [:flip-x :flip-y]) (select-keys after [:flip-x :flip-y])))
+      (t/is (gsh/close-attrs? :points (:points child) (:points after) 1e-10))
+      (t/is (= (select-keys after [:flip-x :flip-y])
+               (select-keys (gsh/update-group-selrect after [child]) [:flip-x :flip-y]))))))
+
+(t/deftest regrouping-still-recalculates-stale-flip-flags
+  (let [group (create-test-shape :group {:flip-x true :flip-y true})
+        child (create-test-shape :rect)
+        after (gsh/update-group-selrect group [child])]
+    (t/is (false? (:flip-x after)))
+    (t/is (false? (:flip-y after)))
+    (t/is (gsh/close-attrs? :points (:points child) (:points after) 1e-10))))
+
 (t/deftest transform-shapes
   (t/testing "Shape without modifiers should stay the same"
     (t/are [type]
