@@ -39,23 +39,31 @@
   [{:keys [page-id changes] :as message}]
   (let [tpoint (ct/tpoint-ms)]
     (try
-      (let [old-page (dm/get-in @state [:pages-index page-id])
-            new-page (-> state
-                         (swap! ch/process-changes changes false)
-                         (dm/get-in [:pages-index page-id]))
+      (if-let [old-page (dm/get-in @state [:pages-index page-id])]
+        (let [new-page (-> state
+                           (swap! ch/process-changes changes false)
+                           (dm/get-in [:pages-index page-id]))]
+          (if (nil? new-page)
+            ;; The changes deleted the page
+            (swap! state #(-> %
+                              (update ::snap dissoc page-id)
+                              (update ::selection dissoc page-id)))
 
-            text-rects (dm/get-in @state [::text-rect page-id])
+            (let [text-rects (dm/get-in @state [::text-rect page-id])
 
-            ;; Update page objects with the text data
-            new-page
-            (reduce-kv
-             (fn [page id data]
-               (update-in page [:objects id] d/patch-object data))
-             new-page
-             text-rects)]
+                  ;; Update page objects with the text data
+                  new-page
+                  (reduce-kv
+                   (fn [page id data]
+                     (update-in page [:objects id] d/patch-object data))
+                   new-page
+                   text-rects)]
 
-        (swap! state update ::snap snap/update-page old-page new-page)
-        (swap! state update ::selection selection/update-page old-page new-page))
+              (swap! state update ::snap snap/update-page old-page new-page)
+              (swap! state update ::selection selection/update-page old-page new-page))))
+
+        ;; A later `:index/initialize` sends the whole page again
+        (log/dbg :hint "page not indexed, skipping update" :id page-id ::log/sync? true))
       (catch :default cause
         (log/error :hint "error updating page index" :id page-id :cause cause))
       (finally
