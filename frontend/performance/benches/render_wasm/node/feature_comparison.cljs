@@ -10,6 +10,7 @@
    ["fs" :as fs]
    ["node:timers/promises" :as timers]
    ["path" :as path]
+   [app.common.schema :as sm]
    [benches.render-wasm.failures :as failures]
    [benches.render-wasm.node.artifacts :as artifacts]
    [benches.render-wasm.node.build :as build]
@@ -401,8 +402,7 @@
                                                 {:home ((:create-run-home services)
                                                         {:root root
                                                          :run-id run-id
-                                                         :output-dir (path/join (:dir home) "configs" slug)
-                                                         :options options})}
+                                                         :output-dir (path/join (:dir home) "configs" slug)})}
                                                 (catch :default cause
                                                   (if (storage-error? cause)
                                                     (throw cause)
@@ -427,7 +427,7 @@
                                   (try
                                     (await ((:execute-run services)
                                             root run-home selected cases
-                                            (assoc options :build-id (:id selected))
+                                            (select-keys options (sm/keys run/schema:run-options))
                                             signal))
                                     (catch :default cause
                                       (if (storage-error? cause)

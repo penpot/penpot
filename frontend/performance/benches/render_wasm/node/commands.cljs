@@ -7,6 +7,7 @@
 (ns benches.render-wasm.node.commands
   "Execution commands loaded after CLI validation."
   (:require
+   [app.common.schema :as sm]
    [app.common.transit :as transit]
    [benches.render-wasm.node.artifacts :as artifacts]
    [benches.render-wasm.node.build :as build]
@@ -30,7 +31,7 @@
                                     (ex-info "run interrupted"
                                              {:type ::interrupted :signal name})))))]
     (try
-      (await (run/run root options signal))
+      (await (run/run root (select-keys options (sm/keys run/schema:run-options)) signal))
       (catch :default cause
         {:error cause :log-path (:log-path (ex-data cause))
          :exit-code (case @interrupted "SIGINT" 130 "SIGTERM" 143 1)})
