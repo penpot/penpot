@@ -8,6 +8,7 @@
   (:require
    [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
@@ -185,3 +186,43 @@
 
       (t/is (some? result))
       (t/is (contains? result rect-id)))))
+
+;; ---- follow-parent-shapes
+
+(defn- get-follow-tree-objects
+  "Objects of a page with a parent board that holds a child board with a
+  rect inside."
+  []
+  (-> (thf/sample-file :file1)
+      (ths/add-sample-shape :parent {:type :frame :name "Parent" :x 0 :y 0 :width 100 :height 100})
+      (ths/add-sample-shape :child {:type :frame :name "Child" :parent-label :parent
+                                    :x 10 :y 10 :width 40 :height 40})
+      (add-rect-child :grandchild :child :x 20 :y 20 :width 10 :height 10)
+      (thf/current-page)
+      (:objects)))
+
+(defn- close-top-lefts?
+  [points shapes]
+  (and (= (count points) (count shapes))
+       (every? true? (map #(gpt/close? %1 (gpt/point (:selrect %2))) points shapes))))
+
+(t/deftest follow-parent-shapes-moves-subtree-with-parent
+  (let [objects (get-follow-tree-objects)
+        parent  (get objects (thi/id :parent))
+        shapes  (gm/follow-parent-shapes objects (thi/id :child)
+                                         parent (gsh/move parent (gpt/point 50 0)) nil)]
+    (t/is (= [(thi/id :child) (thi/id :grandchild)] (mapv :id shapes)))
+    (t/is (close-top-lefts? [(gpt/point 60 10) (gpt/point 70 20)] shapes))))
+
+(t/deftest follow-parent-shapes-moves-subtree-to-target
+  (let [objects (get-follow-tree-objects)
+        parent  (get objects (thi/id :parent))
+        shapes  (gm/follow-parent-shapes objects (thi/id :child)
+                                         parent (gsh/move parent (gpt/point 50 0)) (gpt/point 0 0))]
+    (t/is (close-top-lefts? [(gpt/point 0 0) (gpt/point 10 10)] shapes))))
+
+(t/deftest follow-parent-shapes-without-change-is-empty
+  (let [objects (get-follow-tree-objects)
+        parent  (get objects (thi/id :parent))]
+    (t/is (= [] (gm/follow-parent-shapes objects (thi/id :child) parent parent nil)))
+    (t/is (= [] (gm/follow-parent-shapes objects (thi/id :child) parent parent (gpt/point 10 10))))))

@@ -12,6 +12,7 @@
    [app.common.geom.bounds-map :as cgb]
    [app.common.geom.modif-tree :as cgt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.constraints :as gct]
    [app.common.geom.shapes.flex-layout :as gcfl]
@@ -394,3 +395,25 @@
      ;;#?(:cljs
      ;;   (.log js/console ">result" (modif->js modif-tree objects)))
      modif-tree)))
+
+(defn follow-parent-shapes
+  "Makes the shape `child-id` and its children follow the change of its parent
+  from `parent-before` to `parent-after`, each one through its own
+  constraints. With `target-pos`, the subtree then moves so the top-left of
+  `child-id` lands on it. Returns the shapes of the subtree, parent first, or
+  an empty vector when nothing changes."
+  [objects child-id parent-before parent-after target-pos]
+  (let [child      (get objects child-id)
+        modifiers  (gct/follow-parent-modifiers child parent-before parent-after)
+        ids        (cfh/get-children-ids-with-self objects child-id)
+        modif-tree (if (ctm/empty? modifiers)
+                     {}
+                     (set-objects-modifiers {child-id {:modifiers modifiers}}
+                                            (select-keys objects ids)))
+        follow     #(gtr/transform-shape % (dm/get-in modif-tree [(:id %) :modifiers]))
+        delta      (if (some? target-pos)
+                     (gpt/subtract target-pos (grc/rect->point (:selrect (follow child))))
+                     (gpt/point 0 0))]
+    (if (and (empty? modif-tree) (gpt/almost-zero? delta))
+      []
+      (mapv #(gtr/move (follow (get objects %)) delta) ids))))

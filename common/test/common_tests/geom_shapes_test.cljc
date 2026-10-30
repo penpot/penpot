@@ -11,6 +11,7 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.intersect :as gsin]
+   [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.transforms :as gsht]
    [app.common.math :as mth :refer [close?]]
    [app.common.types.modifiers :as ctm]
@@ -271,3 +272,53 @@
       (t/is (true? (:flip-y result)))
       ;; rotation must not be negated when both axes are flipped
       (t/is (mth/close? 30 (:rotation result))))))
+
+(t/deftest translate-relative-moves-by-reference-offset
+  (let [shape (create-test-shape :rect {:x 10 :y 10})
+        from  (create-test-shape :frame {:x 0 :y 0 :width 100 :height 100})
+        to    (create-test-shape :frame {:x 100 :y 50 :width 100 :height 100})]
+    (t/is (= (gpt/point 110 60)
+             (gpt/point (:selrect (gsh/translate-relative shape from to)))))))
+
+(t/deftest transform-relative-without-rotation-only-translates
+  (let [shape (create-test-shape :rect {:x 10 :y 10})
+        from  (create-test-shape :frame {:x 0 :y 0 :width 100 :height 100})
+        to    (create-test-shape :frame {:x 100 :y 50 :width 100 :height 100})]
+    (t/is (= (gsh/translate-relative shape from to)
+             (gsh/transform-relative shape from to)))))
+
+(t/deftest transform-relative-applies-relative-rotation
+  (let [shape  (create-test-shape :rect {:x 0 :y 0})
+        from   (create-test-shape :frame {:x 0 :y 0 :width 100 :height 100})
+        to     (as-> (create-test-shape :frame {:x 0 :y 0 :width 100 :height 100}) $
+                 (gsh/transform-shape $ (ctm/rotation-modifiers $ (gsh/shape->center $) 90)))
+        result (gsh/transform-relative shape from to)]
+    (t/is (close? 90 (:rotation result)))
+    ;; The top-left corner of the root goes to its top-right corner
+    (t/is (gpt/close? (gpt/point 90 10) (gsh/shape->center result)))))
+
+(t/deftest set-selrect-size-keeps-position
+  (let [shape (gsh/set-selrect-size (create-test-shape :rect {:x 10 :y 20 :width 30 :height 40}) 50 60)]
+    (t/is (= [10 20 50 60] ((juxt :x :y :width :height) (:selrect shape))))
+    (t/is (= [60 80] ((juxt :x2 :y2) (:selrect shape))))
+    (t/is (= [50 60] ((juxt :width :height) shape)))
+    (t/is (every? true? (map gpt/close?
+                             [(gpt/point 10 20) (gpt/point 60 20) (gpt/point 60 80) (gpt/point 10 80)]
+                             (:points shape))))))
+
+(t/deftest transform-path-content-scales-and-centers
+  (let [shape  (create-test-shape :path)
+        width  (-> shape :selrect :width)
+        result (gsh/transform-path-content shape (gmt/scale-matrix (gpt/point 2 2)) (gpt/point 100 100))]
+    (t/is (close? (* 2 width) (-> result :selrect :width)))
+    (t/is (gpt/close? (gpt/point 100 100) (gsh/shape->center result)))))
+
+(t/deftest close-size-ignores-position
+  (t/is (grc/close-size? (grc/make-rect 0 0 10 20) (grc/make-rect 50 50 10 20)))
+  (t/is (not (grc/close-size? (grc/make-rect 0 0 10 20) (grc/make-rect 0 0 11 20)))))
+
+(t/deftest close-ignoring-position-compares-shape-of-points
+  (let [points (grc/rect->points (grc/make-rect 0 0 10 20))]
+    (t/is (gpo/close-ignoring-position? points (grc/rect->points (grc/make-rect 30 40 10 20))))
+    (t/is (not (gpo/close-ignoring-position? points (grc/rect->points (grc/make-rect 0 0 10 21)))))
+    (t/is (gpo/close-ignoring-position? nil nil))))

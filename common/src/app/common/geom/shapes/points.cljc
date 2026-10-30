@@ -176,3 +176,16 @@
     (-> (origin bounds)
         (gpt/add half-h)
         (gpt/add half-v))))
+
+(defn close-ignoring-position?
+  "Returns true when both lists of points are about the same once each one is
+  moved so its first point is at the origin."
+  [points-a points-b]
+  (let [normalize (fn [points]
+                    (when (seq points)
+                      (let [f (first points)]
+                        (mapv #(gpt/subtract % f) points))))
+        a         (normalize points-a)
+        b         (normalize points-b)]
+    (and (= (count a) (count b))
+         (every? identity (map gpt/close? a b)))))

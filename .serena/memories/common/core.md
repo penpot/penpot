@@ -9,6 +9,7 @@
 - `app.common.files.*`: file-level operations, shape tree helpers, change application, migrations, validation, and undo/redo-related logic.
 - `app.common.logic.*`: higher-level workflows/algorithms over files, shapes, components, variants, libraries, tokens, etc.
 - `app.common.geom.*`: geometry helpers and transformations.
+- `app.common.logic.component-geometry`: geometry rules of component copies (reposition against the main, sync follow-parent, switch size overrides). It decides what to apply; the math goes in `app.common.geom.*`, never in `logic.libraries`/`logic.variants`.
 - `app.common.schema` / `app.common.schema.*`: Malli abstraction layer.
 - `app.common.math`, `app.common.time`, `app.common.uuid`, `app.common.json`, etc.: cross-runtime utilities.
 - `app.common.test_helpers.*`: test builders and production-path helpers.

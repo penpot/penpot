@@ -12,26 +12,20 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
-   [app.common.geom.matrix :as gmt]
-   [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
-   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.common :as gco]
    [app.common.logging :as log]
+   [app.common.logic.component-geometry :as clcg]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
-   [app.common.math :as mth]
    [app.common.path-names :as cpn]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.library :as ctl]
-   [app.common.types.modifiers :as ctm]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
-   [app.common.types.path.segment :as segment]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.interactions :as ctsi]
@@ -107,7 +101,6 @@
 (declare update-grid-copy-attrs)
 (declare update-flex-child-main-attrs)
 (declare update-flex-child-copy-attrs)
-(declare reposition-shape)
 (declare make-change)
 
 (defn pretty-file
@@ -873,83 +866,6 @@
             (recur shape-inst' next-data component')
             nil))))))
 
-(defn- geometry-sync-delta
-  "Offset the sync applies to the top-left of `dest-shape` when it copies the
-  geometry of `origin-shape`."
-  [dest-shape origin-shape dest-root origin-root]
-  (gpt/subtract (grc/rect->point (:selrect (reposition-shape origin-shape origin-root dest-root)))
-                (grc/rect->point (:selrect dest-shape))))
-
-(defn- follow-parent-modifiers
-  "Modifiers that make `child` follow the change of its parent from
-  `parent-before` to `parent-after`, through the child constraints."
-  [child parent-before parent-after]
-  (let [sr-before (:selrect parent-before)
-        sr-after  (:selrect parent-after)
-        modifiers (-> (ctm/empty)
-                      (ctm/resize (gpt/point (/ (:width sr-after) (max 0.01 (:width sr-before)))
-                                             (/ (:height sr-after) (max 0.01 (:height sr-before))))
-                                  (first (:points parent-before))
-                                  (:transform parent-before)
-                                  (:transform-inverse parent-before))
-                      (ctm/move (gpt/subtract (first (:points parent-after))
-                                              (first (:points parent-before)))))]
-    ;; A move doesn't need the constraints
-    (if (or (ctm/empty? modifiers) (ctm/only-move? modifiers))
-      modifiers
-      (gsh/calc-child-modifiers parent-before child modifiers false
-                                (:points child)
-                                (:points parent-before)
-                                (delay (:points parent-after))))))
-
-(defn- follow-parent-modif-tree
-  "Modifiers that make `child` and its children follow the change of the
-  parent of `child` from `parent-before` to `parent-after`, each one through
-  its own constraints."
-  [objects child parent-before parent-after]
-  (let [modifiers (follow-parent-modifiers child parent-before parent-after)]
-    (if (ctm/empty? modifiers)
-      {}
-      (gm/set-objects-modifiers {(:id child) {:modifiers modifiers}}
-                                (select-keys objects (cfh/get-children-ids-with-self objects (:id child)))))))
-
-(defn- resize-with-parent
-  "Resizes `shape` the way its constraints do when its parent changes from
-  `parent-before` to `parent-after`, keeping its top-left."
-  [shape parent-before parent-after]
-  (let [modifiers (follow-parent-modifiers shape parent-before parent-after)]
-    (if (ctm/empty? modifiers)
-      shape
-      (let [shape' (gsh/transform-shape shape modifiers)]
-        (gsh/move shape' (gpt/subtract (grc/rect->point (:selrect shape))
-                                       (grc/rect->point (:selrect shape'))))))))
-
-(defn- update-geometry-untouched
-  "Applies `update-fn` to the shapes without marking them touched."
-  [changes ids update-fn container]
-  (pcb/concat-changes
-   changes
-   (-> (pcb/empty-changes)
-       (pcb/with-container container)
-       (pcb/with-objects (:objects container))
-       (pcb/update-shapes ids update-fn {:ignore-touched true}))))
-
-(defn generate-follow-parent
-  "Makes `child` and its children follow the change of the parent of `child`
-  from `parent-before` to `parent-after`, each one through its own
-  constraints, without marking them touched. `delta-fn`, if given, receives
-  `child` after that and returns the offset to move the subtree by."
-  [changes container child parent-before parent-after delta-fn]
-  (let [objects    (:objects container)
-        modif-tree (follow-parent-modif-tree objects child parent-before parent-after)
-        follow     #(gsh/transform-shape % (dm/get-in modif-tree [(:id %) :modifiers]))
-        delta      (if delta-fn (delta-fn (follow child)) (gpt/point 0 0))]
-    (cond-> changes
-      (or (seq modif-tree) (not (gpt/almost-zero? delta)))
-      (update-geometry-untouched (cfh/get-children-ids-with-self objects (:id child))
-                                 #(gsh/move (follow %) delta)
-                                 container))))
-
 (defn- generate-sync-shape-direct-recursive
   "Syncs `shape-inst` and its children from `shape-main`. `parent-change` is
   the geometry of the parent of `shape-inst` before and after the sync, or
@@ -966,19 +882,13 @@
     (let [omit-touched?        (not reset?)
           clear-remote-synced? (and initial-root? reset?)
           set-remote-synced?   (and (not initial-root?) reset?)
-          geometry-kept?       (and omit-touched?
+          geometry-kept        (and omit-touched?
                                     (ctk/touched-group? shape-inst :geometry-group))
-          main-geometry        (reposition-shape shape-main root-main root-inst)
-          follow-modifiers     (when (and geometry-kept? (some? parent-change))
-                                 (let [[parent-before parent-after] parent-change]
-                                   (follow-parent-modifiers shape-inst parent-before parent-after)))
-          shape-after          (cond
-                                 (not geometry-kept?)   main-geometry
-                                 (some? follow-modifiers) (gsh/transform-shape shape-inst follow-modifiers)
-                                 :else                  shape-inst)
-          ;; Offset between where the sync leaves shape-inst and where the main puts it
-          main-gap             (gpt/subtract (grc/rect->point (:selrect shape-after))
-                                             (grc/rect->point (:selrect main-geometry)))
+          main-geometry        (clcg/reposition-shape shape-main root-main root-inst)
+
+          [shape-after follow-modifiers]
+          (clcg/synced-geometry shape-inst main-geometry geometry-kept parent-change)
+
           changes
           (cond-> changes
             :always
@@ -989,10 +899,8 @@
                           container
                           omit-touched?)
 
-            (and (some? follow-modifiers) (not (ctm/empty? follow-modifiers)))
-            (update-geometry-untouched [(:id shape-inst)]
-                                       #(gsh/transform-shape % follow-modifiers)
-                                       container)
+            (some? follow-modifiers)
+            (clcg/generate-transform-untouched container shape-inst follow-modifiers)
 
             (ctsl/flex-layout? shape-main)
             (update-flex-child-copy-attrs shape-main
@@ -1077,10 +985,10 @@
                                :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
                     ;; A swapped child follows its parent and, if the user didn't move it,
                     ;; goes to the place of the slot's occupant in the main
-                    (generate-follow-parent changes container child-inst shape-inst shape-after
-                                            (when-not (ctk/touched-group? child-inst :geometry-group)
-                                              #(gpt/add (geometry-sync-delta % child-main root-inst root-main)
-                                                        main-gap))))
+                    (clcg/generate-follow-parent changes container child-inst shape-inst shape-after
+                                                 (when-not (ctk/touched-group? child-inst :geometry-group)
+                                                   (clcg/sync-swap-position child-main root-main root-inst
+                                                                            shape-after main-geometry))))
 
           moved (fn [changes child-inst child-main]
                   (shape-log :trace (:id child-inst) container
@@ -1394,9 +1302,9 @@
                                                          (:id parent-shape)))
 
         update-new-shape (fn [new-shape original-shape]
-                           (let [new-shape (reposition-shape new-shape
-                                                             root-main
-                                                             root-instance)]
+                           (let [new-shape (clcg/reposition-shape new-shape
+                                                                  root-main
+                                                                  root-instance)]
                              (cond-> new-shape
                                (= (:id original-shape) (:id component-shape))
                                (assoc :frame-id (if (= (:type parent-shape) :frame)
@@ -1471,9 +1379,9 @@
                                                (:id component-parent-shape)))
 
         update-new-shape (fn [new-shape _original-shape]
-                           (reposition-shape new-shape
-                                             root-instance
-                                             root-main))
+                           (clcg/reposition-shape new-shape
+                                                  root-instance
+                                                  root-main))
 
         update-original-shape (fn [original-shape new-shape]
                                 (assoc original-shape
@@ -1939,7 +1847,7 @@
         ;; the dest root before syncing.
         ;; In case of subinstances, the comparison is always done with the
         ;; near component, because this is that we are syncing with.
-        origin-shape (reposition-shape origin-shape origin-root dest-root)
+        origin-shape (clcg/reposition-shape origin-shape origin-root dest-root)
         touched      (get dest-shape :touched #{})]
 
     (loop [attrs updatable-attrs
@@ -2029,45 +1937,6 @@
                    roperations'
                    uoperations')))))))
 
-(defn- set-path-new-values
-  [current-shape prev-shape transform]
-  (let [new-content   (segment/transform-content
-                       (:content current-shape)
-                       (gmt/transform-in (gpt/point 0 0) transform))
-        new-points    (-> (segment/content->selrect new-content)
-                          (grc/rect->points))
-        points-center (gco/points->center new-points)
-        new-selrect   (gsh/calculate-selrect new-points points-center)
-        shape         (assoc current-shape
-                             :content new-content
-                             :points new-points
-                             :selrect new-selrect)
-
-        prev-center   (segment/content-center (:content prev-shape))
-        delta         (gpt/subtract points-center (first new-points))
-        new-pos       (gpt/subtract prev-center delta)]
-    (gsh/absolute-move shape new-pos)))
-
-(defn- switch-path-change-value
-  [prev-shape           ; The shape before the switch
-   current-shape        ; The shape after the switch (a clean copy)
-   ref-shape            ; The referenced shape on the main component
-                        ; before the switch
-   attr]
-  (let [old-width (-> ref-shape :selrect :width)
-        new-width (-> prev-shape :selrect :width)
-
-        old-height (-> ref-shape :selrect :height)
-        new-height (-> prev-shape :selrect :height)
-
-        transform (-> (gpt/point (/ new-width old-width)
-                                 (/ new-height old-height))
-                      (gmt/scale-matrix))
-
-        shape     (set-path-new-values current-shape prev-shape transform)]
-    (get shape attr)))
-
-
 (defn- switch-text-change-value
   [prev-content         ; The :content of the text before the switch
    current-content      ; The :content of the text after the switch (a clean copy)
@@ -2154,141 +2023,6 @@
       current-content)))
 
 
-(defn- switch-fixed-layout-geom-change-value
-  [prev-shape           ; The shape before the switch
-   current-shape        ; The shape after the switch (a clean copy)
-   origin-shape         ; The original shape
-   attr]
-  ;; When there is a layout with fixed h or v sizing, we need
-  ;; to keep the width/height (and recalculate selrect and points)
-  (let [prev-width     (-> prev-shape :selrect :width)
-        current-width  (-> current-shape :selrect :width)
-        origin-width   (-> origin-shape :selrect :width)
-
-        prev-height    (-> prev-shape :selrect :height)
-        current-height (-> current-shape :selrect :height)
-        origin-height  (-> origin-shape :selrect :height)
-
-        x              (-> current-shape :selrect :x)
-        y              (-> current-shape :selrect :y)
-
-
-        h-sizing       (:layout-item-h-sizing prev-shape)
-        v-sizing       (:layout-item-v-sizing prev-shape)
-
-        final-width    (if (= :fix h-sizing)
-                         current-width
-                         (if (= origin-width current-width)
-                           prev-width       ;; same-size: preserve override
-                           current-width))  ;; different-size: use new component's
-
-        final-height   (if (= :fix v-sizing)
-                         current-height
-                         (if (= origin-height current-height)
-                           prev-height      ;; same-size: preserve override
-                           current-height)) ;; different-size: use new component's
-
-        selrect        (assoc (:selrect current-shape)
-                              :width final-width
-                              :height final-height
-                              :x x
-                              :y y
-                              :x1 x
-                              :y1 y
-                              :x2 (+ x final-width)
-                              :y2 (+ y final-height))]
-
-    (case attr
-      :width
-      final-width
-
-      :height
-      final-height
-
-      :selrect
-      selrect
-
-      :points
-      (-> selrect
-          (grc/rect->points)
-          (gsh/transform-points
-           (grc/rect->center selrect)
-           (or (:transform current-shape) (gmt/matrix)))))))
-
-
-(defn- switch-geom-change-value
-  [prev-shape current-shape attr]
-  ;; Composite geometry stores absolute coordinates. When preserving a size
-  ;; override across variants, keep the target variant's position and only carry
-  ;; the previous dimensions; otherwise :x/:y can disagree with :selrect/:points.
-  (let [prev-selrect (:selrect prev-shape)
-        current-selrect (:selrect current-shape)
-        final-width (:width prev-selrect)
-        final-height (:height prev-selrect)
-        x (:x current-selrect)
-        y (:y current-selrect)
-        selrect (assoc current-selrect
-                       :width final-width
-                       :height final-height
-                       :x x
-                       :y y
-                       :x1 x
-                       :y1 y
-                       :x2 (+ x final-width)
-                       :y2 (+ y final-height))]
-    (case attr
-      :selrect
-      selrect
-
-      :points
-      (-> selrect
-          (grc/rect->points)
-          (gsh/transform-points
-           (grc/rect->center selrect)
-           (or (:transform current-shape) (gmt/matrix)))))))
-
-
-(defn- equal-geometry?
-  "Returns true when the value of `attr` in `shape` is considered equal
-   to the corresponding value in `origin-shape`, ignoring positional
-   displacement (x/y).
-   For :selrect we compare width/height only;
-   for :points we normalise each vector so the first point is the
-   origin before comparing.
-   For :content on path shapes we compare the bounding-box width/height
-   of the path segments, again ignoring absolute position.
-
-   Comparisons use `mth/close?` (and `gpt/close?` for points) rather than
-   exact `=` because `previous-shape` here may carry sub-pixel drift from
-   interactive transform modifiers (e.g. an alt-drag duplicate of a
-   variant whose children are component instances). Without tolerance
-   this guard would miss equivalent geometries and let the `:else` branch
-   in `update-attrs-on-switch` carry stale `:selrect`/`:points` from the
-   pre-switch shape onto the freshly instantiated target."
-  [shape origin-shape attr]
-  (or (and (= attr :selrect)
-           (mth/close? (-> shape :selrect :width)  (-> origin-shape :selrect :width))
-           (mth/close? (-> shape :selrect :height) (-> origin-shape :selrect :height)))
-      (and (= attr :points)
-           (let [normalize-pts (fn [pts]
-                                 (when (seq pts)
-                                   (let [f (first pts)]
-                                     (mapv #(gpt/subtract % f) pts))))
-                 a (normalize-pts (get shape :points))
-                 b (normalize-pts (get origin-shape :points))]
-             (and (= (count a) (count b))
-                  (every? identity (map gpt/close? a b)))))
-      (and (= attr :content)
-           (cfh/path-shape? shape)
-           (let [ca (:content shape)
-                 cb (:content origin-shape)]
-             (and (some? ca) (some? cb)
-                  (let [selrect-a (segment/content->selrect ca)
-                        selrect-b (segment/content->selrect cb)]
-                    (and (some? selrect-a) (some? selrect-b)
-                         (mth/close? (:width selrect-a) (:width selrect-b))
-                         (mth/close? (:height selrect-a) (:height selrect-b)))))))))
-
 (defn update-attrs-on-switch
   "Copy attributes that have changed in the shape previous to the switch
    to the current shape (post switch). Used only on variants switch"
@@ -2302,10 +2036,11 @@
   [changes current-shape previous-shape current-root prev-root origin-ref-shape container]
   (let [;; We need to sync only the position relative to the origin of the component.
         ;; (see update-attrs for a full explanation)
-        previous-shape (-> previous-shape
-                           (resize-with-parent (get (:objects container) (:parent-id previous-shape))
-                                               (get (pcb/get-objects changes) (:parent-id current-shape)))
-                           (reposition-shape prev-root current-root))
+        previous-shape (clcg/switch-previous-geometry previous-shape
+                                                      (get (:objects container) (:parent-id previous-shape))
+                                                      (get (pcb/get-objects changes) (:parent-id current-shape))
+                                                      prev-root
+                                                      current-root)
         touched        (get previous-shape :touched #{})
         text-auto?     (and (cfh/text-shape? current-shape)
                             (contains? #{:auto-height :auto-width} (:grow-type current-shape)))]
@@ -2331,7 +2066,7 @@
 
                ;; If :selrect/:points values are already equal ignoring displacement,
                ;; don't copy them
-               (equal-geometry? previous-shape origin-ref-shape attr)
+               (clcg/equal-geometry? previous-shape origin-ref-shape attr)
 
                ;; If the attr is not touched, don't copy it
                (not (touched sync-group))
@@ -2410,19 +2145,19 @@
                                             touched)
 
                   path-change?
-                  (switch-path-change-value previous-shape
-                                            current-shape
-                                            origin-ref-shape
-                                            attr)
+                  (clcg/switch-path-change-value previous-shape
+                                                 current-shape
+                                                 origin-ref-shape
+                                                 attr)
 
                   (and (or (= :fix (:layout-item-h-sizing previous-shape))
                            (= :fix (:layout-item-v-sizing previous-shape)))
                        (contains? #{:points :selrect :width :height} attr))
-                  (switch-fixed-layout-geom-change-value previous-shape current-shape origin-ref-shape attr)
+                  (clcg/switch-fixed-layout-geom-change-value previous-shape current-shape origin-ref-shape attr)
 
                   (and (contains? #{:points :selrect} attr)
                        (not path-change?))
-                  (switch-geom-change-value previous-shape current-shape attr)
+                  (clcg/switch-geom-change-value previous-shape current-shape attr)
 
                   :else
                   (get previous-shape attr)))
@@ -2634,51 +2369,6 @@
                  (assoc shape-main :layout-grid-cells new-cells)))
              {:ignore-touched true}))]
     (pcb/concat-changes changes new-changes)))
-
-(defn- reposition-shape
-  "Expresses the shape (belonging to the origin-root instance) in the frame of the
-  dest-root instance, making the geometry of both instances directly comparable —
-  and copyable.
-
-  If the dest root's geometry is NOT overridden (touched), the instance follows
-  the origin's transformation verbatim (including rotation and flips), so a
-  translation by the roots' (untransformed) position delta suffices — position is
-  free per-instance placement.
-
-  If the dest root's geometry IS overridden (e.g. the user rotated the copy as a
-  whole), the instance keeps its own placement transform, so the origin shape is
-  additionally transformed by the roots' relative transformation (rotation /
-  flips) around the dest root center — geometric changes then land expressed in
-  the dest instance's own frame instead of wiping its placement."
-  [shape origin-root dest-root]
-  (let [shape-pos        (fn [shape]
-                           (gpt/point (dm/get-in shape [:selrect :x])
-                                      (dm/get-in shape [:selrect :y])))
-
-        origin-root-pos  (shape-pos origin-root)
-        dest-root-pos    (shape-pos dest-root)
-        delta            (gpt/subtract dest-root-pos origin-root-pos)
-
-        shape            (gsh/move shape delta)]
-    (if-not (ctk/touched-group? dest-root :geometry-group)
-      shape
-      (let [origin-transform (d/nilv (:transform origin-root) (gmt/matrix))
-            dest-transform   (d/nilv (:transform dest-root) (gmt/matrix))
-            rel-transform    (gmt/multiply dest-transform (gmt/inverse origin-transform))]
-        (if ^boolean (gmt/unit? rel-transform)
-          shape
-          ;; The roots differ in rotation/flips: rotate the whole (already moved)
-          ;; shape around the dest root center by the roots' relative transform.
-          ;; The :rotation attribute delta is fed through the :modifiers path so
-          ;; apply-transform keeps it consistent with the resulting matrix.
-          (let [center       (grc/rect->center (:selrect dest-root))
-                rel-rotation (mod (- (d/nilv (:rotation dest-root) 0)
-                                     (d/nilv (:rotation origin-root) 0))
-                                  360)]
-            (-> shape
-                (assoc-in [:modifiers :rotation] rel-rotation)
-                (gsh/apply-transform (gmt/transform-in center rel-transform))
-                (dissoc :modifiers))))))))
 
 (defn- make-change
   [container change]

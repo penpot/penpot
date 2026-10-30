@@ -4,8 +4,8 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
-   [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
+   [app.common.logic.component-geometry :as clcg]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
@@ -95,20 +95,19 @@
 
         orig-child      (get page-objects (:id orig-swapped-child))
         ;; If the user didn't move it, it goes to the place of related-shape-in-new
-        delta-fn        (when-not (ctk/touched-group? orig-child :geometry-group)
-                          #(gpt/subtract (grc/rect->point (:selrect related-shape-in-new))
-                                         (grc/rect->point (:selrect %))))]
+        target-pos      (when-not (ctk/touched-group? orig-child :geometry-group)
+                          (grc/rect->point (:selrect related-shape-in-new)))]
 
     (-> (pcb/concat-changes before-changes changes)
 
         ;; Move the previous shape to the new parent
         (pcb/change-parent (:parent-id related-shape-in-new) [orig-swapped-child] pos {:allow-altering-copies true})
 
-        (cll/generate-follow-parent (ctn/make-container page :page)
-                                    orig-child
-                                    (get page-objects (:parent-id orig-child))
-                                    current-parent
-                                    delta-fn)
+        (clcg/generate-follow-parent (ctn/make-container page :page)
+                                     orig-child
+                                     (get page-objects (:parent-id orig-child))
+                                     current-parent
+                                     target-pos)
 
         ;; We need to update the swap slot only when it pointed
         ;; to the swap-ref-id. Oterwise this is a swapped item

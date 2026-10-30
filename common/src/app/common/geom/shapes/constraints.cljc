@@ -8,6 +8,7 @@
   (:require
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.intersect :as gsi]
    [app.common.geom.shapes.points :as gpo]
@@ -359,3 +360,36 @@
             (-> modifiers
                 (ctm/add-modifiers modifiers-h)
                 (ctm/add-modifiers modifiers-v))))))))
+
+(defn follow-parent-modifiers
+  "Modifiers that make `child` follow the change of its parent from
+  `parent-before` to `parent-after`, through the child constraints."
+  [child parent-before parent-after]
+  (let [sr-before (:selrect parent-before)
+        sr-after  (:selrect parent-after)
+        modifiers (-> (ctm/empty)
+                      (ctm/resize (gpt/point (/ (:width sr-after) (max 0.01 (:width sr-before)))
+                                             (/ (:height sr-after) (max 0.01 (:height sr-before))))
+                                  (first (:points parent-before))
+                                  (:transform parent-before)
+                                  (:transform-inverse parent-before))
+                      (ctm/move (gpt/subtract (first (:points parent-after))
+                                              (first (:points parent-before)))))]
+    ;; A move doesn't need the constraints
+    (if (or (ctm/empty? modifiers) (ctm/only-move? modifiers))
+      modifiers
+      (calc-child-modifiers parent-before child modifiers false
+                            (:points child)
+                            (:points parent-before)
+                            (delay (:points parent-after))))))
+
+(defn resize-with-parent
+  "Resizes `shape` the way its constraints do when its parent changes from
+  `parent-before` to `parent-after`, keeping its top-left."
+  [shape parent-before parent-after]
+  (let [modifiers (follow-parent-modifiers shape parent-before parent-after)]
+    (if (ctm/empty? modifiers)
+      shape
+      (let [shape' (gtr/transform-shape shape modifiers)]
+        (gtr/move shape' (gpt/subtract (grc/rect->point (:selrect shape))
+                                       (grc/rect->point (:selrect shape'))))))))

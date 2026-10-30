@@ -183,6 +183,15 @@
        ^boolean (mth/close? (dm/get-prop rect1 :height)
                             (dm/get-prop rect2 :height))))
 
+(defn close-size?
+  "Returns true when both rects have about the same width and height,
+  wherever they are."
+  [rect1 rect2]
+  (and ^boolean (mth/close? (dm/get-prop rect1 :width)
+                            (dm/get-prop rect2 :width))
+       ^boolean (mth/close? (dm/get-prop rect1 :height)
+                            (dm/get-prop rect2 :height))))
+
 (defn rect->points
   [rect]
   (dm/assert!

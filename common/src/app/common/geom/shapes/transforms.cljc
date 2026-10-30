@@ -15,7 +15,8 @@
    [app.common.geom.shapes.common :as gco]
    [app.common.math :as mth]
    [app.common.types.modifiers :as ctm]
-   [app.common.types.path :as path]))
+   [app.common.types.path :as path]
+   [app.common.types.path.segment :as segment]))
 
 #?(:clj (set! *warn-on-reflection* true))
 
@@ -580,3 +581,76 @@
 
        :else
        group))))
+
+(defn translate-relative
+  "Moves `shape` by the offset between the top-left of `from` and the
+  top-left of `to`."
+  [shape from to]
+  (move shape (gpt/subtract (grc/rect->point (:selrect to))
+                            (grc/rect->point (:selrect from)))))
+
+(defn transform-relative
+  "Moves `shape` like `translate-relative` and then applies the transform of
+  `to` relative to `from` (rotation and flips) around the center of `to`."
+  [shape from to]
+  (let [shape          (translate-relative shape from to)
+        from-transform (d/nilv (:transform from) (gmt/matrix))
+        to-transform   (d/nilv (:transform to) (gmt/matrix))
+        rel-transform  (gmt/multiply to-transform (gmt/inverse from-transform))]
+    (if ^boolean (gmt/unit? rel-transform)
+      shape
+      ;; The :rotation attribute delta is fed through the :modifiers path so
+      ;; apply-transform keeps it consistent with the resulting matrix.
+      (let [center       (grc/rect->center (:selrect to))
+            rel-rotation (mod (- (d/nilv (:rotation to) 0)
+                                 (d/nilv (:rotation from) 0))
+                              360)]
+        (-> shape
+            (assoc-in [:modifiers :rotation] rel-rotation)
+            (apply-transform (gmt/transform-in center rel-transform))
+            (dissoc :modifiers))))))
+
+(defn set-selrect-size
+  "Sets the size of the selrect of `shape`, keeping the selrect x/y, and
+  recomputes its points with the shape transform."
+  [shape width height]
+  (let [x       (-> shape :selrect :x)
+        y       (-> shape :selrect :y)
+        selrect (assoc (:selrect shape)
+                       :width width
+                       :height height
+                       :x x
+                       :y y
+                       :x1 x
+                       :y1 y
+                       :x2 (+ x width)
+                       :y2 (+ y height))
+        points  (-> selrect
+                    (grc/rect->points)
+                    (gco/transform-points
+                     (grc/rect->center selrect)
+                     (or (:transform shape) (gmt/matrix))))]
+    (assoc shape
+           :width width
+           :height height
+           :selrect selrect
+           :points points)))
+
+(defn transform-path-content
+  "Transforms the content of the path `shape` by `transform` around the
+  origin of coordinates and moves the shape so the center of its points
+  lands on `center`."
+  [shape transform center]
+  (let [new-content   (segment/transform-content
+                       (:content shape)
+                       (gmt/transform-in (gpt/point 0 0) transform))
+        new-points    (-> (segment/content->selrect new-content)
+                          (grc/rect->points))
+        points-center (gco/points->center new-points)
+        new-selrect   (calculate-selrect new-points points-center)
+        delta         (gpt/subtract points-center (first new-points))]
+    (-> shape
+        (assoc :content new-content
+               :points new-points
+               :selrect new-selrect)
+        (absolute-move (gpt/subtract center delta)))))

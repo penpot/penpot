@@ -174,9 +174,15 @@
 (dm/export gtr/apply-objects-modifiers)
 (dm/export gtr/apply-children-modifiers)
 (dm/export gtr/update-shapes-geometry)
+(dm/export gtr/translate-relative)
+(dm/export gtr/transform-relative)
+(dm/export gtr/set-selrect-size)
+(dm/export gtr/transform-path-content)
 
 ;; Constratins
 (dm/export gct/calc-child-modifiers)
+(dm/export gct/follow-parent-modifiers)
+(dm/export gct/resize-with-parent)
 
 ;; Intersection
 (dm/export gsi/overlaps?)
