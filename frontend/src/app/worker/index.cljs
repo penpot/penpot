@@ -35,6 +35,15 @@
           (log/dbg :hint "page indexed" :id (:id page) :elapsed elapsed ::log/sync? true))))
     nil))
 
+(defmethod impl/handler :index/finalize
+  [{:keys [page-id]}]
+  (swap! state #(-> %
+                    (update :pages-index dissoc page-id)
+                    (update ::selection dissoc page-id)
+                    (update ::snap dissoc page-id)))
+  (log/dbg :hint "page index dropped" :id page-id ::log/sync? true)
+  nil)
+
 (defmethod impl/handler :index/update
   [{:keys [page-id changes] :as message}]
   (let [tpoint (ct/tpoint-ms)]

@@ -50,6 +50,24 @@
      :frame-id uuid/zero
      :obj shape}))
 
+(t/deftest finalize-drops-only-that-page
+  (let [page-a (make-page "Page A")
+        page-b (make-page "Page B")]
+    (initialize page-a)
+    (initialize page-b)
+    (impl/handler {:cmd :index/finalize :page-id (:id page-a)})
+    (t/is (= {:pages     #{(:id page-b)}
+              :selection #{(:id page-b)}
+              :snap      #{(:id page-b)}}
+             (indexed-ids @idx/state)))))
+
+(t/deftest finalize-unknown-page-is-noop
+  (let [page (make-page "Page 1")]
+    (initialize page)
+    (let [before @idx/state]
+      (impl/handler {:cmd :index/finalize :page-id (uuid/next)})
+      (t/is (= before @idx/state)))))
+
 (t/deftest update-ignores-pages-not-indexed
   (let [page    (make-page "Page 1")
         page-id (uuid/next)]
