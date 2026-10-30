@@ -535,9 +535,10 @@
                      (if (= max norm-g)
                        (+ 120 (* 60 (/ (- norm-b norm-r) (- max min))))
                        (+ 240 (* 60 (/ (- norm-r norm-g) (- max min)))))))
-        s      (if (and (> l 0) (<= l 0.5))
-                 (/ (- max min) (* 2 l))
-                 (/ (- max min) (- 2 (* 2 l))))]
+        s      (cond
+                 (= max min) 0
+                 (<= l 0.5) (/ (- max min) (* 2 l))
+                 :else (/ (- max min) (- 2 (* 2 l))))]
     [(mod (+ h 360) 360) s l]))
 
 (defn hex->hsv
