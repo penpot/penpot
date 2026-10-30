@@ -82,6 +82,13 @@
     (t/is (= :validation (th/ex-type (:error out))))
     (t/is (= :media-type-not-allowed (th/ex-code (:error out))))))
 
+(t/deftest upload-tempfile-rejects-a-key-it-does-not-declare
+  (let [out (th/management-command! {::th/type :upload-tempfile
+                                     ::rpc/auth-key-id :nexus})]
+    (t/is (some? (:error out)))
+    (t/is (= :authorization (th/ex-type (:error out))))
+    (t/is (= :shared-key-not-allowed (th/ex-code (:error out))))))
+
 (t/deftest duplicate-file
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))

@@ -366,6 +366,24 @@
     (wrap-params-validation cfg $ mdata)
     (wrap-authentication cfg $ mdata)))
 
+(defn- wrap-shared-key-authorization
+  "Authorizes a shared-key caller against the method's `::shared-keys`.
+
+  A management method declares the shared-key ids allowed to call it with
+  `::shared-keys`. When the metadata is absent any configured shared key is
+  accepted, preserving the previous behavior. When it is present and empty no
+  key is accepted."
+  [_ f mdata]
+  (if (contains? mdata ::shared-keys)
+    (let [allowed-keys (::shared-keys mdata)]
+      (fn [cfg params]
+        (if (contains? allowed-keys (::auth-key-id params))
+          (f cfg params)
+          (ex/raise :type :authorization
+                    :code :shared-key-not-allowed
+                    :hint "shared key is not allowed for this method"))))
+    f))
+
 (defn- wrap-management
   [cfg f mdata]
   (as-> f $
@@ -376,7 +394,10 @@
     (wrap-audit cfg $ mdata)
     (wrap-nitrate-sso cfg $ mdata)
     (wrap-params-validation cfg $ mdata)
-    (wrap-authentication cfg $ mdata)))
+    (wrap-authentication cfg $ mdata)
+    ;; Outermost on purpose: a denied key never opens a transaction,
+    ;; validates params or runs the method body.
+    (wrap-shared-key-authorization cfg $ mdata)))
 
 (defn- process-method
   [cfg wrap-fn [f mdata]]

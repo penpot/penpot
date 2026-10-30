@@ -28,11 +28,16 @@
   schema:upload-tempfile-result
   [:map {:title "upload-templfile-result"}])
 
+(def ^:private allowed-shared-key-ids
+  "The exporter uploads its artifacts; the media worker uploads its results."
+  #{:exporter :media-processor})
+
 (sv/defmethod ::upload-tempfile
   {::doc/added "2.12"
    ::sm/params schema:upload-tempfile-params
    ::rpc/multipart-only-params [:content]
-   ::sm/result schema:upload-tempfile-result}
+   ::sm/result schema:upload-tempfile-result
+   ::rpc/shared-keys allowed-shared-key-ids}
   [cfg {:keys [::rpc/profile-id content]}]
   (media.v/validate-media-type! content cm/tempfile-types)
   (let [storage (sto/resolve cfg)

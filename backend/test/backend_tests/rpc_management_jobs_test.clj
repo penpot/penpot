@@ -13,6 +13,7 @@
    [app.db :as db]
    [app.jobs :as jobs]
    [app.metrics :as-alias mtx]
+   [app.rpc :as-alias rpc]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
@@ -133,6 +134,14 @@
 (t/deftest claim-job-validates-params
   (let [out (mgmt :claim-job {:job-id (uuid/next)})]
     (t/is (= :validation (th/ex-type (:error out))))))
+
+(t/deftest claim-job-rejects-a-key-it-does-not-declare
+  (let [out (mgmt :claim-job {::rpc/auth-key-id :nexus
+                              :job-id (uuid/next)
+                              :scheduled-at (ct/now)})]
+    (t/is (some? (:error out)))
+    (t/is (= :authorization (th/ex-type (:error out))))
+    (t/is (= :shared-key-not-allowed (th/ex-code (:error out))))))
 
 (t/deftest report-job-progress-appends-a-progress-event
   (let [job-id (mk-job {})

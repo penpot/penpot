@@ -547,13 +547,30 @@
       (method-fn params))))
 
 (defn management-command!
+  "Invokes a management RPC method.
+
+  Injects the first shared-key id declared by the method when the test does
+  not pass one, so the existing tests exercise the allowed path without
+  repeating the key. Tests that check a rejection pass
+  `::rpc/auth-key-id` explicitly."
   [{:keys [::type] :as data}]
-  (let [[_ method-fn] (get-in *system* [:app.rpc/management-methods type])]
+  (let [[mdata method-fn] (get-in *system* [:app.rpc/management-methods type])]
     (when-not method-fn
       (ex/raise :type :assertion
                 :code :rpc-method-not-found
                 :hint (str/ffmt "management rpc method '%' not found" (name type))))
-    (let [params (prepare-rpc-params data)]
+    (let [data (cond
+                 (contains? data ::rpc/auth-key-id)
+                 data
+
+                 (contains? data :app.http/auth-key-id)
+                 (assoc data ::rpc/auth-key-id (:app.http/auth-key-id data))
+
+                 :else
+                 (if-let [key-id (first (::rpc/shared-keys mdata))]
+                   (assoc data ::rpc/auth-key-id key-id)
+                   data))
+          params (prepare-rpc-params data)]
       (try-on! (method-fn params)))))
 
 (def multipart-headers
