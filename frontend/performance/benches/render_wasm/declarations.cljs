@@ -19,6 +19,8 @@
 
   Collection validates every declaration, derives each scene seed and
   returns plain data."
+  (:require-macros
+   [app.common.exceptions :as ex])
   (:require
    [app.common.schema :as sm]
    [app.common.transit :as t]
@@ -340,10 +342,9 @@
   its wire representation. This permits NaN and infinities while still
   rejecting values that Transit cannot encode."
   [value]
-  (try
-    (let [encoded (t/encode-str value)]
-      (= encoded (-> encoded t/decode-str t/encode-str)))
-    (catch :default _ false)))
+  (true? (ex/ignoring
+          (let [encoded (t/encode-str value)]
+            (= encoded (-> encoded t/decode-str t/encode-str))))))
 
 (defn project-case
   "Plain-data projection of a registered case: internal keys (`:ns`, `:run!`)

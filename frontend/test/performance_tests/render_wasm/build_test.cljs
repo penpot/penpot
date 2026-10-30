@@ -15,6 +15,7 @@
    ["os" :as os]
    ["path" :as path]
    [app.common.transit :as transit]
+   [benches.render-wasm.errors :as errors]
    [benches.render-wasm.node.build :as build]
    [benches.render-wasm.node.process :as process]
    [cljs.test :as t :include-macros true]
@@ -222,6 +223,22 @@
           (t/is (str/includes? log "compiler stderr before failure\n"))
           (t/is (= "partial renderer output\n"
                    (fs/readFileSync (path/join (:renderer-dir retained) "partial.js") "utf8"))))))
+     done)))
+
+(t/deftest failed-manifest-save-makes-the-preparation-error-fatal
+  (t/async done
+    (complete
+     ((^:async fn []
+        (install-renderer
+         (str failing-compiler
+              "fs.unlinkSync(path.join(path.dirname(process.env.FRONTEND_DEST), 'build.transit'));\n"))
+        (let [cause (await (rejected (build/prepare {:root (frontend-root)
+                                                     :build-timeout-ms 10000
+                                                     :on-created record-created})))
+              data  (ex-data cause)]
+          (t/is (errors/fatal? cause))
+          (t/is (string? (:manifest-error data)))
+          (t/is (= :process-exit (:type (ex-data (ex-cause cause))))))))
      done)))
 
 (t/deftest timed-out-lock-holder-retains-its-attempt-and-retry-gets-a-new-id
