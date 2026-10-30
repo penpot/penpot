@@ -1522,8 +1522,8 @@
              (let [objects (u/locate-objects file-id page-id)
                    shape (u/locate-shape file-id page-id id)]
                (when (ctn/in-any-component? objects shape)
-                 (let [[root component] (u/locate-component objects shape)]
-                   (shape-proxy plugin-id (:component-file root) (:main-instance-page component) (:id root))))))
+                 (let [root (ctn/get-instance-root objects shape)]
+                   (shape-proxy plugin-id file-id page-id (:id root))))))
 
            :componentHead
            (fn []
@@ -1538,8 +1538,10 @@
              (let [objects (u/locate-objects file-id page-id)
                    shape (u/locate-shape file-id page-id id)]
                (when (ctn/in-any-component? objects shape)
-                 (when-let [[head component] (u/locate-head-component objects shape)]
-                   (lib-component-proxy plugin-id (:component-file head) (:id component))))))
+                 (let [[head component] (u/locate-head-component objects shape)]
+                   ;; The component is nil when its library is not available
+                   (when (some? component)
+                     (lib-component-proxy plugin-id (:component-file head) (:id component)))))))
 
            :detach
            (fn []

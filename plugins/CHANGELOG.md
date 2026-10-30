@@ -12,6 +12,9 @@
 
 ### 🩹 Fixes
 
+- **plugins-runtime:** `Shape.component()` returns `null` for a copy whose library is not available, instead of throwing `Assert failed: (uuid? id)`.
+- **plugins-runtime:** `Shape.componentRoot()` returns the root of the shape's own component tree. It used to return a shape that pointed at nothing when the copy was on another page or file than its main, and threw when the copy's library was not available.
+- **plugins-runtime:** `LibraryComponent.mainInstance()` returns `null` for a deleted component, instead of a shape with an empty `id` whose `parent` throws.
 - **plugins-runtime:** `LibraryComponent.remove()` now rejects linked-library and missing component handles, and does nothing for an already deleted component.
 - **plugins-runtime**: An interaction obtained from `Shape.interactions` now keeps addressing that interaction instead of the position it held when the array was read. Removing every interaction of a shape from a single read removes all of them rather than leaving some behind, and writing through a held interaction after an earlier one is removed no longer lands on a different interaction.
 - **plugins-runtime**: `Shape.removeInteraction()` now rejects an interaction belonging to a different shape with a validation error, instead of removing whichever interaction sat at the same position on the target shape.
