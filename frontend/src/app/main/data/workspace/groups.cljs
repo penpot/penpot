@@ -290,7 +290,8 @@
              selected    (->> (or ids (dsh/lookup-selected state))
                               (cfh/clean-loops objects)
                               (remove #(ctn/has-any-copy-parent? objects (get objects %))))
-             shapes      (shapes-for-grouping objects selected)
+             shapes      (->> (shapes-for-grouping objects selected)
+                              (remove ctk/is-variant?))
              first-shape (first shapes)]
          (when-not (empty? shapes)
            (let [;; If the selected shape is a group, we can use it. If not,
