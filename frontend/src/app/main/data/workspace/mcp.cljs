@@ -45,6 +45,32 @@
 (defonce interval-sub
   (atom nil))
 
+;; Resolves the promise that keeps the session Web Lock held; nil when none is.
+(defonce ^:private session-lock-release
+  (atom nil))
+
+(defn- hold-session-lock
+  "Holds a shared Web Lock while the MCP connection is requested. Chrome
+  does not freeze a page that holds a Web Lock, and a frozen page cannot
+  run the plugin."
+  []
+  (when-let [locks (and (nil? @session-lock-release)
+                        (unchecked-get globals/navigator "locks"))]
+    (let [released (js/Promise. (fn [resolve] (reset! session-lock-release resolve)))
+          release  @session-lock-release]
+      (-> (.request locks "penpot-mcp-session" #js {:mode "shared"} (constantly released))
+          (.catch (fn [cause]
+                    ;; lets a later connection request try again, unless a
+                    ;; newer lock request has already replaced this one
+                    (compare-and-set! session-lock-release release nil)
+                    (log/warn :hint "unable to hold the MCP session lock" :cause cause)))))))
+
+(defn- release-session-lock
+  []
+  (when-let [release @session-lock-release]
+    (reset! session-lock-release nil)
+    (release)))
+
 (defn connect-mcp
   []
   (ptk/reify ::connect-mcp
@@ -61,7 +87,12 @@
     (watch [_ state _]
       (if (get-in state [:mcp :connection-requested])
         (rx/of (ptk/data-event ::connect))
-        (rx/empty)))))
+        (rx/empty)))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (when (get-in state [:mcp :connection-requested])
+        (hold-session-lock)))))
 
 (defn- start-reconnect-watcher
   []
@@ -134,6 +165,7 @@
 
     ptk/EffectEvent
     (effect [_ _ _]
+      (release-session-lock)
       (stop-reconnect-watcher!))))
 
 (defn- extension-hello?
@@ -231,6 +263,7 @@
                          (.removeEventListener globals/window "message" on-message)
                          (when @announce?
                            (announce-session "disconnected" nil))
+                         (release-session-lock)
                          (stop-reconnect-watcher!)
                          (dp/close-plugin! default-manifest))))
         (.addEventListener globals/window "message" on-message)
