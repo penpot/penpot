@@ -111,16 +111,6 @@
                                                            (:params registered))))]
     (as-invalid-case! #(decl/check-collected-case projected))))
 
-(defn scene-ids
-  "Registered scene ids in declaration order."
-  []
-  (mapv :id (decl/scenes)))
-
-(defn case-ids
-  "Registered case ids in declaration order."
-  []
-  (mapv :id (decl/cases)))
-
 (defn collect-cases
   "Selected benchmark cases as plain data.
 
