@@ -436,7 +436,15 @@
         new-selrect
         (-> new-points
             (gco/transform-points sr-transform)
-            (grc/points->rect))]
+            (grc/points->rect))
+
+        preserve-unflipped
+        (fn [after attr]
+          (if (or (get group attr) (get after attr))
+            after
+            (if (contains? group attr)
+              (assoc after attr (get group attr))
+              (dissoc after attr))))]
 
     ;; Updates the shape and the applytransform-rect will update the other properties
     (-> group
@@ -448,7 +456,11 @@
         ;; need to remove the flip flags
         (assoc :flip-x false)
         (assoc :flip-y false)
-        (apply-transform (gmt/matrix)))))
+        (apply-transform (gmt/matrix))
+        ;; Regrouping still recalculates real flips. An unchanged unflipped
+        ;; axis keeps its nil/false/absent value for exact undo and redo.
+        (preserve-unflipped :flip-x)
+        (preserve-unflipped :flip-y))))
 
 (defn update-mask-selrect
   [masked-group children]

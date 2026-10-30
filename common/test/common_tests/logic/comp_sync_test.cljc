@@ -1218,6 +1218,40 @@
     (t/is (= (:shapes copy-group) (:shapes copy-group'')))
     (t/is (= (geometry copy-group) (geometry copy-group'')))))
 
+(t/deftest test-sync-new-child-follows-an-overridden-group-frame
+  (let [file         (-> (thf/sample-file :file1)
+                         (add-group-component-with-copy)
+                         (touch-copy-group-geometry)
+                         (ths/add-sample-shape :free-shape :x 60 :y 60 :width 10 :height 10))
+        page         (thf/current-page file)
+        changes1     (cls/generate-relocate (-> (pcb/empty-changes nil (:id page))
+                                                (pcb/with-objects (:objects page)))
+                                            (thi/id :main-group) 0 #{(thi/id :free-shape)})
+        updated-file (-> (thf/apply-changes file changes1)
+                         (update-fill :main-child1 "#fabada"))
+        changes2     (sync-file-changes updated-file)
+        file'        (thf/apply-changes updated-file changes2)
+        file''       (thf/apply-undo-changes file' changes2)
+        redone       (thf/apply-changes file'' changes2)
+        copy-group   (ths/get-shape file :copy-group)
+        copy-group'  (ths/get-shape file' :copy-group)
+        added        (ths/get-shape-by-id file' (first (:shapes copy-group')))]
+    ;; The main grew from 30x10 to 60x60. The copy keeps its authored frame;
+    ;; its new child follows the resulting 1/2 and 1/6 size ratios.
+    (t/is (= (geometry copy-group) (geometry copy-group')))
+    (t/is (= #{:geometry-group} (:touched copy-group')))
+    (t/is (= (thi/id :free-shape) (:shape-ref added)))
+    (t/is (gsh/close-attrs? :points
+                            [(gpt/point 135 (/ 355.0 3)) (gpt/point 140 (/ 355.0 3))
+                             (gpt/point 140 120) (gpt/point 135 120)]
+                            (:points added) 1e-10))
+    (t/is (nil? (:touched added)))
+    (doseq [label [:copy-child1 :copy-child2]]
+      (t/is (= (geometry (ths/get-shape file label)) (geometry (ths/get-shape file' label))))
+      (t/is (= #{:geometry-group} (:touched (ths/get-shape file' label)))))
+    (t/is (uc/same-state? (uc/snapshot updated-file) (uc/snapshot file'')))
+    (t/is (uc/same-state? (uc/snapshot file') (uc/snapshot redone)))))
+
 (t/deftest test-sync-undo-group-after-remove-and-update
   (let [;; ==== Setup
         file         (-> (thf/sample-file :file1)
