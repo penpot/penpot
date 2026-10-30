@@ -234,14 +234,29 @@
       (->> (encode data opts)
            (bytes->str)))))
 
+;; A cache used by `decode-str` of `[handlers type reader]`.
+#?(:cljs
+   (def ^:private reader-cache (atom nil)))
+
 (defn decode-str
   ([data] (decode-str data nil))
   ([data opts]
    #?(:cljs
-      (let [type   (:type opts :json)
-            params {:handlers @read-handler-map}
-            reader (t/reader type params)]
-        (t/read reader data))
+      (let [type     (:type opts :json)
+            handlers @read-handler-map
+            [cached-handlers cached-type cached] @reader-cache
+            reader (if (and (identical? cached-handlers handlers)
+                            (= cached-type type))
+                     cached
+                     (let [reader (t/reader type {:handlers handlers})]
+                       (reset! reader-cache [handlers type reader])
+                       reader))]
+        (try
+          (t/read reader data)
+          (catch :default cause
+            ;; A failed read leaves the reader's read cache dirty.
+            (reset! reader-cache nil)
+            (throw cause))))
       :clj
       (-> (str->bytes data)
           (decode opts)))))
