@@ -126,6 +126,13 @@ test("passes an explicit Penpot session ID from the tool call to plugin dispatch
     assert.match(JSON.stringify(body), /chosen-tab/);
 });
 
+test("accepts tool calls with request bodies larger than 100 KiB", async (t) => {
+    t.mock.method(server.pluginBridge, "executePluginTask", async () => ({ data: "ok" }));
+    const code = `return "${"x".repeat(200_000)}".length;`;
+    const response = await modernRequest("tools/call", { name: "execute_code", arguments: { code } });
+    assert.equal(response.status, 200);
+});
+
 test("supports older Streamable HTTP clients without allocating a session", async () => {
     const client = new Client({ name: "legacy-test", version: "1" });
     const transport = new StreamableHTTPClientTransport(new URL(`${baseUrl}/mcp`));
