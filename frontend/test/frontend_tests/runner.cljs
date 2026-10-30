@@ -38,6 +38,7 @@
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
    [frontend-tests.data.workspace-variant-rename-test]
+   [frontend-tests.data.workspace-variants-test]
    [frontend-tests.data.workspace-versions-test]
    [frontend-tests.debug-logging-test]
    [frontend-tests.errors-governor-test]
@@ -189,6 +190,7 @@
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
    'frontend-tests.data.workspace-variant-rename-test
+   'frontend-tests.data.workspace-variants-test
    'frontend-tests.data.workspace-versions-test
    'frontend-tests.debug-logging-test
    'frontend-tests.errors-governor-test

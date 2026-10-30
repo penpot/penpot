@@ -511,3 +511,55 @@
     (thf/validate-file! file')
     (t/is (some? new-shape'))
     (t/is (not= (:parent-id new-shape') (:id container)))))
+
+(defn- two-property-file-with-other-page
+  []
+  (-> (thf/sample-file :file1 :page-label :page1)
+      (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02)
+      (thf/add-sample-page :page2)))
+
+(t/deftest test-update-property-value-skips-when-main-not-in-objects
+  (let [file    (two-property-file-with-other-page)
+        other   (thf/current-page file)
+        comp01  (thc/get-component file :c01)
+        main    (ths/get-shape file :m01 :page-label :page1)
+        before  (:variant-properties comp01)
+        label   (:variant-name main)
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id other))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects other))
+                    (clvp/generate-update-property-value (:id comp01) 1 "crítica"))
+
+        file'   (thf/apply-changes file changes)
+        comp01' (thc/get-component file' :c01)
+        main'   (ths/get-shape file' :m01 :page-label :page1)]
+
+    (thf/validate-file! file')
+    (t/is (empty? (:redo-changes changes)))
+    (t/is (= before (:variant-properties comp01')))
+    (t/is (= label (:variant-name main')))))
+
+(t/deftest test-update-property-value-writes-main-page-and-chains
+  (let [file     (two-property-file-with-other-page)
+        mains    (thf/get-page file :page1)
+        comp01   (thc/get-component file :c01)
+
+        changes  (-> (pcb/empty-changes nil)
+                     (pcb/with-page-id (:id mains))
+                     (pcb/with-library-data (:data file))
+                     (pcb/with-objects (:objects mains))
+                     (clvp/generate-update-property-value (:id comp01) 0 "active")
+                     (clvp/generate-update-property-value (:id comp01) 1 "crítica"))
+
+        file'    (thf/apply-changes file changes)
+        comp01'  (thc/get-component file' :c01)
+        main'    (ths/get-shape file' :m01 :page-label :page1)
+        props'   (:variant-properties comp01')]
+
+    (thf/validate-file! file')
+    (t/is (= "active" (-> props' first :value)))
+    (t/is (= "crítica" (-> props' second :value)))
+    (t/is (= (ctv/properties-to-name props') (:variant-name main')))
+    (t/is (= "active, crítica" (:variant-name main')))))
