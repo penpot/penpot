@@ -12,6 +12,7 @@
    [app.common.test-helpers.composable.comp.setups :as setup]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.composable.gen :as cg]
+   [app.common.test-helpers.composable.grid :as grid]
    [app.common.test-helpers.composable.oracle :as oracle]
    [app.common.test-helpers.composable.shadow :as shadow]
    [app.common.test-helpers.composable.variants :as variants]
@@ -19,7 +20,9 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.texts :as thtx]
-   [clojure.test :as t]))
+   [app.common.uuid :as uuid]
+   [clojure.test :as t]
+   [clojure.walk :as walk]))
 
 (t/use-fixtures :each thi/test-fixture)
 
@@ -644,6 +647,20 @@
                        :ops [[:edit 0 0 1 2] [:update-main 0] [:library-sync]
                              [:undo] [:redo] [:reset 0] [:sync 1]
                              [:switch 1 0 0 0] [:detach 0 0 0 0] [:delete 0 0 0 0]]}))))
+
+(t/deftest resizing-a-copy-scales-a-child-through-its-authored-constraint
+  (let [program   {:world [2 1 {:text true :text-styles true :layout nil}]
+                   :ops [[:delete 0 0 0 0] [:style 5 9 1] [:resize 1 0 0 0]]}
+        situation (:situation (cg/run program))
+        file      (tm/file situation)
+        page      (thf/current-page file)
+        child     (:shape (first (filter #(= [2 0 0] (:path %)) (cg/tree situation))))
+        expected  (oracle/expected-geometry file page (cf/libraries situation) child)]
+    (t/is (= :scale (:constraints-v child)))
+    (t/is (= #{:constraints-group} (:touched child)))
+    ;; The parent shrinks from 100 to 80, so a scaled 50 child becomes 40.
+    (t/is (gsh/close-attrs? :height 40 (:height expected) 0.01))
+    (t/is (gsh/close-attrs? :height 40 (:height child) 0.01))))
 
 (t/deftest detached-swapped-head-follows-its-own-component-without-position-overrides
   (t/is (map? (cg/run {:world [2 1 {:library true :variants true}]

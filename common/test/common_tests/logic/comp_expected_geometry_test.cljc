@@ -288,6 +288,27 @@
         (t/is (= box (child-box synced)) "the sync keeps it there")
         (t/is (= "#ff0000" (-> (ths/get-shape synced :copy-child) :fills first :fill-color)))))))
 
+(t/deftest a-resized-copy-root-places-children-through-their-authored-constraints
+  (doseq [[constraints-h box] [[:right [170 10 20 20]]
+                               [:scale [140 10 40 20]]
+                               [:leftright [70 10 120 20]]]]
+    (t/testing (name constraints-h)
+      (let [file     (component-with-child :left)
+            page     (thf/current-page file)
+            authored (thf/apply-changes file
+                                        (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                                    #{(thi/id :copy-child)}
+                                                                    #(assoc % :constraints-h constraints-h)
+                                                                    (:objects page)
+                                                                    {}))
+            resized  (resize authored :copy-root 200 100)
+            synced   (edit-and-sync resized)]
+        (t/is (= #{:constraints-group} (:touched (ths/get-shape resized :copy-child))))
+        (t/is (= box (child-box resized)) "the resize places the child")
+        (t/is (= box (child-box synced)) "the sync keeps it there")
+        (t/is (= constraints-h (:constraints-h (ths/get-shape synced :copy-child))))
+        (t/is (= "#ff0000" (-> (ths/get-shape synced :copy-child) :fills first :fill-color)))))))
+
 (t/deftest a-copy-root-resized-with-its-content-touches-only-the-root
   (let [file    (-> (component-with-child :scale)
                     (ths/update-shape :main-child :strokes [{:stroke-color "#000000" :stroke-opacity 1

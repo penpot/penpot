@@ -542,12 +542,24 @@
        (gsh/close-attrs? :points (:points shape) (:points other))
        (mth/close? (:content-scale shape 1) (:content-scale other 1))))
 
+(defn- authored-constraints
+  "The constraints that the copy shapes `ids` author, by the id of the main
+  shape each one pairs with."
+  [objects ids]
+  (into {}
+        (keep (fn [id]
+                (let [shape (get objects id)]
+                  (when (ctk/touched-group? shape :constraints-group)
+                    [(:shape-ref shape) (d/without-nils (select-keys shape [:constraints-h :constraints-v]))]))))
+        ids))
+
 (defn- placed-like
   "The main `objects` with the subtree of `shape-main` placed like `placed`,
   a copy shape expressed in the main's frame: resized to its size, its
   children following through their constraints and layouts, then turned
-  and moved with it as one piece."
-  [objects shape-main placed]
+  and moved with it as one piece. A child resizes through the constraints
+  its copy authors (`authored`, by main shape id) instead of the main's."
+  [objects shape-main placed authored]
   (let [scale   (/ (:content-scale placed 1) (:content-scale shape-main 1))
         width   (-> placed :selrect :width)
         height  (-> placed :selrect :height)
@@ -556,7 +568,7 @@
                   objects
                   (let [modif-tree (gm/set-objects-modifiers
                                     {(:id shape-main) {:modifiers (ctm/change-size shape-main width height)}}
-                                    objects)]
+                                    (reduce-kv #(d/update-when %1 %2 merge %3) objects authored))]
                     (reduce-kv (fn [objects id {:keys [modifiers]}]
                                  (d/update-when objects id gsh/transform-shape modifiers))
                                objects
@@ -625,7 +637,9 @@
                            (in-main-frame shape-inst (:root-inst ctx) (:root-main ctx)))
           main-container (cond-> main-container
                            (and (some? placed) (not (close-geometry? placed shape-main)))
-                           (update :objects placed-like shape-main placed))
+                           (update :objects placed-like shape-main placed
+                                   (authored-constraints (:objects container)
+                                                         (cfh/get-children-ids (:objects container) (:id shape-inst)))))
           ctx            (assoc ctx :main-container main-container)
           shape-main     (get-in main-container [:objects (:id shape-main)])
           changes        (-> changes
@@ -1659,7 +1673,7 @@
            main-objects (:objects (:container (meta main)))
            main-parent  (get main-objects (:parent-id main))]
        (if (and parent main-parent)
-         (let [placed (get (placed-like main-objects main-parent parent) (:id main))]
+         (let [placed (get (placed-like main-objects main-parent parent (authored-constraints objects [id])) (:id main))]
            (generate-take-placement changes shape placed objects
                                     (and (ctsl/any-layout-immediate-child? objects shape)
                                          (not (ctsl/position-absolute? shape)))))
