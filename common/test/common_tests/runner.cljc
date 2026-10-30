@@ -63,6 +63,7 @@
    [common-tests.logic.comp-main-edit-breaks-copy-slots-test]
    [common-tests.logic.comp-remove-swap-slots-test]
    [common-tests.logic.comp-reset-test]
+   [common-tests.logic.comp-sync-layout-items-test]
    [common-tests.logic.comp-sync-test]
    [common-tests.logic.comp-touched-test]
    [common-tests.logic.copying-and-duplicating-test]
@@ -170,6 +171,7 @@
    'common-tests.logic.comp-main-edit-breaks-copy-slots-test
    'common-tests.logic.comp-remove-swap-slots-test
    'common-tests.logic.comp-reset-test
+   'common-tests.logic.comp-sync-layout-items-test
    'common-tests.logic.comp-sync-test
    'common-tests.logic.comp-touched-test
    'common-tests.logic.copying-and-duplicating-test
