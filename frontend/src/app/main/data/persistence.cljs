@@ -900,14 +900,23 @@
 
 (defn- with-changes
   "Adds the changes of a queue entry to the save params, one group per
-  commit so the backend can reject them one by one."
+  commit so the backend can reject them one by one.
+
+  The redo keeps the order the edits were made. The undo is applied
+  backwards, so the inverse of the newest commit goes first; inside a
+  commit the list is already in that order, so only the sequence of
+  commits is reversed. The groups carry the redo, and the top-level
+  `:undo-changes` carries the inverse of the whole entry, newest first."
   [params {:keys [commits]}]
-  (assoc params :changes-with-metadata
+  (assoc params
+         :changes-with-metadata
          (mapv (fn [{:keys [id origin redo-changes]}]
                  (cond-> {:commit-id id :changes (vec redo-changes)}
                    (keyword? origin)
                    (assoc :hint-origin origin)))
-               commits)))
+               commits)
+         :undo-changes
+         (into [] (mapcat :undo-changes) (reverse commits))))
 
 (defn- save-attempt-failed
   "Routes a failed attempt to send `commit-id`, which took `elapsed-ms`. A
