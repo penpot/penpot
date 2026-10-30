@@ -662,6 +662,15 @@
     (t/is (gsh/close-attrs? :height 40 (:height expected) 0.01))
     (t/is (gsh/close-attrs? :height 40 (:height child) 0.01))))
 
+(t/deftest switching-to-an-equally-rotated-variant-adds-no-geometry-override
+  ;; The swapped copy keeps a 45 degree turn, which the new variant main
+  ;; already has after update-main; the switch result differs only by noise.
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :layout nil :layout-item-margins false
+                                    :library true :rich-variants true :layout-children false
+                                    :layout-copies true :text true}]
+                       :ops [[:rotate 0 0 0 0] [:edit 0 0 1 1] [:update-main 0] [:delete 0]
+                             [:restore 0] [:nest 0 0 0 0] [:swap 0 0 0 0] [:switch 0 0 0 0]]}))))
+
 (t/deftest detached-swapped-head-follows-its-own-component-without-position-overrides
   (t/is (map? (cg/run {:world [2 1 {:library true :variants true}]
                        :ops [[:edit 0 0 1 2] [:update-main 0] [:library-sync]
