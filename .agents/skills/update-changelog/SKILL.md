@@ -92,10 +92,16 @@ query is needed.
 
 | `issue_type` value | Changelog section |
 |--------------------|-------------------|
-| `Bug` | `### :bug: Bugs fixed` |
-| `Feature` or `Enhancement` | `### :sparkles: New features & Enhancements` |
+| `Feature` | `### :tada: Features` |
+| `Enhancement` | `### :sparkles: Enhancements` |
+| `Bug` | `### :bug: Bugs` |
 | `Task` | **Exclude** — internal chores, not user-facing |
 | `null` (not set) | Fallback to labels: `bug` label → bugs, otherwise enhancements |
+
+**Section order** within a version: `:boom:`, `:rocket:`, `:tada:`,
+`:sparkles:`, `:bug:`. Features come before enhancements so they stand out.
+Versions up to 2.18 use the old layout (`:sparkles: New features &
+Enhancements`, `:bug: Bugs fixed`, mixed order): leave them as they are.
 
 **Breaking changes override everything:** an issue with the `breaking change`
 label goes under `### :boom: Breaking changes & Deprecations`, no matter its
@@ -106,7 +112,7 @@ the existing precedent).
 
 **Highlights come from the `release highlight` label:** an issue with that
 label also gets an entry under `### :rocket: Epics and highlights`, on top of
-its regular entry (usually `:sparkles:`). In the section being refreshed,
+its regular entry (usually `:tada:` or `:sparkles:`). In the section being refreshed,
 `:rocket:` lists exactly the labelled issues: never pick highlights yourself
 and never keep an unlabelled entry there. Product decides the highlights by
 labelling issues on GitHub, so a regeneration cannot undo that choice. Older
@@ -161,7 +167,7 @@ the user or the release notes — never from the milestone fetch.
 - Fix <user-facing description> (https://github.com/penpot/penpot/security/advisories/GHSA-XXXX-XXXX-XXXX)
 ```
 
-Rules: place under `### :bug: Bugs fixed` with **no issue or PR link**; do
+Rules: place under `### :bug: Bugs` with **no issue or PR link**; do
 **not** fetch or verify the URL (it may be draft/unpublished and 404); write
 the description in imperative mood from the advisory title. These entries are
 invisible to the automation — add them by hand, and in step 9 apply only the
@@ -178,14 +184,22 @@ Newest version goes at the top, right after the `# CHANGELOG` header:
 
 - <breaking change or deprecation> [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
 
-### :bug: Bugs fixed
+### :rocket: Epics and highlights
+
+- Add highlighted feature description [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
+
+### :tada: Features
+
+- Add new feature description [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
+
+### :sparkles: Enhancements
+
+- Improve existing behavior description [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
+
+### :bug: Bugs
 
 - Fix description of the bug [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
 - Fix another bug (by @contributor) [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
-
-### :sparkles: New features & Enhancements
-
-- Add new feature description [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
 ```
 
 Format details: entries start with `- ` plus a short imperative description;
@@ -209,7 +223,8 @@ not trust cached data):
 5. **Unmerged or moved PR reference** → fix the reference or remove the
    entry (a PR merged in a *different* milestone is a step-9 anomaly, do not
    silently remove it).
-6. **Issue type changed to `Task`** → remove the entry.
+6. **Issue type changed** → `Task`: remove the entry; another type: move
+   the entry to that type's section.
 7. **Breaking change misplaced** (issue has the `breaking change` label but
    sits in another section) → move the entry to `:boom:`.
 8. **Highlight out of sync** (`:rocket:` entry without the `release
@@ -243,7 +258,8 @@ python3 scripts/gh.py issues "2.16.0" --exclude "release blocker,no changelog" \
   | python3 -c "import sys,json; [print(i['number'], i['title']) for i in json.load(sys.stdin) if 'release highlight' in i['labels']]"
 ```
 
-Create the subsection if missing (place it before `### :sparkles:`) with one
+Create the subsection if missing (place it after `### :boom:` and before
+`### :tada:`) with one
 entry per labelled issue, same text and references as its regular entry.
 Every `:rocket:` entry MUST carry issue AND PR references. If no issue is
 labelled, leave `:rocket:` out and tell the user: the highlights are
@@ -304,6 +320,7 @@ pre-flight. If one shows up in the report, re-run the workflow.
 - **Duplicates**: the earlier version section wins.
 - **Taiga references**: resolve to the GitHub issue via description text or
   PRs mentioning the Taiga URL, then link issue + PR.
+- **Section order**: `:boom:`, `:rocket:`, `:tada:`, `:sparkles:`, `:bug:`.
 - **GHSA entries** live under `:bug:` with only the advisory URL (see 5b).
 - **Re-fetch before editing**; prefer `scripts/gh.py` over raw `gh api`.
 - **Verify PR merge status** (`check-merged`); PR-level exclusions apply.
