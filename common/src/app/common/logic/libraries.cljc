@@ -954,7 +954,8 @@
 
 (defn- rehead-pushed-swap
   "A pushed swap becomes a plain nested copy. Its old position's
-   orientation becomes authored when it differs from its own main."
+   orientation and constraints become authored when they differ from its
+   own main."
   [shape main container]
   (let [shape (-> shape
                   (assoc :shape-ref (:id main))
@@ -965,7 +966,10 @@
         expected (get-in main-container [:objects (:id main)])]
     (cond-> shape
       (and expected (orient-like shape expected (gsh/shape->center shape)))
-      (update :touched ctk/set-touched-group :geometry-group))))
+      (update :touched ctk/set-touched-group :geometry-group)
+
+      (and main (some #(not= (get shape %) (get main %)) [:constraints-h :constraints-v :fixed-scroll]))
+      (update :touched ctk/set-touched-group :constraints-group))))
 
 (defn- author-pushed-content
   "Taking a new content reference makes the pushed differences authored.

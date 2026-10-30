@@ -683,6 +683,19 @@
     (t/is (mth/close? 0 (rotation :sync-random-0-outer-0) 0.01))
     (t/is (mth/close? 45 (rotation :sync-random-0-innercopy-1) 0.01))))
 
+(t/deftest a-pushed-swap-authors-the-constraints-of-its-old-position
+  (let [program   {:world [2 0 {:variants true :text-styles true :layout nil :layout-item-margins false
+                                :library true :rich-variants true :layout-children false
+                                :layout-copies true :text true}]
+                   :ops [[:style 12 7 7 0] [:nest 0 0 0 0] [:swap 8 0 0 0] [:edit 0 0 1 1] [:update-main 0]]}
+        situation (:situation (cg/run program))
+        outer     (tm/shape-by-id situation (thi/id :sync-variant-outer-0))
+        pushed    (tm/shape-by-id situation (first (:shapes outer)))]
+    ;; The old position authored fixed scroll; the new nested copy keeps it
+    ;; against its own main, which does not scroll.
+    (t/is (true? (:fixed-scroll pushed)))
+    (t/is (contains? (:touched pushed) :constraints-group))))
+
 (t/deftest detached-swapped-head-follows-its-own-component-without-position-overrides
   (t/is (map? (cg/run {:world [2 1 {:library true :variants true}]
                        :ops [[:edit 0 0 1 2] [:update-main 0] [:library-sync]
