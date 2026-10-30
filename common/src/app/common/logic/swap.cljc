@@ -261,8 +261,12 @@
             :else
             (get previous-shape attr)))]
 
-    ;; If the final attr-value is the actual value, skip
-    (if (or skip? (= attr-val (get current-shape attr)))
+    ;; If the final attr-value is the actual value, skip. Geometry values
+    ;; equal up to float noise are not an override.
+    (if (or skip?
+            (if (contains? #{:points :selrect :width :height :rotation} attr)
+              (gsh/close-attrs? attr attr-val (get current-shape attr))
+              (= attr-val (get current-shape attr))))
       []
       (cond-> []
         ;; On a text-change, we want to force a position-data reset
