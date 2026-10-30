@@ -113,6 +113,7 @@
    [frontend-tests.tokens.style-dictionary-test]
    [frontend-tests.tokens.token-errors-test]
    [frontend-tests.tokens.token-path-test]
+   [frontend-tests.tokens.token-pill-test]
    [frontend-tests.tokens.tokenscript-test]
    [frontend-tests.tokens.workspace-tokens-remap-test]
    [frontend-tests.ui.check-updates-test]
@@ -281,6 +282,7 @@
    'frontend-tests.tokens.style-dictionary-test
    'frontend-tests.tokens.token-errors-test
    'frontend-tests.tokens.token-path-test
+   'frontend-tests.tokens.token-pill-test
    'frontend-tests.tokens.tokenscript-test
    'frontend-tests.tokens.logic.tokens-source-test
    'frontend-tests.tokens.logic.tokens-status-test
