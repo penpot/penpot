@@ -39,6 +39,21 @@
 (def ^:private sizing-values-both
   [nil :fix :auto :fill])
 
+;; Cases for the touched tests: [copy-value main-before main-after].
+;; `main-before` differs from `copy-value`, so setting the copy activates the
+;; sync group in :touched. `main-after` is a value the root copy would receive
+;; if it were not touched.
+(def ^:private root-touched-cases
+  [[nil    :fill :auto]
+   [:fix   :fill :auto]
+   [:auto  :fill :fix]
+   [:fill  :auto :fix]])
+
+(def ^:private child-touched-cases
+  [[nil    :fill :fill]
+   [:fix   :fill :fill]
+   [:fill  nil   :fix]])
+
 ;; ---- Setup
 
 (defn- add-flex-frame
@@ -52,6 +67,17 @@
   (-> file
       (ths/update-shape label :layout-item-h-sizing value)
       (ths/update-shape label :layout-item-v-sizing value)))
+
+(defn- set-sizing-untouched
+  "Sets both sizing attrs of the shape without marking it as touched."
+  [file label value]
+  (tho/change-shape
+   file label
+   (fn [shape]
+     (cond-> shape
+       (some? value) (assoc :layout-item-h-sizing value :layout-item-v-sizing value)
+       (nil? value)  (dissoc :layout-item-h-sizing :layout-item-v-sizing)))
+   :ignore-touched true))
 
 (defn- setup-file
   "Builds this tree (all boards are flex):
@@ -153,27 +179,31 @@
     file))
 
 (defn- run-touched
-  "Overrides the sizing in the copy (which activates the sync groups in
-   :touched) and then changes the main. The main values must not be
-   propagated to the copy this time."
+  "Overrides the sizing in the copy with every valid value (which activates the
+   sync groups in :touched) and then changes the main. The main values must not
+   be propagated to the copy this time."
   [file]
-  #_(let [file'  (-> file
-                     (set-sizing :copy1 :fix)
-                     (set-sizing :copy-board1 :fix)
-                     (set-sizing :copy-rect1 :fix))
+  (doseq [[label main-label cases]
+          [[:copy1       :comp1  root-touched-cases]
+           [:copy-board1 :board1 root-touched-cases]
+           [:copy-rect1  :rect1  child-touched-cases]]
+          [value before after] cases]
+    (let [file'  (-> file
+                     ;; Align the copy with the main, then override it with a
+                     ;; different value so the override activates :touched.
+                     (set-sizing main-label before)
+                     (set-sizing-untouched label before)
+                     (set-sizing label value))
+          _      (t/is (not= (normalize-sizing value)
+                             (normalize-sizing (first (sizing file' main-label))))
+                       (str label " value must differ from " main-label))
+          _      (t/is (= #{:layout-item-h-sizing :layout-item-v-sizing} (touched file' label))
+                       (str label " must be touched after setting " (pr-str value)))
+          ;; Changing the main must not reach the copy.
           file'' (-> file'
-                     (set-sizing :comp1 :auto)
-                     (set-sizing :board1 :auto)
-                     (set-sizing :rect1 :auto)
+                     (set-sizing main-label after)
                      (sync-component))]
-
-      (t/is (= #{:layout-item-h-sizing :layout-item-v-sizing} (touched file' :copy1)))
-      (t/is (= #{:layout-item-h-sizing :layout-item-v-sizing} (touched file' :copy-board1)))
-      (t/is (= #{:layout-item-h-sizing :layout-item-v-sizing} (touched file' :copy-rect1)))
-
-      (t/is (= [:fix :fix] (sizing file'' :copy1)) "copy1 keeps its override")
-      (t/is (= [:fix :fix] (sizing file'' :copy-board1)) "copy-board1 keeps its override")
-      (t/is (= [:fix :fix] (sizing file'' :copy-rect1)) "copy-rect1 keeps its override")))
+      (check-sizing file'' label value))))
 
 (defn- run-case
   [comp-value board-value rect-value]
