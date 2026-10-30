@@ -4,12 +4,10 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_utils.scss" as *;
-@use "ds/mixins.scss" as *;
-@use "ds/typography.scss" as t;
+@use "ds/typography.scss" as *;
 
 .section {
   margin: 0;
@@ -21,7 +19,7 @@
 
 .section-title,
 .subsection-title {
-  @include t.use-typography("headline-small");
+  @include use-typography("headline-small");
 
   display: flex;
   align-items: center;
@@ -60,6 +58,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  column-gap: var(--sp-s);
   inline-size: 100%;
   min-block-size: $sz-32;
   padding: px2rem(6);
@@ -69,13 +68,23 @@
 }
 
 .command-name {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   margin-inline-start: var(--sp-xxs);
   color: var(--color-foreground-primary);
   flex: 1;
   min-inline-size: 0;
   text-align: start;
+}
+
+.command-label {
+  flex: 0 1 auto;
+}
+
+// The keys take the space the label leaves and wrap between groups.
+.shortcuts-name .shortcut-actions {
+  flex: 1 1 0;
+  justify-content: flex-end;
 }
 
 .not-customizable-label {
@@ -163,13 +172,20 @@
 
 .keys {
   display: flex;
-  justify-content: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--sp-xxs);
+}
+
+.key-group {
+  display: flex;
   align-items: center;
   gap: var(--sp-xxs);
 }
 
 .key {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: flex;
   justify-content: center;
@@ -203,7 +219,7 @@
 }
 
 .shortcut-placeholder {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
 }

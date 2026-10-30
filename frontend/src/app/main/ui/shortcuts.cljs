@@ -539,39 +539,31 @@
 
 (mf/defc shortcuts-keys*
   [{:keys [content command is-customized has-conflict? light-shortcut]}]
-  (let [managed-list    (if (coll? content)
-                          content
-                          (conj () content))
-        chars-list      (map ds/split-sc managed-list)
-        last-element    (last chars-list)
-        short-char-list (if (= 1 (count chars-list))
-                          chars-list
-                          (drop-last chars-list))
-        penultimate     (last short-char-list)]
+  (let [managed-list (if (coll? content)
+                       content
+                       (conj () content))
+        chars-list   (map ds/split-sc managed-list)
+        last-index   (dec (count chars-list))
+        key-class    (cond
+                       has-conflict? (stl/css :conflict-key)
+                       is-customized (stl/css :customized-key)
+                       light-shortcut (stl/css :light-key))]
+    ;; Each combination is a group that never breaks; the list wraps
+    ;; between groups. The separator stays inside a group so no line
+    ;; starts with a comma.
     [:span {:class (stl/css :keys)}
-     (for [chars short-char-list]
-       [:* {:key (str/join chars)}
+     (for [[index chars] (d/enumerate chars-list)]
+       [:span {:key (dm/str index "-" (str/join chars))
+               :class (stl/css :key-group)}
+        (when (and (pos? index) (= index last-index))
+          [:span {:class (stl/css :space)} (tr "shortcuts.or")])
         (for [char chars]
           [:> converted-chars* {:key (dm/str char "-" (name command))
                                 :char char
                                 :command command
-                                :class (cond
-                                         has-conflict? (stl/css :conflict-key)
-                                         is-customized (stl/css :customized-key)
-                                         light-shortcut (stl/css :light-key))}])
-
-        (when (not= chars penultimate) [:span {:class (stl/css :space)} ","])])
-     (when (not= last-element penultimate)
-       [:*
-        [:span {:class (stl/css :space)} (tr "shortcuts.or")]
-        (for [char last-element]
-          [:> converted-chars* {:key (dm/str char "-" (name command))
-                                :char char
-                                :command command
-                                :class (cond
-                                         has-conflict? (stl/css :conflict-key)
-                                         is-customized (stl/css :customized-key)
-                                         light-shortcut (stl/css :light-key))}])])]))
+                                :class key-class}])
+        (when (< index (dec last-index))
+          [:span {:class (stl/css :space)} ","])])]))
 
 (mf/defc shortcut-row-editable*
   [{:keys [elements custom-shortcuts command-translate conflicts section-key]}]
@@ -863,7 +855,7 @@
                  :data-conflict (str has-conflict?)
                  :aria-label command-translate
                  :key command-translate}
-            [:span
+            [:span {:class (stl/css :command-label)}
              [:span {:class (stl/css-case :command-name true
                                           :not-customizable-label (not customizable?))
                      :id (dm/str command-translate "-label")}
