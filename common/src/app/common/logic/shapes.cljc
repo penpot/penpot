@@ -451,6 +451,18 @@
      [all-parents changes])))
 
 
+(defn- find-empty-variant-containers
+  [objects excluded-parent-id ids parent-ids]
+  (let [ids (set ids)]
+    (reduce (fn [to-delete candidate-id]
+              (let [parent (get objects candidate-id)]
+                (if (and (ctk/is-variant-container? parent)
+                         (empty? (remove ids (:shapes parent))))
+                  (conj to-delete (:id parent))
+                  to-delete)))
+            #{}
+            (remove #(= % excluded-parent-id) parent-ids))))
+
 (defn generate-relocate
   [changes parent-id to-index ids & {:keys [cell ignore-parents?]}]
   (let [objects     (pcb/get-objects changes)
@@ -554,15 +566,7 @@
 
 
         ;; Parents that are a variant-container that becomes empty
-        empty-variant-cont (reduce
-                            (fn [to-delete parent-id]
-                              (let [parent (get objects parent-id)]
-                                (if (and (ctk/is-variant-container? parent)
-                                         (empty? (remove (set ids) (:shapes parent))))
-                                  (conj to-delete (:id parent))
-                                  to-delete)))
-                            #{}
-                            (remove #(= % parent-id) all-parents))]
+        empty-variant-cont (find-empty-variant-containers objects parent-id ids all-parents)]
 
     (if (and (ctk/is-variant-container? parent)
              (not (every? ctk/main-instance? shapes)))
@@ -693,16 +697,7 @@
         new-parent         (get objects frame-id)
         variant-shapes     (filter ctk/is-variant? to-move)
         all-parents        (into #{frame-id} (map #(cfh/get-parent-id objects %)) ids)
-        empty-variant-cont
-        (reduce
-         (fn [to-delete pid]
-           (let [parent (get objects pid)]
-             (if (and (ctk/is-variant-container? parent)
-                      (empty? (remove (set ids) (:shapes parent))))
-               (conj to-delete (:id parent))
-               to-delete)))
-         #{}
-         (remove #(= % frame-id) all-parents))]
+        empty-variant-cont (find-empty-variant-containers objects frame-id ids all-parents)]
     (if (empty? to-move)
       changes
       (-> changes

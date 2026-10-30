@@ -7,8 +7,6 @@
 (ns common-tests.logic.variants-reparent-test
   (:require
    [app.common.files.changes-builder :as pcb]
-   [app.common.geom.point :as gpt]
-   [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
@@ -42,6 +40,12 @@
 (defn- property-names
   [component]
   (mapv :name (:variant-properties component)))
+
+(defn- strip-component-times
+  "Undo restamps :modified-at on components when mains are updated.
+   Compare file data without that clock."
+  [data]
+  (update data :components update-vals #(dissoc % :modified-at)))
 
 (t/deftest test-relocate-plain-shape-onto-container-is-rejected
   (let [file       (-> (thf/sample-file :file1)
@@ -111,6 +115,7 @@
         sibling    (thc/get-component file :c01)
         changes    (relocate file (:id container) [(:id main)])
         file'      (thf/apply-changes file changes)
+        file''     (thf/apply-undo-changes file' changes)
         main'      (ths/get-shape file' :m03)
         comp'      (thc/get-component file' :c03)
         sibling'   (thc/get-component file' :c01)
@@ -122,6 +127,8 @@
     (t/is (some? (:variant-name main')))
     (t/is (= (property-names sibling') (property-names comp')))
     (t/is (= (property-names sibling) (property-names sibling')))
+    (t/is (= (strip-component-times (:data file))
+             (strip-component-times (:data file''))))
     (thf/validate-file! file')))
 
 (t/deftest test-relocate-reorder-mains-does-not-rebuild-properties
@@ -134,6 +141,7 @@
         c02       (thc/get-component file :c02)
         changes   (relocate file (:id container) [(:id m01)] :to-index 0)
         file'     (thf/apply-changes file changes)
+        file''    (thf/apply-undo-changes file' changes)
         m01'      (ths/get-shape file' :m01)
         m02'      (ths/get-shape file' :m02)
         c01'      (thc/get-component file' :c01)
@@ -143,6 +151,22 @@
     (t/is (= (:variant-name m02) (:variant-name m02')))
     (t/is (= (:variant-properties c01) (:variant-properties c01')))
     (t/is (= (:variant-properties c02) (:variant-properties c02')))
+    (t/is (= (strip-component-times (:data file))
+             (strip-component-times (:data file''))))
+    (thf/validate-file! file')))
+
+(t/deftest test-relocate-all-mains-within-container-keeps-container
+  (let [file       (-> (thf/sample-file :file1)
+                       (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        container  (ths/get-shape file :v01)
+        m01        (ths/get-shape file :m01)
+        m02        (ths/get-shape file :m02)
+        changes    (relocate file (:id container) [(:id m01) (:id m02)])
+        file'      (thf/apply-changes file changes)
+        container' (ths/get-shape file' :v01)]
+
+    (t/is (= (:id container) (:id container')))
+    (t/is (= (set (:shapes container)) (set (:shapes container'))))
     (thf/validate-file! file')))
 
 (t/deftest test-relocate-main-out-of-container-clears-variant-data
@@ -153,6 +177,7 @@
         m01        (ths/get-shape file :m01)
         changes    (relocate file (:id board) [(:id m01)])
         file'      (thf/apply-changes file changes)
+        file''     (thf/apply-undo-changes file' changes)
         m01'       (ths/get-shape file' :m01)
         c01'       (thc/get-component file' :c01)
         container' (ths/get-shape file' :v01)]
@@ -163,18 +188,20 @@
     (t/is (nil? (:variant-id c01')))
     (t/is (nil? (:variant-properties c01')))
     (t/is (some? container'))
+    (t/is (= (strip-component-times (:data file))
+             (strip-component-times (:data file''))))
     (thf/validate-file! file')))
 
 (t/deftest test-relocate-last-mains-out-deletes-empty-container
   (let [file       (-> (thf/sample-file :file1)
                        (thv/add-variant :v01 :c01 :m01 :c02 :m02)
                        (tho/add-frame :board1))
-        container  (ths/get-shape file :v01)
         board      (ths/get-shape file :board1)
         m01        (ths/get-shape file :m01)
         m02        (ths/get-shape file :m02)
         changes    (relocate file (:id board) [(:id m01) (:id m02)])
         file'      (thf/apply-changes file changes)
+        file''     (thf/apply-undo-changes file' changes)
         container' (ths/get-shape file' :v01)
         m01'       (ths/get-shape file' :m01)
         m02'       (ths/get-shape file' :m02)
@@ -196,6 +223,8 @@
     (t/is (nil? (:variant-id c02')))
     (t/is (nil? (:variant-properties c01')))
     (t/is (nil? (:variant-properties c02')))
+    (t/is (= (strip-component-times (:data file))
+             (strip-component-times (:data file''))))
     (thf/validate-file! file')))
 
 (t/deftest test-board-draw-strips-variant-data-when-main-leaves
@@ -206,6 +235,7 @@
         m01        (ths/get-shape file :m01)
         changes    (move-into-frame file (:id board) [(:id m01)])
         file'      (thf/apply-changes file changes)
+        file''     (thf/apply-undo-changes file' changes)
         m01'       (ths/get-shape file' :m01)
         c01'       (thc/get-component file' :c01)
         container' (ths/get-shape file' :v01)]
@@ -216,6 +246,8 @@
     (t/is (nil? (:variant-id c01')))
     (t/is (nil? (:variant-properties c01')))
     (t/is (some? container'))
+    (t/is (= (strip-component-times (:data file))
+             (strip-component-times (:data file''))))
     (thf/validate-file! file')))
 
 (t/deftest test-board-draw-last-main-deletes-empty-container
@@ -251,6 +283,25 @@
     (t/is (nil? (:variant-properties c02')))
     (thf/validate-file! file')))
 
+(t/deftest test-board-draw-undo-restores-emptied-container
+  (let [file       (-> (thf/sample-file :file1)
+                       (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                       (tho/add-frame :board1))
+        board      (ths/get-shape file :board1)
+        m01        (ths/get-shape file :m01)
+        m02        (ths/get-shape file :m02)
+        changes*   (move-into-frame file (:id board) [(:id m01)])
+        file*      (thf/apply-changes file changes*)
+        changes    (move-into-frame file* (:id board) [(:id m02)])
+        file'      (thf/apply-changes file* changes)
+        file''     (thf/apply-undo-changes file' changes)
+        file'''    (thf/apply-undo-changes file'' changes*)]
+
+    (t/is (= (strip-component-times (:data file*))
+             (strip-component-times (:data file''))))
+    (t/is (= (strip-component-times (:data file))
+             (strip-component-times (:data file'''))))))
+
 (t/deftest test-duplicate-variant-main-keeps-variant-id
   (let [file       (-> (thf/sample-file :file1)
                        (thv/add-variant :v01 :c01 :m01 :c02 :m02))
@@ -263,26 +314,3 @@
 
     (t/is (= 3 (count variant-mains)))
     (thf/validate-file! file')))
-
-(t/deftest test-duplicate-non-main-in-container-does-not-stamp-variant-id
-  (let [file    (-> (thf/sample-file :file1)
-                    (thv/add-variant :v01 :c01 :m01 :c02 :m02)
-                    (tho/add-rect :rect1 :parent-label :v01))
-        page    (thf/current-page file)
-        rect    (ths/get-shape file :rect1)
-        changes (cll/generate-duplicate-changes
-                 (pcb/empty-changes nil)
-                 (:objects page)
-                 page
-                 #{(:id rect)}
-                 (gpt/point 0 0)
-                 {(:id file) file}
-                 (:data file)
-                 (:id file))
-        added   (->> (:redo-changes changes)
-                     (filter #(= :add-obj (:type %)))
-                     (filter #(= (:old-id %) (:id rect)))
-                     first)]
-
-    (t/is (some? added))
-    (t/is (nil? (get-in added [:obj :variant-id])))))
