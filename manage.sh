@@ -71,8 +71,10 @@ export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
 
 export IMAGEMAGICK_VERSION=7.1.2-32
 
-# Safe directory to avoid ownership errors with Git
-git config --global --add safe.directory /home/penpot/penpot || true
+# Safe directory to avoid ownership errors with Git. --add appends on every
+# run, so only add it when missing, or ~/.config/git/config grows a
+# duplicate line per invocation.
+git config --global --get-all safe.directory | grep -qxF '/home/penpot/penpot' || git config --global --add safe.directory /home/penpot/penpot || true
 
 # Set default java options
 export JAVA_OPTS=${JAVA_OPTS:-"-Xmx1000m -Xms50m"};
