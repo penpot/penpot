@@ -10,11 +10,16 @@
   "dependencies": {
     "draft-js": "penpot/draft-js.git#c58ebd9429a6359d72a88cff87e078aaf6fe285d"
   },
+  "scripts": {
+    "test": "vitest run"
+  },
   "peerDependencies": {
     "react": ">=0.17.0",
     "react-dom": ">=0.17.0"
   },
   "devDependencies": {
-    "esbuild": "^0.28.1"
+    "esbuild": "^0.28.1",
+    "jsdom": "^30.0.1",
+    "vitest": "^4.1.10"
   }
 }
