@@ -24,7 +24,7 @@
 
 (def multiple-state-multiple (sr/translate-multiple-state :multiple))
 
-(def ^:const TEXT_EDITOR_STYLES_METADATA_SIZE (* 31 4))
+(def ^:const TEXT_EDITOR_STYLES_METADATA_SIZE (* 33 4))
 (def ^:const TEXT_EDITOR_STYLES_FILL_SOLID 0)
 (def ^:const TEXT_EDITOR_STYLES_FILL_LINEAR_GRADIENT 1)
 (def ^:const TEXT_EDITOR_STYLES_FILL_RADIAL_GRADIENT 2)
@@ -325,6 +325,8 @@
               font-weight-value (aget heap-i32 (+ u32-offset 24))
               line-height-value (aget heap-f32 (+ u32-offset 29))
               letter-spacing-value (aget heap-f32 (+ u32-offset 30))
+              list-style-type-state (aget heap-u32 (+ u32-offset 31))
+              list-style-type-value (aget heap-u32 (+ u32-offset 32))
               font-id (fonts/uuid->font-id font-family-id-value)
               font-style-value (sr/untranslate-font-style (text-editor-get-style-property font-style-state font-style-raw-value))
               font-variant-id-computed (text-editor-compute-font-variant-id font-id font-weight-value font-style-value)
@@ -356,6 +358,7 @@
                       :text-direction (sr/untranslate-text-direction (text-editor-get-style-property text-direction-state text-direction-value))
                       :text-decoration (sr/untranslate-text-decoration (text-editor-get-style-property text-decoration-state text-decoration-value))
                       :text-transform (sr/untranslate-text-transform (text-editor-get-style-property text-transform-state text-transform-value))
+                      :list-style-type (sr/untranslate-list-style-type (text-editor-get-style-property list-style-type-state list-style-type-value))
                       ;; WASM reports size/weight as numbers, but the rest of Penpot (and the backend schema) expects strings.
                       :line-height (let [height (text-editor-get-style-property line-height-state line-height-value)]
                                      (if (= height :multiple) height (str height)))

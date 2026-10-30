@@ -128,5 +128,7 @@
     (merge
      defaults
      (get-attrs-multi (->> (txt/node-seq txt/is-root-node? content)) root-attrs)
-     (get-attrs-multi (->> (txt/node-seq txt/is-paragraph-node? content)) paragraph-attrs)
+     (get-attrs-multi (->> (txt/node-seq txt/is-paragraph-node? content)
+                           (map #(merge txt/default-list-attrs %)))
+                      paragraph-attrs)
      (get-attrs-multi (->> (txt/node-seq txt/is-text-node? content)) text-node-attrs))))

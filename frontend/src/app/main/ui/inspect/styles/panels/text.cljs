@@ -180,6 +180,12 @@
                               :property (str "text-transform: " (:text-transform style) ";")
                               :copiable true}]))
 
+     (when (txt/list-paragraph? style)
+       [:> properties-row* {:term "List Style"
+                            :detail (:list-style-type style)
+                            :property (str "list-style-type: " (:list-style-type style) ";")
+                            :copiable true}])
+
      [:pre {:class (stl/css :text-content-wrapper)
             :role "presentation"}
       [:> property-detail-copiable* {:copied copied

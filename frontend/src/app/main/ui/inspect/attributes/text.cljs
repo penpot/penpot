@@ -129,6 +129,14 @@
              "uppercase" (tr "inspect.attributes.typography.text-transform.uppercase")
              "unset" (tr "inspect.attributes.typography.text-transform.unset"))]]]])
 
+     (when (types.text/list-paragraph? style)
+       [:div {:class (stl/css :text-row)}
+        [:div {:class (stl/css :global/attr-label)} "List Style"]
+        [:div {:class (stl/css :global/attr-value)}
+         [:> copy-button* {:data (copy-style-data style :list-style-type)}
+          [:div {:class (stl/css :button-children)}
+           (tr "inspect.attributes.typography.list-style-type.disc")]]]])
+
      [:> copy-button* {:data (str/trim text)
                        :class (stl/css :attributes-content-row)}
       [:span {:class (stl/css :content)
