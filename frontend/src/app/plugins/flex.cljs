@@ -358,6 +358,9 @@
           (not (r/check-permission plugin-id "content:write"))
           (u/not-valid plugin-id :appendChild "Plugin doesn't have 'content:write' permission")
 
+          (u/non-main-into-variant-container? shape child)
+          (u/not-valid plugin-id :appendChild "Only main instances can be added to a variant container")
+
           :else
           (st/emit!
            (dwsh/relocate-shapes #{child-id} id index)

@@ -336,10 +336,11 @@
                          (remove #(dm/get-in objects [% :blocked]))
                          (cfh/order-by-indexed-shapes objects))
 
+            data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it page-id)
-                        (pcb/with-objects objects))
-
-            changes (cfsh/prepare-move-shapes-into-frame changes frame-id shapes objects true)]
+                        (pcb/with-objects objects)
+                        (pcb/with-library-data data)
+                        (cls/generate-move-shapes-into-frame frame-id shapes objects true))]
 
         (if (some? changes)
           (rx/of (dch/commit-changes changes))

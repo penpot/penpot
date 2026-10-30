@@ -3182,7 +3182,8 @@
                (cond-> (ctsl/grid-layout? obj)
                  (ctsl/remap-grid-cells ids-map))
 
-               (cond-> (ctk/is-variant-container? parent)
+               (cond-> (and (ctk/is-variant-container? parent)
+                            (ctk/main-instance? obj))
                  (assoc :variant-id parent-id))
 
                (cond-> (and (ctk/is-variant? obj) (not (ctk/is-variant-container? parent)))

@@ -574,6 +574,9 @@
           (u/changes-component-copy-structure? objects shape child-shape)
           (u/not-valid plugin-id :appendChild "Cannot change the structure of a component copy")
 
+          (u/non-main-into-variant-container? shape child)
+          (u/not-valid plugin-id :appendChild "Only main instances can be added to a variant container")
+
           :else
           (st/emit! (dwt/move-shapes-to-frame #{child-id} id nil [row column])
                     (ptk/data-event :layout/update {:ids [id]})))))))

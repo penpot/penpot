@@ -1263,6 +1263,9 @@
                  (u/changes-component-copy-structure? objects shape child-shape)
                  (u/not-valid plugin-id :appendChild "Cannot change the structure of a component copy")
 
+                 (u/non-main-into-variant-container? shape child)
+                 (u/not-valid plugin-id :appendChild "Only main instances can be added to a variant container")
+
                  :else
                  (st/emit!
                   (dwsh/relocate-shapes #{child-id} id index)
@@ -1301,6 +1304,9 @@
 
                  (u/changes-component-copy-structure? objects shape child-shape)
                  (u/not-valid plugin-id :insertChild "Cannot change the structure of a component copy")
+
+                 (u/non-main-into-variant-container? shape child)
+                 (u/not-valid plugin-id :insertChild "Only main instances can be added to a variant container")
 
                  :else
                  (st/emit!
