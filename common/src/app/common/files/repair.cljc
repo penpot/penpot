@@ -26,6 +26,20 @@
 (defmulti repair-error
   (fn [code _error _file-data _libraries] code))
 
+(defn- update-component-shapes
+  "Update shapes stored inside a component `:objects` map.
+
+   Emits one `:mod-obj` change per shape, scoped with `:component-id`, instead
+   of rewriting the whole map through a `:mod-component` change. `:ignore-touched`
+   keeps the value the caller computed: no touched group is merged on top."
+  [component objects ids update-fn]
+  (-> (pcb/empty-changes nil)
+      ;; A made container, so `update-shapes` scopes the changes to the
+      ;; component instead of to a page.
+      (pcb/with-container {:id (:id component) :type :component})
+      (pcb/with-objects objects)
+      (pcb/update-shapes ids update-fn {:ignore-touched true})))
+
 (defmethod repair-error :invalid-geometry
   [_ {:keys [shape page-id] :as error} file-data _]
   (let [repair-shape
@@ -386,33 +400,26 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :shape-ref-cycle
-  [_ {:keys [shape args] :as error} file-data _]
-  (let [repair-component
-        (fn [component]
-          (let [objects   (:objects component)
-                ;; we only have encounter this on deleted components,
-                ;; so the relevant objects are inside the component
-                to-detach (->> (:cycles-ids args)
-                               (map #(get objects %))
-                               (map #(ctn/get-head-shape objects %))
-                               (map :id)
-                               distinct
-                               (mapcat #(ctn/get-children-in-instance objects %))
-                               (map :id)
-                               set)]
+  [_ {:keys [shape args] :as error} _file-data _]
+  (let [objects   (:objects shape)
+        ;; we only have encounter this on deleted components,
+        ;; so the relevant objects are inside the component
+        to-detach (->> (:cycles-ids args)
+                       (map #(get objects %))
+                       (map #(ctn/get-head-shape objects %))
+                       (map :id)
+                       distinct
+                       (mapcat #(ctn/get-children-in-instance objects %))
+                       (map :id)
+                       set)
 
-            (update component :objects
-                    (fn [objects]
-                      (reduce-kv (fn [acc k v]
-                                   (if (contains? to-detach k)
-                                     (assoc acc k (ctk/detach-shape v))
-                                     (assoc acc k v)))
-                                 {}
-                                 objects)))))]
+        detach-shape
+        (fn [shape]
+          (log/debug :hint "  -> detach shape" :shape-id (:id shape))
+          (ctk/detach-shape shape))]
+
     (log/debug :hint "repairing component :shape-ref-cycle" :id (:id shape) :name (:name shape))
-    (-> (pcb/empty-changes nil nil)
-        (pcb/with-library-data file-data)
-        (pcb/update-component (:id shape) repair-component))))
+    (update-component-shapes shape objects to-detach detach-shape)))
 
 (defmethod repair-error :shape-ref-in-main
   [_ {:keys [shape page-id] :as error} file-data _]
@@ -554,7 +561,7 @@
     (log/debug :hint "repairing component :component-nil-objects-not-allowed" :id (:id component) :name (:name component))
     (-> (pcb/empty-changes nil)
         (pcb/with-library-data file-data)
-        (pcb/update-component (:id component) repair-component))))
+        (pcb/update-component (:id component) repair-component {:objects? true}))))
 
 (defmethod repair-error :non-deleted-component-cannot-have-objects
   [_ {component :shape} file-data _]   ; in this error the :shape argument is the component
@@ -570,7 +577,7 @@
     (log/debug :hint "repairing component :non-deleted-component-cannot-have-objects" :id (:id component) :name (:name component))
     (-> (pcb/empty-changes nil)
         (pcb/with-library-data file-data)
-        (pcb/update-component (:id component) repair-component))))
+        (pcb/update-component (:id component) repair-component {:objects? true}))))
 
 (defmethod repair-error :invalid-text-touched
   [_ {:keys [shape page-id] :as error} file-data _]
@@ -622,7 +629,7 @@
         (pcb/update-shapes (map :id child-with-duplicate) repair-shape))))
 
 (defmethod repair-error :component-duplicate-slot
-  [_ {:keys [shape] :as error} file-data _]
+  [_ {:keys [shape] :as error} _file-data _]
   (let [main-shape            (get-in shape [:objects (:main-instance-id shape)])
         childs                (map #(get (:objects shape) %) (:shapes main-shape))
         childs-with-duplicate (let [result (reduce (fn [[seen duplicates] item]
@@ -634,20 +641,14 @@
                                                    childs)]
                                 (second result))
         duplicated-ids        (set (mapv :id childs-with-duplicate))
-        repair-component
-        (fn [component]
-          (let [objects (reduce-kv (fn [acc k v]
-                                     (if (contains? duplicated-ids k)
-                                       (assoc acc k (ctk/remove-swap-slot v))
-                                       (assoc acc k v)))
-                                   {}
-                                   (:objects component))]
-            (assoc component :objects objects)))]
+        repair-shape
+        (fn [shape]
+          ;; Remove the swap slot
+          (log/debug :hint "  -> remove swap-slot" :child-id (:id shape))
+          (ctk/remove-swap-slot shape))]
 
     (log/debug :hint "repairing component :component-duplicated-slot" :id (:id shape) :name (:name shape))
-    (-> (pcb/empty-changes nil)
-        (pcb/with-library-data file-data)
-        (pcb/update-component (:id shape) repair-component))))
+    (update-component-shapes shape (:objects shape) duplicated-ids repair-shape)))
 
 (defmethod repair-error :missing-slot
   [_ {:keys [shape page-id args] :as error} file-data _]
