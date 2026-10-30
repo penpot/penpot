@@ -80,7 +80,11 @@ When the app does not behave as the code says, check the build first:
 1. Read the group issue: plan, waiting areas, expected changes, PRs table.
 2. Add a row to the PRs table with no PR number, the user's @login as
    Owner and the state `Claimed` (`gh issue view/edit <n> --body-file`).
-   Skip an area someone else already claimed.
+   Read the body right before editing, and read it again after saving:
+   when two people edit at the same time, GitHub keeps only the last
+   edit, so a row can vanish. Put yours back if it is gone.
+   Skip an area someone else already claimed, unless the claim has had
+   no PR for 7 days and its owner did not answer a comment asking.
 3. `git switch -c <user>-ds-<group>-<area> origin/develop`.
 4. Survey the area: every control of the group in the `.cljs`, the
    legacy icons, the placeholders and mixins the `.scss` uses, the
