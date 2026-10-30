@@ -284,6 +284,117 @@
        (t/is (empty? (uc/failures (await (ftm/finish-generated live)))))
        (ftm/uninstall!)))))
 
+(t/deftest ^:async source-history-checkpoints-legitimate-consumer-writes
+  (await
+   (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
+     (t/is (map? (cg/run {:world [0 0 {:library true :library-depth 0 :stale-libraries true}]
+                          :ops [[:library-edit 0 0 1] [:library-sync] [:edit 0 1 1 2]
+                                [:update-main 0] [:library-edit 0 0 2]]})))
+     (let [initial (cg/world [0 0 {:library true :library-depth 0 :stale-libraries true}])
+           edit    (cg/resolve-op initial {} [:library-edit 0 0 1])
+           owner   (:library-id edit)
+           child   (get-in edit [:shape :id])
+           main    (get-in edit [:shape :parent-id])
+           copy    (get-in (cg/resolve-op initial {} [:edit 0 1 1 2]) [:shape :id])
+           page-id (cthf/current-page-id (get (cf/all-files initial) owner))
+           live    (ftm/start-generated initial)
+           live    (await (ftm/run-generated-source-step live owner (:op edit)))
+           entry   (get-in live [::ftm/source-editors owner :undo :items 0])
+           live    (await (ftm/run-generated-step live (n/sync-from-library owner)))
+           live    (await (ftm/run-generated-step live (n/change-property (constantly copy) :opacity 0.4)))
+           live    (await (ftm/run-generated-step live (n/update-main (constantly copy))))
+           source  (get (cf/all-files live) owner)
+           _       (t/is (= 0.4 (:opacity (tm/shape-by-id (tm/with-file live source) main))))
+           live    (await (ftm/run-generated-source-step live owner
+                                                         (n/change-property (constantly child) :fills "#00ff00")))
+           editor  (get-in live [::ftm/source-editors owner])
+           base    (uc/baseline (:situation editor))
+           source  (get (cf/all-files live) owner)]
+       (t/is (= "#00ff00" (get-in (tm/shape-by-id (tm/with-file live source) child) [:fills 0 :fill-color])))
+       (t/is (= 0.4 (:opacity (tm/shape-by-id (tm/with-file live source) main))))
+       (t/is (= entry (get-in editor [:undo :items 0])))
+       (t/is (= 2 (count (get-in editor [:undo :items]))))
+       (t/is (= 0 (:depth base)))
+       (t/is (= 0.4 (get-in base [:snapshot :files owner :data :pages-index page-id :objects main :opacity])))
+       (t/is (= "#ff0000" (get-in base [:snapshot :files owner :data :pages-index page-id :objects child :fills 0 :fill-color])))
+       (t/is (empty? (uc/failures (await (ftm/finish-generated live)))))
+       (ftm/uninstall!)))))
+
+(t/deftest ^:async source-history-checkpoints-preserve-no-ops-and-older-entries
+  (await
+   (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
+     (let [initial (cg/world [0 0 {:library true :library-depth 0 :stale-libraries true}])
+           edit    (cg/resolve-op initial {} [:library-edit 0 0 1])
+           owner   (:library-id edit)
+           child   (get-in edit [:shape :id])
+           main    (get-in edit [:shape :parent-id])
+           copy    (get-in (cg/resolve-op initial {} [:edit 0 1 1 2]) [:shape :id])
+           live    (ftm/start-generated initial)
+           live    (await (ftm/run-generated-source-step live owner (:op edit)))
+           live    (await (ftm/run-generated-source-step live owner
+                                                         (n/change-property (constantly child) :fills "#00ff00")))
+           editor  (get-in live [::ftm/source-editors owner])
+           _       (t/is (= -1 (:depth (uc/baseline (:situation editor)))))
+           entries (:items (:undo editor))
+           live    (await (ftm/run-generated-step live (n/sync-from-library owner)))
+           live    (await (ftm/run-generated-step live (n/change-property (constantly copy) :opacity 0.4)))
+           live    (await (ftm/run-generated-step live (n/update-main (constantly copy))))
+           base    (uc/baseline live)
+           live    (await (ftm/run-generated-source-step live owner
+                                                         (n/change-property (constantly child) :fills "#00ff00")))
+           editor  (get-in live [::ftm/source-editors owner])]
+       (t/is (= base (uc/baseline live)))
+       (t/is (= 1 (:depth (uc/baseline (:situation editor)))))
+       (t/is (= entries (:items (:undo editor))))
+       (t/is (empty? (uc/failures (await (ftm/finish-generated live)))))
+       (let [live (loop [live live steps [[(n/undo) "#ff0000"] [(n/undo) "#abcdef"]
+                                          [(n/redo) "#ff0000"] [(n/redo) "#00ff00"]]]
+                    (if-let [[op fill] (first steps)]
+                      (let [live   (await (ftm/run-generated-source-step live owner op))
+                            source (tm/with-file live (get (cf/all-files live) owner))]
+                        (t/is (= fill (get-in (tm/shape-by-id source child) [:fills 0 :fill-color])))
+                        (t/is (= 0.4 (:opacity (tm/shape-by-id source main))))
+                        (recur live (rest steps)))
+                      live))
+             live (await (ftm/run-generated-step live (n/undo)))
+             _    (t/is (nil? (:opacity (tm/shape-by-id (tm/with-file live (get (cf/all-files live) owner)) main))))
+             live (await (ftm/run-generated-step live (n/redo)))
+             file (tm/with-file live (get (cf/all-files live) owner))]
+         (t/is (= 0.4 (:opacity (tm/shape-by-id file main))))
+         (t/is (= "#00ff00" (get-in (tm/shape-by-id file child) [:fills 0 :fill-color])))
+         (t/is (empty? (uc/failures (await (ftm/finish-generated live))))))
+       (ftm/uninstall!)))))
+
+(t/deftest ^:async source-handoff-reports-and-retains-a-broken-consumer-segment
+  (await
+   (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
+     (let [initial (cg/world [0 0 {:library true :library-depth 0 :stale-libraries true}])
+           edit    (cg/resolve-op initial {} [:library-edit 0 0 1])
+           owner   (:library-id edit)
+           copy    (get-in (cg/resolve-op initial {} [:edit 0 1 1 2]) [:shape :id])
+           file-id (:id (tm/file initial))
+           page-id (cthf/current-page-id (tm/file initial))
+           live    (ftm/start-generated initial)
+           live    (await (ftm/run-generated-step live (n/change-property (constantly copy) :opacity 0.4)))
+           base    (uc/baseline live)
+           ;; Corrupt the expected pre-edit state. Handoff must report this
+           ;; whole-segment failure before a source edit advances the baseline.
+           live    (uc/mark-baseline live (:depth base)
+                                     (assoc-in (:snapshot base)
+                                               [:files file-id :data :pages-index page-id :objects copy :opacity] 0.9))
+           reports (atom [])
+           live    (await (mock/with-mocks* {t/report #(swap! reports conj %)}
+                            (ftm/run-generated-source-step live owner (:op edit))))
+           failed  (filter #(= :fail (:type %)) @reports)
+           errors  (filter #(= :error (:type %)) @reports)]
+       (t/is (= 1 (count failed)))
+       (t/is (empty? errors))
+       (t/is (= [:variant-undo] (mapv :phase (uc/failures live))))
+       (t/is (= #{[:file :file1 :object :random-library-copy-0-0 :opacity]}
+                (:signature (first (uc/failures live)))))
+       (t/is (= 0 (:depth (uc/baseline live))))
+       (ftm/uninstall!)))))
+
 (t/deftest ^:async source-editors-retain-their-own-undo-and-redo-histories
   (doseq [ops [[[:library-add-child 0] [:library-add-child 0] [:library-undo 0]
                 [:edit 0 1 1 2] [:library-redo 0] [:undo] [:redo]]

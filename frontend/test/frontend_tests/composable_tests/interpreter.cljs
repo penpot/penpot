@@ -959,20 +959,26 @@
     (let [situation (refresh-generated situation)
           baseline  (uc/baseline situation)
           current   (snapshot)]
-      (if baseline
-        ;; Another editor can change loaded libraries between this editor's
-        ;; steps. Keep its own undo baseline and refresh only foreign files.
+      (if (and baseline
+               (= (uc/snapshot (dissoc file :library-of)
+                               {:position-data? (not (features/active-feature? @st/state "render-wasm/v1"))})
+                  (dissoc (get-in current [:files (:id file)]) :library-of)))
+        ;; Keep the verified segment while only foreign inputs changed.
         (uc/mark-baseline situation (:depth baseline)
                           (assoc current :files
                                  (assoc (:files current) (:id file)
                                         (get-in baseline [:snapshot :files (:id file)]))))
+        ;; A foreign editor wrote this file after its last verified segment.
+        ;; Retain its undo entries, but start the next segment at this state.
         (mark-baseline situation)))))
 
 (defn ^:async run-generated-source-step
   "Run a source edit in its owning editor and retain both undo histories.
    Returning to the consumer loads source data without accepting it."
   [situation owner op]
-  (let [consumer (get-generated-editor situation)
+  (let [situation (await (check-variant situation))
+        _        (t/is (empty? (uc/failures situation)) (pr-str (uc/failures situation)))
+        consumer (get-generated-editor situation)
         files    (cf/all-files situation)
         editor   (or (get-in situation [::source-editors owner])
                      {:situation (-> (tm/make-situation (get files owner))
@@ -988,10 +994,17 @@
       (throw (ex-info "Source editor step failed" {:owner owner})))
     (t/is (= (dissoc (:files before) owner) (dissoc (:files (snapshot)) owner))
           "A source editor must not write another file")
-    (let [source   (await (check-variant source))
+    (let [changed? (not= before (snapshot))
+          source   (await (check-variant source))
           editor   (get-generated-editor source)
           consumer (update consumer :situation merge (select-keys source [:accepted-libraries :shape-libraries]))
-          live     (resume-generated-editor consumer)]
+          baseline (uc/baseline (:situation consumer))
+          live     (resume-generated-editor consumer)
+          ;; The consumer's verified history can itself write the source.
+          ;; A real source edit closes that segment; a no-op keeps it exact.
+          live     (if changed?
+                     (mark-baseline live)
+                     (uc/mark-baseline live (:depth baseline) (:snapshot baseline)))]
       (t/is (empty? (uc/failures source)) (pr-str (uc/failures source)))
       (-> live
           (assoc ::source-editors (assoc (::source-editors situation) owner editor))
