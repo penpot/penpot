@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { once } from "node:events";
-import { afterEach, beforeEach, test } from "node:test";
+import { afterEach, beforeEach, mock, test } from "node:test";
 import { WebSocket } from "ws";
-import { PluginBridge } from "./PluginBridge";
+import { HEARTBEAT_REQUEST_INTERVAL_MS, PluginBridge } from "./PluginBridge";
 import { PluginTask } from "./PluginTask";
 import type { PenpotMcpServer } from "./PenpotMcpServer";
 
@@ -37,16 +37,32 @@ async function connect(sessionId: string, token = "alice", fileName = "Design", 
     const socket = new WebSocket(`ws://127.0.0.1:${port}?userToken=${token}`);
     sockets.push(socket);
     await once(socket, "open");
+    // answer tasks from the start, since one may arrive right behind the initialization
+    socket.on("message", (raw) => {
+        const request = JSON.parse(raw.toString());
+        if (request.type !== "initialized" && request.type !== "heartbeat-request") {
+            socket.send(JSON.stringify({ id: request.id, success: true, data: reply }));
+        }
+    });
     const initialized = once(socket, "message", { signal: AbortSignal.timeout(1500) });
     socket.send(JSON.stringify({ type: "initialize", session: { sessionId, fileId: "file-1", fileName } }));
     const [message] = await initialized;
     assert.equal(JSON.parse(message.toString()).type, "initialized");
-    socket.on("message", (raw) => {
-        const request = JSON.parse(raw.toString());
-        socket.send(JSON.stringify({ id: request.id, success: true, data: reply }));
-    });
     return socket;
 }
+
+test("asks each plugin for a heartbeat at a fixed interval", async () => {
+    mock.timers.enable({ apis: ["setInterval"] });
+    try {
+        const socket = await connect("tab-1");
+        const requested = once(socket, "message", { signal: AbortSignal.timeout(1500) });
+        mock.timers.tick(HEARTBEAT_REQUEST_INTERVAL_MS);
+        const [message] = await requested;
+        assert.deepEqual(JSON.parse(message.toString()), { type: "heartbeat-request" });
+    } finally {
+        mock.timers.reset();
+    }
+});
 
 test("keeps two tabs for the same file and dispatches to the selected session", async () => {
     await connect("tab-1");
