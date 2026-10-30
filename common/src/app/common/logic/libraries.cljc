@@ -887,7 +887,7 @@
           main-geometry        (clcg/reposition-shape shape-main root-main root-inst)
 
           [shape-after follow-modifiers]
-          (clcg/synced-geometry shape-inst main-geometry geometry-kept parent-change)
+          (clcg/calc-geometry-after-sync shape-inst main-geometry geometry-kept parent-change)
 
           changes
           (cond-> changes
@@ -987,8 +987,8 @@
                     ;; goes to the place of the slot's occupant in the main
                     (clcg/generate-follow-parent changes container child-inst shape-inst shape-after
                                                  (when-not (ctk/touched-group? child-inst :geometry-group)
-                                                   (clcg/sync-swap-position child-main root-main root-inst
-                                                                            shape-after main-geometry))))
+                                                   (clcg/calc-swap-position-after-sync child-main root-main root-inst
+                                                                                       shape-after main-geometry))))
 
           moved (fn [changes child-inst child-main]
                   (shape-log :trace (:id child-inst) container

@@ -363,7 +363,18 @@
 
 (defn follow-parent-modifiers
   "Modifiers that make `child` follow the change of its parent from
-  `parent-before` to `parent-after`, through the child constraints."
+  `parent-before` to `parent-after`.
+
+  The parent change is a resize from the top-left of `parent-before` to the
+  size of `parent-after`, in the frame of `parent-before`, followed by the
+  move between their top-lefts, so both must have the same rotation. A move
+  alone applies to the child as it is. A resize goes through the child
+  constraints (left, right, center, scale...); a child of a layout that is not
+  absolute follows it as left and top, as the layout places it.
+
+  It only computes the modifiers of `child`: it doesn't propagate them to its
+  children nor recalculate any layout (see
+  `app.common.geom.modifiers/follow-parent-shapes`)."
   [child parent-before parent-after]
   (let [sr-before (:selrect parent-before)
         sr-after  (:selrect parent-after)

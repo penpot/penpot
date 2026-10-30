@@ -22,20 +22,11 @@
    [app.common.types.path.segment :as segment]))
 
 (defn reposition-shape
-  "Expresses the shape (belonging to the origin-root instance) in the frame of the
-  dest-root instance, making the geometry of both instances directly comparable —
-  and copyable.
-
-  If the dest root's geometry is NOT overridden (touched), the instance follows
-  the origin's transformation verbatim (including rotation and flips), so a
-  translation by the roots' (untransformed) position delta suffices — position is
-  free per-instance placement.
-
-  If the dest root's geometry IS overridden (e.g. the user rotated the copy as a
-  whole), the instance keeps its own placement transform, so the origin shape is
-  additionally transformed by the roots' relative transformation (rotation /
-  flips) around the dest root center — geometric changes then land expressed in
-  the dest instance's own frame instead of wiping its placement."
+  "Places `shape`, of the `origin-root` instance, in the `dest-root` instance,
+  so the geometry of both can be compared and copied. It moves the shape by
+  the offset between the roots and, when the user transformed `dest-root`
+  (its geometry is touched), it also applies the rotation and flips of
+  `dest-root` relative to `origin-root`, around the center of `dest-root`."
   [shape origin-root dest-root]
   (if (ctk/touched-group? dest-root :geometry-group)
     (gsh/transform-relative shape origin-root dest-root)
@@ -53,11 +44,17 @@
 
 ;; --- Component sync
 
-(defn synced-geometry
-  "Geometry a sync gives the copy shape `shape-inst`, as `[shape modifiers]`.
-  When `geometry-kept`, the shape keeps its own geometry and follows the
-  change of its parent `parent-change` (`[before after]`, or nil) through
-  `modifiers`. Otherwise it takes `main-geometry` and `modifiers` is nil."
+(defn calc-geometry-after-sync
+  "Calculates the geometry the sync leaves the copy shape `shape-inst` with.
+  Returns `[shape modifiers]`: the shape with that geometry, and the modifiers
+  to apply to it, or nil.
+
+  - When the sync resets its geometry (`geometry-kept` false), the shape takes
+    `main-geometry`, the geometry of its main placed in the copy.
+  - When the user touched its geometry (`geometry-kept` true), the shape keeps
+    it, and follows its parent when the sync changes the parent:
+    `parent-change` is `[before after]`, or nil for the shape the sync starts
+    from."
   [shape-inst main-geometry geometry-kept parent-change]
   (cond
     (not geometry-kept)
@@ -80,11 +77,11 @@
                                #(gsh/transform-shape % modifiers)
                                container)))
 
-(defn sync-swap-position
-  "Where a sync puts a swapped child that the user didn't move: the place of
-  the slot's occupant `child-main` in the main, shifted by the offset between
-  where the sync leaves the parent (`parent-after`) and where the main puts
-  it (`parent-main`)."
+(defn calc-swap-position-after-sync
+  "Calculates where a sync puts a swapped child that the user didn't move:
+  the place of the slot's occupant `child-main` in the main, shifted by the
+  offset between where the sync leaves the parent (`parent-after`) and where
+  the main puts it (`parent-main`)."
   [child-main root-main root-inst parent-after parent-main]
   (let [main-gap (gpt/subtract (grc/rect->point (:selrect parent-after))
                                (grc/rect->point (:selrect parent-main)))]
@@ -121,22 +118,10 @@
       (reposition-shape prev-root current-root)))
 
 (defn equal-geometry?
-  "Returns true when the value of `attr` in `shape` is considered equal
-   to the corresponding value in `origin-shape`, ignoring positional
-   displacement (x/y).
-   For :selrect we compare width/height only;
-   for :points we normalise each vector so the first point is the
-   origin before comparing.
-   For :content on path shapes we compare the bounding-box width/height
-   of the path segments, again ignoring absolute position.
-
-   Comparisons use `mth/close?` (and `gpt/close?` for points) rather than
-   exact `=` because `previous-shape` here may carry sub-pixel drift from
-   interactive transform modifiers (e.g. an alt-drag duplicate of a
-   variant whose children are component instances). Without tolerance
-   this guard would miss equivalent geometries and let the `:else` branch
-   in `update-attrs-on-switch` carry stale `:selrect`/`:points` from the
-   pre-switch shape onto the freshly instantiated target."
+  "Returns true when `attr` has the same geometry in `shape` and
+  `origin-shape`, wherever they are: the size for :selrect and for the
+  :content of paths, the form of the points for :points. It compares with a
+  tolerance, as `shape` can carry sub-pixel drift from transform modifiers."
   [shape origin-shape attr]
   (or (and (= attr :selrect)
            (grc/close-size? (:selrect shape) (:selrect origin-shape)))

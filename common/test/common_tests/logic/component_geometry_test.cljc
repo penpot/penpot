@@ -80,47 +80,47 @@
     (t/is (mth/close? 90 (:rotation shape)))
     (t/is (gpt/close? (gpt/point 90 10) (gsh/shape->center shape)))))
 
-;; ---- synced-geometry
+;; ---- calc-geometry-after-sync
 
-(t/deftest synced-geometry-takes-main-geometry-when-not-kept
+(t/deftest calc-geometry-after-sync-takes-main-geometry-when-not-kept
   (let [main-geometry (make-child 0 0 50 50)]
     (t/is (= [main-geometry nil]
-             (clcg/synced-geometry (make-child 10 10 20 20)
-                                   main-geometry
-                                   false
-                                   [(make-root 0 0 100 100) (make-root 50 0 100 100)])))))
+             (clcg/calc-geometry-after-sync (make-child 10 10 20 20)
+                                            main-geometry
+                                            false
+                                            [(make-root 0 0 100 100) (make-root 50 0 100 100)])))))
 
-(t/deftest synced-geometry-keeps-shape-without-parent-change
+(t/deftest calc-geometry-after-sync-keeps-shape-without-parent-change
   (let [shape-inst (make-child 10 10 20 20)]
     (t/is (= [shape-inst nil]
-             (clcg/synced-geometry shape-inst (make-child 0 0 50 50) true nil)))))
+             (clcg/calc-geometry-after-sync shape-inst (make-child 0 0 50 50) true nil)))))
 
-(t/deftest synced-geometry-follows-parent-move
-  (let [[shape modifiers] (clcg/synced-geometry (make-child 10 10 20 20)
-                                                (make-child 0 0 50 50)
-                                                true
-                                                [(make-root 0 0 100 100) (make-root 30 5 100 100)])]
+(t/deftest calc-geometry-after-sync-follows-parent-move
+  (let [[shape modifiers] (clcg/calc-geometry-after-sync (make-child 10 10 20 20)
+                                                         (make-child 0 0 50 50)
+                                                         true
+                                                         [(make-root 0 0 100 100) (make-root 30 5 100 100)])]
     (t/is (ctm/only-move? modifiers))
     (t/is (gpt/close? (gpt/point 40 15) (top-left shape)))))
 
-(t/deftest synced-geometry-follows-parent-resize-through-constraints
-  (let [[shape _] (clcg/synced-geometry (make-child 80 10 20 20 :constraints-h :right)
-                                        (make-child 0 0 50 50)
-                                        true
-                                        [(make-root 0 0 100 100) (make-root 0 0 200 100)])]
+(t/deftest calc-geometry-after-sync-follows-parent-resize-through-constraints
+  (let [[shape _] (clcg/calc-geometry-after-sync (make-child 80 10 20 20 :constraints-h :right)
+                                                 (make-child 0 0 50 50)
+                                                 true
+                                                 [(make-root 0 0 100 100) (make-root 0 0 200 100)])]
     (t/is (mth/close? 180 (-> shape :selrect :x)))
     (t/is (mth/close? 20 (-> shape :selrect :width)))))
 
-;; ---- sync-swap-position
+;; ---- calc-swap-position-after-sync
 
-(t/deftest sync-swap-position-is-main-place-plus-parent-gap
+(t/deftest calc-swap-position-after-sync-is-main-place-plus-parent-gap
   ;; The slot occupant is at (10, 10) in the main, the copy root is 100 to the
   ;; right, and the sync leaves the parent 5 further right than the main puts it
-  (let [position (clcg/sync-swap-position (make-child 10 10 20 20)
-                                          (make-root 0 0 100 100)
-                                          (make-root 100 0 100 100)
-                                          (make-root 105 0 100 100)
-                                          (make-root 100 0 100 100))]
+  (let [position (clcg/calc-swap-position-after-sync (make-child 10 10 20 20)
+                                                     (make-root 0 0 100 100)
+                                                     (make-root 100 0 100 100)
+                                                     (make-root 105 0 100 100)
+                                                     (make-root 100 0 100 100))]
     (t/is (gpt/close? (gpt/point 115 10) position))))
 
 ;; ---- switch-previous-geometry
