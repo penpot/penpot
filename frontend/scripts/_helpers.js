@@ -328,7 +328,7 @@ export async function compileTranslations() {
     "nl",
     // this happens when file does not matches correct
     // iso code for the language.
-    ["ja_jp", "jpn_JP"],
+    ["ja", "jpn_JP"],
     ["uk", "ukr_UA"],
     "ha",
   ];
