@@ -19,9 +19,11 @@
 ;; frontend/src/app/main/ui/workspace/sidebar/common/sidebar.scss
 
 (def right-sidebar-default-width 318)
+(def right-sidebar-compact-width 240)
 (def right-sidebar-default-max-width 768)
 
 (def left-sidebar-default-width 318)
+(def left-sidebar-compact-width 240)
 (def left-sidebar-default-max-width 500)
 
 (def page-metadata

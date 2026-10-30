@@ -6387,6 +6387,10 @@ msgstr "Линейный градиент"
 msgid "workspace.gradients.radial"
 msgstr "Радиальный градиент"
 
+#: src/app/main/ui/workspace/main_menu.cljs:490
+msgid "workspace.header.menu.disable-compact-mode"
+msgstr "Выключить компактный режим"
+
 #: src/app/main/ui/workspace/main_menu.cljs:293
 msgid "workspace.header.menu.disable-dynamic-alignment"
 msgstr "Отключить активное выравнивание"
@@ -6410,6 +6414,10 @@ msgstr "Отключить привязку к направляющим лине
 #: src/app/main/ui/workspace/main_menu.cljs:341
 msgid "workspace.header.menu.disable-webgl"
 msgstr "Выключить рендеринг WebGL (бета)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:491
+msgid "workspace.header.menu.enable-compact-mode"
+msgstr "Включить компактный режим"
 
 #: src/app/main/ui/workspace/main_menu.cljs:294
 msgid "workspace.header.menu.enable-dynamic-alignment"

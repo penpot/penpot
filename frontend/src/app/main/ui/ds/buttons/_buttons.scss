@@ -21,7 +21,7 @@
   --button-focus-inner-ring-color: initial;
   --button-focus-outer-ring-color: initial;
   --button-width: initial;
-  --button-height: #{$sz-32};
+  --button-height: var(--button-height-override, #{$sz-32});
 
   appearance: none;
   width: var(--button-width);
