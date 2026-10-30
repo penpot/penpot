@@ -23,7 +23,7 @@
    [app.util.dom :as dom]
    [app.util.globals :as g]
    [app.util.http :as http]
-   [app.util.i18n :refer [tr]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as ts]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
@@ -506,7 +506,8 @@
 (defn flash
   "Show error notification banner and emit error report.
   A nil timeout keeps the notification visible until dismissed or replaced.
-  A `:tag` lets the notification be hidden later by that tag.
+  A `:tag` lets the notification be hidden later by that tag. `:level`
+  defaults to `:error`.
 
   The payload format is derived from the cause: environment failures get a
   compact report. The audit event name is the canonical one requested by
@@ -537,8 +538,8 @@
   synchronously from inside an error handler creates a re-entrant
   event-processing cycle that can exhaust the JS call stack
   (RangeError: Maximum call stack size exceeded)."
-  [& {:keys [type hint cause timeout tag report-link? links]
-      :or {type :handled timeout 5000}}]
+  [& {:keys [type hint cause timeout tag report-link? links level]
+      :or {type :handled timeout 5000 level :error}}]
   (js/Promise.
    (fn [resolve _reject]
      (ts/schedule
@@ -563,7 +564,7 @@
                 (ntf/show
                  (cond-> {:content (or ^boolean hint (tr "errors.generic"))
                           :type :toast
-                          :level :error
+                          :level level
                           :timeout timeout}
                    (some? tag)
                    (assoc :tag tag)
@@ -621,8 +622,10 @@
 
 (def ^:private delegated-persistence-types
   "Save failure causes routed to their own error handler: retaining the
-  changes cannot resolve them."
-  #{:authentication :not-found})
+  changes cannot resolve them. A save answered not-found (file gone, edit
+  rights lost, missing data) is not here: it keeps the workspace open and
+  notifies like any other failed save."
+  #{:authentication})
 
 (defn- delegated-persistence-failure?
   [{:keys [type cause-type code]}]
@@ -689,6 +692,15 @@
              :tag persistence-failed-tag
              :report-link? true
              :hint (tr "errors.save-still-retrying"))
+
+      (= :save-permission-denied (:code data))
+      (flash :cause cause
+             :type (persistence-report-type data)
+             :timeout nil
+             :tag persistence-failed-tag
+             :report-link? true
+             :links [(reload-page-link)]
+             :hint (tr "errors.save-permission-lost" (i18n/c (:unsaved-commits data 0))))
 
       :else
       (flash :cause cause

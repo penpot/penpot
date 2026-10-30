@@ -307,8 +307,16 @@
 (def ^:private check-file-restored-params
   (sm/check-fn schema:handle-file-restored))
 
+(defn- restorer-fullname
+  "Name of the user whose session restored the file, when known."
+  [state session-id]
+  (when-let [profile-id (dm/get-in state [:workspace-presence session-id :profile-id])]
+    (dm/get-in state [:profiles profile-id :fullname])))
+
 (defn handle-file-restored
-  [{:keys [file-id vern] :as msg}]
+  "Reloads the file a peer restored to an earlier version and tells the
+  user why it changed."
+  [{:keys [file-id vern session-id] :as msg}]
 
   (assert (check-file-restored-params msg)
           "expected valid parameters")
@@ -320,9 +328,12 @@
             file            (dsh/lookup-file state curr-file-id)
             curr-vern       (:vern file)]
 
-        (when (and (= file-id curr-file-id)
-                   (not= vern curr-vern))
-          (rx/of (ptk/event ::dw/reload-current-file)))))))
+        (if (and (= file-id curr-file-id)
+                 (not= vern curr-vern))
+          (rx/of (ptk/event ::dw/reload-current-file)
+                 (modal/show :file-restored
+                             {:fullname (restorer-fullname state session-id)}))
+          (rx/empty))))))
 
 (def ^:private schema:handle-library-change
   [:map {:title "handle-library-change"}

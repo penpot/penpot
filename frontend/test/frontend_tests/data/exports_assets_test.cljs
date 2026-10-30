@@ -8,6 +8,7 @@
   (:require
    [app.common.uuid :as uuid]
    [app.main.data.exports.assets :as de]
+   [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.persistence :as dwp]
    [app.main.errors :as errors]
    [app.main.repo :as repo]
@@ -201,5 +202,41 @@
         dom/trigger-download-uri         (mock/stub (fn [& _] (reset! downloaded true)))}
        (ptk/emit! store (de/request-simple-export {:export (assoc export :file-id (uuid/next))}))
        (await (async/wait-for #(true? @downloaded) "the export runs"))
+       (await (async/settle))
+       (t/is (nil? (:notification @store)))))))
+
+;; Scenario: a PDF is drawn in the browser while its file has a change not
+;; saved yet. Proves: the export waits for the save first, and the user is
+;; told the export includes changes the server does not have.
+(t/deftest ^:async client-export-waits-for-the-save-and-warns-of-unsaved-changes
+  (let [file-id  (uuid/next)
+        calls    (atom [])
+        store    (export-store (assoc (unsaved-state file-id) :features #{"render-wasm/v1"})
+                               (atom []))]
+    (await
+     (mock/with-mocks*
+       {dwp/force-persist-files-and-wait (mock/stub (fn [file-ids _]
+                                                      (swap! calls conj [:wait file-ids])
+                                                      (rx/empty)))
+        wasm.exports/export-pdf          (mock/stub (fn [_] (swap! calls conj [:export])))
+        i18n/tr                          (mock/stub #(str "translated:" %))}
+       (ptk/emit! store (de/request-simple-export {:export (assoc export :file-id file-id :type :pdf)}))
+       (await (async/wait-for #(= 2 (count @calls)) "the export runs"))
+       (t/is (= [[:wait #{file-id}] [:export]] @calls)
+             "the export starts once the save is done")
+       (t/is (= "translated:workspace.export.unsaved-changes-included"
+                (get-in @store [:notification :content])))))))
+
+;; Scenario: a PDF is drawn in the browser with every change saved. Proves:
+;; no warning is shown.
+(t/deftest ^:async client-export-shows-no-warning-when-the-file-is-saved
+  (let [exported (atom false)
+        store    (export-store (assoc (test-state) :features #{"render-wasm/v1"}) (atom []))]
+    (await
+     (mock/with-mocks*
+       {dwp/force-persist-files-and-wait (mock/stub (fn [_ _] (rx/empty)))
+        wasm.exports/export-pdf          (mock/stub (fn [_] (reset! exported true)))}
+       (ptk/emit! store (de/request-simple-export {:export (assoc export :file-id (uuid/next) :type :pdf)}))
+       (await (async/wait-for #(true? @exported) "the export runs"))
        (await (async/settle))
        (t/is (nil? (:notification @store)))))))

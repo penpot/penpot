@@ -445,6 +445,10 @@ msgstr "Duplicar"
 msgid "dashboard.duplicate-multi"
 msgstr "Duplicar %s archivos"
 
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.duplicate-unsaved-changes"
+msgstr "Algunos de tus últimos cambios aún no se han guardado, así que la copia no los incluirá."
+
 #: src/app/main/ui/dashboard/files.cljs:233, src/app/main/ui/dashboard/projects.cljs:309
 msgid "dashboard.empty-placeholder-drafts-subtitle"
 msgstr "Cuando un miembro del equipo cree algún borrador, este aparecerá aquí."
@@ -1787,6 +1791,16 @@ msgstr "El registro está actualmente desactivado."
 msgid "errors.save-failed"
 msgstr ""
 "El autoguardado se ha detenido en esta sesión, así que los cambios desde el último guardado correcto no se podrán guardar. Descarga el informe para ayudarnos a arreglarlo y recarga la página, o sal de este fichero y vuelve a abrirlo, para seguir editando."
+
+#: src/app/main/errors.cljs
+msgid "errors.save-permission-lost"
+msgid_plural "errors.save-permission-lost"
+msgstr[0] "Ya no puedes editar este archivo, así que 1 cambio no se ha podido guardar. Recarga la página para ver el archivo como está ahora."
+msgstr[1] "Ya no puedes editar este archivo, así que %s cambios no se han podido guardar. Recarga la página para ver el archivo como está ahora."
+
+#: src/app/main/data/persistence.cljs
+msgid "errors.save-rejected-changes-undone"
+msgstr "Algunos de tus últimos cambios no se han podido guardar y se han deshecho. El resto de tu trabajo está guardado."
 
 #: src/app/main/errors.cljs
 msgid "errors.save-still-retrying"
@@ -6506,6 +6520,22 @@ msgstr "Herramientas de depuración"
 msgid "workspace.export.unsaved-changes"
 msgstr "Algunos de tus últimos cambios aún no se han guardado, así que puede que esta exportación no los incluya."
 
+#: src/app/main/data/exports/assets.cljs
+msgid "workspace.export.unsaved-changes-included"
+msgstr "Algunos de tus últimos cambios aún no se han guardado. Esta exportación los incluye."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs
+msgid "workspace.file-restored.message"
+msgstr "%s ha restaurado una versión anterior de este archivo. Ahora ves esa versión."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs
+msgid "workspace.file-restored.message-anonymous"
+msgstr "Un miembro del equipo ha restaurado una versión anterior de este archivo. Ahora ves esa versión."
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs
+msgid "workspace.file-restored.title"
+msgstr "Se ha restaurado este archivo"
+
 #: src/app/main/ui/workspace/sidebar/layers.cljs:907
 msgid "workspace.focus.focus-mode"
 msgstr "Modo foco"
@@ -8392,6 +8422,16 @@ msgstr "¡LA EXTENSIÓN '%s' HA SIDO INSTALADA PARA TU USUARIO!"
 #: src/app/main/ui/workspace/plugins.cljs:528
 msgid "workspace.plugins.try-out.try"
 msgstr "PROBAR PLUGIN"
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs
+#, markdown
+msgid "workspace.save-failure.retrying"
+msgstr "**Edición desactivada** porque no se pueden guardar los cambios."
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs
+#, markdown
+msgid "workspace.save-failure.stopped"
+msgstr "**Edición desactivada** porque no se pueden guardar los cambios."
 
 #: src/app/main/ui/workspace/context_menu.cljs:659
 msgid "workspace.shape.menu.add-flex"

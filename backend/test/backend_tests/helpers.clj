@@ -17,6 +17,7 @@
    [app.common.spec :as us]
    [app.common.time :as ct]
    [app.common.transit :as tr]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -336,6 +337,21 @@
                                                      :changes changes
                                                      :session-id session-id
                                                      :profile-id profile-id})))))))
+
+(defn add-rect-change
+  "A change that adds a 10x10 rect `id` to the root of `page-id`."
+  [page-id id]
+  {:type :add-obj
+   :page-id page-id
+   :id id
+   :parent-id uuid/zero
+   :frame-id uuid/zero
+   :obj (cts/setup-shape {:id id
+                          :type :rect
+                          :name "rect"
+                          :x 0 :y 0 :width 10 :height 10
+                          :parent-id uuid/zero
+                          :frame-id uuid/zero})})
 
 (declare command!)
 

@@ -17,7 +17,9 @@
    [frontend-tests.data.fix-deleted-fonts-test]
    [frontend-tests.data.modal-test]
    [frontend-tests.data.nitrate-test]
+   [frontend-tests.data.persistence-commits-test]
    [frontend-tests.data.persistence-retry-test]
+   [frontend-tests.data.persistence-rollback-test]
    [frontend-tests.data.persistence-test]
    [frontend-tests.data.profile-test]
    [frontend-tests.data.repo-test]
@@ -29,14 +31,17 @@
    [frontend-tests.data.workspace-comments-test]
    [frontend-tests.data.workspace-context-menu-test]
    [frontend-tests.data.workspace-interactions-test]
+   [frontend-tests.data.workspace-libraries-sync-test]
    [frontend-tests.data.workspace-mcp-test]
    [frontend-tests.data.workspace-media-test]
+   [frontend-tests.data.workspace-notifications-test]
    [frontend-tests.data.workspace-pages-test]
    [frontend-tests.data.workspace-path-edition-test]
    [frontend-tests.data.workspace-reflow-test]
    [frontend-tests.data.workspace-shortcuts-test]
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
+   [frontend-tests.data.workspace-undo-test]
    [frontend-tests.data.workspace-variant-rename-test]
    [frontend-tests.data.workspace-variants-test]
    [frontend-tests.data.workspace-versions-test]
@@ -52,6 +57,7 @@
    [frontend-tests.logic.copying-and-duplicating-test]
    [frontend-tests.logic.frame-guides-test]
    [frontend-tests.logic.groups-test]
+   [frontend-tests.logic.move-shapes-to-frame-test]
    [frontend-tests.logic.nudge-selected-shapes-test]
    [frontend-tests.logic.pasting-in-containers-test]
    [frontend-tests.logic.path-actions-test]
@@ -131,6 +137,7 @@
    [frontend-tests.ui.sidebar-scroll-test]
    [frontend-tests.ui.static-test]
    [frontend-tests.ui.stroke-menu-test]
+   [frontend-tests.ui.viewport-top-bar-test]
    [frontend-tests.ui.workspace-libraries-test]
    [frontend-tests.util-clipboard-test]
    [frontend-tests.util-http-test]
@@ -167,7 +174,9 @@
    'frontend-tests.data.fix-deleted-fonts-test
    'frontend-tests.data.modal-test
    'frontend-tests.data.nitrate-test
+   'frontend-tests.data.persistence-commits-test
    'frontend-tests.data.persistence-retry-test
+   'frontend-tests.data.persistence-rollback-test
    'frontend-tests.data.persistence-test
    'frontend-tests.data.profile-test
    'frontend-tests.data.repo-test
@@ -181,14 +190,17 @@
    'frontend-tests.data.workspace-comments-test
    'frontend-tests.data.workspace-context-menu-test
    'frontend-tests.data.workspace-interactions-test
+   'frontend-tests.data.workspace-libraries-sync-test
    'frontend-tests.data.workspace-mcp-test
    'frontend-tests.data.workspace-media-test
+   'frontend-tests.data.workspace-notifications-test
    'frontend-tests.data.workspace-pages-test
    'frontend-tests.data.workspace-path-edition-test
    'frontend-tests.data.workspace-reflow-test
    'frontend-tests.data.workspace-shortcuts-test
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
+   'frontend-tests.data.workspace-undo-test
    'frontend-tests.data.workspace-variant-rename-test
    'frontend-tests.data.workspace-variants-test
    'frontend-tests.data.workspace-versions-test
@@ -204,6 +216,7 @@
    'frontend-tests.logic.copying-and-duplicating-test
    'frontend-tests.logic.frame-guides-test
    'frontend-tests.logic.groups-test
+   'frontend-tests.logic.move-shapes-to-frame-test
    'frontend-tests.logic.nudge-selected-shapes-test
    'frontend-tests.logic.path-actions-test
    'frontend-tests.logic.path-clipboard-test
@@ -284,6 +297,7 @@
    'frontend-tests.ui.sidebar-scroll-test
    'frontend-tests.ui.static-test
    'frontend-tests.ui.stroke-menu-test
+   'frontend-tests.ui.viewport-top-bar-test
    'frontend-tests.ui.workspace-libraries-test
    'frontend-tests.util-clipboard-test
    'frontend-tests.util-http-test

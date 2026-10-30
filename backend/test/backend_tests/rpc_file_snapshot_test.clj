@@ -6,6 +6,7 @@
 
 (ns backend-tests.rpc-file-snapshot-test
   (:require
+   [app.binfile.common :as bfc]
    [app.common.features :as cfeat]
    [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
@@ -15,9 +16,13 @@
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
+   [app.features.fdata :as fdata]
+   [app.features.file-snapshots :as fsnap]
    [app.http :as http]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
+   [app.util.blob :as blob]
+   [app.util.pointer-map :as pmap]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]))
@@ -220,3 +225,201 @@
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
         (t/is (true? (:result out)))))))
+
+(defn- create-edited-file
+  "Creates a file with objects-map, with or without `pointer-map?`, and saves
+  a rect on it; the save takes a snapshot of the file before the rect."
+  [& {:keys [pointer-map?]}]
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false
+                                    :features (-> (cfeat/get-enabled-features cf/flags)
+                                                  (conj "fdata/objects-map")
+                                                  (cond-> (not pointer-map?) (disj "fdata/pointer-map")))})
+        page-id (-> file :data :pages first)
+        rect-id (uuid/next)]
+    (update-file! :file-id (:id file)
+                  :profile-id (:id profile)
+                  :changes [(th/add-rect-change page-id rect-id)])
+    {:profile-id (:id profile)
+     :file-id (:id file)
+     :page-id page-id
+     :rect-id rect-id
+     :snapshot-id (-> (th/db-query :file-change {:file-id (:id file) :label "internal/snapshot/0"}
+                                   {::db/remove-deleted false})
+                      first
+                      :id)}))
+
+(defn- snapshot-row
+  [{:keys [file-id snapshot-id]}]
+  (th/db-get :file-data {:file-id file-id :id snapshot-id :type "snapshot"}
+             {::db/remove-deleted false}))
+
+(defn- snapshot-data
+  [ctx]
+  (-> (snapshot-row ctx) :data blob/decode))
+
+(defn- compaction-tasks
+  []
+  (th/db-exec! ["select * from task where name = 'compact-file-snapshot' and status = 'new'"]))
+
+(t/deftest update-file-snapshot-is-compacted-later
+  (let [{:keys [page-id rect-id] :as ctx} (create-edited-file)
+        before (snapshot-row ctx)
+        data   (snapshot-data ctx)]
+
+    (t/testing "the save stores the data as it was, objects-map included"
+      (t/is (uuid? (:snapshot-id ctx)))
+      (t/is (fdata/has-objects-map? data))
+      (t/is (not (contains? (get-in data [:pages-index page-id :objects]) rect-id))))
+
+    (t/testing "the save queues the compaction"
+      (t/is (= [{:file-id (:file-id ctx) :id (:snapshot-id ctx)}]
+               (mapv #(-> % :props db/decode-transit-pgobject) (compaction-tasks)))))
+
+    (th/run-pending-tasks!)
+
+    (t/testing "the task stores the same data with plain objects"
+      (let [after (snapshot-row ctx)]
+        (t/is (not (fdata/has-objects-map? (snapshot-data ctx))))
+        (t/is (= (fdata/process-objects data (partial into {}))
+                 (snapshot-data ctx)))
+        (t/is (= (:deleted-at before) (:deleted-at after)))
+        (t/is (= (:modified-at before) (:modified-at after)))))
+
+    (t/testing "a second compaction does nothing"
+      (t/is (nil? (db/tx-run! th/*system* fsnap/compact! (:file-id ctx) (:snapshot-id ctx)))))))
+
+(t/deftest compaction-keeps-a-snapshot-pinned-before-it
+  (let [{:keys [profile-id snapshot-id] :as ctx} (create-edited-file)
+        out (th/command! {::th/type :update-file-snapshot
+                          ::rpc/profile-id profile-id
+                          :id snapshot-id
+                          :label "pinned"})]
+    (t/is (nil? (:error out)))
+    (th/run-pending-tasks!)
+    (t/is (nil? (:deleted-at (snapshot-row ctx))))
+    (t/is (not (fdata/has-objects-map? (snapshot-data ctx))))
+    (t/is (= "pinned" (:label (th/db-get :file-change {:id snapshot-id}))))))
+
+(defn- run-compaction
+  "Runs the compaction task handler on snapshot `snapshot-id`."
+  [{:keys [file-id snapshot-id]}]
+  (let [handler (get th/*system* :app.tasks.compact-file-snapshot/handler)]
+    (handler {:props {:file-id file-id :id snapshot-id}})))
+
+(t/deftest compaction-of-a-missing-snapshot-does-nothing
+  (let [{:keys [file-id snapshot-id] :as ctx} (create-edited-file)]
+    (th/db-delete! :file-data {:file-id file-id :id snapshot-id :type "snapshot"})
+    (t/is (nil? (db/tx-run! th/*system* fsnap/compact! file-id snapshot-id)))
+    (run-compaction ctx)
+    (t/is (nil? (snapshot-row ctx)))))
+
+(defn- get-file
+  [file-id]
+  (db/run! th/*system* #(bfc/get-file % file-id)))
+
+(t/deftest snapshot-with-objects-map-can-be-taken-outside-a-transaction
+  (let [{:keys [profile-id file-id] :as ctx} (create-edited-file)
+        file     (assoc (get-file file-id) :data (snapshot-data ctx))
+        snapshot (fsnap/create! th/*system* file {:profile-id profile-id})
+        ctx      (assoc ctx :snapshot-id (:id snapshot))]
+    (t/is (fdata/has-objects-map? (snapshot-data ctx)))
+    (t/is (some #(= (:id snapshot) (-> % :props db/decode-transit-pgobject :id))
+                (compaction-tasks)))
+    (run-compaction ctx)
+    (t/is (not (fdata/has-objects-map? (snapshot-data ctx))))))
+
+(t/deftest compaction-leaves-pages-behind-a-pointer-unloaded
+  (let [{:keys [profile-id file-id page-id] :as ctx} (create-edited-file)
+        pointer-page-id (uuid/next)
+        pointer-id      (uuid/next)
+        data     (-> (snapshot-data ctx)
+                     (assoc-in [:pages-index pointer-page-id] (pmap/create pointer-id {})))
+        file     (assoc (get-file file-id) :data data)
+        snapshot (fsnap/create! th/*system* file {:profile-id profile-id})
+        ctx      (assoc ctx :snapshot-id (:id snapshot))]
+    (run-compaction ctx)
+    (let [data (snapshot-data ctx)
+          page (get-in data [:pages-index pointer-page-id])]
+      (t/is (not (fdata/has-objects-map? data)))
+      (t/is (map? (get-in data [:pages-index page-id :objects])))
+      (t/is (pmap/pointer-map? page))
+      (t/is (= pointer-id (pmap/get-id page))))))
+
+(t/deftest compaction-with-storage-backend
+  (binding [cf/config (assoc cf/config :file-data-backend "storage")]
+    (let [ctx     (create-edited-file)
+          before  (snapshot-row ctx)
+          old-ref (-> before :metadata fdata/decode-metadata :storage-ref-id)
+          storage (sto/resolve th/*system*)
+          data    (fn [row]
+                    (->> (-> row :metadata fdata/decode-metadata :storage-ref-id)
+                         (sto/get-object storage)
+                         (sto/get-object-bytes storage)
+                         (blob/decode)))]
+      (t/is (= "storage" (:backend before)))
+      (t/is (fdata/has-objects-map? (data before)))
+
+      (run-compaction ctx)
+
+      (let [after   (snapshot-row ctx)
+            new-ref (-> after :metadata fdata/decode-metadata :storage-ref-id)]
+        (t/is (= "storage" (:backend after)))
+        (t/is (not= old-ref new-ref))
+        (t/is (= (fdata/process-objects (data before) (partial into {}))
+                 (data after)))
+        (t/testing "the replaced object is left for the storage gc"
+          (t/is (some? (:touched-at (th/db-get :storage-object {:id old-ref})))))))))
+
+(t/deftest snapshot-before-compaction-can-be-previewed-and-restored
+  (let [{:keys [profile-id file-id page-id rect-id snapshot-id]} (create-edited-file)]
+
+    (t/testing "preview"
+      (let [out (th/command! {::th/type :get-file-snapshot
+                              ::rpc/profile-id profile-id
+                              :file-id file-id
+                              :id snapshot-id})]
+        (t/is (nil? (:error out)))
+        (t/is (contains? (-> out :result :data :pages-index (get page-id) :objects) uuid/zero))
+        (t/is (not (contains? (-> out :result :data :pages-index (get page-id) :objects) rect-id)))))
+
+    (t/testing "restore"
+      (let [out (th/command! {::th/type :restore-file-snapshot
+                              ::rpc/profile-id profile-id
+                              :file-id file-id
+                              :id snapshot-id})
+            objects (-> (th/command! {::th/type :get-file
+                                      ::rpc/profile-id profile-id
+                                      :id file-id})
+                        :result :data :pages-index (get page-id) :objects)]
+        (t/is (nil? (:error out)))
+        (t/is (contains? objects uuid/zero))
+        (t/is (not (contains? objects rect-id)))))))
+
+(t/deftest pointer-map-file-snapshot-resolves-pointers-and-is-compacted-later
+  (let [{:keys [page-id rect-id] :as ctx} (create-edited-file :pointer-map? true)
+        data (snapshot-data ctx)]
+    (t/is (uuid? (:snapshot-id ctx)))
+    (t/is (empty? (fdata/get-used-pointer-ids data)))
+    (t/is (fdata/has-objects-map? data))
+    (t/is (not (contains? (get-in data [:pages-index page-id :objects]) rect-id)))
+    (t/is (= 1 (count (compaction-tasks))))
+    (th/run-pending-tasks!)
+    (t/is (not (fdata/has-objects-map? (snapshot-data ctx))))))
+
+(t/deftest snapshot-without-objects-map-needs-no-compaction
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false
+                                    :features (-> (cfeat/get-enabled-features cf/flags)
+                                                  (disj "fdata/objects-map" "fdata/pointer-map"))})]
+    ;; The save enables fdata/objects-map, but the data it snapshots has none
+    (update-file! :file-id (:id file)
+                  :profile-id (:id profile)
+                  :changes [(th/add-rect-change (-> file :data :pages first) (uuid/next))])
+    (t/is (= 1 (count (th/db-query :file-change {:file-id (:id file) :label "internal/snapshot/0"}
+                                   {::db/remove-deleted false}))))
+    (t/is (empty? (compaction-tasks)))))

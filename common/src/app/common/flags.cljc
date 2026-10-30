@@ -96,6 +96,10 @@
     :file-validation
     ;; Reports the referential integrity validation errors internally.
     :soft-file-validation
+    ;; Disabled by default; never enable it in production. Lets a save
+    ;; carry a marker that makes the backend fail it with a chosen error
+    ;; (frontend `debug.failNextSave`).
+    :debug-save-faults
     ;; TODO: deprecate this flag and consolidate the code
     :frontend-svgo
     ;; TODO: deprecate this flag and consolidate the code
