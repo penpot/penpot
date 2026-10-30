@@ -197,6 +197,12 @@
    (and (cfh/frame-shape? shape)
         (= :grid (:layout shape)))))
 
+(defn grid-direction
+  "The direction a grid flows its auto-placed cells in. A grid without one
+  flows by rows, the direction grids are created with."
+  [shape]
+  (d/nilv (:layout-grid-dir shape) :row))
+
 (defn any-layout?
   ([objects id]
    (any-layout? (get objects id)))
@@ -1054,9 +1060,9 @@
   (reorder-grid-track parent from-index to-index move-content? :layout-grid-rows :row))
 
 (defn cells-seq
-  [{:keys [layout-grid-cells layout-grid-dir]} & {:keys [sort?] :or {sort? false}}]
+  [{:keys [layout-grid-cells] :as parent} & {:keys [sort?] :or {sort? false}}]
 
-  (let [comp-fn (if (= layout-grid-dir :row)
+  (let [comp-fn (if (= (grid-direction parent) :row)
                   (juxt :row :column)
                   (juxt :column :row))
         maybe-sort?
@@ -1242,11 +1248,11 @@
             free-cells (get-free-cells parent)
 
             to-add-tracks
-            (if (= (:layout-grid-dir parent) :row)
+            (if (= (grid-direction parent) :row)
               (mth/ceil (/ (- (count no-cell-shapes) (count free-cells)) (count (:layout-grid-rows parent))))
               (mth/ceil (/ (- (count no-cell-shapes) (count free-cells)) (count (:layout-grid-columns parent)))))
 
-            add-track (if (= (:layout-grid-dir parent) :row) add-grid-column add-grid-row)
+            add-track (if (= (grid-direction parent) :row) add-grid-column add-grid-row)
 
             parent
             (->> (range to-add-tracks)
@@ -1492,7 +1498,7 @@
         cols (count (:layout-grid-columns parent))]
     (if (or (zero? rows) (zero? cols))
       (assoc parent :layout-grid-cells {})
-      (let [coords    (vec (sort-by (if (= :row (:layout-grid-dir parent)) identity (juxt second first))
+      (let [coords    (vec (sort-by (if (= :row (grid-direction parent)) identity (juxt second first))
                                     (for [row (range 1 (inc rows)) column (range 1 (inc cols))] [row column])))
             area      (fn [{:keys [row column row-span column-span]}]
                         (for [row (range row (+ row row-span))

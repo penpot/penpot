@@ -6,6 +6,7 @@
 
 (ns common-tests.types.shape-layout-test
   (:require
+   [app.common.files.builder :as fb]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as layout]
    [app.common.uuid :as uuid]
@@ -122,9 +123,58 @@
           shape (if direction (assoc shape :layout-grid-dir direction) (dissoc shape :layout-grid-dir))
           after (layout/fit-cells-to-tracks shape)
           cell  (get-in after [:layout-grid-cells (:id moved)])]
-      (t/is (= (if (= :row direction) [1 2] [2 1]) [(:row cell) (:column cell)]))
+      (t/is (= (if (= :column direction) [2 1] [1 2]) [(:row cell) (:column cell)]))
       (t/is (empty? (layout/overlapping-cells after)))
       (t/is (= after (layout/fit-cells-to-tracks after))))))
+
+(defn- build-grid-with-children
+  "A grid board with `tracks` rows and columns and three children without
+  cells, built as library imports build files. Returns the board after cell
+  assignment and the children's ids."
+  [direction tracks]
+  (let [board-id  (uuid/next)
+        child-ids [(uuid/next) (uuid/next) (uuid/next)]
+        state     (-> (fb/create-state)
+                      (fb/add-file {:name "Grid file"})
+                      (fb/add-page {:name "Page 1"})
+                      (fb/add-board (cond-> {:id board-id :name "Grid" :x 0 :y 0 :width 200 :height 200
+                                             :layout :grid
+                                             :layout-grid-rows []
+                                             :layout-grid-columns []
+                                             :layout-grid-cells {}}
+                                      (some? direction) (assoc :layout-grid-dir direction))))
+        state     (reduce (fn [state id]
+                            (fb/add-shape state {:id id :type :rect :name "Rect" :x 0 :y 0 :width 10 :height 10}))
+                          state
+                          child-ids)
+        objects   (fb/get-current-objects state)
+        board     (reduce (fn [board _]
+                            (-> board
+                                (layout/add-grid-row layout/default-track-value)
+                                (layout/add-grid-column layout/default-track-value)))
+                          (get objects board-id)
+                          (range tracks))]
+    [(layout/assign-cells board objects) child-ids]))
+
+(defn- child-coords
+  [board child-ids]
+  (mapv #(let [cell (layout/get-cell-by-shape-id board %)] [(:row cell) (:column cell)]) child-ids))
+
+(t/deftest a-grid-without-direction-assigns-children-like-a-row-grid
+  (doseq [tracks [0 2]]
+    (let [[absent absent-ids] (build-grid-with-children nil tracks)
+          [row row-ids]       (build-grid-with-children :row tracks)]
+      (t/is (not (contains? absent :layout-grid-dir)))
+      (t/is (= (child-coords row row-ids) (child-coords absent absent-ids))))))
+
+(t/deftest a-grid-without-direction-reflows-to-column-like-a-row-grid
+  ;; The direction event reads a missing direction as :row.
+  (let [[absent absent-ids] (build-grid-with-children nil 2)
+        [row row-ids]       (build-grid-with-children :row 2)
+        absent              (layout/reflow-grid-auto-items-for-direction absent :row :column)
+        row                 (layout/reflow-grid-auto-items-for-direction row :row :column)]
+    (t/is (= [[1 1] [2 1] [1 2]] (child-coords row row-ids)))
+    (t/is (= (child-coords row row-ids) (child-coords absent absent-ids)))))
 
 (t/deftest fitting-a-grid-with-no-tracks-clears-empty-cells
   (doseq [rows [0 1] columns [0 1] :when (or (zero? rows) (zero? columns))]

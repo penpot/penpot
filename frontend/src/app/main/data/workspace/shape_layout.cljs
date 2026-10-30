@@ -317,7 +317,7 @@
                (dwsh/update-shapes
                 ids
                 (fn [shape]
-                  (let [from-dir (d/nilv (:layout-grid-dir shape) :row)]
+                  (let [from-dir (ctl/grid-direction shape)]
                     (cond
                       (not= :grid (:layout shape))
                       shape
