@@ -1481,6 +1481,64 @@
           (contains? (set shapes) shape-id)))
        (second)))
 
+(defn fit-cells-to-tracks
+  "Fit cell placements and spans within the current tracks. Keep occupied
+  cells before empty cells, authored empty areas before defaults, and keep
+  placements that already fit first.
+  If no separate slot remains, keep the receiving cell's properties and
+  combine their children in that cell."
+  [parent]
+  (let [rows (count (:layout-grid-rows parent))
+        cols (count (:layout-grid-columns parent))]
+    (if (or (zero? rows) (zero? cols))
+      (assoc parent :layout-grid-cells {})
+      (let [coords    (vec (sort-by (if (= :row (:layout-grid-dir parent)) identity (juxt second first))
+                                    (for [row (range 1 (inc rows)) column (range 1 (inc cols))] [row column])))
+            area      (fn [{:keys [row column row-span column-span]}]
+                        (for [row (range row (+ row row-span))
+                              column (range column (+ column column-span))] [row column]))
+            fits?     (fn [{:keys [row column row-span column-span]}]
+                        (and (<= 1 row (+ row row-span -1) rows)
+                             (<= 1 column (+ column column-span -1) cols)))
+            authored? (fn [cell]
+                        (not= grid-cell-defaults
+                              (merge grid-cell-defaults (dissoc cell :id :row :column :shapes))))
+            cells     (sort-by (juxt #(cond (seq (:shapes %)) 0 (authored? %) 1 :else 2)
+                                     #(if (fits? %) 0 1) :row :column (comp str :id))
+                               (vals (:layout-grid-cells parent)))
+            [cells covered]
+            (reduce
+             (fn [[cells covered :as result] cell]
+               (let [row     (min rows (:row cell))
+                     column  (min cols (:column cell))
+                     bounded (assoc cell :row row :column column
+                                    :row-span (min (:row-span cell) (inc (- rows row)))
+                                    :column-span (min (:column-span cell) (inc (- cols column))))
+                     free?   #(and (fits? %) (not-any? covered (area %)))
+                     places  (fn [cell] (cons cell (map (fn [[row column]] (assoc cell :row row :column column)) coords)))
+                     placed  (if (or (seq (:shapes cell)) (authored? cell))
+                               (or (d/seek free? (places bounded))
+                                   (d/seek free? (places (assoc bounded :row-span 1 :column-span 1))))
+                               (when (and (<= (:row cell) rows) (<= (:column cell) cols) (free? bounded)) bounded))]
+                 (cond
+                   placed
+                   [(assoc cells (:id placed) placed) (into covered (area placed))]
+
+                   (seq (:shapes cell))
+                   (let [target (d/seek #(in-cell? % row column) (vals cells))]
+                     [(update cells (:id target)
+                              #(cond-> (update % :shapes d/concat-vec (:shapes cell))
+                                 (= :auto (:position %)) (assoc :position :manual)))
+                      covered])
+
+                   :else result)))
+             [{} #{}] cells)]
+        (reduce (fn [parent [row column :as coord]]
+                  (if (contains? covered coord)
+                    parent
+                    (create-cells parent [column row 1 1])))
+                (assoc parent :layout-grid-cells cells) coords)))))
+
 (defn swap-shapes
   [parent id-from id-to]
 
