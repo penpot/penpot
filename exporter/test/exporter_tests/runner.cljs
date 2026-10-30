@@ -13,6 +13,7 @@
    [exporter-tests.export-shapes-test]
    [exporter-tests.jobs-test]
    [exporter-tests.renderer-svg-test]
+   [exporter-tests.resources-test]
    [exporter-tests.scheduler-test]
    [exporter-tests.shell-test]
    [exporter-tests.wasm-pool-test]
@@ -24,6 +25,7 @@
   ['exporter-tests.export-shapes-test
    'exporter-tests.jobs-test
    'exporter-tests.renderer-svg-test
+   'exporter-tests.resources-test
    'exporter-tests.scheduler-test
    'exporter-tests.shell-test
    'exporter-tests.wasm-pool-test])
