@@ -67,13 +67,13 @@ Personal access tokens function like an alternative to our login/password authen
 <p class="advice"><strong>Important:</strong> Treat your access tokens like passwords as they provide access to our account.</p>
 
 ### Manage access tokens
-In Penpot, access tokens are configured at user account level. To manage your access tokens, go to Your account > Access tokens.
+In Penpot, access tokens are configured at user account level. To manage your access tokens, go to Your account > Integrations. You'll find them in the Personal access tokens section.
 
 ![Access tokens](/img/tech-guide/access-tokens.webp)
 
 ### Generate access tokens
 
-1. Press the "Generate new token" button.
+1. Press the "Create new access token" button.
 
 ![Creating token](/img/tech-guide/access-tokens-create-1.webp)
 
@@ -83,7 +83,7 @@ In Penpot, access tokens are configured at user account level. To manage your ac
 
 ![Token expiration](/img/tech-guide/access-tokens-create-2.webp)
 
-4. Once you're happy with the name and the expiration date, press "Create token". At this step you will be able to copy the token to your clipboard.
+4. Once you're happy with the name and the expiration date, press "Create access token". At this step you will be able to copy the token to your clipboard. Keep it somewhere safe: once you close the dialog you will not be able to see it again.
 
 ![Token created](/img/tech-guide/access-tokens-create-3.webp)
 
