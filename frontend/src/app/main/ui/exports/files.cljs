@@ -237,12 +237,13 @@
       (if running?
         (tr "files-export-modal.exporting.title" (i18n/c total))
         (tr "files-export-modal.exported.title" (i18n/c done)))]
-     [:> text* {:as "p"
-                :typography t/body-medium
-                :class (stl/css :phase-message)}
-      (if running?
-        (tr "files-export-modal.exporting.message")
-        (tr "files-export-modal.exported.message"))]]))
+     (when (or running? (pos? done))
+       [:> text* {:as "p"
+                  :typography t/body-medium
+                  :class (stl/css :phase-message)}
+        (if running?
+          (tr "files-export-modal.exporting.message")
+          (tr "files-export-modal.exported.message"))])]))
 
 (mf/defc export-dialog
   {::mf/register modal/components
