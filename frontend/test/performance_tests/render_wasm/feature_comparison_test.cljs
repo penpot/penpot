@@ -428,13 +428,14 @@
               :provenance {:feature-selection selection}}})
 
 (defn- build-service
-  [{:keys [extra-features fail-on inspect]
+  [{:keys [extra-features fail-on inspect build-fn]
     :or {extra-features (constantly [])
-         fail-on (constantly false)}}]
+         fail-on (constantly false)
+         build-fn fake-build}}]
   (fn [request]
     (when inspect (inspect request))
     (let [selection (get request :selection)
-          build     (fake-build selection (extra-features selection))]
+          build     (build-fn selection (extra-features selection))]
       (when-let [on-created (:on-created request)]
         (on-created build))
       (if (fail-on selection)
@@ -531,6 +532,225 @@
   {:prepare-build prepare-build
    :collect-catalog (or collect-catalog (fn [_ _] [(fixture-case)]))
    :execute-run execute-run})
+
+(defn- saved-comparison
+  [outcome]
+  (result/decode (fs/readFileSync (get-in outcome [:home :record-path]) "utf8")))
+
+(t/deftest ^:async invalid-build-selection-or-features-stops-later-configurations
+  (create-frontend-root)
+  (doseq [[field value] [[[:provenance :feature-selection] {:default-features? false :features ["other"]}]
+                         [[:functional :features] #{"a"}]
+                         [[:functional :features] [:invalid]]]]
+    (let [prepared (comparison-prepared ["a"] {:output-dir (path/join @temporary-root (str (random-uuid)))})
+          outcome  (await (feature-comparison/execute
+                           (frontend-root) prepared nil
+                           {:services (comparison-services
+                                       {:prepare-build (build-service
+                                                        {:build-fn (fn [selection extra]
+                                                                     (assoc-in (fake-build selection extra)
+                                                                               (into [:manifest] field) value))})
+                                        :execute-run (execute-service {})})}))
+          record   (saved-comparison outcome)]
+      (t/is (= 1 (:exit-code outcome)))
+      (t/is (= :failed (:status record)))
+      (t/is (= [:failed :unattempted] (mapv :status (:configurations record))))
+      (t/is (= "build" (get-in record [:configurations 0 :failure :phase])))
+      (t/is (str/includes? (get-in record [:configurations 0 :failure :message])
+                           "disagrees with the planned selection")))))
+
+(t/deftest ^:async operational-failures-save-the-stage-and-stop-later-configurations
+  (create-frontend-root)
+  (doseq [[boundary phase message] [[:catalog "catalog" "catalog rejected"]
+                                    [:run-home "run-home" "already exists"]
+                                    [:run "run" "run rejected"]
+                                    [:missing-run "run" "run executor returned no record"]]]
+    (let [prepared (comparison-prepared ["a"] {:output-dir (path/join @temporary-root (str (random-uuid)))})
+          base     (comparison-services {:prepare-build (build-service {}) :execute-run (execute-service {})})
+          services (case boundary
+                     :catalog (assoc base :collect-catalog (fn [_ _] (throw (js/Error. "catalog rejected"))))
+                     :run-home (assoc base :prepare-build
+                                      (build-service {:inspect (fn [_]
+                                                                 (fs/mkdirSync (path/join (:output-dir prepared) "configs" "0")
+                                                                               #js {:recursive true}))}))
+                     :run (assoc base :execute-run (fn [& _] (js/Promise.reject (js/Error. "run rejected"))))
+                     :missing-run (assoc base :execute-run (fn [& _] (js/Promise.resolve {:exit-code 1}))))
+          outcome  (await (feature-comparison/execute (frontend-root) prepared nil {:services services}))
+          record   (saved-comparison outcome)]
+      (t/is (= 1 (:exit-code outcome)))
+      (t/is (= :failed (:status record)))
+      (t/is (= [:failed :unattempted] (mapv :status (:configurations record))))
+      (t/is (= phase (get-in record [:configurations 0 :failure :phase])))
+      (t/is (str/includes? (get-in record [:configurations 0 :failure :message]) message)))))
+
+(t/deftest ^:async unavailable-or-mismatched-run-evidence-stops-later-configurations
+  (create-frontend-root)
+  (doseq [[kind message] [[:missing "run record is missing"]
+                          [:mismatch "saved run identity disagrees with execution result"]]]
+    (let [prepared (comparison-prepared ["a"] {:output-dir (path/join @temporary-root (str (random-uuid)))})
+          execute  (execute-service {})
+          outcome  (await (feature-comparison/execute
+                           (frontend-root) prepared nil
+                           {:services (comparison-services
+                                       {:prepare-build (build-service {})
+                                        :execute-run
+                                        (^:async fn [root home build cases options signal]
+                                          (let [response (await (execute root home build cases options signal))]
+                                            (if (= kind :missing)
+                                              (fs/unlinkSync (:record-path home))
+                                              (files/atomic-write (:record-path home)
+                                                                  (result/encode (assoc (:run response) :run-id (str (random-uuid))))))
+                                            response))})}))
+          record   (saved-comparison outcome)]
+      (t/is (= 1 (:exit-code outcome)))
+      (t/is (= [:failed :unattempted] (mapv :status (:configurations record))))
+      (t/is (= "run-evidence" (get-in record [:configurations 0 :failure :phase])))
+      (t/is (str/includes? (get-in record [:configurations 0 :failure :message]) message)))))
+
+(t/deftest ^:async returned-storage-failure-wins-over-readable-evidence-and-executor-errors
+  (create-frontend-root)
+  (doseq [[signal code] [[nil 1] ["SIGINT" 130] ["SIGTERM" 143]]]
+    (let [controller (js/AbortController.)
+          prepared   (comparison-prepared ["a"] {:output-dir (path/join @temporary-root (str (random-uuid)))})
+          execute    (execute-service {})
+          outcome    (await (feature-comparison/execute
+                             (frontend-root) prepared (.-signal controller)
+                             {:services (comparison-services
+                                         {:prepare-build (build-service {})
+                                          :execute-run
+                                          (^:async fn [root home build cases options signal-object]
+                                            (let [response (await (execute root home build cases options signal-object))]
+                                              (when signal (.abort controller signal))
+                                              (assoc response :exit-code 1
+                                                     :error (js/Error. "executor failure")
+                                                     :storage-error (js/Error. "recovered write failure"))))})}))
+          record     (saved-comparison outcome)
+          run        (result/decode (fs/readFileSync (get-in record [:configurations 0 :run :record-path]) "utf8"))]
+      (t/is (= code (:exit-code outcome)))
+      (t/is (= (if signal :interrupted :failed) (:status record)))
+      (t/is (= :completed (get-in run [:termination :reason])))
+      (t/is (= [:failed :unattempted] (mapv :status (:configurations record))))
+      (t/is (= "run-evidence" (get-in record [:configurations 0 :failure :phase])))
+      (t/is (= "recovered write failure" (get-in record [:configurations 0 :failure :message])))
+      (t/is (= "recovered write failure" (ex-message (:error outcome)))))))
+
+(t/deftest ^:async pre-aborted-comparison-preserves-all-work-as-unattempted
+  (create-frontend-root)
+  (doseq [[signal code] [["SIGINT" 130] ["SIGTERM" 143]]]
+    (let [controller (js/AbortController.)
+          _          (.abort controller signal)
+          prepared   (comparison-prepared ["a" "b"] {:output-dir (path/join @temporary-root (str (random-uuid)))})
+          outcome    (await (feature-comparison/execute
+                             (frontend-root) prepared (.-signal controller)
+                             {:services (comparison-services {:prepare-build (build-service {})
+                                                              :execute-run (execute-service {})})}))
+          record     (saved-comparison outcome)]
+      (t/is (= code (:exit-code outcome)))
+      (t/is (true? (:interrupted? outcome)))
+      (t/is (= :interrupted (:status record)))
+      (t/is (some? (:ended-at record)))
+      (t/is (every? #(= :unattempted (:status %)) (concat (:configurations record) (:edges record))))
+      (t/is (every? #(= (str "interrupted by " signal) (:reason %))
+                    (concat (:configurations record) (:edges record)))))))
+
+(t/deftest ^:async interrupted-build-and-catalog-preserve-stage-failures
+  (create-frontend-root)
+  (doseq [boundary [:build :catalog]
+          rejected [false true]
+          [signal code] [["SIGINT" 130] ["SIGTERM" 143]]]
+    (let [controller (js/AbortController.)
+          prepared   (comparison-prepared ["a"] {:output-dir (path/join @temporary-root (str (random-uuid)))})
+          build      (build-service {})
+          stop       (fn []
+                       (.abort controller signal)
+                       (when rejected (throw (js/Error. "interrupted work"))))
+          services   (comparison-services
+                      {:prepare-build (if (= boundary :build)
+                                        (^:async fn [request]
+                                          (let [selected (await (build request))]
+                                            (stop)
+                                            selected))
+                                        build)
+                       :collect-catalog (fn [_ _]
+                                          (when (= boundary :catalog) (stop))
+                                          (:cases prepared))
+                       :execute-run (execute-service {})})
+          outcome    (await (feature-comparison/execute (frontend-root) prepared (.-signal controller)
+                                                        {:services services}))
+          record     (saved-comparison outcome)]
+      (t/is (= code (:exit-code outcome)))
+      (t/is (true? (:interrupted? outcome)))
+      (t/is (= :interrupted (:status record)))
+      (t/is (= [:failed :unattempted] (mapv :status (:configurations record))))
+      (t/is (= signal (get-in record [:configurations 0 :reason])))
+      (t/is (= (if rejected [(name boundary)] [])
+               (mapv :phase (keep :failure (:configurations record)))))
+      (t/is (every? #(= :unattempted (:status %)) (:edges record))))))
+
+(t/deftest ^:async edge-report-storage-failure-preserves-failed-and-unattempted-edges
+  (create-frontend-root)
+  (let [prepared (comparison-prepared ["a" "b"])
+        outcome  (await (feature-comparison/execute
+                         (frontend-root) prepared nil
+                         {:services (comparison-services
+                                     {:prepare-build (build-service
+                                                      {:inspect (fn [_]
+                                                                  (fs/mkdirSync
+                                                                   (path/join (:output-dir prepared) "comparisons" "00__10.transit")
+                                                                   #js {:recursive true}))})
+                                      :execute-run (execute-service {})})}))
+        record   (saved-comparison outcome)]
+    (t/is (= 1 (:exit-code outcome)))
+    (t/is (= :failed (:status record)))
+    (t/is (every? #(= :completed (:status %)) (:configurations record)))
+    (t/is (= [:failed :unattempted :unattempted :unattempted] (mapv :status (:edges record))))
+    (t/is (= "comparison-storage" (get-in record [:edges 0 :failure :phase])))
+    (t/is (= (get-in outcome [:home :log-path]) (:tail-log outcome)))))
+
+(t/deftest ^:async edge-analysis-failures-allow-independent-comparisons-to-complete
+  (create-frontend-root)
+  (let [prepared (comparison-prepared ["a" "b"])
+        removed  (path/join (:output-dir prepared) "configs" "00" "run.transit")
+        outcome  (await (feature-comparison/execute
+                         (frontend-root) prepared nil
+                         {:services (comparison-services
+                                     {:prepare-build (build-service
+                                                      {:inspect (fn [{:keys [selection]}]
+                                                                  (when (= ["b"] (:features selection))
+                                                                    (fs/unlinkSync removed)))})
+                                      :execute-run (execute-service {})})}))
+        record   (saved-comparison outcome)]
+    (t/is (= 1 (:exit-code outcome)))
+    (t/is (every? #(= :completed (:status %)) (:configurations record)))
+    (t/is (= [:failed :failed :completed :completed] (mapv :status (:edges record))))
+    (t/is (= ["comparison" "comparison"] (mapv #(get-in % [:failure :phase]) (take 2 (:edges record)))))
+    (doseq [edge (drop 2 (:edges record))]
+      (t/is (= :comparison (:type (result/decode (fs/readFileSync (:path edge) "utf8"))))))))
+
+(t/deftest ^:async post-run-persistence-failure-retains-the-running-configuration
+  (create-frontend-root)
+  (let [prepared (comparison-prepared ["a"])
+        path     (path/join (:output-dir prepared) "feature-comparison.transit")
+        prior    (str path ".saved")
+        execute  (execute-service {})
+        outcome  (await (feature-comparison/execute
+                         (frontend-root) prepared nil
+                         {:services (comparison-services
+                                     {:prepare-build (build-service {})
+                                      :execute-run
+                                      (^:async fn [root home build cases options signal]
+                                        (let [response (await (execute root home build cases options signal))]
+                                          (fs/renameSync path prior)
+                                          (fs/mkdirSync path)
+                                          response))})}))
+        record   (result/decode (fs/readFileSync prior "utf8"))
+        run      (result/decode (fs/readFileSync (get-in record [:configurations 0 :run :record-path]) "utf8"))]
+    (t/is (= 1 (:exit-code outcome)))
+    (t/is (= record (:comparison outcome)))
+    (t/is (= :running (:status record)))
+    (t/is (= [:running :planned] (mapv :status (:configurations record))))
+    (t/is (= :completed (get-in run [:termination :reason])))
+    (t/is (= (get-in outcome [:home :log-path]) (:tail-log outcome)))))
 
 (t/deftest create-home-creates-only-a-fresh-home
   (create-frontend-root)
