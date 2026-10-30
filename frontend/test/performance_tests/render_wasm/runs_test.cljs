@@ -100,6 +100,14 @@
   (t/is (thrown-with-msg? js/Error #"nonempty path"
                           (runs/check-output-dir "  "))))
 
+(t/deftest home-creation-reports-an-invalid-parent
+  (let [parent (path/join @temporary-root "file")
+        dir    (path/join parent "run")]
+    (fs/writeFileSync parent "occupied")
+    (let [error (failure #(runs/create-home {:root @temporary-root
+                                             :run-id "run-6" :output-dir dir}))]
+      (t/is (= "ENOTDIR" (.-code (or (ex-cause error) error)))))))
+
 (t/deftest explicit-home-creates-missing-parents
   (let [out  (path/join @temporary-root "missing" "parents" "run")
         home (runs/create-home {:root @temporary-root :run-id "nested"

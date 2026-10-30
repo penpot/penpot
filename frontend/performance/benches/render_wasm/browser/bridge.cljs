@@ -35,7 +35,7 @@
    [benches.render-wasm.cases]
    [benches.render-wasm.codec :as codec]
    [benches.render-wasm.declarations :as decl]
-   [benches.render-wasm.failures :as fail]
+   [benches.render-wasm.errors :as errors :refer [attempt failure?]]
    [benches.render-wasm.fingerprint :as fingerprint]
    [benches.render-wasm.identity :as identity]
    [benches.render-wasm.measurement :as measurement]
@@ -267,19 +267,12 @@
   accounting; the original failure lives under `:cause` as plain data. Only
   the top-level cause decides staleness."
   [epoch cause fallback-phase]
-  (if (fail/stale? cause)
+  (if (errors/stale? cause)
     {:status "stale"}
-    (let [phase   (or (ex/ignoring (:phase (ex-data cause))) fallback-phase "aborted")
-          message (or (ex/ignoring (ex-message cause)) "unknown failure")
-          detail  (or (ex/ignoring (fail/describe-cause cause))
-                      [{:message fail/unrenderable-cause-text}])
-          partial (ex/ignoring (:partial (ex-data cause)))
+    (let [phase       (or (ex/ignoring (:phase (ex-data cause))) fallback-phase "aborted")
           preparation (get-in @prepared* [:graphics :preparation])]
       (dispose-if-current! epoch)
-      (cond-> (fail/fail-data {:phase   phase
-                               :message message
-                               :cause   detail})
-        partial (assoc :partial partial)
+      (cond-> (errors/fail-data (errors/evidence phase cause))
         preparation (assoc :preparation preparation)))))
 
 (defn- guard-current!
@@ -289,7 +282,7 @@
   never in the message: message text is not a protocol."
   [epoch phase]
   (when-not (= epoch @owner-epoch*)
-    (throw (ex-info "superseded" {::fail/stale true :phase phase}))))
+    (throw (ex-info "superseded" {::errors/stale true :phase phase}))))
 
 (defn- build-canvas!
   "Creates the bench canvas with a `width*dpr` backing buffer and an explicit
@@ -309,10 +302,10 @@
   (if-not (wasm/live?)
     (do
       (dispose-if-current! epoch)
-      (fail/fail-data {:phase (if (= :reuse (:context case-desc))
-                                "interact"
-                                "first-render")
-                       :message "disposed or context lost during case"}))
+      (errors/fail-data {:phase (if (= :reuse (:context case-desc))
+                                  "interact"
+                                  "first-render")
+                         :message "disposed or context lost during case"}))
     (let [{:keys [module-ms graphics-ms snapshot upload-ms preparation]} graphics
           setup {:module-init-ms module-ms :graphics-init-ms graphics-ms :upload-ms upload-ms}]
       (merge measurement
@@ -332,11 +325,10 @@
         prep   (if reuse?
                  (-> (protocol/restore hooks (:view graphics))
                      (.catch (fn [cause]
-                               (if (fail/stale? cause)
+                               (if (errors/stale? cause)
                                  (throw cause)
-                                 (throw (ex-info "restore failed"
-                                                 (assoc (ex-data cause) :phase "restore")
-                                                 (if (some? (ex-data cause)) (ex-cause cause) cause)))))))
+                                 (throw (errors/with-context cause "restore failed"
+                                          {:phase "restore"}))))))
                  (js/Promise.resolve nil))
         rtx    {:case case-desc
                 :scene (:snapshot graphics)
@@ -358,30 +350,26 @@
   "Decodes and validates the request before claiming the page. Failure
   leaves the current owner untouched."
   [request]
-  (try
-    (let [params (t/decode-str request)]
-      (if-not (sm/validate schema:load-scene-args params)
-        {:error (fail/fail-data {:phase "invalid-args"
-                                 :message "load-scene needs a Transit request with case"})}
-        (let [case-desc (:case params)
-              scene     (decl/registered-scene (:scene case-desc))
-              local     (decl/registered-case (:id case-desc))]
-          (when (nil? scene)
-            (throw (ex-info (str "unknown scene: " (:scene case-desc))
-                            {:phase "invalid-args"})))
-          (when-not (and local
-                         (fn? (:run! local))
-                         (= (:scene local) (:scene case-desc)))
-            (throw (ex-info (str "missing case body for " (:id case-desc))
-                            {:phase "invalid-args"})))
-          {:params params
-           :case-desc case-desc
-           :local-case local
-           :scene scene})))
-    (catch :default cause
-      {:error (fail/fail-data {:phase "invalid-args"
-                               :message (or (ex-message cause)
-                                            "invalid Transit request")})})))
+  (attempt
+   (let [params (t/decode-str request)]
+     (when-not (sm/validate schema:load-scene-args params)
+       (throw (ex-info "load-scene needs a Transit request with case"
+                       {:phase "invalid-args"})))
+     (let [case-desc (:case params)
+           scene     (decl/registered-scene (:scene case-desc))
+           local     (decl/registered-case (:id case-desc))]
+       (when (nil? scene)
+         (throw (ex-info (str "unknown scene: " (:scene case-desc))
+                         {:phase "invalid-args"})))
+       (when-not (and local
+                      (fn? (:run! local))
+                      (= (:scene local) (:scene case-desc)))
+         (throw (ex-info (str "missing case body for " (:id case-desc))
+                         {:phase "invalid-args"})))
+       {:params params
+        :case-desc case-desc
+        :local-case local
+        :scene scene}))))
 
 (defn- begin-load!
   "Claims the page, releases the prior owner and fixes the viewport.
@@ -465,7 +453,7 @@
              :fingerprint (fingerprint/fingerprint snapshot)
              :ordered (snapshot/upload-order snapshot)))
     (catch :default cause
-      (if (fail/stale? cause)
+      (if (errors/stale? cause)
         (throw cause)
         (throw (ex-info "scene build failed"
                         {:phase "scene-build"}
@@ -495,7 +483,7 @@
       (h/call wasm/internal-module "_set_view_end")
       (assoc graphics :upload-ms (- (now) u0) :view view))
     (catch :default cause
-      (if (fail/stale? cause)
+      (if (errors/stale? cause)
         (throw cause)
         (throw (ex-info "upload failed"
                         {:phase "upload"}
@@ -520,10 +508,11 @@
   Warm initial rendering stays in diagnostics. No attempt slot runs here."
   [request]
   (try
-    (let [{:keys [error params case-desc local-case scene]} (parse-load-request request)]
-      (if error
-        (js/Promise.resolve error)
-        (let [{:keys [epoch dims] :as owner} (begin-load! case-desc)
+    (let [parsed (parse-load-request request)]
+      (if (failure? parsed)
+        (js/Promise.resolve (errors/fail-data (errors/evidence "invalid-args" parsed)))
+        (let [{:keys [params case-desc local-case scene]} parsed
+              {:keys [epoch dims] :as owner} (begin-load! case-desc)
               timeout-ms (or (:timeout-ms params) attempt-ms-budget)
               owner (assoc owner :hooks (browser-hooks epoch (+ (now) timeout-ms)))
               id (or (:preparation-id params) epoch)
@@ -550,17 +539,14 @@
                                             :graphics (assoc graphics :preparation preparation)})
                          {:status "ok" :preparation preparation})))
               (.catch (fn [cause]
-                        (if (fail/stale? cause)
+                        (if (errors/stale? cause)
                           (terminal-failure epoch cause "aborted")
                           (terminal-failure epoch
-                                            (ex-info (or (ex-message cause) "setup failed")
-                                                     (assoc (ex-data cause) :partial
-                                                            (merge {:setup @available*}
-                                                                   (:partial (ex-data cause))))
-                                                     (if (some? (ex-data cause)) (ex-cause cause) cause))
+                                            (errors/with-context cause (errors/message-of cause "setup failed")
+                                              {:partial {:setup @available*}})
                                             "aborted"))))))))
     (catch :default cause
-      (js/Promise.resolve (fail/fail-data {:phase "setup" :message (ex-message cause)})))))
+      (js/Promise.resolve (errors/fail-data (errors/evidence "setup" cause))))))
 
 (defn- execute-prepared
   "Runs one body against the owned preparation with a fresh attempt deadline.
@@ -571,8 +557,8 @@
         id (get-in graphics [:preparation :preparation-id])]
     (if (or (nil? prepared) (not= id preparation-id) busy?
             (and used? (= :fresh (:context case-desc))))
-      (js/Promise.resolve (fail/fail-data {:phase "invalid-args"
-                                           :message "preparation unavailable, busy or already used"}))
+      (js/Promise.resolve (errors/fail-data {:phase "invalid-args"
+                                             :message "preparation unavailable, busy or already used"}))
       (let [epoch (:epoch owner)
             timeout-ms (or timeout-ms (:timeout-ms prepared))
             owner (assoc owner :hooks (browser-hooks epoch (+ (now) timeout-ms)))]
@@ -592,8 +578,8 @@
         (.then codec/encode-str)
         (.catch (fn [cause]
                   (dispose-if-current! epoch)
-                  (t/encode-str (fail/fail-data {:phase "bridge"
-                                                 :message (or (ex-message cause) "result encoding failed")})))))))
+                  (t/encode-str (errors/fail-data {:phase "bridge"
+                                                   :message (errors/message-of cause "result encoding failed")})))))))
 
 (defn prepare-scene-request
   "Accepts a Transit load request and returns a Transit preparation.
@@ -612,11 +598,11 @@
                          [:preparation-id some?]
                          [:timeout-ms {:optional true} [:int {:min 1}]]] params)
          (execute-prepared params)
-         (js/Promise.resolve (fail/fail-data {:phase "invalid-args"
-                                              :message "runPrepared needs a preparation ID"}))))
+         (js/Promise.resolve (errors/fail-data {:phase "invalid-args"
+                                                :message "runPrepared needs a preparation ID"}))))
      (catch :default cause
-       (js/Promise.resolve (fail/fail-data {:phase "invalid-args"
-                                            :message (or (ex-message cause) "invalid Transit request")}))))))
+       (js/Promise.resolve (errors/fail-data {:phase "invalid-args"
+                                              :message (errors/message-of cause "invalid Transit request")}))))))
 
 (defn load-scene
   "Prepares a collected case and runs one attempt, returning Transit evidence.

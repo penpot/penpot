@@ -10,6 +10,7 @@
    ["fs" :as fs]
    ["http" :as http]
    ["path" :as path]
+   [benches.render-wasm.node.files :as files]
    [benches.render-wasm.node.options :as options]
    [clojure.string :as str]))
 
@@ -26,13 +27,6 @@
 
 (def ^:private owners (js/WeakMap.))
 
-(defn- contained?
-  [root file]
-  (let [relative (path/relative root file)]
-    (and (not (path/isAbsolute relative))
-         (not= relative "..")
-         (not (str/starts-with? relative (str ".." path/sep))))))
-
 (defn- request-file
   [root url]
   (let [pathname (js/decodeURIComponent (first (str/split url #"[?#]" 2)))]
@@ -44,10 +38,10 @@
       (throw (ex-info "forbidden request path" {:status 403})))
     (let [relative (if (= pathname "/") "index.html" (subs pathname 1))
           file     (path/resolve root relative)]
-      (when-not (contained? root file)
+      (when-not (files/contained? root file)
         (throw (ex-info "forbidden request path" {:status 403})))
       (let [resolved (fs/realpathSync file)]
-        (when-not (contained? root resolved)
+        (when-not (files/contained? root resolved)
           (throw (ex-info "forbidden artifact symlink" {:status 403})))
         resolved))))
 

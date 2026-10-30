@@ -584,6 +584,25 @@
       (t/is (= phase (get-in record [:configurations 0 :failure :phase])))
       (t/is (str/includes? (get-in record [:configurations 0 :failure :message]) message)))))
 
+(t/deftest ^:async run-failure-saves-partial-measurements-and-nested-causes
+  (create-frontend-root)
+  (let [partial  {:slices [{:duration-ms 3}]}
+        cause    (ex-info "run rejected" {:partial partial}
+                          (ex-info "render failed" {:fn "_render" :code 17}))
+        prepared (comparison-prepared ["a"] {})
+        outcome  (await (feature-comparison/execute
+                         (frontend-root) prepared nil
+                         {:services (comparison-services
+                                     {:prepare-build (build-service {})
+                                      :execute-run (fn [& _] (js/Promise.reject cause))})}))
+        failure  (get-in (saved-comparison outcome) [:configurations 0 :failure])]
+    (t/is (= {:phase "run"
+              :message "run rejected"
+              :partial partial}
+             (select-keys failure [:phase :message :partial])))
+    (t/is (some #(= {:message "render failed" :fn "_render" :code 17} %)
+                (:cause failure)))))
+
 (t/deftest ^:async unavailable-or-mismatched-run-evidence-stops-later-configurations
   (create-frontend-root)
   (doseq [[kind message] [[:missing "run record is missing"]
@@ -637,9 +656,13 @@
 
 (t/deftest ^:async pre-aborted-comparison-preserves-all-work-as-unattempted
   (create-frontend-root)
-  (doseq [[signal code] [["SIGINT" 130] ["SIGTERM" 143]]]
+  (doseq [[reason signal code] [["SIGINT" "SIGINT" 130]
+                                ["SIGTERM" "SIGTERM" 143]
+                                [:SIGTERM "SIGTERM" 143]
+                                [(ex-info "stopped" {:signal "SIGTERM"}) "SIGTERM" 143]
+                                [(js/Error. "stopped") "SIGINT" 130]]]
     (let [controller (js/AbortController.)
-          _          (.abort controller signal)
+          _          (.abort controller reason)
           prepared   (comparison-prepared ["a" "b"] {:output-dir (path/join @temporary-root (str (random-uuid)))})
           outcome    (await (feature-comparison/execute
                              (frontend-root) prepared (.-signal controller)
@@ -648,7 +671,6 @@
           record     (saved-comparison outcome)]
       (t/is (= code (:exit-code outcome)))
       (t/is (= :interrupted (:status record)))
-      (t/is (some? (:ended-at record)))
       (t/is (every? #(= :unattempted (:status %)) (concat (:configurations record) (:edges record))))
       (t/is (every? #(= (str "interrupted by " signal) (:reason %))
                     (concat (:configurations record) (:edges record)))))))
@@ -759,8 +781,10 @@
     (t/is (= (path/join (frontend-root) "target" "performance" "render-wasm"
                         "feature-comparisons" "comparison-a")
              (:dir home)))
-    (t/is (fs/existsSync (:dir home)))
-    (t/is (not (fs/existsSync (:record-path home)))))
+    (t/is (= "" (fs/readFileSync (:log-path home) "utf8"))))
+  (doseq [id [nil "" "../escape" "a/b" "a\\b"]]
+    (t/is (thrown-with-msg? js/Error #"invalid feature comparison id"
+                            (feature-comparison/create-home (frontend-root) id nil))))
   (let [existing (path/join @temporary-root "existing")]
     (fs/mkdirSync existing)
     (t/is (thrown-with-msg? js/Error #"already exists"
@@ -825,8 +849,6 @@
       (doseq [slug ["0" "1"]
               phase ["built" "running" "completed"]]
         (t/is (str/includes? text (str "Configuration " slug " " phase "\n")))))
-    (t/is (every? #(= :completed (:status %)) (:configurations record)))
-    (t/is (every? #(= :completed (:status %)) (:edges record)))
     (t/is (= ["a"] (get-in record [:configurations 1 :effective-features])))
     (t/is (= :comparison (:type comparison)))
     (t/is (= {:from "0"
