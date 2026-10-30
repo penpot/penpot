@@ -9,21 +9,30 @@
   (`team_storage_usage`) that the media-storage-bytes-per-team quota
   reads instead of scanning `storage_object` on every upload.
 
-  The audit-log storage-usage consumer marks dirty the teams whose
-  media may have changed. Every few minutes the `:schedule-team-storage`
-  scheduler streams all dirty teams oldest-first and enqueues one
-  `:recompute-team-storage` job per team (skipped while one is already live),
-  so a failure is contained in its own job and the next tick
-  reschedules it. Teams without a row are born on first quota check
-  (fail open + dirty), never swept."
+  The team-storage consumer of the audit log marks dirty the teams whose
+  media may have changed: it reads the stream from its own cursor, takes
+  the storage-usage event names and marks their teams in one write per
+  chunk. Every few minutes the `:schedule-team-storage` scheduler streams
+  all dirty teams oldest-first and enqueues one `:recompute-team-storage`
+  job per team (skipped while one is already live), so a failure is
+  contained in its own job and the next tick reschedules it. Teams
+  without a row are born on first quota check (fail open + dirty), never
+  swept."
   (:require
+   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
+   [app.loggers.audit :as audit]
+   [app.loggers.audit.consumers :as consumers]
    [app.metrics :as mtx]
    [app.rpc.quotes :as quotes]
    [integrant.core :as ig]))
+
+;; The consumer ids live in `app.loggers.audit.consumers`; this domain
+;; owns the processing of its own events and the job that runs it.
 
 (def ^:private sql:get-dirty-teams
   "Dirty teams first, then the ones nobody refreshed for a week. The
@@ -45,6 +54,205 @@
       SET total_bytes = EXCLUDED.total_bytes,
           dirty_at = CASE WHEN tsu.dirty_at > ?::timestamptz THEN tsu.dirty_at ELSE NULL END,
           updated_at = now()")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; AUDIT-LOG CONSUMER
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private default-team-keys
+  "Key map of the events that carry a single :team-id in props."
+  {:paths [[:team-id]]
+   :keys  [:team-id]})
+
+(def ^:private team-keys-by-name
+  "Single source of the storage-usage contract: event name -> where its
+  team ids live. `:paths` are the prop paths `team-ids-of-event` reads;
+  `:keys` are the top-level props `carries-team-keys?` checks with
+  `contains?`, so an explicit empty collection counts as a fact and not
+  as a producer that lost its keys. Adding a name here also adds it to
+  `team-storage-event-names`, so the two cannot drift."
+  {"upload-file-media-object"          default-team-keys
+   "create-file-media-object-from-url" default-team-keys
+   "clone-file-media-object"           default-team-keys
+   "assemble-file-media-object"        default-team-keys
+   ;; Files created in bulk (import, clone, duplicate) may carry media,
+   ;; so they can change the total even though create-file itself adds
+   ;; no bytes: do not drop it, and do not copy it to cheaper events.
+   "create-file"                       default-team-keys
+   "create-font-variant"               default-team-keys
+   "delete-font"                       default-team-keys
+   "delete-font-variant"               default-team-keys
+   "delete-file"                       default-team-keys
+   "delete-object-with-cascade"        {:paths [[:team-ids] [:cascade :team-ids]]
+                                        :keys  [:team-ids :cascade]}
+   "move-files"                        {:paths [[:source-team-id] [:dest-team-id]]
+                                        :keys  [:source-team-id :dest-team-id]}
+   "move-project"                      {:paths [[:source-team-id] [:dest-team-id]]
+                                        :keys  [:source-team-id :dest-team-id]}
+   "permanently-delete-team-files"     default-team-keys
+   "restore-deleted-team-files"        default-team-keys
+   "restore-file"                      default-team-keys
+   "restore-profile"                   {:paths [[:team-ids] [:cascade :team-ids]]
+                                        :keys  [:team-ids :cascade]}
+   "restore-project"                   default-team-keys
+   "restore-team"                      default-team-keys
+   "file-gc"                           default-team-keys})
+
+(def team-storage-event-names
+  "Audit event names that can change per-team media storage. Only these
+  mark the team dirty. Derived from `team-keys-by-name` so the list and
+  the key map cannot disagree. Purges (`hard-delete-objects`) are
+  excluded on purpose: the physical delete only removes rows the live
+  SUM already ignores (everything with `deleted_at` set), so marking
+  them would recompute the same total — and purged teams would violate
+  the usage table foreign key."
+  (set (keys team-keys-by-name)))
+
+(defn- team-ids-of-event
+  "Team ids of one storage-usage event, read through its key map (see
+  team-keys-by-name). Throws on a present non-UUID: a producer bug,
+  never coerced; the caller logs the row and skips that event."
+  [{:keys [name props]}]
+  (let [{:keys [paths]} (get team-keys-by-name name default-team-keys)
+        ;; A path holds either one id (:team-id) or a collection
+        ;; (:team-ids): normalize both to a seq.
+        ids (mapcat (fn [path]
+                      (let [v (get-in props path)]
+                        (cond (nil? v) nil
+                              (coll? v) v
+                              :else     [v])))
+                    paths)]
+    (doseq [id ids :when (some? id)]
+      (when-not (uuid? id)
+        (ex/raise :type :validation
+                  :code :non-uuid-team-id
+                  :hint "non-uuid team id in storage-usage event"
+                  :event name)))
+    ids))
+
+(defn- carries-team-keys?
+  "True when the event carries any of the team keys its key map names,
+  even an empty collection: an explicit empty list (a profile that owns
+  no team) is a fact, not a producer bug."
+  [{:keys [name props]}]
+  (let [{:keys [keys]} (get team-keys-by-name name default-team-keys)]
+    ;; `some?` on the value, not `contains?`: an explicit empty
+    ;; collection counts (a fact), a nil value does not (the producer
+    ;; failed to resolve its team).
+    (boolean (some #(some? (get props %)) keys))))
+
+(defn- collect-team-ids
+  "Team ids whose media storage may have changed in these events, read
+  straight from props: producers key their events by team so the drain
+  never joins production tables. Each event name maps to its keys
+  explicitly; anything else falls back to the single :team-id in props.
+  A present non-UUID is a producer bug (see team-ids-of-event, never
+  coerced): that event is logged with its row id and skipped, so one bad
+  row cannot wedge the queue."
+  [events]
+  (into #{}
+        (comp (map (fn [{:keys [id] :as event}]
+                     (try
+                       (team-ids-of-event event)
+                       (catch Throwable cause
+                         (l/warn :hint "skipping storage-usage event with invalid team ids"
+                                 :audit-log-id (str id)
+                                 :event (:name event)
+                                 :cause cause)
+                         nil))))
+              (mapcat (fn [ids] (or ids [])))
+              (filter some?))
+        events))
+
+(def ^:private sql:mark-team-storage-dirty
+  "INSERT INTO team_storage_usage AS tsu (team_id, dirty_at)
+   SELECT id, now() FROM unnest(?::uuid[]) AS u(id)
+   WHERE EXISTS (SELECT 1 FROM team AS t WHERE t.id = u.id)
+   ON CONFLICT (team_id) DO UPDATE
+      SET dirty_at = EXCLUDED.dirty_at
+    WHERE tsu.dirty_at IS NULL")
+
+(defn- mark-team-storage-dirty
+  "Mark the teams dirty, keeping the oldest mark: a team marked twice in
+  one window is recomputed once."
+  [conn team-ids]
+  (when (seq team-ids)
+    (db/exec-one! conn [sql:mark-team-storage-dirty
+                        (db/create-array conn "uuid" team-ids)])))
+
+(defn- process-team-storage-chunk
+  "Mark dirty the teams of the events of one chunk that concern the
+  storage usage. Returns {:processed :skipped}: the events outside
+  `team-storage-event-names` and the telemetry shadows count as skipped,
+  so the consumer cursor advances over them and they are not retried.
+
+  The events arrive already decoded (props as maps) and keyed by team in
+  their props, so marking them never joins production tables."
+  [cfg rows]
+  (let [total  (count rows)
+        events (into []
+                     (comp
+                      (filter (fn [row]
+                                (and (contains? team-storage-event-names (:name row))
+                                     (not (audit/telemetry-shadow-source? (:source row))))))
+                      (map (fn [row]
+                             (assoc (consumers/row->event (consumers/decode-row row))
+                                    :id (:id row)))))
+                     rows)
+        teams  (collect-team-ids events)]
+    (mark-team-storage-dirty (::db/conn cfg) teams)
+    (l/trc :hint "storage-usage teams marked dirty"
+           :events (count events)
+           :teams (count teams))
+    ;; No relevant event carries any team key: a producer stopped keying
+    ;; its events. An explicit empty collection does not count (see
+    ;; carries-team-keys?).
+    (when (and (seq events)
+               (not-any? carries-team-keys? events))
+      (l/warn :hint "storage-usage chunk resolved no team ids"
+              :events (count events)
+              :ids (mapv (comp str :id) events)))
+    {:processed (count events)
+     :skipped   (- total (count events))}))
+
+(def schema:audit-log-consumer-team-storage-params
+  "Params of the team-storage consumer job: none. Cron submits {}; the
+  pool and the metrics live on the job-def cfg closed over by the
+  handler, not in job params (closed on purpose, same as the other
+  transports)."
+  [:map {:closed true}])
+
+(declare execute-audit-log-consumer-team-storage)
+
+(defmethod ig/assert-key ::consumer-job-def
+  [_ cfg]
+  (assert (db/pool? (::db/pool cfg)) "expected a valid database pool")
+  (assert (mtx/metrics? (::mtx/metrics cfg)) "expected a valid metrics instance"))
+
+(defmethod ig/init-key ::consumer-job-def
+  [_ cfg]
+  (l/dbg :hint "audit log consumer job initialized"
+         :consumer "team-storage")
+  {::jobs/name      :audit-log-consumer-team-storage
+   ::jobs/schema    schema:audit-log-consumer-team-storage-params
+   ::jobs/handler
+   (fn [_context _params]
+     (execute-audit-log-consumer-team-storage cfg))
+   ::jobs/decoder   (sm/decoder schema:audit-log-consumer-team-storage-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:audit-log-consumer-team-storage-params)})
+
+(defn execute-audit-log-consumer-team-storage
+  "Team-storage job handler: read the stream from the team-storage
+  cursor in chunks and mark the teams of the storage-usage events dirty
+  (heartbeat per iteration: a burst can span many chunks)."
+  [cfg]
+  (if-not (contains? cf/flags :storage-usage)
+    (l/dbg :hint "audit log consumer (team-storage) skipped, flag off")
+    (consumers/drain-consumer cfg consumers/consumer-team-storage process-team-storage-chunk)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; RECOMPUTE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- recompute-team-storage
   "Recompute one team: slow read, fast write. A mark written by a

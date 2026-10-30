@@ -535,7 +535,16 @@
     :fn (mg/resource "app/migrations/sql/0157-add-audit-log-pending-table.sql")}
 
    {:name "0158-add-team-storage-usage"
-    :fn (mg/resource "app/migrations/sql/0158-add-team-storage-usage.sql")}])
+    :fn (mg/resource "app/migrations/sql/0158-add-team-storage-usage.sql")}
+
+   {:name "0159-add-job-exclusive-column"
+    :fn (mg/resource "app/migrations/sql/0159-add-job-exclusive-column.sql")}
+
+   {:name "0160-add-audit-log-cursor"
+    :fn (mg/resource "app/migrations/sql/0160-add-audit-log-cursor.sql")}
+
+   {:name "0161-drop-audit-log-pending"
+    :fn (mg/resource "app/migrations/sql/0161-drop-audit-log-pending.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

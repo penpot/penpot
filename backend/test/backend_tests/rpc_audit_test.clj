@@ -138,9 +138,7 @@
         (t/is (= 1 (count rows)))
         (t/is (= (:id prof) (:profile-id row)))
         (t/is (= "navigate" (:name row)))
-        (t/is (= "frontend" (:source row)))
-        ;; The row is born pending for the enabled consumer.
-        (t/is (= 1 (count (th/db-exec! ["select * from audit_log_pending"]))))))))
+        (t/is (= "frontend" (:source row)))))))
 
 (t/deftest push-events-2
   (with-redefs [app.config/flags #{:audit-log}]
@@ -273,10 +271,7 @@
           (t/is (= "0.0.0.0" (str (:ip-addr row2))))
           (let [day-now (ct/truncate (ct/now) :days)]
             (t/is (= day-now (:created-at row2)))
-            (t/is (= day-now (:tracked-at row2))))
-          ;; Both rows are born pending for Nexus; the admin-console
-          ;; consumer is selective and "navigate" is not allowlisted.
-          (t/is (= 2 (count (th/db-exec! ["select * from audit_log_pending"])))))))))
+            (t/is (= day-now (:tracked-at row2)))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; BACKEND PROCESS-EVENT PATH (RPC commands)
@@ -932,9 +927,7 @@
                                   (push-params (:id prof)))
       (t/is (= 1.0 (ingest-counter metrics "full" "inserted")))
       (t/is (= 1.0 (ingest-counter metrics "shadow" "inserted")))
-      (t/is (= 2 (count (th/db-exec! ["select * from audit_log"]))))
-      ;; Nexus only: "navigate" is not in the admin-console allowlist.
-      (t/is (= 2 (count (th/db-exec! ["select * from audit_log_pending"])))))))
+      (t/is (= 2 (count (th/db-exec! ["select * from audit_log"])))))))
 
 (t/deftest push-handle-events-records-failed-on-error
   (let [prof    (th/create-profile* 1 {:is-active true})
@@ -947,8 +940,7 @@
                                                    (push-params (:id prof)))))
         (t/is (= 1.0 (ingest-counter metrics "full" "failed")))
         (t/is (= 1.0 (ingest-counter metrics "shadow" "failed")))
-        (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))
-        (t/is (= 0 (count (th/db-exec! ["select * from audit_log_pending"]))))))))
+        (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))))))
 
 (t/deftest push-handle-events-single-face-emits-no-empty-series
   ;; With only :audit-log on, exactly one ingest series exists: the
@@ -961,5 +953,4 @@
                                   (push-params (:id prof)))
       (t/is (= 1.0 (ingest-counter metrics "full" "inserted")))
       (t/is (= #{["full" "inserted"]} (counter-label-sets metrics)))
-      (t/is (= 1 (count (th/db-exec! ["select * from audit_log"]))))
-      (t/is (= 0 (count (th/db-exec! ["select * from audit_log_pending"])))))))
+      (t/is (= 1 (count (th/db-exec! ["select * from audit_log"])))))))

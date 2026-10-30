@@ -14,6 +14,11 @@
 - **Never pipe test output directly to filters** (`| head`, `| tail`, `| grep`, etc.).
   Always redirect to a file first: `command > /tmp/output.txt 2>&1`, then read/grep the file.
   This prevents hiding test failures. See `mem:testing` for details.
+- **Never introduce a new function or macro name ending in `!`.** Side
+  effects alone do not justify it: only the two exceptions documented in
+  `mem:clojure/design-rules` (public mutators of `app.db` and helpers over
+  transients). Existing names stay until their refactor; a new one fails
+  review. See `mem:clojure/design-rules` before naming anything.
 - **Read `AGENTS.local.md` after this file whenever it exists.** It carries
   the developer's steering for this project and overrides this file on prose style and
   workflow, but not on project policy, where instructions here prevail.

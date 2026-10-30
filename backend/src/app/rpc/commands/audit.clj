@@ -16,7 +16,6 @@
    [app.db :as db]
    [app.http :as-alias http]
    [app.loggers.audit :as audit]
-   [app.loggers.audit.consumer-task :as consumer]
    [app.loggers.database :as loggers.db]
    [app.loggers.mattermost :as loggers.mm]
    [app.metrics :as mtx]
@@ -122,36 +121,13 @@
   (when (pos? amount)
     (mtx/run! metrics :id :audit-ingest-events :labels [kind outcome] :inc amount)))
 
-(defn- admin-console-eligible?
-  "Rows are positional, in `event-columns` order: [:id :name :source ...]."
-  [[_ name source]]
-  (and (contains? consumer/event-names-for-admin-console name)
-       (not (audit/telemetry-shadow-source? source))))
-
 (defn- insert-rows!
   [tx rows]
   (when (seq rows)
-    (db/insert-many! tx :audit-log event-columns rows)
-    ;; Same transaction as the rows: every ingested record is born
-    ;; pending for every enabled non-selective consumer (see
-    ;; consumer-task). The storage-usage consumer is fed only by
-    ;; backend events (append-audit-entry): no frontend event name can
-    ;; change per-team media storage, so bulk ingest queues nothing
-    ;; for it.
-    ;; The nexus consumer takes every row (gated on its flag like
-    ;; the backend producer does in append-audit-entry).
-    (consumer/queue-nexus-pendings tx (map first rows))
-    ;; The admin-console consumer is selective: only allowlisted names
-    ;; queue its pending (this keeps its browser events working), and
-    ;; never a telemetry shadow (the full row already queues; the
-    ;; shadow keeps the name, so it would be ingested twice).
-    (when (contains? cf/flags :admin-console)
-      (consumer/queue-pendings tx
-                               (into []
-                                     (comp (filter admin-console-eligible?)
-                                           (map first))
-                                     rows)
-                               consumer/consumer-admin-console))))
+    ;; The producer only inserts: each consumer reads the row from its
+    ;; own cursor, so there is no queue to fill here (and no consumer
+    ;; contract to keep in sync with this namespace).
+    (db/insert-many! tx :audit-log event-columns rows)))
 
 (defn- handle-events
   [{:keys [::db/pool] :as cfg} params]
@@ -164,9 +140,9 @@
       (run! (partial loggers.db/emit cfg) events)
       (run! (partial loggers.mm/emit cfg) events))
 
-    ;; Rows and their pendings commit together in one transaction: a
-    ;; row never outlives its queue. Both faces are best-effort, so a
-    ;; failure drops the whole batch (counted below as failed); the
+    ;; The rows of both faces commit together (the consumers read them
+    ;; from their own cursors afterwards). Both faces are best-effort,
+    ;; so a failure drops the whole batch (counted below as failed); the
     ;; endpoint still answers without breaking the request.
     (let [metrics     (mtx/instance cfg)
           full-rows   (if (contains? cf/flags :audit-log)

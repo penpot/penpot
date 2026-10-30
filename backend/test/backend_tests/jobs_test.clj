@@ -32,6 +32,20 @@
   [f]
   (try (f) nil (catch Throwable cause cause)))
 
+(defn- race
+  "Run every thunk on a thread of its own and return what each returned,
+  in the order they were given. They all wait on the same gate, so they
+  contend for whatever they share instead of running one after another."
+  [& thunks]
+  (let [gate    (promise)
+        results (mapv (fn [f]
+                        (future
+                          @gate
+                          (f)))
+                      thunks)]
+    (deliver gate true)
+    (mapv deref results)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JOB-DEF (plain handler + precompiled init-key)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -534,13 +548,14 @@
       (let [cfg    (make-cfg (get-job-defs))
             params (make-params)
             label  (str "skip-active-" status)
-            id1    (jobs/submit cfg {::jobs/name   :echo
-                                     ::jobs/params params
-                                     ::jobs/label  label})
+            id1    (jobs/submit cfg {::jobs/name          :echo
+                                     ::jobs/params        params
+                                     ::jobs/label         label
+                                     ::jobs/skip-if-active true})
             _      (th/db-update! :job {:status status} {:id id1})
-            id2    (jobs/submit cfg {::jobs/name   :echo
-                                     ::jobs/params params
-                                     ::jobs/label  label
+            id2    (jobs/submit cfg {::jobs/name          :echo
+                                     ::jobs/params        params
+                                     ::jobs/label         label
                                      ::jobs/skip-if-active true})]
         (t/is (nil? id2))
         (t/testing "no row deleted, none inserted"
@@ -554,17 +569,108 @@
       (let [cfg    (make-cfg (get-job-defs))
             params (make-params)
             label  (str "skip-terminal-" status)
-            id1    (jobs/submit cfg {::jobs/name   :echo
-                                     ::jobs/params params
-                                     ::jobs/label  label})
+            id1    (jobs/submit cfg {::jobs/name          :echo
+                                     ::jobs/params        params
+                                     ::jobs/label         label
+                                     ::jobs/skip-if-active true})
             _      (th/db-update! :job {:status status} {:id id1})
-            id2    (jobs/submit cfg {::jobs/name   :echo
-                                     ::jobs/params params
-                                     ::jobs/label  label
+            id2    (jobs/submit cfg {::jobs/name          :echo
+                                     ::jobs/params        params
+                                     ::jobs/label         label
                                      ::jobs/skip-if-active true})]
         (t/is (uuid? id2))
         (t/is (= 2 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
                                             WHERE label = ?" label]))))))))
+
+(t/deftest submit-skip-if-active-does-not-block-on-plain-jobs
+  ;; The exclusion is between the jobs that asked for it: a live job
+  ;; that was not submitted as exclusive (a webhook delivery, a
+  ;; notification) does not block an exclusive submit. The label stays
+  ;; a label, and two plain jobs can share it.
+  (let [cfg    (make-cfg (get-job-defs))
+        params (make-params)
+        label  "skip-over-plain"
+        plain  (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params params
+                                 ::jobs/label  label})
+        excl   (jobs/submit cfg {::jobs/name          :echo
+                                 ::jobs/params        params
+                                 ::jobs/label         label
+                                 ::jobs/skip-if-active true})]
+    (t/is (uuid? plain))
+    (t/is (uuid? excl))
+    (t/is (= 2 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                        WHERE label = ?" label]))))
+    (t/testing "and two plain jobs share the label too"
+      (let [other (jobs/submit cfg {::jobs/name   :echo
+                                    ::jobs/params params
+                                    ::jobs/label  label})]
+        (t/is (uuid? other))
+        (t/is (= 3 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                            WHERE label = ?" label]))))))))
+
+(t/deftest exclusive-jobs-are-scoped-by-their-key
+  ;; The key of the exclusion is (tenant, name, queue, label): a job
+  ;; that differs in any of them is a different job and lives with the
+  ;; first one.
+  (let [cfg    (make-cfg (get-job-defs))
+        params (make-params)
+        base   {::jobs/name          :echo
+                ::jobs/params        params
+                ::jobs/skip-if-active true}]
+    (t/is (uuid? (jobs/submit cfg (assoc base ::jobs/label "scope-a"))))
+    (t/is (uuid? (jobs/submit cfg (assoc base ::jobs/label "scope-a"
+                                         ::jobs/queue :storage))))
+    (t/is (uuid? (jobs/submit cfg (assoc base ::jobs/label "scope-a"
+                                         ::jobs/name :typed))))
+    (t/is (nil? (jobs/submit cfg (assoc base ::jobs/label "scope-a"))))))
+
+(t/deftest the-job-table-refuses-two-live-exclusive-rows
+  ;; The exclusion does not live in the submit: the unique index of the
+  ;; live exclusive jobs refuses the second row, whoever writes it.
+  (let [cfg    (make-cfg (get-job-defs))
+        params (make-params)
+        label  "db-enforced"
+        id1    (jobs/submit cfg {::jobs/name          :echo
+                                 ::jobs/params        params
+                                 ::jobs/label         label
+                                 ::jobs/skip-if-active true})
+        row    {:name         "echo"
+                :tenant       (cf/get :tenant)
+                :queue        "default"
+                :label        label
+                :params       (db/json params)
+                :priority     100
+                :max-retries  3
+                :retry-num    0
+                :exclusive    true
+                :scheduled-at (ct/now)
+                :created-at   (ct/now)
+                :modified-at  (ct/now)}]
+    (t/is (uuid? id1))
+    (t/is (thrown? Exception
+                   (th/db-insert! :job (assoc row :id (uuid/next)))))
+    (t/testing "and the row that was there is untouched"
+      (t/is (some? (jobs/get-job cfg id1)))
+      (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                          WHERE label = ?" label])))))))
+
+(t/deftest two-concurrent-exclusive-submits-leave-one-row
+  ;; The check and the insert are the same statement, so two backends
+  ;; submitting the same exclusive key at the same time cannot both
+  ;; win: the second one is rejected by the index.
+  (let [cfg    (make-cfg (get-job-defs))
+        params (make-params)
+        label  "exclusive-race"
+        submit #(jobs/submit cfg {::jobs/name          :echo
+                                  ::jobs/params        params
+                                  ::jobs/label         label
+                                  ::jobs/skip-if-active true})]
+    (let [[a b] (race submit submit)]
+      (t/is (= 1 (count (filter uuid? [a b])))
+            "exactly one of the two submits got a job")
+      (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                          WHERE label = ?" label])))))))
 
 (t/deftest submit-skip-if-active-requires-an-explicit-label
   (let [cfg    (make-cfg (get-job-defs))
@@ -1682,20 +1788,6 @@
 ;; that only the first caller can win, and a row lock the loser waits
 ;; on. Both are only meaningful when two callers arrive at once, so the
 ;; tests below put real threads in front of them.
-
-(defn- race
-  "Run every thunk on a thread of its own and return what each returned,
-  in the order they were given. They all wait on the same gate, so they
-  contend for whatever they share instead of running one after another."
-  [& thunks]
-  (let [gate    (promise)
-        results (mapv (fn [f]
-                        (future
-                          @gate
-                          (f)))
-                      thunks)]
-    (deliver gate true)
-    (mapv deref results)))
 
 (t/deftest the-first-terminal-transition-wins
   (let [cfg    (make-cfg (get-job-defs))
