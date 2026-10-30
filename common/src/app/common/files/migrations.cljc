@@ -88,7 +88,9 @@
 
     (-> file
         (assoc :data data)
-        (update :migrations set/union diff)
+        ;; `:migrations` is an ordered set everywhere; keep it that way
+        ;; even if a caller hands a plain set.
+        (update :migrations #(into (d/ordered-set) (set/union % diff)))
         (vary-meta assoc ::migrated (not-empty diff)))))
 
 (defn generate-migrations-from-version
