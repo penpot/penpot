@@ -671,14 +671,20 @@
                          (generate-rename-component (:component-id shape-inst) (:name shape-inst) library))]
 
     (if component
-      (let [synced-ids (volatile! #{})]
+      (let [synced-ids (volatile! #{})
+            root-main  (ctf/get-component-root library component)]
         (-> (update-main-recursive changes
                                    {:container      container
                                     :main-container (ctf/get-component-container library component)
                                     :component      component
                                     :libraries      libraries
                                     :root-inst      shape-inst
-                                    :root-main      (ctf/get-component-root library component)
+                                    :root-main      root-main
+                                    ;; An orientation the copy root inherits from its
+                                    ;; parent places it; it is not pushed into the main.
+                                    :inherited-turn (when-not (ctk/touched-group? shape-inst :geometry-group)
+                                                      (orient-like shape-inst root-main
+                                                                   (grc/rect->center (:selrect shape-inst))))
                                     :remote-synced  (when-not (:component-root shape-inst) true)
                                     :synced-ids     synced-ids}
                                    shape-inst
@@ -704,9 +710,13 @@
   "Push the copy shape `shape-inst` into `shape-main`, the main shape it
   pairs with: the copy's values, overrides included, go into the main, and
   its touched groups move there (the copy keeps a swap)."
-  [changes {:keys [container main-container root-inst root-main remote-synced]} shape-inst shape-main]
+  [changes {:keys [container main-container root-inst root-main remote-synced inherited-turn]} shape-inst shape-main]
   (cond-> (-> changes
-              (update-attrs shape-main shape-inst root-main root-inst main-container false)
+              (update-attrs shape-main
+                            (cond-> shape-inst (some? inherited-turn) inherited-turn)
+                            root-main
+                            (cond-> root-inst (some? inherited-turn) inherited-turn)
+                            main-container false)
               ;; the copy keeps its swap, and the main takes the copy's overrides
               (set-touched shape-inst container (when (ctk/swapped? shape-inst) #{:swap-group}))
               ;; A previous update is not a reset of the main's authored
