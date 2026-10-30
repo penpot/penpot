@@ -85,13 +85,6 @@
    :allow-scene-differences (boolean (:allow-scene-differences options))
    :allow-all-differences (boolean (:allow-all-differences options))})
 
-(defn- data-of
-  [cause]
-  (try
-    (ex-data cause)
-    (catch :default _
-      nil)))
-
 (defn- signal-name
   [signal]
   (when (and signal (.-aborted ^js signal))
@@ -99,7 +92,7 @@
       (cond
         (string? reason) reason
         (keyword? reason) (name reason)
-        :else (or (:signal (data-of reason)) "SIGINT")))))
+        :else (or (:signal (ex-data reason)) "SIGINT")))))
 
 (defn- signal-exit
   [signal]
@@ -112,7 +105,7 @@
 (defn- with-log-path
   [cause log-path]
   (ex-info (message-of cause)
-           (assoc (data-of cause) :log-path (or (:log-path (data-of cause)) log-path))
+           (assoc (ex-data cause) :log-path (or (:log-path (ex-data cause)) log-path))
            cause))
 
 (defn- failure-evidence
@@ -120,29 +113,47 @@
   (cond-> {:phase (name phase)
            :message (message-of cause)
            :cause (failures/describe-cause cause)}
-    (:log-path (data-of cause)) (assoc :tail-log (:log-path (data-of cause)))))
+    (:log-path (ex-data cause)) (assoc :tail-log (:log-path (ex-data cause)))))
 
 (defn- storage-error
   [cause log-path]
   (ex-info "cannot persist feature comparison"
-           {:type ::storage-error :cause (message-of cause) :log-path log-path}
+           {:type ::storage-error :fatal true :cause (message-of cause) :log-path log-path}
            cause))
 
-(defn- storage-error?
+(defn- fatal?
+  "True when cause or one of its causes cannot be recorded in the saved
+  comparison: it has `:fatal` ex-data or comes from the log sink."
   ([cause]
-   (storage-error? cause 0))
+   (fatal? cause 0))
   ([cause depth]
-   (cond
-     (nil? cause) false
-     (contains? #{::storage-error ::log/storage-error} (:type (data-of cause))) true
-     (>= depth 8) false
-     :else (storage-error? (ex-cause cause) (inc depth)))))
+   (let [data (ex-data cause)]
+     (cond
+       (nil? cause) false
+       (or (:fatal data) (= ::log/storage-error (:type data))) true
+       (>= depth 8) false
+       :else (fatal? (ex-cause cause) (inc depth))))))
 
-(defn- operation-error
-  [cause]
-  (if (storage-error? cause)
-    (throw cause)
-    {:error cause}))
+(defn- attempt
+  "Returns the result of calling f, or {:error cause} when f throws.
+  Rethrows fatal errors."
+  [f]
+  (try
+    (f)
+    (catch :default cause
+      (if (fatal? cause)
+        (throw cause)
+        {:error cause}))))
+
+(defn- ^:async attempt-async
+  "Like `attempt` for a function f that returns a promise or a value."
+  [f]
+  (try
+    (await (f))
+    (catch :default cause
+      (if (fatal? cause)
+        (throw cause)
+        {:error cause}))))
 
 (defn- change-config
   [record slug f]
@@ -244,7 +255,7 @@
     {:comparison record
      :home (:home state)
      :log-path (get-in state [:home :log-path])
-     :tail-log (:log-path (data-of error))
+     :tail-log (:log-path (ex-data error))
      :exit-code exit-code
      :error error
      :interrupted? interrupted?}))
@@ -277,16 +288,14 @@
 
 (defn- ^:async prepare-build
   [state slug selection]
-  (try
-    (let [selected (await ((:prepare-build (:services state))
-                           {:root (:root state)
-                            :selection selection
-                            :build-timeout-ms (get-in state [:options :build-timeout-ms])
-                            :signal (:signal state)
-                            :on-created (partial record-created-build state slug)}))]
-      {:build selected})
-    (catch :default cause
-      (operation-error cause))))
+  (attempt-async
+   (^:async fn []
+     {:build (await ((:prepare-build (:services state))
+                     {:root (:root state)
+                      :selection selection
+                      :build-timeout-ms (get-in state [:options :build-timeout-ms])
+                      :signal (:signal state)
+                      :on-created (partial record-created-build state slug)}))})))
 
 (defn- load-run
   [path]
@@ -367,13 +376,14 @@
 
 (defn- collect-build-cases
   [state selected]
-  (try
-    (let [collected ((:collect-catalog (:services state)) selected
-                                                          {:master-seed (get-in state [:options :seed])
-                                                           :filter (get-in state [:options :filter])})]
-      {:mismatch (not= collected (:cases state))})
-    (catch :default cause
-      (update (operation-error cause) :error with-log-path (:log-path selected)))))
+  (let [result (attempt
+                #(let [collected ((:collect-catalog (:services state))
+                                  selected
+                                  {:master-seed (get-in state [:options :seed])
+                                   :filter (get-in state [:options :filter])})]
+                   {:mismatch (not= collected (:cases state))}))]
+    (cond-> result
+      (:error result) (update :error with-log-path (:log-path selected)))))
 
 (defn- check-catalog
   [state flow]
@@ -395,12 +405,10 @@
 
 (defn- create-config-home
   [state slug]
-  (try
-    {:home ((:create-run-home (:services state))
-            {:root (:root state) :run-id (str (random-uuid))
-             :output-dir (path/join (get-in state [:home :dir]) "configs" slug)})}
-    (catch :default cause
-      (operation-error cause))))
+  (attempt
+   #(do {:home ((:create-run-home (:services state))
+                {:root (:root state) :run-id (str (random-uuid))
+                 :output-dir (path/join (get-in state [:home :dir]) "configs" slug)})})))
 
 (defn- allocate-run
   [state flow]
@@ -414,23 +422,20 @@
 
 (defn- ^:async execute-run
   [state flow]
-  (try
-    (await ((:execute-run (:services state))
-            (:root state) (:run-home flow) (:build flow) (:cases state)
-            (select-keys (:options state) (sm/keys run/schema:run-options))
-            (:signal state)))
-    (catch :default cause
-      (operation-error cause))))
+  (attempt-async
+   #((:execute-run (:services state))
+     (:root state) (:run-home flow) (:build flow) (:cases state)
+     (select-keys (:options state) (sm/keys run/schema:run-options))
+     (:signal state))))
 
 (defn- get-evidence-error
   [slug home response]
   (or (:storage-error response)
-      (try
-        (when-not (= (get-in response [:run :run-id]) (:run-id (load-run (:record-path home))))
-          (throw (ex-info "saved run identity disagrees with execution result"
-                          {:type ::invalid-run :configuration slug})))
-        nil
-        (catch :default cause cause))))
+      (:error (attempt
+               #(when-not (= (get-in response [:run :run-id])
+                             (:run-id (load-run (:record-path home))))
+                  (throw (ex-info "saved run identity disagrees with execution result"
+                                  {:type ::invalid-run :configuration slug})))))))
 
 (defn- get-run-evidence
   [slug home response]
@@ -600,7 +605,7 @@
       {:path path
        :unacknowledged (unacknowledged-count comparison)})
     (catch :default cause
-      (if (storage-error? cause)
+      (if (fatal? cause)
         {:storage-error cause}
         {:error cause}))))
 
@@ -727,7 +732,7 @@
                         {:comparison @(:saved-ref state)
                          :home home
                          :log-path (:log-path home)
-                         :tail-log (:log-path (data-of cause))
+                         :tail-log (:log-path (ex-data cause))
                          :exit-code 1
                          :error cause
                          :interrupted? false}))]
@@ -745,14 +750,13 @@
   [root prepared signal settings]
   (let [services      (merge default-services (:services settings))
         comparison-id (str (random-uuid))
-        home          (try
-                        (create-home root comparison-id (:output-dir prepared))
-                        (catch :default cause
-                          {:error cause}))]
+        home          (attempt #(create-home root comparison-id (:output-dir prepared)))]
     (if-let [cause (:error home)]
       {:comparison nil
        :home nil
        :exit-code 1
        :error cause
        :interrupted? false}
-      (await (execute-comparison (create-comparison-state root prepared signal services home comparison-id))))))
+      (await
+       (execute-comparison
+        (create-comparison-state root prepared signal services home comparison-id))))))
