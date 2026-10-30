@@ -17,6 +17,7 @@
    [app.common.record :as cr]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
+   [app.common.svg :as csvg]
    [app.common.transit :as t]
    [app.common.types.color :as clr]
    [app.common.types.fills :refer [schema:fills fill->color]]
@@ -186,8 +187,83 @@
    [:width ::sm/safe-number]
    [:height ::sm/safe-number]])
 
+(def ^:private schema:svg-scalar-gen
+  "Small generation-only scalar for svg attr values. Validation stays
+  wide (`:string`, any `::sm/number`, `:boolean`), but the default
+  `::sm/number` generator emits unbounded doubles whose own precision
+  pass overflows float: bound everything explicitly here."
+  (sg/one-of
+   (sg/word-string)
+   (sg/small-int :min -1000 :max 1000)
+   (sg/small-double :min -1000 :max 1000)
+   (sg/elements [true false])))
+
+(def ^:private schema:svg-scalar
+  "A scalar svg attr value: trimmed strings or numbers/booleans
+  straight from programmatic svg data."
+  [:or {:gen/gen schema:svg-scalar-gen}
+   :string ::sm/number :boolean])
+
+(def schema:svg-attrs
+  "Closed `:svg-attrs`: every key birth can store, derived from
+  `csvg/svg-stored-attr-keys` (the whitelist in stored spelling), so
+  birth and validation cannot drift apart. Values are the scalars birth
+  stores (trimmed strings, or numbers/booleans straight from
+  programmatic svg data), except `:style`, which birth parses into a
+  map. `:tag` stays a keyword: switching it to string would touch ~22
+  comparison sites and 7 tag sets for zero behavior gain."
+  (into [:map {:title "SvgAttrs" :closed true}]
+        (map (fn [k]
+               [k {:optional true}
+                (if (= k :style)
+                  [:map-of :keyword schema:svg-scalar]
+                  schema:svg-scalar)]))
+        csvg/svg-stored-attr-keys))
+
+(def ^:private schema:svg-shallow-node-gen
+  "Bounded generator for the svg node schemas below: one shallow node.
+  The schemas are recursive, and unbounded recursive generation grows
+  monster trees that OOM around ~200 sampled shapes. Hand-written tests
+  cover deep nesting; generation only needs small valid nodes."
+  (sg/one-of
+   (sg/elements [{:tag :g :attrs {}}
+                 {:tag :g :attrs {} :content []}
+                 {:tag :g :attrs {} :content ["text"]}
+                 {:tag :rect :attrs {:x "0"} :content []}])))
+
+(def schema:svg-def-node
+  "A `:svg-defs` node: keyword tag (the JSON decoder restores keywords
+  from the stored strings), whitelisted attrs, recursive content that
+  may interleave text. Closed: birth and migration normalize def nodes
+  to exactly these keys."
+  [:schema {:registry
+            {::svg-def-node
+             [:map {:closed true
+                    :gen/gen schema:svg-shallow-node-gen}
+              [:tag :keyword]
+              [:attrs schema:svg-attrs]
+              [:content {:optional true}
+               [:vector [:or :string [:ref ::svg-def-node]]]]]}}
+   [:ref ::svg-def-node]])
+
+(def schema:svg-content-node
+  "An svg-raw `:content` tree node: keyword tag, spelling-only
+  kebab-ized attrs (open: the sidebar reads keys outside the whitelist,
+  such as `:stroke-style`), recursive content that may interleave text."
+  [:schema {:registry
+            {::svg-content-node
+             [:map {:gen/gen schema:svg-shallow-node-gen}
+              [:tag :keyword]
+              [:attrs {:optional true} :map]
+              [:content {:optional true}
+               [:vector [:or :string [:ref ::svg-content-node]]]]]}}
+   [:ref ::svg-content-node]])
+
 (def schema:shape-generic-attrs
-  [:map {:title "ShapeGenericAttrs"}
+  [:map {:title "ShapeGenericAttrs"
+         ;; Generated shapes must not carry svg provenance: the closed
+         ;; svg schemas above would fill them with random attrs.
+         :gen/fmap (fn [m] (dissoc m :svg-attrs :svg-defs))}
    [:page-id {:optional true} ::sm/uuid]
    [:component-id {:optional true}  ::sm/uuid]
    [:component-file {:optional true} ::sm/uuid]
@@ -264,15 +340,19 @@
    ;; it, and `setup-shape` drops it when a caller passes nil.
    [:hide-in-viewer {:optional true} :boolean]
 
-   ;; The SVG provenance an import leaves on a shape. Typed `:map` rather than
-   ;; more precisely on purpose: legacy files hold `svg-transform` as a plain
-   ;; `{:a … :f}` map rather than a `::gmt/matrix` record, and `svg-viewbox` as
-   ;; either a `::grc/rect` record or a plain map, so a tighter schema here
-   ;; would reject files that are otherwise valid. The graph *column* types are
-   ;; tightened separately, where a wrong guess costs a column rather than a
-   ;; rejected file (`app.graph.schema.contract/type-overrides`).
-   [:svg-attrs {:optional true} :map]
-   [:svg-defs {:optional true} :map]
+   ;; The SVG provenance an import leaves on a shape. `:svg-attrs` is
+   ;; closed over the whitelist in stored spelling (see
+   ;; `schema:svg-attrs`): legacy files hold `svg-transform` as a plain
+   ;; `{:a … :f}` map rather than a `::gmt/matrix` record, and
+   ;; `svg-viewbox` as either a `::grc/rect` record or a plain map, so a
+   ;; tighter schema on those two would reject files that are otherwise
+   ;; valid. The graph *column* types are tightened separately, where a
+   ;; wrong guess costs a column rather than a rejected file
+   ;; (`app.graph.schema.contract/type-overrides`). Outer `:svg-defs`
+   ;; keys are id strings at birth and keywords after JSON decode, so
+   ;; both are accepted; node tags decode back to keywords.
+   [:svg-attrs {:optional true} schema:svg-attrs]
+   [:svg-defs {:optional true} [:map-of [:or :string :keyword] schema:svg-def-node]]
    [:svg-transform {:optional true} :map]
    [:svg-viewbox {:optional true} :map]])
 
@@ -347,7 +427,9 @@
    ;; string itself: `<text>hi</text>` becomes one svg-raw for the element
    ;; and another for `"hi"`. `app.common.files.shapes-builder/parse-svg-element`
    ;; carries a FIXME about exactly that. Both forms are legal and stored.
-   [:content {:optional true} [:or :map :string]]])
+   ;; Element nodes follow `schema:svg-content-node` (tags decode back to
+   ;; keywords, attrs stay spelling-only).
+   [:content {:optional true} [:or schema:svg-content-node :string]]])
 
 (def schema:image-attrs
   [:map {:title "ImageAttrs"}

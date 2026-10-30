@@ -22,6 +22,7 @@
    [common-tests.files-changes-test]
    [common-tests.files-migrations-0025-test]
    [common-tests.files-migrations-0026-test]
+   [common-tests.files-migrations-0034-test]
    [common-tests.files-migrations-test]
    [common-tests.files.comp-processors-test]
    [common-tests.files.helpers-test]
@@ -106,6 +107,7 @@
    [common-tests.types.shape-decode-encode-test]
    [common-tests.types.shape-interactions-test]
    [common-tests.types.shape-layout-test]
+   [common-tests.types.shape-test]
    [common-tests.types.stroke-test]
    [common-tests.types.text-test]
    [common-tests.types.token-test]
@@ -129,6 +131,7 @@
    'common-tests.files-changes-test
    'common-tests.files-migrations-0025-test
    'common-tests.files-migrations-0026-test
+   'common-tests.files-migrations-0034-test
    'common-tests.files-migrations-test
    'common-tests.files.comp-processors-test
    'common-tests.files.helpers-test
@@ -213,6 +216,7 @@
    'common-tests.types.shape-decode-encode-test
    'common-tests.types.shape-interactions-test
    'common-tests.types.shape-layout-test
+   'common-tests.types.shape-test
    'common-tests.types.stroke-test
    'common-tests.types.text-test
    'common-tests.types.token-test
