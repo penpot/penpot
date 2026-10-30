@@ -398,6 +398,8 @@
         objects         (deref refs/workspace-page-objects)
         any-in-copy?    (some #(ctn/has-any-copy-parent? objects %) shapes)
         any-is-variant? (some ctk/is-variant? shapes)
+        any-is-container? (some ctk/is-variant-container? shapes)
+        crosses-set?    (ctn/crosses-variant-set-boundary? objects shapes)
 
         ;; components can't be ungrouped
         has-frame? (->> shapes (d/seek #(and (cfh/frame-shape? %) (not (ctk/instance-head? %)) (not (ctk/is-variant-container? %)))))
@@ -416,7 +418,7 @@
         #(st/emit! (dwsh/create-artboard-from-selection))]
 
     [:*
-     (when (not (or any-in-copy? any-is-variant?))
+     (when (not (or any-in-copy? any-is-variant? any-is-container? crosses-set?))
        [:*
         (when (or has-bool? has-group? has-mask? has-frame?)
           [:> menu-entry* {:title (tr "workspace.shape.menu.ungroup")
@@ -621,6 +623,10 @@
         (and single? (every? ctl/grid-layout? shapes))
 
         any-is-variant? (some ctk/is-variant? shapes)
+        ;; shape-context-menu* already omits this menu for container-only;
+        ;; gate here too so a future caller cannot show Add flex/grid.
+        any-is-container? (some ctk/is-variant-container? shapes)
+        crosses-set?    (ctn/crosses-variant-set-boundary? objects shapes)
 
         on-add-layout
         (mf/use-fn
@@ -653,7 +659,9 @@
                              :shortcut-key :toggle-layout-grid
                              :on-click on-remove-layout}])]
 
-         (when (or single? (not any-is-variant?))
+         (when (and (not crosses-set?)
+                    (not any-is-container?)
+                    (or single? (not any-is-variant?)))
            [:div
             [:> menu-separator* {}]
             [:> menu-entry* {:title (tr "workspace.shape.menu.add-flex")
