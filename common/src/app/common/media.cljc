@@ -25,6 +25,18 @@
 (def tempfile-types
   (conj image-types "application/pdf" "application/zip"))
 
+(def export-artifact-types
+  "The content types an export job may leave as its result artifact:
+  what the exporter produces, nothing more. The `complete-job` call of
+  the management API refuses any other type for the bytes a worker
+  sends."
+  #{"application/zip"
+    "application/pdf"
+    "image/png"
+    "image/jpeg"
+    "image/webp"
+    "image/svg+xml"})
+
 (def storage-object-types
   "Every content-type the system stores in storage objects: uploaded
   images and fonts, generated thumbnails, temporary files and the

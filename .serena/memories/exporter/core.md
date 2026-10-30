@@ -1,36 +1,76 @@
 # Exporter Architecture and Workflow
 
-`exporter/`: CLJS/Node headless export service. Depends on `common/`; uses Playwright plus export JS/CLJS deps for SVG/PDF/assets.
+`exporter/`: CLJS/Node **worker process** that consumes the backend's
+`:exporter` job queue and renders shapes, frames and files to bitmap, SVG and
+PDF. Depends on `common/`; uses Playwright plus export JS/CLJS deps for
+SVG/PDF/assets. There is no HTTP surface of its own and nothing is persisted
+on this side: the row of the job, its cancel and its result are the backend's.
 
 ## Layout and commands
 
-- Source: `exporter/src/`; config: `deps.edn`, `shadow-cljs.edn`, `package.json`; runtime helpers/assets: `vendor/`, `scripts/`.
-- `exporter/resources/wasm/render-wasm.{js,wasm}` and `exporter/src/app/wasm/shared.js` are generated render-wasm build output, not source: they are gitignored. Never hand-edit or commit them; regenerate by rebuilding render-wasm.
-- From `exporter/`: setup `./scripts/setup`; watch `pnpm run watch` or `pnpm run watch:app`; production build `pnpm run build`; test bundle `pnpm run build:test`; tests `pnpm run test` or `pnpm run test:quiet`; lint `pnpm run lint:clj`; format check/fix `pnpm run check-fmt:clj` / `pnpm run fmt:clj`.
+- Source: `exporter/src/` (one tree, `exporter.*`; the legacy `app.*` tree is
+  gone); config: `deps.edn`, `shadow-cljs.edn`, `package.json`; runtime helpers/assets: `vendor/`, `scripts/`.
+- `exporter/resources/wasm/render-wasm.{js,wasm}` and `exporter/src/exporter/wasm/shared.js` are generated render-wasm build output, not source: they are gitignored. Never hand-edit or commit them; regenerate by rebuilding render-wasm.
+- From `exporter/`: setup `./scripts/setup`; watch `pnpm run watch` or `pnpm run watch:app`; production build `pnpm run build`; test bundle `pnpm run build:test`; tests `pnpm run test` or `pnpm run test:quiet`; lint `pnpm run lint:clj`; format check/fix `pnpm run check-fmt:clj` / `pnpm run fmt:clj`. `./scripts/ci exporter` in the repo root is green (test-quiet defaults `PENPOT_SECRET_KEY` like `test` does).
 - Because exporter consumes `common/`, shared file/shape/model changes may need exporter verification even when the immediate change is not under `exporter/`.
 - Cross-cutting testing principles and anti-patterns: `mem:testing`.
 - Exporter test conventions and CI: `mem:exporter/testing`.
+- No promesa chains in `src` (only raw JS promise interop where a JS API demands
+  it); async is `^:async` + `await`. Promise arg orders and the async-test
+  silent-green trap: `mem:clojure/promesa` — read before touching async code.
 
-## HTTP and browser pool
+## The worker anatomy
 
-- POST body limit is about 60 MB. Exporter supports `application/transit+json`; request params merge query params and body params.
-- Map response bodies are Transit JSON and force HTTP 200; nil 200 bodies become 204.
-- Auth token comes from cookie `auth-token`, then uploads use Bearer auth plus the management shared key.
-- Each export job gets a fresh Playwright browser context. On success, the context closes and the browser returns to the pool; on error, the browser is destroyed instead of reused.
-- Borrow validates browser connection. Pool acquire timeout is about 10s; font loading timeout logs a warning and continues after about 15s.
+- The queue wake-up contract (key shape, the two-item payload, mark-then-push, the claim-back rule) is the backend's public surface now: `mem:backend/core`, "The wake-up contract of a worker queue". This process was its first external consumer; read it before writing another.
+- Main thread boots pools + K pollers (`exporter.main`): browser pool, wasm pool, temp area (`:exporter/tmpdir`, which also cleans what a previous process left on its init), then `consumer.worker/start`. Shutdown: browser → wasm pool → pollers → done (the pollers own their connections; the pools unwind while an export is still in flight).
+- K pollers (`exporter.consumer.worker`): one Redis connection per poller (connection = slot + backpressure), BLPOP on `penpot.worker.queue:<tenant>:exporter`, payload `[job-id scheduled-at]` JSON; corrupt payload warns and drops, dead Redis delays 1s and retries. `K = PENPOT_EXPORTER_WORKER_CONCURRENCY` default 1 floor; replicas × K is the total concurrency. Pools size themselves to K (both read `consumer.config/concurrency`); there is no independent pool-max config anymore, only `:wasm-worker-pool-min`.
+- Management client (`exporter.consumer.api`): claim/progress/create-job-session/complete-job (JSON and multipart via undici FormData)/fail-job, POST to `<internal-uri>/api/management/methods/<method>` with `X-Shared-Key: exporter <key>` (key = `PENPOT_EXPORTER_SHARED_KEY` or HKDF-derived from the secret); transit bodies, non-2xx errors carry `:status` and the error body. `fetch` is a plain def seam for hermetic tests.
+- Runner (`exporter.consumer`, `run-export [render tmpdir claim params]`): mints a render session (`create-job-session`), plans via `make-plan` (single → artifact of its type; multi → zip; frames → pdf via pdfunite), settles via `complete-job-with-artifact` multipart or `fail-job`; the settle never rejects. `exporter.consumer.plan` holds the render-plan pieces (name transducers, partition of 50, grouping by `[scale type]`), dispatching on `exporter.renderer/wasm?`. The job kind is declared (`:kind` in the frozen params), never sniffed.
+- Beats: per-object milestones `:preparing/:rendering/:packaging` with `objects`/`pages` counters, throttled at 250ms; a watchdog repeats the last milestone every 1s.
+- Cancellation: a `skip` answer on any beat means the row is terminal (cancelled, aborted, settled). The runner raises `:job-cancelled` between units of work; mid-Skia the per-lease interval fires the SharedArrayBuffer signal and terminates the leased worker thread. The runner owns the local registry entry via `exporter.jobs` and releases it on settle.
+- `exporter.jobs` is the **local cancel arm only**: one flag per claimed job (`register`/`mark-cancelled` returning true/nil/`cancelled?`/`release`) plus one zero-arg check constructor per job (`check-cancelled`, raising `:job-cancelled`). No terminate callbacks and no shared-array signal travel through here — the abort belongs to whoever holds the render (the per-lease interval of `exporter.wasm.scope` terminates its own worker).
+- Temp files: `exporter.tmpdir/track`/`release` per job id; the `:exporter/tmpdir` init cleans orphans (aged `:job-ttl`). No redis-side store, cancel topic or abandoned-job sweep: an unclaimed-in-time row goes `aborted` by the backend's own lease GC.
+- Run artifacts: `exporter.resources` (`create [tmpdir type name]`, `create-zip`/`add-to-zip`/`close-zip`); no per-file deletion timers — the tmpdir registry owns every path.
 
-## Export batching and async behavior
+## Running it (devenv and deploy)
 
-- `prepare-exports` groups entries by `[scale type]` and partitions groups into chunks of 50. Each partition uses file/page/share/name from its first item, so be careful if entries might cross those boundaries.
-- Single-export response is used only when multiple export is not forced and there is exactly one prepared export containing exactly one object.
-- Multi-object export can run async: when `wait` is false it returns a resource immediately and publishes progress/end/error to Redis by profile topic; when `wait` is true it waits for upload and returns the uploaded resource.
-- Frame export returns a resource immediately and publishes Redis updates; it does not follow the same `wait` option path.
-- ZIP entry names are sanitized and duplicates receive numeric suffixes.
+- Devenv: the tmux `exporter` window (`./scripts/watch` + `wait-and-start.sh`) IS the worker now — no separate window, no role env. It needs the backend and valkey of the devenv up; `watch:app` rebuilds with the same shadow build the `main` build uses.
+- Deploy: the compose service is one `penpot-exporter` (the same image, `CMD ["node", "app.js"]`); scale by replicas, K is per process. Nginx has no `/api/export` route anymore: the frontend talks to the backend's RPC only (`create-export-assets-job`), and downloads ride `/assets/by-id/?share-id=`/auth of the job resource.
+- Useful beats while debugging: the boot log names `:workers K`; each poller logs `running job`/`job settled`; the runner logs `export job settled` with `:outcome`, and a cancel logs `job cancelled by backend` on the watchdog.
+
+## The tree
+
+- Lifecycle is `exporter.utils.system`: async-aware Integrant-style init/halt (`init-key`/`halt-key` multimethods, `ref`s, `weavejester.dependency` ordering, `^:async` + `cljs.core/await`, no promesa chains); tests are `^:async deftest` with `await` directly in the body.
+- `exporter.main` mirrors the backend's `app.main`: a `system-config` def reading env at the wiring layer, a public `system` atom with the running map, `start`/`stop`/`restart` (`^:async`, resolving `:started`/`:stopped`/`:restarted`), a thread guard in `start` (a render worker thread runs this same bundle and boots the `exporter.wasm.worker` engine instead of the system — without it a warmed pool worker would nest pools and pollers and never post `ready`), `start-custom` as the test seam, idempotent `install-process-handlers` for the `uncaughtException`/SIGTERM/SIGINT wiring (runs on `start`, never on namespace load), `^:dev/before-load-async`/`^:dev/after-load-async` hooks bridging the promise lifecycle to shadow's `done` callbacks (a hook failure logs, never sticks the reload), and `main` as the entry point: shadow boots `exporter.main/main`. The entry leaves info logging enabled for the new tree (`setup!` on the `exporter` logger); without it the default level filters everything below fatal.
+- Service config maps take plain (non-namespaced) param keys (`{:exporter.browser/pool {:max 2}}`): the top-level key already scopes the component, so namespacing the params only adds noise. Component keys and error reasons stay namespaced.
+- `exporter.config` is the process configuration: `PENPOT_`-prefixed env over defaults, malli-decoded and validated; `get`/`get-internal-uri`/`management-key` (HKDF)/`flags`/`version`. `prepare-config` over an explicit env object is pure and throws `:invalid-config` (tests exercise it); only the wiring entry `load-config!` reads the live environment and exits on it.
+- `exporter.browser` is the browser pool service: the running instance is the raw pool, the public API takes it first (`exec` fails fast on a nil pool), the browser factory is injected through config for hermetic tests.
+- `exporter.wasm.pool` follows the backend `db/run!` shape: `run [cfg f & args]` resolves the pool from `cfg` (the `:exporter.wasm/pool` service instance, or a raw pool), acquires a worker, applies `f` to the cfg carrying it under `:exporter.wasm.pool/worker` plus any extra args, and returns the worker — or destroys it when `f` fails, like a rollback. Pure pool mechanics only (`init`/`halt`, `terminate`, `await-ready`); the render protocol lives one level up.
+- `exporter.wasm.scope` owns the lease: `run [cfg on-scope]` lends one worker for the whole batch (serializer, per-lease signal buffer, mid-render abort interval), and the public low-level `render-on [cfg params]` renders on the leased worker — asserting `:worker-not-leased`/`:timeout-ms-missing` (`:assertion`, never a silent default: a bare `::key` resolves to the CURRENT ns, never to an alias, so cross-ns keys are literals or `::alias/key`) — with the rest preconfigured and namespaced by setter (`:exporter.renderer/on-object` from the caller, `:exporter.wasm.scope/cancel-buffer` from the lease); the check is mandatory at the lease entry and runs here when configured.
+- `exporter.renderer.browser` merges the bitmap/pdf/svg flows into one `render [cfg params on-object check-cancelled]` (branching by type, `on-object` always awaited, unknown types raise); `cfg` carries what the job params do not freeze (`:exporter.browser/pool`, `:base-uri`, `:public-uri`, `:svgo?`).
+- `exporter.browser.scope` owns the browser batch: `run [cfg exports]` fires every export through its own checkout, all at once, bounded by the pool. No lease — a browser batch shares nothing but the pool, so fan-out only. The facade validates once, partitions by backend and joins both scopes.
+- `exporter.renderer.wasm` is a thin single-shot over the scope lease. The scope fn survives one level down, as `exporter.wasm.scope/run`.
+- `exporter.renderer` is the malli-validated facade with one entry point, the `render-fn` closure over `cfg`: it validates the task map (`:exports :on-object :check-cancelled`) and dispatches it through `render [cfg task]`, which assumes a valid task and only partitions and joins — the browser exports through `exporter.browser.scope`, the wasm ones through one leased worker — resolving nil once every export landed (objects travel through `on-object`). The `:exporter/renderer` service builds the closure from pools plus tmpdir (refs) and static config (`:base-uri`, `:public-uri`, `:management-key`, `:image-cache-size`, `:svgo?`). The facade merges the render env (`::wrender/env`) into every wasm export's params before the lease: the worker thread reads no config and no globals. The consumer renders through the injected fn and never requires the facade. `cfg` is task-free infrastructure with process lifetime (pools, uris, key, flags, tmpdir); everything per-task rides in the validated task map. One closed schema validates data plus injections, so a bad task — or a misspelled key — never touches a pool; task validation raises `:data-validation`. Each driver takes the same `[cfg params on-object check-cancelled]` shape (`headless?` is now `wasm?`: the browser also renders headless, so the old name lied) and implements cancel internally: cooperative checkpoints on the browser, checkpoints plus a mid-render abort of its own leased worker on wasm. The lease lives one level down, in `exporter.wasm.scope/run`, which the facade calls with the task keys set once in `cfg`; the browser batch goes through `exporter.browser.scope/run [cfg exports]`.
+- `exporter.consumer.worker` is the queue poller (`read-payload`, `process`, `poll-once`, `start`/`stop` with a running flag, no promesa): K connections over the `:exporter` queue, claim → `run-export` through the injected `:renderer` and `:exporter/tmpdir` → settle before the next pop. The worker config carries the queue knobs plus both by ref; no render statics nest inside it. `stop` quits every connection and ends every loop; the temp area boots clean through the tmpdir init.
+- `exporter.consumer.config` holds the consumer knobs (`concurrency` floored at 1, `queue-key`, `queue-name`): the runner, the worker and `exporter.main` read it.
+- `exporter.consumer.api` is the backend management client (claim/progress/session/settle, transit bodies, multipart artifact), with the same `fetch` def seam for hermetic tests.
+- `exporter.wasm` is the headless render-wasm driver under Node (artifact load + headless boot, font provisioning, shape rendering); `exporter.wasm.enums` binds the generated `shared.js` the `render-wasm/build export` step emits next to it (not committed). `exporter.wasm.text`/`serialize` own the browser-free call sequencing over the shared serializers.
+- `exporter.wasm.render` is the headless pipeline (fetch scene → serialize → provision fonts/images → relayout → render each object) as `[env params on-object]`: `env` carries `:internal-uri`, `:public-uri`, `:management-key`, `:tmpdir`, `:image-cache-size`, and `fetch` is a plain def seam. `exporter.wasm.worker` is the worker-thread entry: it splits `::render/env` off the posted params (asserting `:env-missing`), assocs the cancel fn from the shared buffer, runs the pipeline posting `object`/`done`, and posts `error` instead of ever rejecting.
+- `exporter.main` wires both pools (`:exporter.browser/pool` and `:exporter.wasm.pool/pool`, each sized to the worker concurrency) plus `:exporter/tmpdir` (path + job ttl from env) plus `:exporter/renderer` (pools and tmpdir as `ref`s, static uris/key/flags) plus `:exporter.consumer/worker` (`:renderer` and `:exporter/tmpdir` by ref, `:concurrency`, `:queue-key`). Service keys follow the domain (`:exporter.wasm/pool`, `:exporter.consumer/worker`), written `::alias/name` where an alias covers them. No test boots the production wiring: the wasm pool warms one worker eagerly and the worker script in a test process would be the test bundle itself; the wiring is asserted as data and the lifecycle rides fake configs.
+- Async test vars prove their chain only when really awaited: a test passing with 0 assertions means the chain broke upstream.
 
 ## Render details
 
+- Headless engines (wasm/Skia) lease one render worker for the whole run (`scope/run`); browser renders go one DOM page per partition of 50.
+- Each export gets a fresh Playwright browser context. On success the context closes and the browser returns to the pool; on error the browser is destroyed instead of reused. Borrow validates the connection; pool acquire timeout about 10s; font loading timeout logs a warning and continues after about 15s.
 - Bitmap export differs for WASM vs non-WASM render paths: WASM forces Playwright `deviceScaleFactor` to 1 and passes scale through the render URL; non-WASM uses `deviceScaleFactor = scale`.
 - WebP is produced by taking a PNG screenshot and converting it with ImageMagick.
 - SVG export rasterizes text foreignObjects to PNG, converts through PPM/color masks/potrace, and reassembles SVG paths. It also replaces non-breaking spaces for SVG compatibility and drops empty defs/paths.
 - PDF export injects `@page` sizing through raw browser `evaluate` JavaScript; that code cannot rely on CLJS runtime helpers.
-- Temporary resources schedule local deletion, then uploads POST to `/api/management/methods/upload-tempfile` with `X-Shared-Key: exporter <management-key>` and Bearer auth.
+- ZIP entry names are sanitized and duplicates receive numeric suffixes.
+
+## On the render engines (do not lose in refactors)
+
+- The wasm engines run on worker threads; `../render-wasm/build export` must run first: it emits the artifact into `exporter/resources/wasm` and `src/exporter/wasm/shared.js` (both uncommitted) before compiling.
+- A render thread cannot read a flag: the cancel reaches it through the SharedArrayBuffer signal, and a render that never answers is killed by the silence watchdog of `exporter.wasm.scope` (the same mechanism a hard cancel rides on).
+- `exporter.main/start` decides what boots by thread: the main thread consumes the queue, a render worker (`exporter.wasm.worker/main`) renders.

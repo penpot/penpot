@@ -157,22 +157,34 @@
 (declare ^:private assign-session-cookie)
 (declare ^:private clear-session-cookie)
 
+(defn generate-token
+  "The authentication token of a session, with exactly the claims the
+  authz resolver accepts: the session id (`:sid`) and the profile it
+  belongs to (`:uid`). The optional `:exp` bounds how long the token
+  verifies, independent of the session row: without it, the expiry of a
+  login session is its absolute max-age counted from `:created-at`."
+  [cfg session & {:keys [exp]}]
+  (let [absolute-max-age (cf/get :auth-token-cookie-max-age-absolute
+                                 default-cookie-max-age-absolute)
+        claims           (cond-> {:iss             "authentication"
+                                  :aud             "penpot"
+                                  :sid             (:id session)
+                                  :iat             (:modified-at session)
+                                  :uid             (:profile-id session)
+                                  :sso-provider-id (:sso-provider-id session)
+                                  :sso-session-id  (:sso-session-id session)}
+                           exp
+                           (assoc :exp exp)
+
+                           (and (nil? exp) (ct/inst? (:created-at session)))
+                           (assoc :exp (ct/plus (:created-at session)
+                                                absolute-max-age)))
+        header           {:kid 1 :ver 1}]
+    (tokens/generate cfg claims header)))
+
 (defn- assign-token
   [cfg session]
-  (let [absolute-max-age (cf/get :auth-token-cookie-max-age-absolute default-cookie-max-age-absolute)
-        claims            {:iss "authentication"
-                           :aud "penpot"
-                           :sid (:id session)
-                           :iat (:modified-at session)
-                           :uid (:profile-id session)
-                           :sso-provider-id (:sso-provider-id session)
-                           :sso-session-id (:sso-session-id session)}
-        claims            (if (:created-at session)
-                            (assoc claims :exp (ct/plus (:created-at session) absolute-max-age))
-                            claims)
-        header            {:kid 1 :ver 1}
-        token             (tokens/generate cfg claims header)]
-    (assoc session :token token)))
+  (assoc session :token (generate-token cfg session)))
 
 (defn create-fn
   [{:keys [::manager] :as cfg} {profile-id :id :as profile}
