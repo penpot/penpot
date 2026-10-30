@@ -111,31 +111,46 @@
   [file label]
   (:touched (ths/get-shape file label)))
 
+(defn- normalize-sizing
+  "`:fix` is the default sizing, so it is equivalent to the attribute being
+   absent. Both forms are accepted in the checks."
+  [value]
+  (if (= value :fix) nil value))
+
+(defn- check-sizing
+  [file label expected]
+  (t/is (= (mapv normalize-sizing [expected expected])
+           (mapv normalize-sizing (sizing file label)))
+        (str label " must be " (pr-str expected))))
+
+(defn- expected-root-copy-sizing
+  "Sizing the copy of the component root is expected to have after a sync.
+   The root copy only receives `:auto` and `:fix`. `:fill` is never propagated
+   from the root, and neither is the absence of the attribute, so in those
+   cases the copy keeps the value it had before the propagation."
+  [comp-value previous]
+  (case comp-value
+    :auto :auto
+    :fix  :fix
+    previous))
+
 (defn- run-propagation
   "Changes the main shapes to every valid value and checks that the value
    reaches the copies."
-  [file base-comp-value]
-  (doseq [comp-value  sizing-values-both
-          board-value sizing-values-both
-          rect-value  sizing-values-child]
-    (let [file' (-> file
-                    (set-sizing :comp1 comp-value)
-                    (set-sizing :board1 board-value)
-                    (set-sizing :rect1 rect-value)
-                    (sync-component))]
-      (if (= comp-value :fill)
-        (if (= base-comp-value :fill)
-          (t/is (contains? #{[nil nil] [:fix :fix]} (sizing file' :copy1))
-                (str "copy1 must be nil or :fix when comp1 is set to :fill and base comp is :fix"))
-          (t/is (= [base-comp-value base-comp-value] (sizing file' :copy1))
-                (str "copy1 must be " base-comp-value " when comp1 is set to :fill")))
-        (t/is (= [comp-value comp-value] (sizing file' :copy1))
-              (str "copy1 must be " (or comp-value "nil"))))
-      (t/is (= [board-value board-value] (sizing file' :copy-board1))
-            (str "copy-board1 must be " (or board-value "nil")))
-      (t/is (= [rect-value rect-value] (sizing file' :copy-rect1))
-            (str "copy-rect1 must be " (or rect-value "nil")))
-      file')))
+  [file]
+  (let [initial (first (sizing file :copy1))]
+    (doseq [comp-value  sizing-values-both
+            board-value sizing-values-both
+            rect-value  sizing-values-child]
+      (let [file' (-> file
+                      (set-sizing :comp1 comp-value)
+                      (set-sizing :board1 board-value)
+                      (set-sizing :rect1 rect-value)
+                      (sync-component))]
+        (check-sizing file' :copy1 (expected-root-copy-sizing comp-value initial))
+        (check-sizing file' :copy-board1 board-value)
+        (check-sizing file' :copy-rect1 rect-value)))
+    file))
 
 (defn- run-touched
   "Overrides the sizing in the copy (which activates the sync groups in
@@ -143,27 +158,27 @@
    propagated to the copy this time."
   [file]
   #_(let [file'  (-> file
-                   (set-sizing :copy1 :fix)
-                   (set-sizing :copy-board1 :fix)
-                   (set-sizing :copy-rect1 :fix))
-        file'' (-> file'
-                   (set-sizing :comp1 :auto)
-                   (set-sizing :board1 :auto)
-                   (set-sizing :rect1 :auto)
-                   (sync-component))]
+                     (set-sizing :copy1 :fix)
+                     (set-sizing :copy-board1 :fix)
+                     (set-sizing :copy-rect1 :fix))
+          file'' (-> file'
+                     (set-sizing :comp1 :auto)
+                     (set-sizing :board1 :auto)
+                     (set-sizing :rect1 :auto)
+                     (sync-component))]
 
-    (t/is (= #{:layout-item-h-sizing :layout-item-v-sizing} (touched file' :copy1)))
-    (t/is (= #{:layout-item-h-sizing :layout-item-v-sizing} (touched file' :copy-board1)))
-    (t/is (= #{:layout-item-h-sizing :layout-item-v-sizing} (touched file' :copy-rect1)))
+      (t/is (= #{:layout-item-h-sizing :layout-item-v-sizing} (touched file' :copy1)))
+      (t/is (= #{:layout-item-h-sizing :layout-item-v-sizing} (touched file' :copy-board1)))
+      (t/is (= #{:layout-item-h-sizing :layout-item-v-sizing} (touched file' :copy-rect1)))
 
-    (t/is (= [:fix :fix] (sizing file'' :copy1)) "copy1 keeps its override")
-    (t/is (= [:fix :fix] (sizing file'' :copy-board1)) "copy-board1 keeps its override")
-    (t/is (= [:fix :fix] (sizing file'' :copy-rect1)) "copy-rect1 keeps its override")))
+      (t/is (= [:fix :fix] (sizing file'' :copy1)) "copy1 keeps its override")
+      (t/is (= [:fix :fix] (sizing file'' :copy-board1)) "copy-board1 keeps its override")
+      (t/is (= [:fix :fix] (sizing file'' :copy-rect1)) "copy-rect1 keeps its override")))
 
 (defn- run-case
   [comp-value board-value rect-value]
   (-> (setup-file comp-value board-value rect-value)
-      (run-propagation comp-value)
+      (run-propagation)
       (run-touched)))
 
 ;; ---- Tests
