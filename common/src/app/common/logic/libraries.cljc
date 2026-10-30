@@ -705,11 +705,6 @@
         library        (dm/get-in libraries [(:component-file shape-inst) :data])
         component      (ctkl/get-component library (:component-id shape-inst))
 
-        shape-main     (when component
-                         (ctf/find-remote-shape container libraries shape-inst))
-
-        initial-root?  (:component-root shape-inst)
-
         ;; The component name is normalized (path separators with one space at
         ;; each side), so the name synced to the main instance root must be
         ;; normalized too. Otherwise the root would not match the component's
@@ -723,9 +718,6 @@
                          (some? clean-name)
                          (assoc :name clean-name))
 
-        root-inst      shape-inst
-        root-main      (ctf/get-component-root library component)
-
         ;; When the synced shape is itself the component's main instance root,
         ;; `find-remote-shape` returns nil and the recursive sync never reaches
         ;; it, so it must be renamed explicitly to keep it matching the
@@ -735,26 +727,8 @@
 
         changes        (cond-> changes
                          (some? clean-name)
-                         (generate-rename-component (:component-id shape-inst) clean-name library))
+                         (generate-rename-component (:component-id shape-inst) clean-name library)
 
-        changes        (if component
-                         (let [synced-ids (volatile! #{})]
-                           (-> (update-main-recursive changes
-                                                      {:container      container
-                                                       :main-container (ctf/get-component-container library component)
-                                                       :component      component
-                                                       :libraries      libraries
-                                                       :root-inst      root-inst
-                                                       :root-main      root-main
-                                                       :remote-synced  (when-not initial-root? true)
-                                                       :synced-ids     synced-ids}
-                                                      shape-inst
-                                                      shape-main)
-                               (mark-local-changes @synced-ids)
-                               (settle-updated-main-placement libraries (:component-file shape-inst) component)))
-                         changes)
-
-        changes        (cond-> changes
                          (and (some? clean-name)
                               main-root?
                               (not= clean-name original-name))
@@ -768,7 +742,28 @@
                                             :local-change? true
                                             :operations [{:type :set :attr :name :val original-name}]}]))]
 
-    changes))
+    (if component
+      (let [synced-ids (volatile! #{})
+            root-main  (ctf/get-component-root library component)]
+        (-> (update-main-recursive changes
+                                   {:container      container
+                                    :main-container (ctf/get-component-container library component)
+                                    :component      component
+                                    :libraries      libraries
+                                    :root-inst      shape-inst
+                                    :root-main      root-main
+                                    ;; An orientation the copy root inherits from its
+                                    ;; parent places it; it is not pushed into the main.
+                                    :inherited-turn (when-not (ctk/touched-group? shape-inst :geometry-group)
+                                                      (orient-like shape-inst root-main
+                                                                   (grc/rect->center (:selrect shape-inst))))
+                                    :remote-synced  (when-not (:component-root shape-inst) true)
+                                    :synced-ids     synced-ids}
+                                   shape-inst
+                                   (ctf/find-remote-shape container libraries shape-inst))
+            (mark-local-changes @synced-ids)
+            (settle-updated-main-placement libraries (:component-file shape-inst) component)))
+      changes)))
 
 (defn split-local-changes
   "`changes` of an update main (`generate-sync-shape-inverse`) as `[local
@@ -787,9 +782,13 @@
   "Push the copy shape `shape-inst` into `shape-main`, the main shape it
   pairs with: the copy's values, overrides included, go into the main, and
   its touched groups move there (the copy keeps a swap)."
-  [changes {:keys [container main-container root-inst root-main remote-synced]} shape-inst shape-main]
+  [changes {:keys [container main-container root-inst root-main remote-synced inherited-turn]} shape-inst shape-main]
   (cond-> (-> changes
-              (update-attrs shape-main shape-inst root-main root-inst main-container false)
+              (update-attrs shape-main
+                            (cond-> shape-inst (some? inherited-turn) inherited-turn)
+                            root-main
+                            (cond-> root-inst (some? inherited-turn) inherited-turn)
+                            main-container false)
               ;; the copy keeps its swap, and the main takes the copy's overrides
               (set-touched shape-inst container (when (ctk/swapped? shape-inst) #{:swap-group}))
               ;; A previous update is not a reset of the main's authored

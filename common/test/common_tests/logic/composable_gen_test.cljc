@@ -5,6 +5,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variants :as clv]
+   [app.common.math :as mth]
    [app.common.schema.test :as smt]
    [app.common.test-helpers.composable.comp.files :as cf]
    [app.common.test-helpers.composable.comp.nodes :as n]
@@ -670,6 +671,17 @@
                                     :layout-copies true :text true}]
                        :ops [[:rotate 0 0 0 0] [:edit 0 0 1 1] [:update-main 0] [:delete 0]
                              [:restore 0] [:nest 0 0 0 0] [:swap 0 0 0 0] [:switch 0 0 0 0]]}))))
+
+(t/deftest updating-a-main-from-a-copy-turned-by-its-parent-keeps-the-main-unturned
+  (let [program   {:world [2 2 {:text true :text-styles true :layout nil}]
+                   :ops [[:rotate 6 0 0 0] [:nest 13 0 0 0] [:transform 0 0 0 13]
+                         [:update-main 3 0 0 0] [:update-main 0 0 0 0]]}
+        situation (:situation (cg/run program))
+        rotation  #(-> (tm/shape-by-id situation (thi/id %)) :rotation (or 0) (mod 360))]
+    ;; The nested copy inherits 45 degrees from its updated parent; its main
+    ;; stays unturned and the copy keeps the turn it had.
+    (t/is (mth/close? 0 (rotation :sync-random-0-outer-0) 0.01))
+    (t/is (mth/close? 45 (rotation :sync-random-0-innercopy-1) 0.01))))
 
 (t/deftest detached-swapped-head-follows-its-own-component-without-position-overrides
   (t/is (map? (cg/run {:world [2 1 {:library true :variants true}]
