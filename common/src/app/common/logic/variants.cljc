@@ -9,11 +9,34 @@
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
+   [app.common.path-names :as cpn]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]))
+
+(defn generate-rename-variant
+  "Rename a variant set in one change vector.
+
+   The builder already has the mains' page objects and library data.
+   The stored name is `clean-path` of `name`, or \"(empty)\" when that
+   path is blank. The board and every direct child take that name.
+   Each component's path and name come from `split-group-name`."
+  [changes variant-id name]
+  (let [objects     (pcb/get-objects changes)
+        data        (pcb/get-library-data changes)
+        clean-name  (cpn/clean-path name)
+        stored-name (if (empty? clean-name) "(empty)" clean-name)
+        shape-ids   (cons variant-id (:shapes (get objects variant-id)))
+        components  (cfv/find-variant-components data objects variant-id)]
+    (reduce (fn [changes component]
+              (let [[path item-name] (cpn/split-group-name stored-name)]
+                (pcb/update-component changes
+                                      (:id component)
+                                      #(assoc % :path path :name item-name))))
+            (pcb/update-shapes changes shape-ids #(assoc % :name stored-name))
+            components)))
 
 (defn generate-add-new-variant
   [changes shape variant-id new-component-id new-shape-id prop-num]

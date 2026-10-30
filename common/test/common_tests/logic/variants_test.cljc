@@ -11,6 +11,8 @@
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
+   [app.common.logic.variants :as clv]
+   [app.common.path-names :as cpn]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -563,3 +565,80 @@
     (t/is (= "crítica" (-> props' second :value)))
     (t/is (= (ctv/properties-to-name props') (:variant-name main')))
     (t/is (= "active, crítica" (:variant-name main')))))
+
+(defn- rename-variant-changes
+  [file name]
+  (let [page (thf/current-page file)]
+    (-> (pcb/empty-changes nil)
+        (pcb/with-page-id (:id page))
+        (pcb/with-library-data (:data file))
+        (pcb/with-objects (:objects page))
+        (clv/generate-rename-variant (thi/id :v01) name))))
+
+(defn- redo-ids
+  [changes change-type]
+  (into #{}
+        (comp (filter #(= change-type (:type %)))
+              (map :id))
+        (:redo-changes changes)))
+
+(t/deftest test-rename-variant-one-vector
+  (let [file     (-> (thf/sample-file :file1)
+                     (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        board    (ths/get-shape file :v01)
+        main1    (ths/get-shape file :m01)
+        main2    (ths/get-shape file :m02)
+        comp1    (thc/get-component file :c01)
+        comp2    (thc/get-component file :c02)
+        changes  (rename-variant-changes file "Group / Button")
+        file'    (thf/apply-changes file changes)
+        board'   (ths/get-shape file' :v01)
+        main1'   (ths/get-shape file' :m01)
+        main2'   (ths/get-shape file' :m02)
+        comp1'   (thc/get-component file' :c01)
+        comp2'   (thc/get-component file' :c02)
+        restored (thf/apply-undo-changes file' changes)]
+
+    (t/is (= #{(thi/id :v01) (thi/id :m01) (thi/id :m02)}
+             (redo-ids changes :mod-obj)))
+    (t/is (= #{(thi/id :c01) (thi/id :c02)}
+             (redo-ids changes :mod-component)))
+    (t/is (= "Group / Button" (:name board') (:name main1') (:name main2')))
+    (t/is (= "Group" (:path comp1') (:path comp2')))
+    (t/is (= "Button" (:name comp1') (:name comp2')))
+    (t/is (= "Group / Button"
+             (cpn/merge-path-item (:path comp1') (:name comp1'))
+             (cpn/merge-path-item (:path comp2') (:name comp2'))))
+    (t/is (= (:id board) (:variant-id comp1') (:variant-id comp2')))
+    (t/is (= (:variant-name main1) (:variant-name main1')))
+    (t/is (= (:variant-name main2) (:variant-name main2')))
+    (t/is (= (:variant-properties comp1) (:variant-properties comp1')))
+    (t/is (= (:variant-properties comp2) (:variant-properties comp2')))
+    (t/is (= (:name board) (:name (ths/get-shape restored :v01))))
+    (t/is (= (:name main1) (:name (ths/get-shape restored :m01))))
+    (t/is (= (:name main2) (:name (ths/get-shape restored :m02))))
+    (t/is (= (:path comp1) (:path (thc/get-component restored :c01))))
+    (t/is (= (:name comp1) (:name (thc/get-component restored :c01))))
+    (t/is (= (:path comp2) (:path (thc/get-component restored :c02))))
+    (t/is (= (:name comp2) (:name (thc/get-component restored :c02))))))
+
+(t/deftest test-rename-variant-slash-only-name
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        changes (rename-variant-changes file "///")
+        file'   (thf/apply-changes file changes)
+        comp1'  (thc/get-component file' :c01)
+        comp2'  (thc/get-component file' :c02)]
+
+    (t/is (= "(empty)"
+             (:name (ths/get-shape file' :v01))
+             (:name (ths/get-shape file' :m01))
+             (:name (ths/get-shape file' :m02))
+             (:name comp1')
+             (:name comp2')))
+    (t/is (= "" (:path comp1') (:path comp2')))
+    (t/is (= "(empty)"
+             (cpn/merge-path-item (:path comp1') (:name comp1'))
+             (cpn/merge-path-item (:path comp2') (:name comp2'))))
+    (t/is (some? (:variant-id comp1')))
+    (t/is (some? (:variant-id comp2')))))

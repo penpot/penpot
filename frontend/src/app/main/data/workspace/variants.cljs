@@ -571,19 +571,17 @@
   (ptk/reify ::rename-variant
 
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [it state _]
       (let [data (dsh/lookup-file-data state)]
         (if-let [{:keys [page-id objects]} (get-variant-mains-page data {:variant-id variant-id})]
-          (let [variant-components (cfv/find-variant-components data objects variant-id)
-                clean-name         (cpn/clean-path name)
-                undo-id            (js/Symbol)]
-            (rx/concat
-             (rx/of (dwu/start-undo-transaction undo-id)
-                    (dwsh/update-shapes [variant-id] #(assoc % :name clean-name) {:page-id page-id}))
-             (rx/from (map
-                       #(dwl/rename-component-and-main-instance (:id %) clean-name)
-                       variant-components))
-             (rx/of (dwu/commit-undo-transaction undo-id))))
+          (let [changes (-> (pcb/empty-changes it page-id)
+                            (pcb/with-library-data data)
+                            (pcb/with-objects objects)
+                            (clv/generate-rename-variant variant-id name))
+                undo-id (js/Symbol)]
+            (rx/of (dwu/start-undo-transaction undo-id)
+                   (dch/commit-changes changes)
+                   (dwu/commit-undo-transaction undo-id)))
           (rx/empty))))))
 
 (defn rename-comp-or-variant-and-main
