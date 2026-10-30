@@ -1508,6 +1508,10 @@ msgstr ""
 "La API del portapapeles no está disponible. Sirve Penpot mediante HTTPS "
 "para activar el acceso al portapapeles."
 
+#: src/app/main/ui/components/copy_button.cljs:26
+msgid "errors.clipboard-copy-failed"
+msgstr "No se ha podido copiar al portapapeles"
+
 #: src/app/main/data/workspace/clipboard.cljs:514
 msgid "errors.clipboard-not-implemented"
 msgstr "Tu navegador no puede realizar esta operación"

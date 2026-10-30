@@ -1494,6 +1494,10 @@ msgstr ""
 "Clipboard API is unavailable. Serve Penpot over HTTPS to enable clipboard "
 "access"
 
+#: src/app/main/ui/components/copy_button.cljs:26
+msgid "errors.clipboard-copy-failed"
+msgstr "Could not copy to the clipboard"
+
 #: src/app/main/data/workspace/clipboard.cljs:514
 msgid "errors.clipboard-not-implemented"
 msgstr "Your browser cannot do this operation"
