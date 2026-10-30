@@ -19,6 +19,7 @@
    [app.common.files.tokens :as cfo]
    [app.common.geom.rect :as grc]
    [app.common.logic.shapes :as cls]
+   [app.common.logic.variants :as clv]
    [app.common.test-helpers.composable.comp.files :as cf]
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.undo-check :as uc]
@@ -879,7 +880,7 @@
 (defn- get-reference-patches
   [before after]
   (reduce (fn [patches key]
-            (if (= (get-in before [key :shape]) (get-in after [key :shape]))
+            (if (= (get before key) (get after key))
               patches
               (-> patches
                   (assoc-in [:before key] (get-in before [key :sources]))
@@ -922,13 +923,24 @@
                 inputs  (cf/all-files situation)
                 ;; Expected inputs come from the requested pull and its before
                 ;; state. Result cell values never supply oracle references.
-                after   (if (instance? n/SyncFromLibrary op)
+                after   (cond
+                          (instance? n/SyncFromLibrary op)
                           (let [source (or (:source op) (n/library-id situation))]
                             (-> after
                                 (assoc-in [:accepted-libraries file-id source] (get inputs source))
                                 (cf/remember-copies file-id source
                                                     (set (keys (get-in inputs [source :data :components]))) inputs)))
-                          after)
+
+                          (or (instance? n/ResetOverrides op)
+                              (instance? n/SwapShape op)
+                              (and (instance? n/SwitchVariant op)
+                                   (clv/find-switch-target inputs
+                                                           (tm/shape-by-id situation (tm/target-shape-id situation (:target op)))
+                                                           (n/switch-pos situation op)
+                                                           (n/switch-value situation op))))
+                          (cf/remember-subtree after file-id (tm/target-shape-id situation (:target op)) inputs)
+
+                          :else after)
                 patches (get-reference-patches (get-generated-references situation) (get-generated-references after))
                 group   (:undo-group (get items index-after))]
             (cond-> after

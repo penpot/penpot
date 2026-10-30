@@ -235,6 +235,112 @@
     (await (replay {:world [0 0 {:library true :library-depth 0 :library-grid true :stale-libraries true}]
                     :ops ops}))))
 
+(t/deftest ^:async selective-library-pulls-retain-independent-reference-histories
+  (doseq [kind [:reset :swap :switch]]
+    (t/testing (name kind)
+      (await
+       (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
+         (let [initial  (cg/world [0 0 {:library true :library-depth 0 :library-variants true :stale-libraries true}])
+               resolved (cg/resolve-op initial {} [kind 0])
+               target   (get-in resolved [:shape :id])
+               main     (if (= kind :reset)
+                          (get-in resolved [:shape :shape-ref])
+                          (get-in resolved [:destination :id]))
+               owner    (get-in resolved [:shape :component-file])
+               source   (get (cf/all-files initial) owner)
+               child    (first (:shapes (tm/shape-by-id (tm/with-file initial source) main)))
+               control  (first (for [{:keys [shape]} (cg/tree initial)
+                                     :when (and (= main (:shape-ref shape)) (not= target (:id shape)))]
+                                 (:id shape)))
+               old-fill (get-in (tm/shape-by-id (tm/with-file initial source) child) [:fills 0 :fill-color])
+               live     (ftm/start-generated initial)
+               live     (await (ftm/run-generated-source-step live owner
+                                                              (n/change-property (constantly child) :fills "#00ff00")))
+               loaded   (get (cf/all-files live) owner)
+               before   (tm/file live)
+               prior    (get (cf/reference-libraries live (tm/shape-by-id live target)) owner)
+               live     (await (ftm/run-generated-step live (:op resolved)))
+               after    (tm/file live)
+               head     (tm/shape-by-id live target)
+               pulled   (tm/shape-by-id live (first (:shapes head)))
+               stale    (tm/shape-by-id live (first (:shapes (tm/shape-by-id live control))))]
+           (t/is (some? control))
+           (t/is (= "#00ff00" (get-in pulled [:fills 0 :fill-color])))
+           (t/is (= old-fill (get-in stale [:fills 0 :fill-color])))
+           (t/is (= (:data loaded) (:data (get (cf/reference-libraries live head) owner))))
+           (t/is (= (:data source) (:data (get (cf/reference-libraries live (tm/shape-by-id live control)) owner))))
+           (t/is (nil? (oracle/check live {})))
+           (let [live (await (ftm/run-generated-step live (n/undo)))]
+             (t/is (= before (tm/file live)))
+             (t/is (= (:data prior) (:data (get (cf/reference-libraries live (tm/shape-by-id live target)) owner))))
+             (t/is (= (:data loaded) (:data (get (cf/all-files live) owner))))
+             (t/is (nil? (oracle/check live {})))
+             (let [live (await (ftm/run-generated-step live (n/redo)))]
+               (t/is (= after (tm/file live)))
+               (t/is (= (:data loaded) (:data (get (cf/reference-libraries live (tm/shape-by-id live target)) owner))))
+               (t/is (= old-fill (get-in (tm/shape-by-id live (first (:shapes (tm/shape-by-id live control)))) [:fills 0 :fill-color])))
+               (t/is (nil? (oracle/check live {})))
+               (t/is (empty? (uc/failures (await (ftm/finish-generated live)))))))
+           (ftm/uninstall!)))))))
+
+(t/deftest ^:async selective-library-reset-replays-through-undo-and-redo
+  (await (replay {:world [0 0 {:library true :library-depth 0 :stale-libraries true}]
+                  :ops [[:library-edit 0 0 1] [:reset 0] [:undo] [:redo]]})))
+
+(t/deftest ^:async selective-library-swap-and-switch-replay-through-undo-and-redo
+  (doseq [kind [:swap :switch]]
+    (let [world    [0 0 {:library true :library-depth 0 :library-variants true :stale-libraries true}]
+          initial  (cg/world world)
+          resolved (cg/resolve-op initial {} [kind 0])
+          main     (get-in resolved [:destination :id])
+          index    (first (filter #(= main (get-in (cg/resolve-op initial {} [:library-edit % 0 2]) [:shape :parent-id]))
+                                  (range 3)))]
+      (t/is (some? index))
+      (await (replay {:world world
+                      :ops [[:library-edit index 0 2] [kind 0] [:undo] [:redo]]})))))
+
+(t/deftest ^:async a-selective-library-reset-in-a-main-refreshes-its-local-images
+  (let [world   [1 0 {:library true :library-depth 0 :stale-libraries true}]
+        state   (-> (cg/initial-state world) (cg/step [:nest 0]) cg/settle-state)
+        initial (:situation state)
+        owner   (:library-id (cg/resolve-op initial {} [:library-edit 0 0 1]))
+        count   (:opportunities (cg/resolve-op initial {} [:reset 0]))
+        index   (first (filter (fn [index]
+                                 (let [shape (:shape (cg/resolve-op initial {} [:reset index]))]
+                                   (and (= owner (:component-file shape))
+                                        (:main-instance (tm/shape-by-id initial (:parent-id shape))))))
+                               (range count)))]
+    (t/is (some? index))
+    (await (replay {:world world
+                    :ops [[:nest 0] [:library-edit 0 0 1] [:reset index] [:undo] [:redo]]}))))
+
+(t/deftest ^:async no-op-variant-requests-keep-stale-reference-inputs
+  (doseq [request [:current :missing]]
+    (await
+     (mock/with-mocks* {rp/cmd! mock/rpc-cmd-mock rx/timer mock/timer-mock}
+       (let [initial  (cg/world [0 0 {:library true :library-depth 0 :library-variants true :stale-libraries true}])
+             resolved (cg/resolve-op initial {} [:switch 0])
+             shape    (:shape resolved)
+             target   (:id shape)
+             owner    (:component-file shape)
+             source   (get (cf/all-files initial) owner)
+             main     (tm/shape-by-id (tm/with-file initial source) (:shape-ref shape))
+             child    (first (:shapes main))
+             value    (if (= request :current)
+                        (get-in source [:data :components (:component-id shape) :variant-properties 0 :value])
+                        "missing-variant-value")
+             live     (ftm/start-generated initial)
+             live     (await (ftm/run-generated-source-step live owner
+                                                            (n/change-property (constantly child) :fills "#00ff00")))
+             before   (tm/file live)
+             inputs   (cf/reference-libraries live (tm/shape-by-id live target))
+             live     (await (ftm/run-generated-step live (n/switch-variant (constantly target) value)))]
+         (t/is (= before (tm/file live)))
+         (t/is (= inputs (cf/reference-libraries live (tm/shape-by-id live target))))
+         (t/is (nil? (oracle/check live {})))
+         (t/is (empty? (uc/failures (await (ftm/finish-generated live)))))
+         (ftm/uninstall!))))))
+
 (t/deftest ^:async accepted-source-child-undo-keeps-backend-parity
   (await (replay {:world [0 0 {:library true :library-depth 0 :library-grid true :stale-libraries true}]
                   :ops [[:library-add-child 0] [:library-add-child 0] [:library-sync]
