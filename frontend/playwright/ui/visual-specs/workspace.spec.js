@@ -744,6 +744,26 @@ test.describe("Left header", () => {
       threshold: 0,
     });
   });
+
+  test("Shows the Penpot logo link", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+
+    const logo = page.locator("header a[class*='main-icon']");
+    await expect(logo).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(logo).toHaveScreenshot("left-header-logo.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await logo.hover();
+    await expect(logo).toHaveScreenshot("left-header-logo-hover.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
 });
 
 test.describe("Right header", () => {
