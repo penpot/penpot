@@ -743,20 +743,28 @@
                                             :operations [{:type :set :attr :name :val original-name}]}]))]
 
     (if component
-      (let [synced-ids (volatile! #{})
-            root-main  (ctf/get-component-root library component)]
+      (let [synced-ids     (volatile! #{})
+            main-container (ctf/get-component-container library component)
+            root-main      (ctf/get-component-root library component)
+            center         (grc/rect->center (:selrect shape-inst))]
         (-> (update-main-recursive changes
                                    {:container      container
-                                    :main-container (ctf/get-component-container library component)
+                                    :main-container main-container
                                     :component      component
                                     :libraries      libraries
                                     :root-inst      shape-inst
                                     :root-main      root-main
-                                    ;; An orientation the copy root inherits from its
-                                    ;; parent places it; it is not pushed into the main.
-                                    :inherited-turn (when-not (ctk/touched-group? shape-inst :geometry-group)
-                                                      (orient-like shape-inst root-main
-                                                                   (grc/rect->center (:selrect shape-inst))))
+                                    ;; An orientation the copy root inherits places it
+                                    ;; and is not pushed into the main. Sync composes a
+                                    ;; nested root with its parent's turn; a top copy
+                                    ;; root owns its turn only when it authors geometry.
+                                    :inherited-turn (if (:component-root shape-inst)
+                                                      (when-not (ctk/touched-group? shape-inst :geometry-group)
+                                                        (orient-like shape-inst root-main center))
+                                                      (when-let [parent (ctn/get-shape container (:parent-id shape-inst))]
+                                                        (orient-like parent
+                                                                     (or (ctn/get-shape main-container (:parent-id root-main)) {})
+                                                                     center)))
                                     :remote-synced  (when-not (:component-root shape-inst) true)
                                     :synced-ids     synced-ids}
                                    shape-inst
