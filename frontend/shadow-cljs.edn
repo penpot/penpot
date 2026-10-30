@@ -175,4 +175,92 @@
    {:compiler-options
     {:fn-invoke-direct true
      :elide-asserts true
-     :anon-fn-naming-policy :off}}}}}
+     :anon-fn-naming-policy :off}}}
+
+  :performance-tests
+  {:target :esm
+   :output-dir "target/performance-tests"
+   :runtime :custom
+   :js-options {:js-provider :import}
+
+
+   :modules
+   {:test {:init-fn performance-tests.render-wasm.runner/init
+           :prepend-js ";if (typeof globalThis.navigator?.userAgent === 'undefined') { globalThis.navigator = {userAgent: ''}; };"}}
+
+   :release
+   {:compiler-options
+    {:fn-invoke-direct true
+     :elide-asserts true
+     :anon-fn-naming-policy :off}}}
+
+  :bench-render-wasm-runner
+  {:target :node-script
+   :output-to "target/performance/render-wasm/runner.cjs"
+   :output-dir "target/performance/render-wasm/runner/"
+   :main benches.render-wasm.node.runner/-main
+   :devtools {:autoload false}
+
+   :compiler-options
+   {:output-feature-set :es2020
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}
+
+   :release
+   {:compiler-options
+    {:fn-invoke-direct true
+     :elide-asserts true
+     :anon-fn-naming-policy :off}}}
+
+  :bench-render-wasm-commands
+  {:target :node-library
+   :output-to "target/performance/render-wasm/commands.cjs"
+   :output-dir "target/performance/render-wasm/commands/"
+   :exports {:execute benches.render-wasm.node.commands/execute}
+   :devtools {:autoload false}
+
+   :compiler-options
+   {:output-feature-set :es2020
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}
+
+   :release
+   {:compiler-options
+    {:fn-invoke-direct true
+     :elide-asserts true
+     :anon-fn-naming-policy :off}}}
+
+  :bench-render-wasm-browser
+  {:target :esm
+   :output-dir #shadow/env ["RENDER_BENCH_BROWSER_DIR" :default "target/performance/render-wasm/browser/"]
+   :closure-defines {benches.render-wasm.identity/build-id #shadow/env ["RENDER_BENCH_BUILD_ID" :default "unprepared"]}
+   ;; Bundle npm dependencies for the dedicated static host.
+   :js-options {:js-provider :shadow}
+
+   :modules
+   {:browser
+    {:exports {default benches.render-wasm.browser.bridge/bridge}}}
+
+   :compiler-options
+   {:output-feature-set :es2020
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}
+
+   :release
+   {:compiler-options
+    {:fn-invoke-direct true
+     :elide-asserts true
+     :anon-fn-naming-policy :off}}}
+
+  :bench-render-wasm-catalog
+  {:target :node-library
+   :output-to #shadow/env ["RENDER_BENCH_CASES_PATH" :default "target/performance/render-wasm/cases.cjs"]
+   :output-dir "target/performance/render-wasm/catalog/"
+   :exports {:collectCases benches.render-wasm.node.case-catalog/collect-cases
+             :buildIdentity benches.render-wasm.node.case-catalog/build-identity}
+   :closure-defines {benches.render-wasm.identity/build-id #shadow/env ["RENDER_BENCH_BUILD_ID" :default "unprepared"]}
+   :compiler-options {:output-feature-set :es2020
+                      :warnings {:fn-deprecated false}}
+   :release {:compiler-options {:fn-invoke-direct true
+                                :elide-asserts true
+                                :anon-fn-naming-policy :off}}}}}

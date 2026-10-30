@@ -1,0 +1,135 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
+
+;; Discovery loads each scene and its transitive requires, including any
+;; colocated operation functions. Stripping :run! only makes output plain
+;; data; it cannot isolate browser dependencies. Keep this entire import
+;; graph safe for Node. Browser adapters will supply execution capabilities in
+;; rtx; discovery must never invoke operation bodies. Collection with a
+;; real body present is proven by `contracts-scene/case`, not by the
+;; metadata-only rects cases.
+
+(ns benches.render-wasm.cases
+  "Case collection for the renderer benchmarks.
+
+  Loading this namespace registers the scene namespaces listed here. The require
+  list is the discovery manifest for case collection.
+
+  NOTE: Nothing here should import browser or renderer code, so the Node runner
+  and offline reports load scenes without requiring a browser.
+
+  Usage:
+
+    (cases/collect-cases {:master-seed 42})
+    ;; =>
+    [{:id :rects/load
+      :scene :rects
+      :scene-description \"Seeded rectangles with translucent fills and centered strokes\"
+      :scene-seed 2602546180
+      :params {:count 1000 :width 1920 :height 1080 :min-size 20 :max-size 100}
+      :view {:scale 1 :x 0 :y 0}
+      :context :fresh
+      :completion :render-full
+      :batch-size 1
+      :preparation {}}
+     {:id :rects/pan ...}
+     {:id :rects/zoom ...}]"
+  (:require
+   [app.common.schema :as sm]
+   [benches.render-wasm.declarations :as decl]
+   [benches.render-wasm.random :as random]
+   benches.render-wasm.scenes.masks
+   benches.render-wasm.scenes.paths
+   benches.render-wasm.scenes.plus
+   benches.render-wasm.scenes.rects
+   [clojure.string :as str]))
+
+(defn- check-master-seed!
+  "Collection requires an integer master seed in [0, 2^32)."
+  [seed]
+  (when-not (random/seed? seed)
+    (throw (ex-info "case collection requires an integer master seed in [0, 2^32)"
+                    {:type ::invalid-master-seed
+                     :seed seed}))))
+
+(defn- as-invalid-case!
+  "Runs `thunk`, translating core case-validation failures into this
+  namespace's ::invalid-case so `collect-cases` has a single error
+  contract. Registry mechanics (::duplicate-*, ::unknown-scene) and scene
+  declarations (::invalid-scene) keep their own types."
+  [thunk]
+  (try
+    (thunk)
+    (catch :default cause
+      (let [data (ex-data cause)]
+        (if (contains? #{::decl/invalid-case ::decl/non-serializable-case} (:type data))
+          (throw (ex-info (ex-message cause)
+                          (assoc data :type ::invalid-case)
+                          cause))
+          (throw cause))))))
+
+(defn- check-params!
+  "Validates case params against the scene's closed schema."
+  [case-id scene-id schema params]
+  (when-not (sm/validate schema params)
+    (throw (ex-info (str "invalid params for case " case-id)
+                    {:type ::invalid-case
+                     :id case-id
+                     :scene scene-id
+                     ::sm/explain (sm/explain schema params)}))))
+
+(defn- validate-case!
+  "Validates a registered case entry against its scene: unknown scene,
+  case-namespace mismatch, declaration schema and closed params."
+  [{:keys [id scene params] :as registered} scene-by-id]
+  (let [entry (get scene-by-id scene)]
+    (when (nil? entry)
+      (throw (ex-info (str "case " id " names an unknown scene: " scene)
+                      {:type ::unknown-scene
+                       :id id
+                       :scene scene})))
+    (when-not (= (name scene) (namespace id))
+      (throw (ex-info (str "case id " id " is not namespaced by its scene: " scene)
+                      {:type ::invalid-case
+                       :id id
+                       :scene scene})))
+    (as-invalid-case! #(decl/check-registered-case! registered))
+    (check-params! id scene (:params-schema entry) params)
+    registered))
+
+(defn- describe-case
+  "Projects a validated case to its collected descriptor: scene description
+  and seed attached, internal keys stripped, transit wire checked."
+  [master-seed registered scene-entry]
+  (let [projected (-> (decl/project-case registered)
+                      (assoc :scene-description (:description scene-entry)
+                             :scene-seed (decl/derive-seed master-seed
+                                                           (:scene registered)
+                                                           (:params registered))))]
+    (as-invalid-case! #(decl/check-collected-case projected))))
+
+(defn collect-cases
+  "Selected benchmark cases as plain data.
+
+  Validates scenes, cases and parameters before any browser work. `:filter`
+  is a substring match on the case id; an empty selection throws ::no-cases."
+  [{:keys [master-seed] :as options}]
+  (check-master-seed! master-seed)
+  (let [pattern       (:filter options)
+        scene-by-id   (into {} (map (juxt :id identity)) (decl/scenes))]
+    (doseq [scene (decl/scenes)]
+      (decl/check-registered-scene! scene))
+    (let [selected (->> (decl/cases)
+                        (map #(validate-case! % scene-by-id))
+                        (filter (fn [registered]
+                                  (or (str/blank? pattern)
+                                      (str/includes? (str (:id registered)) pattern))))
+                        (mapv #(describe-case master-seed % (get scene-by-id (:scene %)))))]
+      (when (empty? selected)
+        (throw (ex-info "no benchmark cases match the selection"
+                        {:type ::no-cases
+                         :filter pattern})))
+      selected)))
