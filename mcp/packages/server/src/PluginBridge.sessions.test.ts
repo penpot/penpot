@@ -169,3 +169,21 @@ test("a dashboard session remains routable while its workspace metadata changes"
         assert.deepEqual(bridge.getUserConnections("alice")!.getSessions(), [{ sessionId: "tab", ...context }]);
     }
 });
+
+test("a task fails at once when its plugin connection closes before answering", async () => {
+    const plugin = new WebSocket(`ws://127.0.0.1:${port}?userToken=alice`);
+    sockets.push(plugin);
+    await once(plugin, "open");
+    const initialized = once(plugin, "message");
+    plugin.send(JSON.stringify({ type: "initialize", session: { sessionId: "tab", fileId: null, fileName: null } }));
+    await initialized;
+    // the socket closes once the task reaches it
+    plugin.on("message", () => plugin.terminate());
+    const started = Date.now();
+    await assert.rejects(
+        bridge.executePluginTask(new PluginTask("test", {}), "tab"),
+        /connection closed before the task finished/
+    );
+    // well within the 1s task timeout of these tests
+    assert.ok(Date.now() - started < 500);
+});
