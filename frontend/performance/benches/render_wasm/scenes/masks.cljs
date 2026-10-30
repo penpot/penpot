@@ -7,7 +7,7 @@
 (ns benches.render-wasm.scenes.masks
   "Fixed grid of masked groups with circle masks and ordered descendants."
   (:require
-   [benches.render-wasm.builder :as sb :include-macros true]
+   [benches.render-wasm.builder :as sb]
    [benches.render-wasm.declarations :as decl :include-macros true]
    [benches.render-wasm.runtime.camera :as camera]))
 
