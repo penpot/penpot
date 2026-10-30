@@ -6979,10 +6979,6 @@ msgstr "Component uitwisselen"
 msgid "workspace.options.component.swap.empty"
 msgstr "Er zijn nog geen activa in deze bibliotheek"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1061
-msgid "workspace.options.component.unlinked"
-msgstr "Niet gekoppeld"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:581
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "Ga naar het hoofdonderdeel"

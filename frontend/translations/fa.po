@@ -6893,10 +6893,6 @@ msgstr "تعویض مؤلفه"
 msgid "workspace.options.component.swap.empty"
 msgstr "هنوز هیچ دارایی‌ای در این کتابخانه وجود ندارد"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1061
-msgid "workspace.options.component.unlinked"
-msgstr "پیوندنشده"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:581
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "یافتن گونه‌های متعارض"

@@ -5726,10 +5726,6 @@ msgstr "החלפת רכיב"
 msgid "workspace.options.component.swap.empty"
 msgstr "עדיין אין נכסים בתיקייה הזאת"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1061
-msgid "workspace.options.component.unlinked"
-msgstr "לא מקושר"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:581
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "מעבר לרכיב הראשי"

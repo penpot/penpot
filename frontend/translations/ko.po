@@ -4915,10 +4915,6 @@ msgstr "컴포넌트 교체"
 msgid "workspace.options.component.swap.empty"
 msgstr "이 라이브러리에 에셋이 아직 없습니다"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1061
-msgid "workspace.options.component.unlinked"
-msgstr "연결 해제됨"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:581
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "충돌하는 베리언트 위치 찾기"

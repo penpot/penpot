@@ -6598,10 +6598,6 @@ msgstr "替換元件"
 msgid "workspace.options.component.swap.empty"
 msgstr "此資料庫尚無資產"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1061
-msgid "workspace.options.component.unlinked"
-msgstr "未連結"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:581
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "找出衝突的變體"

@@ -7134,6 +7134,10 @@ msgstr "Component"
 msgid "workspace.options.component.annotation"
 msgstr "Annotation"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:908
+msgid "workspace.options.component.broken"
+msgstr "Main component not found. This copy won’t receive updates."
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1036
 msgid "workspace.options.component.copy"
 msgstr "Copy"
@@ -7157,10 +7161,6 @@ msgstr "Swap component"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:818
 msgid "workspace.options.component.swap.empty"
 msgstr "There are no assets in this library yet"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1061
-msgid "workspace.options.component.unlinked"
-msgstr "Unlinked"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:581
 msgid "workspace.options.component.variant.duplicated.copy.locate"

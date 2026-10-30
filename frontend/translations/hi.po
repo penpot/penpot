@@ -5118,10 +5118,6 @@ msgstr "स्वैप घटक"
 msgid "workspace.options.component.swap.empty"
 msgstr "इस लाइब्रेरी में अभी तक कोई संपत्ति नहीं है"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1061
-msgid "workspace.options.component.unlinked"
-msgstr "अनलिंक"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:581
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "परस्पर विरोधी वेरिएंट का पता लगाएं"

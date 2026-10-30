@@ -6979,10 +6979,6 @@ msgstr "Заменить компонент"
 msgid "workspace.options.component.swap.empty"
 msgstr "В этой библиотеке ещё нет ресурсов"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1061
-msgid "workspace.options.component.unlinked"
-msgstr "Отвязан"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:581
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "Найти конфликтующие варианты"

@@ -5968,10 +5968,6 @@ msgstr "替换组件"
 msgid "workspace.options.component.swap.empty"
 msgstr "你的库中还没有素材"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1061
-msgid "workspace.options.component.unlinked"
-msgstr "未链接"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:581
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "定位冲突的变体"

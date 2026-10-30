@@ -7219,6 +7219,10 @@ msgstr "Componente"
 msgid "workspace.options.component.annotation"
 msgstr "Nota"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:908
+msgid "workspace.options.component.broken"
+msgstr "No se encuentra el componente principal. Esta copia no recibirá actualizaciones."
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1036
 msgid "workspace.options.component.copy"
 msgstr "Copia"
@@ -7242,10 +7246,6 @@ msgstr "Intercambiar componente"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:818
 msgid "workspace.options.component.swap.empty"
 msgstr "Aún no hay recursos en esta biblioteca"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1061
-msgid "workspace.options.component.unlinked"
-msgstr "Desvinculado"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:581
 msgid "workspace.options.component.variant.duplicated.copy.locate"
