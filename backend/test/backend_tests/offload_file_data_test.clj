@@ -453,9 +453,9 @@
 
       (v3/export-files!
        (-> th/*system*
-           (assoc ::bfc/ids #{(:id file)})
-           (assoc ::bfc/export-type :detach-libraries))
-       (io/output-stream output))
+           (assoc ::bfc/file-ids #{(:id file)})
+           (assoc ::bfc/export-type :detach-libraries)
+           (assoc ::bfc/output (io/output-stream output))))
 
       (let [result   (-> th/*system*
                          (assoc ::bfc/project-id (:default-project-id profile))
