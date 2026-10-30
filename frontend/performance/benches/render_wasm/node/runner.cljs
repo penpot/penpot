@@ -9,6 +9,7 @@
   (:require
    ["path" :as path]
    [app.common.transit :as transit]
+   [benches.render-wasm.errors :as errors :include-macros true :refer [attempt failure?]]
    [benches.render-wasm.feature-plan :as feature-plan]
    [benches.render-wasm.node.compare :as compare]
    [benches.render-wasm.node.log :as log]
@@ -274,32 +275,34 @@
      :options (cond-> options (= command "ab") (assoc :default-features false))
      :summary summary}))
 
+(defn- ^:async run-cli
+  [args]
+  (let [{:keys [command arguments options summary] :as request} (parse-args args)]
+    (log/configure {:level (options/console-level options)
+                    :color (options/color-mode options)})
+    (cond
+      (:help options)
+      (log/result (usage summary))
+
+      (= command "compare")
+      (log/result (:text (compare/execute (second arguments) (nth arguments 2)
+                                          (select-keys options [:cases :allow-build-differences
+                                                                :allow-scene-differences
+                                                                :allow-all-differences]))))
+
+      :else
+      (let [^js commands (js/require (path/join js/__dirname "commands.cjs"))]
+        (set! (.-exitCode js/process)
+              (await (.execute commands
+                               (transit/encode-str (select-keys request [:command :options])))))))))
+
 (defn ^:async -main
   [& args]
   (log/configure {})
-  (try
-    (let [{:keys [command arguments options summary] :as request} (parse-args args)]
-      (log/configure {:level (options/console-level options)
-                      :color (options/color-mode options)})
-      (cond
-        (:help options)
-        (log/result (usage summary))
-
-        (= command "compare")
-        (log/result (:text (compare/execute (second arguments) (nth arguments 2)
-                                            (select-keys options [:cases :allow-build-differences
-                                                                  :allow-scene-differences
-                                                                  :allow-all-differences]))))
-
-        :else
-        (let [^js commands (js/require (path/join js/__dirname "commands.cjs"))]
-          (set! (.-exitCode js/process)
-                (await (.execute commands
-                                 (transit/encode-str (select-keys request [:command :options]))))))))
-    (catch :default cause
-      (let [data (ex-data cause)]
-        (log/error {:message (str (or (ex-message cause) (str cause))
-                                  "\nTry --help for usage.")
+  (let [failed (attempt :catch-fatal (await (run-cli args)))]
+    (when (failure? failed)
+      (let [data (ex-data failed)]
+        (log/error {:message (str (errors/message-of failed) "\nTry --help for usage.")
                     :fields (into (filterv (comp some? second)
                                            [[:type (:type data)] [:baseline (:baseline data)]
                                             [:candidate (:candidate data)]])

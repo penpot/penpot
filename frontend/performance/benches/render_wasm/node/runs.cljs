@@ -14,6 +14,7 @@
   (:require
    ["fs" :as fs]
    ["path" :as path]
+   [benches.render-wasm.errors :as errors]
    [benches.render-wasm.node.artifacts :as artifacts]
    [benches.render-wasm.node.files :as files]
    [benches.render-wasm.result :as result]
@@ -57,12 +58,12 @@
       (fs/mkdirSync dir #js {:recursive true})
       (catch :default cause
         (invalid-home "cannot create run home"
-                      {:path dir :cause (or (ex-message cause) (str cause))})))
+                      {:path dir :cause (errors/message-of cause)})))
     (try
       (fs/writeFileSync log-path "" #js {:encoding "utf8" :flag "wx"})
       (catch :default cause
         (invalid-home "cannot create run log"
-                      {:path log-path :cause (or (ex-message cause) (str cause))})))
+                      {:path log-path :cause (errors/message-of cause)})))
     {:dir dir
      :record-path record-path
      :log-path log-path

@@ -18,11 +18,13 @@
    [performance-tests.render-wasm.compare-test]
    [performance-tests.render-wasm.containers-test]
    [performance-tests.render-wasm.contracts-test]
+   [performance-tests.render-wasm.errors-test]
    [performance-tests.render-wasm.feature-comparison-test]
    [performance-tests.render-wasm.fingerprint-test]
    [performance-tests.render-wasm.geometry-scenes-test]
    [performance-tests.render-wasm.lifecycle-test]
    [performance-tests.render-wasm.log-test]
+   [performance-tests.render-wasm.outcome-test]
    [performance-tests.render-wasm.process-test]
    [performance-tests.render-wasm.protocol-test]
    [performance-tests.render-wasm.report-test]
@@ -52,11 +54,13 @@
    'performance-tests.render-wasm.compare-test
    'performance-tests.render-wasm.containers-test
    'performance-tests.render-wasm.contracts-test
+   'performance-tests.render-wasm.errors-test
    'performance-tests.render-wasm.feature-comparison-test
    'performance-tests.render-wasm.fingerprint-test
    'performance-tests.render-wasm.geometry-scenes-test
    'performance-tests.render-wasm.lifecycle-test
    'performance-tests.render-wasm.log-test
+   'performance-tests.render-wasm.outcome-test
    'performance-tests.render-wasm.process-test
    'performance-tests.render-wasm.protocol-test
    'performance-tests.render-wasm.report-test

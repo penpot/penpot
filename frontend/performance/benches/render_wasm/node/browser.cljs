@@ -7,12 +7,15 @@
 (ns benches.render-wasm.node.browser
   "Owns Chromium through process/run from spawn, then attaches Playwright by CDP.
   Shutdown stops the owned process group before disconnecting the client."
+  (:require-macros
+   [app.common.exceptions :as ex])
   (:require
    ["fs" :as fs]
    ["os" :as os]
    ["path" :as path]
    ["playwright" :as playwright]
    [app.common.transit :as transit]
+   [benches.render-wasm.errors :as errors :include-macros true :refer [attempt]]
    [benches.render-wasm.failures :as failures]
    [benches.render-wasm.identity :as identity]
    [benches.render-wasm.node.options :as options]
@@ -158,19 +161,17 @@
   (when (or page context)
     (let [deadline (process/deadline process/default-termination-grace-ms)
           page-failure
-          (try
-            (when (and page (not (.isClosed ^js page)))
-              (await (within #(.close ^js page)
-                             {:deadline deadline :phase :browser-page-close})))
-            nil
-            (catch :default cause cause))
+          (attempt :catch-fatal
+                   (when (and page (not (.isClosed ^js page)))
+                     (await (within #(.close ^js page)
+                                    {:deadline deadline :phase :browser-page-close})))
+                   nil)
           context-failure
-          (try
-            (when context
-              (await (within #(.close ^js context)
-                             {:deadline deadline :phase :browser-context-close})))
-            nil
-            (catch :default cause cause))]
+          (attempt :catch-fatal
+                   (when context
+                     (await (within #(.close ^js context)
+                                    {:deadline deadline :phase :browser-context-close})))
+                   nil)]
       (when-let [cause (or page-failure context-failure)]
         (throw cause)))))
 
@@ -179,21 +180,12 @@
   close failure does not mask process/disconnect/profile failures because the
   group kill releases the same resources."
   [{:keys [user-data-dir] :as owner}]
-  (try
-    (await (close-page owner))
-    (catch :default _ nil))
-  (let [process-failure    (try
-                             (await (stop-process owner))
-                             nil
-                             (catch :default cause cause))
-        disconnect-failure (try
-                             (await (disconnect owner))
-                             nil
-                             (catch :default cause cause))
-        profile-failure    (try
-                             (fs/rmSync user-data-dir #js {:recursive true :force true})
-                             nil
-                             (catch :default cause cause))]
+  (ex/ignoring (await (close-page owner)))
+  (let [process-failure    (attempt :catch-fatal (await (stop-process owner)) nil)
+        disconnect-failure (attempt :catch-fatal (await (disconnect owner)) nil)
+        profile-failure    (attempt :catch-fatal
+                                    (fs/rmSync user-data-dir #js {:recursive true :force true})
+                                    nil)]
     (when-let [cause (or process-failure disconnect-failure profile-failure)]
       (throw cause))))
 
@@ -275,7 +267,7 @@
                                :endpoint @(:address endpoint) :user-data-dir user-data-dir
                                :startup-failure (failures/describe-cause cause)}
                               cleanup-cause))))
-          (throw (ex-info (or (ex-message cause) (str cause))
+          (throw (ex-info (errors/message-of cause)
                           (assoc (ex-data cause) :endpoint @(:address endpoint) :user-data-dir user-data-dir)
                           cause)))))))
 
@@ -310,14 +302,10 @@
                           (transit/decode-str (await (within #(evaluate page "buildIdentity") bounds))))
           page-own
           (catch :default cause
-            (try
-              (await (close-page page-own))
-              (catch :default _ nil))
+            (ex/ignoring (await (close-page page-own)))
             (throw cause))))
       (catch :default cause
-        (try
-          (await (close-page {:context context}))
-          (catch :default _ nil))
+        (ex/ignoring (await (close-page {:context context})))
         (throw cause)))))
 
 (defn connected?

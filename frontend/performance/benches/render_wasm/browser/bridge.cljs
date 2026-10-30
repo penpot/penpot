@@ -18,6 +18,8 @@
   objects.
 
   Failures retain their phase, cause and available partial evidence."
+  (:require-macros
+   [app.common.exceptions :as ex])
   (:require
    [app.common.render-wasm.helpers :as h]
    [app.common.render-wasm.serialize-shape :as serialize-shape]
@@ -143,12 +145,10 @@
 
 (defn- graphics-string
   [context parameter]
-  (try
-    (let [ext (.getExtension ^js context "WEBGL_debug_renderer_info")]
-      (if (some? ext)
-        (str (.getParameter ^js context (unchecked-get ext parameter)))
-        "unknown"))
-    (catch :default _ "unknown")))
+  (or (ex/ignoring
+       (when-let [ext (.getExtension ^js context "WEBGL_debug_renderer_info")]
+         (str (.getParameter ^js context (unchecked-get ext parameter)))))
+      "unknown"))
 
 (defn- renderer-string
   "Reads the unmasked WebGL renderer identity."
@@ -167,9 +167,7 @@
   (when (some? canvas)
     (when-let [context wasm/gl-context]
       (webgl/release-context! wasm/internal-module context wasm/gl-context-handle))
-    (try
-      (.remove ^js canvas)
-      (catch :default _))))
+    (ex/ignoring (.remove ^js canvas))))
 
 (defn- release-owner-resources!
   "Drops the current owner's canvas, GL handles and WASM module binding
@@ -213,9 +211,7 @@
   not the canvas attributes. What the browser granted comes from
   `getContextAttributes`."
   [ctx width height dpr renderer]
-  (let [attrs (try
-                (.getContextAttributes ^js ctx)
-                (catch :default _ nil))
+  (let [attrs (ex/ignoring (.getContextAttributes ^js ctx))
         attr  (fn [k]
                 (when (some? attrs)
                   (unchecked-get attrs k)))
@@ -273,18 +269,11 @@
   [epoch cause fallback-phase]
   (if (fail/stale? cause)
     {:status "stale"}
-    (let [phase   (try (or (:phase (ex-data cause))
-                           fallback-phase
-                           "aborted")
-                       (catch :default _
-                         (or fallback-phase "aborted")))
-          message (try (or (ex-message cause) "unknown failure")
-                       (catch :default _
-                         "unknown failure"))
-          detail  (try (fail/describe-cause cause)
-                       (catch :default _
-                         [{:message fail/unrenderable-cause-text}]))
-          partial (try (:partial (ex-data cause)) (catch :default _ nil))
+    (let [phase   (or (ex/ignoring (:phase (ex-data cause))) fallback-phase "aborted")
+          message (or (ex/ignoring (ex-message cause)) "unknown failure")
+          detail  (or (ex/ignoring (fail/describe-cause cause))
+                      [{:message fail/unrenderable-cause-text}])
+          partial (ex/ignoring (:partial (ex-data cause)))
           preparation (get-in @prepared* [:graphics :preparation])]
       (dispose-if-current! epoch)
       (cond-> (fail/fail-data {:phase   phase
