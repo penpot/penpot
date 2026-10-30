@@ -86,7 +86,8 @@
    :enable-quotes
    :enable-rpc-climit
    :enable-auto-file-snapshot
-   :disable-file-validation])
+   :disable-file-validation
+   :disable-admin-console])
 
 (defn init-config
   ([next]
