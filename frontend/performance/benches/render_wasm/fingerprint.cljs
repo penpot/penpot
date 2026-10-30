@@ -62,7 +62,7 @@
   Realizing :objects removes ObjectsMap's serialized shape strings while keeping
   production shape, geometry and path tags in the values."
   [snapshot]
-  (-> (update snapshot :objects into {})
+  (-> (assoc snapshot :objects (into {} (:objects snapshot)))
       (codec/encode-str {:type :json-verbose})
       (js/JSON.parse)
       (canonicalize)
