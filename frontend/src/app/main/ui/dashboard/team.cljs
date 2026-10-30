@@ -1710,7 +1710,10 @@
                (when can-add-to-organization?
                  [:div {:class (stl/css :block-content)}
                   [:span {:class (stl/css :block-text)}
-                   [:a {:on-click on-add-team-to-organization} (tr "dashboard.team-organization.add")]]])]))])
+                   [:button {:type "button"
+                             :class (stl/css :add-to-organization)
+                             :on-click on-add-team-to-organization}
+                    (tr "dashboard.team-organization.add")]]])]))])
 
        [:div {:class (stl/css :block)}
         [:div {:class (stl/css :block-label)}
