@@ -8,12 +8,14 @@ skill file itself stays free of inline programs.
 Subcommands:
   check-merged  Verify that every given PR is merged (warns otherwise)
   cross-ref     Compare merged milestone PRs against the changelog section
+  dev-only-bugs List milestone bugs that never reached production
   report        Generate the anomaly report (CHANGES-ISSUES.md)
 
 Usage:
   python3 scripts/changelog.py check-merged 9179 9204 9311
   cat prs.txt | python3 scripts/changelog.py check-merged --stdin
   python3 scripts/changelog.py cross-ref "2.16.0"
+  python3 scripts/changelog.py dev-only-bugs "2.16.0" [--apply]
   python3 scripts/changelog.py report "2.16.0"
   python3 scripts/changelog.py report "2.16.0" --changes CHANGES.md --output CHANGES-ISSUES.md
 
@@ -190,6 +192,97 @@ def cmd_cross_ref(args: argparse.Namespace) -> None:
         print("WARNING: CLOSED (unmerged) PRs in milestone:")
         for pr in closed:
             print(f"  #{pr['number']} {pr['title'][:80]}")
+
+
+# ─────────────────────────────────────────────
+#  Subcommand: dev-only-bugs
+# ─────────────────────────────────────────────
+
+# Bugs found and fixed while building a feature of the same, unreleased
+# milestone never reached end users and stay out of the changelog.
+AUTO_PARENT_TYPES = {"Feature", "Enhancement"}
+
+VERSION_FIELD_RE = re.compile(
+    r"^#{2,4}\s*(?:affected versions?|versions?|environment)[^\n]*\n(.*?)(?=^#{2,4}\s|\Z)",
+    re.IGNORECASE | re.MULTILINE | re.DOTALL,
+)
+DEV_ENV_RE = re.compile(r"\b(?:hourly|develop|staging|pre|unreleased)\b", re.IGNORECASE)
+PROD_ENV_RE = re.compile(
+    r"\b(?:production|pro|main|saas|design\.penpot\.app|self[- ]?hosted?)\b",
+    re.IGNORECASE,
+)
+VERSION_RE = re.compile(r"\b(\d+)\.(\d+)(?:\.\d+)?")
+
+
+def version_field(body: str | None) -> str:
+    """Return the "Affected versions" / "Environment" text of an issue body."""
+    match = VERSION_FIELD_RE.search(body or "")
+    return " ".join(match.group(1).split()) if match else ""
+
+
+def only_unreleased_envs(text: str, milestone: str) -> bool:
+    """True when the version text names unreleased environments only:
+    hourly, develop, staging, PRE or a version of this milestone. Any
+    production hint or other version number keeps the bug in the changelog."""
+    current = tuple(milestone.split(".")[:2])
+    versions = [m for m in VERSION_RE.findall(text)]
+    dev = bool(DEV_ENV_RE.search(text)) or current in versions
+    prod = bool(PROD_ENV_RE.search(text)) or any(v != current for v in versions)
+    return dev and not prod
+
+
+def find_dev_only_bugs(milestone: str, issues: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Split the milestone's changelog bugs that never reached production.
+
+    ``issues`` come from ``gh.py issue`` (they carry ``body`` and
+    ``parent``). Returns ``(auto, suggested)``: ``auto`` bugs are
+    sub-issues of a Feature or Enhancement of this milestone and get the
+    `no changelog` label; ``suggested`` ones need a human to confirm."""
+    auto, suggested = [], []
+    for issue in issues:
+        if issue.get("issue_type") != "Bug" or issue.get("state") != "CLOSED":
+            continue
+        if {"no changelog", "release blocker"} & set(issue.get("labels", [])):
+            continue
+        parent = issue.get("parent") or {}
+        entry = {"issue": issue["number"], "issue_title": issue.get("title", "")}
+        if parent.get("milestone") == milestone:
+            entry["reason"] = f"sub-issue of {parent.get('issue_type')} #{parent['number']} in {milestone}"
+            (auto if parent.get("issue_type") in AUTO_PARENT_TYPES else suggested).append(entry)
+            continue
+        text = version_field(issue.get("body"))
+        if only_unreleased_envs(text, milestone):
+            entry["reason"] = f'only seen on "{text[:80]}"'
+            suggested.append(entry)
+    return auto, suggested
+
+
+def fetch_milestone_bugs(milestone: str) -> list[dict]:
+    """Closed milestone bugs with body and parent (two batched lookups)."""
+    issues = json.loads(run_gh_py("issues", milestone))
+    numbers = [str(i["number"]) for i in issues if i.get("issue_type") == "Bug"]
+    return json.loads(run_gh_py("issue", *numbers)) if numbers else []
+
+
+def cmd_dev_only_bugs(args: argparse.Namespace) -> None:
+    """List bugs that never reached production; --apply labels the sure ones."""
+    auto, suggested = find_dev_only_bugs(args.milestone, fetch_milestone_bugs(args.milestone))
+
+    print(f"Label `no changelog` ({len(auto)}):")
+    for e in auto:
+        print(f"  #{e['issue']} {e['issue_title'][:70]} ({e['reason']})")
+    print(f"Candidates to confirm ({len(suggested)}):")
+    for e in suggested:
+        print(f"  #{e['issue']} {e['issue_title'][:70]} ({e['reason']})")
+
+    if args.apply:
+        for e in auto:
+            subprocess.run(
+                ["gh", "issue", "edit", str(e["issue"]), "--repo", REPO,
+                 "--add-label", "no changelog"],
+                check=True, capture_output=True,
+            )
+        print(f"Labelled {len(auto)} issues `no changelog`", file=sys.stderr)
 
 
 # ─────────────────────────────────────────────
@@ -449,6 +542,9 @@ def cmd_report(args: argparse.Namespace) -> None:
             ):
                 anomalies_d.append({"version": ver, "line": line[:100]})
 
+    # Bugs that may never have reached production: warnings, not anomalies.
+    dev_auto, dev_suggested = find_dev_only_bugs(milestone, fetch_milestone_bugs(milestone))
+
     def fmt_ms(ms: str | None) -> str:
         return ms if ms else "_none_"
 
@@ -595,6 +691,26 @@ def cmd_report(args: argparse.Namespace) -> None:
                 "✅ No highlight gaps found. All released X.Y.0 versions have properly referenced :rocket: entries.\n\n"
             )
 
+        if dev_auto or dev_suggested:
+            f.write("## Bugs that may never have reached production\n\n")
+            f.write(
+                "These are warnings, not anomalies. Bugs found while building "
+                "a feature of this release never affected end users. Add the "
+                "`no changelog` label to the ones you confirm and re-run.\n\n"
+            )
+            if dev_auto:
+                f.write(
+                    "### Sub-issues of a feature of this milestone (run `dev-only-bugs --apply`)\n\n"
+                )
+                for e in dev_auto:
+                    f.write(f"- {issue_link_title(e['issue'], e['issue_title'][:80])}: {e['reason']}\n")
+                f.write("\n")
+            if dev_suggested:
+                f.write("### Candidates to confirm\n\n")
+                for e in dev_suggested:
+                    f.write(f"- {issue_link_title(e['issue'], e['issue_title'][:80])}: {e['reason']}\n")
+                f.write("\n")
+
         f.write("---\n\n")
         f.write("## Context\n\n")
         f.write(f"- Milestone: **{milestone}**\n")
@@ -641,6 +757,15 @@ def main() -> None:
     p_cross.add_argument("--changes", default="CHANGES.md",
                          help="Path to the changelog file (default: CHANGES.md)")
     p_cross.set_defaults(func=cmd_cross_ref)
+
+    p_dev = sub.add_parser(
+        "dev-only-bugs",
+        help="List milestone bugs that never reached production",
+    )
+    p_dev.add_argument("milestone", help="Milestone title (e.g. '2.16.0')")
+    p_dev.add_argument("--apply", action="store_true",
+                       help="Label the sub-issues of a milestone feature `no changelog`")
+    p_dev.set_defaults(func=cmd_dev_only_bugs)
 
     p_report = sub.add_parser(
         "report", help="Generate the anomaly report (CHANGES-ISSUES.md)"
