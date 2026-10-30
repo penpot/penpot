@@ -305,7 +305,14 @@
   second `params` provides the email data and optionally `::factory`
   and `::reuse-conn`. When `::reuse-conn` is true the submission
   reuses the caller's existing `::db/conn` (from cfg) instead of
-  acquiring a fresh one from the pool."
+  acquiring a fresh one from the pool.
+
+  NOTE: this renders the email before submitting, so the full subject
+  and body are stored as job params. Prefer `send-template` for
+  templated emails: it stores only the template id plus the raw data
+  and renders inside the worker. `send` is kept for raw (non
+  templated) emails and for draining jobs submitted in the old
+  format."
   [cfg {:keys [::reuse-conn ::factory] :as params}]
   (when (and reuse-conn (nil? (::db/conn cfg)))
     (ex/raise :type :validation
@@ -592,6 +599,111 @@
   (template-factory
    :id ::comment-notification
    :schema schema:comment-notification))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TEMPLATED SEND (render inside the worker)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Registry of template id to factory. This map is the single source
+;; of truth for templated mail: `send-template` validates membership
+;; here before submitting (so a job that could never be rendered is
+;; rejected up front), and the worker resolves the factory here to
+;; render. Callers pass the id string itself (e.g. `"invite-to-team"`);
+;; keys stay `::eml/`-namespaced and values stay plain data, following
+;; the params convention. Plain strings are also plain-JSON safe for
+;; the `params` column.
+(def templates
+  {"feedback"                             user-feedback
+   "register"                             register
+   "password-recovery"                    password-recovery
+   "password-changed"                     password-changed
+   "change-email"                         change-email
+   "invite-to-team"                       invite-to-team
+   "invite-to-organization"               invite-to-organization
+   "organization-setup-sso"               organization-setup-sso
+   "renewal-notice"                       renewal-notice
+   "join-team"                            join-team
+   "request-file-access"                  request-file-access
+   "request-file-access-yourpenpot"       request-file-access-yourpenpot
+   "request-file-access-yourpenpot-view"  request-file-access-yourpenpot-view
+   "request-team-access"                  request-team-access
+   "comment-mention"                      comment-mention
+   "comment-thread"                       comment-thread
+   "comment-notification"                 comment-notification})
+
+(def ^:private schema:templated-params
+  [:map {:title "Templated Email Params"}
+   [:template (into [:enum] (sort (keys templates)))]
+   [:to [:or ::sm/email [::sm/vec ::sm/email]]]
+   [:reply-to {:optional true} ::sm/email]
+   [:from {:optional true} ::sm/email]
+   [:lang {:optional true} ::sm/text]
+   [:priority {:optional true} [:enum :high :low]]
+   [:extra-data {:optional true} ::sm/text]
+   [:team-id {:optional true} ::sm/uuid]
+   [:file-id {:optional true} ::sm/uuid]
+   [:page-id {:optional true} ::sm/uuid]
+   [:profile {:optional true}
+    [:map
+     [:id ::sm/uuid]]]
+   [:attachments {:optional true}
+    [:map-of :string :string]]])
+
+(defn send-template
+  "Schedule a templated email to be sent asynchronously using the
+  unified jobs machinery. Unlike `send`, this does NOT render the
+  email: it stores only the template id plus the raw template data as
+  `:send-templated-mail` job params, and the worker renders and sends
+  the email. The `::template` param is the template id string (one of
+  the keys of `templates`, e.g. `invite-to-team`);
+  `::reuse-conn` behaves like in `send`."
+  [cfg {:keys [::template ::reuse-conn] :as params}]
+  (when (and reuse-conn (nil? (::db/conn cfg)))
+    (ex/raise :type :validation
+              :code :missing-connection
+              :hint "reuse-conn requires the caller cfg to carry ::db/conn (call inside a transaction)"))
+  (when (nil? template)
+    (ex/raise :type :validation
+              :code :missing-template
+              :hint "template is mandatory for templated emails"))
+  (when-not (contains? templates template)
+    (ex/raise :type :validation
+              :code :unknown-email-template
+              :hint (str/ffmt "unknown email template: %", template)))
+  (let [recipe (-> params
+                   (dissoc ::reuse-conn ::template)
+                   ;; Present-but-nil extras (e.g. `:file-id` when there is
+                   ;; no file) would fail the job schema, while the old
+                   ;; inline render simply ignored them.
+                   (d/without-nils))]
+    (jobs/submit (cond-> (dissoc cfg ::db/conn)
+                   reuse-conn (assoc ::db/conn (::db/conn cfg)))
+                 {::jobs/name :send-templated-mail
+                  ::jobs/delay 0
+                  ::jobs/max-retries 4
+                  ::jobs/priority 200
+                  ::jobs/params (cond-> (assoc recipe :template template)
+                                  ;; `:public-uri` arrives as a URI record
+                                  ;; from config, which plain JSON cannot
+                                  ;; roundtrip; the templates only need its
+                                  ;; string form.
+                                  (some? (:public-uri recipe))
+                                  (update :public-uri str))})))
+
+(defmethod ig/init-key ::templated-job-def
+  [_ {sendmail ::sendmail}]
+  {::jobs/name      :send-templated-mail
+   ::jobs/schema    schema:templated-params
+   ::jobs/handler   (fn [context params]
+                      (let [template-id (:template params)
+                            factory     (get templates template-id)]
+                        (when-not factory
+                          (ex/raise :type :internal
+                                    :code :unknown-email-template
+                                    :template-id template-id))
+                        (sendmail context (factory (dissoc params :template)))))
+   ::jobs/decoder   (sm/decoder schema:templated-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:templated-params)})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; BOUNCE/COMPLAINS HELPERS

@@ -202,11 +202,11 @@
                            (update-password conn))]
       (when profile
         (login-lockout/clear-attempts! cfg (:id profile))
-        (eml/send cfg {::eml/reuse-conn true
-                       ::eml/factory eml/password-changed
-                       :public-uri (cf/get :public-uri)
-                       :to (:email profile)
-                       :name (:fullname profile)})))
+        (eml/send-template cfg {::eml/reuse-conn true
+                                ::eml/template "password-changed"
+                                :public-uri (cf/get :public-uri)
+                                :to (:email profile)
+                                :name (:fullname profile)})))
 
     nil))
 
@@ -485,13 +485,13 @@
                                   {:iss :profile-identity
                                    :profile-id (:id profile)
                                    :exp (ct/in-future {:days 30})})]
-     (eml/send cfg {::eml/reuse-conn true
-                    ::eml/factory eml/register
-                    :public-uri (cf/get :public-uri)
-                    :to (:email profile)
-                    :name (:fullname profile)
-                    :token vtoken
-                    :extra-data ptoken}))))
+     (eml/send-template cfg {::eml/reuse-conn true
+                             ::eml/template "register"
+                             :public-uri (cf/get :public-uri)
+                             :to (:email profile)
+                             :name (:fullname profile)
+                             :token vtoken
+                             :extra-data ptoken}))))
 
 (defn register-profile
   [{:keys [::db/conn] :as cfg} {:keys [token] :as params}]
@@ -654,13 +654,13 @@
                                           {:iss :profile-identity
                                            :profile-id (:id profile)
                                            :exp (ct/in-future {:days 30})})]
-              (eml/send cfg {::eml/reuse-conn true
-                             ::eml/factory eml/password-recovery
-                             :public-uri (cf/get :public-uri)
-                             :to (:email profile)
-                             :token (:token profile)
-                             :name (:fullname profile)
-                             :extra-data ptoken})
+              (eml/send-template cfg {::eml/reuse-conn true
+                                      ::eml/template "password-recovery"
+                                      :public-uri (cf/get :public-uri)
+                                      :to (:email profile)
+                                      :token (:token profile)
+                                      :name (:fullname profile)
+                                      :extra-data ptoken})
               nil))]
 
     (let [profile (->> (profile/clean-email email)

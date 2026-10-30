@@ -225,11 +225,11 @@
 
     (update-profile-password! cfg (assoc profile :password password))
 
-    (eml/send cfg {::eml/reuse-conn true
-                   ::eml/factory eml/password-changed
-                   :public-uri (cf/get :public-uri)
-                   :to (:email profile)
-                   :name (:fullname profile)})
+    (eml/send-template cfg {::eml/reuse-conn true
+                            ::eml/template "password-changed"
+                            :public-uri (cf/get :public-uri)
+                            :to (:email profile)
+                            :name (:fullname profile)})
 
     (->> (rph/get-request params)
          (session/get-session)
@@ -462,14 +462,14 @@
                 :email (:email profile)
                 :hint "looks like the email has spam complaint reports"))
 
-    (eml/send cfg {::eml/reuse-conn true
-                   ::eml/factory eml/change-email
-                   :public-uri (cf/get :public-uri)
-                   :to (:email profile)
-                   :name (:fullname profile)
-                   :pending-email email
-                   :token token
-                   :extra-data ptoken})
+    (eml/send-template cfg {::eml/reuse-conn true
+                            ::eml/template "change-email"
+                            :public-uri (cf/get :public-uri)
+                            :to (:email profile)
+                            :name (:fullname profile)
+                            :pending-email email
+                            :token token
+                            :extra-data ptoken})
     nil))
 
 ;; --- MUTATION: Update Profile Props
