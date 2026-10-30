@@ -7,10 +7,6 @@
 // refactor/ stays for the menu item placeholder (%menu-item-base) of the
 // power up submenu.
 @use "refactor/common-refactor.scss" as deprecated;
-
-// The shared dashboard header styles move in their own change: they are
-// used by ten dashboard modules.
-@use "common/refactor/common-dashboard";
 @use "ds/typography.scss" as *;
 @use "ds/_borders.scss" as *;
 @use "ds/_utils.scss" as *;

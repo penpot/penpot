@@ -11,6 +11,8 @@
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.modal :refer [modal-container*]]
    [app.main.ui.settings.change-email]
@@ -33,7 +35,11 @@
   [:header {:class (stl/css :dashboard-header)
             :data-testid "dashboard-header"}
    [:div {:class (stl/css :dashboard-title)}
-    [:h1 {:data-testid "account-title"} (tr "dashboard.your-account-title")]]])
+    [:> heading* {:level 1
+                  :typography t/title-large
+                  :class (stl/css :dashboard-title-text)
+                  :data-testid "account-title"}
+     (tr "dashboard.your-account-title")]]])
 
 (mf/defc settings*
   [{:keys [route type error-report-id error-href]}]
