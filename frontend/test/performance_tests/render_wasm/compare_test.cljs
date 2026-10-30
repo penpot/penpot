@@ -236,6 +236,11 @@
                              (make-run "baseline" :case/load 10))
         candidate (write-run (path/join @temporary-root "candidate.transit")
                              (make-run "candidate" :case/load 12))]
+    (let [file   (path/join @temporary-root "comparison.transit")
+          record (:comparison (compare/execute baseline candidate {}))]
+      (fs/writeFileSync file (result/encode record))
+      (t/is (thrown-with-msg? js/Error #"expected a saved run record"
+                              (compare/execute baseline file {}))))
     (doseq [selector ["case/load" "case/load,other/load,third/load" ""]]
       (t/is (= ::report-compare/invalid-selector
                (:type (ex-data (failure #(compare/execute baseline candidate

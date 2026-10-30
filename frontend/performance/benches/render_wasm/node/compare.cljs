@@ -7,19 +7,12 @@
 (ns benches.render-wasm.node.compare
   "Offline comparison of two saved schema:run records.
 
-  Inputs are user file paths resolved from the caller's cwd. The namespace
-  depends only on record decoding and the shared report pipeline; it starts no
-  build, host, browser or renderer."
+  Inputs are user file paths resolved from the caller's cwd."
   (:require
-   ["fs" :as fs]
-   ["path" :as path]
+   [benches.render-wasm.node.runs :as runs]
    [benches.render-wasm.report.compare :as compare]
    [benches.render-wasm.report.format :as format]
    [benches.render-wasm.result :as result]))
-
-(defn- read-run
-  [file]
-  (result/decode (fs/readFileSync (path/resolve file) "utf8")))
 
 (defn execute
   "Reads and compares two saved run files.
@@ -38,8 +31,8 @@
   differences and formatted text."
   [baseline-path candidate-path {:keys [cases allow-build-differences
                                         allow-scene-differences allow-all-differences]}]
-  (let [baseline   (read-run baseline-path)
-        candidate  (read-run candidate-path)
+  (let [baseline   (runs/get-record baseline-path)
+        candidate  (runs/get-record candidate-path)
         comparison (result/check-record
                     (compare/compare-runs
                      baseline candidate

@@ -9,7 +9,7 @@
   (:require
    [app.common.schema :as sm]
    [app.common.transit :as transit]
-   [benches.render-wasm.errors :as errors :include-macros true :refer [attempt failure?]]
+   [benches.render-wasm.errors :as errors :refer [attempt failure?]]
    [benches.render-wasm.node.artifacts :as artifacts]
    [benches.render-wasm.node.build :as build]
    [benches.render-wasm.node.feature-comparison :as feature-comparison]

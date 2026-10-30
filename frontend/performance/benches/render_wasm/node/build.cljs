@@ -17,8 +17,7 @@
    ["path" :as path]
    ["url" :as url]
    [app.common.transit :as transit]
-   [benches.render-wasm.errors :as errors :include-macros true :refer [attempt failure?]]
-   [benches.render-wasm.failures :as failures]
+   [benches.render-wasm.errors :as errors :refer [attempt failure?]]
    [benches.render-wasm.identity :as identity]
    [benches.render-wasm.node.artifacts :as artifacts]
    [benches.render-wasm.node.catalog :as catalog]
@@ -148,7 +147,7 @@
             (artifacts/load-build root (:id ready))))
         (catch :default cause
           (let [build          @build-ref
-                failure        {:phase @phase :cause (failures/describe-cause cause)}
+                failure        {:phase @phase :cause (errors/describe-cause cause)}
                 saved          (when (= :building (get-in build [:manifest :status]))
                                  (attempt :catch-fatal
                                           (artifacts/write-manifest

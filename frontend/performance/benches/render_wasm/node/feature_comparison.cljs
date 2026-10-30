@@ -11,21 +11,20 @@
    ["node:timers/promises" :as timers]
    ["path" :as path]
    [app.common.schema :as sm]
-   [benches.render-wasm.errors :as errors :include-macros true :refer [attempt failure?]]
-   [benches.render-wasm.failures :as failures]
+   [benches.render-wasm.errors :as errors :refer [attempt failure?]]
    [benches.render-wasm.node.artifacts :as artifacts]
    [benches.render-wasm.node.build :as build]
    [benches.render-wasm.node.catalog :as catalog]
    [benches.render-wasm.node.files :as files]
    [benches.render-wasm.node.log :as log]
    [benches.render-wasm.node.outcome :as outcome]
+   [benches.render-wasm.node.process :as process]
    [benches.render-wasm.node.run :as run]
    [benches.render-wasm.node.runs :as runs]
+   [benches.render-wasm.node.time :as time]
    [benches.render-wasm.report.compare :as compare]
    [benches.render-wasm.result :as result]
    [clojure.set :as set]))
-
-(def ^:private record-file "feature-comparison.transit")
 
 (def ^:private warnings
   ["Timing values do not determine success."
@@ -37,17 +36,13 @@
    :create-run-home runs/create-home
    :execute-run run/execute})
 
-(defn- now
-  []
-  (.toISOString (js/Date.)))
-
 (defn- invalid-home
   [message data]
   (throw (ex-info message (assoc data :type ::invalid-home))))
 
 (defn- check-id
   [id]
-  (when-not (and (string? id) (re-matches #"[A-Za-z0-9][A-Za-z0-9_-]{0,127}" id))
+  (when-not (files/valid-id? id)
     (invalid-home "invalid feature comparison id" {:id id}))
   id)
 
@@ -65,43 +60,23 @@
     (when (artifacts/inside-builds? root dir)
       (invalid-home "feature comparison cannot use a directory inside builds" {:path dir}))
     (try
-      (fs/mkdirSync dir #js {:recursive true})
-      (fs/writeFileSync (path/join dir "feature-comparison.log") "" #js {:encoding "utf8" :flag "wx"})
+      (files/create-home dir "feature-comparison")
       (catch :default cause
-        (invalid-home "cannot create feature comparison home"
-                      {:path dir :cause (errors/message-of cause)})))
-    {:dir dir
-     :log-path (path/join dir "feature-comparison.log")
-     :record-path (path/join dir record-file)}))
+        (throw (ex-info "cannot create feature comparison home"
+                        {:type ::invalid-home :path dir :cause (errors/message-of cause)}
+                        cause))))))
 
 (defn write-record
   "Validates schema:feature-comparison and atomically replaces the saved file."
   [home record]
-  (let [record (result/check-record record)]
-    (files/atomic-write (:record-path home) (result/encode record))
-    record))
+  (files/atomic-write (:record-path home) (result/encode record))
+  record)
 
 (defn- permissions
   [options]
   {:allow-build-differences (boolean (:allow-build-differences options))
    :allow-scene-differences (boolean (:allow-scene-differences options))
    :allow-all-differences (boolean (:allow-all-differences options))})
-
-(defn- signal-name
-  [signal]
-  (when (and signal (.-aborted ^js signal))
-    (let [reason (.-reason ^js signal)]
-      (cond
-        (string? reason) reason
-        (keyword? reason) (name reason)
-        :else (or (:signal (ex-data reason)) "SIGINT")))))
-
-(defn- failure-evidence
-  [phase cause]
-  (cond-> {:phase (name phase)
-           :message (errors/message-of cause)
-           :cause (failures/describe-cause cause)}
-    (:log-path (ex-data cause)) (assoc :tail-log (:log-path (ex-data cause)))))
 
 (defn- storage-error
   [cause log-path]
@@ -135,7 +110,7 @@
 
 (defn- persist
   [state update]
-  (let [next  (assoc (update @(:record-ref state)) :updated-at (now))
+  (let [next  (assoc (update @(:record-ref state)) :updated-at (time/now))
         saved (try
                 (write-record (:home state) next)
                 (catch :default cause
@@ -167,7 +142,7 @@
            (fn [record]
              (change-config record slug
                             #(-> % (assoc :status :failed
-                                          :failure (failure-evidence phase cause))
+                                          :failure (errors/evidence phase cause))
                                  (dissoc :reason))))))
 
 (defn- interrupt-config
@@ -205,7 +180,7 @@
 
 (defn- finish
   [state status exit-code causes]
-  (let [record (persist state #(assoc % :status status :ended-at (now)))]
+  (let [record (persist state #(assoc % :status status :ended-at (time/now)))]
     {:comparison record
      :home (:home state)
      :log-path (get-in state [:home :log-path])
@@ -238,15 +213,6 @@
                                         :build (select-keys build [:id :manifest-path :log-path]))
                                  (dissoc :failure :reason))))))
 
-(defn- load-run
-  [path]
-  (when-not (and (string? path) (fs/existsSync path))
-    (throw (ex-info "run record is missing" {:type ::missing-run :path path})))
-  (let [record (result/decode (fs/readFileSync path "utf8"))]
-    (when-not (= :run-record (:type record))
-      (throw (ex-info "expected a saved run record" {:type ::invalid-run :path path})))
-    record))
-
 (defn- stop-outcome
   [slug reason cause]
   {:stop? true
@@ -260,20 +226,20 @@
 
 (defn- interrupt-configuration
   [state slug signal phase cause]
-  (interrupt-config state slug signal (when cause (failure-evidence phase cause)))
+  (interrupt-config state slug signal (when cause (errors/evidence phase cause)))
   (cond-> {:interrupted? true :signal signal}
     cause (assoc :error cause)))
 
 (defn- fail-or-interrupt
   [state slug phase cause]
-  (if-let [signal (signal-name (:signal state))]
+  (if-let [signal (process/signal-name (:signal state))]
     (interrupt-configuration state slug signal phase cause)
     (fail-configuration state slug phase (str (name phase) " failure") cause)))
 
 (defn- begin-configuration
   [state configuration]
   (let [slug (:slug configuration)]
-    (if-let [signal (signal-name (:signal state))]
+    (if-let [signal (process/signal-name (:signal state))]
       {:configuration configuration
        :outcome (interrupt-configuration state slug signal nil nil)}
       (do
@@ -311,7 +277,7 @@
                                              :build-timeout-ms (get-in state [:options :build-timeout-ms])
                                              :signal (:signal state)
                                              :on-created (partial record-created-build state slug)})))
-          signal                   (signal-name (:signal state))]
+          signal                   (process/signal-name (:signal state))]
       (cond
         (failure? built)
         (assoc flow :outcome (fail-or-interrupt state slug :build built))
@@ -334,7 +300,7 @@
                                  :filter (get-in state [:options :filter])})
                                (:cases state)))
                         (errors/with-data {:log-path (:log-path selected)}))
-          signal    (signal-name (:signal state))
+          signal    (process/signal-name (:signal state))
           step      (cond
                       (failure? mismatch?) (fail-or-interrupt state slug :catalog mismatch?)
                       signal (interrupt-configuration state slug signal nil nil)
@@ -371,7 +337,7 @@
   [slug home response]
   (or (some #(when (errors/fatal? %) %) (:errors response))
       (attempt
-       (when-not (= (get-in response [:run :run-id]) (:run-id (load-run (:record-path home))))
+       (when-not (= (get-in response [:run :run-id]) (:run-id (runs/get-record (:record-path home))))
          (throw (ex-info "saved run identity disagrees with execution result"
                          {:type ::invalid-run :configuration slug}))))))
 
@@ -393,10 +359,10 @@
 (defn- get-run-failure
   [{:keys [run evidence-error gpu-failure error]}]
   (cond
-    evidence-error (failure-evidence :run-evidence evidence-error)
+    evidence-error (errors/evidence :run-evidence evidence-error)
     gpu-failure gpu-failure
     (map? (get-in run [:termination :failure])) (get-in run [:termination :failure])
-    error (failure-evidence :run error)))
+    error (errors/evidence :run error)))
 
 (defn- classify-run
   [signal evidence]
@@ -446,7 +412,7 @@
   [state flow response]
   (let [slug     (get-in flow [:configuration :slug])
         facts    (get-run-evidence slug (:run-home flow) response)
-        evidence (classify-run (signal-name (:signal state)) facts)]
+        evidence (classify-run (process/signal-name (:signal state)) facts)]
     (record-run-result state slug evidence)
     (config-run-outcome slug evidence)))
 
@@ -511,8 +477,7 @@
 
 (defn- save-comparison
   [path comparison log-path]
-  (let [record (result/check-record comparison)
-        text   (result/encode record)]
+  (let [text (result/encode comparison)]
     (try
       (files/atomic-write path text)
       (catch :default cause
@@ -540,8 +505,8 @@
    (let [record           @(:record-ref state)
          baseline-config  (config-by-slug record (:from edge))
          candidate-config (config-by-slug record (:to edge))
-         baseline         (load-run (get-in baseline-config [:run :record-path]))
-         candidate        (load-run (get-in candidate-config [:run :record-path]))
+         baseline         (runs/get-record (get-in baseline-config [:run :record-path]))
+         candidate        (runs/get-record (get-in candidate-config [:run :record-path]))
          facts            (edge-facts baseline candidate edge)
          comparison       (compare/compare-runs baseline candidate (get-comparison-options record facts))
          path             (path/join (get-in state [:home :dir])
@@ -559,13 +524,13 @@
   (cond
     (and (failure? result) (errors/fatal? result))
     (do
-      (mark-edge state edge :failed {:failure (failure-evidence :comparison-storage result)})
+      (mark-edge state edge :failed {:failure (errors/evidence :comparison-storage result)})
       (mark-edges-unattempted state "not attempted after comparison storage failure")
       (throw result))
 
     (failure? result)
     (do
-      (mark-edge state edge :failed {:failure (failure-evidence :comparison result)})
+      (mark-edge state edge :failed {:failure (errors/evidence :comparison result)})
       (or error result))
 
     (pos? (:unacknowledged result))
@@ -584,7 +549,7 @@
 (defn- ^:async analyze-edges
   [state edges error]
   (await (timers/setImmediate))
-  (if-let [signal (signal-name (:signal state))]
+  (if-let [signal (process/signal-name (:signal state))]
     (do
       (mark-edges-unattempted state (str "interrupted by " signal))
       {:interrupted signal :error error})
@@ -601,7 +566,7 @@
 
 (defn- ^:async run-edges
   [state error]
-  (if-let [signal (signal-name (:signal state))]
+  (if-let [signal (process/signal-name (:signal state))]
     (interrupt-comparison state signal error)
     (do
       (create-comparison-directory state)
@@ -614,7 +579,7 @@
 
 (defn- ^:async run-comparisons
   [state configurations]
-  (if-let [signal (signal-name (:signal state))]
+  (if-let [signal (process/signal-name (:signal state))]
     (interrupt-comparison state signal nil)
     (if-let [[configuration & pending] (seq configurations)]
       (let [step (await (execute-config state configuration))]
@@ -638,7 +603,7 @@
    :cases (:cases prepared)
    :signal signal
    :services services
-   :record-ref (atom (initial-record prepared comparison-id (now)))
+   :record-ref (atom (initial-record prepared comparison-id (time/now)))
    :saved-ref (atom nil)})
 
 (defn- initialize-comparison

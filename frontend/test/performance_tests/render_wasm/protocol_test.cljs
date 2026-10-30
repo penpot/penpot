@@ -9,6 +9,7 @@
   Browser entry tests cover load and warm pan with a fake module."
   (:require
    [app.common.render-wasm.wasm :as wasm]
+   [benches.render-wasm.errors :as errors]
    [benches.render-wasm.runtime.protocol :as protocol]
    [cljs.test :as t :include-macros true]))
 
@@ -153,6 +154,25 @@
                     (t/is (= [1 7] (mapv :frame-type (get-in (ex-data cause) [:partial :slices]))))
                     (t/is (= [0 0] (mapv :duration-ms (get-in (ex-data cause) [:partial :slices]))))
                     (done)))))))
+
+(t/deftest ^:async unreadable-error-message-keeps-render-evidence
+  (let [clock  (fake-clock 0)
+        calls  (atom [])
+        hooks  (drain-hooks {:clock clock :script [1] :calls calls})
+        render (:render hooks)
+        cause  (ex-info "unreadable" {} (js/Error. "device lost"))
+        _      (js/Object.defineProperty cause "message"
+                                         #js {:get (fn [] (throw (js/Error. "message getter failed")))})
+        hooks  (assoc hooks :render (fn [timestamp flags]
+                                      (if (seq @calls)
+                                        (throw cause)
+                                        (render timestamp flags))))
+        result (try
+                 (await (protocol/drain hooks {:flags 0 :origin 0 :immediate true}))
+                 nil
+                 (catch :default error error))]
+    (t/is (= [1] (mapv :frame-type (get-in (ex-data result) [:partial :slices]))))
+    (t/is (some #(= "device lost" (:message %)) (errors/describe-cause result)))))
 
 (t/deftest camera-failure-retains-completed-previews-and-authored-pauses
   (t/async done

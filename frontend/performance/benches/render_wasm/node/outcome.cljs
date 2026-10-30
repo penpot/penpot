@@ -11,7 +11,7 @@
   (a vector, primary failure first) and `:log-path`. Exit code 130 and 143
   mark an interruption and no failure replaces them."
   (:require
-   [benches.render-wasm.errors :as errors :include-macros true :refer [attempt failure?]]))
+   [benches.render-wasm.errors :as errors :refer [attempt failure?]]))
 
 (defn interruption-code
   "Returns the exit code for the interrupting signal name: 143 for SIGTERM,

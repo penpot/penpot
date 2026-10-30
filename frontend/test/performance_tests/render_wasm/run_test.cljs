@@ -556,12 +556,16 @@
 (t/deftest ^:async interruption-before-an-attempt-preserves-unspent-slots
   (doseq [context [:fresh :reuse]
           method [:launch :new-page :prepare]
-          [signal code] [["SIGINT" 130] ["SIGTERM" 143]]]
+          [reason signal code] [["SIGINT" "SIGINT" 130]
+                                ["SIGTERM" "SIGTERM" 143]
+                                [:SIGTERM "SIGTERM" 143]
+                                [(ex-info "stopped" {:signal "SIGTERM"}) "SIGTERM" 143]
+                                [(js/Error. "stopped") "SIGINT" 130]]]
     (let [controller (js/AbortController.)
           base       (fake-browser {})
           stop       (^:async fn [& _]
                        (let [cause (ex-info "interrupted setup" {:signal signal :phase :preparation})]
-                         (.abort controller cause)
+                         (.abort controller reason)
                          (throw cause)))
           fake       (assoc base :service (assoc (:service base) method stop))
           opts       (assoc (options fake (output-dir)) :warmups 1 :repetitions 2)

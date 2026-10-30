@@ -6,7 +6,8 @@
 
 (ns performance-tests.render-wasm.errors-test
   (:require
-   [benches.render-wasm.errors :as errors :include-macros true :refer [attempt failure?]]
+   [app.common.transit :as transit]
+   [benches.render-wasm.errors :as errors :refer [attempt failure?]]
    [cljs.test :as t :include-macros true]
    [clojure.string :as str]))
 
@@ -77,3 +78,53 @@
 (t/deftest message-of-falls-back-to-the-string-form
   (t/is (= "boom" (errors/message-of (ex-info "boom" {}))))
   (t/is (= "text" (errors/message-of "text"))))
+
+(t/deftest context-keeps-deeper-measurements-and-native-cause-details
+  (let [native (ex-info "render failed" {:fn "_render" :code 17})
+        cause  (ex-info "interact failed" {:phase "interact" :partial {:slices [1 2]}} native)
+        error  (errors/with-context cause "setup failed"
+                 {:phase "setup" :partial {:slices [1] :setup {:upload-ms 3}}})
+        result (errors/evidence :setup error)]
+    (t/is (= {:phase "setup" :partial {:slices [1 2] :setup {:upload-ms 3}}}
+             (ex-data error)))
+    (t/is (= "setup failed" (:message result)))
+    (t/is (some #(= {:message "render failed" :fn "_render" :code 17} %)
+                (:cause result)))))
+
+(t/deftest context-keeps-native-errors-as-diagnostic-causes
+  (let [error (errors/with-context (js/Error. "device lost") "restore failed" {:phase "restore"})]
+    (t/is (some #(= "device lost" (:message %)) (errors/describe-cause error)))))
+
+(t/deftest hostile-cause-renders-plain-data
+  (let [hostile (ex-info "boom"
+                         {:fn (fn [] 1) :code #js {:evil 1} :type :wasm-error
+                          :hint (str (apply str (repeat 499 "x")) "😀")}
+                         (js/Error. "inner boom"))
+        result  (errors/evidence :aborted hostile)
+        decoded (-> result transit/encode-str transit/decode-str)
+        outer   (first (:cause decoded))]
+    (t/is (= "aborted" (:phase decoded)))
+    (t/is (= "boom" (:message decoded)))
+    (t/is (string? (:fn outer)))
+    (t/is (string? (:code outer)))
+    (t/is (= (apply str (repeat 499 "x")) (:hint outer)))
+    (t/is (some #(= "inner boom" (:message %)) (:cause decoded)))))
+
+(t/deftest unprintable-values-produce-portable-diagnostics
+  (let [evil (js-obj)]
+    (js/Object.defineProperty evil "evil"
+                              #js {:enumerable true
+                                   :get (fn [] (throw (js/Error. "evil")))})
+    (let [data    (errors/evidence :upload (ex-info "evil boom" {:fn evil}))
+          cause   (errors/evidence :upload evil)
+          decoded (-> [data cause] transit/encode-str transit/decode-str)]
+      (t/is (= "unrenderable value" (get-in decoded [0 :cause 0 :fn])))
+      (t/is (= "unrenderable cause" (get-in decoded [1 :cause 0 :message]))))))
+
+(t/deftest non-finite-failure-details-cross-transit-as-numbers
+  (let [failure (ex-info "bad measurement" {:code js/NaN :hint js/Infinity :type js/-Infinity})
+        decoded (-> (errors/evidence :render failure) transit/encode-str transit/decode-str)
+        detail  (first (:cause decoded))]
+    (t/is (js/Number.isNaN (:code detail)))
+    (t/is (= js/Infinity (:hint detail)))
+    (t/is (= js/-Infinity (:type detail)))))

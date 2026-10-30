@@ -26,7 +26,7 @@
 
 (defn- check-id
   [id]
-  (when-not (and (string? id) (re-matches #"[A-Za-z0-9][A-Za-z0-9_-]{0,127}" id))
+  (when-not (files/valid-id? id)
     (invalid-home "invalid run id" {:id id}))
   id)
 
@@ -48,26 +48,26 @@
   uses the frontend root regardless of cwd."
   [{:keys [root run-id output-dir remove]}]
   (check-id run-id)
-  (let [dir        (check-output-dir
-                    (or output-dir (path/join (artifacts/managed-root root) "runs" run-id)))
-        record-path (path/join dir "run.transit")
-        log-path    (path/join dir "run.log")]
+  (let [dir (check-output-dir
+             (or output-dir (path/join (artifacts/managed-root root) "runs" run-id)))]
     (when (and remove (artifacts/inside-builds? root dir))
       (invalid-home "--remove cannot use an output directory inside builds" {:path dir}))
     (try
-      (fs/mkdirSync dir #js {:recursive true})
+      (assoc (files/create-home dir "run") :run-id run-id)
       (catch :default cause
-        (invalid-home "cannot create run home"
-                      {:path dir :cause (errors/message-of cause)})))
-    (try
-      (fs/writeFileSync log-path "" #js {:encoding "utf8" :flag "wx"})
-      (catch :default cause
-        (invalid-home "cannot create run log"
-                      {:path log-path :cause (errors/message-of cause)})))
-    {:dir dir
-     :record-path record-path
-     :log-path log-path
-     :run-id run-id}))
+        (throw (ex-info "cannot create run home"
+                        {:type ::invalid-home :path dir :cause (errors/message-of cause)}
+                        cause))))))
+
+(defn get-record
+  "Reads and validates a saved run record from a path relative to cwd."
+  [file]
+  (when-not (and (string? file) (fs/existsSync file))
+    (throw (ex-info "run record is missing" {:type ::missing-run :path file})))
+  (let [record (result/decode (fs/readFileSync file "utf8"))]
+    (when-not (= :run-record (:type record))
+      (throw (ex-info "expected a saved run record" {:type ::invalid-run :path file})))
+    record))
 
 (defn write-record!
   "Validates schema:run and atomically replaces the saved file."

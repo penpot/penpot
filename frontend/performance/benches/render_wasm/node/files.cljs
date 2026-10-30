@@ -5,10 +5,37 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.node.files
-  "Small filesystem helpers shared by benchmark storage writers."
+  "Filesystem paths and storage for benchmark artifacts."
   (:require
    ["fs" :as fs]
-   ["path" :as path]))
+   ["path" :as path]
+   [clojure.string :as str]))
+
+(defn valid-id?
+  "True for IDs of up to 128 letters, digits, underscores or hyphens,
+  starting with a letter or digit."
+  [id]
+  (and (string? id)
+       (boolean (re-matches #"[A-Za-z0-9][A-Za-z0-9_-]{0,127}" id))))
+
+(defn contained?
+  "True when `file` is `root` or a path below it."
+  [root file]
+  (let [relative (path/relative root file)]
+    (and (not (path/isAbsolute relative))
+         (not= relative "..")
+         (not (str/starts-with? relative (str ".." path/sep))))))
+
+(defn create-home
+  "Creates `dir` and its parents, reserves an empty log, and returns the
+  directory, log path and record path. `stem` names the .log and .transit files."
+  [dir stem]
+  (let [log-path (path/join dir (str stem ".log"))]
+    (fs/mkdirSync dir #js {:recursive true})
+    (fs/writeFileSync log-path "" #js {:encoding "utf8" :flag "wx"})
+    {:dir dir
+     :log-path log-path
+     :record-path (path/join dir (str stem ".transit"))}))
 
 (defn get-real-path
   "Resolves symlink ancestors even when the final path does not exist yet."

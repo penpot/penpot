@@ -22,8 +22,7 @@
    [app.common.schema :as sm]
    [app.common.transit :as transit]
    [benches.render-wasm.declarations :as declarations]
-   [benches.render-wasm.errors :as errors :include-macros true :refer [attempt failure?]]
-   [benches.render-wasm.failures :as failures]
+   [benches.render-wasm.errors :as errors :refer [attempt failure?]]
    [benches.render-wasm.measurement :as measurement]
    [benches.render-wasm.node.artifacts :as artifacts]
    [benches.render-wasm.node.browser :as browser]
@@ -34,6 +33,7 @@
    [benches.render-wasm.node.process :as process]
    [benches.render-wasm.node.runs :as runs]
    [benches.render-wasm.node.server :as server]
+   [benches.render-wasm.node.time :as time]
    [benches.render-wasm.report.format :as format]
    [benches.render-wasm.report.summarize :as summary]
    [benches.render-wasm.result :as result]
@@ -64,20 +64,11 @@
                :hint "invalid run options"
                :type ::invalid-options))
 
-(defn- now
-  []
-  (.toISOString (js/Date.)))
-
 (defn- cause-evidence
   "Plain failure evidence for a rejected browser, server or persistence action."
   [cause fallback-phase]
-  (let [data  (ex-data cause)
-        phase (or (:phase data) (name fallback-phase))]
-    (cond-> {:status "failed"
-             :phase (if (keyword? phase) (name phase) (str phase))
-             :message (errors/message-of cause)
-             :cause (failures/describe-cause cause)}
-      (:partial data) (assoc :partial (:partial data)))))
+  (errors/fail-data
+   (errors/evidence (or (:phase (ex-data cause)) fallback-phase) cause)))
 
 (defn- failure-evidence
   "Projects a bridge failure response into diagnostics evidence."
@@ -92,11 +83,8 @@
 
 (defn- interruption
   [signal]
-  (when (and signal (.-aborted ^js signal))
-    (let [reason (.-reason ^js signal)
-          data   (ex-data reason)]
-      {:signal (if (string? reason) reason (or (:signal data) "SIGINT"))
-       :cause reason})))
+  (when-let [name (process/signal-name signal)]
+    {:signal name :cause (.-reason ^js signal)}))
 
 (defn- interrupted?
   [state]
@@ -202,7 +190,7 @@
           (record-screenshot-status state (:id case)
                                     {:file file :status :failed
                                      :message (errors/message-of shot)
-                                     :cause (failures/describe-cause shot)})
+                                     :cause (errors/describe-cause shot)})
           (write-log state log/warn (str "Screenshot failed for "
                                          (result/case-name (:id case)) ": "
                                          (errors/message-of shot) "\n")))
@@ -597,7 +585,7 @@
     (when (:screenshots (:opts state))
       (swap! (:run-ref state) update-in [:metadata :diagnostics :screenshots]
              complete-screenshots (:cases state)))
-    (swap! (:run-ref state) result/finish-run (now) termination)
+    (swap! (:run-ref state) result/finish-run (time/now) termination)
     (persist state)
     @(:run-ref state)))
 
@@ -679,7 +667,7 @@
   [root run-id selected-build cases opts]
   (result/create-run
    {:run-id run-id
-    :started-at (now)
+    :started-at (time/now)
     :plan {:cases cases
            :warmups (:warmups opts)
            :repetitions (:repetitions opts)

@@ -16,6 +16,7 @@
    [benches.render-wasm.browser.bridge :as browser]
    [benches.render-wasm.cases :as cases]
    [benches.render-wasm.declarations :as decl]
+   [benches.render-wasm.errors :as errors]
    [benches.render-wasm.measurement :as measurement]
    [benches.render-wasm.report.compare :as compare]
    [benches.render-wasm.report.format :as format]
@@ -98,15 +99,16 @@
   (t/async done
     (expect-failed-args (scene-args 42 {:id :rects/missing}) true done)))
 
-(t/deftest wrong-scene-body-fails-before-claim
+(t/deftest ^:async wrong-scene-body-rejects-the-load-request
   (let [id :rects/wrong-scene
         descriptor (load-case)]
     (decl/register-case! {:id id :scene :other :ns "lifecycle-test"
                           :run! (fn [_] nil)})
     (try
       (let [request (transit/encode-str {:case (assoc descriptor :id id)})
-            parsed  (@#'browser/parse-load-request request)]
-        (t/is (= "invalid-args" (get-in parsed [:error :phase]))))
+            result  (transit/decode-str (await (browser/prepare-scene-request request)))]
+        (t/is (= "failed" (:status result)))
+        (t/is (= "invalid-args" (:phase result))))
       (finally
         (decl/unregister-case! id)))))
 
@@ -171,13 +173,13 @@
                      nil
                      (catch :default cause
                        cause))]
-        (t/is (true? (:benches.render-wasm.failures/stale (ex-data thrown)))
+        (t/is (errors/stale? thrown)
               "the marker lives in ex-data, never in message text")))
     (t/testing "terminal stale resolves without disposal"
       (let [before @@#'browser/owner-epoch*
             result (terminate epoch
                               (ex-info "superseded"
-                                       {:benches.render-wasm.failures/stale true
+                                       {::errors/stale true
                                         :phase "upload"})
                               "upload")
             after  @@#'browser/owner-epoch*]
@@ -757,92 +759,13 @@
                        (cleanup)
                        (done)))))))
 
-(t/deftest hostile-cause-renders-plain-data
-  (let [terminate @#'browser/terminal-failure
-        current   @@#'browser/owner-epoch*
-        hostile   (ex-info "boom"
-                           {:fn   (fn [] 1)
-                            :code #js {:evil 1}
-                            :type :wasm-error
-                            :hint (apply str (repeat 1000 "x"))}
-                           (js/Error. "inner boom"))
-        result    (terminate current hostile "aborted")
-        m         result
-        cause     (:cause m)]
-    (t/is (= "failed" (:status m)))
-    (t/is (= "aborted" (:phase m)))
-    (t/is (= "boom" (:message m)) "top message stays as-is")
-    (t/is (vector? cause) "cause is plain-data vector")
-    (t/is (decl/transit-round-trips? cause) "hostile values become strings")
-    (t/is (every? (fn [entry]
-                    (every? (fn [[_ v]]
-                              (or (not (string? v)) (<= (count v) 500)))
-                            entry))
-                  cause)
-          "strings truncated to the hard cap")
-    (let [outer (first cause)]
-      (t/is (string? (:fn outer)) "function value stringified")
-      (t/is (string? (:code outer)) "host object value stringified")
-      (t/is (= 500 (count (:hint outer))) "long hint truncated"))
-    (t/is (some #(and (string? (:message %))
-                      (re-find #"inner boom" (:message %)))
-                cause)
-          "inner message preserved"))
-  (t/testing "values pr-str cannot render fall back to plain strings"
-    (let [evil      (js-obj)
-          _         (js/Object.defineProperty
-                     evil "evil"
-                     #js {:enumerable true
-                          :get (fn [] (throw (js/Error. "evil")))})
-          terminate @#'browser/terminal-failure
-          current   @@#'browser/owner-epoch*
-          hostile   (ex-info "evil boom" {:fn evil} (js/Error. "inner"))
-          result    (terminate current hostile "aborted")
-          m         result
-          cause     (:cause m)
-          outer     (first cause)]
-      (t/is (= "failed" (:status m)))
-      (t/is (decl/transit-round-trips? cause) "throwing value still crosses the wire")
-      (t/is (= "unrenderable value" (:fn outer))
-            "stringification failure falls back")))
-  (t/testing "causes pr-str cannot render fall back to plain strings"
-    (let [evil      (js-obj)
-          _         (js/Object.defineProperty
-                     evil "evil"
-                     #js {:enumerable true
-                          :get (fn [] (throw (js/Error. "evil")))})
-          terminate @#'browser/terminal-failure
-          current   @@#'browser/owner-epoch*
-          result    (terminate current evil "aborted")
-          m         result
-          cause     (:cause m)]
-      (t/is (= "failed" (:status m)))
-      (t/is (decl/transit-round-trips? cause) "throwing cause still crosses the wire")
-      (t/is (= "unrenderable cause" (:message (first cause)))
-            "level fallback holds"))))
-
-(t/deftest non-finite-failure-details-cross-transit-as-numbers
-  (let [terminate @#'browser/terminal-failure
-        current   @@#'browser/owner-epoch*
-        failure   (ex-info "bad measurement"
-                           {:code js/NaN
-                            :hint js/Infinity
-                            :type js/-Infinity})
-        result    (terminate current failure "aborted")
-        decoded   (-> result transit/encode-str transit/decode-str)
-        detail    (first (:cause decoded))]
-    (t/is (number? (:code detail)))
-    (t/is (js/Number.isNaN (:code detail)))
-    (t/is (= js/Infinity (:hint detail)))
-    (t/is (= js/-Infinity (:type detail)))))
-
 (t/deftest nested-stale-marker-does-not-resolve-stale
   (let [terminate @#'browser/terminal-failure
         current   @@#'browser/owner-epoch*
         nested    (ex-info "upload failed"
                            {:phase "upload"}
                            (ex-info "superseded"
-                                    {:benches.render-wasm.failures/stale true
+                                    {::errors/stale true
                                      :phase "upload"}))
         result    (terminate current nested "aborted")
         m         result]
