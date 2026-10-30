@@ -424,7 +424,10 @@
       [:p {:class (stl/css :desc-text)} (tr "labels.internal-error.desc-message-second")]]
 
      (when (some? report)
-       [:a {:class (stl/css :download-link) :on-click on-download} (tr "labels.download" "report.txt")])
+       [:button {:type "button"
+                 :class (stl/css :download-link)
+                 :on-click on-download}
+        (tr "labels.download" "report.txt")])
 
      [:div {:class (stl/css :buttons-container)}
       [:> button* {:variant "secondary"

@@ -81,5 +81,11 @@
     display: inline-block;
     min-inline-size: $sz-160;
     text-align: center;
+    background: none;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 }
