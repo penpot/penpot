@@ -167,10 +167,10 @@
         output (tmp/tempfile :suffix ".zip")]
     (bf.v3/export-files!
      (-> th/*system*
-         (assoc ::bfc/ids #{(:id file)})
+         (assoc ::bfc/file-ids #{(:id file)})
          (assoc ::bfc/embed-assets false)
-         (assoc ::bfc/include-libraries false))
-     (io/output-stream output))
+         (assoc ::bfc/include-libraries false)
+         (assoc ::bfc/output (io/output-stream output))))
     output))
 
 (defn- import-file

@@ -9,7 +9,6 @@
   it leaves behind when it fails."
   (:require
    [app.binfile.common :as bfc]
-   [app.binfile.jobs :as bfj]
    [app.binfile.v1 :as v1]
    [app.binfile.v3 :as v3]
    [app.common.uuid :as uuid]
@@ -50,7 +49,7 @@
   [file-id]
   (let [output (tmp/tempfile* :suffix ".penpot")]
     (v1/export-files! (-> th/*system*
-                          (assoc ::bfc/ids #{file-id})
+                          (assoc ::bfc/file-ids #{file-id})
                           (assoc ::bfc/include-libraries false)
                           (assoc ::bfc/embed-assets false))
                       output)
@@ -249,12 +248,12 @@
     ;; the core does its work inside the transaction and answers with a result
     ;; the schema of the task does not accept: the check runs before the
     ;; transaction commits, so the work is rolled back with it
-    (with-redefs [bfj/import-files
-                  (fn [tx-cfg _context _params]
-                    (th/create-file* tx-cfg 7 {:profile-id (:id profile)
-                                               :project-id project-id
-                                               :is-shared  false
-                                               :name       "half imported"})
+    (with-redefs [v3/import-files!
+                  (fn [cfg]
+                    (th/create-file* cfg 7 {:profile-id (:id profile)
+                                            :project-id project-id
+                                            :is-shared  false
+                                            :name       "half imported"})
                     {:file-ids   [(uuid/next)]
                      :resolution "not-a-map"})]
 

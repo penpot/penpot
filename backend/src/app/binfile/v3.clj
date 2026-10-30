@@ -454,14 +454,15 @@
         (write-entry! output path encoded-status)))))
 
 (defn- export-files
-  [{:keys [::bfc/ids ::bfc/export-type ::output] :as cfg}]
+  [{:keys [::bfc/file-ids ::bfc/export-type ::output] :as cfg}]
 
-  (let [original-ids ids
-        ids  (into ids (when (= export-type :include-libraries) (bfc/get-libraries cfg ids)))
-        rels (if (= export-type :include-libraries)
-               (->> (bfc/get-files-rels cfg ids)
-                    (mapv (juxt :file-id :library-file-id)))
-               [])
+  (let [original-ids file-ids
+        file-ids     (into file-ids (when (= export-type :include-libraries)
+                                      (bfc/get-libraries cfg file-ids)))
+        rels         (if (= export-type :include-libraries)
+                       (->> (bfc/get-files-rels cfg file-ids)
+                            (mapv (juxt :file-id :library-file-id)))
+                       [])
 
         ;; Compute external libraries: referenced by original files but
         ;; not included in the export set. Only relevant for :link-later.
@@ -486,11 +487,11 @@
     (vswap! bfc/*state* assoc :files (d/ordered-map))
 
     ;; Write all the exporting files
-    (doseq [[index file-id] (d/enumerate ids)]
+    (doseq [[index file-id] (d/enumerate file-ids)]
       (-> cfg
           (assoc ::file-id file-id)
           (with-outer-counter :files {:current (inc index)
-                                      :total (count ids)})
+                                      :total (count file-ids)})
           (export-file)))
 
     ;; Write manifest file
@@ -1384,24 +1385,25 @@
 
 (defn export-files!
   "Do the exportation of a specified file in custom penpot binary
-  format. There are some options available for customize the output:
+  format. The cfg carries what `bfc/export-cfg` froze: `::bfc/file-ids`
+  (the files to export), `::bfc/export-type` (how linked libraries are
+  handled) and `::bfc/output` (where the package is written).
 
-  `::bfc/export-type`: determines how linked libraries are handled.
-  Valid values:
-  `:include-libraries` (include linked libraries),
+  `::bfc/export-type` determines how linked libraries are handled.
+  Valid values: `:include-libraries` (include linked libraries),
   `:merge-libraries` (embed library assets in the file),
   `:detach-libraries` (treat assets as basic objects),
   `:link-later` (preserve component metadata for relinking on import)."
 
-  [{:keys [::bfc/ids] :as cfg} output]
+  [{:keys [::bfc/file-ids ::bfc/output] :as cfg}]
 
   (assert
-   (and (set? ids) (every? uuid? ids))
-   "expected a set of uuid's for `::bfc/ids` parameter")
+   (and (set? file-ids) (every? uuid? file-ids))
+   "expected a set of uuid's for `::bfc/file-ids` parameter")
 
   (assert
    (satisfies? jio/IOFactory output)
-   "expected instance of jio/IOFactory for `input`")
+   "expected instance of jio/IOFactory for `::bfc/output`")
 
   (let [id (uuid/next)
         tp (ct/tpoint)

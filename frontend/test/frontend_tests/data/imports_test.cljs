@@ -137,6 +137,7 @@
      (mock/with-mocks*
        {http/send! (slurp-stub zip-magic)
         uz/get-entry (mock/stub (fn [_ _] (p/resolved ::entry)))
+        uz/get-entries (mock/stub (fn [_] (p/resolved #js [])))
         uz/read-as-text (mock/stub (fn [_] (p/resolved (manifest [first-id "First"]
                                                                  [second-id "Second"]))))
         uz/close (mock/stub (fn [_] nil))}
@@ -152,6 +153,55 @@
 
        (t/testing "all of them share the upload of the file that was dropped"
          (t/is (every? #(= uri (:uri %)) @seen)))))))
+
+(t/deftest ^:async a-version-3-package-sizes-every-file-with-what-it-occupies
+  (let [first-id   (uuid/next)
+        second-id  (uuid/next)
+        object-id  (str (uuid/next))
+        seen       (atom [])
+        ;; the entries of a container: every file keeps its own under
+        ;; `files/<id>`, the binaries of its media shared under `objects/`,
+        ;; and the manifest belongs to the container itself
+        entries
+        #js [#js {:filename "manifest.json"
+                  :compressedSize 100}
+             #js {:filename (str "files/" first-id ".json")
+                  :compressedSize 200}
+             #js {:filename (str "files/" first-id "/pages/one.json")
+                  :compressedSize 300}
+             #js {:filename (str "files/" first-id "/media/one.json")
+                  :compressedSize 10
+                  :content (str "{\"mediaId\": \"" object-id "\"}")}
+             #js {:filename (str "objects/" object-id ".json")
+                  :compressedSize 20}
+             #js {:filename (str "objects/" object-id ".png")
+                  :compressedSize 1000}
+             #js {:filename (str "files/" second-id ".json")
+                  :compressedSize 400}]]
+
+    (await
+     (mock/with-mocks*
+       {http/send! (slurp-stub zip-magic)
+        ;; the manifest is read through the same reader as the rest of the
+        ;; entries, so the fake carries its text and the mock answers what
+        ;; every entry holds
+        uz/get-entry (mock/stub (fn [_ _]
+                                  (p/resolved #js {:content (manifest [first-id "First"]
+                                                                      [second-id "Second"])})))
+        uz/get-entries (mock/stub (fn [_] (p/resolved entries)))
+        uz/read-as-text (mock/stub (fn [entry] (p/resolved (.-content entry))))
+        uz/close (mock/stub (fn [_] nil))}
+
+       (await (hva/observe (imp/analyze [{:uri uri :name "package.penpot" :size 10000}])
+                           {:on-next #(swap! seen conj %)}))))
+
+    (t/testing "a file occupies its own entries and the objects it references"
+      ;; 200 + 300 + 10 of its own, and 20 + 1000 of the object its media
+      ;; points at; the 100 of the manifest belong to the container
+      (t/is (= [1530 400] (mapv :size @seen))))
+
+    (t/testing "what the container occupies is kept apart"
+      (t/is (= [10000 10000] (mapv :container-size @seen))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMPORTING A PACKAGE
@@ -509,6 +559,190 @@
          (swap! rows assoc job-id (job job-id "completed" :result {:resolution {}}))
          (rx/push! ws-stream (message (event job-id :end {:outcome "completed"})))
          (await done))))))
+
+(t/deftest format-file-size-writes-human-sizes
+  (t/testing "unknown sizes show nothing"
+    (t/is (nil? (imp/format-file-size nil)))
+    (t/is (nil? (imp/format-file-size -1))))
+
+  (t/testing "bytes, kilobytes, megabytes and gigabytes"
+    (t/is (= "0B" (imp/format-file-size 0)))
+    (t/is (= "512B" (imp/format-file-size 512)))
+    (t/is (= "1KB" (imp/format-file-size 1024)))
+    (t/is (= "1.5KB" (imp/format-file-size 1536)))
+    (t/is (= "512KB" (imp/format-file-size (* 512 1024))))
+    (t/is (= "234MB" (imp/format-file-size (* 234 1024 1024))))
+    (t/is (= "1.2GB" (imp/format-file-size (* 1.2 1024 1024 1024))))))
+
+(defn- uploading
+  "A file of the wizard while the container it came in is uploaded: the
+  chunks sent out of the chunks the container has."
+  [uri size current total]
+  {:file-id        (uuid/next)
+   :uri            uri
+   :size           (* 1024 1024)
+   :container-size size
+   :type           :binfile-v3
+   :status         :import-progress
+   :progress       {:stage :upload :counters {:upload {:current current :total total}}}})
+
+(t/deftest upload-pct-weighs-every-container-by-its-size
+  (let [small (* 100 1024 1024)
+        big   (* 300 1024 1024)]
+
+    (t/testing "the bytes sent of every container over the bytes of all of them"
+      ;; 100MB of 100MB and half of 300MB: 250 of 400, not the average of
+      ;; 100% and 50%
+      (t/is (= 63 (imp/upload-pct [(uploading "a" small 4 4)
+                                   (uploading "b" big 1 2)]))))
+
+    (t/testing "a container that has not started counts as nothing sent"
+      (t/is (= 25 (imp/upload-pct [(uploading "a" small 4 4)
+                                   {:uri "b" :container-size big :type :binfile-v3
+                                    :status :import-ready}]))))
+
+    (t/testing "the files of one container are one container"
+      (t/is (= 100 (imp/upload-pct [(uploading "a" big 1 1)
+                                    (uploading "a" big 1 1)]))))
+
+    (t/testing "a container with no size leaves the bar indeterminate"
+      (t/is (nil? (imp/upload-pct [])))
+      (t/is (nil? (imp/upload-pct [{:uri "a" :type :binfile-v3 :status :import-ready}]))))))
+
+(t/deftest a-container-past-the-upload-counts-whole
+  ;; the job of a container is created with its upload as its input, so the
+  ;; moment the entries leave the upload stage the container is sent
+  (t/is (= 100 (imp/upload-pct [{:uri "a" :name "a.penpot" :container-size (* 100 1024 1024)
+                                 :type :binfile-v1 :status :import-queued}
+                                {:uri "b" :name "b.penpot" :container-size (* 300 1024 1024)
+                                 :type :binfile-v1 :status :import-success}]))))
+
+(t/deftest upload-done?-tells-when-the-chunks-of-a-container-are-sent
+  (t/testing "the last chunk closes the upload"
+    (t/is (true? (imp/upload-done? (uploading "a" 100 3 3))))
+    (t/is (false? (imp/upload-done? (uploading "a" 100 2 3)))))
+
+  (t/testing "a file that is not uploading yet is not done"
+    (t/is (false? (imp/upload-done? {:status :import-ready})))
+    (t/is (false? (imp/upload-done? {})))))
+
+(t/deftest imported-count-counts-the-files-the-job-left-behind
+  (let [file (fn [uri status progress]
+               (cond-> {:uri uri :type :binfile-v3 :status status}
+                 (some? progress) (assoc :progress progress)))]
+
+    (t/testing "a container that finished counts all of its files"
+      (t/is (= 2 (imp/imported-count [(file "a" :import-success nil)
+                                      (file "a" :import-success nil)]))))
+
+    (t/testing "a running container counts the files it left behind"
+      ;; its milestone says it is working on the second file of three
+      (t/is (= 1 (imp/imported-count [(file "a" :import-progress
+                                            {:stage    :pages
+                                             :counters {:files {:current 2 :total 3}
+                                                        :pages {:current 1 :total 5}}})]))))
+
+    (t/testing "a container that has not started has nothing done"
+      (t/is (= 0 (imp/imported-count [(file "a" :import-queued nil)])))
+      (t/is (= 0 (imp/imported-count [(file "a" :import-progress
+                                            {:stage :pages :counters {}})]))))
+
+    (t/testing "the files of every container add up"
+      (t/is (= 3 (imp/imported-count [(file "a" :import-success nil)
+                                      (file "a" :import-success nil)
+                                      (file "b" :import-progress
+                                            {:stage    :pages
+                                             :counters {:files {:current 2 :total 4}}})]))))
+
+    (t/testing "no files, nothing done"
+      (t/is (= 0 (imp/imported-count []))))))
+
+(t/deftest waiting-slot?-is-true-until-a-worker-picks-the-jobs-up
+  (t/testing "every file queued is a wizard waiting for a slot"
+    (t/is (true? (imp/waiting-slot? [{:status :import-queued}
+                                     {:status :import-queued}]))))
+
+  (t/testing "a job in course leaves the wait behind"
+    (t/is (false? (imp/waiting-slot? [{:status :import-queued}
+                                      {:status :import-progress}]))))
+
+  (t/testing "a file already imported is not waiting either"
+    (t/is (false? (imp/waiting-slot? [{:status :import-success}]))))
+
+  (t/testing "no files, no wait"
+    (t/is (false? (imp/waiting-slot? [])))))
+
+(t/deftest awaiting-analysis-hides-the-rows-while-checking
+  (t/testing "only a clean analysis shows the placeholder"
+    (t/is (true? (imp/awaiting-analysis? :analyze false)))
+    (t/is (false? (imp/awaiting-analysis? :analyze true))))
+  (t/testing "any later stage shows the rows"
+    (t/is (false? (imp/awaiting-analysis? :import-ready false)))
+    (t/is (false? (imp/awaiting-analysis? :import-progress false)))
+    (t/is (false? (imp/awaiting-analysis? :import-success false)))))
+
+(t/deftest ready-to-import?-waits-for-the-whole-analysis
+  (t/testing "every file found and ready, with the analysis over"
+    (t/is (true? (imp/ready-to-import? [{:status :import-ready}
+                                        {:status :import-ready}]
+                                       true))))
+
+  (t/testing "a file that has not arrived keeps the wizard checking"
+    ;; the files of a container are only known once its manifest is read, so
+    ;; offering the import step here would leave the missing one behind
+    (t/is (false? (imp/ready-to-import? [{:status :import-ready}] false))))
+
+  (t/testing "a file that cannot be imported is not ready either"
+    (t/is (false? (imp/ready-to-import? [{:status :import-ready}
+                                         {:status :analyze-error}]
+                                        true))))
+
+  (t/testing "no files at all is not ready"
+    (t/is (false? (imp/ready-to-import? [] true)))))
+
+(t/deftest import-step-follows-the-wizard-status
+  (t/testing "analysis paints the check step"
+    (t/is (= :check (imp/import-step :analyze [])))
+    (t/is (= :check (imp/import-step :import-ready []))))
+
+  (t/testing "an upload milestone paints the upload step"
+    (let [entries [{:file-id (uuid/next)
+                    :status :import-progress
+                    :progress {:stage :upload :counters {:upload {:current 1 :total 2}}}}]]
+      (t/is (= :upload (imp/import-step :import-progress entries)))))
+
+  (t/testing "a file that has not reported anything yet is still uploading"
+    ;; the wizard is uploading from the click, before the first chunk arrives
+    (let [entries [{:file-id (uuid/next) :status :import-ready}
+                   {:file-id (uuid/next)
+                    :status :import-progress
+                    :progress {:stage :upload :counters {:upload {:current 1 :total 2}}}}]]
+      (t/is (= :upload (imp/import-step :import-progress entries)))))
+
+  (t/testing "a finished upload with its job still to come is uploading"
+    (let [entries [{:file-id (uuid/next)
+                    :status :import-progress
+                    :progress {:stage :upload :counters {:upload {:current 2 :total 2}}}}
+                   {:file-id (uuid/next)
+                    :status :import-progress
+                    :progress {:stage :upload :counters {:upload {:current 1 :total 4}}}}]]
+      (t/is (= :upload (imp/import-step :import-progress entries)))))
+
+  (t/testing "queued or job milestones paint the import step"
+    (let [queued  [{:file-id (uuid/next) :status :import-queued}]
+          started [{:file-id (uuid/next) :status :import-progress}]
+          pages   [{:file-id (uuid/next)
+                    :status :import-progress
+                    :progress {:stage :pages :counters {:pages {:current 1 :total 8}}}}]]
+      (t/is (= :import (imp/import-step :import-progress queued)))
+      (t/is (= :import (imp/import-step :import-progress started)))
+      (t/is (= :import (imp/import-step :import-progress pages)))))
+
+  (t/testing "terminal and resolution stages paint the import step"
+    (t/is (= :import (imp/import-step :import-success [])))
+    (t/is (= :import (imp/import-step :import-error [])))
+    (t/is (= :import (imp/import-step :library-resolution [])))
+    (t/is (= :import (imp/import-step :library-summary [])))))
 
 (t/deftest ^:async cancel-job-asks-the-server-and-ignores-failures
   (let [calls  (atom [])
