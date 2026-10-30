@@ -539,7 +539,7 @@ export class PenpotUtils {
      * @example
      * // Three button variants differing in Size
      * // Given three main components s, m, l (here: the first three main components on the page)
-     * const [s, m, l] = penpot.currentPage.findAllShapes(sh => sh.isMainComponent()).slice(0, 3) as Board[];
+     * const [s, m, l] = PenpotUtils.findShapes(sh => sh.isComponentMainInstance(), penpot.root).slice(0, 3) as Board[];
      * const container = PenpotUtils.createVariantContainer([
      *   { shape: s, properties: { Size: 'Small' } },
      *   { shape: m, properties: { Size: 'Medium' } },
