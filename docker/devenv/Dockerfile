@@ -431,6 +431,8 @@ RUN set -ex; \
       fontforge \
       \
       xvfb \
+      xauth \
+      libvulkan1 \
       fonts-noto-color-emoji \
       fonts-unifont \
       libfontconfig1 \
