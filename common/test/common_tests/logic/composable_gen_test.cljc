@@ -696,6 +696,15 @@
     (t/is (true? (:fixed-scroll pushed)))
     (t/is (contains? (:touched pushed) :constraints-group))))
 
+(t/deftest updating-a-main-from-a-resized-copy-turned-by-its-parent-keeps-its-turn
+  ;; The nested copy authors only its size; its 45 degree turn still comes
+  ;; from its parent, so update-main must not turn the main.
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :layout-item-margins false
+                                    :library true :rich-variants true :layout-children false
+                                    :layout-copies true :text true}]
+                       :ops [[:transform 6 15 0 0] [:resize 0 0 0 0] [:resize 2 0 0 0] [:resize 1 0 0 0]
+                             [:edit 22 20 0 0] [:edit 11 0 1 1] [:update-main 11]]}))))
+
 (t/deftest detached-swapped-head-follows-its-own-component-without-position-overrides
   (t/is (map? (cg/run {:world [2 1 {:library true :variants true}]
                        :ops [[:edit 0 0 1 2] [:update-main 0] [:library-sync]
