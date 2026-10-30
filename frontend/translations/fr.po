@@ -1,7 +1,8 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-10-24 06:51+0000\n"
-"Last-Translator: imagoiq <imagoiq@users.noreply.hosted.weblate.org>\n"
+"PO-Revision-Date: 2026-10-31 15:51+0000\n"
+"Last-Translator: Ingrid Pigueron "
+"<ingridpuxd@users.noreply.hosted.weblate.org>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -381,7 +382,7 @@ msgstr "Créer une organisation"
 
 #: src/app/main/ui/dashboard/organization_team_switch.cljs:295
 msgid "dashboard.create-new-team"
-msgstr "+ Créer une nouvelle équipe"
+msgstr "+ Créer une équipe"
 
 #: src/app/main/ui/workspace/main_menu.cljs:711
 msgid "dashboard.create-version-menu"
@@ -2412,11 +2413,11 @@ msgstr "Propriétés de la variante"
 
 #: src/app/main/ui/settings/integrations.cljs:616
 msgid "integrations.access-tokens.create"
-msgstr "Créer un nouveau token d'accès"
+msgstr "Créer un token d'accès"
 
 #: src/app/main/ui/settings/integrations.cljs:632
 msgid "integrations.access-tokens.empty.add-one"
-msgstr "Cliquez sur le bouton « Créer un nouveau token d'accès » pour en générer un."
+msgstr "Cliquez sur le bouton « Créer un token d'accès » pour en générer un."
 
 #: src/app/main/ui/settings/integrations.cljs:631
 msgid "integrations.access-tokens.empty.no-access-tokens"
@@ -4424,9 +4425,7 @@ msgstr "Nous avons envoyé un e-mail de récupération à"
 
 #: src/app/main/ui/auth/recovery_request.cljs:114
 msgid "not-found.login.sent-recovery-check"
-msgstr ""
-"Vérifiez vos e-mails et cliquez sur le lien pour créer un nouveau mot de "
-"passe."
+msgstr "Vérifiez vos e-mails et cliquez sur le lien pour créer un mot de passe."
 
 #: src/app/main/ui/static.cljs:185
 msgid "not-found.login.signup-free"
