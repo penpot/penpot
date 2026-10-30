@@ -66,6 +66,7 @@
    [:vern {:min 0} ::sm/int]
    [:features {:optional true} ::cfeat/features]
    [:changes {:optional true} [:vector cpc/schema:change]]
+   [:undo-changes {:optional true} [:vector cpc/schema:change]]
    [:changes-with-metadata {:optional true}
     [:vector [:map
               [:changes [:vector cpc/schema:change]]
@@ -166,7 +167,7 @@
    ::doc/added "1.17"
    ::db/transaction true}
   [{:keys [::mtx/metrics ::db/conn] :as cfg}
-   {:keys [::rpc/profile-id id changes changes-with-metadata] :as params}]
+   {:keys [::rpc/profile-id id changes changes-with-metadata undo-changes] :as params}]
 
   (files/check-edition-permissions! conn profile-id id)
   (db/xact-lock! conn id)
@@ -189,7 +190,8 @@
                      (assoc :features (set/difference features cfeat/frontend-only-features))
                      (assoc :team team)
                      (assoc :file file)
-                     (assoc :changes changes))
+                     (assoc :changes changes)
+                     (assoc :undo-changes (vec undo-changes)))
 
         cfg      (assoc cfg ::timestamp (ct/now)
                         ::validation-timings (atom {}))
@@ -271,6 +273,46 @@
                    :reprocess-changes-ms (get timings :reprocess-changes-ms)))
           (throw cause))))))
 
+(defn- encode-revision
+  "The payload stored for a revision: the forward changes of the save and
+  their inverse. The server never interprets the inverse, so it is stored
+  as received."
+  [changes undo-changes]
+  (blob/encode {:changes changes
+                :undo-changes (vec undo-changes)}))
+
+(defn- insert-revision!
+  "Writes the revision row of a save and its payload.
+
+  The payload lives in `file_data` with `type = \"revision\"`, the same id
+  as the `file_change` row and the same deletion schedule. It is the place
+  where the changes are heading: `file_change.changes` stays written for
+  the readers deployed today, and a later step can read the payload with a
+  fallback to the column."
+  [{:keys [::db/conn] :as cfg}
+   {:keys [id session-id profile-id created-at deleted-at file-id revn
+           version features changes undo-changes]}]
+  (db/insert! conn :file-change
+              {:id id
+               :session-id session-id
+               :profile-id profile-id
+               :created-at created-at
+               :updated-at created-at
+               :deleted-at deleted-at
+               :file-id file-id
+               :revn revn
+               :version version
+               :features (into-array features)
+               :changes (blob/encode changes)}
+              {::db/return-keys false})
+
+  (fdata/upsert! cfg {:id id
+                      :file-id file-id
+                      :type "revision"
+                      :created-at created-at
+                      :deleted-at deleted-at
+                      :data (encode-revision changes undo-changes)}))
+
 (defn- update-file*
   "Internal function, part of the update-file process, that encapsulates
   the changes application offload to a separated thread and emit all
@@ -280,7 +322,8 @@
 
   Only intended for internal use on this module."
   [{:keys [::db/conn ::timestamp] :as cfg}
-   {:keys [profile-id file team features changes session-id skip-validate] :as params}]
+   {:keys [profile-id file team features changes undo-changes session-id
+           skip-validate] :as params}]
 
   (binding [pmap/*tracked* (pmap/create-tracked)
             pmap/*load-fn* (partial fdata/load-pointer cfg (:id file))]
@@ -355,19 +398,18 @@
 
       ;; Insert change (xlog) with deleted_at in a future data for
       ;; make them automatically eleggible for GC once they expires
-      (db/insert! conn :file-change
-                  {:id (uuid/next)
-                   :session-id session-id
-                   :profile-id profile-id
-                   :created-at change-created-at
-                   :updated-at change-created-at
-                   :deleted-at deleted-at
-                   :file-id (:id file)
-                   :revn (:revn file)
-                   :version (:version file)
-                   :features (into-array (:features file))
-                   :changes (blob/encode changes)}
-                  {::db/return-keys false})
+      (insert-revision! cfg
+                        {:id (uuid/next)
+                         :session-id session-id
+                         :profile-id profile-id
+                         :created-at change-created-at
+                         :deleted-at deleted-at
+                         :file-id (:id file)
+                         :revn (:revn file)
+                         :version (:version file)
+                         :features (:features file)
+                         :changes changes
+                         :undo-changes undo-changes})
 
       (persist-file! cfg (dissoc file ::repair))
 

@@ -232,7 +232,7 @@
 (def ^:private schema:update-params
   [:map {:closed true}
    [:id ::sm/uuid]
-   [:type [:enum "main" "snapshot" "fragment"]]
+   [:type [:enum "main" "snapshot" "fragment" "revision"]]
    [:file-id ::sm/uuid]
    [:backend {:optional true} [:enum "db" "legacy-db" "storage"]]
    [:metadata {:optional true} ctf/schema:file-metadata]
