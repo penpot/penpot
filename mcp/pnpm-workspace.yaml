@@ -19,6 +19,7 @@ packages:
   - "packages/common"
   - "packages/server"
   - "packages/plugin"
+  - "packages/browser-extension"
 
 overrides:
   '@hono/node-server@<2.0.5': ^2.0.5

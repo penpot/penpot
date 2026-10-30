@@ -147,6 +147,17 @@ test("resume and freeze events cannot send liveness messages before initializati
     assert.deepEqual(ui.sockets[0].sent, [{ type: "heartbeat" }]);
 });
 
+test("answers heartbeat requests once initialized, without forwarding them to the plugin", () => {
+    const ui = pluginUi();
+    ui.connect();
+    ui.sockets[0].receive({ type: "heartbeat-request" });
+    assert.deepEqual(ui.sockets[0].sent, []);
+    ui.sockets[0].receive({ type: "initialized" });
+    ui.sockets[0].receive({ type: "heartbeat-request" });
+    assert.deepEqual(ui.sockets[0].sent, [{ type: "heartbeat" }]);
+    assert.equal(ui.messages.filter((message) => message.type === "heartbeat-request").length, 0);
+});
+
 test("plugin reads the current file for each connection metadata request", () => {
     let onMessage!: (message: any) => void;
     const messages: any[] = [];
