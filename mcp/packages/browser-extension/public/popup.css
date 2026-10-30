@@ -1,0 +1,54 @@
+:root {
+    color-scheme: light dark;
+    --text: #1f1f1f;
+    --muted: #6b6b6b;
+    --background: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text: #ededed;
+        --muted: #a0a0a0;
+        --background: #1f1f1f;
+    }
+}
+
+body {
+    width: 320px;
+    margin: 0;
+    padding: 12px 16px;
+    font:
+        13px/1.4 system-ui,
+        sans-serif;
+    color: var(--text);
+    background: var(--background);
+}
+
+h1 {
+    margin: 0 0 12px;
+    font-size: 15px;
+}
+
+h2 {
+    margin: 16px 0 4px;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.note {
+    margin: 0;
+    color: var(--muted);
+}
+
+ul {
+    margin: 0;
+    padding-left: 18px;
+    overflow-wrap: anywhere;
+}
+
+li.empty {
+    list-style: none;
+    margin-left: -18px;
+    color: var(--muted);
+}

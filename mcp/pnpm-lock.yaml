@@ -177,6 +177,24 @@ importers:
         specifier: ^3.9.10
         version: 3.9.10
 
+  packages/browser-extension:
+    devDependencies:
+      '@penpot/mcp-common':
+        specifier: workspace:../common
+        version: link:../common
+      '@types/chrome':
+        specifier: ^0.3.6
+        version: 0.3.6
+      esbuild:
+        specifier: ^0.28.2
+        version: 0.28.2
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
   packages/common:
     devDependencies:
       typescript:
@@ -783,6 +801,9 @@ packages:
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
 
+  '@types/chrome@0.3.6':
+    resolution: {integrity: sha512-NXCrCBefCHCKMVbkaxfBQqyP766Wg85S2FQhixCCxq7AtjJwoEaja2y5NSqCzpihIi9mPqhaF5RuybTnrdYD2Q==}
+
   '@types/connect@3.4.38':
     resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
 
@@ -791,6 +812,9 @@ packages:
 
   '@types/express@5.0.6':
     resolution: {integrity: sha512-sKYVuV7Sv9fbPIt/442koC7+IIwK5olP1KWeD88e/idgoJqDm3JV/YUiPwkoKK92ylff2MGxSz1CSjsXelx0YA==}
+
+  '@types/har-format@1.2.16':
+    resolution: {integrity: sha512-fluxdy7ryD3MV6h8pTfTYpy/xQzCFC7m89nOH9y94cNqJ1mDIDPut7MnRHI3F6qRmh/cT2fUjG1MLdCNb4hE9A==}
 
   '@types/http-errors@2.0.5':
     resolution: {integrity: sha512-r8Tayk8HJnX0FztbZN7oVqGccWgw98T/0neJphO91KkmOzug1KkofZURD4UaD5uH8AqcFLfdPErnBod0u71/qg==}
@@ -1918,6 +1942,10 @@ snapshots:
       '@types/connect': 3.4.38
       '@types/node': 26.6.5
 
+  '@types/chrome@0.3.6':
+    dependencies:
+      '@types/har-format': 1.2.16
+
   '@types/connect@3.4.38':
     dependencies:
       '@types/node': 26.6.5
@@ -1934,6 +1962,8 @@ snapshots:
       '@types/body-parser': 1.19.6
       '@types/express-serve-static-core': 5.1.3
       '@types/serve-static': 2.2.0
+
+  '@types/har-format@1.2.16': {}
 
   '@types/http-errors@2.0.5': {}
 
