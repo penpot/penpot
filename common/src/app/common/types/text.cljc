@@ -920,15 +920,27 @@
     (contains? node :typography-ref-id)   (assoc :typography-ref-id nil)
     (contains? node :typography-ref-file) (assoc :typography-ref-file nil)))
 
+(defn- write-variant
+  "`node` with the variant id of the weight `style` when it shows the same
+   weight and style."
+  [node style]
+  (if (and (some? (:font-variant-id style))
+           (= (style-key :text-content-weight node) (style-key :text-content-weight style)))
+    (assoc node :font-variant-id (:font-variant-id style))
+    node))
+
 (defn- write-units
   "`dst` (as `content->letters` gives it) with the placed styles of `units`
    (unit -> what `place-unit` gives) written on its runs, paragraphs and
    root; without typography references when `drop-typo?`. Run styles go on
    the runs, and on the paragraphs that hold run styles (as the DOM and v1
    editors write them); a line height goes on a run only when it has one,
-   and on a paragraph when it has one or no run of it has."
-  [dst placed drop-typo?]
-  (let [run-units   (filterv #(= :run (get-in style-units [% :level])) (keys placed))
+   and on a paragraph when it has one or no run of it has. `variants`, the
+   placed weights of the side the family comes from, give their variant id
+   to the runs that show the same weight and style."
+  [dst placed drop-typo? variants]
+  (let [placed      (cond-> placed (some? variants) (assoc ::variant variants))
+        run-units   (filterv #(or (= % ::variant) (= :run (get-in style-units [% :level]))) (keys placed))
         ;; a run that already shows the placed style keeps its own values;
         ;; but its variant id names a font of its own family, so with a new
         ;; family it takes the placed one
@@ -936,9 +948,15 @@
         write-run   (fn [node styles]
                       (cond-> (reduce (fn [node [unit style]]
                                         (let [attrs (get-in style-units [unit :attrs])]
-                                          (if (and (= (style-key unit (select-keys node attrs)) (style-key unit style))
-                                                   (not (and family? (= unit :text-content-weight))))
+                                          (cond
+                                            (= unit ::variant)
+                                            (write-variant node style)
+
+                                            (and (= (style-key unit (select-keys node attrs)) (style-key unit style))
+                                                 (not (and family? (= unit :text-content-weight))))
                                             node
+
+                                            :else
                                             (write-style node style attrs (= unit :text-content-line-height)))))
                                       node
                                       (map vector run-units styles))
@@ -976,9 +994,12 @@
                            (fn [i paragraph]
                              (let [styles    (mapv #(first-style i %) run-units)
                                    paragraph (reduce (fn [paragraph [unit style]]
-                                                       (write-style paragraph style (get-in style-units [unit :attrs])
-                                                                    (or (not= unit :text-content-line-height)
-                                                                        (contains? lh-on-runs? i))))
+                                                       (if (= unit ::variant)
+                                                         (cond-> paragraph
+                                                           (contains? paragraph :font-variant-id) (write-variant style))
+                                                         (write-style paragraph style (get-in style-units [unit :attrs])
+                                                                      (or (not= unit :text-content-line-height)
+                                                                          (contains? lh-on-runs? i)))))
                                                      paragraph
                                                      (map vector run-units styles))
                                    paragraph (reduce (fn [paragraph [unit values]]
@@ -1039,7 +1060,12 @@
                          units)]
         (if (and (empty? placed) (not drop-typo?))
           base
-          (letters->content (write-units dst placed drop-typo?)))))))
+          ;; the family's side names the variants of its family
+          (let [variants (when (and (contains? placed :text-content-family)
+                                    (not-any? #{:text-content-weight} units))
+                           (place-unit src dst @lmap :text-content-weight
+                                       (unit-values src :text-content-weight) false))]
+            (letters->content (write-units dst placed drop-typo? variants))))))))
 
 (defn- unit-differs?
   "Whether the styles of `unit` of `b` differ from those of `a` placed on
