@@ -37,6 +37,16 @@
      :log-path log-path
      :record-path (path/join dir (str stem ".transit"))}))
 
+(defn invalid-home
+  [message data]
+  (throw (ex-info message (assoc data :type ::invalid-home))))
+
+(defn check-id
+  [id]
+  (when-not (valid-id? id)
+    (invalid-home "invalid id" {:id id}))
+  id)
+
 (defn get-real-path
   "Resolves symlink ancestors even when the final path does not exist yet."
   [file]

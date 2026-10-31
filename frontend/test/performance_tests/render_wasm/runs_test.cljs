@@ -10,6 +10,7 @@
    ["os" :as os]
    ["path" :as path]
    [benches.render-wasm.node.artifacts :as artifacts]
+   [benches.render-wasm.node.files :as files]
    [benches.render-wasm.node.runs :as runs]
    [benches.render-wasm.result :as result]
    [cljs.test :as t :include-macros true]
@@ -71,7 +72,7 @@
     (let [error (failure #(runs/create-home {:root @temporary-root
                                              :run-id "run-3"
                                              :output-dir directory}))]
-      (t/is (= ::runs/invalid-home (:type (ex-data error))))
+      (t/is (= ::files/invalid-home (:type (ex-data error))))
       (t/is (= "output directory already exists" (ex-message error)))
       (t/is (= "keep" (fs/readFileSync (path/join directory "sentinel") "utf8"))))))
 
@@ -95,7 +96,7 @@
 
 (t/deftest malformed-ids-and-empty-paths-fail-at-the-home-boundary
   (doseq [id ["../escape" "" "a/b" "a\\b"]]
-    (t/is (thrown-with-msg? js/Error #"invalid run id"
+    (t/is (thrown-with-msg? js/Error #"invalid id"
                             (runs/create-home {:root @temporary-root :run-id id}))))
   (t/is (thrown-with-msg? js/Error #"nonempty path"
                           (runs/check-output-dir "  "))))

@@ -36,16 +36,6 @@
    :create-run-home runs/create-home
    :execute-run run/execute})
 
-(defn- invalid-home
-  [message data]
-  (throw (ex-info message (assoc data :type ::invalid-home))))
-
-(defn- check-id
-  [id]
-  (when-not (files/valid-id? id)
-    (invalid-home "invalid feature comparison id" {:id id}))
-  id)
-
 (defn create-home
   "Creates the feature-comparison home directory
 
@@ -53,12 +43,12 @@
   An explicit directory resolves from the caller's cwd and must not exist.
   Paths inside the managed builds tree are rejected."
   [root comparison-id output-dir]
-  (check-id comparison-id)
+  (files/check-id comparison-id)
   (let [default-dir (path/join (artifacts/managed-root root)
                                "feature-comparisons" comparison-id)
         dir         (runs/check-output-dir (or output-dir default-dir))]
     (when (artifacts/inside-builds? root dir)
-      (invalid-home "feature comparison cannot use a directory inside builds" {:path dir}))
+      (files/invalid-home "feature comparison cannot use a directory inside builds" {:path dir}))
     (try
       (files/create-home dir "feature-comparison")
       (catch :default cause
