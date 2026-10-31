@@ -586,6 +586,23 @@
                            {:ignore-touched true}))
       changes)))
 
+(defn- constraint-sized-main
+  "`shape-main` resized to the dimensions the constraints of `shape-inst`, a
+   copy head synced as a root, tie to its plain parent board: they follow the
+   board's resizes, which are not overrides, so sync keeps them. Nil when no
+   dimension is tied."
+  [container shape-inst shape-main]
+  (let [parent  (ctn/get-shape container (:parent-id shape-inst))
+        width?  (contains? #{:scale :leftright} (:constraints-h shape-inst))
+        height? (contains? #{:scale :topbottom} (:constraints-v shape-inst))]
+    (when (and (cfh/frame-shape? parent)
+               (not (cfh/root? parent))
+               (nil? (:shape-ref parent))
+               (or width? height?))
+      (let [width  (:width (:selrect (if width? shape-inst shape-main)))
+            height (:height (:selrect (if height? shape-inst shape-main)))]
+        (gsh/transform-shape shape-main (ctm/change-size shape-main width height))))))
+
 (defn- sync-copy-recursive
   "Sync the copy shape `shape-inst` from `shape-main`, the main shape it
   pairs with, then pair their children (`compare-children`) and walk each
@@ -608,8 +625,12 @@
     (let [;; a copy shape that keeps its own geometry passes it on to its
           ;; children, which follow it as they follow their main's
           shape-before   shape-inst
-          placed         (when (and (not reset?) (ctk/touched-group? shape-inst :geometry-group))
-                           (in-main-frame shape-inst (:root-inst ctx) (:root-main ctx)))
+          placed         (cond
+                           (and (not reset?) (ctk/touched-group? shape-inst :geometry-group))
+                           (in-main-frame shape-inst (:root-inst ctx) (:root-main ctx))
+
+                           (and (not reset?) (= (:id shape-inst) (:id (:root-inst ctx))))
+                           (constraint-sized-main container shape-inst shape-main))
           main-container (cond-> main-container
                            (and (some? placed) (not (close-geometry? placed shape-main)))
                            (update :objects placed-like shape-main placed
