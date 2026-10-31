@@ -457,34 +457,47 @@
   #{:x :y :width :height :selrect :points :transform :transform-inverse
     :rotation :flip-x :flip-y :content-scale})
 
+(defn- same-footprint?
+  "Whether two shapes cover the same corners, in any order."
+  [shape other]
+  (let [corners (:points other)]
+    (and (= (count (:points shape)) (count corners))
+         (every? (fn [point] (some #(gpt/close? point %) corners)) (:points shape)))))
+
 (defn generate-sync-transformed-placement
   "Settle copy descendants after a reflection and untouched swapped heads
    after a parent turn, in the transform's change group. Reflection can
-   leave descendant flip flags in another decomposition; swapped content
-   can have a different size from its position frame. Keep this correction
-   within existing geometry: transforming a stale library copy must not
-   accept pending content, style or structural changes."
+   leave descendant flip flags in another decomposition, so it only
+   re-decomposes shapes that keep their footprint; swapped content can have
+   a different size from its position frame. Keep this correction within
+   existing geometry: transforming a stale library copy must not accept
+   pending content, style, size or structural changes."
   [changes file libraries page before ids]
   (let [objects     (pcb/get-objects changes)
         orientation (fn [shape]
                       [(select-keys (or (:transform shape) (gmt/matrix)) [:a :b :c :d])
                        (:rotation shape) (boolean (:flip-x shape)) (boolean (:flip-y shape))])
-        roots       (into (d/ordered-set)
-                          (keep (fn [id]
-                                  (let [shape (get objects id)
-                                        root (when (:component-id shape) (ctn/get-component-shape objects shape))
-                                        old (get before id)
-                                        reflected-head? (and (:component-id shape)
-                                                             (:shape-ref shape)
-                                                             (or (not= (boolean (:flip-x old)) (boolean (:flip-x shape)))
-                                                                 (not= (boolean (:flip-y old)) (boolean (:flip-y shape)))))]
-                                    (when (or reflected-head?
-                                              (and (ctk/swapped? shape)
-                                                   (not (ctk/touched-group? shape :geometry-group))
-                                                   (not= (orientation old) (orientation shape))))
-                                      (:id root)))))
-                          ids)]
-    (reduce (fn [changes id]
+        ;; Each root to settle, and whether its settlement may resize shapes.
+        roots       (reduce (fn [roots [id resize?]] (update roots id #(or % resize?)))
+                            (d/ordered-map)
+                            (keep (fn [id]
+                                    (let [shape (get objects id)
+                                          root (when (:component-id shape) (ctn/get-component-shape objects shape))
+                                          old (get before id)
+                                          reflected-head? (and (:component-id shape)
+                                                               (:shape-ref shape)
+                                                               (or (not= (boolean (:flip-x old)) (boolean (:flip-x shape)))
+                                                                   (not= (boolean (:flip-y old)) (boolean (:flip-y shape)))))]
+                                      (cond
+                                        (and (ctk/swapped? shape)
+                                             (not (ctk/touched-group? shape :geometry-group))
+                                             (not= (orientation old) (orientation shape)))
+                                        [(:id root) true]
+
+                                        reflected-head?
+                                        [(:id root) false])))
+                                  ids))]
+    (reduce (fn [changes [id resize?]]
               (let [objects   (pcb/get-objects changes)
                     page      (assoc page :objects objects)
                     file      (assoc-in file [:data :pages-index (:id page) :objects] objects)
@@ -499,7 +512,8 @@
                    (let [expected (get placed (:id shape))
                          attrs (cond-> placement-geometry-attrs
                                  (= :path (:type shape)) (conj :content))]
-                     (if (= (:type shape) (:type expected))
+                     (if (and (= (:type shape) (:type expected))
+                              (or resize? (same-footprint? shape expected)))
                        (merge shape (select-keys expected attrs))
                        shape)))
                  {:ignore-touched true})))
