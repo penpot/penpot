@@ -411,6 +411,24 @@
                   (reduce #(update %1 %2 turn) objects
                           (cfh/get-children-ids-with-self objects (:id shape-main)))))))))
 
+(defn- reassign-parent-grid-cells
+  "`changes` with the cells of the grid that holds the copy head `id`
+   assigned again when they take the head in or out of the grid's flow, as
+   showing or hiding a child does."
+  [changes container id]
+  (let [before    (:objects container)
+        parent-id (:parent-id (get before id))]
+    (if (ctsl/grid-layout? before parent-id)
+      (let [changes (pcb/apply-changes-local changes)
+            after   (pcb/get-objects changes)]
+        (if (and (contains? after id)
+                 (not= (ctsl/position-absolute? before id) (ctsl/position-absolute? after id)))
+          (-> changes
+              (pcb/update-shapes [parent-id] ctsl/assign-cells {:with-objects? true :ignore-touched true})
+              (pcb/reorder-grid-children [parent-id]))
+          changes))
+      changes)))
+
 (defn generate-sync-shape-direct
   "Generate changes to synchronize one shape that is the root of a component
   instance, and all its children, from the given component."
@@ -436,17 +454,18 @@
                                                   library file libraries component)
               main-container (main-in-parent-orientation main-container shape-main container shape-inst reset?)
               shape-main (ctn/get-shape main-container (:id shape-main))]
-          (sync-copy-recursive changes
-                               {:container      container
-                                :main-container main-container
-                                :component      component
-                                :library        library
-                                ;; Reset also places new children in the main's frame.
-                                :root-inst      (cond-> shape-inst reset? (dissoc :touched))
-                                :root-main      shape-main
-                                :reset?         reset?}
-                               shape-inst
-                               shape-main))
+          (-> (sync-copy-recursive changes
+                                   {:container      container
+                                    :main-container main-container
+                                    :component      component
+                                    :library        library
+                                    ;; Reset also places new children in the main's frame.
+                                    :root-inst      (cond-> shape-inst reset? (dissoc :touched))
+                                    :root-main      shape-main
+                                    :reset?         reset?}
+                                   shape-inst
+                                   shape-main)
+              (reassign-parent-grid-cells container shape-id)))
 
         ;; If the component is not found, because the master component has been
         ;; deleted or the library unlinked, do nothing.

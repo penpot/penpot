@@ -860,3 +860,17 @@
         child   (some #(when (:layout-item-absolute %) %) (vals objects))]
     (t/is (:shape-ref child))
     (t/is (contains? (:touched child) :geometry-group))))
+
+(t/deftest generated-reset-shows-a-hidden-head-back-in-its-grid-cell
+  ;; a detached grid holds a nested head its copy hid; the reset shows it
+  ;; again, and the resize lays the grid out
+  (let [result  (cg/run {:world [2 0 {:text true :text-styles true :layout :grid}]
+                         :ops [[:nest 0 0 0 0] [:detach 1 0 0 0] [:style 1 1 1 1]
+                               [:edit 1 1 1 :copy-head] [:reset 1] [:resize 1 0 0 0]]})
+        objects (:objects (thf/current-page (tm/file (:situation result))))]
+    (doseq [grid (filter #(= :grid (:layout %)) (vals objects))
+            :let [in-cells (set (mapcat :shapes (vals (:layout-grid-cells grid))))]
+            id (:shapes grid)
+            :let [child (get objects id)]
+            :when (not (or (:hidden child) (:layout-item-absolute child)))]
+      (t/is (contains? in-cells id) (:name child)))))
