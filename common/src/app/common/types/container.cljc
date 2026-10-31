@@ -710,12 +710,20 @@
              (not (and ignore-geometry is-geometry?)))
 
         ;; a text's content touches the groups of what the edit changes
-        ;; in it, and none when it changes nothing a copy can override
+        ;; in it, and none when it changes nothing a copy can override; a
+        ;; copy child taken out of its layout's flow keeps the place the
+        ;; layout gave it, as its own geometry
         content-groups
         (when (and may-touch? group (not equal?))
-          (if (and (= type :text) (= attr :content))
+          (cond
+            (and (= type :text) (= attr :content))
             (let [groups (cttx/changed-groups (:content shape) val)]
               (cond-> groups (seq groups) (conj group)))
+
+            (and (= attr :layout-item-absolute) (true? val))
+            #{group :geometry-group}
+
+            :else
             #{group}))
 
         token-groups

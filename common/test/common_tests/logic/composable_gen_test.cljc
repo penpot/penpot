@@ -851,3 +851,12 @@
                              [:undo] [:redo] [:reset 0] [:sync 1]
                              [:switch 1 0 0 0] [:rotate 1 0 0 0] [:duplicate 0 0 0 0]
                              [:reset 2 0 0 0] [:redo 0 0 0 0]]}))))
+
+(t/deftest generated-copy-child-made-absolute-keeps-its-own-layouts-place
+  ;; the copy's own gap places its Rectangle, which stays there as absolute
+  (let [result  (cg/run {:world [2 0 {:layout :grid :grid-square true :layout-children true :layout-copies true}]
+                         :ops [[:style 2 11 1] [:style 6 35 1]]})
+        objects (:objects (thf/current-page (tm/file (:situation result))))
+        child   (some #(when (:layout-item-absolute %) %) (vals objects))]
+    (t/is (:shape-ref child))
+    (t/is (contains? (:touched child) :geometry-group))))
