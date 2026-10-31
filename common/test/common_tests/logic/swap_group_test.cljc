@@ -1079,3 +1079,14 @@
     (t/is (= (:fills head) (:fills (ths/get-shape-by-id full (:id head)))))
     (t/is (= (thn/normalize-file (tm/file edited))
              (thn/normalize-file (tm/file (r/step swapped (n/undo))))))))
+
+(t/deftest swapping-back-in-a-copy-of-a-deleted-component-inherits-its-position
+  (let [edited  (-> (tm/make-situation (setup))
+                    (r/step (n/change-property :card-star :fills "#333333")) r/settle)
+        deleted (-> edited (r/step (n/delete-component :card-main)) r/settle)
+        swapped (-> deleted (r/step (n/swap-shape :copy-star :star)) r/settle)
+        head    (tm/resolve-shape swapped :copy-star)]
+    (t/is (= "#333333" (get-in head [:fills 0 :fill-color])))
+    (t/is (empty? (:touched head)))
+    (t/is (= (thn/normalize-file (tm/file deleted))
+             (thn/normalize-file (tm/file (r/step swapped (n/undo))))))))

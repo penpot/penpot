@@ -504,7 +504,8 @@
         parent    (get objects (:parent-id shape))
         container (ctn/make-container (assoc page :objects objects) :page)]
     (if (and (:shape-ref parent) (not (ctk/swapped? shape)))
-      (let [component (ctf/find-ref-component nil container libraries shape)
+      (let [component (ctf/find-ref-component nil container libraries shape
+                                              :include-deleted? true)
             head      (d/seek #(= (:id component) (:component-id %))
                               (ctn/get-parent-copy-heads objects parent))]
         (if head
