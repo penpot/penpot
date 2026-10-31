@@ -24,3 +24,21 @@
       {:node (api/list-node [(api/token-node (quote do)) opts
                              (api/list-node (into [(api/token-node (quote fn)) argv] body))])}
       {:node node})))
+
+(defn resolve-or-reject
+  "Analyzes the body of a Promise-returning form."
+  [{:keys [node]}]
+  (let [[_ & body] (:children node)]
+    {:node (api/list-node (into [(api/token-node (quote do))] body))}))
+
+(defn resolve-or-reject-with
+  "Analyzes the cause handler and body. Binds `cause` in the handler only."
+  [{:keys [node]}]
+  (let [[_ cause on-error & body] (:children node)]
+    {:node (api/list-node
+            (into [(api/token-node (quote do))
+                   (api/list-node
+                    [(api/token-node (quote let))
+                     (api/vector-node [cause (api/token-node nil)])
+                     on-error])]
+                  body))}))

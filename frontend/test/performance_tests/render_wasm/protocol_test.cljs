@@ -361,3 +361,30 @@
           (.catch (fn [cause]
                     (t/is (= "cache failed" (ex-message cause)))
                     (done)))))))
+
+(t/deftest invalid-settle-ms-rejects
+  (t/async done
+    (let [hooks (drain-hooks {:clock (fake-clock 0) :script [2] :calls (atom [])})]
+      (-> (protocol/start-camera! {:hooks hooks :view {:scale 1 :x 0 :y 0}}
+                                  {:settle-ms -1})
+          (.then (fn [_]
+                   (t/is false "invalid settle-ms must reject")
+                   (done)))
+          (.catch (fn [cause]
+                    (t/is (= ::protocol/invalid-settle-ms (:type (ex-data cause))))
+                    (done)))))))
+
+(t/deftest invalid-sleep-rejects-with-camera-evidence
+  (t/async done
+    (let [hooks (drain-hooks {:clock (fake-clock 0) :script [2] :calls (atom [])})]
+      (-> (protocol/start-camera! {:hooks hooks :view {:scale 1 :x 0 :y 0}}
+                                  {:settle-ms 0})
+          (protocol/sleep! -1)
+          (.then (fn [_]
+                   (t/is false "invalid sleep must reject")
+                   (done)))
+          (.catch (fn [cause]
+                    (t/is (= ::protocol/invalid-sleep (:type (ex-data cause))))
+                    (t/is (= {:cached-slices [] :authored-sleeps []}
+                             (:partial (ex-data cause))))
+                    (done)))))))

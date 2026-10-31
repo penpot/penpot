@@ -80,6 +80,8 @@
     boundaries, renamed at the interaction level.
   - `:last-input-to-full-ms` from the clock read before the last view update
     to the clock read after the final drain promise resolves."
+  (:require-macros
+   [benches.render-wasm.runtime.protocol :refer [resolve-or-reject resolve-or-reject-with]])
   (:require
    [app.common.render-wasm.wasm :as wasm]
    [benches.render-wasm.errors :as errors]))
@@ -200,75 +202,66 @@
   retrying."
   [{:keys [check] :as hooks}
    {:keys [flags origin immediate]}]
-  (try
-    (check)
-    (letfn [(step [state immediate?]
-              (-> (next-render-timestamp hooks immediate?)
-                  (.then  ;; recurse or drain
-                   (fn [timestamp]
-                     (let [{:keys [frame-type ended-ms] :as rendered}
-                           (render-slice hooks state timestamp)
-                           next-state
-                           (advance-drain-state (:state rendered)
-                                                frame-type
-                                                ended-ms
-                                                origin)]
+  (resolve-or-reject
+   (check)
+   (letfn [(step [state immediate?]
+             (-> (next-render-timestamp hooks immediate?)
+                 (.then  ;; recurse or drain
+                  (fn [timestamp]
+                    (let [{:keys [frame-type ended-ms] :as rendered}
+                          (render-slice hooks state timestamp)
+                          next-state
+                          (advance-drain-state (:state rendered)
+                                               frame-type
+                                               ended-ms
+                                               origin)]
 
-                       (if (drain-complete? frame-type)
-                         (drain-result next-state ended-ms origin)
-                         (step next-state false)))))
-                  (.catch (fn [cause]
-                            (throw (partial-error cause (select-keys state [:slices :viewport-ready-ms])))))))]
-
-      (step {:flags             flags
-             :slices            []
-             :viewport-ready-ms nil}
-            immediate))
-
-    (catch :default cause
-      (js/Promise.reject cause))))
+                      (if (drain-complete? frame-type)
+                        (drain-result next-state ended-ms origin)
+                        (step next-state false)))))
+                 (.catch (fn [cause]
+                           (throw (partial-error cause (select-keys state [:slices :viewport-ready-ms])))))))]
+     (step {:flags             flags
+            :slices            []
+            :viewport-ready-ms nil}
+           immediate))))
 
 (defn restore
   "Puts the camera back to `view` (`{:scale :x :y}`) and drains with the
   SyncTiles flag immediately. Resolves what `drain` resolves. Callers run
   this outside timing: the reset itself is never scored."
   [{:keys [now check set-view set-view-start set-view-end] :as hooks} view]
-  (try
-    (check)
-    (set-view-start)
-    (set-view view)
-    (set-view-end)
-    (drain hooks {:flags     wasm/RENDER_FLAG_SYNC_TILES
-                  :origin    (now)
-                  :immediate true})
-    (catch :default cause
-      (js/Promise.reject cause))))
+  (resolve-or-reject
+   (check)
+   (set-view-start)
+   (set-view view)
+   (set-view-end)
+   (drain hooks {:flags     wasm/RENDER_FLAG_SYNC_TILES
+                 :origin    (now)
+                 :immediate true})))
 
 (defn start-camera!
   "Starts a measured camera session after the caller's untimed preparation.
   `rtx` supplies `:hooks` and the current full `:view`."
   [{:keys [hooks view]} {:keys [settle-ms]}]
-  (try
-    (when-not (and (number? settle-ms)
-                   (js/Number.isFinite settle-ms)
-                   (<= 0 settle-ms))
-      (throw (ex-info "settle-ms must be a nonnegative finite number"
-                      {:type ::invalid-settle-ms :settle-ms settle-ms})))
-    (let [{:keys [now check set-view-start]} hooks]
-      (check)
-      (let [started-ms (now)]
-        (set-view-start)
-        (js/Promise.resolve
-         {:hooks          hooks
-          :view           view
-          :settle-ms      settle-ms
-          :started-ms     started-ms
-          :last-input-ms  started-ms
-          :active-end-ms  (now)
-          :cached-slices  []
-          :authored-sleeps []})))
-    (catch :default cause
-      (js/Promise.reject cause))))
+  (resolve-or-reject
+   (when-not (and (number? settle-ms)
+                  (js/Number.isFinite settle-ms)
+                  (<= 0 settle-ms))
+     (throw (ex-info "settle-ms must be a nonnegative finite number"
+                     {:type ::invalid-settle-ms :settle-ms settle-ms})))
+   (let [{:keys [now check set-view-start]} hooks]
+     (check)
+     (let [started-ms (now)]
+       (set-view-start)
+       {:hooks          hooks
+        :view           view
+        :settle-ms      settle-ms
+        :started-ms     started-ms
+        :last-input-ms  started-ms
+        :active-end-ms  (now)
+        :cached-slices  []
+        :authored-sleeps []}))))
 
 (defn preview-view!
   "Awaits a session and submits one cached preview after exactly one rAF.
@@ -279,7 +272,8 @@
       (.then (fn [{:keys [hooks] :as session}]
                (let [{:keys [now frame check render-from-cache set-view]} hooks
                      evidence (select-keys session [:cached-slices :authored-sleeps])]
-                 (try
+                 (resolve-or-reject-with cause
+                   (partial-error cause evidence)
                    (check)
                    (-> (frame)
                        (.then (fn [timestamp]
@@ -300,9 +294,7 @@
                                           (throw (partial-error cause (assoc evidence :cached-slices slices)))))
                                       (assoc session :view view :last-input-ms input-ms
                                              :active-end-ms (now) :cached-slices slices))))))
-                       (.catch (fn [cause] (throw (partial-error cause evidence)))))
-                   (catch :default cause
-                     (js/Promise.reject (partial-error cause evidence)))))))))
+                       (.catch (fn [cause] (throw (partial-error cause evidence)))))))))))
 
 (defn animate-view!
   "Submits exactly `steps` serial, linearly interpolated full views.
@@ -331,7 +323,8 @@
       (.then (fn [{:keys [hooks] :as session}]
                (let [{:keys [now sleep check]} hooks
                      evidence (select-keys session [:cached-slices :authored-sleeps])]
-                 (try
+                 (resolve-or-reject-with cause
+                   (partial-error cause evidence)
                    (when-not (and (number? requested-ms)
                                   (js/Number.isFinite requested-ms)
                                   (<= 0 requested-ms))
@@ -348,9 +341,7 @@
                                         (update :authored-sleeps conj
                                                 {:requested-ms requested-ms
                                                  :actual-ms (- ended-ms started-ms)})))))
-                         (.catch (fn [cause] (throw (partial-error cause evidence))))))
-                   (catch :default cause
-                     (js/Promise.reject (partial-error cause evidence)))))))))
+                         (.catch (fn [cause] (throw (partial-error cause evidence))))))))))))
 
 (defn- finish-interaction
   "Ends the camera and returns final metrics, retaining trace evidence on failure."
@@ -392,10 +383,9 @@
   (-> (js/Promise.resolve session-p)
       (.then (fn [{:keys [hooks settle-ms] :as session}]
                (let [evidence (select-keys session [:cached-slices :authored-sleeps])]
-                 (try
+                 (resolve-or-reject-with cause
+                   (partial-error cause evidence)
                    ((:check hooks))
                    (-> ((:sleep hooks) settle-ms)
                        (.then (fn [_] (finish-interaction hooks session)))
-                       (.catch (fn [cause] (throw (partial-error cause evidence)))))
-                   (catch :default cause
-                     (js/Promise.reject (partial-error cause evidence)))))))))
+                       (.catch (fn [cause] (throw (partial-error cause evidence)))))))))))
