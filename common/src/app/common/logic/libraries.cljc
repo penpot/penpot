@@ -2096,13 +2096,31 @@
           changes))
       changes)))
 
+(defn- reset-layout-item
+  "Give a reset head the layout item values it inherits: those of its ref
+   when its parent is the copy of the ref's layout parent. Sync passes them
+   from parent to children, so the reset of the head alone keeps them."
+  [changes file libraries container shape-id]
+  (let [objects (pcb/get-objects changes)
+        shape   (get objects shape-id)
+        parent  (get objects (:parent-id shape))
+        ref     (when (and (:layout parent) (:shape-ref parent))
+                  (ctf/find-ref-shape file (assoc container :objects objects) libraries shape
+                                      :include-deleted? true :with-context? true))
+        ref-parent (get-in (meta ref) [:container :objects (:parent-id ref)])]
+    (if (and ref (:layout ref-parent) (= (:id ref-parent) (:shape-ref parent)))
+      (pcb/update-shapes changes [shape-id] #(propagate-attrs % ref layout-child-attrs false)
+                         {:ignore-touched true})
+      changes)))
+
 (defn generate-reset-component
   "Reset the copy head to its near main. A swapped head turns back into the
   component of the main shape it refers to, keeping its id. A nested head
-  also takes its position's placement."
+  also takes its position's placement and inherited layout item values."
   [changes file-full libraries container id]
   (-> changes
       (pcb/with-container container)
       (pcb/with-objects (:objects container))
       (generate-sync-shape-direct file-full libraries container id true)
-      (settle-reset-placement file-full libraries container id)))
+      (settle-reset-placement file-full libraries container id)
+      (reset-layout-item file-full libraries container id)))
