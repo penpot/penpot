@@ -319,6 +319,9 @@ function runFixtureText({
   fingerprint = "a".repeat(64),
   operation = "load",
   operationArgs = { distance: 10 },
+  warmups = 0,
+  repetitions = 1,
+  gitSha = runId,
 }) {
   const k = transit.keyword;
   const map = (pairs) => transit.map(pairs);
@@ -348,22 +351,29 @@ function runFixtureText({
     k("diagnostics"),
     map([]),
   ]);
-  const attempt = map([
-    k("ordinal"),
-    0,
-    k("case-id"),
-    k(caseId),
-    k("preparation-id"),
-    `${runId}-preparation`,
-    k("warmup?"),
-    false,
-    k("outcome"),
-    k("completed"),
-    k("metrics"),
-    map([k("elapsed"), metric]),
-    k("trace"),
-    map([]),
-  ]);
+  const makeAttempt = (ordinal, warmup) =>
+    map([
+      k("ordinal"),
+      ordinal,
+      k("case-id"),
+      k(caseId),
+      k("preparation-id"),
+      `${runId}-preparation`,
+      k("warmup?"),
+      warmup,
+      k("outcome"),
+      k("completed"),
+      k("metrics"),
+      map([k("elapsed"), metric]),
+      k("trace"),
+      map([]),
+    ]);
+  const attempts = [
+    ...Array.from({ length: warmups }, (_, index) => makeAttempt(index, true)),
+    ...Array.from({ length: repetitions }, (_, index) =>
+      makeAttempt(warmups + index, false),
+    ),
+  ];
   const record = map([
     k("type"),
     k("run-record"),
@@ -401,16 +411,16 @@ function runFixtureText({
         ]),
       ],
       k("warmups"),
-      0,
+      warmups,
       k("repetitions"),
-      1,
+      repetitions,
       k("timeout-policy"),
       map([k("attempt-ms"), 30000]),
     ]),
     k("metadata"),
     map([
       k("git"),
-      map([k("sha"), runId, k("dirty"), false]),
+      map([k("sha"), gitSha, k("dirty"), false]),
       k("build"),
       map([
         k("functional"),
@@ -443,7 +453,7 @@ function runFixtureText({
     k("preparations"),
     [preparation],
     k("attempts"),
-    [attempt],
+    attempts,
     k("remaining"),
     map([k(caseId), map([k("warmups"), 0, k("repetitions"), 0])]),
     k("termination"),
@@ -1252,10 +1262,14 @@ test(
     const help = await runCli(fixture, ["--help"]);
     assert.equal(help.exitCode, 0, help.stderr);
     assert.match(help.stdout, /runner compare/);
+    assert.match(help.stdout, /runner merge/);
     const abHelp = await runCli(fixture, ["ab", "--help"]);
     assert.equal(abHelp.exitCode, 0, abHelp.stderr);
     assert.match(abHelp.stdout, /runner ab --features/);
     assert.match(abHelp.stdout, /--only-comparisons/);
+    const mergeHelp = await runCli(fixture, ["merge", "--help"]);
+    assert.equal(mergeHelp.exitCode, 0, mergeHelp.stderr);
+    assert.match(mergeHelp.stdout, /runner merge BASE ADDITIONAL/);
     for (const args of [["ab"], ["ab", "--dry-run"]]) {
       const invalid = await runCli(fixture, args);
       assert.equal(invalid.exitCode, 1, invalid.stderr);
@@ -1298,6 +1312,7 @@ test(
     assert.equal(result.exitCode, 0);
     assert.match(result.stdout, /runner run/);
     assert.match(result.stdout, /runner compare/);
+    assert.match(result.stdout, /runner merge/);
     assert.match(result.stdout, /--cases/);
     assert.match(result.stdout, /--allow-build-differences/);
     assert.match(result.stdout, /--allow-scene-differences/);
@@ -1556,4 +1571,163 @@ test("compare rejects --force without an alias", testOptions, async (t) => {
     assert.doesNotMatch(rejected.stderr, /ENOENT/);
     assert.deepEqual(tree(fixture.managed), original);
   }
+});
+
+test(
+  "merge writes a validated run home with appended measured attempts",
+  testOptions,
+  async (t) => {
+    const fixture = createFrontend(t);
+    const base = path.join(fixture.managed, "base.transit");
+    const additional = path.join(fixture.managed, "additional.transit");
+    const baseText = runFixtureText({
+      runId: "base",
+      caseId: "case/load",
+      value: 10,
+      warmups: 1,
+      repetitions: 2,
+      gitSha: "same-sha",
+    });
+    const additionalText = runFixtureText({
+      runId: "additional",
+      caseId: "case/load",
+      value: 12,
+      warmups: 1,
+      repetitions: 3,
+      gitSha: "same-sha",
+    });
+    fs.writeFileSync(base, baseText);
+    fs.writeFileSync(additional, additionalText);
+    const output = path.join(fixture.managed, "merged-run");
+
+    const result = await runCli(fixture, [
+      "merge",
+      base,
+      additional,
+      "--output-dir",
+      output,
+    ]);
+
+    assert.equal(result.exitCode, 0, result.stderr);
+    const runId = result.stdout.match(/Run ([0-9a-f-]{36})/)[1];
+    assert.ok(fs.existsSync(path.join(output, "run.transit")));
+    assert.equal(fs.readFileSync(base, "utf8"), baseText);
+    assert.equal(fs.readFileSync(additional, "utf8"), additionalText);
+
+    const k = transit.keyword;
+    const merged = readManifest(path.join(output, "run.transit"));
+    const plan = merged.get(k("plan"));
+    const attempts = merged.get(k("attempts"));
+    const remaining = merged.get(k("remaining")).get(k("case/load"));
+    const mergeInfo = merged
+      .get(k("metadata"))
+      .get(k("diagnostics"))
+      .get(k("merge"));
+
+    assert.equal(merged.get(k("run-id")), runId);
+    assert.equal(plan.get(k("warmups")), 1);
+    assert.equal(plan.get(k("repetitions")), 5);
+    assert.deepEqual(
+      attempts.map((attempt) => attempt.get(k("ordinal"))),
+      [0, 1, 2, 3, 4, 5],
+    );
+    assert.deepEqual(
+      attempts.map((attempt) => attempt.get(k("warmup?"))),
+      [true, false, false, false, false, false],
+    );
+    assert.equal(remaining.get(k("warmups")), 0);
+    assert.equal(remaining.get(k("repetitions")), 0);
+    assert.equal(mergeInfo.get(k("base-run-id")), "base");
+    assert.equal(mergeInfo.get(k("additional-run-id")), "additional");
+    assert.equal(mergeInfo.get(k("additional-warmups-excluded")), 1);
+    assert.match(
+      fs.readFileSync(path.join(output, "run.log"), "utf8"),
+      /merge base \+ additional/,
+    );
+  },
+);
+
+test(
+  "merge rejects incompatible runs before creating output",
+  testOptions,
+  async (t) => {
+    const fixture = createFrontend(t);
+    const base = path.join(fixture.managed, "base.transit");
+    const additional = path.join(fixture.managed, "additional.transit");
+    fs.writeFileSync(
+      base,
+      runFixtureText({
+        runId: "base",
+        caseId: "case/load",
+        value: 10,
+        gitSha: "sha-a",
+      }),
+    );
+    fs.writeFileSync(
+      additional,
+      runFixtureText({
+        runId: "additional",
+        caseId: "case/load",
+        value: 12,
+        gitSha: "sha-b",
+      }),
+    );
+    const output = path.join(fixture.managed, "merged-run");
+    const original = tree(fixture.managed);
+
+    const result = await runCli(fixture, [
+      "merge",
+      base,
+      additional,
+      "--output-dir",
+      output,
+    ]);
+
+    assert.equal(result.exitCode, 1);
+    assert.match(result.stderr, /different git provenance/);
+    assert.equal(fs.existsSync(output), false);
+    assert.deepEqual(tree(fixture.managed), original);
+  },
+);
+
+test("merge refuses an existing output directory", testOptions, async (t) => {
+  const fixture = createFrontend(t);
+  const base = path.join(fixture.managed, "base.transit");
+  const additional = path.join(fixture.managed, "additional.transit");
+  fs.writeFileSync(
+    base,
+    runFixtureText({
+      runId: "base",
+      caseId: "case/load",
+      value: 10,
+      gitSha: "same-sha",
+    }),
+  );
+  fs.writeFileSync(
+    additional,
+    runFixtureText({
+      runId: "additional",
+      caseId: "case/load",
+      value: 12,
+      gitSha: "same-sha",
+    }),
+  );
+  const output = path.join(fixture.managed, "existing-run");
+  fs.mkdirSync(output);
+  fs.writeFileSync(path.join(output, "keep.txt"), "keep\n");
+
+  const result = await runCli(fixture, [
+    "merge",
+    base,
+    additional,
+    "--output-dir",
+    output,
+  ]);
+
+  assert.equal(result.exitCode, 1);
+  assert.match(result.stderr, /already exists/);
+  assert.equal(
+    fs.readFileSync(path.join(output, "keep.txt"), "utf8"),
+    "keep\n",
+  );
 });

@@ -871,6 +871,22 @@ pnpm run render-bench -- compare \
   --cases rects/load,paths/load --allow-scene-differences
 ```
 
+Merge an additional saved run into a base run:
+
+```bash
+pnpm run render-bench -- merge \
+  target/performance/render-wasm/runs/<base>/run.transit \
+  target/performance/render-wasm/runs/<additional>/run.transit \
+  --output-dir target/performance/render-wasm/runs/<merged>
+```
+
+The merged record gets a new run id and a fresh run home. Both inputs must be
+completed and compatible: same cases, timeout policy, analysis, build facts,
+runtime environment, and Git provenance. The additional run must use the same
+warmup count. `merge` appends only the additional measured attempts; its warmup
+attempts remain in the additional record. The command starts no build, server,
+or browser.
+
 Inspect and clean managed outputs:
 
 ```bash
@@ -891,6 +907,7 @@ The commands write results to stdout:
 - `ab`: `Comparison <id>`, `Output <absolute path>`, and final
   `Status <status>`.
 - `compare`: the comparison report.
+- `merge`: `Run <id>` and `Output <absolute path>`.
 - Help: usage text. `purge` produces no output on success.
 
 Progress and diagnostics go to stderr. The default shows build phases, case
@@ -912,10 +929,11 @@ Each build writes `build.log`; each A/B comparison writes
 `run.transit`, and optional screenshots.
 
 Exit 0 means the command completed successfully: a ready build for `build`,
-every allocated attempt for `run`, a valid comparison for `compare`, every
-configuration and edge for `ab`, and a clean purge for `purge`. Exit 1 means a
-failed preparation, a failed attempt, an incomplete run, an invalid selection,
-an unacknowledged comparison difference, or a harness failure. Exits 130 and 143
+every allocated attempt for `run`, a valid comparison for `compare`, a
+validated merged record for `merge`, every configuration and edge for `ab`, and
+a clean purge for `purge`. Exit 1 means a failed preparation, a failed attempt,
+an incomplete run, an invalid selection, incompatible merge inputs, an
+unacknowledged comparison difference, or a harness failure. Exits 130 and 143
 mean interruption by `SIGINT` and `SIGTERM` for `build`, `run` and `ab`. An
 interrupted command prints no error for the aborted work; it prints a failed
 write of its own record or log.

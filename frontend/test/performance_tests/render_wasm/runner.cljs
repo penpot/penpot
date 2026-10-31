@@ -24,6 +24,7 @@
    [performance-tests.render-wasm.geometry-scenes-test]
    [performance-tests.render-wasm.lifecycle-test]
    [performance-tests.render-wasm.log-test]
+   [performance-tests.render-wasm.merge-test]
    [performance-tests.render-wasm.outcome-test]
    [performance-tests.render-wasm.process-test]
    [performance-tests.render-wasm.protocol-test]
@@ -60,6 +61,7 @@
    'performance-tests.render-wasm.geometry-scenes-test
    'performance-tests.render-wasm.lifecycle-test
    'performance-tests.render-wasm.log-test
+   'performance-tests.render-wasm.merge-test
    'performance-tests.render-wasm.outcome-test
    'performance-tests.render-wasm.process-test
    'performance-tests.render-wasm.protocol-test

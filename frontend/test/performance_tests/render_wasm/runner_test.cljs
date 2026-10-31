@@ -13,6 +13,7 @@
 
 (t/deftest output-options-apply-to-every-command
   (doseq [args [["build"] ["run"] ["purge"] ["compare" "base" "candidate"]
+                ["merge" "base" "additional"]
                 ["ab" "--features" "a" "--filter" "rects/load"]]]
     (t/is (= :info (options/console-level (:options (runner/parse-args args)))))
     (t/is (= :auto (options/color-mode (:options (runner/parse-args args)))))
@@ -81,7 +82,7 @@
 
 (t/deftest help-needs-no-command-and-other-command-lines-must-be-valid
   (doseq [args [["--help"] ["-h"] ["build" "--help"] ["run" "--help"]
-                ["compare" "--help"]]]
+                ["compare" "--help"] ["merge" "--help"]]]
     (let [{:keys [options summary]} (runner/parse-args args)
           help                    (runner/usage summary)]
       (t/is (true? (:help options)))
@@ -89,13 +90,14 @@
       (t/is (str/includes? help "runner purge"))
       (t/is (str/includes? help "runner run"))
       (t/is (str/includes? help "runner compare"))
+      (t/is (str/includes? help "runner merge"))
       (t/is (str/includes? help "--build-timeout-ms"))
       (t/is (str/includes? help "--cases"))
       (t/is (str/includes? help "--allow-build-differences"))
       (t/is (str/includes? help "--allow-scene-differences"))
       (t/is (str/includes? help "--allow-all-differences"))
       (t/is (not (str/includes? help "--force")))))
-  (t/is (thrown-with-msg? js/Error #"expected build, purge, run, ab or compare"
+  (t/is (thrown-with-msg? js/Error #"expected build, purge, run, ab, compare or merge"
                           (runner/parse-args [])))
   (doseq [args [["unknown"] ["build" "purge"] ["build" "--unknown"]
                 ["run" "extra"] ["compare" "only-one"]]]
@@ -167,6 +169,27 @@
     (t/is (true? (:allow-scene-differences options)))
     (t/is (not (:allow-all-differences options)))))
 
+(t/deftest merge-takes-two-paths-and-only-output-dir
+  (let [{:keys [command arguments options]}
+        (runner/parse-args ["merge" "base.transit" "additional.transit"
+                            "--output-dir" "merged-home"])]
+    (t/is (= "merge" command))
+    (t/is (= ["merge" "base.transit" "additional.transit"] arguments))
+    (t/is (= "merged-home" (:output-dir options))))
+  (doseq [args [["merge"] ["merge" "only-base"]
+                ["merge" "base" "additional" "extra"]]]
+    (t/is (thrown? js/Error (runner/parse-args args))))
+  (doseq [flags [["--build" "id"]
+                 ["--filter" "rects"]
+                 ["--seed" "1"]
+                 ["--require-gpu"]
+                 ["--features" "functional"]
+                 ["--cases" "a,b"]
+                 ["--allow-build-differences"]
+                 ["--only-builds"]
+                 ["--dry-run"]]]
+    (t/is (thrown? js/Error (runner/parse-args (into ["merge" "base" "additional"] flags))))))
+
 (t/deftest force-is-rejected-without-an-alias
   (doseq [args [["compare" "a.transit" "b.transit" "--force"]
                 ["compare" "a.transit" "b.transit" "--force" "--allow-all-differences"]
@@ -182,7 +205,12 @@
            [["build" "--build" "retained"] #"run options require run"]
            [["build" "--only-runs"] #"purge category flags require purge"]
            [["purge" "--seed" "1"] #"run options require run"]
-           [["purge" "--cases" "a,b"] #"compare options require compare"]]]
+           [["purge" "--cases" "a,b"] #"compare options require compare"]
+           [["merge" "a" "b" "--seed" "1"] #"run options require run"]
+           [["merge" "a" "b" "--features" "functional"] #"build options require build"]
+           [["merge" "a" "b" "--cases" "a,b"] #"compare options require compare"]
+           [["merge" "a" "b" "--only-builds"] #"purge category flags require purge"]
+           [["merge" "a" "b" "--dry-run"] #"ab planning options require ab"]]]
     (t/is (thrown-with-msg? js/Error message (runner/parse-args args))))
   (doseq [command ["build" "purge" "run"]
           flag ["--allow-build-differences" "--allow-scene-differences"

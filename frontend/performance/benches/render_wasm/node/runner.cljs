@@ -11,8 +11,10 @@
    [app.common.transit :as transit]
    [benches.render-wasm.errors :as errors :refer [attempt failure?]]
    [benches.render-wasm.feature-plan :as feature-plan]
+   [benches.render-wasm.node.artifacts :as artifacts]
    [benches.render-wasm.node.compare :as compare]
    [benches.render-wasm.node.log :as log]
+   [benches.render-wasm.node.merge :as run-merge]
    [benches.render-wasm.node.options :as options]
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]))
@@ -98,7 +100,8 @@
        "              [--confirm] [--dry-run] [run and comparison options]\n"
        "       runner compare BASELINE CANDIDATE [--cases A,B]\n"
        "              [--allow-build-differences] [--allow-scene-differences]\n"
-       "              [--allow-all-differences]\n\n"
+       "              [--allow-all-differences]\n"
+       "       runner merge BASE ADDITIONAL [--output-dir DIR]\n\n"
        "build prints Build <id> and Output <absolute path> on stdout. Exit 0 means\n"
        "ready; errors retain the build.transit and build.log for that ID.\n"
        "run prints Run <id>, Output <absolute path> and Report on stdout.\n"
@@ -111,7 +114,10 @@
        "to require hardware WebGL2 in preparation metadata. ab --dry-run skips it.\n"
        "compare reads saved schema:run records and starts no build, host or browser.\n"
        "Build and scene permissions combine; operation and runtime checks stay strict.\n"
-       "All-differences permits every compatibility difference. Reports retain them.\n\n"
+       "All-differences permits every compatibility difference. Reports retain them.\n"
+       "merge reads two saved schema:run records and writes a merged record in a fresh\n"
+       "run home. It appends the additional run's measured attempts, keeps the base\n"
+       "warmups, and requires compatible completed runs. It starts no build or browser.\n\n"
        "ab uses every on/off configuration with Cargo defaults disabled; declared\n"
        "defaults must be empty. --max-features defaults to 3 (range 1..6).\n"
        "Use --confirm above eight configurations or with an empty filter.\n"
@@ -227,7 +233,15 @@
       (do
         (when purge? (invalid-args "purge category flags require purge"))
         (when build? (invalid-args "build options require build"))
-        (when run? (invalid-args "run options require run"))))))
+        (when run? (invalid-args "run options require run")))
+
+      "merge"
+      (do
+        (when purge? (invalid-args "purge category flags require purge"))
+        (when build? (invalid-args "build options require build"))
+        (when compare? (invalid-args "compare options require compare"))
+        (when (some-flags? flags (disj run-flags "--output-dir"))
+          (invalid-args "run options require run"))))))
 
 (defn- check-arguments!
   [command arguments]
@@ -236,6 +250,10 @@
       "compare"
       (when-not (= 2 (count extra))
         (invalid-args "compare requires BASELINE and CANDIDATE paths"))
+
+      "merge"
+      (when-not (= 2 (count extra))
+        (invalid-args "merge requires BASE and ADDITIONAL paths"))
 
       (when (seq extra)
         (invalid-args (str command " takes no positional arguments"))))))
@@ -254,8 +272,8 @@
       (invalid-args "--quiet and --verbose are mutually exclusive"))
     (when-not (:help options)
       (when-not (and (= 1 (count (take 1 arguments)))
-                     (contains? #{"build" "purge" "run" "ab" "compare"} command))
-        (invalid-args "expected build, purge, run, ab or compare; try --help"))
+                     (contains? #{"build" "purge" "run" "ab" "compare" "merge"} command))
+        (invalid-args "expected build, purge, run, ab, compare or merge; try --help"))
       (check-command-flags! command flags)
       (check-arguments! command arguments)
       (when (and (= command "purge")
@@ -289,6 +307,12 @@
                                           (select-keys options [:cases :allow-build-differences
                                                                 :allow-scene-differences
                                                                 :allow-all-differences]))))
+
+      (= command "merge")
+      (run-merge/execute (artifacts/frontend-root)
+                         (second arguments)
+                         (nth arguments 2)
+                         (select-keys options [:output-dir]))
 
       :else
       (let [^js commands (js/require (path/join js/__dirname "commands.cjs"))]

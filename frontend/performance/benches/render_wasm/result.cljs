@@ -243,6 +243,23 @@
   (when-not valid?
     (throw (ex-info message (assoc data :type ::invalid-record)))))
 
+(defn- incompatible!
+  "Rejects runs whose recorded evidence cannot be merged."
+  [message data]
+  (throw (ex-info message (assoc data :type ::incompatible-runs))))
+
+(defn- require-compatible!
+  "Requires equal values at `path`, naming the disagreeing field."
+  [base additional path label]
+  (let [base-value       (get-in base path)
+        additional-value (get-in additional path)]
+    (when-not (= base-value additional-value)
+      (incompatible! (str "cannot merge runs with different " label)
+                     {:field label
+                      :path path
+                      :base base-value
+                      :additional additional-value}))))
+
 (defn invalid-reason
   "Classifies one raw measurement without changing its value.
   Nil denotes an explicit missing value; an absent metric has no entry.
@@ -381,6 +398,88 @@
   (require-valid! (not= :running (:reason termination)) "termination needs an end reason" {})
   (check-completion run termination)
   (assoc run :ended-at ended-at :termination termination))
+
+(defn merge-runs
+  "Returns a new validated run that appends `additional`'s measured attempts to
+  `base`.
+
+  Both runs must be completed and compatible. The merged plan keeps `base`'s
+  warmups and adds `additional`'s measured repetitions. Warmup attempts
+  and preparations used only by them are excluded from `additional`.
+
+  The caller supplies the merged run id and may supply its end time."
+  [base additional {:keys [run-id ended-at]}]
+  (let [base       (check-run base)
+        additional (check-run additional)]
+    (require-valid! (and (string? run-id) (seq run-id))
+                    "merged run needs a run id" {})
+    (doseq [[side run] [[:base base] [:additional additional]]]
+      (when-not (= :completed (get-in run [:termination :reason]))
+        (incompatible! "only completed runs can be merged"
+                       {:side side
+                        :run-id (:run-id run)
+                        :reason (get-in run [:termination :reason])})))
+    (when-not (and (string? (:ended-at base))
+                   (string? (:ended-at additional)))
+      (incompatible! "completed runs need end times"
+                     {:base (:ended-at base)
+                      :additional (:ended-at additional)}))
+    (doseq [[path label] [[[:plan :cases] "case definitions"]
+                          [[:plan :timeout-policy] "timeout policy"]
+                          [[:plan :warmups] "warmup count"]
+                          [[:analysis] "analysis settings"]
+                          [[:metadata :git] "git provenance"]
+                          [[:metadata :build] "build facts"]
+                          [[:metadata :environment] "runtime environment"]
+                          [[:metadata :scored?] "scored flag"]]]
+      (require-compatible! base additional path label))
+    (let [base-attempts        (:attempts base)
+          additional-measured  (filterv #(not (:warmup? %)) (:attempts additional))
+          base-preparations    (:preparations base)
+          base-preparation-ids (into #{} (map :preparation-id) base-preparations)
+          used-preparation-ids (into #{} (keep :preparation-id) additional-measured)
+          additional-preparations (filterv #(contains? used-preparation-ids
+                                                       (:preparation-id %))
+                                           (:preparations additional))]
+      (when-let [duplicate (some #(contains? base-preparation-ids (:preparation-id %))
+                                 additional-preparations)]
+        (incompatible! "cannot merge runs with duplicate preparation ids"
+                       {:preparation-id (:preparation-id duplicate)}))
+      (let [offset    (count base-attempts)
+            attempts  (into (vec base-attempts)
+                            (map-indexed (fn [index attempt]
+                                           (assoc attempt :ordinal (+ offset index)))
+                                         additional-measured))
+            plan      (assoc (:plan base)
+                             :repetitions (+ (get-in base [:plan :repetitions])
+                                             (get-in additional [:plan :repetitions])))
+            remaining (reduce consume-slot (initial-remaining plan) attempts)
+            ended-at  (or ended-at
+                          (let [base-end       (:ended-at base)
+                                additional-end (:ended-at additional)]
+                            (if (neg? (compare base-end additional-end))
+                              additional-end
+                              base-end)))
+            metadata  (update (:metadata base) :diagnostics
+                              (fn [diagnostics]
+                                (assoc (or diagnostics {})
+                                       :merge
+                                       {:base-run-id (:run-id base)
+                                        :additional-run-id (:run-id additional)
+                                        :additional-warmups-excluded
+                                        (count (filter :warmup? (:attempts additional)))
+                                        :merged-at ended-at})))]
+        (check-run {:type :run-record
+                    :run-id run-id
+                    :started-at (:started-at base)
+                    :ended-at ended-at
+                    :plan plan
+                    :metadata metadata
+                    :analysis (:analysis base)
+                    :preparations (into (vec base-preparations) additional-preparations)
+                    :attempts attempts
+                    :remaining remaining
+                    :termination {:reason :completed}})))))
 
 (defn- check-feature-configuration
   "Requires evidence that matches each saved configuration's progress."
