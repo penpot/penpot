@@ -15,6 +15,7 @@
    [app.common.test-helpers.composable.comp.runner :as r]
    [app.common.test-helpers.composable.comp.setups :as setup]
    [app.common.test-helpers.composable.core :as tm]
+   [app.common.test-helpers.composable.gen :as cg]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -650,3 +651,25 @@
     (t/is (gsh/close-attrs? :points (:points child) (:points after) 0.001))
     (t/is (= (:rotation child) (:rotation after)))
     (t/is (nil? (:touched (tm/role-shape reset :copy-instance))))))
+
+(t/deftest reset-a-moved-nested-copy-returns-it-to-its-position
+  (let [initial (setup/nested-component-with-copy)
+        head    (tm/role-shape initial :copy-instance)
+        child   (tm/shape-by-id initial (first (:shapes head)))
+        moved   (-> initial (r/step (n/transform-shape :copy-instance :move [5 -3])) r/settle)
+        reset   (-> moved (r/step (n/reset :copy-instance)) r/settle)
+        after   (tm/role-shape reset :copy-instance)]
+    (t/is (gsh/close-attrs? :points (:points head) (:points after) 0.001))
+    (t/is (gsh/close-attrs? :points (:points child) (:points (tm/shape-by-id reset (:id child))) 0.001))
+    (t/is (nil? (:touched after)))
+    (t/is (= (thn/normalize-file (tm/file moved)) (thn/normalize-file (tm/file (r/step reset (n/undo))))))
+    (t/is (map? (cg/run {:world [2 0 {:variants true :rich-variants true :text true :text-styles true
+                                      :library true :layout-copies true}]
+                         :ops [[:delete 0 0 0 0] [:nest 4 0 0 0] [:transform 6 0 0 13]
+                               [:edit 4 1 1 :copy-head] [:reset 4]]})))))
+
+(t/deftest reset-keeps-an-unmoved-nested-copy-in-its-accepted-placement
+  ;; The library turned the copy's main; the consumer has not accepted it.
+  (t/is (map? (cg/run {:world [2 0 {:library true :stale-libraries true
+                                    :library-dependency true :library-text true}]
+                       :ops [[:library-transform 14 3 0 0] [:edit 13 1 1 :copy-head] [:reset 13]]}))))

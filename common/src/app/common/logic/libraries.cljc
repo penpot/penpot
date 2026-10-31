@@ -1960,11 +1960,50 @@
                   data' file-id (changed-components data sync)
                   libraries current-file-id 1)))
 
+(defn- settle-reset-placement
+  "Place a reset nested head whose geometry was overridden as an ordinary
+   copy of its position: its subtree takes the placement a sync of the head
+   that owns its ref gives. Other heads keep the placement they have."
+  [changes file libraries container shape-id]
+  (let [objects (pcb/get-objects changes)
+        shape   (get objects shape-id)
+        parent  (get objects (:parent-id shape))]
+    (if (and (= :page (:type container))
+             (:shape-ref parent)
+             (not (ctk/swapped? shape))
+             (ctk/touched-group? (ctn/get-shape container shape-id) :geometry-group))
+      (let [container (ctn/make-container (assoc container :objects objects) :page)
+            component (ctf/find-ref-component file container libraries shape :include-deleted? true)
+            head      (d/seek #(= (:id component) (:component-id %))
+                              (ctn/get-parent-copy-heads objects parent))]
+        (if head
+          (let [file     (assoc-in file [:data :pages-index (:id container) :objects] objects)
+                proposal (generate-sync-shape-direct (-> (pcb/empty-changes)
+                                                         (pcb/with-container container)
+                                                         (pcb/with-objects objects))
+                                                     file (assoc libraries (:id file) file)
+                                                     container (:id head) false)
+                placed   (pcb/get-objects proposal)]
+            (pcb/update-shapes
+             changes (cfh/get-children-ids-with-self objects shape-id)
+             (fn [shape]
+               (let [expected (get placed (:id shape))
+                     attrs    (cond-> placement-geometry-attrs
+                                (= :path (:type shape)) (conj :content))]
+                 (if (= (:type shape) (:type expected))
+                   (merge shape (select-keys expected attrs))
+                   shape)))
+             {:ignore-touched true}))
+          changes))
+      changes)))
+
 (defn generate-reset-component
   "Reset the copy head to its near main. A swapped head turns back into the
-  component of the main shape it refers to, keeping its id."
+  component of the main shape it refers to, keeping its id. A nested head
+  also takes its position's placement."
   [changes file-full libraries container id]
   (-> changes
       (pcb/with-container container)
       (pcb/with-objects (:objects container))
-      (generate-sync-shape-direct file-full libraries container id true)))
+      (generate-sync-shape-direct file-full libraries container id true)
+      (settle-reset-placement file-full libraries container id)))
