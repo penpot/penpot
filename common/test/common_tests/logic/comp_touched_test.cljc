@@ -351,3 +351,20 @@
           file'   (thf/apply-changes file changes)]
       (t/is (= #{:shadow-group group} (:touched (ths/get-shape file' :copy-child))) (name attr)))))
 
+
+(t/deftest a-copy-child-made-absolute-keeps-its-place-as-an-override
+  (let [file       (-> (thf/sample-file :file1)
+                       (tho/add-simple-component-with-copy :component1 :main-root :main-child :copy-root
+                                                           :copy-root-params {:children-labels [:copy-child]})
+                       (ths/update-shape :main-root :layout :flex)
+                       (ths/update-shape :copy-root :layout :flex))
+        page       (thf/current-page file)
+        copy-child (ths/get-shape file :copy-child)
+        changes    (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                               #{(:id copy-child)}
+                                               #(assoc % :layout-item-absolute true)
+                                               (:objects page)
+                                               {})
+        file'      (thf/apply-changes file changes)]
+    (t/is (= #{:layout-item-absolute :geometry-group}
+             (:touched (ths/get-shape file' :copy-child))))))
