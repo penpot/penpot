@@ -673,3 +673,11 @@
   (t/is (map? (cg/run {:world [2 0 {:library true :stale-libraries true
                                     :library-dependency true :library-text true}]
                        :ops [[:library-transform 14 3 0 0] [:edit 13 1 1 :copy-head] [:reset 13]]}))))
+
+(t/deftest reset-restores-a-nested-copys-inherited-layout-item-values
+  ;; The nested head's margin type overrides the one its flex position inherits.
+  (t/is (map? (cg/run {:world [2 1 {:variants true :rich-variants true :text true :text-styles true
+                                    :library-variants true :stale-libraries true :library-depth 1
+                                    :library true :library-text true :layout :flex
+                                    :layout-children true :layout-copies true}]
+                       :ops [[:style 11 27 1] [:reset 14 0 0 0] [:undo] [:redo]]}))))
