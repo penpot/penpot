@@ -176,6 +176,26 @@
     (t/is (= [[1 1] [2 1] [1 2]] (child-coords row row-ids)))
     (t/is (= (child-coords row row-ids) (child-coords absent absent-ids)))))
 
+(t/deftest a-grid-without-track-lists-assigns-its-children
+  ;; Library imports may build a grid board without track lists.
+  (let [board-id (uuid/next)
+        child-id (uuid/next)
+        state    (-> (fb/create-state)
+                     (fb/add-file {:name "Grid file"})
+                     (fb/add-page {:name "Page 1"})
+                     (fb/add-board {:id board-id :name "Grid" :x 0 :y 0 :width 200 :height 200
+                                    :layout :grid})
+                     (fb/add-shape {:id child-id :type :rect :name "Rect" :x 0 :y 0 :width 10 :height 10}))
+        objects  (fb/get-current-objects state)
+        board    (get objects board-id)
+        after    (layout/assign-cells board objects)]
+    (t/is (nil? (:layout-grid-rows board)))
+    (t/is (= [layout/default-track-value] (:layout-grid-rows after)))
+    (t/is (= [layout/default-track-value] (:layout-grid-columns after)))
+    (t/is (= [1 1] ((juxt :row :column) (layout/get-cell-by-shape-id after child-id))))
+    (t/is (= [layout/default-track-value] (:layout-grid-columns (layout/add-grid-column board layout/default-track-value))))
+    (t/is (= [layout/default-track-value] (:layout-grid-rows (layout/add-grid-row board layout/default-track-value))))))
+
 (t/deftest fitting-a-grid-with-no-tracks-clears-empty-cells
   (doseq [rows [0 1] columns [0 1] :when (or (zero? rows) (zero? columns))]
     (let [cell  (make-cell :row 1 :column 1)
