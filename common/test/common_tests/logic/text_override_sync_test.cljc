@@ -176,6 +176,13 @@
   (t/is (= [[["Hello" {:family "Roboto" :weight 700 :font-variant-id "bold"}] [" world" {:family "Roboto"}]]]
            (sync-text [[["Hello world"]]] hello-bold [[["Hello world" {:family "Roboto"}]]]))))
 
+(t/deftest copy-with-its-own-family-keeps-its-familys-variant-of-the-main-weight
+  ;; the copy's Roboto names its bold "700", the main's family "bold"
+  (t/is (= [[["Hello world" {:family "Roboto" :weight 700 :color :blue}]]]
+           (sync-text [[["Hello world" {:weight 700}]]]
+                      [[["Hello world" {:family "Roboto" :weight 700}]]]
+                      [[["Hello world" {:weight 700 :color :blue}]]]))))
+
 (t/deftest copy-that-bolds-a-word-the-main-replaces-loses-the-bold
   ;; "Goodbye" shares no stretch of 3 letters with "Hello", so it takes the
   ;; style of the first shared letter after it, the regular space
@@ -380,9 +387,10 @@
 
    ["applies a typography"
     (thtx/apply-typography [[["Hello world"]]] :heading heading)
-    ;; the weight is the copy's, so the typography goes
+    ;; the weight is the copy's, so the typography goes; the bold takes
+    ;; the variant the typography's Inter bold names
     [[{:line-height 1.4}
-      ["Hello" {:family "Inter" :weight 700 :font-variant-id "bold" :size 24 :spacing 1 :case "uppercase"}]
+      ["Hello" {:family "Inter" :weight 700 :size 24 :spacing 1 :case "uppercase"}]
       [" world!!!" {:family "Inter" :size 24 :spacing 1 :case "uppercase"}]]]]])
 
 (t/deftest copy-that-bolds-a-word-and-adds-letters-against-main-edits
