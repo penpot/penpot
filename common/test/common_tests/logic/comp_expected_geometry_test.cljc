@@ -25,6 +25,8 @@
    [app.common.test-helpers.composable.comp.runner :as r]
    [app.common.test-helpers.composable.comp.setups :as setup]
    [app.common.test-helpers.composable.core :as tm]
+   [app.common.test-helpers.composable.gen :as cg]
+   [app.common.test-helpers.composable.oracle :as oracle]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -33,6 +35,7 @@
    [app.common.test-helpers.texts :as thtx]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.shape :as cts]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
@@ -413,3 +416,26 @@
             flips (fn [shape] (mapv #(boolean (get shape %)) [:flip-x :flip-y]))]
         (t/is (= (flips shape) (flips after)))
         (t/is (gsh/close-attrs? :points (:points shape) (:points after) 0.001))))))
+
+(t/deftest a-copy-keeps-the-size-a-plain-boards-constraint-gave-it
+  ;; A resize through constraints is derived, never an override, and the
+  ;; next sync of the copy's own component keeps it.
+  (let [file      (-> (thf/sample-file :file1)
+                      (tho/add-simple-component :inner :inner-root :inner-child
+                                                :root-params {:width 100 :height 100}
+                                                :child-params {:x 30 :y 30 :width 40 :height 40})
+                      (tho/add-frame :outer-root {:x 200 :y 0 :width 240 :height 100})
+                      (thc/instantiate-component :inner :nested :parent-label :outer-root
+                                                 :children-labels [:nested-child])
+                      (ths/update-shape :nested :constraints-v :scale)
+                      (thc/make-component :outer :outer-root))
+        shrunk    (-> (tm/make-situation file) (r/step (n/change-height :outer-root 80)) r/settle)
+        resized   (tm/resolve-shape shrunk :nested)
+        edited    (-> shrunk (r/step (n/change-property :inner-child :fills "#dc2626")) r/settle)
+        after     (tm/resolve-shape edited :nested)]
+    (t/is (mth/close? 80 (:height resized)))
+    (t/is (not (contains? (:touched resized) :geometry-group)))
+    (t/is (= "#dc2626" (get-in (tm/resolve-shape edited :nested-child) [:fills 0 :fill-color])))
+    (t/is (mth/close? 80 (:height after)))
+    (t/is (mth/close? 100 (:width after)))
+    (t/is (not (contains? (:touched after) :geometry-group)))))
