@@ -530,6 +530,16 @@
   (or (d/not-empty? (dm/get-prop modifiers :geometry-parent))
       (d/not-empty? (dm/get-prop modifiers :geometry-child))))
 
+(defn structure-rotation
+  "The degrees the structure operations of `modifiers` add to a shape's
+   rotation."
+  [modifiers]
+  (transduce (comp (filter #(= :rotation (dm/get-prop % :type)))
+                   (map #(dm/get-prop % :value)))
+             + 0
+             (concat (dm/get-prop modifiers :structure-parent)
+                     (dm/get-prop modifiers :structure-child))))
+
 (defn has-structure?
   [{:keys [structure-parent structure-child]}]
   (or (d/not-empty? structure-parent)

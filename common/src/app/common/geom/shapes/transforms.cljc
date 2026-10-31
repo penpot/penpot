@@ -284,8 +284,9 @@
 
 (defn- adjust-shape-flips
   "After some transformations the flip-x/flip-y flags can change we need
-  to check this before adjusting the selrect"
-  [shape points]
+  to check this before adjusting the selrect. `turn` is the rotation in
+  degrees the transform adds to the shape's own."
+  [shape points turn]
   (let [points' (dm/get-prop shape :points)
         p0'     (nth points' 0)
         p0      (nth points 0)
@@ -317,15 +318,20 @@
         [flip-x? flip-y?]
         (cond
           (not area?) [flip-x? flip-y?]
-          (not mirror?) (if (and flip-x? flip-y?) [true true] [false false])
+          ;; Without a reflection both flags flip only for a half turn the
+          ;; rotation does not count, as a resize by -1 on both axes.
+          (not mirror?)
+          (let [edge-turn (mth/degrees (mth/atan2 (- (* (:x xv1) (:y xv2)) (* (:y xv1) (:x xv2)))
+                                                  (gpt/dot xv1 xv2)))
+                half?     (< (abs (- (mod (- edge-turn turn) 360) 180)) 1)]
+            [half? half?])
           (not= flip-x? flip-y?) [flip-x? flip-y?]
           ;; A mirror axis at 45 degrees to the edges turns both by a right
           ;; angle. Flip the axis that keeps the final turn along the new x
           ;; edge: flipping y keeps the x edge's direction, flipping x
           ;; reverses it.
           :else
-          (let [turn  (mth/radians (- (d/nilv (dm/get-in shape [:modifiers :rotation]) 0)
-                                      (d/nilv (:rotation shape) 0)))
+          (let [turn  (mth/radians (- turn (d/nilv (:rotation shape) 0)))
                 sign  (if (:flip-x shape) -1 1)
                 along (* sign (+ (* (mth/cos turn) (:x xv2)) (* (mth/sin turn) (:y xv2))))]
             [(neg? along) (not (neg? along))]))]
@@ -369,11 +375,12 @@
 (defn- apply-transform-generic
   "Given a new set of points transformed, set up the rectangle so it keeps
   its properties. We adjust de x,y,width,height and create a custom transform"
-  [shape transform-mtx]
+  [shape transform-mtx turn]
   (let [points    (-> (dm/get-prop shape :points)
                       (gco/transform-points transform-mtx))
 
-        shape     (adjust-shape-flips shape points)
+        shape     (adjust-shape-flips shape points
+                                      (+ turn (d/nilv (dm/get-in shape [:modifiers :rotation]) 0)))
 
         center    (gco/points->center points)
         selrect   (calculate-selrect points center)
@@ -406,17 +413,21 @@
 
 (defn apply-transform
   "Given a new set of points transformed, set up the rectangle so it keeps
-  its properties. We adjust de x,y,width,height and create a custom transform"
-  [shape transform-mtx]
-  (cond
-    (nil? transform-mtx)
-    shape
+  its properties. We adjust de x,y,width,height and create a custom transform.
+  `turn` is the rotation in degrees that the caller adds to the shape after
+  the transform."
+  ([shape transform-mtx]
+   (apply-transform shape transform-mtx 0))
+  ([shape transform-mtx turn]
+   (cond
+     (nil? transform-mtx)
+     shape
 
-    ^boolean (gmt/move? transform-mtx)
-    (apply-transform-move shape transform-mtx)
+     ^boolean (gmt/move? transform-mtx)
+     (apply-transform-move shape transform-mtx)
 
-    :else
-    (apply-transform-generic shape transform-mtx)))
+     :else
+     (apply-transform-generic shape transform-mtx turn))))
 
 (defn- update-group-viewbox
   "Updates the viewbox for groups imported from SVG's"
@@ -536,7 +547,7 @@
        (cond-> shape
          (and (some? transform)
               (not (cfh/root? shape)))
-         (apply-transform transform)
+         (apply-transform transform (ctm/structure-rotation modifiers))
 
          (ctm/has-structure? modifiers)
          (ctm/apply-structure-modifiers modifiers)))
