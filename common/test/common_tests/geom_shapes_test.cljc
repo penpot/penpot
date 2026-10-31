@@ -301,3 +301,17 @@
       (t/is (not (:flip-x after)))
       (t/is (not (:flip-y after)))
       (t/is (mth/close? 180 (:rotation after))))))
+
+(t/deftest a-reflection-keeps-flags-and-rotation-consistent-with-the-transform
+  ;; At odd multiples of 45 degrees a reflection turns both edges by a
+  ;; right angle, so neither edge reverses.
+  (doseq [angle [30 45 135 225 315]
+          axis [(gpt/point -1 1) (gpt/point 1 -1)]]
+    (let [shape   (create-test-shape :rect {:width 120 :height 140})
+          rotated (gsh/transform-shape shape (ctm/rotation-modifiers shape (gsh/shape->center shape) angle))
+          after   (gsh/transform-shape rotated (ctm/resize-modifiers axis (gsh/shape->center rotated)))
+          scale   (gpt/point (if (:flip-x after) -1 1) (if (:flip-y after) -1 1))
+          implied (gmt/multiply (gmt/rotate-matrix (:rotation after)) (gmt/scale-matrix scale))]
+      (t/is (not= (boolean (:flip-x after)) (boolean (:flip-y after))) (str angle " " axis))
+      (t/is (every? #(mth/close? (get implied %) (get (:transform after) %) 1e-9) [:a :b :c :d])
+            (str angle " " axis)))))
