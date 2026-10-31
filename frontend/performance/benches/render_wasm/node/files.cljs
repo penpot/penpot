@@ -9,6 +9,7 @@
   (:require
    ["fs" :as fs]
    ["path" :as path]
+   [benches.render-wasm.errors :as errors]
    [clojure.string :as str]))
 
 (defn valid-id?
@@ -26,9 +27,40 @@
          (not= relative "..")
          (not (str/starts-with? relative (str ".." path/sep))))))
 
-(defn create-home
-  "Creates `dir` and its parents, reserves an empty log, and returns the
-  directory, log path and record path. `stem` names the .log and .transit files."
+(defn invalid-home
+  "Throws an ::invalid-home exception with `data` and an optional cause."
+  ([message data]
+   (throw (ex-info message (assoc data :type ::invalid-home))))
+  ([message data cause]
+   (throw (ex-info message (assoc data :type ::invalid-home) cause))))
+
+(defn check-id
+  "Returns `id` when it is valid, or throws ::invalid-home with `message`."
+  [id message]
+  (when-not (valid-id? id)
+    (invalid-home message {:id id}))
+  id)
+
+(defn check-output-dir
+  "Resolves an explicit user directory from the caller's cwd and checks that it
+  does not exist. Returns nil for nil. Does not create anything."
+  [dir]
+  (when (some? dir)
+    (when (str/blank? dir)
+      (invalid-home "output directory requires a nonempty path" {}))
+    (let [resolved (path/resolve dir)
+          exists?  (try
+                     (fs/lstatSync resolved #js {:throwIfNoEntry false})
+                     (catch :default cause
+                       (let [detail (errors/message-of cause)]
+                         (invalid-home (str "cannot inspect output directory: " detail)
+                                       {:path resolved :cause detail}
+                                       cause))))]
+      (when exists?
+        (invalid-home "output directory already exists" {:path resolved}))
+      resolved)))
+
+(defn- create-home*
   [dir stem]
   (let [log-path (path/join dir (str stem ".log"))]
     (fs/mkdirSync dir #js {:recursive true})
@@ -37,15 +69,26 @@
      :log-path log-path
      :record-path (path/join dir (str stem ".transit"))}))
 
-(defn invalid-home
-  [message data]
-  (throw (ex-info message (assoc data :type ::invalid-home))))
+(defn create-home
+  "Creates `dir` and its parents, reserves an empty log.
 
-(defn check-id
-  [id]
-  (when-not (valid-id? id)
-    (invalid-home "invalid id" {:id id}))
-  id)
+  A filesystem failure throws ::invalid-home with `message` and `:path`, and
+  keeps the original cause.
+
+  Args:
+      dir: path to create.
+      stem: names the .log and .transit files.
+      message: used for errors
+
+  Returns:
+      Directory created, log path and record path."
+  [dir stem message]
+  (try
+    (create-home* dir stem)
+    (catch :default cause
+      (invalid-home message
+                    {:path dir :cause (errors/message-of cause)}
+                    cause))))
 
 (defn get-real-path
   "Resolves symlink ancestors even when the final path does not exist yet."
