@@ -315,3 +315,27 @@
       (t/is (not= (boolean (:flip-x after)) (boolean (:flip-y after))) (str angle " " axis))
       (t/is (every? #(mth/close? (get implied %) (get (:transform after) %) 1e-9) [:a :b :c :d])
             (str angle " " axis)))))
+
+(t/deftest a-rotation-turns-a-shape-without-flipping-it
+  (let [shape    (create-test-shape :rect {:width 120 :height 60})
+        rotate   (fn [shape angle]
+                   (gsh/transform-shape shape (ctm/rotation-modifiers shape (gsh/shape->center shape) angle)))
+        mirror   (fn [shape axis]
+                   (gsh/transform-shape shape (ctm/resize-modifiers axis (gsh/shape->center shape))))
+        composes? (fn [shape]
+                    (let [scale   (gpt/point (if (:flip-x shape) -1 1) (if (:flip-y shape) -1 1))
+                          implied (gmt/multiply (gmt/rotate-matrix (:rotation shape)) (gmt/scale-matrix scale))]
+                      (every? #(mth/close? (get implied %) (get (:transform shape) %) 1e-9) [:a :b :c :d])))]
+    (doseq [angle [135 180 270]]
+      (let [after (rotate shape angle)]
+        (t/is (not (:flip-x after)) (str angle))
+        (t/is (not (:flip-y after)) (str angle))
+        (t/is (mth/close? angle (:rotation after)) (str angle))
+        (t/is (composes? after) (str angle))))
+    (let [turned (-> shape (mirror (gpt/point 1 -1)) (rotate 180))
+          back   (mirror turned (gpt/point -1 1))]
+      (t/is (composes? turned))
+      (t/is (composes? back)))
+    (let [halved (mirror (rotate shape 30) (gpt/point -1 -1))]
+      (t/is (and (:flip-x halved) (:flip-y halved)))
+      (t/is (composes? halved)))))
