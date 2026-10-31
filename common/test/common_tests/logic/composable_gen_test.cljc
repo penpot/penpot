@@ -1,6 +1,7 @@
 (ns common-tests.logic.composable-gen-test
   (:require
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.shapes :as cls]
@@ -21,6 +22,7 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.texts :as thtx]
+   [app.common.types.component :as ctk]
    [app.common.uuid :as uuid]
    [clojure.test :as t]
    [clojure.walk :as walk]))
@@ -476,6 +478,26 @@
     (t/is (some? index))
     (t/is (= 1 (get-in result [:coverage :random :swap :changed])))
     (t/is (= 1 (get-in result [:coverage :random :library-sync :changed])))))
+
+(t/deftest update-main-does-not-nest-a-component-inside-itself
+  ;; A swap in a variant's main reaches a slot switched to that variant inside
+  ;; a copy of the swap's new component, so the copy holds its own component.
+  (let [program {:world [2 2 {:variants true :rich-variants true :text true :text-styles true
+                              :library true :layout :flex :layout-copies true}]
+                 :ops [[:nest 9 0 0 0] [:switch 9 0 0 0] [:nest 2 0 0 0] [:delete 0 0 0 0]
+                       [:swap 10 0 0 0] [:edit 3 0 1 1] [:update-main 3]]}
+        before (:situation (cg/settle-state (reduce cg/step (cg/initial-state (:world program))
+                                                    (butlast (:ops program)))))
+        objects (:objects (thf/current-page (tm/file before)))
+        nests-itself? (fn [shape]
+                        (some #(= (:component-id shape) (:component-id %))
+                              (cfh/get-children objects (:id shape))))
+        copy (some #(when (and (ctk/instance-root? %) (not (ctk/main-instance? %)) (nests-itself? %)) %)
+                   (vals objects))
+        updated (-> before (r/step (n/update-main (constantly (:id copy)))) r/settle)]
+    (t/is (some? copy))
+    (t/is (= (oracle/snapshot before) (oracle/snapshot updated)))
+    (t/is (map? (cg/run program)))))
 
 (t/deftest pushing-a-local-override-does-not-accept-unrelated-source-edits
   (let [spec [2 1 {:library true :stale-libraries true :library-variants true}]

@@ -710,14 +710,36 @@
         (pcb/concat-changes changes placement))
       changes)))
 
+(defn update-main-nesting-loop?
+  "Whether updating the main of the copy head `shape-id` of `container` from
+   the copy would nest its component inside itself: the copy holds a copy of
+   its component, or of a component whose main holds one."
+  [libraries container shape-id]
+  (let [component-id (:component-id (ctn/get-shape container shape-id))
+        holds?       (fn [{:keys [component-file] :as head}]
+                       (let [library   (dm/get-in libraries [component-file :data])
+                             component (ctkl/get-component library (:component-id head) true)
+                             root      (when component (ctf/get-component-root library component))]
+                         (and root
+                              (some #(= component-id (:component-id %))
+                                    (cfh/get-children (:objects (ctf/get-component-container library component))
+                                                      (:id root))))))]
+    (boolean
+     (some (fn [shape]
+             (and (:component-id shape)
+                  (or (= component-id (:component-id shape)) (holds? shape))))
+           (cfh/get-children (:objects container) shape-id)))))
+
 (defn generate-sync-shape-inverse
   "Generate changes to update the component a shape is linked to, from
-  the values in the shape and all its children."
+  the values in the shape and all its children. An update that would nest
+  the component inside itself changes nothing."
   [changes libraries container shape-id]
   (shape-log :debug shape-id container :msg "Sync shape inverse" :shape (str shape-id))
   (let [shape-inst     (ctn/get-shape container shape-id)
         library        (dm/get-in libraries [(:component-file shape-inst) :data])
-        component      (ctkl/get-component library (:component-id shape-inst))
+        component      (when-not (update-main-nesting-loop? libraries container shape-id)
+                         (ctkl/get-component library (:component-id shape-inst)))
 
         ;; The component name is normalized (path separators with one space at
         ;; each side), so the name synced to the main instance root must be
