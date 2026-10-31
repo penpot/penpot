@@ -10,6 +10,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.logic.libraries :as cll]
    [app.common.path-names :as cpn]
    [app.common.thumbnails :as thc]
    [app.common.types.component :as ctk]
@@ -454,6 +455,10 @@
                                       (not (ctn/has-any-copy-parent? objects shape))
                                       (cfh/component-touched? objects (:id shape))))
 
+        ;; Updating the main would nest its component inside itself.
+        update-main-loop?   (and can-update-main?
+                                 (cll/update-main-nesting-loop? libraries {:objects objects} shape-id))
+
         can-detach? (and (seq copies)
                          (every? #(not (ctn/has-any-copy-parent? objects %)) copies))
 
@@ -582,7 +587,8 @@
                          :action do-show-component})
                       (when can-update-main?
                         {:title (tr "workspace.shape.menu.update-main")
-                         :action do-update-component})
+                         :action do-update-component
+                         :disabled update-main-loop?})
                       (when (and (or (not multi) same-variant?) main-instance?)
                         {:title (tr "workspace.shape.menu.add-variant")
                          :shortcut :create-component-variant

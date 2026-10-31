@@ -918,11 +918,12 @@
                       :on-close on-menu-close}
          [:ul {:class (stl/css-case :pill-actions-dropdown true
                                     :extended subtext)}
-          (for [{:keys [title action]} menu-entries]
+          (for [{:keys [title action disabled]} menu-entries]
             (when (some? title)
               [:li {:key title
                     :class (stl/css :pill-actions-dropdown-item)
-                    :on-click (partial do-action action)}
+                    :disabled disabled
+                    :on-click (when-not disabled (partial do-action action))}
                [:span {:class (stl/css :pill-actions-dropdown-item-label)} title]]))]]])]))
 
 (mf/defc component-menu*

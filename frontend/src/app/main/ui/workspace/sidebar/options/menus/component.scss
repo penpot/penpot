@@ -646,6 +646,11 @@
   }
 }
 
+.pill-actions-dropdown-item[disabled] {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
 .pill-actions-dropdown-item-label {
   display: block;
   max-inline-size: 99%;

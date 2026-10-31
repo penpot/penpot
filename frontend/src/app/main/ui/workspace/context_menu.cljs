@@ -719,6 +719,7 @@
                              :title (:title entry)
                              :shortcut (when sc-key (get-tt sc-key))
                              :shortcut-key sc-key
+                             :disabled (:disabled entry)
                              :on-click (:action entry)}]))])
 
      (when variant-container?
