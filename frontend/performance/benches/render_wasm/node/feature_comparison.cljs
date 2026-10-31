@@ -43,18 +43,14 @@
   An explicit directory resolves from the caller's cwd and must not exist.
   Paths inside the managed builds tree are rejected."
   [root comparison-id output-dir]
-  (files/check-id comparison-id)
+  (files/check-id comparison-id "invalid feature comparison id")
   (let [default-dir (path/join (artifacts/managed-root root)
                                "feature-comparisons" comparison-id)
-        dir         (runs/check-output-dir (or output-dir default-dir))]
+        dir         (files/check-output-dir (or output-dir default-dir))]
     (when (artifacts/inside-builds? root dir)
       (files/invalid-home "feature comparison cannot use a directory inside builds" {:path dir}))
-    (try
-      (files/create-home dir "feature-comparison")
-      (catch :default cause
-        (throw (ex-info "cannot create feature comparison home"
-                        {:type ::invalid-home :path dir :cause (errors/message-of cause)}
-                        cause))))))
+    (files/create-home dir "feature-comparison"
+                       "cannot create feature comparison home")))
 
 (defn write-record
   "Validates schema:feature-comparison and atomically replaces the saved file."

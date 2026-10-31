@@ -14,40 +14,22 @@
   (:require
    ["fs" :as fs]
    ["path" :as path]
-   [benches.render-wasm.errors :as errors]
    [benches.render-wasm.node.artifacts :as artifacts]
    [benches.render-wasm.node.files :as files]
    [benches.render-wasm.result :as result]
    [clojure.string :as str]))
-
-(defn check-output-dir
-  "Resolves an explicit user directory from the caller's cwd and checks that it
-  does not exist. Nil selects the managed default. Does not create anything."
-  [dir]
-  (when (some? dir)
-    (when (str/blank? dir)
-      (files/invalid-home "output directory requires a nonempty path" {}))
-    (let [resolved (path/resolve dir)]
-      (when (fs/lstatSync resolved #js {:throwIfNoEntry false})
-        (files/invalid-home "output directory already exists" {:path resolved}))
-      resolved)))
 
 (defn create-home
   "Creates one run home and its empty log. The record is written separately
   after the plan exists. An explicit directory must not exist; a managed home
   uses the frontend root regardless of cwd."
   [{:keys [root run-id output-dir remove]}]
-  (files/check-id run-id)
-  (let [dir (check-output-dir
+  (files/check-id run-id "invalid run id")
+  (let [dir (files/check-output-dir
              (or output-dir (path/join (artifacts/managed-root root) "runs" run-id)))]
     (when (and remove (artifacts/inside-builds? root dir))
       (files/invalid-home "--remove cannot use an output directory inside builds" {:path dir}))
-    (try
-      (assoc (files/create-home dir "run") :run-id run-id)
-      (catch :default cause
-        (throw (ex-info "cannot create run home"
-                        {:type ::invalid-home :path dir :cause (errors/message-of cause)}
-                        cause))))))
+    (assoc (files/create-home dir "run" "cannot create run home") :run-id run-id)))
 
 (defn get-record
   "Reads and validates a saved run record from a path relative to cwd."

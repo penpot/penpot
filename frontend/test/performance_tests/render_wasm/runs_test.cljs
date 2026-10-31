@@ -96,10 +96,10 @@
 
 (t/deftest malformed-ids-and-empty-paths-fail-at-the-home-boundary
   (doseq [id ["../escape" "" "a/b" "a\\b"]]
-    (t/is (thrown-with-msg? js/Error #"invalid id"
+    (t/is (thrown-with-msg? js/Error #"invalid run id"
                             (runs/create-home {:root @temporary-root :run-id id}))))
   (t/is (thrown-with-msg? js/Error #"nonempty path"
-                          (runs/check-output-dir "  "))))
+                          (files/check-output-dir "  "))))
 
 (t/deftest home-creation-reports-an-invalid-parent
   (let [parent (path/join @temporary-root "file")
@@ -107,7 +107,23 @@
     (fs/writeFileSync parent "occupied")
     (let [error (failure #(runs/create-home {:root @temporary-root
                                              :run-id "run-6" :output-dir dir}))]
-      (t/is (= "ENOTDIR" (.-code (or (ex-cause error) error)))))))
+      (t/is (= ::files/invalid-home (:type (ex-data error))))
+      (t/is (= (path/resolve dir) (:path (ex-data error))))
+      (t/is (= "ENOTDIR" (.-code (ex-cause error))))
+      (t/is (= (ex-message (ex-cause error)) (:cause (ex-data error))))
+      (t/is (str/includes? (ex-message error) "cannot inspect output directory"))
+      (t/is (str/includes? (ex-message error) "ENOTDIR")))))
+
+(t/deftest home-creation-wraps-log-failures
+  (let [dir (path/join @temporary-root "occupied-log")]
+    (fs/mkdirSync dir)
+    (fs/writeFileSync (path/join dir "run.log") "")
+    (let [error (failure #(files/create-home dir "run" "cannot create run home"))]
+      (t/is (= ::files/invalid-home (:type (ex-data error))))
+      (t/is (= "cannot create run home" (ex-message error)))
+      (t/is (= dir (:path (ex-data error))))
+      (t/is (= "EEXIST" (.-code (ex-cause error))))
+      (t/is (= (ex-message (ex-cause error)) (:cause (ex-data error)))))))
 
 (t/deftest explicit-home-creates-missing-parents
   (let [out  (path/join @temporary-root "missing" "parents" "run")

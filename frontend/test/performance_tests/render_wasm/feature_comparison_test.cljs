@@ -783,7 +783,7 @@
              (:dir home)))
     (t/is (= "" (fs/readFileSync (:log-path home) "utf8"))))
   (doseq [id [nil "" "../escape" "a/b" "a\\b"]]
-    (t/is (thrown-with-msg? js/Error #"invalid id"
+    (t/is (thrown-with-msg? js/Error #"invalid feature comparison id"
                             (feature-comparison/create-home (frontend-root) id nil))))
   (let [existing (path/join @temporary-root "existing")]
     (fs/mkdirSync existing)

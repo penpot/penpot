@@ -11,9 +11,9 @@
    ["path" :as path]
    [benches.render-wasm.cases :as cases]
    [benches.render-wasm.feature-plan :as feature-plan]
+   [benches.render-wasm.node.files :as files]
    [benches.render-wasm.node.options :as options]
    [benches.render-wasm.node.process :as process]
-   [benches.render-wasm.node.runs :as runs]
    [clojure.string :as str]))
 
 (defn- get-root-features
@@ -41,7 +41,7 @@
                           opts
                           {:default-features false})
         plan       (feature-plan/plan (:features opts) opts)
-        output-dir (runs/check-output-dir (:output-dir opts))
+        output-dir (files/check-output-dir (:output-dir opts))
         cwd        (path/resolve root ".." "render-wasm")
         metadata   (await (process/run
                            {:command "cargo"
