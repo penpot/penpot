@@ -809,7 +809,8 @@
                layout-grid-cells))]
 
      (-> parent
-         (update tracks-prop d/add-at-index new-index value)
+         ;; A grid built without track lists starts from none.
+         (update tracks-prop #(d/add-at-index (or % []) new-index value))
          (assoc :layout-grid-cells layout-grid-cells)))))
 
 (defn add-grid-column
