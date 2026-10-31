@@ -418,21 +418,26 @@
   #{:x :y :width :height :selrect :points :transform :transform-inverse
     :rotation :flip-x :flip-y :content-scale})
 
-(defn- same-footprint?
-  "Whether two shapes cover the same corners, in any order."
+(defn- same-placement?
+  "Whether two shapes cover the same corners with the same transform, so
+   they differ at most in how rotation and flips decompose it."
   [shape other]
-  (let [corners (:points other)]
+  (let [corners   (:points other)
+        transform (or (:transform shape) (gmt/matrix))
+        other-tf  (or (:transform other) (gmt/matrix))]
     (and (= (count (:points shape)) (count corners))
-         (every? (fn [point] (some #(gpt/close? point %) corners)) (:points shape)))))
+         (every? (fn [point] (some #(gpt/close? point %) corners)) (:points shape))
+         (every? #(mth/close? (get transform %) (get other-tf %)) [:a :b :c :d]))))
 
 (defn generate-sync-transformed-placement
   "Settle copy descendants after a reflection and untouched swapped heads
    after a parent turn, in the transform's change group. Reflection can
    leave descendant flip flags in another decomposition, so it only
-   re-decomposes shapes that keep their footprint; swapped content can have
-   a different size from its position frame. Keep this correction within
-   existing geometry: transforming a stale library copy must not accept
-   pending content, style, size or structural changes."
+   re-decomposes shapes whose corners and transform it keeps; swapped
+   content can have a different size from its position frame. Keep this
+   correction within existing geometry: transforming a stale library copy
+   must not accept pending content, style, size, flip or structural
+   changes."
   [changes file libraries page before ids]
   (let [objects     (pcb/get-objects changes)
         orientation (fn [shape]
@@ -474,7 +479,7 @@
                          attrs (cond-> placement-geometry-attrs
                                  (= :path (:type shape)) (conj :content))]
                      (if (and (= (:type shape) (:type expected))
-                              (or resize? (same-footprint? shape expected)))
+                              (or resize? (same-placement? shape expected)))
                        (merge shape (select-keys expected attrs))
                        shape)))
                  {:ignore-touched true})))

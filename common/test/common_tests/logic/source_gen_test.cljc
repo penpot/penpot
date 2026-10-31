@@ -6,11 +6,15 @@
 
 (ns common-tests.logic.source-gen-test
   (:require
+   [app.common.test-helpers.composable.comp.files :as cf]
    [app.common.test-helpers.composable.comp.runner :as r]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.composable.gen :as cg]
    [app.common.test-helpers.composable.oracle :as oracle]
+   [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.shapes :as ths]
+   [app.common.test-helpers.texts :as thtx]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
@@ -34,6 +38,14 @@
                                     :library-dependency true :library-text true}]
                        :ops [[:library-transform 3 1 4 0] [:library-transform 0 4 4 0]
                              [:library-undo] [:library-redo]]}))))
+
+(t/deftest a-reflection-does-not-accept-a-pending-library-flip
+  ;; The dependent main nests a copy whose child the source flipped; the
+  ;; dependent library has not accepted that flip.
+  (t/is (map? (cg/run {:world [2 0 {:library true :stale-libraries true
+                                    :library-dependency true :library-text true}]
+                       :ops [[:library-remove-child 0 0 0 0] [:library-transform 0 4 4 1]
+                             [:library-transform 0 4 4 0] [:library-undo] [:library-redo]]}))))
 
 (t/deftest source-transforms-keep-consumers-stale-until-acceptance
   (doseq [action (range 6) scope [0 1]]
