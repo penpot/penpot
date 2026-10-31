@@ -391,6 +391,45 @@
                          #(update % :touched (fnil conj #{}) :geometry-group)
                          {:ignore-touched true}))))
 
+(defn- grid-cells-by-path
+  "The cells of the grid `shape` without their ids, with each child as its
+   path (see `add-unique-path`)."
+  [shape path-of]
+  (into #{}
+        (map (fn [cell] (-> cell (dissoc :id) (update :shapes #(mapv path-of %)))))
+        (vals (:layout-grid-cells shape))))
+
+(defn- carry-grid-cells
+  "Carry the cell overrides of the switched grid `old` into `new`, its clean
+   copy of the new variant, when the old main `old-ref` and `new` have
+   identical grids: the same tracks and the same cells holding
+   corresponding children. Otherwise the new variant's cells win.
+   `counterpart` gives the child of `new` that relates to a child of `old`."
+  [changes old old-ref new old-path new-path counterpart]
+  (let [identical? (and (= (:layout-grid-rows old-ref) (:layout-grid-rows new))
+                        (= (:layout-grid-columns old-ref) (:layout-grid-columns new))
+                        (= (grid-cells-by-path old-ref old-path)
+                           (grid-cells-by-path new new-path)))
+        cell-id    (fn [{:keys [row column]}]
+                     (some (fn [[id cell]] (when (and (= row (:row cell)) (= column (:column cell))) id))
+                           (:layout-grid-cells new)))
+        cells      (when identical?
+                     (reduce (fn [cells cell]
+                               (let [shapes (mapv counterpart (:shapes cell))
+                                     id     (or (cell-id cell) (:id cell))]
+                                 (if (some nil? shapes)
+                                   (reduced nil)
+                                   (assoc cells id (assoc cell :id id :shapes shapes)))))
+                             {}
+                             (vals (:layout-grid-cells old))))]
+    (if cells
+      (pcb/update-shapes changes [(:id new)]
+                         #(-> %
+                              (assoc :layout-grid-cells cells)
+                              (update :touched (fnil conj #{}) :layout-grid-cells))
+                         {:ignore-touched true})
+      changes)))
+
 (defn generate-keep-touched
   "This is used as part of the switch process, when you switch from
    an original-shape to a new-shape. It generate changes to
@@ -466,6 +505,25 @@
                     (clsw/update-attrs-on-switch changes new old new-shape original-shape old-ref container)))
                 changes
                 pairs)
+
+        ;; Cell overrides carry only between identical grids.
+        new-paths           (into {} (map (juxt :id :shape-path)) new-shapes-w-path)
+        counterpart         (fn [id]
+                              (when-let [old-child (get page-objects id)]
+                                (let [old-ref (find-shape-ref-child-of container libraries old-child
+                                                                       (:id orig-base-ref-shape))]
+                                  (:id (get new-shapes-map (get o-ref-shapes-p-map (:id old-ref)))))))
+        grid-pairs          (filter (fn [{:keys [old new swapped?]}]
+                                      (and (not swapped?)
+                                           (ctsl/grid-layout? old)
+                                           (ctsl/grid-layout? new)
+                                           (ctk/touched-group? old :layout-grid-cells)))
+                                    pairs)
+        changes             (reduce (fn [changes {:keys [old old-ref new]}]
+                                      (carry-grid-cells changes old old-ref new
+                                                        o-ref-shapes-p-map new-paths counterpart))
+                                    changes
+                                    grid-pairs)
         root-geometry?      (some #(and (= (:id %) (:id original-shape))
                                         (ctk/touched-group? % :geometry-group)) orig-touched)
         parent              (get page-objects (:parent-id original-shape))
@@ -486,7 +544,7 @@
                                nil libraries (assoc container :objects (pcb/get-objects changes))
                                (:id new-shape) false))
         changes             (clsw/generate-sync-swap-constraints changes page libraries (:id new-shape))]
-    [changes (mapv (comp :parent-id :new) pairs)]))
+    [changes (into (mapv (comp :parent-id :new) pairs) (map (comp :id :new)) grid-pairs)]))
 
 (defn- shape-index
   "Position of `shape-id` among the children of `parent-id`; 0 when it is not
