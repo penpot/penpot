@@ -304,7 +304,31 @@
         flip-x? (and (neg? dot-x)
                      (not (mth/close? dot-x 0 (* 1e-10 (gpt/length xv1) (gpt/length xv2)))))
         flip-y? (and (neg? dot-y)
-                     (not (mth/close? dot-y 0 (* 1e-10 (gpt/length yv1) (gpt/length yv2)))))]
+                     (not (mth/close? dot-y 0 (* 1e-10 (gpt/length yv1) (gpt/length yv2)))))
+
+        ;; The edges' orientation reverses exactly under a reflection, which
+        ;; then flips one axis. Without area the edges cannot tell.
+        cross1  (- (* (:x xv1) (:y yv1)) (* (:y xv1) (:x yv1)))
+        cross2  (- (* (:x xv2) (:y yv2)) (* (:y xv2) (:x yv2)))
+        area?   (not (or (mth/close? cross1 0 (* 1e-10 (gpt/length xv1) (gpt/length yv1)))
+                         (mth/close? cross2 0 (* 1e-10 (gpt/length xv2) (gpt/length yv2)))))
+        mirror? (neg? (* cross1 cross2))
+
+        [flip-x? flip-y?]
+        (cond
+          (not area?) [flip-x? flip-y?]
+          (not mirror?) (if (and flip-x? flip-y?) [true true] [false false])
+          (not= flip-x? flip-y?) [flip-x? flip-y?]
+          ;; A mirror axis at 45 degrees to the edges turns both by a right
+          ;; angle. Flip the axis that keeps the final turn along the new x
+          ;; edge: flipping y keeps the x edge's direction, flipping x
+          ;; reverses it.
+          :else
+          (let [turn  (mth/radians (- (d/nilv (dm/get-in shape [:modifiers :rotation]) 0)
+                                      (d/nilv (:rotation shape) 0)))
+                sign  (if (:flip-x shape) -1 1)
+                along (* sign (+ (* (mth/cos turn) (:x xv2)) (* (mth/sin turn) (:y xv2))))]
+            [(neg? along) (not (neg? along))]))]
 
     (cond-> shape
       flip-x?
