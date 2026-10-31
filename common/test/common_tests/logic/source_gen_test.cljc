@@ -28,6 +28,13 @@
                                [:library-sync]]}))
           (str edit))))
 
+(t/deftest a-reflection-does-not-accept-a-pending-library-size
+  ;; The dependent main nests a copy of a source main whose width is pending.
+  (t/is (map? (cg/run {:world [2 0 {:library true :stale-libraries true
+                                    :library-dependency true :library-text true}]
+                       :ops [[:library-transform 3 1 4 0] [:library-transform 0 4 4 0]
+                             [:library-undo] [:library-redo]]}))))
+
 (t/deftest source-transforms-keep-consumers-stale-until-acceptance
   (doseq [action (range 6) scope [0 1]]
     (let [initial (cg/initial-state source-world)
