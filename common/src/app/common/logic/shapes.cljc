@@ -566,7 +566,7 @@
       (-> changes
           ;; Remove layout-item properties and tokens when moving a shape outside a layout
           (cond-> (not (ctl/any-layout? parent))
-            (-> (pcb/update-shapes ids ctl/remove-layout-item-data)
+            (-> (pcb/update-shapes ids ctl/remove-layout-item-data {:ignore-touched true})
                 (pcb/update-shapes ids cto/unapply-layout-item-tokens)))
 
           ;; Hide in the viewer the boards moved into a board

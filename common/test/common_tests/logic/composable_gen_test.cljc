@@ -958,3 +958,10 @@
                                     :library-depth 1 :library true :rich-variants true :library-text true
                                     :layout-copies true :text true}]
                        :ops [[:rotate 1 0 0 0] [:switch 3 0 0 0]]}))))
+
+(t/deftest generated-copy-moved-out-of-a-layout-loses-its-margins-without-an-override
+  ;; a copy whose margin type a reset kept is nested out of its flex parent;
+  ;; leaving the layout clears its margins, which is no override
+  (t/is (map? (cg/run {:world [2 1 {:text true :text-styles true :layout :flex :layout-children true}]
+                       :ops [[:remove-child 0 0 0 0] [:nest 0 0 0 0] [:style 2 27 1]
+                             [:edit 0 1 1 :copy-head] [:reset 0] [:nest 0 0 0 0]]}))))
