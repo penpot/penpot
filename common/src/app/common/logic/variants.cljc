@@ -362,6 +362,13 @@
     (let [new-touched (ctf/get-touched-from-ref-chain-until-target-ref container libraries shape nil)]
       (assoc shape :touched (disj new-touched :swap-group)))))
 
+(defn- same-orientation?
+  "Whether shapes `a` and `b` have the same rotation and flips."
+  [a b]
+  (and (mth/close? (mod (or (:rotation a) 0) 360) (mod (or (:rotation b) 0) 360) 0.01)
+       (= (boolean (:flip-x a)) (boolean (:flip-x b)))
+       (= (boolean (:flip-y a)) (boolean (:flip-y b)))))
+
 (defn- keep-orientation-override
   "Retained orientation that differs from the new component's expected
    placement needs a geometry override to survive later sync."
@@ -524,18 +531,21 @@
                                                         o-ref-shapes-p-map new-paths counterpart))
                                     changes
                                     grid-pairs)
-        root-geometry?      (some #(and (= (:id %) (:id original-shape))
-                                        (ctk/touched-group? % :geometry-group)) orig-touched)
+        new-ldata           (or (get-in libraries [(:component-file new-shape) :data]) ldata)
+        new-main            (ctf/get-component-root new-ldata (ctkl/get-component new-ldata (:component-id new-shape)))
+        ;; An authored orientation carries only where both variants share it
+        carried-orientation? (and (some #(and (= (:id %) (:id original-shape))
+                                              (ctk/touched-group? % :geometry-group)) orig-touched)
+                                  (same-orientation? orig-base-ref-shape new-main))
         parent              (get page-objects (:parent-id original-shape))
         ;; A switch keeps orientation even when the old main supplied it.
-        ;; If no geometry was carried, placement from an enclosing copy is
+        ;; If no orientation was carried, placement from an enclosing copy is
         ;; still inherited rather than authored by this switch.
-        position            (when (and (not root-geometry?) (:shape-ref parent))
+        position            (when (and (not carried-orientation?) (:shape-ref parent))
                               (ctf/find-ref-shape nil page libraries original-shape
                                                   :include-deleted? true :with-context? true))
         changes             (keep-orientation-override changes original-shape new-shape page
-                                                       (or (get-in libraries [(:component-file new-shape) :data]) ldata)
-                                                       (:component-id new-shape) position)
+                                                       new-ldata (:component-id new-shape) position)
         ;; A carried size changes the frame its untouched children follow.
         ;; Place them through the same constraints as an ordinary copy sync.
         changes             (cond-> changes
