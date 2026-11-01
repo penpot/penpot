@@ -889,3 +889,15 @@
                                     :layout :grid :library-depth 1 :library true :rich-variants true
                                     :layout-children true :library-text true :layout-copies true :text true}]
                        :ops [[:style 11 35 1] [:grid-direction 13 0 0 1] [:grid-cell 13 0 0 1] [:reset 14 0 0 0]]}))))
+
+(t/deftest generated-swap-to-a-board-without-grid-drops-a-copys-cell-override
+  ;; a copy authors the cells of a nested grid head; its main swaps the head
+  ;; for a component without grid, so the override has no grid to carry to
+  (let [result  (cg/run {:world [2 0 {:variants true :text-styles true :layout :grid :grid-square true :library true
+                                      :rich-variants true :layout-copies true :text true}]
+                         :ops [[:swap 5 0 0 0] [:grid-direction 1 0 0 1] [:grid-cell 1 0 0 1] [:swap 0 0 0 0]]})
+        objects (into {} (mapcat cf/object-trees) (vals (cf/all-files (:situation result))))]
+    (doseq [shape (vals objects)
+            :when (not= :grid (:layout shape))]
+      (t/is (empty? (:layout-grid-cells shape)) (:name shape))
+      (t/is (not (contains? (:touched shape) :layout-grid-cells)) (:name shape)))))
