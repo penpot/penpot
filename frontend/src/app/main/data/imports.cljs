@@ -150,11 +150,10 @@
            (reference-entry? path)
            (update :references conj [file-id entry]))
 
-         (some? (object-of-entry path))
-         (update-in index [:objects (object-of-entry path)] (fnil + 0) size)
-
          :else
-         index)))
+         (if-some [object-id (object-of-entry path)]
+           (update-in index [:objects object-id] (fnil + 0) size)
+           index))))
    {:files {} :objects {} :references []}
    entries))
 
