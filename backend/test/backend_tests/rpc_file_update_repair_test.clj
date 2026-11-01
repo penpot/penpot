@@ -24,6 +24,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files-update :as files-update]
    [app.srepl.procs.file-repair :as file-repair]
+   [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [backend-tests.helpers :as th]
    [clojure.test :as t])
@@ -159,6 +160,32 @@
         (t/is (= "renamed"
                  (get-in stored [:data :pages-index page-id :objects shape-b :name])))
         (t/is (= 1.0 (- (repair-count :repaired) before)))))))
+
+(t/deftest every-revision-of-a-repair-carries-its-payload
+  ;; A repair writes two revisions: the one that fixes the preexisting damage
+  ;; and the one of the client's save. Both must have their file_data payload,
+  ;; so a reader that prefers the payload never finds a hole in the history.
+  (with-repair-flags
+    (fn []
+      (let [{:keys [profile file-id page-id shape-b] :as ctx} (setup-file)
+            broken (break-frame ctx)
+            out    (update-file (:id profile) file-id (:revn broken)
+                                [(set-attr page-id shape-b :name "renamed")])
+            rows   (filterv #(> (:revn %) (:revn broken))
+                            (change-rows file-id))]
+        (t/is (th/success? out))
+        (t/is (= 2 (count rows)))
+        (doseq [row rows]
+          (let [payload (th/db-get :file-data
+                                   {:file-id file-id
+                                    :id (:id row)
+                                    :type "revision"}
+                                   {::db/remove-deleted false})]
+            (t/is (some? payload) (str "payload missing for revn " (:revn row)))
+            (t/is (= (:deleted-at row) (:deleted-at payload)))
+            (t/is (= {:changes (blob/decode (:changes row))
+                      :undo-changes []}
+                     (blob/decode (:data payload))))))))))
 
 (t/deftest repairs-preexisting-frame-not-found-with-schema-validation
   (with-full-repair-flags

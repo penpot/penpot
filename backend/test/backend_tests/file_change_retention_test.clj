@@ -77,9 +77,29 @@
                           :changes    (blob/encode {:foo "bar"})
                           :deleted-at (ct/plus created-at revision-lifetime)}))
 
+(defn- insert-file-data
+  "A `file_data` payload. A revision payload shares the id and the deletion
+  schedule of its revision; a snapshot payload carries no date of its own
+  until the file is deleted."
+  [file-id id {:keys [type created-at deleted-at]}]
+  (th/db-insert! :file-data
+                 {:file-id     file-id
+                  :id          id
+                  :created-at  created-at
+                  :modified-at created-at
+                  :type        (or type "revision")
+                  :backend     "db"
+                  :data        (blob/encode {:changes [] :undo-changes []})
+                  :deleted-at  deleted-at}
+                 {::db/return-keys false}))
+
 (defn- find-change
   [id]
   (th/db-get :file-change {:id id} {::db/remove-deleted false}))
+
+(defn- find-file-data
+  [file-id id]
+  (th/db-get :file-data {:file-id file-id :id id} {::db/remove-deleted false}))
 
 (defn- find-file
   [id]
@@ -100,6 +120,9 @@
 
           revision-id (insert-revision file-id old-at)
           revision-at (:deleted-at (find-change revision-id))
+          _           (insert-file-data file-id revision-id
+                                        {:created-at old-at
+                                         :deleted-at revision-at})
 
           snapshot-id (insert-change file-id {:created-at old-at
                                               :created-by "user"
@@ -114,6 +137,10 @@
 
       (t/testing "the revision keeps the schedule it was born with"
         (t/is (= revision-at (:deleted-at (find-change revision-id)))))
+
+      (t/testing "the revision payload keeps the schedule it was born with"
+        (t/is (= revision-at
+                 (:deleted-at (find-file-data file-id revision-id)))))
 
       (t/testing "the snapshot comes back"
         (t/is (nil? (:deleted-at (find-change snapshot-id)))))
@@ -183,27 +210,67 @@
 (t/deftest a-deleted-then-restored-file-does-not-leak-its-revisions
   ;; The lifecycle that leaked 358,517 rows in production: a file is edited, it
   ;; ends up in the trash, it comes back, and the revisions that were scheduled
-  ;; to die an hour after they were written have to die anyway.
+  ;; to die an hour after they were written have to die anyway. The payload of
+  ;; a revision follows the same rule: it is born with the revision's schedule,
+  ;; deleting the file does not push it out and restoring the file does not
+  ;; clear it.
   (binding [ct/*clock* (ct/fixed-clock test-now)]
     (let [[_ file] (create-file 1)
           file-id   (:id file)
+          old-at    (ct/in-past {:hours 2})
 
-          revision-id (insert-revision file-id (ct/in-past {:hours 2}))
-          revision-at (:deleted-at (find-change revision-id))]
+          revision-id (insert-revision file-id old-at)
+          revision-at (:deleted-at (find-change revision-id))
+
+          _ (insert-file-data file-id revision-id
+                              {:created-at old-at
+                               :deleted-at revision-at})]
 
       (th/run-task! :delete-object {:object     :file
                                     :deleted-at (ct/in-future {:days 7})
                                     :id         file-id})
 
       (t/testing "deleting the file leaves the revision schedule alone"
-        (t/is (= revision-at (:deleted-at (find-change revision-id)))))
+        (t/is (= revision-at (:deleted-at (find-change revision-id))))
+        (t/is (= revision-at
+                 (:deleted-at (find-file-data file-id revision-id)))))
 
       (restore-file file-id)
 
       (t/testing "restoring the file leaves it alone too"
-        (t/is (= revision-at (:deleted-at (find-change revision-id)))))
+        (t/is (= revision-at (:deleted-at (find-change revision-id))))
+        (t/is (= revision-at
+                 (:deleted-at (find-file-data file-id revision-id)))))
 
       (th/run-task! :objects-gc {})
 
       (t/testing "so the collector takes it"
-        (t/is (nil? (find-change revision-id)))))))
+        (t/is (nil? (find-change revision-id)))
+        (t/is (nil? (find-file-data file-id revision-id)))))))
+
+(t/deftest deleting-a-file-keeps-the-schedule-a-payload-was-born-with
+  ;; Only the payloads without a date take the file's deletion date. A revision
+  ;; payload already has one, and a snapshot payload (the other undated row)
+  ;; still gets the trash lifetime, so the restoration of a deleted file keeps
+  ;; finding it.
+  (binding [ct/*clock* (ct/fixed-clock test-now)]
+    (let [[_ file] (create-file 1)
+          file-id  (:id file)
+          trash-at (ct/in-future {:days 7})
+          old-at   (ct/in-past {:hours 2})
+          rev-id   (uuid/next)
+          snap-id  (uuid/next)
+          rev-at   (ct/plus old-at revision-lifetime)]
+
+      (insert-file-data file-id rev-id {:created-at old-at :deleted-at rev-at})
+      (insert-file-data file-id snap-id {:type "snapshot" :created-at old-at})
+
+      (th/run-task! :delete-object {:object     :file
+                                    :deleted-at trash-at
+                                    :id         file-id})
+
+      (t/testing "the revision payload keeps the date it was born with"
+        (t/is (= rev-at (:deleted-at (find-file-data file-id rev-id)))))
+
+      (t/testing "the undated payload takes the file's deletion date"
+        (t/is (= trash-at (:deleted-at (find-file-data file-id snap-id))))))))

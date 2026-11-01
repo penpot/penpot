@@ -376,19 +376,20 @@
                           :session-id session-id})))
 
       (when repair
-        (db/insert! conn :file-change
-                    {:id (uuid/next)
-                     :session-id repair-session-id
-                     :profile-id profile-id
-                     :created-at timestamp
-                     :updated-at timestamp
-                     :deleted-at deleted-at
-                     :file-id (:id file)
-                     :revn (:revn repair)
-                     :version (:version file)
-                     :features (into-array (:features file))
-                     :changes (blob/encode (:changes repair))}
-                    {::db/return-keys false})
+        ;; The repair computes only the forward changes; its inverse is the
+        ;; internal snapshot, not a list of changes.
+        (insert-revision! cfg
+                          {:id (uuid/next)
+                           :session-id repair-session-id
+                           :profile-id profile-id
+                           :created-at timestamp
+                           :deleted-at deleted-at
+                           :file-id (:id file)
+                           :revn (:revn repair)
+                           :version (:version file)
+                           :features (:features file)
+                           :changes (:changes repair)
+                           :undo-changes []})
         (l/wrn :hint "file auto-repaired"
                :file-id (str (:id file))
                :error-codes (error-codes (:errors repair))

@@ -97,10 +97,14 @@
                 {:file-id id :deleted-at nil}
                 {::db/return-keys false})
 
-    ;; Mark file data fragment to be deleted
+    ;; Mark file data to be deleted, but only the rows that do not carry a date
+    ;; yet, exactly like the file-change rows above. A revision payload is born
+    ;; scheduled for deletion together with its revision; rewriting its date
+    ;; here would keep it in the table for days after the revision it belongs
+    ;; to is gone. A snapshot payload has no date and takes this one.
     (db/update! conn :file-data
                 {:deleted-at deleted-at}
-                {:file-id id}
+                {:file-id id :deleted-at nil}
                 {::db/return-keys false})
 
     ;; Mark file media objects to be deleted

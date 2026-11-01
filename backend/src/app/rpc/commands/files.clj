@@ -1407,8 +1407,12 @@
       AND (label IS NOT NULL OR data IS NOT NULL)")
 
 (def ^:private sql:restore-file-data
+  ;; Same rule as `sql:restore-file-changes`: a revision payload is ephemeral
+  ;; (it is born scheduled for deletion together with its revision), so a
+  ;; restore must not clear its date or the collector would never take it.
   "UPDATE file_data SET deleted_at = null
-    WHERE file_id = ANY(?::uuid[])")
+    WHERE file_id = ANY(?::uuid[])
+      AND type <> 'revision'")
 
 (def ^:private sql:restore-file-thumbnails
   "UPDATE file_thumbnail SET deleted_at = null
