@@ -157,6 +157,7 @@
 (t/deftest ^:async a-version-3-package-sizes-every-file-with-what-it-occupies
   (let [first-id   (uuid/next)
         second-id  (uuid/next)
+        unknown-id (uuid/next)
         object-id  (str (uuid/next))
         seen       (atom [])
         ;; the entries of a container: every file keeps its own under
@@ -187,7 +188,8 @@
         ;; every entry holds
         uz/get-entry (mock/stub (fn [_ _]
                                   (p/resolved #js {:content (manifest [first-id "First"]
-                                                                      [second-id "Second"])})))
+                                                                      [second-id "Second"]
+                                                                      [unknown-id "Unknown"])})))
         uz/get-entries (mock/stub (fn [_] (p/resolved entries)))
         uz/read-as-text (mock/stub (fn [entry] (p/resolved (.-content entry))))
         uz/close (mock/stub (fn [_] nil))}
@@ -198,10 +200,15 @@
     (t/testing "a file occupies its own entries and the objects it references"
       ;; 200 + 300 + 10 of its own, and 20 + 1000 of the object its media
       ;; points at; the 100 of the manifest belong to the container
-      (t/is (= [1530 400] (mapv :size @seen))))
+      (t/is (= [1530 400 nil] (mapv :size @seen))))
+
+    (t/testing "a file the container does not hold has no size"
+      ;; the manifest lists it, but no entry of the zip belongs to it: the
+      ;; row says nothing rather than borrowing what the package weighs
+      (t/is (nil? (:size (first (filter #(= unknown-id (:file-id %)) @seen))))))
 
     (t/testing "what the container occupies is kept apart"
-      (t/is (= [10000 10000] (mapv :container-size @seen))))))
+      (t/is (= [10000 10000 10000] (mapv :container-size @seen))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMPORTING A PACKAGE

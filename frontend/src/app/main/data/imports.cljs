@@ -257,7 +257,7 @@
                                                   ;; occupies inside the
                                                   ;; container, never the
                                                   ;; container's
-                                                  (assoc :size (get sizes (str (:id file)) (:size entry)))
+                                                  (assoc :size (get sizes (str (:id file))))
                                                   (assoc :status :success))))))))
 
           (->> stream
