@@ -917,3 +917,11 @@
                        :ops [[:library-transform 2 3 4 0] [:library-delete 0] [:library-sync] [:library-restore 0]
                              [:library-sync] [:library-undo 0 0 0 0] [:library-transform 16 4 4 0]
                              [:edit 17 1 1 :copy-head] [:reset 17]]}))))
+
+(t/deftest generated-turned-fill-copy-skews-the-grid-children-it-holds
+  ;; a copy filling a main's grid cell is turned 45 degrees; the cell skews
+  ;; it, and the children of its nested grid skew with it, as a sync places
+  ;; them
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :grid :rich-variants true
+                                    :layout-children true :grid-empty true :layout-copies true :text true}]
+                       :ops [[:style 4 29 1] [:detach 0 0 0 0] [:rotate 5 0 0 0]]}))))

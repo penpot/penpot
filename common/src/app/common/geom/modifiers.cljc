@@ -166,20 +166,16 @@
 
          transformed-parent-bounds (delay (gtr/transform-bounds @(get bounds parent-id) modifiers))
 
-         children-modifiers
-         (if (or flex-layout? grid-layout?)
-           (->> (:shapes parent)
-                (filter #(ctl/position-absolute? objects %)))
-           (:shapes parent))
-
          children-layout
          (when (or flex-layout? grid-layout?)
            (->> (:shapes parent)
                 (remove #(ctl/position-absolute? objects %))))]
 
      (cond-> modif-tree
+       ;; layout children keep their size along the parent's axes and follow
+       ;; its turn or skew; the layout then places them
        (and has-modifiers? parent? (not root?))
-       (set-children-modifiers children-modifiers objects bounds parent transformed-parent-bounds ignore-constraints)
+       (set-children-modifiers (:shapes parent) objects bounds parent transformed-parent-bounds ignore-constraints)
 
        flex-layout?
        (set-flex-layout-modifiers children-layout objects bounds parent transformed-parent-bounds)
