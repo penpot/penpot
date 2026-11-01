@@ -202,6 +202,26 @@
       (t/is (= (thn/normalize-file (tm/file edited))
                (thn/normalize-file (tm/file (r/step turned (n/undo)))))))))
 
+(t/deftest authored-child-position-follows-a-parent-move-received-through-sync
+  (let [file    (-> (thf/sample-file :file)
+                    (tho/add-simple-component :a :main-a :rect-a
+                                              :root-params {:width 100 :height 100})
+                    (tho/add-frame :main-b {:width 200 :height 200})
+                    (thc/instantiate-component :a :b-a :parent-label :main-b)
+                    (thc/make-component :b :main-b)
+                    (tho/add-frame :main-c {:width 300 :height 300})
+                    (thc/instantiate-component :b :c-b :parent-label :main-c)
+                    (thc/make-component :c :main-c)
+                    (thc/instantiate-component :c :copy-c :children-labels [:copy-b :copy-a]))
+        edited  (-> (tm/make-situation file) r/settle (r/step (n/transform-shape :copy-a :move [5 3])) r/settle)
+        moved   (-> edited (r/step (n/transform-shape :c-b :move [20 0])) r/settle)
+        delta   (fn [label]
+                  (gpt/subtract (gsh/shape->center (tm/resolve-shape moved label))
+                                (gsh/shape->center (tm/resolve-shape edited label))))]
+    (t/is (gpt/close? (gpt/point 20 0) (delta :copy-b)))
+    (t/is (gpt/close? (gpt/point 20 0) (delta :copy-a)))
+    (t/is (= #{:geometry-group} (:touched (tm/resolve-shape moved :copy-a))))))
+
 (t/deftest a-nested-copy-keeps-its-detached-parents-orientation-on-sync
   (let [detached (-> (setup/nested-component-with-copy)
                      (r/step (n/rotate :copy-root 90)) r/settle

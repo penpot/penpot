@@ -586,12 +586,18 @@
     (reduce #(update %1 %2 gsh/move delta) objects ids)))
 
 (defn- sync-descendant-orientation
-  "A parent turned by sync carries its whole subtree, including geometry
-   overrides. Resize remains the job of constraints, not matrix scale."
+  "A parent turned or moved by sync carries its whole subtree, including
+   geometry overrides. Resize remains the job of constraints, not matrix
+   scale."
   [changes container before]
   (let [after    (get (pcb/get-objects changes) (:id before))
+        moved?   (and after
+                      (mth/close? (-> before :selrect :width) (-> after :selrect :width))
+                      (mth/close? (-> before :selrect :height) (-> after :selrect :height))
+                      (not (gpt/close? (gsh/shape->center before) (gsh/shape->center after))))
         changed? (and after
-                      (or (not (mth/close? (or (:rotation before) 0) (or (:rotation after) 0) 1e-10))
+                      (or moved?
+                          (not (mth/close? (or (:rotation before) 0) (or (:rotation after) 0) 1e-10))
                           (not= (boolean (:flip-x before)) (boolean (:flip-x after)))
                           (not= (boolean (:flip-y before)) (boolean (:flip-y after)))))
         ids      (when changed? (cfh/get-children-ids (:objects container) (:id before)))]

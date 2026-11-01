@@ -874,3 +874,10 @@
             :let [child (get objects id)]
             :when (not (or (:hidden child) (:layout-item-absolute child)))]
       (t/is (contains? in-cells id) (:name child)))))
+
+(t/deftest generated-moved-child-follows-its-nested-parent-shifted-by-a-main-layout
+  ;; a child moved in a copy keeps its place in its nested parent copy, which
+  ;; sync moves when a new child shifts the main's flex layout
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :flex :library true
+                                    :rich-variants true :layout-copies true :text true}]
+                       :ops [[:transform 7 0 0 8] [:delete 0] [:restore 0] [:add-child 9 0 0 0]]}))))
