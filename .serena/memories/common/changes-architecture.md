@@ -13,6 +13,12 @@ Each change is a map such as `{:type ... :id ... :page-id ...}`. Common families
 
 Each transaction carries `:redo-changes` and inverse `:undo-changes`. The undo stack stores transactions and can move its index backward/forward.
 
+## Persistence
+
+`update-file` carries both lists: `:changes` is still the forward changes for the readers deployed today, and `:undo-changes` is the inverse. The backend stores them together in the payload of the revision (`file_data`, type `revision`, see `mem:backend/subtleties`); it never interprets the inverse.
+
+When the frontend batches several saves into one request, the merged forward list keeps the order the edits were made and the inverse list goes backwards (the newest commit first), because undoing the batch applies the inverse of the newest edit first. Inside one commit the list is already in that order.
+
 ## changes-builder API
 
 `common/src/app/common/files/changes_builder.cljc` (usually alias `pcb`) is the fluent builder. Start from `(pcb/empty-changes <it> <page-id>)` or `(pcb/empty-changes nil <page-id>)` for tests.
