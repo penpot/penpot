@@ -1101,7 +1101,7 @@
   "Add to the main shape `parent-main`, at `index`, a copy of `child-inst`,
   a child of the copy shape that pairs with it; `child-inst` then refers to
   the new main shape."
-  [changes {:keys [container main-container root-inst root-main libraries added synced-ids]}
+  [changes {:keys [container main-container root-inst root-main libraries added synced-ids inherited-turn]}
    parent-main child-inst index]
   (shape-log :info (:id child-inst) container
              :msg (str "ADD " (shape-label child-inst main-container)))
@@ -1119,6 +1119,12 @@
                            (ctf/find-content-ref-shape nil container libraries child-inst
                                                        :include-deleted? true
                                                        :with-context? true))
+        ;; copy shapes in the main's orientation, without the turn the copy inherits
+        in-main          (fn [shape]
+                           (-> (cond-> shape (some? inherited-turn) inherited-turn)
+                               (reposition-shape (cond-> root-inst (some? inherited-turn) inherited-turn)
+                                                 root-main)))
+
         ;; The parent's inverse sync already pushed its geometry. Compare
         ;; against that frame, rather than its original container value.
         placement-container
@@ -1126,12 +1132,12 @@
           content-main
           (assoc-in [:objects (:id parent-main)]
                     (-> (ctn/get-shape container (:parent-id child-inst))
-                        (reposition-shape root-inst root-main)
+                        (in-main)
                         (assoc :id (:id parent-main)
                                :shape-ref (:shape-ref parent-main)))))
 
         update-new-shape (fn [new-shape original-shape]
-                           (cond-> (reposition-shape new-shape root-inst root-main)
+                           (cond-> (in-main new-shape)
                              (and (= (:id original-shape) (:id child-inst))
                                   (ctk/swapped? child-inst)
                                   (not swap-in-copy?))

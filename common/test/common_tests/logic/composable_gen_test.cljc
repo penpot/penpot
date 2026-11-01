@@ -901,3 +901,10 @@
             :when (not= :grid (:layout shape))]
       (t/is (empty? (:layout-grid-cells shape)) (:name shape))
       (t/is (not (contains? (:touched shape) :layout-grid-cells)) (:name shape)))))
+
+(t/deftest generated-update-main-pushes-a-swap-in-its-mains-orientation
+  ;; a nested copy turned with the main that holds it swaps a child and
+  ;; pushes it into its own unturned main, which takes it unturned
+  (t/is (map? (cg/run {:world [2 1 {:variants true :text-styles true :library true :rich-variants true
+                                    :layout-copies true :text true}]
+                       :ops [[:swap 6 0 0 0] [:transform 17 3 0 0] [:swap 9 0 0 0] [:edit 0 0 1 1] [:update-main 0]]}))))
