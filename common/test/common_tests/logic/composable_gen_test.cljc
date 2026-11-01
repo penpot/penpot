@@ -950,3 +950,11 @@
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :variant-diff false :rich-variants true
                                     :layout-copies true :text true}]
                        :ops [[:transform 3 3 0 0] [:resize 0 0 0 0] [:switch 4 0 0 0]]}))))
+
+(t/deftest generated-switch-in-a-turned-main-keeps-the-first-corner
+  ;; a head in a main turned 45 degrees switches to a wider variant; it
+  ;; keeps its first corner, as its copies do through sync
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :library-variants true :stale-libraries true
+                                    :library-depth 1 :library true :rich-variants true :library-text true
+                                    :layout-copies true :text true}]
+                       :ops [[:rotate 1 0 0 0] [:switch 3 0 0 0]]}))))
