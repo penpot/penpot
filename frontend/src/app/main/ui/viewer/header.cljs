@@ -35,6 +35,11 @@
                (dm/get-in state [:viewer-local :fullscreen?]))
              st/state))
 
+(def ^:private share-modal-open-ref
+  (l/derived (fn [state]
+               (= :share-link (dm/get-in state [::modal/modal :type])))
+             st/state))
+
 (defn open-login-dialog
   []
   (modal/show! :login-register {}))
@@ -131,6 +136,7 @@
 (mf/defc header-options
   [{:keys [section zoom page file index permissions interactions-mode share]}]
   (let [fullscreen?    (mf/deref fullscreen-ref)
+        share-open?    (mf/deref share-modal-open-ref)
 
         toggle-fullscreen
         (mf/use-fn
@@ -144,10 +150,18 @@
 
         open-share-dialog
         (mf/use-fn
-         (mf/deps page)
+         (mf/deps page file)
          (fn []
            (modal/show! :share-link {:page page :file file})
            (modal/disallow-click-outside!)))
+
+        toggle-share-dialog
+        (mf/use-fn
+         (mf/deps open-share-dialog share-open?)
+         (fn []
+           (if share-open?
+             (modal/hide!)
+             (open-share-dialog))))
 
         handle-increase
         (mf/use-fn
@@ -211,7 +225,10 @@
      (when (:in-team permissions)
        [:> button* {:variant "primary"
                     :class (stl/css :share-btn)
-                    :on-click open-share-dialog}
+                    :aria-expanded share-open?
+                    :aria-pressed share-open?
+                    :data-allow-click-modal "share-link"
+                    :on-click toggle-share-dialog}
         (tr "labels.share")])
 
      (when-not (:is-logged permissions)

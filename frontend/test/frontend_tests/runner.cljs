@@ -10,6 +10,7 @@
    [frontend-tests.composable-tests.comp.sync-test]
    [frontend-tests.copy-as-svg-test]
    [frontend-tests.data.comments-filters-test]
+   [frontend-tests.data.common-test]
    [frontend-tests.data.dashboard-test]
    [frontend-tests.data.event-test]
    [frontend-tests.data.exports-assets-test]
@@ -190,6 +191,7 @@
    'frontend-tests.composable-tests.comp.sync-test
    'frontend-tests.copy-as-svg-test
    'frontend-tests.data.comments-filters-test
+   'frontend-tests.data.common-test
    'frontend-tests.data.dashboard-test
    'frontend-tests.data.event-test
    'frontend-tests.data.fix-deleted-fonts-test
