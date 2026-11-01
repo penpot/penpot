@@ -106,18 +106,21 @@
     (t/is (identical? pstate (:persistence loaded)))))
 
 (defn- local-commit
-  "Builds a synthetic local commit event for `file-id`: a page edit as redo,
-  no undo, from the `:local` source."
-  [file-id]
-  (ptk/data-event ::dch/commit
-                  {:id (uuid/next)
-                   :file-id file-id
-                   :file-revn 0
-                   :file-vern 0
-                   :source :local
-                   :features #{}
-                   :redo-changes [{:type :mod-page :id (uuid/next) :name "Edited"}]
-                   :undo-changes []}))
+  "Builds a synthetic local commit event for `file-id`. Defaults to a page edit
+  as redo with no undo; pass `:redo-changes` / `:undo-changes` to build a
+  commit with the exact lists a test needs."
+  ([file-id] (local-commit file-id {}))
+  ([file-id {:keys [redo-changes undo-changes]}]
+   (ptk/data-event ::dch/commit
+                   {:id (uuid/next)
+                    :file-id file-id
+                    :file-revn 0
+                    :file-vern 0
+                    :source :local
+                    :features #{}
+                    :redo-changes (or redo-changes
+                                      [{:type :mod-page :id (uuid/next) :name "Edited"}])
+                    :undo-changes (or undo-changes [])})))
 
 (defn- ^:async run-read-only-phases
   "Drives the read-only save scenario presuming asynchronous APIs: every
@@ -548,6 +551,53 @@
         (finally
           (rx/dispose! store)
           (rx/end! response))))))
+
+;; Scenario: a local edit is saved. Proves: the request carries the inverse
+;; changes next to the forward ones, so the server can keep them.
+(t/deftest ^:async a-save-sends-the-undo-list-of-the-commit
+  (let [redo [{:type :mod-page :id (uuid/next) :name "forward"}]
+        undo [{:type :mod-page :id (uuid/next) :name "inverse"}]]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests response store]}]
+         (ptk/emit! store (local-commit file-id {:redo-changes redo
+                                                 :undo-changes undo})
+                    ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests)) "the save is sent"))
+         (let [[[cmd params]] @requests]
+           (t/is (= :update-file cmd))
+           (t/is (= redo (:changes params)))
+           (t/is (= undo (:undo-changes params))))
+         (rx/push! response {:revn 1})
+         (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
+                                "the save lands")))))))
+
+;; Scenario: two edits close in time are sent in one request. Proves: the redo
+;; keeps the order they were made, and the undo goes backwards, so the stored
+;; inverse undoes the batch instead of replaying it.
+(t/deftest ^:async a-merged-save-keeps-the-undo-in-reverse-commit-order
+  (let [redo-1 [{:type :mod-page :id (uuid/next) :name "one"}]
+        redo-2 [{:type :mod-page :id (uuid/next) :name "two"}]
+        undo-1 [{:type :mod-page :id (uuid/next) :name "undo-one"}]
+        undo-2 [{:type :mod-page :id (uuid/next) :name "undo-two"}]]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests response store]}]
+         (ptk/emit! store
+                    (local-commit file-id {:redo-changes redo-1
+                                           :undo-changes undo-1})
+                    (local-commit file-id {:redo-changes redo-2
+                                           :undo-changes undo-2})
+                    ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests))
+                                "both edits travel in one request"))
+         (let [[[cmd params]] @requests]
+           (t/is (= :update-file cmd))
+           (t/is (= (into redo-1 redo-2) (:changes params)))
+           (t/is (= (into undo-2 undo-1) (:undo-changes params))))
+         (rx/push! response {:revn 1})
+         (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
+                                "the save lands")))))))
 
 ;; Scenario: edit permission is revoked with an edit queued. The save fails
 ;; without sending anything, the queue keeps the edit and the user is

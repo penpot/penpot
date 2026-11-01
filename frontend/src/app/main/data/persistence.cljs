@@ -496,7 +496,8 @@
 
 (defn- send-queued-commit
   "Sends one queued commit and maps its outcome to persistence events."
-  [request-id session-id {:keys [id file-id file-revn file-vern changes features] :as commit}]
+  [request-id session-id {:keys [id file-id file-revn file-vern changes undo-changes
+                                 features] :as commit}]
   (let [sent-at (inst-ms (ct/now))
         params  {:id file-id
                  :revn (max file-revn (get @revn-data file-id 0))
@@ -506,6 +507,7 @@
                  :created-at (:created-at commit)
                  :commit-id id
                  :changes (vec changes)
+                 :undo-changes (vec undo-changes)
                  :features features}]
     ;; UI read-only mode does not invalidate already queued edits.
     (->> (update-file-request request-id params)
@@ -806,7 +808,11 @@
   [buffer]
   (->> (rx/from (group-by :file-id buffer))
        (rx/map (fn [[_ [item :as commits]]]
-                 (let [uchg (into [] xf-mapcat-undo commits)
+                 ;; The redo follows the order the edits were made. The undo
+                 ;; is applied backwards, so the inverse of the newest commit
+                 ;; goes first; inside a commit the list is already in that
+                 ;; order, so only the sequence of commits is reversed.
+                 (let [uchg (into [] xf-mapcat-undo (reverse commits))
                        rchg (into [] xf-mapcat-redo commits)]
                    (-> item
                        (assoc :undo-changes uchg)
