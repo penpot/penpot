@@ -942,3 +942,11 @@
   (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :library true :rich-variants true
                                     :layout-copies true :text true}]
                        :ops [[:switch 6 0 0 0] [:rotate 0 0 0 0] [:reset 5 0 0 0]]}))))
+
+(t/deftest generated-switch-to-a-turned-variant-keeps-the-orientation-of-its-position
+  ;; a nested head whose position in the enclosing main has a resize override
+  ;; switches to a variant turned 45 degrees; it keeps the orientation of its
+  ;; position, which sync gives it, so it has no geometry override
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :variant-diff false :rich-variants true
+                                    :layout-copies true :text true}]
+                       :ops [[:transform 3 3 0 0] [:resize 0 0 0 0] [:switch 4 0 0 0]]}))))
