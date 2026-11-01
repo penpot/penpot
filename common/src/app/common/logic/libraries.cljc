@@ -694,7 +694,14 @@
                   (reorder-copy-children shape-inst children-main container))
 
         (ctsl/grid-layout? shape-inst)
-        (update-grid-copy-attrs shape-before shape-main (not reset?))))))
+        (update-grid-copy-attrs shape-before shape-main (not reset?))
+
+        ;; cells only carry between grids, so a copy that sync leaves
+        ;; without one drops its own
+        (and (not (ctsl/grid-layout? shape-inst)) (seq (:layout-grid-cells shape-inst)))
+        (pcb/update-shapes [(:id shape-inst)]
+                           #(-> % (dissoc :layout-grid-cells) (update :touched disj :layout-grid-cells))
+                           {:ignore-touched true})))))
 
 (defn generate-rename-component
   "Generate the changes for rename the component with the given id, in the current file library."
