@@ -5,14 +5,18 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.node.run
-  "Serial renderer benchmark runs over a retained build.
+  "Renderer benchmark runs over fixed builds.
 
-  One run owns one run home, one loopback host and at most one Chromium process.
-  Fresh cases prepare once per slot on a new page/context. Reuse cases prepare
-  once and run every slot on that page/context. A failed attempt consumes its
-  slot. Browser failures leave the current case's remaining slots unattempted
-  and continue with the next case in a new browser. The run record is atomically
-  replaced after every preparation, attempt and diagnostic change."
+  Runs are stored in a `home`, and execute via a loopback host and at most one
+  Chromium process.
+
+  `:fresh` cases prepare once per slot on a new page and context.
+  `:reuse` cases prepare once and run every slot on the same page and context.
+
+  A failed attempt consumes its slot.
+
+  Browser failures leave the current case's remaining slots unattempted and
+  continue with the next case in a new browser."
   (:require-macros
    [app.common.exceptions :as ex])
   (:require
@@ -469,16 +473,6 @@
         (or outcome :abandon)))))
 
 
-(defn- ^:async launch-initial
-  [state]
-  (let [owner (attempt (await (ensure-browser state)))]
-    (reset! (:launch-deadline state) nil)
-    (when (failure? owner)
-      (when-not (interrupted? state)
-        (record-failure state nil :browser-launch (cause-evidence owner :browser-launch)))
-      (reset! (:abort-run? state) true))
-    (not (failure? owner))))
-
 (defn- fail-startup
   "Records the startup failure and aborts the run. An interrupted run records
   nothing. Returns false."
@@ -487,6 +481,14 @@
     (record-failure state nil stage (cause-evidence cause stage))
     (reset! (:abort-run? state) true))
   false)
+
+(defn- ^:async launch-initial
+  [state]
+  (let [owner (attempt (await (ensure-browser state)))]
+    (reset! (:launch-deadline state) nil)
+    (if (failure? owner)
+      (fail-startup state :browser-launch owner)
+      true)))
 
 (defn- ^:async record-provenance
   [state deadline]
@@ -764,7 +766,7 @@
      :exit-code (get-exit-code run causes @(:harness-failed? state))}))
 
 (defn ^:async execute
-  "Executes a prepared selection in an allocated home and owns host and browser.
+  "Executes a prepared selection. Owns host and browser.
 
   - `root`: the frontend checkout root.
   - `home`: the reserved output home.

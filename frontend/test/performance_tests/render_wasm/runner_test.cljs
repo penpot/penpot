@@ -285,6 +285,16 @@
                           (runner/parse-args ["ab" "--features" "a" "--only-comparisons"])))
   (t/is (thrown? js/Error (runner/parse-args ["ab" "extra" "--features" "a" "--dry-run"]))))
 
+(t/deftest ab-planning-errors-keep-their-cause
+  (let [error (try
+                (runner/parse-args ["ab" "--dry-run"])
+                nil
+                (catch :default cause cause))]
+    (t/is (= :benches.render-wasm.node.runner/invalid-args
+             (:type (ex-data error))))
+    (t/is (some? (ex-cause error)))
+    (t/is (str/includes? (ex-message (ex-cause error)) "at least one"))))
+
 (t/deftest ab-limits-and-confirmation-apply-at-the-parser-boundary
   (t/is (thrown-with-msg? js/Error #"requires --confirm" (runner/parse-args ["ab" "--features" "a"])))
   (t/is (:confirm (:options (runner/parse-args ["ab" "--features" "a" "--confirm"]))))
