@@ -881,3 +881,11 @@
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :flex :library true
                                     :rich-variants true :layout-copies true :text true}]
                        :ops [[:transform 7 0 0 8] [:delete 0] [:restore 0] [:add-child 9 0 0 0]]}))))
+
+(t/deftest generated-reset-of-an-absolute-grid-head-gives-it-back-its-cell
+  ;; a copy makes a nested head absolute and authors its grid's cells; the
+  ;; reset takes the head back into the flow and into a cell
+  (t/is (map? (cg/run {:world [2 1 {:variants true :text-styles true :library-variants true :stale-libraries true
+                                    :layout :grid :library-depth 1 :library true :rich-variants true
+                                    :layout-children true :library-text true :layout-copies true :text true}]
+                       :ops [[:style 11 35 1] [:grid-direction 13 0 0 1] [:grid-cell 13 0 0 1] [:reset 14 0 0 0]]}))))

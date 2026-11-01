@@ -2141,11 +2141,14 @@
 (defn generate-reset-component
   "Reset the copy head to its near main. A swapped head turns back into the
   component of the main shape it refers to, keeping its id. A nested head
-  also takes its position's placement and inherited layout item values."
+  also takes its position's placement and inherited layout item values,
+  and its grid parent's cells follow when that takes it in or out of the
+  flow."
   [changes file-full libraries container id]
   (-> changes
       (pcb/with-container container)
       (pcb/with-objects (:objects container))
       (generate-sync-shape-direct file-full libraries container id true)
       (settle-reset-placement file-full libraries container id)
-      (reset-layout-item file-full libraries container id)))
+      (reset-layout-item file-full libraries container id)
+      (reassign-parent-grid-cells container id)))
