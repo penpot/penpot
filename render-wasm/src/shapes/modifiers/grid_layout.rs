@@ -648,12 +648,25 @@ pub fn grid_cell_data<'a>(
     )
 }
 
+// Returns `(h, v)` such that `p = hv * h + vv * v`: the coordinates of `p` along the
+// frame's unit axes. The axes need not be perpendicular, as in a skewed frame.
+fn frame_coords(p: &Point, hv: Vector, vv: Vector) -> (f32, f32) {
+    let det = hv.x * vv.y - hv.y * vv.x;
+    if det.abs() < f32::EPSILON {
+        return (hv.x * p.x + hv.y * p.y, vv.x * p.x + vv.y * p.y);
+    }
+    (
+        (p.x * vv.y - p.y * vv.x) / det,
+        (hv.x * p.y - hv.y * p.x) / det,
+    )
+}
+
 // Returns `(h_min, v_min, h_size, v_size)` — the child's bounding box expressed in the
-// layout frame's own coordinate system (projected onto its `hv`/`vv` unit vectors).
+// layout frame's own coordinate system (its coordinates along the `hv`/`vv` unit vectors).
 //
 // Using the frame axes rather than screen x/y is necessary when the parent grid frame
-// is itself rotated: in that case `max_x - min_x` is the screen-AABB width, which
-// differs from the width measured along the frame's horizontal axis.
+// is itself rotated or skewed: in that case `max_x - min_x` is the screen-AABB width,
+// which differs from the width measured along the frame's horizontal axis.
 fn child_frame_aabb(child_bounds: &Bounds, hv: Vector, vv: Vector) -> (f32, f32, f32, f32) {
     let corners = child_bounds.points();
     let mut h_min = f32::INFINITY;
@@ -661,8 +674,7 @@ fn child_frame_aabb(child_bounds: &Bounds, hv: Vector, vv: Vector) -> (f32, f32,
     let mut v_min = f32::INFINITY;
     let mut v_max = f32::NEG_INFINITY;
     for p in &corners {
-        let h = hv.x * p.x + hv.y * p.y;
-        let v = vv.x * p.x + vv.y * p.y;
+        let (h, v) = frame_coords(p, hv, vv);
         if h < h_min {
             h_min = h;
         }
@@ -850,15 +862,14 @@ pub fn reflow_grid_layout(
         // For a rotated parent frame, (min_x, min_y) is wrong because it is the
         // screen-AABB corner, not the frame-axis-aligned corner.
         // child_ref = h_min * hv + v_min * vv gives the world-space point whose
-        // projections onto hv/vv are the child's minima along those axes —
+        // frame coordinates are the child's minima along those axes —
         // the "top-left in frame coordinates".
         //
         // For fill axes, resize_matrix scales local-x/y by (new_w / child_bounds.width())
         // anchored at nw. This shifts h_min/v_min: the post-resize minimum is
         //   h_min_new = nw_h + (h_min - nw_h) * scale_w
         // We must translate FROM this post-resize minimum, not the pre-resize one.
-        let nw_h = hv.x * child_bounds.nw.x + hv.y * child_bounds.nw.y;
-        let nw_v = vv.x * child_bounds.nw.x + vv.y * child_bounds.nw.y;
+        let (nw_h, nw_v) = frame_coords(&child_bounds.nw, hv, vv);
         let h_anchor = if child.is_layout_horizontal_fill() && child_bounds.width() > MIN_SIZE {
             let scale_w = new_width / child_bounds.width();
             nw_h + (h_min - nw_h) * scale_w
@@ -932,4 +943,45 @@ pub fn reflow_grid_layout(
     }
 
     Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_child_frame_aabb_in_a_skewed_frame() {
+        // A frame skewed by a fill resize, far from the page origin.
+        let frame = Bounds::new(
+            Point::new(1000.0, 500.0),
+            Point::new(1100.0, 500.0),
+            Point::new(1150.0, 600.0),
+            Point::new(1050.0, 600.0),
+        );
+        let hv = frame.hv(1.0);
+        let vv = frame.vv(1.0);
+        let at = |h: f32, v: f32| frame.nw + hv * h + vv * v;
+        let child = Bounds::new(
+            at(10.0, 20.0),
+            at(30.0, 20.0),
+            at(30.0, 40.0),
+            at(10.0, 40.0),
+        );
+
+        let (h_min, v_min, width, height) = child_frame_aabb(&child, hv, vv);
+        let corner = hv * h_min + vv * v_min;
+
+        assert!(
+            (corner.x - child.nw.x).abs() < 0.01,
+            "{corner:?} != {:?}",
+            child.nw
+        );
+        assert!(
+            (corner.y - child.nw.y).abs() < 0.01,
+            "{corner:?} != {:?}",
+            child.nw
+        );
+        assert!((width - 20.0).abs() < 0.01, "width {width}");
+        assert!((height - 20.0).abs() < 0.01, "height {height}");
+    }
 }
