@@ -189,8 +189,10 @@
     "--allow-all-differences"})
 
 (defn- invalid-args
-  [message]
-  (throw (ex-info message {:type ::invalid-args})))
+  ([message]
+   (invalid-args message nil))
+  ([message cause]
+   (throw (ex-info message {:type ::invalid-args} cause))))
 
 (defn- some-flags?
   [flags group]
@@ -287,7 +289,7 @@
         (try
           (feature-plan/plan (:features options []) options)
           (catch :default cause
-            (invalid-args (ex-message cause))))))
+            (invalid-args (errors/message-of cause) cause)))))
     {:command command
      :arguments arguments
      :options (cond-> options (= command "ab") (assoc :default-features false))
