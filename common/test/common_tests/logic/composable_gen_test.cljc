@@ -908,3 +908,12 @@
   (t/is (map? (cg/run {:world [2 1 {:variants true :text-styles true :library true :rich-variants true
                                     :layout-copies true :text true}]
                        :ops [[:swap 6 0 0 0] [:transform 17 3 0 0] [:swap 9 0 0 0] [:edit 0 0 1 1] [:update-main 0]]}))))
+
+(t/deftest generated-reset-under-a-stale-mirrored-main-keeps-a-consistent-rotation
+  ;; the library turns and flips an outer component; a file that has not
+  ;; accepted it resets a nested head of an unturned copy, which keeps a
+  ;; rotation its transform agrees with
+  (t/is (map? (cg/run {:world [2 1 {:library true :stale-libraries true :library-dependency true :library-text true}]
+                       :ops [[:library-transform 2 3 4 0] [:library-delete 0] [:library-sync] [:library-restore 0]
+                             [:library-sync] [:library-undo 0 0 0 0] [:library-transform 16 4 4 0]
+                             [:edit 17 1 1 :copy-head] [:reset 17]]}))))

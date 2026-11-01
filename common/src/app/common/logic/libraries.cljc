@@ -356,7 +356,9 @@
             (gmt/unit? relative))
       main-container
       (let [transform (gmt/transform-in (gsh/shape->center shape-main) relative)
-            angle (- (or (:rotation target) 0) (or (:rotation origin) 0))
+            ;; a mirror negates the rotation before the turn adds to it
+            angle (- (or (:rotation target) 0)
+                     (or (some-> origin (gsh/apply-transform transform) :rotation) 0))
             flip (fn [shape key]
                    (cond-> (get shape key)
                      (not= (boolean (get origin key)) (boolean (get target key))) not))
