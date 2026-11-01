@@ -8,6 +8,9 @@
   (:require
    [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.transforms :as gtr]
+   [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
@@ -185,3 +188,41 @@
 
       (t/is (some? result))
       (t/is (contains? result rect-id)))))
+
+(defn- reflow
+  [objects ids]
+  (->> objects
+       (gm/set-objects-modifiers (into {} (map #(vector % {:modifiers (ctm/reflow-modifiers)})) ids))
+       (gtr/apply-objects-modifiers objects)))
+
+(defn- edges
+  [{:keys [points]}]
+  (let [[p0 p1 _ p3] points]
+    [(gpt/to-vec p0 p1) (gpt/to-vec p0 p3)]))
+
+(t/deftest grid-child-skews-with-its-skewed-grid
+  (t/testing "a grid board skewed by its turned parent filling a flex skews its children too"
+    (let [file    (-> (thf/sample-file :file1)
+                      (tho/add-frame :outer :width 340 :height 200 :layout :flex :layout-flex-dir :row
+                                     :layout-align-items :center :layout-justify-content :center
+                                     :layout-padding-type :simple :layout-padding {:p1 30 :p2 30 :p3 30 :p4 30})
+                      (tho/add-frame :card :parent-label :outer :x 120 :y 50 :width 100 :height 100)
+                      (tho/add-grid-frame :inner :parent-label :card :x 140 :y 70 :width 60 :height 60)
+                      (add-rect-child :cell :inner :x 140 :y 70 :width 20 :height 20)
+                      (tho/place-in-grid-columns :inner 1 {1 :cell}))
+          ids     [(thi/id :outer) (thi/id :inner)]
+          objects (reflow (:objects (thf/current-page file)) ids)
+          card    (get objects (thi/id :card))
+          objects (->> objects
+                       (gm/set-objects-modifiers
+                        {(:id card) {:modifiers (ctm/rotation-modifiers card (gsh/shape->center card) 45)}})
+                       (gtr/apply-objects-modifiers objects))
+          objects (reflow (assoc-in objects [(:id card) :layout-item-h-sizing] :fill) ids)
+          inner   (get objects (thi/id :inner))
+          cell    (get objects (thi/id :cell))
+          [inner-h inner-v] (edges inner)
+          [cell-h cell-v] (edges cell)]
+
+      (t/is (gpt/close? (gpt/scale inner-h (/ 1 3)) cell-h))
+      (t/is (gpt/close? (gpt/scale inner-v (/ 1 3)) cell-v))
+      (t/is (gpt/close? (first (:points inner)) (first (:points cell)))))))
