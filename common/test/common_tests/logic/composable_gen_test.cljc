@@ -925,3 +925,20 @@
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :grid :rich-variants true
                                     :layout-children true :grid-empty true :layout-copies true :text true}]
                        :ops [[:style 4 29 1] [:detach 0 0 0 0] [:rotate 5 0 0 0]]}))))
+
+(t/deftest generated-resized-main-keeps-a-turned-copy-at-its-first-corner
+  ;; a main is narrowed while a copy of it is turned by a detached parent;
+  ;; the copy keeps its first corner, and a child it overrides keeps its
+  ;; place against it
+  (t/is (map? (cg/run {:world [2 2 {:text true :text-styles true}]
+                       :ops [[:detach 6 0 0 0] [:delete 0] [:restore 0] [:duplicate 2 0 0 0] [:edit 0 0 0 0]
+                             [:transform 8 0 0 2] [:delete 0 0 0 0] [:rotate 8 0 0 0] [:delete 0] [:restore 0]
+                             [:edit 7 0 1 1] [:update-main 7] [:transform 7 7 0 0]]}))))
+
+(t/deftest generated-turned-swap-of-another-size-keeps-the-corner-of-its-position
+  ;; a nested head switched to a wider variant is turned 45 degrees with the
+  ;; chain of copies it is in; it keeps the corner of its narrower position,
+  ;; and a reset lands on it
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :library true :rich-variants true
+                                    :layout-copies true :text true}]
+                       :ops [[:switch 6 0 0 0] [:rotate 0 0 0 0] [:reset 5 0 0 0]]}))))

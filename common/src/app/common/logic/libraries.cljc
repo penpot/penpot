@@ -1670,15 +1670,21 @@
                            {}
                            placement-attrs)
 
+        orient     (when (untouched? :rotation)
+                     (orient-like shape-inst placed (gsh/shape->center shape-inst)))
+        oriented   (cond-> shape-inst (some? orient) (orient))
+        ;; turned alike, both take their place at their first corner
+        turned?    (and (some? (:transform placed))
+                        (not (gmt/unit? (:transform placed)))
+                        (gmt/close? (:transform placed) (or (:transform oriented) (gmt/matrix))))
         position   (fn [shape]
-                     (gpt/point (dm/get-in shape [:selrect :x])
-                                (dm/get-in shape [:selrect :y])))
-        delta      (gpt/subtract (position placed) (position shape-inst))
+                     (or (when turned? (first (:points shape)))
+                         (gpt/point (dm/get-in shape [:selrect :x])
+                                    (dm/get-in shape [:selrect :y]))))
+        delta      (gpt/subtract (position placed) (position oriented))
         move?      (and (untouched? :x)
                         (not layout-placed?)
-                        (not (gpt/almost-zero? delta)))
-        orient     (when (untouched? :rotation)
-                     (orient-like shape-inst placed (gsh/shape->center shape-inst)))]
+                        (not (gpt/almost-zero? delta)))]
     (cond-> changes
       (seq placement)
       (pcb/update-shapes [(:id shape-inst)]
@@ -1878,22 +1884,32 @@
   translation by the roots' (untransformed) position delta suffices — position is
   free per-instance placement.
 
+  A turned or flipped instance lines up with the origin at their first
+  corner, the one a resize keeps, so it follows a resize in its own frame.
+
   If the dest root's geometry IS overridden (e.g. the user rotated the copy as a
   whole), the instance keeps its own placement transform, so the origin shape is
   additionally transformed by the roots' relative transformation (rotation /
   flips) around the dest root center — geometric changes then land expressed in
   the dest instance's own frame instead of wiping its placement."
   [shape origin-root dest-root]
-  (let [shape-pos        (fn [shape]
-                           (gpt/point (dm/get-in shape [:selrect :x])
-                                      (dm/get-in shape [:selrect :y])))
+  (let [touched?         (ctk/touched-group? dest-root :geometry-group)
+        oriented?        (and (not touched?)
+                              (some? (:transform dest-root))
+                              (not (gmt/unit? (:transform dest-root)))
+                              (gmt/close? (or (:transform origin-root) (gmt/matrix))
+                                          (:transform dest-root)))
+        shape-pos        (fn [shape]
+                           (or (when oriented? (first (:points shape)))
+                               (gpt/point (dm/get-in shape [:selrect :x])
+                                          (dm/get-in shape [:selrect :y]))))
 
         origin-root-pos  (shape-pos origin-root)
         dest-root-pos    (shape-pos dest-root)
         delta            (gpt/subtract dest-root-pos origin-root-pos)
 
         shape            (gsh/move shape delta)]
-    (if-not (ctk/touched-group? dest-root :geometry-group)
+    (if-not touched?
       shape
       (if-let [turn (orient-like origin-root dest-root
                                  (grc/rect->center (:selrect dest-root)))]

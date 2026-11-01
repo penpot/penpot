@@ -459,3 +459,28 @@
     (t/is (mth/close? 80 (:height after)))
     (t/is (mth/close? 100 (:width after)))
     (t/is (not (contains? (:touched after) :geometry-group)))))
+
+(t/deftest a-resized-turned-main-keeps-its-copies-at-their-first-corner
+  ;; a width change keeps a shape's first corner; a copy oriented like its
+  ;; main keeps its own first corner, whether the turn or flip is the main's
+  ;; or a parent's
+  (doseq [case [:turned :flipped :parent-turned]]
+    (let [file   (-> (thf/sample-file :file)
+                     (tho/add-simple-component :a :main-a :rect-a :root-params {:width 100 :height 100})
+                     (cond-> (= case :parent-turned)
+                       (-> (tho/add-frame :main-b {:width 200 :height 200})
+                           (thc/instantiate-component :a :b-a :parent-label :main-b)
+                           (thc/make-component :b :main-b))))
+          before (-> (tm/make-situation file)
+                     (r/step (n/rotate (if (= case :parent-turned) :main-b :main-a) 45)) r/settle
+                     (cond-> (= case :flipped) (-> (r/step (n/transform-shape :main-a :flip-x nil)) r/settle)))
+          before (r/settle (tm/with-file before
+                             (thc/instantiate-component (tm/file before) (if (= case :parent-turned) :b :a)
+                                                        :copy :children-labels [:copy-a])))
+          label  (if (= case :parent-turned) :copy-a :copy)
+          after  (-> before (r/step (n/transform-shape :main-a :width 80)) r/settle)
+          copy   (ths/get-shape (tm/file after) label)]
+      (t/is (mth/close? 80 (:width copy) 0.001) (str case))
+      (t/is (gpt/close? (first (:points (ths/get-shape (tm/file before) label)))
+                        (first (:points copy)))
+            (str case)))))
