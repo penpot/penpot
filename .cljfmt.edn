@@ -11,5 +11,6 @@
                  cljs.test/async [[:inner 0]]
                  promesa.exec/thread [[:inner 0]]
                  specify! [[:inner 0] [:inner 1]]
+                 benches.render-wasm.runtime.commands/defcommand [[:inner 0]]
                  benches.render-wasm.runtime.protocol/resolve-or-reject-with [[:inner 0]]}
  }
