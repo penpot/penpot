@@ -1004,3 +1004,11 @@
                                     :layout-copies true :text true}]
                        :ops [[:nest 0 0 0 0] [:text-style 0 1 1] [:duplicate 0 0 0 0]
                              [:update-main 1 0 0 0] [:text-style 0 0 1]]}))))
+
+(t/deftest generated-resized-copy-in-a-turned-board-pushes-its-own-turn
+  ;; a copy turned with a board that is detached and then resized pushes its
+  ;; size to its main but not the board's turn, which sync gives it back
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :library true :rich-variants true
+                                    :layout-copies true :text true}]
+                       :ops [[:rotate 15 0 0 0] [:detach 15 0 0 0] [:delete 5] [:restore 5]
+                             [:resize 14 0 0 0] [:edit 3 0 1 1] [:update-main 3]]}))))

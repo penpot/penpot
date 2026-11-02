@@ -852,11 +852,11 @@
                                     :root-main      root-main
                                     ;; An orientation the copy root inherits places it
                                     ;; and is not pushed into the main. Sync composes a
-                                    ;; nested root with its parent's turn; a top copy
-                                    ;; root owns its turn only when it authors geometry.
-                                    :inherited-turn (if (:component-root shape-inst)
-                                                      (when-not (ctk/touched-group? shape-inst :geometry-group)
-                                                        (orient-like shape-inst root-main center))
+                                    ;; root with its parent's turn; a top copy root that
+                                    ;; does not author its geometry inherits all of it.
+                                    :inherited-turn (if (and (:component-root shape-inst)
+                                                             (not (ctk/touched-group? shape-inst :geometry-group)))
+                                                      (orient-like shape-inst root-main center)
                                                       (when-let [parent (ctn/get-shape container (:parent-id shape-inst))]
                                                         (orient-like parent
                                                                      (or (ctn/get-shape main-container (:parent-id root-main)) {})
