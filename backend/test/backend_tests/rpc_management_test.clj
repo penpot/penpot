@@ -505,6 +505,71 @@
         (t/is (= (:library-file-id item) (:id file3)))))))
 
 
+(t/deftest move-files-from-multiple-teams-is-rejected
+  ;; A single move carries one origin team in its props: mixed origins
+  ;; are refused before anything moves, and the move event is not
+  ;; submitted. The fixtures are created with the flag off so their own
+  ;; membership events do not pollute the mock.
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        team     (th/create-team* 1 {:profile-id (:id profile)})
+        project1 (th/create-project* 1 {:team-id (:default-team-id profile)
+                                        :profile-id (:id profile)})
+        project2 (th/create-project* 2 {:team-id (:id team)
+                                        :profile-id (:id profile)})
+        file1    (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:id project1)})
+        file3    (th/create-file* 3 {:profile-id (:id profile)
+                                     :project-id (:id project2)})]
+    (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+      (with-redefs [cf/flags (conj cf/flags :audit-log)]
+        (let [out   (th/command! {::th/type :move-files
+                                  ::rpc/profile-id (:id profile)
+                                  :project-id (:id project2)
+                                  :ids #{(:id file1) (:id file3)}})
+              error (:error out)]
+          (t/is (th/ex-info? error))
+          (t/is (th/ex-of-type? error :validation))
+          (t/is (th/ex-of-code? error :cant-move-from-multiple-teams))))
+      (t/is (not-any? #(= "move-files" (:name %))
+                      (map second (:call-args-list @audit-mock)))))
+    (t/is (= 1 (count (th/db-query :file {:project-id (:id project1)}))))
+    (t/is (= 1 (count (th/db-query :file {:project-id (:id project2)}))))))
+
+
+(t/deftest move-files-carries-both-teams-in-the-event
+  ;; The event carries the origin and destination team, so a consumer can
+  ;; key on them without joining production tables.
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        team     (th/create-team* 1 {:profile-id (:id profile)})
+        project1 (th/create-project* 1 {:team-id (:default-team-id profile)
+                                        :profile-id (:id profile)})
+        project2 (th/create-project* 2 {:team-id (:id team)
+                                        :profile-id (:id profile)})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:id project1)})
+        raw      (th/command-raw! {::th/type :move-files
+                                   ::rpc/profile-id (:id profile)
+                                   :project-id (:id project2)
+                                   :ids #{(:id file)}})
+        props    (get-in (meta raw) [:app.loggers.audit/props])]
+    (t/is (= (:default-team-id profile) (:source-team-id props)))
+    (t/is (= (:id team) (:dest-team-id props)))))
+
+
+(t/deftest move-project-carries-both-teams-in-the-event
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 2 {:profile-id (:id profile)})
+        project (th/create-project* 1 {:team-id (:default-team-id profile)
+                                       :profile-id (:id profile)})
+        raw     (th/command-raw! {::th/type :move-project
+                                  ::rpc/profile-id (:id profile)
+                                  :project-id (:id project)
+                                  :team-id (:id team)})
+        props   (get-in (meta raw) [:app.loggers.audit/props])]
+    (t/is (= (:default-team-id profile) (:source-team-id props)))
+    (t/is (= (:id team) (:dest-team-id props)))))
+
+
 (t/deftest move-library-to-other-team
   (let [profile  (th/create-profile* 1 {:is-active true})
         team     (th/create-team* 1 {:profile-id (:id profile)})

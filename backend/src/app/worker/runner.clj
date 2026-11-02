@@ -37,9 +37,8 @@
   terminal job produces
   0 affected rows and is skipped without touching its state
   (first-terminal-wins companion). Also predicates the payload
-  scheduled_at: a row rescheduled after the payload was pushed
-  (dispatcher re-pushes on reschedule) is never claimed with the stale
-  payload."
+  scheduled_at: a duplicate or stale payload is never claimed with a
+  timestamp that no longer matches the row."
   [cfg job-id scheduled-at]
   (jobs/claim cfg job-id scheduled-at))
 
@@ -111,10 +110,9 @@
 
       (do
         (let [job-def   (jobs/get-job-def defs (:name job))
-              _         (jobs-metrics/record-queue-wait
+              _         (jobs-metrics/record-claim-wait
                          cfg
                          (::jobs/name job-def)
-                         queue
                          (- (inst-ms (ct/now)) (inst-ms (:scheduled-at job))))
               params    (try
                           (->> (:params job)
@@ -140,7 +138,6 @@
                               (jobs-metrics/record-execution
                                cfg
                                (:name job)
-                               queue
                                (inst-ms (tpoint)))
                               (jobs-metrics/record-legacy-execution
                                cfg
@@ -236,7 +233,7 @@
 
       (not= (inst-ms scheduled-at)
             (inst-ms (:scheduled-at job)))
-      (l/wrn :hint "skipping job, rescheduled"
+      (l/wrn :hint "skipping job, stale payload"
              :job-id (str job-id)
              :runner-id id
              :tenant tenant

@@ -91,13 +91,12 @@
                                         {::db/return-keys false})
 
                             ;; The no-overlap check lives in the submit itself
-                            ;; (`::jobs/skip-if-active`): the check and the
-                            ;; insert share this transaction, so a job could
-                            ;; still transition from running to completed
-                            ;; between the check and the insert. This is
-                            ;; acceptable: the next tick will submit if
-                            ;; needed. The FOR UPDATE SKIP LOCKED on the
-                            ;; scheduled_task row prevents race conditions
+                            ;; (`::jobs/skip-if-active`): the partial unique
+                            ;; index decides on the insert, so there is no
+                            ;; check racing it. The only residual race is a
+                            ;; live job going terminal right before the insert,
+                            ;; which the next tick covers. The FOR UPDATE SKIP
+                            ;; LOCKED on the scheduled_task row prevents races
                             ;; between nodes.
                             (if-let [job-id (submit-cron-job cfg entry)]
                               (let [elapsed (ct/format-duration (tpoint))]

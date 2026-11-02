@@ -153,7 +153,9 @@
                            :app.loggers.database/reporter
                            :app.loggers.metrics/reporter
                            :app.worker/cron
-                           :app.worker/dispatcher)
+                           :app.worker/dispatcher
+                           :app.loggers.audit.consumers.nexus/consumer
+                           :app.loggers.audit.consumers.admin-console/consumer)
                    (remove-job-runners))
         _      (ig/load-namespaces system)
         system (-> (ig/expand system) (ig/init))]
@@ -657,6 +659,18 @@
                                      (assoc ::jobs/params (:params row))
                                      (assoc ::jobs/context (jobs/make-context row))
                                      (assoc ::jobs/job-id (:id row)))))))))
+
+(defn wait-for
+  "Poll `pred` until it holds, up to `timeout` ms (5 s by default). Answers
+  true when it held, false on timeout."
+  ([pred] (wait-for pred 5000))
+  ([pred timeout]
+   (let [deadline (+ (System/currentTimeMillis) timeout)]
+     (loop []
+       (cond
+         (pred) true
+         (< (System/currentTimeMillis) deadline) (do (Thread/sleep 10) (recur))
+         :else false)))))
 
 (defn metrics-stub
   "A metrics instance with no collectors, where every `run!` is a no-op."

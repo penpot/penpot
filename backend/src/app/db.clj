@@ -651,6 +651,19 @@
          (finally
            (reset! context [])))))))
 
+(defn own-transaction
+  "A cfg for a write that must own its transaction: drops `::db/conn`
+  so the next `tx-run!` opens its own transaction on its own
+  connection, and `::db/read-only` so that transaction is writable
+  even when the caller runs read-only (as the storage scheduler does
+  for its plan cursor). It never joins the transaction of whoever
+  called it; because that transaction joins no other, it owns its
+  after-commit context too, so the write and its metric commit or
+  vanish together and a rollback of the surrounding work can undo
+  neither."
+  [cfg]
+  (dissoc cfg ::conn ::read-only))
+
 (defn tx-run!
   "Run a function in a transaction."
   [system f & params]
@@ -787,6 +800,52 @@
   (let [n   (xact-check-param n)
         row (exec-one! conn ["select pg_try_advisory_xact_lock(?::bigint) as lock" n])]
     (:lock row)))
+
+(defn- check-lock-key
+  "A two-key advisory lock takes int4 keys; anything else (a uuid, a value
+  out of range) would reach the database as an opaque cast error."
+  [n]
+  (if (and (int? n) (<= Integer/MIN_VALUE (long n) Integer/MAX_VALUE))
+    n
+    (throw (IllegalArgumentException. "int4 key required"))))
+
+(defn session-try-lock
+  "Take a session-level advisory lock of two keys without waiting.
+
+  `classid` is the namespace of the lock and `objid` the key inside it.
+  This two-key form lives in its own lock space, apart from the one-key
+  `pg_advisory_lock(bigint)` of `xact-lock!` (the file locks and the setup
+  one): PostgreSQL keys a lock by `objsubid` (1 for one key, 2 for two), so
+  the same numbers in the two forms do not conflict. That is how a
+  subsystem takes a namespace of its own without touching the others.
+
+  Unlike the `xact-*` variants the lock survives the transaction: it lives
+  until `session-unlock` releases it, until the connection is really closed
+  or until the session ends. A pooled connection returned with a lock held
+  keeps it, so the caller must release it; `session-unlock-all` clears
+  whatever a borrowed connection carries."
+  [conn classid objid]
+  (let [row (exec-one! conn ["select pg_try_advisory_lock(?::int, ?::int) as lock"
+                             (check-lock-key classid)
+                             (check-lock-key objid)])]
+    (:lock row)))
+
+(defn session-unlock
+  "Release one two-key session-level advisory lock held by this connection.
+  Answers false when this connection did not hold that lock."
+  [conn classid objid]
+  (let [row (exec-one! conn ["select pg_advisory_unlock(?::int, ?::int) as lock"
+                             (check-lock-key classid)
+                             (check-lock-key objid)])]
+    (:lock row)))
+
+(defn session-unlock-all
+  "Release every session-level advisory lock held by this connection.
+  Used before taking one on a borrowed connection, so a lock some earlier
+  borrower failed to release cannot outlive it."
+  [conn]
+  (exec-one! conn ["select pg_advisory_unlock_all()"])
+  true)
 
 (defn sql-exception?
   [cause]

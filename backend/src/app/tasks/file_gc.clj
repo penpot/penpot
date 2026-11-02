@@ -26,6 +26,7 @@
    [app.features.fdata :as feat.fdata]
    [app.features.file-snapshots :as fsnap]
    [app.jobs :as jobs]
+   [app.loggers.audit :as audit]
    [app.storage :as sto]
    [integrant.core :as ig]))
 
@@ -72,10 +73,21 @@
              (into #{} (map :id)))]
 
     (jobs/heartbeat cfg)
-    (doseq [id unused-media]
+    (doseq [media-id unused-media]
       (l/trc :obj "media-object"
              :file-id (str id)
-             :id (str id)))
+             :id (str media-id)))
+
+    ;; A trimmed file is a destructive action that no RPC reports: emit
+    ;; it so the audit trail records it. The team id travels in props so
+    ;; a consumer never joins production tables.
+    (when (and (seq unused-media) (contains? cf/flags :audit-log))
+      (let [team-id (first (audit/get-team-ids cfg {:file-ids [id]}))]
+        (audit/submit cfg {:name "file-gc"
+                           :type "action"
+                           :props (cond-> {:file-id id}
+                                    (some? team-id) (assoc :team-id team-id))
+                           :context {:triggered-by "cron-task"}})))
 
     file))
 
