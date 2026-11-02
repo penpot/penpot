@@ -66,20 +66,19 @@
        ::yres/status 200
        ::yres/body (yres/stream-body
                     (fn [_ output]
-
-                    (let [channel  (sp/chan :buf buf :xf (keep (partial encode encode-fn)))
-                          listener (events/spawn-listener
-                                    channel
-                                    (partial write! output)
-                                    (partial pu/close! output))]
-                      (try
-                        (binding [events/*sink* channel]
-                          (try
-                            (let [result (handler)]
-                              (events/tap :end result))
-                            (catch Throwable cause
-                              (let [result (errors/handle' cause request)]
-                                (events/tap :error result)))))
-                        (finally
-                          (sp/close! channel)
-                          (px/await! listener))))))}))
+                      (let [channel  (sp/chan :buf buf :xf (keep (partial encode encode-fn)))
+                            listener (events/spawn-listener
+                                      channel
+                                      (partial write! output)
+                                      (partial pu/close! output))]
+                        (try
+                          (binding [events/*sink* channel]
+                            (try
+                              (let [result (handler)]
+                                (events/tap :end result))
+                              (catch Throwable cause
+                                (let [result (errors/handle' cause request)]
+                                  (events/tap :error result)))))
+                          (finally
+                            (sp/close! channel)
+                            (px/await! listener))))))})))
