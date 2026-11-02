@@ -4,6 +4,20 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+// Our CLJS test suite already covers the internals:
+// - runner_test.cljs tests parse-args,
+// - build_test.cljs tests preparation with fake compilers,
+// - feature_comparison_test.cljs tests orchestration.
+// Those compile to an :esm bundle with :runtime :custom and run in-process from
+// target/performance-tests/test.js.
+//
+// It cannot test the assembled executable, so here we test:
+// - exit codes of the real process, including 130/143 for SIGINT/SIGTERM,
+// - stdout and stderr separation as the shell sees it,
+// - that runner.cjs finds commands.cjs next to itself,
+// - that help, compare, and merge never load execution dependencies,
+// - release-compiled file and manifest behavior on the real filesystem,
+
 // Opt-in: build the release runner and the test bundle first:
 //
 //   pnpm run build:renderer-benchmarks:runner

@@ -29,6 +29,7 @@
    [performance-tests.render-wasm.process-test]
    [performance-tests.render-wasm.protocol-test]
    [performance-tests.render-wasm.report-test]
+   [performance-tests.render-wasm.request-test]
    [performance-tests.render-wasm.run-test]
    [performance-tests.render-wasm.runner-test]
    [performance-tests.render-wasm.runs-test]
@@ -66,6 +67,7 @@
    'performance-tests.render-wasm.process-test
    'performance-tests.render-wasm.protocol-test
    'performance-tests.render-wasm.report-test
+   'performance-tests.render-wasm.request-test
    'performance-tests.render-wasm.run-test
    'performance-tests.render-wasm.runner-test
    'performance-tests.render-wasm.runs-test

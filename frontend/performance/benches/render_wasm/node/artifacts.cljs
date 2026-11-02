@@ -5,8 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns benches.render-wasm.node.artifacts
-  "Outputs of renderer builds managed under
-  frontend/target/performance/render-wasm.
+  "Managed renderer builds and output homes for benchmark runs and comparisons.
 
   Here, 'managed' means that the runner owns the build directory and its
   contents, which can be deleted by means of the `purge` command."
@@ -16,6 +15,7 @@
    [app.common.schema :as sm]
    [app.common.transit :as transit]
    [benches.render-wasm.codec :as codec]
+   [benches.render-wasm.errors :as errors]
    [benches.render-wasm.node.files :as files]
    [benches.render-wasm.node.time :as time]
    [clojure.string :as str]))
@@ -67,11 +67,81 @@
         :else
         (recur parent)))))
 
+(defn valid-id?
+  "True for IDs of up to 128 letters, digits, underscores or hyphens,
+  starting with a letter or digit."
+  [id]
+  (and (string? id)
+       (boolean (re-matches #"[A-Za-z0-9][A-Za-z0-9_-]{0,127}" id))))
+
 (defn- check-id
   [id]
-  (when-not (files/valid-id? id)
+  (when-not (valid-id? id)
     (throw (ex-info "invalid renderer build id" {:type ::invalid-id :id id})))
   id)
+
+(defn invalid-home
+  "Throws an ::invalid-home exception with `data` and an optional cause."
+  ([message data]
+   (throw (ex-info message (assoc data :type ::invalid-home))))
+  ([message data cause]
+   (throw (ex-info message (assoc data :type ::invalid-home) cause))))
+
+(defn check-home-id
+  "Returns `id` when it is valid, or throws ::invalid-home with `message`."
+  [id message]
+  (when-not (valid-id? id)
+    (invalid-home message {:id id}))
+  id)
+
+(defn check-output-dir
+  "Resolves an explicit user directory from the caller's cwd and checks that it
+  does not exist. Returns nil for nil. Does not create anything."
+  [dir]
+  (when (some? dir)
+    (when (str/blank? dir)
+      (invalid-home "output directory requires a nonempty path" {}))
+    (let [resolved (path/resolve dir)
+          exists?  (try
+                     (fs/lstatSync resolved #js {:throwIfNoEntry false})
+                     (catch :default cause
+                       (let [detail (errors/message-of cause)]
+                         (invalid-home (str "cannot inspect output directory: " detail)
+                                       {:path resolved :cause detail}
+                                       cause))))]
+      (when exists?
+        (invalid-home "output directory already exists" {:path resolved}))
+      resolved)))
+
+(defn- create-home*
+  [dir stem]
+  (let [log-path (path/join dir (str stem ".log"))]
+    (fs/mkdirSync dir #js {:recursive true})
+    (fs/writeFileSync log-path "" #js {:encoding "utf8" :flag "wx"})
+    {:dir dir
+     :log-path log-path
+     :record-path (path/join dir (str stem ".transit"))}))
+
+(defn create-home
+  "Creates `dir` and its parents, reserves an empty log.
+
+  A filesystem failure throws ::invalid-home with `message` and `:path`, and
+  keeps the original cause.
+
+  Args:
+      dir: path to create.
+      stem: names the .log and .transit files.
+      message: used for errors
+
+  Returns:
+      Directory created, log path and record path."
+  [dir stem message]
+  (try
+    (create-home* dir stem)
+    (catch :default cause
+      (invalid-home message
+                    {:path dir :cause (errors/message-of cause)}
+                    cause))))
 
 (defn- checked-path
   [root file]
