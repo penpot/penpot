@@ -95,6 +95,52 @@ Examples:
 
 **NOTE**: if table name has more than one word, we still use <code class="language-text">-</code> as a separator.
 
+### Large tables
+
+A migration runs inside a single transaction, so it cannot use `CONCURRENTLY`,
+and a `CREATE INDEX` in a migration locks the table against writes until the
+whole run commits.
+
+Write the migration as plain, idempotent SQL: `ADD COLUMN IF NOT EXISTS`,
+`CREATE INDEX IF NOT EXISTS`, and `DROP CONSTRAINT IF EXISTS` followed by
+`ADD CONSTRAINT`. Do not encode shape checks as `pg_catalog` introspection.
+They are easy to get wrong (forgetting `NOT condeferred` accepts an
+`INITIALLY DEFERRED` foreign key, which moves the integrity check to commit) and
+they duplicate what the runbook can verify by hand.
+
+On a large table, build the column and the index out of band before deploying,
+with `CREATE INDEX CONCURRENTLY` on its own (never inside a transaction block).
+A partitioned table cannot take `CREATE INDEX CONCURRENTLY` on the parent: build
+the index on each partition, create the parent index with
+`CREATE INDEX ... ON ONLY`, and attach every partition with
+`ALTER INDEX ... ATTACH PARTITION`. An interrupted concurrent build leaves the
+index `INVALID`: drop it and retry. `CREATE INDEX IF NOT EXISTS` matches the
+name, not the definition, so the runbook verifies `pg_index.indisvalid`, that
+the index has no predicate or expression, and that every partition is attached.
+
+A validated foreign key is the other expensive DDL: `ADD FOREIGN KEY` runs as an
+`ALTER TABLE`, so it takes `ACCESS EXCLUSIVE` on the referencing table and
+`SHARE ROW EXCLUSIVE` on the referenced one, and it scans the whole referencing
+table. `NOT VALID` on a partitioned table is only available since PostgreSQL 18.
+A reference that a GC task resolves must be `DEFERRABLE INITIALLY IMMEDIATE`,
+never `INITIALLY DEFERRED`: the immediate check fires inside the transaction
+that catches the violation and retries; the deferred one fires at commit,
+outside the catch.
+
+The runbook ends by verifying the end state (column, pending rows, index and
+constraint shape) and marking the migration step as applied
+(`INSERT INTO migrations (module, step) ...`), so the body does not run at
+startup. The marker is the only thing that skips the migration.
+
+A backfill that removes a key an old reader uses (for example a JSONB pointer
+that the previous GC scans) must run with the old code stopped. Otherwise the
+old reader loses the reference and can delete a live object, and the rows it
+writes in the meantime miss the backfill.
+
+`ADD COLUMN` takes a brief `ACCESS EXCLUSIVE` even when it changes nothing. A
+migration accepts that lock; a deployment that cannot take it runs the runbook
+and marks the step as applied.
+
 If you need to have a global overview of the all schema of the database you can extract it
 using postgresql:
 

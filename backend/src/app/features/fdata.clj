@@ -105,11 +105,16 @@
   (dissoc file :legacy-data))
 
 (defmethod resolve-file-data "storage"
-  [cfg {:keys [metadata] :as file}]
+  [cfg {:keys [storage-object-id] :as file}]
   (let [storage (sto/resolve cfg ::db/reuse-conn true)
-        ref-id  (:storage-ref-id metadata)
-        data    (->> (sto/get-object storage ref-id)
-                     (sto/get-object-bytes storage))]
+        sobject (or (sto/get-object storage storage-object-id)
+                    (ex/raise :type :internal
+                              :code :missing-storage-object
+                              :hint "file data row has no readable storage object"
+                              :file-id (or (:file-id file) (:id file))
+                              :id (:id file)
+                              :storage-object-id storage-object-id))
+        data    (->> (sto/get-object-bytes storage sobject))]
     (-> file
         (assoc :data data)
         (dissoc :legacy-data))))
@@ -122,8 +127,8 @@
 
 (def ^:private sql:insert-file-data
   "INSERT INTO file_data (file_id, id, created_at, modified_at, deleted_at,
-                          type, backend, metadata, data)
-   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+                          type, backend, metadata, data, storage_object_id)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 
 (def ^:private sql:upsert-file-data
   (str sql:insert-file-data
@@ -132,12 +137,16 @@
                        deleted_at=?,
                        backend=?,
                        metadata=?,
-                       data=?"))
+                       data=?,
+                       storage_object_id=?"))
 
 (defn- upsert-in-database
-  [cfg {:keys [id file-id created-at modified-at deleted-at type backend data metadata]}]
+  [cfg {:keys [id file-id created-at modified-at deleted-at type backend data metadata storage-object-id]}]
   (let [created-at  (or created-at (ct/now))
-        metadata    (some-> metadata db/json)
+        ;; The metadata pointer is dead (the column is the only source of
+        ;; truth). Clean it here, the single point where every branch
+        ;; serializes the metadata, so no write can resurrect it.
+        metadata    (some-> metadata (dissoc :storage-ref-id) (db/json))
         modified-at (or modified-at created-at)]
 
     (db/exec-one! cfg [sql:upsert-file-data
@@ -149,11 +158,13 @@
                        backend
                        metadata
                        data
+                       storage-object-id
                        modified-at
                        deleted-at
                        backend
                        metadata
-                       data])))
+                       data
+                       storage-object-id])))
 
 (defn- handle-persistence
   [cfg {:keys [type backend id file-id data] :as params}]
@@ -176,17 +187,13 @@
                                      :content-type "application/octet-stream"
                                      :file-id file-id
                                      :id id})
-          metadata (-> (:metadata params)
-                       (assoc :storage-ref-id (:id sobject)))
           params   (-> params
-                       (assoc :metadata metadata)
+                       (assoc :storage-object-id (:id sobject))
                        (assoc :data nil))]
       (upsert-in-database cfg params))
 
     (= backend "db")
-    (let [metadata (dissoc (:metadata params) :storage-ref-id)
-          params   (assoc params :metadata metadata)]
-      (upsert-in-database cfg params))
+    (upsert-in-database cfg (assoc params :storage-object-id nil))
 
     (= backend "legacy-db")
     (cond
@@ -216,7 +223,8 @@
       (= type "fragment")
       (upsert-in-database cfg
                           (-> (dissoc params :metadata)
-                              (assoc :backend "db")))
+                              (assoc :backend "db")
+                              (assoc :storage-object-id nil)))
 
       :else
       (throw (RuntimeException. "not implemented")))
@@ -225,11 +233,14 @@
     (throw (IllegalArgumentException.
             (str "backend '" backend "' not supported")))))
 
-(defn process-metadata
-  [cfg metadata]
-  (when-let [storage-id (:storage-ref-id metadata)]
-    (let [storage (sto/resolve cfg ::db/reuse-conn true)]
-      (sto/touch-object! storage storage-id))))
+(defn touch-storage-object
+  "Mark a storage object as touched so the storage GC can reclaim it once
+  nothing references it anymore. Used when a file data row replaces or
+  deletes the object it pointed at. Expects a non-nil object id; callers
+  guard with `some->`/`some->>`."
+  [cfg storage-object-id]
+  (-> (sto/resolve cfg ::db/reuse-conn true)
+      (sto/touch-object! storage-object-id)))
 
 (defn- default-backend
   [backend]
@@ -248,6 +259,10 @@
    [:file-id ::sm/uuid]
    [:backend {:optional true} [:enum "db" "legacy-db" "storage"]]
    [:metadata {:optional true} ctf/schema:file-metadata]
+   ;; The storage object the persisted row pointed at before this write; it is
+   ;; the object to touch when the row replaces it. Required so a new caller
+   ;; must decide it explicitly (nil for a new row) instead of leaking it.
+   [:storage-object-id [:maybe ::sm/uuid]]
    [:data {:optional true} bytes?]
    [:created-at {:optional true} ::ct/inst]
    [:modified-at {:optional true} [:maybe ::ct/inst]]
@@ -257,13 +272,22 @@
   (sm/check-fn schema:update-params :hint "invalid params received for update"))
 
 (defn upsert!
-  "Create or update file data"
+  "Create or update a file data row.
+
+  `:storage-object-id` is the storage object the persisted row pointed at
+  before this write (nil for a new row or a row that had none), not the
+  object the new content will live in: the write resolves that itself. The
+  previous object is marked as touched before the row is replaced, so the
+  storage GC can reclaim the blob once nothing references it.
+
+  The function does not query the row: the caller must hand the pointer it
+  read. Returns true when a row was written."
   [cfg params & {:as opts}]
   (let [params (-> (check-update-params params)
                    (update :backend default-backend))]
 
-    (some->> (:metadata params)
-             (process-metadata cfg))
+    (some->> (:storage-object-id params)
+             (touch-storage-object cfg))
 
     (-> (handle-persistence cfg params)
         (db/get-update-count)
@@ -281,7 +305,7 @@
   ;; previous pass marked must still load until `objects-gc` purges it.
   (let [fragment (some-> (db/get* cfg :file-data
                                   {:id id :file-id file-id :type "fragment"}
-                                  {::sql/columns [:data :backend :id :metadata]
+                                  {::sql/columns [:data :backend :file_id :id :metadata :storage_object_id]
                                    ::db/remove-deleted false})
                          (update :metadata decode-metadata))]
 
@@ -308,9 +332,12 @@
     (when (pmap/modified? item)
       (l/trc :hint "persist pointer" :file-id (str file-id) :id (str id))
       (let [content (-> item deref blob/encode)]
+        ;; A modified pointer has a fresh id, so the fragment row is always a
+        ;; new insert: there is no previous storage object to touch.
         (upsert! cfg {:id id
                       :file-id file-id
                       :type "fragment"
+                      :storage-object-id nil
                       :data content})))))
 
 (defmacro with-pointers

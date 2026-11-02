@@ -209,6 +209,7 @@
           p.team_id,
           coalesce(fd.backend, 'legacy-db') AS backend,
           fd.metadata AS metadata,
+          fd.storage_object_id AS storage_object_id,
           fd.data AS data
      FROM file AS f
      LEFT JOIN file_data AS fd ON (fd.file_id = f.id AND fd.id = f.id)
@@ -809,18 +810,33 @@
       (dissoc :metadata)
       (dissoc :migrations)))
 
+(defn file->response
+  "Strip the internal keys of a file map before it leaves the backend in a
+  response. The file data storage pointer is bookkeeping for the write path:
+  a `file-data` object is authentication-only, so a leaked id would let any
+  logged-in profile fetch the blob from `/assets/by-id`. The metadata key of
+  the old pointer is stripped too: a row the migration does not backfill keeps
+  it, and the metadata schema is open, so it would travel in the response."
+  [file]
+  (-> file
+      (dissoc :storage-object-id)
+      (d/update-when :metadata #(dissoc % :storage-ref-id))))
+
 (defn- file->file-data-params
-  [{:keys [id] :as file} & {:as opts}]
+  [{:keys [id] :as file}]
   (let [created-at  (or (:created-at file) (ct/now))
         modified-at (or (:modified-at file) created-at)]
-    (d/without-nils
-     {:id id
-      :type "main"
-      :file-id id
-      :data (:data file)
-      :metadata (:metadata file)
-      :created-at created-at
-      :modified-at modified-at})))
+    (-> (d/without-nils
+         {:id id
+          :type "main"
+          :file-id id
+          :data (:data file)
+          :metadata (:metadata file)
+          :created-at created-at
+          :modified-at modified-at})
+        ;; The storage object the persisted row pointed at (nil for a new or
+        ;; imported file). `upsert!` touches it before replacing the row.
+        (assoc :storage-object-id (:storage-object-id file)))))
 
 (defn insert-file!
   "Insert a new file into the database table. Expectes a not-encoded file.
@@ -844,34 +860,60 @@
                     :cause cause)
           (throw cause))))
 
-    (->> (file->file-data-params file)
+    ;; An INSERT never replaces a persisted pointer: `duplicate-file` hands
+    ;; the source file map here, and touching the source object would be a
+    ;; write on a live object.
+    (->> (file->file-data-params (dissoc file :storage-object-id))
          (fdata/upsert! cfg))
 
     nil))
 
 (defn update-file!
-  "Update an existing file on the database. Expects not encoded file."
-  [{:keys [::db/conn] :as cfg} {:keys [id] :as file} & {:as opts}]
+  "Update an existing file on the database. Expects a not-encoded file map,
+  as returned by `get-file`, and optionally the fields to change as keyword
+  args; they are merged into the file map before persisting.
 
-  (if (::reset-migrations? opts false)
-    (fmigr/reset-migrations! conn file)
-    (fmigr/upsert-migrations! conn file))
+  The storage object the persisted row pointed at travels in the map
+  (`:storage-object-id`), and `upsert!` touches it before replacing the row.
+  That is why the caller must pass the map it read instead of building a
+  partial one: nothing is queried here. The params only change mutable fields
+  of the file: the pointer and the identity (`:id`, `:file-id`) always come
+  from the read map."
+  [{:keys [::db/conn] :as cfg} file & {:as params}]
 
-  (let [file
-        (encode-file cfg file)
+  ;; A map read with `:load-data? false` has no `:data` and no pointer;
+  ;; persisting it would wipe the file content and skip the storage touch.
+  ;; `ex/raise` instead of `assert`: the guard must exist in the deployed
+  ;; binary, where `clojure.core/assert` is compiled out.
+  (when-not (contains? file :data)
+    (ex/raise :type :internal
+              :code :missing-file-data
+              :hint "expected a file map read with data"
+              :file-id (:id file)))
 
-        file-params
-        (file->params (dissoc file :id))
+  (let [reset? (::reset-migrations? params false)
+        ;; The pointer and the identity are bookkeeping of the persisted row,
+        ;; not editable fields: they can only come from the read map. A pointer
+        ;; in the params would skip the touch and leak the replaced blob; an
+        ;; `:id` would retarget the UPDATE.
+        file   (merge file (dissoc params ::reset-migrations?
+                                   :storage-object-id
+                                   :id
+                                   :file-id))]
 
-        file-data-params
-        (file->file-data-params file)]
+    (if reset?
+      (fmigr/reset-migrations! conn file)
+      (fmigr/upsert-migrations! conn file))
 
-    (db/update! conn :file file-params
-                {:id id}
-                {::db/return-keys false})
+    (let [file        (encode-file cfg file)
+          file-params (file->params (dissoc file :id))]
 
-    (fdata/upsert! cfg file-data-params)
-    nil))
+      (db/update! conn :file file-params
+                  {:id (:id file)}
+                  {::db/return-keys false})
+
+      (fdata/upsert! cfg (file->file-data-params file))
+      nil)))
 
 (defn save-file!
   "Applies all the final validations and perist the file, binfile
@@ -902,8 +944,12 @@
         (when (ex/exception? result)
           (l/error :hint "file schema validation error" :cause result))))
 
+    ;; LEGACY: the `::overwrite` branch is the in-place import, dead code that
+    ;; will be removed in a separate PR. It does not carry the previous
+    ;; `storage_object_id`, so it is not supported by the storage pointer
+    ;; model; only the insert branch is live.
     (if (::overwrite cfg)
-      (update-file! cfg file (assoc opts ::reset-migrations? true))
+      (update-file! cfg file ::reset-migrations? true)
       (insert-file! cfg file opts))))
 
 (def ^:private sql:get-file-libraries

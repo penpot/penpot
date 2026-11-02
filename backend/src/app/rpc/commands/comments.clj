@@ -192,7 +192,10 @@
       (-> file
           (assoc :page-name (dm/get-in data [:pages-index page-id :name]))
           (assoc :page-id page-id)
-          (dissoc :data)))))
+          (dissoc :data)
+          ;; The storage pointer is internal bookkeeping: it never leaves the
+          ;; backend in a response.
+          (bfc/file->response)))))
 
 ;; FIXME: rename
 (defn- get-comment-thread

@@ -123,7 +123,8 @@
 
 (defn- get-resolved-file
   [cfg file-id]
-  (bfc/get-file cfg file-id :migrate? false :decode? false))
+  (-> (bfc/get-file cfg file-id :migrate? false :decode? false)
+      (bfc/file->response)))
 
 (defn prepare-download
   [file filename]

@@ -41,11 +41,12 @@
                     :updated-at past})
 
     (t/is (true? (fdata/upsert! th/*system*
-                                {:id      id
-                                 :file-id (:id file)
-                                 :type    "snapshot"
-                                 :backend "legacy-db"
-                                 :data    payload})))
+                                {:id                id
+                                 :file-id           (:id file)
+                                 :type              "snapshot"
+                                 :backend           "legacy-db"
+                                 :storage-object-id nil
+                                 :data              payload})))
 
     (let [row (th/db-get :file-change {:id id} {::db/remove-deleted false})]
       (t/testing "the payload lands in the legacy column"

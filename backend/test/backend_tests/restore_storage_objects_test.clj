@@ -91,8 +91,8 @@
         file     (th/create-file* 1 {:profile-id (:id profile)
                                      :project-id (:default-project-id profile)})
         data-id  (uuid/next)
-        ;; file-data objects carry the ids of their row: the GC resolves the
-        ;; reference with that pair.
+        ;; the row points at its object through `storage_object_id`; the
+        ;; metadata ids are informational for diagnostics
         sobject  (:id (put-object! "file-data" {:file-id (:id file)
                                                 :id data-id}))]
 
@@ -103,7 +103,7 @@
                     :type "main"
                     :backend "fs"
                     :deleted-at (ct/in-past {:days 1})
-                    :metadata (db/json {"storage-ref-id" (str sobject)})})
+                    :storage-object-id sobject})
     (mark-object! sobject)
 
     (restore-file! (:id file))

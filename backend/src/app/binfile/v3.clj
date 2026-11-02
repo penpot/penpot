@@ -1327,6 +1327,10 @@
             (db/exec! cfg [sql-2 file-id]))))))
 
 (defn- import-file-and-overwrite*
+  "LEGACY: in-place binfile import (dead code, to be removed in a separate
+  PR). It is not supported by the storage pointer model: the imported file
+  does not carry the previous `storage_object_id`, so overwriting a
+  storage-backed row would leave its object unreclaimed."
   [{:keys [::manifest ::bfc/file-id] :as cfg}]
 
   (when (not= 1 (count (:files manifest)))

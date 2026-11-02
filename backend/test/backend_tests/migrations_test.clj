@@ -6,7 +6,9 @@
 
 (ns backend-tests.migrations-test
   (:require
+   [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.features.fdata :as fdata]
    [app.migrations :as migrations]
    [app.util.migrations :as mg]
    [backend-tests.helpers :as th]
@@ -15,6 +17,7 @@
    [clojure.test :as t]))
 
 (t/use-fixtures :once th/state-init)
+(t/use-fixtures :each th/database-reset)
 
 (t/deftest migrations-registry-satisfies-steps-spec
   (t/testing "every entry is a {:name :fn} step (guards against stray forms)"
@@ -50,6 +53,18 @@
                       WHERE contype='f' AND condeferrable AND conrelid = ?::regclass" table])
        (map :conname)
        set))
+
+(defn- foreign-key-flags
+  "The deferral and delete-action flags of one foreign key. `condeferred` is
+  true only for `INITIALLY DEFERRED`."
+  [table name]
+  (-> (th/db-exec! ["SELECT condeferrable, condeferred, confdeltype, convalidated
+                       FROM pg_constraint
+                      WHERE contype = 'f'
+                        AND conname = ?
+                        AND conrelid = ?::regclass"
+                    name table])
+      first))
 
 (t/deftest job-table-exists-with-expected-columns
   (t/is (= #{; dispatch/lifecycle columns
@@ -216,3 +231,205 @@
       (t/is (not (contains? triggers "job__modified_at__tgr"))))
     (t/testing "deletion protection is the only trigger on job"
       (t/is (= #{"deletion_protection__tgr"} triggers)))))
+
+;; --- File data storage reference (migration 0159)
+
+(def ^:private file-data-migration
+  (mg/resource "app/migrations/sql/0159-add-file-data-storage-object-id.sql"))
+
+(defn- apply-file-data-migration!
+  []
+  (db/tx-run! (::db/pool th/*system*)
+              (fn [{:keys [::db/conn]}]
+                (file-data-migration conn))))
+
+(t/deftest file-data-storage-object-reference-is-a-deferrable-no-action-fk
+  (t/testing "the pointer column exists"
+    (t/is (contains? (table-columns "file_data") "storage_object_id")))
+  (t/testing "the index that serves the FK check and the GC scan exists"
+    (t/is (contains? (table-indexes "file_data")
+                     "file_data__storage_object_id__idx")))
+  (t/testing "the reference does not cascade"
+    (t/is (contains? (table-foreign-keys "file_data")
+                     ["file_data_storage_object_id_fkey" "a"])))
+  (t/testing "the reference is DEFERRABLE but checked immediately"
+    ;; The storage GC catches the violation inside the chunk transaction. An
+    ;; `INITIALLY DEFERRED` check fires at commit, outside the catch, and the
+    ;; sweep would never move past the blocked chunk.
+    (t/is (= {:condeferrable true
+              :condeferred false
+              :confdeltype "a"
+              :convalidated true}
+             (foreign-key-flags "file_data"
+                                "file_data_storage_object_id_fkey")))))
+
+(t/deftest deleting-a-referenced-storage-object-fails
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+        sobject (:id (th/db-insert! :storage-object {:backend "fs"}))
+        data-id (uuid/next)]
+
+    (th/db-insert! :file-data
+                   {:file-id (:id file)
+                    :id data-id
+                    :type "snapshot"
+                    :backend "storage"
+                    :storage-object-id sobject})
+
+    (t/testing "a live reference refuses the physical delete"
+      (let [cause (try
+                    (th/db-exec! ["DELETE FROM storage_object WHERE id = ?" sobject])
+                    nil
+                    (catch java.sql.SQLException cause cause))]
+        (t/is (some? cause))
+        (t/is (= "23503" (.getSQLState cause)))))
+
+    (th/db-delete! :file-data {:file-id (:id file) :id data-id})
+
+    (t/testing "without the reference the delete succeeds"
+      (th/db-exec! ["DELETE FROM storage_object WHERE id = ?" sobject])
+      (t/is (nil? (th/db-get :storage-object {:id sobject}))))))
+
+(t/deftest file-data-migration-backfills-and-is-idempotent
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+        sobject (:id (th/db-insert! :storage-object {:backend "fs"}))
+        data-id (uuid/next)]
+
+    (th/db-insert! :file-data
+                   {:file-id (:id file)
+                    :id data-id
+                    :type "snapshot"
+                    :backend "storage"
+                    :metadata (db/json {"storage-ref-id" (str sobject)})})
+
+    (t/testing "the backfill copies the metadata pointer into the column"
+      (apply-file-data-migration!)
+      (t/is (= sobject (:storage-object-id (th/db-get :file-data
+                                                      {:file-id (:id file)
+                                                       :id data-id})))))
+
+    (t/testing "the backfill removes the dead metadata pointer"
+      (let [row      (th/db-get :file-data {:file-id (:id file) :id data-id})
+            metadata (fdata/decode-metadata (:metadata row))]
+        (t/is (nil? (:storage-ref-id metadata)))))
+
+    (t/testing "a second application changes nothing"
+      (let [before (th/db-get :file-data {:file-id (:id file) :id data-id})]
+        (apply-file-data-migration!)
+        (t/is (= before (th/db-get :file-data {:file-id (:id file)
+                                               :id data-id})))))))
+
+(t/deftest file-data-migration-guards-corrupt-and-orphan-pointers
+  (let [profile    (th/create-profile* 1)
+        file       (th/create-file* 1 {:profile-id (:id profile)
+                                       :project-id (:default-project-id profile)})
+        sobject    (:id (th/db-insert! :storage-object {:backend "fs"}))
+        valid-id   (uuid/next)
+        corrupt-id (uuid/next)
+        orphan-id  (uuid/next)
+        other-id   (uuid/next)]
+
+    (th/db-insert! :file-data
+                   {:file-id (:id file) :id valid-id :type "snapshot" :backend "storage"
+                    :metadata (db/json {"storage-ref-id" (str sobject)})})
+    (th/db-insert! :file-data
+                   {:file-id (:id file) :id corrupt-id :type "snapshot" :backend "storage"
+                    :metadata (db/json {"storage-ref-id" "not-a-uuid"})})
+    (th/db-insert! :file-data
+                   {:file-id (:id file) :id orphan-id :type "snapshot" :backend "storage"
+                    :metadata (db/json {"storage-ref-id" (str (uuid/next))})})
+    (th/db-insert! :file-data
+                   {:file-id (:id file) :id other-id :type "snapshot" :backend "db"
+                    :metadata (db/json {"storage-ref-id" (str sobject)})})
+
+    (t/testing "the migration applies without aborting"
+      (t/is (true? (apply-file-data-migration!))))
+
+    (t/testing "a valid pointer is backfilled"
+      (t/is (= sobject (:storage-object-id (th/db-get :file-data
+                                                      {:file-id (:id file)
+                                                       :id valid-id})))))
+
+    (t/testing "a non-uuid value stays NULL"
+      (t/is (nil? (:storage-object-id (th/db-get :file-data
+                                                 {:file-id (:id file)
+                                                  :id corrupt-id})))))
+
+    (t/testing "a pointer to a missing object stays NULL"
+      (t/is (nil? (:storage-object-id (th/db-get :file-data
+                                                 {:file-id (:id file)
+                                                  :id orphan-id})))))
+
+    (t/testing "rows of other backends are not touched"
+      (t/is (nil? (:storage-object-id (th/db-get :file-data
+                                                 {:file-id (:id file)
+                                                  :id other-id})))))))
+
+(t/deftest file-data-migration-creates-a-missing-index
+  ;; In the test database the index already exists, so the creation branch is
+  ;; only reachable by dropping it first. It is the branch a fresh deployment
+  ;; runs.
+  (th/db-exec! ["DROP INDEX file_data__storage_object_id__idx"])
+  (t/is (not (contains? (table-indexes "file_data")
+                        "file_data__storage_object_id__idx")))
+
+  (t/is (true? (apply-file-data-migration!)))
+
+  (t/is (contains? (table-indexes "file_data")
+                   "file_data__storage_object_id__idx")))
+
+(t/deftest file-data-migration-rebuilds-a-wrong-foreign-key
+  ;; The migration owns the definition. A constraint created by hand with
+  ;; CASCADE would delete the referencing rows instead of refusing the delete,
+  ;; so it is replaced with the NO ACTION one.
+  (th/db-exec! ["ALTER TABLE file_data
+                   DROP CONSTRAINT file_data_storage_object_id_fkey"])
+  (try
+    (th/db-exec! ["ALTER TABLE file_data
+                     ADD CONSTRAINT file_data_storage_object_id_fkey
+                     FOREIGN KEY (storage_object_id) REFERENCES storage_object(id)
+                     ON DELETE CASCADE DEFERRABLE"])
+    (t/is (true? (apply-file-data-migration!)))
+    (t/is (= "a" (:confdeltype
+                  (foreign-key-flags "file_data"
+                                     "file_data_storage_object_id_fkey"))))
+    (finally
+      (apply-file-data-migration!))))
+
+(t/deftest file-data-migration-rebuilds-a-non-deferrable-foreign-key
+  ;; Without DEFERRABLE the constraint breaks `SET CONSTRAINTS ALL DEFERRED`
+  ;; and `database-reset`; the migration recreates it deferrable.
+  (th/db-exec! ["ALTER TABLE file_data
+                   DROP CONSTRAINT file_data_storage_object_id_fkey"])
+  (try
+    (th/db-exec! ["ALTER TABLE file_data
+                     ADD CONSTRAINT file_data_storage_object_id_fkey
+                     FOREIGN KEY (storage_object_id) REFERENCES storage_object(id)
+                     ON DELETE NO ACTION"])
+    (t/is (true? (apply-file-data-migration!)))
+    (t/is (true? (:condeferrable
+                  (foreign-key-flags "file_data"
+                                     "file_data_storage_object_id_fkey"))))
+    (finally
+      (apply-file-data-migration!))))
+
+(t/deftest file-data-migration-rebuilds-a-deferred-foreign-key
+  ;; An `INITIALLY DEFERRED` check fires at commit, outside the
+  ;; `storage-gc-deleted` chunk transaction, so the sweep would never move past
+  ;; a blocked chunk. The migration must leave the check immediate.
+  (th/db-exec! ["ALTER TABLE file_data
+                   DROP CONSTRAINT file_data_storage_object_id_fkey"])
+  (try
+    (th/db-exec! ["ALTER TABLE file_data
+                     ADD CONSTRAINT file_data_storage_object_id_fkey
+                     FOREIGN KEY (storage_object_id) REFERENCES storage_object(id)
+                     ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED"])
+    (t/is (true? (apply-file-data-migration!)))
+    (t/is (false? (:condeferred
+                   (foreign-key-flags "file_data"
+                                      "file_data_storage_object_id_fkey"))))
+    (finally
+      (apply-file-data-migration!))))

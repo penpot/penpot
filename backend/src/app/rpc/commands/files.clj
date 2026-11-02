@@ -43,7 +43,6 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.rpc.permissions :as perms]
-   [app.util.blob :as blob]
    [app.util.events :as events]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
@@ -222,7 +221,11 @@
         (if (and (contains? (:features file) "fdata/objects-map")
                  (not (contains? (:features params) "fdata/objects-map")))
           (feat.fdata/realize-objects cfg file)
-          file)))))
+          file)
+
+        ;; The storage pointer is internal bookkeeping: it never leaves the
+        ;; backend in a response.
+        (bfc/file->response file)))))
 
 ;; --- COMMAND QUERY: get-file-fragment (by id)
 
@@ -231,7 +234,7 @@
    [:id ::sm/uuid]
    [:file-id ::sm/uuid]
    [:created-at ::ct/inst]
-   [:content ::sm/any]])
+   [:data ::sm/any]])
 
 (def schema:get-file-fragment
   [:map {:title "get-file-fragment"}
@@ -241,8 +244,17 @@
 
 (defn- get-file-fragment
   [cfg file-id fragment-id]
-  (some-> (db/get cfg :file-data {:file-id file-id :id fragment-id :type "fragment"})
-          (update :data blob/decode)))
+  ;; Resolve through the file data backend: a fragment can live on cold
+  ;; storage, and reading its row directly would hand `nil` to `blob/decode`.
+  ;; Only the public fields leave the backend: the row also carries the
+  ;; internal storage pointer and the backend metadata.
+  (when-let [row (db/get cfg :file-data {:file-id file-id
+                                         :id fragment-id
+                                         :type "fragment"})]
+    (let [fragment (->> row
+                        (feat.fdata/resolve-file-data cfg)
+                        (feat.fdata/decode-file-data cfg))]
+      (select-keys fragment (sm/keys schema:file-fragment)))))
 
 (defn- check-fragment-scope!
   "Checks that the fragment is reachable from the pages authorized by
@@ -556,17 +568,21 @@
             (let [file    (bfc/get-file cfg id :load-data? false)
                   summary (t/decode-str result)]
               (-> (assoc file :library-summary summary)
-                  (dissoc :data)))))
+                  (dissoc :data)
+                  (bfc/file->response)))))
 
         calculate-from-db
         (fn []
           (let [file   (bfc/get-file cfg id)
                 result (feat.fdata/with-pointers cfg id
                          (calculate-library-summary file))]
+            ;; The storage pointer is internal bookkeeping: this summary is an
+            ;; RPC response and must not expose it.
             (-> file
                 (assoc :library-summary result)
                 (dissoc :legacy-data)
-                (dissoc :data))))
+                (dissoc :data)
+                (bfc/file->response))))
 
         persist-to-cache
         (fn [{:keys [::rds/conn]} data cache-key]
@@ -1007,13 +1023,10 @@
              :library-id (str (:id ldata))
              :file-id (str file-id))
 
-      (bfc/update-file! cfg {:id file-id
-                             :features (:features file)
-                             :migrations (:migrations file)
-                             :revn (inc (:revn file))
-                             :data (:data file)
-                             :modified-at (ct/now)
-                             :has-media-trimmed false}))))
+      (bfc/update-file! cfg file
+                        :revn (inc (:revn file))
+                        :modified-at (ct/now)
+                        :has-media-trimmed false))))
 
 (defn- get-referenced-files
   [cfg library-id]
@@ -1420,8 +1433,8 @@
 
 (def ^:private sql:restore-storage-objects
   ;; Collect referenced storage ids first (UUID set), then join by PK.
-  ;; Casting `storage_object.id` to text (or OR-ing that with `id IN`) forces
-  ;; a scan of deleted rows; cast the JSON side instead.
+  ;; `file_data` points at its object with the `storage_object_id` column, so
+  ;; the reference is already a uuid and no JSON cast is needed.
   "WITH ids AS (SELECT unnest(?::uuid[]) AS file_id),
         refs AS (
           SELECT fmo.media_id AS id
@@ -1448,11 +1461,11 @@
            WHERE fot.deleted_at IS NULL
              AND fot.media_id IS NOT NULL
           UNION
-          SELECT (fd.metadata->>'storage-ref-id')::uuid
+          SELECT fd.storage_object_id
             FROM file_data AS fd
             JOIN ids ON (ids.file_id = fd.file_id)
            WHERE fd.deleted_at IS NULL
-             AND (fd.metadata->>'storage-ref-id') IS NOT NULL
+             AND fd.storage_object_id IS NOT NULL
         )
    UPDATE storage_object AS so
       SET deleted_at = null
