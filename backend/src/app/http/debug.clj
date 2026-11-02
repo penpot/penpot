@@ -359,10 +359,11 @@
     (let [path (tmp/tempfile :prefix "penpot.export." :min-age "30m")]
       (with-open [output (io/output-stream path)]
         (-> cfg
-            (assoc ::bfc/ids file-ids)
+            (assoc ::bfc/file-ids file-ids)
             (assoc ::bfc/embed-assets embed?)
             (assoc ::bfc/include-libraries libs?)
-            (bf.v3/export-files! output)))
+            (assoc ::bfc/output output)
+            (bf.v3/export-files!)))
 
       (if clone?
         (let [profile    (profile/get-profile pool profile-id)
