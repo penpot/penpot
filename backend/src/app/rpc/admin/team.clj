@@ -7,8 +7,9 @@
 (ns app.rpc.admin.team
   "Admin team commands, served through `/api/admin/methods`.
 
-  Access control lives in `wrap-authentication` (the `\"superuser\"`
-  permission), not here, so a new command cannot forget it."
+  Access control lives in `wrap-authentication` (the implicit
+  `admin:<method>` permission, bypassed by superuser), not here, so a
+  new command cannot forget it."
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
@@ -92,7 +93,6 @@
 
 (sv/defmethod ::get-teams
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params schema:get-teams-params
    ::sm/result schema:get-teams-result}
   [cfg params]
@@ -133,7 +133,6 @@
 
 (sv/defmethod ::get-team
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params schema:get-team-params
    ::sm/result schema:team}
   [cfg {:keys [id]}]
@@ -186,7 +185,6 @@
 
 (sv/defmethod ::get-team-members
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params schema:get-team-members-params
    ::sm/result [:vector schema:team-member]}
   [cfg {:keys [team-id]}]
@@ -224,7 +222,6 @@
 
 (sv/defmethod ::enable-team-feature
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::db/transaction true
    ::sm/params schema:team-feature-params
    ::sm/result schema:team-feature-result}
@@ -233,7 +230,6 @@
 
 (sv/defmethod ::disable-team-feature
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::db/transaction true
    ::sm/params schema:team-feature-params
    ::sm/result schema:team-feature-result}
@@ -250,7 +246,6 @@
 
 (sv/defmethod ::update-team-member-role
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::db/transaction true
    ::sm/params schema:update-team-member-role-params}
   [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [team-id member-id role]}]
@@ -298,7 +293,6 @@
 
 (sv/defmethod ::restore-team
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::db/transaction true
    ::sm/params schema:restore-team-params
    ::sm/result schema:restore-team-result}
@@ -329,7 +323,6 @@
 
 (sv/defmethod ::delete-team
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::db/transaction true
    ::sm/params schema:delete-team-params
    ::sm/result schema:delete-team-result}

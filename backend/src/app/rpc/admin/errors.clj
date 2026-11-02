@@ -10,9 +10,9 @@
   They mirror `get-error-reports` / `get-error-report` (which stay
   token-only for integrations) for session callers, reusing their
   query and schemas. Guards live in wrap-authentication
-  (the 'superuser' permission), not here — except
-  get-shared-error-report, anonymous by design: its share token
-  is the only credential."
+  (the implicit `admin:<method>` permission, bypassed by superuser),
+  not here — except get-shared-error-report, anonymous by design: its
+  share token is the only credential."
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
@@ -47,7 +47,6 @@
 
 (sv/defmethod ::get-error-reports
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params error-reports/schema:get-error-reports-params
    ::sm/result error-reports/schema:get-error-reports-result}
   [cfg params]
@@ -70,7 +69,6 @@
 
 (sv/defmethod ::get-error-report
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params error-reports/schema:get-error-report-params
    ::sm/result error-reports/schema:error-report}
   [cfg {:keys [id]}]
@@ -213,7 +211,6 @@
 
 (sv/defmethod ::create-error-report-share
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params schema:create-error-report-share-params
    ::sm/result schema:create-error-report-share-result}
   [cfg {:keys [id ttl-hours ::rpc/profile-id]}]

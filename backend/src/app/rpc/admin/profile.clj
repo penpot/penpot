@@ -7,8 +7,9 @@
 (ns app.rpc.admin.profile
   "Admin profile commands, served through `/api/admin/methods`.
 
-  Access control lives in `wrap-authentication` (the `\"superuser\"`
-  permission), not here, so a new command cannot forget it."
+  Access control lives in `wrap-authentication` (the implicit
+  `admin:<method>` permission, bypassed by superuser), not here, so a
+  new command cannot forget it."
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
@@ -90,7 +91,6 @@
 
 (sv/defmethod ::get-profiles
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params schema:get-profiles-params
    ::sm/result schema:get-profiles-result}
   [cfg params]
@@ -144,7 +144,6 @@
 
 (sv/defmethod ::get-profile
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params schema:get-profile-params
    ::sm/result schema:profile}
   [cfg {:keys [id]}]
@@ -196,7 +195,6 @@
 
 (sv/defmethod ::block-profile
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::db/transaction true
    ::sm/params schema:get-profile-params
    ::sm/result schema:block-result}
@@ -209,7 +207,6 @@
 
 (sv/defmethod ::unblock-profile
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::db/transaction true
    ::sm/params schema:get-profile-params
    ::sm/result schema:block-result}
@@ -223,7 +220,6 @@
 
 (sv/defmethod ::resend-verification
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::db/transaction true
    ::sm/params schema:get-profile-params
    ::sm/result schema:resend-result}
@@ -279,7 +275,6 @@
 
 (sv/defmethod ::delete-profiles
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::db/transaction true
    ::sm/params schema:delete-profiles-params
    ::sm/result schema:delete-profiles-result}
@@ -307,7 +302,6 @@
 
 (sv/defmethod ::restore-profile
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::db/transaction true
    ::sm/params schema:restore-profile-params
    ::sm/result schema:restore-profile-result}

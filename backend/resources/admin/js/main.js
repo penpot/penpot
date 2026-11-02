@@ -24,6 +24,7 @@ import { projectDetailPage } from "./pages/project-detail.js";
 import { usersPage } from "./pages/users.js";
 import { jobsPage } from "./pages/jobs.js";
 import { jobDetailPage } from "./pages/job-detail.js";
+import { tokensPage } from "./pages/tokens.js";
 import { virtualClockPage } from "./pages/virtual-clock.js";
 
 const NAV_ITEMS = [
@@ -36,6 +37,7 @@ const NAV_ITEMS = [
   { query: "?screen=projects", label: "Projects", screens: ["projects", "project"] },
   { query: "?screen=files", label: "Files", screens: ["files", "file"] },
   { query: "?screen=jobs", label: "Jobs", screens: ["jobs", "job"] },
+  { query: "?screen=tokens", label: "Tokens", screens: ["tokens"] },
   { query: "?screen=virtual-clock", label: "Virtual clock", screens: ["virtual-clock"] },
 ];
 
@@ -103,6 +105,8 @@ function renderAuthed(root) {
     jobsPage(content, { onNavigate: navigate });
   } else if (params.get("screen") === "job" && params.get("id")) {
     jobDetailPage(content, { id: params.get("id"), onNavigate: navigate });
+  } else if (params.get("screen") === "tokens") {
+    tokensPage(content);
   } else if (params.get("screen") === "virtual-clock") {
     virtualClockPage(content, { onNavigate: navigate });
   } else {

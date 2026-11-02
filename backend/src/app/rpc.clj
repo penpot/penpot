@@ -29,6 +29,7 @@
    [app.msgbus :as-alias mbus]
    [app.nitrate :as nitrate]
    [app.redis :as rds]
+   [app.rpc.admin.perms :as perms]
    [app.rpc.climit :as climit]
    [app.rpc.commands.teams :as teams]
    [app.rpc.cond :as cond]
@@ -182,7 +183,12 @@
         ;; tokens are created with empty perms — so this grants nothing
         ;; by itself.
         scope-perms         (disj required-perms "superuser")
-        superuser-required (contains? required-perms "superuser")]
+        superuser-required (contains? required-perms "superuser")
+        ;; Admin methods carry an implicit `admin:<method>` permission
+        ;; derived from their registered name (see app.rpc.admin.perms).
+        admin-method?       (perms/admin-method? mdata)
+        implicit-perm       (when admin-method?
+                              (perms/method-perm mdata))]
     (fn [cfg params]
       (let [profile-id  (::profile-id params)
             auth-type   (::auth-type params)
@@ -204,6 +210,61 @@
           (ex/raise :type :authorization
                     :code :token-auth-required
                     :hint "access token authentication required for this endpoint")
+
+          ;; Admin methods without an explicit "superuser" requirement
+          ;; answer to their implicit perm. Superuser bypasses it; a
+          ;; session without superuser keeps the historical rejection;
+          ;; a token needs the implicit perm (plus any declared scope).
+          (and admin-method?
+               (not superuser-required)
+               required-auth?
+               (auth/superuser-allowed? cfg profile-id token-perms))
+          (f cfg params)
+
+          (and admin-method?
+               (not superuser-required)
+               required-auth?
+               (not= auth-type :token))
+          (ex/raise :type :authorization
+                    :code :superuser-required
+                    :hint "superuser required for this endpoint")
+
+          (and admin-method?
+               (not superuser-required)
+               required-auth?
+               (not (set/subset? (conj scope-perms implicit-perm) token-perms)))
+          (ex/raise :type :authorization
+                    :code :missing-perms
+                    :hint "missing required permissions"
+                    :required (conj scope-perms implicit-perm))
+
+          ;; The token owner behind an admin call must be able to act:
+          ;; a live, active, unblocked profile. Soft-deleted rows are
+          ;; hidden by the default `db/get*` filter, so a deleted owner
+          ;; reads as nil. Registry superusers bypassed above and never
+          ;; reach this branch.
+          (and admin-method?
+               (not superuser-required)
+               required-auth?
+               (= auth-type :token))
+          (let [row (db/get* cfg :profile {:id profile-id}
+                             {:columns [:id :is-active :is-blocked :deleted-at]})]
+            (cond
+              (and (some? row)
+                   (:is-active row)
+                   (not (:is-blocked row)))
+              (f cfg params)
+
+              (and (some? row)
+                   (:is-blocked row))
+              (ex/raise :type :authorization
+                        :code :profile-blocked
+                        :hint "token owner profile is marked as blocked")
+
+              :else
+              (ex/raise :type :authorization
+                        :code :profile-inactive
+                        :hint "token owner profile is not active")))
 
           (and (seq scope-perms)
                (not= auth-type :token))
@@ -507,14 +568,7 @@
 (defn- resolve-admin-methods
   [cfg]
   (let [cfg (assoc cfg ::module "admin" ::type "command" ::metrics-id :rpc-admin-timing)]
-    (->> (sv/scan-ns
-          'app.rpc.admin.errors
-          'app.rpc.admin.file
-          'app.rpc.admin.job
-          'app.rpc.admin.misc
-          'app.rpc.admin.profile
-          'app.rpc.admin.project
-          'app.rpc.admin.team)
+    (->> (apply sv/scan-ns perms/admin-namespaces)
          (map (partial process-method cfg wrap))
          (into {}))))
 

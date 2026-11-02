@@ -85,7 +85,7 @@
 
 (t/deftest unlisted-token-without-scope-rejected
   (let [profile (th/create-profile* 1)]
-    (t/is (= :superuser-required
+    (t/is (= :missing-perms
              (caught-code #(call #{} :token (:id profile) #{}
                                  "get-virtual-clock" {}))))))
 

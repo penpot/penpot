@@ -7,8 +7,9 @@
 (ns app.rpc.admin.project
   "Admin project commands, served through `/api/admin/methods`.
 
-  Access control lives in `wrap-authentication` (the `\"superuser\"`
-  permission), not here, so a new command cannot forget it."
+  Access control lives in `wrap-authentication` (the implicit
+  `admin:<method>` permission, bypassed by superuser), not here, so a
+  new command cannot forget it."
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
@@ -92,7 +93,6 @@
 
 (sv/defmethod ::get-projects
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params schema:get-projects-params
    ::sm/result schema:get-projects-result}
   [cfg params]
@@ -119,7 +119,6 @@
 
 (sv/defmethod ::get-project
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params schema:get-project-params
    ::sm/result schema:project-summary}
   [cfg {:keys [id]}]
@@ -139,7 +138,6 @@
 
 (sv/defmethod ::restore-project
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::db/transaction true
    ::sm/params schema:restore-project-params
    ::sm/result schema:restore-project-result}
@@ -173,7 +171,6 @@
 
 (sv/defmethod ::delete-project
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::db/transaction true
    ::sm/params schema:delete-project-params
    ::sm/result schema:delete-project-result}

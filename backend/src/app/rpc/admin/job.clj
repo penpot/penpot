@@ -9,8 +9,8 @@
 
   Read-only inspection of the `job` table plus cancellation, for the
   Jobs section of the `/admin` panel. Access control lives in
-  `wrap-authentication` (the `\"superuser\"` permission), not here,
-  so a new command cannot forget it.
+  `wrap-authentication` (the implicit `admin:<method>` permission,
+  bypassed by superuser), not here, so a new command cannot forget it.
 
   Cancellation reuses the substrate writer `app.jobs/cancel`, which
   moves pending and running jobs to `cancelled` with their `end`
@@ -120,7 +120,6 @@
 
 (sv/defmethod ::get-jobs
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params schema:get-jobs-params
    ::sm/result schema:get-jobs-result}
   [cfg params]
@@ -211,7 +210,6 @@
 
 (sv/defmethod ::cancel-job
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params schema:cancel-job-params
    ::sm/result schema:cancel-job-result}
   [cfg {:keys [id]}]
@@ -223,7 +221,6 @@
 
 (sv/defmethod ::get-job
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params schema:get-job-params
    ::sm/result schema:job-detail}
   [cfg {:keys [id]}]

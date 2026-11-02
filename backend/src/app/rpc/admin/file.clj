@@ -7,8 +7,9 @@
 (ns app.rpc.admin.file
   "Admin file commands, served through `/api/admin/methods`.
 
-  Access control lives in `wrap-authentication` (the `\"superuser\"`
-  permission), not here, so a new command cannot forget it."
+  Access control lives in `wrap-authentication` (the implicit
+  `admin:<method>` permission, bypassed by superuser), not here, so a
+  new command cannot forget it."
   (:require
    [app.binfile.common :as bfc]
    [app.binfile.v1 :as bf.v1]
@@ -88,7 +89,6 @@
 
 (sv/defmethod ::validate-file
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params schema:validate-file-params
    ::sm/result schema:validate-file-result}
   [cfg {:keys [file-id]}]
@@ -114,7 +114,6 @@
 ;; outer one instead of a savepoint.
 (sv/defmethod ::repair-file
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params schema:repair-file-params
    ::sm/result schema:repair-file-result}
   [cfg {:keys [file-id skip-snapshot ::rpc/profile-id]}]
@@ -217,7 +216,6 @@
 
 (sv/defmethod ::get-files
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params schema:get-files-params
    ::sm/result schema:get-files-result}
   [cfg params]
@@ -243,7 +241,6 @@
 
 (sv/defmethod ::get-file
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params schema:get-file-params
    ::sm/result schema:file-summary}
   [cfg {:keys [id]}]
@@ -263,7 +260,6 @@
 
 (sv/defmethod ::restore-file
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::db/transaction true
    ::sm/params schema:restore-file-params
    ::sm/result schema:restore-file-result}
@@ -299,7 +295,6 @@
 
 (sv/defmethod ::delete-file
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::db/transaction true
    ::sm/params schema:delete-file-params
    ::sm/result schema:delete-file-result}
@@ -346,7 +341,6 @@
 
 (sv/defmethod ::export-files
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params schema:export-files-params}
   [{:keys [::db/pool] :as cfg} {:keys [file-ids includelibs clone embedassets
                                        ::rpc/profile-id]}]
@@ -399,7 +393,6 @@
 
 (sv/defmethod ::import-files
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params schema:import-files-params}
   [{:keys [::db/pool] :as cfg} {:keys [file ::rpc/profile-id]}]
   (let [profile    (profile/get-profile pool profile-id)

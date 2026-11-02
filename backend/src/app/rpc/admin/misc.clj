@@ -9,7 +9,8 @@
 
   Small diagnostic tools that do not deserve their own namespace:
   currently just the virtual clock. Access control lives in
-  `wrap-authentication` (the `\"superuser\"` permission), not here."
+  `wrap-authentication` (the implicit `admin:<method>` permission,
+  bypassed by superuser), not here."
   (:require
    [app.common.exceptions :as ex]
    [app.common.schema :as-alias sm]
@@ -32,7 +33,6 @@
 
 (sv/defmethod ::get-virtual-clock
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params [:map]
    ::sm/result schema:get-virtual-clock-result}
   [_ {:keys [::rpc/profile-id]}]
@@ -48,7 +48,6 @@
 
 (sv/defmethod ::set-virtual-clock
   {::doc/added "2.20"
-   ::rpc/perms #{"superuser"}
    ::sm/params schema:set-virtual-clock-params
    ::sm/result schema:get-virtual-clock-result}
   [_ {:keys [::rpc/profile-id offset reset]}]
