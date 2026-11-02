@@ -1544,6 +1544,30 @@
              (ch/components-changed (:data file) (change {:type :assign :value {:opacity 0.5}}))))
     (t/is (nil? (ch/components-changed (:data file) (change {:type :assign :value {:interactions []}}))))))
 
+(t/deftest a-copy-grid-with-its-own-cells-orders-its-children-by-their-flow
+  (let [page-id (thi/new-id! :page)
+        grid    {:id (thi/new-id! :grid) :type :frame :layout :grid :layout-grid-dir :row
+                 :shape-ref (thi/new-id! :main-grid) :shapes [(thi/new-id! :a) (thi/new-id! :b)]
+                 :layout-grid-cells
+                 {(thi/new-id! :cell-a) {:id (thi/id :cell-a) :row 1 :column 1 :row-span 1 :column-span 1
+                                         :position :auto :shapes [(thi/id :a)]}
+                  (thi/new-id! :cell-b) {:id (thi/id :cell-b) :row 1 :column 2 :row-span 1 :column-span 1
+                                         :position :auto :shapes [(thi/id :b)]}}}
+        objects (fn [grid]
+                  {(:id grid)    grid
+                   (thi/id :a) {:id (thi/id :a) :type :rect :parent-id (:id grid) :shape-ref (thi/new-id! :main-a)}
+                   (thi/id :b) {:id (thi/id :b) :type :rect :parent-id (:id grid) :shape-ref (thi/new-id! :main-b)}})
+        order   (fn [grid]
+                  (->> (-> (pcb/empty-changes nil page-id)
+                           (pcb/with-objects (objects grid))
+                           (pcb/reorder-grid-children [(:id grid)]))
+                       :redo-changes
+                       (some #(when (= :reorder-children (:type %)) (:shapes %)))))]
+    (t/testing "a copy grid with its own cells follows their flow"
+      (t/is (= [(thi/id :b) (thi/id :a)] (order (assoc grid :touched #{:layout-grid-cells})))))
+    (t/testing "a copy grid that takes its main's cells keeps the order sync gives"
+      (t/is (nil? (order grid))))))
+
 (t/deftest restoring-a-variant-without-its-container-syncs-the-new-main-name
   (let [initial  (tm/apply-to (n/make-variant-container "restore" [["b" "#ffffff"]])
                               (setup/empty-situation))
