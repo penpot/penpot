@@ -154,6 +154,125 @@ function readManifest(file) {
   return transit.reader("json").read(fs.readFileSync(file, "utf8"));
 }
 
+function requestText(command, options, color = "never") {
+  const k = transit.keyword;
+  return transit.writer("json").write(transit.map([
+    k("command"), command,
+    k("console"), transit.map([k("level"), k("info"), k("color"), k(color)]),
+    k("options"), transit.map(Object.entries(options).flatMap(([key, value]) => [k(key), value])),
+  ]));
+}
+
+test("deferred transport carries a complete request and numeric status", testOptions, async (t) => {
+  const fixture = createFrontend(t);
+  const capture = path.join(fixture.managed, "request.transit");
+  fs.writeFileSync(path.join(fixture.managed, "commands.cjs"), `
+    module.exports.execute = (text) => {
+      if (typeof text !== "string") throw new Error("expected Transit text");
+      require("node:fs").writeFileSync(${JSON.stringify(capture)}, text);
+      return Promise.resolve(37);
+    };
+  `);
+  const result = await runCli(fixture, ["run", "--build", "ready", "--warmups", "0", "--quiet", "--no-color"]);
+  assert.equal(result.exitCode, 37, result.stderr);
+  const k = transit.keyword;
+  const request = readManifest(capture);
+  assert.equal(request.get(k("command")), "run");
+  assert.equal(request.get(k("console")).get(k("level")).toString(), ":warn");
+  assert.equal(request.get(k("console")).get(k("color")).toString(), ":never");
+  const options = request.get(k("options"));
+  assert.equal(options.get(k("build")).get(k("kind")).toString(), ":existing");
+  assert.equal(options.get(k("build")).get(k("id")), "ready");
+  assert.equal(options.get(k("warmups")), 0);
+  assert.equal(options.get(k("repetitions")), 10);
+  assert.equal(options.get(k("startup-timeout-ms")), 30000);
+});
+
+test("decoded requests reject incomplete, unsupported and policy-invalid commands before acquisition", testOptions, async (t) => {
+  const fixture = createFrontend(t);
+  fs.unlinkSync(path.resolve(fixture.managed, "../../../deps.edn"));
+  const entry = path.join(fixture.managed, "receive.cjs");
+  fs.writeFileSync(entry, `
+    require("./commands.cjs").execute(process.env.COMMAND_REQUEST)
+      .then(code => { process.exitCode = code; });
+  `);
+  const before = tree(fixture.managed);
+  const measurement = { seed: 42, filter: null, warmups: 3, repetitions: 10,
+    "timeout-ms": 30000, "startup-timeout-ms": 30000, "output-dir": null,
+    screenshots: false, "require-gpu": false };
+  const ab = { ...measurement, features: ["a"], "max-features": 3, confirm: false,
+    "dry-run": false, "build-timeout-ms": 300000, "allow-build-differences": false,
+    "allow-scene-differences": false, "allow-all-differences": false };
+  const k = transit.keyword;
+  const build = { "default-features": true, features: [], "build-timeout-ms": 300000 };
+  for (const [text, diagnostic] of [
+    ["invalid Transit", /JSON/],
+    [requestText("build", {}), /default-features|build-timeout-ms/],
+    [requestText("purge", { target: k("all") }, "always"), /unsupported-command/],
+    [requestText("build", { ...build, features: ["profile"] }), /diagnostic-features/],
+    [requestText("run", { ...measurement, remove: false,
+      build: transit.map([k("kind"), k("prepare"), ...Object.entries({ ...build, features: ["stats"] }).flatMap(([key, value]) => [k(key), value])]) }), /diagnostic-features/],
+    [requestText("ab", ab), /confirmation-required/],
+    [requestText("ab", { ...ab, features: ["a", "b"], "max-features": 1, "dry-run": true }), /too-many-features/],
+  ]) {
+    fixture.env.COMMAND_REQUEST = text;
+    const result = await runCli({ ...fixture, runner: entry }, []);
+    assert.equal(result.exitCode, 1, result.stderr);
+    assert.equal(result.stdout, "");
+    assert.match(result.stderr, diagnostic);
+    assert.equal((result.stderr.match(/✖/g) ?? []).length, 1);
+    assert.deepEqual(tree(fixture.managed), before);
+  }
+});
+
+test("final publication failures select a failing status in local and deferred commands", testOptions, async (t) => {
+  for (const command of [["--help"], ["build"]]) {
+    const fixture = createFrontend(t);
+    if (command[0] === "build") installPreparedCompiler(fixture, false);
+    const guard = path.join(fixture.managed, "writer.cjs");
+    fs.writeFileSync(guard, `process.stdout.write = () => { throw new Error("publication unavailable"); };`);
+    fixture.nodeArgs = ["--require", guard];
+    const result = await runCli(fixture, command);
+    assert.equal(result.exitCode, 1, result.stderr);
+    assert.match(result.stderr, /publication unavailable/);
+    assert.equal((result.stderr.match(/✖/g) ?? []).length, 1);
+    if (command[0] === "build") {
+      const [id] = fs.readdirSync(fixture.builds);
+      assert.equal(readManifest(path.join(fixture.builds, id, "build.transit")).get(transit.keyword("status")).toString(), ":ready");
+    }
+  }
+});
+
+test("merge and purge execute with unavailable process, HTTP and browser dependencies", testOptions, async (t) => {
+  const fixture = createFrontend(t);
+  const guard = path.join(fixture.managed, "offline.cjs");
+  fs.writeFileSync(guard, `
+    const Module = require("node:module");
+    const load = Module._load;
+    Module._load = function (id, ...args) {
+      if (["playwright", "http", "node:http", "child_process", "node:child_process"].includes(id)) {
+        throw new Error("Unavailable dependency: " + id);
+      }
+      return load.call(this, id, ...args);
+    };
+  `);
+  fixture.nodeArgs = ["--require", guard];
+  const base = path.join(fixture.managed, "base.transit");
+  const additional = path.join(fixture.managed, "additional.transit");
+  for (const [file, runId, value] of [[base, "base", 10], [additional, "additional", 12]]) {
+    fs.writeFileSync(file, runFixtureText({ runId, caseId: "case/load", value, gitSha: "same" }));
+  }
+  const merged = await runCli(fixture, ["merge", base, additional]);
+  assert.equal(merged.exitCode, 0, merged.stderr);
+  assert.match(merged.stdout, /^Run .+\nOutput .+\n$/);
+  seedBuilds(fixture);
+  const purged = await runCli(fixture, ["purge", "builds"]);
+  assert.equal(purged.exitCode, 0, purged.stderr);
+  for (const id of fs.readdirSync(fixture.builds)) {
+    assert.deepEqual(fs.readdirSync(path.join(fixture.builds, id)), ["keep.txt"]);
+  }
+});
+
 function manifestText(id, status, type) {
   const k = transit.keyword;
   return transit
@@ -727,7 +846,7 @@ test(
       fs.readFileSync(logPath, "utf8"),
       /compiler stderr before failure/,
     );
-    await runCli(fixture, ["purge", "--only-comparisons"]);
+    await runCli(fixture, ["purge", "comparisons"]);
     assert.equal(fs.existsSync(logPath), false);
   },
 );
@@ -782,7 +901,13 @@ test(
           command === "ab"
             ? ["ab", "--features", "a", "--filter", "rects/load"]
             : ["run"];
-        const child = spawn(process.execPath, [fixture.runner, ...args], {
+        const failPublication = command === "run" && signal === "SIGINT";
+        if (failPublication) {
+          const writer = path.join(fixture.managed, "writer.cjs");
+          fs.writeFileSync(writer, `process.stdout.write = () => { throw new Error("publication unavailable"); };`);
+          fixture.nodeArgs = ["--require", writer];
+        }
+        const child = spawn(process.execPath, [...(fixture.nodeArgs ?? []), fixture.runner, ...args], {
           cwd: os.tmpdir(),
           env: { ...process.env, ...fixture.env },
           stdio: ["ignore", "pipe", "pipe"],
@@ -806,6 +931,7 @@ test(
         assert.ok(fs.existsSync(marker), stderr);
         child.kill(signal);
         assert.deepEqual(await exited, [code, null], stderr);
+        if (failPublication) assert.match(stderr, /publication unavailable/);
       }
     }
   },
@@ -906,7 +1032,7 @@ test("purge deletes only the selected artifacts", testOptions, async (t) => {
   const runs = tree(fixture.runs);
   const comparisons = tree(fixture.comparisons);
 
-  assert.deepEqual(await runCli(fixture, ["purge", "--only-builds"]), {
+  assert.deepEqual(await runCli(fixture, ["purge", "builds"]), {
     exitCode: 0,
     stdout: "",
     stderr: "",
@@ -927,7 +1053,7 @@ test("purge deletes only the selected artifacts", testOptions, async (t) => {
 
   seedBuilds(fixture);
   const builds = tree(fixture.builds);
-  assert.deepEqual(await runCli(fixture, ["purge", "--only-runs"]), {
+  assert.deepEqual(await runCli(fixture, ["purge", "runs"]), {
     exitCode: 0,
     stdout: "",
     stderr: "",
@@ -946,7 +1072,7 @@ test("purge deletes only the selected artifacts", testOptions, async (t) => {
 
   const buildsBeforeComparisonPurge = tree(fixture.builds);
   const runsBeforeComparisonPurge = tree(fixture.runs);
-  assert.deepEqual(await runCli(fixture, ["purge", "--only-comparisons"]), {
+  assert.deepEqual(await runCli(fixture, ["purge", "comparisons"]), {
     exitCode: 0,
     stdout: "",
     stderr: "",
@@ -982,7 +1108,7 @@ test("purge deletes only the selected artifacts", testOptions, async (t) => {
 
   seedRuns(fixture);
   seedComparisons(fixture);
-  assert.deepEqual(await runCli(fixture, ["purge"]), {
+  assert.deepEqual(await runCli(fixture, ["purge", "all"]), {
     exitCode: 0,
     stdout: "",
     stderr: "",
@@ -1118,18 +1244,16 @@ test(
     const original = tree(fixture.managed);
 
     for (const args of [
-      ["purge", "--only-builds", "--only-runs"],
-      ["purge", "--only-builds", "--only-comparisons"],
-      ["purge", "--only-runs", "--only-comparisons"],
-      ["purge", "--only-ready-builds"],
-      ["purge", "--only-builds", "ready"],
+      ["purge"],
+      ["purge", "unknown"],
+      ["purge", "builds", "runs"],
     ]) {
       const result = await runCli(fixture, args);
       assert.equal(result.exitCode, 1, args.join(" "));
       assert.equal(result.stdout, "");
       assert.match(
         result.stderr,
-        /type\s+:benches.render-wasm.node.runner\/invalid-args/,
+        /Usage: runner purge/,
       );
       assert.deepEqual(tree(fixture.managed), original, args.join(" "));
     }
@@ -1216,19 +1340,14 @@ fs.writeFileSync(${JSON.stringify(marker)}, "ran");
     );
     const original = tree(fixture.managed);
 
-    const result = await runCli(fixture, [
-      "run",
-      "--build",
-      "retained-id",
-      "--features",
-      "functional",
-    ]);
-
-    assert.equal(result.exitCode, 1);
-    assert.equal(result.stdout, "");
-    assert.match(result.stderr, /cannot be combined/);
-    assert.equal(fs.existsSync(marker), false);
-    assert.deepEqual(tree(fixture.managed), original);
+    for (const flags of [["--features", "functional"], ["--build-timeout-ms", "1000"]]) {
+      const result = await runCli(fixture, ["run", "--build", "retained-id", ...flags]);
+      assert.equal(result.exitCode, 1);
+      assert.equal(result.stdout, "");
+      assert.match(result.stderr, /cannot be combined/);
+      assert.equal(fs.existsSync(marker), false);
+      assert.deepEqual(tree(fixture.managed), original);
+    }
   },
 );
 
@@ -1280,7 +1399,7 @@ test(
     const abHelp = await runCli(fixture, ["ab", "--help"]);
     assert.equal(abHelp.exitCode, 0, abHelp.stderr);
     assert.match(abHelp.stdout, /runner ab --features/);
-    assert.match(abHelp.stdout, /--only-comparisons/);
+    assert.match(abHelp.stdout, /--max-features/);
     const mergeHelp = await runCli(fixture, ["merge", "--help"]);
     assert.equal(mergeHelp.exitCode, 0, mergeHelp.stderr);
     assert.match(mergeHelp.stdout, /runner merge BASE ADDITIONAL/);
@@ -1327,14 +1446,15 @@ test(
     assert.match(result.stdout, /runner run/);
     assert.match(result.stdout, /runner compare/);
     assert.match(result.stdout, /runner merge/);
-    assert.match(result.stdout, /--cases/);
-    assert.match(result.stdout, /--allow-build-differences/);
-    assert.match(result.stdout, /--allow-scene-differences/);
-    assert.match(result.stdout, /--allow-all-differences/);
+    const compareHelp = await runCli(fixture, ["compare", "--help"]);
+    assert.equal(compareHelp.exitCode, 0, compareHelp.stderr);
+    assert.match(compareHelp.stdout, /--cases/);
+    assert.match(compareHelp.stdout, /--allow-build-differences/);
+    assert.match(compareHelp.stdout, /--allow-scene-differences/);
+    assert.match(compareHelp.stdout, /--allow-all-differences/);
     assert.match(result.stdout, /-q, --quiet/);
     assert.match(result.stdout, /-v, --verbose/);
     assert.match(result.stdout, /--\[no-\]color/);
-    assert.doesNotMatch(result.stdout, /--force/);
     assert.deepEqual(tree(fixture.managed), original);
   },
 );

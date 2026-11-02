@@ -23,7 +23,6 @@
    ["module" :as node-module]
    ["os" :as os]
    ["path" :as path]
-   [app.common.schema :as sm]
    [app.common.transit :as transit]
    [benches.render-wasm.declarations :as declarations]
    [benches.render-wasm.errors :as errors :refer [attempt failure?]]
@@ -43,30 +42,11 @@
    [benches.render-wasm.result :as result]
    [clojure.string :as str]))
 
-(def schema:run-options
-  "Resolved options for run preparation and execution."
-  (let [timeout-ms [:int {:min 1 :max 2147483647}]]
-    [:map {:closed true}
-     [:seed [:int {:min 0 :max 4294967295}]]
-     [:warmups [:int {:min 0 :max js/Number.MAX_SAFE_INTEGER}]]
-     [:repetitions [:int {:min 1 :max js/Number.MAX_SAFE_INTEGER}]]
-     [:timeout-ms timeout-ms]
-     [:build-timeout-ms timeout-ms]
-     [:startup-timeout-ms timeout-ms]
-     [:filter {:optional true} [:maybe :string]]
-     [:build-id {:optional true} [:string {:min 1}]]
-     [:output-dir {:optional true} [:maybe [:string {:min 1}]]]
-     [:default-features {:optional true} :boolean]
-     [:features {:optional true} [:vector [:string {:min 1}]]]
-     [:screenshots {:optional true} :boolean]
-     [:remove {:optional true} :boolean]
-     [:require-gpu {:optional true} :boolean]
-     [:browser {:optional true} [:map-of :keyword fn?]]]))
-
-(def ^:private check-options
-  (sm/check-fn schema:run-options
-               :hint "invalid run options"
-               :type ::invalid-options))
+(defn get-execution-options
+  "Returns resolved settings for executing a prepared run."
+  [options]
+  (select-keys options [:seed :filter :warmups :repetitions :timeout-ms
+                        :startup-timeout-ms :screenshots :require-gpu :remove]))
 
 (defn- cause-evidence
   "Plain failure evidence for a rejected browser, server or persistence action."
@@ -650,20 +630,20 @@
             (assoc :environment (get-in selected-build [:manifest :environment])))
    :environment (environment root selected-build)
    :scored? true
-   :diagnostics {:seed (:seed opts)
-                 :filter (:filter opts)
-                 :warmups (:warmups opts)
-                 :repetitions (:repetitions opts)
-                 :timeout-ms (:timeout-ms opts)
-                 :build-timeout-ms (:build-timeout-ms opts)
-                 :startup-timeout-ms (:startup-timeout-ms opts)
-                 :screenshots? (boolean (:screenshots opts))
-                 :require-gpu? (boolean (:require-gpu opts))
-                 :penpot-gpu (or (.-PENPOT_GPU (.-env js/process)) nil)
-                 :runner-git {:sha nil :dirty nil}
-                 :runtime-helper-identity :unverified
-                 :screenshots {}
-                 :failures []}})
+   :diagnostics (cond-> {:seed (:seed opts)
+                         :filter (:filter opts)
+                         :warmups (:warmups opts)
+                         :repetitions (:repetitions opts)
+                         :timeout-ms (:timeout-ms opts)
+                         :startup-timeout-ms (:startup-timeout-ms opts)
+                         :screenshots? (boolean (:screenshots opts))
+                         :require-gpu? (boolean (:require-gpu opts))
+                         :penpot-gpu (or (.-PENPOT_GPU (.-env js/process)) nil)
+                         :runner-git {:sha nil :dirty nil}
+                         :runtime-helper-identity :unverified
+                         :screenshots {}
+                         :failures []}
+                  (:build-timeout-ms opts) (assoc :build-timeout-ms (:build-timeout-ms opts)))})
 
 (defn- create-run-record
   [root run-id selected-build cases opts]
@@ -772,7 +752,7 @@
   - `home`: the reserved output home.
   - `selected-build`: the prepared build.
   - `cases`: the selected cases.
-  - `options`: resolved options satisfying `schema:run-options`.
+  - `options`: resolved execution settings, including optional local :browser services.
   - `signal`: an optional abort signal.
 
   A browser startup failure leaves a valid partial record.
@@ -782,7 +762,6 @@
   write, including a failure followed by a successful write. An interruption
   is not a failure."
   [root home selected-build cases options signal]
-  (check-options options)
   (binding [log/*log-path* (:log-path home)]
     (let [state (create-run-state root home selected-build cases options signal)]
       (persist state)
@@ -792,14 +771,13 @@
 
 (defn- ^:async get-selected-build
   [root opts signal]
-  (if-let [id (:build-id opts)]
-    (artifacts/load-build root id)
-    (await (build/prepare
-            {:root root
-             :features {:default-features? (:default-features opts true)
-                        :features (or (:features opts) [])}
-             :build-timeout-ms (:build-timeout-ms opts)
-             :signal signal}))))
+  (let [{:keys [kind id default-features features build-timeout-ms]} (:build opts)]
+    (case kind
+      :existing (artifacts/load-build root id)
+      :prepare (await (build/prepare
+                       {:root root
+                        :selection {:default-features? default-features :features features}
+                        :build-timeout-ms build-timeout-ms :signal signal})))))
 
 (defn- get-cases
   [selected-build opts]
@@ -811,35 +789,29 @@
                              :log-path (:log-path selected-build))
                       cause)))))
 
-(defn- publish-report
-  [result]
-  (outcome/publish result
-                   #(when-let [report (:report result)]
-                      (log/result (str "Report\n" report)))))
-
 (defn ^:async run
   "Prepares or loads a build, collects matching cases and executes one run.
 
   - `root`: the frontend checkout root.
-  - `options`: resolved options satisfying `schema:run-options`.
+  - `options`: resolved run options with a tagged :build source.
   - `signal`: an optional abort signal.
+  - `services`: local service overrides, with browser functions under :browser.
 
-  Validates options before allocating output. Returns the execution result.
-  A build or catalog failure throws with the run log path and build facts."
-  [root options signal]
-  (let [opts (check-options options)
-        home (runs/create-home {:root root :run-id (str (random-uuid))
-                                :output-dir (:output-dir opts) :remove (:remove opts)})]
+  Returns an outcome with the reserved home, available evidence and failures."
+  [root options signal services]
+  (let [home (runs/create-home {:root root :run-id (str (random-uuid))
+                                :output-dir (:output-dir options) :remove (:remove options)})
+        opts (cond-> (assoc (get-execution-options options) :browser (:browser services))
+               (= :prepare (get-in options [:build :kind]))
+               (assoc :build-timeout-ms (get-in options [:build :build-timeout-ms])))]
     (binding [log/*log-path* (:log-path home)]
       (try
-        (log/result (str "Run " (:run-id home)))
-        (log/result (str "Output " (:dir home)))
-        (let [selected-build (await (get-selected-build root opts signal))
+        (let [selected-build (await (get-selected-build root options signal))
               cases          (get-cases selected-build opts)]
           (log/info (str "  build " (:id selected-build)))
           (log/info (str "  selected " (count cases) " cases"))
-          (publish-report (await (execute root home selected-build cases opts signal))))
+          (await (execute root home selected-build cases opts signal)))
         (catch :default cause
-          (throw (-> cause
-                     errors/as-failure
-                     (errors/with-data {:log-path (:log-path home)}))))))))
+          (outcome/failed (-> cause errors/as-failure
+                              (errors/with-data {:log-path (:log-path home)}))
+                          {:home home :run nil :report nil}))))))

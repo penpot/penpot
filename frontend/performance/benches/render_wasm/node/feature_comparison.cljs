@@ -7,24 +7,23 @@
 (ns benches.render-wasm.node.feature-comparison
   "Serial feature A/B orchestration and persistence of comparisons."
   (:require
-   ["fs" :as fs]
-   ["node:timers/promises" :as timers]
-   ["path" :as path]
-   [app.common.schema :as sm]
-   [benches.render-wasm.errors :as errors :refer [attempt failure?]]
-   [benches.render-wasm.node.artifacts :as artifacts]
-   [benches.render-wasm.node.build :as build]
-   [benches.render-wasm.node.catalog :as catalog]
-   [benches.render-wasm.node.files :as files]
-   [benches.render-wasm.node.log :as log]
-   [benches.render-wasm.node.outcome :as outcome]
-   [benches.render-wasm.node.process :as process]
-   [benches.render-wasm.node.run :as run]
-   [benches.render-wasm.node.runs :as runs]
-   [benches.render-wasm.node.time :as time]
-   [benches.render-wasm.report.compare :as compare]
-   [benches.render-wasm.result :as result]
-   [clojure.set :as set]))
+    ["fs" :as fs]
+    ["node:timers/promises" :as timers]
+    ["path" :as path]
+    [benches.render-wasm.errors :as errors :refer [attempt failure?]]
+    [benches.render-wasm.node.artifacts :as artifacts]
+    [benches.render-wasm.node.build :as build]
+    [benches.render-wasm.node.catalog :as catalog]
+    [benches.render-wasm.node.files :as files]
+    [benches.render-wasm.node.log :as log]
+    [benches.render-wasm.node.outcome :as outcome]
+    [benches.render-wasm.node.process :as process]
+    [benches.render-wasm.node.run :as run]
+    [benches.render-wasm.node.runs :as runs]
+    [benches.render-wasm.node.time :as time]
+    [benches.render-wasm.report.compare :as compare]
+    [benches.render-wasm.result :as result]
+    [clojure.set :as set]))
 
 (def ^:private warnings
   ["Timing values do not determine success."
@@ -49,8 +48,9 @@
         dir         (artifacts/check-output-dir (or output-dir default-dir))]
     (when (artifacts/inside-builds? root dir)
       (artifacts/invalid-home "feature comparison cannot use a directory inside builds" {:path dir}))
-    (artifacts/create-home dir "feature-comparison"
-                           "cannot create feature comparison home")))
+    (assoc (artifacts/create-home dir "feature-comparison"
+                                  "cannot create feature comparison home")
+           :comparison-id comparison-id)))
 
 (defn write-record
   "Validates schema:feature-comparison and atomically replaces the saved file."
@@ -316,7 +316,7 @@
   (attempt
    (await ((:execute-run (:services state))
            (:root state) (:run-home flow) (:build flow) (:cases state)
-           (select-keys (:options state) (sm/keys run/schema:run-options))
+           (run/get-execution-options (:options state))
            (:signal state)))))
 
 (defn- get-evidence-error
@@ -595,20 +595,10 @@
 (defn- initialize-comparison
   [state]
   (let [initial @(:record-ref state)
-        home    (:home state)]
-    (log/result (str "Comparison " (:comparison-id initial)))
-    (log/result (str "Output " (:dir home)))
-    (let [saved (write-record home initial)]
-      (reset! (:record-ref state) saved)
-      (reset! (:saved-ref state) saved))))
-
-(defn- publish-status
-  [result]
-  (outcome/publish result
-                   #(log/result (str "Status " (case (:exit-code result)
-                                                 0 "completed"
-                                                 (130 143) "interrupted"
-                                                 "failed")))))
+        home     (:home state)
+        saved    (write-record home initial)]
+    (reset! (:record-ref state) saved)
+    (reset! (:saved-ref state) saved)))
 
 (defn- ^:async execute-comparison
   [state]
@@ -617,12 +607,11 @@
       (let [result (attempt :catch-fatal
                             (initialize-comparison state)
                             (await (run-comparisons state (:configurations @(:record-ref state)))))]
-        (publish-status
-         (if (failure? result)
-           (outcome/failed result {:comparison @(:saved-ref state)
-                                   :home home
-                                   :log-path (:log-path home)})
-           result))))))
+        (if (failure? result)
+          (outcome/failed result {:comparison @(:saved-ref state)
+                                  :home home
+                                  :log-path (:log-path home)})
+          result)))))
 
 (defn ^:async execute
   "Executes a prepared feature comparison and owns builds, runs and reports.

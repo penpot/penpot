@@ -15,6 +15,7 @@
    [benches.render-wasm.node.artifacts :as artifacts]
    [benches.render-wasm.node.feature-comparison :as feature-comparison]
    [benches.render-wasm.node.log :as log]
+   [benches.render-wasm.node.request :as request]
    [benches.render-wasm.node.run :as run]
    [benches.render-wasm.node.runs :as runs]
    [benches.render-wasm.result :as result]
@@ -180,7 +181,6 @@
    :warmups 0
    :repetitions 1
    :timeout-ms 5000
-   :build-timeout-ms 60000
    :startup-timeout-ms 5000
    :screenshots false
    :remove false
@@ -208,46 +208,7 @@
   [result]
   (result/decode (fs/readFileSync (get-in result [:home :record-path]) "utf8")))
 
-(t/deftest ^:async run-rejects-invalid-options-before-allocating-output
-  (doseq [invalid [{:seed 4294967296}
-                   {:warmups -1}
-                   {:repetitions 1.5}
-                   {:timeout-ms js/Infinity}
-                   {:build-timeout-ms 2147483648}
-                   {:startup-timeout-ms 0}
-                   {:screenshots "false"}
-                   {:remove nil}
-                   {:require-gpu 1}
-                   {:repetitons 1}]]
-    (let [out   (output-dir)
-          opts  (merge (dissoc (options nil out) :browser)
-                       {:build-id "unavailable"} invalid)
-          cause (try
-                  (await (run/run @temporary-root opts nil))
-                  nil
-                  (catch :default cause cause))]
-      (t/testing (pr-str invalid)
-        (t/is (= ::run/invalid-options (:type (ex-data cause))))
-        (t/is (not (fs/existsSync out)))))))
-
-(t/deftest ^:async execute-rejects-invalid-options-before-writing-evidence
-  (let [root       @temporary-root
-        fake       (fake-browser {})
-        home       (runs/create-home {:root root :run-id "invalid-options"
-                                      :output-dir (output-dir)})
-        files      (vec (fs/readdirSync (:dir home)))
-        log-text   (fs/readFileSync (:log-path home) "utf8")
-        opts       (assoc (options fake (:dir home)) :screenshots "false")
-        cause      (try
-                     (await (run/execute root home (selected-build (build-dir) "test-build")
-                                         [(collected :case/a :fresh)] opts nil))
-                     nil
-                     (catch :default cause cause))]
-    (t/is (= ::run/invalid-options (:type (ex-data cause))))
-    (t/is (= files (vec (fs/readdirSync (:dir home)))))
-    (t/is (= log-text (fs/readFileSync (:log-path home) "utf8")))))
-
-(t/deftest ^:async retained-run-prints-results-and-keeps-all-levels-in-its-log
+(t/deftest ^:async retained-run-keeps-all-progress-levels-in-its-log
   (doseq [level [:info :warn :debug]]
     (let [root   @temporary-root
           cases  [(collected :case/a :fresh) (collected :case/b :reuse)]
@@ -272,19 +233,21 @@
       (log/configure {:level level :color :never
                       :stdout #js {:write #(swap! stdout str %)}
                       :stderr #js {:write #(swap! stderr str %)}})
-      (let [response (await (run/run root (assoc (options fake out) :build-id (:id build)
-                                                 :warmups 1 :repetitions 2) nil))
+      (let [resolved (:options (request/apply-defaults
+                                {:command "run"
+                                 :options (assoc (dissoc (options fake out) :browser)
+                                                 :build {:kind :existing :id (:id build)}
+                                                 :warmups 1 :repetitions 2)}))
+            response (await (run/run root resolved nil {:browser (:service fake)}))
             saved    (saved-record response)
             text     (fs/readFileSync (get-in response [:home :log-path]) "utf8")]
         (t/is (= 0 (:exit-code response)))
-        (t/is (= (str "Run " (:run-id saved) "\nOutput " out "\nReport\n"
-                      (str/replace (:report response) #"\n$" "") "\n") @stdout))
+        (t/is (= (:id build) (get-in saved [:metadata :build :provenance :build-id])))
         (t/is (str/includes? text "▸ Case case/a (fresh)\n"))
         (doseq [case-text (rest (str/split text #"▸ Case "))]
           (t/is (str/includes? case-text "  attempt 1/3 completed (warmup)\n"))
           (t/is (str/includes? case-text "  attempt 2/3 completed\n"))
           (t/is (str/includes? case-text "  attempt 3/3 completed\n")))
-        (t/is (str/includes? text (:report response)))
         (t/is (str/includes? text "Browser FakeBrowser/1"))
         (t/is (= (not= :warn level) (str/includes? @stderr "▸ Case case/a")))
         (t/is (= (= :debug level) (str/includes? @stderr "Browser FakeBrowser/1")))))))

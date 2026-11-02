@@ -34,11 +34,9 @@
    [performance-tests.render-wasm.report-test]
    [performance-tests.render-wasm.request-test]
    [performance-tests.render-wasm.run-test]
-   [performance-tests.render-wasm.runner-test]
    [performance-tests.render-wasm.runs-test]
    [performance-tests.render-wasm.scene-snapshot-test]
-   [performance-tests.render-wasm.server-test]
-   [performance-tests.render-wasm.signals-test]))
+   [performance-tests.render-wasm.server-test]))
 
 (enable-console-print!)
 
@@ -76,11 +74,9 @@
    'performance-tests.render-wasm.report-test
    'performance-tests.render-wasm.request-test
    'performance-tests.render-wasm.run-test
-   'performance-tests.render-wasm.runner-test
    'performance-tests.render-wasm.runs-test
    'performance-tests.render-wasm.scene-snapshot-test
-   'performance-tests.render-wasm.server-test
-   'performance-tests.render-wasm.signals-test])
+   'performance-tests.render-wasm.server-test])
 
 (assert (every? find-ns-obj test-namespaces)
         "test-namespaces contains a namespace that isn't required in runner.cljs")

@@ -198,7 +198,7 @@
   {:target :node-script
    :output-to "target/performance/render-wasm/runner.cjs"
    :output-dir "target/performance/render-wasm/runner/"
-   :main benches.render-wasm.node.runner/-main
+   :main benches.render-wasm.node.cli.main/-main
    :devtools {:autoload false}
 
    :compiler-options
@@ -216,7 +216,7 @@
   {:target :node-library
    :output-to "target/performance/render-wasm/commands.cjs"
    :output-dir "target/performance/render-wasm/commands/"
-   :exports {:execute benches.render-wasm.node.commands/execute}
+   :exports {:execute benches.render-wasm.node.cli.deferred/execute}
    :devtools {:autoload false}
 
    :compiler-options
@@ -256,8 +256,8 @@
   {:target :node-library
    :output-to #shadow/env ["RENDER_BENCH_CASES_PATH" :default "target/performance/render-wasm/cases.cjs"]
    :output-dir "target/performance/render-wasm/catalog/"
-   :exports {:collectCases benches.render-wasm.node.case-catalog/collect-cases
-             :buildIdentity benches.render-wasm.node.case-catalog/build-identity}
+   :exports {:collectCases benches.render-wasm.node.catalog.entry/collect-cases
+             :buildIdentity benches.render-wasm.node.catalog.entry/build-identity}
    :closure-defines {benches.render-wasm.identity/build-id #shadow/env ["RENDER_BENCH_BUILD_ID" :default "unprepared"]}
    :compiler-options {:output-feature-set :es2020
                       :warnings {:fn-deprecated false}}

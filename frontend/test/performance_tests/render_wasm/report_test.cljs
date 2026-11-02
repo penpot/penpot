@@ -543,7 +543,7 @@
                                           :prep (assoc-in preparation [:fingerprint :digest] (apply str (repeat 64 "b")))})
                            result/encode
                            result/decode)
-        pairs          (compare/selector-pair base other "saved/pan,different/zoom")
+        pairs          (compare/selector-pair base other ["saved/pan" "different/zoom"])
         rejected       (error-data #(compare/compare-runs base other {:pairs pairs}))
         comparison     (-> (compare/compare-runs base other {:pairs pairs :allow-all-differences true})
                            result/encode result/decode)
@@ -580,8 +580,7 @@
       (t/is (every? :waived? mismatches))
       (t/is (str/includes? text "ACKNOWLEDGED DIFFERENCE"))
       (t/is (str/includes? text ":field :scored?")))
-    (t/is (= ["saved/pan"] (:available (error-data #(compare/resolve-case base "pan")))))
-    (t/is (= ::compare/invalid-selector (:type (error-data #(compare/selector-pair base other "saved/pan")))))))
+    (t/is (= ["saved/pan"] (:available (error-data #(compare/resolve-case base "pan")))))))
 
 (t/deftest explicit-pairs-allow-unlike-names-with-matching-execution-and-fingerprints
   (let [base       (-> (run-with [1]) result/encode result/decode)

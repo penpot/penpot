@@ -247,11 +247,14 @@ manifest records the build id, status, functional settings, Git provenance, and
 build facts. An experiment run can select a retained build with `--build <id>`,
 but a run without `--build` always prepares a new one.
 
-A manual build can select Cargo features with `--features`, but `--build` cannot
-be combined with feature selection.
+`build` and a run that prepares its build accept `--features`,
+`--[no-]default-features`, and `--build-timeout-ms`. A run with `--build` reuses
+the retained build and rejects those preparation options.
 
-We use the same locks as the main build system to ensure that two preparations
-do not run concurrently in the same checkout.
+Run one build preparation at a time in a checkout and keep renderer watchers
+stopped until it finishes. The renderer build lock covers Cargo compilation
+and copying the renderer files. The build script releases that lock before
+ClojureScript compilation.
 
 ### Browser host
 
@@ -631,7 +634,9 @@ finding.
 ### Comparisons
 
 A comparison pairs saved cases by identical case id unless `--cases A,B`
-fixes the selection to single baseline = A, candidate = B.
+selects one explicit baseline, candidate pair. The CLI checks the selector
+syntax before it loads either record, then resolves each selector by saved case
+ID or exact name.
 
 By default, a comparison requires equal:
 
@@ -710,11 +715,13 @@ compares each edge once, not once per execution order. For features
 10 -> 11 : b
 ```
 
-`--max-features` accepts 1 through 6 and defaults to 3. The command requires
-`--confirm` when the comparison has more than 8 configurations or when the
-filter selects every case. `--dry-run` prints the features, configurations,
-edges, selected case count, and budgets without creating a comparison home,
-compiling, or launching a browser.
+`--max-features` accepts 1 through 6 and defaults to 3. When `--dry-run`
+is absent, the command requires `--confirm` for more than 8 configurations
+or a filter that is absent, empty, or contains only whitespace. `--dry-run`
+checks the requested features using Cargo metadata, selects cases from their
+declarations, and prints the features, configurations, edges, selected case
+count, and time limits. It creates no comparison directory, compiles no build,
+and launches no browser.
 
 ### Running a feature comparison
 
@@ -764,9 +771,9 @@ features, build and run references, edges, failures, and interpretation
 warnings. The runner validates the record with a schema and writes it
 atomically. It writes the initial plan before the first build and updates the
 record after each configuration, after each edge, and at termination. The
-command prints `Comparison <id>` and `Output <absolute path>` on stdout before
-the first build, then `Status <status>` at termination. Progress and failures
-go to stderr. Each configuration has its own build and run log.
+command prints `Comparison <id>`, `Output <absolute path>`, and `Status <status>`
+on stdout at termination. Progress and failures go to stderr. Each configuration
+has its own build and run log.
 
 ### Edge comparisons
 
@@ -808,6 +815,17 @@ until preparation finishes.
 
 The literal `--` after `render-bench` is required to forward the command and its
 arguments through the shell wrapper.
+
+List the commands, or show one command's options and defaults:
+
+```bash
+pnpm run render-bench -- --help
+pnpm run render-bench -- run --help
+```
+
+Command options select declared cases and control the build source, sampling,
+output and hardware policy. Case declarations own workload bodies, scene
+parameters, view and operation settings, and case lifecycle.
 
 Build the runner and its command module:
 
@@ -880,35 +898,46 @@ pnpm run render-bench -- merge \
   --output-dir target/performance/render-wasm/runs/<merged>
 ```
 
-The merged record gets a new run id and a fresh run home. Both inputs must be
-completed and compatible: same cases, timeout policy, analysis, build facts,
-runtime environment, and Git provenance. The additional run must use the same
-warmup count. `merge` appends only the additional measured attempts; its warmup
-attempts remain in the additional record. The command starts no build, server,
-or browser.
+The merged record gets a new run id and a new run directory. Both input records
+stay unchanged. Both inputs must be completed and compatible: same cases,
+timeout policy, analysis, build facts, runtime environment, and Git provenance.
+The additional run must use the same warmup count. `merge` appends only the
+additional measured attempts and uses the base run's warmups. The additional
+warmup attempts stay in the additional record. The command starts no build,
+server, or browser.
 
 Inspect and clean managed outputs:
 
 ```bash
-pnpm run render-bench -- purge --only-builds
-pnpm run render-bench -- purge --only-runs
-pnpm run render-bench -- purge --only-comparisons
+pnpm run render-bench -- purge builds
+pnpm run render-bench -- purge runs
+pnpm run render-bench -- purge comparisons
+pnpm run render-bench -- purge all
 ```
 
-`purge` removes known build, standalone-run, or feature-comparison outputs. It
-keeps the managed directories and unrelated files. The three `--only-*` options
-are mutually exclusive; no option selects every category.
+`purge` requires exactly one target: `builds`, `runs`, `comparisons`, or `all`.
+It removes known build, standalone-run, or feature-comparison outputs and keeps
+directories and unrelated files. It follows directory symlinks and can remove
+matching output files from their targets, including targets outside the managed
+directories. `all` removes every category. A missing, unknown or multiple target
+is an argument error.
 
 The commands write results to stdout:
 
-- `build`: `Build <id>` and `Output <absolute path>` at allocation.
-- `run`: `Run <id>` and `Output <absolute path>` at allocation, then a `Report`
-  heading and the formatted summary.
+- `build`: `Build <id>` and `Output <absolute path>` after build preparation
+  ends.
+- `run`: `Run <id>` and `Output <absolute path>` after the run ends. When a
+  report is available, a `Report` heading and the formatted summary follow.
 - `ab`: `Comparison <id>`, `Output <absolute path>`, and final
   `Status <status>`.
 - `compare`: the comparison report.
 - `merge`: `Run <id>` and `Output <absolute path>`.
-- Help: usage text. `purge` produces no output on success.
+- `--help` and `COMMAND --help`: usage text with that command's options and
+  defaults. `purge` produces no output on success.
+
+Each CLI command produces an outcome with an exit code, errors, log path, and
+optional report text. The runner prints the final output once and returns the
+numeric status.
 
 Progress and diagnostics go to stderr. The default shows build phases, case
 headings, and attempt progress. `-q` / `--quiet` shows results, warnings, and
@@ -938,9 +967,11 @@ mean interruption by `SIGINT` and `SIGTERM` for `build`, `run` and `ab`. An
 interrupted command prints no error for the aborted work; it prints a failed
 write of its own record or log.
 
-`--warmups` defaults to 3, `--repetitions` to 10, `--timeout-ms` to 30000,
-`--build-timeout-ms` to 300000, and `--startup-timeout-ms` to 30000. The master
-seed defaults to 42 and accepts a 32-bit unsigned integer. A filter matches a
+`--warmups` defaults to 3, `--repetitions` to 10, `--timeout-ms` to 30000, and
+`--startup-timeout-ms` to 30000. `build`, a run that prepares its build, and an
+A/B experiment use a default `--build-timeout-ms` of 300000; a run with
+`--build` uses the retained build's recorded provenance. The master seed
+defaults to 42 and accepts a 32-bit unsigned integer. A filter matches a
 substring of the case id.
 
 ## Unit tests

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns performance-tests.render-wasm.execution-test
   (:require
@@ -30,7 +30,7 @@
          #js [promise
               (js/Promise.
                (fn [_ reject]
-                 (vreset! timer (js/setTimeout #(reject (js/Error. "Signal test stalled")) 5000))))])
+                 (vreset! timer (js/setTimeout #(reject (js/Error. "Test stalled")) 5000))))])
         (.finally #(js/clearTimeout @timer)))))
 
 (t/deftest ^:async real-signals-reach-the-callback-and-remover-restores-listeners
@@ -38,7 +38,7 @@
         before-term (.listenerCount js/process "SIGTERM")
         received    (atom [])
         next-signal (volatile! nil)
-        remove      (signals/on-signals
+        remove      (execution/on-signals
                      (fn [signal]
                        (swap! received conj signal)
                        (@next-signal signal)))
@@ -83,15 +83,6 @@
   []
   [(.listenerCount js/process "SIGINT") (.listenerCount js/process "SIGTERM")])
 
-(defn- within
-  [promise]
-  (let [timer (volatile! nil)]
-    (-> (js/Promise.race
-         #js [promise
-              (js/Promise.
-               (fn [_ reject]
-                 (vreset! timer (js/setTimeout #(reject (js/Error. "Execution test stalled")) 5000))))])
-        (.finally #(js/clearTimeout @timer)))))
 
 (t/deftest ^:async sync-and-async-handlers-publish-once-and-release-listeners
   (doseq [async [false true]]

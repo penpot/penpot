@@ -8,7 +8,6 @@
   "Offline merge of two saved schema:run records."
   (:require
    ["fs" :as fs]
-   [benches.render-wasm.node.log :as log]
    [benches.render-wasm.node.runs :as runs]
    [benches.render-wasm.result :as result]))
 
@@ -26,6 +25,4 @@
     (runs/write-record! home merged)
     (fs/appendFileSync (:log-path home)
                        (str "merge " (:run-id base) " + " (:run-id additional) "\n"))
-    (log/result (str "Run " run-id))
-    (log/result (str "Output " (:dir home)))
     {:run merged :home home}))
