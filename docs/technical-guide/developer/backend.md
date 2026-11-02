@@ -101,15 +101,18 @@ A migration runs inside a single transaction, so a `CREATE INDEX` in a migration
 locks the table against writes until the whole run commits and cannot use
 `CONCURRENTLY`. On a large table, build the index out of band before upgrading,
 with `CREATE INDEX CONCURRENTLY` on its own (never inside a transaction block);
-the migration's `CREATE INDEX IF NOT EXISTS` then finds it and does nothing.
+the migration's `to_regclass` guard then finds it and does nothing.
 
 A partitioned table cannot take `CREATE INDEX CONCURRENTLY` on the parent: build
 the index on each partition, create the parent index with
 `CREATE INDEX ... ON ONLY`, and attach every partition with
 `ALTER INDEX ... ATTACH PARTITION`. An interrupted `CONCURRENTLY` build leaves
-the index `INVALID`: drop it and retry. The migration should check
-`pg_index.indisvalid` and the attached partitions before continuing, because
-`IF NOT EXISTS` matches the name, not the definition or the completeness.
+the index `INVALID`: drop it and retry. The migration must resolve the table and
+the index through `search_path` (`to_regclass` and `::regclass`, never a
+hardcoded `public.`) and check `pg_index.indisvalid` and the attached partitions
+before continuing, because a name lookup alone does not prove the definition or
+the completeness of the index. Do not rely on `CREATE INDEX IF NOT EXISTS`: it
+matches the name, not the definition.
 
 A validated foreign key is the other expensive DDL: `ADD FOREIGN KEY` takes
 `SHARE ROW EXCLUSIVE` on the referencing and the referenced table and scans the

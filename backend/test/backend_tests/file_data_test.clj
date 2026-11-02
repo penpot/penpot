@@ -102,14 +102,16 @@
                                                  {:file-id (:id file) :id id}))]
 
       ;; The caller passes the object the persisted row points at; `upsert!`
-      ;; touches it before replacing the row.
+      ;; touches it before replacing the row. The dead metadata pointer must
+      ;; not survive the write either.
       (upsert! {:id id
                 :file-id (:id file)
                 :type "main"
                 :backend "db"
                 :storage-object-id sobject
                 :data (blob/encode {:pages [] :pages-index {}})
-                :metadata {:generated-by "test"}})
+                :metadata {:generated-by "test"
+                           :storage-ref-id (uuid/next)}})
 
       (let [row      (th/db-get :file-data {:file-id (:id file) :id id})
             metadata (fdata/decode-metadata (:metadata row))]
@@ -117,7 +119,8 @@
         (t/testing "the hot row no longer references the object"
           (t/is (= "db" (:backend row)))
           (t/is (nil? (:storage-object-id row)))
-          (t/is (nil? (:storage-ref-id metadata))))
+          (t/is (nil? (:storage-ref-id metadata)))
+          (t/is (= "test" (:generated-by metadata))))
 
         (t/testing "the replaced object is touched for the storage GC"
           (t/is (some? (:touched-at (find-object sobject)))))))))

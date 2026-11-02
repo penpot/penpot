@@ -792,7 +792,7 @@
       (dissoc :migrations)))
 
 (defn- file->file-data-params
-  [{:keys [id] :as file} & {:as opts}]
+  [{:keys [id] :as file}]
   (let [created-at  (or (:created-at file) (ct/now))
         modified-at (or (:modified-at file) created-at)]
     (-> (d/without-nils
@@ -829,40 +829,41 @@
                     :cause cause)
           (throw cause))))
 
-    (->> (file->file-data-params file)
+    ;; An INSERT never replaces a persisted pointer: `duplicate-file` hands
+    ;; the source file map here, and touching the source object would be a
+    ;; write on a live object.
+    (->> (file->file-data-params (dissoc file :storage-object-id))
          (fdata/upsert! cfg))
 
     nil))
 
 (defn update-file!
-  "Update an existing file on the database. Expects not encoded file.
+  "Update an existing file on the database. Expects a not-encoded file map,
+  as returned by `get-file`, and optionally the fields to change as keyword
+  args; they are merged into the file map before persisting.
 
-  LEGACY: only reachable from the in-place binfile import (`save-file!` with
-  `::overwrite`), which is dead code and will be removed in a separate PR. It
-  does not carry the previous `storage_object_id` (the imported file map has
-  none), so overwriting a storage-backed row would leave its object
-  unreclaimed. Do not use it for new work."
-  [{:keys [::db/conn] :as cfg} {:keys [id] :as file} & {:as opts}]
+  The storage object the persisted row pointed at travels in the map
+  (`:storage-object-id`), and `upsert!` touches it before replacing the row.
+  That is why the caller must pass the map it read instead of building a
+  partial one: nothing is queried here."
+  [{:keys [::db/conn] :as cfg} file & {:as params}]
 
-  (if (::reset-migrations? opts false)
-    (fmigr/reset-migrations! conn file)
-    (fmigr/upsert-migrations! conn file))
+  (let [reset? (::reset-migrations? params false)
+        file   (merge file (dissoc params ::reset-migrations?))]
 
-  (let [file
-        (encode-file cfg file)
+    (if reset?
+      (fmigr/reset-migrations! conn file)
+      (fmigr/upsert-migrations! conn file))
 
-        file-params
-        (file->params (dissoc file :id))
+    (let [file        (encode-file cfg file)
+          file-params (file->params (dissoc file :id))]
 
-        file-data-params
-        (file->file-data-params file)]
+      (db/update! conn :file file-params
+                  {:id (:id file)}
+                  {::db/return-keys false})
 
-    (db/update! conn :file file-params
-                {:id id}
-                {::db/return-keys false})
-
-    (fdata/upsert! cfg file-data-params)
-    nil))
+      (fdata/upsert! cfg (file->file-data-params file))
+      nil)))
 
 (defn save-file!
   "Applies all the final validations and perist the file, binfile
@@ -898,7 +899,7 @@
     ;; `storage_object_id`, so it is not supported by the storage pointer
     ;; model; only the insert branch is live.
     (if (::overwrite cfg)
-      (update-file! cfg file (assoc opts ::reset-migrations? true))
+      (update-file! cfg file ::reset-migrations? true)
       (insert-file! cfg file opts))))
 
 (def ^:private sql:get-file-libraries

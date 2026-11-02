@@ -22,7 +22,8 @@
 -- the column, the index and the FK already exist:
 --
 --   1. ALTER TABLE file_data ADD COLUMN IF NOT EXISTS storage_object_id uuid NULL;
---   2. UPDATE file_data SET storage_object_id = (metadata->>'storage-ref-id')::uuid
+--   2. UPDATE file_data SET storage_object_id = (metadata->>'storage-ref-id')::uuid,
+--                           metadata = metadata - 'storage-ref-id'
 --       WHERE backend = 'storage' AND storage_object_id IS NULL
 --         AND jsonb_exists(metadata, 'storage-ref-id')
 --         AND metadata->>'storage-ref-id' ~* '<uuid regex>'
@@ -54,9 +55,11 @@
 -- per-partition build plus `ON ONLY` + `ATTACH PARTITION`. An interrupted
 -- concurrent build leaves the index INVALID: drop it and retry. Verify with
 -- `pg_index.indisvalid` and `pg_inherits` before deploying; the block below
--- aborts the migration if the index is not ready. With the column and the
--- index already present, `ADD COLUMN` and `CREATE INDEX` are skipped by the
--- catalog guards and take no table lock.
+-- aborts the migration if the index is not ready. The guards resolve the
+-- table and the index through `search_path` (`to_regclass`, `::regclass`), so
+-- they also work when the application schema is not `public`. With the column
+-- and the index already present, `ADD COLUMN` and `CREATE INDEX` are skipped by
+-- the catalog guards and take no table lock.
 
 SET LOCAL lock_timeout = '3s';
 
@@ -80,7 +83,10 @@ WITH candidates AS MATERIALIZED (
          '^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$'
 )
 UPDATE file_data AS fd
-   SET storage_object_id = c.soid
+   SET storage_object_id = c.soid,
+       -- The column is the only source of truth: drop the old pointer from
+       -- the metadata so the row cannot keep two of them.
+       metadata = fd.metadata - 'storage-ref-id'
   FROM candidates AS c
  WHERE fd.file_id = c.file_id
    AND fd.id = c.id
@@ -88,7 +94,7 @@ UPDATE file_data AS fd
 
 DO $$
 BEGIN
-  IF to_regclass('public.file_data__storage_object_id__idx') IS NULL THEN
+  IF to_regclass('file_data__storage_object_id__idx') IS NULL THEN
     CREATE INDEX file_data__storage_object_id__idx
         ON file_data (storage_object_id);
   END IF;
@@ -101,18 +107,21 @@ DECLARE
   n_partitions integer;
   n_attached   integer;
 BEGIN
+  -- Resolve the index and the table through `search_path` (no `public.`) so
+  -- the guard works on deployments whose objects live in another schema.
   SELECT i.indisvalid, pg_get_indexdef(i.indexrelid)
     INTO idx_valid, idx_def
-    FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid
-   WHERE c.relname = 'file_data__storage_object_id__idx';
+    FROM pg_index AS i
+   WHERE i.indexrelid = to_regclass('file_data__storage_object_id__idx')
+     AND i.indrelid   = 'file_data'::regclass;
 
   SELECT count(*) INTO n_partitions
-    FROM pg_inherits i JOIN pg_class p ON p.oid = i.inhparent
-   WHERE p.relname = 'file_data';
+    FROM pg_inherits
+   WHERE inhparent = 'file_data'::regclass;
 
   SELECT count(*) INTO n_attached
     FROM pg_inherits
-   WHERE inhparent = 'file_data__storage_object_id__idx'::regclass;
+   WHERE inhparent = to_regclass('file_data__storage_object_id__idx');
 
   IF NOT coalesce(idx_valid, false)
      OR idx_def NOT LIKE '%(storage_object_id)%'

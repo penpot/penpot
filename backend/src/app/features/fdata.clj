@@ -137,7 +137,10 @@
 (defn- upsert-in-database
   [cfg {:keys [id file-id created-at modified-at deleted-at type backend data metadata storage-object-id]}]
   (let [created-at  (or created-at (ct/now))
-        metadata    (some-> metadata db/json)
+        ;; The metadata pointer is dead (the column is the only source of
+        ;; truth). Clean it here, the single point where every branch
+        ;; serializes the metadata, so no write can resurrect it.
+        metadata    (some-> metadata (dissoc :storage-ref-id) (db/json))
         modified-at (or modified-at created-at)]
 
     (db/exec-one! cfg [sql:upsert-file-data
@@ -184,11 +187,7 @@
       (upsert-in-database cfg params))
 
     (= backend "db")
-    (let [metadata (dissoc (:metadata params) :storage-ref-id)
-          params   (-> params
-                       (assoc :metadata metadata)
-                       (assoc :storage-object-id nil))]
-      (upsert-in-database cfg params))
+    (upsert-in-database cfg (assoc params :storage-object-id nil))
 
     (= backend "legacy-db")
     (cond
@@ -264,7 +263,16 @@
   (sm/check-fn schema:update-params :hint "invalid params received for update"))
 
 (defn upsert!
-  "Create or update file data"
+  "Create or update a file data row.
+
+  `:storage-object-id` is the storage object the persisted row pointed at
+  before this write (nil for a new row or a row that had none), not the
+  object the new content will live in: the write resolves that itself. The
+  previous object is marked as touched before the row is replaced, so the
+  storage GC can reclaim the blob once nothing references it.
+
+  The function does not query the row: the caller must hand the pointer it
+  read. Returns true when a row was written."
   [cfg params & {:as opts}]
   (let [params (-> (check-update-params params)
                    (update :backend default-backend))]

@@ -68,7 +68,8 @@
       (let [result (:result out)]
         (t/is (uuid? file-id))
         (t/is (= (:name data) (:name result)))
-        (t/is (= proj-id (:project-id result)))))
+        (t/is (= proj-id (:project-id result)))
+        (t/is (not (contains? result :storage-object-id)))))
 
     (t/testing "rename file"
       (let [data {::th/type :rename-file
@@ -922,6 +923,59 @@
           out  (th/command! data)]
       (t/is (nil? (:error out)))
       (t/is (false? (-> out :result :is-shared))))))
+
+(t/deftest unsharing-a-library-touches-the-consumer-storage-object
+  ;; Regression: the absorption used to build a partial file map that dropped
+  ;; `:storage-object-id`, so the offloaded blob of the consumer was never
+  ;; touched and the storage GC could not reclaim it.
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        library  (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared true})
+        consumer (th/create-file* 2 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)})]
+
+    (th/link-file-to-library* {:file-id (:id consumer)
+                               :library-id (:id library)})
+
+    (th/run-task! :offload-file-data {:file-id (:id consumer)})
+    (th/run-task! :storage-gc-touched {:skip-delay true})
+
+    (let [sobject (:storage-object-id (th/db-get :file-data {:file-id (:id consumer)
+                                                             :id (:id consumer)}))]
+      (t/is (uuid? sobject))
+      (t/is (nil? (:touched-at (th/db-get :storage-object {:id sobject}
+                                          {::db/remove-deleted false}))))
+
+      (let [out (th/command! {::th/type :set-file-shared
+                              ::rpc/profile-id (:id profile)
+                              :id (:id library)
+                              :is-shared false})]
+        (t/is (nil? (:error out)))
+
+        (t/testing "the absorbed file rewrites its data and touches the old object"
+          (let [row (th/db-get :file-data {:file-id (:id consumer) :id (:id consumer)})]
+            (t/is (= "db" (:backend row)))
+            (t/is (nil? (:storage-object-id row)))
+            (t/is (some? (:touched-at (th/db-get :storage-object {:id sobject}
+                                                 {::db/remove-deleted false}))))))))))
+
+(t/deftest get-file-does-not-expose-the-storage-pointer
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})]
+
+    (th/run-task! :offload-file-data {:file-id (:id file)})
+    (t/is (uuid? (:storage-object-id (th/db-get :file-data {:file-id (:id file)
+                                                            :id (:id file)}))))
+
+    (let [out (th/command! {::th/type :get-file
+                            ::rpc/profile-id (:id profile)
+                            :id (:id file)})]
+      (t/is (nil? (:error out)))
+      (t/is (= (:id file) (-> out :result :id)))
+      (t/testing "the internal storage object id never reaches the client"
+        (t/is (not (contains? (:result out) :storage-object-id)))))))
 
 (t/deftest permissions-checks-link-to-library-1
   (let [profile1 (th/create-profile* 1)

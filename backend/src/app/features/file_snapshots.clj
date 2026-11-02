@@ -119,14 +119,16 @@
 
 (defn get-snapshot
   "Get a fully decoded snapshot for read-only preview or restoration.
-  Returns the snapshot map with decoded :data field."
+  Returns the snapshot map with decoded :data field. The internal storage
+  pointer of the row is not part of the result."
   [cfg file-id snapshot-id]
-  (let [now (ct/now)]
-    (->> (db/get-with-sql cfg [sql:get-snapshot file-id snapshot-id now]
-                          {::db/remove-deleted false})
-         (decode-snapshot)
-         (fdata/resolve-file-data cfg)
-         (fdata/decode-file-data cfg))))
+  (let [now (ct/now)
+        snapshot (->> (db/get-with-sql cfg [sql:get-snapshot file-id snapshot-id now]
+                                       {::db/remove-deleted false})
+                      (decode-snapshot)
+                      (fdata/resolve-file-data cfg)
+                      (fdata/decode-file-data cfg))]
+    (dissoc snapshot :storage-object-id)))
 
 (def ^:private sql:get-visible-snapshots
   (str "WITH "

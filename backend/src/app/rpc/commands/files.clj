@@ -222,7 +222,11 @@
         (if (and (contains? (:features file) "fdata/objects-map")
                  (not (contains? (:features params) "fdata/objects-map")))
           (feat.fdata/realize-objects cfg file)
-          file)))))
+          file)
+
+        ;; The storage pointer is internal bookkeeping: it never leaves the
+        ;; backend in a response.
+        (dissoc file :storage-object-id)))))
 
 ;; --- COMMAND QUERY: get-file-fragment (by id)
 
@@ -556,17 +560,21 @@
             (let [file    (bfc/get-file cfg id :load-data? false)
                   summary (t/decode-str result)]
               (-> (assoc file :library-summary summary)
-                  (dissoc :data)))))
+                  (dissoc :data)
+                  (dissoc :storage-object-id)))))
 
         calculate-from-db
         (fn []
           (let [file   (bfc/get-file cfg id)
                 result (feat.fdata/with-pointers cfg id
                          (calculate-library-summary file))]
+            ;; The storage pointer is internal bookkeeping: this summary is an
+            ;; RPC response and must not expose it.
             (-> file
                 (assoc :library-summary result)
                 (dissoc :legacy-data)
-                (dissoc :data))))
+                (dissoc :data)
+                (dissoc :storage-object-id))))
 
         persist-to-cache
         (fn [{:keys [::rds/conn]} data cache-key]
@@ -1007,13 +1015,10 @@
              :library-id (str (:id ldata))
              :file-id (str file-id))
 
-      (bfc/update-file! cfg {:id file-id
-                             :features (:features file)
-                             :migrations (:migrations file)
-                             :revn (inc (:revn file))
-                             :data (:data file)
-                             :modified-at (ct/now)
-                             :has-media-trimmed false}))))
+      (bfc/update-file! cfg file
+                        :revn (inc (:revn file))
+                        :modified-at (ct/now)
+                        :has-media-trimmed false))))
 
 (defn- get-referenced-files
   [cfg library-id]

@@ -8,6 +8,7 @@
   (:require
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.features.fdata :as fdata]
    [app.migrations :as migrations]
    [app.util.migrations :as mg]
    [backend-tests.helpers :as th]
@@ -291,6 +292,11 @@
                                                       {:file-id (:id file)
                                                        :id data-id})))))
 
+    (t/testing "the backfill removes the dead metadata pointer"
+      (let [row      (th/db-get :file-data {:file-id (:id file) :id data-id})
+            metadata (fdata/decode-metadata (:metadata row))]
+        (t/is (nil? (:storage-ref-id metadata)))))
+
     (t/testing "a second application changes nothing"
       (let [before (th/db-get :file-data {:file-id (:id file) :id data-id})]
         (apply-file-data-migration!)
@@ -342,3 +348,34 @@
       (t/is (nil? (:storage-object-id (th/db-get :file-data
                                                  {:file-id (:id file)
                                                   :id other-id})))))))
+
+(t/deftest file-data-migration-creates-a-missing-index
+  ;; In the test database the index already exists, so the creation branch is
+  ;; only reachable by dropping it first. It is the branch a fresh deployment
+  ;; runs.
+  (th/db-exec! ["DROP INDEX file_data__storage_object_id__idx"])
+  (t/is (not (contains? (table-indexes "file_data")
+                        "file_data__storage_object_id__idx")))
+
+  (t/is (true? (apply-file-data-migration!)))
+
+  (t/is (contains? (table-indexes "file_data")
+                   "file_data__storage_object_id__idx")))
+
+(t/deftest file-data-migration-aborts-on-an-incomplete-index
+  ;; A prebuilt parent index is matched by its name, so the guard has to abort
+  ;; when the definition is valid but the partitions are not attached yet.
+  (th/db-exec! ["DROP INDEX file_data__storage_object_id__idx"])
+  (th/db-exec! ["CREATE INDEX file_data__storage_object_id__idx
+                    ON ONLY file_data (storage_object_id)"])
+
+  (try
+    (t/is (thrown? java.sql.SQLException
+                   (apply-file-data-migration!)))
+    (finally
+      ;; Leave the shared test schema with the complete, valid index.
+      (th/db-exec! ["DROP INDEX file_data__storage_object_id__idx"])
+      (apply-file-data-migration!)))
+
+  (t/is (contains? (table-indexes "file_data")
+                   "file_data__storage_object_id__idx")))
