@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
+   [app.common.logic.libraries :as cll]
    [app.common.logic.variants :as clv]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
@@ -114,6 +115,33 @@
         objects (:objects (thf/current-page file))]
     (t/is (true? (clv/swap-nesting-loop? objects (ths/get-shape file :x-head) (:data file) (thi/id :cy))))
     (t/is (false? (clv/swap-nesting-loop? objects (ths/get-shape file :x-head) (:data file) (thi/id :cv))))))
+
+(t/deftest update-main-through-a-held-main-is-a-nesting-loop
+  ;; a copy of :ck holds :ca; :ca's copy of :cb and :cb's copy of :cc each
+  ;; swapped their head away, but the main of :cc still holds :ck, so
+  ;; updating :ck from the copy would loop
+  (let [file      (-> (thf/sample-file :file1)
+                      (tho/add-simple-component :cw :mw :mw-child)
+                      (tho/add-simple-component :cv :mv :mv-child)
+                      (tho/add-frame :mk)
+                      (thc/instantiate-component :cw :k-head :parent-label :mk)
+                      (thc/make-component :ck :mk)
+                      (tho/add-frame :mc)
+                      (thc/instantiate-component :ck :c-k :parent-label :mc)
+                      (thc/make-component :cc :mc)
+                      (tho/add-frame :mb)
+                      (thc/instantiate-component :cc :b-c :parent-label :mb :children-labels [:b-c-k])
+                      (thc/make-component :cb :mb)
+                      (thc/component-swap :b-c-k :cv :b-c-v)
+                      (tho/add-frame :ma)
+                      (thc/instantiate-component :cb :a-b :parent-label :ma :children-labels [:a-b-c])
+                      (thc/make-component :ca :ma)
+                      (thc/component-swap :a-b-c :cv :a-b-v)
+                      (thc/instantiate-component :ck :copyk :children-labels [:copyk-head])
+                      (thc/component-swap :copyk-head :ca :copyk-a))
+        objects   (:objects (thf/current-page file))]
+    (t/is (true? (cll/update-main-nesting-loop? (libraries file) {:objects objects} (thi/id :copyk))))
+    (t/is (false? (cll/update-main-nesting-loop? (libraries file) {:objects objects} (thi/id :a-b))))))
 
 (t/deftest swap-in-place-keeps-index-and-layout-attrs
   (let [file      (-> (thf/sample-file :file1)

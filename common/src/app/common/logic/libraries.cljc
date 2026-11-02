@@ -775,22 +775,12 @@
 (defn update-main-nesting-loop?
   "Whether updating the main of the copy head `shape-id` of `container` from
    the copy would nest its component inside itself: the copy holds a copy of
-   its component, or of a component whose main holds one."
+   its component, or of a component whose main holds one, through every
+   level."
   [libraries container shape-id]
-  (let [component-id (:component-id (ctn/get-shape container shape-id))
-        holds?       (fn [{:keys [component-file] :as head}]
-                       (let [library   (dm/get-in libraries [component-file :data])
-                             component (ctkl/get-component library (:component-id head) true)
-                             root      (when component (ctf/get-component-root library component))]
-                         (and root
-                              (some #(= component-id (:component-id %))
-                                    (cfh/get-children (:objects (ctf/get-component-container library component))
-                                                      (:id root))))))]
-    (boolean
-     (some (fn [shape]
-             (and (:component-id shape)
-                  (or (= component-id (:component-id shape)) (holds? shape))))
-           (cfh/get-children (:objects container) shape-id)))))
+  (let [component-id (:component-id (ctn/get-shape container shape-id))]
+    (contains? (ctn/held-component-ids (cfh/get-children (:objects container) shape-id) libraries)
+               component-id)))
 
 (defn generate-sync-shape-inverse
   "Generate changes to update the component a shape is linked to, from
