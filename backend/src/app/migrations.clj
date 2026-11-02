@@ -531,8 +531,8 @@
    {:name "0156-reset-pg-storage-defaults"
     :fn (mg/resource "app/migrations/sql/0156-reset-pg-storage-defaults.sql")}
 
-   {:name "0157-add-audit-log-pending-table"
-    :fn (mg/resource "app/migrations/sql/0157-add-audit-log-pending-table.sql")}])
+   {:name "0158-consumer-generalization"
+    :fn (mg/resource "app/migrations/sql/0158-consumer-generalization.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

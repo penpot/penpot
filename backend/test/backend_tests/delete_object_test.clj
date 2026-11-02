@@ -56,9 +56,13 @@
             (t/is (= "team" (name (:object props))))
             (t/is (= (:id team) (:id props)))
             (t/is (= deleted-at (:deleted-at props)))
-            (t/is (not (contains? props :team-ids)))
-            (t/is (not (contains? props :project-ids)))
-            (t/is (not (contains? props :file-ids)))
+            ;; The shape is the contract: only the team ids go flat, the
+            ;; rest stays under `:cascade`.
+            (t/is (= #{:object :id :deleted-at :team-ids :cascade}
+                     (set (keys props))))
+            ;; Flat team ids for team-keyed consumers, next to the
+            ;; per-entity cascade breakdown.
+            (t/is (= #{(:id team)} (set (:team-ids props))))
             (t/is (= #{(:id team)} (set (get-in props [:cascade :team-ids]))))
             (t/is (= #{(:default-project-id team) (:id project)}
                      (set (get-in props [:cascade :project-ids]))))
@@ -85,7 +89,8 @@
             (t/is (= (:id file) (:id props)))
             (t/is (= [] (get-in props [:cascade :team-ids])))
             (t/is (= [] (get-in props [:cascade :project-ids])))
-            (t/is (= [(:id file)] (get-in props [:cascade :file-ids])))))))))
+            (t/is (= [(:id file)] (get-in props [:cascade :file-ids])))
+            (t/is (= #{(:id team)} (set (:team-ids props))))))))))
 
 (t/deftest delete-object-missing-row-emits-nothing
   ;; A cascade over an unknown id marks nothing, so there is nothing to report.
