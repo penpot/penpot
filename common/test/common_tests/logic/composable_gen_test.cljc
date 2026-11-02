@@ -973,3 +973,10 @@
   (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :library true :rich-variants true
                                     :layout-copies true :text true}]
                        :ops [[:switch 3 0 0 0] [:nest 9 0 0 0] [:edit 7 1 1 :copy-head] [:reset 7]]}))))
+
+(t/deftest generated-copy-with-its-own-geometry-keeps-children-of-a-main-set-to-fill
+  ;; a nested copy made absolute in a copy keeps its size when its main is
+  ;; set to fill a grid; its children stay where the copy has them
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :grid :variant-diff false
+                                    :rich-variants true :grid-empty true :layout-copies true :text true}]
+                       :ops [[:style 1 35 1] [:style 0 29 1]]}))))
