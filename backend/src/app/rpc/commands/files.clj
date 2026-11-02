@@ -43,7 +43,6 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.rpc.permissions :as perms]
-   [app.util.blob :as blob]
    [app.util.events :as events]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
@@ -226,7 +225,7 @@
 
         ;; The storage pointer is internal bookkeeping: it never leaves the
         ;; backend in a response.
-        (dissoc file :storage-object-id)))))
+        (bfc/file->response file)))))
 
 ;; --- COMMAND QUERY: get-file-fragment (by id)
 
@@ -235,7 +234,7 @@
    [:id ::sm/uuid]
    [:file-id ::sm/uuid]
    [:created-at ::ct/inst]
-   [:content ::sm/any]])
+   [:data ::sm/any]])
 
 (def schema:get-file-fragment
   [:map {:title "get-file-fragment"}
@@ -245,8 +244,17 @@
 
 (defn- get-file-fragment
   [cfg file-id fragment-id]
-  (some-> (db/get cfg :file-data {:file-id file-id :id fragment-id :type "fragment"})
-          (update :data blob/decode)))
+  ;; Resolve through the file data backend: a fragment can live on cold
+  ;; storage, and reading its row directly would hand `nil` to `blob/decode`.
+  ;; Only the public fields leave the backend: the row also carries the
+  ;; internal storage pointer and the backend metadata.
+  (when-let [row (db/get cfg :file-data {:file-id file-id
+                                         :id fragment-id
+                                         :type "fragment"})]
+    (let [fragment (->> row
+                        (feat.fdata/resolve-file-data cfg)
+                        (feat.fdata/decode-file-data cfg))]
+      (select-keys fragment [:id :file-id :created-at :data]))))
 
 (defn- check-fragment-scope!
   "Checks that the fragment is reachable from the pages authorized by
@@ -561,7 +569,7 @@
                   summary (t/decode-str result)]
               (-> (assoc file :library-summary summary)
                   (dissoc :data)
-                  (dissoc :storage-object-id)))))
+                  (bfc/file->response)))))
 
         calculate-from-db
         (fn []
@@ -574,7 +582,7 @@
                 (assoc :library-summary result)
                 (dissoc :legacy-data)
                 (dissoc :data)
-                (dissoc :storage-object-id))))
+                (bfc/file->response))))
 
         persist-to-cache
         (fn [{:keys [::rds/conn]} data cache-key]

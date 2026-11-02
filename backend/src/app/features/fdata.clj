@@ -107,8 +107,14 @@
 (defmethod resolve-file-data "storage"
   [cfg {:keys [storage-object-id] :as file}]
   (let [storage (sto/resolve cfg ::db/reuse-conn true)
-        data    (->> (sto/get-object storage storage-object-id)
-                     (sto/get-object-bytes storage))]
+        sobject (or (sto/get-object storage storage-object-id)
+                    (ex/raise :type :internal
+                              :code :missing-storage-object
+                              :hint "file data row has no readable storage object"
+                              :file-id (:file-id file)
+                              :id (:id file)
+                              :storage-object-id storage-object-id))
+        data    (->> (sto/get-object-bytes storage sobject))]
     (-> file
         (assoc :data data)
         (dissoc :legacy-data))))
@@ -224,7 +230,7 @@
     (throw (IllegalArgumentException.
             (str "backend '" backend "' not supported")))))
 
-(defn touch-storage-object!
+(defn touch-storage-object
   "Mark a storage object as touched so the storage GC can reclaim it once
   nothing references it anymore. Used when a file data row replaces or
   deletes the object it pointed at. Expects a non-nil object id; callers
@@ -278,7 +284,7 @@
                    (update :backend default-backend))]
 
     (some->> (:storage-object-id params)
-             (touch-storage-object! cfg))
+             (touch-storage-object cfg))
 
     (-> (handle-persistence cfg params)
         (db/get-update-count)

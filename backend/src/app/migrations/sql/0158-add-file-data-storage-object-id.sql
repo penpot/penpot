@@ -55,11 +55,16 @@
 -- per-partition build plus `ON ONLY` + `ATTACH PARTITION`. An interrupted
 -- concurrent build leaves the index INVALID: drop it and retry. Verify with
 -- `pg_index.indisvalid` and `pg_inherits` before deploying; the block below
--- aborts the migration if the index is not ready. The guards resolve the
--- table and the index through `search_path` (`to_regclass`, `::regclass`), so
--- they also work when the application schema is not `public`. With the column
--- and the index already present, `ADD COLUMN` and `CREATE INDEX` are skipped by
--- the catalog guards and take no table lock.
+-- aborts the migration if the index is not ready. It also requires a
+-- single-column index on `storage_object_id` without a predicate or an
+-- expression: a partial or expression index mentions the column but cannot
+-- serve the foreign key check. The foreign key guard validates the shape
+-- (type, `DEFERRABLE`, `NO ACTION`, validated) and aborts instead of
+-- accepting a constraint that would cascade or break `SET CONSTRAINTS`. The
+-- guards resolve the table and the index through `search_path` (`to_regclass`,
+-- `::regclass`), so they also work when the application schema is not
+-- `public`. With the column and the index already present, `ADD COLUMN` and
+-- `CREATE INDEX` are skipped by the catalog guards and take no table lock.
 
 SET LOCAL lock_timeout = '3s';
 
@@ -103,14 +108,24 @@ END $$;
 DO $$
 DECLARE
   idx_valid    boolean;
+  idx_ok       boolean;
   idx_def      text;
   n_partitions integer;
   n_attached   integer;
 BEGIN
-  -- Resolve the index and the table through `search_path` (no `public.`) so
-  -- the guard works on deployments whose objects live in another schema.
-  SELECT i.indisvalid, pg_get_indexdef(i.indexrelid)
-    INTO idx_valid, idx_def
+  -- Resolve the index through `search_path` and validate its shape, not just
+  -- its name: a partial or expression index also mentions the column but
+  -- cannot serve the foreign key check.
+  SELECT i.indisvalid,
+         pg_get_indexdef(i.indexrelid),
+         (i.indpred IS NULL
+          AND i.indexprs IS NULL
+          AND i.indnatts = 1
+          AND i.indkey[0] = (SELECT a.attnum
+                               FROM pg_attribute AS a
+                              WHERE a.attrelid = 'file_data'::regclass
+                                AND a.attname  = 'storage_object_id'))
+    INTO idx_valid, idx_def, idx_ok
     FROM pg_index AS i
    WHERE i.indexrelid = to_regclass('file_data__storage_object_id__idx')
      AND i.indrelid   = 'file_data'::regclass;
@@ -124,18 +139,31 @@ BEGIN
    WHERE inhparent = to_regclass('file_data__storage_object_id__idx');
 
   IF NOT coalesce(idx_valid, false)
-     OR idx_def NOT LIKE '%(storage_object_id)%'
+     OR NOT coalesce(idx_ok, false)
      OR n_attached <> n_partitions THEN
-    RAISE EXCEPTION 'index file_data__storage_object_id__idx is not ready (valid=%, definition=%, attached=%, partitions=%); finish the runbook step or drop it and retry',
+    RAISE EXCEPTION 'index file_data__storage_object_id__idx is not ready (valid=%, definition=%, attached=%, partitions=%); it must be a single-column index on storage_object_id without a predicate or expression. Finish the runbook step or drop it and retry',
                     idx_valid, idx_def, n_attached, n_partitions;
   END IF;
 END $$;
 
 DO $$
+DECLARE
+  fk_exists boolean;
+  fk_ok     boolean;
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint
-                  WHERE conname = 'file_data_storage_object_id_fkey'
-                    AND conrelid = 'file_data'::regclass) THEN
+  SELECT true,
+         (contype = 'f'
+          AND condeferrable
+          AND confdeltype = 'a'
+          AND convalidated)
+    INTO fk_exists, fk_ok
+    FROM pg_constraint
+   WHERE conname = 'file_data_storage_object_id_fkey'
+     AND conrelid = 'file_data'::regclass;
+
+  IF coalesce(fk_exists, false) AND NOT coalesce(fk_ok, false) THEN
+    RAISE EXCEPTION 'constraint file_data_storage_object_id_fkey exists with the wrong shape; it must be a validated DEFERRABLE NO ACTION foreign key. Drop it and let the runbook or this migration recreate it';
+  ELSIF NOT coalesce(fk_exists, false) THEN
     ALTER TABLE file_data
       ADD CONSTRAINT file_data_storage_object_id_fkey
       FOREIGN KEY (storage_object_id) REFERENCES storage_object(id)

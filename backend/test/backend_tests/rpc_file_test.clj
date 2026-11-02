@@ -3065,6 +3065,36 @@
                               :id slink-id})]
         (t/is (nil? (:error out)))))))
 
+(t/deftest get-file-fragment-returns-only-public-fields
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)})
+        fragment (first (th/db-query :file-data {:file-id (:id file)
+                                                 :type "fragment"}))]
+
+    (t/is (uuid? (:id fragment)))
+
+    (t/testing "a fragment on hot storage resolves"
+      (let [out (th/command! {::th/type :get-file-fragment
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id file)
+                              :fragment-id (:id fragment)})]
+        (t/is (nil? (:error out)))
+        (let [result (:result out)]
+          (t/is (contains? result :data))
+          (t/is (= #{:id :file-id :created-at :data}
+                   (set (keys result)))))))
+
+    (t/testing "a fragment moved to cold storage still resolves"
+      (th/run-task! :offload-file-data {:file-id (:id file)})
+      (let [out (th/command! {::th/type :get-file-fragment
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id file)
+                              :fragment-id (:id fragment)})]
+        (t/is (nil? (:error out)))
+        (t/is (contains? (:result out) :data))
+        (t/is (not (contains? (:result out) :storage-object-id)))))))
+
 (t/deftest share-link-fragment-access-denied
   (let [owner   (th/create-profile* 1 {:is-active true})
         viewer  (th/create-profile* 2 {:is-active true})
@@ -3288,3 +3318,19 @@
                                   :team-id (:default-team-id profile)}))]
     (t/is (th/success? out))
     (t/is (= #{(:id file2)} (into #{} (map :id) (:result out))))))
+
+(t/deftest get-team-shared-files-does-not-expose-the-storage-pointer
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true})]
+
+    (th/run-task! :offload-file-data {:file-id (:id file)})
+
+    (let [out    (th/command! {::th/type :get-team-shared-files
+                               ::rpc/profile-id (:id profile)
+                               :team-id (:default-team-id profile)})
+          result (:result out)]
+      (t/is (nil? (:error out)))
+      (t/is (= #{(:id file)} (into #{} (map :id) result)))
+      (t/is (every? #(not (contains? % :storage-object-id)) result)))))

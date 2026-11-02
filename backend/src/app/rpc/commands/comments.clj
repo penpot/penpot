@@ -178,7 +178,7 @@
           (dissoc :data)
           ;; The storage pointer is internal bookkeeping: it never leaves the
           ;; backend in a response.
-          (dissoc :storage-object-id)))))
+          (bfc/file->response)))))
 
 ;; FIXME: rename
 (defn- get-comment-thread

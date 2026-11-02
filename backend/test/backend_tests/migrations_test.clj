@@ -254,7 +254,7 @@
     (th/db-insert! :file-data
                    {:file-id (:id file)
                     :id data-id
-                    :type "main"
+                    :type "snapshot"
                     :backend "storage"
                     :storage-object-id sobject})
 
@@ -282,7 +282,7 @@
     (th/db-insert! :file-data
                    {:file-id (:id file)
                     :id data-id
-                    :type "main"
+                    :type "snapshot"
                     :backend "storage"
                     :metadata (db/json {"storage-ref-id" (str sobject)})})
 
@@ -314,16 +314,16 @@
         other-id   (uuid/next)]
 
     (th/db-insert! :file-data
-                   {:file-id (:id file) :id valid-id :type "main" :backend "storage"
+                   {:file-id (:id file) :id valid-id :type "snapshot" :backend "storage"
                     :metadata (db/json {"storage-ref-id" (str sobject)})})
     (th/db-insert! :file-data
-                   {:file-id (:id file) :id corrupt-id :type "main" :backend "storage"
+                   {:file-id (:id file) :id corrupt-id :type "snapshot" :backend "storage"
                     :metadata (db/json {"storage-ref-id" "not-a-uuid"})})
     (th/db-insert! :file-data
-                   {:file-id (:id file) :id orphan-id :type "main" :backend "storage"
+                   {:file-id (:id file) :id orphan-id :type "snapshot" :backend "storage"
                     :metadata (db/json {"storage-ref-id" (str (uuid/next))})})
     (th/db-insert! :file-data
-                   {:file-id (:id file) :id other-id :type "main" :backend "db"
+                   {:file-id (:id file) :id other-id :type "snapshot" :backend "db"
                     :metadata (db/json {"storage-ref-id" (str sobject)})})
 
     (t/testing "the migration applies without aborting"
@@ -379,3 +379,42 @@
 
   (t/is (contains? (table-indexes "file_data")
                    "file_data__storage_object_id__idx")))
+
+(t/deftest file-data-migration-rejects-a-partial-index
+  ;; A partial index mentions the column in its definition but PostgreSQL
+  ;; cannot use it for the foreign key check.
+  (th/db-exec! ["DROP INDEX file_data__storage_object_id__idx"])
+  (th/db-exec! ["CREATE INDEX file_data__storage_object_id__idx
+                    ON file_data (storage_object_id)
+                 WHERE storage_object_id IS NOT NULL"])
+
+  (try
+    (t/is (thrown? java.sql.SQLException
+                   (apply-file-data-migration!)))
+    (finally
+      (th/db-exec! ["DROP INDEX file_data__storage_object_id__idx"])
+      (apply-file-data-migration!)))
+
+  (t/is (contains? (table-indexes "file_data")
+                   "file_data__storage_object_id__idx")))
+
+(t/deftest file-data-migration-rejects-a-wrong-foreign-key
+  ;; The guard only accepts a validated DEFERRABLE NO ACTION foreign key: a
+  ;; cascade would delete the referencing rows instead of refusing the delete.
+  (th/db-exec! ["ALTER TABLE file_data
+                   DROP CONSTRAINT file_data_storage_object_id_fkey"])
+  (th/db-exec! ["ALTER TABLE file_data
+                   ADD CONSTRAINT file_data_storage_object_id_fkey
+                   FOREIGN KEY (storage_object_id) REFERENCES storage_object(id)
+                   ON DELETE CASCADE DEFERRABLE"])
+
+  (try
+    (t/is (thrown? java.sql.SQLException
+                   (apply-file-data-migration!)))
+    (finally
+      (th/db-exec! ["ALTER TABLE file_data
+                       DROP CONSTRAINT file_data_storage_object_id_fkey"])
+      (apply-file-data-migration!)))
+
+  (t/is (contains? (table-foreign-keys "file_data")
+                   ["file_data_storage_object_id_fkey" "a"])))

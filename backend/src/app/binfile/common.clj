@@ -791,6 +791,14 @@
       (dissoc :metadata)
       (dissoc :migrations)))
 
+(defn file->response
+  "Strip the internal keys of a file map before it leaves the backend in a
+  response. The file data storage pointer is bookkeeping for the write path:
+  a `file-data` object is authentication-only, so a leaked id would let any
+  logged-in profile fetch the blob from `/assets/by-id`."
+  [file]
+  (dissoc file :storage-object-id))
+
 (defn- file->file-data-params
   [{:keys [id] :as file}]
   (let [created-at  (or (:created-at file) (ct/now))
@@ -849,7 +857,10 @@
   [{:keys [::db/conn] :as cfg} file & {:as params}]
 
   (let [reset? (::reset-migrations? params false)
-        file   (merge file (dissoc params ::reset-migrations?))]
+        ;; The storage pointer is bookkeeping of the persisted row, not an
+        ;; editable field: it can only come from the read map. Letting a param
+        ;; override it would skip the touch and leak the replaced blob.
+        file   (merge file (dissoc params ::reset-migrations? :storage-object-id))]
 
     (if reset?
       (fmigr/reset-migrations! conn file)

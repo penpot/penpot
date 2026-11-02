@@ -90,7 +90,7 @@
 
       ;; The storage pointer of the source file is internal bookkeeping: the
       ;; new file does not inherit it, and it never leaves the backend.
-      (dissoc file :storage-object-id))))
+      (bfc/file->response file))))
 
 (def ^:private
   schema:duplicate-file

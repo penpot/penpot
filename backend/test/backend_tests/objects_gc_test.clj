@@ -8,7 +8,6 @@
   (:require
    [app.common.logging :as l]
    [app.common.time :as ct]
-   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.rpc :as-alias rpc]
@@ -227,26 +226,26 @@
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
                                     :project-id (:default-project-id profile)})
-        data-id (uuid/next)
         sobject (sto/put-object! (::sto/storage th/*system*)
                                  {::sto/content (sto/content "file-data")
                                   :content-type "application/octet-stream"
                                   :bucket "file-data"
                                   :file-id (:id file)
-                                  :id data-id})]
+                                  :id (:id file)})]
 
-    (th/db-insert! :file-data
-                   {:file-id (:id file)
-                    :id data-id
-                    :type "main"
-                    :backend "storage"
+    ;; `main` always carries `id = file_id`: mark the real row as deleted
+    ;; instead of inventing a second main row.
+    (th/db-update! :file-data
+                   {:backend "storage"
+                    :data nil
                     :storage-object-id (:id sobject)
-                    :deleted-at (ct/in-past "30m")})
+                    :deleted-at (ct/in-past "30m")}
+                   {:file-id (:id file) :id (:id file)})
 
     (th/run-task! :objects-gc {})
 
     (t/testing "the row is purged"
-      (t/is (nil? (th/db-get :file-data {:file-id (:id file) :id data-id}))))
+      (t/is (nil? (th/db-get :file-data {:file-id (:id file) :id (:id file)}))))
 
     (t/testing "the storage object is touched for the storage GC"
       (t/is (some? (:touched-at (th/db-get :storage-object {:id (:id sobject)})))))))

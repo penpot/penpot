@@ -6,6 +6,7 @@
 
 (ns backend-tests.file-data-test
   (:require
+   [app.binfile.common :as bfc]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
@@ -55,11 +56,12 @@
                 (fdata/resolve-file-data cfg row))))
 
 (t/deftest upsert-to-storage-writes-the-column
-  (let [file   (create-file!)
-        id     (uuid/next)
-        data   (blob/encode {:pages [] :pages-index {}})]
+  (let [file (create-file!)
+        data (blob/encode {:pages [] :pages-index {}})]
 
-    (upsert! {:id id
+    ;; `main` always carries `id = file_id`: update the row the file already
+    ;; has instead of inventing a second one.
+    (upsert! {:id (:id file)
               :file-id (:id file)
               :type "main"
               :backend "storage"
@@ -67,7 +69,7 @@
               :data data
               :metadata {:generated-by "test"}})
 
-    (let [row      (th/db-get :file-data {:file-id (:id file) :id id})
+    (let [row      (th/db-get :file-data {:file-id (:id file) :id (:id file)})
           metadata (fdata/decode-metadata (:metadata row))
           sobject  (:storage-object-id row)]
 
@@ -88,10 +90,9 @@
         (t/is (= (vec data) (vec (:data (resolve! row)))))))))
 
 (t/deftest upsert-back-to-db-clears-the-column-and-touches-the-object
-  (let [file (create-file!)
-        id   (uuid/next)]
+  (let [file (create-file!)]
 
-    (upsert! {:id id
+    (upsert! {:id (:id file)
               :file-id (:id file)
               :type "main"
               :backend "storage"
@@ -99,12 +100,12 @@
               :data (blob/encode {:pages [] :pages-index {}})})
 
     (let [sobject (:storage-object-id (th/db-get :file-data
-                                                 {:file-id (:id file) :id id}))]
+                                                 {:file-id (:id file) :id (:id file)}))]
 
       ;; The caller passes the object the persisted row points at; `upsert!`
       ;; touches it before replacing the row. The dead metadata pointer must
       ;; not survive the write either.
-      (upsert! {:id id
+      (upsert! {:id (:id file)
                 :file-id (:id file)
                 :type "main"
                 :backend "db"
@@ -113,7 +114,7 @@
                 :metadata {:generated-by "test"
                            :storage-ref-id (uuid/next)}})
 
-      (let [row      (th/db-get :file-data {:file-id (:id file) :id id})
+      (let [row      (th/db-get :file-data {:file-id (:id file) :id (:id file)})
             metadata (fdata/decode-metadata (:metadata row))]
 
         (t/testing "the hot row no longer references the object"
@@ -126,27 +127,25 @@
           (t/is (some? (:touched-at (find-object sobject)))))))))
 
 (t/deftest resolve-file-data-uses-the-column-and-ignores-the-metadata
-  (let [file (create-file!)
-        id   (uuid/next)
-        data (blob/encode {:pages [] :pages-index {}})
-        obj  (put-object! "file-data"
-                          {:file-id (:id file) :id id}
-                          (sto/content data))
+  (let [file  (create-file!)
+        data  (blob/encode {:pages [] :pages-index {}})
+        obj   (put-object! "file-data"
+                           {:file-id (:id file) :id (:id file)}
+                           (sto/content data))
         ;; A different, well-formed pointer in the metadata: it must be
         ;; ignored now that the column is the only source of truth.
         other (put-object! "file-data"
                            {:file-id (uuid/next) :id (uuid/next)})]
 
-    (th/db-insert! :file-data
-                   {:file-id (:id file)
-                    :id id
-                    :type "main"
-                    :backend "storage"
+    (th/db-update! :file-data
+                   {:backend "storage"
+                    :data nil
                     :storage-object-id (:id obj)
-                    :metadata (db/json {"storage-ref-id" (str (:id other))})})
+                    :metadata (db/json {"storage-ref-id" (str (:id other))})}
+                   {:file-id (:id file) :id (:id file)})
 
     (t/testing "the column wins over the metadata"
-      (let [row (th/db-get :file-data {:file-id (:id file) :id id})]
+      (let [row (th/db-get :file-data {:file-id (:id file) :id (:id file)})]
         (t/is (= (:id obj) (:storage-object-id row)))
         (t/is (= (vec data) (vec (:data (resolve! row)))))))))
 
@@ -161,14 +160,60 @@
                    {:touched-at (ct/in-past {:hours 3})}
                    {:id (:id sobject)})
 
-    (th/db-insert! :file-data
-                   {:file-id (:id file)
-                    :id (uuid/next)
-                    :type "main"
-                    :backend "storage"
-                    :storage-object-id (:id sobject)})
+    (th/db-update! :file-data
+                   {:backend "storage"
+                    :data nil
+                    :storage-object-id (:id sobject)}
+                   {:file-id (:id file) :id (:id file)})
 
     (let [result (th/run-task! :storage-gc-touched {})]
       (t/is (= 1 (:freeze result)))
       (t/is (= 0 (:delete result)))
       (t/is (nil? (:touched-at (find-object (:id sobject))))))))
+
+(t/deftest update-file!-ignores-the-pointer-in-the-params
+  ;; `:storage-object-id` is bookkeeping of the persisted row, not an editable
+  ;; field: a param must not be able to drop the pointer and skip the touch.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})]
+
+    (th/run-task! :offload-file-data {:file-id (:id file)})
+    (th/run-task! :storage-gc-touched {:skip-delay true})
+
+    (let [sobject (:storage-object-id (th/db-get :file-data {:file-id (:id file)
+                                                             :id (:id file)}))]
+      (t/is (uuid? sobject))
+      (t/is (nil? (:touched-at (find-object sobject))))
+
+      (db/tx-run! th/*system*
+                  (fn [cfg]
+                    (let [file (bfc/get-file cfg (:id file)
+                                             :migrate? false
+                                             :lock-for-share? true)]
+                      (bfc/update-file! cfg file
+                                        :storage-object-id nil
+                                        :modified-at (ct/now)))))
+
+      (t/testing "the previous object is still touched"
+        (t/is (some? (:touched-at (find-object sobject))))))))
+
+(t/deftest resolve-file-data-reports-a-missing-storage-object
+  (let [file (create-file!)]
+
+    (th/db-update! :file-data
+                   {:backend "storage"
+                    :data nil
+                    :storage-object-id nil}
+                   {:file-id (:id file) :id (:id file)})
+
+    (let [cause (try
+                  (db/tx-run! th/*system*
+                              (fn [cfg]
+                                (->> (th/db-get :file-data {:file-id (:id file)
+                                                            :id (:id file)})
+                                     (fdata/resolve-file-data cfg))))
+                  nil
+                  (catch clojure.lang.ExceptionInfo cause cause))]
+      (t/is (some? cause))
+      (t/is (= :missing-storage-object (:code (ex-data cause)))))))

@@ -132,7 +132,7 @@
   (let [;; The storage pointer is internal bookkeeping: this bundle is an RPC
         ;; response and must not expose it.
         file    (-> (bfc/get-file cfg file-id)
-                    (dissoc :storage-object-id))
+                    (bfc/file->response))
 
         project (db/get conn :project
                         {:id (:project-id file)}
@@ -163,7 +163,7 @@
         libs    (->> (bfc/get-file-libraries conn file-id)
                      (mapv (fn [{:keys [id] :as lib}]
                              (-> (merge lib (bfc/get-file cfg id))
-                                 (dissoc :storage-object-id)))))
+                                 (bfc/file->response)))))
 
         ;; A share link never grants pages of a linked library, so trim
         ;; each library to the components the allowed pages reference.

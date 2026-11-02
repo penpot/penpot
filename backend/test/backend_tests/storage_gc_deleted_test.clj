@@ -161,12 +161,13 @@
   foreign key of `storage_object_id` refuses the physical delete."
   [file-id]
   (let [blocked (put-object! (ct/in-past "30m"))]
-    (th/db-insert! :file-data
-                   {:file-id file-id
-                    :id (uuid/next)
-                    :type "main"
-                    :backend "storage"
-                    :storage-object-id (:id blocked)})
+    ;; `main` always carries `id = file_id`: point the real row at the object
+    ;; instead of inventing a second main row.
+    (th/db-update! :file-data
+                   {:backend "storage"
+                    :data nil
+                    :storage-object-id (:id blocked)}
+                   {:file-id file-id :id file-id})
     blocked))
 
 (t/deftest file-data-reference-blocks-its-chunk
@@ -178,7 +179,7 @@
         ;; the first chunk with the objects that fill it up. The last object
         ;; lands in the next chunk: it proves the run kept going.
         blocked (blocked-by-file-data! (:id file))
-        _       (mapv (fn [_] (put-object! (ct/in-past "20m"))) (range (dec chunk-size)))
+        others  (mapv (fn [_] (put-object! (ct/in-past "20m"))) (range (dec chunk-size)))
         last-id (:id (put-object! (ct/in-past "5m")))
 
         result  (th/run-task! :storage-gc-deleted {})]
@@ -188,6 +189,9 @@
 
     (t/testing "the object referenced by the file data row is still alive"
       (t/is (some? (find-object (:id blocked)))))
+
+    (t/testing "the other objects of the failed chunk are still alive"
+      (t/is (every? #(some? (find-object (:id %))) others)))
 
     (t/testing "the object of the next chunk is gone"
       (t/is (nil? (find-object last-id))))))

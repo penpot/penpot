@@ -65,6 +65,9 @@
               (d/update-when :features db/decode-pgarray #{}))))
 
 (def ^:private sql:get-minimal-file
+  ;; `fd.storage_object_id` is load-bearing: `restore!` hands this map to
+  ;; `update-file!` so the previous main object is touched before the row is
+  ;; replaced. Removing it would leave the old blob unreclaimed with no error.
   "SELECT f.id,
           f.revn,
           f.modified_at,
@@ -128,7 +131,7 @@
                       (decode-snapshot)
                       (fdata/resolve-file-data cfg)
                       (fdata/decode-file-data cfg))]
-    (dissoc snapshot :storage-object-id)))
+    (bfc/file->response snapshot)))
 
 (def ^:private sql:get-visible-snapshots
   (str "WITH "

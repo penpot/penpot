@@ -765,7 +765,7 @@
         (dissoc :deleted-at)
         ;; The storage pointer is internal bookkeeping: it never leaves the
         ;; backend in a response.
-        (dissoc :storage-object-id)
+        (bfc/file->response)
         (assoc :page-id (-> file :data :pages first)))))
 
 (def ^:private schema:create-team-access-request

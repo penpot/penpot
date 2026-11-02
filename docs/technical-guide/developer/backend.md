@@ -109,17 +109,23 @@ the index on each partition, create the parent index with
 `ALTER INDEX ... ATTACH PARTITION`. An interrupted `CONCURRENTLY` build leaves
 the index `INVALID`: drop it and retry. The migration must resolve the table and
 the index through `search_path` (`to_regclass` and `::regclass`, never a
-hardcoded `public.`) and check `pg_index.indisvalid` and the attached partitions
-before continuing, because a name lookup alone does not prove the definition or
-the completeness of the index. Do not rely on `CREATE INDEX IF NOT EXISTS`: it
-matches the name, not the definition.
+hardcoded `public.`) and check `pg_index.indisvalid`, the index shape and the
+attached partitions before continuing, because a name lookup alone does not prove
+the definition or the completeness of the index. The index must be a
+single-column index on the target column, without a predicate or an expression:
+a partial or expression index mentions the column but cannot serve a foreign key
+check. Do not rely on `CREATE INDEX IF NOT EXISTS`: it matches the name, not the
+definition.
 
 A validated foreign key is the other expensive DDL: `ADD FOREIGN KEY` takes
 `SHARE ROW EXCLUSIVE` on the referencing and the referenced table and scans the
 whole referencing table, and `NOT VALID` on a partitioned table is only
 available since PostgreSQL 18. Create it out of band in a quiet window with a
 `lock_timeout` and a `pg_constraint` guard, and make the migration skip it when
-it already exists. `ADD COLUMN` takes a brief `ACCESS EXCLUSIVE` even when it
+it already exists. The guard must validate the shape (foreign key,
+`DEFERRABLE`, `NO ACTION`, validated) and abort on anything else: a constraint
+created with `ON DELETE CASCADE` would delete the referencing rows instead of
+refusing the delete. `ADD COLUMN` takes a brief `ACCESS EXCLUSIVE` even when it
 changes nothing: guard it with `pg_attribute` when the column is prebuilt.
 
 If you need to have a global overview of the all schema of the database you can extract it
