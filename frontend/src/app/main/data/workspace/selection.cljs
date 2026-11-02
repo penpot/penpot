@@ -180,9 +180,9 @@
              ;; ClojureScript that is -1 and throws (see penpot#7064).
              current-index  (some-> sibling-ids (d/index-of first-selected))
              sibling        (when (some? current-index)
-                              (if (= (dec (count sibling-ids)) current-index)
-                                (first sibling-ids)
-                                (nth sibling-ids (inc current-index) nil)))]
+                              (if (= 0 current-index)
+                                (last sibling-ids)
+                                (nth sibling-ids (dec current-index) nil)))]
 
          (cond
            (and (= 1 count-selected) (some? sibling))
@@ -217,9 +217,9 @@
                  sibling-ids    (:shapes parent)
                  current-index  (some-> sibling-ids (d/index-of first-selected))
                  sibling        (when (some? current-index)
-                                  (if (= 0 current-index)
-                                    (last sibling-ids)
-                                    (nth sibling-ids (dec current-index) nil)))]
+                                (if (= (dec (count sibling-ids)) current-index)
+                                (first sibling-ids)
+                                (nth sibling-ids (inc current-index) nil)))]
              (cond
                (and (= 1 count-selected) (some? sibling))
                (rx/of (select-shape sibling))
