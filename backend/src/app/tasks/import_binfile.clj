@@ -9,6 +9,7 @@
   resource into the project frozen in its params."
   (:require
    [app.binfile.jobs :as bfj]
+   [app.binfile.v3 :as bfv3]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.db :as db]
@@ -67,7 +68,11 @@
   [:map
    [:id         ::sm/uuid]
    [:name       :string]
-   [:candidates [:vector schema:candidate]]])
+   [:candidates [:vector schema:candidate]]
+   [:tokens-source? {:optional true} :boolean]
+   [:tokens-status-names {:optional true} bfv3/schema:tokens-status-names]
+   [:tokens-source-fallback {:optional true}
+    [:enum :tokens-source-fallback-local :tokens-source-deactivated]]])
 
 (def schema:resolution-entry
   "The libraries one imported file uses, split in the ones already linked

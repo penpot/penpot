@@ -155,6 +155,21 @@
              0
              resolution))
 
+(defn pending-library-resolution-request
+  [file-id pending-entry library-id]
+  (cond
+    (and (:tokens-source? pending-entry) library-id)
+    {:command :resolve-import-token-source
+     :params (cond-> {:file-id file-id
+                      :library-id library-id}
+               (some? (:tokens-status-names pending-entry))
+               (assoc :tokens-status-names (:tokens-status-names pending-entry)))}
+
+    library-id
+    {:command :link-file-to-library
+     :params {:file-id file-id
+              :library-id library-id}}))
+
 (defn- pending-library-links
   "The library links the wizard must create for the files of a resolution:
   one per pending entry the user chose a candidate for. The file id comes
@@ -166,7 +181,8 @@
        (mapcat (fn [{:keys [id pending]}]
                  (keep (fn [entry]
                          (when-let [library-id (get-in selection [id (:id entry)])]
-                           {:file-id id :library-id library-id}))
+                           (merge {:file-id id :library-id library-id}
+                                  (select-keys entry [:tokens-source? :tokens-status-names :tokens-source-fallback]))))
                        pending)))))
 
 (defn- analyze-entries
@@ -362,21 +378,34 @@
   (fn []
     (mapv #(assoc % :status :analyze) entries)))
 
-(defn- link-files-to-library!
-  "Call the link-file-to-library RPC for each file-id with the given
-  library-id. Returns an observable that completes when all links are done."
-  [file-ids library-id]
-  (->> (rx/from file-ids)
-       (rx/merge-map (fn [file-id]
-                       (->> (rp/cmd! :link-file-to-library
-                                     {:file-id file-id
-                                      :library-id library-id})
-                            (rx/catch (fn [cause]
-                                        (log/error :hint "failed to link library"
-                                                   :file-id file-id
-                                                   :library-id library-id
-                                                   :cause cause)
-                                        (rx/of nil))))))))
+(defn- resolve-library-links
+  [resolution selection resolved*]
+  (->> (pending-library-links resolution selection)
+       (keep (fn [{:keys [file-id library-id] :as entry}]
+               (pending-library-resolution-request file-id entry library-id)))
+       (remove @resolved*)
+       (rx/from)
+       (rx/mapcat (fn [{:keys [command params] :as request}]
+                    (->> (rp/cmd! command params)
+                         (rx/tap (fn [_] (swap! resolved* conj request))))))))
+
+(defn- confirm-library-links!
+  [resolution selection resolved* linking?* on-finish-import]
+  (when-not @linking?*
+    (reset! linking?* true)
+    (->> (resolve-library-links resolution selection resolved*)
+         (rx/subs!
+          (constantly nil)
+          (fn [cause]
+            (reset! linking?* false)
+            (log/error :hint "failed to resolve imported library" :cause cause)
+            (st/emit! (ntf/error (or (:hint (ex-data cause))
+                                     (tr "dashboard.libraries-and-templates.import-error")))))
+          (fn []
+            (reset! linking?* false)
+            (st/emit! (modal/hide))
+            (when (fn? on-finish-import)
+              (on-finish-import)))))))
 
 (mf/defc library-resolution*
   {::mf/private true}
@@ -698,7 +727,7 @@
 (mf/defc import-library-summary-stage*
   {::mf/private true}
   [{:keys [resolution selection visited
-           on-summary-back on-confirm-library-links]}]
+           on-summary-back on-confirm-library-links linking?]}]
   [:*
    [:div {:class (stl/css :modal-content)}
     [:> library-resolution-summary*
@@ -710,12 +739,14 @@
      (when (seq visited)
        [:> button* {:class (stl/css :cancel-button)
                     :variant "secondary"
-                    :on-click on-summary-back}
+                    :on-click on-summary-back
+                    :disabled linking?}
         (tr "labels.back")])
      [:div {:class (stl/css :action-buttons-end)}
       [:> button* {:class (stl/css :accept-btn)
                    :variant "primary"
-                   :on-click on-confirm-library-links}
+                   :on-click on-confirm-library-links
+                   :disabled linking?}
        (tr "dashboard.import.confirm-library-links")]]]]])
 
 (mf/defc import-dialog
@@ -752,6 +783,10 @@
         ;; Per-file selection for multi-match candidates: {file-id {old-lib-id candidate-id}}
         selection*  (mf/use-state {})
         selection   (deref selection*)
+
+        resolved-links* (mf/use-var #{})
+        linking?*       (mf/use-state false)
+        linking?        (deref linking?*)
 
         ;; Wizard progression as an ordered "visited" stack of file-ids.
         ;; `current-file` is derived: the first unresolved file NOT yet in `visited`.
@@ -879,17 +914,8 @@
          (mf/deps resolution selection on-finish-import)
          (fn [event]
            (dom/prevent-default event)
-           ;; For each file with pending candidates, link it to the selected libraries
-           (->> (rx/from (pending-library-links resolution selection))
-                (rx/merge-map
-                 (fn [{:keys [file-id library-id]}]
-                   (link-files-to-library! [file-id] library-id)))
-                (rx/subs! (constantly nil)
-                          (constantly nil)
-                          (fn []
-                            (st/emit! (modal/hide))
-                            (when (fn? on-finish-import)
-                              (on-finish-import)))))))
+           (confirm-library-links! resolution selection resolved-links*
+                                   linking?* on-finish-import)))
 
         on-wizard-next
         (mf/use-fn
@@ -1046,6 +1072,7 @@
           :selection selection
           :visited visited
           :on-summary-back on-summary-back
-          :on-confirm-library-links on-confirm-library-links}]
+          :on-confirm-library-links on-confirm-library-links
+          :linking? linking?}]
 
         nil)]]))
