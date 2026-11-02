@@ -2326,6 +2326,32 @@
     ;; The transform matrix should also be preserved
     (t/is (some? (:transform rect02')))))
 
+(t/deftest test-switch-with-flip-override
+  ;; a flip of the copy's child is a geometry override that both variants
+  ;; agree on, so it carries like a rotation
+  (let [file     (-> (thf/sample-file :file1)
+                     (thv/add-variant-with-child
+                      :v01 :c01 :m01 :c02 :m02 :r01 :r02
+                      {:child1-params {:width 100 :height 50}
+                       :child2-params {:width 100 :height 50}})
+                     (thc/instantiate-component :c01 :copy01 :children-labels [:copy-r01]))
+        page     (thf/current-page file)
+        rect01   (ths/get-shape file :copy-r01)
+        changes  (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                             #{(:id rect01)}
+                                             #(gsh/transform-shape % (ctm/resize-modifiers (gpt/point -1 1) (gsh/shape->center %)))
+                                             (:objects page)
+                                             {})
+        file     (thf/apply-changes file changes)
+        flipped  (ths/get-shape file :copy-r01)
+        file'    (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        page'    (thf/current-page file')
+        rect02'  (get-in page' [:objects (-> (ths/get-shape file' :copy02) :shapes first)])]
+    (t/is (true? (:flip-x flipped)))
+    (t/is (true? (:flip-x rect02')))
+    (t/is (= (:transform flipped) (:transform rect02')))
+    (t/is (gsh/close-attrs? :points (:points flipped) (:points rect02')))))
+
 (t/deftest test-switch-with-rotation-different-variants
   (let [;; ==== Setup
         file      (-> (thf/sample-file :file1)

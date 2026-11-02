@@ -1012,3 +1012,10 @@
                                     :layout-copies true :text true}]
                        :ops [[:rotate 15 0 0 0] [:detach 15 0 0 0] [:delete 5] [:restore 5]
                              [:resize 14 0 0 0] [:edit 3 0 1 1] [:update-main 3]]}))))
+
+(t/deftest generated-switched-copy-keeps-its-childs-flip
+  ;; a copy child flipped horizontally keeps its flip over a variant switch
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :library-variants true :stale-libraries true
+                                    :library-depth 1 :library true :rich-variants true :library-text true
+                                    :layout-copies true :text true}]
+                       :ops [[:transform 0 4 0 2] [:switch 0 0 0 0]]}))))

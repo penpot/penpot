@@ -102,11 +102,15 @@
                        origin  (get origin-shape dimension)]
                    (if (mth/close? origin current) prev current)))
         width  (size :width)
-        height (size :height)]
+        height (size :height)
+        ;; the turn and flips the switch carries, when both variants agree on them
+        shape  (cond-> current-shape
+                 (gsh/close-attrs? :transform (:transform origin-shape) (:transform current-shape))
+                 (assoc :transform (:transform prev-shape)))]
     (case attr
       :width  width
       :height height
-      (sized-geometry-value current-shape width height attr))))
+      (sized-geometry-value shape width height attr))))
 
 
 (defn- equal-geometry?
