@@ -2035,22 +2035,30 @@
                   libraries current-file-id 1)))
 
 (defn- settle-reset-placement
-  "Place a reset nested head whose geometry was overridden as an ordinary
-   copy of its position: its subtree takes the placement a sync of the head
-   that owns its ref gives. Other heads keep the placement they have."
+  "Place a reset nested head as an ordinary copy of its position when its
+   geometry was overridden, or a copy between it and the head that owns its
+   ref keeps its own: its subtree takes the placement a sync of that head
+   gives. Other heads keep the placement they have."
   [changes file libraries container shape-id]
   (let [objects (pcb/get-objects changes)
         shape   (get objects shape-id)
-        parent  (get objects (:parent-id shape))]
+        parent  (get objects (:parent-id shape))
+        ;; the head as it was before the reset cleared its overrides
+        before  (ctn/get-shape container shape-id)]
     (if (and (= :page (:type container))
              (:shape-ref parent)
-             (not (ctk/swapped? shape))
-             (ctk/touched-group? (ctn/get-shape container shape-id) :geometry-group))
+             (not (ctk/swapped? shape)))
       (let [container (ctn/make-container (assoc container :objects objects) :page)
             component (ctf/find-ref-component file container libraries shape :include-deleted? true)
             head      (d/seek #(= (:id component) (:component-id %))
-                              (ctn/get-parent-copy-heads objects parent))]
-        (if head
+                              (ctn/get-parent-copy-heads objects parent))
+            ;; the copies from the parent up to that head
+            between   (when head
+                        (into [] (d/take-until #(= (:id head) (:id %)))
+                              (cfh/get-parents-with-self objects (:id parent))))]
+        (if (and head
+                 (some #(ctk/touched-group? % :geometry-group)
+                       (cons before between)))
           (let [file     (assoc-in file [:data :pages-index (:id container) :objects] objects)
                 proposal (generate-sync-shape-direct (-> (pcb/empty-changes)
                                                          (pcb/with-container container)

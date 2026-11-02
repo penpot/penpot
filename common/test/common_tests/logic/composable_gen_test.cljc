@@ -980,3 +980,10 @@
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :grid :variant-diff false
                                     :rich-variants true :grid-empty true :layout-copies true :text true}]
                        :ops [[:style 1 35 1] [:style 0 29 1]]}))))
+
+(t/deftest generated-reset-nested-head-keeps-the-size-its-resized-parent-gives
+  ;; a copy taller than its main scales a nested head set to scale
+  ;; vertically; resetting the head keeps the size that sync gives it
+  (t/is (map? (cg/run {:world [2 0 {:text true :text-styles true :layout :grid :grid-empty true}]
+                       :ops [[:resize 0 0 0 0] [:nest 20 0 0 0] [:style 9 9 1] [:edit 20 1 1 :copy-head]
+                             [:reset 20]]}))))
