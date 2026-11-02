@@ -105,6 +105,7 @@
 (declare add-shape-to-main)
 (declare remove-shape)
 (declare move-shape)
+(declare reorder-main-children)
 (declare set-touched)
 (declare change-remote-synced)
 (declare update-attrs)
@@ -647,7 +648,8 @@
   the `:component` and its `:library`, the roots `:root-inst` and
   `:root-main`, and `:reset?`. The main shapes of the children of a copy
   shape that keeps its own geometry are placed like it first, so they get
-  their expected geometry."
+  their expected geometry. The children of a grid copy with its own cells
+  follow the flow of those cells instead of the main's order."
   [changes {:keys [container main-container component reset?] :as ctx} shape-inst shape-main]
   (shape-log :debug (:id shape-inst) container
              :msg "Sync shape direct recursive"
@@ -659,6 +661,9 @@
     (let [;; a copy shape that keeps its own geometry passes it on to its
           ;; children, which follow it as they follow their main's
           shape-before   shape-inst
+          ;; a grid copy with its own cells orders its children as they flow
+          own-flow?      (and (not reset?) (ctsl/grid-layout? shape-inst)
+                              (ctk/touched-group? shape-inst :layout-grid-cells))
           placed         (cond
                            (and (not reset?) (ctk/touched-group? shape-inst :geometry-group))
                            (in-main-frame shape-inst (:root-inst ctx) (:root-main ctx))
@@ -695,10 +700,13 @@
                     :only-main (fn [changes child-main]
                                  (add-shape-to-instance changes ctx shape-inst child-main
                                                         (d/index-of children-main child-main)))})
-                  (reorder-copy-children shape-inst children-main container))
+                  (cond-> (not own-flow?) (reorder-copy-children shape-inst children-main container)))
 
         (ctsl/grid-layout? shape-inst)
         (update-grid-copy-attrs shape-before shape-main (not reset?))
+
+        (and own-flow? (= :page (:type container)))
+        (pcb/reorder-grid-children [(:id shape-inst)])
 
         ;; cells only carry between grids, so a copy that sync leaves
         ;; without one drops its own
@@ -862,16 +870,28 @@
                                                     (d/index-of children-inst child-inst)))
                     :only-main (fn [changes child-main]
                                  (remove-shape changes child-main main-container))
-                    :moved     (fn [changes child-inst child-main]
-                                 (move-shape changes
-                                             child-main
-                                             (d/index-of children-main child-main)
-                                             (d/index-of children-inst child-inst)
-                                             main-container))
-                    :inverse?  true}))
+                    :inverse?  true})
+                  (reorder-main-children shape-main children-inst @added main-container))
 
         (ctsl/grid-layout? shape-main)
         (update-grid-main-attrs shape-main shape-inst children-inst @added main-container)))))
+
+(defn- reorder-main-children
+  "Order the children of `shape-main` as the copy's `children-inst`, each by
+  the main shape it pairs with or the one `added` for it, in one change that
+  its undo reverts."
+  [changes shape-main children-inst added main-container]
+  (let [order (into [] (keep #(get added (:id %) (:shape-ref %))) children-inst)
+        reorder (fn [shapes]
+                  {:type :reorder-children
+                   :parent-id (:id shape-main)
+                   :shapes shapes
+                   :allow-altering-copies true})]
+    (if (= order (vec (:shapes shape-main)))
+      changes
+      (pcb/add-changes changes main-container
+                       [(reorder order)]
+                       [(reorder (vec (:shapes shape-main)))]))))
 
 (defn- mark-local-changes
   "Mark as `:local-change?` the changes of the copy shapes `ids`. The inverse

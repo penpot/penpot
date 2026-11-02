@@ -1236,17 +1236,22 @@
                 new-shapes (->> (:shapes grid)
                                 (filterv #(contains? objects %)))
 
+                ;; a copy with its own cells orders its children itself
+                copy?       (ctk/in-component-copy? grid)
+
                 redo-change
-                {:type :reorder-children
-                 :parent-id (:id grid)
-                 :page-id page-id
-                 :shapes new-shapes}
+                (cond-> {:type :reorder-children
+                         :parent-id (:id grid)
+                         :page-id page-id
+                         :shapes new-shapes}
+                  copy? (assoc :allow-altering-copies true))
 
                 undo-change
-                {:type :reorder-children
-                 :parent-id (:id grid)
-                 :page-id page-id
-                 :shapes old-shapes}]
+                (cond-> {:type :reorder-children
+                         :parent-id (:id grid)
+                         :page-id page-id
+                         :shapes old-shapes}
+                  copy? (assoc :allow-altering-copies true))]
             (-> changes
                 (update :redo-changes conj redo-change)
                 (update :undo-changes conj undo-change)
@@ -1256,8 +1261,10 @@
         (->> ids
              (map (d/getf objects))
              (filter ctl/grid-layout?)
-             ;; Component sync owns copy child ordering.
-             (remove ctk/in-component-copy?)
+             ;; Component sync orders a copy that takes its main's cells; a
+             ;; copy with its own cells follows their flow.
+             (remove #(and (ctk/in-component-copy? %)
+                           (not (ctk/touched-group? % :layout-grid-cells))))
              (reduce reorder-grid changes))]
 
     changes))

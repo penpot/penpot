@@ -987,3 +987,12 @@
   (t/is (map? (cg/run {:world [2 0 {:text true :text-styles true :layout :grid :grid-empty true}]
                        :ops [[:resize 0 0 0 0] [:nest 20 0 0 0] [:style 9 9 1] [:edit 20 1 1 :copy-head]
                              [:reset 20]]}))))
+
+(t/deftest generated-copy-grid-with-its-own-cells-follows-their-flow
+  ;; a copy with its own cells, pushed to its main grid flowing by columns,
+  ;; orders the children of both as those cells flow
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :grid :variant-diff false
+                                    :grid-square true :rich-variants true :layout-children true
+                                    :layout-copies true :text true}]
+                       :ops [[:grid-direction 0 0 0 1] [:grid-cell 0 0 0 1] [:grid-direction 0 0 15 0]
+                             [:edit 3 0 1 1] [:update-main 3] [:style 1 11 0 0]]}))))
