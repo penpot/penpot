@@ -569,7 +569,9 @@
                   objects
                   (let [modif-tree (gm/set-objects-modifiers
                                     {(:id shape-main) {:modifiers (ctm/change-size shape-main width height)}}
-                                    (reduce-kv #(d/update-when %1 %2 merge %3) objects authored))]
+                                    ;; the copy keeps its own size, which no layout of the main owns
+                                    (-> (reduce-kv #(d/update-when %1 %2 merge %3) objects authored)
+                                        (assoc-in [(:id shape-main) :layout-item-absolute] true)))]
                     (reduce-kv (fn [objects id {:keys [modifiers]}]
                                  (d/update-when objects id gsh/transform-shape modifiers))
                                objects
