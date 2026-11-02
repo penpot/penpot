@@ -15,6 +15,7 @@
    [performance-tests.render-wasm.browser-test]
    [performance-tests.render-wasm.build-test]
    [performance-tests.render-wasm.builder-test]
+   [performance-tests.render-wasm.cli-test]
    [performance-tests.render-wasm.compare-test]
    [performance-tests.render-wasm.containers-test]
    [performance-tests.render-wasm.contracts-test]
@@ -53,6 +54,7 @@
    'performance-tests.render-wasm.browser-test
    'performance-tests.render-wasm.build-test
    'performance-tests.render-wasm.builder-test
+   'performance-tests.render-wasm.cli-test
    'performance-tests.render-wasm.compare-test
    'performance-tests.render-wasm.containers-test
    'performance-tests.render-wasm.contracts-test
