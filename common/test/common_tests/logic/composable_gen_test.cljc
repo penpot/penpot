@@ -996,3 +996,11 @@
                                     :layout-copies true :text true}]
                        :ops [[:grid-direction 0 0 0 1] [:grid-cell 0 0 0 1] [:grid-direction 0 0 15 0]
                              [:edit 3 0 1 1] [:update-main 3] [:style 1 11 0 0]]}))))
+
+(t/deftest generated-copy-text-with-its-own-family-and-weight-keeps-its-variant
+  ;; a copy text sets its own family and the weight its main then takes too;
+  ;; a later sync keeps the variant its own family names for that weight
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :rich-variants true
+                                    :layout-copies true :text true}]
+                       :ops [[:nest 0 0 0 0] [:text-style 0 1 1] [:duplicate 0 0 0 0]
+                             [:update-main 1 0 0 0] [:text-style 0 0 1]]}))))

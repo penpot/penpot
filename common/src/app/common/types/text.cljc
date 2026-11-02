@@ -1047,9 +1047,10 @@
                          units)]
         (if (and (empty? placed) (not drop-typo?))
           base
-          ;; the family's side names the variants of its family
+          ;; the family's side names the variants of its family, also when
+          ;; both sides show the same weight and it is not placed
           (let [variants (when (and (contains? placed :text-content-family)
-                                    (not-any? #{:text-content-weight} units))
+                                    (not (contains? placed :text-content-weight)))
                            (place-unit src dst @lmap :text-content-weight
                                        (unit-values src :text-content-weight) false))]
             (letters->content (write-units dst placed drop-typo? variants))))))))

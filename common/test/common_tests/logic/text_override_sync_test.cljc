@@ -183,6 +183,14 @@
                       [[["Hello world" {:family "Roboto" :weight 700}]]]
                       [[["Hello world" {:weight 700 :color :blue}]]]))))
 
+(t/deftest copy-with-its-own-family-and-weight-keeps-its-familys-variant
+  ;; the copy's Roboto names its bold "700"; the main turning bold as well
+  ;; leaves the weight equal on both sides, and the main's "bold" stays its own
+  (t/is (= [[["Hello world" {:family "Roboto" :weight 700 :color :blue}]]]
+           (sync-text [[["Hello world"]]]
+                      [[["Hello world" {:family "Roboto" :weight 700}]]]
+                      [[["Hello world" {:weight 700 :color :blue}]]]))))
+
 (t/deftest copy-that-bolds-a-word-the-main-replaces-loses-the-bold
   ;; "Goodbye" shares no stretch of 3 letters with "Hello", so it takes the
   ;; style of the first shared letter after it, the regular space
