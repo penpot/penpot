@@ -286,15 +286,3 @@
             (.destroy ^js stream))
           (when-let [stream (.-stderr child)]
             (.destroy ^js stream)))))))
-
-(defn on-signals
-  "Installs SIGINT/SIGTERM callbacks receiving the signal name. Returns an
-  idempotent remover. The caller can abort its work and let output drain."
-  [callback]
-  (let [interrupt (fn [] (callback "SIGINT"))
-        terminate (fn [] (callback "SIGTERM"))]
-    (.on js/process "SIGINT" interrupt)
-    (.on js/process "SIGTERM" terminate)
-    (fn []
-      (.removeListener js/process "SIGINT" interrupt)
-      (.removeListener js/process "SIGTERM" terminate))))

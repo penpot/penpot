@@ -31,3 +31,10 @@
   [options arguments]
   (shared/check-arguments arguments 0)
   options)
+
+(defn check-options
+  "Checks measurement feature policy and returns the resolved build options."
+  [resolved]
+  (options/feature-selection {:default-features? (:default-features resolved)
+                              :features (:features resolved)})
+  resolved)
