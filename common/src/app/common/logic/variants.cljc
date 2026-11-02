@@ -666,14 +666,16 @@
 (defn swap-nesting-loop?
   "Whether swapping, or switching, the copy head `shape` of `objects` for a
    copy of the component `component-id` of library data `ldata` would nest a
-   component inside itself."
+   component inside itself, directly or through the mains of the components
+   that component holds in `ldata`."
   [objects shape ldata component-id]
   (let [component (ctkl/get-component ldata component-id true)
         page      (ctf/get-component-page ldata component)
-        root      (ctf/get-component-root ldata component)]
+        root      (ctf/get-component-root ldata component)
+        parents   (into #{} (keep :component-id) (cfh/get-parents-with-self objects (:parent-id shape)))]
     (boolean
      (and page
           root
-          (cfh/components-nesting-loop?
-           (cfh/get-children-with-self (:objects page) (:id root))
-           (cfh/get-parents-with-self objects (:parent-id shape)))))))
+          (some parents
+                (ctn/held-component-ids (cfh/get-children-with-self (:objects page) (:id root))
+                                        {(:id ldata) {:data ldata}}))))))
