@@ -8,8 +8,10 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.main.data.notifications :as ntf]
    [app.main.data.workspace.tokens.format :refer [category-dictionary
                                                   format-token-value]]
+   [app.main.store :as st]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.inspect.styles.property-detail-copiable :refer [property-detail-copiable*]]
    [app.util.clipboard :as clipboard]
@@ -43,9 +45,13 @@
         (mf/use-fn
          (mf/deps copied)
          (fn []
-           (reset! copied* true)
-           (clipboard/to-clipboard copiable-value)
-           (tm/schedule 1000 #(reset! copied* false))))]
+           (-> (clipboard/to-clipboard copiable-value)
+               (.then (fn [_]
+                        (reset! copied* true)
+                        (tm/schedule 1000 #(reset! copied* false))))
+               (.catch (fn [cause]
+                         (st/emit! (ntf/error (or (clipboard/error-message cause)
+                                                  (tr "errors.clipboard-api-unavailable")))))))))]
     [:dl {:class [(stl/css :property-row) class]
           :data-testid "property-row"}
      [:dt {:class (stl/css :property-term)} term]

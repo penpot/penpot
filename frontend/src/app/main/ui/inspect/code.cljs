@@ -14,6 +14,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.config :as cfg]
    [app.main.data.event :as ev]
+   [app.main.data.notifications :as ntf]
    [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
@@ -213,14 +214,18 @@
         (mf/use-fn
          (mf/deps style-code markup-code images-data fonts-data)
          (fn []
-           (clipboard/to-clipboard (gen-all-code style-code markup-code images-data fonts-data))
            (let [origin (if (= :workspace from)
                           "workspace"
                           "viewer")]
-             (st/emit! (ev/event
-                        {::ev/name "copy-inspect-code"
-                         ::ev/origin origin
-                         :type "all"})))))
+             (-> (clipboard/to-clipboard (gen-all-code style-code markup-code images-data fonts-data))
+                 (.then (fn [_]
+                          (st/emit! (ev/event
+                                     {::ev/name "copy-inspect-code"
+                                      ::ev/origin origin
+                                      :type "all"}))))
+                 (.catch (fn [cause]
+                           (st/emit! (ntf/error (or (clipboard/error-message cause)
+                                                    (tr "errors.clipboard-api-unavailable"))))))))))
 
         ;;handle-open-review
         ;;(mf/use-fn

@@ -11,6 +11,8 @@
    [app.common.data.macros :as dm]
    [app.common.types.color :as cc]
    [app.config :as cfg]
+   [app.main.data.notifications :as ntf]
+   [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.formats :as fmt]
@@ -86,9 +88,13 @@
         (mf/use-fn
          (mf/deps copied copiable-value)
          (fn []
-           (reset! copied* true)
-           (clipboard/to-clipboard copiable-value)
-           (tm/schedule 1000 #(reset! copied* false))))]
+           (-> (clipboard/to-clipboard copiable-value)
+               (.then (fn [_]
+                        (reset! copied* true)
+                        (tm/schedule 1000 #(reset! copied* false))))
+               (.catch (fn [cause]
+                         (st/emit! (ntf/error (or (clipboard/error-message cause)
+                                                  (tr "errors.clipboard-api-unavailable")))))))))]
     [:*
      [:dl {:class [(stl/css :property-row) class]
            :data-testid "property-row"}
