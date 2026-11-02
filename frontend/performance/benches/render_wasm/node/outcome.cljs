@@ -19,6 +19,11 @@
   [signal-name]
   (case signal-name "SIGTERM" 143 130))
 
+(defn succeeded
+  "Returns a successful outcome with command result data."
+  [data]
+  (merge {:exit-code 0 :errors [] :log-path nil} data))
+
 (defn failed
   "Returns an outcome with exit code 1 for `cause`. The log path comes from
   the ex-data of `cause`. `data` adds more keys."

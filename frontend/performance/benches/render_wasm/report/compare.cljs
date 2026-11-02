@@ -31,13 +31,9 @@
                       {:type ::unknown-case :selector selector :available (mapv result/case-name ids)})))))
 
 (defn selector-pair
-  "Resolves a single A,B comparison selector into an extensible pair list.
-  A belongs to baseline; B belongs to candidate. Force is a separate option."
-  [baseline candidate selector]
-  (let [names (str/split selector #"," -1)]
-    (when-not (and (= 2 (count names)) (every? seq names))
-      (throw (ex-info "--cases requires one exact A,B pair" {:type ::invalid-selector})))
-    [[(resolve-case baseline (first names)) (resolve-case candidate (second names))]]))
+  "Resolves baseline and candidate selectors into an extensible pair list."
+  [baseline candidate [baseline-selector candidate-selector]]
+  [[(resolve-case baseline baseline-selector) (resolve-case candidate candidate-selector)]])
 
 (defn- difference
   "Returns one compatibility difference when recorded values disagree."

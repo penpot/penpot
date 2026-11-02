@@ -125,7 +125,7 @@
         candidate (write-run (path/join @temporary-root "candidate.transit")
                              (make-run "candidate" :b/pan 12))
         {:keys [text]} (compare/execute baseline candidate
-                                        {:cases "a/pan,b/pan"})]
+                                        {:case-pair ["a/pan" "b/pan"]})]
     (t/is (str/includes? text "Pair a/pan,b/pan"))))
 
 (t/deftest cases-requires-scene-permission-for-different-scenes
@@ -134,7 +134,7 @@
         candidate (write-run (path/join @temporary-root "candidate.transit")
                              (make-run "candidate" :b/load 12 :scene :other
                                        :fingerprint (apply str (repeat 64 "b"))))
-        selector  {:cases "a/load,b/load"}]
+        selector  {:case-pair ["a/load" "b/load"]}]
     (t/is (= ::report-compare/incompatible
              (:type (ex-data (failure #(compare/execute baseline candidate selector))))))
     (t/is (= ::report-compare/incompatible
@@ -254,7 +254,7 @@
       (t/is (str/includes? text "ACKNOWLEDGED DIFFERENCE"))
       (t/is (str/includes? text ":rule :all")))))
 
-(t/deftest invalid-selectors-and-unreadable-records-fail-at-the-boundary
+(t/deftest unreadable-records-fail-at-the-boundary
   (let [baseline  (write-run (path/join @temporary-root "baseline.transit")
                              (make-run "baseline" :case/load 10))
         candidate (write-run (path/join @temporary-root "candidate.transit")
@@ -264,10 +264,6 @@
       (fs/writeFileSync file (result/encode record))
       (t/is (thrown-with-msg? js/Error #"expected a saved run record"
                               (compare/execute baseline file {}))))
-    (doseq [selector ["case/load" "case/load,other/load,third/load" ""]]
-      (t/is (= ::report-compare/invalid-selector
-               (:type (ex-data (failure #(compare/execute baseline candidate
-                                                          {:cases selector})))))))
     (fs/writeFileSync (path/join @temporary-root "broken.transit") "not transit")
     (t/is (thrown? js/Error (compare/execute baseline
                                              (path/join @temporary-root "broken.transit")

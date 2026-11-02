@@ -21,6 +21,7 @@
    [benches.render-wasm.node.files :as files]
    [benches.render-wasm.node.log :as log]
    [benches.render-wasm.node.process :as process]
+   [benches.render-wasm.node.request :as request]
    [benches.render-wasm.result :as result]
    [cljs.test :as t :include-macros true]
    [clojure.string :as str]
@@ -50,9 +51,11 @@
 
 (defn- planning-options
   []
-  {:features ["b" "a"] :filter "rects/load" :seed 42 :dry-run true
-   :warmups 0 :repetitions 1 :timeout-ms 2000
-   :build-timeout-ms 10000 :startup-timeout-ms 3000})
+  (:options (request/apply-defaults
+             {:command "ab"
+              :options {:features ["b" "a"] :filter "rects/load" :seed 42 :dry-run true
+                        :warmups 0 :repetitions 1 :timeout-ms 2000
+                        :build-timeout-ms 10000 :startup-timeout-ms 3000}})))
 
 (defn- metadata-output
   [definitions]
@@ -153,8 +156,7 @@
         ready  (await (node-plan/prepare (frontend-root) opts nil))]
     (t/is (= ["a" "b"] (get-in ready [:plan :features])))
     (t/is (= (cases/collect-cases {:master-seed 42 :filter "rects/load"}) (:cases ready)))
-    (t/is (= (assoc opts :features ["a" "b"] :default-features false :max-features 3 :confirm false
-                    :allow-build-differences false :allow-scene-differences false :allow-all-differences false)
+    (t/is (= (assoc opts :features ["a" "b"])
              (:options ready)))
     (t/is (= output (:output-dir ready)))
     (t/is (not (fs/existsSync (path/join @temporary-root "new"))))
@@ -1051,7 +1053,6 @@
                                            :execute-run (execute-service {})})})))
         record      (:comparison result)]
     (t/is (= 1 (:exit-code result)))
-    (t/is (str/ends-with? @stdout "Status failed\n"))
     (t/is (seq (:errors result)))
     (t/is (= :running (:status record)))
     (t/is (= :building (get-in record [:configurations 0 :status])))

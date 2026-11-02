@@ -65,10 +65,10 @@
 
   Options: frontend :root, :selection or :features, :build-timeout-ms
   (300000), AbortSignal :signal, and optional :on-created callback. The callback
-  runs once after directory, log and initial manifest creation. CLI callers
-  print the ID there. Storage errors have no recorded ID. Later errors carry
+  receives the new build reference once the output directory, log and initial
+  manifest exist. Storage errors have no recorded ID. Later errors carry
   :build-id and :phase. An error also carries :manifest-error and is fatal when
-  the failed manifest cannot be saved. A retry always creates a new attempt."
+  the failed manifest cannot be saved. A retry always creates a new build."
   [{:keys [root features selection build-timeout-ms signal on-created]
     :or {build-timeout-ms options/default-build-timeout-ms}}]
   (when-not (and (js/Number.isSafeInteger build-timeout-ms) (pos? build-timeout-ms))

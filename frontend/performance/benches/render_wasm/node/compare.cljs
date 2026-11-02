@@ -23,13 +23,13 @@
   It is also possible to restrict comparison to specific scene ids.
 
   Options:
-   - `:cases` is one A,B selector, where A is a baseline an B the candidate.
+   - `:case-pair` contains the baseline and candidate selectors, or nil.
    - The three `:allow-*-differences` options select build, scene or all
      compatibility permissions.
 
   Returns the validated `comparison` with its selected permissions, retained
   differences and formatted text."
-  [baseline-path candidate-path {:keys [cases allow-build-differences
+  [baseline-path candidate-path {:keys [case-pair allow-build-differences
                                         allow-scene-differences allow-all-differences]}]
   (let [baseline   (runs/get-record baseline-path)
         candidate  (runs/get-record candidate-path)
@@ -39,8 +39,8 @@
                      (cond-> {:allow-build-differences (boolean allow-build-differences)
                               :allow-scene-differences (boolean allow-scene-differences)
                               :allow-all-differences (boolean allow-all-differences)}
-                       cases
+                       case-pair
                        (assoc :pairs (compare/selector-pair baseline candidate
-                                                            cases)))))]
+                                                            case-pair)))))]
     {:comparison comparison
      :text (format/format-comparison comparison)}))

@@ -33,14 +33,7 @@
   render-wasm with the inherited environment, checks an optional fresh output
   path, and collects selected case data once."
   [root opts signal]
-  (let [opts       (merge {:max-features feature-plan/default-max-features
-                           :confirm false :dry-run false :seed 42
-                           :allow-build-differences false
-                           :allow-scene-differences false
-                           :allow-all-differences false}
-                          opts
-                          {:default-features false})
-        plan       (feature-plan/plan (:features opts) opts)
+  (let [plan       (feature-plan/plan (:features opts) opts)
         output-dir (artifacts/check-output-dir (:output-dir opts))
         cwd        (path/resolve root ".." "render-wasm")
         metadata   (await (process/run
