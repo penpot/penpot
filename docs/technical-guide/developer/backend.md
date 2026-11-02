@@ -111,6 +111,14 @@ the index `INVALID`: drop it and retry. The migration should check
 `pg_index.indisvalid` and the attached partitions before continuing, because
 `IF NOT EXISTS` matches the name, not the definition or the completeness.
 
+A validated foreign key is the other expensive DDL: `ADD FOREIGN KEY` takes
+`SHARE ROW EXCLUSIVE` on the referencing and the referenced table and scans the
+whole referencing table, and `NOT VALID` on a partitioned table is only
+available since PostgreSQL 18. Create it out of band in a quiet window with a
+`lock_timeout` and a `pg_constraint` guard, and make the migration skip it when
+it already exists. `ADD COLUMN` takes a brief `ACCESS EXCLUSIVE` even when it
+changes nothing: guard it with `pg_attribute` when the column is prebuilt.
+
 If you need to have a global overview of the all schema of the database you can extract it
 using postgresql:
 

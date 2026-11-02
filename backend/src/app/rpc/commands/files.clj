@@ -1419,8 +1419,8 @@
 
 (def ^:private sql:restore-storage-objects
   ;; Collect referenced storage ids first (UUID set), then join by PK.
-  ;; Casting `storage_object.id` to text (or OR-ing that with `id IN`) forces
-  ;; a scan of deleted rows; cast the JSON side instead.
+  ;; `file_data` points at its object with the `storage_object_id` column, so
+  ;; the reference is already a uuid and no JSON cast is needed.
   "WITH ids AS (SELECT unnest(?::uuid[]) AS file_id),
         refs AS (
           SELECT fmo.media_id AS id

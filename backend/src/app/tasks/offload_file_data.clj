@@ -39,7 +39,11 @@
   and the migrated bytes for the caller to aggregate."
   [cfg {:keys [id file-id type data] :as fdata}]
   (jobs/heartbeat cfg)
-  (fdata/upsert! cfg (assoc fdata :backend "storage"))
+  ;; The row comes from `SELECT fd.*`, whose NULL columns are absent (the db
+  ;; layer uses `next.jdbc.optional`); normalize the required pointer key.
+  (fdata/upsert! cfg (assoc fdata
+                            :backend "storage"
+                            :storage-object-id (:storage-object-id fdata)))
   (let [size (if (bytes? data) (alength ^bytes data) 0)]
     (l/trc :hint "file data row offloaded"
            :file-id (str file-id)

@@ -279,6 +279,7 @@
                    {:id snapshot-id
                     :file-id (:id file)
                     :type "snapshot"
+                    :storage-object-id nil
                     :data (blob/encode (:data file))
                     :created-at created-at
                     :deleted-at deleted-at})

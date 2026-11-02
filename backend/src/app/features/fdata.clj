@@ -105,14 +105,9 @@
   (dissoc file :legacy-data))
 
 (defmethod resolve-file-data "storage"
-  [cfg {:keys [metadata storage-object-id] :as file}]
+  [cfg {:keys [storage-object-id] :as file}]
   (let [storage (sto/resolve cfg ::db/reuse-conn true)
-        ;; TEMPORARY: rows written before the storage_object_id column (or by
-        ;; an older instance during a rolling deploy) keep the pointer in the
-        ;; metadata. Remove this fallback in the next release, together with
-        ;; the metadata write and the schema entry.
-        ref-id  (or storage-object-id (:storage-ref-id metadata))
-        data    (->> (sto/get-object storage ref-id)
+        data    (->> (sto/get-object storage storage-object-id)
                      (sto/get-object-bytes storage))]
     (-> file
         (assoc :data data)
@@ -183,13 +178,7 @@
                                      :content-type "application/octet-stream"
                                      :file-id file-id
                                      :id id})
-          ;; NOTE: the metadata key is written during the transition to the
-          ;; storage_object_id column, so instances running the previous
-          ;; release still find the pointer. Remove it in the next release.
-          metadata (-> (:metadata params)
-                       (assoc :storage-ref-id (:id sobject)))
           params   (-> params
-                       (assoc :metadata metadata)
                        (assoc :storage-object-id (:id sobject))
                        (assoc :data nil))]
       (upsert-in-database cfg params))
@@ -236,23 +225,14 @@
     (throw (IllegalArgumentException.
             (str "backend '" backend "' not supported")))))
 
-(defn- get-stored-storage-object-id
-  "Resolve the storage object the persisted row currently points at, if any."
-  [cfg {:keys [file-id id]}]
-  (some-> (db/get* cfg :file-data
-                   {:file-id file-id :id id}
-                   {::sql/columns [:storage_object_id]
-                    ::db/remove-deleted false})
-          :storage-object-id))
-
 (defn touch-storage-object!
   "Mark a storage object as touched so the storage GC can reclaim it once
   nothing references it anymore. Used when a file data row replaces or
-  deletes the object it pointed at."
+  deletes the object it pointed at. Expects a non-nil object id; callers
+  guard with `some->`/`some->>`."
   [cfg storage-object-id]
-  (when storage-object-id
-    (-> (sto/resolve cfg ::db/reuse-conn true)
-        (sto/touch-object! storage-object-id))))
+  (-> (sto/resolve cfg ::db/reuse-conn true)
+      (sto/touch-object! storage-object-id)))
 
 (defn- default-backend
   [backend]
@@ -271,7 +251,10 @@
    [:file-id ::sm/uuid]
    [:backend {:optional true} [:enum "db" "legacy-db" "storage"]]
    [:metadata {:optional true} ctf/schema:file-metadata]
-   [:storage-object-id {:optional true} [:maybe ::sm/uuid]]
+   ;; The storage object the persisted row pointed at before this write; it is
+   ;; the object to touch when the row replaces it. Required so a new caller
+   ;; must decide it explicitly (nil for a new row) instead of leaking it.
+   [:storage-object-id [:maybe ::sm/uuid]]
    [:data {:optional true} bytes?]
    [:created-at {:optional true} ::ct/inst]
    [:modified-at {:optional true} [:maybe ::ct/inst]]
@@ -286,8 +269,8 @@
   (let [params (-> (check-update-params params)
                    (update :backend default-backend))]
 
-    (when-let [storage-object-id (get-stored-storage-object-id cfg params)]
-      (touch-storage-object! cfg storage-object-id))
+    (some->> (:storage-object-id params)
+             (touch-storage-object! cfg))
 
     (-> (handle-persistence cfg params)
         (db/get-update-count)
@@ -332,9 +315,12 @@
     (when (pmap/modified? item)
       (l/trc :hint "persist pointer" :file-id (str file-id) :id (str id))
       (let [content (-> item deref blob/encode)]
+        ;; A modified pointer has a fresh id, so the fragment row is always a
+        ;; new insert: there is no previous storage object to touch.
         (upsert! cfg {:id id
                       :file-id file-id
                       :type "fragment"
+                      :storage-object-id nil
                       :data content})))))
 
 (defmacro with-pointers

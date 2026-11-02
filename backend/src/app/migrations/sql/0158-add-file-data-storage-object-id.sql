@@ -6,6 +6,10 @@
 -- the storage GC had to parse the JSON to resolve the reference and nothing
 -- prevented `storage-gc-deleted` from deleting the blob of a live row.
 --
+-- The release is a coordinated restart: the column is the only source of
+-- truth, the metadata pointer is no longer written, and a rollback to the
+-- previous code cannot read the rows written by this release.
+--
 -- `DEFERRABLE` follows the schema convention (all foreign keys of the
 -- project are deferrable, so `th/database-reset` can delete table by table
 -- with `SET CONSTRAINTS ALL DEFERRED`). `NO ACTION` keeps the reference
@@ -13,42 +17,82 @@
 --
 -- NOTE: `NOT VALID` foreign keys on partitioned tables are only supported
 -- since PostgreSQL 18, so the constraint is created validated (it scans the
--- heap of every partition of `file_data`). Run the heavy index build out of
--- band before deploying:
+-- heap of every partition of `file_data`). Run the heavy work out of band
+-- before deploying; the guards below make this migration a near no-op when
+-- the column, the index and the FK already exist:
 --
 --   1. ALTER TABLE file_data ADD COLUMN IF NOT EXISTS storage_object_id uuid NULL;
 --   2. UPDATE file_data SET storage_object_id = (metadata->>'storage-ref-id')::uuid
 --       WHERE backend = 'storage' AND storage_object_id IS NULL
---         AND jsonb_exists(metadata, 'storage-ref-id');
+--         AND jsonb_exists(metadata, 'storage-ref-id')
+--         AND metadata->>'storage-ref-id' ~* '<uuid regex>'
+--         AND EXISTS (SELECT 1 FROM storage_object so WHERE so.id::text = metadata->>'storage-ref-id');
 --   3. CREATE INDEX CONCURRENTLY IF NOT EXISTS file_data_NN__storage_object_id__idx
 --        ON file_data_NN (storage_object_id);          -- one per partition
 --   4. CREATE INDEX IF NOT EXISTS file_data__storage_object_id__idx
 --        ON ONLY file_data (storage_object_id);
 --      ALTER INDEX file_data__storage_object_id__idx
 --        ATTACH PARTITION file_data_NN__storage_object_id__idx;  -- one per partition
---   5. Optionally create the foreign key in a quiet window with the same
---      guard used below.
+--   5. Create the foreign key in a quiet window (mandatory on large
+--      instances) with the same guard used below:
+--
+--      BEGIN;
+--      SET LOCAL lock_timeout = '3s';
+--      DO $$ BEGIN
+--        IF NOT EXISTS (SELECT 1 FROM pg_constraint
+--                        WHERE conname = 'file_data_storage_object_id_fkey'
+--                          AND conrelid = 'file_data'::regclass) THEN
+--          ALTER TABLE file_data
+--            ADD CONSTRAINT file_data_storage_object_id_fkey
+--            FOREIGN KEY (storage_object_id) REFERENCES storage_object(id)
+--            ON DELETE NO ACTION DEFERRABLE;
+--        END IF;
+--      END $$;
+--      COMMIT;
 --
 -- `CREATE INDEX CONCURRENTLY` cannot run on a partitioned parent, hence the
 -- per-partition build plus `ON ONLY` + `ATTACH PARTITION`. An interrupted
 -- concurrent build leaves the index INVALID: drop it and retry. Verify with
 -- `pg_index.indisvalid` and `pg_inherits` before deploying; the block below
--- aborts the migration if the index is not ready.
---
--- Once the index exists, this migration finds it and does nothing.
+-- aborts the migration if the index is not ready. With the column and the
+-- index already present, `ADD COLUMN` and `CREATE INDEX` are skipped by the
+-- catalog guards and take no table lock.
 
 SET LOCAL lock_timeout = '3s';
 
-ALTER TABLE file_data ADD COLUMN IF NOT EXISTS storage_object_id uuid NULL;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_attribute
+                  WHERE attrelid = 'file_data'::regclass
+                    AND attname = 'storage_object_id'
+                    AND NOT attisdropped) THEN
+    ALTER TABLE file_data ADD COLUMN storage_object_id uuid NULL;
+  END IF;
+END $$;
 
-UPDATE file_data
-   SET storage_object_id = (metadata->>'storage-ref-id')::uuid
- WHERE backend = 'storage'
-   AND storage_object_id IS NULL
-   AND jsonb_exists(metadata, 'storage-ref-id');
+WITH candidates AS MATERIALIZED (
+  SELECT file_id, id, (metadata->>'storage-ref-id')::uuid AS soid
+    FROM file_data
+   WHERE backend = 'storage'
+     AND storage_object_id IS NULL
+     AND jsonb_exists(metadata, 'storage-ref-id')
+     AND metadata->>'storage-ref-id' ~*
+         '^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$'
+)
+UPDATE file_data AS fd
+   SET storage_object_id = c.soid
+  FROM candidates AS c
+ WHERE fd.file_id = c.file_id
+   AND fd.id = c.id
+   AND EXISTS (SELECT 1 FROM storage_object AS so WHERE so.id = c.soid);
 
-CREATE INDEX IF NOT EXISTS file_data__storage_object_id__idx
-    ON file_data (storage_object_id);
+DO $$
+BEGIN
+  IF to_regclass('public.file_data__storage_object_id__idx') IS NULL THEN
+    CREATE INDEX file_data__storage_object_id__idx
+        ON file_data (storage_object_id);
+  END IF;
+END $$;
 
 DO $$
 DECLARE
@@ -89,3 +133,5 @@ BEGIN
       ON DELETE NO ACTION DEFERRABLE;
   END IF;
 END $$;
+
+RESET lock_timeout;

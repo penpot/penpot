@@ -795,14 +795,17 @@
   [{:keys [id] :as file} & {:as opts}]
   (let [created-at  (or (:created-at file) (ct/now))
         modified-at (or (:modified-at file) created-at)]
-    (d/without-nils
-     {:id id
-      :type "main"
-      :file-id id
-      :data (:data file)
-      :metadata (:metadata file)
-      :created-at created-at
-      :modified-at modified-at})))
+    (-> (d/without-nils
+         {:id id
+          :type "main"
+          :file-id id
+          :data (:data file)
+          :metadata (:metadata file)
+          :created-at created-at
+          :modified-at modified-at})
+        ;; The storage object the persisted row pointed at (nil for a new or
+        ;; imported file). `upsert!` touches it before replacing the row.
+        (assoc :storage-object-id (:storage-object-id file)))))
 
 (defn insert-file!
   "Insert a new file into the database table. Expectes a not-encoded file.
@@ -832,7 +835,13 @@
     nil))
 
 (defn update-file!
-  "Update an existing file on the database. Expects not encoded file."
+  "Update an existing file on the database. Expects not encoded file.
+
+  LEGACY: only reachable from the in-place binfile import (`save-file!` with
+  `::overwrite`), which is dead code and will be removed in a separate PR. It
+  does not carry the previous `storage_object_id` (the imported file map has
+  none), so overwriting a storage-backed row would leave its object
+  unreclaimed. Do not use it for new work."
   [{:keys [::db/conn] :as cfg} {:keys [id] :as file} & {:as opts}]
 
   (if (::reset-migrations? opts false)
@@ -884,6 +893,10 @@
         (when (ex/exception? result)
           (l/error :hint "file schema validation error" :cause result))))
 
+    ;; LEGACY: the `::overwrite` branch is the in-place import, dead code that
+    ;; will be removed in a separate PR. It does not carry the previous
+    ;; `storage_object_id`, so it is not supported by the storage pointer
+    ;; model; only the insert branch is live.
     (if (::overwrite cfg)
       (update-file! cfg file (assoc opts ::reset-migrations? true))
       (insert-file! cfg file opts))))

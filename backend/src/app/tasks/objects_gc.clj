@@ -632,7 +632,8 @@
                     (->> (db/exec! conn [sql:lock-file-data file-ids ids threshold])
                          (reduce (fn [total {:keys [file-id id type deleted-at backend storage-object-id]}]
 
-                                   (fdata/touch-storage-object! cfg storage-object-id)
+                                   (some->> storage-object-id
+                                            (fdata/touch-storage-object! cfg))
 
                                    (l/trc :obj "file-data"
                                           :id (str id)

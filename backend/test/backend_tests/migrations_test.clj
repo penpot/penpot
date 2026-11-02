@@ -258,8 +258,12 @@
                     :storage-object-id sobject})
 
     (t/testing "a live reference refuses the physical delete"
-      (t/is (thrown? Exception
-                     (th/db-exec! ["DELETE FROM storage_object WHERE id = ?" sobject]))))
+      (let [cause (try
+                    (th/db-exec! ["DELETE FROM storage_object WHERE id = ?" sobject])
+                    nil
+                    (catch java.sql.SQLException cause cause))]
+        (t/is (some? cause))
+        (t/is (= "23503" (.getSQLState cause)))))
 
     (th/db-delete! :file-data {:file-id (:id file) :id data-id})
 
@@ -292,3 +296,49 @@
         (apply-file-data-migration!)
         (t/is (= before (th/db-get :file-data {:file-id (:id file)
                                                :id data-id})))))))
+
+(t/deftest file-data-migration-guards-corrupt-and-orphan-pointers
+  (let [profile    (th/create-profile* 1)
+        file       (th/create-file* 1 {:profile-id (:id profile)
+                                       :project-id (:default-project-id profile)})
+        sobject    (:id (th/db-insert! :storage-object {:backend "fs"}))
+        valid-id   (uuid/next)
+        corrupt-id (uuid/next)
+        orphan-id  (uuid/next)
+        other-id   (uuid/next)]
+
+    (th/db-insert! :file-data
+                   {:file-id (:id file) :id valid-id :type "main" :backend "storage"
+                    :metadata (db/json {"storage-ref-id" (str sobject)})})
+    (th/db-insert! :file-data
+                   {:file-id (:id file) :id corrupt-id :type "main" :backend "storage"
+                    :metadata (db/json {"storage-ref-id" "not-a-uuid"})})
+    (th/db-insert! :file-data
+                   {:file-id (:id file) :id orphan-id :type "main" :backend "storage"
+                    :metadata (db/json {"storage-ref-id" (str (uuid/next))})})
+    (th/db-insert! :file-data
+                   {:file-id (:id file) :id other-id :type "main" :backend "db"
+                    :metadata (db/json {"storage-ref-id" (str sobject)})})
+
+    (t/testing "the migration applies without aborting"
+      (t/is (true? (apply-file-data-migration!))))
+
+    (t/testing "a valid pointer is backfilled"
+      (t/is (= sobject (:storage-object-id (th/db-get :file-data
+                                                      {:file-id (:id file)
+                                                       :id valid-id})))))
+
+    (t/testing "a non-uuid value stays NULL"
+      (t/is (nil? (:storage-object-id (th/db-get :file-data
+                                                 {:file-id (:id file)
+                                                  :id corrupt-id})))))
+
+    (t/testing "a pointer to a missing object stays NULL"
+      (t/is (nil? (:storage-object-id (th/db-get :file-data
+                                                 {:file-id (:id file)
+                                                  :id orphan-id})))))
+
+    (t/testing "rows of other backends are not touched"
+      (t/is (nil? (:storage-object-id (th/db-get :file-data
+                                                 {:file-id (:id file)
+                                                  :id other-id})))))))
