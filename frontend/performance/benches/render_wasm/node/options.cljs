@@ -14,13 +14,19 @@
 
 (def ^:private diagnostic-features #{"stats" "profile" "profile-macros" "profile-raf"})
 
+(defn feature-name?
+  "True for a Cargo feature name made of letters, digits, underscores or hyphens."
+  [value]
+  (and (string? value)
+       (boolean (re-matches #"[A-Za-z0-9_-]+" value))))
+
 (defn feature-selection
   "Validates measurement feature selection before allocating an attempt.
   Cargo validates functional feature names during the retained build."
   [{:keys [default-features? features]
     :or {default-features? true features []}}]
   (when-not (and (boolean? default-features?) (vector? features)
-                 (every? #(and (string? %) (re-matches #"[A-Za-z0-9_-]+" %)) features))
+                 (every? feature-name? features))
     (throw (ex-info "invalid Cargo feature selection" {:type ::invalid-features})))
   (when-let [selected (seq (filter diagnostic-features features))]
     (throw (ex-info "measurement builds cannot enable diagnostic Cargo features"

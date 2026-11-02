@@ -24,12 +24,12 @@
   after the plan exists. An explicit directory must not exist; a managed home
   uses the frontend root regardless of cwd."
   [{:keys [root run-id output-dir remove]}]
-  (files/check-id run-id "invalid run id")
-  (let [dir (files/check-output-dir
+  (artifacts/check-home-id run-id "invalid run id")
+  (let [dir (artifacts/check-output-dir
              (or output-dir (path/join (artifacts/managed-root root) "runs" run-id)))]
     (when (and remove (artifacts/inside-builds? root dir))
-      (files/invalid-home "--remove cannot use an output directory inside builds" {:path dir}))
-    (assoc (files/create-home dir "run" "cannot create run home") :run-id run-id)))
+      (artifacts/invalid-home "--remove cannot use an output directory inside builds" {:path dir}))
+    (assoc (artifacts/create-home dir "run" "cannot create run home") :run-id run-id)))
 
 (defn get-record
   "Reads and validates a saved run record from a path relative to cwd."

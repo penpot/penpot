@@ -10,7 +10,6 @@
    ["os" :as os]
    ["path" :as path]
    [benches.render-wasm.node.artifacts :as artifacts]
-   [benches.render-wasm.node.files :as files]
    [benches.render-wasm.node.runs :as runs]
    [benches.render-wasm.result :as result]
    [cljs.test :as t :include-macros true]
@@ -72,7 +71,7 @@
     (let [error (failure #(runs/create-home {:root @temporary-root
                                              :run-id "run-3"
                                              :output-dir directory}))]
-      (t/is (= ::files/invalid-home (:type (ex-data error))))
+      (t/is (= ::artifacts/invalid-home (:type (ex-data error))))
       (t/is (= "output directory already exists" (ex-message error)))
       (t/is (= "keep" (fs/readFileSync (path/join directory "sentinel") "utf8"))))))
 
@@ -99,7 +98,7 @@
     (t/is (thrown-with-msg? js/Error #"invalid run id"
                             (runs/create-home {:root @temporary-root :run-id id}))))
   (t/is (thrown-with-msg? js/Error #"nonempty path"
-                          (files/check-output-dir "  "))))
+                          (artifacts/check-output-dir "  "))))
 
 (t/deftest home-creation-reports-an-invalid-parent
   (let [parent (path/join @temporary-root "file")
@@ -107,7 +106,7 @@
     (fs/writeFileSync parent "occupied")
     (let [error (failure #(runs/create-home {:root @temporary-root
                                              :run-id "run-6" :output-dir dir}))]
-      (t/is (= ::files/invalid-home (:type (ex-data error))))
+      (t/is (= ::artifacts/invalid-home (:type (ex-data error))))
       (t/is (= (path/resolve dir) (:path (ex-data error))))
       (t/is (= "ENOTDIR" (.-code (ex-cause error))))
       (t/is (= (ex-message (ex-cause error)) (:cause (ex-data error))))
@@ -118,8 +117,8 @@
   (let [dir (path/join @temporary-root "occupied-log")]
     (fs/mkdirSync dir)
     (fs/writeFileSync (path/join dir "run.log") "")
-    (let [error (failure #(files/create-home dir "run" "cannot create run home"))]
-      (t/is (= ::files/invalid-home (:type (ex-data error))))
+    (let [error (failure #(artifacts/create-home dir "run" "cannot create run home"))]
+      (t/is (= ::artifacts/invalid-home (:type (ex-data error))))
       (t/is (= "cannot create run home" (ex-message error)))
       (t/is (= dir (:path (ex-data error))))
       (t/is (= "EEXIST" (.-code (ex-cause error))))
