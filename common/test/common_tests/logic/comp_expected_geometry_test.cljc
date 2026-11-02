@@ -460,6 +460,31 @@
     (t/is (mth/close? 100 (:width after)))
     (t/is (not (contains? (:touched after) :geometry-group)))))
 
+(t/deftest a-constraint-a-copy-sets-after-a-resize-moves-nothing-at-sync
+  ;; A constraint the copy sets on a child applies to later resizes, so the
+  ;; next sync keeps the child as the earlier resize left it.
+  (let [file     (-> (thf/sample-file :file1)
+                     (tho/add-simple-component :c :c-root :c-child
+                                               :root-params {:width 100 :height 100}
+                                               :child-params {:x 0 :y 0 :width 20 :height 20})
+                     (thc/instantiate-component :c :copy :children-labels [:copy-child]))
+        resized  (-> (tm/make-situation file)
+                     (r/step (n/change-height :copy 200))
+                     (r/step (n/change-property :copy-child :constraints-v :scale))
+                     r/settle)
+        edited   (-> resized (r/step (n/change-property :c-child :fills "#dc2626")) r/settle)
+        child    (tm/resolve-shape edited :copy-child)]
+    (t/is (mth/close? 20 (:height (tm/resolve-shape resized :copy-child))))
+    (t/is (= "#dc2626" (get-in child [:fills 0 :fill-color])))
+    (t/is (mth/close? 20 (:height child)))
+    (t/is (not (contains? (:touched child) :geometry-group)))))
+
+(t/deftest generated-constraint-a-copy-sets-after-a-resize-moves-nothing
+  ;; a copy resized from its 0.01 main sets a child's vertical constraint to
+  ;; scale; the child keeps the height the resize left it
+  (t/is (map? (cg/run {:world [2 0 {:text true :text-styles true}]
+                       :ops [[:add-child 0 0 0 0] [:resize 0 0 0 0] [:delete 0 0 0 0] [:style 1 9 1]]}))))
+
 (t/deftest a-resized-turned-main-keeps-its-copies-at-their-first-corner
   ;; a width change keeps a shape's first corner; a copy oriented like its
   ;; main keeps its own first corner, whether the turn or flip is the main's

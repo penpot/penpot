@@ -638,6 +638,17 @@
             height (:height (:selrect (if height? shape-inst shape-main)))]
         (gsh/transform-shape shape-main (ctm/change-size shape-main width height))))))
 
+(defn- constraint-kept?
+  "Whether the copy shape `shape-inst` keeps the geometry it shows at sync:
+   its copy authors a constraint that ties one of its dimensions to its copy
+   parent. A constraint applies to the resizes after it, so sync does not
+   resize the shape through it again."
+  [container shape-inst]
+  (and (ctk/touched-group? shape-inst :constraints-group)
+       (or (contains? #{:scale :leftright} (:constraints-h shape-inst))
+           (contains? #{:scale :topbottom} (:constraints-v shape-inst)))
+       (some? (:shape-ref (ctn/get-shape container (:parent-id shape-inst))))))
+
 (defn- sync-copy-recursive
   "Sync the copy shape `shape-inst` from `shape-main`, the main shape it
   pairs with, then pair their children (`compare-children`) and walk each
@@ -665,7 +676,8 @@
           own-flow?      (and (not reset?) (ctsl/grid-layout? shape-inst)
                               (ctk/touched-group? shape-inst :layout-grid-cells))
           placed         (cond
-                           (and (not reset?) (ctk/touched-group? shape-inst :geometry-group))
+                           (and (not reset?) (or (ctk/touched-group? shape-inst :geometry-group)
+                                                 (constraint-kept? container shape-inst)))
                            (in-main-frame shape-inst (:root-inst ctx) (:root-main ctx))
 
                            (and (not reset?) (= (:id shape-inst) (:id (:root-inst ctx))))
