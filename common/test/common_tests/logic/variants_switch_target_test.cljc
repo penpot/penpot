@@ -95,6 +95,26 @@
     (t/is (true? (loop? :nested)))
     (t/is (false? (loop? :copy01)))))
 
+(t/deftest swap-through-a-held-main-is-a-nesting-loop
+  ;; :cy holds a copy of :cz whose own copy of :cx was swapped away; the
+  ;; main of :cz still holds :cx, which a reset brings back
+  (let [file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component :cw :mw :mw-child)
+                    (tho/add-simple-component :cv :mv :mv-child)
+                    (tho/add-frame :mx)
+                    (thc/instantiate-component :cw :x-head :parent-label :mx)
+                    (thc/make-component :cx :mx)
+                    (tho/add-frame :mz)
+                    (thc/instantiate-component :cx :z-x :parent-label :mz)
+                    (thc/make-component :cz :mz)
+                    (tho/add-frame :my)
+                    (thc/instantiate-component :cz :y-z :parent-label :my :children-labels [:y-z-x])
+                    (thc/make-component :cy :my)
+                    (thc/component-swap :y-z-x :cv :y-z-v))
+        objects (:objects (thf/current-page file))]
+    (t/is (true? (clv/swap-nesting-loop? objects (ths/get-shape file :x-head) (:data file) (thi/id :cy))))
+    (t/is (false? (clv/swap-nesting-loop? objects (ths/get-shape file :x-head) (:data file) (thi/id :cv))))))
+
 (t/deftest swap-in-place-keeps-index-and-layout-attrs
   (let [file      (-> (thf/sample-file :file1)
                       (thv/add-variant :v01 :c01 :m01 :c02 :m02)
