@@ -965,3 +965,11 @@
   (t/is (map? (cg/run {:world [2 1 {:text true :text-styles true :layout :flex :layout-children true}]
                        :ops [[:remove-child 0 0 0 0] [:nest 0 0 0 0] [:style 2 27 1]
                              [:edit 0 1 1 :copy-head] [:reset 0] [:nest 0 0 0 0]]}))))
+
+(t/deftest generated-nest-refuses-a-loop-through-a-switched-copy
+  ;; a copy whose nested head was switched away from Board is nested into
+  ;; Board's main; the main of that head still holds a Board, which a reset
+  ;; brings back, so the nest would loop
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :library true :rich-variants true
+                                    :layout-copies true :text true}]
+                       :ops [[:switch 3 0 0 0] [:nest 9 0 0 0] [:edit 7 1 1 :copy-head] [:reset 7]]}))))

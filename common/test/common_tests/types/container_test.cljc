@@ -449,6 +449,13 @@
     (t/testing "a copy does not go inside its own main"
       (t/is (= [:root :root] (place file :main1 [:copy1] :pasting? true)))
       (t/is (= [:main2 :main2] (place file :main2 [:copy1] :pasting? true))))
+    (t/testing "a copy does not go inside the main of a component its main holds, though it swapped it"
+      (let [file (-> file
+                     (tho/add-nested-component :n1 :nmain1 :nmain1-child :n2 :nmain2 :nested-head)
+                     (thc/instantiate-component :n2 :ncopy2 :children-labels [:ncopy2-head])
+                     (thc/component-swap :ncopy2-head :c2 :ncopy2-swapped))]
+        (t/is (= [:root :root] (place file :nmain1 [:ncopy2])))
+        (t/is (= [:board :board] (place file :board [:ncopy2])))))
     (t/testing "a main does not go inside itself, even pasted"
       (t/is (= [:root :root] (place file :main1-child [:main1])))
       (t/is (= [:root :root] (place file :main1-child [:main1] :pasting? true))))
