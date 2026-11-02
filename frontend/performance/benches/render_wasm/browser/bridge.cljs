@@ -88,6 +88,7 @@
    ;; WASM calls
    :render            (fn [timestamp flags]
                         (h/call wasm/internal-module "_render" timestamp flags))
+   :render-sync       #(h/call wasm/internal-module "_render_sync")
    :render-from-cache #(h/call wasm/internal-module "_render_from_cache" 0)
    :set-view          #(h/call wasm/internal-module "_set_view"
                                (:scale %) (- (:x %)) (- (:y %)))

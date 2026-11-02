@@ -53,7 +53,15 @@
   their bodies. This namespace loads there because renderer effects come
   through the browser-supplied `:hooks`."
   (:require
+   [benches.render-wasm.runtime.commands :refer [defcommand]]
    [benches.render-wasm.runtime.protocol :as protocol]))
+
+(defcommand render-sync
+  "Renders through the blocking renderer path."
+  {:requires [:render-sync]}
+  [rtx]
+  ((get-in rtx [:hooks :render-sync]))
+  rtx)
 
 (defn load!
   "Drains the uploaded scene until the renderer reports Full completion.
