@@ -8,14 +8,9 @@
   "Resolved benchmark requests, sender defaults and receiver validation."
   (:require
    [app.common.schema :as sm]
-   [benches.render-wasm.node.cli.ab :as ab]
-   [benches.render-wasm.node.cli.build :as build]
-   [benches.render-wasm.node.cli.compare :as compare]
    [benches.render-wasm.node.cli.console :as console]
    [benches.render-wasm.node.cli.help :as help]
-   [benches.render-wasm.node.cli.merge :as merge]
-   [benches.render-wasm.node.cli.purge :as purge]
-   [benches.render-wasm.node.cli.run :as run]
+   [benches.render-wasm.node.cli.registry :as registry]
    [malli.transform :as mt]))
 
 (defn- command-schema
@@ -26,14 +21,10 @@
    [:options {:default {}} options]])
 
 (def schema:request
-  [:multi {:dispatch :command}
-   ["build" (command-schema "build" build/schema:options)]
-   ["run" (command-schema "run" run/schema:options)]
-   ["ab" (command-schema "ab" ab/schema:options)]
-   ["compare" (command-schema "compare" compare/schema:options)]
-   ["merge" (command-schema "merge" merge/schema:options)]
-   ["purge" (command-schema "purge" purge/schema:options)]
-   ["help" (command-schema "help" help/schema:options)]])
+  (into [:multi {:dispatch :command}]
+        (map (fn [[command definition]]
+               [command (command-schema command (:schema definition))]))
+        (conj registry/commands ["help" {:schema help/schema:options}])))
 
 (def ^:private default-decoder
   (delay (sm/decoder schema:request (mt/default-value-transformer))))
