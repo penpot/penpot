@@ -596,7 +596,7 @@
     :hidden :masked-group :fills :proportion :proportion-lock :constraints-h
     :constraints-v :fixed-scroll :r1 :r2 :r3 :r4 :rotation :opacity :grids :exports
     :strokes :blend-mode :interactions :shadow :blur :background-blur :grow-type :applied-tokens
-    :plugin-data})
+    :plugin-data :flip-x :flip-y})
 
 (def ^:private allowed-shape-geom-attrs #{:x :y :width :height})
 (def ^:private allowed-shape-base-attrs #{:id :name :type :selrect :points :transform
