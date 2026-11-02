@@ -452,28 +452,3 @@
       (finally
         (.abort controller "test-cleanup")
         (await held)))))
-
-(t/deftest ^:async real-signals-reach-the-callback-and-remover-restores-listeners
-  (let [before-int  (.listenerCount js/process "SIGINT")
-        before-term (.listenerCount js/process "SIGTERM")
-        received    (atom [])
-        next-signal (volatile! nil)
-        remove      (process/on-signals
-                     (fn [signal]
-                       (swap! received conj signal)
-                       (@next-signal signal)))
-        receive     (fn [signal]
-                      (within
-                       (js/Promise.
-                        (fn [resolve _]
-                          (vreset! next-signal resolve)
-                          (.kill js/process (.-pid js/process) signal)))))]
-    (try
-      (t/is (= "SIGINT" (await (receive "SIGINT"))))
-      (t/is (= "SIGTERM" (await (receive "SIGTERM"))))
-      (t/is (= ["SIGINT" "SIGTERM"] @received))
-      (finally
-        (remove)))
-    (remove)
-    (t/is (= before-int (.listenerCount js/process "SIGINT")))
-    (t/is (= before-term (.listenerCount js/process "SIGTERM")))))

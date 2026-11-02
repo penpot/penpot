@@ -16,10 +16,12 @@
    [performance-tests.render-wasm.build-test]
    [performance-tests.render-wasm.builder-test]
    [performance-tests.render-wasm.cli-test]
+   [performance-tests.render-wasm.commands-test]
    [performance-tests.render-wasm.compare-test]
    [performance-tests.render-wasm.containers-test]
    [performance-tests.render-wasm.contracts-test]
    [performance-tests.render-wasm.errors-test]
+   [performance-tests.render-wasm.execution-test]
    [performance-tests.render-wasm.feature-comparison-test]
    [performance-tests.render-wasm.fingerprint-test]
    [performance-tests.render-wasm.geometry-scenes-test]
@@ -35,7 +37,8 @@
    [performance-tests.render-wasm.runner-test]
    [performance-tests.render-wasm.runs-test]
    [performance-tests.render-wasm.scene-snapshot-test]
-   [performance-tests.render-wasm.server-test]))
+   [performance-tests.render-wasm.server-test]
+   [performance-tests.render-wasm.signals-test]))
 
 (enable-console-print!)
 
@@ -55,10 +58,12 @@
    'performance-tests.render-wasm.build-test
    'performance-tests.render-wasm.builder-test
    'performance-tests.render-wasm.cli-test
+   'performance-tests.render-wasm.commands-test
    'performance-tests.render-wasm.compare-test
    'performance-tests.render-wasm.containers-test
    'performance-tests.render-wasm.contracts-test
    'performance-tests.render-wasm.errors-test
+   'performance-tests.render-wasm.execution-test
    'performance-tests.render-wasm.feature-comparison-test
    'performance-tests.render-wasm.fingerprint-test
    'performance-tests.render-wasm.geometry-scenes-test
@@ -74,7 +79,8 @@
    'performance-tests.render-wasm.runner-test
    'performance-tests.render-wasm.runs-test
    'performance-tests.render-wasm.scene-snapshot-test
-   'performance-tests.render-wasm.server-test])
+   'performance-tests.render-wasm.server-test
+   'performance-tests.render-wasm.signals-test])
 
 (assert (every? find-ns-obj test-namespaces)
         "test-namespaces contains a namespace that isn't required in runner.cljs")

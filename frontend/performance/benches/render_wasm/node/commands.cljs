@@ -12,47 +12,22 @@
    [benches.render-wasm.errors :as errors :refer [attempt failure?]]
    [benches.render-wasm.node.artifacts :as artifacts]
    [benches.render-wasm.node.build :as build]
+   [benches.render-wasm.node.execution :as execution]
    [benches.render-wasm.node.feature-comparison :as feature-comparison]
    [benches.render-wasm.node.feature-plan :as feature-plan]
    [benches.render-wasm.node.log :as log]
    [benches.render-wasm.node.options :as options]
    [benches.render-wasm.node.outcome :as outcome]
-   [benches.render-wasm.node.process :as process]
    [benches.render-wasm.node.run :as run]))
-
-(defn- ^:async with-interruption
-  "Calls `(f signal)` with an AbortSignal that SIGINT and SIGTERM abort, and
-  returns its outcome. A failure becomes an outcome with exit code 1. After an
-  interruption the exit code is 130 or 143 and only fatal failures stay in
-  the errors: the others come from the aborted work."
-  [f]
-  (let [controller     (js/AbortController.)
-        signal         (.-signal controller)
-        interrupted    (atom nil)
-        remove-signals (process/on-signals
-                        (fn [signal-name]
-                          (when-not (.-aborted signal)
-                            (reset! interrupted signal-name)
-                            (.abort controller
-                                    (ex-info "interrupted"
-                                             {:type ::interrupted :signal signal-name})))))]
-    (try
-      (let [result   (attempt :catch-fatal (await (f signal)))
-            finished (if (failure? result) (outcome/failed result {}) result)]
-        (cond-> finished
-          @interrupted (-> (update :errors #(filterv errors/fatal? %))
-                           (assoc :exit-code (outcome/interruption-code @interrupted)))))
-      (finally
-        (remove-signals)))))
 
 (defn- run-command
   [root options]
-  (with-interruption
+  (execution/with-interruption
     #(run/run root (select-keys options (sm/keys run/schema:run-options)) %)))
 
 (defn- build-command
   [root options]
-  (with-interruption
+  (execution/with-interruption
     (^:async fn [signal]
       (await (build/prepare {:root root
                              :features {:default-features? (:default-features options)
@@ -66,7 +41,7 @@
 
 (defn- ab-command
   [root options]
-  (with-interruption
+  (execution/with-interruption
     (^:async fn [signal]
       (let [prepared (await (feature-plan/prepare root options signal))]
         (if (:dry-run options)

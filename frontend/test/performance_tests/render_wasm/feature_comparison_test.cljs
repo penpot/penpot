@@ -15,6 +15,7 @@
    [benches.render-wasm.errors :as errors]
    [benches.render-wasm.feature-plan :as feature-plan]
    [benches.render-wasm.node.build :as build]
+   [benches.render-wasm.node.execution :as execution]
    [benches.render-wasm.node.feature-comparison :as feature-comparison]
    [benches.render-wasm.node.feature-plan :as node-plan]
    [benches.render-wasm.node.files :as files]
@@ -1102,7 +1103,7 @@
   (doseq [[signal exit-code] [["SIGINT" 130] ["SIGTERM" 143]]]
     (let [prepared   (comparison-prepared ["a"] {:output-dir (path/join @temporary-root signal)})
           controller (js/AbortController.)
-          remove     (process/on-signals #(.abort controller %))
+          remove     (execution/on-signals #(.abort controller %))
           execute    (execute-service
                       (fn [build]
                         (when (seq (get-in build [:manifest :functional :features]))

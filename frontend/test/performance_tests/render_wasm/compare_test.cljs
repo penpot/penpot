@@ -7,10 +7,13 @@
 (ns performance-tests.render-wasm.compare-test
   (:require
    ["fs" :as fs]
+   ["node:stream" :as stream]
    ["os" :as os]
    ["path" :as path]
    [app.common.transit :as transit]
    [benches.render-wasm.node.compare :as compare]
+   [benches.render-wasm.node.execution :as execution]
+   [benches.render-wasm.node.log :as log]
    [benches.render-wasm.report.compare :as report-compare]
    [benches.render-wasm.result :as result]
    [cljs.test :as t :include-macros true]
@@ -190,6 +193,26 @@
       (t/is (= {:scene :scene :functional-build :build}
                (into {} (map (juxt :field :rule))
                      (get-in comparison [:pairs 0 :mismatches])))))))
+
+(t/deftest comparison-failure-identifies-incompatible-fields
+  (let [baseline  (write-run (path/join @temporary-root "baseline.transit")
+                             (make-run "baseline" :case/load 10))
+        candidate (write-run (path/join @temporary-root "candidate.transit")
+                             (make-run "candidate" :case/load 12
+                                       :environment {:node "v25" :browser "Fake"}))
+        cause     (failure #(compare/execute baseline candidate {}))
+        text      (atom "")
+        stderr    (stream/Writable.
+                   #js {:write (fn [chunk _encoding done]
+                                 (swap! text str (.toString chunk))
+                                 (done))})]
+    (try
+      (t/is (some? cause))
+      (t/is (= 1 (execution/fail cause {:color :never} {:stderr stderr})))
+      (t/is (str/includes? @text "incompatible saved runs"))
+      (t/is (str/includes? @text ":environment"))
+      (finally
+        (log/configure {})))))
 
 (t/deftest scoped-permissions-keep-operation-and-runtime-checks-strict
   (let [baseline (write-run (path/join @temporary-root "baseline.transit")

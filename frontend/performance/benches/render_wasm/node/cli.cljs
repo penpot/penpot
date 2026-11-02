@@ -16,14 +16,11 @@
    [clojure.string :as str]
    [clojure.tools.cli :as tools]))
 
-(def ^:private commands
-  (into {} registry/commands))
-
 (defn- get-definition
   [topic]
   (if (nil? topic)
     {:usage help/usage :description help/description :options []}
-    (get commands topic)))
+    (registry/get-definition topic)))
 
 (defn- get-declarations
   [definition]
@@ -46,7 +43,7 @@
         first-arg (first argv)
         topic     (when (and first-arg (not (str/starts-with? first-arg "-"))) first-arg)
         args      (if topic (rest argv) argv)]
-    (when (and topic (not (contains? commands topic)))
+    (when (and topic (nil? (registry/get-definition topic)))
       (throw (argument-error topic (str "unknown command: " topic) nil)))
     (let [definition (get-definition topic)]
       (try
@@ -68,9 +65,7 @@
                             :options ((:resolve definition)
                                       (dissoc options :help :quiet :verbose :color) arguments)}))
               resolved (request/check (request/apply-defaults partial))]
-          (if (and (not= "help" (:command resolved)) (:check definition))
-            (update resolved :options (:check definition))
-            resolved))
+          (update resolved :options #(registry/check-options (:command resolved) %)))
         (catch :default cause
           (if (contains? #{::shared/invalid-args ::request/invalid-request
                            ::feature-plan/too-many-features ::feature-plan/confirmation-required}

@@ -53,6 +53,13 @@ Managed output: frontend/target/performance/render-wasm/runs/<run-id>/run.transi
                     {:kind :existing :id (:build-id options)}
                     (assoc preparation :kind :prepare)))))
 
+(defn check-options
+  "Checks measurement feature policy for the selected build source."
+  [options]
+  (when (= :prepare (get-in options [:build :kind]))
+    (build/check-options (:build options)))
+  options)
+
 (defn get-help-defaults
   "Returns CLI defaults for run options with a preparation source."
   [options]
