@@ -499,6 +499,45 @@
   [shape libraries]
   (get-in libraries [(:component-file shape) :data :components (:component-id shape)]))
 
+(defn- main-shapes
+  "The shapes of the main of `component` in the file data `data`: its main
+  instance on a page, or the shapes a deleted component keeps."
+  [data component]
+  (if (:deleted component)
+    (vals (:objects component))
+    (cfh/get-children-with-self
+     (get-in data [:pages-index (:main-instance-page component) :objects])
+     (:main-instance-id component))))
+
+(defn held-component-ids
+  "Ids of the components of the copies and mains among `shapes`, and of the
+  components the mains of these hold, through every level. A sync or a
+  reset brings back what a main holds, even where a copy swapped it."
+  [shapes libraries]
+  (loop [pending (filterv :component-id shapes)
+         ids     #{}]
+    (if-let [shape (peek pending)]
+      (let [id (:component-id shape)]
+        (if (contains? ids id)
+          (recur (pop pending) ids)
+          (let [data      (get-in libraries [(:component-file shape) :data])
+                component (get-in data [:components id])]
+            (recur (cond-> (pop pending)
+                     (some? component)
+                     (into (filter :component-id) (main-shapes data component)))
+                   (conj ids id)))))
+      ids)))
+
+(defn- nesting-loop?
+  "Whether nesting `children` below `parent` would hold a component inside
+  its own main, directly or through the mains of the components it holds."
+  [objects parent children libraries]
+  (let [parent-ids (into #{} (keep :component-id) (cfh/get-parents-with-self objects (:id parent)))]
+    (and (seq parent-ids)
+         (boolean (some parent-ids
+                        (held-component-ids (mapcat #(cfh/get-children-with-self objects (:id %)) children)
+                                            libraries))))))
+
 (defn invalid-structure-for-component?
   "Check if the structure generated nesting children in parent is invalid in
   terms of nested components: a change of a copy's structure, a main inside
@@ -522,9 +561,7 @@
 
         selected-main-instance? (seq selected-components)
         parent-in-component?    (in-any-component? objects parent)
-        comps-nesting-loop?     (not (->> children
-                                          (map #(cfh/components-nesting-loop? objects (:id %) (:id parent)))
-                                          (every? nil?)))]
+        comps-nesting-loop?     (nesting-loop? objects parent children libraries)]
     (or
      ;;We don't want to change the structure of component copies
      (ctk/in-component-copy? parent)
@@ -532,7 +569,8 @@
      ;; If we are moving something containing a main instance the container can't be part of a component (neither main nor copy)
      (and selected-main-instance? parent-in-component?)
      ;; Avoid a component nesting loop: a main inside itself, or a copy
-     ;; inside its own main. A plain shape moved into its own subtree passes;
+     ;; inside its own main or the main of a component it holds. A plain
+     ;; shape moved into its own subtree passes;
      ;; the move itself (`relocate-shapes`) refuses it.
      comps-nesting-loop?)))
 
