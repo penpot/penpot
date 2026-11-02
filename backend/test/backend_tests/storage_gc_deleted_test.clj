@@ -155,3 +155,39 @@
 
     (t/testing "the objects after the failed chunk are gone"
       (t/is (every? #(nil? (find-object (:id %))) recent)))))
+
+(defn- blocked-by-file-data!
+  "Puts an object referenced by a `file_data` row, so the `NO ACTION`
+  foreign key of `storage_object_id` refuses the physical delete."
+  [file-id]
+  (let [blocked (put-object! (ct/in-past "30m"))]
+    (th/db-insert! :file-data
+                   {:file-id file-id
+                    :id (uuid/next)
+                    :type "main"
+                    :backend "storage"
+                    :storage-object-id (:id blocked)})
+    blocked))
+
+(t/deftest file-data-reference-blocks-its-chunk
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+
+        ;; The blocked object goes first in `deleted_at` order, so it lands in
+        ;; the first chunk with the objects that fill it up. The last object
+        ;; lands in the next chunk: it proves the run kept going.
+        blocked (blocked-by-file-data! (:id file))
+        _       (mapv (fn [_] (put-object! (ct/in-past "20m"))) (range (dec chunk-size)))
+        last-id (:id (put-object! (ct/in-past "5m")))
+
+        result  (th/run-task! :storage-gc-deleted {})]
+
+    (t/testing "the run finishes and only the object of the second chunk is deleted"
+      (t/is (= 1 (:deleted result))))
+
+    (t/testing "the object referenced by the file data row is still alive"
+      (t/is (some? (find-object (:id blocked)))))
+
+    (t/testing "the object of the next chunk is gone"
+      (t/is (nil? (find-object last-id))))))

@@ -1606,14 +1606,13 @@
       (t/is (every? #(nil? (:data %)) rows))
       (t/is (every? #(= "storage" (:backend %)) rows)))
 
-    (let [file    (-> (th/db-get :file-data {:id (:id file) :type "main"})
-                      (update :metadata fdata/decode-metadata))
+    (let [file    (th/db-get :file-data {:id (:id file) :type "main"})
           storage (sto/resolve th/*system*)]
       ;; (pp/pprint file)
       (t/is (= "storage" (:backend file)))
       (t/is (nil? (:data file)))
 
-      (let [sobj (sto/get-object storage (-> file :metadata :storage-ref-id))]
+      (let [sobj (sto/get-object storage (:storage-object-id file))]
         (vreset! sobject sobj)
         ;; (pp/pprint (meta sobj))
         (t/is (= "file-data" (:bucket (meta sobj))))

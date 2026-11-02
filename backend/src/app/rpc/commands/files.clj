@@ -1447,11 +1447,11 @@
            WHERE fot.deleted_at IS NULL
              AND fot.media_id IS NOT NULL
           UNION
-          SELECT (fd.metadata->>'storage-ref-id')::uuid
+          SELECT fd.storage_object_id
             FROM file_data AS fd
             JOIN ids ON (ids.file_id = fd.file_id)
            WHERE fd.deleted_at IS NULL
-             AND (fd.metadata->>'storage-ref-id') IS NOT NULL
+             AND fd.storage_object_id IS NOT NULL
         )
    UPDATE storage_object AS so
       SET deleted_at = null

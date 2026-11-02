@@ -14,7 +14,6 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.features.fdata :as fdata]
    [app.jobs :as jobs]
    [app.jobs.metrics :as metrics]
    [app.main :as main]
@@ -483,11 +482,7 @@
     (let [result (th/run-task! :offload-file-data {:file-id (:id file)})]
       (t/is (pos? (:offloaded result))))
 
-    (let [ref-ids (into #{}
-                        (comp (map :metadata)
-                              (map fdata/decode-metadata)
-                              (keep :storage-ref-id))
-                        (db-rows (:id file)))]
+    (let [ref-ids (into #{} (keep :storage-object-id) (db-rows (:id file)))]
       (t/is (pos? (count ref-ids)))
       (t/is (every? some? (map #(sto/get-object storage %) ref-ids)))
 

@@ -105,9 +105,13 @@
   (dissoc file :legacy-data))
 
 (defmethod resolve-file-data "storage"
-  [cfg {:keys [metadata] :as file}]
+  [cfg {:keys [metadata storage-object-id] :as file}]
   (let [storage (sto/resolve cfg ::db/reuse-conn true)
-        ref-id  (:storage-ref-id metadata)
+        ;; TEMPORARY: rows written before the storage_object_id column (or by
+        ;; an older instance during a rolling deploy) keep the pointer in the
+        ;; metadata. Remove this fallback in the next release, together with
+        ;; the metadata write and the schema entry.
+        ref-id  (or storage-object-id (:storage-ref-id metadata))
         data    (->> (sto/get-object storage ref-id)
                      (sto/get-object-bytes storage))]
     (-> file
@@ -122,8 +126,8 @@
 
 (def ^:private sql:insert-file-data
   "INSERT INTO file_data (file_id, id, created_at, modified_at, deleted_at,
-                          type, backend, metadata, data)
-   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+                          type, backend, metadata, data, storage_object_id)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 
 (def ^:private sql:upsert-file-data
   (str sql:insert-file-data
@@ -132,10 +136,11 @@
                        deleted_at=?,
                        backend=?,
                        metadata=?,
-                       data=?"))
+                       data=?,
+                       storage_object_id=?"))
 
 (defn- upsert-in-database
-  [cfg {:keys [id file-id created-at modified-at deleted-at type backend data metadata]}]
+  [cfg {:keys [id file-id created-at modified-at deleted-at type backend data metadata storage-object-id]}]
   (let [created-at  (or created-at (ct/now))
         metadata    (some-> metadata db/json)
         modified-at (or modified-at created-at)]
@@ -149,11 +154,13 @@
                        backend
                        metadata
                        data
+                       storage-object-id
                        modified-at
                        deleted-at
                        backend
                        metadata
-                       data])))
+                       data
+                       storage-object-id])))
 
 (defn- handle-persistence
   [cfg {:keys [type backend id file-id data] :as params}]
@@ -176,16 +183,22 @@
                                      :content-type "application/octet-stream"
                                      :file-id file-id
                                      :id id})
+          ;; NOTE: the metadata key is written during the transition to the
+          ;; storage_object_id column, so instances running the previous
+          ;; release still find the pointer. Remove it in the next release.
           metadata (-> (:metadata params)
                        (assoc :storage-ref-id (:id sobject)))
           params   (-> params
                        (assoc :metadata metadata)
+                       (assoc :storage-object-id (:id sobject))
                        (assoc :data nil))]
       (upsert-in-database cfg params))
 
     (= backend "db")
     (let [metadata (dissoc (:metadata params) :storage-ref-id)
-          params   (assoc params :metadata metadata)]
+          params   (-> params
+                       (assoc :metadata metadata)
+                       (assoc :storage-object-id nil))]
       (upsert-in-database cfg params))
 
     (= backend "legacy-db")
@@ -213,7 +226,8 @@
       (= type "fragment")
       (upsert-in-database cfg
                           (-> (dissoc params :metadata)
-                              (assoc :backend "db")))
+                              (assoc :backend "db")
+                              (assoc :storage-object-id nil)))
 
       :else
       (throw (RuntimeException. "not implemented")))
@@ -222,11 +236,23 @@
     (throw (IllegalArgumentException.
             (str "backend '" backend "' not supported")))))
 
-(defn process-metadata
-  [cfg metadata]
-  (when-let [storage-id (:storage-ref-id metadata)]
-    (let [storage (sto/resolve cfg ::db/reuse-conn true)]
-      (sto/touch-object! storage storage-id))))
+(defn- get-stored-storage-object-id
+  "Resolve the storage object the persisted row currently points at, if any."
+  [cfg {:keys [file-id id]}]
+  (some-> (db/get* cfg :file-data
+                   {:file-id file-id :id id}
+                   {::sql/columns [:storage_object_id]
+                    ::db/remove-deleted false})
+          :storage-object-id))
+
+(defn touch-storage-object!
+  "Mark a storage object as touched so the storage GC can reclaim it once
+  nothing references it anymore. Used when a file data row replaces or
+  deletes the object it pointed at."
+  [cfg storage-object-id]
+  (when storage-object-id
+    (-> (sto/resolve cfg ::db/reuse-conn true)
+        (sto/touch-object! storage-object-id))))
 
 (defn- default-backend
   [backend]
@@ -245,6 +271,7 @@
    [:file-id ::sm/uuid]
    [:backend {:optional true} [:enum "db" "legacy-db" "storage"]]
    [:metadata {:optional true} ctf/schema:file-metadata]
+   [:storage-object-id {:optional true} [:maybe ::sm/uuid]]
    [:data {:optional true} bytes?]
    [:created-at {:optional true} ::ct/inst]
    [:modified-at {:optional true} [:maybe ::ct/inst]]
@@ -259,8 +286,8 @@
   (let [params (-> (check-update-params params)
                    (update :backend default-backend))]
 
-    (some->> (:metadata params)
-             (process-metadata cfg))
+    (when-let [storage-object-id (get-stored-storage-object-id cfg params)]
+      (touch-storage-object! cfg storage-object-id))
 
     (-> (handle-persistence cfg params)
         (db/get-update-count)
@@ -278,7 +305,7 @@
   ;; previous pass marked must still load until `objects-gc` purges it.
   (let [fragment (some-> (db/get* cfg :file-data
                                   {:id id :file-id file-id :type "fragment"}
-                                  {::sql/columns [:data :backend :id :metadata]
+                                  {::sql/columns [:data :backend :id :metadata :storage_object_id]
                                    ::db/remove-deleted false})
                          (update :metadata decode-metadata))]
 

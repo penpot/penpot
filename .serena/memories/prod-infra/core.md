@@ -44,6 +44,7 @@ Production runs the deployed toolbox, not the devenv one:
 - **One query per reference column.** Two columns in one `IN (col_a, col_b)` lose the index and scan the whole table; split them.
 - The read-only replica cuts long queries: see `mem:prod-infra/grafana`.
 - A migration that builds an index runs inside the migration transaction, so it cannot use `CONCURRENTLY`, and a plain `CREATE INDEX` locks the table against writes for the whole build. On a large table (file saves write to `file_change` on every save) build the index out of band, before deploying, with `CREATE INDEX CONCURRENTLY` on its own (never inside a transaction block); the shipped migration uses `IF NOT EXISTS`, finds it and does nothing. A concurrent build interrupted midway leaves the index invalid: drop it and retry (check `pg_indexes` and `pg_index.indisvalid`).
+- A partitioned parent cannot take `CREATE INDEX CONCURRENTLY` (`cannot create index on partitioned table ... concurrently`). Build one index per partition with `CONCURRENTLY`, then `CREATE INDEX ... ON ONLY` on the parent and `ALTER INDEX ... ATTACH PARTITION` for each child; the parent index only becomes valid when every partition is attached. Make the migration's plain `CREATE INDEX IF NOT EXISTS` skip a prebuilt index and add a guard that aborts if `pg_index.indisvalid` is false or the attached children do not match the partition count: `IF NOT EXISTS` matches the name, not the definition or the completeness.
 
 ## See also
 

@@ -41,7 +41,8 @@
           c.data AS legacy_data,
           fd.data AS data,
           coalesce(fd.backend, 'legacy-db') AS backend,
-          fd.metadata AS metadata
+          fd.metadata AS metadata,
+          fd.storage_object_id AS storage_object_id
      FROM file_change AS c
      LEFT JOIN file_data AS fd ON (fd.file_id = c.file_id
                                    AND fd.id = c.id
@@ -69,7 +70,8 @@
           f.modified_at,
           f.deleted_at,
           fd.backend AS backend,
-          fd.metadata AS metadata
+          fd.metadata AS metadata,
+          fd.storage_object_id AS storage_object_id
      FROM file AS f
      LEFT JOIN file_data AS fd ON (fd.file_id = f.id AND fd.id = f.id)
     WHERE f.id = ?")

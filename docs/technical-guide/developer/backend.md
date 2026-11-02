@@ -95,6 +95,22 @@ Examples:
 
 **NOTE**: if table name has more than one word, we still use <code class="language-text">-</code> as a separator.
 
+### Large tables
+
+A migration runs inside a single transaction, so a `CREATE INDEX` in a migration
+locks the table against writes until the whole run commits and cannot use
+`CONCURRENTLY`. On a large table, build the index out of band before upgrading,
+with `CREATE INDEX CONCURRENTLY` on its own (never inside a transaction block);
+the migration's `CREATE INDEX IF NOT EXISTS` then finds it and does nothing.
+
+A partitioned table cannot take `CREATE INDEX CONCURRENTLY` on the parent: build
+the index on each partition, create the parent index with
+`CREATE INDEX ... ON ONLY`, and attach every partition with
+`ALTER INDEX ... ATTACH PARTITION`. An interrupted `CONCURRENTLY` build leaves
+the index `INVALID`: drop it and retry. The migration should check
+`pg_index.indisvalid` and the attached partitions before continuing, because
+`IF NOT EXISTS` matches the name, not the definition or the completeness.
+
 If you need to have a global overview of the all schema of the database you can extract it
 using postgresql:
 

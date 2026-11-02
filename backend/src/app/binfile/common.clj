@@ -209,6 +209,7 @@
           p.team_id,
           coalesce(fd.backend, 'legacy-db') AS backend,
           fd.metadata AS metadata,
+          fd.storage_object_id AS storage_object_id,
           fd.data AS data
      FROM file AS f
      LEFT JOIN file_data AS fd ON (fd.file_id = f.id AND fd.id = f.id)

@@ -6,6 +6,7 @@
 
 (ns backend-tests.migrations-test
   (:require
+   [app.common.uuid :as uuid]
    [app.db :as db]
    [app.migrations :as migrations]
    [app.util.migrations :as mg]
@@ -15,6 +16,7 @@
    [clojure.test :as t]))
 
 (t/use-fixtures :once th/state-init)
+(t/use-fixtures :each th/database-reset)
 
 (t/deftest migrations-registry-satisfies-steps-spec
   (t/testing "every entry is a {:name :fn} step (guards against stray forms)"
@@ -216,3 +218,77 @@
       (t/is (not (contains? triggers "job__modified_at__tgr"))))
     (t/testing "deletion protection is the only trigger on job"
       (t/is (= #{"deletion_protection__tgr"} triggers)))))
+
+;; --- File data storage reference (migration 0158)
+
+(def ^:private file-data-migration
+  (mg/resource "app/migrations/sql/0158-add-file-data-storage-object-id.sql"))
+
+(defn- apply-file-data-migration!
+  []
+  (db/tx-run! (::db/pool th/*system*)
+              (fn [{:keys [::db/conn]}]
+                (file-data-migration conn))))
+
+(t/deftest file-data-storage-object-reference-is-a-deferrable-no-action-fk
+  (t/testing "the pointer column exists"
+    (t/is (contains? (table-columns "file_data") "storage_object_id")))
+  (t/testing "the index that serves the FK check and the GC scan exists"
+    (t/is (contains? (table-indexes "file_data")
+                     "file_data__storage_object_id__idx")))
+  (t/testing "the reference does not cascade"
+    (t/is (contains? (table-foreign-keys "file_data")
+                     ["file_data_storage_object_id_fkey" "a"])))
+  (t/testing "the reference is DEFERRABLE like every FK of the schema"
+    (t/is (contains? (deferrable-foreign-keys "file_data")
+                     "file_data_storage_object_id_fkey"))))
+
+(t/deftest deleting-a-referenced-storage-object-fails
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+        sobject (:id (th/db-insert! :storage-object {:backend "fs"}))
+        data-id (uuid/next)]
+
+    (th/db-insert! :file-data
+                   {:file-id (:id file)
+                    :id data-id
+                    :type "main"
+                    :backend "storage"
+                    :storage-object-id sobject})
+
+    (t/testing "a live reference refuses the physical delete"
+      (t/is (thrown? Exception
+                     (th/db-exec! ["DELETE FROM storage_object WHERE id = ?" sobject]))))
+
+    (th/db-delete! :file-data {:file-id (:id file) :id data-id})
+
+    (t/testing "without the reference the delete succeeds"
+      (th/db-exec! ["DELETE FROM storage_object WHERE id = ?" sobject])
+      (t/is (nil? (th/db-get :storage-object {:id sobject}))))))
+
+(t/deftest file-data-migration-backfills-and-is-idempotent
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+        sobject (:id (th/db-insert! :storage-object {:backend "fs"}))
+        data-id (uuid/next)]
+
+    (th/db-insert! :file-data
+                   {:file-id (:id file)
+                    :id data-id
+                    :type "main"
+                    :backend "storage"
+                    :metadata (db/json {"storage-ref-id" (str sobject)})})
+
+    (t/testing "the backfill copies the metadata pointer into the column"
+      (apply-file-data-migration!)
+      (t/is (= sobject (:storage-object-id (th/db-get :file-data
+                                                      {:file-id (:id file)
+                                                       :id data-id})))))
+
+    (t/testing "a second application changes nothing"
+      (let [before (th/db-get :file-data {:file-id (:id file) :id data-id})]
+        (apply-file-data-migration!)
+        (t/is (= before (th/db-get :file-data {:file-id (:id file)
+                                               :id data-id})))))))
