@@ -38,12 +38,15 @@
 
 (defn grantable-perms
   "Every implicit admin permission a superuser may grant on a token.
-  Root-only methods (they declare `superuser`) are excluded: granting
-  their implicit perm would be useless, the method never consults it."
+  Root-only methods (they declare `superuser`) and anonymous methods
+  (they need no credential at all) are excluded: granting their
+  implicit perm would be useless, the method never consults it."
   []
   (into #{}
         (comp (filter (fn [[_ mdata]] (admin-method? mdata)))
               (remove (fn [[_ mdata]]
                         (contains? (set (::rpc/perms mdata)) "superuser")))
+              (remove (fn [[_ mdata]]
+                        (false? (::rpc/auth mdata true))))
               (map (fn [[_ mdata]] (method-perm mdata))))
         (apply sv/scan-ns admin-namespaces)))

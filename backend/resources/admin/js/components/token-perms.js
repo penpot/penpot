@@ -23,7 +23,6 @@ const RESOURCE_LABELS = new Map([
   ["jobs", "Jobs"],
   ["error", "Error reports"],
   ["virtual", "System"],
-  ["token", "Tokens"],
 ]);
 
 const RESOURCE_ORDER = [

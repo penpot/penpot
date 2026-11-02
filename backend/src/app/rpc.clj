@@ -212,59 +212,54 @@
                     :hint "access token authentication required for this endpoint")
 
           ;; Admin methods without an explicit "superuser" requirement
-          ;; answer to their implicit perm. Superuser bypasses it; a
-          ;; session without superuser keeps the historical rejection;
-          ;; a token needs the implicit perm (plus any declared scope).
+          ;; answer to their implicit perm: superuser bypasses it, a
+          ;; session without superuser keeps the historical rejection,
+          ;; and a token needs the implicit perm (plus any declared
+          ;; scope) behind a live owner.
           (and admin-method?
                (not superuser-required)
-               required-auth?
-               (auth/superuser-allowed? cfg profile-id token-perms))
-          (f cfg params)
+               required-auth?)
+          (cond
+            (auth/superuser-allowed? cfg profile-id token-perms)
+            (f cfg params)
 
-          (and admin-method?
-               (not superuser-required)
-               required-auth?
-               (not= auth-type :token))
-          (ex/raise :type :authorization
-                    :code :superuser-required
-                    :hint "superuser required for this endpoint")
+            (not= auth-type :token)
+            (ex/raise :type :authorization
+                      :code :superuser-required
+                      :hint "superuser required for this endpoint")
 
-          (and admin-method?
-               (not superuser-required)
-               required-auth?
-               (not (set/subset? (conj scope-perms implicit-perm) token-perms)))
-          (ex/raise :type :authorization
-                    :code :missing-perms
-                    :hint "missing required permissions"
-                    :required (conj scope-perms implicit-perm))
+            (not (set/subset? (conj scope-perms implicit-perm) token-perms))
+            (ex/raise :type :authorization
+                      :code :missing-perms
+                      :hint "missing required permissions"
+                      :required (conj scope-perms implicit-perm))
 
-          ;; The token owner behind an admin call must be able to act:
-          ;; a live, active, unblocked profile. Soft-deleted rows are
-          ;; hidden by the default `db/get*` filter, so a deleted owner
-          ;; reads as nil. Registry superusers bypassed above and never
-          ;; reach this branch.
-          (and admin-method?
-               (not superuser-required)
-               required-auth?
-               (= auth-type :token))
-          (let [row (db/get* cfg :profile {:id profile-id}
-                             {:columns [:id :is-active :is-blocked :deleted-at]})]
-            (cond
-              (and (some? row)
-                   (:is-active row)
-                   (not (:is-blocked row)))
-              (f cfg params)
+            ;; The token owner behind an admin call must be able to
+            ;; act: a live, active, unblocked profile. The deleted-at
+            ;; column is read and checked explicitly on top of the
+            ;; default `db/get*` filter, so this branch fails closed
+            ;; even if that default ever changes. Registry superusers
+            ;; bypassed above and never reach this branch.
+            :else
+            (let [row (db/get* cfg :profile {:id profile-id}
+                               {:columns [:id :is-active :is-blocked :deleted-at]})]
+              (cond
+                (and (some? row)
+                     (nil? (:deleted-at row))
+                     (:is-active row)
+                     (not (:is-blocked row)))
+                (f cfg params)
 
-              (and (some? row)
-                   (:is-blocked row))
-              (ex/raise :type :authorization
-                        :code :profile-blocked
-                        :hint "token owner profile is marked as blocked")
+                (and (some? row)
+                     (:is-blocked row))
+                (ex/raise :type :authorization
+                          :code :profile-blocked
+                          :hint "token owner profile is marked as blocked")
 
-              :else
-              (ex/raise :type :authorization
-                        :code :profile-inactive
-                        :hint "token owner profile is not active")))
+                :else
+                (ex/raise :type :authorization
+                          :code :profile-inactive
+                          :hint "token owner profile is not active"))))
 
           (and (seq scope-perms)
                (not= auth-type :token))

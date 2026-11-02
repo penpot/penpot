@@ -22,6 +22,7 @@
    [app.rpc.admin.perms :as perms]
    [app.util.services :as sv]
    [backend-tests.helpers :as th]
+   [clojure.set :as set]
    [clojure.test :as t]))
 
 (t/use-fixtures :once th/state-init)
@@ -95,6 +96,19 @@
           "superuser is a bypass, never a grantable perm")
     (t/is (not (contains? vocab "admin:create-admin-token"))
           "root-only methods are out of the grantable set")))
+
+(t/deftest grantable-vocabulary-excludes-anonymous-methods
+  (let [methods         (apply sv/scan-ns perms/admin-namespaces)
+        anonymous-perms (into #{}
+                              (comp (filter (fn [[_ mdata]]
+                                              (false? (::rpc/auth mdata true))))
+                                    (map (fn [[_ mdata]]
+                                           (perms/method-perm mdata))))
+                              methods)]
+    (t/is (seq anonymous-perms)
+          "sanity: the fixture (an anonymous method) exists")
+    (t/is (empty? (set/intersection anonymous-perms (perms/grantable-perms)))
+          "granting a perm that changes nothing is a false delegation")))
 
 ;; ----------------------------------------------------------------
 ;; Implicit perm on the wire

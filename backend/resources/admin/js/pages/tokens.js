@@ -18,6 +18,7 @@ const COLUMNS = [
   { key: "permissions", label: "Permissions", class: "admin-cell-count" },
   { key: "created", label: "Created", class: "admin-cell-date" },
   { key: "expires", label: "Expires", class: "admin-cell-date" },
+  { key: "actions", label: "", class: "admin-cell-status" },
 ];
 
 function labeledInput(labelText, { placeholder = "", type = "text" } = {}) {
@@ -215,7 +216,7 @@ export function tokensPage(root) {
         }))
       );
       [...table.querySelector("tbody").children].forEach((rowEl, index) => {
-        const cell = document.createElement("td");
+        const cell = rowEl.querySelector('[data-key="actions"]');
         const revoke = document.createElement("button");
         revoke.className = "admin-button admin-button-ghost";
         revoke.textContent = "Revoke";
@@ -235,7 +236,6 @@ export function tokensPage(root) {
           }
         });
         cell.appendChild(revoke);
-        rowEl.appendChild(cell);
       });
       listBox.appendChild(table);
     } catch {

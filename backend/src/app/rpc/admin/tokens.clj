@@ -69,10 +69,23 @@
                   :code :unknown-permission
                   :hint "unknown admin permission"
                   :unknown unknown)))
-    (when-not (db/get* cfg :profile {:id owner-id} {:columns [:id :deleted-at]})
-      (ex/raise :type :not-found
-                :code :profile-not-found
-                :hint "owner profile not found"))
+    (let [owner (db/get* cfg :profile {:id owner-id}
+                         {:columns [:id :is-active :is-blocked :deleted-at]})]
+      (cond
+        (or (nil? owner) (some? (:deleted-at owner)))
+        (ex/raise :type :not-found
+                  :code :profile-not-found
+                  :hint "owner profile not found")
+
+        (:is-blocked owner)
+        (ex/raise :type :authorization
+                  :code :profile-blocked
+                  :hint "owner profile is marked as blocked")
+
+        (not (:is-active owner))
+        (ex/raise :type :authorization
+                  :code :profile-inactive
+                  :hint "owner profile is not active")))
     (quotes/check! cfg {::quotes/id ::quotes/access-tokens-per-profile
                         ::quotes/profile-id owner-id})
     (let [row (db/tx-run!
@@ -95,7 +108,7 @@
           t.created_at, t.updated_at, t.expires_at,
           p.email AS owner_email
      FROM access_token AS t
-     JOIN profile AS p ON p.id = t.profile_id
+     LEFT JOIN profile AS p ON p.id = t.profile_id
     WHERE t.type = 'admin'")
 
 (def ^:private schema:get-admin-permissions-result
