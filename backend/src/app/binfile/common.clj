@@ -130,6 +130,9 @@
 (defn initial-state
   []
   {:storage-objects #{}
+   :storage-aliases {}
+   :storage-alias-index {}
+   :input-cache {}
    :files #{}
    :teams #{}
    :projects #{}})
@@ -141,6 +144,153 @@
 (defn collect-summary
   [state key items]
   (update state key into xf-map-media-id items))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; STORAGE REFERENCES
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; The bucket of a storage object is decided by the reference that uses
+;; it, not by the label that the object carries in the file. If two
+;; references of different buckets share the same object, the object has
+;; to be separated in two objects, one per bucket.
+
+(def storage-bucket-by-kind
+  {:media     "file-media-object"
+   :thumbnail "file-object-thumbnail"})
+
+(def ^:private storage-reference-columns
+  {:media     [:media-id :thumbnail-id]
+   :thumbnail [:media-id]})
+
+(defn collect-storage-references
+  "Fold rows of `kind` into a map that associates every storage object id
+  with the set of buckets required by its references."
+  [references kind rows]
+  (let [bucket  (get storage-bucket-by-kind kind)
+        columns (get storage-reference-columns kind)]
+    (reduce
+     (fn [references row]
+       (reduce (fn [references column]
+                 (if-let [id (get row column)]
+                   (update references id (fnil conj #{}) bucket)
+                   references))
+               references
+               columns))
+     references
+     rows)))
+
+(defn assoc-storage-id
+  "Register the object id that resolves a reference, keyed by the object id
+  as it comes in the file and the bucket that the reference requires."
+  [state id bucket new-id]
+  (update state :index assoc [id bucket] new-id))
+
+(defn lookup-storage-id
+  [id bucket]
+  (get-in @*state* [:index [id bucket]]))
+
+(defn reference-storage-id
+  "Like `lookup-storage-id` but raises when the file does not provide an
+  object for that reference."
+  [id bucket]
+  (when id
+    (or (lookup-storage-id id bucket)
+        (ex/raise :type :validation
+                  :code :inconsistent-penpot-file
+                  :hint "the penpot file references a storage object that it does not contain"
+                  :storage-object-id (str id)
+                  :bucket bucket))))
+
+(defn resolve-storage-row
+  "Import side. Return `row` with every storage reference of `kind`
+  pointing at the object the bundle stored for it. Raises when the
+  bundle does not contain an object a reference uses."
+  [row kind]
+  (reduce (fn [row column]
+            (d/update-when row column #(reference-storage-id % (get storage-bucket-by-kind kind))))
+          row
+          (get storage-reference-columns kind)))
+
+(defn- register-storage-alias
+  [alias-id source-id bucket]
+  (vswap! *state* (fn [state]
+                    (-> state
+                        (update :storage-aliases assoc alias-id {:source-id source-id
+                                                                 :bucket bucket})
+                        (assoc-in [:storage-alias-index [source-id bucket]] alias-id)))))
+
+(defn- lookup-storage-alias
+  "Return the alias already emitted for `[source-id bucket]`, if any."
+  [source-id bucket]
+  (get-in @*state* [:storage-alias-index [source-id bucket]]))
+
+(defn resolve-storage-reference
+  "Export side. Return the object id to use for a reference that requires
+  `bucket`:
+
+  - if the object already has that bucket, the object itself;
+  - if not, an alive object with the same hash and that bucket, if any;
+  - if not, a copy of the object with the required bucket, which is emitted
+    in the bundle under a new object id.
+
+  Raises when the object can not be read at all, mirroring
+  `export-storage-objects`: a bundle that loses a reference must fail
+  loudly instead of carrying a null the import would reject."
+  [storage id bucket]
+  (when id
+    (let [object (sto/get-object storage id {:include-deleted? true})]
+      (cond
+        (nil? object)
+        (ex/raise :type :internal
+                  :code :storage-object-not-found
+                  :hint "the file references a storage object that can not be read"
+                  :storage-object-id (str id)
+                  :bucket bucket)
+
+        (= bucket (:bucket (meta object)))
+        (do
+          (vswap! *state* update :storage-objects conj id)
+          id)
+
+        :else
+        (if-let [twin (->> {:hash (:hash (meta object))
+                            :bucket bucket
+                            :backend (:backend object)}
+                           (sto/get-object-by-hash storage))]
+          (do
+            (l/warn :hint "storage object with unexpected bucket; using the alive object with the same content"
+                    :storage-object-id (str id)
+                    :bucket bucket
+                    :replacement-id (str (:id twin))
+                    ::l/sync? true)
+            (vswap! *state* update :storage-objects conj (:id twin))
+            (:id twin))
+
+          (or (lookup-storage-alias id bucket)
+              (let [alias-id (uuid/next)]
+                (l/warn :hint "storage object with unexpected bucket; emitting a copy with the required bucket"
+                        :storage-object-id (str id)
+                        :bucket bucket
+                        :copy-id (str alias-id)
+                        ::l/sync? true)
+                (register-storage-alias alias-id id bucket)
+                (vswap! *state* update :storage-objects conj alias-id)
+                alias-id)))))))
+
+(defn resolve-storage-references
+  "Export side. Return `rows` with every storage reference of `kind`
+  pointing to an object of the required bucket."
+  [storage kind rows]
+  (let [bucket  (get storage-bucket-by-kind kind)
+        columns (get storage-reference-columns kind)]
+    (mapv (fn [row]
+            (reduce (fn [row column]
+                      (if (contains? row column)
+                        (update row column #(resolve-storage-reference storage % bucket))
+                        row))
+                    row
+                    columns))
+          rows)))
 
 (defn lookup-index
   [id]

@@ -83,6 +83,9 @@
       [:used-by {:optional true} [:vector ::sm/uuid]]]]]])
 
 (def ^:private schema:storage-object
+  ;; The entry `:bucket` is an audit/compat label kept from the export;
+  ;; the bucket the object is stored with is decided by the reference
+  ;; that uses it, never by this label.
   [:map {:title "StorageObject"}
    [:id ::sm/uuid]
    [:size ::sm/int]
@@ -296,35 +299,53 @@
 (defn- export-storage-objects
   [{:keys [::output] :as cfg}]
   (let [storage (sto/resolve cfg)
+        aliases (-> bfc/*state* deref :storage-aliases)
         ids     (-> bfc/*state* deref :storage-objects not-empty)
         total   (count ids)]
     (doseq [[index id] (d/enumerate ids)]
-      (let [sobject (sto/get-object storage id)
-            smeta   (meta sobject)
-            ext     (cmedia/mtype->extension (:content-type smeta))
-            path    (str "objects/" id ".json")
-            params  (-> (meta sobject)
-                        (assoc :id (:id sobject))
-                        (assoc :size (:size sobject))
-                        (encode-storage-object))]
+      (let [alias   (get aliases id)
+            ;; Aliases are copies of an object that is emitted with the
+            ;; bucket that a reference requires instead of the bucket that
+            ;; the object carries in the database.
+            source  (if alias (:source-id alias) id)
+            sobject (sto/get-object storage source {:include-deleted? true})]
+        (when-not sobject
+          (ex/raise :type :internal
+                    :code :storage-object-not-found
+                    :hint "the file references a storage object that can not be read"
+                    :storage-object-id (str source)))
 
-        (write-entry! output path params)
+        (let [smeta  (meta sobject)
+              ext    (cmedia/mtype->extension (:content-type smeta))
+              path   (str "objects/" id ".json")
+              params (-> smeta
+                         (assoc :id id)
+                         (assoc :size (:size sobject))
+                         (cond-> alias (assoc :bucket (:bucket alias)))
+                         (encode-storage-object))]
 
-        (tap-progress cfg {:section :storage-object :id id
-                           :current (inc index) :total total})
+          (write-entry! output path params)
 
-        (with-open [input (sto/get-object-data storage sobject)]
-          (.putNextEntry ^ZipOutputStream output (ZipEntry. (str "objects/" id ext)))
-          (io/copy input output :size (:size sobject))
-          (.closeEntry ^ZipOutputStream output))))))
+          (tap-progress cfg {:section :storage-object :id id
+                             :current (inc index) :total total})
+
+          (with-open [input (sto/get-object-data storage sobject {:include-deleted? true})]
+            (.putNextEntry ^ZipOutputStream output (ZipEntry. (str "objects/" id ext)))
+            (io/copy input output :size (:size sobject))
+            (.closeEntry ^ZipOutputStream output)))))))
 
 (defn- export-file
   [{:keys [::file-id ::output] :as cfg}]
-  (let [file          (get-file cfg file-id)
+  (let [file         (get-file cfg file-id)
+        storage      (sto/resolve cfg)
 
-        media         (->> (bfc/get-file-media cfg file)
-                           (map (fn [media]
-                                  (dissoc media :file-id))))
+        ;; The bucket of every referenced object is decided by the
+        ;; reference, so the references are resolved here, before they are
+        ;; written, and the objects to emit are collected in the state.
+        media        (->> (bfc/get-file-media cfg file)
+                          (map (fn [media]
+                                 (dissoc media :file-id)))
+                          (bfc/resolve-storage-references storage :media))
 
         data          (:data file)
         typographies  (:typographies data)
@@ -337,7 +358,8 @@
         pages         (:pages data)
         pages-index   (:pages-index data)
 
-        thumbnails    (bfc/get-file-object-thumbnails cfg file-id)]
+        thumbnails   (->> (bfc/get-file-object-thumbnails cfg file-id)
+                          (bfc/resolve-storage-references storage :thumbnail))]
 
     (tap-progress cfg {:section :file :id file-id :name (:name file)})
 
@@ -381,9 +403,6 @@
                 shape (assoc shape :page-id page-id)
                 shape (encode-shape shape)]
             (write-entry! output path shape)))))
-
-    (vswap! bfc/*state* bfc/collect-storage-objects media)
-    (vswap! bfc/*state* bfc/collect-storage-objects thumbnails)
 
     (doseq [[index {:keys [id] :as item}] (d/enumerate media)]
       (let [path    (str "files/" file-id "/media/" id ".json")
@@ -761,13 +780,25 @@
           (decode-plugin-data)
           (validate-plugin-data)))))
 
+(defn- read-decoded-entry
+  "Read a bundle entry, decode and validate it, caching the result in
+  the state. Media and thumbnail entries are read twice per import (the
+  references pre-scan and the file import), and every read counts
+  against the shared text budget, so the second read reuses the first."
+  [cfg entry decode validate]
+  (if-let [object (get-in @bfc/*state* [:input-cache entry])]
+    object
+    (let [object (->> (read-entry cfg (::bfc/input cfg) entry)
+                      (decode)
+                      (validate))]
+      (vswap! bfc/*state* assoc-in [:input-cache entry] object)
+      object)))
+
 (defn- read-file-media
-  [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
+  [{:keys [::entries-index] :as cfg} file-id]
   (->> (get-in entries-index [:media (str file-id)])
        (reduce (fn [result {:keys [id entry]}]
-                 (let [object (->> (read-entry cfg input entry)
-                                   (decode-media)
-                                   (validate-media))
+                 (let [object (read-decoded-entry cfg entry decode-media validate-media)
                        object (-> object
                                   (assoc :file-id file-id)
                                   (update :created-at default-now)
@@ -911,12 +942,10 @@
                  (d/ordered-map)))))
 
 (defn- read-file-thumbnails
-  [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
+  [{:keys [::entries-index] :as cfg} file-id]
   (->> (get-in entries-index [:thumbnails (str file-id)])
        (reduce (fn [result {:keys [page-id frame-id tag entry]}]
-                 (let [object (->> (read-entry cfg input entry)
-                                   (decode-file-thumbnail)
-                                   (validate-file-thumbnail))]
+                 (let [object (read-decoded-entry cfg entry decode-file-thumbnail validate-file-thumbnail)]
 
                    (if (and (= frame-id (:frame-id object))
                             (= page-id (:page-id object))
@@ -948,6 +977,32 @@
      :components components
      :plugin-data plugin-data}))
 
+(defn- read-storage-references
+  "Pre-scan the bundle references and return a map that associates every
+  storage object id with the set of buckets that its references require.
+  The bucket of an object is decided by the reference, so an object shared
+  by references of different buckets is stored once per bucket."
+  [{:keys [::entries-index] :as cfg}]
+  (let [media      (->> (:media entries-index)
+                        vals
+                        (apply concat)
+                        (keep (fn [{:keys [id entry]}]
+                                (let [object (read-decoded-entry cfg entry decode-media validate-media)]
+                                  (when (= id (:id object))
+                                    object)))))
+        thumbnails (->> (:thumbnails entries-index)
+                        vals
+                        (apply concat)
+                        (keep (fn [{:keys [entry tag page-id frame-id]}]
+                                (let [object (read-decoded-entry cfg entry decode-file-thumbnail validate-file-thumbnail)]
+                                  (when (and (= tag (:tag object))
+                                             (= page-id (:page-id object))
+                                             (= frame-id (:frame-id object)))
+                                    object)))))]
+    (-> {}
+        (bfc/collect-storage-references :media media)
+        (bfc/collect-storage-references :thumbnail thumbnails))))
+
 (defn- import-file
   [{:keys [::db/conn ::bfc/project-id ::manifest] :as cfg}
    {file-id :id file-name :name}
@@ -973,8 +1028,7 @@
       (let [params (-> item
                        (update :id bfc/lookup-index)
                        (assoc :file-id file-id')
-                       (d/update-when :media-id bfc/lookup-index)
-                       (d/update-when :thumbnail-id bfc/lookup-index))]
+                       (bfc/resolve-storage-row :media))]
 
         (tap-progress cfg {:section :media :id (:id params) :file-id file-id
                            :current (inc index) :total (count media)})
@@ -991,7 +1045,7 @@
                     ::db/on-conflict-do-nothing? (::bfc/overwrite cfg))))
 
     (doseq [[index item] (d/enumerate thumbnails)]
-      (let [media-id  (bfc/lookup-index (:media-id item))
+      (let [media-id  (:media-id (bfc/resolve-storage-row item :thumbnail))
             object-id (-> (assoc item :file-id file-id')
                           (cth/fmt-object-id))
             params    {:file-id file-id'
@@ -1065,11 +1119,22 @@
   ;; we will lose all registry of the pending to reconcile blobs
   ;; what the storage subsystem registers in other parallel
   ;; transaction
-  (let [storage (sto/resolve cfg)
-        entries (:objects entries-index)
-        total   (count entries)]
+  (let [storage    (sto/resolve cfg)
+        ;; Without object entries there is nothing to persist and no
+        ;; reference to resolve: skip the media/thumbnails pre-scan.
+        references (if (seq (:objects entries-index))
+                     (read-storage-references cfg)
+                     {})
+        entries    (:objects entries-index)
+        total      (count entries)]
 
-    (doseq [[index {:keys [id entry]}] (d/enumerate entries)]
+    (doseq [[index {:keys [id entry]}] (d/enumerate entries)
+            :let [buckets (get references id)]
+            ;; Only the objects that some reference uses are persisted, and the
+            ;; bucket of each of them is decided by the reference: an object
+            ;; shared by references of different buckets is stored once per
+            ;; bucket.
+            :when buckets]
       (tap-progress cfg {:section :storage-objects
                          :current (inc index) :total total})
       (let [object  (-> (read-entry cfg input entry)
@@ -1119,21 +1184,24 @@
               content (if-let [{:keys [bytes hash]} clean]
                         (-> (sto/content bytes)
                             (sto/wrap-with-hash hash))
-                        content)
-              params  (-> object
-                          (dissoc :id :size)
-                          (assoc ::sto/content content)
-                          (assoc ::sto/deduplicate? true)
-                          (assoc ::sto/touched-at timestamp))
-              sobject (sto/put-object! storage params)]
+                        content)]
 
-          (l/dbg :hint "persisted storage object"
-                 :id (str (:id sobject))
-                 :prev-id (str id)
-                 :bucket (:bucket params)
-                 ::l/sync? true)
+          (doseq [bucket buckets]
+            (let [params  (-> object
+                              (dissoc :id :size)
+                              (assoc :bucket bucket)
+                              (assoc ::sto/content content)
+                              (assoc ::sto/deduplicate? true)
+                              (assoc ::sto/touched-at timestamp))
+                  sobject (sto/put-object! storage params)]
 
-          (vswap! bfc/*state* update :index assoc id (:id sobject)))))))
+              (l/dbg :hint "persisted storage object"
+                     :id (str (:id sobject))
+                     :prev-id (str id)
+                     :bucket bucket
+                     ::l/sync? true)
+
+              (vswap! bfc/*state* bfc/assoc-storage-id id bucket (:id sobject)))))))))
 
 (defn- add-to-file
   "Add a resolved library entry to a file in the file-grouped resolution.

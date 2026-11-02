@@ -397,6 +397,11 @@
 
 (defmethod write-section :v1/sobjects
   [{:keys [::output] :as cfg}]
+  ;; NOTE: unlike the v3 exporter, the legacy exporter writes the objects
+  ;; as collected, without resolving references: no twin reuse, no alias
+  ;; copies and no deleted-object reads. Reference resolution lives only
+  ;; in v3; keep it that way (this format is exercised by tests, production
+  ;; exports through `bf.v3/export-files!`).
   (let [sids    (-> bfc/*state* deref :sids)
         storage (sto/resolve cfg)]
 
@@ -601,9 +606,15 @@
 
 (defmethod read-section :v1/sobjects
   [{:keys [::db/conn ::bfc/input ::bfc/timestamp] :as cfg}]
-  (let [storage (sto/resolve cfg)
-        ids     (read-obj! input)
-        thumb?  (into #{} (map :media-id) (:thumbnails @bfc/*state*))]
+  (let [storage    (sto/resolve cfg)
+        ids        (read-obj! input)
+
+        ;; The bucket of every object is decided by the reference that uses
+        ;; it: an object shared by references of different buckets is stored
+        ;; once per bucket.
+        references (-> {}
+                       (bfc/collect-storage-references :media (:media @bfc/*state*))
+                       (bfc/collect-storage-references :thumbnail (:thumbnails @bfc/*state*)))]
 
     (doseq [expected-storage-id ids]
       (let [id    (read-uuid! input)
@@ -627,28 +638,30 @@
                                       {:keys [bytes size]} (bfc/sanitize-imported-svg mdata raw)]
                                   [bytes size])
                                 [resource size])
-              hash            (sto/calculate-hash resource)
-              content         (-> (sto/content resource size)
-                                  (sto/wrap-with-hash hash))
+              buckets         (get references id)]
 
-              params          (-> mdata
+          ;; Objects that no reference uses are not persisted.
+          (when (seq buckets)
+            (let [hash    (sto/calculate-hash resource)
+                  content (-> (sto/content resource size)
+                              (sto/wrap-with-hash hash))]
+
+              (doseq [bucket buckets]
+                (let [params  (-> mdata
+                                  (assoc :bucket bucket)
                                   (assoc ::sto/content content)
                                   (assoc ::sto/deduplicate? true)
                                   (assoc ::sto/touched-at timestamp))
 
-              params          (if (thumb? id)
-                                (assoc params :bucket "file-object-thumbnail")
-                                (assoc params :bucket "file-media-object"))
+                      sobject (sto/put-object! storage params)]
 
-              sobject         (sto/put-object! storage params)]
+                  (l/dbg :hint "persisted storage object"
+                         :old-id (str id)
+                         :new-id (str (:id sobject))
+                         :bucket bucket
+                         ::l/sync? true)
 
-          (l/dbg :hint "persisted storage object"
-                 :old-id (str id)
-                 :new-id (str (:id sobject))
-                 :is-thumbnail (boolean (thumb? id))
-                 ::l/sync? true)
-
-          (vswap! bfc/*state* update :index assoc id (:id sobject)))))
+                  (vswap! bfc/*state* bfc/assoc-storage-id id bucket (:id sobject)))))))))
 
     (doseq [item (:media @bfc/*state*)]
       (l/dbg :hint "inserting file media object"
@@ -662,11 +675,10 @@
           (db/insert! conn :file-media-object
                       (-> item
                           (assoc :file-id file-id)
-                          (d/update-when :media-id bfc/lookup-index)
-                          (d/update-when :thumbnail-id bfc/lookup-index))))))
+                          (bfc/resolve-storage-row :media))))))
 
     (doseq [item (:thumbnails @bfc/*state*)]
-      (let [item (update item :media-id bfc/lookup-index)]
+      (let [item (bfc/resolve-storage-row item :thumbnail)]
         (l/dbg :hint "inserting file object thumbnail"
                :file-id (str (:file-id item))
                :media-id (str (:media-id item))

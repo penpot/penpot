@@ -22,6 +22,11 @@
 - A failed backend write can leave an unreferenced database row.
 - Callers often set `:touched-at` so garbage collection can remove such rows.
 - `get-object` excludes rows with `deleted_at`.
+- `get-object`, `get-object-data`, and `get-object-bytes` accept `{:include-deleted? true}`.
+  It returns a row marked for deletion anyway. Use it when the content must be read
+  before the gc removes it: the export of a file.
+- `get-object-by-hash` returns an alive object by hash and bucket. Pass `:backend` to look
+  in the backend of a known object instead of the storage default.
 - Existing object values can remain readable until physical deletion.
 - `:expired-at` blocks reads after the expiration time.
 - `del-object!` sets `deleted_at` on live rows only (`deleted_at IS NULL`): a repeated call returns `false`. It does not remove backend content.
@@ -99,6 +104,13 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
 | `job-resource` | Storage objects owned by job rows (`job.resource_id`), written by `app.jobs.storage`. | No | Authentication required, owner-scoped | jobs-GC touch → reference scan. |
 
 - The valid bucket set is `app.storage.schema/metadata-buckets` (derived from `bucket-requirements`, where a new bucket and its required metadata keys are one entry); `app.storage/valid-buckets` aliases it.
+- The bucket is decided by the reference, not by the object. Every reference requires the
+  bucket of its row, and a storage object serves exactly one bucket: if two references of
+  different buckets share an object, the object is split in two, one per bucket.
+- A cross-bucket reference is a bug, and the per-bucket gc check does not see it: the
+  object gets marked for deletion and the delete fails on the foreign key.
+- `app.binfile.common/storage-bucket-by-kind` holds the reference table that the importer
+  and the exporter use; `bfc/reference-storage-id` resolves a reference to its object.
 - `file-media-object` is the default bucket for old rows without bucket metadata.
 - Do not assign a new bucket without adding its access and cleanup behavior.
 - The touched-object collector raises an internal error for an unknown bucket.
