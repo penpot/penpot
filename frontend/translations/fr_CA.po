@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-28 08:14+0000\n"
-"Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
-"Language-Team: French (Canada) "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr_CA/>\n"
+"PO-Revision-Date: 2026-11-03 02:51+0000\n"
+"Last-Translator: Alexis Morin <alexismo@users.noreply.hosted.weblate.org>\n"
+"Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
+"frontend/fr_CA/>\n"
 "Language: fr_CA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 2026.10.dev0\n"
+"X-Generator: Weblate 2026.11.1.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:191, src/app/main/ui/viewer/login.cljs:119
 msgid "auth.already-have-account"
@@ -9163,3 +9163,78 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/versions.cljs:462
 msgid "workspace.versions.warning.text"
 msgstr "Les versions auto-sauvegardées seront conservées pendant %s jours."
+
+#: src/app/main/data/nitrate.cljs:599
+msgid "dashboard.change-organization-modal.description"
+msgstr ""
+"Les projets et fichiers resteront disponibles aux membres de l'équipe. "
+"L'équipe recevra la configuration de la nouvelle organisation."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:334
+msgid "dashboard.check-updates.available-message"
+msgstr ""
+"Les nouvelles versions incluent des améliorations à la performance, des "
+"nouvelles fonctionnalités et des correctifs qui maintiennent ton "
+"installation à jour."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:309
+msgid "dashboard.check-updates.available-title"
+msgstr "UNE NOUVELLE VERSION DE PENPOT EST DISPONIBLE"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:341
+msgid "dashboard.check-updates.highlights-title"
+msgstr "Nouveautés - Points forts"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:318
+msgid "dashboard.check-updates.installed-version"
+msgstr "Version installée"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:326
+msgid "dashboard.check-updates.latest-version"
+msgstr "Dernière version"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:235
+msgid "dashboard.check-updates.try-again"
+msgstr "Réessayer"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:230
+msgid "dashboard.check-updates.unable-hint"
+msgstr "Vérifier le réseau ou la configuration de l'instance et réessayer."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:226
+msgid "dashboard.check-updates.unable-message"
+msgstr "Cette installation n'a pu rejoindre le service des versions de Penpot."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:215
+msgid "dashboard.check-updates.unable-title"
+msgstr "IMPOSSIBLE DE VÉRIFIER LES MISES À JOUR"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:265
+msgid "dashboard.check-updates.uptodate-message"
+msgstr "Tu utilises la version stable la plus récente :"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:254
+msgid "dashboard.check-updates.uptodate-title"
+msgstr "PENPOT EST À JOUR"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:371
+msgid "dashboard.check-updates.view-changelog"
+msgstr "Voir le journal des modifications"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:374
+msgid "dashboard.check-updates.view-release-notes"
+msgstr "Voir les notes de la version"
+
+#: src/app/main/ui/dashboard/grid.cljs:252
+msgid "dashboard.grid.last-modified-at"
+msgstr "Dernière modification %s"
+
+#: src/app/main/ui/dashboard/import.cljs:597
+msgid "dashboard.import.auto-linked-libraries"
+msgid_plural "dashboard.import.auto-linked-libraries"
+msgstr[0] "1 bibliothèque a été liée automatiquement par nom."
+msgstr[1] "%s bibliothèques ont été liées automatiquement par nom."
+
+#: src/app/main/ui/dashboard/import.cljs:733
+msgid "dashboard.import.confirm-library-links"
+msgstr "Confirmer les liens de bibliothèque"
