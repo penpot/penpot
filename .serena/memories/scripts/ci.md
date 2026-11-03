@@ -7,14 +7,22 @@ verify changes before declaring work done.
 
 It also exports `PENPOT_FLAGS` with `enable-backend-asserts` appended (keeping
 whatever the caller already set), which is what puts `clojure.core/assert`
-into the compiled test code. Prefer it over calling `clojure -M:dev:test` by
-hand for that reason alone: without the flag the suite passes while every
-assertion is compiled out. GitHub Actions sets the same flag.
+into the compiled test code. A hand-run `clojure -M:dev:test` compiles every
+assertion out, so add the flag yourself when you run kaocha by hand. GitHub
+Actions sets the same flag.
+
+Role split: the edit-and-rerun loop belongs to the warm backend test JVM
+(`mem:backend/testing`, `backend/scripts/test-repl`); `scripts/ci backend
+--test` is the cold, CI-parity run before a commit, and the way to replay a
+CI order.
 
 ## When to use
 
 - After implementing or fixing code in a module: run its checks before
   finishing (AGENTS.md: run the applicable lint and format checks).
+- Before a commit: `./scripts/ci backend --test` is the cold backend run that
+  matches CI; the edit-and-rerun loop uses the warm test JVM instead
+  (`mem:backend/testing`).
 - When `common/` changed: validate its consumers too (frontend, backend,
   exporter; see the dependency graph in `mem:critical-info`).
 - To fix formatting across a module (`--fix`) or repair delimiters
@@ -113,8 +121,9 @@ produce deployable artifacts.
 - Exports `PENPOT_FLAGS` with `enable-backend-asserts` appended to any
   existing value, so backend test runs compile in and exercise
   precondition asserts; see `mem:backend/testing`.
-- Test and build tasks are long-running (backend: `clojure -M:dev:test`;
-  frontend build: ~2 min warm); use a generous timeout when calling it from
-  an agent shell.
+- Test and build tasks are long-running (backend: a cold kaocha run via
+  `clojure -M:dev:test`; frontend build: ~2 min warm); use a generous timeout
+  when calling it from an agent shell. The backend loop itself should use the
+  warm test JVM (`mem:backend/testing`).
 - Skill entry point: `.agents/skills/local-ci/SKILL.md`.
 - Testing principles and output discipline: `mem:testing`.

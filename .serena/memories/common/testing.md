@@ -20,6 +20,7 @@ From `common/`:
 - Quiet logging during a JS run: append `--log-level warn` (or `trace|debug|info|warn|error`)
 - Build JS test target only (no run): `pnpm run build:test`
 - After `build:test` has been run, run the compiled runner directly: `node target/tests/test.js [--focus ...] [--log-level ...]`.
+- `backend/scripts/test-repl` is backend-only (its default selector is `^backend-tests.*-test$`), so it never runs `common` tests; the commands above stay the ones to use.
 
 New common JS test namespaces must be required/listed in `common_tests/runner.cljc`;
 new vars in existing namespaces need no runner change. Multiple JVM `--focus` flags
