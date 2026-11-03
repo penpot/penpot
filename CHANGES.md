@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2.18.6
+
+### :bug: Bugs fixed
+
+- Fix upload endpoints storing server files when the path points outside the temp dir [#12771](https://github.com/penpot/penpot/issues/12771) (PR: [#12772](https://github.com/penpot/penpot/pull/12772))
+
+## 2.18.5
+
+### :bug: Bugs fixed
+
+- Fix the Admin Console failing on every URL on Docker deployments by reverting the subpath support [#12358](https://github.com/penpot/penpot/pull/12358)
+
 ## 2.18.4
 
 ### :bug: Bugs fixed
