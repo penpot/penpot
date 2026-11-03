@@ -28,8 +28,10 @@
 --         AND jsonb_exists(metadata, 'storage-ref-id')
 --         AND metadata->>'storage-ref-id' ~* '<uuid regex>'
 --         AND EXISTS (SELECT 1 FROM storage_object so WHERE so.id::text = metadata->>'storage-ref-id');
---   3. CREATE INDEX CONCURRENTLY IF NOT EXISTS file_data_NN__storage_object_id__idx
+--   3. CREATE INDEX CONCURRENTLY file_data_NN__storage_object_id__idx
 --        ON file_data_NN (storage_object_id);          -- one per partition
+--      (no `IF NOT EXISTS`: an interrupted build leaves an INVALID index with
+--       that name, so drop it and retry instead of skipping the rebuild)
 --   4. CREATE INDEX IF NOT EXISTS file_data__storage_object_id__idx
 --        ON ONLY file_data (storage_object_id);
 --      ALTER INDEX file_data__storage_object_id__idx

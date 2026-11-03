@@ -253,7 +253,8 @@
 
 (t/deftest update-file!-rejects-a-map-without-data
   ;; A map read with `:load-data? false` has no `:data` and no storage pointer;
-  ;; persisting it would wipe the content and skip the touch.
+  ;; persisting it would wipe the content and skip the touch. The guard is an
+  ;; explicit raise, not an assert, so it also exists in production.
   (let [file  (create-file!)
         cause (try
                 (db/tx-run! th/*system*
@@ -261,5 +262,25 @@
                               (bfc/update-file! cfg (bfc/get-file cfg (:id file)
                                                                   :load-data? false))))
                 nil
-                (catch AssertionError cause cause))]
-    (t/is (some? cause))))
+                (catch clojure.lang.ExceptionInfo cause cause))]
+    (t/is (some? cause))
+    (t/is (= :missing-file-data (:code (ex-data cause))))))
+
+(t/deftest update-file!-ignores-the-identity-in-the-params
+  ;; The params change mutable fields only: `:id` cannot retarget the UPDATE.
+  (let [file  (create-file!)
+        other (uuid/next)
+        when  (ct/inst "2020-01-01T00:00:00Z")]
+
+    (db/tx-run! th/*system*
+                (fn [cfg]
+                  (let [file (bfc/get-file cfg (:id file)
+                                           :migrate? false
+                                           :lock-for-share? true)]
+                    (bfc/update-file! cfg file :id other :modified-at when))))
+
+    (t/testing "the read file is updated"
+      (t/is (= when (:modified-at (th/db-get :file {:id (:id file)})))))
+
+    (t/testing "the id in the params is ignored"
+      (t/is (nil? (th/db-get :file {:id other}))))))

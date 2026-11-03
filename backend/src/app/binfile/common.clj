@@ -853,19 +853,30 @@
   The storage object the persisted row pointed at travels in the map
   (`:storage-object-id`), and `upsert!` touches it before replacing the row.
   That is why the caller must pass the map it read instead of building a
-  partial one: nothing is queried here."
+  partial one: nothing is queried here. The params only change mutable fields
+  of the file: the pointer and the identity (`:id`, `:file-id`) always come
+  from the read map."
   [{:keys [::db/conn] :as cfg} file & {:as params}]
 
   ;; A map read with `:load-data? false` has no `:data` and no pointer;
   ;; persisting it would wipe the file content and skip the storage touch.
-  (assert (contains? file :data)
-          "expected a file map read with data")
+  ;; `ex/raise` instead of `assert`: the guard must exist in the deployed
+  ;; binary, where `clojure.core/assert` is compiled out.
+  (when-not (contains? file :data)
+    (ex/raise :type :internal
+              :code :missing-file-data
+              :hint "expected a file map read with data"
+              :file-id (:id file)))
 
   (let [reset? (::reset-migrations? params false)
-        ;; The storage pointer is bookkeeping of the persisted row, not an
-        ;; editable field: it can only come from the read map. Letting a param
-        ;; override it would skip the touch and leak the replaced blob.
-        file   (merge file (dissoc params ::reset-migrations? :storage-object-id))]
+        ;; The pointer and the identity are bookkeeping of the persisted row,
+        ;; not editable fields: they can only come from the read map. A pointer
+        ;; in the params would skip the touch and leak the replaced blob; an
+        ;; `:id` would retarget the UPDATE.
+        file   (merge file (dissoc params ::reset-migrations?
+                                   :storage-object-id
+                                   :id
+                                   :file-id))]
 
     (if reset?
       (fmigr/reset-migrations! conn file)

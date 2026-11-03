@@ -81,6 +81,23 @@
       (t/is (= {:generated-by "offload-test"}
                (fdata/decode-metadata (:metadata row)))))))
 
+(t/deftest offloads-a-file-data-row-with-a-json-null-metadata
+  ;; A jsonb `null` decodes to nil; the key must disappear from the row instead
+  ;; of travelling as `:metadata nil`, which the update schema rejects.
+  (let [profile (th/create-profile* 1)
+        file    (create-file 1 profile)]
+
+    (th/db-exec! ["UPDATE file_data SET metadata = 'null'::jsonb
+                    WHERE file_id = ? AND id = ?"
+                  (:id file) (:id file)])
+
+    (let [result (th/run-task! :offload-file-data {:file-id (:id file)})
+          row    (th/db-get :file-data {:file-id (:id file) :id (:id file)})]
+      (t/is (pos? (:offloaded result)))
+      (t/is (= "storage" (:backend row)))
+      (t/is (uuid? (:storage-object-id row)))
+      (t/is (nil? (:metadata row))))))
+
 (t/deftest skips-file-locked-by-another-transaction
   (let [profile (th/create-profile* 1)
         file    (create-file 1 profile)

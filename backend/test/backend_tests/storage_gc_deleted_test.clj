@@ -6,6 +6,7 @@
 
 (ns backend-tests.storage-gc-deleted-test
   (:require
+   [app.common.logging :as l]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
@@ -170,6 +171,25 @@
                    {:file-id file-id :id file-id})
     blocked))
 
+(def ^:private blocked-chunk-hint
+  "chunk deletion blocked by a live file data reference; fix the reference and let the next run reclaim the chunk")
+
+(defn- blocked-chunk-log
+  "The first captured error record with the blocked-chunk hint, waiting for it
+  because logging is asynchronous."
+  [records]
+  (let [deadline (+ (System/currentTimeMillis) 5000)]
+    (loop []
+      (let [record (first (filter (fn [record]
+                                    (and (= :error (::l/level record))
+                                         (= blocked-chunk-hint
+                                            (get (::l/props record) :hint))))
+                                  @records))]
+        (cond
+          record record
+          (> (System/currentTimeMillis) deadline) nil
+          :else (do (Thread/sleep 10) (recur)))))))
+
 (t/deftest file-data-reference-blocks-its-chunk
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
@@ -182,7 +202,13 @@
         others  (mapv (fn [_] (put-object! (ct/in-past "20m"))) (range (dec chunk-size)))
         last-id (:id (put-object! (ct/in-past "5m")))
 
-        result  (th/run-task! :storage-gc-deleted {})]
+        records (atom [])
+        _       (add-watch l/log-record ::capture
+                           (fn [_ _ _ record] (swap! records conj record)))
+        result  (try
+                  (th/run-task! :storage-gc-deleted {})
+                  (finally
+                    (remove-watch l/log-record ::capture)))]
 
     (t/testing "the run finishes and only the object of the second chunk is deleted"
       (t/is (= 1 (:deleted result))))
@@ -192,6 +218,9 @@
 
     (t/testing "the other objects of the failed chunk are still alive"
       (t/is (every? #(some? (find-object (:id %))) others)))
+
+    (t/testing "the blocked chunk is logged as an error with a specific hint"
+      (t/is (some? (blocked-chunk-log records))))
 
     (t/testing "the object of the next chunk is gone"
       (t/is (nil? (find-object last-id))))))
