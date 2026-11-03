@@ -329,13 +329,13 @@
             [:v1/metadata :v1/files :v1/rels :v1/sobjects]))))
 
 (defmethod write-section :v1/metadata
-  [{:keys [::output ::bfc/ids ::bfc/include-libraries] :as cfg}]
-  (if-let [fids (get-files cfg ids)]
+  [{:keys [::output ::bfc/file-ids ::bfc/include-libraries] :as cfg}]
+  (if-let [fids (get-files cfg file-ids)]
     (let [lids (when include-libraries
-                 (bfc/get-libraries cfg ids))
-          ids  (into fids lids)]
-      (write-obj! output {:version cf/version :files ids})
-      (vswap! bfc/*state* assoc :files ids))
+                 (bfc/get-libraries cfg file-ids))
+          file-ids (into fids lids)]
+      (write-obj! output {:version cf/version :files file-ids})
+      (vswap! bfc/*state* assoc :files file-ids))
     (ex/raise :type :not-found
               :code :files-not-found
               :hint "unable to retrieve files for export")))
@@ -689,12 +689,12 @@
   `::bfc/embed-assets`: instead of including the libraries, embed in the
   same file library all assets used from external libraries."
 
-  [{:keys [::bfc/ids] :as cfg} output]
+  [{:keys [::bfc/file-ids] :as cfg} output]
 
   (dm/assert!
-   "expected a set of uuid's for `::bfc/ids` parameter"
-   (and (set? ids)
-        (every? uuid? ids)))
+   "expected a set of uuid's for `::bfc/file-ids` parameter"
+   (and (set? file-ids)
+        (every? uuid? file-ids)))
 
   (dm/assert!
    "expected instance of jio/IOFactory for `input`"

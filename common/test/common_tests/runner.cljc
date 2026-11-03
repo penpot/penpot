@@ -74,6 +74,7 @@
    [common-tests.logic.swap-and-reset-test]
    [common-tests.logic.swap-as-override-test]
    [common-tests.logic.swap-keeps-id-test]
+   [common-tests.logic.swap-missing-library-test]
    [common-tests.logic.text-sync-test]
    [common-tests.logic.text-touched-test]
    [common-tests.logic.token-apply-test]
@@ -182,6 +183,7 @@
    'common-tests.logic.swap-and-reset-test
    'common-tests.logic.swap-as-override-test
    'common-tests.logic.swap-keeps-id-test
+   'common-tests.logic.swap-missing-library-test
    'common-tests.logic.text-sync-test
    'common-tests.logic.text-touched-test
    'common-tests.logic.token-apply-test

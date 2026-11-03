@@ -22,7 +22,6 @@
    [app.jobs :as jobs]
    [app.storage :as sto]
    [app.util.blob :as blob]
-   [app.util.pointer-map :as pmap]
    [cuerdas.core :as str]))
 
 (def sql:snapshots
@@ -49,11 +48,19 @@
                                    AND fd.type = 'snapshot')
     WHERE c.label IS NOT NULL")
 
+;; `:migrations` is an ordered set everywhere (see `common.types.file`),
+;; and `need-migration?`/`migrate` use set semantics on it: the pgarray
+;; must never surface as a vector, where `contains?`/`set/difference`
+;; would compare indexes instead of names.
+(defn- decode-migrations
+  [value]
+  (into (d/ordered-set) (db/decode-pgarray value [])))
+
 (defn- decode-snapshot
   [snapshot]
   (some-> snapshot
           (-> (d/update-when :metadata fdata/decode-metadata)
-              (d/update-when :migrations db/decode-pgarray [])
+              (d/update-when :migrations decode-migrations)
               (d/update-when :features db/decode-pgarray #{}))))
 
 (def ^:private sql:get-minimal-file
@@ -469,12 +476,11 @@
   pointer ids never trigger a load."
   [cfg file-id xform f init]
   (let [conn  (db/get-connection cfg)
-        load  (partial fdata/load-pointer cfg file-id)
         xform (comp
                (map (partial fdata/resolve-file-data cfg))
                (map (partial fdata/decode-file-data cfg))
                xform)]
 
-    (binding [pmap/*load-fn* load]
+    (fdata/with-pointers cfg file-id
       (->> (db/plan conn [sql:get-snapshots file-id] {:fetch-size 1})
            (transduce xform f init)))))

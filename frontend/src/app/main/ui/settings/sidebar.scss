@@ -4,8 +4,11 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
 @use "ds/mixins.scss" as *;
+@use "ds/typography.scss" as *;
+@use "ds/z-index.scss" as *;
 
 .dashboard-sidebar {
   @include custom-scrollbar;
@@ -14,24 +17,24 @@
   grid-row: 1 / span 2;
   display: grid;
   grid-template-rows: 1fr auto;
-  height: 100%;
-  padding-block-start: deprecated.$s-16;
-  border-right: deprecated.$s-1 solid var(--panel-border-color);
-  z-index: deprecated.$z-index-1;
-  background-color: var(--panel-background-color);
+  block-size: 100%;
+  padding-block-start: var(--sp-l);
+  border-inline-end: $b-1 solid var(--color-background-quaternary);
+  z-index: var(--z-index-panels);
+  background-color: var(--color-background-primary);
 }
 
 .sidebar-content {
   display: grid;
   grid-template-rows: auto auto 1fr;
-  height: 100%;
+  block-size: 100%;
   padding: 0;
   overflow-y: auto;
 }
 
 .sidebar-separator {
   border-color: transparent;
-  margin: deprecated.$s-12 deprecated.$s-16;
+  margin: var(--sp-m) var(--sp-l);
 }
 
 .sidebar-nav-settings {
@@ -43,46 +46,48 @@
 }
 
 .settings-item {
-  --settings-foreground-color: var(--menu-foreground-color-rest);
+  --settings-foreground-color: var(--color-foreground-secondary);
   --settings-background-color: transparent;
 
   display: flex;
   align-items: center;
-  padding: deprecated.$s-8 deprecated.$s-8 deprecated.$s-8 deprecated.$s-24;
+  padding: var(--sp-s) var(--sp-s) var(--sp-s) var(--sp-xxl);
   color: var(--settings-foreground-color);
   background-color: var(--settings-background-color);
   cursor: pointer;
 
   &:hover {
-    --settings-foreground-color: var(--sidebar-element-foreground-color-hover);
-    --settings-background-color: var(--sidebar-element-background-color-hover);
+    --settings-foreground-color: var(--color-accent-primary);
+    --settings-background-color: var(--color-background-secondary);
   }
 
   &.current {
-    --settings-foreground-color: var(--sidebar-element-foreground-color-selected);
-    --settings-background-color: var(--sidebar-element-background-color-selected);
+    --settings-foreground-color: var(--color-accent-primary);
+    --settings-background-color: var(--color-background-quaternary);
   }
 }
 
+// The DS small icon draws 12px inside a 16px box: 4px less margin keeps
+// the label where it was (the drawing sits 2px to the right).
 .feedback-icon {
-  @extend %button-icon-small;
-
-  stroke: var(--settings-foreground-color);
-  margin-right: deprecated.$s-8;
+  flex-shrink: 0;
+  color: var(--settings-foreground-color);
+  margin-inline-end: var(--sp-xs);
 }
 
 .element-title {
-  @include deprecated.text-ellipsis;
-  @include deprecated.body-medium-typography;
+  @include text-ellipsis;
+  @include use-typography("body-medium");
 }
 
 .back-to-dashboard {
-  @include deprecated.button-style;
-
+  border: none;
+  background: none;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  padding: deprecated.$s-12 deprecated.$s-16;
-  font-size: deprecated.$fs-14;
+  padding: var(--sp-m) var(--sp-l);
+  font-size: px2rem(14);
 }
 
 .back-text {
@@ -90,9 +95,7 @@
 }
 
 .arrow-icon {
-  @extend %button-icon;
-
-  stroke: var(--icon-foreground);
-  transform: rotate(180deg);
-  margin-right: deprecated.$s-12;
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+  margin-inline-end: var(--sp-m);
 }

@@ -21,6 +21,7 @@
 - Full referential/semantic validation currently runs only when file features contain `"components/v2"`.
 - Validation starts at root plus orphan shapes, then validates component records. `validate-file!` raises `:validation :referential-integrity` with collected details.
 - `repair-file` does not mutate data directly; it reduces validation errors into redo changes using `changes-builder`. Callers must apply or persist those changes.
+- `repair-file-until-valid` stops on: no errors; unchanged `:data` after apply (backend page/`PointerMap` `=` is pointer identity); stable error fingerprint `(frequencies (map #(dissoc % :shape) errors))` vs previous pass (check fingerprint before `repair-file`/`process-changes`); or `max-iterations`. Each `repair-error` builds from the original `file-data`, so N `:set`-based errors on one shape take N passes.
 - `:missing-slot` fires only for a REAL swap: a copy sub-head whose `shape-ref` is no longer a child of the near main parent. A pure positional mismatch (ref still a sibling elsewhere) is a reorder — valid, realigned by the async component sync; do not "repair" it by assigning swap slots (a slot freezes the child out of normal sync). `fix-missing-swap-slots` (migration 0019) follows the same membership rule.
 
 ## Migrations

@@ -376,7 +376,7 @@
 
 (defn update-object-indices
   [file page-id]
-  (update-in file [:pages-index page-id :objects] update-page-index))
+  (d/update-in-when file [:pages-index page-id :objects] update-page-index))
 
 (defn rotated-frame?
   [frame]

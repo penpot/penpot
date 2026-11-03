@@ -41,6 +41,7 @@
    [frontend-tests.data.workspace-shortcuts-test]
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
+   [frontend-tests.data.workspace-variant-rename-test]
    [frontend-tests.data.workspace-versions-test]
    [frontend-tests.debug-logging-test]
    [frontend-tests.errors-governor-test]
@@ -49,6 +50,7 @@
    [frontend-tests.helpers-shapes-test]
    [frontend-tests.logic.bool-move-test]
    [frontend-tests.logic.comp-remove-swap-slots-test]
+   [frontend-tests.logic.comp-watcher-test]
    [frontend-tests.logic.components-and-tokens]
    [frontend-tests.logic.copy-paste-typography-test]
    [frontend-tests.logic.copying-and-duplicating-test]
@@ -107,6 +109,7 @@
    [frontend-tests.tokens.logic.token-actions-test]
    [frontend-tests.tokens.logic.token-data-test]
    [frontend-tests.tokens.logic.token-remapping-test]
+   [frontend-tests.tokens.logic.tokens-source-test]
    [frontend-tests.tokens.logic.tokens-status-test]
    [frontend-tests.tokens.referenced-token-value-test]
    [frontend-tests.tokens.style-dictionary-test]
@@ -133,6 +136,7 @@
    [frontend-tests.ui.inspect-stroke-tokens-test]
    [frontend-tests.ui.jobs-progress-test]
    [frontend-tests.ui.layout-container-multiple-test]
+   [frontend-tests.ui.mcp-authorize-test]
    [frontend-tests.ui.measurements-test]
    [frontend-tests.ui.measures-menu-props-test]
    [frontend-tests.ui.organization-team-switch-test]
@@ -148,18 +152,21 @@
    [frontend-tests.ui.text-attrs-multiple-test]
    [frontend-tests.ui.workspace-libraries-test]
    [frontend-tests.util-clipboard-test]
+   [frontend-tests.util-http-test]
    [frontend-tests.util-object-test]
    [frontend-tests.util-queue-test]
    [frontend-tests.util-range-tree-test]
    [frontend-tests.util-simple-math-test]
    [frontend-tests.util-text-clipboard-test]
    [frontend-tests.util-text-editor-test]
+   [frontend-tests.util-theme-test]
    [frontend-tests.util-webapi-test]
    [frontend-tests.util-zip-test]
    [frontend-tests.util.code-gen-markup-svg-wasm-test]
    [frontend-tests.util.dom.dnd-test]
    [frontend-tests.worker-snap-test]
    [frontend-tests.worker.exports-test]
+   [frontend-tests.worker.index-test]
    [goog.object :as gobj]))
 
 (enable-console-print!)
@@ -195,6 +202,7 @@
    'frontend-tests.data.imports-test
    'frontend-tests.data.jobs-test
    'frontend-tests.worker.exports-test
+   'frontend-tests.worker.index-test
    'frontend-tests.data.svg-upload-test
    'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test
@@ -211,6 +219,7 @@
    'frontend-tests.data.workspace-shortcuts-test
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
+   'frontend-tests.data.workspace-variant-rename-test
    'frontend-tests.data.workspace-versions-test
    'frontend-tests.debug-logging-test
    'frontend-tests.errors-governor-test
@@ -219,6 +228,7 @@
    'frontend-tests.helpers-shapes-test
    'frontend-tests.logic.bool-move-test
    'frontend-tests.logic.comp-remove-swap-slots-test
+   'frontend-tests.logic.comp-watcher-test
    'frontend-tests.logic.components-and-tokens
    'frontend-tests.logic.copy-paste-typography-test
    'frontend-tests.logic.copying-and-duplicating-test
@@ -281,6 +291,7 @@
    'frontend-tests.tokens.token-errors-test
    'frontend-tests.tokens.token-path-test
    'frontend-tests.tokens.tokenscript-test
+   'frontend-tests.tokens.logic.tokens-source-test
    'frontend-tests.tokens.logic.tokens-status-test
    'frontend-tests.tokens.workspace-tokens-remap-test
    'frontend-tests.ui.branch-review-common-test
@@ -305,6 +316,7 @@
    'frontend-tests.ui.measurements-test
    'frontend-tests.ui.measures-menu-props-test
    'frontend-tests.ui.organization-team-switch-test
+   'frontend-tests.ui.mcp-authorize-test
    'frontend-tests.ui.routes-test
    'frontend-tests.render-dimensions-test
    'frontend-tests.text-editor-paste-guard-test
@@ -319,12 +331,14 @@
    'frontend-tests.ui.text-attrs-multiple-test
    'frontend-tests.ui.workspace-libraries-test
    'frontend-tests.util-clipboard-test
+   'frontend-tests.util-http-test
    'frontend-tests.util-object-test
    'frontend-tests.util-queue-test
    'frontend-tests.util-range-tree-test
    'frontend-tests.util-simple-math-test
    'frontend-tests.util-text-clipboard-test
    'frontend-tests.util-text-editor-test
+   'frontend-tests.util-theme-test
    'frontend-tests.util-webapi-test
    'frontend-tests.util.code-gen-markup-svg-wasm-test
    'frontend-tests.util.dom.dnd-test

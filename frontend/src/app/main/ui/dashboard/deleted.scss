@@ -4,19 +4,21 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+// The shared dashboard header styles move in their own change: they are
+// used by ten dashboard modules.
 @use "common/refactor/common-dashboard";
-@use "ds/typography.scss" as t;
+@use "ds/typography.scss" as *;
 @use "ds/spacing.scss" as *;
 @use "ds/z-index.scss" as *;
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .dashboard-container {
   flex: 1 0 0;
-  width: 100%;
+  inline-size: 100%;
   margin-inline-end: var(--sp-l);
-  border-top: $b-1 solid var(--panel-border-color);
+  border-block-start: $b-1 solid var(--color-background-quaternary);
   overflow-y: auto;
   padding-block-end: var(--sp-xxxl);
 }
@@ -31,10 +33,10 @@
   display: block;
   color: var(--color-foreground-secondary);
 
-  @include t.use-typography("body-large");
+  @include use-typography("body-large");
 
   line-height: 0.8;
-  height: var(--sp-xl);
+  block-size: var(--sp-xl);
 }
 
 .info-text-highlight {
@@ -43,7 +45,7 @@
 
 .deleted-options {
   display: flex;
-  gap: 5px;
+  gap: px2rem(5);
   flex-shrink: 0;
 }
 
@@ -51,12 +53,12 @@
   background: var(--color-background-default);
   padding: var(--sp-xxl) var(--sp-xxl) var(--sp-s) var(--sp-xxl);
   position: sticky;
-  top: 0;
+  inset-block-start: 0;
   z-index: var(--z-index-panels);
 }
 
 .nav-inside {
-  border-bottom: $b-1 solid var(--panel-border-color);
+  border-block-end: $b-1 solid var(--color-background-quaternary);
   display: flex;
   gap: var(--sp-l);
   justify-content: space-between;
@@ -74,7 +76,7 @@
 
 .selected {
   color: var(--color-foreground-primary);
-  border-bottom: $b-1 solid var(--color-foreground-primary);
+  border-block-end: $b-1 solid var(--color-foreground-primary);
 }
 
 .project {
@@ -83,8 +85,8 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-s);
-  width: 99%;
-  max-height: $sz-40;
+  inline-size: 99%;
+  max-block-size: $sz-40;
   padding: var(--sp-s) var(--sp-s) var(--sp-s) var(--sp-l);
   margin-block-start: var(--sp-l);
   border-radius: $br-4;
@@ -94,19 +96,19 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  width: 100%;
-  min-height: var(--sp-xxxl);
+  inline-size: 100%;
+  min-block-size: var(--sp-xxxl);
   margin-inline-start: var(--sp-s);
 }
 
 .project-name {
-  @include t.use-typography("body-large");
+  @include use-typography("body-large");
 
-  width: fit-content;
+  inline-size: fit-content;
   margin-inline-end: var(--sp-m);
   line-height: 0.8;
-  color: var(--title-foreground-color-hover);
-  height: var(--sp-l);
+  color: var(--color-foreground-primary);
+  block-size: var(--sp-l);
 }
 
 .project-actions {
@@ -115,25 +117,12 @@
   margin-inline-start: var(--sp-xxxl);
 }
 
-.add-file-btn,
 .options-btn {
-  @extend %button-tertiary;
-
-  height: var(--sp-xxxl);
-  width: var(--sp-xxxl);
   margin: 0 var(--sp-s);
-  padding: var(--sp-s);
 }
 
 .info-wrapper {
   display: flex;
   align-items: center;
   gap: var(--sp-s);
-}
-
-.add-icon,
-.menu-icon {
-  @extend %button-icon;
-
-  stroke: var(--icon-foreground);
 }

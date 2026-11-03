@@ -134,6 +134,23 @@ class SyncPnpmVersionTests(unittest.TestCase):
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("missing/package.json", proc.stdout + proc.stderr)
 
+    def test_target_dirs_are_never_stamped(self):
+        generated = self.tmp / "module" / "target"
+        generated.mkdir(parents=True)
+        package = generated / "package.json"
+        package.write_text(
+            '{\n'
+            '  "name": "generated",\n'
+            '  "packageManager": "pnpm@10.0.0+sha512.' + "00" * 64 + '"\n'
+            '}\n'
+        )
+        before = package.read_bytes()
+
+        self.assertEqual(self.stamp().returncode, 0)
+        self.assertEqual(package.read_bytes(), before)
+        # The stale copy must not make --check fail either.
+        self.assertEqual(self.stamp("--check").returncode, 0)
+
     def test_stamp_is_idempotent(self):
         self.assertEqual(self.stamp().returncode, 0)
         first = {

@@ -239,6 +239,8 @@
 (sv/defmethod ::create-file-media-object-from-url
   {::doc/added "1.17"
    ::doc/changes [["2.19" "The optional :id param is rejected with a params-validation error; the server always generates the identifier"]]
+   ::climit/id [[:process-image/by-profile ::rpc/profile-id]
+                [:process-image/global]]
    ::sm/params schema:create-file-media-object-from-url}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (files/check-edition-permissions! pool profile-id file-id)
@@ -262,16 +264,7 @@
                     (assoc :from-url? true)
                     (assoc :content content)
                     (assoc :name (d/nilv name "unknown")))]
-
-    ;; NOTE: we use the climit here in a dynamic invocation because we
-    ;; don't want saturate the process-image limit with IO (download
-    ;; of external image)
-
-    (-> cfg
-        (assoc ::climit/id [[:process-image/by-profile (:profile-id params)]
-                            [:process-image/global]])
-        (assoc ::climit/label "create-file-media-object-from-url")
-        (climit/invoke! #(db/run! %1 create-file-media-object %2) params))))
+    (db/run! cfg create-file-media-object params)))
 
 
 ;; --- Clone File Media object (Upload and create from url)

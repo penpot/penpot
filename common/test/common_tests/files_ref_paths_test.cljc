@@ -587,7 +587,9 @@
     [:set-token-theme :id]
     [:set-token-theme :attrs :id]
     [:set-tokens-status :theme-ids ::set]
-    [:set-tokens-status :set-ids ::set]})
+    [:set-tokens-status :set-ids ::set]
+    [:set-own-tokens-status :theme-ids ::set]
+    [:set-own-tokens-status :set-ids ::set]})
 
 (t/deftest every-change-uuid-is-classified
   (let [known   (set/union change-ref-paths change-non-reference-paths)
