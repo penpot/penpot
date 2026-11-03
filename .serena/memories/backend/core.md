@@ -14,13 +14,24 @@ Backend: JVM Clojure; Integrant; PostgreSQL; Redis/Valkey; RPC; HTTP; storage; m
 
 ## Stable namespace map
 
-- `app.rpc.commands.*`: RPC command implementations exposed under `/api/rpc/command/<cmd-name>`.
+- `app.rpc.commands.*`: RPC command implementations, all reachable under `/api/main/methods/<cmd-name>`. `/api/rpc/command/<cmd-name>` is the deprecated alias of `/api/main/methods`; it still exists because the exporter calls it.
+- `app.rpc.admin.*`: admin commands under `/api/admin/methods/<cmd-name>`
+  (same wrapper as `main`, short names, no doc routes). Guarded by an
+  implicit per-method permission (`admin:<cmd-name>`, derived in
+  `wrap-authentication`, never declared); `superuser` bypasses every
+  check. `app.rpc.admin.perms` owns the vocabulary
+  (`admin-namespaces`, `grantable-perms`); `app.rpc.admin.tokens`
+  (issue/list/revoke/get-permissions, root-only) is the only ns
+  allowed an explicit `superuser` requirement. `export-files` /
+  `import-files` are plain admin commands answering with a download
+  stream, not separate HTTP routes.
 - `app.rpc.permissions`: permission predicate/check helper factories.
 - `app.http.*`: HTTP routes and middleware.
 - `app.auth.*`: provider-specific authentication helpers such as LDAP/OIDC.
 - `app.loggers.*`: audit, webhook, database, and external log integrations.
 - `app.db.*` / `app.db`: next.jdbc wrapper and SQL helpers.
 - `app.tasks.*`: background task handlers.
+- `app.features.object-cascade`: the single description of the deletion cascade, walked in both directions by the `:delete-object` and `:restore-object` tasks.
 - `app.worker`: task execution/cron plumbing.
 - `app.main`: Integrant system map and component wiring.
 - `app.config`: `PENPOT_*` env config and feature flags.
@@ -110,6 +121,7 @@ EOF
 ```
 
 Default port is 6064. Use `-p <PORT>` for a different port. Use `-t <MS>` to override the 120s timeout. Do not start the nREPL server — assume it is already running.
+Reloading a namespace with `:reload` only affects the REPL session: the running server keeps serving old code until you evaluate `(restart)` in nREPL, which reloads the whole system.
 
 ### Interactive REPL
 
