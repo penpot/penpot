@@ -948,6 +948,61 @@ impl TextContent {
         (!bounds.is_empty()).then_some(bounds)
     }
 
+    /// Readings paint outside the base glyph metrics, like emphasis marks.
+    /// Their ink joins the culling and export bounds.
+    fn horizontal_ruby_bounds(&self, selrect: &Rect, valign: VerticalAlign) -> Option<Rect> {
+        if !self
+            .paragraphs
+            .iter()
+            .flat_map(Paragraph::children)
+            .any(TextSpan::has_ruby)
+        {
+            return None;
+        }
+        let total_height: f32 = self
+            .layout
+            .paragraphs
+            .iter()
+            .filter_map(|group| group.first())
+            .map(|paragraph| paragraph.height())
+            .sum();
+        let mut y = selrect.y() + vertical_align_offset(selrect.height(), total_height, valign);
+        let plans = self.horizontal_plans();
+        let mut bounds = Rect::new_empty();
+        for (index, ((group, model), plan)) in self
+            .layout
+            .paragraphs
+            .iter()
+            .zip(&self.paragraphs)
+            .zip(plans.iter())
+            .enumerate()
+        {
+            let Some(paragraph) = group.first() else {
+                continue;
+            };
+            let x = selrect.x() + plan.x_offset(model, selrect.width());
+            if let Some(ink) = horizontal_ruby_ink_bounds(self, index, paragraph, x, y) {
+                bounds.join(ink);
+            }
+            y += paragraph.height();
+        }
+        (!bounds.is_empty()).then_some(bounds)
+    }
+
+    /// Bounds of the marks and readings painted outside the glyph metrics.
+    fn horizontal_annotation_bounds(&self, selrect: &Rect, valign: VerticalAlign) -> Option<Rect> {
+        match (
+            self.horizontal_emphasis_bounds(selrect, valign),
+            self.horizontal_ruby_bounds(selrect, valign),
+        ) {
+            (Some(mut emphasis), Some(ruby)) => {
+                emphasis.join(ruby);
+                Some(emphasis)
+            }
+            (emphasis, ruby) => emphasis.or(ruby),
+        }
+    }
+
     /// Compute a tight text rect from laid-out Skia paragraphs using glyph
     /// metrics (fm.top for overshoot, line descent for bottom, line left/width
     /// for horizontal extent).
@@ -1005,8 +1060,8 @@ impl TextContent {
 
         if has_lines {
             let mut bounds = Rect::from_ltrb(min_x, min_y, max_x, max_y);
-            if let Some(emphasis) = self.horizontal_emphasis_bounds(selrect, valign) {
-                bounds.join(emphasis);
+            if let Some(annotations) = self.horizontal_annotation_bounds(selrect, valign) {
+                bounds.join(annotations);
             }
             Some(bounds)
         } else {
@@ -1030,8 +1085,8 @@ impl TextContent {
         }
         if self.grow_type() == GrowType::AutoWidth {
             let mut bounds = self.content_rect(selrect, valign);
-            if let Some(emphasis) = self.horizontal_emphasis_bounds(selrect, valign) {
-                bounds.join(emphasis);
+            if let Some(annotations) = self.horizontal_annotation_bounds(selrect, valign) {
+                bounds.join(annotations);
             }
             return bounds;
         }
