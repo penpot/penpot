@@ -290,6 +290,24 @@
                              :missing branch-missing
                              :highlight highlight}]]])
 
+(mf/defc overlay-card*
+  "MAIN under BRANCH, in one card, so what moved or changed shows."
+  {::mf/private true}
+  [{:keys [kind main-value branch-value main-objects branch-objects large highlight]}]
+  [:> preview-card* {:label (tr "workspace.branches.review.view.overlay")
+                     :side "base"
+                     :is-large (boolean large)
+                     :detail (tr "workspace.branches.review.overlay-detail")}
+   [:div {:class (stl/css :overlay-stage)}
+    (when main-value
+      [:div {:class (stl/css :overlay-layer)}
+       [:> brp/entity-preview* {:kind kind :value main-value :objects main-objects
+                                :highlight highlight}]])
+    (when branch-value
+      [:div {:class (stl/css :overlay-layer :is-top)}
+       [:> brp/entity-preview* {:kind kind :value branch-value :objects branch-objects
+                                :highlight highlight}]])]])
+
 (mf/defc view-modes*
   "Side by side or overlay for the previews of a change, as icon toggles,
   then the toggle that gives the previews the whole dialog. `show-modes`
@@ -349,19 +367,13 @@
     (when (or main-v branch-v)
       [:div {:class (stl/css :visual)}
        (if (= mode :overlay)
-         [:> preview-card* {:label (tr "workspace.branches.review.view.overlay")
-                            :side "base"
-                            :is-large (boolean large)
-                            :detail (tr "workspace.branches.review.overlay-detail")}
-          [:div {:class (stl/css :overlay-stage)}
-           (when main-v
-             [:div {:class (stl/css :overlay-layer)}
-              [:> brp/entity-preview* {:kind kind :value main-v :objects main-objs
-                                       :highlight highlight}]])
-           (when branch-v
-             [:div {:class (stl/css :overlay-layer :is-top)}
-              [:> brp/entity-preview* {:kind kind :value branch-v :objects branch-objs
-                                       :highlight highlight}]])]]
+         [:> overlay-card* {:kind kind
+                            :large large
+                            :highlight highlight
+                            :main-value main-v
+                            :branch-value branch-v
+                            :main-objects main-objs
+                            :branch-objects branch-objs}]
          [:> side-cards* {:kind kind
                           :large large
                           :highlight highlight
@@ -492,8 +504,10 @@
 (mf/defc board-detail*
   {::mf/private true}
   [{:keys [page-id board-id groups items cascades open-side data diff-meta selected excluded
-           reviewed on-select on-toggle]}]
-  (let [group    (some #(when (= page-id (:page-id %)) %) groups)
+           reviewed on-select on-toggle expanded on-expand]}]
+  (let [mode*    (mf/use-state :side)
+        mode     (deref mode*)
+        group    (some #(when (= page-id (:page-id %)) %) groups)
         board    (some #(when (= board-id (:id %)) %) (:boards group))
         rows     (:rows board)
         objects  (get-in data [:pages-index page-id :objects])
@@ -506,27 +520,38 @@
     (when board
       [:*
        [:div {:class (stl/css :detail-head)}
-        [:> heading* {:level 3 :typography t/body-large :class (stl/css :detail-title)}
-         (:name board)]
-        [:> tag* {} (tr "workspace.branches.compare.shape.board")]]
+        [:div {:class (stl/css :detail-head-main)}
+         [:> heading* {:level 3 :typography t/body-large :class (stl/css :detail-title)}
+          (:name board)]
+         [:> tag* {} (tr "workspace.branches.compare.shape.board")]]
+        [:> view-modes* {:mode mode
+                         :on-change #(reset! mode* %)
+                         :show-modes true
+                         :expanded expanded
+                         :on-expand on-expand}]]
        [:> text* {:as "p" :typography t/body-small :class (stl/css :detail-summary)}
         (dm/str (:name group) " › " (:name board) " - "
                 (tr "workspace.branches.review.board.inside" (i18n/c (count rows))))]
-       [:div {:class (stl/css :cards)}
-        [:> preview-card* {:label (tr "workspace.branches.review.side.main")
-                           :side "main"
-                           :detail (some-> (:main-at diff-meta) ct/inst ct/timeago)}
-         [:> brp/entity-preview* {:kind :shape
-                                  :value (get main-objs board-id)
-                                  :objects main-objs
-                                  :missing {:side :main :open-side open-side}}]]
-        [:> preview-card* {:label (tr "workspace.branches.review.side.branch")
-                           :side "branch"
-                           :detail (some-> (:branch-at diff-meta) ct/inst ct/timeago)}
-         [:> brp/entity-preview* {:kind :shape
-                                  :value (get branch-objs board-id)
-                                  :objects branch-objs
-                                  :missing {:side :branch :open-side open-side}}]]]
+       (let [main-v   (get main-objs board-id)
+             branch-v (get branch-objs board-id)]
+         [:div {:class (stl/css :visual)}
+          (if (= mode :overlay)
+            [:> overlay-card* {:kind :shape
+                               :large expanded
+                               :main-value main-v
+                               :branch-value branch-v
+                               :main-objects main-objs
+                               :branch-objects branch-objs}]
+            [:> side-cards* {:kind :shape
+                             :large expanded
+                             :main-value main-v
+                             :branch-value branch-v
+                             :main-objects main-objs
+                             :branch-objects branch-objs
+                             :main-detail (some-> (:main-at diff-meta) ct/inst ct/timeago)
+                             :branch-detail (some-> (:branch-at diff-meta) ct/inst ct/timeago)
+                             :main-missing {:side :main :open-side open-side}
+                             :branch-missing {:side :branch :open-side open-side}}])])
        [:div {:class (stl/css :inner-list)}
         (for [[idx item] rows]
           [:> item-row* {:key idx :index idx :item item
@@ -765,7 +790,8 @@
           [:> empty-state* {:icon i/git-branch :text (tr "workspace.branches.compare.empty")}]]
 
          (= :board (:kind selected))
-         [:> board-detail* {:page-id (:page-id selected)
+         [:> board-detail* {:key (dm/str (:page-id selected) "/" (:board-id selected))
+                            :page-id (:page-id selected)
                             :board-id (:board-id selected)
                             :groups groups
                             :items items
@@ -777,7 +803,9 @@
                             :excluded excluded
                             :reviewed reviewed
                             :on-select on-select
-                            :on-toggle on-toggle}]
+                            :on-toggle on-toggle
+                            :expanded expanded
+                            :on-expand on-expand}]
 
          sel-item
          [:> item-detail* {:key (:index selected)
