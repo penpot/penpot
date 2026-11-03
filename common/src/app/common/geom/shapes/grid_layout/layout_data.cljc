@@ -513,7 +513,7 @@
            (max column-gap (/ (- bound-width column-total-size) (inc num-columns)))
 
            (= :space-around (:layout-justify-content parent))
-           (max column-gap (/ (- bound-width column-total-size) num-columns))
+           (max column-gap (if (zero? num-columns) column-gap (/ (- bound-width column-total-size) num-columns)))
 
            (= :space-between (:layout-justify-content parent))
            (max column-gap (if (= num-columns 1) column-gap (/ (- bound-width column-total-size) (dec num-columns))))
@@ -531,7 +531,7 @@
            (max row-gap (/ (- bound-height row-total-size) (inc num-rows)))
 
            (= :space-around (:layout-align-content parent))
-           (max row-gap (/ (- bound-height row-total-size) num-rows))
+           (max row-gap (if (zero? num-rows) row-gap (/ (- bound-height row-total-size) num-rows)))
 
            (= :space-between (:layout-align-content parent))
            (max row-gap (if (= num-rows 1) row-gap (/ (- bound-height row-total-size) (dec num-rows))))
