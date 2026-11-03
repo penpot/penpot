@@ -63,6 +63,7 @@
   padding: var(--sp-s);
   border: $b-1 dashed color-mix(in srgb, var(--preview-missing-color) 30%, transparent);
   border-radius: $br-4;
+  background-color: color-mix(in srgb, var(--color-static-white) 50%, transparent);
   text-align: center;
 }
 
