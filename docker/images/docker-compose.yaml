@@ -255,6 +255,15 @@ services:
       # PENPOT_WASM_WORKER_IDLE_TIMEOUT: 300
       # PENPOT_WASM_WORKER_IMAGE_CACHE_SIZE: 134217728
 
+      ## Run the exporter's Chromium with its sandbox, so a page that exploits
+      ## the browser stays confined. Chromium needs user namespaces for it,
+      ## which Docker's default seccomp profile blocks: enable the
+      ## security_opt below together with this.
+      # PENPOT_BROWSER_SANDBOX: true
+
+    # security_opt:
+    #   - seccomp=unconfined
+
   penpot-postgres:
     image: "postgres:15"
     restart: always

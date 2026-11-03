@@ -132,7 +132,10 @@
 
 (def browser-pool-factory
   (letfn [(create []
-            (p/let [opts    #js {:args #js ["--allow-insecure-localhost" "--font-render-hinting=none"]}
+            ;; Chromium's sandbox needs user namespaces, which Docker's default
+            ;; seccomp profile blocks, so it is opt-in (see docker-compose.yaml).
+            (p/let [opts    #js {:args #js ["--allow-insecure-localhost" "--font-render-hinting=none"]
+                                 :chromiumSandbox (cf/get :browser-sandbox false)}
                     browser (.launch pw/chromium opts)
                     id      (swap! pool-browser-id inc)]
               (l/info :origin "factory" :action "create" :browser-id id)

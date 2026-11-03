@@ -18,7 +18,7 @@
     "generic-pool": "^3.9.0",
     "inflation": "^2.1.0",
     "ioredis": "^6.0.0",
-    "playwright": "1.63.0",
+    "playwright": "1.64.1",
     "raw-body": "^4.0.0",
     "source-map-support": "^0.5.21",
     "undici": "^8.12.3",

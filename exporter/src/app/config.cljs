@@ -52,6 +52,7 @@
    [:tempdir {:optional true} :string]
    [:browser-pool-max {:optional true} ::sm/int]
    [:browser-pool-min {:optional true} ::sm/int]
+   [:browser-sandbox {:optional true} ::sm/boolean]
    [:exporter-max-concurrent-jobs {:optional true} ::sm/int]
    [:exporter-max-jobs-per-profile {:optional true} ::sm/int]
    [:exporter-queue-max {:optional true} ::sm/int]
