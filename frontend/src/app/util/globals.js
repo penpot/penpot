@@ -84,6 +84,9 @@ goog.scope(function () {
         forward() {},
         go() {},
       };
+      // `app.main.data.workspace.mcp` talks to a browser extension through
+      // window messages; nothing receives them here.
+      mockWindow.postMessage = function () {};
       return mockWindow;
     }
   })();

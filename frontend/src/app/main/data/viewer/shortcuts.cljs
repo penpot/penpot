@@ -17,7 +17,8 @@
 (def shortcuts
   {:increase-zoom      {:tooltip "+"
                         :label (fn [] (tr "shortcuts.increase-zoom"))
-                        :command "+"
+                        :command ["+" "="]
+                        :show-command "+"
                         :subsections [:zoom-viewer]
                         :section [:viewer]
                         :fn #(st/emit! dv/increase-zoom)}

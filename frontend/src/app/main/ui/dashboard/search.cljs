@@ -12,8 +12,8 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
@@ -62,17 +62,20 @@
       (cond
         (empty? search-term)
         [:div {:class (stl/css :grid-empty-placeholder :search)}
-         [:div {:class (stl/css :icon)} deprecated-icon/search]
+         [:div {:class (stl/css :icon)}
+          [:> icon* {:icon-id i/search :size "xl"}]]
          [:div {:class (stl/css :text)} (tr "dashboard.type-something")]]
 
         (nil? result)
         [:div {:class (stl/css :grid-empty-placeholder :search)}
-         [:div {:class (stl/css :icon)} deprecated-icon/search]
+         [:div {:class (stl/css :icon)}
+          [:> icon* {:icon-id i/search :size "xl"}]]
          [:div {:class (stl/css :text)} (tr "dashboard.searching-for" search-term)]]
 
         (empty? result)
         [:div {:class (stl/css :grid-empty-placeholder :search)}
-         [:div {:class (stl/css :icon)} deprecated-icon/search]
+         [:div {:class (stl/css :icon)}
+          [:> icon* {:icon-id i/search :size "xl"}]]
          [:div {:class (stl/css :text)} (tr "dashboard.no-matches-for" search-term)]]
 
         :else

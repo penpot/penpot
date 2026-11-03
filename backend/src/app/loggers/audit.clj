@@ -21,6 +21,7 @@
    [app.http :as-alias http]
    [app.http.access-token :as-alias actoken]
    [app.jobs :as jobs]
+   [app.loggers.audit.consumer-task :as consumer]
    [app.loggers.audit.tasks :as-alias tasks]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
@@ -241,8 +242,13 @@
                    (update :props db/tjson)
                    (update :context db/tjson)
                    (update :ip-addr db/inet))
-        params (select-keys params event-keys)]
-    (db/insert! cfg :audit-log params)))
+        params (select-keys params event-keys)
+        row    (db/insert! cfg :audit-log params)]
+    ;; The consumer queue follows the row in the same transaction: one
+    ;; pending per enabled consumer. A rollback takes both on its way
+    ;; out, so a row never outlives its queue.
+    (consumer/queue-pendings cfg [(:id row)])
+    row))
 
 (def ^:private xf:filter-telemetry-props
   "Transducer that keeps only map entries whose values are UUIDs,
@@ -582,6 +588,8 @@
   logic."
   [cfg event]
   (when (contains? cf/flags :audit-log)
+    ;; Transactional (not a bare connection): the row and its
+    ;; pendings commit or vanish together (see append-audit-entry).
     (let [tnow  (ct/now)
           event (-> event
                     (assoc :created-at tnow)
@@ -592,4 +600,4 @@
                     (update :source d/nilv "backend")
                     (select-keys event-keys)
                     (check-event))]
-      (db/run! cfg append-audit-entry event))))
+      (db/tx-run! cfg append-audit-entry event))))

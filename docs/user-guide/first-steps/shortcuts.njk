@@ -35,7 +35,9 @@ desc: Get quickstart tips, shortcuts, and tutorials for Penpot! Learn interface 
 <p class="advice"><strong>Paste</strong> cannot be customized.</p>
 
 <h3 id="customize-shortcuts-layouts">Keyboard layouts</h3>
-<p>Punctuation keys (such as <kbd>-</kbd>, <kbd>[</kbd>, <kbd>/</kbd> or <kbd>'</kbd>) are recorded by their physical position on the keyboard, so they work the same on AZERTY, QWERTZ and other layouts. Letters and numbers are recorded by the character they type. With <kbd>Shift</kbd>, the base key is recorded, not the shifted character.</p>
+<p>Letters are recorded by the character they type, so they follow your layout (on AZERTY, the <kbd>A</kbd> key records <kbd>a</kbd>). With <kbd>Shift</kbd>, <kbd>Alt</kbd> or another modifier, letter and digit keys record the key itself, not the character the modifier makes (<kbd>Shift</kbd><kbd>0</kbd>, not <kbd>Shift</kbd><kbd>)</kbd>; <kbd>Option</kbd><kbd>M</kbd> on macOS, not <kbd>µ</kbd>).</p>
+<p>Punctuation keys (such as <kbd>-</kbd>, <kbd>[</kbd>, <kbd>/</kbd> or <kbd>'</kbd>) are recorded by their physical position on the keyboard, so <kbd>Shift</kbd> with the <kbd>+</kbd> key records <kbd>Shift</kbd><kbd>+</kbd> on a Spanish layout. In browsers that do not expose the keyboard layout, such as Firefox or Safari, Penpot records the character you type instead; the shortcut still works there. Keys typed with <kbd>AltGr</kbd> record the character they type (<kbd>\</kbd> on a Spanish layout).</p>
+<p>One known limitation: number keys set opacity (<kbd>0</kbd>–<kbd>9</kbd>) only where digits are typed without <kbd>Shift</kbd>, so AZERTY layouts need the numeric keypad for them.</p>
 
 <h3 id="customize-shortcuts-reset">Reset to default</h3>
 <p>When you have custom shortcuts, a <strong>Reset all</strong> button appears next to the search field. It lists every shortcut that will go back to its default before you confirm.</p>
@@ -615,11 +617,6 @@ desc: Get quickstart tips, shortcuts, and tutorials for Penpot! Learn interface 
     </tr>
   </thead>
   <tbody>
-    <tr>
-      <td>Add node</td>
-      <td style="text-align: center;"><kbd>Shift</kbd><kbd>+</kbd></td>
-      <td style="text-align: center;"><kbd>⇧</kbd><kbd>+</kbd></td>
-    </tr>
     <tr>
       <td>Delete node, segment or handle</td>
       <td style="text-align: center;"><kbd>Delete</kbd> or <kbd>Backspace</kbd></td>

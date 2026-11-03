@@ -306,13 +306,16 @@
 
 (sv/defmethod ::update-profile-photo
   {:doc/added "1.1"
+   ::climit/id [[:process-image/by-profile ::rpc/profile-id]
+                [:process-image/global]]
    ::sm/params schema:update-profile-photo
    ::rpc/multipart-only-params [:file]
    ::sm/result :nil}
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
-  (media.v/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
-  (media.v/validate-media-size! file)
+  (media.v/check-media-type file #{"image/jpeg" "image/png" "image/webp"})
+  (media.v/check-media-size file)
+  (media.v/check-upload-path file)
   (update-profile-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-profile-photo
@@ -355,13 +358,12 @@
      :content-type (:mtype thumb)}))
 
 (defn upload-photo
-  [{:keys [::sto/storage] :as cfg} {:keys [file] :as params}]
-  (let [params (-> cfg
-                   (assoc ::climit/id [[:process-image/by-profile (:profile-id params)]
-                                       [:process-image/global]])
-                   (assoc ::climit/label "upload-photo")
-                   (climit/invoke! generate-thumbnail file))]
-    (sto/put-object! storage params)))
+  "Generate the thumbnail of a photo and store it.
+
+  The caller declares the `process-image` limits: this helper runs inside
+  them, so a command that calls it has to take them."
+  [{:keys [::sto/storage] :as cfg} {:keys [file]}]
+  (sto/put-object! storage (generate-thumbnail cfg file)))
 
 ;; --- MUTATION: Delete Photo
 

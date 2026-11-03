@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.geom.image-crop :as gic]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -20,6 +21,7 @@
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.timers :as ts]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (defn get-shape-node
@@ -30,6 +32,14 @@
    (if (= (.-id base-node) (dm/str "shape-" id))
      base-node
      (dom/query base-node (dm/str "#shape-" id)))))
+
+(defn- get-fill-image-nodes
+  "Retrieve the pictures of the shape image fills, inside its own fill
+   patterns"
+  [shape shape-node]
+  (when (or (some :fill-image (:fills shape))
+            (some? (:fill-image shape)))
+    (dom/query-all shape-node ":scope > defs > pattern image")))
 
 (defn get-nodes
   "Retrieve the DOM nodes to apply the matrix transformation"
@@ -43,11 +53,13 @@
           masking-child? (:masking-child? (meta shape))]
       (cond
         frame?
-        [shape-node
-         (dom/query shape-node ".frame-children")
-         (dom/query (dm/str "#thumbnail-container-" id))
-         (dom/query (dm/str "#thumbnail-" id))
-         (dom/query (dm/str "#frame-title-" id))]
+        (d/concat-vec
+         [shape-node
+          (dom/query shape-node ".frame-children")
+          (dom/query (dm/str "#thumbnail-container-" id))
+          (dom/query (dm/str "#thumbnail-" id))
+          (dom/query (dm/str "#frame-title-" id))]
+         (get-fill-image-nodes shape shape-node))
 
         ;; For groups we don't want to transform the whole group but only
         ;; its filters/masks
@@ -72,9 +84,38 @@
            (dom/query (dm/str "#frame-title-" id)))]
 
         :else
-        [shape-node
-         (when (dbg/enabled? :shape-titles)
-           (dom/query (dm/str "#frame-title-" id)))]))))
+        (d/concat-vec
+         [shape-node
+          (when (dbg/enabled? :shape-titles)
+            (dom/query (dm/str "#frame-title-" id)))]
+         (get-fill-image-nodes shape shape-node))))))
+
+(defn- fill-image-matrix
+  "Return the matrix that keeps the picture of an image fill `node` in
+   place while `modifiers` change the fill transform (resize with the mod
+   key). Return nil when the modifiers do not change the fill."
+  [shape modifiers node]
+  (let [changes (->> (:structure-parent modifiers)
+                     (filter #(= :change-property (:type %)))
+                     (d/index-by :property :value))
+        selrect (dm/get-prop shape :selrect)
+        id      (dom/get-attribute node "id")
+
+        [transform transform' :as change]
+        (if (some? id)
+          ;; Fill images have an id ending with the fill index
+          (when-let [fills' (get changes :fills)]
+            (let [index (d/parse-integer (last (str/split id "-")))]
+              [(dm/get-in (nth (:fills shape) index nil) [:fill-image :transform])
+               (dm/get-in (nth fills' index nil) [:fill-image :transform])]))
+          (when-let [fill-image' (get changes :fill-image)]
+            [(dm/get-in shape [:fill-image :transform])
+             (get fill-image' :transform)]))]
+
+    (when (some? change)
+      (gic/preview-image-matrix transform transform'
+                                (dm/get-prop selrect :width)
+                                (dm/get-prop selrect :height)))))
 
 (defn transform-region!
   [node modifiers]
@@ -166,6 +207,13 @@
 
             (= (dom/get-tag-name node) "pattern")
             (set-transform-att! node "patternTransform" transform)
+
+            ;; Picture of an image fill: it gets the shape transform
+            ;; through the shape node, and only needs its own when the
+            ;; fill transform changes
+            (= (dom/get-tag-name node) "image")
+            (when-let [matrix (fill-image-matrix shape modifiers node)]
+              (set-transform-att! node "transform" matrix))
 
             (and (some? transform) (some? node))
             (set-transform-att! node "transform" transform)))))))

@@ -43,6 +43,8 @@
                                  :name "create-project"
                                  :type "action"
                                  :profile-id p1
+                                 :profile-email "ada@example.com"
+                                 :profile-name "Ada"
                                  :props {:team-id team-id}
                                  :context {}
                                  :created-at now
@@ -73,6 +75,10 @@
           (t/is (= (str e2) (str (:id e2'))))
           (t/is (= (str p1) (str (:profile-id e1'))))
           (t/is (= (str p2) (str (:profile-id e2'))))
+          (t/is (= "ada@example.com" (:profile-email e1')))
+          (t/is (= "Ada" (:profile-name e1')))
+          (t/is (nil? (:profile-email e2')))
+          (t/is (nil? (:profile-name e2')))
           (t/is (= "127.0.0.1" (:ip-addr e1')))
           (t/is (= "10.0.0.1" (:ip-addr e2')))
           (t/is (string? (:created-at e1')))

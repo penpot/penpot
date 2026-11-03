@@ -137,7 +137,7 @@ fn emit_image_text_stroke(
     let href = xml_escape_attr(url);
     // GPU text strokes paint the image via `get_fill_shader` onto `selrect`
     // with cover/center scaling — not `selrect + stroke.delta()` stretched.
-    let dest = text_image_cover_dest(&element.selrect(), image_fill);
+    let dest = image_fill.cover_rect(&element.selrect());
     emit_linked_image_element(builder, image_fill, dest, &href, None, true, *matrix);
 
     builder.close_group();
@@ -148,20 +148,6 @@ fn emit_image_text_stroke(
         builder.close_group();
     }
     Ok(())
-}
-
-/// Cover-centered dest matching [`crate::shapes::get_fill_shader`] for images.
-fn text_image_cover_dest(selrect: &skia_safe::Rect, image_fill: &ImageFill) -> skia_safe::Rect {
-    let image_width = image_fill.width() as f32;
-    let image_height = image_fill.height() as f32;
-    let scale_x = selrect.width() / image_width;
-    let scale_y = selrect.height() / image_height;
-    let scale = scale_x.max(scale_y);
-    let scaled_width = image_width * scale;
-    let scaled_height = image_height * scale;
-    let pos_x = selrect.left() - (scaled_width - selrect.width()) / 2.0;
-    let pos_y = selrect.top() - (scaled_height - selrect.height()) / 2.0;
-    skia_safe::Rect::from_xywh(pos_x, pos_y, scaled_width, scaled_height)
 }
 
 fn push_glyph_clip(
@@ -365,12 +351,12 @@ fn linked_image_fills_at_layer<'a>(
     layer: usize,
     shared: &RenderResources,
 ) -> Vec<&'a ImageFill> {
-    let mut out = Vec::new();
-    let mut seen = HashSet::new();
+    // Spans can share an image with different transforms: one element each.
+    let mut out: Vec<&ImageFill> = Vec::new();
     for paragraph in text_content.paragraphs() {
         for span in paragraph.children() {
             if let Some(Fill::Image(img)) = span.fills_from_bottom(layer) {
-                if shared.images.source_url(&img.id()).is_some() && seen.insert(img.id()) {
+                if shared.images.source_url(&img.id()).is_some() && !out.contains(&img) {
                     out.push(img);
                 }
             }
@@ -412,7 +398,7 @@ fn emit_text_image_fill(
     let clip_id = builder.unique("txtimgclip");
     let text_content = shape.get_text_content().new_bounds(shape.selrect());
     let mut paragraph_builders =
-        text_content.paragraph_builder_group_opaque_for_image_layer(layer, image_fill.id());
+        text_content.paragraph_builder_group_opaque_for_image_layer(layer, image_fill);
 
     let canvas = builder.new_fragment();
     {
@@ -428,7 +414,7 @@ fn emit_text_image_fill(
     emit_linked_image_element(
         builder,
         image_fill,
-        shape.selrect(),
+        image_fill.dest_rect(&shape.selrect()),
         &href,
         Some(&clip_id),
         true,

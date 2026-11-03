@@ -1037,7 +1037,9 @@
         (when (and session organization-id)
           (let [props (-> (or (:props session) {})
                           (update :sso assoc organization-id exp))]
-            (session/update-session (::session/manager cfg) (assoc session :props props))))
+            (session/update-session (::session/manager cfg) (assoc session :props props))
+            (submit-organization-sso-auth-event
+             cfg request (:profile-id session) organization-id "organization-sso-token-issued")))
         (submit-organization-sso-auth-event
          cfg request (:profile-id session) organization-id "organization-sso-auth-succeeded")
         (redirect-response dest-url))

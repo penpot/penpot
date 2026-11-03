@@ -27,9 +27,9 @@
   &:hover {
     --layer-background-color: var(--color-background-secondary);
     --shadow-color: var(--color-background-secondary);
-    --context-hover-color: var(--layer-row-foreground-color-hover);
+    --context-hover-color: var(--color-accent-primary);
     --context-hover-opacity: 1;
-    --layer-foreground-color: var(--layer-row-foreground-color-hover);
+    --layer-foreground-color: var(--color-accent-primary);
 
     &.hidden {
       opacity: 1;
@@ -200,43 +200,38 @@
   align-items: center;
   block-size: 100%;
   inline-size: $sz-24;
-  padding-inline-start: var(--sp-s);
 
-  svg {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: transparent;
-    fill: none;
-    block-size: $sz-12;
-    inline-size: $sz-12;
-    stroke-width: 1.33px;
-    stroke: var(--color-foreground-secondary);
-
-    .layer-row.hidden & {
-      opacity: 0.7;
-    }
-
-    .layer-row.selected & {
-      stroke: var(--color-accent-primary);
-    }
-
-    .layer-row.type-comp & {
-      stroke: var(--color-accent-secondary);
-    }
-
-    .layer-row.highlight &,
-    .layer-row:hover & {
-      opacity: 1;
-      stroke: var(--color-accent-primary);
-    }
-  }
+  // The DS icon draws 12px inside a 16px box: 2px less start padding
+  // keeps the arrow where the old 12px icon was.
+  padding-inline-start: px2rem(6);
 
   .layer-row.selected & {
     background-color: var(--color-background-quaternary);
   }
+}
 
-  &.inverse svg {
+.toggle-content-icon {
+  color: var(--color-foreground-secondary);
+
+  .layer-row.hidden & {
+    opacity: 0.7;
+  }
+
+  .layer-row.selected & {
+    color: var(--color-accent-primary);
+  }
+
+  .layer-row.type-comp & {
+    color: var(--color-accent-secondary);
+  }
+
+  .layer-row.highlight &,
+  .layer-row:hover & {
+    opacity: 1;
+    color: var(--color-accent-primary);
+  }
+
+  .toggle-content.inverse & {
     transform: rotate(90deg);
   }
 }
@@ -256,26 +251,6 @@
   background: var(--layer-row-action-btn-background);
   padding-inline-end: px2rem(6);
 
-  svg {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: transparent;
-    fill: none;
-    block-size: $sz-12;
-    inline-size: $sz-12;
-    stroke-width: 1.33px;
-    stroke: var(--color-foreground-secondary);
-
-    .layer-row.hidden & {
-      opacity: 0.7;
-    }
-
-    .type-comp & {
-      stroke: var(--color-accent-secondary);
-    }
-  }
-
   .element-actions.selected & {
     display: flex;
     opacity: 0;
@@ -294,21 +269,37 @@
     display: flex;
 
     --layer-row-action-btn-background: var(--color-background-secondary);
-
-    svg {
-      opacity: 1;
-      stroke: var(--color-accent-primary);
-    }
   }
 
   .layer-row.selected & {
     display: flex;
 
     --layer-row-action-btn-background: var(--color-background-quaternary);
+  }
+}
 
-    svg {
-      stroke: var(--color-accent-primary);
-    }
+.element-action-icon {
+  // The DS icon box is 16px and the button leaves 12px: keep the box
+  // whole, centered, instead of letting it shrink and cut the icon.
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+
+  .layer-row.hidden & {
+    opacity: 0.7;
+  }
+
+  .type-comp & {
+    color: var(--color-accent-secondary);
+  }
+
+  .layer-row.highlight &,
+  .layer-row:hover & {
+    opacity: 1;
+    color: var(--color-accent-primary);
+  }
+
+  .layer-row.selected & {
+    color: var(--color-accent-primary);
   }
 }
 

@@ -809,6 +809,31 @@ pub extern "C" fn render_shape_pixels(
 }
 
 #[no_mangle]
+pub extern "C" fn export_target(a: u32, b: u32, c: u32, d: u32, scale: f32, format: u32) -> u32 {
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    let Ok(format) = RasterFormat::from_u32(format) else {
+        return 1;
+    };
+
+    with_state!(state, {
+        let Some(shape) = state.shapes.get(&id) else {
+            return 1;
+        };
+        let extrect = get_render_state().get_cached_extrect(shape, &state.shapes, scale);
+        let width = (scale * extrect.width()).ceil() as i32;
+        let height = (scale * extrect.height()).ceil() as i32;
+        let max_size = get_gpu_state().max_surface_size();
+        if width <= max_size && height <= max_size {
+            0
+        } else if format.fits_raster(width, height) {
+            1
+        } else {
+            2
+        }
+    })
+}
+
+#[no_mangle]
 pub extern "C" fn render_stats() {
     get_render_state().print_stats();
 }
@@ -820,11 +845,11 @@ pub fn free_gpu_resources() {
 
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn render_shape_pdf(a: u32, b: u32, c: u32, d: u32, scale: f32) -> Result<*mut u8> {
+pub extern "C" fn render_shape_pdf(a: u32, b: u32, c: u32, d: u32) -> Result<*mut u8> {
     let id = uuid_from_u32_quartet(a, b, c, d);
 
     with_state!(state, {
-        let data = state.render_shape_pdf(&id, scale)?;
+        let data = state.render_shape_pdf(&id)?;
 
         let len = data.len() as u32;
         let mut buf = Vec::with_capacity(4 + data.len());
@@ -834,6 +859,69 @@ pub extern "C" fn render_shape_pdf(a: u32, b: u32, c: u32, d: u32, scale: f32) -
     })
 }
 
+/// Multi-page PDF: shape UUIDs are read from the transfer buffer (16 bytes
+/// each, same layout as `set_focus_mode`). Returns `[len u32 LE][pdf bytes]`.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_shapes_pdf() -> Result<*mut u8> {
+    let bytes = mem::bytes();
+    let ids: Vec<Uuid> = bytes
+        .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
+        .map(|data| Uuid::try_from(data).map_err(|e| Error::RecoverableError(e.to_string())))
+        .collect::<Result<Vec<Uuid>>>()?;
+
+    with_state!(state, {
+        let data = state.render_shapes_pdf(&ids)?;
+
+        let len = data.len() as u32;
+        let mut buf = Vec::with_capacity(4 + data.len());
+        buf.extend_from_slice(&len.to_le_bytes());
+        buf.extend_from_slice(&data);
+        Ok(mem::write_bytes(buf))
+    })
+}
+
+/// Starts a progressive multi-page PDF session (see `pdf_export_add_page` /
+/// `pdf_export_finish`). Replaces any previous session.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn pdf_export_begin() -> Result<()> {
+    with_state!(state, { state.pdf_export_begin() })
+}
+
+/// Appends one shape as a page of the current PDF export session.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn pdf_export_add_page(a: u32, b: u32, c: u32, d: u32) -> Result<()> {
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    with_state!(state, { state.pdf_export_add_page(&id) })
+}
+
+/// Finishes the PDF export session and returns `[len u32 LE][pdf bytes]`.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn pdf_export_finish() -> Result<*mut u8> {
+    with_state!(state, {
+        let data = state.pdf_export_finish()?;
+
+        let len = data.len() as u32;
+        let mut buf = Vec::with_capacity(4 + data.len());
+        buf.extend_from_slice(&len.to_le_bytes());
+        buf.extend_from_slice(&data);
+        Ok(mem::write_bytes(buf))
+    })
+}
+
+/// Aborts the current PDF export session, if any.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn pdf_export_abort() -> Result<()> {
+    with_state!(state, {
+        state.pdf_export_abort();
+    });
+    Ok(())
+}
+
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn render_shape_svg(a: u32, b: u32, c: u32, d: u32, scale: f32) -> Result<*mut u8> {
@@ -841,6 +929,28 @@ pub extern "C" fn render_shape_svg(a: u32, b: u32, c: u32, d: u32, scale: f32) -
 
     with_state!(state, {
         let data = state.render_shape_svg(&id, scale)?;
+
+        let len = data.len() as u32;
+        let mut buf = Vec::with_capacity(4 + data.len());
+        buf.extend_from_slice(&len.to_le_bytes());
+        buf.extend_from_slice(&data);
+        Ok(mem::write_bytes(buf))
+    })
+}
+
+/// Multi-root SVG: shape UUIDs are read from the transfer buffer (16 bytes
+/// each, same layout as `render_shapes_pdf`). Returns `[len u32 LE][svg bytes]`.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_shapes_svg(scale: f32) -> Result<*mut u8> {
+    let bytes = mem::bytes();
+    let ids: Vec<Uuid> = bytes
+        .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
+        .map(|data| Uuid::try_from(data).map_err(|e| Error::RecoverableError(e.to_string())))
+        .collect::<Result<Vec<Uuid>>>()?;
+
+    with_state!(state, {
+        let data = state.render_shapes_svg(&ids, scale)?;
 
         let len = data.len() as u32;
         let mut buf = Vec::with_capacity(4 + data.len());

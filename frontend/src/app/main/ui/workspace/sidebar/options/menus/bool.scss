@@ -23,6 +23,9 @@
 }
 
 .boolean-radio-btn {
+  --radio-btn-border-color: transparent;
+  --radio-btn-border-color-selected: transparent;
+
   background-color: transparent;
   gap: var(--sp-xs);
 }

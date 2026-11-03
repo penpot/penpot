@@ -3362,10 +3362,6 @@ msgstr "इस शैली का उपयोग करके आइटम च
 msgid "shortcuts.add-comment"
 msgstr "टिप्पणियाँ"
 
-#: src/app/main/data/workspace/path/shortcuts.cljs:61
-msgid "shortcuts.add-node"
-msgstr "नोड जोड़ें"
-
 #: src/app/main/data/workspace/shortcuts.cljs:532
 msgid "shortcuts.align-bottom"
 msgstr "नीचे संरेखित करें"

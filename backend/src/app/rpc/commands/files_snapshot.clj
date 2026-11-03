@@ -9,10 +9,12 @@
    [app.binfile.common :as bfc]
    [app.common.exceptions :as ex]
    [app.common.features :as-alias cfeat]
+   [app.common.files.migrations :as fmg]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.db :as db]
    [app.db.sql :as-alias sql]
+   [app.features.fdata :as fdata]
    [app.features.file-snapshots :as fsnap]
    [app.features.logical-deletion :as ldel]
    [app.main :as-alias main]
@@ -53,7 +55,7 @@
    ::sm/params schema:get-file-snapshot
    ::sm/result files/schema:file-with-permissions
    ::db/transaction true}
-  [cfg {:keys [::rpc/profile-id file-id id] :as params}]
+  [cfg {:keys [::rpc/profile-id file-id id features] :as params}]
   (let [perms (perms/get-file-read-permissions cfg profile-id file-id)]
     (files/check-read-permissions! perms)
     (let [snapshot (fsnap/get-snapshot cfg file-id id)]
@@ -66,12 +68,41 @@
       ;; Load current file metadata only (no data decoding) then overlay
       ;; the snapshot data so the client receives the same shape as a
       ;; normal get-file response but with historical page/object content.
-      (let [base-file (bfc/get-file cfg file-id :load-data? false)]
+      ;; Snapshots may hold pointer-mapped pages shared with the live
+      ;; file, so materialize them here: the preview UI applies the
+      ;; response straight into state and cannot resolve pointers.
+      ;; NOTE: the loader binds the live file-id, not the snapshot id.
+      ;;
+      ;; A snapshot taken while a migration was pending stores the old
+      ;; format. Apply the pending migrations in memory, the same pure
+      ;; step a normal read runs, and never persist them: the stored
+      ;; version keeps its data and restoring it re-migrates on the
+      ;; next read. `decode-snapshot` hands an ordered set, which is
+      ;; what `need-migration?`/`migrate` require; a stored NULL is
+      ;; regenerated from the snapshot's version.
+      (let [base-file (bfc/get-file cfg file-id :load-data? false)
+            snapshot  (assoc snapshot :id file-id)
+            file      (if (fmg/need-migration? snapshot)
+                        (let [file (fdata/realize cfg snapshot)]
+                          (fmg/migrate-file
+                           file
+                           (delay (bfc/get-resolved-file-libraries cfg file))))
+                        (update snapshot :data
+                                #(fdata/realize-pointers cfg file-id %)))
+            ;; Works like in `get-file`: a client that does not declare
+            ;; `fdata/objects-map` gets plain objects. The historical
+            ;; feature set is deliberately not checked against the
+            ;; enabled one: a version may predate a feature change.
+            file      (if (and (contains? (:features file) "fdata/objects-map")
+                               (not (contains? features "fdata/objects-map")))
+                        (fdata/realize-objects cfg file)
+                        file)]
         (-> base-file
-            (assoc :data (:data snapshot))
-            (assoc :version (:version snapshot))
-            (assoc :features (:features snapshot))
-            (assoc :revn (:revn snapshot))
+            (assoc :data (:data file))
+            (assoc :version (:version file))
+            (assoc :features (:features file))
+            (assoc :migrations (:migrations file))
+            (assoc :revn (:revn file))
             (assoc :vern (rand-int 100000))
             (assoc :permissions perms))))))
 
@@ -84,10 +115,22 @@
   {::doc/added "1.20"
    ::sm/params schema:create-file-snapshot
    ::climit/id [[:create-file-snapshot/by-profile ::rpc/profile-id]
-                [:create-file-snapshot/global]]}
+                [:create-file-snapshot/global]]
+   ::db/transaction true}
   [cfg {:keys [::rpc/profile-id file-id label]}]
   (files/check-edition-permissions! cfg profile-id file-id)
-  (let [file    (bfc/get-file cfg file-id :realize? true)
+  ;; NOTE: the file is intentionally NOT realized here: the snapshot
+  ;; shares fragment rows with the live file (same as automatic
+  ;; snapshots) instead of storing a materialized copy. file-gc treats
+  ;; every unpurged snapshot as a liveness root, and readers
+  ;; (get-file-snapshot, restore!, reduce-snapshots) resolve pointers
+  ;; on demand.
+  ;; NOTE: the file is read with FOR SHARE inside this transaction so
+  ;; snapshot creation serializes with a concurrent :file-gc pass
+  ;; (which takes FOR UPDATE + SKIP LOCKED on the same row). Without
+  ;; the lock, a version pinned mid-pass could reference fragment rows
+  ;; the pass is recreating.
+  (let [file    (bfc/get-file cfg file-id :lock-for-share? true)
         project (db/get-by-id cfg :project (:project-id file))]
 
     (-> cfg
@@ -115,37 +158,50 @@
                 [:restore-file-snapshot/global]]}
   [{:keys [::db/pool ::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id ::rpc/session-id file-id id] :as params}]
 
-  ;; Check permissions and read current file state (short-lived, outside restore transaction)
+  ;; Check permissions
   (files/check-edition-permissions! pool profile-id file-id)
-  (let [file  (bfc/get-file cfg file-id)
-        team  (teams/get-team pool
+  (let [team  (teams/get-team pool
                               :profile-id profile-id
                               :file-id file-id)
         delay (ldel/get-deletion-delay team)
-        file-revn (:revn file)]
 
-    ;; Create backup snapshot of the current state (committed immediately
-    ;; independently of the restore outcome)
-    (fsnap/create! cfg file
-                   {:profile-id profile-id
-                    :deleted-at (ct/in-future delay)
-                    :created-by "system"})
+        ;; Create backup snapshot of the current state (committed immediately
+        ;; independent of the restore outcome). The read takes FOR SHARE so a
+        ;; concurrent :file-gc pass (which holds FOR UPDATE + SKIP LOCKED on the
+        ;; file row) either finishes first -- and we snapshot the new fragments --
+        ;; or skips the file and retries later. Without the lock, the backup
+        ;; could reference fragments the pass is about to mark as deleted,
+        ;; breaking the backup permanently.
+        ;;
+        ;; The backup read also provides the revn the guard below compares
+        ;; against. An edit committed before this read is captured in the
+        ;; backup and no longer aborts the restore; only edits committed
+        ;; after the backup conflict.
+        backup-revn
+        (db/tx-run! cfg
+                    (fn [cfg]
+                      (let [file (bfc/get-file cfg file-id :lock-for-share? true)]
+                        (fsnap/create! cfg file
+                                       {:profile-id profile-id
+                                        :deleted-at (ct/in-future delay)
+                                        :created-by "system"})
+                        (:revn file))))]
 
     ;; Restore snapshot inside its own transaction; the revn check
     ;; ensures no data is lost if the file was edited concurrently
     (db/tx-run! cfg
                 (fn [{:keys [::db/conn] :as cfg}]
                   (let [current (bfc/get-minimal-file conn file-id {::db/for-update true})]
-                    (when (not= (:revn current) file-revn)
+                    (when (not= (:revn current) backup-revn)
                       (ex/raise :type :conflict
                                 :code :file-modified
                                 :hint "the file was modified during the restore process, please retry")))
                   (let [vern (fsnap/restore! cfg file-id id)]
                     (mbus/pub! msgbus
-                               :topic (:id file)
+                               :topic file-id
                                :message {:type :file-restored
                                          :session-id session-id
-                                         :file-id (:id file)
+                                         :file-id file-id
                                          :vern vern})
                     nil)))))
 

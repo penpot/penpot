@@ -213,7 +213,12 @@
    ;; SMP: Mahjong/Domino/Playing Cards (U+1F000-1F0FF), Supplemental Arrows-C (U+1F800-1F8FF),
    ;;      Legacy Computing Symbols (U+1FB00-1FBFF)
    :symbols-2   #"[\u2190-\u21FF\u2200-\u22FF\u2300-\u23FF\u25A0-\u25FF\u2600-\u26FF\u2700-\u27BF\u2B00-\u2BFF]|\uD83C[\uDC00-\uDCFF]|\uD83E[\uDC00-\uDCFF\uDF00-\uDFFF]"
-   :music       #"[\u2669-\u267B]|\uD834[\uDD00-\uDD1F]"})
+   :music       #"[\u2669-\u267B]|\uD834[\uDD00-\uDD1F]"
+   ;; Arrows, Mathematical Operators, Misc Mathematical Symbols A/B, Supplemental
+   ;; Arrows A/B, Supplemental Math Operators: the Symbols fonts lack most of them
+   :math        #"[\u2190-\u21FF\u2200-\u22FF\u27C0-\u27FF\u2900-\u2AFF]"
+   ;; Letterlike Symbols (ℝ, ℕ, ℃, ™, ...)
+   :letterlike  #"[\u2100-\u214F]"})
 
 (defn contains-emoji? [text]
   (let [result (re-find emoji-pattern text)]
@@ -292,7 +297,9 @@
    :meroitic    {:font-id "gfont-noto-sans-meroitic"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
    :symbols     {:font-id "gfont-noto-sans-symbols"       :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
    :symbols-2   {:font-id "gfont-noto-sans-symbols-2"     :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :music       {:font-id "gfont-noto-music"              :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}})
+   :music       {:font-id "gfont-noto-music"              :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :math        {:font-id "gfont-noto-sans-math"          :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :letterlike  {:font-id "gfont-noto-sans"               :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}})
 
 (defn add-noto-fonts [fonts languages]
   (reduce (fn [acc lang]

@@ -17,10 +17,12 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.render-wasm.api.select :as wselect]
    [app.common.transit :as t]
    [app.common.types.fills :as types.fills]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.shape.text :as cts]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
@@ -1468,12 +1470,72 @@
                                   :name name
                                   :finalize? finalize?)))
 
+(defn- layout-item
+  "The ancestor of `shape` (or `shape` itself) that is a direct child of its board."
+  [objects shape]
+  (loop [item shape]
+    (let [parent-id (:parent-id item)]
+      (if (or (= parent-id (:frame-id shape))
+              (nil? (get objects parent-id)))
+        item
+        (recur (get objects parent-id))))))
+
+(defn- v3-sync-text-layout
+  "Previews an auto-grow text's live size in its layout, so a fit-content parent
+  follows it while typing. Geometry is committed on finalize."
+  [id]
+  (ptk/reify ::v3-sync-text-layout
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects  (dsh/lookup-page-objects state)
+            shape    (get objects id)
+            preview? (and (cfh/text-shape? shape)
+                          (not= :fixed (:grow-type shape))
+                          (ctl/any-layout-descent? objects shape)
+                          (not (ctl/position-absolute? (layout-item objects shape))))
+            size     (when preview?
+                       (dwwt/get-wasm-text-new-size shape))
+            previous (or (get-in state [::layout-preview id])
+                         (select-keys (:selrect shape) [:width :height]))]
+        ;; Modifiers are costly, so skip keystrokes that keep the size.
+        (if (and (some? size)
+                 (not (and (mth/close? (:width size) (:width previous))
+                           (mth/close? (:height size) (:height previous)))))
+          (rx/of #(assoc-in % [::layout-preview id] size)
+                 (dwm/set-wasm-modifiers (dwwt/resize-wasm-text-modifiers shape)
+                                         :interactive? false))
+          (rx/empty))))))
+
+(defn v3-stop-text-layout-preview
+  "Drops the layout preview of the text `id` and leaves interactive render mode."
+  [id]
+  (ptk/reify ::v3-stop-text-layout-preview
+    ptk/WatchEvent
+    (watch [_ state _]
+      (if (contains? (get state ::layout-preview) id)
+        (rx/of #(update % ::layout-preview dissoc id)
+               (dwm/clear-local-transform))
+        (rx/empty)))))
+
+(defn v3-update-editor-content
+  "Commits `content` from the WASM editor to the text `shape-id` and, while
+  editing, previews its new size in the layout."
+  [shape-id content & {:keys [finalize?]}]
+  (let [update-event (editor-content-update shape-id content :finalize? finalize?)]
+    (if finalize?
+      update-event
+      (ptk/reify ::v3-update-editor-content
+        ptk/WatchEvent
+        (watch [_ _ _]
+          (rx/of update-event
+                 (v3-sync-text-layout shape-id)))))))
+
 (defn v3-sync-editor-content
   "Event pushing the WASM editor content back into the shape, or nil when there is
    nothing to sync. Every text edit commits through it, menu or keystroke alike."
   [& {:keys [finalize?]}]
   (when-let [{:keys [shape-id content]} (wasm.text-editor/text-editor-sync-content)]
-    (editor-content-update shape-id content :finalize? finalize?)))
+    (v3-update-editor-content shape-id content :finalize? finalize?)))
 
 (defn v3-apply-pending-caret-styles
   "Event saving an insertion made at `before` that consumed the pending caret style:
@@ -1483,7 +1545,7 @@
     ;; Sync first so the cached content stays index-aligned with WASM.
     (wasm.text-editor/text-editor-sync-content)
     (if-let [{:keys [content]} (wasm.api/apply-pending-caret-styles! shape-id range)]
-      (editor-content-update shape-id content)
+      (v3-update-editor-content shape-id content)
       (v3-sync-editor-content))))
 
 (defn- sync-editor-content-stream
@@ -1503,13 +1565,17 @@
              (wasm.text-editor/text-editor-has-selection?))
     (let [text (wasm.text-editor/text-editor-export-selection)]
       (when (seq text)
-        (let [content (when (features/active-feature? state "text-editor-wasm/v1-html-paste")
-                        (-> (wasm.text-editor/text-editor-get-active-shape-id)
-                            (wasm.text-editor/selection-content)))
-              payload (when (some? content)
-                        (text-clipboard/payload->html content
-                                                      (:current-file-id state)
-                                                      (:current-team-id state)))]
+        (let [shape-id (wasm.text-editor/text-editor-get-active-shape-id)
+              content  (when (features/active-feature? state "text-editor-wasm/v1-html-paste")
+                         (wasm.text-editor/selection-content shape-id))
+              geometry (when (some? content)
+                         (wasm.text-editor/content-geometry shape-id content
+                                                            (wasm.text-editor/selection-start)))
+              payload  (when (some? content)
+                         (text-clipboard/payload->html content
+                                                       (:current-file-id state)
+                                                       (:current-team-id state)
+                                                       geometry))]
           {"text/plain" text
            "text/html"  (clipboard/plain-text->html text payload)})))))
 
@@ -1552,9 +1618,6 @@
              (rx/catch on-clipboard-error))
         (rx/empty)))))
 
-;; Bigger HTML is pasted as plain text rather than walked.
-(def ^:private max-paste-html-length 1000000)
-
 (defn payload-content
   "The content of a Penpot text `payload` without what the current file cannot reach.
    A payload without team counts as coming from the current team."
@@ -1571,28 +1634,65 @@
   [text]
   (when (str/starts-with? (str/trim (or text "")) "{")
     (let [data (ex/ignoring (t/decode-str text))]
-      (when (and (map? data) (= :copied-shapes (:type data)))
+      (when (and (map? data)
+                 (= :copied-shapes (:type data))
+                 (map? (:objects data))
+                 (set? (:selected data)))
         data))))
+
+(defn copied-text-geometry
+  "The geometry (see `text-editor/content-geometry`) of each selected text in
+   `objects` with gradient or image spans, by id, for a shape copy; nil when none."
+  [state objects selected]
+  (when (features/active-feature? state "text-editor-wasm/v1-html-paste")
+    (not-empty
+     (into {}
+           (keep (fn [id]
+                   (let [{:keys [content] :as shape} (get objects id)]
+                     (when (cfh/text-shape? shape)
+                       (some->> (wasm.text-editor/content-geometry id content {:para 0 :offset 0})
+                                (vector id))))))
+           selected))))
+
+(defn- text-origins
+  "The span origins of `text` in `text-geometry`, nil for each span without one."
+  [text-geometry {:keys [id content]}]
+  (or (get-in text-geometry [id :origins])
+      (mapv #(mapv (constantly nil) (:children %))
+            (-> content :children first :children))))
+
+(defn- pasteable-text?
+  "True when a copied text shape, which other apps or plugins may have written, can
+   be pasted into the text editor."
+  [{:keys [x y content]}]
+  (and (number? x) (number? y) (cts/valid-content? content)))
 
 (defn- copied-shapes->payload
   "A text payload joining the content of the copied text shapes, top to bottom and
-   left to right; nil when none of the copied shapes is a text."
-  [{:keys [objects selected file-id team-id]}]
+   left to right; nil when none of the copied shapes is a text or it is not valid."
+  [{:keys [objects selected file-id team-id text-geometry]}]
   (let [texts (->> selected
                    (keep #(get objects %))
-                   (filter cfh/text-shape?)
-                   (sort-by (juxt :y :x)))]
-    (when (seq texts)
-      {:file-id file-id
-       :team-id team-id
-       :content (assoc-in (:content (first texts))
-                          [:children 0 :children]
-                          (into [] (mapcat #(-> % :content :children first :children)) texts))})))
+                   (filter cfh/text-shape?))]
+    (when (and (seq texts) (every? pasteable-text? texts))
+      (let [texts   (sort-by (juxt :y :x) texts)
+            payload (cond-> {:file-id file-id
+                             :team-id team-id
+                             :content (assoc-in (:content (first texts))
+                                                [:children 0 :children]
+                                                (into [] (mapcat #(-> % :content :children first :children)) texts))}
+                      (some? text-geometry)
+                      (assoc :geometry {:origins (into [] (mapcat (partial text-origins text-geometry)) texts)}))]
+        (when (text-clipboard/valid-payload? payload)
+          payload)))))
 
 (defn- penpot-paste
   [state payload]
-  {:penpot?  true
-   :fragment (text-paste/content->fragment (payload-content state payload))})
+  (let [content (payload-content state payload)]
+    {:penpot?  true
+     :content  content
+     :geometry (:geometry payload)
+     :fragment (text-paste/content->fragment content)}))
 
 (defn- clipboard->paste
   "What to paste for clipboard `html` and `text`, or nil: text and text shapes copied
@@ -1609,17 +1709,70 @@
       (some->> (copied-shapes->payload shapes) (penpot-paste state))
 
       :else
-      (when-let [fragment (or (when (and html-paste? (< 0 (count html) max-paste-html-length))
+      (when-let [fragment (or (when (and html-paste? (< 0 (count html) text-clipboard/max-paste-html-length))
                                 (some-> (text-clipboard/html->fragment html)
                                         (text-clipboard/without-overrides)))
                               (text-clipboard/text->fragment text))]
         {:penpot? false
          :fragment fragment}))))
 
+(defn- target-geometry
+  "Where the gradient and image spans of `pasted`, inserted at `start`, begin in `shape`
+   with `content`, laid over the box it gets once resized to its text; nil when none."
+  [{:keys [id grow-type]} content pasted start]
+  (when-let [geometry (wasm.text-editor/content-geometry id pasted start)]
+    (if (= :fixed grow-type)
+      geometry
+      ;; Auto-sized boxes only fit their text when resized (for the editor, when it
+      ;; closes), which drops the vertical-align offset in the measured origins.
+      (let [{:keys [width height]} (wasm.api/get-text-dimensions id)
+            fit (fn [{:keys [box] :as origin}]
+                  (let [offset (case (some-> (:vertical-align content) name)
+                                 "center" (/ (- (:height box) height) 2)
+                                 "bottom" (- (:height box) height)
+                                 0)]
+                    (-> origin
+                        (update :y - offset)
+                        (assoc :box {:width  (if (= :auto-width grow-type) width (:width box))
+                                     :height height}))))]
+        (update geometry :origins (partial mapv (partial mapv #(some-> % fit))))))))
+
+(defn- move-pasted-fills
+  "`content`, the shape's after restyling the paste, with the pasted gradients and
+   images keeping their place on their spans. Pushes the result to WASM."
+  [shape content {:keys [geometry] :as paste} start]
+  (let [pasted (:content paste)
+        target (when (some? geometry) (target-geometry shape content pasted start))]
+    (if (some? target)
+      (let [content (text-paste/move-span-fills content pasted start geometry target)]
+        (wasm.api/set-shape-text-content (:id shape) content)
+        content)
+      content)))
+
+(defn move-new-text-fills
+  "Event moving the gradients and images of `payload`, just pasted on the canvas as the
+   text `id`, so they keep their place on their spans."
+  [id {:keys [geometry]}]
+  (ptk/reify ::move-new-text-fills
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [{:keys [content] :as shape} (dsh/lookup-shape state id)
+            start  {:para 0 :offset 0}
+            target (when (and (some? shape) (some? geometry) (wasm.api/initialized?))
+                     (wselect/use-shape id)
+                     (wasm.api/set-shape-text-content id content)
+                     (target-geometry shape content content start))]
+        (if (some? target)
+          (rx/of (dwsh/update-shapes
+                  [id]
+                  #(update % :content text-paste/move-span-fills content start geometry target)
+                  {:attrs #{:content}}))
+          (rx/empty))))))
+
 (defn- insert-fragment
   "Insert the text of `fragment` at the caret and restyle it: with its own styles
    or overrides, else with the pending caret style. Returns the event saving it."
-  [{:keys [fragment penpot?]}]
+  [state {:keys [fragment penpot?] :as paste}]
   (let [shape-id (wasm.text-editor/text-editor-get-active-shape-id)
         start    (wasm.text-editor/selection-start)
         styled?  (or penpot? (text-paste/styled? fragment))
@@ -1636,7 +1789,8 @@
         ;; Sync first so the cached content stays index-aligned with WASM.
         (wasm.text-editor/text-editor-sync-content)
         (if-let [{:keys [content]} (wasm.api/apply-paste-styles shape-id fragment start penpot?)]
-          (editor-content-update shape-id content)
+          (let [shape (dsh/lookup-shape state shape-id)]
+            (v3-update-editor-content shape-id (move-pasted-fills shape content paste start)))
           (v3-sync-editor-content)))
 
       pending?
@@ -1653,7 +1807,7 @@
     (watch [_ state _]
       (if-let [paste (when (wasm.text-editor/text-editor-has-focus?)
                        (clipboard->paste state html text))]
-        (let [event (insert-fragment paste)]
+        (let [event (insert-fragment state paste)]
           (wasm.api/request-render-preserving-target "text-paste")
           (if (some? event) (rx/of event) (rx/empty)))
         (rx/empty)))))

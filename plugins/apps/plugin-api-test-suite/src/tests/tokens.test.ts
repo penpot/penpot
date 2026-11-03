@@ -481,6 +481,55 @@ describe('Tokens', () => {
       expect(keys).not.toContain('strokeWidthRight');
     });
 
+    // Issue #12319: per-side widths are only supported on boards and
+    // rectangles. `applyToken` used to bind them on any shape, leaving an
+    // ellipse in the per-side state the `strokes` setter rejects.
+    test('applyToken rejects an explicit per-side width on an ellipse', (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const token = set.addToken({
+        type: 'borderWidth',
+        name: unique('width.'),
+        value: '4',
+      });
+      const ellipse = ctx.penpot.createEllipse();
+      ctx.board.appendChild(ellipse);
+
+      expect(() => ellipse.applyToken(token, ['strokeWidthTop'])).toThrow();
+      expect(ellipse.tokens.strokeWidthTop).toBeUndefined();
+    });
+
+    test('applyToShapes rejects an explicit per-side width on an ellipse', (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const token = set.addToken({
+        type: 'borderWidth',
+        name: unique('width.'),
+        value: '4',
+      });
+      const ellipse = ctx.penpot.createEllipse();
+      ctx.board.appendChild(ellipse);
+
+      expect(() =>
+        token.applyToShapes([ellipse], ['strokeWidthLeft']),
+      ).toThrow();
+      expect(ellipse.tokens.strokeWidthLeft).toBeUndefined();
+    });
+
+    test('applyToken keeps accepting the uniform strokeWidth alias on an ellipse', async (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const token = set.addToken({
+        type: 'borderWidth',
+        name: unique('width.'),
+        value: '4',
+      });
+      const ellipse = ctx.penpot.createEllipse();
+      ctx.board.appendChild(ellipse);
+
+      ellipse.applyToken(token, ['strokeWidth']);
+
+      await waitFor(() => ellipse.tokens.strokeWidth === token.name);
+      expect(ellipse.tokens.strokeWidth).toBe(token.name);
+    });
+
     for (const side of [
       'strokeWidthTop',
       'strokeWidthRight',

@@ -17,6 +17,19 @@
 
 (log/set-level! :warn)
 
+;; Keyboard layout map for Mousetrap: punctuation resolves by physical
+;; position through it. The shortcut recorder (`app.main.ui.shortcuts`)
+;; asks Mousetrap for the key it stores, so both use the same map. Absent
+;; until `getLayoutMap` resolves, and in browsers without the keyboard API
+;; (Firefox, Safari).
+(let [navigator (when (exists? js/navigator) js/navigator)
+      keyboard  (when (some? navigator) (.-keyboard ^js navigator))]
+  (when (and (some? keyboard)
+             (exists? (.-getLayoutMap ^js keyboard)))
+    (-> (.getLayoutMap ^js keyboard)
+        (.then (fn [m] (.setLayoutMap mousetrap m))
+               (fn [_] (.setLayoutMap mousetrap nil))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -156,8 +169,11 @@
       shortcuts
       (reduce-kv
        (fn [acc sc-key new-command]
+         ;; A non-customizable shortcut ignores overrides stored before it
+         ;; became so: the settings page no longer offers to reset them.
          (if (and (contains? acc sc-key)
-                  (not (:disabled (get acc sc-key))))
+                  (not (:disabled (get acc sc-key)))
+                  (not (false? (:customizable (get acc sc-key)))))
            (-> acc
                (assoc-in [sc-key :original-command] (get-in acc [sc-key :command]))
                (assoc-in [sc-key :command] new-command)

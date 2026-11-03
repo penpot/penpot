@@ -626,3 +626,33 @@
           result  (dwt/merge-live-text-dimensions :auto-width selrect {:width 0 :height 0})]
       (t/is (= 50 (:width result)))
       (t/is (= 25 (:height result))))))
+
+;; ---------------------------------------------------------------------------
+;; copied-shapes->payload
+;; ---------------------------------------------------------------------------
+
+(defn- copied-text
+  [id y & spans]
+  {:id id
+   :type :text
+   :x 0
+   :y y
+   :content {:type "root"
+             :children [{:type "paragraph-set"
+                         :children [{:type "paragraph"
+                                     :children (mapv #(hash-map :text %) spans)}]}]}})
+
+(t/deftest copied-shapes-payload-joins-text-geometry
+  (let [top-id    (uuid/next)
+        bottom-id (uuid/next)
+        origin    {:x 4 :y 2 :box {:width 100 :height 20}}
+        data      {:file-id   (uuid/next)
+                   :selected  #{bottom-id top-id}
+                   :objects   {top-id    (copied-text top-id 0 "a" "b")
+                               bottom-id (copied-text bottom-id 50 "c")}}]
+    (t/testing "the origins follow the joined paragraphs, nil for texts without geometry"
+      (t/is (= {:origins [[nil nil] [origin]]}
+               (:geometry (#'dwt/copied-shapes->payload
+                           (assoc data :text-geometry {bottom-id {:origins [[origin]]}}))))))
+    (t/testing "a copy without geometry gives a payload without it"
+      (t/is (not (contains? (#'dwt/copied-shapes->payload data) :geometry))))))

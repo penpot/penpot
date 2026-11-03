@@ -17,7 +17,7 @@
    [app.common.time :as ct]
    [app.common.types.organization :as cto]
    [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
-   [app.common.types.team :refer [schema:team]]
+   [app.common.types.team :as ctt :refer [schema:team]]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -46,6 +46,10 @@
    [cuerdas.core :as str]))
 
 
+(def ^:private allowed-shared-key-ids
+  "The Nitrate admin-console is the only caller of this API."
+  #{:admin-console})
+
 (defn- profile-to-map [profile]
   {:id            (:id profile)
    :name          (:fullname profile)
@@ -58,6 +62,7 @@
 (sv/defmethod ::authenticate
   "Authenticate the current user"
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params [:map]
    ::sm/result schema:profile
    ::nitrate/sso false}
@@ -105,6 +110,7 @@
 (sv/defmethod ::get-penpot-version
   "Get the current Penpot version"
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params [:map]
    ::sm/result schema:get-penpot-version-result
    ::rpc/auth false}
@@ -124,6 +130,7 @@
 (sv/defmethod ::get-teams
   "List teams for which current user is owner"
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params [:map]
    ::sm/result schema:get-teams-result
    ::nitrate/sso false}
@@ -135,6 +142,7 @@
 (sv/defmethod ::get-member-teams
   "List all active teams where the current user is a member"
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params [:map]
    ::sm/result schema:get-member-teams-result
    ::nitrate/sso false}
@@ -151,6 +159,7 @@
 (sv/defmethod ::update-profile-theme
   "Update the current user's theme"
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params schema:update-profile-theme
    ::db/transaction true
    ::nitrate/sso false}
@@ -171,6 +180,7 @@
 (sv/defmethod ::update-profile-props
   "Merge writable properties into the current user's profile"
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params schema:update-profile-props
    ::db/transaction true
    ::nitrate/sso false}
@@ -193,12 +203,14 @@
   Accepts an optional previous-id to mark the old logo for garbage
   collection when replacing an existing one."
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params schema:upload-organization-logo
    ::rpc/multipart-only-params [:content]
    ::sm/result schema:upload-organization-logo-result
    ::nitrate/sso false}
   [{:keys [::sto/storage]} {:keys [content organization-id previous-id]}]
-  (media.v/validate-media-type! content cm/image-types)
+  (media.v/check-media-type content cm/image-types)
+  (media.v/check-upload-path content)
   (when previous-id
     (sto/touch-object! storage previous-id))
   (let [hash (sto/calculate-hash (:path content))
@@ -225,6 +237,7 @@
 (sv/defmethod ::notify-team-change
   "Notify to Penpot a team change from nitrate"
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params schema:notify-team-change
    ::rpc/auth false}
   [cfg team]
@@ -245,6 +258,7 @@
 (sv/defmethod ::notify-user-added-to-organization
   "Notify to Penpot that an user has joined an organization from nitrate"
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params schema:notify-user-added-to-organization
    ::rpc/auth false}
   [cfg {:keys [profile-id organization-id]}]
@@ -276,6 +290,7 @@
 (sv/defmethod ::get-managed-profiles
   "List profiles that belong to teams for which current user is owner"
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params [:map]
    ::sm/result schema:managed-profile-result
    ::nitrate/sso false}
@@ -316,6 +331,7 @@
 (sv/defmethod ::get-teams-summary
   "Get summary information for a list of teams"
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params schema:get-teams-summary-params
    ::sm/result schema:get-teams-summary-result
    ::nitrate/sso false}
@@ -437,6 +453,7 @@ RETURNING id, deleted_at;")
   "For a deleted organization, preserve organization teams and only prefix or delete
    imported Personal Projects before notifying connected users."
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params schema:notify-organization-deletion
    ::rpc/auth false}
   [cfg {:keys [organization-id]}]
@@ -457,6 +474,7 @@ RETURNING id, deleted_at;")
   "For a given user, find all owned organizations and apply the deleted-organization
    transfer rules to their imported Personal Projects teams."
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params schema:notify-user-organizations-deletion
    ::nitrate/sso false}
   [cfg {:keys [profile-id]}]
@@ -483,6 +501,7 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::get-profile-by-email
   "Get profile by email"
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params [:map [:email ::sm/email]]
    ::sm/result schema:profile
    ::nitrate/sso false}
@@ -507,6 +526,7 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::get-profile-by-id
   "Get profile by email"
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params [:map [:id ::sm/uuid]]
    ::sm/result schema:profile
    ::nitrate/sso false}
@@ -542,6 +562,7 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::get-organization-member-team-counts
   "Get the number of non-default teams each profile belongs to within a set of teams."
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params schema:get-organization-member-team-counts-params
    ::sm/result schema:get-organization-member-team-counts-result
    ::rpc/auth false}
@@ -560,6 +581,56 @@ RETURNING id, deleted_at;")
       (db/run! cfg (fn [{:keys [::db/conn]}]
                      (let [ids-array (db/create-array conn "uuid" team-ids)]
                        (db/exec! conn [sql:get-organization-member-team-counts ids-array])))))))
+
+
+;; ---- API: get-organization-member-teams
+
+(def ^:private sql:get-organization-member-teams
+  "SELECT t.id, t.name, t.photo_id,
+          CASE WHEN tpr.is_owner THEN 'owner'
+               WHEN tpr.is_admin THEN 'admin'
+               WHEN tpr.can_edit THEN 'editor'
+               ELSE 'viewer'
+           END AS role
+     FROM team_profile_rel AS tpr
+     JOIN team AS t ON t.id = tpr.team_id
+    WHERE tpr.profile_id = ?
+      AND t.id = ANY(?)
+      AND t.deleted_at IS NULL
+      AND t.is_default IS FALSE;")
+
+(def ^:private schema:get-organization-member-teams-params
+  [:map
+   [:profile-id ::sm/uuid]
+   [:team-ids [:or ::sm/uuid [:vector ::sm/uuid]]]])
+
+(def ^:private schema:get-organization-member-teams-result
+  [:vector [:map
+            [:id ::sm/uuid]
+            [:name ::sm/text]
+            [:photo-url {:optional true} ::sm/uri]
+            [:role ctt/schema:role]]])
+
+(sv/defmethod ::get-organization-member-teams
+  "Get the non-default teams a profile belongs to within a set of teams,
+  with the profile's role in each one."
+  {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
+   ::sm/params schema:get-organization-member-teams-params
+   ::sm/result schema:get-organization-member-teams-result
+   ::nitrate/sso false}
+  [cfg {:keys [profile-id team-ids]}]
+  (let [team-ids (if (uuid? team-ids) [team-ids] team-ids)]
+    (if (empty? team-ids)
+      []
+      (db/run! cfg (fn [{:keys [::db/conn]}]
+                     (let [ids-array (db/create-array conn "uuid" team-ids)]
+                       (->> (db/exec! conn [sql:get-organization-member-teams profile-id ids-array])
+                            (mapv (fn [{:keys [photo-id role] :as row}]
+                                    (cond-> (-> row
+                                                (dissoc :photo-id)
+                                                (assoc :role (keyword role)))
+                                      photo-id (assoc :photo-url (files/resolve-public-uri photo-id))))))))))))
 
 
 ;; API: invite-to-organization
@@ -582,6 +653,7 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::invite-to-organization
   "Invite to organization"
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params [:map
                 [:email ::sm/email]
                 [:organization cto/schema:organization-with-avatar]]
@@ -614,6 +686,7 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::get-organization-invitations
   "Get valid invitations for an organization, returning at most one invitation per email."
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params schema:get-organization-invitations-params
    ::sm/result schema:get-organization-invitations-result
    ::nitrate/sso false}
@@ -642,6 +715,7 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::delete-organization-invitations
   "Delete all invitations for one email in an organization scope (organization + organization teams)."
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params schema:delete-organization-invitations-params
    ::nitrate/sso false}
   [cfg {:keys [organization-id email]}]
@@ -669,6 +743,7 @@ RETURNING id, deleted_at;")
    Called from Nitrate when an organization is about to be deleted, so users that click
    their invitation token hit the existing invalid-token landing page."
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params schema:delete-all-organization-invitations-params
    ::rpc/auth false}
   [cfg {:keys [organization-id]}]
@@ -707,6 +782,7 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::remove-from-organization
   "Remove an user from an organization"
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params [:map
                 [:profile-id ::sm/uuid]
                 [:organization-id ::sm/uuid]
@@ -752,6 +828,7 @@ RETURNING id, deleted_at;")
   "Get a summary of the teams that would be deleted, transferred, or exited
    if the user were removed from the organization"
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params [:map
                 [:profile-id ::sm/uuid]
                 [:organization-id ::sm/uuid]
@@ -787,6 +864,7 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::send-renewal-email
   "Send an Enterprise subscription renewal notice email to a user."
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params schema:send-renewal-email-params
    ::rpc/auth false}
   [cfg {:keys [profile-id user-email user-name renewal-date estimated-amount organizations]}]
@@ -863,6 +941,7 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::exists-organization-team-invitations-for-non-members
   "Return if there are any team invitations for emails that are not organization members."
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params schema:organization-team-invitations-for-non-members-params
    ::sm/result schema:exists-organization-team-invitations-for-non-members-result
    ::nitrate/sso false}
@@ -873,6 +952,7 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::delete-organization-team-invitations-for-non-members
   "Delete team invitations for emails that are not organization members."
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params schema:organization-team-invitations-for-non-members-params
    ::db/transaction true
    ::nitrate/sso false}
@@ -905,6 +985,7 @@ RETURNING id, deleted_at;")
   events)"
 
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::audit/skip true
    ::sm/params schema:push-audit-events-params
    ::rpc/auth false}
@@ -1012,6 +1093,7 @@ RETURNING id, deleted_at;")
   "Get detailed information for all non-deleted teams in an organization,
    including owner info and project/file/member counts."
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params schema:get-teams-detail-params
    ::sm/result schema:get-teams-detail-result
    ::nitrate/sso false}
@@ -1042,6 +1124,7 @@ RETURNING id, deleted_at;")
   (customer-configured), so it is checked against the SSRF blocklist before
   any outbound request is attempted."
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params cto/schema:nitrate-sso
    ::sm/result schema:check-organization-sso-result
    ::rpc/auth false}
@@ -1055,15 +1138,26 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::notify-organization-sso-change
   "Nitrate notifies that an organization sso values have changed"
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params [:map
                 [:organization-id ::sm/uuid]
                 [:updated-props ::sm/boolean]
                 [:announce-activation ::sm/boolean]]
    ::rpc/auth false}
-  [{:keys [::db/pool] :as cfg} {:keys [organization-id updated-props announce-activation]}]
+  [{:keys [::db/pool] :as cfg}
+   {:keys [organization-id updated-props announce-activation] :as params}]
   (when updated-props
     (rpc/invalidate-organization-sso-cache-by-organization! organization-id)
-    (session/clear-organization-sso-sessions! pool organization-id))
+    (session/clear-organization-sso-sessions! pool organization-id)
+    (let [request (-> params meta ::http/request)
+          context (-> (audit/prepare-context-from-request request)
+                      (assoc :request-id (::rpc/request-id params)))]
+      (audit/submit cfg {:type "action"
+                         :name "organization-sso-token-revoked"
+                         :profile-id uuid/zero
+                         :ip-addr (::rpc/ip-addr params)
+                         :props {:organization-id organization-id}
+                         :context (d/without-nils context)})))
   (notifications/notify-organization-change-sso cfg organization-id)
   (when announce-activation
     (neh/send-organization-setup-sso-emails! cfg organization-id))
@@ -1104,6 +1198,7 @@ RETURNING id, deleted_at;")
    email allow-list. Requires the `admin-console-bulk-create-profiles` flag, disabled
    by default so it is only available on test environments."
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params schema:bulk-create-profiles-params
    ::sm/result schema:bulk-create-profiles-result
    ::rpc/auth false}
@@ -1138,6 +1233,7 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::get-air-gapped
   "Returns whether this Penpot instance runs in air-gapped mode."
   {::doc/added "2.18"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
    ::sm/params [:map]
    ::sm/result schema:get-air-gapped-result
    ::rpc/auth false}

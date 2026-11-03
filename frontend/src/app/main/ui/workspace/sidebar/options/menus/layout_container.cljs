@@ -986,8 +986,14 @@
            :on-pointer-leave pointer-leave}
 
      [:div {:class (stl/css :track-info-container)}
-      [:div {:class (stl/css :track-info-dir-icon)
-             :on-click handle-select-track}
+      ;; Raw button on purpose: it is the start segment of the track
+      ;; value field, not a DS button.
+      [:button {:type "button"
+                :class (stl/css :track-info-dir-icon)
+                :aria-label (if is-column
+                              (tr "workspace.layout-grid.editor.select-column")
+                              (tr "workspace.layout-grid.editor.select-row"))
+                :on-click handle-select-track}
        [:> icon* {:icon-id (if is-column i/flex-vertical i/flex-horizontal)
                   :class (stl/css :track-info-dir)}]]
 
@@ -1037,7 +1043,14 @@
 
     [:div {:class (stl/css :grid-tracks) :data-testid testid}
      [:div {:class (stl/css :grid-track-header)}
-      [:button {:class (stl/css :expand-icon) :on-click toggle}
+      ;; The track title next to it toggles too, as a larger pointer
+      ;; target; this button is the one for the keyboard.
+      [:button {:class (stl/css :expand-icon)
+                :aria-label (if is-column
+                              (tr "workspace.layout-grid.editor.columns")
+                              (tr "workspace.layout-grid.editor.rows"))
+                :aria-expanded (boolean expanded?)
+                :on-click toggle}
        [:> icon* {:icon-id i/menu :class (stl/css :expand-icon-svg)}]]
       [:div {:class (stl/css :track-title) :on-click toggle}
        [:div {:class (stl/css :track-name) :title track-name} track-name]

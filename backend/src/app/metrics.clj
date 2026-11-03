@@ -148,6 +148,25 @@
     (number? value)  (str value)
     :else            fallback))
 
+;; Tail for request and wait timings (RPC, CLIMIT waits, audit handler,
+;; HTTP dispatch): covers the 30s/60s CLIMIT timeouts while keeping the
+;; sub-7.5s resolution of the default buckets untouched.
+(def default-request-histogram-buckets
+  [1 5 10 25 50 75 100 250 500 750 1000 2500 5000 7500
+   10000 15000 30000 60000])
+
+;; Tail for background tasks (GC sweeps, file workers): they run until
+;; done with no CLIMIT timeout, bounded in practice by the 300s postgres
+;; statement timeout.
+(def default-tasks-histogram-buckets
+  [1 5 10 25 50 75 100 250 500 750 1000 2500 5000 7500
+   10000 15000 30000 60000 120000 300000])
+
+;; Tail for Redis eval: sub-second in practice, one extra bucket covers
+;; the pathological (timeout) case without adding idle series.
+(def default-redis-histogram-buckets
+  [1 5 10 25 50 75 100 250 500 750 1000 2500 5000 7500 10000])
+
 (defmulti run-collector! (fn [mdef _] (::mdef/type mdef)))
 (defmulti create-collector ::mdef/type)
 

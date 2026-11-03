@@ -15,7 +15,7 @@ volumes:
 
 services:
   rustfs:
-    image: "rustfs/rustfs:1.0.0"
+    image: "rustfs/rustfs:1.0.3"
     command: /data
 
     volumes:
@@ -68,7 +68,7 @@ services:
           - postgres
 
   valkey:
-    image: valkey/valkey:8.1
+    image: valkey/valkey:8.1.10
     restart: always
     command: valkey-server --save 120 1 --loglevel warning
     volumes:
@@ -79,7 +79,7 @@ services:
           - valkey
 
   mailer:
-    image: axllent/mailpit:v1.31.1
+    image: axllent/mailpit:v1.32.0
     restart: always
     volumes:
       - "mailpit_data:/data"

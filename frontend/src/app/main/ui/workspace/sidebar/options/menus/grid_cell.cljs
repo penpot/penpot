@@ -19,6 +19,7 @@
    [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
@@ -289,8 +290,7 @@
                                  :set-alignment set-justify-self}]]
 
         [:div {:class (stl/css :row)}
-         [:button
-          {:class (stl/css :edit-grid-btn)
-           :alt    (tr "workspace.layout-grid.editor.options.edit-grid")
-           :on-click toggle-edit-mode}
+         [:> button* {:variant "secondary"
+                      :class (stl/css :edit-grid-btn)
+                      :on-click toggle-edit-mode}
           (tr "workspace.layout-grid.editor.options.edit-grid")]]])]))

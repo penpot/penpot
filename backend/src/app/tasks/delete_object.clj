@@ -87,10 +87,14 @@
                   :file-id id
                   :cause cause))))
 
-    ;; Mark file change to be deleted
+    ;; Mark file change to be deleted, but only the rows that do not carry a
+    ;; date yet. A revision is born already scheduled for deletion one hour
+    ;; later, and rewriting its date here would push it out to the trash
+    ;; lifetime; the collector would still take it, just much later than it
+    ;; should.
     (db/update! conn :file-change
                 {:deleted-at deleted-at}
-                {:file-id id}
+                {:file-id id :deleted-at nil}
                 {::db/return-keys false})
 
     ;; Mark file data fragment to be deleted

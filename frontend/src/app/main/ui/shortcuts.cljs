@@ -7,6 +7,7 @@
 (ns app.main.ui.shortcuts
   (:require-macros [app.main.style :as stl])
   (:require
+   ["@penpot/mousetrap$default" :as mousetrap]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.config :as cf]
@@ -36,38 +37,149 @@
 
 (def ^:private key-name-map
   {"ArrowUp"    "up"
+   "Up"         "up"
    "ArrowDown"  "down"
+   "Down"       "down"
    "ArrowLeft"  "left"
+   "Left"       "left"
    "ArrowRight" "right"
+   "Right"      "right"
    "Escape"     "escape"
+   "Esc"        "escape"
    "Enter"      "enter"
    "Backspace"  "backspace"
    "Delete"     "del"
+   "Del"        "del"
+   "Insert"     "ins"
+   "Ins"        "ins"
    "Tab"        "tab"
+   "Home"       "home"
+   "End"        "end"
+   "PageUp"     "pageup"
+   "PageDown"   "pagedown"
+   "CapsLock"   "capslock"
+   "Spacebar"   "space"
+   "Control"    "ctrl"
+   "Shift"      "shift"
+   "Alt"        "alt"
+   "Meta"       "meta"
    " "          "space"})
 
-;; Mousetrap (the runtime shortcut matcher, vendored at
-;; frontend/packages/mousetrap) resolves a keydown positionally - via keyCode
-;; - ONLY for this punctuation set (its _KEYCODE_MAP); it falls back to
-;; `event.key.toLowerCase()` (glyph-based) for letters and digits, which
-;; aren't in that map. Recording punctuation from `code` therefore matches
-;; what Mousetrap triggers regardless of layout (e.g. the key next to Right
-;; Shift on a US layout is always "Period", whatever glyph it types on a
-;; given ISO layout). With modifiers, letters and digits come from keyCode
-;; like Mousetrap's keydown match (see `letter-or-digit`); otherwise from the
-;; glyph, like its keypress match.
-(def ^:private code-name-map
-  {"Minus"        "-"
-   "Equal"        "="
-   "BracketLeft"  "["
-   "BracketRight" "]"
-   "Backslash"    "\\"
-   "Semicolon"    ";"
-   "Quote"        "'"
-   "Backquote"    "`"
-   "Comma"        ","
-   "Period"       "."
-   "Slash"        "/"})
+;; Mirrors how mousetrap reads a bind string (`_keysFromString` and
+;; `_getKeyInfo` in @penpot/mousetrap), so a command is valid exactly when
+;; mousetrap can match it.
+
+(def ^:private command-aliases
+  {"ctrl"    "ctrl"
+   "control" "ctrl"
+   "alt"     "alt"
+   "option"  "alt"
+   "shift"   "shift"
+   "meta"    "meta"
+   "command" "meta"
+   "return"  "enter"
+   "enter"   "enter"
+   "esc"     "escape"
+   "escape"  "escape"
+   "del"     "del"
+   "delete"  "del"
+   "ins"     "ins"
+   "insert"  "ins"
+   "space"   "space"
+   "plus"    "+"})
+
+(def ^:private command-modifiers
+  #{"ctrl" "alt" "shift" "meta"})
+
+(def ^:private command-named-keys
+  (into #{} (remove command-modifiers) (vals key-name-map)))
+
+(defn- canonical-command-key
+  [token]
+  (cond
+    ;; `mod` follows the platform, like `ds/c-mod`.
+    (= "mod" token)
+    (if (cf/check-platform? :macos) "meta" "ctrl")
+
+    (contains? command-aliases token)
+    (get command-aliases token)
+
+    (= 1 (count token))
+    (str/lower token)
+
+    :else
+    (str/lower (get key-name-map token token))))
+
+(defn- command-step-keys
+  "Splits one step of a command (\"ctrl+shift+z\") into canonical keys.
+   A lone \"+\" is the plus key, and \"++\" ends a step with it."
+  [step]
+  (if (= "+" step)
+    ["+"]
+    (->> (.split (str/replace step #"\+{2}" "+plus") "+")
+         (mapv canonical-command-key))))
+
+(defn- final-command-key?
+  [k]
+  (or (= 1 (count k))
+      (contains? command-named-keys k)
+      ;; Two-digit alternatives first: cljs `re-matches` does not
+      ;; backtrack into a longer alternative.
+      (some? (re-matches #"f(?:1[0-9]|2[0-4]|[1-9])" k))
+      (some? (re-matches #"num[0-9]" k))))
+
+(defn- valid-command-step?
+  "A lone modifier is a valid step: `:show-measure` binds a bare `alt`."
+  [step-keys]
+  (let [final-key (peek step-keys)]
+    (if (contains? command-modifiers final-key)
+      (= 1 (count step-keys))
+      (and (every? command-modifiers (pop step-keys))
+           (final-command-key? final-key)))))
+
+(defn valid-command?
+  "True when `command` is a key combination mousetrap can match: steps
+   separated by single spaces, each a lone modifier or modifiers joined
+   with \"+\" ending with a single character, a named key (`escape`, `up`,
+   ...), a function key (`f1`..`f24`) or a numpad digit (`num0`..`num9`).
+   The empty string is valid: it disables the shortcut."
+  [command]
+  (and (string? command)
+       (or (= "" command)
+           (every? (comp valid-command-step? command-step-keys)
+                   (.split command " ")))))
+
+(defn- canonical-command-step
+  "One step in the form mousetrap matches on: canonical keys with the
+   modifiers sorted, so `Shift+Ctrl+Z` and `ctrl+shift+z` compare equal."
+  [step]
+  (let [step-keys (command-step-keys step)
+        final-key (peek step-keys)]
+    (str/join "+" (conj (vec (sort (pop step-keys))) final-key))))
+
+(defn- reserved-command-steps
+  "Key combinations of the non-customizable workspace shortcuts (cancel,
+   copy, paste): assigning them to another action would bind one key to two
+   actions. The path editor's cancel also binds `v`, the move tool key,
+   so path shortcuts are left out."
+  []
+  (into #{}
+        (comp (filter #(false? (:customizable (val %))))
+              (mapcat #(let [command (:command (val %))]
+                         (if (vector? command) command [command])))
+              (mapcat #(.split % " "))
+              (map canonical-command-step))
+        wsc/shortcuts))
+
+(defn reserved-command?
+  "True when any step of `command` is a combination Penpot keeps for a
+   non-customizable shortcut."
+  [command]
+  (and (string? command)
+       (not= "" command)
+       (let [reserved (reserved-command-steps)]
+         (some? (some #(contains? reserved (canonical-command-step %))
+                      (.split command " "))))))
 
 (defn- event->native
   "Unwraps a goog.events.BrowserEvent to the native event, since the
@@ -77,42 +189,46 @@
     (or (.getBrowserEvent event) event)
     event))
 
-(defn- letter-or-digit
-  "Letter or digit named by keyCode when a modifier is held, ignoring the glyph
-  it makes the key type (Option+Shift+5 types \"ﬁ\" on macOS)."
+(defn- alt-graph?
   [^js event]
-  (let [key-code (.-keyCode event)]
-    (when (and (or (.-ctrlKey event) (.-metaKey event)
-                   (.-altKey event) (.-shiftKey event))
-               (or (<= 48 key-code 57)
-                   (<= 65 key-code 90)))
-      (.toLowerCase (js/String.fromCharCode key-code)))))
+  (boolean
+   (or (when (fn? (.-getModifierState event))
+         (.getModifierState event "AltGraph"))
+       (let [native (event->native event)]
+         (when (and (not (identical? native event))
+                    (fn? (.-getModifierState native)))
+           (.getModifierState native "AltGraph"))))))
 
 (defn- normalize-key
+  "Returns the key token Mousetrap matches for `event`, asking Mousetrap
+   itself (`keyForRecording`) so a recorded shortcut always fires: letters
+   and digits with a modifier by keyCode (`shift+1`, `alt+m`), punctuation
+   by position when the browser has a layout map, the typed glyph
+   otherwise."
   [^js event]
-  (let [key  (.-key event)]
-    (when (and key (not (contains? modifier-keys key)))
-      (or (get key-name-map key)
-          (get code-name-map (.-code (event->native event)))
-          (letter-or-digit event)
-          (some-> key .toLowerCase)))))
+  (let [key (.-key event)]
+    (when (and (string? key) (not (contains? modifier-keys key)))
+      (.keyForRecording ^js mousetrap (event->native event)))))
 
 (defn- event->modifier-parts
   [^js event]
-  (cond-> []
-    (and (.-ctrlKey event)
-         (not (cf/check-platform? :macos)))
-    (conj "ctrl")
+  (let [alt-graph? (alt-graph? event)]
+    (cond-> []
+      (and (.-ctrlKey event)
+           (not (cf/check-platform? :macos))
+           (not alt-graph?))
+      (conj "ctrl")
 
-    (and (.-metaKey event)
-         (cf/check-platform? :macos))
-    (conj "command")
+      (and (.-metaKey event)
+           (cf/check-platform? :macos))
+      (conj "command")
 
-    (.-altKey event)
-    (conj "alt")
+      (and (.-altKey event)
+           (not alt-graph?))
+      (conj "alt")
 
-    (.-shiftKey event)
-    (conj "shift")))
+      (.-shiftKey event)
+      (conj "shift"))))
 
 (defn- keyboard-event->mousetrap
   [^js event]
@@ -423,39 +539,31 @@
 
 (mf/defc shortcuts-keys*
   [{:keys [content command is-customized has-conflict? light-shortcut]}]
-  (let [managed-list    (if (coll? content)
-                          content
-                          (conj () content))
-        chars-list      (map ds/split-sc managed-list)
-        last-element    (last chars-list)
-        short-char-list (if (= 1 (count chars-list))
-                          chars-list
-                          (drop-last chars-list))
-        penultimate     (last short-char-list)]
+  (let [managed-list (if (coll? content)
+                       content
+                       (conj () content))
+        chars-list   (map ds/split-sc managed-list)
+        last-index   (dec (count chars-list))
+        key-class    (cond
+                       has-conflict? (stl/css :conflict-key)
+                       is-customized (stl/css :customized-key)
+                       light-shortcut (stl/css :light-key))]
+    ;; Each combination is a group that never breaks; the list wraps
+    ;; between groups. The separator stays inside a group so no line
+    ;; starts with a comma.
     [:span {:class (stl/css :keys)}
-     (for [chars short-char-list]
-       [:* {:key (str/join chars)}
+     (for [[index chars] (d/enumerate chars-list)]
+       [:span {:key (dm/str index "-" (str/join chars))
+               :class (stl/css :key-group)}
+        (when (and (pos? index) (= index last-index))
+          [:span {:class (stl/css :space)} (tr "shortcuts.or")])
         (for [char chars]
           [:> converted-chars* {:key (dm/str char "-" (name command))
                                 :char char
                                 :command command
-                                :class (cond
-                                         has-conflict? (stl/css :conflict-key)
-                                         is-customized (stl/css :customized-key)
-                                         light-shortcut (stl/css :light-key))}])
-
-        (when (not= chars penultimate) [:span {:class (stl/css :space)} ","])])
-     (when (not= last-element penultimate)
-       [:*
-        [:span {:class (stl/css :space)} (tr "shortcuts.or")]
-        (for [char last-element]
-          [:> converted-chars* {:key (dm/str char "-" (name command))
-                                :char char
-                                :command command
-                                :class (cond
-                                         has-conflict? (stl/css :conflict-key)
-                                         is-customized (stl/css :customized-key)
-                                         light-shortcut (stl/css :light-key))}])])]))
+                                :class key-class}])
+        (when (< index (dec last-index))
+          [:span {:class (stl/css :space)} ","])])]))
 
 (mf/defc shortcut-row-editable*
   [{:keys [elements custom-shortcuts command-translate conflicts section-key]}]
@@ -544,12 +652,16 @@
                       effective-section-key))
            (clean-editing-state)))
 
+        reserved?              (and (some? recorded-command)
+                                    (not reset-pending)
+                                    (reserved-command? recorded-command))
+
         save-fn
         (mf/use-fn
-         (mf/deps recorded-command conflict command effective-section-key)
+         (mf/deps recorded-command reserved? conflict command effective-section-key)
          (fn [event]
            (dom/prevent-default event)
-           (when recorded-command
+           (when (and recorded-command (not reserved?))
              (if (deref reset-pending*)
                (st/emit! (customize/reset-custom-shortcut command recorded-command effective-section-key))
                (st/emit! (customize/set-custom-shortcut
@@ -653,9 +765,16 @@
                                 :has-conflict? false}]])
 
         (when (and recorded-command (not reset-pending))
-          (if conflict
+          (cond
+            reserved?
+            [:> context-notification* {:level :warning :class (stl/css :modal-error-msg)}
+             (tr "shortcuts.edit-modal.reserved")]
+
+            conflict
             [:> context-notification* {:level :warning :class (stl/css :modal-error-msg)}
              (tr "shortcuts.edit-modal.conflict" (:name conflict))]
+
+            :else
             [:> context-notification* {:level :success :class (stl/css :modal-success-msg)}
              (tr "shortcuts.edit-modal.success")]))
         [:div {:class (stl/css :edit-buttons)}
@@ -668,6 +787,7 @@
           [:> icon-button* {:variant "primary"
                             :aria-label (tr "labels.save")
                             :on-click save-fn
+                            :disabled reserved?
                             :icon i/tick
                             :icon-size "m"}]]
          [:div {:class (stl/css :confirmation-buttons)}
@@ -735,7 +855,7 @@
                  :data-conflict (str has-conflict?)
                  :aria-label command-translate
                  :key command-translate}
-            [:span
+            [:span {:class (stl/css :command-label)}
              [:span {:class (stl/css-case :command-name true
                                           :not-customizable-label (not customizable?))
                      :id (dm/str command-translate "-label")}

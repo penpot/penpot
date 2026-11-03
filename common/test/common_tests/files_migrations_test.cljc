@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.files.migrations :as cfm]
    [app.common.files.tokens :as cfo]
+   [app.common.geom.rect :as grc]
    [app.common.test-helpers.components :as thk]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
@@ -16,6 +17,7 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.variants :as thv]
    [app.common.types.file :as ctf]
+   [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.token :as ctt]
    [app.common.uuid :as uuid]
@@ -636,6 +638,62 @@
               (str "points rebuilt from content when they were " (pr-str points)))
         (t/is (= (:selrect shape) (:selrect shape'))
               "selrect rebuilt from content")))))
+
+(def ^:private contents-without-rect
+  "Path contents from old files whose points give no rect"
+  {"segments without params"  [{:command :move-to} {:command :line-to}]
+   "only a close path"        [{:command :close-path :params {}}]
+   "not finite coordinates"   [{:command :move-to :params {:x ##NaN :y ##Inf}}
+                               {:command :line-to :params {:x 10 :y 10}}]})
+
+(t/deftest migration-legacy-6-repairs-paths-whose-content-has-no-rect
+  (let [migration-id "legacy-6"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)]
+
+    (doseq [[label content] contents-without-rect]
+      (let [shape  (-> (make-path-shape shape-id)
+                       (assoc :points [] :content content))
+            data   {:pages-index {page-id {:objects {shape-id shape}}}}
+            data'  (cfm/migrate-data data migration-id)
+            shape' (get-in data' [:pages-index page-id :objects shape-id])]
+
+        (t/is (grc/rect? (:selrect shape')) (str "selrect is a rect: " label))
+        (t/is (= 4 (count (:points shape'))) (str "points rebuilt: " label))))))
+
+(t/deftest migration-0003-convert-path-content-drops-segments-without-coordinates
+  (let [migration-id "0003-convert-path-content-v2"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        content      [{:command :move-to :params {:x 10 :y 20}}
+                      {:command :line-to}
+                      {:command :curve-to :params {:x 50 :y 50}}
+                      {:command :line-to :params {:x 110 :y 70}}
+                      {:command :close-path :params {}}]
+        shape        (assoc (make-path-shape shape-id) :content content)
+        data         {:pages-index {page-id {:objects {shape-id shape}}}}
+        data'        (cfm/migrate-data data migration-id)
+        content'     (get-in data' [:pages-index page-id :objects shape-id :content])]
+
+    (t/is (path/content? content'))
+    (t/is (= [:move-to :line-to :close-path] (mapv :command (vec content'))))))
+
+(t/deftest migration-legacy-6-chain-with-content-without-rect
+  ;; The file must load: every migration from legacy-6 on and the final
+  ;; data validation must succeed.
+  (doseq [[label content] contents-without-rect]
+    (let [shape-id (uuid/next)
+          file     (ctf/make-file {:name "Legacy path without rect"})
+          page-id  (first (get-in file [:data :pages]))
+          shape    (-> (make-path-shape shape-id)
+                       (assoc :points [] :content content))
+          file     (-> file
+                       (dissoc :migrations)
+                       (assoc :version 5)
+                       (assoc-in [:data :pages-index page-id :objects shape-id] shape))
+          file'    (cfm/migrate-file file (delay {}))]
+
+      (t/is (contains? (:migrations file') "legacy-6") (str "migrated: " label)))))
 
 (t/deftest migration-legacy-6-runs-through-file-migration
   ;; A file saved before version 6 runs every migration from legacy-6 on,

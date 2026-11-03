@@ -32,8 +32,26 @@
 (def check-input
   (sm/check-fn schema:input))
 
-(defn validate-media-type!
-  ([upload] (validate-media-type! upload cm/image-types))
+(def allowed-upload-prefixes
+  ;; Upload temp files are created server-side by the multipart parser
+  ;; (yetti `default-temp-dir`, `/tmp/undertow/`) plus the tmp dir used
+  ;; by tests and storage tmp files (`/tmp/penpot/`). Anything else
+  ;; (e.g. `/etc/passwd` smuggled via Transit `~#path`) is rejected.
+  ["/tmp/undertow/" "/tmp/penpot/"])
+
+(defn check-upload-path
+  [upload]
+  (let [real (try (str (fs/real (:path upload)))
+                  (catch Exception _ nil))]
+    (when (or (nil? real)
+              (not (some #(str/starts-with? real %) allowed-upload-prefixes)))
+      (ex/raise :type :validation
+                :code :params-validation
+                :hint "invalid upload path"))
+    upload))
+
+(defn check-media-type
+  ([upload] (check-media-type upload cm/image-types))
   ([upload allowed]
    (when-not (contains? allowed (:mtype upload))
      (ex/raise :type :validation
@@ -42,7 +60,7 @@
 
    upload))
 
-(defn validate-media-size!
+(defn check-media-size
   [upload]
   (let [max-size (cf/get :media-max-file-size)]
     (when (> (:size upload) max-size)
@@ -53,10 +71,10 @@
                                 max-size)))
     upload))
 
-(defn validate-font-size!
+(defn check-font-size
   "Validates that the font file `upload` does not exceed the configured
   `:font-max-file-size` limit.  Accepts the same map shape as
-  `validate-media-size!` — requires a `:size` key in bytes."
+  `check-media-size` — requires a `:size` key in bytes."
   [upload]
   (let [max-size (cf/get :font-max-file-size)]
     (when (> (:size upload) max-size)

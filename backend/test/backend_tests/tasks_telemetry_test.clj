@@ -11,6 +11,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.loggers.audit :as audit]
+   [app.loggers.audit.consumer-task :as at]
    [app.tasks.telemetry :as telemetry]
    [app.util.json :as json]
    [backend-tests.helpers :as th]
@@ -999,3 +1000,45 @@
         (th/run-task! :telemetry {:send? true :enabled? true})
         (t/is (= 1 @send-count))  ;; still 1, not 2
         (t/is (= 0 (count-telemetry-rows)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PENDING-QUEUE REGRESSION (telemetry deletes)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- insert-pending-pair!
+  "Queue the row for both consumers (from the consumer constants, not
+  literals): the delete paths must face pending-ful rows."
+  [row-id]
+  (doseq [consumer [at/consumer-nexus at/consumer-admin-console]]
+    (th/db-exec! ["INSERT INTO audit_log_pending (audit_log_id, consumer)
+                   VALUES (?::uuid, ?::smallint)
+                        ON CONFLICT DO NOTHING"
+                  row-id consumer])))
+
+(defn- count-pendings []
+  (-> (th/db-exec-one! ["SELECT count(*) AS cnt FROM audit_log_pending"])
+      :cnt
+      long))
+
+(t/deftest test-delete-sent-events-removes-pendings-first
+  ;; Regression: telemetry rows carry pendings for both consumers, so
+  ;; deleting the row must delete its pendings first, or the FK
+  ;; rejects the delete and the batch is sent again next tick.
+  (let [row (insert-telemetry-row! "navigate")]
+    (insert-pending-pair! (:id row))
+    (t/is (= 2 (count-pendings)))
+    (db/tx-run! th/*pool*
+                (fn [{:keys [::db/conn]}]
+                  (@#'telemetry/delete-sent-events conn [(:id row)])))
+    (t/is (= 0 (count-telemetry-rows)))
+    (t/is (= 0 (count-pendings)))))
+
+(t/deftest test-gc-events-removes-pendings-first
+  ;; Same guarantee for the >7-days purge.
+  (let [past (ct/in-past {:days 8})
+        row  (insert-telemetry-row! "navigate" {:created-at past :tracked-at past})]
+    (insert-pending-pair! (:id row))
+    (t/is (= 2 (count-pendings)))
+    (@#'telemetry/gc-events {::db/conn th/*pool*})
+    (t/is (= 0 (count-telemetry-rows)))
+    (t/is (= 0 (count-pendings)))))

@@ -6,6 +6,7 @@
 
 (ns backend-tests.file-gc-scheduler-test
   (:require
+   [app.common.time :as ct]
    [app.jobs :as jobs]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
@@ -26,3 +27,17 @@
       (t/is (thrown-with-msg? Exception #"check error"
                               (jobs/submit cfg {::jobs/name   :file-gc-scheduler
                                                 ::jobs/params {:min-age {:bogus true}}}))))))
+
+(t/deftest scheduler-submits-one-job-per-eligible-file
+  (let [profile (th/create-profile* 1)]
+    (doseq [i [1 2 3]]
+      (let [file (th/create-file* i {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)})]
+        ;; Make the files deterministically eligible: pending trim and
+        ;; modified long enough ago.
+        (th/db-update! :file {:has-media-trimmed false
+                              :modified-at (ct/in-past "2h")}
+                       {:id (:id file)})))
+    (let [result (th/run-task! :file-gc-scheduler {:min-age "1h"})]
+      (t/is (= 3 (:processed result)))
+      (t/is (= 3 (count (th/db-query :job {:name "file-gc"})))))))
