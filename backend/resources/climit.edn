@@ -115,9 +115,10 @@
  ;;    `files_pull_request.clj::update-pull-request-snapshot`), which is
  ;;    the anchor's shape again.
  ;;
- ;; Every entry carries a queue, as the header requires: a command takes
- ;; its own limits before the root ones, so an entry without a queue lets
- ;; its waiters pile up without bound. The write-side global queues
+ ;; The numbers here are example defaults, not measurements. Every entry
+ ;; of this file carries a queue because `climit_test.clj` checks this
+ ;; file for one; at runtime a limit with no entry is skipped with a
+ ;; warning (`climit.clj::wrap`). The write-side global queues
  ;; follow the anchor's ratio of five waiters to three permits, rounded
  ;; up. The per-profile entry of one permit and a queue of two keeps a
  ;; single designer to one operation at a time. The two read-side
