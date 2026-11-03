@@ -16,8 +16,8 @@
    ["path" :as path]
    [app.common.transit :as transit]
    [benches.render-wasm.errors :as errors]
-   [benches.render-wasm.node.build :as build]
    [benches.render-wasm.node.process :as process]
+   [benches.render-wasm.node.runner.build :as build]
    [cljs.test :as t :include-macros true]
    [clojure.string :as str]))
 

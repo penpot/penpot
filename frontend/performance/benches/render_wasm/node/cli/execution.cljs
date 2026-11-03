@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.execution
+(ns benches.render-wasm.node.cli.execution
   "Validate benchmark command requests, run their handlers and print results.
 
   Both the CLI entry and the separately compiled renderer command entry use
@@ -21,9 +21,9 @@
    [app.common.schema :as sm]
    [benches.render-wasm.errors :as errors :refer [attempt failure?]]
    [benches.render-wasm.node.cli.registry :as registry]
+   [benches.render-wasm.node.cli.request :as request]
    [benches.render-wasm.node.log :as log]
-   [benches.render-wasm.node.outcome :as outcome]
-   [benches.render-wasm.node.request :as request]))
+   [benches.render-wasm.node.outcome :as outcome]))
 
 (defn on-signals
   "Listen for process interrupts so the caller can stop work and finish cleanup.

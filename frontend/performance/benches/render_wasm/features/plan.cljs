@@ -4,10 +4,10 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.feature-plan
+(ns benches.render-wasm.features.plan
   "Requested-feature configurations and comparison edges."
   (:require
-   [benches.render-wasm.node.options :as options]
+   [benches.render-wasm.features.selection :as selection]
    [clojure.string :as str]))
 
 (def ^:const default-max-features 3)
@@ -16,7 +16,7 @@
   "Checks names and empty declared defaults against Cargo metadata's feature
   definitions. Cargo owns activation; these definitions are not resolved here."
   [features definitions]
-  (let [features (:features (options/feature-selection {:features features}))]
+  (let [features (:features (selection/feature-selection {:features features}))]
     (when-not (and (map? definitions)
                    (every? string? (keys definitions))
                    (every? #(and (vector? %) (every? string? %)) (vals definitions)))
@@ -34,7 +34,7 @@
   above eight configurations or with an empty filter; dry-run needs none."
   [features {:keys [max-features confirm dry-run filter]
              :or {max-features default-max-features confirm false dry-run false}}]
-  (let [features (:features (options/feature-selection {:features features}))
+  (let [features (:features (selection/feature-selection {:features features}))
         n        (count features)]
     (when-not (and (int? max-features) (<= 1 max-features 6))
       (throw (ex-info "max-features must be an integer from 1 to 6" {:type ::invalid-limit})))

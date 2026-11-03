@@ -13,9 +13,9 @@
    ["path" :as path]
    [app.common.transit :as transit]
    [benches.render-wasm.identity :as identity]
-   [benches.render-wasm.node.browser :as browser]
    [benches.render-wasm.node.process :as process]
-   [benches.render-wasm.node.server :as server]
+   [benches.render-wasm.node.runner.browser :as browser]
+   [benches.render-wasm.node.runner.server :as server]
    [cljs.test :as t :include-macros true]))
 
 (def ^:private temporary-root (atom nil))

@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.cli.run
+(ns benches.render-wasm.node.cli.commands.run
   "Options for a benchmark run and its selected build source."
   (:require
    [app.common.schema :as sm]
-   [benches.render-wasm.node.cli.build :as build]
+   [benches.render-wasm.node.cli.commands.build :as build]
    [benches.render-wasm.node.cli.shared :as shared]))
 
 (def schema:build

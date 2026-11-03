@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.cli.purge
+(ns benches.render-wasm.node.cli.commands.purge
   "Options for purging managed benchmark artifacts."
   (:require
    [benches.render-wasm.node.cli.shared :as shared]))

@@ -9,8 +9,8 @@
    ["fs" :as fs]
    ["os" :as os]
    ["path" :as path]
-   [benches.render-wasm.node.artifacts :as artifacts]
-   [benches.render-wasm.node.runs :as runs]
+   [benches.render-wasm.node.storage.artifacts :as artifacts]
+   [benches.render-wasm.node.storage.runs :as runs]
    [benches.render-wasm.result :as result]
    [cljs.test :as t :include-macros true]
    [clojure.string :as str]))

@@ -7,8 +7,8 @@
 (ns performance-tests.render-wasm.cli-test
   (:require
    [app.common.schema :as sm]
-   [benches.render-wasm.node.cli :as cli]
-   [benches.render-wasm.node.request :as request]
+   [benches.render-wasm.node.cli.request :as request]
+   [benches.render-wasm.node.cli.resolve :as cli]
    [cljs.test :as t :include-macros true]
    [clojure.string :as str]))
 

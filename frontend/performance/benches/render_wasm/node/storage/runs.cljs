@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.runs
+(ns benches.render-wasm.node.storage.runs
   "Manages saved run destinations, schema:run persistence and diagnostic logs.
 
   Runs are saved under <frontend>/target/performance/render-wasm/runs.
@@ -14,8 +14,8 @@
   (:require
    ["fs" :as fs]
    ["path" :as path]
-   [benches.render-wasm.node.artifacts :as artifacts]
    [benches.render-wasm.node.files :as files]
+   [benches.render-wasm.node.storage.artifacts :as artifacts]
    [benches.render-wasm.result :as result]
    [clojure.string :as str]))
 

@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.request
+(ns benches.render-wasm.node.cli.request
   "Resolved benchmark requests, sender defaults and receiver validation."
   (:require
    [app.common.schema :as sm]

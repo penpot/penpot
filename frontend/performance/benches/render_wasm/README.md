@@ -1290,7 +1290,14 @@ observed change matters for the workload.
 ```text
 frontend/performance/benches/render_wasm/
 ├── browser/          page entry and browser bridge
-├── node/             CLI, build preparation, server, browser host, run, artefacts
+├── features/         feature selection, configurations and comparison edges
+├── node/
+│   ├── catalog/      compiled catalog entry and retained catalog loader
+│   ├── cli/          CLI entry, resolution, requests and execution lifecycle
+│   │   └── commands/ per-command schemas, help and resolution
+│   ├── report/       saved-record comparison and merge
+│   ├── runner/       build preparation, server, browser host and run orchestration
+│   └── storage/      artifacts and saved runs
 ├── report/           summaries, comparisons, statistics, formatting
 ├── runtime/          renderer commands, render drains, and camera sessions
 ├── scenes/           scene recipes and their cases
@@ -1299,7 +1306,6 @@ frontend/performance/benches/render_wasm/
 ├── cases.cljs        case discovery and collection
 ├── codec.cljs        Transit round-trip validation
 ├── errors.cljc       failure values and diagnostics
-├── feature_plan.cljs feature configurations and comparison edges
 ├── snapshot.cljs     snapshot validation and upload order
 ├── fingerprint.cljs  digest of the starting snapshot
 ├── identity.cljc     build identity and bundle compatibility checks

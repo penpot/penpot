@@ -13,8 +13,8 @@
    [app.common.transit :as transit]
    [benches.render-wasm.codec :as codec]
    [benches.render-wasm.identity :as identity]
-   [benches.render-wasm.node.artifacts :as artifacts]
-   [benches.render-wasm.node.catalog :as catalog]
+   [benches.render-wasm.node.catalog.loader :as catalog]
+   [benches.render-wasm.node.storage.artifacts :as artifacts]
    [cljs.test :as t :include-macros true]))
 
 (def ^:private temporary-root (atom nil))

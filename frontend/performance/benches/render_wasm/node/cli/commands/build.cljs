@@ -4,17 +4,18 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.cli.build
+(ns benches.render-wasm.node.cli.commands.build
   "Options for preparing a benchmark build."
   (:require
+   [benches.render-wasm.features.selection :as selection]
    [benches.render-wasm.node.cli.shared :as shared]
-   [benches.render-wasm.node.options :as options]))
+   [benches.render-wasm.node.settings :as settings]))
 
 (def schema:options
   [:map {:closed true}
    [:default-features {:default true} :boolean]
    [:features {:default []} [:vector shared/schema:feature]]
-   [:build-timeout-ms {:default options/default-build-timeout-ms} shared/schema:timeout-ms]])
+   [:build-timeout-ms {:default settings/default-build-timeout-ms} shared/schema:timeout-ms]])
 
 (def ^:const usage "runner build [options]")
 
@@ -23,7 +24,7 @@
 (def cli-options
   [[nil "--[no-]default-features" "Enable Cargo defaults"]
    [nil "--features FEATURES" "Comma-separated functional Cargo features"
-    :parse-fn options/parse-feature-list]
+    :parse-fn shared/parse-feature-list]
    (shared/build-timeout-option "Complete preparation deadline")])
 
 (defn resolve-options
@@ -35,6 +36,6 @@
 (defn check-options
   "Checks measurement feature policy and returns the resolved build options."
   [resolved]
-  (options/feature-selection {:default-features? (:default-features resolved)
-                              :features (:features resolved)})
+  (selection/feature-selection {:default-features? (:default-features resolved)
+                                :features (:features resolved)})
   resolved)

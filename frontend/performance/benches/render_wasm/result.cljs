@@ -10,7 +10,7 @@
    [app.common.schema :as sm]
    [app.common.transit :as transit]
    [benches.render-wasm.codec :as codec]
-   [benches.render-wasm.feature-plan :as feature-plan]
+   [benches.render-wasm.features.plan :as feature-plan]
    [benches.render-wasm.report.analysis :as analysis]))
 
 (def schema:basis

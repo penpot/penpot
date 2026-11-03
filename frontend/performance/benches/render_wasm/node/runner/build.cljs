@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.build
+(ns benches.render-wasm.node.runner.build
   "These functions build the renderer and package it with the code that runs
   benchmarks in Node and the browser.
 
@@ -22,12 +22,13 @@
    ["url" :as url]
    [app.common.transit :as transit]
    [benches.render-wasm.errors :as errors :refer [attempt failure?]]
+   [benches.render-wasm.features.selection :as selection]
    [benches.render-wasm.identity :as identity]
-   [benches.render-wasm.node.artifacts :as artifacts]
-   [benches.render-wasm.node.catalog :as catalog]
+   [benches.render-wasm.node.catalog.loader :as catalog]
    [benches.render-wasm.node.log :as log]
-   [benches.render-wasm.node.options :as options]
    [benches.render-wasm.node.process :as process]
+   [benches.render-wasm.node.settings :as settings]
+   [benches.render-wasm.node.storage.artifacts :as artifacts]
    [clojure.string :as str]))
 
 (defn ^:async git-provenance
@@ -116,11 +117,11 @@
   A failure rejects the promise and keeps any files already written for
   inspection. Error data includes :build-id and :log-path when available."
   [{:keys [root features selection build-timeout-ms signal on-created]
-    :or {build-timeout-ms options/default-build-timeout-ms}}]
+    :or {build-timeout-ms settings/default-build-timeout-ms}}]
   (when-not (and (js/Number.isSafeInteger build-timeout-ms) (pos? build-timeout-ms))
     (throw (ex-info "build timeout must be a positive integer" {:type ::invalid-timeout})))
   (let [root      (or root (artifacts/frontend-root))
-        selection (options/feature-selection (or selection features))
+        selection (selection/feature-selection (or selection features))
         deadline  (process/deadline build-timeout-ms)
         bounds    {:deadline deadline :signal signal}
         initial   (artifacts/create-build root selection {:git {:sha nil :dirty nil}
@@ -153,8 +154,8 @@
                                             "RENDER_WASM_BUILD_INFO" facts-path}})))
           (let [facts    (js/JSON.parse (fs/readFileSync facts-path "utf8"))
                 profile  (js->clj (.-profile facts) :keywordize-keys true)
-                resolved (:features (options/feature-selection {:features (js->clj (.-features facts))
-                                                                :default-features? (:default-features? selection)}))]
+                resolved (:features (selection/feature-selection {:features (js->clj (.-features facts))
+                                                                  :default-features? (:default-features? selection)}))]
             (when-not (and (= "3" (:opt_level profile))
                            (false? (:debug_assertions profile)))
               (throw (ex-info "Cargo did not produce an optimized renderer"

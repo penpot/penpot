@@ -4,12 +4,12 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.compare
+(ns benches.render-wasm.node.report.compare
   "Offline comparison of two saved schema:run records.
 
   Inputs are user file paths resolved from the caller's cwd."
   (:require
-   [benches.render-wasm.node.runs :as runs]
+   [benches.render-wasm.node.storage.runs :as runs]
    [benches.render-wasm.report.compare :as compare]
    [benches.render-wasm.report.format :as format]
    [benches.render-wasm.result :as result]))

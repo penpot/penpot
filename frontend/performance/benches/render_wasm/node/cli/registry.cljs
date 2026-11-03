@@ -7,12 +7,12 @@
 (ns benches.render-wasm.node.cli.registry
   "Ordered command definitions for parsing, request schemas and help."
   (:require
-   [benches.render-wasm.node.cli.ab :as ab]
-   [benches.render-wasm.node.cli.build :as build]
-   [benches.render-wasm.node.cli.compare :as compare]
-   [benches.render-wasm.node.cli.merge :as merge]
-   [benches.render-wasm.node.cli.purge :as purge]
-   [benches.render-wasm.node.cli.run :as run]))
+   [benches.render-wasm.node.cli.commands.ab :as ab]
+   [benches.render-wasm.node.cli.commands.build :as build]
+   [benches.render-wasm.node.cli.commands.compare :as compare]
+   [benches.render-wasm.node.cli.commands.merge :as merge]
+   [benches.render-wasm.node.cli.commands.purge :as purge]
+   [benches.render-wasm.node.cli.commands.run :as run]))
 
 (def commands
   [["build"   {:usage build/usage

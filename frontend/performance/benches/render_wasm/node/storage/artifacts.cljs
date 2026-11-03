@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.artifacts
+(ns benches.render-wasm.node.storage.artifacts
   "Managed renderer builds and output homes for benchmark runs and comparisons.
 
   Here, 'managed' means that the runner owns the build directory and its

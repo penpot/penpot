@@ -7,7 +7,7 @@
 (ns performance-tests.render-wasm.request-test
   (:require
    [app.common.schema :as sm]
-   [benches.render-wasm.node.request :as request]
+   [benches.render-wasm.node.cli.request :as request]
    [cljs.test :as t :include-macros true]
    [performance-tests.render-wasm.test-helpers :refer [failure-data]]))
 
