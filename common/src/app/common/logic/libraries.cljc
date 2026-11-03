@@ -686,9 +686,11 @@
   "Whether the copy shape `shape-inst` keeps the geometry it shows at sync:
    its copy authors a constraint that ties one of its dimensions to its copy
    parent. A constraint applies to the resizes after it, so sync does not
-   resize the shape through it again."
-  [container shape-inst]
+   resize the shape through it again. A swap reaching the shape from its
+   main (`shape-main` shows another component) brings the new size."
+  [container shape-inst shape-main]
   (and (ctk/touched-group? shape-inst :constraints-group)
+       (= (:component-id shape-inst) (:component-id shape-main))
        (or (contains? #{:scale :leftright} (:constraints-h shape-inst))
            (contains? #{:scale :topbottom} (:constraints-v shape-inst)))
        (some? (:shape-ref (ctn/get-shape container (:parent-id shape-inst))))))
@@ -721,7 +723,7 @@
                               (ctk/touched-group? shape-inst :layout-grid-cells))
           placed         (cond
                            (and (not reset?) (or (ctk/touched-group? shape-inst :geometry-group)
-                                                 (constraint-kept? container shape-inst)))
+                                                 (constraint-kept? container shape-inst shape-main)))
                            (in-main-frame shape-inst (:root-inst ctx) (:root-main ctx))
 
                            (and (not reset?) (= (:id shape-inst) (:id (:root-inst ctx))))

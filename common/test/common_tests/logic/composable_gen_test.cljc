@@ -1048,3 +1048,11 @@
   (t/is (map? (cg/run {:world [2 0 {:text true :text-styles true}]
                        :ops [[:resize 2 0 0 0] [:detach 3 0 0 0] [:detach 11 0 0 0] [:rotate 10 0 0 0]
                              [:update-main 0 0 0 0] [:transform 0 0 0 12] [:update-main 7 0 0 0]]}))))
+
+(t/deftest generated-swap-brings-its-size-to-a-copy-child-with-its-own-constraint
+  ;; a copy child with its own scale constraint takes the size of the
+  ;; component its main swaps it for, as the other copies do
+  (t/is (map? (cg/run {:world [2 1 {:variants true :text-styles true :library true
+                                    :rich-variants true :layout-copies true :text true}]
+                       :ops [[:style 24 8 1] [:swap 2 0 0 0] [:edit 3 0 1 1] [:update-main 3]
+                             [:update-main 0 0 0 0]]}))))
