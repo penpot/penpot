@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { PenpotMcpServer, shouldRegisterDeveloperTools, shouldStartReplServer } from "./PenpotMcpServer";
+import { HEARTBEAT_STALE_THRESHOLD_MS } from "./PluginBridge";
 
 test("registers developer tools in local devenv mode", () => {
     assert.equal(shouldRegisterDeveloperTools(true, false), true);
@@ -256,3 +257,20 @@ function restoreOrDelete(key: string, value: string | undefined) {
         delete process.env[key];
     }
 }
+
+test("uses the default heartbeat threshold when PENPOT_MCP_HEARTBEAT_STALE_MS is unset", () => {
+    assert.equal(PenpotMcpServer.heartbeatStaleMs({}), HEARTBEAT_STALE_THRESHOLD_MS);
+});
+
+test("uses PENPOT_MCP_HEARTBEAT_STALE_MS when it is a positive number", () => {
+    assert.equal(PenpotMcpServer.heartbeatStaleMs({ PENPOT_MCP_HEARTBEAT_STALE_MS: "600000" }), 600000);
+});
+
+test("falls back to the default heartbeat threshold for empty, invalid, zero or negative values", () => {
+    for (const value of ["", "abc", "0", "-5"]) {
+        assert.equal(
+            PenpotMcpServer.heartbeatStaleMs({ PENPOT_MCP_HEARTBEAT_STALE_MS: value }),
+            HEARTBEAT_STALE_THRESHOLD_MS
+        );
+    }
+});

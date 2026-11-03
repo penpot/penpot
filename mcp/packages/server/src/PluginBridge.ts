@@ -90,12 +90,14 @@ export class PluginBridge implements TaskDispatchHost {
      *   instance) via Redis, rather than dispatched directly over a local socket.
      * @param taskTimeoutSecs - Timeout, in seconds, for plugin task execution
      *   (defaults to {@link DEFAULT_TASK_TIMEOUT_SECS})
+     * @param heartbeatStaleMs - Plugin heartbeat age, in ms, after which tasks are refused
      */
     constructor(
         public readonly mcpServer: PenpotMcpServer,
         private port: number,
         private readonly taskTimeoutSecs: number,
-        private readonly redisBridge?: RedisBridge
+        private readonly redisBridge?: RedisBridge,
+        private readonly heartbeatStaleMs: number = HEARTBEAT_STALE_THRESHOLD_MS
     ) {
         this.dispatcher = redisBridge
             ? new MultiInstanceTaskDispatcher(this, redisBridge)
@@ -442,7 +444,7 @@ export class PluginBridge implements TaskDispatchHost {
         }
 
         // the socket can be open while browser-throttled plugin JS cannot run tasks
-        assertPluginResponsive(target, Date.now());
+        assertPluginResponsive(target, Date.now(), this.heartbeatStaleMs);
 
         // register the task for result correlation, then send over the socket
         this.pendingTasks.set(task.id, task);

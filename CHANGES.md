@@ -118,6 +118,7 @@
 - Upgrade the MCP SDK to v2 and adopt the new protocol version [#11827](https://github.com/penpot/penpot/issues/11827) (PR: [#11841](https://github.com/penpot/penpot/pull/11841))
 - Remove legacy SSE support from the MCP server [#11846](https://github.com/penpot/penpot/issues/11846) (PR: [#11841](https://github.com/penpot/penpot/pull/11841))
 - Delete selected path handles with Backspace or Delete [#11858](https://github.com/penpot/penpot/issues/11858) (PR: [#11896](https://github.com/penpot/penpot/pull/11896))
+- Add `PENPOT_MCP_HEARTBEAT_STALE_MS` to configure the MCP plugin heartbeat threshold (by @fernando-ferreira-zonesoft) [#11885](https://github.com/penpot/penpot/issues/11885) (PR: [#12494](https://github.com/penpot/penpot/pull/12494))
 - Use the tooltip component in the token pill info [#11886](https://github.com/penpot/penpot/issues/11886) (PR: [#11900](https://github.com/penpot/penpot/pull/11900))
 - Hide the duplicate cursor when alt-dragging a shape that cannot be duplicated (by @0xTHAC0) [#11905](https://github.com/penpot/penpot/issues/11905) (PR: [#11195](https://github.com/penpot/penpot/pull/11195))
 ## 2.18.4

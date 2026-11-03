@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
+import { once } from "node:events";
 import test from "node:test";
-import { assertPluginResponsive, HEARTBEAT_STALE_THRESHOLD_MS } from "./PluginBridge";
+import { WebSocket } from "ws";
+import type { PenpotMcpServer } from "./PenpotMcpServer";
+import { assertPluginResponsive, HEARTBEAT_STALE_THRESHOLD_MS, PluginBridge } from "./PluginBridge";
+import { PluginTask } from "./PluginTask";
 
 test("passes for a responsive connection with a recent heartbeat", () => {
     const now = 1_000_000;
@@ -42,4 +46,46 @@ test("honours a custom stale threshold", () => {
         () => assertPluginResponsive({ frozen: false, lastHeartbeat }, now, 1_000),
         /appears to be suspended by the browser/
     );
+});
+
+async function withStalePlugin(heartbeatStaleMs: number | undefined, check: (bridge: PluginBridge) => Promise<void>) {
+    const mcpServer = {
+        host: "127.0.0.1",
+        isMultiUserMode: () => false,
+        getSessionContext: () => ({ userToken: undefined }),
+    } as unknown as PenpotMcpServer;
+    const bridge = new PluginBridge(mcpServer, 0, 5, undefined, heartbeatStaleMs);
+    const internals = bridge as any;
+    await once(internals.wsServer, "listening");
+    const plugin = new WebSocket(`ws://127.0.0.1:${internals.wsServer.address().port}`);
+    try {
+        await once(plugin, "open");
+        const initialized = once(plugin, "message", { signal: AbortSignal.timeout(1500) });
+        plugin.send(
+            JSON.stringify({ type: "initialize", session: { sessionId: "tab", fileId: "file-1", fileName: "Design" } })
+        );
+        await initialized;
+        plugin.on("message", (raw) => {
+            const request = JSON.parse(raw.toString());
+            plugin.send(JSON.stringify({ id: request.id, success: true, data: "ok" }));
+        });
+        const connection = [...internals.connectionsBySocket.values()][0];
+        connection.lastHeartbeat = Date.now() - 60_000;
+        await check(bridge);
+    } finally {
+        plugin.terminate();
+        await bridge.close();
+    }
+}
+
+test("refuses tasks for a plugin whose heartbeat is older than the default threshold", async () => {
+    await withStalePlugin(undefined, async (bridge) => {
+        await assert.rejects(bridge.executePluginTask(new PluginTask("test", {}), "tab"), /no heartbeat for 60s/);
+    });
+});
+
+test("sends tasks to the same plugin when the threshold is configured higher", async () => {
+    await withStalePlugin(600_000, async (bridge) => {
+        assert.equal((await bridge.executePluginTask(new PluginTask("test", {}), "tab")).data, "ok");
+    });
 });
