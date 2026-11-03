@@ -60,7 +60,8 @@ test("an archived branch opens read-only and offers its ways out", async ({
     page.getByRole("toolbar", { name: "Drawing tools" }),
   ).toBeHidden();
 
-  // restoring reopens the branch, and the banner follows its new status
+  // restoring asks first, then reopens the branch, and the banner follows
+  // its new status
   await workspacePage.mockRPC(
     "get-file-branch-info?file-id=*",
     "pull-requests/get-file-branch-info-branch.json",
@@ -71,6 +72,13 @@ test("an archived branch opens read-only and offers its ways out", async ({
       /"~:archived":\s*false/.test(req.postData() ?? ""),
   );
   await banner.getByRole("button", { name: "Restore" }).click();
+  // the confirmation is a plain modal: its title heads the box that holds
+  // the accept button
+  await page
+    .getByRole("heading", { name: "Restore branch" })
+    .locator("../..")
+    .getByRole("button", { name: "Restore" })
+    .click();
   await restore;
   await expect(banner.getByText("1 change not in main")).toBeVisible();
   await expect(
@@ -94,7 +102,7 @@ test("an archived branch asks before turning into an ordinary file", async ({
   ).toBeVisible();
 });
 
-test("the switcher groups merged and archived branches apart", async ({
+test("the switcher groups archived branches apart and lists no merged ones", async ({
   page,
 }) => {
   const workspacePage = new WorkspacePage(page);
@@ -104,8 +112,9 @@ test("the switcher groups merged and archived branches apart", async ({
   await page.getByTitle("Switch branch").click();
   const popover = page.getByRole("dialog", { name: "Branches" });
 
-  await popover.getByRole("button", { name: /^Merged/ }).click();
-  await expect(popover.getByText("shipped")).toBeVisible();
+  // a merge deletes its branch: no group lists merged branches
+  await expect(popover.getByRole("button", { name: /^Merged/ })).toBeHidden();
+  await expect(popover.getByText("shipped")).toBeHidden();
   await expect(popover.getByText("parked")).toBeHidden();
 
   await popover.getByRole("button", { name: /^Archived/ }).click();
@@ -123,17 +132,8 @@ test("the branch list offers Restore for archived branches only", async ({
   await page.getByTitle("Switch branch").click();
   await page.getByText("All branches").click();
 
-  await page.getByRole("tab", { name: "Merged (1)" }).click();
-  await page.getByRole("button", { name: "Options", exact: true }).click();
-  await expect(
-    page.getByRole("menuitem", { name: "Branch info" }),
-  ).toBeVisible();
-  await expect(page.getByRole("menuitem", { name: "Restore" })).toBeHidden();
-  await expect(page.getByRole("menuitem", { name: "Compare" })).toBeHidden();
-  await expect(
-    page.getByRole("menuitem", { name: "Turn into an ordinary file" }),
-  ).toBeHidden();
-  await page.keyboard.press("Escape");
+  // a merge deletes its branch: no tab lists merged branches
+  await expect(page.getByRole("tab", { name: /^Merged/ })).toBeHidden();
 
   await page.getByRole("tab", { name: "Archived (1)" }).click();
   await page.getByRole("button", { name: "Options", exact: true }).click();

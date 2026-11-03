@@ -33,10 +33,9 @@ test("on a branch of a library, the header says consumers read main", async ({
   );
   await expect(chip).toBeVisible();
 
+  // the popover says it under the main row
   await chip.click();
-  await expect(
-    page.getByText("Default branch (read by library consumers)"),
-  ).toBeVisible();
+  await expect(page.getByText("Read by library consumers")).toBeVisible();
 });
 
 test("on a library, the create dialog says consumers read main", async ({
@@ -51,11 +50,11 @@ test("on a library, the create dialog says consumers read main", async ({
   await workspacePage.mockGetFile("pull-requests/get-file-blank-shared.json");
   await workspacePage.goToWorkspace();
 
-  await expect(
-    page.getByText("Default branch (read by library consumers)"),
-  ).toBeVisible();
+  await expect(page.getByText("Default branch", { exact: true })).toBeVisible();
 
+  // the header says only "Default branch": the popover adds the library note
   await page.getByTitle("Switch branch").click();
+  await expect(page.getByText("Read by library consumers")).toBeVisible();
   await page.getByText("New branch").click();
   await expect(
     page.getByText(

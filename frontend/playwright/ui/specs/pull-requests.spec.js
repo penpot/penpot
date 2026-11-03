@@ -3,6 +3,9 @@ import { WorkspacePage } from "../pages/WorkspacePage";
 
 const PR_ID = "c7ce0794-0992-8105-8004-38f280443999";
 
+const reviewTitle = (page) =>
+  page.getByText("Reviewing the design review", { exact: true });
+
 test.beforeEach(async ({ page }) => {
   await WorkspacePage.init(page);
   await WorkspacePage.mockConfigFlags(page, ["enable-branching"]);
@@ -30,11 +33,11 @@ test("opening a file with pr-id shows the review sandbox banner", async ({
   await setupPullRequestSandbox(workspacePage);
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
-  await expect(page.getByText("Reviewing pull request")).toBeVisible();
+  await expect(reviewTitle(page)).toBeVisible();
   await expect(page.getByText("Checkout redesign").first()).toBeVisible();
 
   // the route reads as two pills: the branch under review, then main
-  const banner = page.getByText("Reviewing pull request").locator("../../..");
+  const banner = reviewTitle(page).locator("../../..");
   await expect(banner.getByText("checkout", { exact: true })).toBeVisible();
   await expect(banner.getByText("Main", { exact: true })).toBeVisible();
 
@@ -58,7 +61,7 @@ test("the compare dialog shows the proposed changes", async ({ page }) => {
   await page.getByRole("button", { name: "Compare" }).click();
 
   // the branching compare dialog is reused to inspect the changes
-  await expect(page.getByText("Compare changes")).toBeVisible();
+  await expect(page.getByText("Review changes")).toBeVisible();
 });
 
 test("accepting the pull request opens the merge dialog", async ({ page }) => {
@@ -66,7 +69,7 @@ test("accepting the pull request opens the merge dialog", async ({ page }) => {
   await setupPullRequestSandbox(workspacePage);
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
-  const banner = page.getByText("Reviewing pull request").locator("../../..");
+  const banner = reviewTitle(page).locator("../../..");
   await banner.getByRole("button", { name: "Options" }).click();
   await page.getByText("Merge to main").click();
 
@@ -80,7 +83,7 @@ test("the review behaves like a normal, editable file", async ({ page }) => {
   await setupPullRequestSandbox(workspacePage);
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
-  await expect(page.getByText("Reviewing pull request")).toBeVisible();
+  await expect(reviewTitle(page)).toBeVisible();
   // the file is the live branch, opened normally: the design toolbar is
   // available so reviewers can try and validate anything...
   await expect(workspacePage.rectShapeButton).toBeVisible();
@@ -115,7 +118,7 @@ test("closing the pull request asks for confirmation", async ({ page }) => {
   );
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
-  const banner = page.getByText("Reviewing pull request").locator("../../..");
+  const banner = reviewTitle(page).locator("../../..");
   await banner.getByRole("button", { name: "Options" }).click();
   await page.getByText("Cancel review").click();
 
@@ -124,7 +127,7 @@ test("closing the pull request asks for confirmation", async ({ page }) => {
 
   // confirming closes the pull request; being inside its sandbox, the
   // user is taken back to the file (no pr-id in the url)
-  await page.getByRole("button", { name: "Cancel pull request" }).click();
+  await page.getByRole("button", { name: "Cancel design review" }).click();
   await expect(page).not.toHaveURL(/pr-id/);
 });
 
@@ -161,15 +164,15 @@ test("exiting the review takes the user back to the file", async ({ page }) => {
   await setupPullRequestSandbox(workspacePage);
   await workspacePage.goToWorkspace({ extraParams: `&pr-id=${PR_ID}` });
 
-  await expect(page.getByText("Reviewing pull request")).toBeVisible();
-  const banner = page.getByText("Reviewing pull request").locator("../../..");
+  await expect(reviewTitle(page)).toBeVisible();
+  const banner = reviewTitle(page).locator("../../..");
   await banner.getByRole("button", { name: "Options" }).click();
   await page.getByText("Exit review").click();
 
   // exiting drops the review context and the pr-id param; the file (the
   // live branch) stays as it was
   await expect(page).not.toHaveURL(/pr-id/);
-  await expect(page.getByText("Reviewing pull request")).toBeHidden();
+  await expect(reviewTitle(page)).toBeHidden();
 });
 
 test("during a review the header names the branch under review", async ({
@@ -186,7 +189,7 @@ test("during a review the header names the branch under review", async ({
 
   // the review banner replaces the branch banner, so the header loads the
   // branch context itself
-  await expect(page.getByText("Reviewing pull request")).toBeVisible();
+  await expect(reviewTitle(page)).toBeVisible();
   await expect(page.getByTitle("On branch checkout from main")).toBeVisible();
 });
 
