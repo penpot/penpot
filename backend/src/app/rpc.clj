@@ -124,7 +124,8 @@
                              (cond-> (and (not (uuid? session-pid))
                                           (uuid? token-pid))
                                (-> (assoc ::auth-type :token)
-                                   (assoc ::token-perms (set (::actoken/perms request #{})))))
+                                   (assoc ::token-perms (set (::actoken/perms request #{})))
+                                   (assoc ::token-type (::actoken/type request))))
                              (cond-> key-id
                                (assoc ::auth-key-id key-id))
                              ;; Server-side only: request bodies cannot forge
@@ -171,10 +172,12 @@
   [_ f mdata]
   (let [required-auth?      (::auth mdata true)
         required-auth-type  (::auth-type mdata)
+        required-token-type (::token-type mdata)
         required-perms      (into #{} (::perms mdata))]
     (fn [cfg params]
       (let [profile-id  (::profile-id params)
             auth-type   (::auth-type params)
+            token-type  (::token-type params)
             token-perms (set (::token-perms params #{}))]
         (cond
           (and required-auth? (not (uuid? profile-id)))
@@ -182,8 +185,13 @@
                     :code :authentication-required
                     :hint "authentication required for this endpoint")
 
-          (and (= required-auth-type :token)
-               (not= auth-type :token))
+          (or (and (= required-auth-type :token)
+                   (not= auth-type :token))
+              (and required-token-type
+                   (or (not= auth-type :token)
+                       (not= required-token-type token-type)))
+              (and (= token-type "mcp")
+                   (not= required-token-type "mcp")))
           (ex/raise :type :authorization
                     :code :token-auth-required
                     :hint "access token authentication required for this endpoint")
@@ -358,6 +366,28 @@
     (wrap-params-validation cfg $ mdata)
     (wrap-authentication cfg $ mdata)))
 
+(defn- wrap-shared-key-authorization
+  "Authorizes a shared-key caller against the method's `::allowed-shared-keys`.
+
+  A management method declares the shared-key ids allowed to call it with
+  `::allowed-shared-keys`. When the metadata is absent any configured shared key is
+  accepted, preserving the previous behavior. When it is present and empty no
+  key is accepted."
+  [_ f mdata]
+  (if (contains? mdata ::allowed-shared-keys)
+    (let [allowed-keys (::allowed-shared-keys mdata)]
+      (fn [cfg params]
+        (if (contains? allowed-keys (::auth-key-id params))
+          (f cfg params)
+          (do
+            (l/wrn :hint "shared key is not allowed for this method"
+                   :handler-name (::handler-name params)
+                   :key-id (::auth-key-id params))
+            (ex/raise :type :authorization
+                      :code :shared-key-not-allowed
+                      :hint "shared key is not allowed for this method")))))
+    f))
+
 (defn- wrap-management
   [cfg f mdata]
   (as-> f $
@@ -368,7 +398,10 @@
     (wrap-audit cfg $ mdata)
     (wrap-nitrate-sso cfg $ mdata)
     (wrap-params-validation cfg $ mdata)
-    (wrap-authentication cfg $ mdata)))
+    (wrap-authentication cfg $ mdata)
+    ;; Outermost on purpose: a denied key never opens a transaction,
+    ;; validates params or runs the method body.
+    (wrap-shared-key-authorization cfg $ mdata)))
 
 (defn- process-method
   [cfg wrap-fn [f mdata]]
@@ -522,7 +555,7 @@
      {:middleware [[mw/cors]
                    [sec/client-header-check]
                    [session/authz cfg]
-                   [actoken/authz cfg]]
+                   [actoken/authz (assoc cfg ::actoken/allow-mcp true)]]
       :handler (make-rpc-handler methods)}]
 
     (doc/routes :methods methods
@@ -540,5 +573,5 @@
     {:middleware [[mw/cors]
                   [sec/client-header-check]
                   [session/authz cfg]
-                  [actoken/authz cfg]]
+                  [actoken/authz (assoc cfg ::actoken/allow-mcp true)]]
      :handler (make-rpc-handler methods)}]])

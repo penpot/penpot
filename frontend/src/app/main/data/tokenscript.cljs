@@ -212,6 +212,9 @@
       :interpreter/unknown-function
       (wte/error-with-value :error.token/unknown-function (:function-name data))
 
+      :processor/token-name-collision
+      (wte/error-with-value :error.token/name-collision (:token-name data))
+
       (:functions/argument-out-of-range :functions/invalid-base)
       (wte/error-with-value :error.token/function-argument-out-of-range (:function-name data))
 

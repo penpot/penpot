@@ -393,6 +393,31 @@ test.describe("Component options", () => {
     });
   });
 
+  test("Shows the groups of the swap panel", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(
+      /get\-file\?/,
+      "workspace/get-file-9066-swap-groups.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickToggableLayer("Board");
+    await workspace.clickToggableLayer("Group");
+    await workspace.layers.getByText("A", { exact: true }).click();
+    await workspace.rightSidebar.getByRole("button", { name: /^A / }).click();
+
+    await expect(workspace.rightSidebar.getByText("Letters")).toBeVisible();
+    await workspace.rightSidebar.getByText("Letters").hover();
+    await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+
   test("Shows the annotation actions of a main component", async ({ page }) => {
     const workspace = new WorkspacePage(page);
     await workspace.setupEmptyFile();
@@ -574,6 +599,68 @@ test.describe("Layers panel", () => {
   });
 });
 
+test.describe("Layers", () => {
+  test("Shows the buttons of the layer rows", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.mockRPC(
+      "update-file?id=*",
+      "workspace/update-file-empty.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickToggableLayer("Board");
+    await workspace.clickToggableLayer("Group");
+    const layer = workspace.layers.getByText("A", { exact: true });
+    await layer.click();
+    await layer.hover();
+    await workspace.layers.getByRole("button", { name: "Hide" }).click();
+    await workspace.layers.getByRole("button", { name: "Lock" }).click();
+    await expect(
+      workspace.layers.getByRole("button", { name: "Show" }),
+    ).toBeVisible();
+    await expect(
+      workspace.layers.getByRole("button", { name: "Unlock" }),
+    ).toBeVisible();
+
+    // Selected, hidden and blocked layer, with the pointer on its row.
+    await expect(workspace.layers).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    // The pointer on a collapsed group, away from the selected layer.
+    await workspace.layers.getByText("Board", { exact: true }).hover();
+    await expect(workspace.layers).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+
+  test("Shows the rename input of a layer", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.layers.getByText("Board", { exact: true }).dblclick();
+    const input = workspace.layers.getByRole("textbox");
+    await expect(input).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(workspace.layers).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
 test.describe("Guides", () => {
   test("Shows the advanced options of a square guide", async ({ page }) => {
     // A taller window keeps the whole Design tab visible: a scrolled
@@ -600,6 +687,28 @@ test.describe("Guides", () => {
     await expect(workspace.rightSidebar).toHaveScreenshot({
       maxDiffPixelRatio: 0,
       threshold: 0.02,
+    });
+  });
+});
+
+test.describe("Viewport top bar", () => {
+  test("Shows the view only bar of the inspect tab", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickLeafLayer("Board");
+    await workspace.rightSidebar.getByRole("tab", { name: "Inspect" }).click();
+    const bar = page.getByText("Inspecting code").locator("../../..");
+    await expect(bar).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(bar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
     });
   });
 });
@@ -668,6 +777,30 @@ test.describe("Right header", () => {
       maxDiffPixelRatio: 0,
       threshold: 0,
     });
+  });
+});
+
+test.describe("Share button", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Share button in the right header", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    // A shared team where the user is admin, so the header shows Share.
+    await workspace.mockRPC("get-teams", "workspace/get-teams-shared.json");
+    await workspace.goToWorkspace();
+
+    const header = page.locator('[class*="workspace-header-right"]');
+    const share = header
+      .locator("[class*='share-btn']")
+      .or(header.getByRole("button", { name: "Share" }));
+    await expect(share).toBeVisible();
+    await page.mouse.move(640, 300);
+    await expect(header).toHaveScreenshot(shot);
+
+    await share.hover();
+    await page.waitForTimeout(1000);
+    await expect(header).toHaveScreenshot(shot);
   });
 });
 
@@ -1028,5 +1161,192 @@ test.describe("Export modal", () => {
       maxDiffPixelRatio: 0,
       threshold: 0,
     });
+  });
+});
+
+test.describe("Unpublish library modal", () => {
+  test("Shows the close, cancel and unpublish buttons", async ({ page }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-library.json");
+    await workspace.mockRPC(
+      "get-library-file-references?file-id=*",
+      "workspace/get-library-file-references-empty.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "c1249a66-fce0-8175-8004-7433fe4be8bc",
+      pageId: "c1249a66-fce0-8175-8004-7433fe4be8bd",
+    });
+
+    await page.getByRole("button", { name: "Main menu" }).click();
+    await page.locator("#file-menu-file").click();
+    await page.locator("#file-menu-remove-shared").click();
+
+    const modal = page.locator("[class*='delete_shared__modal-container']");
+    await expect(modal).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(modal).toHaveScreenshot(shot);
+
+    await modal.locator("[class*='modal-header'] button").hover();
+    await expect(modal).toHaveScreenshot(shot);
+  });
+});
+
+test.describe("Assets tab controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Add library button", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.clickAssets();
+
+    const add = workspace.sidebar.getByTestId("libraries");
+    await expect(add).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(add).toHaveScreenshot(shot);
+    await add.hover();
+    await expect(add).toHaveScreenshot(shot);
+  });
+
+  test("Libraries, filter and group modal", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    const { fileId, pageId } = await setupFileWithAssets(workspace);
+    await workspace.goToWorkspace({ fileId, pageId });
+    await workspace.clickAssets();
+
+    const header = workspace.sidebar
+      .getByTestId("libraries")
+      .locator("xpath=..");
+    await expect(workspace.sidebar.getByTestId("libraries")).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(header).toHaveScreenshot(shot);
+
+    await workspace.sidebar.getByTestId("libraries").hover();
+    await expect(header).toHaveScreenshot(shot);
+
+    const filter = workspace.sidebar.getByTitle("Filter");
+    await filter.hover();
+    await expect(header).toHaveScreenshot(shot);
+
+    await filter.click();
+    await page.mouse.move(640, 600);
+    await expect(header).toHaveScreenshot(shot);
+    await page.keyboard.press("Escape");
+
+    await workspace.sidebar.getByRole("button", { name: "Colors" }).click();
+    await workspace.sidebar
+      .locator("[class*='colors'] [class*='asset-list-item']")
+      .first()
+      .click({ button: "right" });
+    await page.getByText("Group", { exact: true }).click();
+    const modal = page.locator("[class*='groups__modal-container']");
+    await expect(modal).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(modal).toHaveScreenshot(shot);
+  });
+});
+
+test.describe("Comments panel filter", () => {
+  test("Shows the filter trigger and its menu", async ({ page }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.showComments();
+
+    const trigger = workspace.rightSidebar.getByRole("button", {
+      name: "Show all comments",
+    });
+    await expect(trigger).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(trigger).toHaveScreenshot(shot);
+
+    await trigger.hover();
+    await expect(trigger).toHaveScreenshot(shot);
+
+    await trigger.click();
+    const menu = page.locator("[class*='comment-mode-dropdown']");
+    await expect(menu).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(menu).toHaveScreenshot(shot);
+  });
+});
+
+test.describe("Gradient type select", () => {
+  test("Shows the gradient type select closed, open and changed", async ({
+    page,
+  }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-not-empty.json");
+    await workspace.goToWorkspace({
+      fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+      pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+    });
+    await workspace.clickLeafLayer("Rectangle");
+    await page.getByRole("button", { name: "#B1B2B5" }).click();
+    await page.getByText("Solid").click();
+    await page.getByText("Gradient").click();
+
+    const typeSelect = workspace.colorpicker
+      .getByRole("combobox")
+      .filter({ hasText: "Linear" });
+    await expect(typeSelect).toBeVisible();
+    const pickerBox = await workspace.colorpicker.boundingBox();
+    const selectBox = await typeSelect.boundingBox();
+    // The gradient bar above the select and room below it for the open list.
+    const clip = {
+      x: Math.floor(pickerBox.x),
+      y: Math.floor(selectBox.y) - 60,
+      width: Math.ceil(pickerBox.width),
+      height: 200,
+    };
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await typeSelect.hover();
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await typeSelect.click();
+    const radial = page.getByRole("option", { name: "Radial" });
+    await expect(radial).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await radial.click();
+    await expect(
+      workspace.colorpicker.getByRole("combobox").filter({ hasText: "Radial" }),
+    ).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    // The whole gradient panel: preview bar, stops and the stop list.
+    const panel = workspace.colorpicker.locator("[class*='gradient-panel']");
+    await expect(panel).toHaveScreenshot(shot);
+  });
+});
+
+test.describe("Shortcuts panel", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Wraps long key lists between combinations", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+
+    await page.keyboard.press("Shift+?");
+    const list = page.locator("[class*='shortcuts-list']");
+    await expect(list).toBeVisible();
+    await page.getByRole("textbox").first().fill("board");
+
+    const next = page.getByRole("listitem", { name: "Next board" });
+    const prev = page.getByRole("listitem", { name: "Previous board" });
+    await prev.scrollIntoViewIfNeeded();
+    await page.mouse.move(640, 300);
+    await expect(next).toHaveScreenshot(shot);
+    await expect(prev).toHaveScreenshot(shot);
   });
 });

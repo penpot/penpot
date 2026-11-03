@@ -6,12 +6,15 @@
 
 (ns app.rpc.commands.access-token
   (:require
+   [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.http.access-token :as actoken]
    [app.main :as-alias main]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.rpc.quotes :as quotes]
    [app.setup :as-alias setup]
@@ -28,16 +31,27 @@
       AND id != ?
       AND type = 'mcp'")
 
+(def ^:private sql:get-valid-mcp-token
+  "SELECT * FROM access_token
+    WHERE profile_id = ?
+      AND type = 'mcp'
+      AND (expires_at IS NULL OR expires_at > now())
+    ORDER BY created_at DESC
+    LIMIT 1")
+
 (defn create-access-token
   "Create an access token with empty perms.
 
   Elevated permissions (e.g. error-reports:read) are not assignable via
   the public API; grant them with SQL or `repl:grant-access-token-perm`."
   [{:keys [::db/conn] :as cfg} profile-id name expiration type]
+  ;; Serialize regeneration with OAuth provisioning for the same profile.
+  (when (= type "mcp")
+    (db/get-by-id conn :profile profile-id {::db/for-update true}))
   (let [token-id   (uuid/next)
         expires-at (some-> expiration (ct/in-future))
         created-at (ct/now)
-        token-iss  (if (= type "mcp") "urn:penpot:mcp-token" "access-token")
+        token-iss  (if (= type "mcp") actoken/mcp-token-issuer "access-token")
         token      (tokens/generate cfg {:iss token-iss
                                          :uid profile-id
                                          :iat created-at
@@ -61,6 +75,27 @@
       (db/exec! conn [sql:clean-old-mcp-tokens profile-id (:id token)]))
 
     (decode-row token)))
+
+(defn ensure-mcp-access!
+  "Enable MCP and return the profile's unexpired token, creating it if absent.
+  Must run in a transaction. Lock the profile even when no token exists, so
+  concurrent approvals and settings regeneration use the same lock. Enabling
+  MCP must not regenerate a token already held by a connected client; an
+  expired token is replaced because no client can use it, and so is a token
+  issued before MCP tokens had their own issuer, or one this instance cannot
+  decrypt, because the backend rejects both."
+  [{:keys [::db/conn] :as cfg} profile-id]
+  (let [profile (profile/get-profile conn profile-id ::db/for-update true)
+        token   (db/exec-one! conn [sql:get-valid-mcp-token profile-id])
+        ;; A token this instance cannot decrypt is as unusable as an expired one
+        token   (when (= actoken/mcp-token-issuer
+                         (ex/ignoring (:iss (tokens/decode cfg (:token token)))))
+                  token)]
+    (when-not (:mcp-enabled (:props profile))
+      (profile/update-profile-props cfg profile-id {:mcp-enabled true}))
+    (if token
+      (decode-row token)
+      (create-access-token cfg profile-id "MCP" nil "mcp"))))
 
 (defn repl:create-access-token
   [cfg profile-id name expiration]

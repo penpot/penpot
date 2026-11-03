@@ -986,8 +986,14 @@
            :on-pointer-leave pointer-leave}
 
      [:div {:class (stl/css :track-info-container)}
-      [:div {:class (stl/css :track-info-dir-icon)
-             :on-click handle-select-track}
+      ;; Raw button on purpose: it is the start segment of the track
+      ;; value field, not a DS button.
+      [:button {:type "button"
+                :class (stl/css :track-info-dir-icon)
+                :aria-label (if is-column
+                              (tr "workspace.layout-grid.editor.select-column")
+                              (tr "workspace.layout-grid.editor.select-row"))
+                :on-click handle-select-track}
        [:> icon* {:icon-id (if is-column i/flex-vertical i/flex-horizontal)
                   :class (stl/css :track-info-dir)}]]
 

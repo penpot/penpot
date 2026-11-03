@@ -235,7 +235,7 @@
     (ctm/move-modifiers (displacement center-before center-after before-side-vector after-side-vector))))
 
 (defmethod constraint-modifier :default [_ _ _ _ _ _]
-  [])
+  (ctm/empty))
 
 (def const->type+axis
   {:left :start

@@ -213,6 +213,7 @@
     "accept-team-invitation-from"
     "add-member-to-organization"
     "add-team-to-organization"
+    "assign-organization-attribute"
     "auditlog-exported"
     "auditlog-guide-downloaded"
     "cancel-organization-invitation"
@@ -253,6 +254,7 @@
     "sso-config-tested"
     "success-activate-organization-sso"
     "success-apply-organization-sso-changes"
+    "unassign-organization-attribute"
     "update-organization-invitation"
     "update-organization-permissions"
     "update-team-invitation"
@@ -289,6 +291,19 @@
                         id->email-prop)))
         events))
 
+(defn- collect-actor-ids-needing-profile
+  "Actor ids (event :profile-id) that still need top-level :profile-email
+  and/or :profile-name. Skips uuid/zero and non-uuids."
+  [events]
+  (into #{}
+        (keep (fn [event]
+                (when (or (not (contains? event :profile-email))
+                          (not (contains? event :profile-name)))
+                  (when-let [id (uuid/coerce (:profile-id event))]
+                    (when-not (uuid/zero? id)
+                      id)))))
+        events))
+
 (defn- load-team-names
   [conn ids]
   (if (seq ids)
@@ -297,12 +312,13 @@
       (into {} (map (juxt :id :name) rows)))
     {}))
 
-(defn- load-profile-emails
+(defn- load-profiles
+  "Batch-load profile email and fullname (including soft-deleted)."
   [conn ids]
   (if (seq ids)
     (let [arr  (db/create-array conn "uuid" ids)
-          rows (db/exec! conn ["SELECT id, email FROM profile WHERE id = ANY(?)" arr])]
-      (into {} (map (juxt :id :email) rows)))
+          rows (db/exec! conn ["SELECT id, email, fullname FROM profile WHERE id = ANY(?)" arr])]
+      (into {} (map (juxt :id identity) rows)))
     {}))
 
 (defn- maybe-assoc-team-name
@@ -315,33 +331,58 @@
       event)))
 
 (defn- maybe-assoc-emails
-  [event emails]
+  [event profiles]
   (update event :props
           (fn [props]
             (reduce-kv (fn [props id-key email-key]
                          (if-let [email (and (not (contains? props email-key))
                                              (when-let [id (uuid/coerce (get props id-key))]
-                                               (get emails id)))]
+                                               (:email (get profiles id))))]
                            (assoc props email-key email)
                            props))
                        props
                        id->email-prop))))
 
+(defn- maybe-assoc-actor-profile
+  "Fill-only top-level :profile-email / :profile-name from the event
+  actor (:profile-id). Omits keys when the id is missing, zero, the
+  profile row is absent, or the corresponding column is empty
+  (fullname defaults to \"\" in the schema)."
+  [event profiles]
+  (let [id (uuid/coerce (:profile-id event))]
+    (if (or (nil? id) (uuid/zero? id))
+      event
+      (if-let [profile (get profiles id)]
+        (cond-> event
+          (and (not (contains? event :profile-email))
+               (not-empty (:email profile)))
+          (assoc :profile-email (:email profile))
+
+          (and (not (contains? event :profile-name))
+               (not-empty (:fullname profile)))
+          (assoc :profile-name (:fullname profile)))
+        event))))
+
 (defn- enrich-events-for-admin-console
   "Enrich allowlisted events before the admin-console ingest:
   1. Fill missing :team-name from team id (including soft-deleted).
-  2. Fill missing emails from matching id keys (including soft-deleted
-     profiles): :profile-email, :user-email, :member-email,
-     :user-who-send-invitation-email."
+  2. Fill missing emails from matching id keys in props (including
+     soft-deleted profiles): :profile-email, :user-email, :member-email,
+     :user-who-send-invitation-email.
+  3. Fill missing top-level :profile-email / :profile-name from the
+     event actor (:profile-id), including soft-deleted profiles; omit
+     when there is no usable actor id or the value is empty."
   [{:keys [::db/conn]} events]
   (let [team-ids    (collect-team-ids-needing-name events)
-        profile-ids (collect-profile-ids-needing-email events)
+        profile-ids (into (collect-profile-ids-needing-email events)
+                          (collect-actor-ids-needing-profile events))
         team-names  (load-team-names conn team-ids)
-        emails      (load-profile-emails conn profile-ids)]
+        profiles    (load-profiles conn profile-ids)]
     (mapv (fn [event]
             (-> event
                 (maybe-assoc-team-name team-names)
-                (maybe-assoc-emails emails)))
+                (maybe-assoc-emails profiles)
+                (maybe-assoc-actor-profile profiles)))
           events)))
 
 (defn- send-to-admin-console

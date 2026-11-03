@@ -55,13 +55,10 @@
     (cthf/apply-changes file changes)))
 
 (t/deftest ^:async component-restore-preserves-the-users-view
-  (doseq [scenario [:same-page :other-page :linked-library]]
+  (doseq [scenario [:same-page :other-page]]
     (let [file    (cond-> (file-with-deleted-component)
                     (= scenario :other-page) (cthf/add-sample-page :other-page))
-          store   (if (= scenario :linked-library)
-                    (ths/setup-store (cthf/sample-file :local-file)
-                                     {:renderer :svg :libraries [file]})
-                    (ths/setup-store file {:renderer :svg}))
+          store   (ths/setup-store file {:renderer :svg})
           view    {:selected #{(thi/id :copy)}
                    :zoom 2
                    :vport {:x 100 :y 200 :width 800 :height 600}
@@ -107,6 +104,23 @@
          (await (async/settle))
          (t/is (empty? @events))
          (t/is (true? (get-in @store [:files (:id file) :data :components (thi/id :restorable) :deleted]))))))))
+
+(t/deftest ^:async component-restore-rejects-linked-libraries
+  (let [library (file-with-deleted-component)
+        file    (cthf/sample-file :consumer-file)
+        store   (ths/setup-store file {:renderer :svg :libraries [library]})
+        before  @store
+        events  (atom [])]
+    (ptk/emit! store #(assoc-in % [:plugins :flags plugin-id :throw-validation-errors] true))
+    (await
+     (mock/with-mocks*
+       {st/state store
+        st/emit! (mock/stub (fn [& emitted] (swap! events into emitted)))}
+       (let [component (library/lib-component-proxy plugin-id (:id library) (thi/id :restorable))]
+         (t/is (thrown-with-msg? js/Error #"current file" (.restore component)))
+         (await (async/settle))
+         (t/is (empty? @events))
+         (t/is (= (:files before) (:files @store))))))))
 
 (t/deftest ^:async component-restore-rejects-a-missing-component
   (let [file  (cthf/sample-file :restore-file)
@@ -373,6 +387,48 @@
         (t/is (= 1 (count @errors)))
         (t/is (= [plugin-id :setVariantProperty "Plugin doesn't have 'library:write' permission"]
                  (first @errors)))))))
+
+(t/deftest variant-rename-property-sanitizes-name
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        id        (uuid/next)
+        renamed   (atom nil)
+        errors    (atom [])]
+    (with-redefs [r/check-permission (constantly true)
+                  u/not-valid        (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  library/get-variant-components (constantly [{:variant-properties [{:name "color" :value "red"}]}])
+                  dwv/update-property-name (fn [vid pos name opts]
+                                             (reset! renamed {:id vid :pos pos :name name :opts opts})
+                                             ::rename-event)
+                  st/emit!           mock/noop]
+      (let [proxy (library/variant-proxy plugin-id file-id id)]
+        (.renameProperty proxy 0 "a=b")
+        (t/is (empty? @errors))
+        (t/is (= "ab" (:name @renamed)))
+        (.renameProperty proxy 0 "=,=")
+        (t/is (= 1 (count @errors)))
+        (t/is (= :name (second (first @errors))))))))
+
+(t/deftest component-set-variant-property-sanitizes-value
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        id        (uuid/next)
+        updated   (atom nil)
+        errors    (atom [])]
+    (with-redefs [r/check-permission (constantly true)
+                  u/not-valid        (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  u/locate-library-component (constantly {:id id :variant-properties [{:name "color"}]})
+                  dwv/update-property-value (fn [cid pos value]
+                                              (reset! updated {:id cid :pos pos :value value})
+                                              ::value-event)
+                  st/emit!           mock/noop]
+      (let [proxy (library/lib-component-proxy plugin-id file-id id)]
+        (.setVariantProperty proxy 0 "a=b")
+        (t/is (empty? @errors))
+        (t/is (= "ab" (:value @updated)))
+        (.setVariantProperty proxy 0 "=,=")
+        (t/is (empty? @errors))
+        (t/is (= "" (:value @updated)))))))
 
 ;; ---------------------------------------------------------------------------
 ;; connectLibrary

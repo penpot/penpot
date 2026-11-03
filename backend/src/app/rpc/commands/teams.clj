@@ -27,6 +27,7 @@
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
@@ -1094,13 +1095,16 @@
 
 (sv/defmethod ::update-team-photo
   {::doc/added "1.17"
+   ::climit/id [[:process-image/by-profile ::rpc/profile-id]
+                [:process-image/global]]
    ::sm/params schema:update-team-photo
    ::rpc/multipart-only-params [:file]}
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
 
-  (media.v/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
-  (media.v/validate-media-size! file)
+  (media.v/check-media-type file #{"image/jpeg" "image/png" "image/webp"})
+  (media.v/check-media-size file)
+  (media.v/check-upload-path file)
   (update-team-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-team-photo

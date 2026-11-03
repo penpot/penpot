@@ -3073,6 +3073,31 @@
       (mem/free)
       result)))
 
+(defn render-shapes-svg
+  "Renders the given shape ids into one SVG document (joined viewBox).
+  IDs are written to the transfer buffer (same layout as `render-shapes-pdf`)."
+  [shape-ids scale]
+  (when (and (initialized?) (seq shape-ids))
+    (let [ids    (vec shape-ids)
+          size   (mem/get-alloc-size ids UUID-U8-SIZE)
+          heap   (mem/get-heap-u32)
+          offset (mem/alloc->offset-32 size)
+
+          _ (reduce (fn [offset id]
+                      (mem.h32/write-uuid offset heap id))
+                    offset
+                    ids)
+
+          result-offset
+          (h/call wasm/internal-module "_render_shapes_svg" scale)
+
+          heapu8  (mem/get-heap-u8)
+          heapu32 (mem/get-heap-u32)
+          length  (aget heapu32 (mem/->offset-32 result-offset))
+          result  (dr/read-image-bytes heapu8 (+ result-offset 4) length)]
+      (mem/free)
+      result)))
+
 (defn init-wasm-module
   [module]
   (let [default-fn (unchecked-get module "default")

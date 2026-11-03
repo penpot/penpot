@@ -61,6 +61,7 @@ jobs:
     outputs:
       gh_ref: ${{ steps.vars.outputs.gh_ref }}
       bundle_version: ${{ steps.vars.outputs.bundle_version }}
+      build_key: ${{ steps.vars.outputs.build_key }}
       short_sha: ${{ steps.vars.outputs.short_sha }}
       sha: ${{ steps.vars.outputs.sha }}
       commit_title: ${{ steps.vars.outputs.commit_title }}
@@ -79,16 +80,26 @@ jobs:
         env:
           GH_REF: ${{ inputs.gh_ref || github.ref_name }}
         run: |
+          # Same command the build uses to stamp version.txt.
+          BUNDLE_VERSION=$(./manage.sh version)
+          SHORT_SHA=$(git rev-parse --short=12 HEAD)
+          # The key takes only the closest tag (--abbrev=0): the sha already
+          # pins the commit, and the full describe output is not stable
+          # across checkouts (its -g<sha> suffix length depends on the
+          # local object count). Must match build-docker.yml.
+          VERSION_TAG=$(git describe --tags --match '*.*.*' --abbrev=0)
           echo "gh_ref=$GH_REF" >> $GITHUB_OUTPUT
-          echo "bundle_version=$(git describe --tags --always)" >> $GITHUB_OUTPUT
-          echo "short_sha=$(git rev-parse --short=12 HEAD)" >> $GITHUB_OUTPUT
+          echo "bundle_version=$BUNDLE_VERSION" >> $GITHUB_OUTPUT
+          echo "build_key=sha-${SHORT_SHA}-${VERSION_TAG}" >> $GITHUB_OUTPUT
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
           echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
           echo "commit_title=$(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
 
-      # Keyed by commit sha, same as build-docker.yml's marker check, so
-      # both pipelines agree on what "already built" means: any ref that
-      # points at an already-bundled commit skips the build, regardless of
-      # which ref built it first. `force` bypasses this check entirely.
+      # Keyed by commit sha AND version, same as build-docker.yml's marker
+      # check, so both pipelines agree on what "already built" means. The
+      # version is stamped into the bundle, so a new tag on an already
+      # bundled commit (2.18.1-RC1 -> 2.18.1) must produce a new bundle.
+      # `force` bypasses this check entirely.
       - name: Check if this bundle is already built
         id: check
         env:
@@ -97,8 +108,7 @@ jobs:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
           S3_BUCKET: ${{ secrets.S3_BUCKET }}
           FORCE: ${{ inputs.force }}
-          SHORT_SHA: ${{ steps.vars.outputs.short_sha }}
-          BUNDLE_VERSION: ${{ steps.vars.outputs.bundle_version }}
+          BUILD_KEY: ${{ steps.vars.outputs.build_key }}
         run: |
           if [ "$FORCE" = "true" ]; then
             echo "exists=false" >> $GITHUB_OUTPUT
@@ -112,7 +122,7 @@ jobs:
 
           BUNDLE_EXISTS=$(aws s3api head-object \
             --bucket "$S3_BUCKET" \
-            --key "penpot-sha-${SHORT_SHA}.zip" \
+            --key "penpot-${BUILD_KEY}.zip" \
             > /dev/null 2>&1 && echo "true" || echo "false")
 
           if [ "$BUNDLE_EXISTS" = "true" ]; then
@@ -120,7 +130,7 @@ jobs:
             {
               echo "### ⏭️ Bundle build skipped"
               echo ""
-              echo "The bundle in S3 was already built from \`sha-${SHORT_SHA}\` (\`${BUNDLE_VERSION}\`)."
+              echo "The bundle in S3 was already built for \`${BUILD_KEY}\`."
             } >> "$GITHUB_STEP_SUMMARY"
           else
             echo "exists=false" >> $GITHUB_OUTPUT
@@ -164,11 +174,11 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
           S3_BUCKET: ${{ secrets.S3_BUCKET }}
-          SHORT_SHA: ${{ needs.check.outputs.short_sha }}
+          BUILD_KEY: ${{ needs.check.outputs.build_key }}
           BUNDLE_VERSION: ${{ needs.check.outputs.bundle_version }}
         run: |
           aws s3 cp zips/penpot.zip \
-            "s3://${S3_BUCKET}/penpot-sha-${SHORT_SHA}.zip" \
+            "s3://${S3_BUCKET}/penpot-${BUILD_KEY}.zip" \
             --metadata "bundle-version=${BUNDLE_VERSION}"
 
       - name: Write step summary
@@ -180,7 +190,7 @@ jobs:
           {
             echo "### ✅ Bundle built"
             echo ""
-            echo "- Version: \`${BUNDLE_VERSION}\` (\`git describe --tags --always\`)"
+            echo "- Version: \`${BUNDLE_VERSION}\` (\`./manage.sh version\`)"
             echo "- Commit: [\`${SHORT_SHA}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${SHORT_SHA}) — ${COMMIT_TITLE}"
             echo "- Built at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
           } >> "$GITHUB_STEP_SUMMARY"

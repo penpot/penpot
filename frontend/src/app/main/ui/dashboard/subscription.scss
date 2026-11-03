@@ -4,10 +4,16 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+// refactor/ stays for the menu item placeholder (%menu-item-base) of the
+// power up submenu.
 @use "refactor/common-refactor.scss" as deprecated;
+
+// The shared dashboard header styles move in their own change: they are
+// used by ten dashboard modules.
 @use "common/refactor/common-dashboard";
-@use "ds/typography.scss" as t;
+@use "ds/typography.scss" as *;
 @use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
 @use "ds/spacing.scss" as *;
 
 .cta-power-up {
@@ -26,8 +32,9 @@
 }
 
 .cta-top-section {
-  @include deprecated.button-style;
-
+  border: none;
+  background: none;
+  cursor: pointer;
   display: grid;
   color: var(--color-foreground-secondary);
   grid-template-columns: 1fr auto;
@@ -44,17 +51,11 @@
 }
 
 .icon-dropdown {
-  @include deprecated.flex-center;
-
-  height: 100%;
-  width: var(--sp-l);
-}
-
-.icon-dropdown svg {
-  @extend %button-icon-small;
-
-  stroke: var(--icon-foreground);
-  transform: rotate(90deg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  block-size: 100%;
+  inline-size: var(--sp-l);
 }
 
 .cta-bottom-section {
@@ -69,12 +70,14 @@
 }
 
 .cta-bottom-section .content {
-  @include t.use-typography("body-medium");
-  @include deprecated.button-style;
+  @include use-typography("body-medium");
 
+  border: none;
+  background: none;
+  cursor: pointer;
   color: var(--color-foreground-secondary);
   display: inline-block;
-  text-align: left;
+  text-align: start;
 }
 
 .cta-bottom-button {
@@ -87,42 +90,35 @@
 
 .cta-text,
 .cta-title {
-  text-align: left;
+  text-align: start;
 }
 
 .cta-title {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   margin-block-end: var(--sp-xs);
 }
 
 .highlighted .cta-title {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   margin-block-end: 0;
 }
 
 .cta-text {
-  @include t.use-typography("title-small");
+  @include use-typography("title-small");
 }
 
 .highlighted .cta-text {
-  @include t.use-typography("body-large");
+  @include use-typography("body-large");
 
   color: var(--color-foreground-primary);
 }
 
 .cta-bottom-section .content a {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   color: var(--color-accent-tertiary);
-  margin-inline-start: var(--sp-xs);
-}
-
-.cta-link {
-  @include deprecated.button-style;
-
-  align-self: end;
   margin-inline-start: var(--sp-xs);
 }
 
@@ -130,29 +126,31 @@
   display: grid;
   grid-auto-rows: min-content;
   gap: var(--sp-s);
-  max-width: deprecated.$s-1000;
-  width: 100%;
+  max-inline-size: px2rem(1000);
+  inline-size: 100%;
 }
 
 .team-label {
-  @include t.use-typography("headline-small");
+  @include use-typography("headline-small");
 
-  color: var(--title-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
 .team-text {
-  @include t.use-typography("title-medium");
+  @include use-typography("title-medium");
 
   color: var(--color-foreground-primary);
 }
 
 .manage-subscription-link {
-  @include deprecated.button-style;
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
+  border: none;
+  background: none;
+  cursor: pointer;
   color: var(--color-accent-tertiary);
   display: flex;
-  margin-block-start: -8px;
+  margin-block-start: calc(-1 * var(--sp-s));
   padding: 0;
 }
 
@@ -169,7 +167,6 @@
 
 .subscription-icon {
   stroke: var(--color-foreground-secondary);
-  stroke-width: 2.25px;
 }
 
 .menu-item {
@@ -178,21 +175,15 @@
   cursor: pointer;
 
   &:hover {
-    color: var(--menu-foreground-color-hover);
-
-    .open-arrow {
-      svg {
-        stroke: var(--menu-foreground-color-hover);
-      }
-    }
+    color: var(--color-foreground-primary);
   }
 }
 
 .members-cta {
-  height: fit-content;
+  block-size: fit-content;
   margin-block-start: var(--sp-s);
-  margin-inline-start: deprecated.$s-52;
-  max-width: deprecated.$s-220;
+  margin-inline-start: px2rem(52);
+  max-inline-size: px2rem(220);
 
   .cta-title {
     line-height: 1.2;
@@ -200,7 +191,7 @@
 }
 
 .dashboard-cta {
-  height: fit-content;
+  block-size: fit-content;
   margin: var(--sp-l);
 
   .cta-title {
@@ -209,7 +200,7 @@
 }
 
 .cta-message {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
   line-height: 1;
@@ -231,13 +222,13 @@
 }
 
 .nitrate-title {
-  @include t.use-typography("body-large");
+  @include use-typography("body-large");
 
   color: var(--color-foreground-primary);
 }
 
 .nitrate-info {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   color: var(--color-foreground-secondary);
   margin-block: var(--sp-s) var(--sp-xxl);
@@ -249,8 +240,8 @@
 }
 
 .nitrate-bottom-button {
-  width: fit-content;
-  height: fit-content;
+  inline-size: fit-content;
+  block-size: fit-content;
   padding: var(--sp-s) var(--sp-m);
 }
 
@@ -271,14 +262,14 @@
 }
 
 .nitrate-current-plan-label {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   padding-block-end: var(--sp-xs);
   color: var(--color-foreground-secondary);
 }
 
 .nitrate-current-plan-text {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   color: var(--color-foreground-primary);
 }

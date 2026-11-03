@@ -70,8 +70,7 @@
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
-   [beicon.v2.core :as rx]
-   [cuerdas.core :as str]))
+   [beicon.v2.core :as rx]))
 
 (declare shape-proxy)
 (declare shape-proxy?)
@@ -385,11 +384,8 @@
             :get #(-> % u/proxy->shape :name)
             :set
             (fn [self value]
-              (let [id (obj/get self "$id")
-                    value  (when (string? value) (-> value str/trim cpn/clean-path))
-                    valid? (and (some? value)
-                                (not (str/ends-with? value "/"))
-                                (not (str/blank? value)))]
+              (let [id    (obj/get self "$id")
+                    value (cpn/normalize-path-name value)]
                 (cond
                   (not (r/check-permission plugin-id "content:write"))
                   (u/not-valid plugin-id :name "Plugin doesn't have 'content:write' permission")
@@ -397,7 +393,7 @@
                   (not (u/page-active? page-id))
                   (u/not-valid plugin-id :name "Cannot modify a page that is not currently active")
 
-                  (not valid?)
+                  (nil? value)
                   (u/not-valid plugin-id :name value)
 
                   :else
@@ -1267,6 +1263,9 @@
                  (u/changes-component-copy-structure? objects shape child-shape)
                  (u/not-valid plugin-id :appendChild "Cannot change the structure of a component copy")
 
+                 (u/non-main-into-variant-container? shape child)
+                 (u/not-valid plugin-id :appendChild "Only main instances can be added to a variant container")
+
                  :else
                  (st/emit!
                   (dwsh/relocate-shapes #{child-id} id index)
@@ -1305,6 +1304,9 @@
 
                  (u/changes-component-copy-structure? objects shape child-shape)
                  (u/not-valid plugin-id :insertChild "Cannot change the structure of a component copy")
+
+                 (u/non-main-into-variant-container? shape child)
+                 (u/not-valid plugin-id :insertChild "Only main instances can be added to a variant container")
 
                  :else
                  (st/emit!

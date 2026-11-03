@@ -75,7 +75,9 @@
        (not-empty)))
 
 (def ^:private xf:map-page-id
-  (map :page-id))
+  ;; Component-only changes have no :page-id; keep drops those nils so
+  ;; update-object-indices does not create a nil key in :pages-index.
+  (keep :page-id))
 
 (def ^:private wasm-structural-change-types
   #{:add-obj :mov-objects})

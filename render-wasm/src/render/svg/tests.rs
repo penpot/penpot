@@ -59,6 +59,75 @@ fn exports_a_solid_rect() {
 }
 
 #[test]
+fn exports_multiple_roots_in_one_svg_with_relative_placement() {
+    let mut pool = ShapesPool::new();
+    let left = uid(1);
+    let right = uid(2);
+    add_solid_rect(
+        &mut pool,
+        left,
+        Uuid::nil(),
+        (0.0, 0.0, 50.0, 50.0),
+        skia::Color::from_rgb(255, 0, 0),
+    );
+    add_solid_rect(
+        &mut pool,
+        right,
+        Uuid::nil(),
+        (100.0, 0.0, 150.0, 50.0),
+        skia::Color::from_rgb(0, 0, 255),
+    );
+
+    let svg = render_multi(&pool, &[left, right]);
+    assert_eq!(
+        svg.matches("<svg").count(),
+        1,
+        "multi-root export must emit one <svg>: {svg}"
+    );
+    assert_eq!(
+        svg.matches("</svg>").count(),
+        1,
+        "multi-root export must emit one </svg>: {svg}"
+    );
+    // Joined page is 150×50; both fills present and the right rect keeps x=100.
+    assert!(
+        svg.contains("viewBox=\"0 0 150 50\""),
+        "joined viewBox should span both rects: {svg}"
+    );
+    assert!(svg.contains("fill=\"red\""), "missing left red fill: {svg}");
+    assert!(
+        svg.contains("fill=\"blue\"") && svg.contains("x=\"100\""),
+        "missing right blue fill at x=100: {svg}"
+    );
+}
+
+#[test]
+fn exports_multi_root_all_hidden_or_missing_as_empty_svg() {
+    let mut pool = ShapesPool::new();
+    let hidden = uid(1);
+    add_solid_rect(
+        &mut pool,
+        hidden,
+        Uuid::nil(),
+        (0.0, 0.0, 50.0, 50.0),
+        skia::Color::from_rgb(255, 0, 0),
+    );
+    pool.get_mut(&hidden).unwrap().set_hidden(true);
+
+    let missing = uid(99);
+    let svg = render_multi(&pool, &[hidden, missing]);
+    assert_eq!(svg.matches("<svg").count(), 1, "empty multi export: {svg}");
+    assert!(
+        svg.contains("viewBox=\"0 0 0 0\"") || svg.contains("width=\"0\""),
+        "no drawable roots should yield an empty page: {svg}"
+    );
+    assert!(
+        !svg.contains("fill=\"red\""),
+        "hidden root must not paint: {svg}"
+    );
+}
+
+#[test]
 fn exports_leaf_opacity_and_blend_mode_as_group_wrappers() {
     let mut pool = ShapesPool::new();
     let id = uid(1);

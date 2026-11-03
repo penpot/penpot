@@ -12,7 +12,9 @@
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
    [app.main.ui.components.forms :as fm]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -45,8 +47,11 @@
      [:div {:class (stl/css :modal-container)}
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-title)} (tr "modals.leave-and-reassign.title")]
-       [:button {:class (stl/css :modal-close-btn)
-                 :on-click modal/hide!} deprecated-icon/close]]
+       [:> icon-button* {:variant "ghost"
+                         :tooltip-class (stl/css :modal-close-btn)
+                         :aria-label (tr "labels.close")
+                         :icon i/close
+                         :on-click modal/hide!}]]
 
       [:div {:class (stl/css :modal-content)}
        [:p {:class (stl/css :modal-msg)}
@@ -62,19 +67,16 @@
 
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}
-        [:input {:class (stl/css :cancel-button)
-                 :type "button"
-                 :value (tr "labels.cancel")
-                 :on-click modal/hide!}]
+        [:> button* {:variant "secondary"
+                     :type "button"
+                     :on-click modal/hide!}
+         (tr "labels.cancel")]
 
-        [:input.accept-button
-         {:type "button"
-          :class (stl/css-case  :accept-btn true
-                                :danger (:valid @form)
-                                :global/disabled (not (:valid @form)))
-          :disabled (not (:valid @form))
-          :value (tr "modals.leave-and-reassign.promote-and-leave")
-          :on-click on-accept}]]]]]))
+        [:> button* {:variant (if (:valid @form) "destructive" "primary")
+                     :type "button"
+                     :disabled (not (:valid @form))
+                     :on-click on-accept}
+         (tr "modals.leave-and-reassign.promote-and-leave")]]]]]))
 
 
 
@@ -149,8 +151,11 @@
      [:div {:class (stl/css :modal-organization-container)}
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-organization-title)} (tr "modals.before-leave-organization.title")]
-       [:button {:class (stl/css :modal-close-btn)
-                 :on-click modal/hide!} deprecated-icon/close]]
+       [:> icon-button* {:variant "ghost"
+                         :tooltip-class (stl/css :modal-close-btn)
+                         :aria-label (tr "labels.close")
+                         :icon i/close
+                         :on-click modal/hide!}]]
 
       [:div {:class (stl/css :modal-content)}
        (if (zero? num-teams-to-delete)
@@ -169,16 +174,13 @@
 
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}
-        [:input {:class (stl/css :cancel-button)
-                 :type "button"
-                 :value (tr "labels.cancel")
-                 :on-click modal/hide!}]
+        [:> button* {:variant "secondary"
+                     :type "button"
+                     :on-click modal/hide!}
+         (tr "labels.cancel")]
 
-        [:input.accept-button
-         {:type "button"
-          :class (stl/css-case  :accept-btn true
-                                :danger all-valid?
-                                :global/disabled (not all-valid?))
-          :disabled (not all-valid?)
-          :value (tr "modals.leave-and-reassign.promote-and-leave")
-          :on-click on-accept}]]]]]))
+        [:> button* {:variant (if all-valid? "destructive" "primary")
+                     :type "button"
+                     :disabled (not all-valid?)
+                     :on-click on-accept}
+         (tr "modals.leave-and-reassign.promote-and-leave")]]]]]))

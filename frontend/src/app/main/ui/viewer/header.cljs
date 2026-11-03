@@ -14,6 +14,9 @@
    [app.main.data.viewer.shortcuts :as sc]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.exports.assets :refer [progress-widget]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.icons :as deprecated-icon]
@@ -47,11 +50,11 @@
 
   (let [open*           (mf/use-state false)
         open?           (deref open*)
-        open-dropdown
+        toggle-dropdown
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
-           (reset! open* true)))
+           (swap! open* not)))
 
         close-dropdown
         (mf/use-fn
@@ -73,28 +76,31 @@
            (dom/stop-propagation event)
            (on-decrease)))]
 
-    [:div {:class (stl/css-case :zoom-widget true
-                                :selected open?)
-           :on-click open-dropdown
-           :title (tr "workspace.header.zoom")}
-     [:span {:class (stl/css :label)} (fmt/format-percent zoom)]
+    [:div {:class (stl/css :zoom-widget-wrapper)}
+     [:button {:type "button"
+               :class (stl/css-case :zoom-widget true
+                                    :selected open?)
+               :on-click toggle-dropdown
+               :title (tr "workspace.header.zoom")
+               :aria-expanded open?}
+      [:span {:class (stl/css :label)} (fmt/format-percent zoom)]]
      [:& dropdown {:show open?
                    :on-close close-dropdown}
       [:ul {:class (stl/css :dropdown)}
        [:li  {:class (stl/css :basic-zoom-bar)}
         [:span {:class (stl/css :zoom-btns)}
-         [:button {:class (stl/css :zoom-btn)
-                   :on-click on-decrease}
-          [:span {:class (stl/css :zoom-icon)}
-           deprecated-icon/remove-icon]]
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "shortcuts.decrease-zoom")
+                           :on-click on-decrease
+                           :icon i/remove}]
          [:p  {:class (stl/css :zoom-text)}
           (fmt/format-percent zoom)]
-         [:button {:class (stl/css :zoom-btn)
-                   :on-click on-increase}
-          [:span {:class (stl/css :zoom-icon)}
-           deprecated-icon/add]]]
-        [:button {:class (stl/css :reset-btn)
-                  :on-click on-zoom-reset}
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "shortcuts.increase-zoom")
+                           :on-click on-increase
+                           :icon i/add}]]
+        [:> button* {:variant "ghost"
+                     :on-click on-zoom-reset}
          (tr "workspace.header.reset-zoom")]]
 
        [:li {:class (stl/css :zoom-option)
@@ -188,27 +194,30 @@
        :on-fullscreen toggle-fullscreen}]
 
      (when (:in-team permissions)
-       [:span {:on-click go-to-workspace
-               :class (stl/css :edit-btn)}
-        deprecated-icon/curve])
+       [:> icon-button* {:variant "ghost"
+                         :aria-label (tr "labels.edit")
+                         :icon i/curve
+                         :on-click go-to-workspace}])
 
-     [:span {:title (tr "viewer.header.fullscreen")
-             :class (stl/css-case :fullscreen-btn true
-                                  :selected fullscreen?)
-             :on-click toggle-fullscreen}
-      deprecated-icon/expand]
+     [:> icon-button* {:variant "ghost"
+                       :aria-label (tr "viewer.header.fullscreen")
+                       :aria-pressed (boolean fullscreen?)
+                       :icon i/expand
+                       :on-click toggle-fullscreen}]
 
      (when (:in-team permissions)
-       [:button {:on-click open-share-dialog
-                 :class (stl/css :share-btn)}
+       [:> button* {:variant "primary"
+                    :class (stl/css :share-btn)
+                    :on-click open-share-dialog}
         (tr "labels.share")])
 
      (when-not (:is-logged permissions)
-       [:span {:on-click open-login-dialog
-               :class (stl/css :go-log-btn)} (tr "labels.log-or-sign")])]))
+       [:> button* {:variant "ghost"
+                    :on-click open-login-dialog}
+        (tr "labels.log-or-sign")])]))
 
 (mf/defc header-sitemap
-  [{:keys [project file page frame toggle-thumbnails] :as props}]
+  [{:keys [project file page frame toggle-thumbnails shown-thumbnails] :as props}]
   (let [project-name   (:name project)
         file-name      (:name file)
         page-name      (:name page)
@@ -236,11 +245,15 @@
            :title (tr "viewer.header.sitemap")}
      [:span {:class (stl/css :project-name)} project-name]
      [:div {:class (stl/css :sitemap-text)}
-      [:div {:class (stl/css :breadcrumb)
-             :on-click open-dropdown}
-       [:span  {:class (stl/css :breadcrumb-text)}
-        (dm/str file-name " / " page-name)]
-       [:span {:class (stl/css :icon)} deprecated-icon/arrow]
+      [:div {:class (stl/css :breadcrumb)}
+       [:button {:type "button"
+                 :class (stl/css :breadcrumb-btn)
+                 :aria-expanded (deref show-dropdown?)
+                 :aria-haspopup "menu"
+                 :on-click open-dropdown}
+        [:span  {:class (stl/css :breadcrumb-text)}
+         (dm/str file-name " / " page-name)]
+        [:> icon* {:icon-id i/arrow-down :size "s" :class (stl/css :icon)}]]
        [:span "/"]
        [:& dropdown {:show @show-dropdown?
                      :on-close close-dropdown}
@@ -254,12 +267,14 @@
             [:span {:class (stl/css :label)}
              (get-in file [:data :pages-index id :name])]
             (when (= page-id id)
-              [:span {:class (stl/css :icon-check)} deprecated-icon/tick])])]]]
-      [:div {:class (stl/css :current-frame)
-             :id "current-frame"
-             :on-click toggle-thumbnails}
+              [:> icon* {:icon-id i/tick :size "s" :class (stl/css :icon-check)}])])]]]
+      [:button {:type "button"
+                :class (stl/css :current-frame)
+                :id "current-frame"
+                :aria-expanded (boolean shown-thumbnails)
+                :on-click toggle-thumbnails}
        [:span {:class (stl/css :frame-name)} frame-name]
-       [:span {:class (stl/css :icon)} deprecated-icon/arrow]]]]))
+       [:> icon* {:icon-id i/arrow-down :size "s" :class (stl/css :icon)}]]]]))
 
 (def ^:private penpot-logo-icon
   (deprecated-icon/icon-xref :penpot-logo-icon (stl/css :logo-icon)))
@@ -322,33 +337,34 @@
                           :page page
                           :frame frame
                           :toggle-thumbnails toggle-thumbnails
+                          :shown-thumbnails shown-thumbnails
                           :index index}]]
 
      [:div {:class (stl/css :mode-zone)}
-      [:button {:on-click navigate
-                :data-value "interactions"
-                :class (stl/css-case :mode-zone-btn true
-                                     :selected (= section :interactions))
-                :title (tr "viewer.header.interactions-section" (sc/get-tooltip :open-interactions))}
-       deprecated-icon/play]
+      [:> icon-button* {:variant "ghost"
+                        :on-click navigate
+                        :data-value "interactions"
+                        :aria-pressed (= section :interactions)
+                        :aria-label (tr "viewer.header.interactions-section" (sc/get-tooltip :open-interactions))
+                        :icon i/play}]
 
       (when (or (:in-team permissions)
                 (= (:who-comment permissions) "all"))
-        [:button {:on-click navigate
-                  :data-value "comments"
-                  :class (stl/css-case :mode-zone-btn true
-                                       :selected (= section :comments))
-                  :title (tr "viewer.header.comments-section" (sc/get-tooltip :open-comments))}
-         deprecated-icon/comments])
+        [:> icon-button* {:variant "ghost"
+                          :on-click navigate
+                          :data-value "comments"
+                          :aria-pressed (= section :comments)
+                          :aria-label (tr "viewer.header.comments-section" (sc/get-tooltip :open-comments))
+                          :icon i/comments}])
 
       (when (or (:in-team permissions)
                 (and (= (:type permissions) :share-link)
                      (= (:who-inspect permissions) "all")))
-        [:button {:on-click go-to-inspect
-                  :class (stl/css-case :mode-zone-btn true
-                                       :selected (= section :inspect))
-                  :title (tr "viewer.header.inspect-section" (sc/get-tooltip :open-inspect))}
-         deprecated-icon/code])]
+        [:> icon-button* {:variant "ghost"
+                          :on-click go-to-inspect
+                          :aria-pressed (= section :inspect)
+                          :aria-label (tr "viewer.header.inspect-section" (sc/get-tooltip :open-inspect))
+                          :icon i/code}])]
 
      [:& header-options {:section section
                          :permissions permissions

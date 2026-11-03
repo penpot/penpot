@@ -65,7 +65,9 @@ export default defineConfig({
     },
     {
       name: "ds",
-      use: { ...devices["Desktop Chrome"] },
+      // Accounts without a theme follow the system one; keep the visual
+      // specs on the dark theme so their screenshots stay comparable.
+      use: { ...devices["Desktop Chrome"], colorScheme: "dark" },
       testDir: "./playwright/ui/visual-specs",
       expect: {
         toHaveScreenshot: { maxDiffPixelRatio: 0.005 },
