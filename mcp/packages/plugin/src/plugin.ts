@@ -2,9 +2,9 @@ import { ExecuteCodeTaskHandler } from "./task-handlers/ExecuteCodeTaskHandler";
 import { Task, TaskHandler } from "./TaskHandler";
 import { formatTaskError } from "./ErrorUtils";
 import { extractMinorVersion, isCompatibleVersion } from "./VersionCompatibility";
-import type { PluginConnectionInit } from "../../common/src";
+import type { ContentRollbackEvent, PluginConnectionInit } from "../../common/src";
 import type { WorkspaceContext } from "@penpot/plugin-types";
-import { RollbackLog } from "./RollbackLog";
+import { LocalStorageRollbackStore, RollbackLog, type RollbackStore } from "./RollbackLog";
 
 /**
  * indicates whether the plugin is running in an environment with the Penpot-integrated remote MCP server
@@ -27,9 +27,26 @@ const taskHandlers: TaskHandler[] = [new ExecuteCodeTaskHandler()];
 
 /**
  * Rollbacks of rejected changes, reported to the MCP server with the next task response.
+ * The ones not reported yet are kept in the plugin local storage of the open file, so a reload
+ * of the tab or of the plugin does not lose them.
  */
-const rollbackLog = new RollbackLog();
+const rollbackLog = new RollbackLog(createRollbackStore());
 rollbackLog.listen();
+
+/**
+ * Creates the store of the rollbacks not reported yet, for the open file.
+ *
+ * @returns the store, or undefined when no file is open or the local storage is unavailable
+ */
+function createRollbackStore(): RollbackStore | undefined {
+    try {
+        const fileId = penpot.currentFile?.id;
+        return fileId ? new LocalStorageRollbackStore(penpot.localStorage, fileId) : undefined;
+    } catch (error) {
+        console.warn("Rollbacks are kept in memory only:", error);
+        return undefined;
+    }
+}
 
 // Open the plugin UI (main.ts)
 penpot.ui.open("Penpot MCP Plugin", `?theme=${penpot.theme}`, {
@@ -40,7 +57,16 @@ penpot.ui.open("Penpot MCP Plugin", `?theme=${penpot.theme}`, {
 
 // Register message handlers
 penpot.ui.onMessage<
-    string | { id: string; type?: string; status?: string; sessionId?: string; task: string; params: any }
+    | string
+    | {
+          id: string;
+          type?: string;
+          status?: string;
+          sessionId?: string;
+          task: string;
+          params: any;
+          rollbacks?: ContentRollbackEvent[];
+      }
 >((message) => {
     if (typeof message === "object" && message.type === "ui-initialized") {
         uiInitialized = true;
@@ -85,6 +111,9 @@ penpot.ui.onMessage<
         }
     } else if (typeof message === "object" && message.type === "context-request") {
         sendWorkspaceContext();
+    } else if (typeof message === "object" && message.type === "unclaimed-rollbacks") {
+        // the server got these with a response that came too late: report them again
+        rollbackLog.restore(message.rollbacks ?? []);
     } else if (typeof message === "object" && message.type === "update-connection-status") {
         mcp?.setMcpStatus(message.status || "unknown", message.sessionId);
     } else if (typeof message === "object" && message.task && message.id) {

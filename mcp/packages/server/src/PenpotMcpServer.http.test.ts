@@ -230,3 +230,32 @@ test("puts a rollback warning first in a failed tool response too", async (t) =>
     assert.equal(failure.type, "text");
     assert.match(failure.text, /Tool execution failed: .*Shape not found/);
 });
+
+/**
+ * A plugin connection whose socket keeps the messages sent to it.
+ */
+function fakeConnection(): { socket: { readyState: number; send: (message: string) => void }; sent: unknown[] } {
+    const sent: unknown[] = [];
+    return { socket: { readyState: 1, send: (message: string) => sent.push(JSON.parse(message)) }, sent };
+}
+
+test("gives the rollbacks of a response that came after its task timed out back to the plugin", () => {
+    const bridge = server.pluginBridge as any;
+    const connection = fakeConnection();
+
+    bridge.handlePluginTaskResponse(
+        { id: "timed-out", success: true, data: { result: 1, log: "" }, rollbacks: [rollback] },
+        connection
+    );
+
+    assert.deepEqual(connection.sent, [{ type: "unclaimed-rollbacks", rollbacks: [rollback] }]);
+});
+
+test("sends nothing back for a late response without rollbacks", () => {
+    const bridge = server.pluginBridge as any;
+    const connection = fakeConnection();
+
+    bridge.handlePluginTaskResponse({ id: "timed-out", success: true, data: { result: 1, log: "" } }, connection);
+
+    assert.deepEqual(connection.sent, []);
+});

@@ -3,7 +3,12 @@ import * as http from "http";
 import { z } from "zod";
 import { AbstractPluginTask, PluginTask, PluginTaskError } from "./PluginTask";
 import { RollbackNotices } from "./RollbackNotices";
-import { PluginTaskResponse, PluginTaskResult } from "@penpot/mcp-common";
+import {
+    ContentRollbackEvent,
+    PluginTaskResponse,
+    PluginTaskResult,
+    UnclaimedRollbacksMessage,
+} from "@penpot/mcp-common";
 import { createLogger } from "./logger";
 import type { PenpotMcpServer } from "./PenpotMcpServer";
 import type { RedisBridge } from "./RedisBridge";
@@ -317,7 +322,9 @@ export class PluginBridge implements TaskDispatchHost {
      * Handles responses from the plugin for completed tasks.
      *
      * Finds the pending task by ID and resolves or rejects its promise
-     * based on the execution result.
+     * based on the execution result. A response that comes after its task
+     * timed out has no task to report its rollbacks to, so they go back to
+     * the plugin, which sends them with its next response.
      *
      * @param response - The plugin task response containing ID and result
      * @param connection - The responding local connection, or undefined for Redis responses
@@ -326,6 +333,7 @@ export class PluginBridge implements TaskDispatchHost {
         const task = this.pendingTasks.get(response.id);
         if (!task) {
             this.logger.info(`Received response for unknown task ID: ${response.id}`);
+            this.returnRollbacks(connection, response.rollbacks);
             return;
         }
 
@@ -354,6 +362,28 @@ export class PluginBridge implements TaskDispatchHost {
         }
 
         this.logger.info(`Task ${response.id} completed: success=${response.success}`);
+    }
+
+    /**
+     * Sends rollbacks that no tool execution received back to the plugin.
+     *
+     * @param connection - The plugin connection that reported them, if known
+     * @param rollbacks - The rollbacks of a response whose task is gone
+     */
+    private returnRollbacks(
+        connection: PenpotConnection | undefined,
+        rollbacks: ContentRollbackEvent[] | undefined
+    ): void {
+        if (!connection || !rollbacks || rollbacks.length === 0) {
+            return;
+        }
+        if (connection.socket.readyState !== 1) {
+            this.logger.warn("Plugin disconnected; %d rollback(s) of a late response are lost", rollbacks.length);
+            return;
+        }
+        const message: UnclaimedRollbacksMessage = { type: "unclaimed-rollbacks", rollbacks };
+        connection.socket.send(JSON.stringify(message));
+        this.logger.info("Returned %d rollback(s) of a late response to the plugin", rollbacks.length);
     }
 
     /**

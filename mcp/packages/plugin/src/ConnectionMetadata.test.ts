@@ -32,6 +32,7 @@ function pluginRequire(name: string) {
     if (name === "./VersionCompatibility") return VersionCompatibility;
     if (name === "./RollbackLog")
         return {
+            LocalStorageRollbackStore: class {},
             RollbackLog: class {
                 listen() {}
             },

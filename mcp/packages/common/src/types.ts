@@ -30,6 +30,19 @@ export interface PluginTaskResult<T> {
 }
 
 /**
+ * Message from the MCP server giving the plugin back the rollbacks of a task response that came
+ * after its task timed out, so that the plugin reports them with its next response.
+ */
+export interface UnclaimedRollbacksMessage {
+    type: "unclaimed-rollbacks";
+
+    /**
+     * The rollbacks the late response carried, oldest first.
+     */
+    rollbacks: ContentRollbackEvent[];
+}
+
+/**
  * Rollback of rejected changes in the Penpot workspace.
  *
  * The backend rejected some changes and the workspace undid them, together with the rest of their
