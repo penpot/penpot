@@ -1019,3 +1019,10 @@
                                     :library-depth 1 :library true :rich-variants true :library-text true
                                     :layout-copies true :text true}]
                        :ops [[:transform 0 4 0 2] [:switch 0 0 0 0]]}))))
+
+(t/deftest generated-single-line-flex-set-to-space-between-lays-out
+  ;; aligning the content of a one-line wrapped flex main by space-between
+  ;; leaves no gap to share between its lines
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :layout :flex :library true
+                                    :rich-variants true :layout-copies true :text true}]
+                       :ops [[:style 0 23 18 0]]}))))

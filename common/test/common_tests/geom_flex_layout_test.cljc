@@ -60,6 +60,15 @@
       (t/is (== (if (= children 1) (if row? 7 11) (if row? 100 140)) gap))
       (t/is (every? mth/finite? (map line [:layout-gap-col :layout-gap-row :margin-x :margin-y]))))))
 
+(t/deftest next-line-after-a-single-space-between-line-is-finite
+  (doseq [direction [:row :column]]
+    (let [frame  (make-col-frame :layout-flex-dir direction
+                                 :layout-align-content :space-between)
+          bounds (rect->bounds (grc/make-rect 0 0 200 200))
+          base-p (flp/get-base-line frame bounds 50 30 1)
+          next-p (flp/get-next-line frame bounds {:line-width 50 :line-height 30} base-p 50 30 1)]
+      (t/is (every? mth/finite? [(:x next-p) (:y next-p)])))))
+
 ;; ---- get-base-line (around? branch) ----
 ;;
 ;; Bug: in positions.cljc the col? + around? branch had a mis-parenthesised
