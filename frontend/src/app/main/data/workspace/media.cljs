@@ -435,10 +435,12 @@
 
             fdata   (dsh/lookup-file-data state file-id)
             page    (dsh/get-page fdata page-id)
-            pos     (dsh/get-viewport-center state)]
+            pos     (dsh/get-viewport-center state)
+
+            name    (str/replace (:name svg-data) ".svg" "")]
 
         (->> (create-shapes-svg file-id (:objects page) pos svg-data)
-             (rx/map (partial add-shapes-and-component it fdata page (:name svg-data))))))))
+             (rx/map (partial add-shapes-and-component it fdata page name)))))))
 
 (defn upload-media-components
   [params]
