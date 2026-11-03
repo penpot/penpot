@@ -7,6 +7,8 @@
 (ns common-tests.files-builder-test
   (:require
    [app.common.files.builder :as fb]
+   [app.common.files.validate :as cfv]
+   [app.common.path-names :as cpn]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
@@ -87,3 +89,30 @@
                                  :height 10}))
         shape (fb/get-shape state shape-id)]
     (t/is (= "Group / Subgroup / Name" (:name shape)))))
+
+(t/deftest add-component-renames-frame-to-match-component
+  (t/testing "the main instance frame name is aligned with the component's path+name"
+    (let [file-id      (uuid/next)
+          page-id      (uuid/next)
+          frame-id     (uuid/next)
+          component-id (uuid/next)
+          state        (-> (fb/create-state)
+                           (fb/add-file {:id file-id :name "Test file"})
+                           (fb/add-page {:id page-id :name "Page 1"})
+                           (fb/add-board {:id frame-id
+                                          :name "Wrong / Frame / Name"
+                                          :x 0
+                                          :y 0
+                                          :width 10
+                                          :height 10})
+                           (fb/add-component {:component-id component-id
+                                              :name "Component"
+                                              :path "Group / Subgroup"}))
+          shape        (fb/get-shape state frame-id)
+          file-data    (get-in state [::fb/files file-id :data])
+          component    (get-in file-data [:components component-id])
+          errors       (cfv/validate-file {:id file-id :data file-data} {})]
+
+      (t/is (= "Group / Subgroup / Component" (:name shape)))
+      (t/is (= (:name shape) (cpn/merge-path-item (:path component) (:name component))))
+      (t/is (nil? errors)))))

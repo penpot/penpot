@@ -462,12 +462,24 @@
         frame-id
         (or frame-id (get state ::current-frame-id))
 
+        name
+        (or name "anonymous")
+
+        path
+        (d/nilv path "")
+
+        ;; The main instance root name must match the component's path+name, so
+        ;; the frame is renamed if needed. This keeps the builder output valid
+        ;; under the :invalid-main-instance-name integrity check.
+        normalized-name
+        (cpn/merge-path-item path name)
+
         change1
         (d/without-nils
          {:type :add-component
           :id component-id
-          :name (or name "anonmous")
-          :path (d/nilv path "")
+          :name name
+          :path path
           :main-instance-id frame-id
           :main-instance-page page-id
           :variant-id variant-id
@@ -481,11 +493,13 @@
          [{:type :set :attr :component-root :val true}
           {:type :set :attr :main-instance :val true}
           {:type :set :attr :component-id :val component-id}
-          {:type :set :attr :component-file :val file-id}]}]
+          {:type :set :attr :component-file :val file-id}
+          {:type :set :attr :name :val normalized-name}]}]
 
     (-> state
         (commit-change change1)
-        (commit-change change2))))
+        (commit-change change2)
+        (track-used-name normalized-name))))
 
 (defn add-tokens-lib
   [state tokens-lib]
