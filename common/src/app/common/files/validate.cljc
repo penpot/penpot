@@ -109,6 +109,19 @@
 ;; a page's validation pass.
 (def ^:dynamic ^:private *children-sets* nil)
 
+;; Qualifying variant-component ids collected while walking page boards
+;; and objects-only boards. `check-component` reads this set so a member
+;; is not also reported as a solo.
+(def ^:dynamic ^:private *variant-member-ids* nil)
+
+;; Shape ids that exist on any page in `:pages-index`. Objects-only
+;; boards skip an id that is already a page shape.
+(def ^:dynamic ^:private *page-shape-ids* nil)
+
+;; Page ids walked in this validation pass. A live solo compares its
+;; label only when its main's page is not in this set.
+(def ^:dynamic ^:private *validated-page-ids* nil)
+
 (defn- build-children-sets
   "Return a {parent-id → #{child-ids}} map built from `objects` in a single
   `reduce-kv` pass.  Only shapes that have at least one child get an entry."
@@ -576,10 +589,47 @@
   (check-empty-swap-slot shape file page)
   (run! #(check-shape % file page libraries :context :not-component) (:shapes shape)))
 
+(defn- record-variant-members
+  [members]
+  (when-let [ids *variant-member-ids*]
+    (vswap! ids into (map :component-id) members)))
+
+(defn- variant-member-props-changed?
+  [member]
+  (not= (vec (or (:variant-properties (:component member)) []))
+        (vec (:props member))))
+
+(defn- variant-member-label-changed?
+  [data member]
+  (cfv/variant-main-label-changed? data (:component member) (:props member)))
+
+(defn- variant-properties-need-repair?
+  [data members compare-label?]
+  (boolean
+   (some (fn [member]
+           (or (variant-member-props-changed? member)
+               (and compare-label?
+                    (variant-member-label-changed? data member))))
+         (cfv/repair-variant-members members))))
+
+(defn- check-variant-property-set
+  [shape file page objects data & {:keys [compare-label? owner-id]}]
+  (let [members (cfv/qualifying-variant-members data objects shape)]
+    (record-variant-members members)
+    (when (variant-properties-need-repair? data members compare-label?)
+      (if (some? owner-id)
+        (report-error :invalid-variant-properties
+                      (str/ffmt "Variant container % has invalid properties" (:id shape))
+                      shape file page
+                      :component-id owner-id)
+        (report-error :invalid-variant-properties
+                      (str/ffmt "Variant container % has invalid properties" (:id shape))
+                      shape file page)))))
+
 (defn- check-variant-container
   "Shape is a variant container, so:
      -all its children should be variants with variant-id equals to the shape-id
-     -all the components should have the same properties
+     -the stored properties should match the shared rewrite
      -the name of the container should be normalized for paths (separator / with one space at each side)."
   [shape file page]
   (let [shape-id       (:id shape)
@@ -587,8 +637,6 @@
         shapes         (:shapes shape)
         objects        (:objects page)
         file-data      (:data file)
-        first-child    (get objects (first shapes))
-        prop-names     (cfv/extract-properties-names first-child file-data)
         clean-path     (cpn/clean-path container-name)
         clean-path     (if (str/blank? clean-path)
                          "(empty)" ;; this may occur if the name contains only separators
@@ -605,18 +653,14 @@
                               (str/ffmt "Main instance shape % should be a variant" (:id child))
                               child file page
                               :variant-id shape-id)
-                (do
-                  (when (not= (:variant-id child) shape-id)
-                    (report-error :main-instance-invalid-variant-id
-                                  (str/ffmt "Main instance in variant % should have the variant-id of the container but has %" (:id child) (:variant-id child))
-                                  child file page
-                                  :variant-id shape-id))
-                  (when (not= prop-names (cfv/extract-properties-names child file-data))
-                    (report-error :invalid-variant-properties
-                                  (str/ffmt "Variant % has invalid properties %" (:id child) (vec prop-names))
-                                  child file page
-                                  :prop-names prop-names))))))
-          shapes)))
+                (when (not= (:variant-id child) shape-id)
+                  (report-error :main-instance-invalid-variant-id
+                                (str/ffmt "Main instance in variant % should have the variant-id of the container but has %" (:id child) (:variant-id child))
+                                child file page
+                                :variant-id shape-id)))))
+          shapes)
+    (check-variant-property-set shape file page objects file-data
+                                :compare-label? false)))
 
 (defn- renamed-container?
   [container]
@@ -626,44 +670,52 @@
 (defn- check-variant
   "Shape is a variant, so
      -it should be a main component
-     -its parent should be a variant-container
+     -the parent is the board when it is a variant container, or when
+      the shape's :variant-id equals the parent's id
+     -:parent-not-variant, :variant-main-bad-name,
+      :variant-component-bad-name, and :variant-component-bad-id
+      report only then
      -its variant-name is derived from the properties
      -its name should be the same as its parent's
    "
   [shape file page]
-  (let [parent       (ctst/get-shape page (:parent-id shape))
-        component    (ctkl/get-component (:data file) (:component-id shape) true)
-        variant-name (ctv/properties-to-name (:variant-properties component))]
+  (let [parent           (ctst/get-shape page (:parent-id shape))
+        component        (ctkl/get-component (:data file) (:component-id shape) true)
+        variant-name     (ctv/properties-to-name (:variant-properties component))
+        parent-is-board? (and (some? parent)
+                              (or (ctk/is-variant-container? parent)
+                                  (= (:variant-id shape) (:id parent))))]
     (when-not (ctk/main-instance? shape)
       (report-error :variant-not-main
                     (str/ffmt "Variant % is not a main instance" (:id shape))
-                    shape file page))
-    (when-not (ctk/is-variant-container? parent)
-      (report-error :parent-not-variant
-                    (str/ffmt "Variant % has an invalid parent" (:id shape))
                     shape file page))
     (when-not (= variant-name (:variant-name shape))
       (report-error :variant-main-bad-variant-name
                     (str/ffmt "Variant % has an invalid variant-name" (:id shape))
                     shape file page
                     :variant-name variant-name))
-    ;; If the container is going to be renamed all main and components will be renamed, too
-    (when-not (renamed-container? parent)
-      (when-not (= (:name parent) (:name shape))
-        (report-error :variant-main-bad-name
-                      (str/ffmt "Main instance inside variant % has an invalid name" (:id shape))
+    (when parent-is-board?
+      (when-not (ctk/is-variant-container? parent)
+        (report-error :parent-not-variant
+                      (str/ffmt "Variant % has an invalid parent" (:id shape))
+                      shape file page))
+      ;; If the container is going to be renamed all main and components will be renamed, too
+      (when-not (renamed-container? parent)
+        (when-not (= (:name parent) (:name shape))
+          (report-error :variant-main-bad-name
+                        (str/ffmt "Main instance inside variant % has an invalid name" (:id shape))
+                        shape file page
+                        :variant-name (:name parent)))
+        (when-not (= (:name parent) (cpn/merge-path-item (:path component) (:name component)))
+          (report-error :variant-component-bad-name
+                        (str/ffmt "Component % has an invalid name" (:id shape))
+                        shape file page
+                        :variant-container-name (:name parent))))
+      (when-not (= (:variant-id component) (:variant-id shape))
+        (report-error :variant-component-bad-id
+                      (str/ffmt "Variant % has a :variant-id that does not point to the container" (:id shape))
                       shape file page
-                      :variant-name (:name parent)))
-      (when-not (= (:name parent) (cpn/merge-path-item (:path component) (:name component)))
-        (report-error :variant-component-bad-name
-                      (str/ffmt "Component % has an invalid name" (:id shape))
-                      shape file page
-                      :variant-container-name (:name parent))))
-    (when-not (= (:variant-id component) (:variant-id shape))
-      (report-error :variant-component-bad-id
-                    (str/ffmt "Variant % has a :variant-id that does not point to the container" (:id shape))
-                    shape file page
-                    :variant-id (:parent-id shape)))))
+                      :variant-id (:parent-id shape))))))
 
 (defn- check-shape
   "Validate referential integrity and semantic coherence of
@@ -813,6 +865,71 @@
                   "A non-deleted component cannot have shapes inside"
                   component file nil)))
 
+(defn- compute-page-shape-ids
+  [data]
+  (into #{}
+        (mapcat (fn [page] (keys (:objects page))))
+        (vals (:pages-index data))))
+
+(defn- page-shape-ids
+  [data]
+  (cond
+    (delay? *page-shape-ids*) @*page-shape-ids*
+    (some? *page-shape-ids*)  *page-shape-ids*
+    :else                     (compute-page-shape-ids data)))
+
+(defn- check-objects-only-variant-boards
+  "Walk variant boards that exist only in this component's `:objects`."
+  [component file]
+  (when-let [objects (:objects component)]
+    (let [data     (:data file)
+          page-ids (page-shape-ids data)]
+      (doseq [shape (vals objects)]
+        (when (and (ctk/is-variant-container? shape)
+                   (not (contains? page-ids (:id shape))))
+          (check-variant-property-set shape file nil objects data
+                                      :compare-label? true
+                                      :owner-id (:id component)))))))
+
+(defn- find-variant-board
+  [data component]
+  (let [board-id  (:variant-id component)
+        page-id   (:main-instance-page component)
+        page-objs (get-in data [:pages-index page-id :objects])]
+    (if (get page-objs board-id)
+      {:objects page-objs :container (get page-objs board-id)}
+      (some (fn [other]
+              (when-let [board (get-in other [:objects board-id])]
+                {:objects   (:objects other)
+                 :container board}))
+            (vals (:components data))))))
+
+(defn- variant-member-owned?
+  [data component]
+  (or (contains? (some-> *variant-member-ids* deref) (:id component))
+      (when-let [{:keys [objects container]} (find-variant-board data component)]
+        (some #(= (:id component) (:component-id %))
+              (cfv/qualifying-variant-members data objects container)))))
+
+(defn- solo-label-unchecked?
+  [component]
+  (or (:deleted component)
+      (not (contains? *validated-page-ids* (:main-instance-page component)))))
+
+(defn- check-solo-variant-component
+  [component file]
+  (let [data           (:data file)
+        member         {:component component
+                        :props     (cfv/prepare-variant-properties
+                                    (:variant-properties component))}
+        compare-label? (solo-label-unchecked? component)]
+    (when (or (variant-member-props-changed? member)
+              (and compare-label?
+                   (variant-member-label-changed? data member)))
+      (report-error :invalid-variant-properties
+                    (str/ffmt "Variant component % has invalid properties" (:id component))
+                    component file nil))))
+
 (defn- check-component
   "Validate semantic coherence of a component. Report all errors found."
   [component file]
@@ -828,7 +945,9 @@
     (check-ref-cycles component file))
 
   (when (ctk/is-variant? component)
-    (check-variant-component component file)))
+    (check-variant-component component file)
+    (when-not (variant-member-owned? (:data file) component)
+      (check-solo-variant-component component file))))
 
 (defn- get-orphan-shapes
   "Return the ids of shapes unreachable from the root traversal: shapes
@@ -875,7 +994,10 @@
   Return a list of errors or `nil`"
   [{:keys [data features] :as file} libraries]
   (when (contains? features "components/v2")
-    (binding [*errors* (volatile! [])]
+    (binding [*errors* (volatile! [])
+              *variant-member-ids* (volatile! #{})
+              *page-shape-ids* (delay (compute-page-shape-ids data))
+              *validated-page-ids* (set (keys (:pages-index data)))]
 
       ;; `reduce-kv` is used throughout this function (and `validate-file-affected`)
       ;; instead of `(run! f (vals m))` or `(doseq [[k v] m])` because persistent
@@ -898,7 +1020,8 @@
 
       (reduce-kv
        (fn [_ _ component]
-         (check-component component file))
+         (check-component component file)
+         (check-objects-only-variant-boards component file))
        nil
        (:components data))
 
@@ -986,7 +1109,10 @@
   [{:keys [data features] :as file} libraries changes]
   (when (contains? features "components/v2")
     (let [{:keys [page-ids component-ids]} (extract-affected-ids changes)]
-      (binding [*errors* (volatile! [])]
+      (binding [*errors* (volatile! [])
+                *variant-member-ids* (volatile! #{})
+                *page-shape-ids* (delay (compute-page-shape-ids data))
+                *validated-page-ids* page-ids]
 
         (reduce-kv
          (fn [_ page-id page]
@@ -1006,7 +1132,8 @@
         (reduce-kv
          (fn [_ id component]
            (when (contains? component-ids id)
-             (check-component component file)))
+             (check-component component file)
+             (check-objects-only-variant-boards component file)))
          nil
          (:components data))
 
