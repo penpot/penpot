@@ -5,13 +5,17 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.node.build
-  "Prepares retained release artifacts under a single preparation deadline.
+  "These functions build the renderer and package it with the code that runs
+  benchmarks in Node and the browser.
 
-  The caller owns exclusive preparation for this checkout. The renderer's
-  lock protects Cargo and copying; CLJS compilation follows after it releases.
-  Preparation uses installed dependencies. Cargo may fetch missing crates and
-  the custom Skia binaries on a cold build. Every attempt retains its manifest
-  and compiler log, including failed attempts."
+  Each build gets its own directory under
+  frontend/target/performance/render-wasm/builds/. It contains the renderer
+  compiled to WebAssembly, a list of benchmarks that Node can load, and the
+  page and JavaScript that run them in a browser.
+
+  Run `prepare` from Node in a checkout with the project's build tools and
+  dependencies installed. Stop other builds and any processes that rebuild the
+  renderer on file changes until it finishes."
   (:require
    ["fs" :as fs]
    ["path" :as path]
@@ -27,7 +31,16 @@
    [clojure.string :as str]))
 
 (defn ^:async git-provenance
-  "Captures revision and dirty state through the same bounded child boundary."
+  "Read the Git commit ID and whether the checkout containing `root` has local
+  changes, including staged changes and untracked files.
+
+  `bounds` supplies :deadline, an absolute time in milliseconds since the Unix
+  epoch, and an optional :signal AbortSignal to cancel the work.
+
+  Return a promise of a map containing :sha, the commit ID, and :dirty, which
+  is true when the checkout has local changes. If Git information is
+  unavailable, log a warning and return nil for both values. A timeout or
+  cancellation rejects the promise."
   [root bounds]
   (try
     (let [options (merge bounds {:command "git" :cwd root})
@@ -42,6 +55,9 @@
           {:sha nil :dirty nil})))))
 
 (defn- check-profile-marks
+  "Require :cljs-profile-marks to be false in the map describing the compiled
+  code. This flag indicates whether extra calls record timings for profiling;
+  those calls can affect benchmark measurements. Return the map or throw."
   [compiled]
   (when-not (false? (:cljs-profile-marks compiled))
     (throw (ex-info "compiled benchmark enables profiling marks or omits its setting"
@@ -49,8 +65,17 @@
   compiled)
 
 (defn- ^:async validate-browser
-  "Imports the release bridge in Node without preparing a renderer.
-  The bridge's identity method returns the compiled identity over Transit."
+  "Checks that the JavaScript compiled for the browser belongs to the requested
+  build and has profiling disabled.
+
+    build: supplies the expected :id and :browser-dir, the directory containing
+        browser.js.
+    root: the frontend directory.
+    bounds: supplies :deadline, an absolute time in milliseconds since the Unix
+        epoch, and an optional :signal AbortSignal for cancellation.
+
+  Returns a promise of the code's build information, including :build-id and
+  :cljs-profile-marks. Rejects the promise if loading or checking the code fails."
   [build root bounds]
   (let [module-url (.-href (url/pathToFileURL (path/join (:browser-dir build) "browser.js")))
         script     "const {default: bridge} = await import(process.env.RENDER_BENCH_MODULE_URL); process.stdout.write(bridge.buildIdentity());"
@@ -61,14 +86,35 @@
     (check-profile-marks (identity/check (:id build) (transit/decode-str (:stdout result))))))
 
 (defn ^:async prepare
-  "Returns a ready build reference after compilation and identity validation.
+  "Build the renderer and the programs that run benchmarks, and save the files
+  for later benchmark runs.
 
-  Options: frontend :root, :selection or :features, :build-timeout-ms
-  (300000), AbortSignal :signal, and optional :on-created callback. The callback
-  receives the new build reference once the output directory, log and initial
-  manifest exist. Storage errors have no recorded ID. Later errors carry
-  :build-id and :phase. An error also carries :manifest-error and is fatal when
-  the failed manifest cannot be saved. A retry always creates a new build."
+  Pass an options map with :root set to the frontend directory. If omitted,
+  the function locates that directory from the Node program's location.
+
+  Cargo features choose which optional parts of the renderer to compile. Use
+  :selection {:default-features? true :features []} to enable Cargo's defaults.
+  Put additional feature names from render-wasm/Cargo.toml in the vector, and
+  set :default-features? to false to disable the declared defaults. The
+  :features option accepts the same map when :selection is absent. Omit both
+  options to use Cargo's defaults.
+
+  :build-timeout-ms sets the time allowed for building, in milliseconds
+  (300000 by default). An optional `:signal AbortSignal` cancels the work.
+  An optional :on-created function receives a map with the build's ID and
+  paths after its directory, log and initial metadata file exist. This callback
+  runs before compilation. Await the promise from `prepare` before using the
+  compiled files.
+
+  The promise resolves to a map with :id, the build's unique identifier;
+  :dir, its output directory; :log-path, its compiler log; and :manifest,
+  metadata describing the build and its settings. :cases-path points to the
+  JavaScript module that lists the benchmarks for Node. :browser-dir and
+  :renderer-dir contain the compiled programs, and :index-path points to the
+  HTML page.
+
+  A failure rejects the promise and keeps any files already written for
+  inspection. Error data includes :build-id and :log-path when available."
   [{:keys [root features selection build-timeout-ms signal on-created]
     :or {build-timeout-ms options/default-build-timeout-ms}}]
   (when-not (and (js/Number.isSafeInteger build-timeout-ms) (pos? build-timeout-ms))

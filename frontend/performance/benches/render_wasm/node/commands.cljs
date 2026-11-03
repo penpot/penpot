@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.node.commands
   "Deferred execution entry for build, run and feature comparison commands."
@@ -13,7 +13,6 @@
    [benches.render-wasm.node.build :as build]
    [benches.render-wasm.node.execution :as execution]
    [benches.render-wasm.node.feature-comparison :as feature-comparison]
-   [benches.render-wasm.node.feature-plan :as feature-plan]
    [benches.render-wasm.node.outcome :as outcome]
    [benches.render-wasm.node.run :as run]))
 
@@ -42,9 +41,9 @@
 (defn- ^:async ab-command
   [{:keys [get-root signal services]} options]
   (let [root     (get-root)
-        prepared (await (feature-plan/prepare root options signal))]
+        prepared (await (feature-comparison/prepare root options signal))]
     (if (:dry-run options)
-      (outcome/succeeded {:report (feature-plan/format-plan prepared)})
+      (outcome/succeeded {:report (feature-comparison/format-plan prepared)})
       (let [{:keys [home exit-code] :as result}
             (await (feature-comparison/execute root prepared signal {:services services}))]
         (cond-> result

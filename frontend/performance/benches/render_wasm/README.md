@@ -1,30 +1,26 @@
 # WASM renderer benchmarks
 
-The renderer benchmark suite measures the Penpot WASM renderer in Chromium. It
-provides means to declare parameterized scenes, then render them on a browser
-process, recording how long each of several phases take. It can measure "cold"
-starts, "warm" interactions like pan and zoom, and compare runs with different
-renderer builds.
-
-| 💡 Jump to [How to run](#how-to-run) below for usage instructions. |
-| ------------------------------------------------------------------ |
+The renderer benchmark suite measures the Penpot WebAssembly (WASM) renderer in
+Chromium. Scenes describe shapes; cases describe the work to perform on them.
+The suite records setup, rendering, pan and zoom durations and compares runs
+with different renderer builds. [How to run](#how-to-run) gives the commands.
 
 The suite has three parts:
 
 1. A Node runner controls the experiment. It prepares or reuses a build, selects
-   test cases, serves the browser executor, launches the browser, schedules
-   "attempts" (since cases can fail), saves results, and prints reports.
-2. The browser executes the experiment. It owns the WASM module, graphics
-   context, scene snapshot, "upload" (to the renderer), interactions, and
-   timing.
-3. The reports tool analyses saved records. It runs in Node or the browser
-   without loading the renderer.
+   cases, serves the browser code, launches Chromium, schedules attempts, saves
+   results, and prints reports. An attempt is one execution of a case.
+2. The browser creates the renderer and graphics context, constructs the scene
+   snapshot, uploads its shapes, performs the work, and records durations.
+3. The reporting code computes statistics from saved records in Node or the
+   browser without loading the renderer.
 
 ## Contents
 
 - [Main concepts](#main-concepts)
 - [Architecture](#architecture)
 - [Workloads](#workloads)
+- [Renderer commands](#renderer-commands)
 - [Measurement](#measurement)
 - [Results and reports](#results-and-reports)
 - [A/B feature experiments](#ab-feature-experiments)
@@ -64,10 +60,14 @@ The suite has three parts:
 - **Case**: a scene plus its execution settings: parameters, base view, context
   policy, completion rule, optional operation settings, and a run function. A
   case is the unit that is measured.
-- **Operation**: the work a case performs during one attempt, written as a
-  function that runs in the browser. The function receives a runtime context
-  with the scene, module, view, clock, frame scheduler, and renderer hooks.
-  Standard operations load, pan, and zoom.
+- **Operation**: the function that performs a case's work during one attempt.
+  It receives a runtime context with the case data, scene snapshot, renderer
+  module, view, and hooks. Standard operations load, pan, and zoom.
+- **View**: the camera's zoom `:scale` and offsets `:x` and `:y`.
+  Optional `:viewport` settings give the canvas width, height, and device pixel
+  ratio, the number of drawing-buffer pixels per CSS pixel along each dimension.
+- **Hook**: a function supplied through `:hooks` for clock readings,
+  scheduling, view updates, rendering, or checking whether work may continue.
 - **Case descriptor**: What gets sent to the browser. It contains the case id,
   scene, derived seed, parameters, view, context policy, completion rule, batch
   size, preparation settings, and operation settings. Any functions are removed.
@@ -80,16 +80,16 @@ The suite has three parts:
 ### Execution
 
 - **Build**: one compiled renderer plus the matching catalogue and browser
-  executor. A build id ties the three artefacts together, and the runner rejects
+  executor. A build id ties the three outputs together, and the runner rejects
   a mismatch.
 - **Retained build**: a ready build that the suite stores under the managed
-  build directory and later runs can reuse without recompiling.
+  build directory for reuse in later runs.
 - **Fresh case**: a case with `:context :fresh`. Each attempt gets a new page,
   module, graphics context, and upload.
 - **Warm case**: a case with `:context :reuse`. One page, module, graphics
   context, snapshot, and upload serve all attempts of the case.
-- **Preparation**: the untimed setup for one measured context. It covers module
-  instantiation, WebGL context creation, scene build, snapshot validation,
+- **Preparation**: setup for one graphics context. It covers module
+  instantiation, WebGL2 context creation, scene build, snapshot validation,
   fingerprinting, upload-order derivation, and upload. A warm preparation also
   restores the starting view and drains to `Full`. One page owns one
   preparation.
@@ -114,13 +114,39 @@ The suite has three parts:
 - **Runner**: the Node command line interface that builds or reuses a build,
   selects cases, serves the build, launches Chromium, runs attempts, saves
   records, and prints reports.
-- **Measurement**: a timed phase. The suite times module start, graphics start,
-  upload, first render, and warm interaction separately. Each measurement
-  records its value, unit, and basis. The basis says whether the value covers a
-  whole attempt or averages a number of inner calls.
-- **Slice**: one renderer call record inside an attempt: timestamp, flags,
-  frame type, and call duration. Slices are raw evidence. They are not
-  independent observations.
+- **Browser executor**: the compiled page and JavaScript that perform
+  preparation and case operations. Its bridge exposes the operations that Node
+  can request.
+- **Measurement**: a numeric result for a quantity such as elapsed duration.
+  The suite measures module start, graphics start, upload, first render, and
+  camera movement separately.
+- **Metric**: the name and definition of a measured quantity. Saved run metrics
+  declare a unit, semantics, basis, and zero policy. Semantics identifies what
+  the value measures. The basis states whether a value covers an attempt or
+  averages its inner calls. The zero policy states whether zero supplies a valid
+  value for analysis.
+- **Observation**: one valid value from a measured attempt for statistical
+  analysis. A batch average supplies one observation for its attempt.
+- **Slice**: a trace entry for one renderer call: timestamp, flags, frame type,
+  and duration. Slices describe the work within an attempt.
+- **Trace**: details of the work, including individual renderer calls,
+  cached previews, requested waits, and observed durations.
+- **Clock reading**: a time in milliseconds from the clock's origin. Subtracting
+  two readings from that clock gives an elapsed duration.
+- **Endpoint**: the clock reading at the end of the measured work. The renderer
+  endpoint is the reading immediately after a renderer call returns.
+- **Render drain**: repeated renderer calls until one returns `Full`. Partial
+  completion schedules another call on the next animation frame.
+- **Cached preview**: one render from cached tiles after a view update.
+- **Camera session**: camera start, view updates with cached previews, a settling
+  wait, camera end, and the final render drain.
+- **Active interval**: the part of a camera session from camera start through
+  the last cached preview and its guard check, or an explicit pause that follows
+  the preview.
+- **Settling wait**: the requested pause after the active interval and before
+  ending the interaction. The observed wait includes scheduling delays.
+- **Camera finalization**: the interval from immediately before ending the
+  interaction through the renderer call that returns `Full`.
 - **Frame type**: the completion signal returned by one renderer call. `None`
   means no frame; `Partial` means visible work remains; `Full` means the
   renderer finished the current request; `ViewportReady` means the visible
@@ -129,6 +155,34 @@ The suite has three parts:
   512 document units. The renderer caches rendered tiles in a texture atlas.
 - **Atlas**: a GPU texture that stores many tiles or a document-space preview.
   Atlases let warm pan and zoom present cached pixels before new tiles finish.
+
+### Command execution
+
+- **Renderer command**: a function that accepts a command context or its Promise
+  and returns a Promise of the next context. The base function uses the declared
+  name, such as `pan`. The measured function adds `*`, such as `pan*`, and records
+  an event for its work.
+- **Command context**: the map with keys `:case`, `:scene`, `:view`, and `:hooks`.
+  It carries the case descriptor, prepared scene snapshot, current view, and
+  hooks.
+- **Command body**: the work declared by `defcommand`. A synchronous body
+  returns the next context. An asynchronous body completes through callbacks
+  named by its declaration.
+- **Composite command**: a command that combines calls to other commands.
+  A declaration with `:measured-variant false` defines its base function and
+  collects events from the measured commands it calls.
+- **Command execution**: one call to `commands/execute`, which runs a function
+  from one command context to the next and records measured calls in completion
+  order.
+- **Event**: the record for one measured command call. It contains the command
+  name, vectors of raw metric values, and an optional trace.
+- **Guard**: the `:check` hook. A return authorizes work; an error rejects it.
+  The renderer owner is the execution authorized to use the renderer. The guard
+  can report cancellation, deadline expiry, context loss, or replacement of
+  that owner.
+- **Completion callback**: `complete` or `fail` in an asynchronous command body.
+  The first call determines the outcome: `complete` supplies the next context
+  and optional measurements; `fail` supplies a cause.
 
 ### Results
 
@@ -151,10 +205,10 @@ The suite has three parts:
 - **Feature configuration**: the set of Cargo features enabled for one renderer
   build.
 - **Feature comparison**: all on and off combinations of the requested features.
-  `N` requested features produce `2^N` configurations.
+  $N$ requested features produce $2^N$ configurations.
 - **Edge**: two configurations that differ in exactly one feature, compared from
   the configuration with the feature off to the configuration with the feature
-  on. A comparison with `N` features has `N * 2^(N-1)` edges.
+  on. A comparison with $N$ features has $N 2^{N-1}$ edges.
 - **Edge comparison**: the comparison record for one edge, stored with the
   feature comparison.
 - **Feature-comparison record**: the saved plan, configurations, runs, edges,
@@ -168,20 +222,20 @@ The Node runner owns everything outside the page:
 
 - it prepares or loads a build;
 - it reads the compiled catalogue and selects cases;
-- it serves the selected build from an owned loopback server;
+- it serves the selected build from a server on `127.0.0.1`;
 - it launches Chromium and creates pages;
 - it schedules warmups and measured attempts;
 - it records preparations, attempts, failures, and termination;
-- it writes the run record after every material change;
-- it asks the shared report code for the terminal summary.
+- it writes the run record as work progresses;
+- it prints a final report.
 
 The browser bridge owns everything inside the page:
 
-- it validates a request before claiming the page;
+- it validates a request before assigning the page to that work;
 - it imports the renderer module and creates the canvas and WebGL2 context;
 - it builds, validates, fingerprints, orders, and uploads the scene;
 - it restores the starting view outside timing for warm cases;
-- it runs the case operation and times the requested phases;
+- it runs the case operation and records the requested measurements;
 - it returns plain data and disposes the context when asked.
 
 The shared reporting code owns analysis:
@@ -214,38 +268,37 @@ sequenceDiagram
     N->>N: persist the run record
 ```
 
-The node runner saves the initial plan before it starts a browser, and updates
+The Node runner saves the initial plan before it starts a browser, and updates
 the run record after each preparation and attempt, and at termination. Reports
-are build from these saved records later.
+use these saved records.
 
 ### Builds and catalogues
 
-A build has three artefacts that must agree:
+A build has three matching outputs:
 
 - the renderer module;
 - the case catalogue compiled for Node;
 - the browser executor and its page.
 
-Preparation compiles the renderer in release mode with Cargo, then compiles the
-catalogue and browser executor with the same build _id_, tying the three artefacts
-together. The runner checks the id before case collection and when a page starts,
-and rejects a mismatch.
+Build preparation compiles the renderer in release mode with Cargo, then compiles
+the catalogue and browser executor with the same build id. The runner checks
+the id before case collection and when a page starts, and rejects a mismatch.
 
-An ordinary measurement build uses the renderer's default cargo feature set. A
+An ordinary measurement build uses the renderer's default Cargo feature set. A
 feature experiment may enable selected functional features. Both kinds of
 measurement build should exclude diagnostic features such as `stats`, `profile`,
 `profile-macros`, and `profile-raf`. The build checks that we are in release
 mode, the optimization level, and disabled profiling marks.
 
-The build record also captures a fixed list of environment values that Cargo
-receives, such as compiler, target, and Emscripten settings. Note that it only
-records the environment supplied to Cargo via a whitelist. It's not a full
-environment dump, and it does not certify a hermetic build.
+The build record captures a fixed list of environment values supplied to Cargo,
+including compiler, target, and Emscripten settings. These values provide
+provenance for interpreting a run. Reproducing a build also requires its other
+environment settings and dependencies.
 
 Builds are saved under `target/performance/render-wasm/builds/<id>/`. The
 manifest records the build id, status, functional settings, Git provenance, and
 build facts. An experiment run can select a retained build with `--build <id>`,
-but a run without `--build` always prepares a new one.
+and `run` prepares a new build when it omits `--build`.
 
 `build` and a run that prepares its build accept `--features`,
 `--[no-]default-features`, and `--build-timeout-ms`. A run with `--build` reuses
@@ -266,10 +319,11 @@ process it starts. Cases run serially. A fresh case gets a new page and context
 for each preparation. A warm case keeps one page and context for all of its
 attempts.
 
-The runner bounds every phase with a deadline. When a page stalls past its
-deadline, Node stops the browser process and records the failure. The browser
-bridge also checks for context loss, expired deadlines, and stale work from an
-earlier page before and after asynchronous work.
+The runner applies deadlines to startup, preparation, and attempts. When a page
+stalls past its deadline, Node stops the browser process and records the failure.
+The browser bridge also checks for context loss, expired deadlines, and work associated
+with a superseded renderer owner before and after asynchronous work. A browser
+thread occupied by synchronous work relies on the Node deadline to stop it.
 
 Clean-up closes the page, then the browser, then the server. The runner deletes
 a build selected with `--remove` only after the final run record is saved.
@@ -299,23 +353,25 @@ produce the same snapshot.
       (rect))))
 ```
 
-Scene scopes do not nest. Ordinary `let`, `doseq`, and functions defined outside
-the scope work inside the body. Each shape constructor accepts an optional label
+Each scene has one construction scope. Starting another scene inside it raises
+an error. Ordinary `let`, `doseq`, and functions defined outside the scope work
+inside the body. Each shape constructor accepts an optional label
 or a label plus attributes. Attributes override generated defaults by key.
 Labels must be keywords or vectors and must be unique within the snapshot.
 
 Containers follow the same pattern:
 
-- `frame` keeps its authored `:x`, `:y`, `:width`, and `:height`.
+- `frame` keeps the supplied `:x`, `:y`, `:width`, and `:height`.
 - `group` derives bounds from its children. A masked group uses its first child
   as the mask.
 - `bool` derives content and bounds from its children with the standard path
-  engine. It requires a boolean operation type and cannot contain frames.
+  engine. It requires a boolean operation type. Frame children raise a
+  construction error.
 
 ### Declaring a case
 
-A case id uses the scene namespace. The `defcase` form derives the scene from
-that namespace and attaches the run function.
+For a scene named `:rects`, case ids start with `:rects/`. The `defcase` form
+derives the scene from that keyword namespace and attaches the run function.
 
 ```clojure
 (defcase :rects/pan
@@ -344,20 +400,20 @@ The case declares:
 - `:batch-size` and `:preparation`: execution settings recorded in the
   descriptor and checked by comparisons. A batch size groups inner calls inside
   one attempt; a repetition is a separate attempt. Standard load, pan, and zoom
-  cases run one call per attempt.
+cases run one call per attempt.
 
 ### Case collection and seeds
 
 Node collects cases from the compiled catalogue. Collection loads every
-declaration, validates every scene and case, derives the scene seed, projects
-the case to plain data, and checks that the descriptor survives a serialization
-round trip. The process does not build shapes, start a browser, or initialize
-the renderer.
+declaration, validates every scene and case, derives the scene seed, selects
+the case's data fields, and checks that the descriptor survives a serialization
+round trip. Shape construction, browser startup, and renderer initialization
+take place during execution.
 
 The scene seed depends only on the master seed, the scene id, and the canonical
-parameters. It does not depend on the case id, collection order, operation
-body, attempt count, or feature configuration. This keeps load, pan, and zoom
-cases on the same scene content and keeps A/B configurations comparable.
+parameters. These inputs give load, pan, and zoom cases the same starting
+content across case bodies, collection orders, attempt counts, and feature
+configurations. They also give A/B configurations matching scene content.
 
 A filter selects cases by a substring of the case id. An empty selection is an
 error. Declarations outside the filter are still validated.
@@ -369,8 +425,8 @@ their object keys, consistent child and parent links, a tree that reaches every
 shape from the root, and references that point at present shapes. Validation
 runs before any timer starts.
 
-The browser derives upload order from the snapshot and does not store it in the
-snapshot. The root comes first, then descendants in the order of each shape's
+The browser derives upload order from the snapshot. The root comes first, then
+descendants in the order of each shape's
 child list. The browser computes the order and the fingerprint before the upload
 clock starts. The upload uses the same batch serializer as the editor, with
 structure, fill, and stroke data batched and path and SVG attributes handled per
@@ -389,16 +445,214 @@ A load case renders a fresh scene and times module start, graphics start,
 upload, and the first render to `Full`. A pan or zoom case prepares the scene
 once, restores the starting view outside timing for each attempt, then times a
 camera session. The standard camera sessions use 20 view updates and a 100 ms
-settle wait. Pan and zoom parameters vary by scene.
+settling wait. Pan and zoom parameters vary by scene.
+
+## Renderer commands
+
+A renderer command accepts a command context or its Promise and returns a
+Promise of the next context. The command context has four fields:
+
+| Field | Meaning |
+| --- | --- |
+| `:case` | Case descriptor, including the case id. |
+| `:scene` | Prepared starting snapshot with concrete shapes and references. |
+| `:view` | Current zoom scale, camera offsets, and optional viewport settings. |
+| `:hooks` | Functions for clocks, scheduling, rendering, view changes, and the execution guard. |
+
+The `:scene` field describes the starting snapshot. Commands return view changes
+through `:view` and apply renderer work through hooks. Every command context
+supplies `:now`, `:check`, `:frame`, `:sleep`, `:render`, `:render-sync`,
+`:render-from-cache`, `:set-view`, `:set-view-start`, and `:set-view-end` as
+functions. The `:now` hook returns a clock reading in milliseconds.
+The `:check` guard authorizes work by returning and reports cancellation,
+deadline expiry, context loss, or a superseded owner
+by throwing an error. The owner is the execution authorized to use the renderer.
+Returned contexts retain the execution's `:check` guard; replacing it rejects
+completion.
+
+### Declaring a command
+
+`defcommand` defines two functions from one body. The base function runs the
+work; the function with a `*` suffix also records a measurement event. Measured
+functions require an active command execution. Both functions resolve their
+incoming context before running the body. A synchronous body
+returns the next command context.
+
+```clojure
+(ns example.renderer-commands
+  (:require
+   [benches.render-wasm.runtime.camera :as camera]
+   [benches.render-wasm.runtime.commands :as commands :refer [defcommand]]
+   [benches.render-wasm.runtime.protocol :as protocol]))
+
+(defcommand render-sync
+  "Renders the prepared scene synchronously."
+  [rtx]
+  ((get-in rtx [:hooks :render-sync]))
+  rtx)
+```
+
+`:pre` conditions validate arguments before work and timing in every build.
+Input resolution, context validation, and argument validation precede the start
+clock reading. Context validation checks the complete set of hooks. Output
+validation and event recording follow the endpoint.
+
+The body duration is
+
+\[
+\Delta t = t_{\mathrm{end}} - t_{\mathrm{start}},
+\]
+
+where both clock readings use milliseconds from the same origin. A synchronous
+command captures the endpoint immediately after its body returns. An
+asynchronous command supplies an endpoint or captures it when `complete` runs.
+
+### Asynchronous completion
+
+The option `:async [complete fail]` supplies two completion callbacks to the
+body. Their names belong to the declaration; the public command arguments stay
+the same. The first callback call determines the outcome:
+
+- `(complete next-rtx)` succeeds with the next command context and captures the
+  endpoint at that call.
+- `(complete next-rtx evidence)` succeeds with an explicit endpoint and raw
+  measurements when `evidence` supplies them.
+- `(fail cause)` rejects the command with its cause and available partial trace.
+
+Successful completion requires a call to `complete`. A returned Promise forwards
+its rejection to `fail`. The execution records diagnostics for repeated
+completion calls while it is active. Its guard checks authorization at
+completion, and the measured command records its event after output validation.
+
+The optional completion map has these fields:
+
+| Field | Meaning |
+| --- | --- |
+| `:end-ms` | Clock reading at the end of the work, using the same clock origin as the start. |
+| `:metrics` | Namespaced metric keywords mapped to nonempty vectors of raw numbers. |
+| `:trace` | Details of the work, such as traces of render calls and requested waits. |
+
+The command supplies `:command/elapsed`, its body duration in milliseconds.
+`:metrics` supplies additional quantities. Command events preserve zero,
+negative, `NaN`, and infinite numeric values as raw measurements.
+
+Camera completion illustrates the callback interface:
+
+```clojure
+(defcommand pan
+  "Moves the view and completes when rendering reaches Full."
+  {:async [complete fail]}
+  [rtx {:keys [dx dy steps settle-ms]}]
+  (let [target (-> (:view rtx)
+                   (update :x + dx)
+                   (update :y + dy))]
+    (-> (protocol/start-camera! rtx {:settle-ms settle-ms})
+        (protocol/animate-view! {:to target :steps steps})
+        (protocol/finish-camera!)
+        (.then (fn [trace]
+                 (complete (assoc rtx :view target)
+                           {:end-ms (:end-ms trace)
+                            :metrics {:renderer/call-elapsed
+                                      (mapv :duration-ms (:slices trace))}
+                            :trace trace})))
+        (.catch fail))))
+```
+
+The final renderer call can return before the Promise callback runs. The
+`:end-ms` field carries that renderer endpoint through the scheduling delay.
+For example, renderer work lasting 7 ms followed by a 500 ms callback delay
+still supplies a renderer duration of 7 ms. A clock reading in the later
+callback would measure 507 ms.
+
+The provided `camera/pan` and `camera/pan*` commands accept explicit `:dx`, `:dy`,
+`:steps`, and `:settle-ms`. They submit interpolated views on animation frames,
+draw cached previews, wait for settling, and finish rendering to `Full`. They
+resolve to the context with the final view. The measured function records:
+
+| Metric | Values in one event, in milliseconds |
+| --- | --- |
+| `:command/elapsed` | One duration from the start of the body through the renderer endpoint. |
+| `:renderer/call-elapsed` | One duration per renderer call in the final drain. |
+| `:renderer/cache-call-elapsed` | One duration per cached render call. |
+| `:camera/finalization-to-full` | One duration from before ending the interaction through the renderer endpoint. |
+
+Its trace also contains individual render calls, view-update durations, waits,
+and the final `:end-ms`. Each vector preserves the call order within its quantity.
+
+### Composition and execution
+
+A composite combines commands. `:measured-variant false` defines its base
+function and selects measurements through the calls in its body:
+
+```clojure
+(defcommand selected-pans
+  {:measured-variant false}
+  [rtx]
+  (-> rtx
+      (camera/pan* {:dx 10 :dy 0 :steps 2 :settle-ms 5})
+      (camera/pan {:dx 0 :dy 5 :steps 2 :settle-ms 5})
+      (camera/pan* {:dx -10 :dy 0 :steps 2 :settle-ms 5})))
+```
+
+All three calls update the view and renderer. The first and third record
+events. Command functions resolve incoming Promises, so threading passes each
+updated context to the next command.
+
+A command execution runs a function from one command context to the next,
+authorizes its work, and collects events in completion order. Given a prepared
+command context `rtx`:
+
+```clojure
+(commands/execute rtx selected-pans)
+```
+
+The returned Promise resolves to an outcome. A successful outcome contains
+`:outcome :completed`, the next `:context`, and ordered `:events`. A failed
+outcome contains `:outcome :failed`, `:error`, and the events recorded before
+failure. Existing Errors retain their identity and partial trace. Other thrown
+values become Errors with the original value in `:thrown`. An active execution
+can also record repeated completion calls in `:diagnostics`.
+
+An event has this shape:
+
+```clojure
+{:command :benches.render-wasm.runtime.camera/pan
+ :metrics {:command/elapsed [74]
+           :renderer/call-elapsed [7 7]
+           :renderer/cache-call-elapsed [2 2]
+           :camera/finalization-to-full [33]}
+ :trace {:end-ms 74}}
+```
+
+One event represents one measured command call. Its metric vectors describe
+the individual values that call produced. The command execution owns this
+history; its guard authorizes work for that execution. Pass the resulting
+context to `commands/execute` to start another command execution.
+
+### Runtime code
+
+[`runtime/commands.clj`](runtime/commands.clj) declares commands;
+[`runtime/commands.cljs`](runtime/commands.cljs) executes them.
+[`runtime/camera.cljs`](runtime/camera.cljs) defines rendering and camera
+operations. [`runtime/protocol.cljs`](runtime/protocol.cljs) defines render
+drains, camera sessions, hook contracts, and trace fields.
+
+Case declarations such as [`scenes/rects.cljs`](scenes/rects.cljs) attach operation
+bodies through [`declarations.cljc`](declarations.cljc). Node loads these
+declarations and functions during catalogue collection. Renderer operations run
+through the supplied hooks when the functions execute in the browser.
+[`browser/bridge.cljs`](browser/bridge.cljs) constructs the runtime context for
+case operations and prepares graphics contexts, snapshots, and uploads. Reused
+cases restore their starting view outside interaction timing before each attempt.
 
 ## Measurement
 
 ### Preparation and measurement boundaries
 
-The suite keeps slow setup out of timed code. This ties the numbers to renderer
-work instead of test code.
+Each duration has a defined start and endpoint. Setup and diagnostics run
+around the interval whose work they prepare or describe.
 
-Outside timers:
+Work around those intervals includes:
 
 - scene build, snapshot validation, and fingerprinting;
 - upload order derivation;
@@ -407,7 +661,7 @@ Outside timers:
 - module script import;
 - camera restore and the drain that prepares a warm case.
 
-Inside timers:
+The timed work includes:
 
 - module instantiation;
 - graphics context creation and initial size synchronization;
@@ -445,15 +699,15 @@ runs a camera session:
 1. start the camera interaction;
 2. for each view update, wait for the next animation frame, apply the view, and
    present cached pixels;
-3. wait for the settle interval;
+3. wait for the requested settling time;
 4. end the camera interaction;
 5. render until `Full`.
 
 A pure pan can reuse cached textures while it updates which tiles are visible.
-A zoom rebuilds and invalidates tile textures. The suite keeps the 100 ms settle
-interval and records the requested and actual waits separately from renderer
-work. The final drain includes the end of the interaction; the run also records
-that call's own duration.
+A zoom rebuilds and invalidates tile textures. Standard cases request a 100 ms
+settling wait and record the requested and observed durations separately from
+renderer calls. Camera finalization includes the call that ends the interaction;
+the run also records that call's duration.
 
 ### Slices and metrics
 
@@ -472,34 +726,39 @@ A fresh attempt reports one drain:
 A warm attempt reports the camera session and the final drain:
 
 - `cached-slices`: one record per gesture frame with `timestamp`,
-  `duration-ms` for the cached-preview call, and `view-and-preview-ms` for the
+  `duration-ms` for the cached preview call, and `view-and-preview-ms` for the
   view update plus preview call;
 - `slices`: the final drain, with the same shape as a fresh drain;
 - `interact-ms`: the whole camera session, from before the interaction starts
   through the final `Full`;
 - `active-ms`: from before the interaction starts to after the last cached
-  preview, or after an authored pause that follows it;
+  preview and its guard check, or after an explicit pause that follows it;
 - `settling-requested-ms` and `settling-actual-ms`: the declared and observed
-  settle spans;
-- `set-view-end-ms`: the call that ends the interaction, on its own clock;
-- `time-to-viewport-ready-ms` and `time-to-full-ms`: the final drain
-  boundaries;
-- `last-input-to-full-ms`: from before the last view update to after the final
-  drain resolves.
+  settling waits;
+- `set-view-end-ms`: elapsed time during the call that ends the interaction;
+- `time-to-viewport-ready-ms` and `time-to-full-ms`: durations from camera
+  finalization through the first `ViewportReady` or `Full`, and through `Full`,
+  respectively;
+- `last-input-to-full-ms`: from before the last view update to the endpoint of
+  the renderer call that returns `Full`.
+
+Both drains and camera sessions return `end-ms`, the clock reading immediately
+after the final renderer call returns `Full`. Completion durations end at that
+reading. Promise callbacks can run later as the browser schedules queued work.
 
 Both kinds of attempt report `renderer-call-total-ms`, the sum of the renderer
 call durations, computed after timing.
 
-A metric names its unit, semantics, basis, and zero policy. A batch average
-declares its call count, but one attempt still supplies one observation. Raw
-slices keep zero durations and non-finite values; the metric layer marks values
-that cannot supply an observation.
+A saved run metric declares its unit, semantics, basis, and zero policy. A batch
+average records its call count; one attempt supplies one observation. Raw slices
+keep zero durations and non-finite values. The metric entry classifies the value
+for analysis and records a reason when it is invalid.
 
-### What completion means
+### Renderer completion
 
 The renderer finishes in tile budgets. One renderer call returns a frame type,
 and the caller continues while the renderer reports `Partial` or
-`ViewportReady`. The run completes when a call returns `Full`. `None` or an
+`ViewportReady`. The drain completes when a call returns `Full`. `None` or an
 unknown value fails the attempt.
 
 | Value | Frame type      | Meaning                                                        |
@@ -509,15 +768,14 @@ unknown value fails the attempt.
 |     2 | `Full`          | the renderer finished the current request                      |
 |     3 | `ViewportReady` | the visible viewport was submitted; work outside it may remain |
 
-`Full` is a renderer submission boundary. It does not mean that the GPU has
-finished or that pixels are visible. Skia and WebGL submit commands without
-waiting for completion, and the suite has no signal for GPU completion or
-displayed pixels. A call duration measures synchronous work inside the renderer
-call plus any driver stall that happens on the calling thread.
+`Full` marks renderer submission of the completed request. Skia and WebGL queue
+GPU work, and GPU execution and display follow their own schedules. A call
+duration measures synchronous work on the calling thread, including any driver
+stall. These clock readings describe work through the renderer return.
 
 For scheduled calls, the browser passes the timestamp of the animation frame.
-For immediate calls, it reads the clock. Each slice records its timestamp so
-that call sequences can be reconstructed.
+For immediate calls, it reads the clock. Each slice records its timestamp to
+describe the call sequence.
 
 ### Graphics environment
 
@@ -547,8 +805,7 @@ the GPU policy and environment signal under diagnostics. Default runs allow
 SwiftShader fallback and warn when they record software
 rendering. Comparisons check effective graphics settings and resolved launch
 arguments. Comparing hardware and software runs requires
-`--allow-all-differences`: whether that comparison needs a narrower permission
-is still an open question.
+`--allow-all-differences`.
 
 ## Results and reports
 
@@ -567,8 +824,9 @@ A run record contains:
 - the termination reason.
 
 A preparation records its case, fingerprint, effective graphics, and setup
-diagnostics. An attempt records one outcome which can have some invalid or
-absent metrics due to failures. We try to retain trace evidence after a failure.
+diagnostics. An attempt records one outcome and its metric entries. Entries can
+describe invalid values or missing measurements. Errors retain available
+traces of render calls and waits after a failure.
 
 ### Failures and termination
 
@@ -577,8 +835,8 @@ records a failed attempt and consumes the slot. A warm preparation failure or a
 warm attempt failure releases the prepared page and context and leaves that
 case's remaining slots unattempted. A browser or page failure closes the browser
 it started, abandons the current case, and starts a new browser for the next
-case when possible. The runner performs no hidden retries and no adaptive
-stopping.
+case when possible. The run fixes its attempt count before execution and uses
+each allocated slot at most once.
 
 A run terminates in one of four states:
 
@@ -589,8 +847,9 @@ A run terminates in one of four states:
   failure stopped the case.
 - **interrupted**: `SIGINT` or `SIGTERM` stopped the run.
 
-The runner persists partial records before it exits. Exit status is
-authoritative; a saved record alone does not prove success.
+The runner saves partial records before it exits. Use exit status to determine
+whether the command completed successfully; saved records also describe work
+that ended in failure.
 
 ### Summaries
 
@@ -606,10 +865,10 @@ A summary reports, for each case and metric:
   categories;
 - the definitions and units of the metric.
 
-Warmups and wholly failed attempts supply no observations. A completed attempt
-can supply a valid value for one metric and an invalid value for another. The
-report suppresses pooled estimates when valid observations use different metric
-definitions.
+Statistics use valid values from completed measured attempts. The record also
+retains warmups and failures. A completed attempt can supply a valid value for
+one metric and an invalid value for another. A pooled estimate combines values
+across attempts and requires matching metric definitions.
 
 The default analysis settings are:
 
@@ -627,16 +886,16 @@ can override them at analysis time. An estimate that cannot be computed keeps a
 reason and, when applicable, the minimum count it needs.
 
 The intervals are exploratory and conditional on the observed attempts.
-Attempts within one run share evolving caches, so they are not independent
-samples from a stable process. Repeated whole runs are the way to confirm a
-finding.
+Attempts within one run share evolving caches and can have dependent durations.
+Repeated whole runs provide evidence about reproducibility across those cache
+conditions.
 
 ### Comparisons
 
 A comparison pairs saved cases by identical case id unless `--cases A,B`
 selects one explicit baseline, candidate pair. The CLI checks the selector
 syntax before it loads either record, then resolves each selector by saved case
-ID or exact name.
+id or exact name.
 
 By default, a comparison requires equal:
 
@@ -649,8 +908,8 @@ By default, a comparison requires equal:
   environment;
 - warmup count, timeout policy, and metric definitions.
 
-Git revision, dirty state, run ids, timestamps, and each run's saved analysis
-defaults are provenance. They do not block pairing.
+Git revision, dirty state, run ids, timestamps, and saved analysis defaults
+provide provenance for interpreting the paired cases.
 
 The comparison reports absolute and percentage median changes, with a bootstrap
 interval for each change. A zero baseline suppresses a percentage change. The
@@ -659,8 +918,8 @@ all-differences permission allows raw values.
 
 ### Comparison permissions
 
-The comparison records compatibility differences and never hides them. A
-permission acknowledges a class of differences and labels each acknowledged
+The comparison records every compatibility difference. A permission acknowledges
+a class of differences and labels each acknowledged
 mismatch with the rule that allowed it.
 
 - `--allow-build-differences` acknowledges recorded build settings, effective
@@ -672,13 +931,14 @@ mismatch with the rule that allowed it.
   strict. Missing or varying fingerprint evidence still needs the
   all-differences permission.
 - `--allow-all-differences` acknowledges every compatibility difference,
-  including mixed metric definitions. The report compares valid raw values
-  without converting units. Malformed records and unusable measurements remain
-  unusable.
+  including mixed metric definitions. The report compares valid raw values in
+  their recorded units. Record validation and measurement validity still govern
+  the analysis.
 
 Build and scene permissions combine by union. All-differences includes both.
 A report shows the selected permissions, every recorded difference, and the
-rule that acknowledged it. Timing values never determine the exit status.
+rule that acknowledged it. Exit status reports execution and compatibility
+checks; the estimates describe the observed timing differences.
 
 ## A/B feature experiments
 
@@ -686,7 +946,8 @@ An A/B experiment answers one question: how do the selected cases behave when a
 renderer feature is off versus on, with everything else held constant?
 
 The `ab` command takes the requested features, plans the configurations, builds
-every configuration, runs every configuration, and compares every "edge".
+every configuration, runs every configuration, and compares every edge: a pair
+of configurations that differ by one feature.
 
 ### Planning
 
@@ -703,9 +964,9 @@ A feature configuration is a set of enabled Cargo features. The planner:
 6. emits every pair of configurations that differ in exactly one feature, from
    the configuration with that feature off to the configuration with it on.
 
-The command requires at least one requested feature. For `N` features, the
-comparison has `2^N` configurations and `N * 2^(N-1)` edges. The planner
-compares each edge once, not once per execution order. For features
+The command requires at least one requested feature. For $N$ features, the
+comparison has $2^N$ configurations and $N 2^{N-1}$ edges. The planner
+compares each edge once, in the direction from off to on. For features
 `[a, b]`, the configurations are `00, 01, 11, 10` and the edges are:
 
 ```text
@@ -745,15 +1006,15 @@ pnpm run render-bench -- ab \
 The feature names must exist in the renderer manifest. Placeholders appear here
 because the manifest decides which features are available.
 
-A configuration that records attempts but fails does not stop the comparison.
-Its failures and remaining slots are preserved. A build failure, a catalogue
+After a configuration records attempts, scheduling continues with its recorded
+failures and remaining slots. A build failure, a catalogue
 identity failure, or a run with zero attempts stops scheduling later
 configurations; those configurations are recorded as unattempted with a reason.
 `SIGINT` and `SIGTERM` save the available state and return 130 or 143.
 
 ### Feature-comparison output
 
-The default home is
+The default output directory is
 `target/performance/render-wasm/feature-comparisons/<ab-id>/`. It contains:
 
 ```text
@@ -788,24 +1049,23 @@ match that evidence, the difference remains unacknowledged.
 The comparison record also carries the edge context: the source and target
 configuration slugs and the expected feature facts. An edge is analysed when
 both endpoint records exist, even if one run recorded failed attempts. A missing
-endpoint or an analysis error remains an explicit edge outcome. An edge that
+endpoint or an analysis error produces an explicit edge outcome. An edge that
 retains an unacknowledged difference keeps its saved report, is marked failed,
 and makes the invocation exit 1.
 
-Other build differences remain subject to `--allow-build-differences`. Scene
-differences remain subject to `--allow-scene-differences`. Operation, view,
+Other build differences require `--allow-build-differences`. Scene differences
+require `--allow-scene-differences`. Operation, view,
 context, preparation, completion, batch size, graphics, runtime environment, and
 metric-definition differences stay strict unless `--allow-all-differences` is
-selected. If the two configurations report the same effective feature set, the
-edge remains in the comparison and is labelled with that fact. The suite does
-not
-infer a performance effect from the requested toggle alone.
+selected. If two configurations report the same effective feature set, the
+comparison includes their edge and labels it with that fact. Effective feature
+sets describe the code settings that accompany the observed timings.
 
 The command returns 0 when every configuration completes, every edge analysis
 finishes, and every difference is acknowledged. It returns 1 for execution,
 persistence, or analysis failures, including unacknowledged differences. Edge
-reports show raw times and the usual statistics. They describe the observed
-difference; they do not prove that the feature caused it.
+reports show raw times and statistics for the observed differences. Establishing
+a causal effect requires experimental control and repeated measurements.
 
 ## How to run
 
@@ -859,12 +1119,12 @@ Require hardware rendering for rectangle load, pan, and zoom in a GPU container:
 pnpm run render-bench -- run --filter rects --require-gpu
 ```
 
-For a functional smoke check, add `--warmups 0 --repetitions 1`. A successful
+For a functional check, add `--warmups 0 --repetitions 1`. A successful
 run renders the scenes through `Full` and saves the vendor and renderer strings
 with `:software false` in each preparation's `:effective-graphics`.
 
-An explicit `--output-dir` must not exist; the runner refuses to overwrite it.
-The same rule applies to an A/B feature-comparison home.
+Choose a new path for `--output-dir`. The runner rejects an existing output
+directory. A/B feature comparisons apply the same rule.
 
 Compare two saved runs offline:
 
@@ -939,21 +1199,22 @@ Each CLI command produces an outcome with an exit code, errors, log path, and
 optional report text. The runner prints the final output once and returns the
 numeric status.
 
-Progress and diagnostics go to stderr. The default shows build phases, case
+Progress and diagnostics go to stderr. The default shows build stages, case
 headings, and attempt progress. `-q` / `--quiet` shows results, warnings, and
 errors. `-v` / `--verbose` also shows debug details and raw build output. Quiet
 and verbose are mutually exclusive. These options apply to every command.
 
 `--color` forces terminal colours; `--no-color` disables them. Automatic colour
 uses a terminal stream when `NO_COLOR` is empty or absent and `TERM` is not
-`dumb`. Results and file logs receive no logger colours. Child output is read as
-lines with normalized line endings. Verbose terminal output prefixes and dims
-these lines; file logs store them without those decorations. Terminal errors
-include a bounded log tail when available.
+`dumb`. Colour choices apply to terminal diagnostics. Result text and file logs
+use plain text. The runner reads child output as lines and normalizes their
+line endings. Verbose terminal output prefixes and dims these lines; file logs
+store the lines as text. Terminal errors include a limited extract from the end
+of the log when available.
 
 Files receive every log level, including debug output hidden from the console.
 Each build writes `build.log`; each A/B comparison writes
-`feature-comparison.log`. The default run home is
+`feature-comparison.log`. The default run directory is
 `target/performance/render-wasm/runs/<run-id>/`, which contains `run.log`,
 `run.transit`, and optional screenshots.
 
@@ -963,9 +1224,9 @@ validated merged record for `merge`, every configuration and edge for `ab`, and
 a clean purge for `purge`. Exit 1 means a failed preparation, a failed attempt,
 an incomplete run, an invalid selection, incompatible merge inputs, an
 unacknowledged comparison difference, or a harness failure. Exits 130 and 143
-mean interruption by `SIGINT` and `SIGTERM` for `build`, `run` and `ab`. An
-interrupted command prints no error for the aborted work; it prints a failed
-write of its own record or log.
+mean interruption by `SIGINT` and `SIGTERM` for `build`, `run` and `ab`.
+Interruption uses those statuses to report aborted work. Errors writing the
+command's record or log also produce diagnostics.
 
 `--warmups` defaults to 3, `--repetitions` to 10, `--timeout-ms` to 30000, and
 `--startup-timeout-ms` to 30000. `build`, a run that prepares its build, and an
@@ -1010,14 +1271,15 @@ pass and 1 when they fail.
 
 ## Scope and limitations
 
-The suite measures renderer phases inside Chromium exclusively, which means that
-the numbers we generate end at the renderer submission boundary. In particular,
-we **do not** measure memory, power, frame rate, frame drops, visual
-correctness, network, or editor input-to-paint.
+The suite records durations for setup, render calls, and camera movement inside
+Chromium.
+Rendering durations end when the renderer returns after submitting work.
+Memory, power, frame rate, frame drops, visual correctness, network latency,
+and editor input-to-paint each require measurements for those quantities.
 
-In addition, a fresh context starts a new page, module, and WebGL context. The
-browser process persists across cases, and the module script import runs before
-the module clock, so the measurement is not cold.
+A fresh case starts a new page, module, and WebGL2 graphics context. The browser
+process persists across successful cases, and module script import precedes
+module timing. These startup conditions define measurements for fresh cases.
 
 Attempts share evolving caches, so bootstrap intervals describe the observations
 within a run. Repeat whole runs to assess reproducibility, and judge whether the
@@ -1030,7 +1292,7 @@ frontend/performance/benches/render_wasm/
 ├── browser/          page entry and browser bridge
 ├── node/             CLI, build preparation, server, browser host, run, artefacts
 ├── report/           summaries, comparisons, statistics, formatting
-├── runtime/          render drain and camera session protocol
+├── runtime/          renderer commands, render drains, and camera sessions
 ├── scenes/           scene recipes and their cases
 ├── builder.cljc      scene construction
 ├── declarations.cljc scene and case registry, schemas, seed derivation
