@@ -14,6 +14,7 @@
    [app.common.files.shapes-builder :as sb]
    [app.common.math :as mth]
    [app.common.media :as media]
+   [app.common.path-names :as cpn]
    [app.common.schema :as sm]
    [app.common.types.container :as ctn]
    [app.common.types.fills :as types.fills]
@@ -437,7 +438,7 @@
             page    (dsh/get-page fdata page-id)
             pos     (dsh/get-viewport-center state)
 
-            name    (str/replace (:name svg-data) ".svg" "")]
+            name    (cpn/remove-extension (:name svg-data))]
 
         (->> (create-shapes-svg file-id (:objects page) pos svg-data)
              (rx/map (partial add-shapes-and-component it fdata page name)))))))

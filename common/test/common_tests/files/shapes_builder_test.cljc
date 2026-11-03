@@ -91,3 +91,20 @@
 
         ;; stroke-style is not set at import time (nil means default solid rendering)
         (t/is (nil? (:stroke-style stroke)))))))
+
+;; Regression for https://github.com/penpot/penpot/issues/12773: the SVG
+;; root shape name must have any extension stripped (not only ".svg"),
+;; so the component name and the main instance root name match.
+(t/deftest create-svg-shapes-strips-name-extension
+  (let [svg-data {:name "my.svg.icon.SVG"
+                  :tag :svg
+                  :attrs {:xmlns "http://www.w3.org/2000/svg"
+                          :width "24" :height "24"
+                          :viewBox "0 0 24 24"}
+                  :content [{:tag :rect
+                             :attrs {:x "0" :y "0" :width "24" :height "24"}
+                             :content []}]}
+        [root _children] (sb/create-svg-shapes svg-data {:x 0 :y 0} {} nil nil #{} false)]
+
+    (t/is (= "my.svg.icon" (:name root)))))
+
