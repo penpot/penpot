@@ -24,6 +24,11 @@ So if you need to read the result of your executions/observe properties affected
 before trying to observe changes.
 Every `execude_code` call waits for updates before applying your code, so you never need to call `waitForLayoutUpdate` at the beginning of your code.
 
+## Read-Only Mode
+
+While saves are failing, the workspace becomes read-only: every write through the API throws an error saying that the
+workspace is read-only. Do not retry in a loop; wait and try again later, or tell the user.
+
 # The Structure of Penpot Designs
 
 A Penpot design ultimately consists of shapes.

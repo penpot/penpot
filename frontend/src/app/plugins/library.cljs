@@ -1392,6 +1392,8 @@
                  team-id    (:current-team-id @st/state)
                  library-id (uuid/parse library-id)]
              (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
+                  ;; Saves may have failed while the list loaded
+                  (rx/tap (fn [_] (r/check-writable)))
                   (rx/subs!
                    (fn [shared-files]
                      ;; Only published libraries of the team can be linked
