@@ -361,9 +361,10 @@ Some of the aforementioned configuration options control these modes.
 * Auto-formatting: Use `pnpm run fmt`
 * Generating API type data: See [types-generator/README.md](types-generator/README.md)
 * Versioning: Use `bash scripts/set-version` to set the version for the MCP package (in `package.json`).
-  - Ensure that at least the major, minor and patch components of the version are always up-to-date.
-  - The MCP plugin assumes that a mismatch between the MCP version and the Penpot version (as returned by the API) 
-    indicates incompatibility, resulting in the display of a warning message in the plugin UI.
+  - Ensure that at least the major and minor components of the version are always up-to-date.
+  - The MCP plugin assumes that a mismatch between the major.minor components of the MCP version and the Penpot
+    version (as returned by the API) indicates incompatibility, resulting in the display of a warning message in
+    the plugin UI. Patch releases are treated as compatible.
 * Packaging and publishing:
   1. Ensure that the API type data is up-to-date (see above).
   2. Ensure release version is set correctly in package.json (call `bash scripts/set-version` to update it automatically)
