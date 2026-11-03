@@ -1189,6 +1189,7 @@
         changes        (cond-> changes
                          (and (some? clean-name)
                               main-root?
+                              (some? root-main)
                               (not= clean-name (:name root-main)))
                          (-> (update :redo-changes conj
                                      (make-change container
@@ -2748,7 +2749,8 @@
 
         changes     (-> changes
                         (cond-> (not= normalized-name (:name root))
-                          (pcb/update-shapes [(:id root)] #(assoc % :name normalized-name)))
+                          (pcb/update-shapes [(:id root)] #(assoc % :name normalized-name)
+                                             {:ignore-touched true}))
                         (pcb/add-component (:id root-shape)
                                            path
                                            name

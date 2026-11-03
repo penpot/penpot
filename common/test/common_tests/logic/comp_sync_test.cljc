@@ -546,7 +546,8 @@
 
 (defn- run-sync-inverse
   "Run the inverse sync on `shape-tag`, which has been renamed to an
-   unnormalized name, and return the resulting main root and component."
+   unnormalized name, and return the resulting main root and component
+   names, and the updated file."
   [shape-tag]
   (let [file       (-> (thf/sample-file :file1)
                        (tho/add-simple-component-with-copy :component1
@@ -567,7 +568,8 @@
         main-root' (ths/get-shape file' :main-root)
         component' (ctkl/get-component (:data file') (thi/id :component1))]
     [(:name main-root')
-     (cpn/merge-path-item (:path component') (:name component'))]))
+     (cpn/merge-path-item (:path component') (:name component'))
+     file']))
 
 (t/deftest test-sync-inverse-normalizes-copy-name
   (t/testing "syncing an unnormalized copy name keeps the component and its main root matching"
@@ -597,4 +599,8 @@
 
 (t/deftest test-sync-inverse-normalizes-main-name
   (t/testing "syncing an unnormalized main name keeps the component and the main root matching"
-    (t/is (= ["Group / Subgroup" "Group / Subgroup"] (run-sync-inverse :main-root)))))
+    (let [[main-root-name component-name file'] (run-sync-inverse :main-root)]
+      ;; ==== Check
+      (t/is (= "Group / Subgroup" main-root-name))
+      (t/is (= "Group / Subgroup" component-name))
+      (t/is (nil? (cfv/validate-file file' {}))))))
