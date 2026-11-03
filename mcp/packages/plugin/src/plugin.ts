@@ -1,6 +1,7 @@
 import { ExecuteCodeTaskHandler } from "./task-handlers/ExecuteCodeTaskHandler";
 import { Task, TaskHandler } from "./TaskHandler";
 import { formatTaskError } from "./ErrorUtils";
+import { extractMinorVersion, isCompatibleVersion } from "./VersionCompatibility";
 import type { PluginConnectionInit } from "../../common/src";
 import type { WorkspaceContext } from "@penpot/plugin-types";
 
@@ -15,17 +16,6 @@ const isIntegratedRemoteMcp = !!mcp;
  * null otherwise (e.g. in Penpot versions without global plugins)
  */
 const management = typeof penpotMgmt === "undefined" ? null : penpotMgmt;
-
-/**
- * Extracts the major.minor.patch prefix from a version string.
- *
- * @param version - a version string starting with major.minor.patch
- * @returns the major.minor.patch prefix, or the original string if it does not match
- */
-function extractVersionPrefix(version: string): string {
-    const match = version.match(/^(\d+\.\d+\.\d+)/);
-    return match ? match[1] : version;
-}
 
 let uiInitialized = false;
 
@@ -53,11 +43,10 @@ penpot.ui.onMessage<
             integratedRemoteMcp: isIntegratedRemoteMcp,
         });
         // Check Penpot version compatibility
-        const penpotVersionPrefix = penpot.version ? extractVersionPrefix(penpot.version) : "<2.15"; // pre-2.15 versions don't have version info
-        const mcpVersionPrefix = extractVersionPrefix(PENPOT_MCP_VERSION);
+        const penpotVersionPrefix = penpot.version ? extractMinorVersion(penpot.version) : "<2.15"; // pre-2.15 versions don't have version info
+        const mcpVersionPrefix = extractMinorVersion(PENPOT_MCP_VERSION);
         console.log(`Penpot version: ${penpotVersionPrefix}, MCP version: ${mcpVersionPrefix}`);
-        const isLocalPenpotVersion = penpotVersionPrefix == "0.0.0";
-        if (penpotVersionPrefix !== mcpVersionPrefix && !isLocalPenpotVersion) {
+        if (!isCompatibleVersion(penpotVersionPrefix, mcpVersionPrefix)) {
             penpot.ui.sendMessage({
                 type: "version-mismatch",
                 mcpVersion: mcpVersionPrefix,
