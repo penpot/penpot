@@ -14,6 +14,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.fdata :as fdata]
    [app.jobs :as jobs]
    [app.jobs.metrics :as metrics]
    [app.main :as main]
@@ -60,6 +61,25 @@
       (t/is (= (count before) (count after)))
       (t/is (every? #(= "storage" (:backend %)) after))
       (t/is (every? #(nil? (:data %)) after)))))
+
+(t/deftest offloads-a-file-data-row-with-metadata
+  ;; `SELECT fd.*` returns jsonb metadata as a `PGobject`; the offload has to
+  ;; decode it before `fdata/upsert!` validates the row. Imported files carry
+  ;; metadata, so without the normalization the job never offloads them.
+  (let [profile (th/create-profile* 1)
+        file    (create-file 1 profile)]
+
+    (th/db-update! :file-data
+                   {:metadata (db/json {"generated-by" "offload-test"})}
+                   {:file-id (:id file) :id (:id file)})
+
+    (let [result (th/run-task! :offload-file-data {:file-id (:id file)})
+          row    (th/db-get :file-data {:file-id (:id file) :id (:id file)})]
+      (t/is (pos? (:offloaded result)))
+      (t/is (= "storage" (:backend row)))
+      (t/is (uuid? (:storage-object-id row)))
+      (t/is (= {:generated-by "offload-test"}
+               (fdata/decode-metadata (:metadata row)))))))
 
 (t/deftest skips-file-locked-by-another-transaction
   (let [profile (th/create-profile* 1)

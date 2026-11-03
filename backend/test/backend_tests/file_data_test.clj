@@ -216,4 +216,50 @@
                   nil
                   (catch clojure.lang.ExceptionInfo cause cause))]
       (t/is (some? cause))
-      (t/is (= :missing-storage-object (:code (ex-data cause)))))))
+      (t/is (= :missing-storage-object (:code (ex-data cause))))
+      (t/is (= (:id file) (:file-id (ex-data cause)))))))
+
+(t/deftest load-pointer-reports-the-file-when-the-object-is-gone
+  (let [file     (create-file!)
+        fragment (first (th/db-query :file-data {:file-id (:id file)
+                                                 :type "fragment"}))
+        sobject  (put-object! "file-data"
+                              {:file-id (:id file) :id (:id fragment)})]
+
+    (t/is (uuid? (:id fragment)))
+
+    ;; The foreign key accepts the row (the object exists); a soft-deleted
+    ;; object is simply unreadable, which is the case the error reports.
+    (th/db-update! :storage-object
+                   {:deleted-at (ct/in-past "1h")}
+                   {:id (:id sobject)})
+    (th/db-update! :file-data
+                   {:backend "storage"
+                    :data nil
+                    :storage-object-id (:id sobject)}
+                   {:file-id (:id file) :id (:id fragment)})
+
+    (let [cause (try
+                  (db/tx-run! th/*system*
+                              (fn [cfg]
+                                (fdata/load-pointer cfg (:id file) (:id fragment))))
+                  nil
+                  (catch clojure.lang.ExceptionInfo cause cause))
+          data  (ex-data cause)]
+      (t/is (some? cause))
+      (t/is (= :missing-storage-object (:code data)))
+      (t/is (= (:id file) (:file-id data)))
+      (t/is (= (:id fragment) (:id data))))))
+
+(t/deftest update-file!-rejects-a-map-without-data
+  ;; A map read with `:load-data? false` has no `:data` and no storage pointer;
+  ;; persisting it would wipe the content and skip the touch.
+  (let [file  (create-file!)
+        cause (try
+                (db/tx-run! th/*system*
+                            (fn [cfg]
+                              (bfc/update-file! cfg (bfc/get-file cfg (:id file)
+                                                                  :load-data? false))))
+                nil
+                (catch AssertionError cause cause))]
+    (t/is (some? cause))))

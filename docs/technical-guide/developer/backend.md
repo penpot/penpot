@@ -117,12 +117,12 @@ a partial or expression index mentions the column but cannot serve a foreign key
 check. Do not rely on `CREATE INDEX IF NOT EXISTS`: it matches the name, not the
 definition.
 
-A validated foreign key is the other expensive DDL: `ADD FOREIGN KEY` takes
-`SHARE ROW EXCLUSIVE` on the referencing and the referenced table and scans the
-whole referencing table, and `NOT VALID` on a partitioned table is only
-available since PostgreSQL 18. Create it out of band in a quiet window with a
-`lock_timeout` and a `pg_constraint` guard, and make the migration skip it when
-it already exists. The guard must validate the shape (foreign key,
+A validated foreign key is the other expensive DDL: `ADD FOREIGN KEY` runs as an
+`ALTER TABLE`, so it takes `ACCESS EXCLUSIVE` on the referencing table and
+`SHARE ROW EXCLUSIVE` on the referenced one, and it scans the whole referencing
+table. `NOT VALID` on a partitioned table is only available since PostgreSQL 18.
+Create it out of band in a quiet window with a `lock_timeout` and a
+`pg_constraint` guard, and make the migration skip it when it already exists. The guard must validate the shape (foreign key,
 `DEFERRABLE`, `NO ACTION`, validated) and abort on anything else: a constraint
 created with `ON DELETE CASCADE` would delete the referencing rows instead of
 refusing the delete. `ADD COLUMN` takes a brief `ACCESS EXCLUSIVE` even when it

@@ -856,6 +856,11 @@
   partial one: nothing is queried here."
   [{:keys [::db/conn] :as cfg} file & {:as params}]
 
+  ;; A map read with `:load-data? false` has no `:data` and no pointer;
+  ;; persisting it would wipe the file content and skip the storage touch.
+  (assert (contains? file :data)
+          "expected a file map read with data")
+
   (let [reset? (::reset-migrations? params false)
         ;; The storage pointer is bookkeeping of the persisted row, not an
         ;; editable field: it can only come from the read map. Letting a param

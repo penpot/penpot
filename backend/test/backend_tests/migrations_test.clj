@@ -418,3 +418,39 @@
 
   (t/is (contains? (table-foreign-keys "file_data")
                    ["file_data_storage_object_id_fkey" "a"])))
+
+(t/deftest file-data-migration-rejects-an-expression-index
+  ;; The guard requires a plain single-column index: an expression index also
+  ;; matches the name but PostgreSQL cannot use it for the foreign key check.
+  (th/db-exec! ["DROP INDEX file_data__storage_object_id__idx"])
+  (try
+    (th/db-exec! ["CREATE INDEX file_data__storage_object_id__idx
+                      ON file_data (lower(storage_object_id::text))"])
+    (t/is (thrown? java.sql.SQLException
+                   (apply-file-data-migration!)))
+    (finally
+      (th/db-exec! ["DROP INDEX IF EXISTS file_data__storage_object_id__idx"])
+      (apply-file-data-migration!)))
+
+  (t/is (contains? (table-indexes "file_data")
+                   "file_data__storage_object_id__idx")))
+
+(t/deftest file-data-migration-rejects-a-non-deferrable-foreign-key
+  ;; Without DEFERRABLE the constraint breaks `SET CONSTRAINTS ALL DEFERRED`
+  ;; and `database-reset`.
+  (th/db-exec! ["ALTER TABLE file_data
+                   DROP CONSTRAINT file_data_storage_object_id_fkey"])
+  (try
+    (th/db-exec! ["ALTER TABLE file_data
+                     ADD CONSTRAINT file_data_storage_object_id_fkey
+                     FOREIGN KEY (storage_object_id) REFERENCES storage_object(id)
+                     ON DELETE NO ACTION"])
+    (t/is (thrown? java.sql.SQLException
+                   (apply-file-data-migration!)))
+    (finally
+      (th/db-exec! ["ALTER TABLE file_data
+                       DROP CONSTRAINT IF EXISTS file_data_storage_object_id_fkey"])
+      (apply-file-data-migration!)))
+
+  (t/is (contains? (table-foreign-keys "file_data")
+                   ["file_data_storage_object_id_fkey" "a"])))

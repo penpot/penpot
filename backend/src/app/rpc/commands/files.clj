@@ -254,7 +254,7 @@
     (let [fragment (->> row
                         (feat.fdata/resolve-file-data cfg)
                         (feat.fdata/decode-file-data cfg))]
-      (select-keys fragment [:id :file-id :created-at :data]))))
+      (select-keys fragment (sm/keys schema:file-fragment)))))
 
 (defn- check-fragment-scope!
   "Checks that the fragment is reachable from the pages authorized by

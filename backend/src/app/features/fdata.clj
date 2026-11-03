@@ -111,7 +111,7 @@
                     (ex/raise :type :internal
                               :code :missing-storage-object
                               :hint "file data row has no readable storage object"
-                              :file-id (:file-id file)
+                              :file-id (or (:file-id file) (:id file))
                               :id (:id file)
                               :storage-object-id storage-object-id))
         data    (->> (sto/get-object-bytes storage sobject))]
@@ -302,7 +302,7 @@
   ;; previous pass marked must still load until `objects-gc` purges it.
   (let [fragment (some-> (db/get* cfg :file-data
                                   {:id id :file-id file-id :type "fragment"}
-                                  {::sql/columns [:data :backend :id :metadata :storage_object_id]
+                                  {::sql/columns [:data :backend :file_id :id :metadata :storage_object_id]
                                    ::db/remove-deleted false})
                          (update :metadata decode-metadata))]
 
