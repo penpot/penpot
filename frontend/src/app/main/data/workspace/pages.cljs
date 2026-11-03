@@ -14,6 +14,7 @@
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
+   [app.common.types.objects-map :as omap]
    [app.common.types.page :as ctp]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
@@ -35,6 +36,7 @@
    [app.render-wasm.shape :as wasm.shape]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.timers :as tm]
    [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -62,6 +64,27 @@
 (defn- get-page-cache
   [state file-id page-id]
   (dm/get-in state [:workspace-cache [file-id page-id]]))
+
+(defn- release-page-encoding
+  "Once the worker has the page, its encoded shapes are only needed for the
+  next send. Drop them while the page is open."
+  [file-id page-id]
+  (ptk/reify ::release-page-encoding
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [objects (dsh/lookup-page-objects state file-id page-id)]
+        (when (and (= page-id (:current-page-id state))
+                   (omap/objects-map? objects))
+          (omap/release-encoded! objects))))))
+
+(defn- encode-page-on-idle!
+  "Encode the page again in idle time, so the next send is cheap."
+  [objects]
+  (when (omap/objects-map? objects)
+    (letfn [(step [deadline]
+              (when-not (omap/encode-pending! objects ##Inf deadline)
+                (tm/schedule-on-idle-until step)))]
+      (tm/schedule-on-idle-until step))))
 
 (defn- initialize-page*
   "Second phase of page initialization, once we know the page is
@@ -93,7 +116,7 @@
               (rx/map #(http/fetch-data-uri % false))
               (rx/ignore))
          (->> (mw/ask! {:cmd :index/initialize :page page})
-              (rx/ignore)))))))
+              (rx/map #(release-page-encoding file-id page-id))))))))
 
 (defn initialize-page
   [file-id page-id]
@@ -150,9 +173,10 @@
           exit? (dissoc :workspace-drawing))))
 
     ptk/EffectEvent
-    (effect [_ _ _]
+    (effect [_ state _]
       ;; Free the worker's copy of the page and its indexes
-      (mw/emit! {:cmd :index/finalize :page-id page-id}))))
+      (mw/emit! {:cmd :index/finalize :page-id page-id})
+      (encode-page-on-idle! (dsh/lookup-page-objects state file-id page-id)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace Page CRUD

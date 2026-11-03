@@ -13,6 +13,7 @@
    [app.common.logging :as log]
    [app.common.time :as ct]
    [app.common.transit :as t]
+   [app.common.types.objects-map :as omap]
    [app.worker.impl :as impl]
    [app.worker.selection :as selection]
    [app.worker.snap :as snap]
@@ -67,6 +68,10 @@
       (swap! state update :pages-index assoc (:id page) page)
       (swap! state update ::selection selection/add-page page)
       (swap! state update ::snap snap/add-page page)
+      ;; The indexes decoded every shape and the worker never sends the
+      ;; page back, so the encoded copies are dead weight.
+      (when (omap/objects-map? (:objects page))
+        (omap/release-encoded! (:objects page)))
 
       (finally
         (let [elapsed (tpoint)]

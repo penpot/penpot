@@ -92,6 +92,52 @@
       (t/is (= (get obj1 :a) (get obj2 :a)))
       (t/is (= (get obj1 :b) (get obj2 :b))))))
 
+#?(:cljs
+   (t/deftest release-encoded
+     (let [obj (-> (omap/create)
+                   (assoc :a {:foo 1})
+                   (assoc :b {:bar 2})
+                   (omap/compact)
+                   (transit/encode-str)
+                   (transit/decode-str))
+           _   (get obj :a)
+           obj (omap/release-encoded! obj)
+           data (:data (datafy obj))]
+
+       (t/testing "drops only the decoded entries"
+         (t/is (nil? (get data :a)))
+         (t/is (string? (get data :b))))
+
+       (t/testing "keeps the same contents"
+         (t/is (= {:foo 1} (get obj :a)))
+         (t/is (= {:bar 2} (get obj :b)))
+         (t/is (= 2 (count obj))))
+
+       (t/testing "encodes them again when serialized"
+         (let [obj' (-> obj transit/encode-str transit/decode-str)]
+           (t/is (= {:foo 1} (get obj' :a)))
+           (t/is (= {:bar 2} (get obj' :b))))))))
+
+#?(:cljs
+   (t/deftest encode-pending
+     (let [ids (map #(uuid/custom 0 %) (range 1 6))
+           obj (-> (reduce #(assoc %1 %2 {:n (str %2)}) (omap/create) ids)
+                   (omap/compact)
+                   (transit/encode-str)
+                   (transit/decode-str))
+           _   (run! #(get obj %) ids)
+           obj (omap/release-encoded! obj)
+           pending #(count (filter nil? (vals (:data (datafy obj)))))]
+
+       (t/is (= 5 (pending)))
+       (t/is (false? (omap/encode-pending! obj 2)))
+       (t/is (= 3 (pending)))
+       (t/is (true? (omap/encode-pending! obj 3)))
+       (t/is (= 0 (pending)))
+       (t/is (not (:modified (datafy obj))))
+       (t/is (= (map #(hash-map :n (str %)) ids)
+                (map #(get (-> obj transit/encode-str transit/decode-str) %) ids))))))
+
 (t/deftest creation-and-duplication
   (smt/check!
    (smt/for [data (->> (sg/map-of (sg/uuid) (sg/generator cts/schema:shape))
