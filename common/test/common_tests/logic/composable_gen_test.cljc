@@ -1041,3 +1041,10 @@
                                     :rich-variants true :layout-copies true :text true}]
                        :ops [[:rotate 3 0 5 0] [:duplicate 0 0 0 0] [:duplicate 0 0 0 0]
                              [:transform 5 4 0 4] [:rotate 0 0 0 0]]}))))
+
+(t/deftest generated-copy-child-override-keeps-its-constraint-when-sync-turns-and-resizes-its-parent
+  ;; a copy child moved on its own stays at its distance from the top of its
+  ;; parent when an update main turns the parent back and shrinks it
+  (t/is (map? (cg/run {:world [2 0 {:text true :text-styles true}]
+                       :ops [[:resize 2 0 0 0] [:detach 3 0 0 0] [:detach 11 0 0 0] [:rotate 10 0 0 0]
+                             [:update-main 0 0 0 0] [:transform 0 0 0 12] [:update-main 7 0 0 0]]}))))
