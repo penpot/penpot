@@ -593,12 +593,14 @@
 (defn- sync-descendant-orientation
   "A parent turned or moved by sync carries its whole subtree, including
    geometry overrides. Resize remains the job of constraints, not matrix
-   scale."
+   scale: a parent turned and resized at once resizes its subtree through
+   their constraints first, then turns and moves it as one piece."
   [changes container before]
   (let [after    (get (pcb/get-objects changes) (:id before))
-        moved?   (and after
-                      (mth/close? (-> before :selrect :width) (-> after :selrect :width))
-                      (mth/close? (-> before :selrect :height) (-> after :selrect :height))
+        resized? (and after
+                      (not (and (mth/close? (-> before :selrect :width) (-> after :selrect :width))
+                                (mth/close? (-> before :selrect :height) (-> after :selrect :height)))))
+        moved?   (and after (not resized?)
                       (not (gpt/close? (gsh/shape->center before) (gsh/shape->center after))))
         changed? (and after
                       (or moved?
@@ -615,9 +617,12 @@
                                                        (:x vertical) (:y vertical) 0 0)]
                             (assoc shape :transform matrix :transform-inverse (gmt/inverse matrix))))
             turn        (orient-like (orientation before) (orientation after) (gsh/shape->center before))
-            delta       (gpt/subtract (gsh/shape->center after) (gsh/shape->center before))]
+            delta       (gpt/subtract (gsh/shape->center after) (gsh/shape->center before))
+            placed      (when resized? (placed-like (:objects container) before after {}))]
         (pcb/update-shapes changes ids
-                           #(cond-> % (some? turn) turn :always (gsh/move delta))
+                           (if resized?
+                             #(get placed (:id %) %)
+                             #(cond-> % (some? turn) turn :always (gsh/move delta)))
                            {:ignore-touched true}))
       changes)))
 
