@@ -23,9 +23,7 @@
   - `:view`: the current view.
   - `:hooks`: the clock, scheduling, renderer and execution guard functions.
 
-  The runtime context for a case operation also includes `:module`, the
-  instantiated WebAssembly renderer. `pan!` and `zoom!` read movement settings
-  from `[:case :operation]`.
+  `pan!` and `zoom!` read movement settings from `[:case :operation]`.
 
   ## Rendering and camera sessions
 

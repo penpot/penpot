@@ -107,15 +107,20 @@
 (t/deftest declared-preparation-survives-collection-and-wire
   (with-synthetic-scene :contracts-prepared {:count 3}
     (fn []
-      (let [preparation {:settle-ms 25}
+      (let [preparation {:render :none :settle-ms 25}
             registered  (decl/registered-case :contracts-prepared/case)]
-        (decl/register-case! (assoc registered :preparation preparation))
+        (decl/register-case! (assoc registered
+                                    :preparation (assoc preparation :callback identity)
+                                    :reset identity))
         (let [collected (cases/collect-cases {:master-seed 42 :filter "contracts-prepared/"})
               decoded   (transit/decode-str (transit/encode-str collected))]
           (t/is (= [:contracts-prepared/case] (mapv :id decoded)))
           (t/is (= collected decoded))
           (t/is (= preparation (:preparation (first decoded))))
-          (t/is (= (first decoded) (decl/check-collected-case (first decoded)))))))))
+          (t/is (= (first decoded) (decl/check-collected-case (first decoded)))))
+        (decl/register-case! (assoc registered :preparation {:asset {:loader identity}}))
+        (t/is (= ::cases/invalid-case
+                 (:type (failure-data #(cases/collect-cases {:master-seed 42 :filter "contracts-prepared/"})))))))))
 
 (t/deftest rects-cases-carry-declared-view-context-and-completion
   (let [collected (rect-cases)]

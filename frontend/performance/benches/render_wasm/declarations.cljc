@@ -9,7 +9,8 @@
 
   A scene declares an id, description, parameters schema and build function.
   A case declares an id namespaced by its scene, parameters, view, context
-  policy, completion mode and optional operation identity and run function.
+  policy and a run function. Optional preparation and reset functions transform
+  the context before and after its main execution.
 
   Ordinary :require loads the declaration macros and runtime helpers.
   Collection validates declarations and produces plain descriptors."
@@ -83,11 +84,15 @@
 
        The scene comes from the namespace part of the :scene/case id. An
        optional argument vector and body supply the run function, which accepts
-       one execution context. Collection produces plain case descriptors.
+       one command context and returns its next context or a Promise of it.
+       `[:preparation :callback]` runs once after upload. Preparation renders
+       Full by default; `:render :none` selects a cold first render. `:reset`
+       runs after each successful main execution. Collection produces plain
+       case descriptors.
 
        Example:
 
-         (defcase :rects/pan options [context] (pan! context))"
+         (defcase :rects/pan options [context] (pan* context pan-options))"
        ([id opts]
         (case-registration-form id (scene-from-id id) opts nil))
        ([id opts argv & body]
@@ -97,12 +102,11 @@
 #?(:cljs
    (do
      ;; Case execution context:
-     ;; :case   - collected descriptor, including operation and completion
+     ;; :case   - collected descriptor
      ;; :scene  - scene snapshot {:objects ... :refs ...}
-     ;; :module - WASM module handle
-     ;; :view   - prepared camera view
+     ;; :view   - current camera view
      ;; :hooks  - clock, scheduling, guard and renderer operations
-     ;; Case bodies return a measurement or a Promise of one.
+     ;; Case bodies return the next context or a Promise of it.
 
      ;; Declarations and their transitive imports load in Node and the browser.
      ;; Browser capabilities enter through the execution context; resource
@@ -152,7 +156,11 @@
         [:completion {:optional true} [:enum :call :await :render-full]]
         [:batch-size {:optional true} [:int {:min 1}]]
         [:operation {:optional true} [:map]]
-        [:preparation {:optional true} [:map]]
+        [:preparation {:optional true}
+         [:map
+          [:render {:optional true} [:enum :full :none]]
+          [:callback {:optional true} fn?]]]
+        [:reset {:optional true} fn?]
         [:run! {:optional true} fn?]])
 
      (def schema:collected-case
@@ -166,7 +174,7 @@
         [:context [:enum :fresh :reuse]]
         [:completion [:enum :call :await :render-full]]
         [:batch-size [:int {:min 1}]]
-        [:preparation [:map]]
+        [:preparation [:map [:render {:optional true} [:enum :full :none]]]]
         [:operation {:optional true} [:map]]])
 
      (defonce registry
@@ -348,7 +356,7 @@
                  (= encoded (-> encoded t/decode-str t/encode-str))))))
 
      (defn project-case
-       "Returns the case's descriptor fields with defaults for completion,
+       "Returns the case's data descriptor with defaults for completion,
        batch size and preparation."
        [bench-case]
        (-> bench-case
@@ -356,7 +364,7 @@
                          :operation :preparation])
            (update :completion #(or % :render-full))
            (update :batch-size #(or % 1))
-           (update :preparation #(or % {}))))
+           (update :preparation #(dissoc (or % {}) :callback))))
 
      (defn check-collected-case
        "Validates a collected case descriptor and its Transit representation,
