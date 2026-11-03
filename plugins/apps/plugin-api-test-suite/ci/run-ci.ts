@@ -242,7 +242,7 @@ async function setupMockedRoutes(page: Page): Promise<void> {
     route.fulfill({
       status: 200,
       contentType: 'application/javascript',
-      body: 'var penpotFlags = "";\n',
+      body: 'var penpotFlags = "disable-admin-console";\n',
     }),
   );
 
