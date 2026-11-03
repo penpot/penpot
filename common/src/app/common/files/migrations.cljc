@@ -2335,6 +2335,308 @@
           (update :pages-index d/update-vals update-container)
           (d/update-when :components d/update-vals update-container)))))
 
+;; Property names and values used to accept `,` and `=`. The formula
+;; editor treats those as separators, and a later edit strips them.
+;; Files saved before that strip can also hold two identical names, two
+;; identical value combinations, or a label that was not saved with the
+;; values. Rewrite the text in place and refresh the label.
+(def ^:private variant-property-passes 10)
+
+(defn- clip-property-text
+  [value pass]
+  (let [value (or value "")]
+    (cond
+      (<= (count value) ctv/property-max-length)
+      value
+
+      (>= pass variant-property-passes)
+      (subs value 0 ctv/property-max-length)
+
+      :else
+      (let [matched (re-matches #"^(.*?)( ?\(\d+\))$" value)
+            base    (if matched (nth matched 1) value)
+            suffix  (if matched (nth matched 2) "")
+            room    (- ctv/property-max-length (count suffix))]
+        (if (neg? room)
+          (subs value 0 ctv/property-max-length)
+          (str (subs base 0 (min (count base) room)) suffix))))))
+
+(defn- trimmed-unique-text
+  "Number `text` against `taken`, then trim. An empty base is stored
+   as \"(1)\" rather than \" (1)\", which the next sanitize would trim."
+  [taken text]
+  (loop [candidate (str/trim (or text ""))
+         guard     0]
+    (let [numbered (str/trim (ctv/update-number-in-repeated-item taken candidate))]
+      (cond
+        (>= guard 32)
+        numbered
+
+        (some #(= numbered %) taken)
+        (recur numbered (inc guard))
+
+        :else
+        numbered))))
+
+(defn- property-name-or-generated
+  [name taken-names]
+  (let [text (or (ctv/sanitize-property-text (when (string? name) name)) "")]
+    (if (str/blank? text)
+      (str ctv/property-prefix
+           (ctv/next-property-number (mapv (fn [taken-name] {:name taken-name}) taken-names)))
+      text)))
+
+(defn- sanitized-property-value
+  [value]
+  (let [text (or (ctv/sanitize-property-text (when (string? value) value)) "")]
+    (if (> (count text) ctv/property-max-length)
+      (subs text 0 ctv/property-max-length)
+      text)))
+
+(defn- sanitize-variant-properties
+  [props]
+  (reduce (fn [acc prop]
+            (conj acc (assoc prop
+                             :name (property-name-or-generated (:name prop) (mapv :name acc))
+                             :value (sanitized-property-value (:value prop)))))
+          []
+          (or props [])))
+
+(defn- variant-property-names-settled?
+  [props]
+  (let [names (mapv :name props)]
+    (and (= (count names) (count (distinct names)))
+         (every? #(<= (count %) ctv/property-max-length) names))))
+
+(defn- settle-variant-property-names
+  [props]
+  (loop [props (vec props)
+         pass  1]
+    (let [props' (reduce (fn [acc prop]
+                           (let [taken  (mapv :name acc)
+                                 named  (-> (:name prop)
+                                            (clip-property-text pass)
+                                            (->> (trimmed-unique-text taken))
+                                            (clip-property-text pass))
+                                 named  (if (and (some #(= named %) taken)
+                                                 (< pass variant-property-passes))
+                                          (-> (trimmed-unique-text taken named)
+                                              (clip-property-text pass))
+                                          named)]
+                             (conj acc (assoc prop :name named))))
+                         []
+                         props)]
+      (if (or (variant-property-names-settled? props')
+              (>= pass variant-property-passes))
+        props'
+        (recur props' (inc pass))))))
+
+(defn- prepare-variant-properties
+  [props]
+  (-> props
+      sanitize-variant-properties
+      settle-variant-property-names))
+
+(defn- canonical-variant-property-names
+  [props-seq]
+  (reduce (fn [names props]
+            (reduce (fn [names prop]
+                      (if (some #(= (:name prop) %) names)
+                        names
+                        (conj names (:name prop))))
+                    names
+                    props))
+          []
+          props-seq))
+
+(defn- align-variant-properties
+  [props names]
+  (mapv (fn [name]
+          (or (some #(when (= name (:name %)) %) props)
+              {:name name :value ""}))
+        names))
+
+(defn- value-index-to-number
+  [props]
+  (or (->> (map-indexed vector props)
+           (filter (fn [[_ prop]]
+                     (not (str/blank? (:value prop)))))
+           last
+           first)
+      0))
+
+(defn- resolve-variant-value-tuple
+  [props seen]
+  (loop [props (vec props)
+         pass  1]
+    (let [tuple (mapv :value props)]
+      (if (or (empty? props)
+              (not (some #(= tuple %) seen))
+              (> pass variant-property-passes))
+        props
+        (let [idx     (value-index-to-number props)
+              taken   (mapv #(nth % idx "") seen)
+              current (:value (nth props idx))
+              updated (if (>= pass variant-property-passes)
+                        (let [text (or current "")]
+                          (subs text 0 (min ctv/property-max-length (count text))))
+                        (-> (trimmed-unique-text taken current)
+                            (clip-property-text pass)))]
+          (if (>= pass variant-property-passes)
+            (assoc-in props [idx :value] updated)
+            (recur (assoc-in props [idx :value] updated)
+                   (inc pass))))))))
+
+(defn- variant-main-shape
+  [data component]
+  (let [main-id (:main-instance-id component)
+        page-id (:main-instance-page component)]
+    (cond
+      (and (:deleted component) main-id)
+      (get-in component [:objects main-id])
+
+      (and page-id main-id)
+      (get-in data [:pages-index page-id :objects main-id])
+
+      :else
+      nil)))
+
+(defn- write-variant-member
+  [data component props]
+  (let [variant-name (ctv/properties-to-name props)
+        component-id (:id component)
+        main-id      (:main-instance-id component)
+        page-id      (:main-instance-page component)
+        shape        (variant-main-shape data component)
+        same-props?  (= (vec (or (:variant-properties component) []))
+                        (vec props))
+        data         (if same-props?
+                       data
+                       (assoc-in data [:components component-id :variant-properties] props))]
+    (cond
+      (or (nil? shape)
+          (= variant-name (:variant-name shape)))
+      data
+
+      (and (:deleted component) main-id)
+      (assoc-in data [:components component-id :objects main-id :variant-name] variant-name)
+
+      (and page-id main-id)
+      (assoc-in data [:pages-index page-id :objects main-id :variant-name] variant-name)
+
+      :else
+      data)))
+
+(defn- qualifying-variant-member
+  [data objects container child-id]
+  (when-let [child (get objects child-id)]
+    (let [component (get-in data [:components (:component-id child)])]
+      (when (and (ctk/is-variant? child)
+                 (= (:id container) (:variant-id child))
+                 (some? component)
+                 (= (:id container) (:variant-id component)))
+        {:component    component
+         :component-id (:id component)}))))
+
+(defn- qualifying-variant-members
+  [data objects container]
+  (into []
+        (keep #(qualifying-variant-member data objects container %))
+        (:shapes container)))
+
+(defn- migrate-variant-property-set
+  [data members]
+  (let [prepared (mapv (fn [member]
+                         (assoc member :props (prepare-variant-properties
+                                               (:variant-properties (:component member)))))
+                       members)
+        names    (canonical-variant-property-names (map :props prepared))
+        aligned  (mapv (fn [member]
+                         (update member :props #(align-variant-properties % names)))
+                       prepared)
+        resolved (reduce (fn [acc member]
+                           (let [seen  (mapv #(mapv :value (:props %)) acc)
+                                 props (resolve-variant-value-tuple (:props member) seen)]
+                             (conj acc (assoc member :props props))))
+                         []
+                         aligned)]
+    (reduce (fn [data member]
+              (write-variant-member data (:component member) (:props member)))
+            data
+            resolved)))
+
+(defn- variant-container-entries
+  [data]
+  (concat
+   (for [page  (vals (:pages-index data))
+         shape (vals (:objects page))
+         :when (ctk/is-variant-container? shape)]
+     {:objects   (:objects page)
+      :container shape})
+   (for [component (vals (:components data))
+         shape     (vals (:objects component))
+         :when     (ctk/is-variant-container? shape)]
+     {:objects   (:objects component)
+      :container shape})))
+
+(defmethod migrate-data "0034-sanitize-variant-property-text"
+  [data _]
+  (let [[data used-ids]
+        (reduce (fn [[data used-ids] {:keys [objects container]}]
+                  (let [members (qualifying-variant-members data objects container)]
+                    [(migrate-variant-property-set data members)
+                     (into used-ids (map :component-id) members)]))
+                [data #{}]
+                (variant-container-entries data))
+
+        solos
+        (remove (fn [component]
+                  (or (contains? used-ids (:id component))
+                      (not (ctk/is-variant? component))))
+                (vals (:components data)))]
+
+    (reduce (fn [data component]
+              (write-variant-member data
+                                    component
+                                    (prepare-variant-properties (:variant-properties component))))
+            data
+            solos)))
+
+;; The board name and each main's layer name are already normalized.
+;; The library entry could still carry the previous path. Point every
+;; member of the board at that board name.
+(defmethod migrate-data "0035-align-variant-component-names"
+  [data _]
+  (letfn [(align-container [data objects container]
+            (let [board-name         (or (:name container) "")
+                  [path item-name]   (cpn/split-group-name board-name)]
+              (reduce (fn [data child-id]
+                        (let [child     (get objects child-id)
+                              component (when child
+                                          (get-in data [:components (:component-id child)]))]
+                          (if (and (ctk/is-variant? child)
+                                   (= (:id container) (:variant-id child))
+                                   (some? component)
+                                   (= (:id container) (:variant-id component))
+                                   (not= board-name
+                                         (cpn/merge-path-item (:path component) (:name component))))
+                            (update-in data [:components (:id component)]
+                                       assoc :path path :name item-name)
+                            data)))
+                      data
+                      (:shapes container))))
+
+          (containers-in [objects]
+            (filter ctk/is-variant-container? (vals objects)))]
+
+    (reduce (fn [data objects]
+              (reduce #(align-container %1 objects %2)
+                      data
+                      (containers-in objects)))
+            data
+            (concat (map :objects (vals (:pages-index data)))
+                    (map :objects (vals (:components data)))))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2426,4 +2728,6 @@
          "0031-migrate-stroke-width-token-attr"
          "0032-fix-children-not-in-parent"
          "0033-normalize-main-instance-names"
-         "0034-fix-path-content-offset"]))
+         "0034-fix-path-content-offset"
+         "0034-sanitize-variant-property-text"
+         "0035-align-variant-component-names"]))
