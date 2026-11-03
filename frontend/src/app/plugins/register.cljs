@@ -25,7 +25,9 @@
 (def mcp-permissions
   #{"user:read" "library:read" "library:write"
     "comment:read" "comment:write" "content:read" "content:write"
-    "allow:global" "manage:projects" "manage:teams" "manage:delete"})
+    "allow:global" "manage:projects" "manage:teams" "manage:delete"
+    ;; Keeps the rollbacks not reported yet across reloads
+    "allow:localstorage"})
 
 ;; Promise that resolves when plugins runtime is initialized.
 ;; Lives here to avoid circular dependency: workspace.mcp -> app.plugins -> app.plugins.api -> workspace
