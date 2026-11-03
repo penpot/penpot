@@ -117,5 +117,20 @@
         (t/is (not (contains? obj1 :b)))
         (t/is (= 1 (get obj1 :a)))
         (t/is (= nil (get obj1 :b)))
-        (t/is (= ::empty (get obj1 :b ::empty)))))))
+        (t/is (= ::empty (get obj1 :b ::empty))))))
+
+  (t/testing "with-meta"
+    (binding [pmap/*tracked* (atom {})
+              pmap/*load-fn* (constantly {})]
+      (let [obj1 (pmap/create uuid/zero {})
+            obj2 (with-meta obj1 {:foo :bar})
+            obj3 (with-meta obj1 {})]
+        ;; A metadata change is a new pointer: fresh id and tracked, so
+        ;; the fragment row is never rewritten under the same id.
+        (t/is (pmap/modified? obj2))
+        (t/is (not= (pmap/get-id obj1) (pmap/get-id obj2)))
+        (t/is (contains? @pmap/*tracked* (pmap/get-id obj2)))
+        ;; The same metadata keeps the pointer untouched.
+        (t/is (not (pmap/modified? obj3)))
+        (t/is (= (pmap/get-id obj1) (pmap/get-id obj3)))))))
 

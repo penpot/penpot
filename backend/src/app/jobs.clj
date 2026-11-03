@@ -847,7 +847,8 @@
   The interrupt is an internal signal, not an error: the caller is a task
   that must stop the work in course. `heartbeat` calls this when one of
   its writes finds the job gone, and a caller can also ask explicitly,
-  which is what the binfile adapter does before and after its run."
+  which is what the binfile adapter does before and after its run.
+  Answers with the cfg, so a caller can thread the check into its run."
   [cfg job-id]
   (let [job (get-job cfg job-id)]
     (when-not (and (some? job) (contains? active-statuses (:status job)))
@@ -855,7 +856,8 @@
                 :code :job-interrupted
                 :hint "the job is no longer active"
                 :job-id job-id
-                :status (or (:status job) "gone")))))
+                :status (or (:status job) "gone")))
+    cfg))
 
 (defn heartbeat
   "Keep a running job alive and, optionally, report its progress.

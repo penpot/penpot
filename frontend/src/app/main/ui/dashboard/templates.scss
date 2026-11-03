@@ -105,10 +105,7 @@
   align-items: center;
   height: $sz-16;
   width: $sz-16;
-  color: transparent;
-  fill: none;
-  stroke-width: $b-1;
-  stroke: var(--color-foreground-secondary);
+  color: var(--color-foreground-secondary);
 }
 
 .move-button {
@@ -131,7 +128,7 @@
     background-color: var(--color-accent-primary);
 
     .arrow-icon {
-      stroke: var(--color-background-tertiary);
+      color: var(--color-background-tertiary);
     }
   }
 }
@@ -196,7 +193,7 @@
     border-color: var(--color-accent-primary);
 
     .download-icon {
-      stroke: var(--color-accent-primary);
+      color: var(--color-accent-primary);
     }
 
     .card-text {
@@ -243,10 +240,7 @@
   align-items: center;
   height: $sz-16;
   width: $sz-16;
-  color: transparent;
-  fill: none;
-  stroke-width: $b-1;
-  stroke: var(--icon-foreground);
+  color: var(--color-foreground-secondary);
 }
 
 .template-link {

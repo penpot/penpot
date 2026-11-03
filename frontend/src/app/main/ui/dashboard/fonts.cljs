@@ -21,8 +21,13 @@
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
    [app.util.http :as http]
@@ -195,13 +200,18 @@
     [:div {:class (stl/css :dashboard-fonts-upload)}
      [:div {:class (stl/css :dashboard-fonts-hero)}
       [:div {:class (stl/css :desc)}
-       [:h2 (tr "labels.upload-custom-fonts")]
-       [:> i18n/tr-html* {:content (tr "dashboard.fonts.hero-text1")}]
+       [:> heading* {:level 2
+                     :typography t/title-large
+                     :class (stl/css :hero-title)}
+        (tr "labels.upload-custom-fonts")]
+       [:> i18n/tr-html* {:content (tr "dashboard.fonts.hero-text1")
+                          :class (stl/css :hero-text)}]
 
-       [:button {:class (stl/css :btn-primary)
-                 :on-click on-click
-                 :tab-index "0"}
-        [:span (tr "labels.add-custom-font")]
+       [:> button* {:variant "primary"
+                    :type "button"
+                    :class (stl/css :add-font-button)
+                    :on-click on-click}
+        (tr "labels.add-custom-font")
         [:& file-uploader {:input-id "font-upload"
                            :accept accept-font-types
                            :multi true
@@ -223,17 +233,19 @@
         [:div {:class (stl/css :font-item :table-row)}
          [:span (tr "dashboard.fonts.fonts-added" (i18n/c (count fonts)))]
          [:div {:class (stl/css :table-field :options)}
-          [:button {:class (stl/css-case
-                            :btn-primary true
-                            :disabled disable-upload-all?)
-                    :on-click on-upload-all
-                    :data-testid "upload-all"
-                    :disabled disable-upload-all?}
-           [:span (tr "dashboard.fonts.upload-all")]]
-          [:button {:class (stl/css :btn-secondary)
-                    :on-click on-dismis-all
-                    :data-testid "dismiss-all"}
-           [:span (tr "dashboard.fonts.dismiss-all")]]]])
+          [:> button* {:variant "primary"
+                       :type "button"
+                       :class (stl/css :upload-button)
+                       :on-click on-upload-all
+                       :data-testid "upload-all"
+                       :disabled disable-upload-all?}
+           (tr "dashboard.fonts.upload-all")]
+          [:> button* {:variant "secondary"
+                       :type "button"
+                       :class (stl/css :dismiss-button)
+                       :on-click on-dismis-all
+                       :data-testid "dismiss-all"}
+           (tr "dashboard.fonts.dismiss-all")]]])
 
       (for [{:keys [id] :as item} (sort-by :font-family font-vals)]
         (let [uploading?      (contains? uploading id)
@@ -242,6 +254,7 @@
                  :key (dm/str id)}
            [:div {:class (stl/css :table-field :family)}
             [:input {:type "text"
+                     :class (stl/css :name-input)
                      :data-id (dm/str id)
                      :on-blur on-blur-name
                      :on-change on-change-name
@@ -256,23 +269,23 @@
 
            [:div {:class (stl/css :table-field :options)}
             (when (:height-warning? item)
-              [:span {:class (stl/css :icon :failure)}
-               deprecated-icon/msg-neutral])
+              [:> icon* {:icon-id i/msg-neutral
+                         :class (stl/css :warning-icon)}])
 
-            [:button {:on-click on-upload
-                      :data-id (dm/str id)
-                      :class (stl/css-case
-                              :btn-primary true
-                              :upload-button true
-                              :disabled disable-upload?)
-                      :disabled disable-upload?}
+            [:> button* {:variant "primary"
+                         :type "button"
+                         :on-click on-upload
+                         :data-id (dm/str id)
+                         :class (stl/css :upload-button)
+                         :disabled disable-upload?}
              (if ^boolean uploading?
                (tr "labels.uploading")
                (tr "labels.upload"))]
-            [:span {:class (stl/css :icon :close)
-                    :data-id (dm/str id)
-                    :on-click on-delete}
-             deprecated-icon/close]]]))]]))
+            [:> icon-button* {:variant "ghost"
+                              :aria-label (tr "labels.remove")
+                              :icon i/close
+                              :data-id (dm/str id)
+                              :on-click on-delete}]]]))]]))
 
 (mf/defc installed-font-context-menu*
   {::mf/private true}
@@ -292,7 +305,7 @@
       :show is-open
       :fixed false
       :min-width true
-      :top -15
+      :top -21
       :left -115
       :options options}]))
 
@@ -406,6 +419,7 @@
                                  :is-edition edition?)}
       (if ^boolean edition?
         [:input {:type "text"
+                 :class (stl/css :name-input)
                  :auto-focus true
                  :default-value font-family
                  :on-key-down on-key-down
@@ -420,29 +434,37 @@
          [:span {:class (stl/css :label)}
           [:> font-variant-display-name* {:variant item}]]
          (when can-edit
-           [:span
-            {:class (stl/css :icon :close)
-             :data-id (dm/str id)
-             :on-click on-delete-variant}
-            deprecated-icon/add])])]
+           [:button {:type "button"
+                     :class (stl/css :variant-delete)
+                     :aria-label (tr "dashboard.fonts.delete-variant")
+                     :title (tr "dashboard.fonts.delete-variant")
+                     :data-id (dm/str id)
+                     :on-click on-delete-variant}
+            [:> icon* {:icon-id i/close
+                       :size "s"
+                       :aria-hidden true}]])])]
 
      (if ^boolean edition?
        [:div {:class (stl/css :table-field :options)}
-        [:button
-         {:disabled (str/blank? font-family)
-          :on-click on-save
-          :class (stl/css-case :btn-primary true
-                               :btn-disabled (str/blank? font-family))}
+        [:> button* {:variant "primary"
+                     :type "button"
+                     :class (stl/css :upload-button)
+                     :disabled (str/blank? font-family)
+                     :on-click on-save}
          (tr "labels.save")]
-        [:button {:class (stl/css :icon :close)
-                  :on-click on-cancel}
-         deprecated-icon/close]]
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "labels.cancel")
+                          :icon i/close
+                          :on-click on-cancel}]]
 
        (when can-edit
          [:div {:class (stl/css :table-field :options)}
-          [:span {:class (stl/css :icon)
-                  :on-click on-menu-open}
-           deprecated-icon/menu]
+          [:> icon-button* {:variant "ghost"
+                            :aria-label (tr "labels.options")
+                            :aria-haspopup "menu"
+                            :aria-expanded menu-open?
+                            :icon i/menu
+                            :on-click on-menu-open}]
 
           [:> installed-font-context-menu*
            {:on-close on-menu-close
@@ -468,12 +490,16 @@
      (cond
        (seq fonts)
        [:*
-        [:h3 (tr "labels.installed-fonts")]
+        [:> heading* {:level 3
+                      :typography t/title-small
+                      :class (stl/css :installed-fonts-title)}
+         (tr "labels.installed-fonts")]
         [:div {:class (stl/css :installed-fonts-header)}
          [:div {:class (stl/css :table-field :family)} (tr "labels.font-family")]
          [:div {:class (stl/css :table-field :variants)} (tr "labels.font-variants")]
          [:div {:class (stl/css :table-field :search-input)}
-          [:input {:placeholder (tr "labels.search-font")
+          [:input {:class (stl/css :search-font-input)
+                   :placeholder (tr "labels.search-font")
                    :default-value ""
                    :on-change on-change}]]]
         (for [[font-id variants] (->> (vals fonts)
@@ -486,13 +512,16 @@
 
        (nil? fonts)
        [:div {:class (stl/css :fonts-placeholder)}
-        [:div {:class (stl/css :icon)} deprecated-icon/loader]
+        [:> loader* {:width 32
+                     :title (tr "labels.loading")}]
         [:div {:class (stl/css :label)} (tr "dashboard.loading-fonts")]]
 
        :else
        (if ^boolean can-edit
          [:div {:class (stl/css :fonts-placeholder)}
-          [:div {:class (stl/css :icon)} deprecated-icon/text]
+          [:> icon* {:icon-id i/text
+                     :size "xl"
+                     :class (stl/css :placeholder-icon)}]
           [:div {:class (stl/css :label)} (tr "dashboard.fonts.empty-placeholder")]]
 
          [:> empty-placeholder*

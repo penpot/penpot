@@ -10,6 +10,7 @@
   (:require
    [app.binfile.common :as bfc]
    [app.binfile.jobs :as bfj]
+   [app.binfile.v1 :as v1]
    [app.binfile.v3 :as v3]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -59,6 +60,37 @@
   [job-id]
   (jobs/make-context (jobs/get-job th/*system* job-id)))
 
+(defn- run-export!
+  "Run an export through the adapter, as the job handler does: the
+  frozen cfg in, the progress out as job events."
+  [cfg context file-ids export-type output]
+  (let [cfg (bfc/export-cfg cfg {:file-ids    file-ids
+                                 :export-type export-type
+                                 :output      output})]
+    (bfj/check-active cfg context)
+    (bfj/run cfg context v3/export-files!)))
+
+(defn- run-import!
+  "Run an import through the adapter, as the job handler does: the
+  frozen cfg in, the progress out as job events. The project touch
+  stays in the handler, covered by its own tests."
+  [cfg context {:keys [profile-id project-id team name input version]}]
+  (bfj/check-active cfg context)
+  (let [cfg (bfc/import-cfg cfg {:profile-id profile-id
+                                 :project-id project-id
+                                 :team       team
+                                 :name       name
+                                 :input      input})]
+    (bfj/run cfg context
+             (fn [cfg]
+               (case (int version)
+                 1 (v1/import-files! cfg)
+                 3 (v3/import-files! cfg)
+                 (throw (ex-info "unsupported binfile version"
+                                 {:type    :validation
+                                  :code    :unsupported-version
+                                  :version version})))))))
+
 (defn- progress-events
   "The progress events of a job, oldest first, with decoded payloads."
   [job-id]
@@ -88,9 +120,9 @@
                  :library-file-id (:id library)})
 
     (v3/export-files! (-> th/*system*
-                          (assoc ::bfc/ids #{(:id file)})
-                          (assoc ::bfc/export-type :link-later))
-                      (io/output-stream output))
+                          (assoc ::bfc/file-ids #{(:id file)})
+                          (assoc ::bfc/export-type :link-later)
+                          (assoc ::bfc/output (io/output-stream output))))
 
     (db/update! th/*system* :file
                 {:deleted-at (ct/now)}
@@ -118,10 +150,8 @@
         job-id  (th/create-job* :export-binfile {:profile-id (:id profile)})
         output  (tmp/tempfile* :suffix ".penpot")]
 
-    (bfj/export-files (job-cfg) (job-context job-id)
-                      {:ids         #{file-id}
-                       :export-type :detach-libraries
-                       :output      output})
+    (run-export! (job-cfg) (job-context job-id)
+                 #{file-id} :detach-libraries output)
 
     (t/testing "the artifact is a penpot file with its manifest"
       (t/is (fs/exists? output))
@@ -150,13 +180,13 @@
         job-id   (th/create-job* :import-binfile {:profile-id (:id profile)
                                                   :resource-id (:resource-id staged)})
         context  (job-context job-id)
-        result   (bfj/import-files (job-cfg) context
-                                   {:profile-id (:id profile)
-                                    :project-id (:default-project-id profile)
-                                    :team       team
-                                    :name       "imported"
-                                    :input      (js/load-input th/*system* context)
-                                    :version    3})]
+        result   (run-import! (job-cfg) context
+                              {:profile-id (:id profile)
+                               :project-id (:default-project-id profile)
+                               :team       team
+                               :name       "imported"
+                               :input      (js/load-input th/*system* context)
+                               :version    3})]
 
     (t/testing "the package is imported in the destination project"
       (t/is (= 1 (count (:file-ids result)))))
@@ -175,10 +205,9 @@
     (with-redefs [jobs/heartbeat (fn [_cfg & {:as options}]
                                    (swap! reports conj (:progress options))
                                    1)]
-      (bfj/export-files (job-cfg) (job-context job-id)
-                        {:ids         #{file-id}
-                         :export-type :detach-libraries
-                         :output      (tmp/tempfile* :suffix ".penpot")}))
+      (run-export! (job-cfg) (job-context job-id)
+                   #{file-id} :detach-libraries
+                   (tmp/tempfile* :suffix ".penpot")))
 
     (t/testing "the file opens the run with its position"
       (let [event (first @reports)]
@@ -207,10 +236,9 @@
 
     ;; the taps themselves, before the adapter turns them into events
     (with-redefs [events/tap (fn [_type data] (swap! taps conj data))]
-      (bfj/export-files (job-cfg) (job-context job-id)
-                        {:ids         #{file-id}
-                         :export-type :detach-libraries
-                         :output      (tmp/tempfile* :suffix ".penpot")}))
+      (run-export! (job-cfg) (job-context job-id)
+                   #{file-id} :detach-libraries
+                   (tmp/tempfile* :suffix ".penpot")))
 
     (t/testing "the tap that opens the file carries the outer counters"
       (let [tap (first (filter #(= :file (:section %)) @taps))]
@@ -269,13 +297,13 @@
     (with-redefs [jobs/heartbeat (fn [_cfg & {:as options}]
                                    (swap! reports conj (:progress options))
                                    1)]
-      (bfj/import-files (job-cfg) context
-                        {:profile-id (:id profile)
-                         :project-id (:default-project-id profile)
-                         :team       team
-                         :name       "imported"
-                         :input      (js/load-input th/*system* context)
-                         :version    3}))
+      (run-import! (job-cfg) context
+                   {:profile-id (:id profile)
+                    :project-id (:default-project-id profile)
+                    :team       team
+                    :name       "imported"
+                    :input      (js/load-input th/*system* context)
+                    :version    3}))
 
     (t/testing "the run opens with the manifest, which has no units to count"
       (let [event (first @reports)]
@@ -301,8 +329,8 @@
         job-id  (th/create-job* :export-binfile {:profile-id (:id profile)})
         context (job-context job-id)]
 
-    (t/testing "a running job is active"
-      (t/is (nil? (bfj/check-active th/*system* context))))
+    (t/testing "a running job is active, and answers with the cfg to thread it"
+      (t/is (identical? th/*system* (bfj/check-active th/*system* context))))
 
     (t/testing "a cancelled job is not"
       (th/db-update! :job {:status "cancelled"} {:id job-id})
@@ -314,10 +342,8 @@
     (t/testing "so the export stops at its next progress point"
       (let [output (tmp/tempfile* :suffix ".penpot")
             cause  (try
-                     (bfj/export-files (job-cfg) context
-                                       {:ids         #{file-id}
-                                        :export-type :detach-libraries
-                                        :output      output})
+                     (run-export! (job-cfg) context
+                                  #{file-id} :detach-libraries output)
                      nil
                      (catch Throwable raised raised))]
         (t/is (= :interrupt (th/ex-type cause)))
@@ -342,14 +368,14 @@
         cause   (ex-info "the job is no longer active"
                          {:type :interrupt :code :job-interrupted})]
     (with-redefs [jobs/heartbeat (fn [& _] (throw cause))]
-      (let [raised (try (@#'bfj/with-progress th/*system* context
-                                              (fn []
-                                                (swap! steps conj :before)
-                                                ;; the sink calls the beat
-                                                ;; inline, so its interrupt
-                                                ;; aborts the run here
-                                                (events/tap :progress {:section :file})
-                                                (swap! steps conj :after)))
+      (let [raised (try (bfj/run th/*system* context
+                                 (fn [_cfg]
+                                   (swap! steps conj :before)
+                                   ;; the sink calls the beat
+                                   ;; inline, so its interrupt
+                                   ;; aborts the run here
+                                   (events/tap :progress {:section :file})
+                                   (swap! steps conj :after)))
                         nil
                         (catch Throwable stopped stopped))]
         (t/is (= :interrupt (:type (ex-data raised))))

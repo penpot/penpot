@@ -22,6 +22,7 @@
    [app.main.worker]
    [app.util.dom :as dom]
    [app.util.globals :as g]
+   [app.util.http :as http]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as ts]
    [app.util.webapi :as wapi]
@@ -439,16 +440,31 @@
 
 (defn on-update-loop
   "Handler for the rumext update scheduler trips: logs the throttled
-  update loop with the events being processed, at most once per
-  `report-window-ms`. Runs inside store watchers and effect bodies, so it
-  never throws."
-  [_]
+  update loop and reports it as an unhandled exception with the events
+  being processed, at most once per `report-window-ms`. Runs inside store
+  watchers and effect bodies, so it never throws."
+  [{:keys [rounds]}]
   (try
     (let [now (inst-ms (ct/now))]
       (when (>= (- now @update-loop-warned-at) report-window-ms)
         (vreset! update-loop-warned-at now)
-        (.warn js/console "[update-scheduler] update loop throttled; in-flight events:"
-               (into-array (map ptk/repr-event (ptk/in-flight-events st/state))))))
+        (let [events (ptk/in-flight-events st/state)
+              cause  (ex-info "update loop throttled"
+                              {:type :internal
+                               :code :update-loop-throttled
+                               :rounds rounds})]
+          (.warn js/console "[update-scheduler] update loop throttled; in-flight events:"
+                 (into-array (map ptk/repr-event events)))
+          (when (seq events)
+            (.set in-flight-by-cause cause (in-flight-lines events)))
+          ;; Report outside the loop that tripped the scheduler, as an
+          ;; unhandled exception: a throttled loop is an application defect,
+          ;; so it must reach the error reports and alerts, not only audit.
+          (ts/schedule
+           #(submit-report :event-name "unhandled-exception"
+                           :hint (ex-message cause)
+                           :report (fn [] (generate-report cause))
+                           :cause cause)))))
     (catch :default _
       nil)))
 
@@ -1123,6 +1139,15 @@
         (and (= (.-name ^js cause) "NotFoundError")
              (str/includes? message "removeChild")))))
 
+(defn network-failure->error
+  "Wrap a raw network TypeError as a connectivity error, so it is reported
+  as an environment failure instead of an application crash."
+  [cause]
+  (ex-info (ex-message cause)
+           {:type (if (false? (.-onLine ^js g/navigator)) :offline :network)
+            :hint "unable to perform fetch operation"}
+           cause))
+
 (defn- from-plugin?
   "Check if the error is marked as originating from plugin code. The
   plugin runtime tracks plugin errors in a WeakMap, which works even
@@ -1148,6 +1173,10 @@
                 ;; Other ignorable exceptions: ignore silently
                 (is-ignorable-exception? cause)
                 nil
+
+                ;; Raw fetch failures: connectivity, not a crash
+                (http/network-failure? cause)
+                (on-error (network-failure->error cause))
 
                 ;; All other errors: show exception page
                 :else
@@ -1175,6 +1204,10 @@
                 ;; Other ignorable exceptions: ignore silently
                 (is-ignorable-exception? cause)
                 nil
+
+                ;; Raw fetch failures: connectivity, not a crash
+                (http/network-failure? cause)
+                (on-error (network-failure->error cause))
 
                 ;; All other errors: show exception page
                 :else

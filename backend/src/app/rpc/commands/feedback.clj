@@ -13,11 +13,57 @@
    [app.config :as cf]
    [app.db :as db]
    [app.email :as eml]
+   [app.loggers.audit :as-alias audit]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
-   [app.util.services :as sv]))
+   [app.rpc.helpers :as rph]
+   [app.util.services :as sv]
+   [clojure.string :as str]))
+
+(def schema:send-mcp-feedback
+  [:map {:title "send-mcp-feedback" :closed true}
+   [:subject [:and [:string {:min 1 :max 120}]
+              [:fn #(and (not (str/blank? %))
+                         (not (re-find #"\p{Cc}" %)))]]]
+   ;; Line breaks and tabs are the only control characters allowed
+   [:feedback [:and [:string {:min 1 :max 5000}]
+               [:fn #(and (not (str/blank? %))
+                          (not (re-find #"[\p{Cc}&&[^\t\n\r]]" %)))]]]])
+
+(sv/defmethod ::send-mcp-feedback
+  {::rpc/token-type "mcp"
+   ::db/transaction true
+   ::doc/added "2.20"
+   ::sm/params schema:send-mcp-feedback}
+  [cfg {:keys [::rpc/profile-id subject feedback]}]
+  (let [profile     (profile/get-profile cfg profile-id)
+        destination (cf/get :mcp-feedback-email)]
+    ;; Blocking a profile invalidates its sessions but not its access tokens
+    (when (:is-blocked profile)
+      (ex/raise :type :authorization
+                :code :profile-blocked
+                :hint "profile is marked as blocked"))
+    (when-not (:is-active profile)
+      (ex/raise :type :authorization
+                :code :profile-not-active
+                :hint "profile is not active"))
+    (when (str/blank? destination)
+      (ex/raise :type :restriction
+                :code :feedback-disabled
+                :hint "MCP feedback is not configured"))
+    (eml/send cfg {::eml/reuse-conn true
+                   :to destination
+                   :reply-to (:email profile)
+                   :subject (str "[MCP feedback] " subject)
+                   :body {"text/plain" (str "Submitted by: " (:fullname profile)
+                                            " <" (:email profile) ">\n"
+                                            "Profile ID: " (:id profile) "\n\n"
+                                            "Feedback:\n\n" feedback)}})
+    ;; The audit event keeps who sent feedback, not its text
+    (rph/with-meta {:status "queued"}
+      {::audit/replace-props {}})))
 
 (declare ^:private send-user-feedback!)
 

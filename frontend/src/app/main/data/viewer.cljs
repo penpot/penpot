@@ -24,6 +24,7 @@
    [app.main.data.fonts :as df]
    [app.main.data.helpers :as dsh]
    [app.main.features :as features]
+   [app.main.features.pointer-map :as fpmap]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.render-wasm.api :as wasm.api]
@@ -120,6 +121,13 @@
    [:file-id ::sm/uuid]
    [:share-id {:optional true} ::sm/uuid]])
 
+(defn resolve-viewer-fragment
+  "Resolves one pointer-mapped entry of the view-only bundle into a
+  [key data] pair. Thin wrapper over the shared `fpmap/resolve-pointer`
+  with share-link scoping; see it for the failure contract."
+  [file-id share-id entry]
+  (fpmap/resolve-pointer file-id share-id entry))
+
 (defn- fetch-bundle
   [{:keys [file-id share-id] :as params}]
 
@@ -140,14 +148,7 @@
                        (uuid? share-id)
                        (assoc :share-id share-id))
 
-            resolve  (fn [[key pointer]]
-                       (let [params {:file-id file-id :fragment-id @pointer}
-                             params (cond-> params
-                                      (uuid? share-id)
-                                      (assoc :share-id share-id))]
-                         (->> (rp/cmd! :get-file-fragment params)
-                              (rx/map :data)
-                              (rx/map #(vector key %)))))]
+            resolve  (partial resolve-viewer-fragment file-id share-id)]
 
         (->> (rp/cmd! :get-view-only-bundle params')
              (rx/mapcat

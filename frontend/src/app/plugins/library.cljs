@@ -779,12 +779,13 @@
 
     :renameProperty
     (fn [pos name]
-      (let [nprops (->> (get-variant-components file-id id) first :variant-properties count)]
+      (let [nprops   (->> (get-variant-components file-id id) first :variant-properties count)
+            prepared (ctv/prepare-property-name name)]
         (cond
           (or (not (nat-int? pos)) (>= pos nprops))
           (u/not-valid plugin-id :pos pos)
 
-          (not (ctv/valid-property-name? name))
+          (nil? prepared)
           (u/not-valid plugin-id :name name)
 
           (not (r/check-permission plugin-id "library:write"))
@@ -792,7 +793,7 @@
 
           :else
           (st/emit!
-           (dwv/update-property-name id pos (ctv/normalize-property-text name)
+           (dwv/update-property-name id pos prepared
                                      {:trigger "plugin:rename-property"})))))))
 
 (set! shape/variant-proxy variant-proxy)
@@ -916,6 +917,9 @@
         (cond
           (not (r/check-permission plugin-id "library:write"))
           (u/not-valid plugin-id :restore "Plugin doesn't have 'library:write' permission")
+
+          (not= file-id (:current-file-id @st/state))
+          (u/not-valid plugin-id :restore "Can only restore components from the current file's library")
 
           (nil? component)
           (u/not-valid plugin-id :restore "Component does not exist")
@@ -1087,12 +1091,13 @@
 
     :setVariantProperty
     (fn [pos value]
-      (let [nprops (-> (u/locate-library-component file-id id) :variant-properties count)]
+      (let [nprops   (-> (u/locate-library-component file-id id) :variant-properties count)
+            prepared (ctv/prepare-property-value value)]
         (cond
           (or (not (nat-int? pos)) (>= pos nprops))
           (u/not-valid plugin-id :pos (str pos))
 
-          (not (ctv/valid-property-value? value))
+          (nil? prepared)
           (u/not-valid plugin-id :value value)
 
           (not (r/check-permission plugin-id "library:write"))
@@ -1101,7 +1106,7 @@
           :else
           (st/emit!
            (se/event plugin-id "variant-edit-property-value")
-           (dwv/update-property-value id pos (ctv/normalize-property-text value))))))))
+           (dwv/update-property-value id pos prepared)))))))
 
 (defn library-proxy? [p]
   (obj/type-of? p "LibraryProxy"))

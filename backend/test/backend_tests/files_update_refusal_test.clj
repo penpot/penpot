@@ -90,6 +90,33 @@
                                    :name "Page 1"
                                    :objects {uuid/zero root}}}}}))
 
+(defn- valid-file
+  "A file with one valid page: a root frame that lists its only child."
+  []
+  (let [page-id  (uuid/next)
+        child-id (uuid/next)
+        child    (cts/setup-shape {:id child-id
+                                   :type :rect
+                                   :name "rect"
+                                   :x 0 :y 0 :width 10 :height 10
+                                   :parent-id uuid/zero
+                                   :frame-id uuid/zero})
+        root     (-> (cts/setup-shape {:id uuid/zero
+                                       :type :frame
+                                       :name "Root"
+                                       :x 0 :y 0 :width 100 :height 100
+                                       :parent-id uuid/zero
+                                       :frame-id uuid/zero})
+                     (assoc :shapes [child-id]))]
+    {:id (uuid/next)
+     :revn 0
+     :version 0
+     :features #{"components/v2"}
+     :data {:pages [page-id]
+            :pages-index {page-id {:id page-id
+                                   :name "Page 1"
+                                   :objects {uuid/zero root child-id child}}}}}))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -144,17 +171,27 @@
                       ["check" "reason"] ["affected" "child-not-found"])))))
 
 (t/deftest referential-refusal-reports-the-gate-stage-and-code
-  (let [cfg     (validation-cfg (metrics))
-        file    (broken-referential-file)
-        page-id (first (:pages (:data file)))
-        changes [{:type :mod-obj :page-id page-id :id uuid/zero :operations []}]
-        cause   (binding [cf/flags #{:file-validation}]
-                  (with-redefs [bfc/get-resolved-file-libraries (fn [_ _] {})]
-                    (try
-                      (@#'files-update/process-changes-and-validate cfg file changes nil)
-                      nil
-                      (catch Throwable cause
-                        cause))))]
+  ;; The damage has to come from the changes. A file damaged before the
+  ;; save is repairable, and the save then goes through instead of
+  ;; refusing.
+  (let [cfg      (validation-cfg (metrics))
+        file     (valid-file)
+        page-id  (first (:pages (:data file)))
+        shape-id (first (remove #{uuid/zero}
+                                (keys (get-in file [:data :pages-index page-id :objects]))))
+        changes  [{:type :mod-obj
+                   :page-id page-id
+                   :id shape-id
+                   :operations [{:type :set
+                                 :attr :parent-id
+                                 :val (uuid/next)}]}]
+        cause    (binding [cf/flags #{:file-validation}]
+                   (with-redefs [bfc/get-resolved-file-libraries (fn [_ _] {})]
+                     (try
+                       (@#'files-update/process-changes-and-validate cfg file changes nil)
+                       nil
+                       (catch Throwable cause
+                         cause))))]
     (t/is (some? cause))
     (t/is (= "referential"
              (@#'files-update/refusal-stage
