@@ -6,6 +6,8 @@ Uses GitHub GraphQL and REST APIs via the authenticated ``gh`` CLI.
 
 Subcommands:
   issues      List issues in a milestone (or unassigned with milestone=none)
+  issue       Fetch issue details by number (batched)
+  comments    Fetch every comment of one or more issues
   prs         Fetch details for one or more PRs (by number or milestone)
   advisories  List or inspect GitHub security advisories
   link-issue  Explicitly link a GitHub issue to a pull request
@@ -26,6 +28,7 @@ Usage:
   python3 scripts/gh.py prs --milestone "2.16.0"            (default: state=merged)
   python3 scripts/gh.py prs --milestone "2.16.0" --state all
   python3 scripts/gh.py issue 11235 11236
+  python3 scripts/gh.py comments 11235 11236
   python3 scripts/gh.py advisories                          (list all advisories)
   python3 scripts/gh.py advisories --severity critical      (filter by severity)
   python3 scripts/gh.py advisories GHSA-xvj6-fh9w-gjw7     (single advisory detail)
@@ -889,6 +892,51 @@ def cmd_issue(args: argparse.Namespace) -> None:
 
 
 # ─────────────────────────────────────────────
+#  Subcommand: comments
+# ─────────────────────────────────────────────
+
+COMMENTS_PER_PAGE = 100
+
+
+def fetch_issue_comments(issue_number: int) -> list[dict]:
+    """Fetch every comment of an issue via REST, oldest first."""
+    comments: list[dict] = []
+    page = 1
+    while True:
+        batch = run_gh_rest(
+            f"repos/{REPO}/issues/{issue_number}/comments"
+            f"?per_page={COMMENTS_PER_PAGE}&page={page}"
+        )
+        for comment in batch:
+            comments.append({
+                "issue": issue_number,
+                "id": comment["id"],
+                "author": (comment.get("user") or {}).get("login"),
+                "created_at": comment.get("created_at"),
+                "body": comment.get("body"),
+            })
+        if len(batch) < COMMENTS_PER_PAGE:
+            return comments
+        page += 1
+
+
+def cmd_comments(args: argparse.Namespace) -> None:
+    """Handle the ``comments`` subcommand (REST, paginated per issue)."""
+    issue_numbers = read_numbers_from_args(args)
+    if not issue_numbers:
+        print("ERROR: no issue numbers provided (pass numbers, --file, or --stdin)",
+              file=sys.stderr)
+        sys.exit(1)
+
+    all_comments: list[dict] = []
+    for num in issue_numbers:
+        print(f"Fetching comments for issue #{num}...", file=sys.stderr)
+        all_comments.extend(fetch_issue_comments(num))
+
+    print(json.dumps(all_comments, indent=2))
+
+
+# ─────────────────────────────────────────────
 #  Subcommand: advisories
 # ─────────────────────────────────────────────
 
@@ -1079,6 +1127,24 @@ def main() -> None:
         help="Read issue numbers from stdin (one per line)"
     )
     p_issue.set_defaults(func=cmd_issue)
+
+    # --- comments ---
+    p_comments = sub.add_parser(
+        "comments", help="Fetch every comment of one or more issues"
+    )
+    p_comments.add_argument(
+        "numbers", type=int, nargs="*",
+        help="Issue numbers to fetch (space-separated)"
+    )
+    p_comments.add_argument(
+        "--file", type=str,
+        help="File with one issue number per line"
+    )
+    p_comments.add_argument(
+        "--stdin", action="store_true",
+        help="Read issue numbers from stdin (one per line)"
+    )
+    p_comments.set_defaults(func=cmd_comments)
 
     # --- advisories ---
     p_adv = sub.add_parser("advisories", help="List or inspect GitHub security advisories")
