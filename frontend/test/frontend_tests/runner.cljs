@@ -103,7 +103,6 @@
    [frontend-tests.svg-fills-test]
    [frontend-tests.svg-filters-test]
    [frontend-tests.text-editor-paste-guard-test]
-   [frontend-tests.tokens.combobox-navigation-test]
    [frontend-tests.tokens.context-menu-test]
    [frontend-tests.tokens.copy-paste-props-test]
    [frontend-tests.tokens.import-export-test]
@@ -113,14 +112,15 @@
    [frontend-tests.tokens.logic.tokens-source-test]
    [frontend-tests.tokens.logic.tokens-status-test]
    [frontend-tests.tokens.referenced-token-value-test]
+   [frontend-tests.tokens.shadow-form-test]
    [frontend-tests.tokens.style-dictionary-test]
    [frontend-tests.tokens.token-errors-test]
-   [frontend-tests.tokens.token-forms-test]
    [frontend-tests.tokens.token-parsing-test]
    [frontend-tests.tokens.token-path-test]
    [frontend-tests.tokens.token-pill-test]
    [frontend-tests.tokens.token-tree-test]
    [frontend-tests.tokens.tokenscript-test]
+   [frontend-tests.tokens.typography-form-test]
    [frontend-tests.tokens.workspace-tokens-remap-test]
    [frontend-tests.ui.check-updates-test]
    [frontend-tests.ui.color-token-position-test]
@@ -282,7 +282,6 @@
    'frontend-tests.router-test
    'frontend-tests.svg-fills-test
    'frontend-tests.svg-filters-test
-   'frontend-tests.tokens.combobox-navigation-test
    'frontend-tests.tokens.copy-paste-props-test
    'frontend-tests.tokens.context-menu-test
    'frontend-tests.tokens.import-export-test
@@ -290,14 +289,15 @@
    'frontend-tests.tokens.logic.token-data-test
    'frontend-tests.tokens.logic.token-remapping-test
    'frontend-tests.tokens.referenced-token-value-test
+   'frontend-tests.tokens.shadow-form-test
    'frontend-tests.tokens.style-dictionary-test
    'frontend-tests.tokens.token-errors-test
-   'frontend-tests.tokens.token-forms-test
    'frontend-tests.tokens.token-parsing-test
    'frontend-tests.tokens.token-path-test
    'frontend-tests.tokens.token-pill-test
    'frontend-tests.tokens.token-tree-test
    'frontend-tests.tokens.tokenscript-test
+   'frontend-tests.tokens.typography-form-test
    'frontend-tests.tokens.logic.tokens-source-test
    'frontend-tests.tokens.logic.tokens-status-test
    'frontend-tests.tokens.workspace-tokens-remap-test

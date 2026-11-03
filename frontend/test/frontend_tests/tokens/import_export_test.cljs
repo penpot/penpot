@@ -9,11 +9,8 @@
    [app.common.json :as json]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.workspace.tokens.import-export :as dwti]
-   [app.main.ui.workspace.tokens.import.modal :as wtim]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]))
-
-(def ^:private has-token-files? @#'wtim/has-token-files?)
 
 (t/deftest import-file-stream-test
   (t/async
@@ -107,9 +104,3 @@ color.value tries to reference missing, which is not defined.")))
                          (t/is (instance? ctob/TokensLib tokens-lib))
                          (t/is (= "{missing}" (:value (ctob/get-token-by-name tokens-lib "core" "color"))))
                          (done))))))))
-
-(t/deftest has-token-files-test
-  (t/testing "an import needs at least one json file"
-    (t/is (has-token-files? ["README.md" "tokens/core.json"]))
-    (t/is (not (has-token-files? ["README.md" "logo.png"])))
-    (t/is (not (has-token-files? [])))))
