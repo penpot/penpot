@@ -1033,3 +1033,11 @@
   ;; later sync leaves it there
   (t/is (map? (cg/run {:world [2 2 {:text true :text-styles true}]
                        :ops [[:style 8 9 3 1] [:resize 2 0 0 0] [:detach 3 0 0 0]]}))))
+
+(t/deftest generated-turned-main-keeps-a-flipped-copys-rotation-consistent
+  ;; a main turned 45 degrees turns the subtree of a flipped copy; a mirrored
+  ;; child stores the rotation its transform and flip decompose into
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :variant-diff false
+                                    :rich-variants true :layout-copies true :text true}]
+                       :ops [[:rotate 3 0 5 0] [:duplicate 0 0 0 0] [:duplicate 0 0 0 0]
+                             [:transform 5 4 0 4] [:rotate 0 0 0 0]]}))))
