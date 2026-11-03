@@ -961,11 +961,12 @@
         component (ctkl/get-component data component-id)
         page-id   (:main-instance-page component)
         root-id   (:main-instance-id component)]
-    (if (and (= tag "component")
-             (features/active-feature? state "render-wasm/v1"))
+    (if (features/active-feature? state "render-wasm/v1")
       ;; WASM: render immediately, UI only — server persist happens
-      ;; on the debounced path (update-component-thumbnail)
-      (dwt.wasm/render-thumbnail file-id page-id root-id)
+      ;; on the debounced path (update-component-thumbnail). Frame
+      ;; thumbnails are only shown by the SVG viewport.
+      (when (= tag "component")
+        (dwt.wasm/render-thumbnail file-id page-id root-id))
       (dwt/update-thumbnail file-id page-id root-id tag "update-component-thumbnail-sync"))))
 
 (defn- render-component-thumbnail-event
