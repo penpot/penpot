@@ -28,6 +28,10 @@
 
 (def projection-version 1)
 
+(def ^:private allowed-shared-key-ids
+  "Only the nexus file-security pipeline reads file projections."
+  #{:nexus})
+
 ;; Bounds for the data that crosses to nexus on every sweep. The
 ;; projection stays small by construction; anything past the caps sets
 ;; `:truncated?` instead of growing the payload.
@@ -220,7 +224,8 @@
   {::doc/added "2.20"
    ::sm/params schema:get-file-for-analysis-params
    ::sm/result schema:get-file-for-analysis-result
-   ::rpc/auth false}
+   ::rpc/auth false
+   ::rpc/allowed-shared-keys allowed-shared-key-ids}
   [cfg {:keys [file-id]}]
   ;; `realize?` loads the whole object tree eagerly: the projection
   ;; walks every shape, so lazy pointers (no `load-fn` bound here)
