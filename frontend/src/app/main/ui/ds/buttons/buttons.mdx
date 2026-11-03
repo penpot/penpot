@@ -71,8 +71,23 @@ Action buttons are a variant of `icon-button*` (`"action"`) but smaller.
 
 ### Semantics
 
-In some cases, a button needs to be semantically an 'a' tag, but visually maintain the button style.
-In that case, the button accepts a 'to' property with the expected 'href'. It will then be rendered as an anchor element.
+When the control takes the user to another page or URL, it must be a link, even if it looks like a button.
+Pass the destination in `to`: `button*` then renders an `<a href>` with the button style, so it can be
+opened in a new tab and assistive technologies announce it as a link. It renders no `type` attribute,
+which on an anchor would mean a MIME type.
+
+```clj
+[:> button* {:variant "secondary"
+             :to (rt/resolve-uri router :auth-login {})}
+ (tr "profile.recovery.go-to-login")]
+```
+
+To keep the in-app navigation on a plain click, add an `on-click` that calls `prevent-default` (unless
+Ctrl/Cmd is pressed) and emits the navigation event. Other anchor attributes, such as `target`, pass through.
+
+<Canvas of={ButtonStories.AsLink} />
+
+Use a plain `button*` (without `to`) for actions that do not change the URL, such as opening a modal.
 
 ### Accessibility
 

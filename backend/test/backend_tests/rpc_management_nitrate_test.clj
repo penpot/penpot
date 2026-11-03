@@ -52,6 +52,13 @@
     (t/is (= :authentication (th/ex-type (:error out))))
     (t/is (= :authentication-required (th/ex-code (:error out))))))
 
+(t/deftest authenticate-rejects-a-key-it-does-not-declare
+  (let [out (th/management-command! {::th/type :authenticate
+                                     ::rpc/auth-key-id :exporter})]
+    (t/is (not (th/success? out)))
+    (t/is (= :authorization (th/ex-type (:error out))))
+    (t/is (= :shared-key-not-allowed (th/ex-code (:error out))))))
+
 (t/deftest create-and-update-organization-invitations-audit-props
   (let [owner-id-ref (atom nil)]
     (with-mocks [email-mock {:target 'app.email/send :return nil}

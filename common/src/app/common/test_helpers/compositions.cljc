@@ -10,6 +10,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variants :as clv]
@@ -442,6 +443,33 @@
                      :page-label page-label
                      :propagate-fn propagate-fn
                      :library library)))
+
+(defn change-shape
+  "Applies `update-fn` to the shape identified by shape-tag. With
+  `ignore-touched` the change is not an override, as when a layout changes it."
+  [file shape-tag update-fn & {:keys [ignore-touched]}]
+  (let [page (thf/current-page file)]
+    (thf/apply-changes
+     file
+     (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                 #{(thi/id shape-tag)}
+                                 update-fn
+                                 (:objects page)
+                                 {:ignore-touched ignore-touched}))))
+
+(defn move-shape-tree
+  "Moves the shape identified by shape-tag and its children by `delta`. With
+  `ignore-touched` the move is not an override, as when a layout moves it."
+  [file shape-tag delta & {:keys [ignore-touched]}]
+  (let [page    (thf/current-page file)
+        objects (:objects page)]
+    (thf/apply-changes
+     file
+     (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                 (cfh/get-children-ids-with-self objects (thi/id shape-tag))
+                                 #(gsh/move % delta)
+                                 objects
+                                 {:ignore-touched ignore-touched}))))
 
 (defn update-color
   "Update the first fill color for the shape identified by shape-tag"

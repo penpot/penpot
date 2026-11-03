@@ -167,22 +167,22 @@
         output (tmp/tempfile :suffix ".zip")]
     (bf.v3/export-files!
      (-> th/*system*
-         (assoc ::bfc/ids #{(:id file)})
+         (assoc ::bfc/file-ids #{(:id file)})
          (assoc ::bfc/embed-assets false)
-         (assoc ::bfc/include-libraries false))
-     (io/output-stream output))
+         (assoc ::bfc/include-libraries false)
+         (assoc ::bfc/output (io/output-stream output))))
     output))
 
 (defn- import-file
   [profile path]
-  (let [out (th/command! {::th/type :import-binfile
-                          ::rpc/profile-id (:id profile)
-                          :project-id (:default-project-id profile)
-                          :name "imported"
-                          :file {:filename "imported.penpot"
-                                 :size (fs/size path)
-                                 :path path
-                                 :mtype "application/zip"}})]
+  (let [out (th/multipart-command! {::th/type :import-binfile
+                                    ::rpc/profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :name "imported"
+                                    :file {:filename "imported.penpot"
+                                           :size (fs/size path)
+                                           :path path
+                                           :mtype "application/zip"}})]
     (t/is (nil? (:error out)))
     (th/consume-sse (:result out))))
 

@@ -182,7 +182,7 @@ Who uses it:
 
 Failure policy: every send is best-effort. A failure never rolls back the business action; it is only recorded for debugging.
 
-Backend side (`backend/src/app/rpc/management/nitrate.clj` `::push-audit-events`): `::audit/skip`, `::rpc/auth false` (trust comes from the shared key, not from a user session). It builds context with `audit/prepare-context-from-request` + `request-id`, takes the given `profile-id` as-is (no coercion here, must already be a uuid), sets `tracked-at = request-at`, defaults `type` to `"action"`, and calls `audit/submit` (which defaults `source` to `"backend"`). So these rows land as **`source = backend`**: they are audited like backend events because a trusted service set the author.
+Backend side (`backend/src/app/rpc/management/nitrate.clj` `::push-audit-events`): `::audit/skip`, `::rpc/auth false` (trust comes from the shared key, not from a user session; only the `admin-console` key id is allowed). It builds context with `audit/prepare-context-from-request` + `request-id`, takes the given `profile-id` as-is (no coercion here, must already be a uuid), sets `tracked-at = request-at`, defaults `type` to `"action"`, and calls `audit/submit` (which defaults `source` to `"backend"`). So these rows land as **`source = backend`**: they are audited like backend events because a trusted service set the author.
 
 ### 7b. Browser channel (best-effort, like frontend events)
 
@@ -301,7 +301,7 @@ So the full journey is: Penpot buffer → Nexus `audit_log` (via either archive 
 
 Penpot → admin-console archiving lives in its own job (`:audit-log-consumer-admin-console`, consumer `2`, flag `:admin-console`, params closed empty): it drains its own pending queue and ingests allowlisted events through `nitrate/call :ingest-audit-log`, enriched as described above. What also exists (do not confuse with archiving):
 
-- **Nitrate → Penpot**: `POST /api/management/methods/push-audit-events` (`backend/src/app/rpc/management/nitrate.clj`) lets the trusted Nitrate backend inject events into the Penpot audit log (no RPC auth, `::audit/skip`, request context + `submit`). Section 7a is the main user.
+- **Nitrate → Penpot**: `POST /api/management/methods/push-audit-events` (`backend/src/app/rpc/management/nitrate.clj`) lets the trusted Nitrate backend inject events into the Penpot audit log (no RPC auth, `::audit/skip`, request context + `submit`; only the `admin-console` shared-key id can call it). Section 7a is the main user.
 - **Admin-console browser → collector**: usage events from the admin-console UI traveling through the normal public `push-audit-events` (section 7b).
 - **Penpot frontend Nitrate bits**: membership/subscription events (`frontend/src/app/main/data/nitrate.cljs`, `nitrate-audit/*`) through the same public endpoint.
 

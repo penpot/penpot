@@ -22,6 +22,7 @@
    [common-tests.files-changes-test]
    [common-tests.files-migrations-0025-test]
    [common-tests.files-migrations-0026-test]
+   [common-tests.files-migrations-0034-test]
    [common-tests.files-migrations-test]
    [common-tests.files.comp-processors-test]
    [common-tests.files.helpers-test]
@@ -77,6 +78,7 @@
    [common-tests.logic.text-touched-test]
    [common-tests.logic.token-apply-test]
    [common-tests.logic.token-test]
+   [common-tests.logic.variants-reparent-test]
    [common-tests.logic.variants-switch-test]
    [common-tests.logic.variants-test]
    [common-tests.math-test]
@@ -130,6 +132,7 @@
    'common-tests.files-changes-test
    'common-tests.files-migrations-0025-test
    'common-tests.files-migrations-0026-test
+   'common-tests.files-migrations-0034-test
    'common-tests.files-migrations-test
    'common-tests.files.comp-processors-test
    'common-tests.files.helpers-test
@@ -185,6 +188,7 @@
    'common-tests.logic.text-touched-test
    'common-tests.logic.token-apply-test
    'common-tests.logic.token-test
+   'common-tests.logic.variants-reparent-test
    'common-tests.logic.variants-switch-test
    'common-tests.logic.variants-test
    'common-tests.math-test

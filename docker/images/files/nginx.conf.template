@@ -155,6 +155,11 @@ http {
             proxy_pass $PENPOT_EXPORTER_URI;
         }
 
+        location = /.well-known/oauth-authorization-server/api/mcp/oauth {
+            proxy_set_header Host $proxy_host;
+            proxy_pass $PENPOT_BACKEND_URI$request_uri;
+        }
+
         location /api {
             proxy_set_header Host $proxy_host;
             proxy_pass $PENPOT_BACKEND_URI/api;
