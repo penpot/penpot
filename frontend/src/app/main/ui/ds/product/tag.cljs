@@ -24,7 +24,7 @@
 
 (mf/defc tag*
   "A short, static status word. The `label` variant is a small code-font
-  tag that names what something is (Board, Verified, Clash);
+  tag that names what something is (Board, Verified, Conflict);
   the `pill` variant is a rounded word or count that sits at the end of a
   row (Choose, Decided, 3 edits). The tone colours both; `icon` goes
   before the text."

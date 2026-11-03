@@ -11263,7 +11263,7 @@ msgstr "What this choice drops"
 
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:305
 msgid "workspace.branches.resolve.intro-attrs"
-msgstr "Main and this branch both edited this. Only the properties marked Clash need a choice; the others changed on one side only, so they are already filled in."
+msgstr "Main and this branch both edited this. Only the properties marked Conflict need a choice; the others changed on one side only, so they are already filled in."
 
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:304
 msgid "workspace.branches.resolve.intro-text"
@@ -11340,7 +11340,7 @@ msgstr "Loses work"
 
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:156
 msgid "workspace.branches.resolve.tag.clash"
-msgstr "Clash"
+msgstr "Conflict"
 
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:160
 msgid "workspace.branches.resolve.tag.from-branch"
@@ -11528,8 +11528,8 @@ msgstr[1] "Merge blocked: %s decisions left"
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:297
 msgid "workspace.branches.resolve.tag.clashes"
 msgid_plural "workspace.branches.resolve.tag.clashes"
-msgstr[0] "1 clash"
-msgstr[1] "%s clashes"
+msgstr[0] "1 conflict"
+msgstr[1] "%s conflicts"
 
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:299
 msgid "workspace.branches.resolve.tag.independent"
