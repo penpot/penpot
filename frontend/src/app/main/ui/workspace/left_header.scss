@@ -4,27 +4,32 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
 
 .workspace-header-left {
   display: flex;
   align-items: center;
-  padding: deprecated.$s-12 deprecated.$s-12 deprecated.$s-8 deprecated.$s-12;
-  min-height: deprecated.$s-52;
+  padding: var(--sp-m) var(--sp-m) var(--sp-s) var(--sp-m);
+  min-block-size: px2rem(52);
 }
 
 .main-icon {
-  @include deprecated.flex-center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  inline-size: $sz-32;
+  block-size: $sz-32;
+  min-block-size: $sz-32;
+  margin-inline-end: var(--sp-xs);
 
-  width: deprecated.$s-32;
-  height: deprecated.$s-32;
-  min-height: deprecated.$s-32;
-  margin-right: deprecated.$s-4;
-
+  // The Penpot logo is brand art from the legacy icon set and has no class.
   svg {
-    min-height: deprecated.$s-32;
-    width: deprecated.$s-32;
-    fill: var(--icon-foreground-hover);
+    min-block-size: $sz-32;
+    inline-size: $sz-32;
+    fill: var(--color-foreground-primary);
   }
 }
 
@@ -32,49 +37,60 @@
   position: relative;
   flex-grow: 1;
   flex-shrink: 1;
-  min-width: 0;
-  height: deprecated.$s-32;
-  min-height: deprecated.$s-32;
+  min-inline-size: 0;
+  block-size: $sz-32;
+  min-block-size: $sz-32;
 }
 
 .project-name,
 .file-name {
-  @include deprecated.uppercase-title-typography;
-  @include deprecated.text-ellipsis;
-
-  height: deprecated.$s-16;
-  width: 100%;
-  padding-bottom: deprecated.$s-2;
-  color: var(--title-foreground-color);
+  display: block;
+  max-inline-size: 99%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  block-size: $sz-16;
+  inline-size: 100%;
+  padding-block-end: var(--sp-xxs);
   cursor: pointer;
 }
 
-.file-name {
-  @include deprecated.small-title-typography;
+.project-name {
+  @include use-typography("headline-small");
 
-  text-transform: none;
-  color: var(--title-foreground-color-hover);
+  color: var(--color-foreground-secondary);
+}
+
+.file-name {
+  @include use-typography("title-small");
+
+  color: var(--color-foreground-primary);
   align-items: center;
   display: flex;
   flex-direction: row;
 }
 
 .file-name-label {
-  @include deprecated.text-ellipsis;
+  display: block;
+  max-inline-size: 99%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .file-name-input {
-  @include deprecated.flex-center;
+  @include use-typography("title-small");
 
-  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  inline-size: 100%;
   margin: 0;
   border: 0;
   padding: 0;
-  border-radius: deprecated.$br-4;
-  background-color: var(--input-background-color);
-  font-size: deprecated.$fs-14;
-  color: var(--input-foreground-color);
-  z-index: deprecated.$z-index-20;
+  border-radius: $br-4;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-secondary);
   white-space: break-spaces;
 
   &:focus {
@@ -83,46 +99,42 @@
 }
 
 .shared-badge {
-  @include deprecated.flex-center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  inline-size: $sz-16;
+  block-size: $sz-32;
+  margin-inline-end: var(--sp-xs);
+}
 
-  width: deprecated.$s-16;
-  height: deprecated.$s-32;
-  margin-right: deprecated.$s-4;
-
-  svg {
-    stroke: var(--button-secondary-foreground-color-rest);
-    fill: none;
-    height: deprecated.$s-16;
-    width: deprecated.$s-16;
-  }
+.shared-badge-icon {
+  color: var(--color-foreground-secondary);
 }
 
 .status-notification {
-  width: deprecated.$s-6;
-  height: deprecated.$s-6;
-  border-radius: 50%;
-  margin-right: deprecated.$s-4;
+  --status-notification-background-color: transparent;
+
+  inline-size: $sz-6;
+  block-size: $sz-6;
+  border-radius: $br-circle;
+  margin-inline-end: var(--sp-xs);
   flex-shrink: 0;
+  background-color: var(--status-notification-background-color);
 
-  &.pending-status {
-    background-color: var(--status-widget-background-color-warning);
-  }
-
-  &.saving-status {
-    background-color: var(--status-widget-background-color-pending);
+  &.pending-status,
+  &.saving-status,
+  &.retrying-status {
+    --status-notification-background-color: var(--color-accent-warning);
   }
 
   &.saved-status {
-    background-color: var(--status-widget-background-color-success);
+    --status-notification-background-color: var(--color-accent-success);
+
     animation: jump 0.3s ease-out;
   }
 
-  &.retrying-status {
-    background-color: var(--status-widget-background-color-warning);
-  }
-
   &.error-status {
-    background-color: var(--status-widget-background-color-error);
+    --status-notification-background-color: var(--color-foreground-error);
   }
 }
 

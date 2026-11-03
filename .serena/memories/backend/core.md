@@ -4,7 +4,7 @@ Backend: JVM Clojure; Integrant; PostgreSQL; Redis/Valkey; RPC; HTTP; storage; m
 
 ## Focused memories
 
-- Cross-cutting backend subtleties (RPC, DB, workers, cron, CLIMIT, HTTP/sessions, storage, file data): `mem:backend/subtleties`
+- Cross-cutting backend subtleties (RPC, DB helpers, workers, cron, CLIMIT, config and HTTP/session middleware, http self-metrics, media processing, and file data persistence): `mem:backend/subtleties`
 - Storage abstraction, logical buckets, object lifecycle, deduplication, access, and garbage collection: `mem:backend/storage`.
 - Embedded Ladybug graph experiment, projection, incremental sync, console, and risks: `mem:backend/graph-experiment`
 - Session lifetime config, token `:exp`, and idle/absolute GC: `mem:backend/session-expiration`.
@@ -32,7 +32,7 @@ Backend: JVM Clojure; Integrant; PostgreSQL; Redis/Valkey; RPC; HTTP; storage; m
 
 RPC commands are defined with `app.util.services/defmethod` and schemas. Use `get-` prefixes for read operations. Command metadata usually includes auth, docs version, params schema, and result schema. Return plain maps/vectors or raise structured exceptions from `app.common.exceptions`.
 
-Backend RPC command areas without focused memories include access tokens, binfile, demo, feedback, file snapshots, fonts, management, Nitrate, and webhooks beyond the notes in `mem:backend/auth-permissions-product-domains`; inspect nearby command tests and command metadata before changing them.
+Backend RPC command areas without focused memories include access tokens (auth rules, incl. MCP tokens, in `mem:backend/auth-permissions-product-domains`), binfile, demo, feedback, file snapshots, fonts, management, Nitrate, and webhooks beyond the notes in `mem:backend/auth-permissions-product-domains`; inspect nearby command tests and command metadata before changing them.
 
 ## DB conventions
 
@@ -48,6 +48,8 @@ Backend RPC command areas without focused memories include access tokens, binfil
 - Some tables carry a SQL deletion guard (`raise_deletion_protection` + a `deletion_protection__tgr` statement trigger): `profile`, `team`, `team_font_variant`, `file_media_object`, `file_thumbnail`, `file_tagged_object_thumbnail` and `job`. A `DELETE` raises unless the transaction runs `SET LOCAL rules.deletion_protection TO off` (the guard is on when the GUC is unset, empty or `on`); see `app.tasks.objects-gc`, `app.jobs.gc` and `th/db-force-delete`.
 
 Database migrations live in `backend/src/app/migrations/`; pure SQL migrations are under `backend/src/app/migrations/sql/`. SQL filenames conventionally start with a sequence and verb/table description, e.g. `0026-mod-profile-table-add-is-active-field`. Applied migrations are tracked in the `migrations` table.
+
+Migrations must stay within PostgreSQL 15 syntax: the official docker images (`docker/images/docker-compose.yaml`) pin `postgres:15`, so anything newer breaks those deployments (`SET STORAGE DEFAULT` is PostgreSQL 16, for instance). The documented floor is >=15.
 
 For interactive PostgreSQL access with correct dev defaults, use `scripts/psql`; to dump the current DDL schema, use `scripts/db-schema` (see `mem:scripts/psql`).
 

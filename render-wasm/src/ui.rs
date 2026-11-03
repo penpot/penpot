@@ -55,4 +55,22 @@ impl Guide {
     pub fn position(&self) -> f32 {
         self.kind.value()
     }
+
+    /// Whether `along` (the coordinate along the guide line: y for vertical
+    /// guides, x for horizontal) falls inside this guide's interactive
+    /// segment. Free guides (`frame_range = None`) accept any value; board-
+    /// bound guides only accept points inside their clipped range.
+    pub fn contains_along(&self, along: f32) -> bool {
+        match self.frame_range {
+            None => true,
+            Some((start, end)) => {
+                let (lo, hi) = if start <= end {
+                    (start, end)
+                } else {
+                    (end, start)
+                };
+                along >= lo && along <= hi
+            }
+        }
+    }
 }

@@ -624,6 +624,7 @@
        (fn []
          (on-blur)
          (st/emit! dw/hide-context-menu
+                   (dwt/v3-stop-text-layout-preview shape-id)
                    (dwu/commit-undo-transaction shape-id))
          (text-editor/text-editor-dispose)
          (wasm.api/request-render-preserving-target "text-editor-dispose"))))

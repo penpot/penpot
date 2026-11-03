@@ -206,12 +206,13 @@
     [:allow-demo-users {:optional true} ::sm/boolean]
     [:error-report-webhook {:optional true} :string]
     [:user-feedback-destination {:optional true} :string]
+    [:mcp-feedback-email {:optional true} ::sm/email]
 
     [:default-rpc-rlimit {:optional true} [::sm/vec :string]]
     [:rpc-rlimit-config {:optional true} ::fs/path]
     [:rpc-climit-config {:optional true} ::fs/path]
 
-    [:audit-log-archive-uri {:optional true} :string]
+    [:nexus-uri {:optional true} ::sm/uri]
     [:audit-log-http-handler-concurrency {:optional true} ::sm/int]
 
     [:default-executor-parallelism {:optional true} ::sm/int] ;; REVIEW

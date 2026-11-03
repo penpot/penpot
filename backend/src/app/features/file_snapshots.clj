@@ -48,11 +48,19 @@
                                    AND fd.type = 'snapshot')
     WHERE c.label IS NOT NULL")
 
+;; `:migrations` is an ordered set everywhere (see `common.types.file`),
+;; and `need-migration?`/`migrate` use set semantics on it: the pgarray
+;; must never surface as a vector, where `contains?`/`set/difference`
+;; would compare indexes instead of names.
+(defn- decode-migrations
+  [value]
+  (into (d/ordered-set) (db/decode-pgarray value [])))
+
 (defn- decode-snapshot
   [snapshot]
   (some-> snapshot
           (-> (d/update-when :metadata fdata/decode-metadata)
-              (d/update-when :migrations db/decode-pgarray [])
+              (d/update-when :migrations decode-migrations)
               (d/update-when :features db/decode-pgarray #{}))))
 
 (def ^:private sql:get-minimal-file
@@ -376,8 +384,13 @@
                :snapshot-id (str (:id snapshot)))
 
         ;; In the same way, on reseting the file data, we need to restore
-        ;; the applied migrations on the moment of taking the snapshot
-        (bfc/update-file! cfg file ::bfc/reset-migrations? true)
+        ;; the applied migrations on the moment of taking the snapshot.
+        ;; The snapshot data may hold shared pointer-mapped pages; the
+        ;; loader stays bound while persisting so any page the encode
+        ;; path does load keeps working (`enable-objects-map` skips the
+        ;; unloaded ones).
+        (fdata/with-pointers cfg file-id
+          (bfc/update-file! cfg file ::bfc/reset-migrations? true))
 
         ;; FIXME: this should be separated functions, we should not have
         ;; inline sql here.
@@ -441,7 +454,12 @@
 
 (defn reduce-snapshots
   "Process the file snapshots using efficient reduction; the file
-  reduction comes with all snapshots, including maked as deleted"
+  reduction comes with all snapshots, including maked as deleted.
+
+  Snapshot data may hold pointer-mapped pages, so the fragment loader
+  is bound while reducing: consumers that walk page content (media
+  refs, stats) transparently load fragments, consumers that only read
+  pointer ids never trigger a load."
   [cfg file-id xform f init]
   (let [conn  (db/get-connection cfg)
         xform (comp
@@ -449,5 +467,6 @@
                (map (partial fdata/decode-file-data cfg))
                xform)]
 
-    (->> (db/plan conn [sql:get-snapshots file-id] {:fetch-size 1})
-         (transduce xform f init))))
+    (fdata/with-pointers cfg file-id
+      (->> (db/plan conn [sql:get-snapshots file-id] {:fetch-size 1})
+           (transduce xform f init)))))

@@ -4,54 +4,56 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
 
 .text-palette {
-  height: 100%;
+  block-size: 100%;
   display: flex;
 }
 
+// Raw buttons on purpose: full-height scroll arrows with a fade, not DS
+// button sizes.
 .left-arrow,
 .right-arrow {
-  @include deprecated.button-style;
-  @include deprecated.flex-center;
+  --arrow-foreground-color: var(--color-foreground-secondary);
 
+  display: flex;
+  justify-content: center;
+  align-items: center;
   position: relative;
-  height: 100%;
-  width: deprecated.$s-24;
+  block-size: 100%;
+  inline-size: $sz-24;
   padding: 0;
-  z-index: deprecated.$z-index-2;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--arrow-foreground-color);
 
-  svg {
-    @extend %button-icon;
-  }
+  // Above the typography list, which is positioned and comes after the
+  // left arrow, so the fade covers the items that scroll under it.
+  z-index: 2;
 
   &::after {
     content: "";
     position: absolute;
-    bottom: 0;
-    left: calc(-1 * deprecated.$s-80);
-    height: 100%;
-    width: deprecated.$s-80;
-    z-index: deprecated.$z-index-1;
-    background-image: linear-gradient(
-      to left,
-      var(--palette-button-shadow-initial) 0%,
-      var(--palette-button-shadow-final) 100%
-    );
+    inset-block-end: 0;
+    inset-inline-start: calc(-1 * px2rem(80));
+    block-size: 100%;
+    inline-size: px2rem(80);
+    z-index: 1;
+    background-image: linear-gradient(to left, var(--color-background-primary) 0%, transparent 100%);
     pointer-events: none;
   }
 
   &:hover {
-    svg {
-      stroke: var(--button-foreground-hover);
-    }
+    --arrow-foreground-color: var(--color-accent-primary);
   }
 
   &:disabled {
-    svg {
-      stroke: var(--button-foreground-color-disabled);
-    }
+    --arrow-foreground-color: var(--color-foreground-disabled);
 
     &::after {
       background-image: none;
@@ -61,19 +63,11 @@
 
 .left-arrow {
   &::after {
-    left: deprecated.$s-24;
-    background-image: linear-gradient(
-      to right,
-      var(--palette-button-shadow-initial) 0%,
-      var(--palette-button-shadow-final) 100%
-    );
+    inset-inline-start: $sz-24;
+    background-image: linear-gradient(to right, var(--color-background-primary) 0%, transparent 100%);
   }
 
-  &.disabled ::after {
-    background-image: none;
-  }
-
-  svg {
+  .arrow-icon {
     transform: rotate(180deg);
   }
 }
@@ -85,55 +79,46 @@
 
 .text-palette-inside {
   display: flex;
-  gap: deprecated.$s-8;
+  gap: var(--sp-s);
 }
 
 .typography-item {
-  @include deprecated.body-small-typography;
+  --typography-item-background-color: var(--color-background-tertiary);
+
+  @include use-typography("body-small");
 
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
-  height: 100%;
-  width: deprecated.$s-136;
-  padding: deprecated.$s-8;
-  border-radius: deprecated.$br-8;
-  background-color: var(--palette-text-background-color);
+  block-size: 100%;
+  inline-size: px2rem(136);
+  padding: var(--sp-s);
+  border-radius: $br-8;
+  background-color: var(--typography-item-background-color);
 
   &:first-child {
-    margin-left: deprecated.$s-8;
+    margin-inline-start: var(--sp-s);
+  }
+
+  .typography-name,
+  .typography-font,
+  .typography-data {
+    display: block;
+    max-inline-size: 99%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    block-size: $sz-16;
+    inline-size: $sz-120;
+    color: var(--color-foreground-secondary);
   }
 
   .typography-name {
-    @include deprecated.text-ellipsis;
-
-    height: deprecated.$s-16;
-    width: deprecated.$s-120;
-    color: var(--palette-text-color-selected);
-  }
-
-  .typography-font {
-    @include deprecated.text-ellipsis;
-
-    height: deprecated.$s-16;
-    width: deprecated.$s-120;
-    color: var(--palette-text-color);
-  }
-
-  .typography-data {
-    @include deprecated.text-ellipsis;
-
-    height: deprecated.$s-16;
-    width: deprecated.$s-120;
-    color: var(--palette-text-color);
+    color: var(--color-foreground-primary);
   }
 
   &.mid-item {
-    .typography-name {
-      height: deprecated.$s-16;
-    }
-
     .typography-data {
       display: none;
     }
@@ -147,12 +132,12 @@
   }
 
   &:hover {
-    background-color: var(--palette-text-background-color-hover);
+    --typography-item-background-color: var(--color-background-quaternary);
   }
 }
 
 .text-palette-empty {
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
-  color: var(--palette-text-color);
+  color: var(--color-foreground-secondary);
 }

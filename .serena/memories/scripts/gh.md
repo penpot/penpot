@@ -119,6 +119,7 @@ python3 scripts/gh.py advisories GHSA-xvj6-fh9w-gjw7
 
 ## Key principles
 
+- `issues --compare` collects every `#NNNN` token in the file regardless of its link target, so a same-numbered reference to another tracker (e.g. `[Taiga #12312](...)`) or an inline prose number falsely marks that GitHub issue as already listed; verify against `changelog.py cross-ref` when a number collides.
 - Changelog-specific checks (merge-status verification, milestone-vs-changelog cross-reference, anomaly report) live in `scripts/changelog.py`, which calls this script via subprocess — see `mem:scripts/changelog`.
 
 - All output is JSON — pipe into `jq` or other tools for further processing.

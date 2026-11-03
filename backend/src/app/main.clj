@@ -22,13 +22,14 @@
    [app.http.debug :as-alias http.debug]
    [app.http.link-preview :as-alias http.link-preview]
    [app.http.management :as mgmt]
+   [app.http.mcp-oauth :as-alias http.mcp-oauth]
    [app.http.session :as session]
    [app.http.websocket :as http.ws]
    [app.jobs :as-alias jobs]
    [app.jobs.gc :as-alias jobs.gc]
    [app.jobs.metrics :as jobs-metrics]
    [app.loggers.webhooks :as-alias webhooks]
-   [app.metrics :as-alias mtx]
+   [app.metrics :as mtx]
    [app.metrics.definition :as-alias mdef]
    [app.msgbus :as-alias mbus]
    [app.redis :as-alias rds]
@@ -70,16 +71,31 @@
     ::mdef/help "A total number of bytes processed by update-file."
     ::mdef/type :counter}
 
+   :update-file-validation-timing
+   {::mdef/name "penpot_rpc_update_file_validation_timing"
+    ::mdef/help "update-file validation step timings (milliseconds)."
+    ::mdef/labels ["step"]
+    ::mdef/buckets mtx/default-request-histogram-buckets
+    ::mdef/type :histogram}
+
+   :update-file-repair
+   {::mdef/name "penpot_rpc_update_file_repair_total"
+    ::mdef/help "update-file auto-repair attempts by outcome (repaired or unrepaired)."
+    ::mdef/labels ["outcome"]
+    ::mdef/type :counter}
+
    :rpc-main-timing
    {::mdef/name "penpot_rpc_main_timing"
     ::mdef/help "RPC command method call timing for main"
     ::mdef/labels ["name"]
+    ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
 
    :rpc-management-timing
    {::mdef/name "penpot_rpc_management_timing"
     ::mdef/help "RPC command method call timing for management."
     ::mdef/labels ["name"]
+    ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
 
    :websocket-active-connections
@@ -112,12 +128,20 @@
     ;; panel or alert breaks.
     ::mdef/help "Deprecated: use penpot_jobs_execution_ms, which adds a queue label."
     ::mdef/labels ["name"]
+    ::mdef/buckets mtx/default-tasks-histogram-buckets
     ::mdef/type :histogram}
+
+   :storage-gc-deleted-objects
+   {::mdef/name "penpot_storage_gc_deleted_objects_total"
+    ::mdef/help "Storage objects permanently deleted by storage-gc-deleted, by backend."
+    ::mdef/labels ["backend"]
+    ::mdef/type :counter}
 
    :redis-eval-timing
    {::mdef/name "penpot_redis_eval_timing"
     ::mdef/help "Redis EVAL commands execution timings (ms)"
     ::mdef/labels ["name"]
+    ::mdef/buckets mtx/default-redis-histogram-buckets
     ::mdef/type :histogram}
 
    :rpc-climit-waiting
@@ -136,6 +160,7 @@
    {::mdef/name "penpot_rpc_climit_timing"
     ::mdef/help "Summary of the time between queuing and executing on the CLIMIT"
     ::mdef/labels ["name"]
+    ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
 
    :audit-http-handler-queue-size
@@ -154,6 +179,7 @@
    {::mdef/name "penpot_audit_http_handler_timing"
     ::mdef/help "Summary of the time between queuing and executing on the audit log http handler"
     ::mdef/labels []
+    ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
 
    :storage-s3-requests
@@ -203,6 +229,7 @@
    {::mdef/name "penpot_http_server_dispatch_timing"
     ::mdef/help "Histogram of dispatch handler"
     ::mdef/labels []
+    ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
 
    :http-worker-queue-size
@@ -351,7 +378,44 @@
    :http-malformed-requests-total
    {::mdef/name "penpot_http_malformed_requests_total"
     ::mdef/help "Total number of requests whose body the parser could not read."
-    ::mdef/type :counter}})
+    ::mdef/type :counter}
+
+   :audit-consumer-events
+   {::mdef/name "penpot_audit_consumer_events_total"
+    ::mdef/help "Audit log events drained by the consumer task, by destination and outcome."
+    ::mdef/labels ["destination" "outcome"]
+    ::mdef/type :counter}
+
+   :audit-consumer-discarded
+   {::mdef/name "penpot_audit_consumer_discarded_total"
+    ::mdef/help "Audit log entries discarded without being archived, by reason."
+    ::mdef/labels ["reason"]
+    ::mdef/type :counter}
+
+   :audit-ingest-events
+   {::mdef/name "penpot_audit_ingest_events_total"
+    ::mdef/help "Audit log frontend events ingested, by kind and outcome."
+    ::mdef/labels ["kind" "outcome"]
+    ::mdef/type :counter}
+
+   :file-data-offload-rows
+   {::mdef/name "penpot_file_data_offload_rows_total"
+    ::mdef/help "File data rows moved from hot to cold storage by the offload job."
+    ::mdef/labels ["type"]
+    ::mdef/type :counter}
+
+   :file-data-offload-bytes
+   {::mdef/name "penpot_file_data_offload_bytes_total"
+    ::mdef/help "File data bytes moved from hot to cold storage by the offload job."
+    ::mdef/labels ["type"]
+    ::mdef/type :counter}
+
+   :file-data-offload-timing
+   {::mdef/name "penpot_file_data_offload_timing_ms"
+    ::mdef/help "Time spent offloading one file from hot to cold storage (milliseconds)."
+    ::mdef/labels ["result"]
+    ::mdef/type :histogram
+    ::mdef/buckets [1 10 50 100 500 1000 5000 10000 30000 60000 300000]}})
 
 (def system-config
   {::db/pool
@@ -477,8 +541,16 @@
     ::http.debug/routes  (ig/ref ::http.debug/routes)
     ::http.assets/routes (ig/ref ::http.assets/routes)
     ::http.link-preview/routes (ig/ref ::http.link-preview/routes)
+    ::http.mcp-oauth/routes (ig/ref ::http.mcp-oauth/routes)
     ::http.ws/routes     (ig/ref ::http.ws/routes)
     ::http.awsns/routes  (ig/ref ::http.awsns/routes)}
+
+   ::http.mcp-oauth/routes
+   {::db/pool (ig/ref ::db/pool)
+    ::rds/pool (ig/ref ::rds/pool)
+    ::setup/props (ig/ref ::setup/props)
+    ::session/manager (ig/ref ::session/manager)
+    ::http.client/client (ig/ref ::http.client/client)}
 
    ::http.link-preview/routes
    {::db/pool         (ig/ref ::db/pool)}
@@ -555,7 +627,7 @@
 
    :app.nitrate/client
    {::http.client/client (ig/ref ::http.client/client)
-    ;; No ::jobs/defs: nitrate never submits jobs, and archive-task's
+    ;; No ::jobs/defs: nitrate never submits jobs, and consumer-task's
     ;; job-def needs this client — that would cycle through jobs/defs.
     ::setup/shared-keys  (ig/ref ::setup/shared-keys)}
 
@@ -584,25 +656,25 @@
     ::setup/shared-keys      (ig/ref ::setup/shared-keys)}
 
    ::jobs/defs
-   {:sendmail              (ig/ref ::email/job-def)
-    :delete-object         (ig/ref :app.tasks.delete-object/job-def)
-    :demo-purge            (ig/ref :app.tasks.demo-purge/job-def)
-    :run-webhook           (ig/ref ::webhooks/run-webhook-job-def)
-    :process-webhook-event (ig/ref ::webhooks/process-webhook-event-job-def)
-    :file-gc               (ig/ref :app.tasks.file-gc/job-def)
-    :offload-file-data     (ig/ref :app.tasks.offload-file-data/job-def)
-    :objects-gc            (ig/ref :app.tasks.objects-gc/job-def)
-    :export-binfile        (ig/ref :app.tasks.export-binfile/job-def)
-    :import-binfile        (ig/ref :app.tasks.import-binfile/job-def)
-    :storage-gc-deleted    (ig/ref ::sto.gc-deleted/job-def)
-    :storage-gc-touched    (ig/ref ::sto.gc-touched/job-def)
-    :storage-pending-gc    (ig/ref ::sto.pending-gc/job-def)
-    :jobs-gc               (ig/ref :app.jobs.gc/job-def)
-    :telemetry             (ig/ref :app.tasks.telemetry/job-def)
-    :session-gc            (ig/ref ::session/job-def)
-    :file-gc-scheduler     (ig/ref :app.tasks.file-gc-scheduler/job-def)
-    :audit-log-archive     (ig/ref :app.loggers.audit.archive-task/job-def)
-    :audit-log-gc          (ig/ref :app.loggers.audit.gc-task/job-def)}
+   {:sendmail                       (ig/ref ::email/job-def)
+    :delete-object                  (ig/ref :app.tasks.delete-object/job-def)
+    :demo-purge                     (ig/ref :app.tasks.demo-purge/job-def)
+    :run-webhook                    (ig/ref ::webhooks/run-webhook-job-def)
+    :process-webhook-event          (ig/ref ::webhooks/process-webhook-event-job-def)
+    :file-gc                        (ig/ref :app.tasks.file-gc/job-def)
+    :offload-file-data              (ig/ref :app.tasks.offload-file-data/job-def)
+    :objects-gc                     (ig/ref :app.tasks.objects-gc/job-def)
+    :export-binfile                 (ig/ref :app.tasks.export-binfile/job-def)
+    :import-binfile                 (ig/ref :app.tasks.import-binfile/job-def)
+    :storage-gc-deleted             (ig/ref ::sto.gc-deleted/job-def)
+    :storage-gc-touched             (ig/ref ::sto.gc-touched/job-def)
+    :storage-pending-gc             (ig/ref ::sto.pending-gc/job-def)
+    :jobs-gc                        (ig/ref :app.jobs.gc/job-def)
+    :telemetry                      (ig/ref :app.tasks.telemetry/job-def)
+    :session-gc                     (ig/ref ::session/job-def)
+    :file-gc-scheduler              (ig/ref :app.tasks.file-gc-scheduler/job-def)
+    :audit-log-consumer-nexus        (ig/ref :app.loggers.audit.consumer-task/nexus-job-def)
+    :audit-log-consumer-admin-console (ig/ref :app.loggers.audit.consumer-task/admin-console-job-def)}
 
    ::jobs/request-pool
    {::rds/client  (ig/ref ::rds/client)
@@ -691,16 +763,16 @@
    {::db/pool     (ig/ref ::db/pool)
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
-   :app.loggers.audit.archive-task/job-def
+   :app.loggers.audit.consumer-task/nexus-job-def
    {::db/pool            (ig/ref ::db/pool)
     ::http.client/client (ig/ref ::http.client/client)
     ::setup/shared-keys  (ig/ref ::setup/shared-keys)
-    :app.nitrate/client  (ig/ref :app.nitrate/client)
     ::mtx/metrics        (ig/ref ::mtx/metrics)}
 
-   :app.loggers.audit.gc-task/job-def
-   {::db/pool     (ig/ref ::db/pool)
-    ::mtx/metrics (ig/ref ::mtx/metrics)}
+   :app.loggers.audit.consumer-task/admin-console-job-def
+   {::db/pool            (ig/ref ::db/pool)
+    :app.nitrate/client  (ig/ref :app.nitrate/client)
+    ::mtx/metrics        (ig/ref ::mtx/metrics)}
 
    ::email/blacklist
    {}
@@ -821,15 +893,13 @@
      {:cron #penpot/cron "0 30 */3,23 * * ?"
       :job :telemetry}
 
-     (when (or (contains? cf/flags :nexus)
-               (contains? cf/flags :admin-console))
+     (when (contains? cf/flags :nexus)
        {:cron #penpot/cron "0 */5 * * * ?" ;; every 5m
-        :job :audit-log-archive})
+        :job :audit-log-consumer-nexus})
 
-     (when (or (contains? cf/flags :nexus)
-               (contains? cf/flags :admin-console))
-       {:cron #penpot/cron "30 */5 * * * ?" ;; every 5m
-        :job :audit-log-gc})]}
+     (when (contains? cf/flags :admin-console)
+       {:cron #penpot/cron "30 */5 * * * ?" ;; every 5m, offset 30s from nexus
+        :job :audit-log-consumer-admin-console})]}
 
    ::wrk/dispatcher
    {::rds/client  (ig/ref ::rds/client)

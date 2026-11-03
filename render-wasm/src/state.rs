@@ -28,6 +28,8 @@ pub(crate) struct State {
     pub saved_shapes: Option<ShapesPool>,
     /// True while the first bulk load of shapes is in progress.
     pub loading: bool,
+    /// Progressive multi-page PDF export (begin / add-page / finish).
+    pub pdf_export: Option<crate::render::pdf::PdfExportSession>,
 }
 
 impl State {
@@ -38,6 +40,7 @@ impl State {
             shapes: ShapesPool::new(),
             saved_shapes: None,
             loading: false,
+            pdf_export: None,
         }
     }
 
@@ -99,12 +102,36 @@ impl State {
         get_render_state().render_shape_pixels(id, &self.shapes, scale, timestamp, format)
     }
 
-    pub fn render_shape_pdf(&mut self, id: &Uuid, scale: f32) -> Result<Vec<u8>> {
-        crate::render::pdf::render_to_pdf(get_resources(), id, &self.shapes, scale)
+    pub fn render_shape_pdf(&mut self, id: &Uuid) -> Result<Vec<u8>> {
+        crate::render::pdf::render_to_pdf(get_resources(), id, &self.shapes)
+    }
+
+    pub fn render_shapes_pdf(&mut self, ids: &[Uuid]) -> Result<Vec<u8>> {
+        crate::render::pdf::render_to_pdf_multi(get_resources(), ids, &self.shapes)
+    }
+
+    pub fn pdf_export_begin(&mut self) -> Result<()> {
+        crate::render::pdf::export_begin(&mut self.pdf_export)
+    }
+
+    pub fn pdf_export_add_page(&mut self, id: &Uuid) -> Result<()> {
+        crate::render::pdf::export_add_page(&mut self.pdf_export, get_resources(), id, &self.shapes)
+    }
+
+    pub fn pdf_export_finish(&mut self) -> Result<Vec<u8>> {
+        crate::render::pdf::export_finish(&mut self.pdf_export, &self.shapes)
+    }
+
+    pub fn pdf_export_abort(&mut self) {
+        crate::render::pdf::export_abort(&mut self.pdf_export)
     }
 
     pub fn render_shape_svg(&mut self, id: &Uuid, scale: f32) -> Result<Vec<u8>> {
         crate::render::svg::render_to_svg(get_resources(), id, &self.shapes, scale)
+    }
+
+    pub fn render_shapes_svg(&mut self, ids: &[Uuid], scale: f32) -> Result<Vec<u8>> {
+        crate::render::svg::render_to_svg_multi(get_resources(), ids, &self.shapes, scale)
     }
 
     /// GPU-free counterpart of [`State::render_shape_pixels`]: encodes to

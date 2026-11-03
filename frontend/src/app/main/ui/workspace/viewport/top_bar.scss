@@ -4,55 +4,54 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .viewport-actions,
 .viewport-actions-path {
   pointer-events: none;
   position: absolute;
 
-  --actions-toolbar-position-y: #{deprecated.$s-28};
-  --actions-toolbar-offset-y: #{deprecated.$s-6};
+  --actions-toolbar-position-y: #{$sz-28};
+  --actions-toolbar-offset-y: #{px2rem(6)};
 
-  top: calc(var(--actions-toolbar-position-y) + var(--actions-toolbar-offset-y));
-  left: 50%;
+  inset-block-start: calc(var(--actions-toolbar-position-y) + var(--actions-toolbar-offset-y));
+  inset-inline-start: 50%;
   transform: translateX(-50%);
-  z-index: deprecated.$z-index-20;
+
+  // TODO: No DS z-index token for this value.
+  z-index: 20;
 }
 
 .viewport-actions-path {
-  z-index: deprecated.$z-index-3;
+  // TODO: No DS z-index token for this value.
+  z-index: 3;
 }
 
 .viewport-actions-container {
-  @include deprecated.flex-row;
-
-  background: var(--panel-background-color);
-  border-radius: deprecated.$br-12;
-  box-shadow: 0 0 deprecated.$s-12 0 var(--menu-shadow-color);
-  gap: deprecated.$s-8;
-  height: deprecated.$s-48;
-  padding: deprecated.$s-8;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  background: var(--color-background-primary);
+  border-radius: $br-12;
+  box-shadow: 0 0 px2rem(12) 0 var(--color-shadow-dark);
+  block-size: $sz-48;
+  padding: var(--sp-s);
   cursor: initial;
   pointer-events: initial;
-  min-width: deprecated.$s-400;
-  border: deprecated.$s-2 solid var(--panel-border-color);
+  min-inline-size: $sz-400;
+  border: $b-2 solid var(--color-background-quaternary);
 }
 
 .viewport-actions-title {
+  @include use-typography("body-small");
+
   flex: 1;
-  font-size: deprecated.$fs-12;
   color: var(--color-foreground-secondary);
-  padding-left: deprecated.$s-8;
-  width: max-content;
-}
-
-.done-btn {
-  @extend %button-primary;
-
-  text-transform: uppercase;
-  padding: deprecated.$s-8 deprecated.$s-20;
-  font-size: deprecated.$fs-11;
+  padding-inline-start: var(--sp-s);
+  inline-size: max-content;
 }
 
 .viewport-actions-no-rulers {

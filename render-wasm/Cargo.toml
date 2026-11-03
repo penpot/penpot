@@ -26,6 +26,7 @@ gl = "0.14.0"
 glam = "0.24.2"
 indexmap = "2.7.1"
 macros = { path = "macros" }
+miniz_oxide = "0.8.0"
 skia-safe = { version = "0.153.3", default-features = false, features = [
   "gl",
   "svg",

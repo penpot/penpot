@@ -18,8 +18,8 @@
    [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.viewer.shapes :as shapes]
    [app.main.ui.viewer.viewport-common :as vpc]
    [app.main.ui.viewer.viewport-wasm :as viewport.wasm]
@@ -218,11 +218,17 @@
              (st/emit! (dv/go-to-frame (:starting-frame flow))))))]
 
     (when flows
-      [:div {:on-click toggle-dropdown
-             :class (stl/css :view-options)}
-       [:span {:class (stl/css :icon)} deprecated-icon/play]
-       [:span {:class (stl/css :dropdown-title)} (:name current-flow)]
-       [:span {:class (stl/css :icon-dropdown)}  deprecated-icon/arrow]
+      [:div {:class (stl/css :view-options-wrapper)}
+       [:button {:type "button"
+                 :class (stl/css :view-options)
+                 :aria-expanded show-dropdown?
+                 :aria-haspopup "menu"
+                 :on-click toggle-dropdown}
+        [:> icon* {:icon-id i/play :size "s" :class (stl/css :icon)}]
+        [:span {:class (stl/css :dropdown-title)} (:name current-flow)]
+        [:> icon* {:icon-id i/arrow-down
+                   :size "s"
+                   :class (stl/css :icon-dropdown)}]]
        [:& dropdown {:show show-dropdown?
                      :on-close hide-dropdown}
         [:ul {:class (stl/css :dropdown)}
@@ -236,7 +242,7 @@
                  :on-click select-flow}
             [:span {:class (stl/css :label)} (:name flow)]
             (when (= flow-id (:id current-flow))
-              [:span {:class (stl/css :icon)} deprecated-icon/tick])])]]])))
+              [:> icon* {:icon-id i/tick :size "s" :class (stl/css :icon)}])])]]])))
 
 (mf/defc interactions-menu*
   [{:keys [interactions-mode]}]
@@ -253,10 +259,16 @@
              (dom/stop-propagation event)
              (st/emit! (dv/set-interactions-mode mode)))))]
 
-    [:div {:on-click toggle-dropdown
-           :class (stl/css :view-options)}
-     [:span {:class (stl/css :dropdown-title)} (tr "viewer.header.interactions")]
-     [:span {:class (stl/css :icon-dropdown)} deprecated-icon/arrow]
+    [:div {:class (stl/css :view-options-wrapper)}
+     [:button {:type "button"
+               :class (stl/css :view-options)
+               :aria-expanded (deref show-dropdown?)
+               :aria-haspopup "menu"
+               :on-click toggle-dropdown}
+      [:span {:class (stl/css :dropdown-title)} (tr "viewer.header.interactions")]
+      [:> icon* {:icon-id i/arrow-down
+                 :size "s"
+                 :class (stl/css :icon-dropdown)}]]
      [:& dropdown {:show @show-dropdown?
                    :on-close hide-dropdown}
       [:ul {:class (stl/css :dropdown)}
@@ -267,7 +279,7 @@
 
         [:span {:class (stl/css :label)} (tr "viewer.header.dont-show-interactions")]
         (when (= interactions-mode :hide)
-          [:span {:class (stl/css :icon)}  deprecated-icon/tick])]
+          [:> icon* {:icon-id i/tick :size "s" :class (stl/css :icon)}])]
 
        [:li {:class (stl/css-case :dropdown-element true
                                   :selected (= interactions-mode :show))
@@ -275,7 +287,7 @@
              :data-mode "show"}
         [:span {:class (stl/css :label)} (tr "viewer.header.show-interactions")]
         (when (= interactions-mode :show)
-          [:span {:class (stl/css :icon)}  deprecated-icon/tick])]
+          [:> icon* {:icon-id i/tick :size "s" :class (stl/css :icon)}])]
 
 
 
@@ -286,7 +298,7 @@
 
         [:span {:class (stl/css :label)} (tr "viewer.header.show-interactions-on-click")]
         (when (= interactions-mode :show-on-click)
-          [:span {:class (stl/css :icon)}  deprecated-icon/tick])]]]]))
+          [:> icon* {:icon-id i/tick :size "s" :class (stl/css :icon)}])]]]]))
 
 (defn animate-go-to-frame
   [animation current-viewport orig-viewport current-size orig-size wrapper-size]

@@ -46,6 +46,26 @@
     (t/is (= ["org-a" "org-b" "org-c" nil]
              (map :id (dts/sort-organizations organizations))))))
 
+(t/deftest names-starting-with-an-accented-letter-sort-as-the-plain-letter
+  ;; A code-point comparison would push "Ábaco", "Órbita" and "Ámbar"
+  ;; after "z"; accented letters must sort like their base letter.
+  (let [organizations [{:id "org-1" :name "OrgA"}
+                       nil
+                       {:id "org-2" :name "Órbita"}
+                       {:id "org-3" :name "beta"}
+                       {:id "org-4" :name "Ábaco"}]
+        teams [{:id "t1" :name "zeta"}
+               {:id "t2" :name "Personal projects" :is-default true}
+               {:id "t3" :name "apricot"}
+               {:id "t4" :name "Ámbar"}]
+        display-name (fn [team] (if (:is-default team) "Personal projects" (:name team)))]
+    (t/is (= ["Ábaco" "beta" "Órbita" "OrgA" nil]
+             (map :name (dts/sort-organizations organizations))))
+    (t/is (= ["Ámbar" "apricot" "zeta" "Personal projects"]
+             (map :name (dts/sort-organization-teams teams))))
+    (t/is (= ["Ámbar" "apricot" "zeta" "Personal projects"]
+             (map :name (dts/sort-all-teams teams display-name))))))
+
 (t/deftest closed-control-line-2-matrix
   (t/testing "profile with organizations, destination has an organization"
     (t/is (= "Org A"

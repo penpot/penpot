@@ -111,7 +111,7 @@
 
 (defn- generate-tooltip
   "Generates a tooltip for a given token"
-  [is-viewer shape theme-token token half-applied no-valid-value ref-not-in-active-set is-name-collision errors]
+  [is-viewer shape theme-token token half-applied no-valid-value ref-not-in-active-set error-message]
   (let [{:keys [name type resolved-value value]} token
         resolved-value-theme (:resolved-value theme-token)
         resolved-value (or resolved-value-theme resolved-value)
@@ -141,8 +141,8 @@
       ref-not-in-active-set
       (tr "workspace.tokens.ref-not-valid" name)
 
-      is-name-collision
-      (wte/resolve-error-message (first errors))
+      error-message
+      error-message
 
       no-valid-value
       (tr "workspace.tokens.value-not-valid")
@@ -237,9 +237,11 @@
 
         is-viewer? (not can-edit)
 
+        tokenscript? (contains? cf/flags :tokenscript)
+
         ref-not-in-active-set
-        (if (contains? cf/flags :tokenscript)
-          (seq (:errors resolved-token))
+        (if tokenscript?
+          (wte/has-error-code? :error.style-dictionary/missing-reference errors)
           (and is-reference?
                (not (contains-reference-value? value active-theme-tokens))))
 
@@ -249,6 +251,11 @@
                             (= :error.token/name-collision))
 
         no-valid-value (seq errors)
+
+        ;; Tokenscript errors carry their own message, as in the edit form.
+        error-message
+        (when (and no-valid-value (or tokenscript? name-collision))
+          (wte/resolve-error-message (first errors)))
 
         errors?
         (or ref-not-in-active-set
@@ -297,11 +304,11 @@
 
         on-hover
         (mf/use-fn
-         (mf/deps selected-shapes is-viewer? active-theme-tokens token half-applied? no-valid-value ref-not-in-active-set name-collision errors)
+         (mf/deps selected-shapes is-viewer? active-theme-tokens token half-applied? no-valid-value ref-not-in-active-set error-message)
          (fn [_]
            (let [theme-token (get active-theme-tokens name)
                  title (generate-tooltip is-viewer? (first selected-shapes) theme-token token
-                                         half-applied? no-valid-value ref-not-in-active-set name-collision errors)]
+                                         half-applied? no-valid-value ref-not-in-active-set error-message)]
              (reset! tooltip-content* title))))
 
         ;; `tooltip-content` may hold rich (hiccup) content, so it's wrapped
@@ -346,9 +353,8 @@
         [:> icon*
          {:icon-id i/broken-link
           :class (stl/css :token-pill-icon)
-          :aria-label (if name-collision
-                        (wte/resolve-error-message (first errors))
-                        (tr "workspace.tokens.missing-reference"))}]
+          :aria-label (or error-message
+                          (tr "workspace.tokens.missing-reference"))}]
 
         color
         [:> swatch* {:background color

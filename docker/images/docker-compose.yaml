@@ -26,6 +26,9 @@
 x-flags: &penpot-flags
   PENPOT_FLAGS: disable-email-verification enable-smtp enable-prepl-server disable-secure-session-cookies enable-mcp enable-admin-console
 
+## Public URI where Penpot is reached. To serve Penpot from a subpath, include
+## it with a trailing slash, e.g. https://example.com/penpot/. A reverse proxy in
+## front must forward the subpath unchanged, without rewriting it.
 x-uri: &penpot-public-uri
   PENPOT_PUBLIC_URI: http://localhost:9001
 
@@ -110,6 +113,8 @@ services:
       # ## internet with HTTPS using traefik.
 
       # - "traefik.http.routers.penpot-https.rule=Host(`<DOMAIN_NAME>`)"
+      # ## When Penpot is served from a subpath, match it too:
+      # - "traefik.http.routers.penpot-https.rule=Host(`<DOMAIN_NAME>`) && PathPrefix(`/<SUBPATH>`)"
       # - "traefik.http.routers.penpot-https.entrypoints=websecure"
       # - "traefik.http.routers.penpot-https.tls.certresolver=letsencrypt"
       # - "traefik.http.routers.penpot-https.tls=true"
@@ -186,6 +191,10 @@ services:
       PENPOT_SMTP_TLS: "false"
       PENPOT_SMTP_SSL: "false"
 
+      ## Inbox for the feedback that MCP agents send. Set it together with
+      ## PENPOT_MCP_BACKEND_URI on the penpot-mcp service.
+      # PENPOT_MCP_FEEDBACK_EMAIL: mcp-feedback@example.com
+
   penpot-admin-console:
     image: "penpotapp/admin-console:${PENPOT_VERSION:-2.18}"
     restart: always
@@ -209,6 +218,11 @@ services:
     restart: always
     networks:
       - penpot
+
+    # environment:
+      ## Offers the submit_feedback tool, which emails agent feedback through the
+      ## backend. Set it together with PENPOT_MCP_FEEDBACK_EMAIL on the backend.
+      # PENPOT_MCP_BACKEND_URI: http://penpot-backend:6060/
 
   penpot-exporter:
     image: "penpotapp/exporter:${PENPOT_VERSION:-2.18}"

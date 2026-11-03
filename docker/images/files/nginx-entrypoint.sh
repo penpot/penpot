@@ -51,6 +51,23 @@ update_oidc_name /var/www/app/js/config.js
 ## Nginx Config
 #########################################
 
+# Path of PENPOT_PUBLIC_URI (e.g. /penpot/ for https://example.com/penpot/).
+# Requests below it are rewritten to the root, so the proxy in front of this
+# server forwards them unchanged.
+PENPOT_PUBLIC_PATH="$(sed -E 's|^[A-Za-z][A-Za-z0-9+.-]*://[^/]*||; s|[?#].*$||' <<< "${PENPOT_PUBLIC_URI:-}")"
+PENPOT_PUBLIC_PATH="/${PENPOT_PUBLIC_PATH#/}"
+export PENPOT_PUBLIC_PATH="${PENPOT_PUBLIC_PATH%/}/"
+
+if [ "$PENPOT_PUBLIC_PATH" != "/" ]; then
+    # shellcheck disable=SC2016 # literal regex metacharacters
+    _public_path_regex="$(sed -E 's/[][\.*^$(){}+?|]/\\&/g' <<< "$PENPOT_PUBLIC_PATH")"
+    export PENPOT_PUBLIC_PATH_DIRECTIVES="location = ${PENPOT_PUBLIC_PATH%/} { absolute_redirect off; return 301 ${PENPOT_PUBLIC_PATH}\$is_args\$args; }
+        rewrite ^${_public_path_regex}(.*)\$ /\$1 last;"
+    unset _public_path_regex
+else
+    export PENPOT_PUBLIC_PATH_DIRECTIVES=""
+fi
+
 export PENPOT_BACKEND_URI=${PENPOT_BACKEND_URI:-http://penpot-backend:6060}
 export PENPOT_EXPORTER_URI=${PENPOT_EXPORTER_URI:-http://penpot-exporter:6061}
 export PENPOT_HTTP_SERVER_MAX_BODY_SIZE=${PENPOT_HTTP_SERVER_MAX_BODY_SIZE:-367001600} # Default to 350MiB
@@ -58,7 +75,7 @@ export PENPOT_IPV6_LISTEN_DIRECTIVE=${PENPOT_IPV6_LISTEN_DIRECTIVE:-"listen [::]
 if is_truthy "${PENPOT_DISABLE_IPV6_LISTEN:-}"; then
   export PENPOT_IPV6_LISTEN_DIRECTIVE=""
 fi
-envsubst "\$PENPOT_BACKEND_URI,\$PENPOT_EXPORTER_URI,\$PENPOT_HTTP_SERVER_MAX_BODY_SIZE,\$PENPOT_IPV6_LISTEN_DIRECTIVE" \
+envsubst "\$PENPOT_BACKEND_URI,\$PENPOT_EXPORTER_URI,\$PENPOT_HTTP_SERVER_MAX_BODY_SIZE,\$PENPOT_IPV6_LISTEN_DIRECTIVE,\$PENPOT_PUBLIC_PATH,\$PENPOT_PUBLIC_PATH_DIRECTIVES" \
         < /tmp/nginx.conf.template > /etc/nginx/nginx.conf
 
 if [[ $PENPOT_FLAGS == *"enable-admin-console"* ]]; then

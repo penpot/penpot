@@ -16,7 +16,7 @@
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.dom :as dom]
    [app.util.dom.normalize-wheel :as nw]
    [app.util.i18n :refer [tr]]
@@ -24,12 +24,6 @@
    [app.util.storage :as storage]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
-
-(def ^:private arrow-icon
-  (deprecated-icon/icon-xref :arrow (stl/css :arrow-icon)))
-
-(def ^:private download-icon
-  (deprecated-icon/icon-xref :add (stl/css :download-icon)))
 
 (def builtin-templates
   (l/derived :builtin-templates st/state))
@@ -77,6 +71,7 @@
     [:div {:class (stl/css :title)}
      [:button {:tab-index "0"
                :class (stl/css :title-btn)
+               :aria-expanded (not is-collapsed)
                :on-click on-click
                :on-key-down on-key-down}
       [:span {:class (stl/css :title-text)}
@@ -85,11 +80,13 @@
         [:span {:class (stl/css :title-icon-container)}
          [:span {:class (stl/css :title-icon-text)} (tr "labels.show")]
          [:span {:class (stl/css :title-icon :title-icon-collapsed)}
-          arrow-icon]]
+          [:> icon* {:icon-id i/arrow
+                     :class (stl/css :arrow-icon)}]]]
         [:span {:class (stl/css :title-icon-container)}
          [:span {:class (stl/css :title-icon-text)} (tr "labels.hide")]
          [:span {:class (stl/css :title-icon)}
-          arrow-icon]])]]))
+          [:> icon* {:icon-id i/arrow
+                     :class (stl/css :arrow-icon)}]]])]]))
 
 (mf/defc card-item*
   [{:keys [item index is-visible collapsed on-import]}]
@@ -131,7 +128,8 @@
         (if @hover?
           (tr "dashboard.template.add-to-project")
           (:name item))]
-       download-icon]]]))
+       [:> icon* {:icon-id i/add
+                  :class (stl/css :download-icon)}]]]]))
 
 (mf/defc card-item-link*
   [{:keys [total is-visible collapsed section]}]
@@ -286,8 +284,10 @@
        [:button {:class (stl/css :move-button :move-left)
                  :tab-index (if ^boolean collapsed "-1" "0")
                  :on-click on-move-left
-                 :on-key-down on-move-left}
-        arrow-icon])
+                 :on-key-down on-move-left
+                 :aria-label (tr "labels.previous")}
+        [:> icon* {:icon-id i/arrow
+                   :class (stl/css :arrow-icon)}]])
 
      (when (:right @can-move)
        [:button {:class (stl/css :move-button :move-right)
@@ -295,4 +295,5 @@
                  :on-click on-move-right
                  :on-key-down  on-move-right
                  :aria-label (tr "labels.next")}
-        arrow-icon])]))
+        [:> icon* {:icon-id i/arrow
+                   :class (stl/css :arrow-icon)}]])]))

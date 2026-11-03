@@ -744,8 +744,9 @@
 #_:clj-kondo/ignore
 (defn set-wasm-modifiers
   [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis
-                        subtree-ids-by-id selection-rect-cache]
-                 :or {ignore-constraints false ignore-snap-pixel false snap-ignore-axis nil}
+                        subtree-ids-by-id selection-rect-cache interactive?]
+                 :or {ignore-constraints false ignore-snap-pixel false snap-ignore-axis nil
+                      interactive? true}
                  :as params}]
   (let [modif-tree (without-nil-ids modif-tree)]
     (ptk/reify ::set-wasm-modifiers
@@ -764,8 +765,10 @@
         ;; the renderer into fast + atlas-backdrop mode so the live
         ;; preview is cheap, tiles never appear sequentially and the main
         ;; thread is not blocked. The pair is closed in
-        ;; `clear-local-transform`.
-        (ensure-interactive-transform-start!)
+        ;; `clear-local-transform`. Previews outside a gesture pass
+        ;; `:interactive? false` to keep full quality rendering.
+        (when interactive?
+          (ensure-interactive-transform-start!))
         (let [snap-pixel?  (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
               translation? (every? #(ctm/only-move? (:modifiers %)) (vals modif-tree))]
 

@@ -52,6 +52,13 @@
     (t/is (= :authentication (th/ex-type (:error out))))
     (t/is (= :authentication-required (th/ex-code (:error out))))))
 
+(t/deftest authenticate-rejects-a-key-it-does-not-declare
+  (let [out (th/management-command! {::th/type :authenticate
+                                     ::rpc/auth-key-id :exporter})]
+    (t/is (not (th/success? out)))
+    (t/is (= :authorization (th/ex-type (:error out))))
+    (t/is (= :shared-key-not-allowed (th/ex-code (:error out))))))
+
 (t/deftest create-and-update-organization-invitations-audit-props
   (let [owner-id-ref (atom nil)]
     (with-mocks [email-mock {:target 'app.email/send :return nil}
@@ -250,6 +257,53 @@
         (t/is (true? (get-in teams-by-id [(:id default-team) :is-default])))
         (t/is (false? (get-in teams-by-id [(:id owned-team) :is-default])))
         (t/is (false? (get-in teams-by-id [(:id member-team) :is-default])))))))
+
+(t/deftest get-organization-member-teams-returns-roles-within-given-teams
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile      (th/create-profile* 1 {:is-active true})
+          other        (th/create-profile* 2 {:is-active true})
+          owned-team   (th/create-team* 1 {:profile-id (:id profile)})
+          admin-team   (th/create-team* 2 {:profile-id (:id other)})
+          editor-team  (th/create-team* 3 {:profile-id (:id other)})
+          viewer-team  (th/create-team* 4 {:profile-id (:id other)})
+          foreign-team (th/create-team* 5 {:profile-id (:id other)})
+          not-member   (th/create-team* 6 {:profile-id (:id other)})
+          deleted-team (th/create-team* 7 {:profile-id (:id profile)})
+          _            (th/db-update! :team
+                                      {:deleted-at (ct/now)}
+                                      {:id (:id deleted-team)})
+          _            (doseq [[team role] [[admin-team :admin]
+                                            [editor-team :editor]
+                                            [viewer-team :viewer]
+                                            [foreign-team :editor]]]
+                         (th/create-team-role* {:team-id (:id team)
+                                                :profile-id (:id profile)
+                                                :role role}))
+          team-ids     (mapv :id [owned-team admin-team editor-team viewer-team
+                                  not-member deleted-team
+                                  {:id (:default-team-id profile)}])
+          out          (th/management-command! {::th/type :get-organization-member-teams
+                                                ::rpc/profile-id (:id other)
+                                                :profile-id (:id profile)
+                                                :team-ids team-ids})]
+      (t/is (th/success? out))
+      (t/is (= {(:id owned-team)  :owner
+                (:id admin-team)  :admin
+                (:id editor-team) :editor
+                (:id viewer-team) :viewer}
+               (->> out :result (map (juxt :id :role)) (into {}))))
+      (t/is (= (:name owned-team)
+               (->> out :result (d/seek #(= (:id owned-team) (:id %))) :name))))))
+
+(t/deftest get-organization-member-teams-empty-team-ids
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          out     (th/management-command! {::th/type :get-organization-member-teams
+                                           ::rpc/profile-id (:id profile)
+                                           :profile-id (:id profile)
+                                           :team-ids []})]
+      (t/is (th/success? out))
+      (t/is (= [] (:result out))))))
 
 (t/deftest update-profile-theme-updates-only-theme
   (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
@@ -575,6 +629,34 @@
     (let [msg (-> @calls first :message)]
       (t/is (= :organization-change-sso (:type msg)))
       (t/is (= organization-id (:organization-id msg))))))
+
+(t/deftest notify-organization-sso-change-emits-token-revoked-when-updated-props
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [organization-id (uuid/random)
+          out             (with-redefs [mbus/pub! (constantly nil)]
+                            (th/management-command! {::th/type :notify-organization-sso-change
+                                                     :organization-id organization-id
+                                                     :updated-props true
+                                                     :announce-activation false}))
+          revoked         (->> (:call-args-list @audit-mock)
+                               (map second)
+                               (filter #(= "organization-sso-token-revoked" (:name %))))]
+      (t/is (th/success? out))
+      (t/is (= 1 (count revoked)))
+      (t/is (= uuid/zero (:profile-id (first revoked))))
+      (t/is (= {:organization-id organization-id} (:props (first revoked))))))
+
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [out (with-redefs [mbus/pub! (constantly nil)]
+                (th/management-command! {::th/type :notify-organization-sso-change
+                                         :organization-id (uuid/random)
+                                         :updated-props false
+                                         :announce-activation false}))
+          revoked (->> (:call-args-list @audit-mock)
+                       (map second)
+                       (filter #(= "organization-sso-token-revoked" (:name %))))]
+      (t/is (th/success? out))
+      (t/is (empty? revoked)))))
 
 (t/deftest notify-user-organizations-deletion-renames-or-deletes-teams-and-publishes-per-organization-events
   ;; --- Deferred owned-organizations: nil during setup, filled before RPC ---

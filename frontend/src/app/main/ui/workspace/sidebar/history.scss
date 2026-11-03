@@ -4,13 +4,14 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+@use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
 
 .history-toolbox {
   display: flex;
   flex-direction: column;
-  background-color: var(--panel-background-color);
+  background-color: var(--color-background-primary);
 }
 
 .history-entry-empty {
@@ -22,21 +23,29 @@
 }
 
 .history-entries {
-  height: calc(100vh - deprecated.$s-100);
-  padding: deprecated.$s-12;
+  block-size: calc(100vh - #{px2rem(100)});
+  padding: var(--sp-m);
   overflow: hidden auto;
-  font-size: deprecated.$fs-12;
+  font-size: px2rem(12);
 }
 
 .history-entry {
+  --entry-background-color: var(--color-background-tertiary);
+  --entry-foreground-color: var(--color-foreground-secondary);
+  --entry-border-color: transparent;
+  --entry-arrow-opacity: 0;
+
   display: flex;
   justify-content: center;
   flex-direction: column;
-  min-height: deprecated.$s-32;
-  margin: deprecated.$s-4;
-  padding: deprecated.$s-4 deprecated.$s-8;
-  border: deprecated.$s-2 solid transparent;
-  border-radius: deprecated.$s-8;
+  min-block-size: $sz-32;
+  margin: var(--sp-xs);
+
+  // The end padding is small because the details button leaves 6px
+  // around its 12px arrow.
+  padding: var(--sp-xs) var(--sp-xxs) var(--sp-xs) var(--sp-s);
+  border: $b-2 solid var(--entry-border-color);
+  border-radius: $br-8;
   background-color: var(--entry-background-color);
   cursor: pointer;
   transition: border 0.2s;
@@ -46,18 +55,18 @@
     align-items: center;
 
     .history-entry-summary-icon {
-      svg {
-        @extend %button-icon-small;
-
-        stroke: var(--entry-foreground-color);
-      }
+      display: flex;
+      color: var(--entry-foreground-color);
     }
 
     .history-entry-summary-text {
       display: flex;
       flex-direction: column;
-      gap: deprecated.$s-2;
-      margin: 0 deprecated.$s-8;
+      gap: var(--sp-xxs);
+
+      // The DS icon draws 12px inside a 16px box: a smaller start margin
+      // keeps the text where it was.
+      margin-inline: var(--sp-xs) var(--sp-s);
       color: var(--color-foreground-primary);
       min-inline-size: 0;
     }
@@ -73,7 +82,7 @@
     // template ("hash · time by Name") survive rendering. Issue #7660.
     .history-entry-meta {
       color: var(--color-foreground-secondary);
-      font-size: deprecated.$fs-10;
+      font-size: px2rem(10);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -99,28 +108,28 @@
       white-space: nowrap;
     }
 
-    .history-entry-summary-button {
-      opacity: deprecated.$op-0;
-      margin-left: auto;
+    // Tooltip wrapper of the details button, pushed to the end of the row.
+    .history-entry-summary-button-wrapper {
+      margin-inline-start: auto;
+    }
 
-      &.button-opened {
-        svg {
-          transform: rotate(90deg);
-        }
+    .history-entry-summary-button {
+      opacity: var(--entry-arrow-opacity);
+
+      &:focus-visible {
+        --entry-arrow-opacity: 1;
       }
 
-      svg {
-        @extend %button-icon-small;
-
-        stroke: var(--entry-foreground-color);
+      &.button-opened .history-entry-summary-arrow {
+        transform: rotate(90deg);
       }
     }
   }
 
   .history-entry-detail {
     display: block;
-    padding-top: deprecated.$s-16;
-    color: var(--modal-text-foreground-color);
+    padding-block-start: var(--sp-l);
+    color: var(--color-foreground-secondary);
 
     .history-entry-details-list {
       margin: 0;
@@ -128,31 +137,16 @@
   }
 
   &.disabled {
-    border-color: var(--entry-border-color-disabled);
-    background-color: var(--entry-background-color-disabled);
+    --entry-background-color: var(--color-background-primary);
+    --entry-border-color: var(--color-background-quaternary);
   }
 
   &.hover,
   &:hover {
-    background-color: var(--entry-background-color-hover);
-    color: var(--entry-foreground-color-hover);
+    --entry-background-color: var(--color-background-quaternary);
+    --entry-foreground-color: var(--color-foreground-primary);
+    --entry-arrow-opacity: 1;
 
-    .history-entry-summary {
-      .history-entry-summary-icon {
-        svg {
-          stroke: var(--entry-foreground-color-hover);
-        }
-      }
-
-      .history-entry-summary-button {
-        opacity: deprecated.$op-10;
-
-        &.button-opened {
-          svg {
-            transform: rotate(90deg);
-          }
-        }
-      }
-    }
+    color: var(--color-foreground-primary);
   }
 }

@@ -325,8 +325,7 @@ First, set the complete public URL in `docker-compose.yaml`:
 PENPOT_PUBLIC_URI: https://mycompany.com/penpot/
 ```
 
-Then route the subpath to the Penpot frontend and remove the prefix before
-forwarding the request:
+Then route the subpath to the Penpot frontend, forwarding the path unchanged:
 
 ```nginx
 server {
@@ -344,8 +343,6 @@ server {
   }
 
   location /penpot/ {
-    rewrite ^/penpot/(.*)$ /$1 break;
-
     proxy_set_header Host $http_host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Scheme $scheme;
@@ -359,9 +356,10 @@ server {
 }
 ```
 
-This single location also covers the API and WebSocket endpoints because NGINX
-forwards them after removing `/penpot`. Keep the trailing slash in
-`PENPOT_PUBLIC_URI`.
+This single location covers every Penpot endpoint, WebSockets included. Keep
+the trailing slash in `PENPOT_PUBLIC_URI`, and do not add a path to `proxy_pass`
+(such as `http://localhost:9001/`): NGINX would then replace the `/penpot/`
+prefix instead of forwarding it.
 
 ### Example with CADDY SERVER
 

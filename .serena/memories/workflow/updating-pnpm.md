@@ -23,12 +23,12 @@ file (never pipe tool output through filters).
 - The store survives `node_modules` cleans. It is content-addressed and
   integrity-verified, so it cannot go stale; staleness lives in
   node_modules. Only `scripts/clean-node-modules --store` removes it.
-- Every first-party `package.json` (35 files: workspace roots plus
+- Every first-party `package.json` (34 files: workspace roots plus
   members) must carry a `packageManager` field with the identical
   `pnpm@<version>+sha512.<hash>` value. Do not let them drift.
   `external/` (vendored trees with their own lifecycles), `.opencode/`,
-  `.pnpm-store/`, `bundles/` and `docker/images/bundle-*` copies are
-  never stamped.
+  `.pnpm-store/`, `bundles/`, `target/` build output and
+  `docker/images/bundle-*` copies are never stamped.
 - pnpm is a system binary everywhere (devenv image, CI runners, Docker
   images). Nothing may call corepack: it is gone from Node 25+. pnpm
   auto-downloads the `packageManager` version on mismatch
@@ -60,7 +60,7 @@ file (never pipe tool output through filters).
 3. From the repo root, on a host whose system pnpm is the target version
    (rebuilt devenv), run `scripts/sync-pnpm-version`. It resolves the
    integrity hash via `pnpm view` + node (no npm, no corepack, no
-   python3) and stamps the identical field into all 35 files, replacing
+   python3) and stamps the identical field into all 34 files, replacing
    only the value line (each file keeps its own indent) and inserting
    the key after `"name"`/`"version"` where missing. Explicit version
    instead: `scripts/sync-pnpm-version <version>`. The explicit form works
@@ -71,6 +71,7 @@ file (never pipe tool output through filters).
 4. Run `scripts/sync-pnpm-version --install` (plain `pnpm install` in
    each of the 11 workspace roots) to refresh lockfile metadata, then
    fix any failing workspace (see gotchas) and re-run that directory.
+   For a version-only bump, `pnpm install --lockfile-only` in each root is enough: it rewrites only the pnpm self-reference entries and needs no node_modules. The repo-root `pnpm-lock.yaml` is rewritten by itself on the first `pnpm` call that self-installs the target version.
 
 ## Gotchas
 
@@ -88,13 +89,17 @@ file (never pipe tool output through filters).
   so a nested one silently forks install and lockfile behavior. Do not
   reintroduce it.
 - `media-processor/target/package.json` is a generated, gitignored copy that
-  the script also stamps, so stamping and `--check` report 36 files while
-  only 35 are tracked. A stale copy there makes `--check` fail with nothing
+  the script also stamps, so stamping and `--check` report 35 files while
+  only 34 are tracked. A stale copy there makes `--check` fail with nothing
   wrong in the repo: delete `media-processor/target` and re-run.
 - Expect metadata-only lockfile diffs when only the pnpm version moves:
   the pnpm self-reference entries, plus a new `packageManagerDependencies`
   section in lockfiles last written by older pnpm. Large diffs mean
   re-resolution; inspect them before accepting.
+- A backport merge of main into staging can bring a newer `PNPM_VERSION` in `docker/` while every `packageManager` field stays behind, since main receives partial `.github/`+`docker/` backports from develop. Resolve those conflicts with main's version and run `scripts/sync-pnpm-version <version>` in the same merge.
+- Direction does not decide the winner, the version does. A maintenance→main merge (`main-2.18.x` into `main`) can carry the newer Node and pnpm pins in `docker/` and the `plugins-deploy-*` workflows while main's `.nvmrc` and 35 `packageManager` fields stay on the older pair. Take the newer pair on every pin site (`docker/`, workflows, `.nvmrc`, `packageManager`) and run `scripts/sync-pnpm-version <version>` in the same merge; check with `--check` plus `pnpm install --lockfile-only --frozen-lockfile` per workspace.
+- Those merges conflict on the pnpm self-reference block in all 11 lockfiles (importers `packageManagerDependencies`, `packages/@pnpm/exe.*@<ver>`, `pnpm@<ver>` and the matching `snapshots` entries). Resolve each workspace's lockfile keeping its own importer/package resolution and swapping only that block to the newer version. Do not start from the older side and regenerate with `pnpm install --lockfile-only`: pnpm re-resolves every changed range upward (this merge took root `@playwright/test` from 1.63.0 to 1.64.1 and `@modelcontextprotocol/server` from 2.3.1 to 2.4.0), which pollutes the merge with unrelated bumps. If a workspace later needs a real re-resolution after a manifest bump, `pnpm install --lockfile-only --fix-lockfile` accepts the hand-merged file and only fills what the manifests demand.
+- `pnpm install` cannot run in `frontend` or `exporter` when `github.com` does not resolve: the `@penpot/svgo` git dependency triggers a `git fetch`. Frontend's lockfile entry carries no integrity, so pnpm always refetches; exporter's has one and still works. For frontend, resolve the self-reference hunks only.
 
 ## Verification
 
