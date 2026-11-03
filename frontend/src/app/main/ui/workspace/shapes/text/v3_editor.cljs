@@ -933,14 +933,17 @@
 
     ;; The workspace leaves undo to the active editor. Handle the same events
     ;; for keyboard shortcuts, native history input and workspace menu actions.
+    ;; A menu takes the focus and blurs the WASM editor, which then ignores the
+    ;; restore: take the focus back first, as the edition is still open.
     (mf/use-effect
-     (mf/deps)
+     (mf/deps focus-editor!)
      (fn []
        (let [subscription
              (->> st/stream
                   (rx/filter #(or (ptk/type? ::dwu/undo %) (ptk/type? ::dwu/redo %)))
                   (rx/subs! (fn [event]
                               (when-not (mf/ref-val composing-ref)
+                                (focus-editor!)
                                 (st/emit! (dwt/v3-restore-history
                                            (if (ptk/type? ::dwu/undo event) :undo :redo)))
                                 (reset-input-node (mf/ref-val contenteditable-ref))
