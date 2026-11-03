@@ -156,6 +156,16 @@
           col-gap (:column-gap result)]
       (t/is (mth/close? 50.0 col-gap 0.01)))))
 
+(t/deftest grid-gap-space-around-without-tracks-keeps-the-gap
+  (let [frame  (make-grid-frame :layout-justify-content :space-around
+                                :layout-align-content :space-around
+                                :layout-grid-columns []
+                                :layout-grid-rows []
+                                :layout-gap {:column-gap 5 :row-gap 7})
+        result (gld/calc-layout-data frame (bounds-for frame) [] {} {})]
+    (t/is (mth/close? 5 (:column-gap result)))
+    (t/is (mth/close? 7 (:row-gap result)))))
+
 (t/deftest grid-column-gap-space-between
   (t/testing "justify-content :space-between increases column-gap correctly"
     ;; free = 100; num-cols = 2; formula: 100 / (2-1) = 100
