@@ -1966,6 +1966,28 @@
         (turn shape)
         shape))))
 
+(defn- stored-turn
+  "The rotation that `shape`, just turned by `angle` with its subtree, stores:
+   `rotation` plus `angle`, or minus it when only that one decomposes its
+   transform with its flips. A mirror that flips after its turn turns the
+   other way."
+  [shape rotation angle]
+  (let [{:keys [a b c d]} (or (:transform shape) (gmt/matrix))
+        mirrored (not= (boolean (:flip-x shape)) (boolean (:flip-y shape)))
+        sign     (if (:flip-x shape) -1 1)
+        turn     (mth/degrees (mth/atan2 (* sign b) (* sign a)))
+        same?    #(mth/close? (mod (- %1 %2 -180) 360) 180 0.01)
+        stores?  (fn [value]
+                   (or (same? value turn)
+                       (and mirrored (same? value (- turn)))
+                       (and (:flip-x shape) (:flip-y shape) (same? value (+ turn 180)))))
+        plus     (mod (+ rotation angle) 360)
+        minus    (mod (- rotation angle) 360)]
+    (if (and (= mirrored (neg? (- (* a d) (* b c))))
+             (not (stores? plus)) (stores? minus))
+      minus
+      plus)))
+
 (defn orient-like
   "Turn the subtree of `head` around `center` to match `target`'s matrix.
    Compose flip flags with the roots, independent of rotation step size."
@@ -1984,12 +2006,13 @@
                   flip-x? flip-y?)
           (fn [shape]
             (let [flip-x (cond-> (:flip-x shape) flip-x? not)
-                  flip-y (cond-> (:flip-y shape) flip-y? not)]
-              (-> shape
-                  (assoc-in [:modifiers :rotation] angle)
-                  (gsh/apply-transform transform)
-                  (dissoc :modifiers)
-                  (assoc :flip-x flip-x :flip-y flip-y)))))))))
+                  flip-y (cond-> (:flip-y shape) flip-y? not)
+                  turned (-> shape
+                             (assoc-in [:modifiers :rotation] angle)
+                             (gsh/apply-transform transform)
+                             (dissoc :modifiers)
+                             (assoc :flip-x flip-x :flip-y flip-y))]
+              (assoc turned :rotation (stored-turn turned (or (:rotation shape) 0) angle)))))))))
 
 (defn- maybe-sync
   [c enabled? done? f]

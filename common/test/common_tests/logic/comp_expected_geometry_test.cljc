@@ -509,3 +509,22 @@
       (t/is (gpt/close? (first (:points (ths/get-shape (tm/file before) label)))
                         (first (:points copy)))
             (str case)))))
+
+(t/deftest a-turn-stores-a-mirrored-childs-rotation-as-its-transform-decomposes
+  ;; a child mirrored across its diagonal, stored as a vertical flip after a
+  ;; 270 degree turn, turned 45 degrees with its unflipped parent: only 225
+  ;; decomposes its new transform with the flip
+  (let [head    (cts/setup-shape {:type :frame :x 0 :y 0 :width 100 :height 100})
+        target  (gsh/transform-shape head (ctm/rotation-modifiers head (gsh/shape->center head) 45))
+        square  (cts/setup-shape {:type :rect :x 25 :y 25 :width 50 :height 50})
+        mirror  (gmt/matrix 0 1 1 0 0 0)
+        child   (assoc square
+                       :transform mirror :transform-inverse (gmt/inverse mirror)
+                       :rotation 270 :flip-y true
+                       :points [(gpt/point 25 25) (gpt/point 25 75) (gpt/point 75 75) (gpt/point 75 25)])
+        turned  ((cll/orient-like head target (gsh/shape->center head)) child)
+        {:keys [a b c d]} (:transform turned)]
+    (t/is (mth/close? 225 (:rotation turned) 0.01))
+    (t/is (every? true? (map #(mth/close? %1 %2 1e-6)
+                             [a b c d]
+                             [(- (/ (mth/sqrt 2) 2)) (/ (mth/sqrt 2) 2) (/ (mth/sqrt 2) 2) (/ (mth/sqrt 2) 2)])))))
