@@ -5,8 +5,9 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns performance-tests.render-wasm.protocol-test
-  "Tests drain, restore and interact with an injected clock and renderer.
-  Browser entry tests cover load and warm pan with a fake module."
+  "Tests render drains and camera sessions with a controllable clock.
+  A drain renders until Full completion. A camera session moves a view through
+  cached previews, a settling wait and final rendering to Full."
   (:require
    [app.common.render-wasm.wasm :as wasm]
    [benches.render-wasm.errors :as errors]
@@ -14,16 +15,17 @@
    [cljs.test :as t :include-macros true]))
 
 (defn- fake-clock
-  "Controllable ms clock. `advance!` moves it; tests drive time by hand."
+  "Returns a controllable clock in milliseconds.
+  `:now` reads it; `:advance!` adds the supplied duration."
   [start]
   (let [t (atom start)]
     {:now      (fn [] @t)
      :advance! (fn [ms] (swap! t + ms) @t)}))
 
 (defn- drain-hooks
-  "Fake hooks driving `:render` through `script` (a vector of frame types
-  returned in order), recording observed flags in `calls`. `:frame`
-  advances 16 ms per rAF; `:sleep` advances the clock without yielding."
+  "Returns hooks that simulate rendering and record flags in `calls`.
+  `:render` returns the frame types from `script` in order. Each `:frame` adds
+  16 ms to the clock; `:sleep` adds the requested wait. Both return Promises."
   [{:keys [clock script calls check]}]
   (let [remaining (atom (vec script))]
     {:now               (:now clock)
@@ -43,6 +45,31 @@
      :set-view          (fn [_view] nil)
      :set-view-start    (fn [] nil)
      :set-view-end      (fn [] nil)}))
+
+(t/deftest ^:async completion-keeps-the-renderer-endpoint
+  (doseq [camera [false true]]
+    (let [clock  (fake-clock 1000)
+          hooks  (assoc (drain-hooks {:clock clock :script [] :calls (atom [])})
+                        :render (fn [_ _]
+                                  ((:advance! clock) 7)
+                                  (js/queueMicrotask #((:advance! clock) 500))
+                                  wasm/FRAME_TYPE_FULL))
+          result (await
+                  (if camera
+                    (-> (protocol/start-camera! {:hooks hooks :view {:scale 1 :x 0 :y 0}}
+                                                {:settle-ms 0})
+                        (protocol/animate-view! {:to {:scale 1 :x 10 :y 5} :steps 1})
+                        (protocol/finish-camera!))
+                    (protocol/drain hooks {:flags 0 :origin 1000 :immediate true})))
+          end    (if camera 1023 1007)]
+      (t/is (= end (:end-ms result)))
+      (t/is (= (+ end 500) ((:now clock))))
+      (if camera
+        (do
+          (t/is (= 23 (:interact-ms result)))
+          (t/is (= 7 (:last-input-to-full-ms result)))
+          (t/is (= 7 (:time-to-full-ms result))))
+        (t/is (= 7 (:full-ms result)))))))
 
 (t/deftest immediate-full-reports-equal-boundaries
   (t/async done

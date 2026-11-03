@@ -25,6 +25,39 @@
                              (api/list-node (into [(api/token-node (quote fn)) argv] body))])}
       {:node node})))
 
+(defn defcommand
+  "Analyzes command options and both generated functions."
+  [{:keys [node]}]
+  (let [[_ command & forms] (:children node)
+        [doc forms]        (if (string? (api/sexpr (first forms)))
+                             [(first forms) (next forms)]
+                             [nil forms])
+        [options forms]    (if (api/map-node? (first forms))
+                             [(first forms) (next forms)]
+                             [nil forms])
+        [argv & body]      forms
+        [conditions body]  (if (and (api/map-node? (first body)) (next body))
+                             [(first body) (next body)]
+                             [nil body])
+        handlers           (:async (some-> options api/sexpr))
+        core               (api/list-node
+                            (into [(api/token-node 'fn)
+                                   (api/vector-node (mapv api/token-node handlers))]
+                                  body))
+        starred            (api/token-node (symbol (str (api/sexpr command) "*")))
+        measured           (get (some-> options api/sexpr) :measured-variant true)
+        definition         (api/list-node
+                            (into [(api/token-node 'defn) command]
+                                  (concat (when doc [doc]) [argv]
+                                          (when conditions [conditions]) [core])))]
+    {:node (api/list-node
+            (into [(api/token-node 'do)]
+                  (concat (when options [(api/coerce (dissoc (api/sexpr options) :async))])
+                          [definition]
+                          (when measured
+                            [(api/list-node [(api/token-node 'def)
+                                             starred command])]))))}))
+
 (defn resolve-or-reject
   "Analyzes the body of a Promise-returning form."
   [{:keys [node]}]

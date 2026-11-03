@@ -5,81 +5,90 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.runtime.protocol
-  "Shared render-completion protocol for the renderer benchmarks.
+  "Rendering until completion and timing camera movement.
 
-  The WASM renderer finishes progressively in tile budgets: one `_render`
-  call returns a frame type and the caller keeps calling until `FRAME_TYPE_FULL`.
-  This namespace implements a driver loop and camera sessions over an injected
-  `hooks` map. Callers use the same timing and continuation rules for
-  rendering and interaction:
+  A frame type describes the progress of one renderer call. A render drain is
+  a sequence of calls that ends when the renderer returns Full. Each call
+  produces a slice: its timestamp, flags, frame type and duration. Partial and
+  ViewportReady schedule another call on the next animation frame. Full marks
+  renderer submission of the completed request. GPU execution and display
+  proceed asynchronously.
 
-  - `drain` drives `_render` to `FRAME_TYPE_FULL`, collecting one slice per
-    call.
-  - `restore` puts the camera back to the case's initial view, then drains.
-    Callers run it outside timing.
-  - `start-camera!`, `preview-view!`, `animate-view!`, `sleep!` and
-    `finish-camera!` form one Promise-aware camera session.
+  A view contains zoom `:scale` and offsets `:x` and `:y`. A cached preview
+  draws from existing tiles, the fixed regions of the scene that the renderer
+  caches. A camera session starts an interaction, applies views with cached
+  previews, waits for the requested settling time, ends the interaction and
+  renders until Full. Each preview waits for an animation frame. Explicit
+  pauses can extend the active interval between camera start and settling.
+  Camera finalization starts immediately before ending the interaction and
+  ends at the final renderer return.
 
-  `hooks` supplies clock, scheduling and renderer operations. The browser
-  supplies real capabilities; tests supply fakes.
+  ## Hooks and errors
 
-  - `:now` zero-arg clock, ms.
-  - `:frame` zero-arg promise of the next rAF timestamp.
-  - `:sleep` `(fn [ms] ...)` promise.
-  - `:check` zero-arg guard. Throws on cancellation, wall deadline,
-    context loss or superseded ownership. The protocol checks before work,
-    after awaited frames and sleeps, and around render calls. It never
-    retries; synchronous stalls cannot be
-    interrupted in-page, so Node stays the outer backstop.
-  - `:render` `(fn [timestamp flags] ...)` returning a frame type.
-  - `:render-from-cache` zero-arg cached-preview call. The protocol times
-    the call itself and discards its return value.
-  - `:set-view` `(fn [view] ...)` with `view` a `{:scale :x :y}` map.
-  - `:set-view-start` / `:set-view-end` zero-arg camera calls.
+  Hooks are functions that supply clock, scheduling and renderer operations:
 
-  Guard and renderer errors reject the returned promises. The browser's
-  `:check` guard throws when work is cancelled, exceeds its deadline,
-  loses its rendering context or is no longer the active task.
+  - `:now` returns a clock reading in milliseconds.
+  - `:frame` resolves a Promise with the next animation frame's timestamp.
+  - `:sleep` accepts a requested wait in milliseconds and returns its Promise.
+  - `:check` is a guard. Returning authorizes work; throwing rejects it. It can
+    report cancellation, an expired deadline, loss of the WebGL2 graphics
+    context or replacement of the active renderer owner. An owner is the
+    execution authorized to use the renderer.
+  - `:render` accepts a timestamp and flags and returns a frame type.
+  - `:render-from-cache` draws one cached preview.
+  - `:set-view` accepts a view containing scale and both offsets.
+  - `:set-view-start` and `:set-view-end` start and end the interaction.
 
-  Frame types come from `app.common.render-wasm.wasm`: FRAME_TYPE_PARTIAL and
-  FRAME_TYPE_VIEWPORT_READY continue, FRAME_TYPE_FULL completes, FRAME_TYPE_NONE
-  or anything else fails the attempt. The previous returned frame type becomes the
-  next call's flags. `restore` and the final camera-session drain start with
-  the SyncTiles flag immediately (no rAF); a fresh drain can start with
-  different flags and wait for a frame.
+  Guards run before work, after awaited frames and waits, and around render
+  calls. Guard and renderer errors reject the returned Promises. Errors keep
+  available traces of render calls and pauses under `:partial`.
 
-  ## Metrics reported
+  Frame types come from `app.common.render-wasm.wasm`. Partial and ViewportReady
+  continue rendering, Full completes it, and other values reject with
+  `::unexpected-frame-type`. Each subsequent call receives the preceding frame
+  type as its flags. SyncTiles asks the renderer to update which tiles the
+  current view requires.
+  View restoration and camera finalization use that flag for their first call
+  and start immediately. A drain can also wait for an animation frame before
+  its first call. Later calls wait for animation frames.
 
-  - `:slices` one map per `_render` call:
-    - `:timestamp`: the rAF stamp the call ran under, or the clock value for
-      an immediate call without a frame
-    - `:flags`: flags passed in
-    - `:frame-type`: frame type returned
-    - `:duration-ms`: wall time of the call itself
-    Raw slices are retained as-is, including zero durations.
-  - `:cached-slices` one map per gesture frame:
-    - `:timestamp` rAF stamp of the input
-    - `:duration-ms`: the timed `_render-from-cache` call.
-    - `:view-and-preview-ms`: the view update and cached-preview call span.
-    Cached previews have their own shape: no flags or frame type.
-  - `:viewport-ready-ms` first Full-or-ViewportReady completion measured
-    from the drain origin. An immediate Full supplies both boundaries, so
-    they are equal there.
-  - `:full-ms` Full completion measured from the drain origin.
-  - `:interact-ms` from before `_set_view_start` through final Full.
-  - `:active-ms` from before `_set_view_start` to after the last cached
-    preview and its guard check, or an authored sleep after that preview.
-  - `:authored-sleeps` requested and actual durations of optional pauses.
-  - `:settling-requested-ms` the declared settle wait passed in.
-  - `:settling-actual-ms` from the end of the active span to finalization
-    start, recorded separately from the declared value.
-  - `:set-view-end-ms` wall time of the `_set_view_end` call itself.
-    Finalization starts before `_set_view_end`, so the final drain times
-    include it; the call time is still reported on its own.
-  - `:time-to-viewport-ready-ms` / `:time-to-full-ms` the drain's
-    boundaries, renamed at the interaction level.
-  - `:last-input-to-full-ms` from the clock read before the last view update
-    to the clock read after the final drain promise resolves."
+  ## Render calls and measured durations
+
+  A trace records individual calls and waits. Durations use milliseconds and
+  preserve raw numeric values, including zero. A drain origin is the clock
+  reading from which its completion durations start.
+
+  - `:slices` contains one entry per renderer call:
+    - `:timestamp`: the animation frame's timestamp or the current clock
+      reading for an immediate call.
+    - `:flags`: the flags passed to the renderer.
+    - `:frame-type`: the returned frame type.
+    - `:duration-ms`: elapsed time during the call.
+  - `:cached-slices` contains one entry per cached preview:
+    - `:timestamp`: the animation frame's timestamp for the view update.
+    - `:duration-ms`: elapsed time during the cached render call.
+    - `:view-and-preview-ms`: elapsed time for the view update and preview.
+  - `:viewport-ready-ms` measures from the drain origin to the first call that
+    returns ViewportReady or Full. It equals `:full-ms` when the first such
+    call returns Full.
+  - `:full-ms` measures from the drain origin to the call that returns Full.
+  - `:end-ms` is the clock reading immediately after that final call returns.
+  - `:interact-ms` measures from immediately before camera start through the
+    final renderer return.
+  - `:active-ms` measures from camera start through the last cached preview and
+    its guard check, or through an explicit pause that follows the preview.
+  - `:authored-sleeps` contains requested and observed durations of explicit
+    pauses during the active interval.
+  - `:settling-requested-ms` is the requested settling wait.
+  - `:settling-actual-ms` measures from the end of the active interval to the
+    start of camera finalization.
+  - `:set-view-end-ms` measures the call that ends the interaction.
+  - `:time-to-viewport-ready-ms` measures from camera finalization to the first
+    ViewportReady or Full result. `:time-to-full-ms` ends at Full. Both include
+    the call that ends the interaction.
+  - `:last-input-to-full-ms` measures from immediately before the last view
+    update to the final renderer return. The initial input time equals camera
+    start; each view update replaces it."
   (:require-macros
    [benches.render-wasm.runtime.protocol :refer [resolve-or-reject resolve-or-reject-with]])
   (:require
@@ -88,14 +97,15 @@
 
 
 (defn- partial-error
-  "Attaches available trace evidence to a rejection without adding clock reads.
-  Deeper failure evidence takes precedence over a caller's earlier state."
+  "Returns an error with completed traces under `:partial`.
+  Trace fields already present in the error take precedence over `evidence`."
   [cause evidence]
   (errors/with-context cause (errors/message-of cause "renderer protocol failed")
     {:partial evidence}))
 
 (defn- next-render-timestamp
-  "Gets an immediate clock timestamp or awaits the next frame timestamp."
+  "Resolves to the current clock reading for an immediate render, or to the
+  next animation frame's timestamp."
   [{:keys [now frame]} immediate?]
   (if immediate?
     (js/Promise.resolve (now))
@@ -103,7 +113,8 @@
 
 
 (defn- render-slice
-  "Times one render call and adds its slice to the drain state."
+  "Returns the updated drain state, frame type and endpoint for one render call.
+  The state includes the completed call in its `:slices` trace."
   [{:keys [now check render]}
    {:keys [flags] :as state}
    timestamp]
@@ -133,7 +144,7 @@
 
 
 (defn- viewport-ready-time
-  "Keeps the first submission boundary that exposes the requested viewport."
+  "Returns the elapsed time to the first ViewportReady or Full result."
   [current-ready-ms frame-type ended-ms origin-ms]
   (or current-ready-ms
       (when (or (= frame-type wasm/FRAME_TYPE_VIEWPORT_READY)
@@ -142,7 +153,8 @@
 
 
 (defn- advance-drain-state
-  "Updates progressive completion or rejects with the available raw slices."
+  "Updates the continuation flags and completion time for a returned frame type.
+  An unexpected type throws an error containing the completed render calls."
   [{:keys [viewport-ready-ms] :as state}
    frame-type
    ended-ms
@@ -161,45 +173,36 @@
                               origin-ms)))
 
 (defn- drain-complete?
-  "Tests for the renderer's Full submission boundary."
+  "Returns whether the renderer reported Full completion."
   [frame-type]
   (= frame-type wasm/FRAME_TYPE_FULL))
 
 (defn- drain-result
-  "Returns raw slices and completion times from the drain origin."
+  "Returns traces of render calls, the final clock reading and completion durations
+  measured from the drain origin."
   [{:keys [slices viewport-ready-ms]}
    ended-ms
    origin-ms]
   {:slices            slices
+   :end-ms            ended-ms
    :viewport-ready-ms viewport-ready-ms
    :full-ms           (- ended-ms origin-ms)})
 
 
 (defn drain
-  "Drives `_render` to `FRAME_TYPE_FULL` and resolves to
-   `{:slices [...] :viewport-ready-ms ... :full-ms ...}`.
+  "Renders until a call returns Full and resolves to its traces and durations.
 
-  The flow is:
+  Options:
+  - `:flags` supplies the first render call's flags.
+  - `:origin` supplies the starting clock reading for completion durations.
+  - `:immediate` starts the first call immediately when true. Otherwise, the
+    first call waits for an animation frame. Subsequent calls wait for frames.
 
-  drain
-    └─ step
-         ├─ next-render-timestamp
-         ├─ render-slice
-         ├─ advance-drain-state
-         └─ either
-              ├─ drain-result
-              └─ step
-
-   `opts` contains:
-     - `:flags` (first call's flags)
-     - `:origin` (required starting moment in ms)
-     - `:immediate` (run the first `_render` in the same task instead of waiting
-       for a frame; later frames always wait).
-
-   Partial and ViewportReady continue with the returned frame type as the next
-   flags. FRAME_TYPE_FULL resolves. Anything else rejects with
-  `::unexpected-frame-type`. A failure of the hook `:check` rejects without
-  retrying."
+  The result contains `:slices`, the traces of render calls; `:end-ms`, the final
+  renderer clock reading; and `:viewport-ready-ms` and `:full-ms`, durations
+  measured from `:origin`. Partial and ViewportReady continue with the returned
+  frame type as the next flags. A guard failure or unexpected frame type
+  rejects the Promise with completed traces in the error's `:partial` field."
   [{:keys [check] :as hooks}
    {:keys [flags origin immediate]}]
   (resolve-or-reject
@@ -227,9 +230,11 @@
            immediate))))
 
 (defn restore
-  "Puts the camera back to `view` (`{:scale :x :y}`) and drains with the
-  SyncTiles flag immediately. Resolves what `drain` resolves. Callers run
-  this outside timing: the reset itself is never scored."
+  "Restores `view` and renders its tiles until Full.
+  The first call uses SyncTiles and starts immediately. Completion durations
+  begin after restoring the view and ending the interaction. Returns a Promise
+  with recorded render calls, completion durations and the final clock reading
+  `:end-ms`."
   [{:keys [now check set-view set-view-start set-view-end] :as hooks} view]
   (resolve-or-reject
    (check)
@@ -241,8 +246,10 @@
                  :immediate true})))
 
 (defn start-camera!
-  "Starts a measured camera session after the caller's untimed preparation.
-  `rtx` supplies `:hooks` and the current full `:view`."
+  "Starts a camera session from the context's current `:view` and `:hooks`.
+  Resolves to the session with its start time and requested settling wait.
+  The initial active interval covers the operation that starts the camera.
+  `:settle-ms` must give a finite, nonnegative duration in milliseconds."
   [{:keys [hooks view]} {:keys [settle-ms]}]
   (resolve-or-reject
    (when-not (and (number? settle-ms)
@@ -264,9 +271,9 @@
         :authored-sleeps []}))))
 
 (defn preview-view!
-  "Awaits a session and submits one cached preview after exactly one rAF.
-  The call span includes view update and cache rendering. Failures retain
-  completed previews and authored pauses without adding clock reads."
+  "Updates the view and draws one cached preview on the next animation frame.
+  Resolves to the session with the new view and measured preview durations.
+  Errors retain completed previews and pauses under `:partial`."
   [session-p view]
   (-> (js/Promise.resolve session-p)
       (.then (fn [{:keys [hooks] :as session}]
@@ -297,8 +304,10 @@
                        (.catch (fn [cause] (throw (partial-error cause evidence)))))))))))
 
 (defn animate-view!
-  "Submits exactly `steps` serial, linearly interpolated full views.
-  Invalid steps retain the session's completed previews and pauses."
+  "Moves to `to` through `steps` linearly interpolated views in sequence.
+  Each update waits for an animation frame and draws one cached preview.
+  Resolves to the session with its final view. Steps must be a positive integer;
+  errors retain completed previews and pauses under `:partial`."
   [session-p {:keys [to steps]}]
   (-> (js/Promise.resolve session-p)
       (.then (fn [{from :view :as session}]
@@ -316,8 +325,10 @@
                        (range 1 (inc steps)))))))
 
 (defn sleep!
-  "Awaits an authored pause inside the active span and records its actual time.
-  Rejections retain earlier completed previews and pauses without new timers."
+  "Pauses the camera session and records the requested and observed wait.
+  The wait must be finite and nonnegative. The pause extends the active
+  interval. Resolves to the updated session;
+  errors retain completed previews and pauses under `:partial`."
   [session-p requested-ms]
   (-> (js/Promise.resolve session-p)
       (.then (fn [{:keys [hooks] :as session}]
@@ -344,7 +355,8 @@
                          (.catch (fn [cause] (throw (partial-error cause evidence))))))))))))
 
 (defn- finish-interaction
-  "Ends the camera and returns final metrics, retaining trace evidence on failure."
+  "Ends the interaction and resolves to camera durations and recorded render calls.
+  Errors retain completed previews and pauses under `:partial`."
   [{:keys [now check set-view-end] :as hooks}
    {:keys [settle-ms started-ms cached-slices last-input-ms active-end-ms authored-sleeps]}]
   (check)
@@ -359,10 +371,11 @@
                   :origin    finalization-start
                   :immediate true})
           (.then
-           (fn [{:keys [slices viewport-ready-ms full-ms]}]
+           (fn [{:keys [slices end-ms viewport-ready-ms full-ms]}]
              {:cached-slices             cached-slices
               :slices                    slices
-              :interact-ms               (- (now) started-ms)
+              :end-ms                    end-ms
+              :interact-ms               (- end-ms started-ms)
               :active-ms                 (- active-end-ms started-ms)
               :authored-sleeps           authored-sleeps
               :settling-requested-ms     settle-ms
@@ -370,15 +383,17 @@
               :set-view-end-ms           set-view-end-ms
               :time-to-viewport-ready-ms viewport-ready-ms
               :time-to-full-ms           full-ms
-              :last-input-to-full-ms     (- (now) last-input-ms)}))
+              :last-input-to-full-ms     (- end-ms last-input-ms)}))
           (.catch (fn [cause]
                     (throw (partial-error cause {:cached-slices cached-slices
                                                  :authored-sleeps authored-sleeps}))))))))
 
 
 (defn finish-camera!
-  "Awaits a session, settles, ends the camera and drains through Full.
-  Failures keep completed cached previews and authored pauses."
+  "Waits for settling, ends the interaction and renders until Full.
+  Resolves to cached previews, traces of final render calls, pauses and measured
+  camera durations. `:end-ms` is the clock reading at the final renderer return.
+  Errors retain completed previews and pauses under `:partial`."
   [session-p]
   (-> (js/Promise.resolve session-p)
       (.then (fn [{:keys [hooks settle-ms] :as session}]

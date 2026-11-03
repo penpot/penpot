@@ -27,6 +27,7 @@
    app.common.i18n/tr hooks.i18n/tr-dynamic
    benches.render-wasm.declarations/defscene hooks.benches/defscene
    benches.render-wasm.declarations/defcase hooks.benches/defcase
+   benches.render-wasm.runtime.commands/defcommand hooks.benches/defcommand
    benches.render-wasm.runtime.protocol/resolve-or-reject hooks.benches/resolve-or-reject
    benches.render-wasm.runtime.protocol/resolve-or-reject-with hooks.benches/resolve-or-reject-with}}
 
