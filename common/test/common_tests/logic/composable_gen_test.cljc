@@ -1026,3 +1026,10 @@
   (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :layout :flex :library true
                                     :rich-variants true :layout-copies true :text true}]
                        :ops [[:style 0 23 18 0]]}))))
+
+(t/deftest generated-detached-copy-child-with-its-own-constraint-stays-in-place
+  ;; a nested copy child with its own center constraint keeps its place when
+  ;; the copy around it is detached, as an override of its new main, and a
+  ;; later sync leaves it there
+  (t/is (map? (cg/run {:world [2 2 {:text true :text-styles true}]
+                       :ops [[:style 8 9 3 1] [:resize 2 0 0 0] [:detach 3 0 0 0]]}))))
