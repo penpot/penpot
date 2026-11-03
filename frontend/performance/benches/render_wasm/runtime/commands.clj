@@ -4,19 +4,40 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.runtime.commands)
+(ns benches.render-wasm.runtime.commands
+  "Declarations of renderer commands.
+  A command transforms a command context, a map of case data, a scene snapshot,
+  the current camera view and hooks. A scene is a recipe for shapes; a case
+  pairs a scene with its work. A snapshot contains concrete shapes and their
+  references. The view stores zoom scale and camera offsets. Hooks are functions
+  for clocks, scheduling and renderer operations. A measured command records
+  an event containing raw numeric values for named quantities, called metrics.")
 
 (defmacro defcommand
-  "Defines a command for scenes.
+  "Defines a base command and its measured function with a `*` suffix.
 
-  `(defcommand foo ...)` creates commands `foo` and `foo*`. The latter is
-  measured (records raw observations).
+  Both accept a command context or its Promise and return a Promise of the next
+  context. A synchronous body returns that context. The measured function
+  requires an active command execution and records one event with
+  `:command/elapsed`, the body duration in milliseconds.
 
-  Both variants accept a context or its Promise and return a Promise of the
-  updated context. `:requires` declares callable hook names.
-  `:measured-variant false` defines a composite that awaits its returned context.
-  Argument destructuring and `:pre` checks precede the measured interval in
-  every build. The condition map accepts only `:pre`."
+  Options:
+  - `:measured-variant false` defines a composite's base function. A composite
+    combines commands and records events from the measured commands it calls.
+  - `:async [complete fail]` lets the body complete asynchronously. Successful
+    completion requires `complete`; `fail` reports a cause. The first call to
+    either callback determines the outcome. A returned Promise forwards its
+    rejection to `fail`.
+
+  `complete` accepts the next context and an optional map. `:end-ms` supplies
+  the clock reading at the end of the work. When the map omits `:end-ms`,
+  `complete` captures a reading on entry. `:metrics` maps namespaced metric
+  keywords to nonempty vectors of raw numbers.
+  `:trace` contains renderer details such as individual render calls and waits.
+
+  Argument destructuring and `:pre` conditions precede work and timing in every
+  build. A failed condition rejects the returned Promise. The condition map
+  accepts `:pre`. Output validation and event recording follow the endpoint."
   [command & forms]
   (let [[doc forms]       (if (string? (first forms))
                             [(first forms) (next forms)]
@@ -29,6 +50,7 @@
                             [(first body) (next body)]
                             [nil body])
         measured          (get options :measured-variant true)
+        handlers          (:async options)
         command-id        (keyword (str (get-in &env [:ns :name])) (name command))
         starred           (symbol (str command "*"))
         prepare           (gensym "prepare")]
@@ -36,8 +58,12 @@
                    (vector? argv)
                    (seq argv)
                    (boolean? measured)
-                   (every? #{:requires :measured-variant} (keys options))
-                   (every? keyword? (:requires options))
+                   (every? #{:measured-variant :async} (keys options))
+                   (or (not (contains? options :async))
+                       (and (vector? handlers)
+                            (= 2 (count handlers))
+                            (every? simple-symbol? handlers)
+                            (apply distinct? handlers)))
                    (every? #{:pre} (keys conditions))
                    (or (nil? (:pre conditions)) (vector? (:pre conditions))))
       (throw (ex-info "invalid command declaration" {:command command})))
@@ -48,17 +74,17 @@
                                              {:type ::invalid-arguments
                                               :command ~command-id
                                               :condition '~condition}))))
-                      (fn [] ~@body))]
+                      (fn ~(or handlers []) ~@body))]
        (defn ~command
          ~@(when doc [doc])
          [rtx# & args#]
          (invoke {:command ~command-id :measured false :composite ~(not measured)
-                  :requires ~(:requires options)}
+                  :async ~(some? handlers)}
                  rtx# ~prepare args#))
        ~@(when measured
            [`(defn ~starred
                ~(str "Measured variant of `" command "`." (when doc (str " " doc)))
                [rtx# & args#]
                (invoke {:command ~command-id :measured true :composite false
-                        :requires ~(:requires options)}
+                        :async ~(some? handlers)}
                        rtx# ~prepare args#))]))))

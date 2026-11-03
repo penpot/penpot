@@ -4,11 +4,14 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.runtime.protocol)
+(ns benches.render-wasm.runtime.protocol
+  "Forms for evaluating renderer operations as Promises.
+  A Promise represents a result that can complete with a value or reject with
+  a cause. These forms include synchronous errors in that result.")
 
 (defmacro resolve-or-reject
-  "Evaluates `body` and returns a Promise. A synchronous throw rejects the
-  returned promise."
+  "Evaluates `body` and returns a Promise of its result.
+  A synchronous throw rejects the Promise."
   [& body]
   `(try
      (js/Promise.resolve (do ~@body))
@@ -16,8 +19,9 @@
        (js/Promise.reject cause#))))
 
 (defmacro resolve-or-reject-with
-  "Evaluates `body` and returns a Promise. A synchronous throw rejects with the
-  result of `on-error`, evaluated with `cause` bound to the thrown value."
+  "Evaluates `body` and returns a Promise of its result.
+  A synchronous throw rejects with `on-error`, evaluated with `cause` bound
+  to the thrown value."
   [cause on-error & body]
   `(try
      (js/Promise.resolve (do ~@body))
