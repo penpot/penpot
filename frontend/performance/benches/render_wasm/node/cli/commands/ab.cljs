@@ -4,12 +4,12 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.cli.ab
+(ns benches.render-wasm.node.cli.commands.ab
   "Options for comparing configurations of Cargo features."
   (:require
-   [benches.render-wasm.feature-plan :as feature-plan]
+   [benches.render-wasm.features.plan :as feature-plan]
    [benches.render-wasm.node.cli.shared :as shared]
-   [benches.render-wasm.node.options :as options]))
+   [benches.render-wasm.node.settings :as settings]))
 
 (def schema:max-features
   [:int {:min 1 :max 6}])
@@ -21,7 +21,7 @@
     [:max-features {:default feature-plan/default-max-features} schema:max-features]
     [:confirm {:default false} :boolean]
     [:dry-run {:default false} :boolean]
-    [:build-timeout-ms {:default options/default-build-timeout-ms} shared/schema:timeout-ms]]])
+    [:build-timeout-ms {:default settings/default-build-timeout-ms} shared/schema:timeout-ms]]])
 
 (def ^:const usage "runner ab --features A,B [options]")
 
@@ -31,7 +31,7 @@
 
 (def cli-options
   (into [[nil "--features FEATURES" "Comma-separated functional Cargo features"
-          :parse-fn options/parse-feature-list]
+          :parse-fn shared/parse-feature-list]
          (shared/number-option "--max-features N" "Maximum number of requested features"
                                schema:max-features "must be an integer from 1 to 6")
          [nil "--confirm" "Confirm above eight configurations or with a blank filter"]

@@ -4,14 +4,14 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.server
+(ns benches.render-wasm.node.runner.server
   "An owned loopback HTTP server for one immutable renderer build."
   (:require
    ["fs" :as fs]
    ["http" :as http]
    ["path" :as path]
    [benches.render-wasm.node.files :as files]
-   [benches.render-wasm.node.options :as options]
+   [benches.render-wasm.node.settings :as settings]
    [clojure.string :as str]))
 
 (def ^:private mime
@@ -113,7 +113,7 @@
   has a 30000 ms default timeout and accepts an optional AbortSignal. Abort,
   timeout and listen errors close the owned server before rejecting."
   ([build] (open build {}))
-  ([build {:keys [startup-timeout-ms signal] :or {startup-timeout-ms options/default-startup-timeout-ms}}]
+  ([build {:keys [startup-timeout-ms signal] :or {startup-timeout-ms settings/default-startup-timeout-ms}}]
    (js/Promise.
     (fn [resolve reject]
       (let [root       (fs/realpathSync (:dir build))

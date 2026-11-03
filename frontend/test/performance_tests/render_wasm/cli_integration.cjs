@@ -677,7 +677,7 @@ test(
     assert.match(result.stderr, /renderer build preparation failed/);
     assert.match(
       result.stderr,
-      /type\s+:benches.render-wasm.node.build\/preparation-failed/,
+      /type\s+:benches.render-wasm.node.runner.build\/preparation-failed/,
     );
     assert.match(result.stderr, new RegExp(`build\\s+${id}`));
     assert.ok(result.stderr.includes(logPath));

@@ -4,18 +4,18 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.runner
+(ns benches.render-wasm.node.cli.main
   "Command-line entry for renderer benchmarks and saved results."
   (:require
    ["path" :as path]
    [app.common.transit :as transit]
    [benches.render-wasm.errors :refer [attempt failure?]]
-   [benches.render-wasm.node.artifacts :as artifacts]
-   [benches.render-wasm.node.cli :as cli]
-   [benches.render-wasm.node.compare :as compare]
-   [benches.render-wasm.node.execution :as execution]
-   [benches.render-wasm.node.merge :as merge]
-   [benches.render-wasm.node.outcome :as outcome]))
+   [benches.render-wasm.node.cli.execution :as execution]
+   [benches.render-wasm.node.cli.resolve :as cli]
+   [benches.render-wasm.node.outcome :as outcome]
+   [benches.render-wasm.node.report.compare :as compare]
+   [benches.render-wasm.node.report.merge :as merge]
+   [benches.render-wasm.node.storage.artifacts :as artifacts]))
 
 (defn- help-command
   [_ {:keys [topic]}]

@@ -4,17 +4,17 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.commands
+(ns benches.render-wasm.node.cli.deferred
   "Deferred execution entry for build, run and feature comparison commands."
   (:require
    [app.common.transit :as transit]
    [benches.render-wasm.errors :refer [attempt failure?]]
-   [benches.render-wasm.node.artifacts :as artifacts]
-   [benches.render-wasm.node.build :as build]
-   [benches.render-wasm.node.execution :as execution]
-   [benches.render-wasm.node.feature-comparison :as feature-comparison]
+   [benches.render-wasm.node.cli.execution :as execution]
    [benches.render-wasm.node.outcome :as outcome]
-   [benches.render-wasm.node.run :as run]))
+   [benches.render-wasm.node.runner.build :as build]
+   [benches.render-wasm.node.runner.feature-comparison :as feature-comparison]
+   [benches.render-wasm.node.runner.run :as run]
+   [benches.render-wasm.node.storage.artifacts :as artifacts]))
 
 (defn- ^:async build-command
   [{:keys [get-root signal]} options]

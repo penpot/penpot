@@ -14,10 +14,10 @@
    ["path" :as path]
    [app.common.transit :as transit]
    [benches.render-wasm.errors :as errors]
-   [benches.render-wasm.node.cli :as cli]
-   [benches.render-wasm.node.execution :as execution]
+   [benches.render-wasm.node.cli.execution :as execution]
+   [benches.render-wasm.node.cli.request :as request]
+   [benches.render-wasm.node.cli.resolve :as cli]
    [benches.render-wasm.node.log :as log]
-   [benches.render-wasm.node.request :as request]
    [cljs.test :as t :include-macros true]
    [clojure.string :as str]))
 

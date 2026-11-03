@@ -11,7 +11,7 @@
    ["net" :as net]
    ["os" :as os]
    ["path" :as path]
-   [benches.render-wasm.node.server :as server]
+   [benches.render-wasm.node.runner.server :as server]
    [cljs.test :as t :include-macros true]))
 
 (def ^:private temporary-root (atom nil))

@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.browser
+(ns benches.render-wasm.node.runner.browser
   "Owns Chromium through process/run from spawn, then attaches Playwright by CDP.
   Shutdown stops the owned process group before disconnecting the client."
   (:require-macros
@@ -17,8 +17,8 @@
    [app.common.transit :as transit]
    [benches.render-wasm.errors :as errors :refer [attempt]]
    [benches.render-wasm.identity :as identity]
-   [benches.render-wasm.node.options :as options]
-   [benches.render-wasm.node.process :as process]))
+   [benches.render-wasm.node.process :as process]
+   [benches.render-wasm.node.settings :as settings]))
 
 (defn gpu-active?
   "Returns whether the development container enables GPU access."
@@ -211,7 +211,7 @@
 
   Startup failures include information about endpoint and profile."
   [{:keys [signal startup-timeout-ms deadline]
-    :or {startup-timeout-ms options/default-startup-timeout-ms}}]
+    :or {startup-timeout-ms settings/default-startup-timeout-ms}}]
   (let [deadline (or deadline (process/deadline startup-timeout-ms))
         budget   (process/remaining deadline)]
     (when (and signal (.-aborted ^js signal))
@@ -278,7 +278,7 @@
 
   Failures close the started page/context before rejecting."
   [owner host {:keys [viewport signal startup-timeout-ms deadline]
-               :or {startup-timeout-ms options/default-startup-timeout-ms}}]
+               :or {startup-timeout-ms settings/default-startup-timeout-ms}}]
   (let [deadline (or deadline (process/deadline startup-timeout-ms))
         bounds   {:deadline deadline :signal signal :phase :browser-page-startup}
         ^js browser (:browser owner)

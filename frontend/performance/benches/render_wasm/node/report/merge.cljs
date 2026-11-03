@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.merge
+(ns benches.render-wasm.node.report.merge
   "Offline merge of two saved schema:run records."
   (:require
    ["fs" :as fs]
-   [benches.render-wasm.node.runs :as runs]
+   [benches.render-wasm.node.storage.runs :as runs]
    [benches.render-wasm.result :as result]))
 
 (defn execute

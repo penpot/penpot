@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.catalog
+(ns benches.render-wasm.node.catalog.loader
   "Loads case descriptors from a selected build, without the runner's registry."
   (:require
    ["module" :as node-module]

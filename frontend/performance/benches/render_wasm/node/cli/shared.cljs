@@ -8,8 +8,9 @@
   "Value constraints and option groups shared by benchmark commands."
   (:require
    [app.common.schema :as sm]
-   [benches.render-wasm.node.artifacts :as artifacts]
-   [benches.render-wasm.node.options :as options]
+   [benches.render-wasm.features.selection :as selection]
+   [benches.render-wasm.node.settings :as settings]
+   [benches.render-wasm.node.storage.artifacts :as artifacts]
    [benches.render-wasm.random :as random]
    [clojure.string :as str]))
 
@@ -30,7 +31,7 @@
   [:fn {:error/message "expected a benchmark artifact ID"} artifacts/valid-id?])
 
 (def schema:feature
-  [:fn {:error/message "expected a Cargo feature name"} options/feature-name?])
+  [:fn {:error/message "expected a Cargo feature name"} selection/feature-name?])
 
 (def schema:measurement
   [:map {:closed true}
@@ -39,7 +40,7 @@
    [:warmups {:default 3} schema:nonnegative-count]
    [:repetitions {:default 10} schema:positive-count]
    [:timeout-ms {:default 30000} schema:timeout-ms]
-   [:startup-timeout-ms {:default options/default-startup-timeout-ms} schema:timeout-ms]
+   [:startup-timeout-ms {:default settings/default-startup-timeout-ms} schema:timeout-ms]
    [:output-dir {:default nil} [:maybe ::sm/text]]
    [:screenshots {:default false} :boolean]
    [:require-gpu {:default false} :boolean]])
@@ -49,6 +50,10 @@
    [:allow-build-differences {:default false} :boolean]
    [:allow-scene-differences {:default false} :boolean]
    [:allow-all-differences {:default false} :boolean]])
+
+(defn parse-feature-list
+  [text]
+  (:features (selection/feature-selection {:features (mapv str/trim (str/split text #"," -1))})))
 
 (defn- parse-number
   [text]

@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.run
+(ns benches.render-wasm.node.runner.run
   "Renderer benchmark runs over fixed builds.
 
   Runs are stored in a `home`, and execute via a loopback host and at most one
@@ -27,15 +27,15 @@
    [benches.render-wasm.declarations :as declarations]
    [benches.render-wasm.errors :as errors :refer [attempt failure?]]
    [benches.render-wasm.measurement :as measurement]
-   [benches.render-wasm.node.artifacts :as artifacts]
-   [benches.render-wasm.node.browser :as browser]
-   [benches.render-wasm.node.build :as build]
-   [benches.render-wasm.node.catalog :as catalog]
+   [benches.render-wasm.node.catalog.loader :as catalog]
    [benches.render-wasm.node.log :as log]
    [benches.render-wasm.node.outcome :as outcome]
    [benches.render-wasm.node.process :as process]
-   [benches.render-wasm.node.runs :as runs]
-   [benches.render-wasm.node.server :as server]
+   [benches.render-wasm.node.runner.browser :as browser]
+   [benches.render-wasm.node.runner.build :as build]
+   [benches.render-wasm.node.runner.server :as server]
+   [benches.render-wasm.node.storage.artifacts :as artifacts]
+   [benches.render-wasm.node.storage.runs :as runs]
    [benches.render-wasm.node.time :as time]
    [benches.render-wasm.report.format :as format]
    [benches.render-wasm.report.summarize :as summary]

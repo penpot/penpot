@@ -4,13 +4,8 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.options
-  "Command defaults and feature validation."
-  (:require
-   [clojure.string :as str]))
-
-(def default-build-timeout-ms 300000)
-(def default-startup-timeout-ms 30000)
+(ns benches.render-wasm.features.selection
+  "Feature validation.")
 
 (def ^:private diagnostic-features #{"stats" "profile" "profile-macros" "profile-raf"})
 
@@ -32,17 +27,3 @@
     (throw (ex-info "measurement builds cannot enable diagnostic Cargo features"
                     {:type ::diagnostic-features :features (vec selected)})))
   {:default-features? default-features? :features (vec (sort (distinct features)))})
-
-(defn parse-feature-list
-  [text]
-  (:features (feature-selection {:features (mapv str/trim (str/split text #"," -1))})))
-
-(defn console-level
-  "Returns the console level selected by quiet or verbose options."
-  [opts]
-  (cond (:quiet opts) :warn (:verbose opts) :debug :else :info))
-
-(defn color-mode
-  "Returns automatic, forced or disabled console coloring."
-  [opts]
-  (case (:color opts) true :always false :never :auto))

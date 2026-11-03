@@ -6,25 +6,25 @@
 
 (ns performance-tests.render-wasm.feature-comparison-test
   (:require
-    ["fs" :as fs]
-    ["node:timers/promises" :as timers]
-    ["os" :as os]
-    ["path" :as path]
-    [benches.render-wasm.cases :as cases]
-    [benches.render-wasm.declarations :as decl]
-    [benches.render-wasm.errors :as errors]
-    [benches.render-wasm.feature-plan :as feature-plan]
-    [benches.render-wasm.node.build :as build]
-    [benches.render-wasm.node.execution :as execution]
-    [benches.render-wasm.node.feature-comparison :as feature-comparison]
-    [benches.render-wasm.node.files :as files]
-    [benches.render-wasm.node.log :as log]
-    [benches.render-wasm.node.process :as process]
-    [benches.render-wasm.node.request :as request]
-    [benches.render-wasm.result :as result]
-    [cljs.test :as t :include-macros true]
-    [clojure.string :as str]
-    [frontend-tests.helpers.mock :as mock]))
+   ["fs" :as fs]
+   ["node:timers/promises" :as timers]
+   ["os" :as os]
+   ["path" :as path]
+   [benches.render-wasm.cases :as cases]
+   [benches.render-wasm.declarations :as decl]
+   [benches.render-wasm.errors :as errors]
+   [benches.render-wasm.features.plan :as feature-plan]
+   [benches.render-wasm.node.cli.execution :as execution]
+   [benches.render-wasm.node.cli.request :as request]
+   [benches.render-wasm.node.files :as files]
+   [benches.render-wasm.node.log :as log]
+   [benches.render-wasm.node.process :as process]
+   [benches.render-wasm.node.runner.build :as build]
+   [benches.render-wasm.node.runner.feature-comparison :as feature-comparison]
+   [benches.render-wasm.result :as result]
+   [cljs.test :as t :include-macros true]
+   [clojure.string :as str]
+   [frontend-tests.helpers.mock :as mock]))
 
 (def ^:private temporary-root (atom nil))
 

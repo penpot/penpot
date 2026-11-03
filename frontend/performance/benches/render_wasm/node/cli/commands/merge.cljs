@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.cli.merge
+(ns benches.render-wasm.node.cli.commands.merge
   "Options for merging saved benchmark records."
   (:require
    [app.common.schema :as sm]

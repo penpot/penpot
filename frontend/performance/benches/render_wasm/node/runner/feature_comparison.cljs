@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.feature-comparison
+(ns benches.render-wasm.node.runner.feature-comparison
   "Plan and run benchmarks for combinations of optional Cargo renderer features.
 
   `prepare` reads Cargo metadata and collects the selected benchmark cases.
@@ -23,17 +23,17 @@
    ["path" :as path]
    [benches.render-wasm.cases :as cases]
    [benches.render-wasm.errors :as errors :refer [attempt failure?]]
-   [benches.render-wasm.feature-plan :as feature-plan]
-   [benches.render-wasm.node.artifacts :as artifacts]
-   [benches.render-wasm.node.build :as build]
-   [benches.render-wasm.node.catalog :as catalog]
+   [benches.render-wasm.features.plan :as feature-plan]
+   [benches.render-wasm.node.catalog.loader :as catalog]
    [benches.render-wasm.node.files :as files]
    [benches.render-wasm.node.log :as log]
-   [benches.render-wasm.node.options :as options]
    [benches.render-wasm.node.outcome :as outcome]
    [benches.render-wasm.node.process :as process]
-   [benches.render-wasm.node.run :as run]
-   [benches.render-wasm.node.runs :as runs]
+   [benches.render-wasm.node.runner.build :as build]
+   [benches.render-wasm.node.runner.run :as run]
+   [benches.render-wasm.node.settings :as settings]
+   [benches.render-wasm.node.storage.artifacts :as artifacts]
+   [benches.render-wasm.node.storage.runs :as runs]
    [benches.render-wasm.node.time :as time]
    [benches.render-wasm.report.compare :as compare]
    [benches.render-wasm.result :as result]
@@ -690,9 +690,9 @@
     prepared: The result of `prepare`.
     signal: An optional AbortSignal that cancels execution.
     settings: May contain `:services` overrides with the same contracts as the
-      defaults: `:prepare-build` uses `node.build/prepare`, `:collect-catalog`
-      uses `node.catalog/collect`, `:create-run-home` uses `node.runs/create-home`,
-      and `:execute-run` uses `node.run/execute`. Omitted services use
+      defaults: `:prepare-build` uses `node.runner.build/prepare`, `:collect-catalog`
+      uses `node.catalog.loader/collect`, `:create-run-home` uses `node.storage.runs/create-home`,
+      and `:execute-run` uses `node.runner.run/execute`. Omitted services use
       `default-services`.
 
   Returns:
@@ -781,7 +781,7 @@
                            {:command "cargo"
                             :args ["metadata" "--offline" "--locked" "--no-deps" "--format-version" "1"]
                             :cwd cwd
-                            :deadline (process/deadline (:build-timeout-ms opts options/default-build-timeout-ms))
+                            :deadline (process/deadline (:build-timeout-ms opts settings/default-build-timeout-ms))
                             :signal signal}))]
     (feature-plan/check-manifest (:features plan) (get-root-features cwd (:stdout metadata)))
     {:plan plan

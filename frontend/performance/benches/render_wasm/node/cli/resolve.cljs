@@ -4,15 +4,15 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.cli
+(ns benches.render-wasm.node.cli.resolve
   "Command-specific argument resolution and help for renderer benchmarks."
   (:require
-   [benches.render-wasm.feature-plan :as feature-plan]
+   [benches.render-wasm.features.plan :as feature-plan]
    [benches.render-wasm.node.cli.console :as console]
    [benches.render-wasm.node.cli.help :as help]
    [benches.render-wasm.node.cli.registry :as registry]
+   [benches.render-wasm.node.cli.request :as request]
    [benches.render-wasm.node.cli.shared :as shared]
-   [benches.render-wasm.node.request :as request]
    [clojure.string :as str]
    [clojure.tools.cli :as tools]))
 

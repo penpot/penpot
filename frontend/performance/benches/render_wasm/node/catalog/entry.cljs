@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.case-catalog
+(ns benches.render-wasm.node.catalog.entry
   "Node entry points of a compiled renderer benchmark build.
 
   The `:bench-render-wasm-catalog` build in `frontend/shadow-cljs.edn` names

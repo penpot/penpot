@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.node.cli.compare
+(ns benches.render-wasm.node.cli.commands.compare
   "Options for comparing saved benchmark records."
   (:require
    [app.common.schema :as sm]
