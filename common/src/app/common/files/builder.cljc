@@ -86,7 +86,7 @@
 (defn- unique-name
   [name state]
   (let [container-id (::current-page-id state)
-        unames       (dm/get-in state [:unames container-id])]
+        unames       (dm/get-in state [::unames container-id])]
     (d/unique-name name (or unames #{}))))
 
 (defn- clear-names [file]
