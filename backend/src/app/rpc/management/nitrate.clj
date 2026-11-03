@@ -209,8 +209,8 @@
    ::sm/result schema:upload-organization-logo-result
    ::nitrate/sso false}
   [{:keys [::sto/storage]} {:keys [content organization-id previous-id]}]
-  (media.v/check-media-type content cm/image-types)
   (media.v/check-upload-path content)
+  (media.v/check-media-type content cm/image-types)
   (when previous-id
     (sto/touch-object! storage previous-id))
   (let [hash (sto/calculate-hash (:path content))

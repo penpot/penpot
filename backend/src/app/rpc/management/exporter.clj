@@ -39,8 +39,8 @@
    ::sm/result schema:upload-tempfile-result
    ::rpc/allowed-shared-keys allowed-shared-key-ids}
   [cfg {:keys [::rpc/profile-id content]}]
-  (media.v/check-media-type content cm/tempfile-types)
   (media.v/check-upload-path content)
+  (media.v/check-media-type content cm/tempfile-types)
   (let [storage (sto/resolve cfg)
         hash    (sto/calculate-hash (:path content))
         data    (-> (sto/content (:path content))
