@@ -235,11 +235,19 @@ fn column_break(
         }
     }
     // Drop the shift if it would empty this column or overflow the new one:
-    // a kinsoku violation is better than overflowing the wrap budget.
-    let shifted_extent: f32 = items[break_at..i].iter().map(|it| it.extent).sum();
-    if break_at == column_start
-        || (break_at < i && shifted_extent + items[i].extent > max_height + FIT_TOLERANCE)
-    {
+    // a kinsoku violation is better than overflowing the wrap budget. The
+    // moved items stay with what follows up to the next allowed break, so
+    // measure that whole unit: a forbidden run longer than a column would
+    // otherwise be pushed out again at every column.
+    let unit_end = (i + 1..items.len())
+        .find(|&next| break_block(items, next).is_none())
+        .unwrap_or(items.len());
+    let unit_extent: f32 = items[break_at..unit_end]
+        .iter()
+        .filter(|it| !it.ch.is_some_and(can_hang))
+        .map(|it| it.extent)
+        .sum();
+    if break_at == column_start || (break_at < i && unit_extent > max_height + FIT_TOLERANCE) {
         break_at = natural;
     }
     Some(break_at)
@@ -1278,6 +1286,19 @@ mod tests {
         for (column, used) in column_used {
             assert!(used <= 20.0, "column {column} overflows: {used}");
         }
+    }
+
+    #[test]
+    fn plan_columns_does_not_cascade_a_forbidden_run_longer_than_a_column() {
+        // ー、ャュョッ。 cannot start a column, and the run is longer than a
+        // column. Pushing its head out cannot satisfy kinsoku: each new column
+        // would push it out again and leave one or two characters behind.
+        let items: Vec<FlowItem> = "ださい。ー、ャュョッ。"
+            .chars()
+            .map(|c| item(10.0, c))
+            .collect();
+        let placements = plan_columns(&items, 50.0);
+        assert_eq!(columns(&placements), vec![0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1]);
     }
 
     #[test]
