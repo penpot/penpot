@@ -31,6 +31,27 @@
 (def write-handler-map (atom nil))
 (def read-handler-map (atom nil))
 
+#?(:cljs
+   (def ^:private max-array-map-entries
+     "Shape-sized maps stay array maps, which take far less memory than
+     hash maps. Adding a key they lack still turns them into hash maps."
+     64))
+
+#?(:cljs
+   (deftype ^:private ArrayMapBuilder []
+     Object
+     (init [_ _] #js [])
+     (add [_ arr k v _] (.push arr k v) arr)
+     (finalize [_ arr _]
+       (if (<= (alength arr) (* 2 max-array-map-entries))
+         (PersistentArrayMap. nil (/ (alength arr) 2) arr nil)
+         (.fromArray PersistentHashMap arr true)))
+     (fromArray [_ arr _]
+       (.fromArray PersistentArrayMap arr true true))))
+
+#?(:cljs
+   (def ^:private map-builder (ArrayMapBuilder.)))
+
 ;; Readers are built lazily on first use and reused afterwards. Building a
 ;; reader on every call is expensive: transit merges the handlers, allocates
 ;; a read cache and prepares the marshaller machinery. A reader captures the
@@ -45,9 +66,11 @@
    (defn- rebuild-readers
      []
      (set! *json-reader*
-           (delay (t/reader :json {:handlers @read-handler-map})))
+           (delay (t/reader :json {:handlers @read-handler-map
+                                   :map-builder map-builder})))
      (set! *json-verbose-reader*
-           (delay (t/reader :json-verbose {:handlers @read-handler-map})))))
+           (delay (t/reader :json-verbose {:handlers @read-handler-map
+                                           :map-builder map-builder})))))
 
 ;; A generic pointer; mainly used for deserialize backend pointer-map
 ;; instances that serializes to pointer but may in other ways.
