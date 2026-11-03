@@ -7,10 +7,14 @@
 (ns backend-tests.rpc-file-snapshot-test
   (:require
    [app.binfile.common :as bfc]
+   [app.common.data :as d]
    [app.common.features :as cfeat]
+   [app.common.files.defaults :as cfd]
+   [app.common.files.migrations :as fmg]
    [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
+   [app.common.types.objects-map :as omap]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -664,3 +668,189 @@
           (t/is (nil? (:error out)))
           (t/is (empty? (fdata/get-used-pointer-ids
                          (get-in out [:result :data])))))))))
+
+(t/deftest snapshot-preview-applies-pending-migrations
+  ;; A snapshot taken while a migration was pending stores the old
+  ;; format. The preview must apply the pending migration in memory
+  ;; (the same pure step a normal read runs) instead of handing the old
+  ;; format to the UI, and must not persist anything: the stored
+  ;; version keeps its data so restoring it re-migrates on next read.
+  (let [profile  (th/create-profile* 1)
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared false})
+        file-id  (:id file)
+        page-id  (first (get-in file [:data :pages]))
+        shape-id (uuid/random)]
+
+    (update-file! :profile-id (:id profile)
+                  :file-id file-id
+                  :revn 0
+                  :changes [{:type :add-obj
+                             :page-id page-id
+                             :id shape-id
+                             :parent-id uuid/zero
+                             :frame-id uuid/zero
+                             :components-v2 true
+                             :obj (-> (cts/setup-shape {:id shape-id
+                                                        :name "rect"
+                                                        :frame-id uuid/zero
+                                                        :parent-id uuid/zero
+                                                        :type :rect})
+                                      (assoc :applied-tokens {:stroke-width "token"}))}])
+
+    ;; Force the 0031 migration on the next save.
+    (th/db-delete! :file-migration {:file-id file-id
+                                    :name "0031-migrate-stroke-width-token-attr"})
+
+    (update-file! :profile-id (:id profile)
+                  :file-id file-id
+                  :revn 1
+                  :changes [{:type :add-page :name "b" :id (uuid/random)}])
+
+    (let [snapshot (->> (th/db-query :file-change {:file-id file-id})
+                        (filter #(and (some? (:label %))
+                                      (= 1 (:revn %))))
+                        (first))
+          snapshot-id (:id snapshot)
+          stored      (fdata/realize th/*system*
+                                     (assoc (fsnap/get-snapshot th/*system* file-id snapshot-id)
+                                            :id file-id))
+          out         (th/command! {::th/type :get-file-snapshot
+                                    ::rpc/profile-id (:id profile)
+                                    :file-id file-id
+                                    :id snapshot-id
+                                    :features cfeat/supported-features})]
+
+      (t/is (uuid? snapshot-id))
+
+      ;; The stored version keeps the old format and the pending
+      ;; migration: the preview must not touch the stored row.
+      (t/is (not (contains? (set (:migrations stored))
+                            "0031-migrate-stroke-width-token-attr")))
+      (t/is (= {:stroke-width "token"}
+               (get-in stored [:data :pages-index page-id
+                               :objects shape-id :applied-tokens])))
+
+      ;; The preview migrates it in memory.
+      (t/is (nil? (:error out)))
+      (t/is (= file-id (get-in out [:result :data :id])))
+      (let [tokens (get-in out [:result :data :pages-index page-id
+                                :objects shape-id :applied-tokens])]
+        (t/is (not (contains? tokens :stroke-width)))
+        (t/is (contains? tokens :stroke-width-top))
+        (t/is (contains? tokens :stroke-width-bottom)))
+
+      ;; The preview declared the migrated set in the payload.
+      (t/is (contains? (set (get-in out [:result :migrations]))
+                       "0031-migrate-stroke-width-token-attr")))
+
+    ;; Nothing was persisted by the preview.
+    (let [snapshot-id (:id (->> (th/db-query :file-change {:file-id file-id})
+                                (filter #(and (some? (:label %))
+                                              (= 1 (:revn %))))
+                                (first)))
+          stored      (fdata/realize th/*system*
+                                     (assoc (fsnap/get-snapshot th/*system* file-id snapshot-id)
+                                            :id file-id))]
+      (t/is (= {:stroke-width "token"}
+               (get-in stored [:data :pages-index page-id
+                               :objects shape-id :applied-tokens]))))))
+
+(t/deftest snapshot-preview-realizes-objects-for-clients-without-the-feature
+  ;; `:features` works like in `get-file`: a client that does not
+  ;; declare `fdata/objects-map` receives plain objects instead of the
+  ;; storage structure of the fragment.
+  (let [profile  (th/create-profile* 1)
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared false})
+        file-id  (:id file)
+        page-id  (first (get-in file [:data :pages]))
+        shape-id (uuid/random)
+        _        (update-file! :profile-id (:id profile)
+                               :file-id file-id
+                               :revn 0
+                               :changes [{:type :add-obj
+                                          :page-id page-id
+                                          :id shape-id
+                                          :parent-id uuid/zero
+                                          :frame-id uuid/zero
+                                          :components-v2 true
+                                          :obj (cts/setup-shape
+                                                {:id shape-id
+                                                 :name "rect"
+                                                 :frame-id uuid/zero
+                                                 :parent-id uuid/zero
+                                                 :type :rect})}])
+
+        snapshot-id (:id (:result (th/command! {::th/type :create-file-snapshot
+                                                ::rpc/profile-id (:id profile)
+                                                :file-id file-id
+                                                :label "v1"})))
+        preview     (fn [features]
+                      (th/command! {::th/type :get-file-snapshot
+                                    ::rpc/profile-id (:id profile)
+                                    :file-id file-id
+                                    :id snapshot-id
+                                    :features features}))
+        with-feature    (preview cfeat/supported-features)
+        without-feature (preview (disj cfeat/supported-features
+                                       "fdata/objects-map"))]
+
+    (t/is (nil? (:error with-feature)))
+    (t/is (nil? (:error without-feature)))
+    (t/is (omap/objects-map?
+           (get-in with-feature [:result :data :pages-index page-id :objects])))
+    (t/is (not (omap/objects-map?
+                (get-in without-feature [:result :data :pages-index page-id :objects]))))))
+
+(t/deftest snapshot-preview-migrates-legacy-snapshots-without-migrations
+  ;; Snapshots written before the `migrations` column existed (SQL
+  ;; migration 0140) store NULL and the format version of their time.
+  ;; The decoder must hand an ordered set (a vector would make
+  ;; `need-migration?` compare indexes), and the preview must
+  ;; regenerate the applied set from the stored version, migrate the
+  ;; data in memory and leave the row untouched.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        file-id (:id file)
+        snap-id (:id (:result (th/command! {::th/type :create-file-snapshot
+                                            ::rpc/profile-id (:id profile)
+                                            :file-id file-id
+                                            :label "legacy"})))]
+
+    (t/is (d/ordered-set? (:migrations (fsnap/get-snapshot th/*system* file-id snap-id))))
+
+    ;; Turn the version into a pre-0140 snapshot: no applied set and an
+    ;; old format version.
+    (th/db-exec! ["UPDATE file_change SET migrations = NULL, version = 60 WHERE id = ?"
+                  snap-id])
+
+    (let [stored (fsnap/get-snapshot th/*system* file-id snap-id)
+          out    (th/command! {::th/type :get-file-snapshot
+                               ::rpc/profile-id (:id profile)
+                               :file-id file-id
+                               :id snap-id
+                               :features cfeat/supported-features})
+          result (:result out)]
+
+      (t/is (nil? (:migrations stored)))
+      (t/is (= 60 (:version stored)))
+
+      (t/is (nil? (:error out)))
+      (t/is (d/ordered-set? (:migrations result)))
+      ;; The preview regenerates everything the stored version lacks
+      ;; instead of trusting the absent applied set.
+      (t/is (= cfd/version (:version result)))
+      (t/is (= (into #{} fmg/available-migrations)
+               (set (:migrations result))))
+      (t/is (set/subset? (into #{} (fmg/generate-migrations-from-version cfd/version))
+                         (set (:migrations result))))
+
+      ;; Nothing is persisted.
+      (let [stored (fsnap/get-snapshot th/*system* file-id snap-id)]
+        (t/is (nil? (:migrations stored)))
+        (t/is (= 60 (:version stored)))))))

@@ -17,7 +17,7 @@
    [app.common.time :as ct]
    [app.common.types.organization :as cto]
    [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
-   [app.common.types.team :refer [schema:team]]
+   [app.common.types.team :as ctt :refer [schema:team]]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -560,6 +560,55 @@ RETURNING id, deleted_at;")
       (db/run! cfg (fn [{:keys [::db/conn]}]
                      (let [ids-array (db/create-array conn "uuid" team-ids)]
                        (db/exec! conn [sql:get-organization-member-team-counts ids-array])))))))
+
+
+;; ---- API: get-organization-member-teams
+
+(def ^:private sql:get-organization-member-teams
+  "SELECT t.id, t.name, t.photo_id,
+          CASE WHEN tpr.is_owner THEN 'owner'
+               WHEN tpr.is_admin THEN 'admin'
+               WHEN tpr.can_edit THEN 'editor'
+               ELSE 'viewer'
+           END AS role
+     FROM team_profile_rel AS tpr
+     JOIN team AS t ON t.id = tpr.team_id
+    WHERE tpr.profile_id = ?
+      AND t.id = ANY(?)
+      AND t.deleted_at IS NULL
+      AND t.is_default IS FALSE;")
+
+(def ^:private schema:get-organization-member-teams-params
+  [:map
+   [:profile-id ::sm/uuid]
+   [:team-ids [:or ::sm/uuid [:vector ::sm/uuid]]]])
+
+(def ^:private schema:get-organization-member-teams-result
+  [:vector [:map
+            [:id ::sm/uuid]
+            [:name ::sm/text]
+            [:photo-url {:optional true} ::sm/uri]
+            [:role ctt/schema:role]]])
+
+(sv/defmethod ::get-organization-member-teams
+  "Get the non-default teams a profile belongs to within a set of teams,
+  with the profile's role in each one."
+  {::doc/added "2.18"
+   ::sm/params schema:get-organization-member-teams-params
+   ::sm/result schema:get-organization-member-teams-result
+   ::nitrate/sso false}
+  [cfg {:keys [profile-id team-ids]}]
+  (let [team-ids (if (uuid? team-ids) [team-ids] team-ids)]
+    (if (empty? team-ids)
+      []
+      (db/run! cfg (fn [{:keys [::db/conn]}]
+                     (let [ids-array (db/create-array conn "uuid" team-ids)]
+                       (->> (db/exec! conn [sql:get-organization-member-teams profile-id ids-array])
+                            (mapv (fn [{:keys [photo-id role] :as row}]
+                                    (cond-> (-> row
+                                                (dissoc :photo-id)
+                                                (assoc :role (keyword role)))
+                                      photo-id (assoc :photo-url (files/resolve-public-uri photo-id))))))))))))
 
 
 ;; API: invite-to-organization

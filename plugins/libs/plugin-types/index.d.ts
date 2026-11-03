@@ -3060,7 +3060,8 @@ export interface LibraryComponent extends LibraryElement {
   remove(): void;
 
   /**
-   * Restores this component if it has been deleted, including its main instance.
+   * Restores this component if it has been deleted, including its main instance,
+   * in the current file's library.
    * Leaves the current page, selection, zoom, and viewport unchanged.
    * Requires `library:write` permission. Does nothing if already restored.
    *

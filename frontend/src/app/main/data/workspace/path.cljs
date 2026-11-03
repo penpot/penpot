@@ -55,7 +55,6 @@
 ;; Path tools
 (dm/export tools/make-curve)
 (dm/export tools/make-corner)
-(dm/export tools/add-node)
 (dm/export tools/remove-node)
 (dm/export tools/delete-selected)
 (dm/export tools/delete-selected-with-segments)

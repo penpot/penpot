@@ -125,7 +125,8 @@
 
            (t/is (= {:file-id  (:id target)
                      :uri      "http://assets/export"
-                     :filename "My file"}
+                     :filename "My file"
+                     :size     120}
                     (last @seen)))))))))
 
 (t/deftest ^:async a-failure-fails-only-its-own-file
@@ -165,7 +166,8 @@
          (t/testing "the failure does not touch the file that worked"
            (t/is (= {:file-id  (:id one)
                      :uri      "http://assets/first"
-                     :filename "First"}
+                     :filename "First"
+                     :size     nil}
                     (first (filter #(and (= (:id one) (:file-id %))
                                          (:uri %))
                                    @seen)))))

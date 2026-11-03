@@ -1727,10 +1727,6 @@ msgstr "مُختلط"
 msgid "shortcuts.add-comment"
 msgstr "تعليقات"
 
-#: src/app/main/data/workspace/path/shortcuts.cljs:61
-msgid "shortcuts.add-node"
-msgstr "إضافة عقدة"
-
 #: src/app/main/data/workspace/shortcuts.cljs:532
 msgid "shortcuts.align-bottom"
 msgstr "محاذاة لأسفل"

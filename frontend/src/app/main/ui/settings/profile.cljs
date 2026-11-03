@@ -17,6 +17,8 @@
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -71,7 +73,8 @@
 
       [:div {:class (stl/css :options)}
        [:div.change-email
-        [:a {:on-click on-show-change-email}
+        [:a {:class (stl/css :link)
+             :on-click on-show-change-email}
          (tr "dashboard.change-email")]]]]
 
      [:> fm/submit-button*
@@ -80,8 +83,9 @@
        :class (stl/css :btn-primary)}]
 
      [:div {:class (stl/css :links)}
-      [:div {:class (stl/css :link-item)}
-       [:a {:on-click on-show-delete-account
+      [:div
+       [:a {:class (stl/css :link)
+            :on-click on-show-delete-account
             :data-testid "remove-acount-btn"}
         (tr "dashboard.remove-account")]]]]))
 
@@ -119,9 +123,12 @@
 
     [:form {:class (stl/css :avatar-form)}
      [:div {:class (stl/css :image-change-field)}
-      [:span {:class (stl/css :update-overlay)
-              :on-click on-image-click} (tr "labels.update")]
-      [:img {:src photo}]
+      [:button {:type "button"
+                :class (stl/css :update-overlay)
+                :on-click on-image-click}
+       (tr "labels.update")]
+      [:img {:class (stl/css :avatar-image)
+             :src photo}]
       (when has-photo?
         [:button {:type "button"
                   :class (stl/css :delete-overlay)
@@ -146,6 +153,10 @@
   [:section {:class (stl/css :dashboard-settings)
              :aria-labelledby "profile-section-title"}
    [:div {:class (stl/css :form-container)}
-    [:h2 {:id "profile-section-title"} (tr "labels.profile")]
+    [:> heading* {:level 2
+                  :typography t/title-large
+                  :id "profile-section-title"
+                  :class (stl/css :page-title)}
+     (tr "labels.profile")]
     [:> profile-photo-form*]
     [:> profile-form*]]])

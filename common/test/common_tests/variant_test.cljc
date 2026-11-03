@@ -171,3 +171,45 @@
     (t/is (= (ctv/find-boolean-pair ["false" "true"])     {"true" true "false" false}))
     (t/is (= (ctv/find-boolean-pair ["off" "on" "other"]) nil))
     (t/is (= (ctv/find-boolean-pair ["hello" "bye"])      nil))))
+
+
+(t/deftest sanitize-and-prepare-property-text
+  (t/testing "sanitize-property-text"
+    (t/is (= (ctv/sanitize-property-text "a=b") "ab"))
+    (t/is (= (ctv/sanitize-property-text "a,b") "ab"))
+    (t/is (= (ctv/sanitize-property-text " Big, red ") "Big red"))
+    (t/is (= (ctv/sanitize-property-text " a=b, ") "ab"))
+    (t/is (= (ctv/sanitize-property-text ",=") ""))
+    (t/is (nil? (ctv/sanitize-property-text nil)))
+    (t/is (nil? (ctv/sanitize-property-text 42))))
+
+  (t/testing "valid-property-name? rejects forbidden chars"
+    (t/is (true? (ctv/valid-property-name? "ok")))
+    (t/is (false? (ctv/valid-property-name? "a=b")))
+    (t/is (false? (ctv/valid-property-name? "a,b")))
+    (t/is (false? (ctv/valid-property-name? ""))))
+
+  (t/testing "valid-property-value? rejects forbidden chars"
+    (t/is (true? (ctv/valid-property-value? "ok")))
+    (t/is (true? (ctv/valid-property-value? "")))
+    (t/is (false? (ctv/valid-property-value? "a=b")))
+    (t/is (false? (ctv/valid-property-value? "a,b"))))
+
+  (t/testing "prepare-property-name"
+    (t/is (= (ctv/prepare-property-name "Size=Big") "SizeBig"))
+    (t/is (nil? (ctv/prepare-property-name "=,=")))
+    (t/is (= (ctv/prepare-property-name "  ok  ") "ok"))
+    (t/is (nil? (ctv/prepare-property-name 42))))
+
+  (t/testing "prepare-property-value"
+    (t/is (= (ctv/prepare-property-value "a=b,") "ab"))
+    (t/is (= (ctv/prepare-property-value "=,=") ""))
+    (t/is (= (ctv/prepare-property-value nil) ""))
+    (t/is (nil? (ctv/prepare-property-value 42)))))
+
+
+(t/deftest path-to-properties-sanitizes-values
+  (let [props  [{:name "Property 1" :value ""}]
+        result (ctv/path-to-properties "Button / Big, red" props)]
+    (t/is (= "Button" (-> result first :value)))
+    (t/is (= "Big red" (-> result second :value)))))

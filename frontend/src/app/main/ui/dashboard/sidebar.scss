@@ -147,7 +147,6 @@
 // side keeps the drawing and the text where they were.
 .pin-icon {
   flex-shrink: 0;
-  stroke-width: 1.33px;
   color: var(--color-foreground-secondary);
   margin: 0 px2rem(10);
 }
@@ -213,7 +212,6 @@
 
 .search-icon {
   flex-shrink: 0;
-  stroke-width: 1px;
 }
 
 .clear-search-btn:hover {
@@ -374,6 +372,5 @@
 }
 
 .exit-icon {
-  stroke-width: 1px;
   color: var(--color-foreground-secondary);
 }

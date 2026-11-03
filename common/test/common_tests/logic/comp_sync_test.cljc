@@ -18,6 +18,7 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
    [app.common.types.shape-tree :as ctst]
    [clojure.test :as t]))
 
@@ -539,3 +540,258 @@
     ;; A position-only change in the main component must not propagate to copies
     ;; and therefore must produce no redo-changes.
     (t/is (empty? (:redo-changes sync-changes)))))
+
+(defn- sync-file-changes
+  [file]
+  (cll/generate-sync-file-changes (pcb/empty-changes)
+                                  nil
+                                  :components
+                                  (:id file)
+                                  (thi/id :component1)
+                                  (:id file)
+                                  {(:id file) file}
+                                  (:id file)))
+
+(t/deftest test-sync-many-updated-shapes
+  ;; The undo changes of a sync used to grow one lazy level per updated
+  ;; shape (#12576). Overflowing the stack needs thousands of shapes, which
+  ;; is too slow here; test-update-attr-changes-many-calls covers that.
+  (let [;; ==== Setup
+        n            500
+        child-labels (mapv #(keyword (str "main-child-" %)) (range n))
+        file         (-> (thf/sample-file :file1)
+                         (tho/add-component-with-many-children-and-copy
+                          :component1
+                          :main-root
+                          child-labels
+                          :copy-root
+                          :main-child-params-list (repeat n {:fills (ths/sample-fills-color
+                                                                     :fill-color "#abcdef")})))
+        page         (thf/current-page file)
+
+        ;; ==== Action
+        changes1     (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                 (into #{} (map thi/id) child-labels)
+                                                 (fn [shape]
+                                                   (assoc shape :fills (ths/sample-fills-color :fill-color "#fabada")))
+                                                 (:objects page)
+                                                 {})
+        updated-file (thf/apply-changes file changes1)
+        changes2     (sync-file-changes updated-file)
+        file'        (thf/apply-changes updated-file changes2)
+        file''       (thf/apply-undo-changes file' changes2)
+
+        ;; ==== Get
+        copy-fill    (fn [file]
+                       (let [copy-root (ths/get-shape file :copy-root)]
+                         (into #{}
+                               (map #(-> (ths/get-shape-by-id file %) :fills first :fill-color))
+                               (:shapes copy-root))))]
+
+    ;; ==== Check
+    (t/is (= #{"#fabada"} (copy-fill file')))
+    (t/is (= #{"#abcdef"} (copy-fill file'')))))
+
+(t/deftest test-update-attr-changes-many-calls
+  ;; Regression: each call nested the undo list in one more lazy concat, so
+  ;; walking it after many calls overflowed the stack (#12576).
+  (let [;; ==== Setup
+        file        (-> (thf/sample-file :file1)
+                        (tho/add-rect :rect1))
+        page        (thf/current-page file)
+        rect        (ths/get-shape file :rect1)
+        roperations [{:type :set :attr :opacity :val 0.5 :ignore-touched true}]
+        uoperations (list {:type :set :attr :opacity :val 1 :ignore-touched true})
+
+        ;; ==== Action
+        changes     (reduce (fn [changes _]
+                              (#'cll/add-update-attr-changes changes rect page roperations uoperations))
+                            (pcb/empty-changes)
+                            (range 50000))
+        undo        (:undo-changes changes)]
+
+    ;; ==== Check
+    (t/is (= 100000 (count undo)))
+    ;; Undo restores the shape first and then recalculates its parents.
+    (t/is (= [:mod-obj :reg-objects] (map :type (take 2 undo))))))
+
+(defn- geometry
+  [shape]
+  ;; Compare as doubles: a recalculated selrect has doubles where the
+  ;; original one may have longs.
+  {:selrect (update-vals (select-keys (:selrect shape) [:x :y :width :height]) double)
+   :points  (mapv #(update-vals (select-keys % [:x :y]) double) (:points shape))})
+
+(defn- add-group-component-with-copy
+  [file]
+  ;; Generated shape tree:
+  ;; :main-root [:name Frame1]                    # [Component :component1]
+  ;;     :main-group [:name Group1]
+  ;;         :main-child1 [:name Rect1]
+  ;;         :main-child2 [:name Rect2]
+  ;;
+  ;; :copy-root [:name Frame1]                    #--> [Component :component1] :main-root
+  ;;     :copy-group [:name Group1]               ---> :main-group
+  ;;         :copy-child1 [:name Rect1]           ---> :main-child1
+  ;;         :copy-child2 [:name Rect2]           ---> :main-child2
+  (-> file
+      (tho/add-frame :main-root :x 0 :y 0 :width 100 :height 100)
+      (tho/add-group :main-group :parent-label :main-root :x 10 :y 10 :width 30 :height 10)
+      (ths/add-sample-shape :main-child1 :parent-label :main-group :name "Rect1"
+                            :x 10 :y 10 :width 10 :height 10
+                            :fills (ths/sample-fills-color :fill-color "#abcdef"))
+      (ths/add-sample-shape :main-child2 :parent-label :main-group :name "Rect2"
+                            :x 30 :y 10 :width 10 :height 10
+                            :fills (ths/sample-fills-color :fill-color "#abcdef"))
+      (thc/make-component :component1 :main-root)
+      (thc/instantiate-component :component1 :copy-root
+                                 :children-labels [:copy-group :copy-child1 :copy-child2])))
+
+(defn- touch-copy-group-geometry
+  ;; With its geometry touched, the sync does not copy the group's own
+  ;; geometry from the main, so only the parents recalculation decides it.
+  [file]
+  (reduce #(ths/update-shape %1 %2 :touched #{:geometry-group})
+          file
+          [:copy-group :copy-child1 :copy-child2]))
+
+(defn- update-fill
+  [file label color]
+  (let [page    (thf/current-page file)
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{(thi/id label)}
+                                            #(assoc % :fills (ths/sample-fills-color :fill-color color))
+                                            (:objects page)
+                                            {})]
+    (thf/apply-changes file changes)))
+
+(t/deftest test-sync-undo-restores-group-geometry
+  (let [;; ==== Setup
+        file         (add-group-component-with-copy (thf/sample-file :file1))
+        page         (thf/current-page file)
+        copy-group   (ths/get-shape file :copy-group)
+
+        ;; ==== Action
+        changes1     (-> (pcb/empty-changes nil (:id page))
+                         (pcb/with-objects (:objects page))
+                         (cls/generate-update-shapes #{(thi/id :main-child2)}
+                                                     #(gsh/absolute-move % (gpt/point 60 60))
+                                                     (:objects page)
+                                                     {})
+                         (pcb/resize-parents [(thi/id :main-child2)]))
+        updated-file (thf/apply-changes file changes1)
+        changes2     (sync-file-changes updated-file)
+        file'        (thf/apply-changes updated-file changes2)
+        file''       (thf/apply-undo-changes file' changes2)
+
+        ;; ==== Get
+        copy-group'  (ths/get-shape file' :copy-group)
+        copy-group'' (ths/get-shape file'' :copy-group)]
+
+    ;; ==== Check
+    (t/is (not= (geometry copy-group) (geometry copy-group')))
+    (t/is (= (geometry copy-group) (geometry copy-group'')))))
+
+(t/deftest test-sync-undo-group-after-add-and-update
+  (let [;; ==== Setup
+        file         (-> (thf/sample-file :file1)
+                         (add-group-component-with-copy)
+                         (touch-copy-group-geometry)
+                         (ths/add-sample-shape :free-shape :x 60 :y 60 :width 10 :height 10))
+        page         (thf/current-page file)
+        copy-group   (ths/get-shape file :copy-group)
+
+        ;; ==== Action
+        ;; The new shape goes first in the group, so the sync handles it before
+        ;; the updated sibling.
+        changes1     (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                                (pcb/with-page-id (:id page))
+                                                (pcb/with-objects (:objects page)))
+                                            (thi/id :main-group)
+                                            0
+                                            #{(thi/id :free-shape)})
+        updated-file (-> (thf/apply-changes file changes1)
+                         (update-fill :main-child1 "#fabada"))
+        changes2     (sync-file-changes updated-file)
+        file'        (thf/apply-changes updated-file changes2)
+        file''       (thf/apply-undo-changes file' changes2)
+
+        ;; ==== Get
+        copy-group'  (ths/get-shape file' :copy-group)
+        copy-group'' (ths/get-shape file'' :copy-group)]
+
+    ;; ==== Check
+    (t/is (= 3 (count (:shapes copy-group'))))
+    (t/is (not= (geometry copy-group) (geometry copy-group')))
+    (t/is (= (:shapes copy-group) (:shapes copy-group'')))
+    (t/is (= (geometry copy-group) (geometry copy-group'')))))
+
+(t/deftest test-sync-undo-group-after-remove-and-update
+  (let [;; ==== Setup
+        file         (-> (thf/sample-file :file1)
+                         (add-group-component-with-copy)
+                         (touch-copy-group-geometry))
+        page         (thf/current-page file)
+        copy-group   (ths/get-shape file :copy-group)
+
+        ;; ==== Action
+        ;; The removed shape is the first one in the group, so the sync
+        ;; handles it before the updated sibling. Remove it only from the
+        ;; main, as a library update does, so that the sync removes it from
+        ;; the copy.
+        changes1     (-> (pcb/empty-changes nil (:id page))
+                         (pcb/with-objects (:objects page))
+                         (pcb/remove-objects #{(thi/id :main-child1)}))
+        updated-file (-> (thf/apply-changes file changes1)
+                         (update-fill :main-child2 "#fabada"))
+        changes2     (sync-file-changes updated-file)
+        file'        (thf/apply-changes updated-file changes2)
+        file''       (thf/apply-undo-changes file' changes2)
+
+        ;; ==== Get
+        copy-group'  (ths/get-shape file' :copy-group)
+        copy-group'' (ths/get-shape file'' :copy-group)]
+
+    ;; ==== Check
+    (t/is (= 1 (count (:shapes copy-group'))))
+    (t/is (not= (geometry copy-group) (geometry copy-group')))
+    (t/is (= (:shapes copy-group) (:shapes copy-group'')))
+    (t/is (= (geometry copy-group) (geometry copy-group'')))))
+
+(t/deftest test-sync-inverse-undo-group-after-add-and-update
+  (let [;; ==== Setup
+        ;; Penpot does not let users move shapes into a copy, but files can
+        ;; still hold copies with shapes the main lacks, so build the data
+        ;; directly. The new shape goes first in the copy group, so the
+        ;; inverse sync handles it before the updated sibling.
+        file         (-> (thf/sample-file :file1)
+                         (add-group-component-with-copy)
+                         (ths/add-sample-shape :free-shape :parent-label :copy-group
+                                               :x 160 :y 160 :width 10 :height 10)
+                         (ths/update-shape :copy-group :shapes [(thi/id :free-shape)
+                                                                (thi/id :copy-child1)
+                                                                (thi/id :copy-child2)]))
+        main-group   (ths/get-shape file :main-group)
+
+        ;; ==== Action
+        updated-file (update-fill file :copy-child1 "#fabada")
+        page         (thf/current-page updated-file)
+        container    (ctn/make-container page :page)
+        changes      (-> (pcb/empty-changes)
+                         (pcb/with-container container)
+                         (cll/generate-sync-shape-inverse (:data updated-file)
+                                                          {(:id updated-file) updated-file}
+                                                          container
+                                                          (thi/id :copy-root)))
+        file'        (thf/apply-changes updated-file changes)
+        file''       (thf/apply-undo-changes file' changes)
+
+        ;; ==== Get
+        main-group'  (ths/get-shape file' :main-group)
+        main-group'' (ths/get-shape file'' :main-group)]
+
+    ;; ==== Check
+    (t/is (= 3 (count (:shapes main-group'))))
+    (t/is (not= (geometry main-group) (geometry main-group')))
+    (t/is (= (:shapes main-group) (:shapes main-group'')))
+    (t/is (= (geometry main-group) (geometry main-group'')))))

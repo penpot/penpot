@@ -8,9 +8,13 @@
   "The `:import-binfile` job: it imports the package the job owns as a
   resource into the project frozen in its params."
   (:require
+   [app.binfile.common :as bfc]
    [app.binfile.jobs :as bfj]
+   [app.binfile.v1 :as bf.v1]
+   [app.binfile.v3 :as bf.v3]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.db :as db]
    [app.jobs :as jobs]
    [app.jobs.storage :as js]
@@ -101,6 +105,18 @@
                :type :validation
                :code :invalid-result))
 
+(defn- touch-project
+  "Mark the destination project as modified.
+
+  An import adds files, and the triggers of the schema only touch the
+  project on an update, so a project that just received files keeps its
+  old date and stays where it was in the list."
+  [cfg project-id]
+  (db/update! cfg :project
+              {:modified-at (ct/now)}
+              {:id project-id}
+              {::db/return-keys false}))
+
 (defn execute-import
   "Plain handler, importable and testable without integrant.
 
@@ -124,32 +140,38 @@
     (try
       (projects/check-edition-permissions! cfg profile-id project-id)
 
-      (let [team   (or (teams/get-team cfg
-                                       :profile-id profile-id
-                                       :project-id project-id)
-                       (ex/raise :type :not-found
-                                 :code :project-not-found
-                                 :hint "the destination project is not available"
-                                 :profile-id profile-id
-                                 :project-id project-id))
-            result (db/tx-run! cfg
-                               (fn [tx-cfg]
-                                 ;; the core joins this transaction: it
-                                 ;; is the one that decides whether the
-                                 ;; whole import is kept or rolled back
-                                 (check-result
-                                  (assoc (bfj/import-files tx-cfg context
-                                                           {:profile-id profile-id
-                                                            :project-id project-id
-                                                            :team       team
-                                                            :name       (:name params)
-                                                            :input      input
-                                                            :version    (:version params)})
-                                         :name    (:name params)
-                                         :version (:version params)))))]
-
-        result)
-
+      (let [team (or (teams/get-team cfg
+                                     :profile-id profile-id
+                                     :project-id project-id)
+                     (ex/raise :type :not-found
+                               :code :project-not-found
+                               :hint "the destination project is not available"
+                               :profile-id profile-id
+                               :project-id project-id))]
+        (db/tx-run! cfg (fn [tx-cfg]
+                          ;; the core joins this transaction: it
+                          ;; is the one that decides whether the
+                          ;; whole import is kept or rolled back
+                          (-> (bfc/import-cfg tx-cfg {:profile-id profile-id
+                                                      :project-id project-id
+                                                      :team       team
+                                                      :name       (:name params)
+                                                      :input      input})
+                              (bfj/check-active context)
+                              (bfj/run context
+                                       (fn [cfg]
+                                         (let [result (case (int (:version params))
+                                                        1 (bf.v1/import-files! cfg)
+                                                        3 (bf.v3/import-files! cfg)
+                                                        (ex/raise :type :validation
+                                                                  :code :unsupported-version
+                                                                  :hint "unsupported binfile version"
+                                                                  :version (:version params)))]
+                                           (touch-project cfg project-id)
+                                           result)))
+                              (assoc :name (:name params))
+                              (assoc :version (:version params))
+                              (check-result)))))
       (finally
         (fs/delete input)
         (js/release-input cfg context)))))

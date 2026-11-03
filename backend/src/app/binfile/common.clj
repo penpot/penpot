@@ -997,7 +997,8 @@
   "Make the file its own tokens source when its tokens source is not one
   of the given library-ids, as happens when the library was deleted. The
   tokens lib of the source is copied while the library still exists, even
-  if deleted; otherwise the tokens source and status are removed."
+  if deleted; otherwise the tokens source is removed and the file gets back
+  the tokens status kept aside for its own tokens lib, if any."
   [cfg data library-ids]
   (let [source-id (cfo/get-tokens-source data)]
     (if (and (some? source-id)
@@ -1006,7 +1007,7 @@
                                  :include-deleted? true
                                  :throw-if-not-exists? false)]
         (cfo/absorb-tokens-lib data (:data library))
-        (dissoc data :tokens-source :tokens-status))
+        (cfo/detach-tokens-source data))
       data)))
 
 (defn embed-assets
@@ -1446,12 +1447,13 @@
     :else                     :detach-libraries))
 
 (defn export-cfg
-  "The domain cfg of an export: the frozen set of files and how their
-  libraries are handled."
-  [cfg {:keys [ids export-type]}]
+  "The domain cfg of an export: the frozen set of files, how their
+  libraries are handled, and where the package is written."
+  [cfg {:keys [file-ids export-type output]}]
   (-> cfg
-      (assoc ::ids ids)
-      (assoc ::export-type export-type)))
+      (assoc ::file-ids file-ids)
+      (assoc ::export-type export-type)
+      (assoc ::output output)))
 
 (defn import-cfg
   "The domain cfg of an import: the destination team/profile/project, the
