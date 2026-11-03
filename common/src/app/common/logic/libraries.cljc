@@ -1203,9 +1203,13 @@
                                                      :include-deleted? true
                                                      :with-context? true)
                 take-position    (ctf/take-position nil libraries objects new-head (:shape-ref replaced) position)
-                position-objects (get-in (meta position) [:container :objects])]
+                position-objects (get-in (meta position) [:container :objects])
+                ;; the head takes the place the replaced child authored
+                placement        (set/intersection (set (:touched replaced)) placement-groups)]
             (mapv (fn [shape]
-                    (let [shape (take-position shape)]
+                    (let [shape (cond-> (take-position shape)
+                                  (and (= (:id shape) (:id new-head)) (seq placement))
+                                  (update :touched (fnil into #{}) placement))]
                       (author-pushed-content shape (get position-objects (:shape-ref shape)))))
                   new-shapes))
           new-shapes)
