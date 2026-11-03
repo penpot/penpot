@@ -36,7 +36,9 @@ When you get this warning:
   * Redo the missing changes, then check again; if the same changes are rejected again, stop and tell the user.
 
 While saves are failing, the workspace becomes read-only: every write through the API throws an error saying that the
-workspace is read-only. Do not retry in a loop; wait and try again later, or tell the user.
+workspace is read-only because changes cannot be saved. Do not retry in a loop; wait and try again later, or tell the user.
+Writes also throw when the user cannot edit the file, a version is being previewed or the canvas stopped rendering;
+the error says which. These do not pass by waiting: tell the user.
 
 # The Structure of Penpot Designs
 

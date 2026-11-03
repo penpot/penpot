@@ -279,17 +279,34 @@
     :else (let [{:keys [permissions]} (dm/get-in @registry [:data plugin-id])]
             (contains? permissions permission))))
 
+(defn- read-only-reason
+  "Why plugin writes must fail in `state`, or nil when they can go ahead.
+  The read-only flag alone is not a reason: the Inspect tab sets it too,
+  and it only hides the editing tools."
+  [state]
+  (let [wglobal (:workspace-global state)]
+    (cond
+      (some? (:persistence-lock wglobal))
+      "because changes cannot be saved right now"
+
+      (not (dm/get-in state [:permissions :can-edit]))
+      "because you cannot edit this file"
+
+      (some? (:preview-id wglobal))
+      "while a version is being previewed"
+
+      (dm/get-in state [:render-state :lost])
+      "because the canvas stopped rendering")))
+
 (defn check-writable
-  "Throws while the workspace is read-only: saves are failing, the user
-  cannot edit or a version is being previewed. A write made then would be
-  lost, so it fails whatever the plugin's validation flag."
+  "Throws while saves are failing, the user cannot edit, a version is
+  being previewed or the render context is lost. A write made then would
+  be lost or edit the wrong data, so it fails whatever the plugin's
+  validation flag."
   []
-  (let [wglobal (:workspace-global @st/state)]
-    (when (true? (:read-only? wglobal))
-      (throw (ex-info (if (some? (:persistence-lock wglobal))
-                        "[PENPOT PLUGIN] The workspace is read-only because changes cannot be saved right now"
-                        "[PENPOT PLUGIN] The workspace is read-only")
-                      {:type ::read-only})))))
+  (when-let [reason (read-only-reason @st/state)]
+    (throw (ex-info (str "[PENPOT PLUGIN] The workspace is read-only " reason)
+                    {:type ::read-only}))))
 
 (def ^:private write-permissions
   #{"content:write" "library:write"})
