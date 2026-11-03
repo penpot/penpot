@@ -1056,3 +1056,10 @@
                                     :rich-variants true :layout-copies true :text true}]
                        :ops [[:style 24 8 1] [:swap 2 0 0 0] [:edit 3 0 1 1] [:update-main 3]
                              [:update-main 0 0 0 0]]}))))
+
+(t/deftest generated-pushed-switch-takes-the-place-its-copy-authored
+  ;; a switched head pushed into a copy in a main takes the place the copy
+  ;; child it replaces had moved to, as its own geometry
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :variant-diff false :rich-variants true
+                                    :layout-copies true :text true}]
+                       :ops [[:delete 5 0 0 0] [:switch 3 0 0 0] [:transform 0 0 0 3] [:update-main 0 0 0 0]]}))))
