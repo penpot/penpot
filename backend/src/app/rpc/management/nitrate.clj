@@ -139,6 +139,7 @@
    ::nitrate/sso false}
   [{:keys [::sto/storage]} {:keys [content organization-id previous-id]}]
   (media.v/validate-media-type! content cm/image-types)
+  (media.v/validate-upload-path content)
   (when previous-id
     (sto/touch-object! storage previous-id))
   (let [hash (sto/calculate-hash (:path content))

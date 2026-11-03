@@ -32,6 +32,24 @@
 (def check-input
   (sm/check-fn schema:input))
 
+(def allowed-upload-prefixes
+  ;; Upload temp files are created server-side by the multipart parser
+  ;; (yetti `default-temp-dir`, `/tmp/undertow/`) plus the tmp dir used
+  ;; by tests and storage tmp files (`/tmp/penpot/`). Anything else
+  ;; (e.g. `/etc/passwd` smuggled via Transit `~#path`) is rejected.
+  ["/tmp/undertow/" "/tmp/penpot/"])
+
+(defn validate-upload-path
+  [upload]
+  (let [real (try (str (fs/real (:path upload)))
+                  (catch Exception _ nil))]
+    (when (or (nil? real)
+              (not (some #(str/starts-with? real %) allowed-upload-prefixes)))
+      (ex/raise :type :validation
+                :code :params-validation
+                :hint "invalid upload path"))
+    upload))
+
 (defn validate-media-type!
   ([upload] (validate-media-type! upload cm/image-types))
   ([upload allowed]

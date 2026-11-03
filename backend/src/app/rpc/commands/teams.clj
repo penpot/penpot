@@ -1034,6 +1034,7 @@
 
   (media.v/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
   (media.v/validate-media-size! file)
+  (media.v/validate-upload-path file)
   (update-team-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-team-photo
