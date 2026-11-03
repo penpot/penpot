@@ -173,7 +173,14 @@ pub(crate) fn horizontal_policy_justify_spacing(
 }
 
 /// Lays a paragraph out with extra per-span sheds (char index, amount).
-pub(crate) type LayOutWithSheds<'a> = dyn Fn(&[Vec<(usize, f32)>]) -> LayoutParagraph + 'a;
+/// Lays out a paragraph with extra sheds, restricted to a builder UTF-16
+/// window (`FULL_WINDOW` for all of it).
+pub(crate) type LayOutWithSheds<'a> =
+    dyn Fn(&[Vec<(usize, f32)>], std::ops::Range<usize>) -> LayoutParagraph + 'a;
+
+/// Builder UTF-16 units first laid out from a line start: a few lines of
+/// text. The window doubles until it holds the lines a decision needs.
+const SQUEEZE_WINDOW: usize = 512;
 
 /// One real character of a horizontal paragraph in builder order.
 struct LineChar {
@@ -270,22 +277,71 @@ pub(crate) fn horizontal_squeeze_sheds(
 ) -> (Vec<Vec<(usize, f32)>>, LayoutParagraph) {
     let chars = line_chars(paragraph, plan);
     let mut sheds: Vec<Vec<(usize, f32)>> = vec![Vec::new(); plan.texts.len()];
-    let mut laid_out = lay_out(&sheds);
+    let total = plan
+        .offsets
+        .ranges
+        .iter()
+        .map(|range| range.builder_end)
+        .max()
+        .unwrap_or(0);
+    // Lines are broken greedily, so a line and the decision about it depend
+    // only on the text from its start. Lay out that text alone, enough of it
+    // for the line, the next one and what decides the next break: relaying
+    // out the whole paragraph per line made long paragraphs quadratic.
+    let lay_out_from = |sheds: &[Vec<(usize, f32)>], start: usize| {
+        let mut size = SQUEEZE_WINDOW;
+        loop {
+            let end = start.saturating_add(size).min(total);
+            let laid_out = lay_out(sheds, start..end);
+            if end >= total || laid_out.get_line_metrics().len() >= 3 {
+                return laid_out;
+            }
+            size *= 2;
+        }
+    };
+    // `window` is laid out from `window_start` with the current sheds; its
+    // lines stay valid until a squeeze changes the sheds, so lines without a
+    // candidate move on inside it instead of laying out again.
+    let mut window_start = 0usize;
+    let mut window = lay_out_from(&sheds, window_start);
     let mut line_index = 0usize;
     for _ in 0..chars.len() + 1 {
-        let lines = laid_out.get_line_metrics();
-        if line_index + 1 >= lines.len() {
+        let window_lines = window.get_line_metrics();
+        // A line is decided by the next one and what follows it: past that,
+        // lay out again from the line.
+        let reached_end = window_lines
+            .last()
+            .is_some_and(|last| window_start + last.end_index >= total);
+        if line_index > 0 && line_index + 2 >= window_lines.len() && !reached_end {
+            window_start += window_lines.get(line_index).map_or_else(
+                || window_lines.last().map_or(0, |last| last.end_index),
+                |line| line.start_index,
+            );
+            window = lay_out_from(&sheds, window_start);
+            line_index = 0;
+            continue;
+        }
+        let start = window_start
+            + window_lines
+                .get(line_index)
+                .map_or(0, |line| line.start_index);
+        let laid_out = &window;
+        let lines: Vec<_> = window_lines.iter().skip(line_index).collect();
+        if lines.len() < 2 {
             break;
         }
-        let (line, next) = (&lines[line_index], &lines[line_index + 1]);
-        let Some(unit_start) = chars.iter().position(|c| c.utf16 >= next.start_index) else {
+        let (line, next) = (lines[0], lines[1]);
+        let next_start = window_start + next.start_index;
+        let Some(unit_start) = chars.iter().position(|c| c.utf16 >= next_start) else {
             break;
         };
         let unit = line_start_unit(&chars, unit_start);
-        let unit_end_utf16 = chars.get(unit.end).map_or(next.end_index, |c| c.utf16);
+        let unit_end_utf16 = chars
+            .get(unit.end)
+            .map_or(window_start + next.end_index, |c| c.utf16);
         let unit_width = laid_out
             .get_rects_for_range(
-                chars[unit.start].utf16..unit_end_utf16,
+                chars[unit.start].utf16 - window_start..unit_end_utf16 - window_start,
                 RectHeightStyle::Tight,
                 RectWidthStyle::Tight,
             )
@@ -301,11 +357,11 @@ pub(crate) fn horizontal_squeeze_sheds(
         let line_chars_end = unit.start;
         let line_chars_start = chars
             .iter()
-            .position(|c| c.utf16 >= line.start_index)
+            .position(|c| c.utf16 >= start)
             .unwrap_or(line_chars_end);
         let capacities = squeeze_capacities(&chars, line_chars_start..line_chars_end);
-        let total: f32 = capacities.iter().map(|(_, _, cap)| cap).sum();
-        if needed <= 0.0 || total < needed {
+        let capacity: f32 = capacities.iter().map(|(_, _, cap)| cap).sum();
+        if needed <= 0.0 || capacity < needed {
             line_index += 1;
             continue;
         }
@@ -328,16 +384,194 @@ pub(crate) fn horizontal_squeeze_sheds(
         if trailing_aki > 0.0 {
             candidate[last.span].push((last.index, trailing_aki));
         }
-        let squeezed = lay_out(&candidate);
-        let kept = squeezed
-            .get_line_metrics()
-            .get(line_index)
-            .is_some_and(|squeezed_line| squeezed_line.end_index >= unit_end_utf16);
+        // The check needs this line only: lay out to the end of the pulled
+        // unit plus a line's worth of what follows.
+        let check_end = unit_end_utf16
+            .saturating_add(unit_end_utf16 - start)
+            .min(total);
+        let squeezed = lay_out(&candidate, start..check_end);
+        let squeezed_lines = squeezed.get_line_metrics();
+        let kept = squeezed_lines
+            .first()
+            .is_some_and(|squeezed_line| start + squeezed_line.end_index >= unit_end_utf16);
         if kept {
             sheds = candidate;
-            laid_out = squeezed;
+            if check_end >= total && squeezed_lines.len() < 2 {
+                break;
+            }
+            window_start = start;
+            window = squeezed;
+            line_index = 1;
+        } else {
+            line_index += 1;
         }
-        line_index += 1;
     }
+    let laid_out = lay_out(&sheds, FULL_WINDOW);
     (sheds, laid_out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::shapes::{TextAlign, TextDirection};
+    use skia::textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle, TextStyle};
+    use std::cell::Cell;
+
+    type LayOutFull<'a> = dyn Fn(&[Vec<(usize, f32)>]) -> LayoutParagraph + 'a;
+
+    /// The squeeze pass as it was before windowing: one layout of the whole
+    /// paragraph per line.
+    fn full_relayout_sheds(
+        paragraph: &Paragraph,
+        plan: &HorizontalParagraphPlan,
+        width: f32,
+        lay_out: &LayOutFull,
+    ) -> Vec<Vec<(usize, f32)>> {
+        let chars = line_chars(paragraph, plan);
+        let mut sheds: Vec<Vec<(usize, f32)>> = vec![Vec::new(); plan.texts.len()];
+        let mut laid_out = lay_out(&sheds);
+        let mut line_index = 0usize;
+        for _ in 0..chars.len() + 1 {
+            let lines = laid_out.get_line_metrics();
+            if line_index + 1 >= lines.len() {
+                break;
+            }
+            let (line, next) = (&lines[line_index], &lines[line_index + 1]);
+            let Some(unit_start) = chars.iter().position(|c| c.utf16 >= next.start_index) else {
+                break;
+            };
+            let unit = line_start_unit(&chars, unit_start);
+            let unit_end_utf16 = chars.get(unit.end).map_or(next.end_index, |c| c.utf16);
+            let unit_width = laid_out
+                .get_rects_for_range(
+                    chars[unit.start].utf16..unit_end_utf16,
+                    RectHeightStyle::Tight,
+                    RectWidthStyle::Tight,
+                )
+                .iter()
+                .map(|rect| rect.rect.width())
+                .sum::<f32>();
+            let last = &chars[unit.end - 1];
+            let trailing_aki = match last.class {
+                Some(JapaneseClass::ClosingBracket | JapaneseClass::Comma) => last.font_size / 2.0,
+                _ => 0.0,
+            };
+            let needed = line.width as f32 + unit_width - trailing_aki - width + JUSTIFY_EPSILON;
+            let line_chars_end = unit.start;
+            let line_chars_start = chars
+                .iter()
+                .position(|c| c.utf16 >= line.start_index)
+                .unwrap_or(line_chars_end);
+            let capacities = squeeze_capacities(&chars, line_chars_start..line_chars_end);
+            let total: f32 = capacities.iter().map(|(_, _, cap)| cap).sum();
+            if needed <= 0.0 || total < needed {
+                line_index += 1;
+                continue;
+            }
+            let mut candidate = sheds.clone();
+            let mut remaining = needed;
+            for priority in 1..=5 {
+                let caps: Vec<(usize, f32)> = capacities
+                    .iter()
+                    .filter(|(_, p, _)| *p == priority)
+                    .map(|(at, _, cap)| (*at, *cap))
+                    .collect();
+                for (at, amount) in capped_equal_allocations(&caps, remaining) {
+                    candidate[chars[at].span].push((chars[at].index, amount));
+                    remaining -= amount;
+                }
+                if remaining <= 0.0 {
+                    break;
+                }
+            }
+            if trailing_aki > 0.0 {
+                candidate[last.span].push((last.index, trailing_aki));
+            }
+            let squeezed = lay_out(&candidate);
+            if squeezed
+                .get_line_metrics()
+                .get(line_index)
+                .is_some_and(|squeezed_line| squeezed_line.end_index >= unit_end_utf16)
+            {
+                sheds = candidate;
+                laid_out = squeezed;
+            }
+            line_index += 1;
+        }
+        sheds
+    }
+
+    #[test]
+    fn windowed_squeeze_matches_full_relayout_and_lays_out_the_paragraph_once() {
+        crate::globals::design_init();
+        let text = "あい、うえ、おかきくけこさしすせそ「かぎ」、と。".repeat(40);
+        let span = TextSpan {
+            text,
+            font_size: 16.0,
+            line_height: 1.0,
+            ..TextSpan::default()
+        };
+        let mut paragraph = Paragraph::new(
+            TextAlign::default(),
+            TextDirection::LTR,
+            None,
+            None,
+            1.0,
+            0.0,
+            vec![span],
+        );
+        paragraph.set_language("ja".to_string());
+        let plan = HorizontalParagraphPlan::new(&paragraph);
+        let mut style = TextStyle::default();
+        style.set_font_size(16.0);
+        let mut fonts = FontCollection::new();
+        fonts.set_default_font_manager(skia::FontMgr::new(), None);
+        let mut paragraph_style = ParagraphStyle::default();
+        paragraph_style.set_apply_rounding_hack(false);
+        let width = 16.0 * 7.6;
+        let full_layouts = Cell::new(0usize);
+        let lay_out = |extra: &[Vec<(usize, f32)>], window: std::ops::Range<usize>| {
+            if window == FULL_WINDOW {
+                full_layouts.set(full_layouts.get() + 1);
+            }
+            let sheds: Vec<(usize, f32)> = plan.sheds[0]
+                .iter()
+                .chain(extra.first().into_iter().flatten())
+                .copied()
+                .collect();
+            let (text, from) =
+                window_slice(&plan.texts[0], &plan.offsets.ranges[0], &window).unwrap_or(("", 0));
+            let sheds = window_entries(&sheds, from, text.chars().count());
+            let mut builder = ParagraphBuilder::new(&paragraph_style, &fonts);
+            builder.push_style(&style);
+            add_horizontal_span(
+                &mut builder,
+                &paragraph.children()[0],
+                text,
+                &sheds,
+                &[],
+                &style,
+                &fonts,
+            );
+            let mut laid_out = LayoutParagraph::build(&mut builder);
+            laid_out.layout(width);
+            laid_out
+        };
+        let (windowed, _) = horizontal_squeeze_sheds(&paragraph, &plan, width, &lay_out);
+        assert_eq!(
+            full_layouts.get(),
+            1,
+            "the whole paragraph is laid out once"
+        );
+        let reference = full_relayout_sheds(&paragraph, &plan, width, &|extra| {
+            lay_out(extra, FULL_WINDOW)
+        });
+        assert!(!reference[0].is_empty(), "the text squeezes some lines");
+        assert_eq!(windowed.len(), reference.len());
+        for (got, want) in windowed[0].iter().zip(&reference[0]) {
+            assert_eq!(got.0, want.0);
+            assert!((got.1 - want.1).abs() < 0.01, "{got:?} vs {want:?}");
+        }
+        assert_eq!(windowed[0].len(), reference[0].len());
+    }
 }
