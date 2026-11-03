@@ -485,6 +485,58 @@
   [o]
   (instance? ObjectsMap o))
 
+#?(:cljs
+   (defn release-encoded!
+     "Drop the encoded form of every entry that is already decoded. They
+     are encoded again on the next `get-data`, so use it only where the
+     map is not sent through transit again soon."
+     [^ObjectsMap o]
+     (let [cache (.-cache o)
+           data  (.-data o)]
+       (set! (.-data o)
+             (persistent!
+              (reduce-kv (fn [acc k v]
+                           (if (and (some? v) (string? (get data k)))
+                             (assoc! acc k nil)
+                             acc))
+                         (transient data)
+                         cache)))
+       (set! (.-modified o) true)
+       o)))
+
+#?(:cljs
+   (defn encode-pending!
+     "Encode up to `n` entries whose encoded form is missing, stopping
+     early once `deadline` (a `js/performance.now` time) has passed, so
+     a later `get-data` has less to do. Always encodes at least one.
+     Returns true when none are left."
+     ([o n] (encode-pending! o n ##Inf))
+     ([^ObjectsMap o n deadline]
+      (let [cache   (.-cache o)
+            data    (.-data o)
+            acc     (transient data)
+            encoded (volatile! 0)
+            done?   (reduce-kv (fn [done? k v]
+                                 (cond
+                                   (some? v)
+                                   done?
+
+                                   (or (>= @encoded n)
+                                       (and (pos? @encoded)
+                                            (> (js/performance.now) deadline)))
+                                   (reduced false)
+
+                                   :else
+                                   (do (assoc! acc k (t/encode-str (get cache k)))
+                                       (vswap! encoded inc)
+                                       done?)))
+                               true
+                               data)]
+        (set! (.-data o) (persistent! acc))
+        (when done?
+          (set! (.-modified o) false))
+        done?))))
+
 (defn create
   ([] (from-data {}))
   ([other]

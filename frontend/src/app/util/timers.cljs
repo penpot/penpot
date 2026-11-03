@@ -59,6 +59,18 @@
        (-dispose [_]
          (cancel-idle-callback sem))))))
 
+(defn schedule-on-idle-until
+  "Like `schedule-on-idle`, but calls `func` with the `js/performance.now`
+  time at which the idle period ends."
+  [func]
+  (let [sem (request-idle-callback
+             (fn [^js deadline]
+               (func (+ (js/performance.now)
+                        (if (some? deadline) (.timeRemaining deadline) 16)))))]
+    (reify rx/IDisposable
+      (-dispose [_]
+        (cancel-idle-callback sem)))))
+
 (def ^:private request-animation-frame
   (if (and (exists? js/globalThis)
            (exists? (.-requestAnimationFrame js/globalThis)))
