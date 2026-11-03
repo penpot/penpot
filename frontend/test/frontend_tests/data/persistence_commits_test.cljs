@@ -158,3 +158,15 @@
     (t/is (empty? (get-in plan [:files file-id :redo])))
     (t/is (= [(:id lib)] (mapv :id (get-in plan [:files lib-id :reverted])))
           "the rest of the undo group goes too")))
+
+(t/deftest rollback-targets-name-the-files-pages-and-page-shapes-of-the-reverted-changes
+  (let [[f1 f2 p1 p2 p3 s1 s2 s3 s4 s5] (repeatedly 10 uuid/next)
+        plan {:files      {f1 {:reverted [{:redo-changes [{:type :add-obj :page-id p1 :id s1}
+                                                          {:type :mov-objects :page-id p1 :shapes [s2 s3]}
+                                                          {:type :mod-obj :component-id (uuid/next) :id s4}
+                                                          {:type :mod-page :id p2}]}]}}
+              :compensate [{:file-id f2 :redo-changes [{:type :del-obj :page-id p3 :id s5}]}]}]
+    (t/is (= {:file-ids  #{f1 f2}
+              :page-ids  #{p1 p2 p3}
+              :shape-ids #{s1 s2 s3 s5}}
+             (pcm/rollback-targets plan)))))

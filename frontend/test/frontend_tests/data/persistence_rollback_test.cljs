@@ -15,6 +15,7 @@
    [app.main.data.changes :as dch]
    [app.main.data.modal :as-alias modal]
    [app.main.data.persistence :as dps]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.undo :as dwu]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -566,3 +567,49 @@
          (t/is (= 0 (get-in @store [:workspace-undo :index])) "it points at the rename again")
          (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
                                 "the rollback settles")))))))
+
+;; Scenario: the undo of a rejected rename cannot be applied, so the
+;; rollback reloads the file. Proves: `::rolled-back` waits for the
+;; reloaded data, so a listener that reads the listed shapes sees the
+;; server data, never the rejected one.
+(t/deftest ^:async a-rollback-that-reloads-the-file-is-reported-after-the-reload
+  (let [reloads  (atom 0)
+        original (get-method ptk/resolve ::dw/reload-current-file)]
+    (-add-method ptk/resolve ::dw/reload-current-file
+                 (fn [_ _]
+                   (swap! reloads inc)
+                   (ptk/data-event ::reloaded {})))
+    (try
+      (await
+       (thp/with-persistence
+         (^:async fn [{:keys [file-id response requests store]}]
+           (let [page-id  (uuid/next)
+                 shape-id (uuid/next)
+                 ;; A change type with no handler, so its undo throws
+                 commit   (ptk/data-event ::dch/commit
+                                          (update @(thp/rename-commit file-id page-id shape-id "A" "B")
+                                                  :undo-changes #(into [{:type :debug-fail}] %)))
+                 seen     (atom [])
+                 sub      (->> (ptk/input-stream store)
+                               (rx/filter (ptk/type? ::dps/rolled-back))
+                               (rx/subs! (fn [event]
+                                           (swap! seen conj
+                                                  [(:shape-ids @event)
+                                                   (thp/shape-name store file-id page-id shape-id)]))))]
+             (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "B")))
+             (ptk/emit! store commit ::dps/force-persist)
+             (await (async/wait-for #(= 1 (count @requests)) "the rename is sent"))
+             (rx/push! response (thp/rejection (:id @commit)))
+             (await (async/wait-for #(= 1 @reloads) "the rollback reloads the file"))
+             (await (async/settle))
+             (t/is (empty? @seen) "nothing is reported before the reload")
+             (ptk/emit! store (#'dw/bundle-fetched {:file {:id file-id :revn 0
+                                                           :data (thp/file-data page-id shape-id "A")}
+                                                    :file-id file-id
+                                                    :thumbnails {}}))
+             (await (async/wait-for #(seq @seen) "the rollback is reported"))
+             (t/is (= [[#{shape-id} "A"]] @seen) "the listener reads the reloaded data")
+             (rx/dispose! sub)))))
+      (finally
+        (-add-method ptk/resolve ::dw/reload-current-file original)))))
+

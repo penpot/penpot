@@ -22,6 +22,34 @@ export interface PluginTaskResult<T> {
      * Optional result data from the task execution.
      */
     data?: T;
+
+    /**
+     * Rollbacks of rejected changes that happened in the workspace since the previous task response.
+     */
+    rollbacks?: ContentRollbackEvent[];
+}
+
+/**
+ * Rollback of rejected changes in the Penpot workspace.
+ *
+ * The backend rejected some changes and the workspace undid them, together with the rest of their
+ * undo steps and any later change to the same file. Mirrors the plugin API's `ContentRollback`.
+ */
+export interface ContentRollbackEvent {
+    /**
+     * Ids of the files that lost changes.
+     */
+    fileIds: string[];
+
+    /**
+     * Ids of the pages the undone changes touched.
+     */
+    pageIds: string[];
+
+    /**
+     * Ids of the page shapes the undone changes touched.
+     */
+    shapeIds: string[];
 }
 
 /**
@@ -71,6 +99,11 @@ export interface PluginTaskResponse<T> {
      * The result of the task execution.
      */
     data?: T;
+
+    /**
+     * Rollbacks of rejected changes that happened in the workspace since the previous task response.
+     */
+    rollbacks?: ContentRollbackEvent[];
 }
 
 /**

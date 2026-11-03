@@ -630,21 +630,50 @@
                   :features features
                   :remote-seq (dm/get-in state [:persistence :remote-seq] 0))]))))))
 
+(defn- reloaded-s
+  "Ends once the reload that follows a failed rebase of `file-ids` has put
+  the server data of those files in the state."
+  [stream current-file-id file-ids]
+  (let [loaded? (if (every? #(= current-file-id %) file-ids)
+                  (ptk/type? ::dw/bundle-fetched)
+                  (ptk/type? ::dw/all-libraries-resolved))]
+    (->> stream
+         (rx/filter loaded?)
+         (rx/take 1)
+         (rx/ignore)
+         (rx/take-until (rx/filter (ptk/type? ::dw/finalize-workspace) stream)))))
+
+(defn- notify-rolled-back
+  "Emits `::rolled-back` with `targets` once the reverted data is in the
+  state: at once, or after the reload when a rebase of `rebases` failed.
+  The reload replaces the whole file data, so other shapes may change too."
+  [stream state rebases targets]
+  (rx/defer
+   (fn []
+     (let [failed (into #{} (comp (map deref) (filter :failed) (map :file-id)) rebases)
+           event  (ptk/data-event ::rolled-back targets)]
+       (if (empty? failed)
+         (rx/of event)
+         (rx/concat (reloaded-s stream (:current-file-id state) failed)
+                    (rx/of event)))))))
+
 (defn- apply-rollback-plan
   "Events that revert the local data as `plan` says: pending commits are
   undone, saved ones undone by a new commit, and their groups leave the
   undo history."
-  [origin state {:keys [files compensate groups undo-index]}]
-  (rx/concat
-   (rx/from (map (fn [[fid plan]] (dch/rebase-commits fid plan)) files))
-   (rx/from (map (fn [[fid commits]] (compensate-commits origin state fid commits))
-                 (group-by :file-id compensate)))
-   (rx/of (dwu/forget-undo-groups groups undo-index)
-          (prune-removed-shapes (get (dsh/lookup-page-objects state)
-                                     (dm/get-in state [:workspace-local :edition])))
-          ;; Tells listeners (e.g. a library sync) which files lost commits
-          (ptk/data-event ::rolled-back
-                          {:file-ids (into (set (keys files)) (map :file-id) compensate)}))))
+  [origin state stream {:keys [files compensate groups undo-index]}]
+  (let [rebases (mapv (fn [[fid plan]] (dch/rebase-commits fid plan)) files)]
+    (rx/concat
+     (rx/from rebases)
+     (rx/from (map (fn [[fid commits]] (compensate-commits origin state fid commits))
+                   (group-by :file-id compensate)))
+     (rx/of (dwu/forget-undo-groups groups undo-index)
+            (prune-removed-shapes (get (dsh/lookup-page-objects state)
+                                       (dm/get-in state [:workspace-local :edition]))))
+     ;; Tells listeners (a library sync, plugins) which files, pages and
+     ;; shapes lost commits
+     (notify-rolled-back stream state rebases
+                         (pcm/rollback-targets {:files files :compensate compensate})))))
 
 (defn- rollback-rejected
   "Reverts the commits `rejected` in the save of `entry`, the later commits
@@ -661,8 +690,8 @@
           (update state :persistence pcm/without-rolled-back entry plan')))
 
       ptk/WatchEvent
-      (watch [it state _]
-        (apply-rollback-plan it state @plan))
+      (watch [it state stream]
+        (apply-rollback-plan it state stream @plan))
 
       ptk/EffectEvent
       (effect [_ _ _]
@@ -931,9 +960,9 @@
                      (dissoc :failing-since :slow-failures)))))
 
       ptk/WatchEvent
-      (watch [it state _]
+      (watch [it state stream]
         (if-let [plan @plan]
-          (apply-rollback-plan it state plan)
+          (apply-rollback-plan it state stream plan)
           (rx/empty))))))
 
 (defn- queue-needs-a-runner?

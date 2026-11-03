@@ -4,6 +4,7 @@ import { formatTaskError } from "./ErrorUtils";
 import { extractMinorVersion, isCompatibleVersion } from "./VersionCompatibility";
 import type { PluginConnectionInit } from "../../common/src";
 import type { WorkspaceContext } from "@penpot/plugin-types";
+import { RollbackLog } from "./RollbackLog";
 
 /**
  * indicates whether the plugin is running in an environment with the Penpot-integrated remote MCP server
@@ -23,6 +24,12 @@ let uiInitialized = false;
  * Registry of all available task handlers.
  */
 const taskHandlers: TaskHandler[] = [new ExecuteCodeTaskHandler()];
+
+/**
+ * Rollbacks of rejected changes, reported to the MCP server with the next task response.
+ */
+const rollbackLog = new RollbackLog();
+rollbackLog.listen();
 
 // Open the plugin UI (main.ts)
 penpot.ui.open("Penpot MCP Plugin", `?theme=${penpot.theme}`, {
@@ -127,7 +134,7 @@ management?.on("workspacechange", sendWorkspaceContext);
  */
 async function handlePluginTaskRequest(request: { id: string; task: string; params: any }): Promise<void> {
     console.log("Executing plugin task:", request.task, request.params);
-    const task = new Task(request.id, request.task, request.params);
+    const task = new Task(request.id, request.task, request.params, rollbackLog);
 
     // Find the appropriate handler
     const handler = taskHandlers.find((h) => h.isApplicableTo(task));

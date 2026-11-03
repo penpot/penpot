@@ -213,7 +213,11 @@
 (defn rebase-commits
   "Undoes `undo`, applies `remote` and redoes `redo` on the local data of
   `file-id`, commits oldest first. Nothing is saved or added to the undo
-  history; if the changes fail to apply, the file is reloaded."
+  history; if the changes fail to apply, the file is reloaded.
+
+  Not a commit, so commit watchers miss it: once it has run, its deref
+  gives `{:file-id :changes :failed}` (`:failed` true when the file
+  reloads instead)."
   [file-id {:keys [undo remote redo]}]
   (let [commit  {:file-id file-id
                  :redo-changes (-> []
@@ -223,6 +227,12 @@
         event   (apply-changes-localy commit nil)
         failed? (volatile! false)]
     (ptk/reify ::rebase-commits
+      IDeref
+      (-deref [_]
+        {:file-id file-id
+         :changes (:redo-changes commit)
+         :failed  @failed?})
+
       ptk/UpdateEvent
       (update [_ state]
         (if (dsh/lookup-file-data state file-id)

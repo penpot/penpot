@@ -1,7 +1,8 @@
 import { WebSocket, WebSocketServer } from "ws";
 import * as http from "http";
 import { z } from "zod";
-import { AbstractPluginTask, PluginTask } from "./PluginTask";
+import { AbstractPluginTask, PluginTask, PluginTaskError } from "./PluginTask";
+import { RollbackNotices } from "./RollbackNotices";
 import { PluginTaskResponse, PluginTaskResult } from "@penpot/mcp-common";
 import { createLogger } from "./logger";
 import type { PenpotMcpServer } from "./PenpotMcpServer";
@@ -86,6 +87,11 @@ export class PluginBridge implements TaskDispatchHost {
     private readonly taskTimeouts: Map<string, NodeJS.Timeout> = new Map();
     private readonly taskConnections: Map<string, PenpotConnection> = new Map();
     private readonly dispatcher: TaskDispatcher;
+
+    /**
+     * Collector of the rollbacks that task responses report, per tool execution.
+     */
+    public readonly rollbackNotices = new RollbackNotices();
 
     /**
      * Creates the plugin bridge and starts its WebSocket server.
@@ -338,9 +344,12 @@ export class PluginBridge implements TaskDispatchHost {
 
         // Resolve or reject the task's promise based on the result
         if (response.success) {
-            task.resolveWithResult({ data: response.data });
+            task.resolveWithResult({ data: response.data, rollbacks: response.rollbacks });
         } else {
-            const error = new Error(response.error || "Task execution failed (details not provided)");
+            const error = new PluginTaskError(
+                response.error || "Task execution failed (details not provided)",
+                response.rollbacks
+            );
             task.rejectWithError(error);
         }
 
@@ -385,6 +394,7 @@ export class PluginBridge implements TaskDispatchHost {
      * Executes a plugin task by sending it to the connected Penpot plugin instance,
      * either directly via WebSocket or indirectly via Redis (depending on the configuration),
      * and awaiting the result.
+     * Rollbacks the response reports go to {@link rollbackNotices}.
      *
      * @param task - The plugin task to execute
      * @param sessionId - The target session; when omitted, discovery must yield exactly one session
@@ -403,11 +413,20 @@ export class PluginBridge implements TaskDispatchHost {
             userToken = sessionContext.userToken;
         }
         // attach the result handler before dispatch can reject the task
-        const result = task.getResultPromise();
+        const resultPromise = task.getResultPromise();
         void this.dispatcher.dispatch(task, userToken, sessionId).catch((error) => {
             task.rejectWithError(error instanceof Error ? error : new Error(String(error)));
         });
-        return await result;
+        try {
+            const result = await resultPromise;
+            this.rollbackNotices.record(result.rollbacks);
+            return result;
+        } catch (error) {
+            if (error instanceof PluginTaskError) {
+                this.rollbackNotices.record(error.rollbacks);
+            }
+            throw error;
+        }
     }
 
     /**

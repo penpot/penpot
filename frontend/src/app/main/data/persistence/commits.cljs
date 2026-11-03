@@ -150,6 +150,41 @@
                 (count compensate))
    :files    (count (into (set (keys files)) (map :file-id) compensate))})
 
+(def ^:private page-change-types
+  "Changes whose `:id` is a page id."
+  #{:add-page :mod-page :del-page :mov-page})
+
+(def ^:private shape-change-types
+  "Changes whose `:id` is a shape id."
+  #{:add-obj :mod-obj :del-obj :fix-obj})
+
+(defn- change-page-id
+  [{:keys [type] :as change}]
+  (if (contains? page-change-types type)
+    (:id change)
+    (:page-id change)))
+
+(defn- change-shape-ids
+  "Ids of the page shapes `change` touches; none for component shapes."
+  [{:keys [type page-id] :as change}]
+  (when (some? page-id)
+    (cond
+      (contains? shape-change-types type)
+      [(:id change)]
+
+      (contains? #{:mov-objects :reorder-children} type)
+      (:shapes change))))
+
+(defn rollback-targets
+  "The files of the commits `plan` reverts, and the pages and page shapes
+  their changes touch."
+  [{:keys [files compensate]}]
+  (let [commits (into (vec compensate) (mapcat (comp :reverted val)) files)
+        changes (into [] (mapcat :redo-changes) commits)]
+    {:file-ids  (into (set (keys files)) (map :file-id) compensate)
+     :page-ids  (into #{} (keep change-page-id) changes)
+     :shape-ids (into #{} (mapcat change-shape-ids) changes)}))
+
 (defn- drop-commits
   "Removes the commits in `ids` from the queue and the buffer; an entry left
   empty leaves the queue."
