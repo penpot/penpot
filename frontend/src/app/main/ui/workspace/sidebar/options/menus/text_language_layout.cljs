@@ -16,9 +16,18 @@
    [app.util.text.layout :as tl]
    [rumext.v2 :as mf]))
 
+;; Id of the "No language profile" choice. The DS select shows "--" for a
+;; blank id, so the choice cannot use "".
+(def plain-profile "plain")
+
+(defn selected-profile
+  "Select id of a paragraph `profile`: the plain choice when unset."
+  [profile]
+  (if (= :multiple profile) "multiple" (or profile plain-profile)))
+
 (defn profile-options
   [language value translate]
-  (let [options (into [{:id "" :label (translate "workspace.options.text-options.profile-plain")}]
+  (let [options (into [{:id plain-profile :label (translate "workspace.options.text-options.profile-plain")}]
                       (case language
                         :japanese [{:id "ja" :label (translate "workspace.options.text-options.profile-japanese")}]
                         :chinese [{:id "zh-Hans" :label (translate "workspace.options.text-options.profile-chinese-simplified")}
@@ -29,11 +38,11 @@
                                   {:id "zh-Hant-HK" :label (translate "workspace.options.text-options.profile-chinese-hong-kong")}]
                         :korean [{:id "ko" :label (translate "workspace.options.text-options.profile-korean")}]))
         mixed? (= :multiple value)
-        id (if mixed? "multiple" (or value ""))]
+        id (selected-profile value)]
     (cond-> options
       (not (some #(= (:id %) id) options))
       (conj {:id id
-             :label (if mixed? (translate "labels.mixed-values") value)
+             :label (if mixed? (translate "settings.multiple") value)
              :disabled true
              :dimmed true}))))
 
@@ -46,7 +55,7 @@
 
 (defn profile-change
   [value]
-  {:text-language (when (seq value) value)})
+  {:text-language (when (and (seq value) (not= plain-profile value)) value)})
 
 (defn emphasis-position-options
   [translate]
@@ -154,7 +163,7 @@
   [{:keys [language values ruby-values text-selection-active reading-selection-active zhuyin-selection-active
            on-change on-ruby-presentation-change on-blur]}]
   (let [profile (:text-language values)
-        selected (if (= :multiple profile) "multiple" (or profile ""))
+        selected (selected-profile profile)
         options (mf/with-memo [language profile] (profile-options language profile tr))
         matches? (tl/profile-matches? language profile)
         handle-profile-change (mf/use-fn

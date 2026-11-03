@@ -61,7 +61,7 @@
 
 (t/deftest choosing-a-profile-only-changes-the-paragraph-language
   (t/is (= {:text-language "ko"} (tll/profile-change "ko")))
-  (t/is (= {:text-language nil} (tll/profile-change "")))
+  (t/is (= {:text-language nil} (tll/profile-change tll/plain-profile)))
   (t/is (tl/profile-matches? :japanese "ja-JP"))
   (t/is (tl/profile-matches? :chinese "zh-Hant-TW"))
   (t/is (tl/profile-matches? :korean "KO-kr"))
@@ -72,10 +72,15 @@
 (t/deftest profile-choices-keep-mixed-and-other-language-values-visible
   (let [mixed (last (tll/profile-options :korean :multiple identity))
         other (last (tll/profile-options :chinese "ja" identity))]
-    (t/is (= {:id "multiple" :label "labels.mixed-values" :disabled true :dimmed true} mixed))
+    (t/is (= {:id "multiple" :label "settings.multiple" :disabled true :dimmed true} mixed))
     (t/is (= {:id "ja" :label "ja" :disabled true :dimmed true} other))
-    (t/is (= ["" "zh-Hans" "zh-Hant" "zh-Hans-CN" "zh-Hant-CN" "zh-Hant-TW" "zh-Hant-HK"]
-             (mapv :id (tll/profile-options :chinese nil identity))))))
+    (t/is (= ["plain" "zh-Hans" "zh-Hant" "zh-Hans-CN" "zh-Hant-CN" "zh-Hant-TW" "zh-Hant-HK"]
+             (mapv :id (tll/profile-options :chinese nil identity))))
+    ;; The DS select shows "--" for a blank id, so the plain choice needs one.
+    (t/is (not-any? (comp str/blank? :id) (tll/profile-options :korean nil identity)))
+    (t/is (= "plain" (tll/selected-profile nil)))
+    (t/is (= "multiple" (tll/selected-profile :multiple)))
+    (t/is (= "ko" (tll/selected-profile "ko")))))
 
 (t/deftest korean-word-wrapping-is-distinct-from-the-saved-experiment
   (t/is (= ["syllable" "keep-words"]
