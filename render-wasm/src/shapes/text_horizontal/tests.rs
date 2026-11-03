@@ -1876,7 +1876,7 @@ fn horizontal_annotations_attach_to_the_ideographic_em_box() {
 #[test]
 fn horizontal_indivisible_punctuation_unit_overflows_a_narrow_box() {
     use crate::shapes::text_policy::KoreanWrap;
-    for language in ["zh-Hant-TW", "zh-Hans-CN", "zh-Hant-HK", "ko"] {
+    for language in ["zh-Hant-TW", "zh-Hans-CN", "zh-Hant-HK", "ko", "ja"] {
         let (_, plan, layout) =
             cjk_horizontal_layout(&["文", "。"], language, KoreanWrap::KeepWords, 20.0);
         let starts: Vec<_> = layout
@@ -1894,6 +1894,55 @@ fn horizontal_indivisible_punctuation_unit_overflows_a_narrow_box() {
             "the unit overflows rather than splitting"
         );
     }
+}
+
+#[test]
+fn japanese_narrow_box_keeps_ruby_bases_whole_and_respects_kinsoku() {
+    use crate::shapes::kinsoku::forbidden_at_line_start;
+    use crate::shapes::text_vertical::test_support::provider;
+    init_state();
+    let mut fonts = skia::textlayout::FontCollection::new();
+    fonts.set_asset_font_manager(Some(
+        provider(include_bytes!("../../fonts/cjk-locl-test.ttf")).into(),
+    ));
+    let mut resources =
+        crate::render::RenderResources::try_new_headless().expect("headless resources");
+    let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+    let mut base = make_span("文文", 0.0);
+    base.font_size = 20.0;
+    base.ruby = "ぶんぶん".to_string();
+    let mut paragraph = make_paragraph(
+        vec![make_span("「", 0.0), base, make_span("」、文文。", 0.0)],
+        0.0,
+    );
+    paragraph.set_language("ja".to_string());
+    let source: Vec<char> = "「文文」、文文。".chars().collect();
+    let (plan, layout) = cjk_layout_paragraph(&paragraph, 20.0, &fonts);
+    let starts: Vec<usize> = layout
+        .get_line_metrics()
+        .iter()
+        .map(|line| plan.offsets.builder_to_source(line.start_index))
+        .collect();
+    for start in &starts {
+        assert!(
+            !forbidden_at_line_start(source[*start]),
+            "line {starts:?} starts with {}",
+            source[*start]
+        );
+    }
+    let targets = horizontal_ruby_targets(&paragraph, &plan.offsets);
+    assert_eq!(targets.len(), 1);
+    let rects = layout.get_rects_for_range(
+        targets[0].1.clone(),
+        RectHeightStyle::Tight,
+        RectWidthStyle::Tight,
+    );
+    assert!(
+        rects
+            .iter()
+            .all(|r| (r.rect.top() - rects[0].rect.top()).abs() < 0.01),
+        "the ruby base splits over lines {starts:?}"
+    );
 }
 
 #[test]

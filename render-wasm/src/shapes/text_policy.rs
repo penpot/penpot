@@ -142,6 +142,9 @@ impl TextLayoutPolicy {
             && !opening(before)
             && !closing(after)
             && !(self.is_korean() && "‐‑–-・·々〻ー".contains(after))
+            && !(self == Self::Japanese
+                && (crate::shapes::kinsoku::forbidden_at_line_start(after)
+                    || crate::shapes::kinsoku::forbidden_at_line_end(before)))
             && !(before == after && matches!(after, '…' | '‥' | '—' | '―'))
             && !("$＄£€₩￥¥₽₺₫+＋-－−".contains(before) && numeric(after))
             && !(numeric(before) && "%％‰℃℉°".contains(after))
