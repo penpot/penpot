@@ -1,9 +1,9 @@
-import { Tool, EmptyToolArgs } from "../Tool";
+import { Tool, EmptyToolArgs } from "../../Tool";
 import "reflect-metadata";
-import type { ToolResponse } from "../ToolResponse";
-import { TextResponse } from "../ToolResponse";
-import { PenpotMcpServer } from "../PenpotMcpServer";
-import { NreplClient } from "../NreplClient";
+import type { ToolResponse } from "../../ToolResponse";
+import { TextResponse } from "../../ToolResponse";
+import { PenpotMcpServer } from "../../PenpotMcpServer";
+import { NreplClient } from "../../NreplClient";
 
 /**
  * Reports the compiler status of the shadow-cljs `:main` build.

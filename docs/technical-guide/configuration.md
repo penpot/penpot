@@ -959,6 +959,30 @@ The defaults match the service name used in the official `docker-compose.yaml`. 
 them only if your MCP service has a different name or listens on other ports. Both
 variables are ignored when the `enable-mcp` flag is not set.
 
+#### MCP feedback
+
+Agents can email feedback about Penpot MCP to an inbox you choose, through the
+`submit_feedback` tool. Set the backend URI on the MCP container to offer the tool,
+and the inbox on the backend to accept the emails:
+
+```bash
+# MCP
+PENPOT_MCP_BACKEND_URI: http://penpot-backend:6060/
+
+# Backend
+PENPOT_MCP_FEEDBACK_EMAIL: mcp-feedback@example.com
+```
+
+- `PENPOT_MCP_BACKEND_URI`: The URI the MCP server uses to reach the backend. When
+  unset, the MCP server does not offer the tool.
+- `PENPOT_MCP_FEEDBACK_EMAIL`: The address that receives the feedback. When unset,
+  the backend rejects submissions.
+
+The backend accepts feedback when the `enable-mcp` or `enable-access-tokens` flag is
+set, and sends it through the [email configuration](#email-configuration). Each
+email carries the name and email address of the user who sent it, and uses that
+address as reply-to.
+
 ### Internal resolver
 
 The frontend container resolves the backend, exporter and MCP service names with the

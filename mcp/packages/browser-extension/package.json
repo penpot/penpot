@@ -1,0 +1,21 @@
+{
+  "name": "mcp-browser-extension",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Browser extension that keeps Penpot tabs connected to MCP from being discarded",
+  "type": "module",
+  "packageManager": "pnpm@12.15.0+sha512.b3951d6d6ff4a9f13dc7cf56cd28d2b8eb37dbcc9c68e52e1e1191873ea9f82a017287ab50baadc5ccc494f036c67c0e47eb13608c2fa36f47711b61ea128e61",
+  "scripts": {
+    "build": "tsc && node ./scripts/build.mjs",
+    "test": "tsx --test \"src/**/*.test.ts\"",
+    "types:check": "tsc",
+    "clean": "rm -rf dist/"
+  },
+  "devDependencies": {
+    "@penpot/mcp-common": "workspace:../common",
+    "@types/chrome": "^0.3.6",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3"
+  }
+}

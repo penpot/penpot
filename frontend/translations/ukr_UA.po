@@ -3581,10 +3581,6 @@ msgstr "Оберіть елементи, використовуючи цей с�
 msgid "shortcuts.add-comment"
 msgstr "Коментарі"
 
-#: src/app/main/data/workspace/path/shortcuts.cljs:61
-msgid "shortcuts.add-node"
-msgstr "Додати вузол"
-
 #: src/app/main/data/workspace/shortcuts.cljs:532
 msgid "shortcuts.align-bottom"
 msgstr "Вирівняти по низу"

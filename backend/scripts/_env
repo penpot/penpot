@@ -92,6 +92,7 @@ export JAVA_OPTS="\
        -XX:+UseShenandoahGC \
        -XX:+UseCompactObjectHeaders \
        -XX:ShenandoahGCMode=generational \
+       -XX:NativeMemoryTracking=summary \
        -XX:-OmitStackTraceInFastThrow  \
        --sun-misc-unsafe-memory-access=allow \
        --enable-preview \

@@ -627,13 +627,19 @@
 (defn init-climit
   "Build a concurrency limiter component from an inline config map. The
   optional second argument is the metrics instance to publish to (a
-  `metrics-stub` by default, where every `run!` is a no-op)."
+  `metrics-stub` by default, where every `run!` is a no-op).
+
+  The root limiters are added with permits that no test reaches: every
+  request goes through them, and a test that does not list them would log a
+  warning per request."
   ([config]
    (init-climit config (metrics-stub)))
   ([config metrics]
    (let [file (doto (java.io.File/createTempFile "climit" ".edn")
                 (.deleteOnExit))]
-     (spit file (pr-str config))
+     (spit file (pr-str (merge {:root/global {:permits 1000 :timeout 3000}
+                                :root/by-profile {:permits 1000 :timeout 3000}}
+                               config)))
      (ig/init-key ::rpc/climit
                   {::climit/enabled true
                    ::climit/config (.getAbsolutePath file)

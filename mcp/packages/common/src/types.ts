@@ -97,3 +97,36 @@ export interface ExecuteCodeTaskResultData<T> {
      */
     log: string;
 }
+
+/**
+ * Status of the Penpot MCP plugin connection, as reported to the Penpot app.
+ */
+export type McpConnectionStatus = "idle" | "connecting" | "connected" | "disconnected" | "error";
+
+/**
+ * Message posted by a browser extension's content script to ask the Penpot page for its MCP session.
+ */
+export interface ExtensionHello {
+    type: "penpot-mcp-extension:hello";
+}
+
+/**
+ * Message posted by the Penpot page when it starts listening for an {@link ExtensionHello}.
+ *
+ * A content script that said hello before the page was listening says it again.
+ */
+export interface PageReady {
+    type: "penpot-mcp:ready";
+}
+
+/**
+ * Message posted by the Penpot page to announce its MCP session to a browser extension.
+ *
+ * The page sends it in reply to {@link ExtensionHello} and on every connection status change.
+ */
+export interface SessionAnnouncement {
+    type: "penpot-mcp:session";
+    /** the MCP session ID of the page, or null while it is not known. */
+    sessionId: string | null;
+    status: McpConnectionStatus;
+}

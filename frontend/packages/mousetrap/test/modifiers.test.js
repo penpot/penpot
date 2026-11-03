@@ -31,7 +31,7 @@ describe("modifiers", () => {
     assert.equal(fired("shift+ctrl+alt+q", event), 1);
   });
 
-  it("drops the phantom ctrl while AltGraph is active", () => {
+  it("drops the phantom ctrl and alt while AltGraph is active", () => {
     const altgr = {
       key: "]",
       code: "BracketRight",
@@ -40,7 +40,38 @@ describe("modifiers", () => {
       getModifierState: (mod) => mod === "AltGraph",
     };
     assert.equal(fired("ctrl+alt+]", altgr), 0);
-    assert.equal(fired("alt+]", altgr), 1);
+    assert.equal(fired("alt+]", altgr), 0);
+    assert.equal(fired("]", altgr), 1);
+  });
+
+  it("falls back to ctrl+alt for a letter that AltGr turns into a glyph", () => {
+    // Spanish layout on Windows: Ctrl+Alt+E types "€".
+    const event = {
+      key: "€",
+      code: "KeyE",
+      keyCode: 69,
+      ctrlKey: true,
+      altKey: true,
+      getModifierState: (mod) => mod === "AltGraph",
+    };
+    assert.equal(fired("ctrl+alt+e", event), 1);
+    assert.equal(fired("€", event), 1);
+  });
+
+  it("matches letters and digits by keyCode when a modifier changes the glyph", () => {
+    // Shift+1 types "!" on US and Spanish layouts.
+    assert.equal(fired("shift+1", { key: "!", code: "Digit1", keyCode: 49, shiftKey: true }), 1);
+    // Spanish layout: Shift+0 types "=".
+    assert.equal(fired("shift+0", { key: "=", code: "Digit0", keyCode: 48, shiftKey: true }), 1);
+    // macOS: Option+M types "µ" and Option+E is a dead key.
+    assert.equal(fired("alt+m", { key: "µ", code: "KeyM", keyCode: 77, altKey: true }), 1);
+    assert.equal(fired("alt+e", { key: "Dead", code: "KeyE", keyCode: 69, altKey: true }), 1);
+    assert.equal(fired("alt+shift+5", { key: "%", code: "Digit5", keyCode: 53, altKey: true, shiftKey: true }), 1);
+  });
+
+  it("keeps AZERTY letters by layout, not by position", () => {
+    // AZERTY: the key at the US "W" position types "z" and has keyCode 90.
+    assert.equal(fired("ctrl+z", { key: "z", code: "KeyW", keyCode: 90, ctrlKey: true }), 1);
   });
 
   it("keeps a real ctrl+alt without AltGraph", () => {

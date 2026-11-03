@@ -579,6 +579,10 @@ msgstr "Grid view"
 msgid "dashboard.files-layout.list"
 msgstr "List view"
 
+#: src/app/main/ui/dashboard/fonts.cljs:431
+msgid "dashboard.fonts.delete-variant"
+msgstr "Delete font style"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:608
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Missing font"
@@ -677,6 +681,70 @@ msgstr "Connect selected libraries"
 msgid "dashboard.import.file-name-label"
 msgstr "File name"
 
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.title"
+msgstr "Import file"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.status.ready"
+msgstr "Ready"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.steps.label"
+msgstr "Import steps"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.steps.check"
+msgstr "Check"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.steps.upload"
+msgstr "Upload"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.steps.import"
+msgstr "Import"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.check.title"
+msgstr "Checking your files..."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.check.message"
+msgstr "Making sure each file can be imported. This only takes a moment."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.ready.title"
+msgstr "Files ready"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.ready.message"
+msgstr "Your files can be imported. Continue to upload them."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.upload.title"
+msgstr "Uploading your files..."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.upload.message"
+msgstr "Sending your files. Keep this dialog open until the upload ends."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.importing.title"
+msgid_plural "dashboard.import.importing.title"
+msgstr[0] "Importing 1 file"
+msgstr[1] "Importing %s files"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.importing.done"
+msgid_plural "dashboard.import.importing.done"
+msgstr[0] "1 done"
+msgstr[1] "%s done"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.importing.message"
+msgstr "Rebuilding pages, components and assets in your project."
+
 #: src/app/main/ui/dashboard/import.cljs:619
 msgid "dashboard.import.import-error.check-error"
 msgstr "We couldn't verify this file."
@@ -718,6 +786,14 @@ msgstr "Next file"
 #: src/app/main/ui/dashboard.cljs:265
 msgid "dashboard.import.no-perms"
 msgstr "You don’t have permission to import to this team"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.queued.title"
+msgstr "Waiting to start..."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.queued.message"
+msgstr "Your files are uploaded. The import starts as soon as a slot is free."
 
 #: src/app/main/ui/dashboard/import.cljs:443
 msgid "dashboard.import.resolve-libraries"
@@ -2101,9 +2177,37 @@ msgstr "Idea"
 msgid "feedback.type.issue"
 msgstr "Issue"
 
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.title"
-msgstr "Download files"
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.cancel-export"
+msgstr "Cancel export"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.done"
+msgstr "Done"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.export-error"
+msgstr "Couldn't export: %s"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.exported.message"
+msgstr "Check your downloads folder."
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.exported.title"
+msgid_plural "files-export-modal.exported.title"
+msgstr[0] "1 file exported"
+msgstr[1] "%s files exported"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.exporting.message"
+msgstr "Each file downloads as soon as it's ready."
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.exporting.title"
+msgid_plural "files-export-modal.exporting.title"
+msgstr[0] "Exporting 1 file"
+msgstr[1] "Exporting %s files"
 
 #: src/app/main/ui/exports/files.cljs:183
 msgid "files-export-modal.options.detach-libraries.message"
@@ -2144,6 +2248,18 @@ msgstr "Embed library assets in the file"
 #: src/app/main/ui/exports/files.cljs
 msgid "files-download-modal.unsaved-changes"
 msgstr "Some of your latest changes are not saved yet, so this download will not include them."
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.status.exported"
+msgstr "Exported"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.status.waiting"
+msgstr "Waiting"
+
+#: src/app/main/ui/exports/files.cljs
+msgid "files-export-modal.title"
+msgstr "Export file"
 
 #: src/app/main/ui/settings/password.cljs:45
 msgid "generic.error"
@@ -2696,7 +2812,7 @@ msgstr "Uploading file…"
 
 #: src/app/main/ui/dashboard/import.cljs:328, src/app/main/ui/exports/files.cljs:103
 msgid "jobs.queued"
-msgstr "Queued"
+msgstr "Waiting job slot"
 
 #: src/app/main/ui/dashboard/comments.cljs:94
 msgid "label.mark-all-as-read"
@@ -4809,10 +4925,6 @@ msgstr "Select items using this style"
 msgid "shortcuts.add-comment"
 msgstr "Comments"
 
-#: src/app/main/data/workspace/path/shortcuts.cljs:61
-msgid "shortcuts.add-node"
-msgstr "Add node"
-
 #: src/app/main/data/workspace/shortcuts.cljs:532
 msgid "shortcuts.align-bottom"
 msgstr "Align bottom"
@@ -5088,13 +5200,6 @@ msgstr "Join nodes"
 #: src/app/main/ui/shortcuts.cljs:624
 msgid "shortcuts.key-combo"
 msgstr "Press the new keys"
-
-#: src/app/main/ui/settings/shortcuts.cljs:484
-msgid "shortcuts.layout-map-missing"
-msgstr ""
-"This browser does not expose the keyboard layout, so shortcuts that "
-"combine Shift with punctuation (for example Shift+,) may not work here. "
-"They keep working in Chromium browsers."
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:249
 msgid "shortcuts.line-through"
@@ -7056,6 +7161,12 @@ msgstr "UPDATES"
 #: src/app/main/ui/ds/notifications/shared/notification_pill.cljs:61
 msgid "workspace.notification-pill.detail"
 msgstr "Details"
+
+#: src/app/main/data/workspace/notifications.cljs:282
+msgid "workspace.notifications.file-repaired"
+msgstr ""
+"We fixed some issues in this file. You can find a copy of the original version in "
+"the version history."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
 msgid "workspace.options.add-interaction"
@@ -9717,3 +9828,27 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/versions.cljs:462
 msgid "workspace.versions.warning.text"
 msgstr "Autosaved versions will be kept for %s days."
+
+msgid "mcp.oauth.title"
+msgstr "Connect to Penpot MCP"
+
+msgid "mcp.oauth.request"
+msgstr "%s wants to connect to Penpot."
+
+msgid "mcp.oauth.account"
+msgstr "You are signed in as %s."
+
+msgid "mcp.oauth.access"
+msgstr "This client can read and change designs through MCP connections established from Penpot."
+
+msgid "mcp.oauth.enable"
+msgstr "Allowing access enables the MCP integration and creates your MCP token if needed."
+
+msgid "mcp.oauth.approve"
+msgstr "Allow access"
+
+msgid "mcp.oauth.failed"
+msgstr "This request has expired, was already used, or could not be completed. Start the connection again from your MCP client."
+
+msgid "mcp.oauth.cancelled"
+msgstr "Connection cancelled"

@@ -407,6 +407,12 @@
      [:theme-ids [:set ::sm/uuid]]
      [:set-ids [:set ::sm/uuid]]]]
 
+   [:set-own-tokens-status
+    [:map {:title "SetOwnTokensStatus"}
+     [:type [:= :set-own-tokens-status]]
+     [:theme-ids [:maybe [:set ::sm/uuid]]]
+     [:set-ids [:maybe [:set ::sm/uuid]]]]]
+
    [:rename-token-set-group
     [:map {:title "RenameTokenSetGroup"}
      [:type [:= :rename-token-set-group]]
@@ -1066,6 +1072,13 @@
   [data {:keys [theme-ids set-ids]}]
   (-> (cfo/ensure-tokens-lib data)
       (cfo/update-tokens-status ctos/set-tokens-status theme-ids set-ids)))
+
+(defmethod process-change :set-own-tokens-status
+  [data {:keys [theme-ids set-ids]}]
+  (cfo/set-own-tokens-status data
+                             (when (or (some? theme-ids) (some? set-ids))
+                               (ctos/make-tokens-status :active-theme-ids theme-ids
+                                                        :active-set-ids set-ids))))
 
 (defmethod process-change :rename-token-set-group
   [data {:keys [set-group-path set-group-fname]}]

@@ -5,7 +5,16 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.climit
-  "Concurrencly limiter for RPC."
+  "Concurrencly limiter for RPC.
+
+  A command declares its limits in its `::climit/id` metadata and takes them
+  before the root ones, so a request waiting for its own limits does not hold
+  the root permits of its profile.
+
+  Every acquisition goes through this wrapper, so every path takes the
+  limiters in the same order. A command that calls another command from
+  inside its handler would take them twice: the second call waits for a
+  permit the first one holds, and answers 429 when the timeout runs out."
   (:refer-clojure :exclude [run!])
   (:require
    [app.common.exceptions :as ex]
@@ -221,16 +230,6 @@
 
 (def ^:private idseq (AtomicLong. 0))
 
-(def ^:private ^ThreadLocal held-limiters
-  ;; Limiters a thread is inside of, identified by the limiter instance, which
-  ;; already encodes the limit id and its key: the cache is per id+key pair.
-  ;; `pbh/invoke!` runs the handler on the calling thread, so a handler that
-  ;; enters climit again for a limit it holds finds it here. Without this a
-  ;; thread parks forever behind a permit it holds itself.
-  (ThreadLocal/withInitial
-   (reify java.util.function.Supplier
-     (get [_] (java.util.HashSet.)))))
-
 (defn- impl-invoke
   [metrics counters cache config handler]
   (let [limit-id     (::id config)
@@ -249,69 +248,57 @@
                       :permits (or (:permits config) (:concurrency config) 1)
                       :queue-max (or (:queue config) (:queue-size config))}
         limiter      (cache/get cache limit-id (partial create-limiter config))
-        held         ^java.util.Set (.get ^ThreadLocal held-limiters)]
+        tpoint       (ct/tpoint)
+        req-id       (.incrementAndGet ^AtomicLong idseq)
+        waiting      (volatile! true)
+        stop-waiting (fn []
+                       ;; Exactly one decrement per increment: the flag
+                       ;; makes a second call a no-op and the `finally`
+                       ;; guarantees that there is one.
+                       (when @waiting
+                         (vreset! waiting false)
+                         (waiting-dec metrics counters limit-name)))]
 
-    (if (.contains held limiter)
-      ;; The calling thread already holds this limiter for this key: run the
-      ;; handler inline instead of queueing behind itself.
-      (do
-        (l/trc :hint "reentrant invocation" :id limit-id :label limit-label)
-        (handler))
+    (try
+      ;; The increment lives inside the `try`, so a throwable from the
+      ;; publishing path unwinds through the `finally`: the count comes back
+      ;; down instead of staying up for good.
+      (waiting-inc metrics counters limit-name)
 
-      (let [tpoint        (ct/tpoint)
-            req-id        (.incrementAndGet ^AtomicLong idseq)
-            waiting       (volatile! true)
-            stop-waiting  (fn []
-                            ;; Exactly one decrement per increment: the flag
-                            ;; makes a second call a no-op and the `finally`
-                            ;; guarantees that there is one.
-                            (when @waiting
-                              (vreset! waiting false)
-                              (waiting-dec metrics counters limit-name)))]
+      (let [stats (pbh/get-stats limiter)]
+        (log limit "enqueued" req-id stats nil nil nil))
 
-        (.add held limiter)
+      (pbh/invoke! limiter (fn []
+                             (stop-waiting)
+                             (let [elapsed (tpoint)
+                                   stats   (pbh/get-stats limiter)]
+                               (measure metrics mlabels elapsed)
+                               (log limit "acquired" req-id stats elapsed nil nil)
+                               (handler))))
 
-        (try
-          ;; The increment lives inside the `try`, so a throwable from the
-          ;; publishing path unwinds through the `finally`: the thread drops the
-          ;; mark and the count comes back down instead of staying up for good.
-          (waiting-inc metrics counters limit-name)
-
-          (let [stats (pbh/get-stats limiter)]
-            (log limit "enqueued" req-id stats nil nil nil))
-
-          (pbh/invoke! limiter (fn []
-                                 (stop-waiting)
-                                 (let [elapsed (tpoint)
-                                       stats   (pbh/get-stats limiter)]
-                                   (measure metrics mlabels elapsed)
-                                   (log limit "acquired" req-id stats elapsed nil nil)
-                                   (handler))))
-
-          (catch ExceptionInfo cause
-            (let [{:keys [type code] :as data} (ex-data cause)]
-              (if (= :bulkhead-error type)
-                (let [elapsed (tpoint)
-                      stats   (pbh/get-stats limiter)
-                      reason  (if (some? (:timeout data)) "timeout" "queue-full")]
-                  (mtx/run! metrics
-                            :id :rpc-climit-rejected
-                            :inc 1
-                            :labels (into-array String [limit-name reason]))
-                  (log limit "rejected" req-id stats elapsed code reason)
-                  (ex/raise :type :concurrency-limit
-                            :code code
-                            :hint "concurrency limit reached"
-                            :cause cause))
-                (throw cause))))
-
-          (finally
-            (.remove held limiter)
-            (stop-waiting)
+      (catch ExceptionInfo cause
+        (let [{:keys [type code] :as data} (ex-data cause)]
+          (if (= :bulkhead-error type)
             (let [elapsed (tpoint)
-                  stats   (pbh/get-stats limiter)]
+                  stats   (pbh/get-stats limiter)
+                  reason  (if (some? (:timeout data)) "timeout" "queue-full")]
+              (mtx/run! metrics
+                        :id :rpc-climit-rejected
+                        :inc 1
+                        :labels (into-array String [limit-name reason]))
+              (log limit "rejected" req-id stats elapsed code reason)
+              (ex/raise :type :concurrency-limit
+                        :code code
+                        :hint "concurrency limit reached"
+                        :cause cause))
+            (throw cause))))
 
-              (log limit "finished" req-id stats elapsed nil nil))))))))
+      (finally
+        (stop-waiting)
+        (let [elapsed (tpoint)
+              stats   (pbh/get-stats limiter)]
+
+          (log limit "finished" req-id stats elapsed nil nil))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MIDDLEWARE
@@ -340,6 +327,16 @@
       :else
       (throw (IllegalArgumentException. "unable to normalize limit")))))
 
+(defn- resolve-limit-key
+  "The key of a limit, resolved the same way in every path: a keyword is
+  looked up in the params, a function is applied to them, any other value is
+  the key itself."
+  [key params]
+  (cond
+    (keyword? key) (get params key)
+    (fn? key)       (key params)
+    :else           key))
+
 (defn wrap
   [cfg handler {label ::sv/name :as mdata}]
   (if-let [climit (::rpc/climit cfg)]
@@ -363,7 +360,7 @@
 
                     (fn [cfg params]
                       (let [config (-> config
-                                       (assoc ::key (key-fn params))
+                                       (assoc ::key (resolve-limit-key key-fn params))
                                        (assoc ::label label)
                                        ;; NOTE: only used for debugging output
                                        (assoc ::params params))]
@@ -373,40 +370,11 @@
                   (l/wrn :hint "no config found for specified queue" :id (id->str limit-id))
                   handler)))
             handler
-            ;; The root limiters go last so they end up outermost: every path
-            ;; meets them before the command's own limits. The nested
-            ;; `climit/invoke!` chains carry only the command's own limits and
-            ;; run inside those of the enclosing call, so this puts both paths
-            ;; in the same order. With the opposite order two calls of the same
-            ;; profile hold the same limiters inverted and park for good.
-            (concat (get-limits mdata) global-limits))
+            ;; The root limiters go first so they end up innermost: a command
+            ;; takes the limits it declares before the root ones. Every path
+            ;; meets the limiters in the same order, because every acquisition
+            ;; goes through this wrapper.
+            (concat global-limits (get-limits mdata)))
 
     handler))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; PUBLIC API
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- build-exec-chain
-  [{:keys [::label ::rpc/climit] :as cfg} f]
-  (reduce (fn [handler [limit-id limit-key]]
-            (if-let [config (get-config climit limit-id)]
-              (let [config (-> config
-                               (assoc ::key limit-key)
-                               (assoc ::label label))]
-                (fn [cfg params]
-                  (let [config (assoc config ::params params)]
-                    (invoke climit config (partial handler cfg params)))))
-              (do
-                (l/wrn :hint "config not found" :label label :id limit-id)
-                f)))
-          f
-          (get-limits cfg)))
-
-(defn invoke!
-  "Run a function in context of climit."
-  [{:keys [::rpc/climit] :as cfg} f params]
-  (let [f (if climit
-            (build-exec-chain cfg f)
-            f)]
-    (f cfg params)))

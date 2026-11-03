@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# This starts the MCP server in multi-user mode with OAuth enabled, for
+# testing OAuth in the Penpot development environment (assuming devenv).
+# Agentic tooling expects the single-user server from start-mcp-devenv.
+
+set -e
+
+if [ -z "$PENPOT_PUBLIC_URI" ]; then
+    echo "PENPOT_PUBLIC_URI is not set; run this inside the devenv container." >&2
+    exit 1
+fi
+
+PENPOT_MCP_AUTH_URI="${PENPOT_PUBLIC_URI%/}/api/mcp/oauth"
+
+echo "OAuth authorization URI: $PENPOT_MCP_AUTH_URI"
+echo "MCP endpoint for clients: ${PENPOT_PUBLIC_URI%/}/mcp/stream"
+
+PENPOT_MCP_SERVER_HOST=0.0.0.0 PENPOT_MCP_REMOTE_MODE=true PENPOT_MCP_AUTH_URI="$PENPOT_MCP_AUTH_URI" pnpm run bootstrap:multi-user
