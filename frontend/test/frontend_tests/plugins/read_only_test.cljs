@@ -25,9 +25,9 @@
 ;; Its validation flag is off, so only errors that always throw reach it
 (def ^:private plugin-id "00000000-0000-0000-0000-000000000000")
 
-(defn- set-read-only
-  [store read-only?]
-  (swap! store assoc-in [:workspace-global :read-only?] read-only?))
+(defn- set-can-edit
+  [store can-edit?]
+  (swap! store assoc-in [:permissions :can-edit] can-edit?))
 
 (defn- shape-count
   [store]
@@ -46,7 +46,7 @@
   (with-context
     (fn [store ^js context]
       (let [^js board (.createBoard context)]
-        (set-read-only store true)
+        (set-can-edit store false)
 
         (t/testing "a shape setter"
           (t/is (thrown-with-msg? js/Error #"read-only" (set! (.-name board) "Renamed")))
@@ -67,10 +67,30 @@
   (with-context
     (fn [store ^js context]
       (let [^js board (.createBoard context)]
-        (set-read-only store true)
-        (set-read-only store false)
+        (set-can-edit store false)
+        (set-can-edit store true)
         (set! (.-name board) "Renamed")
         (t/is (= "Renamed" (.-name board)))))))
+
+(t/deftest the-inspect-tab-does-not-block-writes
+  (with-context
+    (fn [store ^js context]
+      (let [^js board (.createBoard context)]
+        (swap! store update :workspace-global assoc
+               :read-only? true
+               :options-mode :inspect)
+        (set! (.-name board) "Renamed")
+        (t/is (= "Renamed" (.-name board)))))))
+
+(t/deftest each-read-only-source-says-why
+  (doseq [[path value reason] [[[:permissions :can-edit] false #"cannot edit this file"]
+                               [[:workspace-global :preview-id] (random-uuid) #"version is being previewed"]
+                               [[:render-state :lost] true #"canvas stopped rendering"]]]
+    (with-context
+      (fn [store ^js context]
+        (swap! store assoc-in path value)
+        (t/testing (str path)
+          (t/is (thrown-with-msg? js/Error reason (.createBoard context))))))))
 
 (t/deftest a-save-failure-lock-says-why-the-workspace-is-read-only
   (with-context
@@ -84,7 +104,7 @@
   (with-context
     (fn [store ^js context]
       (let [^js board (.createBoard context)]
-        (set-read-only store true)
+        (set-can-edit store false)
         (t/is (string? (.-name board)))
         (let [block (.undoBlockBegin (.-history context))]
           (t/is (some? block))
@@ -93,7 +113,7 @@
 (t/deftest read-only-keeps-permission-checks-of-reads
   (with-context
     (fn [store _]
-      (set-read-only store true)
+      (set-can-edit store false)
       (t/is (true? (r/check-permission plugin-id "content:read")))
       (t/is (true? (r/has-permission? plugin-id "content:write")))
       (t/is (thrown? js/Error (r/check-permission plugin-id "library:write"))))))
