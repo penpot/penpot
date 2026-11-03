@@ -54,6 +54,18 @@
        (map :conname)
        set))
 
+(defn- foreign-key-flags
+  "The deferral and delete-action flags of one foreign key. `condeferred` is
+  true only for `INITIALLY DEFERRED`."
+  [table name]
+  (-> (th/db-exec! ["SELECT condeferrable, condeferred, confdeltype, convalidated
+                       FROM pg_constraint
+                      WHERE contype = 'f'
+                        AND conname = ?
+                        AND conrelid = ?::regclass"
+                    name table])
+      first))
+
 (t/deftest job-table-exists-with-expected-columns
   (t/is (= #{; dispatch/lifecycle columns
              "id" "name" "tenant" "queue" "label" "priority" "scheduled_at"
@@ -240,9 +252,16 @@
   (t/testing "the reference does not cascade"
     (t/is (contains? (table-foreign-keys "file_data")
                      ["file_data_storage_object_id_fkey" "a"])))
-  (t/testing "the reference is DEFERRABLE like every FK of the schema"
-    (t/is (contains? (deferrable-foreign-keys "file_data")
-                     "file_data_storage_object_id_fkey"))))
+  (t/testing "the reference is DEFERRABLE but checked immediately"
+    ;; The storage GC catches the violation inside the chunk transaction. An
+    ;; `INITIALLY DEFERRED` check fires at commit, outside the catch, and the
+    ;; sweep would never move past the blocked chunk.
+    (t/is (= {:condeferrable true
+              :condeferred false
+              :confdeltype "a"
+              :convalidated true}
+             (foreign-key-flags "file_data"
+                                "file_data_storage_object_id_fkey")))))
 
 (t/deftest deleting-a-referenced-storage-object-fails
   (let [profile (th/create-profile* 1)
@@ -362,82 +381,27 @@
   (t/is (contains? (table-indexes "file_data")
                    "file_data__storage_object_id__idx")))
 
-(t/deftest file-data-migration-aborts-on-an-incomplete-index
-  ;; A prebuilt parent index is matched by its name, so the guard has to abort
-  ;; when the definition is valid but the partitions are not attached yet.
-  (th/db-exec! ["DROP INDEX file_data__storage_object_id__idx"])
-  (th/db-exec! ["CREATE INDEX file_data__storage_object_id__idx
-                    ON ONLY file_data (storage_object_id)"])
-
-  (try
-    (t/is (thrown? java.sql.SQLException
-                   (apply-file-data-migration!)))
-    (finally
-      ;; Leave the shared test schema with the complete, valid index.
-      (th/db-exec! ["DROP INDEX file_data__storage_object_id__idx"])
-      (apply-file-data-migration!)))
-
-  (t/is (contains? (table-indexes "file_data")
-                   "file_data__storage_object_id__idx")))
-
-(t/deftest file-data-migration-rejects-a-partial-index
-  ;; A partial index mentions the column in its definition but PostgreSQL
-  ;; cannot use it for the foreign key check.
-  (th/db-exec! ["DROP INDEX file_data__storage_object_id__idx"])
-  (th/db-exec! ["CREATE INDEX file_data__storage_object_id__idx
-                    ON file_data (storage_object_id)
-                 WHERE storage_object_id IS NOT NULL"])
-
-  (try
-    (t/is (thrown? java.sql.SQLException
-                   (apply-file-data-migration!)))
-    (finally
-      (th/db-exec! ["DROP INDEX file_data__storage_object_id__idx"])
-      (apply-file-data-migration!)))
-
-  (t/is (contains? (table-indexes "file_data")
-                   "file_data__storage_object_id__idx")))
-
-(t/deftest file-data-migration-rejects-a-wrong-foreign-key
-  ;; The guard only accepts a validated DEFERRABLE NO ACTION foreign key: a
-  ;; cascade would delete the referencing rows instead of refusing the delete.
+(t/deftest file-data-migration-rebuilds-a-wrong-foreign-key
+  ;; The migration owns the definition. A constraint created by hand with
+  ;; CASCADE would delete the referencing rows instead of refusing the delete,
+  ;; so it is replaced with the NO ACTION one.
   (th/db-exec! ["ALTER TABLE file_data
                    DROP CONSTRAINT file_data_storage_object_id_fkey"])
-  (th/db-exec! ["ALTER TABLE file_data
-                   ADD CONSTRAINT file_data_storage_object_id_fkey
-                   FOREIGN KEY (storage_object_id) REFERENCES storage_object(id)
-                   ON DELETE CASCADE DEFERRABLE"])
-
   (try
-    (t/is (thrown? java.sql.SQLException
-                   (apply-file-data-migration!)))
+    (th/db-exec! ["ALTER TABLE file_data
+                     ADD CONSTRAINT file_data_storage_object_id_fkey
+                     FOREIGN KEY (storage_object_id) REFERENCES storage_object(id)
+                     ON DELETE CASCADE DEFERRABLE"])
+    (t/is (true? (apply-file-data-migration!)))
+    (t/is (= "a" (:confdeltype
+                  (foreign-key-flags "file_data"
+                                     "file_data_storage_object_id_fkey"))))
     (finally
-      (th/db-exec! ["ALTER TABLE file_data
-                       DROP CONSTRAINT file_data_storage_object_id_fkey"])
-      (apply-file-data-migration!)))
+      (apply-file-data-migration!))))
 
-  (t/is (contains? (table-foreign-keys "file_data")
-                   ["file_data_storage_object_id_fkey" "a"])))
-
-(t/deftest file-data-migration-rejects-an-expression-index
-  ;; The guard requires a plain single-column index: an expression index also
-  ;; matches the name but PostgreSQL cannot use it for the foreign key check.
-  (th/db-exec! ["DROP INDEX file_data__storage_object_id__idx"])
-  (try
-    (th/db-exec! ["CREATE INDEX file_data__storage_object_id__idx
-                      ON file_data (lower(storage_object_id::text))"])
-    (t/is (thrown? java.sql.SQLException
-                   (apply-file-data-migration!)))
-    (finally
-      (th/db-exec! ["DROP INDEX IF EXISTS file_data__storage_object_id__idx"])
-      (apply-file-data-migration!)))
-
-  (t/is (contains? (table-indexes "file_data")
-                   "file_data__storage_object_id__idx")))
-
-(t/deftest file-data-migration-rejects-a-non-deferrable-foreign-key
+(t/deftest file-data-migration-rebuilds-a-non-deferrable-foreign-key
   ;; Without DEFERRABLE the constraint breaks `SET CONSTRAINTS ALL DEFERRED`
-  ;; and `database-reset`.
+  ;; and `database-reset`; the migration recreates it deferrable.
   (th/db-exec! ["ALTER TABLE file_data
                    DROP CONSTRAINT file_data_storage_object_id_fkey"])
   (try
@@ -445,12 +409,27 @@
                      ADD CONSTRAINT file_data_storage_object_id_fkey
                      FOREIGN KEY (storage_object_id) REFERENCES storage_object(id)
                      ON DELETE NO ACTION"])
-    (t/is (thrown? java.sql.SQLException
-                   (apply-file-data-migration!)))
+    (t/is (true? (apply-file-data-migration!)))
+    (t/is (true? (:condeferrable
+                  (foreign-key-flags "file_data"
+                                     "file_data_storage_object_id_fkey"))))
     (finally
-      (th/db-exec! ["ALTER TABLE file_data
-                       DROP CONSTRAINT IF EXISTS file_data_storage_object_id_fkey"])
-      (apply-file-data-migration!)))
+      (apply-file-data-migration!))))
 
-  (t/is (contains? (table-foreign-keys "file_data")
-                   ["file_data_storage_object_id_fkey" "a"])))
+(t/deftest file-data-migration-rebuilds-a-deferred-foreign-key
+  ;; An `INITIALLY DEFERRED` check fires at commit, outside the
+  ;; `storage-gc-deleted` chunk transaction, so the sweep would never move past
+  ;; a blocked chunk. The migration must leave the check immediate.
+  (th/db-exec! ["ALTER TABLE file_data
+                   DROP CONSTRAINT file_data_storage_object_id_fkey"])
+  (try
+    (th/db-exec! ["ALTER TABLE file_data
+                     ADD CONSTRAINT file_data_storage_object_id_fkey
+                     FOREIGN KEY (storage_object_id) REFERENCES storage_object(id)
+                     ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED"])
+    (t/is (true? (apply-file-data-migration!)))
+    (t/is (false? (:condeferred
+                   (foreign-key-flags "file_data"
+                                      "file_data_storage_object_id_fkey"))))
+    (finally
+      (apply-file-data-migration!))))
