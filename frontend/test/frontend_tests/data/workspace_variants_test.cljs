@@ -8,6 +8,7 @@
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.files.variant :as cfv]
+   [app.common.logic.variants :as clv]
    [app.common.path-names :as cpn]
    [app.common.test-helpers.components :as cthc]
    [app.common.test-helpers.compositions :as tho]
@@ -181,6 +182,20 @@
       (tho/add-simple-component :c02 :m02 :r02
                                 :root-params {:name "Beta" :x 150 :y 0 :width 100 :height 80})))
 
+(defn- two-mains-shared-prefix-file
+  []
+  (-> (cthf/sample-file :file1)
+      (tho/add-simple-component :c01 :m01 :r01
+                                :root-params {:name "UI / Alpha" :x 0 :y 0 :width 100 :height 80})
+      (tho/add-simple-component :c02 :m02 :r02
+                                :root-params {:name "UI / Beta" :x 150 :y 0 :width 100 :height 80})))
+
+(defn- path-named-main-file
+  []
+  (-> (cthf/sample-file :file1)
+      (tho/add-simple-component :c01 :m01 :r01
+                                :root-params {:name "Group / Button"})))
+
 (defn- two-mains-on-page1-with-page2
   "Two mains on :page1; the open page is :page2 (Assets combine while elsewhere)."
   []
@@ -200,6 +215,10 @@
       (tho/add-frame :v01 {:name "Set"})
       (tho/add-simple-component :c01 :m01 :r01
                                 :root-params {:parent-label :v01 :name "Set"})))
+
+(defn- component-full-name
+  [component]
+  (cpn/merge-path-item (:path component) (:name component)))
 
 (defn- page-objects
   [file]
@@ -258,7 +277,7 @@
         changes       (-> (pcb/empty-changes nil (:id page))
                           (pcb/with-objects (:objects page))
                           (pcb/with-library-data (:data file))
-                          (dwv/generate-define-variant-container
+                          (clv/generate-define-variant-container
                            variant-id main-id component-id name))
         file'         (cthf/apply-changes file changes)
         container'    (cths/get-shape file' :v01)
@@ -271,7 +290,7 @@
     (t/is (= variant-id (:variant-id comp')))
     (t/is (some? (:variant-id comp')))
     (t/is (= (ctv/properties-to-name (:variant-properties comp'))
-             (:variant-name main'))))))
+             (:variant-name main')))))
 
 (t/deftest transform-in-variant-validates-after-every-commit
   (t/async
@@ -320,6 +339,54 @@
            (t/is (= variant-id (:variant-id comp')))))
        after-commits-idle))))
 
+(t/deftest transform-in-variant-path-name-validates-after-every-commit
+  (t/async
+    done
+    (let [file       (path-named-main-file)
+          main-id    (cthi/id :m01)
+          variant-id (uuid/next)
+          snapshots  (atom [])
+          store      (ths/setup-store file)]
+      (watch-applied-commits store snapshots)
+      (ths/run-store
+       store
+       done
+       [(dwv/transform-in-variant main-id variant-id nil [] false true true)]
+       (fn [state]
+         (let [snaps       @snapshots
+               flagged     (first-flagged snaps variant-id)
+               file'       (ths/get-file-from-state state)
+               objects'    (page-objects file')
+               container'  (get objects' variant-id)
+               main'       (get objects' main-id)
+               comp'       (cthc/get-component file' :c01)
+               before-flag (take-while
+                            #(not (ctk/is-variant-container?
+                                   (get (page-objects (:file %)) variant-id)))
+                            snaps)]
+           (assert-valid-snapshots snaps)
+           (t/is (some? flagged) "a commit must set :is-variant-container")
+           (doseq [snap before-flag]
+             (let [ffile (:file snap)
+                   fmain (get (page-objects ffile) main-id)
+                   fcomp (cthc/get-component ffile :c01)]
+               (t/is (= "Group / Button" (:name fmain)))
+               (t/is (= "Group / Button" (component-full-name fcomp)))))
+           (when flagged
+             (let [ffile (:file flagged)
+                   fobjs (page-objects ffile)
+                   fcont (get fobjs variant-id)
+                   fmain (get fobjs main-id)
+                   fcomp (cthc/get-component ffile :c01)]
+               (t/is (= "Group" (:name fcont) (:name fmain) (component-full-name fcomp)))
+               (t/is (= variant-id (:variant-id fmain) (:variant-id fcomp)))
+               (t/is (= (ctv/properties-to-name (:variant-properties fcomp))
+                        (:variant-name fmain)))))
+           (t/is (ctk/is-variant-container? container'))
+           (t/is (= "Group" (:name container') (:name main') (component-full-name comp')))
+           (t/is (= variant-id (:variant-id main') (:variant-id comp')))))
+       after-commits-idle))))
+
 (t/deftest add-new-variant-on-existing-set-still-validates
   (t/async
     done
@@ -363,19 +430,37 @@
        done
        [(dwv/combine-as-variants [id1 id2] {:variant-id variant-id :trigger "test"})]
        (fn [state]
-         (let [snaps   @snapshots
-               file'   (ths/get-file-from-state state)
-               objects (page-objects file')
-               container (get objects variant-id)
-               m01'    (get objects id1)
-               m02'    (get objects id2)
-               c01'    (cthc/get-component file' :c01)
-               c02'    (cthc/get-component file' :c02)
-               names1  (mapv :name (:variant-properties c01'))
-               names2  (mapv :name (:variant-properties c02'))
-               ordered (mapv :main-instance-id
-                             (cfv/find-variant-components (:data file') objects variant-id))]
+         (let [snaps       @snapshots
+               file'       (ths/get-file-from-state state)
+               objects     (page-objects file')
+               container   (get objects variant-id)
+               m01'        (get objects id1)
+               m02'        (get objects id2)
+               c01'        (cthc/get-component file' :c01)
+               c02'        (cthc/get-component file' :c02)
+               names1      (mapv :name (:variant-properties c01'))
+               names2      (mapv :name (:variant-properties c02'))
+               ordered     (mapv :main-instance-id
+                                 (cfv/find-variant-components (:data file') objects variant-id))
+               before-flag (take-while
+                            #(not (ctk/is-variant-container?
+                                   (get (page-objects (:file %)) variant-id)))
+                            snaps)
+               flagged     (first-flagged snaps variant-id)]
            (assert-valid-snapshots snaps)
+           (doseq [snap before-flag]
+             (let [ffile (:file snap)
+                   fmain (get (page-objects ffile) id1)
+                   fcomp (cthc/get-component ffile :c01)]
+               (t/is (= "Alpha" (:name fmain)))
+               (t/is (= "Alpha" (component-full-name fcomp)))))
+           (when flagged
+             (let [ffile (:file flagged)
+                   fobjs (page-objects ffile)
+                   fcont (get fobjs variant-id)
+                   fmain (get fobjs id1)
+                   fcomp (cthc/get-component ffile :c01)]
+               (t/is (= "Component" (:name fcont) (:name fmain) (component-full-name fcomp)))))
            (doseq [{:keys [file]} snaps]
              (let [objs  (page-objects file)
                    cont  (get objs variant-id)
@@ -390,6 +475,53 @@
            (t/is (= variant-id (:variant-id m02')))
            (t/is (= variant-id (:parent-id m01')))
            (t/is (= variant-id (:parent-id m02')))))
+       after-commits-idle))))
+
+(t/deftest combine-as-variants-shared-prefix-validates-after-every-commit
+  (t/async
+    done
+    (let [file       (two-mains-shared-prefix-file)
+          id1        (cthi/id :m01)
+          id2        (cthi/id :m02)
+          variant-id (uuid/next)
+          snapshots  (atom [])
+          store      (ths/setup-store file)]
+      (watch-applied-commits store snapshots)
+      (ths/run-store
+       store
+       done
+       [(dwv/combine-as-variants [id1 id2] {:variant-id variant-id :trigger "test"})]
+       (fn [state]
+         (let [snaps       @snapshots
+               file'       (ths/get-file-from-state state)
+               objects     (page-objects file')
+               container   (get objects variant-id)
+               m01'        (get objects id1)
+               m02'        (get objects id2)
+               c01'        (cthc/get-component file' :c01)
+               c02'        (cthc/get-component file' :c02)
+               flagged     (first-flagged snaps variant-id)]
+           (assert-valid-snapshots snaps)
+           (doseq [{:keys [file]} snaps]
+             (let [objs (page-objects file)
+                   cont (get objs variant-id)
+                   kids (set (:shapes cont))]
+               (when (contains? kids id2)
+                 (t/is (ctk/is-variant-container? cont)
+                       "other mains must not enter the frame before it is a variant container"))))
+           (when flagged
+             (let [ffile (:file flagged)
+                   fobjs (page-objects ffile)
+                   fcont (get fobjs variant-id)
+                   fmain (get fobjs id1)
+                   fcomp (cthc/get-component ffile :c01)]
+               (t/is (= "UI" (:name fcont) (:name fmain) (component-full-name fcomp)))))
+           (t/is (ctk/is-variant-container? container))
+           (t/is (= "UI" (:name container) (:name m01') (:name m02')
+                    (component-full-name c01') (component-full-name c02')))
+           (t/is (= variant-id (:variant-id m01') (:variant-id m02')
+                    (:variant-id c01') (:variant-id c02')))
+           (t/is (= variant-id (:parent-id m01') (:parent-id m02')))))
        after-commits-idle))))
 
 (t/deftest combine-as-variants-from-another-page-validates-after-every-commit
