@@ -19,7 +19,9 @@ impl HorizontalParagraphPlan {
         if !(policy.is_chinese()
             || matches!(
                 policy,
-                TextLayoutPolicy::KoreanWords | TextLayoutPolicy::KoreanSyllable
+                TextLayoutPolicy::Japanese
+                    | TextLayoutPolicy::KoreanWords
+                    | TextLayoutPolicy::KoreanSyllable
             ))
             || !width.is_finite()
             || width <= 0.0
