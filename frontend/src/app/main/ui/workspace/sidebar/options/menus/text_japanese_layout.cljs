@@ -44,7 +44,7 @@
   (cond-> options
     (mixed-span-value? value)
     (conj {:id       "mixed"
-           :label    (tr "labels.mixed-values")
+           :label    (tr "settings.multiple")
            :disabled true
            :dimmed   true})))
 
