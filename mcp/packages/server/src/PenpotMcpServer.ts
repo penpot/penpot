@@ -20,6 +20,8 @@ import { CljsReplTool } from "./tools/dev/CljsReplTool";
 import { ImportPenpotFileTool } from "./tools/dev/ImportPenpotFileTool";
 import { CljsCompilerOutputTool } from "./tools/dev/CljsCompilerOutputTool";
 import { CljCheckParentheses } from "./tools/dev/CljCheckParentheses";
+import { CljTestTool } from "./tools/dev/CljTestTool";
+import { CljEvalTool } from "./tools/dev/CljEvalTool";
 import { ReadTaigaIssueTool } from "./tools/dev/ReadTaigaIssueTool";
 import { NreplClient } from "./NreplClient";
 import { ReplServer } from "./ReplServer";
@@ -285,6 +287,8 @@ export class PenpotMcpServer {
             toolInstances.push(new ImportPenpotFileTool(this, nreplClient));
             toolInstances.push(new CljsCompilerOutputTool(this, nreplClient));
             toolInstances.push(new CljCheckParentheses(this));
+            toolInstances.push(new CljTestTool(this));
+            toolInstances.push(new CljEvalTool(this));
             toolInstances.push(new ReadTaigaIssueTool(this));
         }
 
