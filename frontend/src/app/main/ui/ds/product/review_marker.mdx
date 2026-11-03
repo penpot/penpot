@@ -1,0 +1,36 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS INC Sucursal en España SL */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as ReviewMarker from "./review_marker.stories";
+
+<Meta title="Product/Review/ReviewMarker" />
+
+# ReviewMarker
+
+The mark a design review leaves on the canvas: a round mark with the
+number of a comment, or a square one with the task icon.
+
+<Canvas of={ReviewMarker.AllMarkers} />
+
+## Variants
+
+- `type`: `comment` (default) or `task`.
+- `state`: `default`, `active` (the one open now), `resolved` (a settled
+  comment: a tick replaces its number) and `lost` (its layer was deleted:
+  a dashed orange outline).
+
+## Technical notes
+
+It renders a `button`. The caller names it with `aria-label` and handles
+`on-click`; `label` is the number of a comment.
+
+```clj
+[:> review-marker* {:label (str (:seqn thread))
+                    :state (if open? "active" "default")
+                    :aria-label (tr "workspace.review.marker.comment" (:seqn thread))
+                    :on-click on-open}]
+```

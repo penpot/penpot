@@ -1,0 +1,255 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
+
+// --- List
+
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// --- Events
+
+.task-event {
+  --task-event-icon-color: var(--color-accent-info);
+
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-s);
+  padding: var(--sp-s);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+
+  &.is-warning {
+    --task-event-icon-color: var(--color-accent-warning);
+
+    color: var(--color-accent-warning);
+  }
+}
+
+.task-event-icon {
+  flex-shrink: 0;
+  color: var(--task-event-icon-color);
+}
+
+.task-event-text {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.task-event-time {
+  color: var(--color-foreground-primary);
+}
+
+// --- State and next step
+
+.task-state-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.task-state-text {
+  color: var(--color-foreground-primary);
+}
+
+.task-review-link {
+  @include use-typography("body-small");
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-accent-primary);
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.task-next-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+  padding: var(--sp-m);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+
+  &.is-inline {
+    flex-direction: row;
+    justify-content: flex-end;
+    padding: 0;
+    background: none;
+  }
+}
+
+.task-next-step-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--sp-s);
+}
+
+// --- Floating panels on the canvas
+
+.floating-panel {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  inline-size: $sz-284;
+  max-block-size: 60vh;
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);
+  color: var(--color-foreground-primary);
+  overflow: hidden;
+  cursor: auto;
+  pointer-events: auto;
+}
+
+.floating-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  padding: var(--sp-s) var(--sp-s) var(--sp-s) var(--sp-m);
+  border-block-end: $b-1 solid var(--color-background-quaternary);
+}
+
+.floating-header-icon {
+  color: var(--color-accent-info);
+}
+
+.floating-title {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--color-foreground-secondary);
+
+  &.is-strong {
+    color: var(--color-foreground-primary);
+  }
+}
+
+.floating-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+  padding: var(--sp-m);
+  overflow-y: auto;
+}
+
+.task-title {
+  margin: 0;
+}
+
+// --- New task form
+
+.task-title-input {
+  @include use-typography("body-small");
+
+  inline-size: 100%;
+  padding: var(--sp-s);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+  resize: none;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-accent-primary);
+  }
+}
+
+.form-hint {
+  margin: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-s);
+}
+
+.form-label {
+  flex-shrink: 0;
+  color: var(--color-foreground-primary);
+}
+
+.form-select {
+  max-inline-size: px2rem(160);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-s);
+}
+
+// --- Progress
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.progress-label {
+  color: var(--color-foreground-primary);
+}
+
+.progress-link {
+  @include use-typography("body-small");
+
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-accent-info);
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.progress-bar {
+  block-size: var(--sp-xs);
+  border-radius: $br-4;
+  background-color: var(--color-background-quaternary);
+  overflow: hidden;
+}
+
+.progress-fill {
+  block-size: 100%;
+  border-radius: $br-4;
+  background-color: var(--color-accent-info);
+}

@@ -247,12 +247,14 @@
             features    (get state :features)
             permissions (get state :permissions)]
 
-        ;; Historical previews must not create edits to the live file. Check
-        ;; this when creating commits so previously queued edits can still save.
-        ;; Refusals answer with an empty stream (never nil) so callers can
-        ;; uniformly subscribe and observe termination.
+        ;; Historical previews must not create edits to the live file, and
+        ;; a design review is read-only (the branch is edited outside it).
+        ;; Check this when creating commits so previously queued edits can
+        ;; still save. Refusals answer with an empty stream (never nil) so
+        ;; callers can uniformly subscribe and observe termination.
         (if (and (:can-edit permissions)
-                 (not (dm/get-in state [:workspace-global :preview-id])))
+                 (not (dm/get-in state [:workspace-global :preview-id]))
+                 (not (contains? state :workspace-pr-preview)))
           (do
             (log/trace :hint "commit-changes" :redo-changes redo-changes)
             (let [selected (dm/get-in state [:workspace-local :selected])]

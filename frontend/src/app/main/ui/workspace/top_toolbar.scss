@@ -129,3 +129,15 @@
   border-radius: $br-4;
   background-color: var(--color-accent-default);
 }
+
+// the tools of a design review use the review colour: blue on the tool in
+// use and on hover, instead of the accent of the drawing tools
+.review-tool:hover {
+  --button-hover-bg-color: var(--color-background-quaternary);
+  --button-hover-fg-color: var(--color-accent-info);
+}
+
+.review-tool[aria-pressed="true"] {
+  --button-active-bg-color: var(--color-background-info);
+  --button-active-fg-color: var(--color-accent-info);
+}

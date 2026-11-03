@@ -297,7 +297,32 @@
 .floating-thread-header-left {
   @include use-typography("body-small");
 
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
   color: var(--color-foreground-primary);
+}
+
+// a thread written in a design review says so, in the review colour
+.review-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-xxs);
+  min-inline-size: 0;
+  padding: 0 var(--sp-xs);
+  border-radius: $br-4;
+  background-color: var(--color-background-info);
+  color: var(--color-accent-info);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.thread-task {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
 }
 
 .floating-thread-header-right {

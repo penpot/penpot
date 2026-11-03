@@ -138,7 +138,6 @@
   supplies its children (a board or group draws them). `highlight`
   (`{:id :status}`) outlines the layer an added or deleted change is
   about, when `objects` holds it."
-  {::mf/private true}
   [{:keys [shape objects highlight]}]
   (let [{:keys [x y width height]} (shape-bounds shape)
         width   (max 1 width)

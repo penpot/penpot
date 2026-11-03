@@ -389,49 +389,13 @@
   transition:
     inset-block-end 0.2s,
     block-size 0.2s;
-
-  &.is-collapsed {
-    inset-block-end: 0;
-    block-size: var(--sp-m);
-    border-radius: $br-12 $br-12 0 0;
-
-    .pr-banner-content {
-      block-size: 0;
-      padding-block: 0;
-      visibility: hidden;
-    }
-  }
-}
-
-.pr-banner-handle {
-  position: absolute;
-  inset-inline: 0;
-  inset-block-start: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  block-size: var(--sp-m);
-  border: none;
-  background: none;
-  cursor: pointer;
-  inline-size: 100%;
-  z-index: 1;
-}
-
-.pr-banner-handle-btn {
-  block-size: var(--sp-xs);
-  inline-size: 100%;
-  max-inline-size: $sz-64;
-  padding: 0;
-  border-radius: $br-4;
-  background-color: var(--color-background-quaternary);
 }
 
 .pr-banner-content {
   display: flex;
   align-items: center;
   gap: var(--sp-m);
-  padding: var(--sp-m) var(--sp-m) var(--sp-s);
+  padding: var(--sp-s) var(--sp-m);
 }
 
 .pr-banner-icon {
@@ -454,36 +418,12 @@
   @include use-typography("body-small");
 }
 
-.pr-banner-title,
-.pr-banner-route {
+.pr-banner-title {
   color: var(--color-foreground-secondary);
-}
-
-// branch -> main, as pills, the same way the compare dialog names them
-.pr-banner-route {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-  white-space: nowrap;
 }
 
 .pr-banner-name {
   color: var(--color-foreground-primary);
-}
-
-.pr-banner-badges {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-}
-
-.pr-banner-approvals {
-  @include use-typography("code-font");
-
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-xxs);
-  color: var(--color-accent-success);
 }
 
 .pr-banner-actions {
@@ -496,4 +436,44 @@
 .pr-banner-menu {
   display: flex;
   align-items: center;
+}
+
+.pr-banner-separator {
+  align-self: stretch;
+  border-inline-start: $b-1 solid var(--color-background-quaternary);
+}
+
+.pr-banner-tasks {
+  @include use-typography("body-small");
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-s);
+  padding: var(--sp-xs) var(--sp-s);
+  border: none;
+  border-radius: $br-8;
+  background: none;
+  color: var(--color-foreground-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--color-background-tertiary);
+    color: var(--color-foreground-primary);
+  }
+}
+
+.pr-banner-progress {
+  display: block;
+  inline-size: $sz-64;
+  block-size: var(--sp-xs);
+  border-radius: $br-4;
+  background-color: var(--color-background-quaternary);
+  overflow: hidden;
+}
+
+.pr-banner-progress-fill {
+  display: block;
+  block-size: 100%;
+  background-color: var(--color-accent-info);
 }

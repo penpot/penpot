@@ -1,0 +1,32 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_borders.scss" as *;
+
+.marker {
+  position: absolute;
+
+  // the mark is centered on its point
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+
+// the area a thread points at: the review blue at a tenth of its strength,
+// with a dashed outline
+.area-box {
+  position: absolute;
+  border: $b-1 dashed var(--color-accent-info);
+  border-radius: $br-4;
+  background-color: color-mix(in srgb, var(--color-accent-info) 10%, transparent);
+  pointer-events: none;
+}
+
+.area-drawer {
+  position: absolute;
+  inset: 0;
+  cursor: crosshair;
+  pointer-events: auto;
+}

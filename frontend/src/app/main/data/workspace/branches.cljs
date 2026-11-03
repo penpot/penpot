@@ -753,6 +753,8 @@
      resolve conflicts before integrating.
    - `:comment` — what the user says about the merge, kept with its
      record and shown in the reviews dialog.
+   - `:notify-assignees` — tell the assignees of the open tasks of the
+     branch, by email, that the merge moved their tasks into main.
    - `:excluded` — the per-change selection (change keys,
      `app.common.files.branch-merge/change-key`) naming the changes the
      user deselected, which main keeps its own value for.
@@ -764,7 +766,7 @@
   before that diff has loaded carry the revn of the conflict answer instead
   (`conflict-main-revn`). Unresolved conflicts open the resolution modal."
   ([branch] (merge-branch branch nil))
-  ([branch {:keys [resolutions comment excluded]}]
+  ([branch {:keys [resolutions comment excluded notify-assignees]}]
    (assert (uuid? (:id branch)) "expected a branch row with a valid `:id`")
    (ptk/reify ::merge-branch
      ptk/WatchEvent
@@ -781,6 +783,7 @@
                         (cond-> {:branch-id branch-id}
                           (seq resolutions)  (assoc :resolutions resolutions)
                           (seq excluded)     (assoc :excluded excluded)
+                          notify-assignees   (assoc :notify-assignees true)
                           (not (str/blank? comment)) (assoc :comment (str/trim comment))
                           (some? main-revn)  (assoc :expected-main-revn main-revn)))
                (rx/mapcat

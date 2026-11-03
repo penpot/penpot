@@ -1,0 +1,62 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
+
+.review-marker {
+  --marker-fg-color: var(--color-foreground-primary);
+  --marker-bg-color: var(--color-background-info);
+  --marker-border-color: var(--color-accent-info);
+  --marker-border-style: solid;
+
+  @include use-typography("body-small");
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: $sz-32;
+  block-size: $sz-32;
+  padding: 0;
+  border: $b-2 var(--marker-border-style) var(--marker-border-color);
+  border-radius: $br-circle;
+  background-color: var(--marker-bg-color);
+  color: var(--marker-fg-color);
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover {
+    --marker-border-color: var(--color-foreground-primary);
+  }
+
+  &:focus-visible {
+    outline: $b-1 solid var(--color-accent-primary);
+    outline-offset: $b-2;
+  }
+
+  &.is-task {
+    border-radius: $br-6;
+  }
+
+  &.is-active {
+    --marker-fg-color: var(--color-background-primary);
+    --marker-bg-color: var(--color-accent-info);
+  }
+
+  &.is-resolved {
+    --marker-fg-color: var(--color-foreground-secondary);
+    --marker-bg-color: var(--color-background-primary);
+    --marker-border-color: var(--color-foreground-secondary);
+  }
+
+  &.is-lost {
+    --marker-fg-color: var(--color-accent-warning);
+    --marker-bg-color: var(--color-background-warning);
+    --marker-border-color: var(--color-accent-warning);
+    --marker-border-style: dashed;
+  }
+}

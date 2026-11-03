@@ -157,10 +157,12 @@
             :comment-url comment-url}))))))
 
 (defn- decode-row
-  [{:keys [participants position mentions] :as row}]
+  [{:keys [participants position mentions area anchor-type] :as row}]
   (cond-> row
     (db/pgpoint? position) (assoc :position (db/decode-pgpoint position))
     (db/pgobject? participants) (assoc :participants (db/decode-transit-pgobject participants))
+    (db/pgobject? area) (assoc :area (db/decode-transit-pgobject area))
+    (string? anchor-type) (assoc :anchor-type (keyword anchor-type))
     (db/pgarray? mentions) (assoc :mentions (db/decode-pgarray mentions #{}))))
 
 (def xf-decode-row
@@ -250,6 +252,8 @@
            p.team_id AS team_id,
            f.name AS file_name,
            f.project_id AS project_id,
+           fpr.title AS pull_request_title,
+           fpr.status AS pull_request_status,
            first_value(c.content) OVER w AS content,
            (SELECT count(1)
               FROM comment AS c
@@ -264,6 +268,7 @@
      INNER JOIN project AS p ON (p.id = f.project_id)
       LEFT JOIN comment_thread_status AS cts ON (cts.thread_id = ct.id AND cts.profile_id = ?)
       LEFT JOIN profile AS pf ON (ct.owner_id = pf.id)
+      LEFT JOIN file_pull_request AS fpr ON (fpr.id = ct.pull_request_id)
      WHERE f.deleted_at IS NULL
        AND p.deleted_at IS NULL
        %1
@@ -442,6 +447,26 @@
 
 ;; --- COMMAND: Create Comment Thread
 
+(def schema:area
+  "A rectangle of the canvas a thread points at, in canvas coordinates."
+  [:map {:title "CommentThreadArea"}
+   [:x ::sm/safe-number]
+   [:y ::sm/safe-number]
+   [:width ::sm/safe-number]
+   [:height ::sm/safe-number]])
+
+(def ^:private schema:anchor
+  "What a thread points at: a spot of a board (`:canvas`, the default),
+  a layer or a rectangle."
+  [:multi {:dispatch :type :title "CommentThreadAnchor"}
+   [:canvas [:map [:type [:= :canvas]]]]
+   [:layer [:map
+            [:type [:= :layer]]
+            [:shape-id ::sm/uuid]]]
+   [:area [:map
+           [:type [:= :area]]
+           [:area schema:area]]]])
+
 (def ^:private
   schema:create-comment-thread
   [:map {:title "create-comment-thread"}
@@ -451,7 +476,28 @@
    [:page-id ::sm/uuid]
    [:frame-id ::sm/uuid]
    [:share-id {:optional true} [:maybe ::sm/uuid]]
-   [:mentions {:optional true} [::sm/set ::sm/uuid]]])
+   [:mentions {:optional true} [::sm/set ::sm/uuid]]
+   ;; the design review the thread is written in: an open pull request
+   ;; of this file (the branch file it reviews)
+   [:pull-request-id {:optional true} ::sm/uuid]
+   [:anchor {:optional true} schema:anchor]])
+
+(def ^:private sql:get-open-pull-request-of-file
+  "SELECT id FROM file_pull_request
+    WHERE id = ?
+      AND source_file_id = ?
+      AND status = 'open'
+      AND deleted_at IS NULL")
+
+(defn- check-review-of-file
+  "Refuse a thread for a design review that is not an open review of the
+  file the thread is written on."
+  [conn pull-request-id file-id]
+  (when-not (db/exec-one! conn [sql:get-open-pull-request-of-file pull-request-id file-id])
+    (ex/raise :type :validation
+              :code :pull-request-not-open
+              :hint "the thread names a design review that is not open on this file"
+              :pull-request-id pull-request-id)))
 
 (defn- update-thread-seqn
   [conn file-id seqn]
@@ -492,7 +538,8 @@
 
 (defn- create-comment-thread
   [{:keys [::db/conn] :as cfg}
-   {:keys [::rpc/profile-id ::rpc/request-at ::file position content mentions frame-id] :as params}]
+   {:keys [::rpc/profile-id ::rpc/request-at ::file position content mentions frame-id
+           pull-request-id anchor]}]
 
   (let [;; NOTE: we take the next seq number from a separate query
         ;; because we need to lock the file for avoid race conditions
@@ -502,6 +549,9 @@
         ;; the sequence state management to a different table or
         ;; different storage (example: redis) for alivate the update
         ;; pression on the file table
+
+        _         (when pull-request-id
+                    (check-review-of-file conn pull-request-id (:id file)))
 
         profile   (profile/get-profile conn profile-id)
         seqn      (get-next-seqn conn (:id file))
@@ -521,7 +571,11 @@
                                    :seqn seqn
                                    :frame-id frame-id
                                    :position (db/pgpoint position)
-                                   :mentions (db/encode-pgarray mentions conn "uuid")})
+                                   :mentions (db/encode-pgarray mentions conn "uuid")
+                                   :pull-request-id pull-request-id
+                                   :anchor-type (d/name (get anchor :type :canvas))
+                                   :shape-id (:shape-id anchor)
+                                   :area (some-> (:area anchor) db/tjson)})
                       (decode-row))
         comment   (-> (db/insert! conn :comment
                                   {:id (uuid/next)

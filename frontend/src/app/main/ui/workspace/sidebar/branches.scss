@@ -170,6 +170,18 @@
   color: var(--color-foreground-primary);
 }
 
+.merge-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.merge-tasks-more {
+  @include use-typography("body-small");
+
+  color: var(--color-accent-primary);
+}
+
 .merge-summary {
   @include use-typography("body-small");
 
@@ -480,6 +492,31 @@
 .branch-banner-title {
   color: var(--color-foreground-primary);
   white-space: nowrap;
+}
+
+.branch-banner-review {
+  color: var(--color-foreground-secondary);
+  white-space: nowrap;
+}
+
+.branch-banner-tasks {
+  @include use-typography("body-small");
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  padding: var(--sp-xs) var(--sp-s);
+  border: none;
+  border-radius: $br-8;
+  background: none;
+  color: var(--color-foreground-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--color-background-tertiary);
+    color: var(--color-foreground-primary);
+  }
 }
 
 .branch-banner-icon-warning {

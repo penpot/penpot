@@ -1,0 +1,9 @@
+Hello {{name|abbreviate:25}}!
+
+{{ source-user }} merged the branch "{{ branch-name }}" into "{{ file-name }}". Your open tasks moved to main as they were:
+
+{{ task-titles }}
+
+{{ file-url }}
+
+The Penpot team.

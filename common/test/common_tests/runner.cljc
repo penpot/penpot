@@ -28,6 +28,7 @@
    [common-tests.files.comp-processors-test]
    [common-tests.files.helpers-test]
    [common-tests.files.repair-test]
+   [common-tests.files.review-activity-test]
    [common-tests.files.shapes-builder-test]
    [common-tests.files.tokens-test]
    [common-tests.files.validate-test]
@@ -137,6 +138,7 @@
    'common-tests.files.comp-processors-test
    'common-tests.files.helpers-test
    'common-tests.files.repair-test
+   'common-tests.files.review-activity-test
    'common-tests.files.shapes-builder-test
    'common-tests.files.tokens-test
    'common-tests.files.validate-test

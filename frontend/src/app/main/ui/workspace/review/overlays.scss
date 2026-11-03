@@ -1,0 +1,143 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
+
+.overlays {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.threads {
+  position: absolute;
+}
+
+// --- Changes
+
+.change-box {
+  --change-color: var(--color-accent-info);
+
+  position: absolute;
+  border: $b-1 dashed var(--change-color);
+  pointer-events: none;
+
+  &.is-added {
+    --change-color: var(--color-accent-success);
+  }
+
+  &.is-active {
+    border: $b-2 solid var(--change-color);
+    border-radius: $br-4;
+  }
+}
+
+.change-tag {
+  @include use-typography("body-small");
+
+  position: absolute;
+  inset-block-end: 100%;
+  inset-inline-end: 0;
+  margin-block-end: var(--sp-xxs);
+  padding: 0 var(--sp-xs);
+  border-radius: $br-4 $br-4 0 0;
+  background-color: var(--color-background-info);
+  color: var(--color-accent-info);
+  white-space: nowrap;
+
+  &.is-added {
+    background-color: var(--color-background-success);
+    color: var(--color-accent-success);
+  }
+
+  &.is-active {
+    inset-inline: 0 auto;
+    background-color: var(--color-accent-info);
+    color: var(--color-background-primary);
+  }
+
+  &.is-pick {
+    background-color: var(--color-accent-primary);
+  }
+}
+
+.navigator {
+  position: absolute;
+  inset-block-end: $sz-88;
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  padding: var(--sp-xs) var(--sp-s);
+  border: $b-1 solid var(--color-accent-info);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  pointer-events: auto;
+}
+
+.navigator-count {
+  color: var(--color-foreground-secondary);
+  white-space: nowrap;
+}
+
+.navigator-text {
+  color: var(--color-foreground-secondary);
+  white-space: nowrap;
+}
+
+.navigator-name {
+  color: var(--color-foreground-primary);
+}
+
+.navigator-separator {
+  align-self: stretch;
+  border-inline-start: $b-1 solid var(--color-background-quaternary);
+}
+
+// --- Picking the layer of a task
+
+.picker {
+  position: absolute;
+  inset: 0;
+  cursor: crosshair;
+  pointer-events: auto;
+}
+
+.picker-banner {
+  position: absolute;
+
+  // below the toolbar, which sits at the top center of the canvas
+  inset-block-start: $sz-120;
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  padding: var(--sp-xs) var(--sp-xs) var(--sp-xs) var(--sp-m);
+  border: $b-1 solid var(--color-accent-primary);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  pointer-events: auto;
+}
+
+.picker-icon {
+  color: var(--color-foreground-secondary);
+}
+
+.picker-label {
+  color: var(--color-foreground-secondary);
+  white-space: nowrap;
+}
+
+.picker-title {
+  color: var(--color-foreground-primary);
+  white-space: nowrap;
+}

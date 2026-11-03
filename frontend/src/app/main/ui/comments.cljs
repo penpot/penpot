@@ -18,6 +18,7 @@
    [app.main.data.comments :as dcm]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.comments :as dwcm]
+   [app.main.data.workspace.tasks :as dwtk]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -26,6 +27,7 @@
    [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as h]
+   [app.main.ui.workspace.review.tasks :as rvt]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -206,7 +208,6 @@
 
 ;; Component that renders the component content
 (mf/defc comment-content*
-  {::mf/private true}
   [{:keys [content]}]
   (let [comment-elements (mf/use-memo (mf/deps content) #(parse-comment content))]
     (for [[idx {:keys [type content]}] (d/enumerate comment-elements)]
@@ -901,6 +902,8 @@
                                   :is-disabled disabled?}]]
       [:> mentions-panel*]]]))
 
+(declare make-comments-ref)
+
 (mf/defc comment-floating-thread-header*
   {::mf/private true}
   [{:keys [thread origin]}]
@@ -946,12 +949,52 @@
          (mf/deps options)
          (fn [event]
            (dom/stop-propagation event)
-           (st/emit! (dcm/hide-comment-options))))]
+           (st/emit! (dcm/hide-comment-options))))
+
+        tasks     (mf/deref refs/tasks)
+        task      (when (some? thread) (dwtk/get-task-of-thread tasks (:id thread)))
+        comments  (mf/deref (mf/with-memo [thread] (make-comments-ref (:id thread))))
+        can-task? (and (dwtk/enabled?)
+                       (not= origin :viewer)
+                       (some? thread)
+                       (nil? task))
+
+        ;; "Make it a task": the title comes from the first comment, the
+        ;; layer is the one the thread points at (its board otherwise)
+        on-make-task
+        (mf/use-fn
+         (mf/deps thread comments)
+         (fn [event]
+           (dom/stop-propagation event)
+           (let [first-comment (first (sort-by :created-at (vals comments)))
+                 text          (str/trim (str/replace (or (:content first-comment) (:content thread) "")
+                                                      #"@\[([^\]]*)\]\([^\)]*\)" "@$1"))]
+             (st/emit! (dwtk/start-new-task
+                        {:page-id (:page-id thread)
+                         :frame-id (:frame-id thread)
+                         :shape-id (if (= :layer (:anchor-type thread))
+                                     (:shape-id thread)
+                                     (:frame-id thread))
+                         :position (:position thread)
+                         :thread-id (:id thread)
+                         :pull-request-id (when (= "open" (:pull-request-status thread))
+                                            (:pull-request-id thread))
+                         :title (subs text 0 (min 250 (count text)))})))))]
 
     [:*
      [:div {:class (stl/css :floating-thread-header-left)}
-      (tr "labels.comment") " " [:span {:class (stl/css :grayed-text)} "#" (:seqn thread)]]
+      (tr "labels.comment") " " [:span {:class (stl/css :grayed-text)} "#" (:seqn thread)]
+      (when (some? (:pull-request-id thread))
+        [:span {:class (stl/css :review-label)
+                :title (:pull-request-title thread)}
+         [:> icon* {:icon-id i/git-pull-request-arrow :size "s"}]
+         (or (:pull-request-title thread) (tr "workspace.review.design-review"))])]
      [:div {:class (stl/css :floating-thread-header-right)}
+      (when can-task?
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.tasks.make-task")
+                          :on-click on-make-task
+                          :icon i/view-as-list}])
       (when (some? thread)
         [:> checkbox* {:class (stl/css :checkbox-wrapper)
                        :checked (:is-resolved thread)
@@ -1050,6 +1093,18 @@
   [thread-id]
   (l/derived (l/in [:comments thread-id]) st/state))
 
+(mf/defc thread-task-section*
+  "The task a thread is attached to, inside the thread: its state, what
+  happened to it and what to do next."
+  {::mf/private true}
+  [{:keys [task thread]}]
+  (let [events (rvt/use-task-events (:id task))]
+    [:div {:class (stl/css :thread-task)}
+     [:> rvt/task-state-line* {:task task}]
+     (for [event events]
+       [:> rvt/task-event* {:key (dm/str (:id event)) :event event :thread thread}])
+     [:> rvt/task-next-step* {:task task}]]))
+
 (mf/defc comment-floating-thread*
   {::mf/wrap [mf/memo]}
   [{:keys [thread zoom origin position-modifier viewport]}]
@@ -1076,6 +1131,9 @@
         comments-ref  (mf/with-memo [thread-id]
                         (make-comments-ref thread-id))
         comments-map  (mf/deref comments-ref)
+
+        tasks         (mf/deref refs/tasks)
+        task          (dwtk/get-task-of-thread tasks thread-id)
 
         comments      (mf/with-memo [comments-map]
                         (->> (vals comments-map)
@@ -1134,7 +1192,10 @@
                                             :thread thread}]
          (for [item (rest comments)]
            [:* {:key (dm/str (:id item))}
-            [:> comment-floating-thread-item* {:comment item}]])]
+            [:> comment-floating-thread-item* {:comment item}]])
+
+         (when (and (some? task) (not= origin :viewer))
+           [:> thread-task-section* {:task task :thread thread}])]
 
         [:> comment-reply-form* {:on-submit on-submit
                                  :on-cancel (when (= origin :viewer) on-cancel)}]

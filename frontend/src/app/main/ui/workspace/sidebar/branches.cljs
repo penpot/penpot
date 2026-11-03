@@ -12,11 +12,16 @@
    [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.branches :as dwb]
+   [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.pull-requests :as dwpr]
+   [app.main.data.workspace.review :as dwrv]
+   [app.main.data.workspace.tasks :as dwtk]
    [app.main.refs :as refs]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.menu :refer [menu* menu-item* menu-separator*]]
@@ -27,6 +32,7 @@
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.hooks.resize :as r]
+   [app.main.ui.workspace.review.tasks :as rvt]
    [app.main.ui.workspace.sidebar.branch-review.common :as brc]
    [app.main.ui.workspace.sidebar.branch-review.compare]
    [app.main.ui.workspace.sidebar.branch-review.conflicts]
@@ -35,6 +41,7 @@
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [goog.events :as events]
    [okulary.core :as l]
@@ -264,6 +271,16 @@
   (let [comment*  (mf/use-state "")
         comment   (deref comment*)
 
+        ;; the open tasks of the branch move to main as they are; their
+        ;; assignees may be told
+        tasks*     (mf/use-state nil)
+        notify*    (mf/use-state true)
+        notify?    (deref notify*)
+        open-tasks (->> (deref tasks*)
+                        (remove dwtk/closed?)
+                        (vec))
+        on-notify  (mf/use-fn #(swap! notify* not))
+
         ;; what goes in and what stays out, when the compare dialog of this
         ;; branch is the one that asked for the merge
         diff-st   (mf/deref branch-diff)
@@ -302,10 +319,19 @@
 
         on-submit
         (mf/use-fn
-         (mf/deps branch comment excluded)
+         (mf/deps branch comment excluded notify? open-tasks)
          (fn [_]
-           (st/emit! (dwb/merge-branch branch {:comment comment :excluded excluded})
+           (st/emit! (dwb/merge-branch branch {:comment comment
+                                               :excluded excluded
+                                               :notify-assignees (boolean (and notify? (seq open-tasks)))})
                      (modal/hide))))]
+
+    (mf/with-effect [branch]
+      (when-let [branch-file-id (:branch-file-id branch)]
+        (when (dwtk/enabled?)
+          (->> (rp/cmd! :get-file-tasks {:file-id branch-file-id})
+               (rx/subs! #(reset! tasks* %)
+                         (fn [_] (reset! tasks* [])))))))
 
     [:> modal* {:is-open true
                 :on-open-change (prui/on-dismiss on-close)}
@@ -336,6 +362,21 @@
                    :on-change on-comment-change
                    :rows 3}]]
 
+      (when (seq open-tasks)
+        [:div {:class (stl/css :merge-tasks)}
+         [:> context-notification* {:level :warning :type :context}
+          (tr "workspace.branches.merge.open-tasks" (i18n/c (count open-tasks)))]
+         [:span {:class (stl/css :field-label)}
+          (tr "workspace.branches.merge.open-tasks-title")]
+         [:> rvt/task-list* {:tasks (vec (take 3 open-tasks))}]
+         (when (> (count open-tasks) 3)
+           [:span {:class (stl/css :merge-tasks-more)}
+            (tr "workspace.branches.merge.more-open-tasks" (i18n/c (- (count open-tasks) 3)))])
+         [:> checkbox* {:id "merge-notify-assignees"
+                        :checked notify?
+                        :on-change on-notify
+                        :label (tr "workspace.branches.merge.notify-assignees")}]])
+
       (if (pos? left-out)
         ;; deleting the branch takes the changes left out with it
         [:> context-notification* {:level :warning :type :context}
@@ -349,7 +390,9 @@
       [:> button* {:variant "primary"
                    :icon i/git-merge
                    :on-click on-submit}
-       (tr "workspace.branches.merge.confirm-accept")]]]))
+       (if (seq open-tasks)
+         (tr "workspace.branches.merge.confirm-anyway")
+         (tr "workspace.branches.merge.confirm-accept"))]]]))
 
 ;; --- Confirmation for relevant branch actions (merge / update / materialize)
 
@@ -1189,15 +1232,30 @@
         banner-ref (r/use-resize-observer
                     (mf/use-fn (fn [_ _] (publish-banner-clearance!))))
 
-        status     (banner-status ctx open-pr)]
+        status     (banner-status ctx open-pr)
+
+        ;; the tasks of the open review that still need the user's work
+        tasks      (mf/deref refs/tasks)
+        my-tasks   (mf/with-memo [tasks open-pr profile]
+                     (when (some? open-pr)
+                       (count (dwtk/tasks-for (dwtk/review-tasks (vals tasks) (:id open-pr))
+                                              (:id profile)))))
+
+        on-my-tasks
+        (mf/use-fn
+         (fn [_]
+           (st/emit! (dwrv/set-panel-tab :tasks)
+                     (dwrv/set-task-filter :mine)
+                     (dwd/select-for-drawing :comments))))]
 
     (mf/with-effect [file-id]
       (when (contains? cf/flags :branching)
         (st/emit! (dwb/fetch-branch-context)))
       ;; the primary action depends on whether the branch already has an
-      ;; open pull request
+      ;; open pull request, and the bar counts the tasks for the user
       (when (dwpr/enabled?)
-        (st/emit! (dwpr/fetch-pull-requests))))
+        (st/emit! (dwpr/fetch-pull-requests)
+                  (dwtk/fetch-tasks))))
 
     ;; refresh the change counts every time a save settles (and when
     ;; returning to the tab, so "main advanced" is surfaced too)
@@ -1246,8 +1304,19 @@
                                     :branch-banner-icon-warning (contains? #{:conflicts :counts-error} (:id status)))}
          [:> i/icon* {:icon-id (:icon status)}]]
         [:div {:class (stl/css :branch-banner-text)}
-         [:span {:class (stl/css :branch-banner-title)} (:label status)]]
+         [:span {:class (stl/css :branch-banner-title)} (:label status)]
+         (when (some? open-pr)
+           [:span {:class (stl/css :branch-banner-review)} (:title open-pr)])]
         [:div {:class (stl/css :branch-banner-separator)}]
+
+        (when (pos? (or my-tasks 0))
+          [:*
+           [:button {:class (stl/css :branch-banner-tasks)
+                     :type "button"
+                     :on-click on-my-tasks}
+            [:> i/icon* {:icon-id i/view-as-list :size "s"}]
+            (tr "workspace.tasks.for-you-count" (i18n/c my-tasks))]
+           [:div {:class (stl/css :branch-banner-separator)}]])
 
         [:div {:class (stl/css :branch-banner-actions)}
          (cond

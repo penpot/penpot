@@ -43,6 +43,7 @@
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files-branch-policies :as bp]
    [app.rpc.commands.files-create :as fcreate]
+   [app.rpc.commands.files-task :as ftask]
    [app.rpc.commands.files-update :as fupd]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
@@ -499,12 +500,13 @@
   `file_branch_merge` migration). The open pull request of the branch is
   the design review the merge accepts, so it is read here, before the
   merge closes it. A blank comment is stored as no comment. Must run
-  inside the merge transaction."
+  inside the merge transaction. Returns the id of the record."
   [conn {:keys [id source-file-id name]} {:keys [profile-id comment created-at]}]
-  (let [pr      (db/exec-one! conn [sql:get-open-branch-pull-request id])
-        comment (when-not (str/blank? comment) (str/trim comment))]
+  (let [pr       (db/exec-one! conn [sql:get-open-branch-pull-request id])
+        comment  (when-not (str/blank? comment) (str/trim comment))
+        merge-id (uuid/next)]
     (db/insert! conn :file-branch-merge
-                {:id (uuid/next)
+                {:id merge-id
                  :created-at created-at
                  :file-id source-file-id
                  :file-branch-id id
@@ -513,7 +515,8 @@
                  :comment comment
                  :pull-request-id (:id pr)
                  :pull-request-title (:title pr)}
-                {::db/return-keys false})))
+                {::db/return-keys false})
+    merge-id))
 
 ;; --- COMMAND: create-file-branch
 
@@ -1092,7 +1095,10 @@
    [:expected-main-revn {:optional true} ::sm/int]
    ;; what the user says about the merge; kept in its record
    ;; (`file_branch_merge`), shown in the list of merges of main
-   [:comment {:optional true} [:string {:max 4000}]]])
+   [:comment {:optional true} [:string {:max 4000}]]
+   ;; tell the assignees of the open tasks of the branch, by email, that
+   ;; the merge moved their tasks into main
+   [:notify-assignees {:optional true} ::sm/boolean]])
 
 (sv/defmethod ::merge-file-branch
   "Merge a branch into its source file (main).
@@ -1120,7 +1126,8 @@
    ::climit/id [[:merge-file-branch/by-profile ::rpc/profile-id]
                 [:merge-file-branch/global]]}
   [{:keys [::mbus/msgbus] :as cfg}
-   {:keys [::rpc/profile-id ::rpc/session-id branch-id resolutions expected-main-revn comment excluded]}]
+   {:keys [::rpc/profile-id ::rpc/session-id branch-id resolutions expected-main-revn comment excluded
+           notify-assignees]}]
   (bp/with-policies
     (check-branching-enabled!)
     (let [branch (db/get* cfg :file-branch {:id branch-id})]
@@ -1219,9 +1226,17 @@
                      ;; releases the pinned base snapshot. The record is
                      ;; written first: it reads the open pull request the
                      ;; lines below close.
-                     (record-merge! conn branch {:profile-id profile-id
-                                                 :comment comment
-                                                 :created-at ts})
+                     (let [merge-id (record-merge! conn branch {:profile-id profile-id
+                                                                :comment comment
+                                                                :created-at ts})]
+                       ;; the tasks of the branch outlive it: the open ones
+                       ;; keep going on main, the closed ones are its history
+                       (ftask/move-branch-tasks cfg {:branch-file-id branch-file-id
+                                                     :main-id main-id
+                                                     :merge-id merge-id
+                                                     :branch-name (:name branch)
+                                                     :profile-id profile-id
+                                                     :notify-assignees notify-assignees}))
                      (db/update! conn :file-branch
                                  {:status "merged"
                                   :merged-at ts

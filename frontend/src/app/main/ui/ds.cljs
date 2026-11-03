@@ -48,7 +48,10 @@
    [app.main.ui.ds.product.milestone-group :refer [milestone-group*]]
    [app.main.ui.ds.product.panel-title :refer [panel-title*]]
    [app.main.ui.ds.product.preview-card :refer [preview-card*]]
+   [app.main.ui.ds.product.review-marker :refer [review-marker*]]
    [app.main.ui.ds.product.tag :refer [tag*]]
+   [app.main.ui.ds.product.task-row :refer [task-row*]]
+   [app.main.ui.ds.product.task-status :refer [task-status*]]
    [app.main.ui.ds.storybook :as sb]
    [app.main.ui.ds.tooltip.tooltip :refer [tooltip*]]
    [app.main.ui.ds.utilities.date :refer [date*]]
@@ -97,6 +100,9 @@
     :FilterChip filter-chip*
     :PreviewCard preview-card*
     :Tag tag*
+    :ReviewMarker review-marker*
+    :TaskRow task-row*
+    :TaskStatus task-status*
     :Milestone milestone*
     :MilestoneGroup milestone-group*
     :Date date*

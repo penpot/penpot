@@ -1,0 +1,49 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
+
+(ns app.main.ui.ds.product.review-marker
+  (:require-macros
+   [app.main.style :as stl])
+  (:require
+   [app.common.data :as d]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
+   [rumext.v2 :as mf]))
+
+(def ^:private schema:review-marker
+  [:map
+   [:class {:optional true} [:maybe :string]]
+   [:type {:optional true} [:maybe [:enum "comment" "task"]]]
+   [:state {:optional true} [:maybe [:enum "default" "active" "resolved" "lost"]]]
+   [:label {:optional true} [:maybe :string]]])
+
+(mf/defc review-marker*
+  "The mark a design review leaves on the canvas. A comment is a round
+  mark with its number; a task, a square one with the task icon. Active
+  is the one open now, resolved a comment already settled (it shows a
+  tick instead of its number) and lost a mark whose layer was deleted.
+  It renders a button: the caller names it (`aria-label`) and handles
+  the click."
+  {::mf/schema schema:review-marker}
+  [{:keys [class type state label] :rest props}]
+  (let [type  (d/nilv type "comment")
+        state (d/nilv state "default")
+        props (mf/spread-props props
+                               {:class [class (stl/css-case :review-marker true
+                                                            :is-task (= type "task")
+                                                            :is-active (= state "active")
+                                                            :is-resolved (= state "resolved")
+                                                            :is-lost (= state "lost"))]
+                                :type "button"})]
+    [:> :button props
+     (cond
+       (= type "task")
+       [:> icon* {:icon-id i/view-as-list :size "s"}]
+
+       (= state "resolved")
+       [:> icon* {:icon-id i/tick :size "s"}]
+
+       :else
+       label)]))

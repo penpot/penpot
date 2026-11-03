@@ -1,0 +1,57 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
+
+.task-status {
+  --task-status-fg-color: var(--color-foreground-secondary);
+  --task-status-bg-color: var(--color-background-quaternary);
+  --task-status-dot-color: var(--color-foreground-secondary);
+
+  @include use-typography("body-small");
+
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--sp-xs);
+  padding: var(--sp-xxs) var(--sp-s);
+  border-radius: $br-4;
+  background-color: var(--task-status-bg-color);
+  color: var(--task-status-fg-color);
+  white-space: nowrap;
+
+  &.is-done {
+    --task-status-fg-color: var(--color-accent-info);
+    --task-status-bg-color: var(--color-background-info);
+    --task-status-dot-color: var(--color-accent-info);
+  }
+
+  &.is-reopened {
+    --task-status-fg-color: var(--color-accent-warning);
+    --task-status-bg-color: var(--color-background-warning);
+    --task-status-dot-color: var(--color-accent-warning);
+  }
+
+  &.is-verified {
+    --task-status-fg-color: var(--color-accent-success);
+    --task-status-bg-color: var(--color-background-success);
+    --task-status-dot-color: var(--color-accent-success);
+  }
+
+  &.is-wont-do {
+    --task-status-dot-color: var(--color-background-disabled);
+  }
+}
+
+.dot {
+  flex-shrink: 0;
+  inline-size: $sz-6;
+  block-size: $sz-6;
+  border-radius: $br-circle;
+  background-color: var(--task-status-dot-color);
+}
