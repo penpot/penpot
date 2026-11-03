@@ -63,8 +63,9 @@
                 [:process-image/global]]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id content] :as params}]
   (files/check-edition-permissions! pool profile-id file-id)
-  (media.v/validate-media-type! content)
-  (media.v/validate-media-size! content)
+  (media.v/check-media-type content)
+  (media.v/check-media-size content)
+  (media.v/check-upload-path content)
 
   ;; TEMPORARILY DISABLED (2026-10-19): media-storage-bytes-per-team
   ;; quote performs a full SUM over storage_object per upload (3-12s in
@@ -365,6 +366,7 @@
    ::sm/params schema:upload-chunk
    ::sm/result schema:upload-chunk-result}
   [cfg {:keys [::rpc/profile-id session-id index content]}]
+  (media.v/check-upload-path content)
   (let [session (db/tx-run! cfg check-upload-chunk-slot session-id profile-id index content)]
     (l/trc :hint "upload-chunk"
            :session-id session-id
@@ -513,8 +515,8 @@
                       content (-> content
                                   (assoc :filename (str "upload:" name))
                                   (assoc :mtype mtype)
-                                  (media.v/validate-media-type!)
-                                  (media.v/validate-media-size!))
+                                  (media.v/check-media-type)
+                                  (media.v/check-media-size))
                       mobj    (create-file-media-object cfg (assoc params
                                                                    :id id
                                                                    :from-chunks? true

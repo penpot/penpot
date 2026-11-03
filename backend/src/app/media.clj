@@ -59,8 +59,8 @@
                           :hint "seems like the url points to resource with unknown size"))
 
               (-> {:size size :mtype mtype}
-                  (validation/validate-media-type!)
-                  (validation/validate-media-size!))))]
+                  (validation/check-media-type)
+                  (validation/check-media-size))))]
 
     (let [{:keys [body] :as response}
           (try

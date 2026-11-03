@@ -289,8 +289,9 @@
    ::sm/params schema:create-file-object-thumbnail}
 
   [cfg {:keys [::rpc/profile-id file-id object-id media tag]}]
-  (media.v/validate-media-type! media)
-  (media.v/validate-media-size! media)
+  (media.v/check-media-type media)
+  (media.v/check-media-size media)
+  (media.v/check-upload-path media)
 
   (db/run! cfg files/check-edition-permissions! profile-id file-id)
   (when-let [file (files/get-minimal-file cfg file-id {::db/check-deleted false})]
@@ -394,8 +395,9 @@
    ::sm/params schema:create-file-thumbnail}
 
   [cfg {:keys [::rpc/profile-id file-id] :as params}]
-  (media.v/validate-media-type! (:media params))
-  (media.v/validate-media-size! (:media params))
+  (media.v/check-media-type (:media params))
+  (media.v/check-media-size (:media params))
+  (media.v/check-upload-path (:media params))
 
   (db/run! cfg files/check-edition-permissions! profile-id file-id)
 
