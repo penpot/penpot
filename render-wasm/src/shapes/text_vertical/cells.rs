@@ -21,9 +21,23 @@ use super::orientation::{
 };
 use super::shaping::{resolve_typefaces, shape_with_typefaces, span_font_families, ShapedRun};
 
-/// Smallest horizontal scale for `all` tate-chu-yoko; digit modes use 1 /
-/// run length.
+/// Smallest horizontal scale for `all` tate-chu-yoko, except short Western
+/// runs; digit modes use 1 / run length.
 const MIN_TCY_SCALE: f32 = 0.5;
+
+/// Smallest horizontal scale of an `all` composite of `text`. A Western run
+/// no longer than a `digits` composite squeezes as far as one (1 / length),
+/// so `2027` combines under `all` as it does under `digits`. Upright CJK
+/// keeps MIN_TCY_SCALE: a deeper squeeze makes full-width glyphs illegible.
+fn all_min_scale(text: &str) -> f32 {
+    let count = text.chars().count().max(1);
+    let digits_max = TextCombineUpright::Digits.digits_max().unwrap_or(4);
+    if count <= digits_max && !text.chars().any(is_upright_char) {
+        MIN_TCY_SCALE.min(1.0 / count as f32)
+    } else {
+        MIN_TCY_SCALE
+    }
+}
 
 /// Fonts available to the layout: the provider's registered faces and the
 /// fallback families tried after each span's own font.
@@ -215,7 +229,7 @@ impl<'a> SpanCells<'a> {
     pub(super) fn push(&self, text: &str, runs: &mut Vec<ShapedRun>, cells: &mut Vec<FlowCell>) {
         let combine = self.span.text_combine_upright;
         if combine == TextCombineUpright::All
-            && self.push_tate_chu_yoko(text, 0, MIN_TCY_SCALE, runs, cells)
+            && self.push_tate_chu_yoko(text, 0, all_min_scale(text), runs, cells)
         {
             return;
         }
@@ -963,6 +977,30 @@ mod tests {
                 .iter()
                 .any(|c| matches!(c.kind, CellKind::TateChuYoko { .. })),
             "an over-wide run must not become a tate-chu-yoko composite"
+        );
+    }
+
+    #[test]
+    fn tate_chu_yoko_all_squeezes_a_short_run_like_digits() {
+        // Four wide characters need a scale under MIN_TCY_SCALE. `digits`
+        // squeezes a four-digit run to 1/4, so `all` must combine a run of
+        // the same length instead of turning it sideways.
+        let mut content = make_content_with_spans(&["WWWW"], 400.0);
+        content.paragraphs_mut()[0].children_mut()[0].text_combine_upright =
+            TextCombineUpright::All;
+        let layout = layout_content(&content, 400.0);
+        let scales: Vec<f32> = layout
+            .cells
+            .iter()
+            .filter_map(|c| match c.kind {
+                CellKind::TateChuYoko { h_scale, .. } => Some(h_scale),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(scales.len(), 1, "one composite for the whole run");
+        assert!(
+            scales[0] < MIN_TCY_SCALE,
+            "the test run needs a deep squeeze"
         );
     }
 
