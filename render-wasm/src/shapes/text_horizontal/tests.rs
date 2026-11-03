@@ -2263,6 +2263,75 @@ fn horizontal_emphasis_export_bounds_include_every_adjacent_ruby_mark() {
     }
 }
 
+#[test]
+fn horizontal_ruby_export_bounds_keep_every_reading_whole() {
+    // Readings sit above the line box with the Japanese default clearance.
+    // Auto-width text built its bounds from the content rect and the
+    // emphasis marks only, so an export cut the top of the reading.
+    init_state();
+    let mut resources =
+        crate::render::RenderResources::try_new_headless().expect("headless resources");
+    let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+    let grows = [
+        crate::shapes::GrowType::Fixed,
+        crate::shapes::GrowType::AutoHeight,
+        crate::shapes::GrowType::AutoWidth,
+    ];
+    let emphases = [TextEmphasis::None, TextEmphasis::FilledCircle];
+    let texts = [("AB", "ABC", "CD"), ("漢字", "かんじ", "の圏点")];
+    for (grow, emphasis, (base, ruby, rest)) in grows
+        .into_iter()
+        .flat_map(|grow| emphases.map(|emphasis| (grow, emphasis)))
+        .flat_map(|(grow, emphasis)| texts.map(|text| (grow, emphasis, text)))
+    {
+        let spans = vec![
+            TextSpan {
+                font_size: 48.0,
+                fills: vec![crate::shapes::Fill::Solid(crate::shapes::SolidColor(
+                    skia::Color::BLACK,
+                ))],
+                ruby: ruby.to_string(),
+                text_emphasis: emphasis,
+                ..make_span(base, 0.0)
+            },
+            make_span(rest, 0.0),
+        ];
+        let mut paragraph = make_paragraph(spans, 0.0);
+        paragraph.set_language("ja".to_string());
+        let bounds = crate::math::Rect::from_xywh(0.0, 0.0, 360.0, 60.0);
+        let mut content = TextContent::new(bounds, grow);
+        content.add_paragraph(paragraph);
+        content.update_layout(bounds);
+        let mut shape = crate::shapes::Shape::new(Uuid::nil());
+        shape.set_selrect(0.0, 0.0, 360.0, 60.0);
+        let export = content.calculate_bounds(&shape, false).to_rect();
+
+        let pad = 100.0;
+        let mut surface = skia::surfaces::raster_n32_premul((560, 260)).unwrap();
+        surface.canvas().clear(skia::Color::TRANSPARENT);
+        let x = pad + content.horizontal_plans()[0].x_offset(&content.paragraphs()[0], 360.0);
+        paint_horizontal_ruby(
+            surface.canvas(),
+            &content,
+            0,
+            &content.layout.paragraphs[0][0],
+            x,
+            pad,
+        );
+        let image = surface.image_snapshot();
+        let pixels = image.peek_pixels().expect("raster pixels");
+        let ink_top = (0..260)
+            .find(|y| (0..560).any(|x| pixels.get_color((x, *y)).a() > 0))
+            .expect("the reading is painted") as f32;
+        assert!(
+            ink_top - pad >= export.top() - 1.0,
+            "{grow:?} {emphasis:?} {ruby}: export top {} crops the reading inked from {}",
+            export.top(),
+            ink_top - pad
+        );
+    }
+}
+
 /// Fixed-width `TextContent` of one paragraph, laid out like the renderer.
 fn aligned_content(text: &str, tracking: f32, align: TextAlign, width: f32) -> TextContent {
     let mut paragraph = Paragraph::new(

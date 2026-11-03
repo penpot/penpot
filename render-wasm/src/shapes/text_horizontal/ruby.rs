@@ -442,6 +442,65 @@ pub(crate) fn paint_horizontal_ruby(
     x: f32,
     y: f32,
 ) {
+    visit_horizontal_ruby_glyphs(
+        text_content,
+        paragraph_index,
+        laid_out,
+        x,
+        y,
+        |font, glyph, origin, paint| {
+            if let Some(blob) = single_glyph_blob(font, glyph) {
+                canvas.draw_text_blob(&blob, origin, paint);
+            }
+        },
+    );
+}
+
+/// Ink bounds of the horizontal readings (ruby and Zhuyin) of a paragraph
+/// laid out at (`x`, `y`), or None without readings.
+pub(crate) fn horizontal_ruby_ink_bounds(
+    text_content: &TextContent,
+    paragraph_index: usize,
+    laid_out: &LayoutParagraph,
+    x: f32,
+    y: f32,
+) -> Option<skia::Rect> {
+    let mut bounds: Option<skia::Rect> = None;
+    visit_horizontal_ruby_glyphs(
+        text_content,
+        paragraph_index,
+        laid_out,
+        x,
+        y,
+        |font, glyph, origin, _| {
+            let mut ink = [skia::Rect::default()];
+            font.get_bounds(&[glyph], &mut ink, None);
+            let ink = ink[0].with_offset(origin);
+            if !ink.is_empty() {
+                bounds = Some(match bounds {
+                    Some(mut joined) => {
+                        joined.join(ink);
+                        joined
+                    }
+                    None => ink,
+                });
+            }
+        },
+    );
+    bounds
+}
+
+/// Each reading glyph of a horizontal paragraph laid out at (`x`, `y`): its
+/// font, glyph id, baseline origin and paint. Painting and bounds share it,
+/// so exports keep exactly the ink the canvas draws.
+fn visit_horizontal_ruby_glyphs(
+    text_content: &TextContent,
+    paragraph_index: usize,
+    laid_out: &LayoutParagraph,
+    x: f32,
+    y: f32,
+    mut visit: impl FnMut(&skia::Font, skia::GlyphId, (f32, f32), &skia::Paint),
+) {
     let Some(paragraph) = text_content.paragraphs().get(paragraph_index) else {
         return;
     };
@@ -483,15 +542,12 @@ pub(crate) fn paint_horizontal_ruby(
                     font_provider,
                     fallback_families,
                 ) {
-                    if let Some(blob) =
-                        single_glyph_blob(&glyph.run.font, glyph.run.glyphs[glyph.glyph])
-                    {
-                        canvas.draw_text_blob(
-                            &blob,
-                            (x + origin.x + glyph.origin.x, y + origin.y + glyph.origin.y),
-                            &paint,
-                        );
-                    }
+                    visit(
+                        &glyph.run.font,
+                        glyph.run.glyphs[glyph.glyph],
+                        (x + origin.x + glyph.origin.x, y + origin.y + glyph.origin.y),
+                        &paint,
+                    );
                 }
             }
             continue;
@@ -539,7 +595,9 @@ pub(crate) fn paint_horizontal_ruby(
                 leading_gap,
                 room,
             };
-            ruby_line.paint(canvas, &paint, x, y);
+            ruby_line.visit_glyphs(x, y, |font, glyph, origin| {
+                visit(font, glyph, origin, &paint)
+            });
         }
     }
 }
@@ -561,14 +619,17 @@ pub(super) struct RubyLine<'a> {
 
 impl RubyLine<'_> {
     /// Glyphs set in pieces (`horizontal_ruby_pieces`), distributed over the
-    /// base and the spacing before it.
-    fn paint(&self, canvas: &Canvas, paint: &skia::Paint, x: f32, y: f32) {
+    /// base and the spacing before it, with their baseline origins.
+    fn visit_glyphs(
+        &self,
+        x: f32,
+        y: f32,
+        mut visit: impl FnMut(&skia::Font, skia::GlyphId, (f32, f32)),
+    ) {
         let baseline = self.baseline(y);
         for ((run_index, glyph, _, _), left) in self.glyphs.iter().zip(self.glyph_lefts()) {
             let run = &self.shaped[*run_index];
-            if let Some(blob) = single_glyph_blob(&run.font, run.glyphs[*glyph]) {
-                canvas.draw_text_blob(&blob, (x + left, baseline), paint);
-            }
+            visit(&run.font, run.glyphs[*glyph], (x + left, baseline));
         }
     }
 
