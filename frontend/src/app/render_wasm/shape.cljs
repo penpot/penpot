@@ -454,8 +454,18 @@
                  (:type attrs)
                  (PersistentArrayMap. nil (/ (alength arr) 2) arr nil))))
 
+(defn- shape->map
+  "Plain map with the shape's entries, reusing the delegate array instead
+  of building a hash map."
+  [^ShapeProxy shape]
+  (let [delegate (.-delegate shape)]
+    (if (instance? PersistentArrayMap delegate)
+      (let [arr (.concat #js [:id (.-id shape) :type (.-type shape)] (.-arr delegate))]
+        (PersistentArrayMap. nil (/ (alength arr) 2) arr nil))
+      (assoc delegate :id (.-id shape) :type (.-type shape)))))
+
 (t/add-handlers!
  ;; We only add a write handler, read handler uses the dynamic dispatch
  {:id "shape"
   :class ShapeProxy
-  :wfn #(into {} %)})
+  :wfn shape->map})
