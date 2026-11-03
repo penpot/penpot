@@ -17,11 +17,7 @@
    [benches.render-wasm.cases :as cases]
    [benches.render-wasm.declarations :as decl]
    [benches.render-wasm.errors :as errors]
-   [benches.render-wasm.measurement :as measurement]
-   [benches.render-wasm.report.compare :as compare]
-   [benches.render-wasm.report.format :as format]
-   [benches.render-wasm.report.summarize :as summary]
-   [benches.render-wasm.result :as result]
+   [benches.render-wasm.runtime.camera :as camera]
    [cljs.test :as t :include-macros true]))
 
 ;; Forward declaration: entry-test helpers below build args against the
@@ -32,10 +28,25 @@
 ;; `frontend-tests.render-wasm.webgl-test`, which also pins the success,
 ;; nil-context and registration-failure cases.
 
+(defn- register-phase-case
+  [options run]
+  (let [params (:params (decl/registered-case :rects/load))]
+    (decl/defcase :rects/lifecycle
+      (-> (merge {:params params
+                  :view {:scale 1 :x 0 :y 0}
+                  :context :fresh}
+                 options)
+          (update :params #(merge params %)))
+      [rtx]
+      (run rtx))))
+
 (defn- load-case
-  "Collected `:rects/load` descriptor for entry tests."
+  "Returns the collected rectangle case for entry tests."
   []
-  (first (cases/collect-cases {:master-seed 42 :filter "rects/load"})))
+  (first (cases/collect-cases {:master-seed 42
+                               :filter (if (decl/registered-case :rects/lifecycle)
+                                         "rects/lifecycle"
+                                         "rects/load")})))
 
 (defn- scene-args
   "Transit request for `browser/load-scene`. `overrides` change the
@@ -424,9 +435,11 @@
                        (try
                          (browser/dispose!)
                          (finally
+                           (decl/unregister-case! :rects/lifecycle)
                            (restore-dom!))))]
     (reset-bench-globals!)
     (try
+      (register-phase-case {} camera/render-sync*)
       (f cleanup)
       (catch :default cause
         (cleanup)
@@ -458,7 +471,9 @@
         (load-result (scene-args 7 {})
                      (fn [m]
                        (t/is (= "ok" (:status m)))
-                       (t/is (= 1 (count (get-in m [:trace :slices]))))
+                       (t/is (= 1 (count (get-in m [:preparation :diagnostics :setup-render :slices]))))
+                       (t/is (= [::camera/render-sync]
+                                (mapv :command (get-in m [:phases 0 :events]))))
                        (t/is (= 1001 (:shapes (:scene m))) "the canonical scene uploads whole")
                        (let [graphics (:effective-graphics m)]
                          (t/is (= 1234 (:drawing-buffer-width graphics))
@@ -475,35 +490,7 @@
                        (cleanup)
                        (done)))))))
 
-(t/deftest successful-load-produces-portable-reports
-  (t/async done
-    (with-entry-env
-      (fn [cleanup]
-        (load-result
-         (scene-args 7 {})
-         (fn [evidence]
-           (let [case (load-case)
-                 preparation (:preparation evidence)
-                 run (-> (result/create-run {:run-id "load-report" :started-at "start"
-                                             :plan {:cases [case] :warmups 0 :repetitions 1}
-                                             :metadata {:git {:sha nil :dirty nil}
-                                                        :build {:functional {:mode :test}}
-                                                        :environment {} :scored? false}})
-                         (result/record-preparation preparation)
-                         (result/record-attempt (measurement/attempt (:id case) (:preparation-id preparation) false evidence))
-                         (result/finish-run "end" {:reason :completed}))
-                 text (result/encode run)
-                 report (summary/summarize (result/decode text))
-                 comparison (compare/compare-runs run run)
-                 comparison-text (.compare browser/bridge text text (transit/encode-str {}))]
-             (t/is (= report (transit/decode-str (.summarize browser/bridge text))))
-             (t/is (= (format/format-run report) (.formatRun browser/bridge text)))
-             (t/is (= comparison (result/decode comparison-text)))
-             (t/is (= (format/format-comparison comparison) (.formatComparison browser/bridge comparison-text))))
-           (cleanup)
-           (done)))))))
-
-(t/deftest exported-load-scene-retains-progressive-frame-evidence
+(t/deftest preparation-retains-progressive-frame-evidence
   (t/async done
     (with-entry-env
       (fn [cleanup]
@@ -515,9 +502,10 @@
         (-> (.loadScene browser/bridge (scene-args 7 {}))
             (.then (fn [text]
                      (t/is (string? text) "the exported loadScene returns Transit")
-                     (let [{:keys [status slices viewport-ready-ms full-ms metrics trace scene]}
-                           (transit/decode-str text)
-                           retained     (:slices trace)
+                     (let [{:keys [status preparation scene]} (transit/decode-str text)
+                           {:keys [slices viewport-ready-ms full-ms]}
+                           (get-in preparation [:diagnostics :setup-render])
+                           retained     slices
                            render-calls (filterv #(= "render" (first %)) (read-calls))]
                        (t/is (= "ok" status))
                        (t/is (= {:shapes 1001 :seed 7} scene)
@@ -538,7 +526,6 @@
                                         ["render" timestamp flags])
                                       retained))
                              "decoded slices retain every WASM call's timestamp and flags in order")
-                       (t/is (= slices retained) "raw and trace slices survive Transit together")
                        (t/is (= 37 viewport-ready-ms
                                 (+ (:timestamp (nth retained 1))
                                    (:duration-ms (nth retained 1))))
@@ -548,12 +535,10 @@
                                    (:duration-ms (nth retained 2))))
                              "Full completion ends with the final slice")
                        (t/is (< viewport-ready-ms full-ms))
-                       (t/is (= full-ms (get-in metrics [:first-render-ms :value])))
-                       (t/is (= viewport-ready-ms (get-in metrics [:viewport-ready-ms :value])))
-                       (t/is (= 10
-                                (reduce + 0 (map :duration-ms retained))
-                                (get-in metrics [:renderer-call-total-ms :value]))
-                             "renderer-call total sums the retained calls without frame waits"))
+                       (t/is (= [{:phase :preparation
+                                  :preparation-id (:preparation-id preparation)
+                                  :outcome :completed :events []}]
+                                (:phases preparation))))
                      (cleanup)
                      (done)))
             (.catch (fn [cause]
@@ -579,108 +564,264 @@
                                         (cleanup)
                                         (done))))))))))
 
-(t/deftest warm-pan-restores-and-reaches-full
+(t/deftest compiled-pan-finishes-at-its-final-render
   (t/async done
     (with-entry-env
       (fn [cleanup]
-        (load-result (scene-args 7 {:id :rects/pan :context :reuse})
+        (register-phase-case {:context :reuse}
+                             #(camera/pan* % {:dx 10 :dy 5 :steps 2 :settle-ms 0}))
+        (load-result (scene-args 7 {})
                      (fn [m]
-                       (t/is (= "ok" (:status m)))
-                       (t/is (= 20 (count (:cached-slices m))))
-                       (t/is (= 100 (:settling-requested-ms m)))
-                       (t/is (= [4] (mapv :flags (:slices m))))
-                       (t/is (= [2] (mapv :frame-type (:slices m))))
-                       (t/is (= 3 (effect-count (read-calls) "render"))
-                             "setup, restore and finalization each drain once")
+                       (let [phase (first (:phases m))
+                             event (first (:events phase))
+                             trace (:trace event)]
+                         (t/is (= "ok" (:status m)))
+                         (t/is (= :main (:phase phase)))
+                         (t/is (= ::camera/pan (:command event)))
+                         (t/is (= 2 (count (:cached-slices trace))))
+                         (t/is (= 0 (:settling-requested-ms trace)))
+                         (t/is (= [4] (mapv :flags (:slices trace))))
+                         (t/is (= [2] (mapv :frame-type (:slices trace))))
+                         (t/is (= 2 (effect-count (read-calls) "render"))
+                               "preparation and camera finalization each render once"))
                        (cleanup)
                        (done)))))))
 
-(t/deftest warm-zoom-reaches-full
-  (t/async done
-    (with-entry-env
-      (fn [cleanup]
-        (load-result (scene-args 7 {:id :rects/zoom :context :reuse})
-                     (fn [m]
-                       (t/is (= "ok" (:status m)))
-                       (t/is (= 20 (count (:cached-slices m))))
-                       (t/is (= [2] (mapv :frame-type (:slices m))))
-                       (cleanup)
-                       (done)))))))
+(t/deftest ^:async reused-context-prepares-once-and-resets-each-main
+  (await
+   (with-entry-env
+     (^:async fn [cleanup]
+       (try
+         (let [views   (atom [])
+               options {:dy 0 :steps 1 :settle-ms 0}
+               pan     (fn [phase dx rtx]
+                         (swap! views conj [phase (get-in rtx [:view :x])])
+                         (camera/pan* rtx (assoc options :dx dx)))]
+           (register-phase-case {:context :reuse
+                                 :preparation {:callback #(pan :preparation 5 %)}
+                                 :reset #(pan :reset -10 %)}
+                                #(pan :main 10 %))
+           (let [prepared (transit/decode-str (await (browser/prepare-scene-request (scene-args 7 {}))))
+                 prep     (:preparation prepared)
+                 request  (transit/encode-str {:preparation-id (:preparation-id prep)})
+                 first    (transit/decode-str (await (browser/run-prepared request)))
+                 second   (transit/decode-str (await (browser/run-prepared request)))]
+             (t/is (= ["ok" "ok" "ok"] (mapv :status [prepared first second])))
+             (t/is (= [[:preparation 0] [:main 5] [:reset 15] [:main 5] [:reset 15]] @views))
+             (t/is (= [:preparation] (mapv :phase (:phases prep))))
+             (t/is (= [::camera/pan] (mapv :command (get-in prep [:phases 0 :events]))))
+             (t/is (= prep (:preparation first) (:preparation second)))
+             (doseq [execution [first second]]
+               (t/is (= [:main :reset] (mapv :phase (:phases execution))))
+               (t/is (= [:completed :completed] (mapv :outcome (:phases execution))))
+               (t/is (= [[::camera/pan] [::camera/pan]]
+                        (mapv #(mapv :command (:events %)) (:phases execution)))))
+             (t/is (= 1 (effect-count (read-calls) "create")))
+             (t/is (= 6 (effect-count (read-calls) "render"))
+                   "the callback, initial Full, and four main/reset gestures render")
+             (t/is (= 1 (count (filter #(= ["call" "_init_shapes_pool"] %) (read-calls)))))))
+         (finally
+           (cleanup)))))))
 
-(t/deftest prepared-warm-scene-runs-twice-with-one-context-and-upload
-  (t/async done
-    (with-entry-env
-      (fn [cleanup]
-        (-> (browser/prepare-scene-request
-             (scene-args 7 {:id :rects/pan :context :reuse
-                            :operation {:steps 2 :dx 10 :dy 5 :settle-ms 0}}))
-            (.then (fn [text]
-                     (let [prepared (transit/decode-str text)
-                           prep (:preparation prepared)
-                           request (transit/encode-str {:preparation-id (:preparation-id prep)})]
-                       (t/is (= "ok" (:status prepared)))
-                       (t/is (seq (get-in prep [:diagnostics :setup-render :slices])))
-                       (-> (browser/run-prepared request)
-                           (.then (fn [first-text]
-                                    (let [first-result (transit/decode-str first-text)]
-                                      (t/is (= "ok" (:status first-result)))
-                                      (t/is (not (contains? (:metrics first-result) :upload-ms)))
-                                      (t/is (= prep (:preparation first-result)))
-                                      (browser/run-prepared request))))
-                           (.then (fn [second-text]
-                                    (let [second-result (transit/decode-str second-text)
-                                          calls (read-calls)]
-                                      (t/is (= "ok" (:status second-result)))
-                                      (t/is (= prep (:preparation second-result)))
-                                      (t/is (= 1 (effect-count calls "create")))
-                                      (t/is (= 5 (effect-count calls "render")))
-                                      (t/is (= 1 (count (filter #(= ["call" "_init_shapes_pool"] %) calls))))
-                                      (t/is (= 2 (count (:cached-slices second-result))))
-                                      (cleanup)
-                                      (done))))))))
-            (.catch (fn [cause]
-                      (t/is false (str "prepared reuse failed: " cause))
-                      (cleanup)
-                      (done))))))))
+(t/deftest ^:async fresh-contexts-prepare-and-reset-once
+  (await
+   (with-entry-env
+     (^:async fn [cleanup]
+       (try
+         (let [visits (atom [])
+               work   (fn [phase rtx]
+                        (swap! visits conj phase)
+                        (camera/render-sync* rtx))]
+           (register-phase-case {:preparation {:callback #(work :preparation %)}
+                                 :reset #(work :reset %)}
+                                #(work :main %))
+           (dotimes [_ 2]
+             (let [prepared (transit/decode-str (await (browser/prepare-scene-request (scene-args 7 {}))))
+                   prep     (:preparation prepared)
+                   request  (transit/encode-str {:preparation-id (:preparation-id prep)})
+                   evidence (transit/decode-str (await (browser/run-prepared request)))
+                   repeated (transit/decode-str (await (browser/run-prepared request)))]
+               (t/is (= "ok" (:status evidence)))
+               (t/is (= [:main :reset] (mapv :phase (:phases evidence))))
+               (t/is (= [::camera/render-sync] (mapv :command (get-in prep [:phases 0 :events]))))
+               (t/is (= "invalid-args" (:phase repeated)))))
+           (t/is (= [:preparation :main :reset :preparation :main :reset] @visits))
+           (t/is (= 2 (effect-count (read-calls) "create")))
+           (t/is (= 2 (effect-count (read-calls) "render"))))
+         (finally
+           (cleanup)))))))
 
-(t/deftest fresh-preparation-runs-once-and-saves-structured-metrics
-  (t/async done
-    (with-entry-env
-      (fn [cleanup]
-        (-> (browser/prepare-scene-request (scene-args 7 {}))
-            (.then (fn [text]
-                     (let [request (transit/encode-str
-                                    {:preparation-id (get-in (transit/decode-str text)
-                                                             [:preparation :preparation-id])})]
-                       (t/is (zero? (effect-count (read-calls) "render")))
-                       (-> (browser/run-prepared request)
-                           (.then (fn [text]
-                                    (let [evidence (transit/decode-str text)]
-                                      (t/is (= "ok" (:status evidence)))
-                                      (t/is (= (:full-ms evidence) (get-in evidence [:metrics :first-render-ms :value])))
-                                      (t/is (contains? (:metrics evidence) :upload-ms))
-                                      (t/is (not (contains? (:metrics evidence) :full-ms)))
-                                      (t/is (not (contains? evidence :first-render-ms)))
-                                      (t/is (not (contains? evidence :render-frames)))
-                                      (browser/run-prepared request))))
-                           (.then (fn [text]
-                                    (t/is (= "invalid-args" (:phase (transit/decode-str text))))
-                                    (cleanup)
-                                    (done)))))))
-            (.catch (fn [cause]
-                      (t/is false (str "fresh preparation failed: " cause))
-                      (cleanup)
-                      (done))))))))
+(t/deftest ^:async preparation-policy-keeps-selected-events-and-empty-main
+  (doseq [context [:fresh :reuse]
+          render [nil :none]]
+    (await
+     (with-entry-env
+       (^:async fn [cleanup]
+         (try
+           (unchecked-set js/globalThis "__benchNow" 0)
+           (register-phase-case
+            {:params {:count 2}
+             :context context
+             :preparation (cond-> {:callback #(-> % (camera/render-sync*) (camera/render-sync*))}
+                            render (assoc :render render))}
+            identity)
+           (let [evidence (transit/decode-str (await (browser/load-scene (scene-args 7 {}))))
+                 prep     (:preparation evidence)
+                 block    (first (:phases prep))]
+             (t/is (= "ok" (:status evidence)))
+             (t/is (= :completed (:outcome block)))
+             (t/is (= [{:command ::camera/render-sync :metrics {:command/elapsed [0]}}
+                       {:command ::camera/render-sync :metrics {:command/elapsed [0]}}]
+                      (:events block)))
+             (t/is (= [{:phase :main :preparation-id (:preparation-id prep)
+                        :outcome :completed :events []}]
+                      (:phases evidence)))
+             (t/is (= (if (= render :none) 0 1) (effect-count (read-calls) "render"))))
+           (finally
+             (cleanup))))))))
+
+(t/deftest ^:async reused-context-carries-view-without-a-reset
+  (await
+   (with-entry-env
+     (^:async fn [cleanup]
+       (try
+         (let [views (atom [])]
+           (register-phase-case {:params {:count 2} :context :reuse}
+                                (fn [rtx]
+                                  (swap! views conj (:view rtx))
+                                  (camera/pan rtx {:dx 10 :dy 5 :steps 1 :settle-ms 0})))
+           (let [prepared (transit/decode-str (await (browser/prepare-scene-request (scene-args 7 {}))))
+                 request  (transit/encode-str {:preparation-id (get-in prepared [:preparation :preparation-id])})
+                 first    (transit/decode-str (await (browser/run-prepared request)))
+                 second   (transit/decode-str (await (browser/run-prepared request)))]
+             (t/is (= ["ok" "ok"] (mapv :status [first second])))
+             (t/is (= [{:scale 1 :x 0 :y 0} {:scale 1 :x 10 :y 5}] @views))
+             (t/is (= [[] []] (mapv #(get-in % [:phases 0 :events]) [first second])))))
+         (finally
+           (cleanup)))))))
+
+(t/deftest ^:async phase-failure-keeps-raw-evidence-and-stops-the-context
+  (doseq [context [:fresh :reuse]
+          failed-phase [:preparation :main :reset]]
+    (await
+     (with-entry-env
+       (^:async fn [cleanup]
+         (try
+           (unchecked-set js/globalThis "__benchNow" 0)
+           (let [visits (atom [])
+                 work   (fn [phase rtx]
+                          (swap! visits conj phase)
+                          (-> (camera/render-sync* rtx)
+                              (.then (fn [next-rtx]
+                                       (when (= phase failed-phase)
+                                         (throw (js/Error. "phase fixture failed")))
+                                       next-rtx))))]
+             (register-phase-case {:params {:count 2} :context context
+                                   :preparation {:callback #(work :preparation %)}
+                                   :reset #(work :reset %)}
+                                  #(work :main %))
+             (let [request  (-> (transit/decode-str (scene-args 7 {}))
+                                (assoc :preparation-id "phase-failure")
+                                (transit/encode-str))
+                   prepared (transit/decode-str (await (browser/prepare-scene-request request)))
+                   run      (transit/encode-str {:preparation-id "phase-failure"})
+                   evidence (if (= failed-phase :preparation)
+                              prepared
+                              (transit/decode-str (await (browser/run-prepared run))))
+                   stopped  (transit/decode-str (await (browser/run-prepared run)))
+                   blocks   (:phases evidence)]
+               (t/is (= "failed" (:status evidence)))
+               (t/is (= (name failed-phase) (:phase evidence)))
+               (t/is (= "phase fixture failed" (:message evidence)))
+               (t/is (= (case failed-phase
+                          :preparation [:preparation]
+                          :main [:preparation :main]
+                          :reset [:preparation :main :reset])
+                        @visits))
+               (t/is (= (if (= failed-phase :reset) [:main :reset] [failed-phase])
+                        (mapv :phase blocks)))
+               (t/is (= :failed (:outcome (last blocks))))
+               (t/is (= (repeat (count blocks)
+                                [{:command ::camera/render-sync :metrics {:command/elapsed [0]}}])
+                        (map :events blocks)))
+               (when (= failed-phase :preparation)
+                 (let [setup (get-in evidence [:partial :setup])]
+                   (t/is (number? (:module-ms setup)))
+                   (t/is (number? (:graphics-ms setup)))
+                   (t/is (number? (:upload-ms setup)))
+                   (t/is (string? (get-in setup [:fingerprint :digest])))))
+               (when-not (= failed-phase :preparation)
+                 (t/is (= (:preparation prepared) (:preparation evidence)))
+                 (t/is (= :completed (get-in evidence [:preparation :phases 0 :outcome]))))
+               (t/is (= "invalid-args" (:phase stopped)))
+               (t/is (= 1 (effect-count (read-calls) "remove"))))
+             (register-phase-case {:params {:count 2}} camera/render-sync*)
+             (let [next-case (transit/decode-str (await (browser/load-scene (scene-args 8 {}))))]
+               (t/is (= "ok" (:status next-case)))
+               (t/is (= [::camera/render-sync]
+                        (mapv :command (get-in next-case [:phases 0 :events]))))))
+           (finally
+             (cleanup))))))))
+
+(t/deftest ^:async superseded-phase-failure-keeps-its-own-preparation
+  (doseq [failed-phase [:main :reset]]
+    (await
+     (with-entry-env
+       (^:async fn [cleanup]
+         (try
+           (let [entered (volatile! nil)
+                 reject  (volatile! nil)
+                 started (js/Promise. (fn [resolve _reject] (vreset! entered resolve)))
+                 work    (fn [phase rtx]
+                           (-> (camera/render-sync* rtx)
+                               (.then (fn [next-rtx]
+                                        (if (= phase failed-phase)
+                                          (js/Promise. (fn [_resolve fail]
+                                                         (vreset! reject fail)
+                                                         (@entered nil)))
+                                          next-rtx)))))]
+             (register-phase-case {:params {:count 2} :context :reuse
+                                   :reset #(work :reset %)}
+                                  #(work :main %))
+             (let [request (-> (transit/decode-str (scene-args 7 {}))
+                               (assoc :preparation-id "first")
+                               (transit/encode-str))
+                   prepared (transit/decode-str (await (browser/prepare-scene-request request)))
+                   first-run (browser/run-prepared (transit/encode-str {:preparation-id "first"}))]
+               (await started)
+               (register-phase-case {:params {:count 2}} camera/render-sync*)
+               (let [next-request (-> (transit/decode-str (scene-args 8 {}))
+                                      (assoc :preparation-id "second")
+                                      (transit/encode-str))
+                     next-prepared (transit/decode-str (await (browser/prepare-scene-request next-request)))]
+                 (@reject (js/Error. "late phase failure"))
+                 (let [failed (transit/decode-str (await first-run))
+                       next-run (transit/decode-str
+                                 (await (browser/run-prepared (transit/encode-str {:preparation-id "second"}))))]
+                   (t/is (= "failed" (:status failed)))
+                   (t/is (= (name failed-phase) (:phase failed)))
+                   (t/is (= (:preparation prepared) (:preparation failed)))
+                   (t/is (= (if (= failed-phase :main) [:main] [:main :reset])
+                            (mapv :phase (:phases failed))))
+                   (t/is (= :failed (:outcome (last (:phases failed)))))
+                   (t/is (= (repeat (count (:phases failed)) "first")
+                            (map :preparation-id (:phases failed))))
+                   (t/is (= ["ok" "ok"] (mapv :status [next-prepared next-run])))
+                   (t/is (= "second" (get-in next-run [:preparation :preparation-id])))))))
+           (finally
+             (cleanup))))))))
 
 (t/deftest rejected-camera-body-releases-owner
   (t/async done
     (with-entry-env
       (fn [cleanup]
         (unchecked-set js/globalThis "__benchThrowIn" "_render_from_cache")
-        (load-result (scene-args 7 {:id :rects/pan :context :reuse})
+        (register-phase-case {:context :reuse}
+                             #(camera/pan* % {:dx 10 :dy 5 :steps 2 :settle-ms 0}))
+        (load-result (scene-args 7 {})
                      (fn [m]
                        (t/is (= "failed" (:status m)))
-                       (t/is (= "interact" (:phase m)))
+                       (t/is (= "main" (:phase m)))
                        (t/is (= 1 (effect-count (read-calls) "remove")))
                        (t/is (nil? @@#'browser/canvas*))
                        (cleanup)
@@ -698,6 +839,7 @@
                      (fn [m]
                        (t/is (= "failed" (:status m)))
                        (t/is (= "module-init" (:phase m)))
+                       (t/is (= {} (get-in m [:partial :setup])))
                        (cleanup)
                        (done)))))))
 
@@ -727,6 +869,7 @@
                      (fn [m]
                        (t/is (= "failed" (:status m)))
                        (t/is (= "graphics-init" (:phase m)))
+                       (t/is (= {} (get-in m [:partial :setup])))
                        (t/is (= "graphics init failed" (:message m))
                              "top message stays phase-labeled")
                        (assert-wasm-cause (:cause m)
@@ -756,6 +899,10 @@
                        (assert-wasm-cause (:cause m)
                                           "_set_view"
                                           #"fake _set_view failure")
+                       (let [setup (get-in m [:partial :setup])]
+                         (t/is (number? (:module-ms setup)))
+                         (t/is (number? (:graphics-ms setup)))
+                         (t/is (string? (get-in setup [:fingerprint :digest]))))
                        (cleanup)
                        (done)))))))
 

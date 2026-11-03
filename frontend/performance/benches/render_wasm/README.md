@@ -61,8 +61,8 @@ The suite has three parts:
   policy, completion rule, optional operation settings, and a run function. A
   case is the unit that is measured.
 - **Operation**: the function that performs a case's work during one attempt.
-  It receives a runtime context with the case data, scene snapshot, renderer
-  module, view, and hooks. Standard operations load, pan, and zoom.
+  It receives a command context with the case data, scene snapshot, current
+  view, and hooks. Standard operations load, pan, and zoom.
 - **View**: the camera's zoom `:scale` and offsets `:x` and `:y`.
   Optional `:viewport` settings give the canvas width, height, and device pixel
   ratio, the number of drawing-buffer pixels per CSS pixel along each dimension.
@@ -90,9 +90,9 @@ The suite has three parts:
   context, snapshot, and upload serve all attempts of the case.
 - **Preparation**: setup for one graphics context. It covers module
   instantiation, WebGL2 context creation, scene build, snapshot validation,
-  fingerprinting, upload-order derivation, and upload. A warm preparation also
-  restores the starting view and drains to `Full`. One page owns one
-  preparation.
+  fingerprinting, upload-order derivation, and upload. It then runs the optional
+  preparation callback and drains to `Full` unless the case declares
+  `:preparation {:render :none}`. One page owns one preparation.
 - **Attempt**: one execution of a case against a preparation. An attempt
   records one outcome, one set of metrics, and a raw trace. A failed attempt
   still consumes its allocated slot.
@@ -234,7 +234,7 @@ The browser bridge owns everything inside the page:
 - it validates a request before assigning the page to that work;
 - it imports the renderer module and creates the canvas and WebGL2 context;
 - it builds, validates, fingerprints, orders, and uploads the scene;
-- it restores the starting view outside timing for warm cases;
+- it carries each phase's returned context into the next phase or attempt;
 - it runs the case operation and records the requested measurements;
 - it returns plain data and disposes the context when asked.
 
@@ -264,7 +264,7 @@ sequenceDiagram
     B->>B: build, validate, fingerprint the snapshot
     B->>W: upload shapes in tree order
     B->>W: render until Full
-    B-->>N: metrics, slices, and preparation evidence
+    B-->>N: preparation evidence and raw phase blocks
     N->>N: persist the run record
 ```
 
@@ -378,10 +378,10 @@ derives the scene from that keyword namespace and attaches the run function.
   {:params default-params
    :view {:scale 1 :x 0 :y 0}
    :context :reuse
-   :completion :render-full
-   :operation {:steps 20 :dx 200 :dy 0 :settle-ms 100}}
-  [rtx]
-  (camera/pan! rtx))
+   :reset (fn [rtx]
+            (camera/pan rtx {:steps 20 :dx -200 :dy 0 :settle-ms 100}))}
+   [rtx]
+   (camera/pan* rtx {:steps 20 :dx 200 :dy 0 :settle-ms 100}))
 ```
 
 The case declares:
@@ -393,14 +393,15 @@ The case declares:
 - `:context`: `:fresh` creates a page, module, and context per attempt.
   `:reuse` keeps one page, module, context, snapshot, and upload for all
   attempts of the case.
-- `:completion`: the declared completion rule, `:call`, `:await`, or
-  `:render-full`. The standard load body drains to `Full`; the standard pan and
-  zoom bodies finish a camera session with a final `Full` drain.
-- `:operation`: settings read by the operation body.
-- `:batch-size` and `:preparation`: execution settings recorded in the
-  descriptor and checked by comparisons. A batch size groups inner calls inside
-  one attempt; a repetition is a separate attempt. Standard load, pan, and zoom
-cases run one call per attempt.
+- `:preparation`: an optional `:callback` function runs after upload and returns
+  the next context or its Promise. Preparation then renders Full by default.
+  `:render :none` completes preparation after the callback for cold-render cases.
+- `:reset`: an optional function that receives the context after successful
+  main execution and returns the next context or its Promise. Reset runs after
+  every successful main, including warmups and the final attempt.
+
+Commands receive workload arguments from the case body. The callback, main body,
+and reset share the command context and can each call measured commands.
 
 ### Case collection and seeds
 
@@ -409,6 +410,10 @@ declaration, validates every scene and case, derives the scene seed, selects
 the case's data fields, and checks that the descriptor survives a serialization
 round trip. Shape construction, browser startup, and renderer initialization
 take place during execution.
+
+The local registry keeps the main, reset, and preparation callback functions.
+The descriptor carries the declared preparation data. The browser resolves the
+functions from its registry using the case id.
 
 The scene seed depends only on the master seed, the scene id, and the canonical
 parameters. These inputs give load, pan, and zoom cases the same starting
@@ -441,11 +446,9 @@ shape.
 | `plus`  | 1000 plus signs made from two open line subpaths                        | load, pan, zoom |
 | `masks` | 24 masked groups, each with a circle mask and 8 striped rectangles      | load, pan, zoom |
 
-A load case renders a fresh scene and times module start, graphics start,
-upload, and the first render to `Full`. A pan or zoom case prepares the scene
-once, restores the starting view outside timing for each attempt, then times a
-camera session. The standard camera sessions use 20 view updates and a 100 ms
-settling wait. Pan and zoom parameters vary by scene.
+Scene recipes supply canonical geometry for rendering and camera workloads.
+Camera sessions submit view updates and wait for settling before their final
+render. Each case declares its sequence, arguments, and reset behavior in code.
 
 ## Renderer commands
 
@@ -629,6 +632,39 @@ the individual values that call produced. The command execution owns this
 history; its guard authorizes work for that execution. Pass the resulting
 context to `commands/execute` to start another command execution.
 
+### Case phases
+
+The browser executes preparation, main, and reset through the command executor.
+Preparation builds and uploads the scene, runs its optional callback once, and
+renders Full unless the case declares `:preparation {:render :none}`. A fresh
+context prepares once for its attempt; a reused context prepares once for its
+case. Each phase passes its returned context to the next phase.
+
+A successful preparation response contains its raw block in
+`[:preparation :phases]`. A failed preparation returns its available blocks in
+top-level `:phases`. An attempt response contains main and any declared reset
+in `:phases`:
+
+```clojure
+{:phase :main
+ :preparation-id "preparation-1"
+ :outcome :completed
+ :events [{:command :benches.render-wasm.runtime.camera/render-sync
+           :metrics {:command/elapsed [7]}}]}
+```
+
+Each block retains ordered command events, raw numeric vectors, and any
+completion diagnostics. A phase can complete with an empty event vector.
+Initialization and upload durations stay in preparation `:diagnostics`.
+Automatic initial rendering retains its raw trace under
+`[:diagnostics :setup-render]`. Measured commands in the callback supply the
+preparation block's selected events.
+
+Reset runs after successful main. Its returned context supplies the next reused
+attempt. A phase failure releases its owned context and returns the failed
+block with earlier events and available traces. Completed preparation retains
+its own evidence when main or reset fails.
+
 ### Runtime code
 
 [`runtime/commands.clj`](runtime/commands.clj) declares commands;
@@ -643,7 +679,8 @@ declarations and functions during catalogue collection. Renderer operations run
 through the supplied hooks when the functions execute in the browser.
 [`browser/bridge.cljs`](browser/bridge.cljs) constructs the runtime context for
 case operations and prepares graphics contexts, snapshots, and uploads. Reused
-cases restore their starting view outside interaction timing before each attempt.
+cases carry their returned context into the next attempt; their reset function
+controls restoration.
 
 ## Measurement
 
@@ -659,16 +696,18 @@ Work around those intervals includes:
 - request and result serialization;
 - validation, logging, and screenshots;
 - module script import;
-- camera restore and the drain that prepares a warm case.
+- the automatic initial Full render during preparation.
 
-The timed work includes:
+Preparation diagnostics time:
 
 - module instantiation;
 - graphics context creation and initial size synchronization;
 - shape batch upload, including the loading lifecycle and first view setup;
-- the render drain to `Full`;
-- for warm cases, the camera session: view updates, cached previews, settling,
-  ending the interaction, and the final drain.
+- the automatic render drain to `Full`.
+
+Measured commands record their own intervals during preparation, main, or reset.
+For a camera command, this includes view updates, cached previews, settling,
+ending the interaction, and the final drain.
 
 ### Lifecycle of a fresh load
 
@@ -679,22 +718,25 @@ flowchart TD
     C --> D[Build and validate snapshot - untimed]
     D --> E[Fingerprint and derive upload order - untimed]
     E --> F[Time upload and first view setup]
-    F --> G[Time render drain to Full]
-    G --> H[Record result]
-    H --> I[Dispose page and context]
+    F --> G[Run preparation callback]
+    G --> H[Render initial Full unless render is none]
+    H --> I[Run main]
+    I --> J[Run reset after successful main]
+    J --> K[Return raw phase records]
+    K --> L[Dispose page and context]
 ```
 
 The module script import is untimed because the browser loads it once per page.
 Module instantiation starts a new renderer state. Graphics start creates the
 WebGL2 context and synchronizes the drawing buffer. Upload covers the loading
-lifecycle, batch serialization, and tile preparation. The first render clock
-starts after upload ends.
+lifecycle, batch serialization, and tile preparation. Each measured command
+starts its clock immediately before its work.
 
 ### Warm interactions
 
-A warm case owns one prepared page. Before each attempt, the browser restores
-the case's starting view and drains to `Full` outside timing. The operation then
-runs a camera session:
+A warm case owns one prepared page. Its main body starts from the context
+returned by preparation or the preceding attempt's reset. A camera command runs
+this session:
 
 1. start the camera interaction;
 2. for each view update, wait for the next animation frame, apply the view, and
@@ -711,19 +753,18 @@ the run also records that call's duration.
 
 ### Slices and metrics
 
-The browser returns raw evidence for each attempt. A fresh attempt also reports
-`module-init-ms`, `graphics-init-ms`, and `upload-ms` from preparation.
+The browser returns ordered events within each phase. Preparation diagnostics
+retain `module-init-ms`, `graphics-init-ms`, and `upload-ms` separately.
 
-A fresh attempt reports one drain:
+A render drain retains these trace fields:
 
 - `slices`: one record per renderer call with `timestamp`, `flags`,
   `frame-type`, and `duration-ms`;
 - `viewport-ready-ms`: the first `ViewportReady` or `Full` completion from the
   drain origin;
-- `full-ms`: the `Full` completion from the drain origin;
-- `first-render-ms`: the single first-render metric for a fresh case.
+- `full-ms`: the `Full` completion from the drain origin.
 
-A warm attempt reports the camera session and the final drain:
+A camera command's trace contains the camera session and final drain:
 
 - `cached-slices`: one record per gesture frame with `timestamp`,
   `duration-ms` for the cached preview call, and `view-and-preview-ms` for the
@@ -746,13 +787,9 @@ Both drains and camera sessions return `end-ms`, the clock reading immediately
 after the final renderer call returns `Full`. Completion durations end at that
 reading. Promise callbacks can run later as the browser schedules queued work.
 
-Both kinds of attempt report `renderer-call-total-ms`, the sum of the renderer
-call durations, computed after timing.
-
-A saved run metric declares its unit, semantics, basis, and zero policy. A batch
-average records its call count; one attempt supplies one observation. Raw slices
-keep zero durations and non-finite values. The metric entry classifies the value
-for analysis and records a reason when it is invalid.
+Measured command events keep each metric's raw values in a vector. Repeated
+commands produce separate events, including when they name the same metric.
+Raw values preserve zero, negative, and non-finite measurements for analysis.
 
 ### Renderer completion
 
