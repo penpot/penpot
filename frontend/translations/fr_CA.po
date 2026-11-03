@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-11-03 02:51+0000\n"
+"PO-Revision-Date: 2026-11-04 13:51+0000\n"
 "Last-Translator: Alexis Morin <alexismo@users.noreply.hosted.weblate.org>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -9238,3 +9238,69 @@ msgstr[1] "%s bibliothèques ont été liées automatiquement par nom."
 #: src/app/main/ui/dashboard/import.cljs:733
 msgid "dashboard.import.confirm-library-links"
 msgstr "Confirmer les liens de bibliothèque"
+
+#: src/app/main/ui/dashboard/import.cljs:709
+msgid "dashboard.import.connect-selected-libraries"
+msgstr "Connecter les bibliothèques sélectionnées"
+
+#: src/app/main/ui/dashboard/import.cljs:296
+msgid "dashboard.import.file-name-label"
+msgstr "Nom du fichier"
+
+#: src/app/main/ui/dashboard/import.cljs:710
+msgid "dashboard.import.next-file"
+msgstr "Fichier suivant"
+
+#: src/app/main/ui/dashboard/import.cljs:443
+msgid "dashboard.import.resolve-libraries"
+msgstr ""
+"Certaines bibliothèques n'ont pu être liées automatiquement. Sélectionner la "
+"bonne bibliothèque pour chacun :"
+
+#: src/app/main/ui/dashboard/import.cljs:565
+msgid "dashboard.import.resolve-libraries-summary"
+msgstr "Réviser les liens de bibliothèque avant de confirmer :"
+
+#: src/app/main/ui/dashboard/import.cljs:459
+msgid "dashboard.import.resolve-libraries.connect-to"
+msgstr "connecter à"
+
+#: src/app/main/ui/dashboard/import.cljs:453
+msgid "dashboard.import.resolve-libraries.original-library"
+msgstr "bibliothèque originale"
+
+#: src/app/main/ui/dashboard/import.cljs:521
+msgid "dashboard.import.summary.linked"
+msgstr "liée automatiquement"
+
+#: src/app/main/ui/dashboard/import.cljs:529
+msgid "dashboard.import.summary.manually-linked"
+msgstr "liée manuellement"
+
+#: src/app/main/ui/dashboard/import.cljs:537
+msgid "dashboard.import.summary.new"
+msgstr "Nouveau"
+
+#: src/app/main/ui/dashboard/import.cljs:558
+msgid "dashboard.import.summary.no-selection"
+msgstr "Aucune bibliothèque sélectionnée"
+
+#: src/app/main/ui/dashboard/import.cljs:534
+msgid "dashboard.import.summary.original"
+msgstr "Original"
+
+#: src/app/main/ui/dashboard/team.cljs:152
+msgid "dashboard.invite-profile-disabled"
+msgstr "Tu n'as pas la permission d'inviter des gens à cette équipe"
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:185
+msgid "dashboard.no-organizations-yet"
+msgstr "Aucune organisation."
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:208, src/app/main/ui/dashboard/organization_team_switch.cljs:209
+msgid "dashboard.other-teams"
+msgstr "Autres équipes"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:38, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:58, src/app/main/ui/dashboard/organization_team_switch.cljs:57, src/app/main/ui/dashboard/projects.cljs:50, src/app/main/ui/dashboard/projects.cljs:364, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/team.cljs:647, src/app/main/ui/dashboard/team.cljs:1257, src/app/main/ui/dashboard/team.cljs:1537, src/app/main/ui/dashboard/team.cljs:1644
+msgid "dashboard.personal-projects"
+msgstr "Projets personnels"
