@@ -11339,7 +11339,7 @@ msgid "workspace.branches.resolve.row.loses-work"
 msgstr "Loses work"
 
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:156
-msgid "workspace.branches.resolve.tag.clash"
+msgid "workspace.branches.resolve.tag.conflict"
 msgstr "Conflict"
 
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:160
@@ -11526,8 +11526,8 @@ msgstr[0] "Merge blocked: 1 decision left"
 msgstr[1] "Merge blocked: %s decisions left"
 
 #: src/app/main/ui/workspace/sidebar/branch_review/conflicts.cljs:297
-msgid "workspace.branches.resolve.tag.clashes"
-msgid_plural "workspace.branches.resolve.tag.clashes"
+msgid "workspace.branches.resolve.tag.conflicts"
+msgid_plural "workspace.branches.resolve.tag.conflicts"
 msgstr[0] "1 conflict"
 msgstr[1] "%s conflicts"
 

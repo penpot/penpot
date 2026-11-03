@@ -6,7 +6,7 @@
 
 (ns frontend-tests.ui.branch-review-common-test
   "How the decisions dialog splits a conflict: the properties both sides
-  moved clash, the ones a single side moved come filled in from it."
+  moved conflict, the ones a single side moved come filled in from it."
   (:require
    [app.common.files.branch-merge :as bm]
    [app.common.uuid :as uuid]
@@ -30,20 +30,20 @@
   [conflict]
   (into {} (map (juxt :attr :source)) (brc/conflict-attr-rows conflict)))
 
-(t/deftest only-properties-both-sides-moved-clash
-  (t/is (= {:rx :clash :width :branch :opacity :main} (sources card))))
+(t/deftest only-properties-both-sides-moved-conflict
+  (t/is (= {:rx :conflict :width :branch :opacity :main} (sources card))))
 
-(t/deftest without-a-base-every-property-clashes
-  (t/is (= #{:clash} (set (vals (sources (assoc card :base nil :reason :add-add))))))
-  (t/is (= #{:clash} (set (vals (sources (dissoc card :base)))))))
+(t/deftest without-a-base-every-property-conflicts
+  (t/is (= #{:conflict} (set (vals (sources (assoc card :base nil :reason :add-add))))))
+  (t/is (= #{:conflict} (set (vals (sources (dissoc card :base)))))))
 
 (t/deftest independent-edits-come-filled-in
   (let [res (brc/prefill-resolution card)]
     (t/is (= {:width :branch :opacity :main} res))
     (t/is (not (bm/conflict-resolved? card res))
-          "the clashing radius still waits for a choice")))
+          "the conflicting radius still waits for a choice")))
 
-(t/deftest choosing-the-clash-resolves-the-conflict
+(t/deftest choosing-the-conflicting-property-resolves-the-conflict
   (let [res (brc/choose-attr card nil :rx :branch)]
     (t/is (= {:rx :branch :width :branch :opacity :main} res))
     (t/is (bm/conflict-resolved? card res))
@@ -51,7 +51,7 @@
              (brc/dropped-values card res))
           "keeping the branch radius drops main's, and nothing else")))
 
-(t/deftest a-conflict-without-a-clash-comes-out-resolved
+(t/deftest a-conflict-without-conflicting-properties-comes-out-resolved
   (let [conflict (-> card
                      (assoc-in [:main :rx] 8)
                      (update :changed-attrs dissoc :rx))]

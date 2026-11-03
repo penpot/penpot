@@ -8,7 +8,7 @@
   "What the compare and conflict dialogs say about a diff entry, kept free
   of rendering: labels, values, categories, one-line summaries, the
   page/board a change lives on, how a conflict splits into the
-  properties that clash and the ones only one side touched, and what the
+  properties in conflict and the ones only one side touched, and what the
   copy rule decides for the copies of a changed component."
   (:require
    [app.common.data.macros :as dm]
@@ -589,14 +589,14 @@
              :boards []
              :count  (count library)}))))
 
-;; --- Conflicts: what clashes and what one side did alone
+;; --- Conflicts: which properties conflict and what one side did alone
 
 (defn- attr-sources
   "Every changed attr of a conflict with who changed it, using the base
-  value both sides started from. `:clash` attrs moved on both sides; a
+  value both sides started from. `:conflict` attrs moved on both sides; a
   `:main` or `:branch` attr moved on that side alone, so its value is not
   in doubt. Without a base (both sides added the entity) every attr
-  clashes."
+  conflicts."
   [conflict]
   (let [base      (:base conflict)
         has-base? (map? base)]
@@ -608,48 +608,48 @@
                    :main   main
                    :branch branch
                    :source (cond
-                             (not has-base?)    :clash
+                             (not has-base?)    :conflict
                              (= base-v main)    :branch
                              (= base-v branch)  :main
-                             :else              :clash)})))
+                             :else              :conflict)})))
          (sort-by (comp attr-label :attr))
          vec)))
 
 (defn conflict-attr-rows
   "The attrs of a conflict a person decides on (see `attr-sources`).
   Technical attrs are left out: they follow the visible ones they come
-  with. When only technical attrs clash, they are shown instead, so the
+  with. When only technical attrs conflict, they are shown instead, so the
   conflict can still be decided."
   [conflict]
   (let [all     (attr-sources conflict)
         visible (filterv #(not (contains? technical-attrs (:attr %))) all)]
-    (if (and (not-any? #(= :clash (:source %)) visible)
-             (some #(= :clash (:source %)) all))
+    (if (and (not-any? #(= :conflict (:source %)) visible)
+             (some #(= :conflict (:source %)) all))
       all
       visible)))
 
-(defn clash-attrs
+(defn conflicting-attrs
   [rows]
-  (into [] (comp (filter #(= :clash (:source %))) (map :attr)) rows))
+  (into [] (comp (filter #(= :conflict (:source %))) (map :attr)) rows))
 
-(defn- hidden-clashes
-  "The clashing attrs `conflict-attr-rows` does not show."
+(defn- hidden-conflicts
+  "The conflicting attrs `conflict-attr-rows` does not show."
   [conflict]
   (let [shown (into #{} (map :attr) (conflict-attr-rows conflict))]
     (into []
-          (comp (filter #(= :clash (:source %)))
+          (comp (filter #(= :conflict (:source %)))
                 (map :attr)
                 (remove shown))
           (attr-sources conflict))))
 
 (defn prefill-resolution
   "The per-attr resolution a conflict starts with: every attr one side
-  changed alone takes that side. The clashing attrs stay out, so the
+  changed alone takes that side. The conflicting attrs stay out, so the
   conflict is not resolved until the user picks them; a conflict without
-  a clash comes out resolved."
+  conflicting attrs comes out resolved."
   [conflict]
   (into {}
-        (comp (remove #(= :clash (:source %)))
+        (comp (remove #(= :conflict (:source %)))
               (map (juxt :attr :source)))
         (attr-sources conflict)))
 
@@ -671,17 +671,17 @@
                :else           (prefill-resolution conflict))]
     (reduce (fn [res hidden] (assoc res hidden side))
             (assoc seed attr side)
-            (hidden-clashes conflict))))
+            (hidden-conflicts conflict))))
 
 (defn choose-side
-  "The resolution of `conflict` when every clashing attr takes `side`; the
+  "The resolution of `conflict` when every conflicting attr takes `side`; the
   independent edits keep the side that made them."
   [conflict side]
   (if (per-attr? conflict)
     (let [rows (conflict-attr-rows conflict)]
       (reduce (fn [res attr] (assoc res attr side))
               (prefill-resolution conflict)
-              (into (clash-attrs rows) (hidden-clashes conflict))))
+              (into (conflicting-attrs rows) (hidden-conflicts conflict))))
     side))
 
 (defn attr-choice

@@ -6,7 +6,7 @@
 
 (ns app.main.ui.workspace.sidebar.branch-review.conflicts
   "The decisions dialog: one entity both sides changed at a time. Only the
-  properties that really clash ask for a choice; the ones a single side
+  properties really in conflict ask for a choice; the ones a single side
   changed are filled in from that side, and the dialog says what each
   choice drops before the merge applies it."
   (:require-macros [app.main.style :as stl])
@@ -47,26 +47,26 @@
    :delete-modify "workspace.branches.conflicts.reason.delete-modify"
    :modify-delete "workspace.branches.conflicts.reason.modify-delete"})
 
-(defn- text-clash?
+(defn- text-conflict?
   "A conflict whose text content both sides rewrote."
   [conflict]
   (and (brc/per-attr? conflict)
-       (some #(and (= :content (:attr %)) (= :clash (:source %)))
+       (some #(and (= :content (:attr %)) (= :conflict (:source %)))
              (brc/conflict-attr-rows conflict))))
 
 (defn- loses-work?
   "Whether every choice on a text conflict drops a paragraph edit: both
   sides edited different paragraphs."
   [conflict]
-  (and (text-clash? conflict)
+  (and (text-conflict? conflict)
        (some #(= :dropped (:status %)) (brc/paragraph-rows conflict :main))
        (some #(= :dropped (:status %)) (brc/paragraph-rows conflict :branch))))
 
 (defn- row-subtitle
   [conflict res]
-  (let [rows   (brc/conflict-attr-rows conflict)
-        clash  (brc/clash-attrs rows)
-        drops  (brc/dropped-values conflict res)]
+  (let [rows        (brc/conflict-attr-rows conflict)
+        conflicting (brc/conflicting-attrs rows)
+        drops       (brc/dropped-values conflict res)]
     (cond
       (bm/conflict-resolved? conflict res)
       (cond
@@ -76,9 +76,9 @@
                             (str/lower (str/join ", " (map (comp brc/attr-label :attr) drops))))
         :else           (tr "workspace.branches.resolve.row.kept-both"))
 
-      (seq clash)
+      (seq conflicting)
       (tr "workspace.branches.resolve.row.both-changed"
-          (str/join ", " (map brc/attr-label clash)))
+          (str/join ", " (map brc/attr-label conflicting)))
 
       :else
       (some-> (get reason->label (:reason conflict)) tr))))
@@ -124,28 +124,28 @@
     [:span]]
    (for [{:keys [attr main branch source]} rows
          :let [choice (brc/attr-choice res attr)
-               clash? (= source :clash)
-               result (case (or choice (when-not clash? source))
+               conflicting? (= source :conflict)
+               result (case (or choice (when-not conflicting? source))
                         :main   main
                         :branch branch
                         nil)
-               decided? (some? (or choice (when-not clash? source)))]]
-     [:div {:class (stl/css-case :table-row true :is-clash (and clash? (nil? choice)))
+               decided? (some? (or choice (when-not conflicting? source)))]]
+     [:div {:class (stl/css-case :table-row true :is-conflicting (and conflicting? (nil? choice)))
             :key (str attr)}
       [:> text* {:as "span" :typography t/body-small :class (stl/css :td-name)}
        (brc/attr-label attr)]
       (if (= source :branch)
         [:> text* {:as "span" :typography t/body-small :class (stl/css :td-unchanged)}
          (tr "workspace.branches.resolve.unchanged")]
-        [:button {:class (stl/css-case :td-pick true :is-chosen (and clash? (= choice :main)))
-                  :disabled (not clash?)
+        [:button {:class (stl/css-case :td-pick true :is-chosen (and conflicting? (= choice :main)))
+                  :disabled (not conflicting?)
                   :on-click #(on-pick attr :main)}
          [:> brl/value-chip* {:value main :is-old (not= choice :main)}]])
       (if (= source :main)
         [:> text* {:as "span" :typography t/body-small :class (stl/css :td-unchanged)}
          (tr "workspace.branches.resolve.unchanged")]
-        [:button {:class (stl/css-case :td-pick true :is-chosen (and clash? (= choice :branch)))
-                  :disabled (not clash?)
+        [:button {:class (stl/css-case :td-pick true :is-chosen (and conflicting? (= choice :branch)))
+                  :disabled (not conflicting?)
                   :on-click #(on-pick attr :branch)}
          [:> brl/value-chip* {:value branch :is-old (not= choice :branch)}]])
       (if decided?
@@ -155,12 +155,12 @@
          (tr "workspace.branches.resolve.choose-side")])
       [:span {:class (stl/css :td-tag)}
        (cond
-         ;; a decided clash is done (green); an independent edit takes the
+         ;; a decided conflict is done (green); an independent edit takes the
          ;; colour of the side it comes from, as the preview cards do
-         (and clash? choice)
+         (and conflicting? choice)
          [:> tag* {:tone "success"} (tr "workspace.branches.resolve.tag.your-choice")]
-         clash?
-         [:> tag* {:tone "warning"} (tr "workspace.branches.resolve.tag.clash")]
+         conflicting?
+         [:> tag* {:tone "warning"} (tr "workspace.branches.resolve.tag.conflict")]
          (= source :main)
          [:> tag* {:tone "purple"} (tr "workspace.branches.resolve.tag.from-main")]
          :else
@@ -279,10 +279,10 @@
                      (brc/copies-entry copies conflict
                                        (get-in data [:pages-index (:page-id conflict) :objects])))
         per-attr?  (brc/per-attr? conflict)
-        text?      (text-clash? conflict)
+        text?      (text-conflict? conflict)
         table-rows (if text? (filterv #(not= :content (:attr %)) rows) rows)
-        clash-n    (count (brc/clash-attrs rows))
-        indep-n    (- (count rows) clash-n)
+        conflict-n (count (brc/conflicting-attrs rows))
+        indep-n    (- (count rows) conflict-n)
         resolved?  (bm/conflict-resolved? conflict res)
         drops      (when resolved? (brc/dropped-values conflict res))
         main-detail   (some-> (:main-at diff-meta) ct/inst ct/timeago)
@@ -305,7 +305,7 @@
         [:> tag* {:tone "success"} (tr "workspace.branches.resolve.decided")]
         [:> tag* {:tone "warning"}
          (if per-attr?
-           (dm/str (tr "workspace.branches.resolve.tag.clashes" (i18n/c clash-n))
+           (dm/str (tr "workspace.branches.resolve.tag.conflicts" (i18n/c conflict-n))
                    (when (pos? indep-n)
                      (dm/str " - " (tr "workspace.branches.resolve.tag.independent" (i18n/c indep-n)))))
            (tr (get reason->label (:reason conflict) "workspace.branches.status.conflict")))])]
@@ -344,7 +344,7 @@
 
      (when per-attr?
        (for [{:keys [attr main branch source]} rows
-             :when (and (= :clash source) (not= attr :content))
+             :when (and (= :conflict source) (not= attr :content))
              :let [choice (brc/attr-choice res attr)]]
          [:div {:class (stl/css :inline-actions) :key (str attr)}
           [:> text* {:as "span" :typography t/body-small :class (stl/css :muted)}
@@ -496,7 +496,7 @@
                                        (if (= mode :update) :main->branch :branch->main))))
 
     ;; independent edits are not in doubt: fill them in from the side that
-    ;; made them, so only the clashing properties wait for a choice
+    ;; made them, so only the conflicting properties wait for a choice
     (mf/with-effect [conflicts status]
       (when (and (seq conflicts) (not loading?))
         (let [seed (into {}
