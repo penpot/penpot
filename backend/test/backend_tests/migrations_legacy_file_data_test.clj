@@ -118,7 +118,10 @@
     (t/testing "second run is a no-op"
       (run-migration)
       (t/is (some? (get-file-data fid fid)))
-      (t/is (some? (get-file-data fid snap-id))))))
+      (t/is (some? (get-file-data fid snap-id)))
+      (t/is (nil? (:data (th/db-get :file {:id fid} {::db/remove-deleted false}))))
+      (t/is (nil? (:data (th/db-get :file-change {:id snap-id} {::db/remove-deleted false}))))
+      (t/is (nil? (th/db-get :file-change {:id rev-id} {::db/remove-deleted false}))))))
 
 (t/deftest keeps-preexisting-file-data-row
   (let [profile (th/create-profile* 1)
@@ -140,3 +143,38 @@
       (let [fd (get-file-data fid fid)]
         (t/is (= (seq ^bytes current) (seq ^bytes (:data fd)))))
       (t/is (nil? (:data (th/db-get :file {:id fid} {::db/remove-deleted false})))))))
+
+(t/deftest keeps-preexisting-snapshot-row
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+        fid     (:id file)
+
+        ;; file_data already holds the snapshot payload; the legacy column
+        ;; keeps a stale copy that must not overwrite it.
+        snap-id (uuid/next)
+        current (blob/encode {:snapshot :current})
+        stale   (blob/encode {:snapshot :stale})
+        _       (t/is (not= (seq ^bytes current) (seq ^bytes stale)))
+        _       (th/db-insert! :file-data
+                               {:file-id  fid
+                                :id       snap-id
+                                :type     "snapshot"
+                                :backend  "db"
+                                :metadata nil
+                                :data     current})
+        _       (th/db-insert! :file-change
+                               {:id      snap-id
+                                :file-id fid
+                                :revn    1
+                                :label   "v1"
+                                :data    stale})]
+
+    (run-migration)
+
+    (t/testing "file_data keeps its data and legacy is nulled"
+      (let [fd (get-file-data fid snap-id)]
+        (t/is (= (seq ^bytes current) (seq ^bytes (:data fd)))))
+      (t/is (nil? (:data (th/db-get :file-change {:id snap-id}
+                                    {::db/remove-deleted false})))))))
+
