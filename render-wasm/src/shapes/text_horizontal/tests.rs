@@ -1773,18 +1773,21 @@ fn horizontal_squeeze_keeps_the_next_character_on_the_line() {
     };
     // Seven characters fit; the eighth overflows by less than the 、 aki.
     let width = advance * 7.6;
-    let lay_out = |extra: &[Vec<(usize, f32)>]| {
+    let lay_out = |extra: &[Vec<(usize, f32)>], window: std::ops::Range<usize>| {
         let sheds: Vec<(usize, f32)> = plan.sheds[0]
             .iter()
             .chain(extra.first().into_iter().flatten())
             .copied()
             .collect();
+        let (text, from) =
+            window_slice(&plan.texts[0], &plan.offsets.ranges[0], &window).unwrap_or(("", 0));
+        let sheds = window_entries(&sheds, from, text.chars().count());
         let mut builder = ParagraphBuilder::new(&paragraph_style, &fonts);
         builder.push_style(&style);
         add_horizontal_span(
             &mut builder,
             &paragraph.children()[0],
-            &plan.texts[0],
+            text,
             &sheds,
             &[],
             &style,
@@ -1797,7 +1800,7 @@ fn horizontal_squeeze_keeps_the_next_character_on_the_line() {
 
     // Line ends count builder UTF-16 units, word joiners included.
     let builder_text: Vec<char> = plan.texts[0].chars().collect();
-    let natural = lay_out(&[]);
+    let natural = lay_out(&[], FULL_WINDOW);
     let natural_end = natural.get_line_metrics()[0].end_index;
     assert_eq!(
         builder_text[natural_end], 'か',

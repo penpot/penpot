@@ -744,11 +744,12 @@ impl TextContent {
         plan: &HorizontalParagraphPlan,
         width: f32,
     ) -> HorizontalAdjustment {
-        let lay_out = |extra_sheds: &[Vec<(usize, f32)>]| {
+        let lay_out = |extra_sheds: &[Vec<(usize, f32)>], window: std::ops::Range<usize>| {
             let mut laid_out = LayoutParagraph::build(&mut self.horizontal_measure_builder(
                 paragraph,
                 plan,
                 extra_sheds,
+                window,
             ));
             laid_out.layout(plan.layout_width(width));
             laid_out
@@ -760,7 +761,7 @@ impl TextContent {
             horizontal_squeeze_sheds(paragraph, plan, width, &lay_out)
         } else {
             let sheds = vec![Vec::new(); plan.texts.len()];
-            let laid_out = lay_out(&sheds);
+            let laid_out = lay_out(&sheds, FULL_WINDOW);
             (sheds, laid_out)
         };
         let spacing = if paragraph.text_align() == TextAlign::Distribute {
@@ -777,13 +778,15 @@ impl TextContent {
         HorizontalAdjustment { sheds, spacing }
     }
 
-    /// Left-aligned builder of one paragraph with plain fills, its plan's
-    /// sheds plus `extra_sheds`, for measuring line adjustment.
+    /// Left-aligned builder of the builder UTF-16 `window` of one paragraph
+    /// (`FULL_WINDOW` for all of it) with plain fills, its plan's sheds plus
+    /// `extra_sheds`, for measuring line adjustment.
     fn horizontal_measure_builder(
         &self,
         paragraph: &Paragraph,
         plan: &HorizontalParagraphPlan,
         extra_sheds: &[Vec<(usize, f32)>],
+        window: std::ops::Range<usize>,
     ) -> HorizontalBuilder {
         let fonts = get_font_collection();
         let fallback_fonts = get_fallback_fonts();
@@ -803,6 +806,23 @@ impl TextContent {
                 .chain(extra_sheds.get(span_index).into_iter().flatten())
                 .copied()
                 .collect();
+            let ruby = &plan.ruby_spacing.adjustments[span_index];
+            let (text, combined, ruby) = if window == FULL_WINDOW {
+                (text.as_str(), combined, ruby.clone())
+            } else {
+                let Some(range) = plan.offsets.ranges.iter().find(|r| r.span == span_index) else {
+                    continue;
+                };
+                let Some((slice, from)) = window_slice(text, range, &window) else {
+                    continue;
+                };
+                let len = slice.chars().count();
+                (
+                    slice,
+                    window_entries(&combined, from, len),
+                    window_entries(ruby, from, len),
+                )
+            };
             let text_style = span.to_style_with_paint(
                 &self.bounds(),
                 fallback_fonts,
@@ -816,7 +836,7 @@ impl TextContent {
                 span,
                 text,
                 &combined,
-                &plan.ruby_spacing.adjustments[span_index],
+                &ruby,
                 &text_style,
                 fonts,
             );
@@ -845,17 +865,25 @@ impl TextContent {
                     let mut plan = HorizontalParagraphPlan::new(paragraph);
                     plan.relax_overlong_words(paragraph, width, |plan| {
                         let sheds = vec![Vec::new(); plan.texts.len()];
-                        let mut measured = LayoutParagraph::build(
-                            &mut self.horizontal_measure_builder(paragraph, plan, &sheds),
-                        );
+                        let mut measured =
+                            LayoutParagraph::build(&mut self.horizontal_measure_builder(
+                                paragraph,
+                                plan,
+                                &sheds,
+                                FULL_WINDOW,
+                            ));
                         measured.layout(width);
                         measured
                     });
                     plan.retain_atomic_overflow(paragraph, width, |plan, width| {
                         let sheds = vec![Vec::new(); plan.texts.len()];
-                        let mut measured = LayoutParagraph::build(
-                            &mut self.horizontal_measure_builder(paragraph, plan, &sheds),
-                        );
+                        let mut measured =
+                            LayoutParagraph::build(&mut self.horizontal_measure_builder(
+                                paragraph,
+                                plan,
+                                &sheds,
+                                FULL_WINDOW,
+                            ));
                         measured.layout(width);
                         measured
                     });

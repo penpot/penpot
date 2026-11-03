@@ -211,6 +211,55 @@ pub(crate) fn add_horizontal_span(
     }
 }
 
+/// Builder UTF-16 window that covers a whole paragraph.
+pub(crate) const FULL_WINDOW: std::ops::Range<usize> = 0..usize::MAX;
+
+/// Part of a span's builder `text` inside the builder UTF-16 `window`, with
+/// the char index of its first character, or None when the span lies
+/// outside the window. A warichu box is atomic: kept whole when it starts
+/// inside the window.
+pub(crate) fn window_slice<'a>(
+    text: &'a str,
+    range: &HorizontalSpanRange,
+    window: &std::ops::Range<usize>,
+) -> Option<(&'a str, usize)> {
+    if range.builder_end <= window.start || range.builder_start >= window.end {
+        return None;
+    }
+    if range.warichu {
+        return (range.builder_start >= window.start).then_some((text, 0));
+    }
+    let mut utf16 = range.builder_start;
+    let mut from = None;
+    let mut to = text.len();
+    for (index, (byte, ch)) in text.char_indices().enumerate() {
+        if from.is_none() && utf16 >= window.start {
+            from = Some((byte, index));
+        }
+        if utf16 >= window.end {
+            to = byte;
+            break;
+        }
+        utf16 += ch.len_utf16();
+    }
+    let (from_byte, from_char) = from?;
+    Some((&text[from_byte..to.max(from_byte)], from_char))
+}
+
+/// Per-char `entries` of a span shifted to a slice starting at char `from`
+/// and `len` chars long.
+pub(crate) fn window_entries(
+    entries: &[(usize, f32)],
+    from: usize,
+    len: usize,
+) -> Vec<(usize, f32)> {
+    entries
+        .iter()
+        .filter(|(index, _)| *index >= from && *index < from + len)
+        .map(|(index, amount)| (index - from, *amount))
+        .collect()
+}
+
 /// Add `text`, adjusting the letter-spacing of single characters so the
 /// builder text stays unchanged: those at `sheds` lose their amount and
 /// those in `extra` take its added spacing. Skia tracks every cluster,
