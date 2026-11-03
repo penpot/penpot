@@ -6,26 +6,25 @@
 
 (ns performance-tests.render-wasm.feature-comparison-test
   (:require
-   ["fs" :as fs]
-   ["node:timers/promises" :as timers]
-   ["os" :as os]
-   ["path" :as path]
-   [benches.render-wasm.cases :as cases]
-   [benches.render-wasm.declarations :as decl]
-   [benches.render-wasm.errors :as errors]
-   [benches.render-wasm.feature-plan :as feature-plan]
-   [benches.render-wasm.node.build :as build]
-   [benches.render-wasm.node.execution :as execution]
-   [benches.render-wasm.node.feature-comparison :as feature-comparison]
-   [benches.render-wasm.node.feature-plan :as node-plan]
-   [benches.render-wasm.node.files :as files]
-   [benches.render-wasm.node.log :as log]
-   [benches.render-wasm.node.process :as process]
-   [benches.render-wasm.node.request :as request]
-   [benches.render-wasm.result :as result]
-   [cljs.test :as t :include-macros true]
-   [clojure.string :as str]
-   [frontend-tests.helpers.mock :as mock]))
+    ["fs" :as fs]
+    ["node:timers/promises" :as timers]
+    ["os" :as os]
+    ["path" :as path]
+    [benches.render-wasm.cases :as cases]
+    [benches.render-wasm.declarations :as decl]
+    [benches.render-wasm.errors :as errors]
+    [benches.render-wasm.feature-plan :as feature-plan]
+    [benches.render-wasm.node.build :as build]
+    [benches.render-wasm.node.execution :as execution]
+    [benches.render-wasm.node.feature-comparison :as feature-comparison]
+    [benches.render-wasm.node.files :as files]
+    [benches.render-wasm.node.log :as log]
+    [benches.render-wasm.node.process :as process]
+    [benches.render-wasm.node.request :as request]
+    [benches.render-wasm.result :as result]
+    [cljs.test :as t :include-macros true]
+    [clojure.string :as str]
+    [frontend-tests.helpers.mock :as mock]))
 
 (def ^:private temporary-root (atom nil))
 
@@ -153,7 +152,7 @@
   (let [output (path/join @temporary-root "new" "comparison")
         opts   (assoc (planning-options) :output-dir output)
         before (vec (fs/readdirSync (renderer-root)))
-        ready  (await (node-plan/prepare (frontend-root) opts nil))]
+        ready  (await (feature-comparison/prepare (frontend-root) opts nil))]
     (t/is (= ["a" "b"] (get-in ready [:plan :features])))
     (t/is (= (cases/collect-cases {:master-seed 42 :filter "rects/load"}) (:cases ready)))
     (t/is (= (assoc opts :features ["a" "b"])
@@ -162,7 +161,7 @@
     (t/is (not (fs/existsSync (path/join @temporary-root "new"))))
     (t/is (= before (vec (fs/readdirSync (renderer-root)))))
     (t/is (empty? (fs/readdirSync (frontend-root))))
-    (let [text (node-plan/format-plan ready)]
+    (let [text (feature-comparison/format-plan ready)]
       (doseq [part ["a, b" "00" "01" "11" "10" "00 -> 10: a" "Cases: 1"
                     "0 warmups, 1 measured" "attempt 2000, build 10000, startup 3000"]]
         (t/is (str/includes? text part))))))
@@ -179,7 +178,7 @@
                     (t/is (= (renderer-root) (:cwd request)))
                     (t/is (not (contains? request :env)))
                     (js/Promise.resolve (metadata-output {"default" [] "a" [] "b" ["a"]})))}
-     (let [ready (await (node-plan/prepare (frontend-root) (planning-options) nil))]
+     (let [ready (await (feature-comparison/prepare (frontend-root) (planning-options) nil))]
        (t/is (= ["a" "b"] (get-in ready [:plan :features])))))))
 
 (t/deftest ^:async collected-custom-case-data-and-order-survive-planning
@@ -196,8 +195,8 @@
                           :preparation {:reset :outside-timing :data [1 2]}
                           :run! (fn [_] (throw (js/Error. "planning must not run an operation")))}))
   (try
-    (let [ready (await (node-plan/prepare (frontend-root)
-                                          (assoc (planning-options) :filter "feature-plan-fixture/") nil))
+    (let [ready (await (feature-comparison/prepare (frontend-root)
+                                                   (assoc (planning-options) :filter "feature-plan-fixture/") nil))
           data  (:cases ready)]
       (t/is (= [:feature-plan-fixture/second :feature-plan-fixture/first] (mapv :id data)))
       (t/is (= (cases/collect-cases {:master-seed 42 :filter "feature-plan-fixture/"}) data))
@@ -218,10 +217,10 @@
     (await (mock/with-mocks*
              {process/run (fn [_] (js/Promise.resolve (metadata-output definitions)))}
              (t/is (= message (await (error-message
-                                      (node-plan/prepare (frontend-root) (planning-options) nil))))))))
+                                      (feature-comparison/prepare (frontend-root) (planning-options) nil))))))))
   (t/is (= "no benchmark cases match the selection"
-           (await (error-message (node-plan/prepare (frontend-root)
-                                                    (assoc (planning-options) :filter "missing-case") nil))))))
+           (await (error-message (feature-comparison/prepare (frontend-root)
+                                                             (assoc (planning-options) :filter "missing-case") nil))))))
 
 (t/deftest ^:async invalid-input-and-existing-output-fail-before-cargo
   (write-cargo-fixture)
@@ -229,18 +228,18 @@
    (mock/with-mocks*
      {process/run (fn [_] (throw (js/Error. "unexpected Cargo invocation")))}
      (t/is (= "output directory already exists"
-              (await (error-message (node-plan/prepare (frontend-root)
-                                                       (assoc (planning-options) :output-dir (frontend-root)) nil)))))
+              (await (error-message (feature-comparison/prepare (frontend-root)
+                                                                (assoc (planning-options) :output-dir (frontend-root)) nil)))))
      (t/is (= "ab requires at least one requested feature"
-              (await (error-message (node-plan/prepare (frontend-root)
-                                                       (assoc (planning-options) :features []) nil))))))))
+              (await (error-message (feature-comparison/prepare (frontend-root)
+                                                                (assoc (planning-options) :features []) nil))))))))
 
 (t/deftest ^:async cancellation-reaches-the-process-boundary
   (write-cargo-fixture)
   (let [controller (js/AbortController.)]
     (.abort controller "SIGINT")
     (t/is (str/includes? (await (error-message
-                                 (node-plan/prepare (frontend-root) (planning-options) (.-signal controller))))
+                                 (feature-comparison/prepare (frontend-root) (planning-options) (.-signal controller))))
                          "cancelled"))))
 
 (defn- planned-record

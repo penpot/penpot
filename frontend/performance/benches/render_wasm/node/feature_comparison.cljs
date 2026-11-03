@@ -5,25 +5,40 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.node.feature-comparison
-  "Serial feature A/B orchestration and persistence of comparisons."
+  "Plan and run benchmarks for combinations of optional Cargo renderer features.
+
+  `prepare` reads Cargo metadata and collects the selected benchmark cases.
+  Call `format-plan` to inspect that data, or await `execute` to build and run
+  each configuration in sequence. Each configuration disables Cargo defaults.
+  An edge is a comparison between two configurations that differ by one
+  requested feature, from disabled to enabled.
+
+  Execution saves progress, run records, logs and edge reports for inspection
+  after completion, failure or cancellation. Builds use the checkout's renderer
+  and benchmark sources. Keep other renderer builds and watchers stopped until
+  execution finishes."
   (:require
-    ["fs" :as fs]
-    ["node:timers/promises" :as timers]
-    ["path" :as path]
-    [benches.render-wasm.errors :as errors :refer [attempt failure?]]
-    [benches.render-wasm.node.artifacts :as artifacts]
-    [benches.render-wasm.node.build :as build]
-    [benches.render-wasm.node.catalog :as catalog]
-    [benches.render-wasm.node.files :as files]
-    [benches.render-wasm.node.log :as log]
-    [benches.render-wasm.node.outcome :as outcome]
-    [benches.render-wasm.node.process :as process]
-    [benches.render-wasm.node.run :as run]
-    [benches.render-wasm.node.runs :as runs]
-    [benches.render-wasm.node.time :as time]
-    [benches.render-wasm.report.compare :as compare]
-    [benches.render-wasm.result :as result]
-    [clojure.set :as set]))
+   ["fs" :as fs]
+   ["node:timers/promises" :as timers]
+   ["path" :as path]
+   [benches.render-wasm.cases :as cases]
+   [benches.render-wasm.errors :as errors :refer [attempt failure?]]
+   [benches.render-wasm.feature-plan :as feature-plan]
+   [benches.render-wasm.node.artifacts :as artifacts]
+   [benches.render-wasm.node.build :as build]
+   [benches.render-wasm.node.catalog :as catalog]
+   [benches.render-wasm.node.files :as files]
+   [benches.render-wasm.node.log :as log]
+   [benches.render-wasm.node.options :as options]
+   [benches.render-wasm.node.outcome :as outcome]
+   [benches.render-wasm.node.process :as process]
+   [benches.render-wasm.node.run :as run]
+   [benches.render-wasm.node.runs :as runs]
+   [benches.render-wasm.node.time :as time]
+   [benches.render-wasm.report.compare :as compare]
+   [benches.render-wasm.result :as result]
+   [clojure.set :as set]
+   [clojure.string :as str]))
 
 (def ^:private warnings
   ["Timing values do not determine success."
@@ -36,11 +51,26 @@
    :execute-run run/execute})
 
 (defn create-home
-  "Creates the feature-comparison home directory
+  "Creates a directory and an empty log for a new feature comparison.
 
-  The default lives under the managed feature-comparisons directory.
-  An explicit directory resolves from the caller's cwd and must not exist.
-  Paths inside the managed builds tree are rejected."
+  Args:
+    root: The frontend directory.
+    comparison-id: Contains 1 to 128 ASCII letters, digits, underscores or
+      hyphens, starting with a letter or digit.
+    output-dir: With nil `output-dir`, uses
+      `target/performance/render-wasm/feature-comparisons/<comparison-id>` under
+      root. An explicit path resolves from the Node process's working directory.
+      The chosen directory must not exist and must not be inside the managed
+      builds tree, including through symlink ancestors.
+
+  Returns:
+    A map containing `:comparison-id`, `:dir`, `:log-path` and `:record-path`.
+    The log is `feature-comparison.log`; `:record-path` names the future
+    `feature-comparison.transit` file, which this function does not write.
+
+  Throws:
+    Invalid identifiers, rejected paths and filesystem failures throw an error;
+    path and filesystem errors include `:path` when available."
   [root comparison-id output-dir]
   (artifacts/check-home-id comparison-id "invalid feature comparison id")
   (let [default-dir (path/join (artifacts/managed-root root)
@@ -53,7 +83,21 @@
            :comparison-id comparison-id)))
 
 (defn write-record
-  "Validates schema:feature-comparison and atomically replaces the saved file."
+  "Validates and saves a feature-comparison record.
+
+  Encodes `record` as Transit after schema validation, then atomically replaces
+  that file so readers see either the previous complete record or the new one.
+
+  Args:
+    home: Supplies `:record-path` in an existing directory.
+    record: The feature-comparison record.
+
+  Returns:
+    The record.
+
+  Throws:
+    Validation, write and rename failures throw without replacing the previous
+    record."
   [home record]
   (files/atomic-write (:record-path home) (result/encode record))
   record)
@@ -95,6 +139,7 @@
   (some #(when (= slug (:slug %)) %) (:configurations record)))
 
 (defn- persist
+  "Save updated progress before exposing it as the current and last saved record."
   [state update]
   (let [next  (assoc (update @(:record-ref state)) :updated-at (time/now))
         saved (try
@@ -503,9 +548,13 @@
       :unacknowledged (unacknowledged-count comparison)})))
 
 (defn- record-edge-outcome
-  "Records the result of analyzing an edge and returns the first error seen so
-  far. Throws a fatal failure after the edge and the remaining edges are
-  recorded."
+  "Records the result of analyzing an edge.
+
+  Returns:
+    The first error seen so far.
+
+  Throws:
+    A fatal failure after the edge and the remaining edges are recorded."
   [state edge result error]
   (cond
     (and (failure? result) (errors/fatal? result))
@@ -614,14 +663,49 @@
           result)))))
 
 (defn ^:async execute
-  "Executes a prepared feature comparison and owns builds, runs and reports.
+  "Build and benchmark every prepared feature configuration, then compare runs.
 
-  - prepared: node.feature-plan/prepare output.
-  - settings: accepts an optional :services map with :prepare-build, :collect-catalog,
-    :create-run-home and :execute-run overrides.
+  The caller must handle `:dry-run` by calling `format-plan` instead; this function
+  always executes.
 
-  Returns the comparison record, home, log path, exit code and the failures
-  in :errors. The saved record reflects the last successful atomic write."
+  Create a fresh comparison directory and save its initial record before the
+  first build. Build and run configurations serially, checking each compiled
+  catalog against the prepared cases. Runs live in `configs/<slug>` under the
+  comparison directory; edge reports live in `comparisons/<from>__<to>.transit`.
+  Build artifacts remain in the managed builds directory.
+
+  Timing differences alone do not cause failure. Unacknowledged differences
+  in build, scene or other comparison metadata do cause an edge to fail.
+  The prepared options `:allow-build-differences` and `:allow-scene-differences`
+  acknowledge their respective categories; `:allow-all-differences` acknowledges
+  every compatibility mismatch. Reports retain acknowledged differences.
+
+  Build or catalog failures stop later configurations. A failed run may allow
+  later configurations when it retains attempts and usable evidence; missing
+  evidence, GPU failure or zero attempts stop them. Cancellation skips remaining
+  work. Files already written remain for diagnosis.
+
+  Args:
+    root: The frontend directory.
+    prepared: The result of `prepare`.
+    signal: An optional AbortSignal that cancels execution.
+    settings: May contain `:services` overrides with the same contracts as the
+      defaults: `:prepare-build` uses `node.build/prepare`, `:collect-catalog`
+      uses `node.catalog/collect`, `:create-run-home` uses `node.runs/create-home`,
+      and `:execute-run` uses `node.run/execute`. Omitted services use
+      `default-services`.
+
+  Returns:
+    Await the returned promise for a map with `:comparison`, the last
+    successfully saved progress record; `:home`, the comparison ID and paths;
+    `:log-path`; `:errors`, retained error objects; and `:exit-code`. The exit
+    code is 0 only when all configurations and edges complete, 1 on failure,
+    or 130/143 on interruption.
+
+    If storage fails, the returned `:comparison` reflects the last successful
+    atomic write, or nil if no record was saved; `:home` is nil if directory
+    creation failed. Inspect the saved statuses and `:errors` together, since
+    `:errors` is not an exhaustive list of failed configurations or edges."
   [root prepared signal settings]
   (let [services      (merge default-services (:services settings))
         comparison-id (str (random-uuid))
@@ -631,3 +715,100 @@
       (await
        (execute-comparison
         (create-comparison-state root prepared signal services home comparison-id))))))
+
+
+
+(defn- get-root-features
+  "Read feature definitions for cwd/Cargo.toml from Cargo metadata JSON."
+  [cwd text]
+  (let [metadata (js->clj (js/JSON.parse text))
+        manifest (fs/realpathSync (path/join cwd "Cargo.toml"))
+        package  (first (filter #(= manifest (fs/realpathSync
+                                              (path/resolve cwd (get % "manifest_path"))))
+                                (get metadata "packages")))]
+    (when-not package
+      (throw (ex-info "Cargo metadata does not contain the renderer manifest"
+                      {:type ::missing-package :manifest-path manifest})))
+    (get package "features")))
+
+(defn ^:async prepare
+  "Collect and validate a feature comparison plan without building or running it.
+
+  Run `cargo metadata --offline --locked --no-deps` in `render-wasm` with the
+  inherited environment. Cargo and its offline metadata must be available.
+  `:build-timeout-ms` bounds that subprocess in milliseconds, not the entire
+  planning operation.
+  Require empty declared Cargo defaults and known requested feature names;
+  Cargo remains responsible for resolving feature activation during builds.
+
+  Planning creates no comparison output and starts no build, server or browser,
+  including for a dry-run.
+
+  Args:
+    root: The frontend directory, with render-wasm as its sibling.
+    opts: Resolved CLI options, including defaults. `:features` supplies the
+      requested Cargo feature names, `:seed` supplies the master scene seed,
+      and `:filter` selects case IDs by substring. `:max-features` limits the
+      requested feature count. Execution requires `:confirm` for more than
+      eight configurations or a blank filter; `:dry-run` bypasses that
+      confirmation requirement only.
+
+      An optional `:output-dir` resolves from the Node process's working
+      directory and must not exist. Check it without creating or reserving it.
+      `execute` checks it again and also rejects paths inside the managed
+      builds tree.
+    signal: An optional AbortSignal that cancels the process.
+
+  Returns:
+    Await the promise for a map with `:plan`, `:cases`, `:output-dir` and
+    `:options`. The `:plan` map contains `:features` in sorted order,
+    `:configurations` with a `:slug` and Cargo `:selection`, and `:edges` with
+    `:from` and `:to` slugs and a `:feature`. Slugs are bit strings in sorted
+    feature order: `0` means disabled, `1` enabled. The `:cases` vector holds
+    case descriptions collected once. `:output-dir` is the absolute explicit
+    path or nil. `:options` contains the supplied options with normalized
+    features and output path. Pass this map to `format-plan` or `execute`.
+
+  Throws:
+    Invalid options or paths, Cargo failures or cancellation, unsupported
+    manifest features, and case collection failures reject the promise.
+    An empty case selection is an error."
+  [root opts signal]
+  (let [plan       (feature-plan/plan (:features opts) opts)
+        output-dir (artifacts/check-output-dir (:output-dir opts))
+        cwd        (path/resolve root ".." "render-wasm")
+        metadata   (await (process/run
+                           {:command "cargo"
+                            :args ["metadata" "--offline" "--locked" "--no-deps" "--format-version" "1"]
+                            :cwd cwd
+                            :deadline (process/deadline (:build-timeout-ms opts options/default-build-timeout-ms))
+                            :signal signal}))]
+    (feature-plan/check-manifest (:features plan) (get-root-features cwd (:stdout metadata)))
+    {:plan plan
+     :cases (cases/collect-cases {:master-seed (:seed opts) :filter (:filter opts)})
+     :output-dir output-dir
+     :options (assoc opts :features (:features plan) :output-dir output-dir)}))
+
+(defn format-plan
+  "Return a text summary of the map produced by `prepare`.
+
+  This function neither collects cases again nor reads the filesystem,
+  starts processes or executes benchmarks.
+
+  Returns:
+    Feature names, configurations, comparison edges, case count, sampling
+    counts and configured timeouts."
+  [{:keys [plan cases options]}]
+  (str "Feature comparison plan\n"
+       "Features: " (str/join ", " (:features plan)) "\n"
+       "Configurations (Cargo defaults disabled):\n"
+       (str/join "\n" (map #(str "  " (:slug %) ": "
+                                 (str/join ", " (get-in % [:selection :features])))
+                           (:configurations plan))) "\n"
+       "Edges:\n"
+       (str/join "\n" (map #(str "  " (:from %) " -> " (:to %) ": " (:feature %))
+                           (:edges plan))) "\n"
+       "Cases: " (count cases) "\n"
+       "Attempts per case: " (:warmups options) " warmups, " (:repetitions options) " measured\n"
+       "Timeouts (ms): attempt " (:timeout-ms options)
+       ", build " (:build-timeout-ms options) ", startup " (:startup-timeout-ms options) "\n"))
