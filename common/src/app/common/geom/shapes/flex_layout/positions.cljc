@@ -98,7 +98,8 @@
           stretch?
           (/ free-width num-lines)
 
-          between?
+          ;; a single line has no gap to share
+          (and between? (> num-lines 1))
           (/ free-width (dec num-lines))
 
           around?
@@ -118,7 +119,7 @@
           stretch?
           (/ free-height num-lines)
 
-          between?
+          (and between? (> num-lines 1))
           (/ free-height (dec num-lines))
 
           around?
