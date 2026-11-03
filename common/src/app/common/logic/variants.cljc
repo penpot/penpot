@@ -38,6 +38,24 @@
             (pcb/update-shapes changes shape-ids #(assoc % :name stored-name))
             components)))
 
+(defn generate-define-variant-container
+  "One change vector. `name` is the string stored on the board.
+   The component path and name are `split-group-name` of that string.
+   Library data is refreshed before the first property is added."
+  [changes variant-id main-id component-id name]
+  (let [[path item-name] (cpn/split-group-name name)]
+    (-> changes
+        (pcb/update-shapes [variant-id]
+                           #(assoc % :is-variant-container true :name name))
+        (pcb/update-shapes [main-id]
+                           #(assoc % :name name :variant-id variant-id))
+        (pcb/update-component component-id
+                              #(assoc % :variant-id variant-id
+                                      :path path
+                                      :name item-name)
+                              {:apply-changes-local-library? true})
+        (clvp/generate-add-new-property variant-id {:fill-values? true}))))
+
 (defn generate-add-new-variant
   [changes shape variant-id new-component-id new-shape-id prop-num]
   (let [data                (pcb/get-library-data changes)

@@ -304,21 +304,6 @@
                (dch/commit-changes changes)
                (dwu/commit-undo-transaction undo-id)))))))))
 
-(defn generate-define-variant-container
-  "One commit that turns an existing frame into a valid variant set:
-   container flag and name, the main's variant-id, the component's
-   variant-id (refreshing library data), then the first property."
-  [changes variant-id main-id component-id name]
-  (-> changes
-      (pcb/update-shapes [variant-id]
-                         #(assoc % :is-variant-container true :name name))
-      (pcb/update-shapes [main-id]
-                         #(assoc % :name name :variant-id variant-id))
-      (pcb/update-component component-id
-                            #(assoc % :variant-id variant-id)
-                            {:apply-changes-local-library? true})
-      (clvp/generate-add-new-property variant-id {:fill-values? true})))
-
 (defn- define-variant-container
   "Read page objects after the artboard exists, then commit the defining
    variant fields in one change."
@@ -332,7 +317,8 @@
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-objects objects)
                         (pcb/with-library-data data)
-                        (generate-define-variant-container variant-id main-id component-id name))]
+                        (clv/generate-define-variant-container
+                         variant-id main-id component-id name))]
         (rx/of (dch/commit-changes changes))))))
 
 (defn- focus-property
@@ -340,7 +326,10 @@
   (ptk/reify ::focus-property
     ptk/EffectEvent
     (effect [_ _ _]
-      (dom/focus! (dom/get-element (str "variant-prop-" variant-id "-0"))))))
+      ;; Unit tests run without a DOM; skip rather than throw into the store.
+      (when (exists? js/document)
+        (some-> (dom/get-element (str "variant-prop-" variant-id "-0"))
+                (dom/focus!))))))
 
 (defn- resposition-and-resize-variant
   "Resize the variant container, and move the shape (that is a variant) to the right"
@@ -467,9 +456,6 @@
     (rx/concat
      (rx/of
       (dwu/start-undo-transaction undo-id)
-
-      (when (not= name (:name main))
-        (dwl/rename-component component-id name))
 
       ;; Create the frame while it is still a normal board
       (dwsh/create-artboard-from-shapes [main-instance-id] variant-id nil nil nil delta flex?)

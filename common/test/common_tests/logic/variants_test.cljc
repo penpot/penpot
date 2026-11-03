@@ -14,10 +14,12 @@
    [app.common.logic.variants :as clv]
    [app.common.path-names :as cpn]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.variants :as thv]
+   [app.common.types.component :as ctk]
    [app.common.types.variant :as ctv]
    [clojure.test :as t]
    [cuerdas.core :as str]))
@@ -565,6 +567,48 @@
     (t/is (= "crítica" (-> props' second :value)))
     (t/is (= (ctv/properties-to-name props') (:variant-name main')))
     (t/is (= "active, crítica" (:variant-name main')))))
+
+(defn- post-artboard-alpha-file
+  "A normal frame holding one main named Alpha — before the container flag."
+  []
+  (-> (thf/sample-file :file1)
+      (tho/add-frame :v01 {:name "Board"})
+      (tho/add-simple-component :c01 :m01 :r01
+                                :root-params {:parent-label :v01 :name "Alpha"})))
+
+(t/deftest test-define-variant-container-renames-component-in-same-vector
+  (let [file         (post-artboard-alpha-file)
+        page         (thf/current-page file)
+        variant-id   (thi/id :v01)
+        main-id      (thi/id :m01)
+        component-id (:id (thc/get-component file :c01))
+        changes      (-> (pcb/empty-changes nil (:id page))
+                         (pcb/with-objects (:objects page))
+                         (pcb/with-library-data (:data file))
+                         (clv/generate-define-variant-container
+                          variant-id main-id component-id "Component"))
+        file'        (thf/apply-changes file changes)
+        container'   (ths/get-shape file' :v01)
+        main'        (ths/get-shape file' :m01)
+        comp'        (thc/get-component file' :c01)
+        restored       (thf/apply-undo-changes file' changes)
+        container-rest (ths/get-shape restored :v01)
+        main-rest      (ths/get-shape restored :m01)
+        comp-rest      (thc/get-component restored :c01)]
+
+    (t/is (ctk/is-variant-container? container'))
+    (t/is (= "Component"
+             (:name container')
+             (:name main')
+             (cpn/merge-path-item (:path comp') (:name comp'))))
+    (t/is (= variant-id (:variant-id main') (:variant-id comp')))
+    (t/is (= (ctv/properties-to-name (:variant-properties comp'))
+             (:variant-name main')))
+    (t/is (not (ctk/is-variant-container? container-rest)))
+    (t/is (= "Alpha" (:name main-rest)))
+    (t/is (= "Alpha" (cpn/merge-path-item (:path comp-rest) (:name comp-rest))))
+    (t/is (nil? (:variant-id main-rest)))
+    (t/is (nil? (:variant-id comp-rest)))))
 
 (defn- rename-variant-changes
   [file name]
