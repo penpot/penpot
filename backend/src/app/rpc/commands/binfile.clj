@@ -159,7 +159,7 @@
                     (assoc params :file file))
                   params)
 
-        _       (media.v/validate-upload-path (:file params))
+        _       (media.v/check-upload-path (:file params))
 
         version (or version
                     (case (bfc/parse-file-format (-> params :file :path))
