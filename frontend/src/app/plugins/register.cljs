@@ -270,13 +270,37 @@
                                               (.error js/console "Rollback install failed:" err2))))))
                          (.error js/console "Failed to remove plugin:" err))))))))
 
-(defn check-permission
+(defn has-permission?
+  "True when the plugin was granted `permission`."
   [plugin-id permission]
   (cond
     (= plugin-id "00000000-0000-0000-0000-000000000000") true
     (= plugin-id mcp-plugin-id) (contains? mcp-permissions permission)
     :else (let [{:keys [permissions]} (dm/get-in @registry [:data plugin-id])]
             (contains? permissions permission))))
+
+(defn check-writable
+  "Throws while the workspace is read-only: saves are failing, the user
+  cannot edit or a version is being previewed. A write made then would be
+  lost, so it fails whatever the plugin's validation flag."
+  []
+  (let [wglobal (:workspace-global @st/state)]
+    (when (true? (:read-only? wglobal))
+      (throw (ex-info (if (some? (:persistence-lock wglobal))
+                        "[PENPOT PLUGIN] The workspace is read-only because changes cannot be saved right now"
+                        "[PENPOT PLUGIN] The workspace is read-only")
+                      {:type ::read-only})))))
+
+(def ^:private write-permissions
+  #{"content:write" "library:write"})
+
+(defn check-permission
+  "True when the plugin was granted `permission`. A write permission also
+  runs `check-writable`, which throws while the workspace is read-only."
+  [plugin-id permission]
+  (when (contains? write-permissions permission)
+    (check-writable))
+  (has-permission? plugin-id permission))
 
 (defn get-plugin-data
   [state plugin-id]

@@ -92,6 +92,7 @@
    [frontend-tests.plugins.page-active-validation-test]
    [frontend-tests.plugins.page-test]
    [frontend-tests.plugins.parser-test]
+   [frontend-tests.plugins.read-only-test]
    [frontend-tests.plugins.register-test]
    [frontend-tests.plugins.shape-bugfixes-test]
    [frontend-tests.plugins.text-test]
@@ -285,6 +286,7 @@
    'frontend-tests.plugins.page-active-validation-test
    'frontend-tests.plugins.page-test
    'frontend-tests.plugins.parser-test
+   'frontend-tests.plugins.read-only-test
    'frontend-tests.plugins.register-test
    'frontend-tests.plugins.shape-bugfixes-test
    'frontend-tests.plugins.text-test
