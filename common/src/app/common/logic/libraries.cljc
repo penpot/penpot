@@ -1823,6 +1823,32 @@
          changes)))
    changes ids))
 
+(defn generate-keep-advanced-placement
+  "Make authored the geometry of the copy shapes `ids`, whose references
+   advanced, when their next sync would place them elsewhere: their copy
+   parent keeps overrides that the new main lacks. Parents come before
+   their children, so each child is checked in its parent's settled frame."
+  [changes container libraries ids]
+  (reduce
+   (fn [changes id]
+     (let [objects      (pcb/get-objects changes)
+           container    (assoc container :objects objects)
+           shape        (get objects id)
+           parent       (get objects (:parent-id shape))
+           main         (ctf/find-ref-shape nil container libraries shape
+                                            :include-deleted? true :with-context? true)
+           main-objects (:objects (:container (meta main)))
+           main-parent  (get main-objects (:parent-id main))]
+       (if (and (some? (:shape-ref parent)) (some? main-parent)
+                (not (ctk/touched-group? shape :geometry-group))
+                (not (close-geometry? shape (get (placed-like main-objects main-parent parent
+                                                              (authored-constraints objects [id]))
+                                                 (:id main)))))
+         (pcb/update-shapes changes [id] #(update % :touched ctk/set-touched-group :geometry-group)
+                            {:ignore-touched true})
+         changes)))
+   changes ids))
+
 (defn- update-swapped-placement
   "Synchronizes a swapped copy head with the main shape it replaces, in the
   attributes that place it in its parent."

@@ -126,12 +126,14 @@
           objects  (pcb/get-objects changes)
           advanced (into []
                          (filter (fn [id]
-                                   (let [before (get-in container [:objects id])
-                                         after  (get objects id)]
-                                     (and (ctk/swapped? after)
-                                          (not= (:shape-ref before) (:shape-ref after))))))
-                         (cfh/get-children-ids (:objects container) shape-id))]
-      (cll/generate-sync-advanced-placement changes container libraries advanced))))
+                                   (not= (get-in container [:objects id :shape-ref])
+                                         (get-in objects [id :shape-ref]))))
+                         (cfh/get-children-ids (:objects container) shape-id))
+          swapped? #(ctk/swapped? (get objects %))]
+      (-> changes
+          (cll/generate-sync-advanced-placement container libraries (filterv swapped? advanced))
+          ;; a nested copy keeps where it is when its new main would place it elsewhere
+          (cll/generate-keep-advanced-placement container libraries (remove swapped? advanced))))))
 
 (defn- generate-detach-recursive
   [changes container libraries shape-id first component-root?]
