@@ -62,3 +62,11 @@
 
 (t/deftest uuid->hash-code-stable-for-zero-uuid
   (t/is (= 3659997967308761462 (db/uuid->hash-code uuid/zero))))
+
+(t/deftest pool-enables-the-partitionwise-join
+  ;; The pool sets the GUC on every connection, so the planner can resolve a
+  ;; join between two partitioned tables pairwise, partition by partition.
+  (let [row (db/exec-one! th/*pool*
+                          ["SELECT current_setting('enable_partitionwise_join') AS partitionwise_join"])]
+
+    (t/is (= "on" (:partitionwise-join row)))))

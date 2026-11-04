@@ -108,7 +108,10 @@
 
 (def initsql
   (str "SET statement_timeout = 300000;\n"
-       "SET idle_in_transaction_session_timeout = 300000;"))
+       "SET idle_in_transaction_session_timeout = 300000;\n"
+       ;; lets the planner resolve a join between two partitioned tables
+       ;; pairwise, when both are partitioned with the same bounds
+       "SET enable_partitionwise_join = on;"))
 
 (defn- create-datasource-config
   [{:keys [::uri] :as cfg}]

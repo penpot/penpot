@@ -560,6 +560,7 @@
       ;; deleting a version takes it out of the count right away
       (let [out (th/command! {::th/type :delete-file-snapshot
                               ::rpc/profile-id (:id profile)
+                              :file-id (:id file)
                               :id (:id snapshot)})]
         (t/is (nil? (:error out)))
         (t/is (true? (:result out)))

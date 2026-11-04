@@ -1354,7 +1354,7 @@
   ;; for ever. Rows that still carry a legacy payload without a label are
   ;; garbage that no read path reaches; 0157-migrate-legacy-file-data deletes
   ;; them, so they must keep their date and go with the collector.
-  "UPDATE file_change SET deleted_at = null
+  "UPDATE file_change SET deleted_at = null, updated_at = now()
     WHERE file_id = ANY(?::uuid[])
       AND label IS NOT NULL")
 

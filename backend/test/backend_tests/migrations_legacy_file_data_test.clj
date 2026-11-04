@@ -13,6 +13,7 @@
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.features.file-changes :as fchanges]
    [app.util.blob :as blob]
    [backend-tests.helpers :as th]
    [clojure.java.io :as io]
@@ -58,6 +59,7 @@
                                     :revn 1
                                     :data snap-data
                                     :label "v1"
+                                    :kind fchanges/snapshot-kind
                                     :created-at created-at
                                     :updated-at updated-at
                                     :deleted-at deleted-at})
@@ -69,6 +71,7 @@
                                    {:id rev-id
                                     :file-id fid
                                     :revn 2
+                                    :kind fchanges/revision-kind
                                     :data rev-data})
 
         ;; Live revision (changes, no data, no label): untouched.
@@ -77,6 +80,7 @@
                                    {:id live-id
                                     :file-id fid
                                     :revn 3
+                                    :kind fchanges/revision-kind
                                     :changes (blob/encode [{:type :dummy}])})]
 
     (run-migration)
@@ -168,6 +172,7 @@
                                 :file-id fid
                                 :revn    1
                                 :label   "v1"
+                                :kind    fchanges/snapshot-kind
                                 :data    stale})]
 
     (run-migration)
