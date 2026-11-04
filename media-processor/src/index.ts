@@ -7,25 +7,11 @@ import { JobsWorker, type RedisLike } from "./jobs-worker.js";
 import { makeMediaHandlers } from "./jobs/media.js";
 import { initLogger, logActiveTransports } from "./logger.js";
 import { configureRuntime } from "./runtime.js";
-import { configureSvgLimits } from "./services/svg.js";
-import { configureSvgPool, shutdownSvgPool } from "./svg-pool.js";
 
 const config = loadConfig();
 const log = initLogger(config);
 logActiveTransports(log);
 configureRuntime(config);
-
-configureSvgLimits({ maxSize: config.svgMaxSize });
-configureSvgPool({
-  workers: config.svgWorkers,
-  maxOldGenerationSizeMb: config.svgWorkerMaxOldMb,
-  timeout: config.svgTimeout,
-  maxSize: config.svgMaxSize,
-});
-
-if (config.svgWorkers === 0) {
-  log.warn("SVG_WORKERS=0: sanitization runs inline and blocks the event loop");
-}
 
 const backend = new BackendClient({
   backendUri: config.backendUri,
@@ -108,7 +94,6 @@ async function shutdown(signal: string): Promise<void> {
   stopping = true;
   log.info({ signal }, "media worker shutting down");
   await worker.stop();
-  await shutdownSvgPool();
   await new Promise<void>((resolve) => health.close(() => resolve()));
   await new Promise<void>((resolve) => log.flush(() => resolve()));
   // pino transports keep handles alive; flush first, then exit deliberately.

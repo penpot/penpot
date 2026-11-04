@@ -60,6 +60,7 @@ export interface JobsWorkerOptions {
   pollTimeoutSeconds?: number;
   reconnectDelayMs?: number;
   stopTimeoutMs?: number;
+  completeRetryDelayMs?: number;
 }
 
 interface PollerGroup {
@@ -71,6 +72,8 @@ interface PollerGroup {
 const DEFAULT_POLL_TIMEOUT_SECONDS = 5;
 const DEFAULT_RECONNECT_DELAY_MS = 1000;
 const DEFAULT_STOP_TIMEOUT_MS = 30_000;
+const DEFAULT_COMPLETE_RETRY_DELAY_MS = 1000;
+const COMPLETE_ATTEMPTS = 2;
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -102,8 +105,10 @@ export class JobsWorker {
   private readonly pollTimeoutSeconds: number;
   private readonly reconnectDelayMs: number;
   private readonly stopTimeoutMs: number;
+  private readonly completeRetryDelayMs: number;
 
   private running = false;
+  private stopping: Promise<void> | null = null;
   private conns: RedisLike[] = [];
   private pollers: Promise<void>[] = [];
   private lastRedisError = 0;
@@ -120,6 +125,7 @@ export class JobsWorker {
     this.pollTimeoutSeconds = options.pollTimeoutSeconds ?? DEFAULT_POLL_TIMEOUT_SECONDS;
     this.reconnectDelayMs = options.reconnectDelayMs ?? DEFAULT_RECONNECT_DELAY_MS;
     this.stopTimeoutMs = options.stopTimeoutMs ?? DEFAULT_STOP_TIMEOUT_MS;
+    this.completeRetryDelayMs = options.completeRetryDelayMs ?? DEFAULT_COMPLETE_RETRY_DELAY_MS;
     this.groups = [
       {
         name: "fast",
@@ -162,7 +168,12 @@ export class JobsWorker {
    * after the cap. Either way the substrate schedules another attempt instead
    * of waiting for the lease. Idempotent.
    */
-  public async stop(): Promise<void> {
+  public stop(): Promise<void> {
+    this.stopping ??= this.doStop();
+    return this.stopping;
+  }
+
+  private async doStop(): Promise<void> {
     if (!this.running) {
       return;
     }
@@ -278,8 +289,23 @@ export class JobsWorker {
         return;
       }
 
-      await this.client.complete(payload.jobId, result ?? null);
-      this.log.info({ jobId: payload.jobId, name, elapsed: Date.now() - started }, "job completed");
+      try {
+        await this.completeJob(payload.jobId, result ?? null);
+        this.log.info({ jobId: payload.jobId, name, elapsed: Date.now() - started }, "job completed");
+      } catch (cause) {
+        // The work is done but the row could not be settled: report it as a
+        // settle failure, not as a processing error. The substrate decides
+        // whether another attempt is worth it.
+        this.log.error({ cause, jobId: payload.jobId, name }, "job complete report failed");
+        await this.failJob(payload.jobId, {
+          error: {
+            type: "internal",
+            code: "settle-failed",
+            hint: "the worker could not report the job result",
+          },
+          retriable: true,
+        });
+      }
     } catch (cause) {
       if (controller.signal.aborted) {
         await this.reportAbort(context, started);
@@ -327,6 +353,26 @@ export class JobsWorker {
       error: { type: "internal", code: "processing-error", hint: "Internal processing error" },
       retriable: true,
     };
+  }
+
+  /**
+   * Settle a finished job, retrying a transient transport failure. `complete`
+   * is idempotent (it answers `skip` on a terminal row), so a retry cannot
+   * settle the row twice; it only avoids re-running the whole handler.
+   */
+  private async completeJob(jobId: string, result: unknown): Promise<void> {
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        await this.client.complete(jobId, result);
+        return;
+      } catch (cause) {
+        if (attempt >= COMPLETE_ATTEMPTS) {
+          throw cause;
+        }
+        this.log.warn({ cause, jobId, attempt }, "job complete report failed, retrying");
+        await delay(this.completeRetryDelayMs);
+      }
+    }
   }
 
   private async failJob(jobId: string, report: { error: JobError; retriable: boolean }): Promise<void> {

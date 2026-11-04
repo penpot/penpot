@@ -15,7 +15,7 @@ Media worker of the unified jobs substrate. It runs the durable media jobs (imag
 - `src/jobs/media.ts` — handlers of `media-info`, `media-thumbnail`, `profile-thumbnail` and `font-variants`.
 - `src/index.ts` — config, logger, health server, worker start and SIGTERM/SIGINT.
 - `src/health.ts` — `GET`/`HEAD /health`, matched by pathname (query string tolerated).
-- `src/services/image.ts`, `font.ts`, `svg.ts`; `src/svg-pool.ts`, `src/svg-worker.ts`. The SVG pool stays configured at boot but no media job routes to it.
+- `src/services/image.ts` and `font.ts`; `src/http.ts` holds the URL and error helpers shared by the two HTTP clients.
 
 ## Job contract
 
@@ -34,7 +34,7 @@ Media worker of the unified jobs substrate. It runs the durable media jobs (imag
 - `BLPOP` timeout 5 s. A corrupt payload is logged and dropped. A Redis failure is a lost turn: the poller waits 1 s and retries.
 - A failed claim is logged and the row is left alone (the dispatcher reschedules it or the lease aborts it); it is never treated as a `skip`.
 - `stop` stops popping, aborts every job in flight (each has its own `AbortController`), waits up to 30 s for the pollers, and reports the handlers that ignored the abort as `internal/worker-shutdown` with `retriable: true`, so the substrate schedules another attempt instead of waiting for the lease. A result produced after that report is dropped: the row already belongs to another attempt. Then it quits the connections. Idempotent. A claim that lands after `stop` began is aborted before its handler runs.
-- `SIGTERM`/`SIGINT` call `stop` before closing the SVG pool, the health server and the logger.
+- `SIGTERM`/`SIGINT` call `stop` before closing the health server and the logger.
 
 ## Cancellation
 
@@ -60,7 +60,6 @@ Defaults and env names:
 - `_SHARED_KEY` optional; if absent, HKDF `blake2b512` over `PENPOT_SECRET_KEY` with salt `media-processor` (base64url). Prefer passing the derived key directly, not the master secret. A missing URI or key aborts the boot.
 - `_MAX_FILE_SIZE` 350 MiB (the backend sends at most 30 MiB, `:media-max-file-size`).
 - Image limits: `_IMAGE_MAX_PIXELS` 128000000, `_IMAGE_MAX_WIDTH`/`_HEIGHT` 16384. They are applied at boot by `runtime.ts`; a missing call is a regression.
-- SVG: `_SVG_MAX_SIZE` 2 MiB, `_SVG_WORKERS` 2 (`0` runs inline), `_SVG_WORKER_MAX_OLD_MB` 512, `_SVG_TIMEOUT` 30000. Unused by the media jobs today.
 - Font: `_FONT_PROCESS_MEM` 512, `_FONT_PROCESS_CPU_TIME` 30, `_FONT_TIMEOUT` 120000.
 - `_PORT` 6065 / `_HOST` 0.0.0.0 are only for the health server.
 - The usual `PENPOT_LOGGERS_LOKI_*` variables feed pino.
@@ -71,9 +70,9 @@ From `media-processor/`:
 
 - `pnpm run test`, `pnpm run types:check`, `pnpm run fmt:check`, `pnpm run build`.
 - `pnpm run start` (bundle) and `pnpm run start:dev` (`tsx` + backend env file; only needed with the remote flag on).
-- Build emits `dist/index.js` and `dist/svg-worker.js`; both are esbuild entry points. `ioredis`, `dompurify` and `jsdom` stay external.
+- Build emits `dist/index.js`; the only external runtime deps are `sharp`, `ioredis`, `pino`, `pino-pretty` and `pino-loki`.
 
-The poller tests use the in-memory Redis double in `test/fake-redis.ts` (real BLPOP semantics, no external Redis); `test/svg-worker-real.test.ts` starts the real worker thread. There is no media-processor service in the devenv compose: run it with `start:dev` and the env vars. The README's "Verifying both executors" is the manual runbook for local vs remote.
+The poller tests use the in-memory Redis double in `test/fake-redis.ts` (real BLPOP semantics, no external Redis). There is no media-processor service in the devenv compose: run it with `start:dev` and the env vars. The README's "Verifying both executors" is the manual runbook for local vs remote.
 
 ## Security and operations
 

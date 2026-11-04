@@ -32,17 +32,9 @@
             :code :not-implemented
             :hint (str/fmt "No impl found for local process cmd: %s" cmd)))
 
-(defmethod process :sanitize-svg
-  [_system {:keys [content] :as params}]
-  (assoc params :content (svg/sanitize-svg content)))
-
-(defmethod process :release-input
-  [_system params]
-  params)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMAGE THUMBNAILS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private schema:thumbnail-params
   [:map {:title "ThumbnailParams"}

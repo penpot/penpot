@@ -217,3 +217,17 @@
                                      :hint "storage down"})
       (t/is (= "failed" (:status (jobs/get-job th/*system* job-id))))
       (t/is (nil? (:thumbnail-id (fmo (:id row))))))))
+
+(t/deftest store-result-streams-the-artifact-without-reading-it-into-memory
+  (let [object (sto/put-object! (storage)
+                                {::sto/content (sto/content "artifact")
+                                 :content-type "image/png"
+                                 :bucket       "tempfile"})]
+    (with-redefs [sto/get-object-bytes
+                  (fn [& _]
+                    (throw (ex-info "the artifact must not be read in memory" {})))]
+      (let [result (mj/store-result th/*system* (:id object)
+                                    "file-media-object"
+                                    {:content-type "image/png"})]
+        (t/is (uuid? (:id result)))
+        (t/is (some? (sto/get-object (storage) (:id result))))))))

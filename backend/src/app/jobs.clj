@@ -1381,13 +1381,13 @@
       AND status IN ('new','scheduled','retry','running')
     RETURNING id")
 
-(def ^:private sql:select-active-jobs-by-label
-  "SELECT id FROM job
+(def ^:private sql:select-active-jobs-by-labels
+  "SELECT id, label FROM job
     WHERE name = ?
       AND tenant = ?
-      AND label = ?
+      AND label = ANY(?::text[])
       AND status IN ('new','scheduled','retry','running')
-    ORDER BY created_at ASC, id ASC")
+    ORDER BY scheduled_at DESC, id DESC")
 
 (defn cancel
   "Cancel a pending or running job (new/scheduled/retry/running) and
@@ -1419,6 +1419,24 @@
       (cleanup-throttle job-id))
     n))
 
+(defn active-jobs-by-label
+  "Active jobs (`new`, `scheduled`, `retry` or `running`) of `name` for the
+  current tenant, indexed by label. When a label has more than one active
+  row, the most recently scheduled one wins."
+  [cfg name labels]
+  (assert (mtx/instance cfg) "missing ::mtx/metrics on the jobs cfg")
+  (let [tenant (cf/get :tenant)
+        labels (vec (distinct labels))]
+    (if (empty? labels)
+      {}
+      (db/run! cfg
+               (fn [{:keys [::db/conn]}]
+                 (let [arr (db/create-array conn "text" labels)]
+                   (->> (db/exec! conn [sql:select-active-jobs-by-labels (d/name name) tenant arr])
+                        (reduce (fn [result row]
+                                  (assoc result (:label row) (:id row)))
+                                {}))))))))
+
 (defn cancel-by-label
   "Cancel every active job of this tenant with the given `name` and `label`,
   and answer how many were actually cancelled.
@@ -1439,9 +1457,7 @@
               :code :cancel-by-label-requires-label
               :hint "cancel-by-label requires an explicit non-blank label"
               :name (d/name name)))
-  (let [tenant (cf/get :tenant)
-        ids    (->> (db/exec! cfg [sql:select-active-jobs-by-label (d/name name) tenant label])
-                    (map :id))]
+  (let [ids (vals (active-jobs-by-label cfg name [label]))]
     (reduce (fn [total id] (+ total (cancel cfg id))) 0 ids)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1681,14 +1697,31 @@
 
       (cond
         (nil? reply)
-        (do
-          (cancel cfg job-id)
-          (ex/raise :type :timeout
-                    :code :request-timeout
-                    :hint "timeout waiting for the job result"
-                    :tenant tenant
-                    :job-id (str job-id)
-                    :timeout timeout))
+        ;; The reply can be lost while the row is already terminal (the
+        ;; writer committed just after the BLPOP timed out). The row is the
+        ;; source of truth: answer its outcome instead of a false timeout.
+        (let [job (get-job cfg job-id)]
+          (cond
+            (= "completed" (:status job))
+            (:result job)
+
+            (= "failed" (:status job))
+            (let [error (:error job)]
+              (ex/raise :type (request-error-type error)
+                        :code (request-error-code error)
+                        :hint (or (get error :hint) "job failed")
+                        :job-id (str job-id)
+                        :response {:error error}))
+
+            :else
+            (do
+              (cancel cfg job-id)
+              (ex/raise :type :timeout
+                        :code :request-timeout
+                        :hint "timeout waiting for the job result"
+                        :tenant tenant
+                        :job-id (str job-id)
+                        :timeout timeout))))
 
         (contains? reply :error)
         (let [error (:error reply)]

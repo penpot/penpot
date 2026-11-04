@@ -27,10 +27,6 @@ describe("loadConfig", () => {
     expect(config.jobsFastConcurrency).toBe(2);
     expect(config.jobsConcurrency).toBe(2);
     expect(config.maxFileSize).toBe(367001600);
-    expect(config.svgMaxSize).toBe(2097152);
-    expect(config.svgWorkers).toBe(2);
-    expect(config.svgWorkerMaxOldMb).toBe(512);
-    expect(config.svgTimeout).toBe(30000);
     expect(config.redisUri).toBe("redis://redis/0");
     expect(config.tenant).toBe("default");
     expect(config.backendUri).toBe(backendUri);
@@ -46,10 +42,6 @@ describe("loadConfig", () => {
     process.env.PENPOT_MEDIA_PROCESSOR_JOBS_FAST_CONCURRENCY = "4";
     process.env.PENPOT_MEDIA_PROCESSOR_JOBS_CONCURRENCY = "3";
     process.env.PENPOT_MEDIA_PROCESSOR_MAX_FILE_SIZE = "104857600";
-    process.env.PENPOT_MEDIA_PROCESSOR_SVG_MAX_SIZE = "1024";
-    process.env.PENPOT_MEDIA_PROCESSOR_SVG_WORKERS = "0";
-    process.env.PENPOT_MEDIA_PROCESSOR_SVG_WORKER_MAX_OLD_MB = "256";
-    process.env.PENPOT_MEDIA_PROCESSOR_SVG_TIMEOUT = "1000";
     process.env.PENPOT_MEDIA_PROCESSOR_REDIS_URI = "redis://cache:6379/2";
     process.env.PENPOT_MEDIA_PROCESSOR_TENANT = "acme";
     process.env.PENPOT_MEDIA_PROCESSOR_BACKEND_URI = "https://penpot.internal";
@@ -64,10 +56,6 @@ describe("loadConfig", () => {
     expect(config.jobsFastConcurrency).toBe(4);
     expect(config.jobsConcurrency).toBe(3);
     expect(config.maxFileSize).toBe(104857600);
-    expect(config.svgMaxSize).toBe(1024);
-    expect(config.svgWorkers).toBe(0);
-    expect(config.svgWorkerMaxOldMb).toBe(256);
-    expect(config.svgTimeout).toBe(1000);
     expect(config.redisUri).toBe("redis://cache:6379/2");
     expect(config.tenant).toBe("acme");
     expect(config.backendUri).toBe("https://penpot.internal");

@@ -60,7 +60,12 @@ async function startWorker(
   server: FakeRedisServer,
   client: FakeClient,
   handlers: Record<string, JobHandler>,
-  overrides: { fastConcurrency?: number; slowConcurrency?: number; stopTimeoutMs?: number } = {}
+  overrides: {
+    fastConcurrency?: number;
+    slowConcurrency?: number;
+    stopTimeoutMs?: number;
+    completeRetryDelayMs?: number;
+  } = {}
 ): Promise<JobsWorker> {
   const worker = new JobsWorker({
     tenant,
@@ -73,6 +78,7 @@ async function startWorker(
     pollTimeoutSeconds: 0.02,
     reconnectDelayMs: 5,
     stopTimeoutMs: 500,
+    completeRetryDelayMs: 1,
     createConnection: () => server.connect(),
     ...overrides,
   });
@@ -283,6 +289,58 @@ describe("JobsWorker", () => {
     await delay(10);
     expect(client.complete).not.toHaveBeenCalled();
     expect(client.fail).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries a transient complete failure without running the handler again", async () => {
+    const server = new FakeRedisServer();
+    const handler = vi.fn<JobHandler>(async () => ({ width: 10 }));
+    const complete = vi.fn().mockRejectedValueOnce(new Error("boom")).mockResolvedValue("run");
+    const client = makeClient({ complete });
+
+    workers.push(await startWorker(server, client, { "media-info": handler }));
+    server.push(jobsQueueKey(tenant, FAST), payload("fast-1"));
+
+    await waitFor(() => client.complete.mock.calls.length === 2);
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(client.fail).not.toHaveBeenCalled();
+  });
+
+  it("reports a persistent complete failure as settle-failed", async () => {
+    const server = new FakeRedisServer();
+    const handler = vi.fn<JobHandler>(async () => ({ width: 10 }));
+    const complete = vi.fn().mockRejectedValue(new Error("down"));
+    const client = makeClient({ complete });
+
+    workers.push(await startWorker(server, client, { "media-info": handler }));
+    server.push(jobsQueueKey(tenant, FAST), payload("fast-1"));
+
+    await waitFor(() => client.fail.mock.calls.length === 1);
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    const [jobId, error, retriable] = client.fail.mock.calls[0];
+    expect(jobId).toBe("fast-1");
+    expect(error).toMatchObject({ type: "internal", code: "settle-failed" });
+    expect(retriable).toBe(true);
+  });
+
+  it("shares one shutdown between concurrent stop calls", async () => {
+    const server = new FakeRedisServer();
+    const client = makeClient();
+    const running = deferred<unknown>();
+    const handler = vi.fn<JobHandler>(async () => running.promise);
+
+    const worker = await startWorker(server, client, { "media-info": handler });
+    workers.push(worker);
+    server.push(jobsQueueKey(tenant, FAST), payload("fast-1"));
+    await waitFor(() => handler.mock.calls.length === 1);
+
+    const first = worker.stop();
+    const second = worker.stop();
+    expect(second).toBe(first);
+
+    running.resolve({ done: true });
+    await Promise.all([first, second]);
   });
 
   it("never writes the reply key", async () => {

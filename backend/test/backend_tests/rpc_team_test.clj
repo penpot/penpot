@@ -1523,6 +1523,34 @@
                                   :mtype "image/jpeg"}})]
     (t/is (th/ex-of-code? (:error out) :params-validation))))
 
+(t/deftest update-team-photo-stores-the-generated-photo
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 1 {:profile-id (:id prof)})
+        storage (:app.storage/storage th/*system*)
+        out     (th/command! (th/with-multipart
+                               {::th/type :update-team-photo
+                                ::rpc/profile-id (:id prof)
+                                :team-id (:id team)
+                                :file {:filename "sample.jpg"
+                                       :size 123123
+                                       :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                                       :mtype "image/jpeg"}}))]
+
+    (t/is (nil? (:error out)))
+
+    (let [row (th/db-get :team {:id (:id team)})]
+      (t/is (uuid? (:photo-id row)))
+      (t/is (some? (sto/get-object storage (:photo-id row))))
+
+      (let [sobj (db/exec-one! th/*pool*
+                               ["SELECT COALESCE(metadata->>'bucket', metadata->>'~:bucket') AS bucket,
+                                       COALESCE(metadata->>'content-type', metadata->>'~:content-type') AS content_type
+                                   FROM storage_object
+                                  WHERE id = ?"
+                                (:photo-id row)])]
+        (t/is (= "profile" (:bucket sobj)))
+        (t/is (= "image/jpeg" (:content-type sobj)))))))
+
 (t/deftest leaver-loses-file-access
   ;; GHSA-v9r9-h77c-55m2: leaving the team must revoke the file and
   ;; project roles granted in that team.

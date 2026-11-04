@@ -78,26 +78,29 @@
     ;;                     ::quotes/profile-id profile-id
     ;;                     ::quotes/team-id    team-id
     ;;                     ::quotes/incr       (:size content)})
-    (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                   ;; We get the minimal file for proper checking if
-                   ;; file is not already deleted
-                   (let [_      (files/get-minimal-file conn file-id)
-                         mobj   (create-file-media-object cfg params)]
+    ;; The `:media-info` job waits for its result: resolve it before taking
+    ;; a database connection, so the request does not hold one for the wait.
+    (let [info (media/info cfg content)]
+      (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                     ;; We get the minimal file for proper checking if
+                     ;; file is not already deleted
+                     (let [_      (files/get-minimal-file conn file-id)
+                           mobj   (create-file-media-object cfg (assoc params ::info info))]
 
-                     (db/update! conn :file
-                                 {:modified-at (ct/now)
-                                  :has-media-trimmed false}
-                                 {:id file-id}
-                                 {::db/return-keys false})
+                       (db/update! conn :file
+                                   {:modified-at (ct/now)
+                                    :has-media-trimmed false}
+                                   {:id file-id}
+                                   {::db/return-keys false})
 
-                     (with-meta mobj
-                       {::audit/replace-props
-                        {:name (:name params)
-                         :file-id file-id
-                         :team-id team-id
-                         :is-local (:is-local params)
-                         :size (:size content)
-                         :mtype (:mtype content)}}))))))
+                       (with-meta mobj
+                         {::audit/replace-props
+                          {:name (:name params)
+                           :file-id file-id
+                           :team-id team-id
+                           :is-local (:is-local params)
+                           :size (:size content)
+                           :mtype (:mtype content)}})))))))
 
 (defn- big-enough-for-thumbnail?
   "Checks if the provided image info is big enough for
@@ -158,13 +161,14 @@
      :content-type mtype
      :bucket "file-media-object"}))
 
-(defn- process-image
-  "Resolve the image info through the `:media-info` job and prepare the
-  original object. The thumbnail is not generated here: it is a job of its
-  own, so the upload does not wait for it."
-  [cfg content]
-  (let [info  (media/info cfg content)
-        image (process-main-image cfg (assoc content :ts (:ts info)))]
+(defn- prepare-image
+  "Prepare the original object from the already resolved image info.
+
+  The `:media-info` job runs outside the database connection (its result is
+  passed in), so an upload never holds a connection while the job runs. The
+  thumbnail is not generated here: it is a job of its own."
+  [cfg content info]
+  (let [image (process-main-image cfg (assoc content :ts (:ts info)))]
     (assoc info
            ::image image
            ::thumb-needed? (and (not (svg-image? info))
@@ -172,7 +176,7 @@
 
 (defn- create-file-media-object
   [{:keys [::sto/storage ::db/conn] :as cfg}
-   {:keys [id file-id is-local name content from-url? from-chunks?]}]
+   {:keys [id file-id is-local name content from-url? from-chunks? ::info] :as params}]
 
   (let [tpoint (ct/tpoint)
         id     (or id (uuid/next))
@@ -192,7 +196,12 @@
            :path (str (:path content))
            :origin origin)
 
-    (let [result  (process-image cfg content)
+    (when (nil? info)
+      (ex/raise :type :internal
+                :code :missing-media-info
+                :hint "create-file-media-object requires the resolved media info"))
+
+    (let [result  (prepare-image cfg content info)
           image   (sto/put-object! storage (::image result))
           row     (db/exec-one! conn [sql:create-file-media-object
                                       id
@@ -268,7 +277,9 @@
         params  (-> params
                     (assoc :from-url? true)
                     (assoc :content content)
-                    (assoc :name (d/nilv name "unknown")))]
+                    (assoc :name (d/nilv name "unknown"))
+                    ;; resolve the info job before taking a connection
+                    (assoc ::info (media/info cfg content)))]
     (db/run! cfg create-file-media-object params)))
 
 
@@ -575,28 +586,35 @@
    {:keys [::rpc/profile-id session-id file-id is-local name mtype] :as params}]
   (files/check-edition-permissions! pool profile-id file-id)
 
-  (db/tx-run! cfg
-              (fn [{:keys [::db/conn] :as cfg}]
-                (let [content (assemble-chunks cfg profile-id session-id)
-                      content (-> content
-                                  (assoc :filename (str "upload:" name))
-                                  (assoc :mtype mtype)
-                                  (media.v/validate-media-type!)
-                                  (media.v/validate-media-size!))
-                      mobj    (create-file-media-object cfg (assoc params
-                                                                   :from-chunks? true
-                                                                   :content content))]
+  ;; The chunks are assembled and the media info resolved before the short
+  ;; transaction: the job wait must not hold an open transaction.
+  (let [content (db/tx-run! cfg assemble-chunks profile-id session-id)
+        content (-> content
+                    (assoc :filename (str "upload:" name))
+                    (assoc :mtype mtype)
+                    (media.v/validate-media-type!)
+                    (media.v/validate-media-size!))
+        info    (media/info cfg content)]
 
-                  (db/update! conn :file
-                              {:modified-at      (ct/now)
-                               :has-media-trimmed false}
-                              {:id file-id}
-                              {::db/return-keys false})
+    (db/tx-run! cfg
+                (fn [{:keys [::db/conn] :as cfg}]
+                  ;; the file may have been deleted while the job ran
+                  (files/get-minimal-file conn file-id)
+                  (let [mobj (create-file-media-object cfg (assoc params
+                                                                  :from-chunks? true
+                                                                  :content content
+                                                                  ::info info))]
 
-                  (with-meta mobj
-                    {::audit/replace-props
-                     {:name      name
-                      :file-id   file-id
-                      :is-local  is-local
-                      :mtype     mtype}})))))
+                    (db/update! conn :file
+                                {:modified-at      (ct/now)
+                                 :has-media-trimmed false}
+                                {:id file-id}
+                                {::db/return-keys false})
+
+                    (with-meta mobj
+                      {::audit/replace-props
+                       {:name      name
+                        :file-id   file-id
+                        :is-local  is-local
+                        :mtype     mtype}}))))))
 

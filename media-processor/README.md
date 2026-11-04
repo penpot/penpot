@@ -21,8 +21,8 @@ SVG sanitization never reaches this worker: it is always local in the backend.
 - `src/index.ts` — config, logger, health server, worker and signals.
 - `src/health.ts` — `GET`/`HEAD /health` for the deployment probe.
 - `src/services/` — image (sharp) and font (FontForge) processing.
-- `src/svg-pool.ts` / `src/svg-worker.ts` — kept for the SVG path, but no
-  media job routes to them.
+- `src/http.ts` — URL, error-snippet and record helpers shared by the HTTP
+  clients.
 
 ## Job contract
 
@@ -54,8 +54,8 @@ flag. The flag changes the executor and the queues, never the contract.
 for the pollers, report the ones whose handler ignored the abort as
 `internal/worker-shutdown` with `retriable: true` (so the substrate schedules
 another attempt instead of waiting for the lease), then close the
-connections, the SVG pool and the health server. A result produced after
-that report is dropped: the row already belongs to another attempt.
+connections and the health server. A result produced after that report is
+dropped: the row already belongs to another attempt.
 
 ## Cancellation
 
@@ -128,10 +128,6 @@ presigned URL per object and either URI works.
 | `PENPOT_MEDIA_PROCESSOR_MAX_FILE_SIZE` | 350 MiB | Input download cap; the backend sends at most 30 MiB (`:media-max-file-size`) |
 | `PENPOT_MEDIA_PROCESSOR_IMAGE_MAX_PIXELS` | 128000000 | sharp limit |
 | `PENPOT_MEDIA_PROCESSOR_IMAGE_MAX_WIDTH` / `_HEIGHT` | `16384` | sharp limit |
-| `PENPOT_MEDIA_PROCESSOR_SVG_MAX_SIZE` | 2 MiB | SVG cap (main thread and worker) |
-| `PENPOT_MEDIA_PROCESSOR_SVG_WORKERS` | `2` | Pool size; `0` runs inline and blocks the event loop |
-| `PENPOT_MEDIA_PROCESSOR_SVG_WORKER_MAX_OLD_MB` | `512` | Worker heap cap |
-| `PENPOT_MEDIA_PROCESSOR_SVG_TIMEOUT` | `30000` | Pool job timeout (ms) |
 | `PENPOT_MEDIA_PROCESSOR_FONT_PROCESS_MEM` | `512` | FontForge address space (MiB) |
 | `PENPOT_MEDIA_PROCESSOR_FONT_PROCESS_CPU_TIME` | `30` | FontForge CPU seconds |
 | `PENPOT_MEDIA_PROCESSOR_FONT_TIMEOUT` | `120000` | FontForge timeout (ms) |
@@ -158,13 +154,12 @@ From `media-processor/`:
 - `pnpm run test` — Vitest suite.
 - `pnpm run types:check` — `tsc --noEmit`.
 - `pnpm run fmt:check` / `pnpm run fmt` — Prettier.
-- `pnpm run build` — esbuild bundle (`dist/index.js` and `dist/svg-worker.js`).
+- `pnpm run build` — esbuild bundle (`dist/index.js`).
 - `pnpm run start` — run the bundle.
 - `pnpm run start:dev` — `tsx` with the backend env file. It is only needed
   with `:remote-media-processing` on: with the flag off the backend runners
   consume the local queues in the backend process.
 
-The poller tests use the in-memory Redis double in `test/fake-redis.ts`;
-`test/svg-worker-real.test.ts` exercises the real worker thread. There is no
-media-processor service in the devenv compose: run it manually with
-`pnpm run start:dev` when you need the remote executor.
+The poller tests use the in-memory Redis double in `test/fake-redis.ts`.
+There is no media-processor service in the devenv compose: run it manually
+with `pnpm run start:dev` when you need the remote executor.

@@ -68,29 +68,42 @@
    ::sm/params schema:get-font-variants}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id file-id project-id share-id] :as params}]
   (dm/with-open [conn (db/open pool)]
-    (cond
-      (uuid? team-id)
-      (do
-        (teams/check-read-permissions! cfg profile-id team-id)
-        (db/query conn :team-font-variant
-                  {:team-id team-id
-                   :deleted-at nil}))
+    (let [team-id
+          (cond
+            (uuid? team-id)
+            (do
+              (teams/check-read-permissions! cfg profile-id team-id)
+              team-id)
 
-      (uuid? project-id)
-      (let [project (db/get-by-id conn :project project-id {:columns [:id :team-id]})]
-        (projects/check-read-permissions! cfg profile-id project-id)
-        (db/query conn :team-font-variant
-                  {:team-id (:team-id project)
-                   :deleted-at nil}))
+            (uuid? project-id)
+            (let [project (db/get-by-id conn :project project-id {:columns [:id :team-id]})]
+              (projects/check-read-permissions! cfg profile-id project-id)
+              (:team-id project))
 
-      (uuid? file-id)
-      (let [file    (db/get-by-id conn :file file-id {:columns [:id :project-id]})
-            project (db/get-by-id conn :project (:project-id file) {:columns [:id :team-id]})
-            perms   (perms/get-file-read-permissions cfg profile-id file-id share-id)]
-        (files/check-read-permissions! perms)
-        (db/query conn :team-font-variant
-                  {:team-id (:team-id project)
-                   :deleted-at nil})))))
+            (uuid? file-id)
+            (let [file    (db/get-by-id conn :file file-id {:columns [:id :project-id]})
+                  project (db/get-by-id conn :project (:project-id file) {:columns [:id :team-id]})
+                  perms   (perms/get-file-read-permissions cfg profile-id file-id share-id)]
+              (files/check-read-permissions! perms)
+              (:team-id project)))
+
+          rows   (db/query conn :team-font-variant
+                           {:team-id team-id
+                            :deleted-at nil})
+
+          ;; The client needs to know which variants still have a pending
+          ;; generation job, even when it did not create the job (a reload
+          ;; or another tab). The job row is the source of truth.
+          active (jobs/active-jobs-by-label (assoc cfg ::db/conn conn)
+                                            :font-variants
+                                            (mapv #(str "font:" (:id %)) rows))]
+
+      (mapv (fn [{:keys [id] :as row}]
+              (let [label (str "font:" id)]
+                (cond-> (assoc row :processing (contains? active label))
+                  (contains? active label)
+                  (assoc :job-id (get active label)))))
+            rows))))
 
 
 (declare create-font-variant)

@@ -433,7 +433,7 @@
                :key (dm/str id)}
          [:span {:class (stl/css :label)}
           [:> font-variant-display-name* {:variant item}]]
-         (when (contains? pending id)
+         (when (or (:processing item) (contains? pending id))
            [:span {:class (stl/css :pending)
                    :data-testid "font-variant-processing"}
             (tr "dashboard.fonts.processing")])

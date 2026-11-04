@@ -91,6 +91,23 @@ describe("job params", () => {
     expect(fontVariantsJobSchema.parse(params)).toEqual(params);
     expect(() => fontVariantsJobSchema.parse({ ...params, targets: [] })).toThrow();
   });
+
+  it("rejects a profile-thumbnail input that is not a photo", () => {
+    expect(profileThumbnailJobSchema.parse({ input: { ...input, mtype: "image/webp" } })).toBeTruthy();
+    expect(() => profileThumbnailJobSchema.parse({ input: { ...input, mtype: "image/svg+xml" } })).toThrow();
+  });
+
+  it("rejects a font target that is never generated", () => {
+    const params = {
+      input,
+      "variant-id": "33333333-3333-4333-8333-333333333333",
+      "source-mtype": "font/ttf",
+      targets: ["font/otf"],
+    };
+    expect(fontVariantsJobSchema.parse(params)).toEqual(params);
+    expect(() => fontVariantsJobSchema.parse({ ...params, targets: ["font/woff2"] })).toThrow();
+    expect(() => fontVariantsJobSchema.parse({ ...params, targets: ["application/zip"] })).toThrow();
+  });
 });
 
 describe("input ref", () => {
@@ -109,18 +126,11 @@ describe("error vocabulary", () => {
     for (const code of [
       "invalid-image",
       "invalid-font",
-      "svg-too-large",
       "payload-too-large",
       "backend-fetch-failed",
       "backend-upload-failed",
       "processing-error",
-      "svg-sanitization-failed",
-      "svg-timeout",
-      "svg-worker-failed",
-      "svg-worker-exited",
-      "svg-pool-stopped",
-      "svg-pool-degraded",
-      "svg-pool-disabled",
+      "settle-failed",
     ]) {
       expect(ERROR_CODES).toContain(code);
     }

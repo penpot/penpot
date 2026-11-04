@@ -286,16 +286,22 @@
         object  (some-> (sto/get-object storage result-id))]
     (if (nil? object)
       (media-result-expired! result-id)
-      (let [data (or (sto/get-object-bytes storage object)
-                     (media-result-expired! result-id))]
+      ;; Stream the artifact through a local file instead of loading the
+      ;; whole object in memory; the hook may run with a row locked.
+      (let [input (or (sto/get-object-data storage object)
+                      (media-result-expired! result-id))
+            path  (tmp/tempfile :prefix "penpot.media.result." :min-age "1h")]
         (try
+          (io/write* path input)
           (sto/put-object! storage
-                           (merge {::sto/content      (sto/content data)
+                           (merge {::sto/content      (sto/content path)
                                    ::sto/deduplicate? false
                                    ::sto/touched-at   (ct/now)}
                                   metadata
                                   {:bucket bucket}))
           (finally
+            (.close ^InputStream input)
+            (fs/delete path)
             (release-temporary! system result-id)))))))
 
 (defn fetch-input

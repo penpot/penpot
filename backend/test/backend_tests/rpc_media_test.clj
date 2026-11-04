@@ -6,6 +6,7 @@
 
 (ns backend-tests.rpc-media-test
   (:require
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -31,6 +32,35 @@
   [media-id]
   (first (th/db-query :job {:name  "media-thumbnail"
                             :label (str "media:" media-id)})))
+
+(t/deftest upload-file-media-object-rejects-a-file-deleted-while-the-job-runs
+  ;; The info job runs before the short transaction; if the file is deleted
+  ;; meanwhile, the transaction must not create an orphan media object.
+  (let [prof  (th/create-profile* 1 {:is-active true})
+        file  (th/create-file* 1 {:profile-id (:id prof)
+                                  :project-id (:default-project-id prof)
+                                  :is-shared false})
+        path  (th/tempfile "backend_tests/test_files/sample.jpg")
+        mfile {:filename "sample.jpg" :size 312043 :path path :mtype "image/jpeg"}]
+
+    (with-redefs [media/info
+                  (fn [_ _]
+                    (db/update! th/*pool* :file
+                                {:deleted-at (ct/now)}
+                                {:id (:id file)}
+                                {::db/return-keys false})
+                    {:width 800 :height 800 :mtype "image/jpeg"
+                     :size 312043 :orientation 1 :ts (ct/now)})]
+      (let [out (th/multipart-command! {::th/type :upload-file-media-object
+                                        ::rpc/profile-id (:id prof)
+                                        :file-id (:id file)
+                                        :is-local true
+                                        :name "testfile"
+                                        :content mfile})]
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :not-found))
+        (t/is (empty? (th/db-query :file-media-object {:file-id (:id file)}))
+              "no media object is created for a deleted file")))))
 
 (defn- pending-media-object
   "The single row that references the media object, with the thumbnail the

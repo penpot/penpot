@@ -491,3 +491,47 @@
                "a failed job does not reload the list")))
       (finally
         (rx/dispose! store)))))
+
+(t/deftest ^:async a-loaded-variant-with-a-job-is-tracked-and-clears
+  (let [team-id    (uuid/next)
+        variant-id (uuid/next)
+        job-id     (uuid/next)
+        variant    (assoc (font-variant team-id variant-id (uuid/next) job-id)
+                          :processing true)
+        ws-stream  (rx/subject)
+        status     (atom "running")
+        reads      (atom [])
+        store      (ptk/store {:state {:ws-conn nil
+                                       :current-team-id team-id}})]
+    (try
+      (await
+       (mock/with-mocks*
+         {st/state          store
+          ws/get-rcv-stream (mock/stub (fn [_] ws-stream))
+          rp/cmd!           (mock/stub
+                             (fn [id params]
+                               (swap! reads conj {:id id :params params})
+                               (case id
+                                 :get-job (rx/of {:id job-id :status @status})
+                                 :get-font-variants (rx/of [(assoc variant
+                                                                   :processing false
+                                                                   :job-id nil)])
+                                 (rx/of nil))))
+          fonts/register!   (mock/stub (fn [& _] nil))}
+
+         (st/emit! (df/fonts-fetched [variant]))
+
+         (await (async/wait-for #(contains? (:fonts-tracked @store) job-id)
+                                "the loaded job is tracked"))
+         (t/is (true? (:processing (get (:fonts @store) variant-id))))
+
+         (reset! status "completed")
+         (rx/push! ws-stream (ws-message (job-event job-id :end)))
+
+         (await (async/wait-for #(not (contains? (:fonts-tracked @store) job-id))
+                                "the job is untracked"))
+         (await (async/wait-for #(some? (variant-fetch @reads))
+                                "the list is refetched"))
+         (t/is (false? (:processing (get (:fonts @store) variant-id))))))
+      (finally
+        (rx/dispose! store)))))

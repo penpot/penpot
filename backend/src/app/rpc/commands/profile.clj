@@ -297,7 +297,6 @@
 
 ;; --- MUTATION: Update Photo
 
-(declare upload-photo)
 (declare update-profile-photo)
 
 (def ^:private

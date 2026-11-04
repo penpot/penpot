@@ -23,6 +23,8 @@
    [app.jobs :as jobs]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
+   [app.media :as media]
+   [app.media.jobs :as media.jobs]
    [app.media.validation :as media.v]
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
@@ -1085,7 +1087,6 @@
 
 ;; --- Mutation: Update Team Photo
 
-(declare upload-photo)
 (declare ^:private update-team-photo)
 
 (def ^:private schema:update-team-photo
@@ -1107,26 +1108,40 @@
   (update-team-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-team-photo
+  "Generate the photo of a team with the `:profile-thumbnail` job.
+
+  The job runs without an owner (the team row already exists but the hook
+  only moves owned photos), so this function stores the result itself and
+  updates `team.photo_id`. The previous photo is touched for the GC. The
+  admin check runs before the upload is materialized."
   [{:keys [::db/pool ::sto/storage] :as cfg} {:keys [profile-id team-id file] :as params}]
   (let [team  (get-team pool :profile-id profile-id :team-id team-id)
-        photo (profile/upload-photo cfg params)]
+        _     (check-admin-permissions! pool profile-id team-id)
+        input (media.jobs/materialize-input cfg file)]
+    (try
+      (let [result (media/profile-photo cfg {:input input})
+            photo  (get result :photo)
+            object (media.jobs/store-result cfg
+                                            (uuid/parse (:id photo))
+                                            "profile"
+                                            {:content-type (:mtype photo)})]
 
-    (check-admin-permissions! pool profile-id team-id)
+        ;; Mark object as touched for make it ellegible for tentative
+        ;; garbage collection.
+        (when-let [id (:photo-id team)]
+          (sto/touch-object! storage id))
 
-    ;; Mark object as touched for make it ellegible for tentative
-    ;; garbage collection.
-    (when-let [id (:photo-id team)]
-      (sto/touch-object! storage id))
+        ;; Save new photo
+        (db/update! pool :team
+                    {:photo-id (:id object)}
+                    {:id team-id})
 
-    ;; Save new photo
-    (db/update! pool :team
-                {:photo-id (:id photo)}
-                {:id team-id})
-
-    (rph/with-meta (assoc team :photo-id (:id photo))
-      {::audit/replace-props
-       {:team-id team-id
-        :file-name (:filename file)
-        :file-size (:size file)
-        :file-path (str (:path file))
-        :file-mtype (:mtype file)}})))
+        (rph/with-meta (assoc team :photo-id (:id object))
+          {::audit/replace-props
+           {:team-id team-id
+            :file-name (:filename file)
+            :file-size (:size file)
+            :file-path (str (:path file))
+            :file-mtype (:mtype file)}}))
+      (finally
+        (media.jobs/release-temporary! cfg (:id input))))))

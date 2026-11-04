@@ -1,3 +1,4 @@
+import { ERROR_SNIPPET_BYTES, isRecord, joinUri } from "./http.js";
 import { createLogger } from "./logger.js";
 
 /**
@@ -54,7 +55,6 @@ export interface ClaimedJob {
 
 const log = createLogger("jobs-client");
 const DEFAULT_TIMEOUT_MS = 60_000;
-const ERROR_SNIPPET_BYTES = 4 * 1024;
 
 /**
  * A management call that did not answer: transport, timeout, HTTP error,
@@ -70,14 +70,6 @@ export class JobsClientError extends Error {
     this.method = method;
     this.status = status;
   }
-}
-
-function joinUri(base: string, path: string): string {
-  return new URL(path, base.endsWith("/") ? base : `${base}/`).toString();
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }
 
 export class JobsClient {

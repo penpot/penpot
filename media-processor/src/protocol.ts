@@ -33,8 +33,6 @@ export const ERROR_CODES = [
   "invalid-image",
   "unsupported-image-format",
   "invalid-font",
-  "invalid-svg-file",
-  "svg-too-large",
   "image-dimensions-exceeded",
   "image-pixel-count-exceeded",
   "output-dimensions-exceeded",
@@ -45,13 +43,7 @@ export const ERROR_CODES = [
   "backend-fetch-failed",
   "backend-upload-failed",
   "processing-error",
-  "svg-sanitization-failed",
-  "svg-timeout",
-  "svg-worker-failed",
-  "svg-worker-exited",
-  "svg-pool-stopped",
-  "svg-pool-degraded",
-  "svg-pool-disabled",
+  "settle-failed",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -114,9 +106,19 @@ export const mediaThumbnailJobSchema = z
   })
   .strict();
 
+/**
+ * The photo jobs only accept photo formats. The backend checks them before
+ * the submit (`schema:profile-thumbnail`); the worker fails closed too, so a
+ * forged or replayed reference is `invalid-params` instead of a decode error
+ * deep inside sharp.
+ */
+const photoInputRefSchema = inputRefSchema.extend({
+  mtype: z.enum(["image/jpeg", "image/png", "image/webp"]),
+});
+
 export const profileThumbnailJobSchema = z
   .object({
-    input: inputRefSchema,
+    input: photoInputRefSchema,
   })
   .strict();
 
@@ -125,6 +127,8 @@ export const fontVariantsJobSchema = z
     input: inputRefSchema,
     "variant-id": z.string().regex(uuidRegex, "variant-id must be a uuid"),
     "source-mtype": z.string().min(1),
-    targets: z.array(z.string().min(1)).min(1),
+    /* The backend derives the targets from `missing-variants`; `font/woff2`
+       is never generated, only used as an uploaded source. */
+    targets: z.array(z.enum(["font/ttf", "font/otf", "font/woff"])).min(1),
   })
   .strict();

@@ -2088,6 +2088,48 @@
     (t/is (= :request-timeout (:code (ex-data cause))))
     (t/is (= "cancelled" (:status (first (th/db-query :job {:label label})))))))
 
+(defn- with-lost-reply
+  "Run `f` with `wait-reply` replaced: it settles the job of `label` with
+  `action` and answers nil, as when the reply is lost after the BLPOP."
+  [label action f]
+  (with-redefs-fn
+    {#'jobs/wait-reply
+     (fn [cfg _key _timeout]
+       (let [row (first (th/db-query :job {:label label}))]
+         (action cfg row))
+       nil)}
+    f))
+
+(t/deftest submit-and-wait-answers-the-row-when-the-reply-is-lost
+  (let [cfg   (make-cfg (with-notifies (get-job-defs)))
+        label (str "wait-lost-" (uuid/next))]
+
+    (with-lost-reply label
+      (fn [cfg row]
+        (jobs/claim cfg (:id row) (:scheduled-at row))
+        (t/is (= 1 (jobs/complete cfg :job-id (:id row) :result {:value 42}))))
+      #(t/is (= {:value 42}
+                (jobs/submit-and-wait cfg {::jobs/name   :echo
+                                           ::jobs/params (make-params)
+                                           ::jobs/label  label}))))))
+
+(t/deftest submit-and-wait-raises-the-row-error-when-the-reply-is-lost
+  (let [cfg   (make-cfg (with-notifies (get-job-defs)))
+        label (str "wait-lost-fail-" (uuid/next))]
+
+    (with-lost-reply label
+      (fn [cfg row]
+        (jobs/claim cfg (:id row) (:scheduled-at row))
+        (t/is (= 1 (jobs/fail cfg (:id row) {:type :validation
+                                             :code :invalid-image
+                                             :hint "nope"}))))
+      #(let [cause (raised (fn []
+                             (jobs/submit-and-wait cfg {::jobs/name   :echo
+                                                        ::jobs/params (make-params)
+                                                        ::jobs/label  label})))]
+         (t/is (= :validation (:type (ex-data cause))))
+         (t/is (= :invalid-image (:code (ex-data cause))))))))
+
 (t/deftest submit-and-wait-requires-a-notifying-def
   (let [cfg   (make-cfg (get-job-defs))
         cause (raised #(jobs/submit-and-wait cfg {::jobs/name   :echo

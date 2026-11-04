@@ -744,3 +744,42 @@
         err   (:error out)]
     (t/is (th/ex-info? err))
     (t/is (th/ex-of-type? err :not-found))))
+
+(t/deftest get-font-variants-reports-the-pending-generation
+  "The list says which variants still have an active generation job, so a
+  reloaded tab paints them as processing and can follow the job."
+  (with-mocks [mock {:target 'app.rpc.quotes/check! :return nil}]
+    (let [prof       (th/create-profile* 1 {:is-active true})
+          team-id    (:default-team-id prof)
+          font-id    (uuid/custom 10 32)
+          font-bytes (-> (io/resource "backend_tests/test_files/font-1.ttf") (io/read*))
+          session-id (upload-font-chunked! prof font-bytes "font/ttf" (* 4 1024 1024))
+          out        (th/command! {::th/type        :create-font-variant
+                                   ::rpc/profile-id (:id prof)
+                                   :team-id         team-id
+                                   :font-id         font-id
+                                   :font-family     "processing-font"
+                                   :font-weight     400
+                                   :font-style      "normal"
+                                   :uploads         {"font/ttf" session-id}})
+          result     (:result out)
+          job-id     (:job-id result)
+          fetch      (fn []
+                       (->> (:result (th/command! {::th/type        :get-font-variants
+                                                   ::rpc/profile-id (:id prof)
+                                                   :team-id         team-id}))
+                            (filter #(= (:id result) (:id %)))
+                            first))]
+
+      (t/is (nil? (:error out)))
+      (t/is (uuid? job-id))
+
+      (let [row (fetch)]
+        (t/is (true? (:processing row)))
+        (t/is (= job-id (:job-id row))))
+
+      (th/run-pending-job! :font-variants (str "font:" (:id result)))
+
+      (let [row (fetch)]
+        (t/is (false? (:processing row)))
+        (t/is (nil? (:job-id row)))))))

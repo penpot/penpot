@@ -34,6 +34,8 @@
   "Size in bytes of each chunk when uploading font files (10 MiB)."
   (* 1024 1024 10))
 
+(declare track-font-variants)
+
 (defn fonts-fetched
   [fonts]
   (letfn [;; Prepare font to the internal font database format.
@@ -76,7 +78,19 @@
                          (map adapt-font-id)
                          (group-by :font-id)
                          (mapv prepare-font))]
-          (fonts/register! :custom fonts))))))
+          (fonts/register! :custom fonts)))
+
+      ptk/WatchEvent
+      (watch [_ state _]
+        ;; A variant that arrives with an active job (a reloaded tab, another
+        ;; tab) must be followed too, or the badge would never clear.
+        (let [tracked (:fonts-tracked state)
+              rows    (->> fonts
+                           (filter :job-id)
+                           (remove (fn [row] (contains? tracked (:job-id row)))))]
+          (if (seq rows)
+            (rx/of (track-font-variants (:current-team-id state) rows))
+            (rx/empty)))))))
 
 (defn fetch-fonts
   [team-id]
@@ -359,6 +373,33 @@
     (update [_ state]
       (update state :fonts-pending (fnil disj #{}) id))))
 
+(defn font-variant-untracked
+  "Stop following the job of a settled variant."
+  [job-id]
+  (ptk/reify ::font-variant-untracked
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :fonts-tracked (fnil disj #{}) job-id))))
+
+(declare follow-font-variant-job)
+
+(defn track-font-variants
+  "Follow the `:font-variants` jobs of the rows that arrived from the
+  server with a `:job-id`, once each."
+  [team-id rows]
+  (ptk/reify ::track-font-variants
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :fonts-tracked (fnil into #{}) (keep :job-id rows)))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [ws-conn (:ws-conn state)]
+        (->> rows
+             (map (fn [{:keys [id font-family job-id]}]
+                    (follow-font-variant-job ws-conn team-id id font-family job-id)))
+             (apply rx/merge))))))
+
 (defn font-variant-job-failed
   "Tell the user that the job of `id` ended without its missing formats.
 
@@ -387,10 +428,12 @@
           (cond
             (= "completed" status)
             (rx/of (font-variant-settled variant-id)
+                   (font-variant-untracked job-id)
                    (fetch-fonts team-id))
 
             (contains? #{"failed" "cancelled"} status)
             (rx/of (font-variant-settled variant-id)
+                   (font-variant-untracked job-id)
                    (font-variant-job-failed variant-id font-family))
 
             :else
@@ -398,7 +441,8 @@
        (rx/catch
         (fn [cause]
           (log/error :msg "unable to follow the font variant job" :cause cause)
-          (rx/of (font-variant-settled variant-id))))))
+          (rx/of (font-variant-settled variant-id)
+                 (font-variant-untracked job-id))))))
 
 (defn font-variant-created
   "Add an uploaded font variant to the list and follow its job.
@@ -411,7 +455,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (cond-> (update state :fonts assoc id font)
-        (some? job-id) (update :fonts-pending (fnil conj #{}) id)))
+        (some? job-id) (update :fonts-pending (fnil conj #{}) id)
+        (some? job-id) (update :fonts-tracked (fnil conj #{}) job-id)))
 
     ptk/WatchEvent
     (watch [_ state _]

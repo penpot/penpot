@@ -4,6 +4,7 @@ import { Readable, Transform, type TransformCallback } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { InputRef } from "./protocol.js";
 import { ProcessingError } from "./errors.js";
+import { ERROR_SNIPPET_BYTES, isRecord, joinUri } from "./http.js";
 import { createLogger } from "./logger.js";
 
 export interface BackendClientOptions {
@@ -21,7 +22,6 @@ export interface UploadedResult {
 
 const log = createLogger("backend-client");
 const DEFAULT_TIMEOUT_MS = 120_000;
-const ERROR_SNIPPET_BYTES = 4 * 1024;
 
 class PayloadTooLarge extends Error {}
 
@@ -40,14 +40,6 @@ class SizeGuard extends Transform {
     }
     callback(null, chunk);
   }
-}
-
-function joinUri(base: string, path: string): string {
-  return new URL(path, base.endsWith("/") ? base : `${base}/`).toString();
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }
 
 function isRedirect(status: number): boolean {
