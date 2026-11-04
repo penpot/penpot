@@ -7,6 +7,7 @@
 (ns backend-tests.rpc-test
   (:require
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -922,6 +923,92 @@
     (t/is (= pid (::rpc/profile-id
                   (call-body (method {}) {:extras {::actoken/profile-id pid
                                                    ::actoken/type "personal"}}))))))
+
+;; --- SHARED KEY AUTHORIZATION
+
+(defn- call-shared-key-wrapper
+  [mdata params]
+  (let [wrapped (#'rpc/wrap-shared-key-authorization
+                 nil (fn [_ params] params) mdata)]
+    (wrapped nil params)))
+
+(t/deftest shared-key-authorization-allows-declared-keys
+  (let [mdata {::rpc/allowed-shared-keys #{:exporter :media-processor}}]
+    (t/is (= :exporter
+             (::rpc/auth-key-id
+              (call-shared-key-wrapper mdata {::rpc/auth-key-id :exporter}))))
+    (t/is (= :media-processor
+             (::rpc/auth-key-id
+              (call-shared-key-wrapper mdata {::rpc/auth-key-id :media-processor}))))))
+
+(t/deftest shared-key-authorization-rejects-other-key
+  (let [ex (try (call-shared-key-wrapper {::rpc/allowed-shared-keys #{:exporter}}
+                                         {::rpc/auth-key-id :nexus})
+                (catch Exception e e))]
+    (t/is (th/ex-of-type? ex :authorization))
+    (t/is (th/ex-of-code? ex :shared-key-not-allowed))))
+
+(t/deftest shared-key-authorization-rejects-missing-key
+  (let [ex (try (call-shared-key-wrapper {::rpc/allowed-shared-keys #{:exporter}} {})
+                (catch Exception e e))]
+    (t/is (th/ex-of-type? ex :authorization))
+    (t/is (th/ex-of-code? ex :shared-key-not-allowed))))
+
+(t/deftest shared-key-authorization-without-metadata-allows-any-key
+  (t/is (= :nexus
+           (::rpc/auth-key-id
+            (call-shared-key-wrapper {} {::rpc/auth-key-id :nexus}))))
+  (t/is (nil? (::rpc/auth-key-id (call-shared-key-wrapper {} {})))))
+
+(t/deftest shared-key-authorization-empty-set-denies-all
+  (let [ex (try (call-shared-key-wrapper {::rpc/allowed-shared-keys #{}}
+                                         {::rpc/auth-key-id :exporter})
+                (catch Exception e e))]
+    (t/is (th/ex-of-type? ex :authorization))
+    (t/is (th/ex-of-code? ex :shared-key-not-allowed))))
+
+(t/deftest shared-key-authorization-logs-the-denied-key
+  (let [records (atom [])
+        watch   (fn [_ _ _ record] (swap! records conj record))]
+    (add-watch l/log-record ::shared-key-denied watch)
+    (try
+      (try (call-shared-key-wrapper {::rpc/allowed-shared-keys #{:exporter}}
+                                    {::rpc/auth-key-id :nexus
+                                     ::rpc/handler-name "test-method"})
+           (catch Exception _))
+      (let [deadline (+ (System/currentTimeMillis) 2000)
+            logged?  (fn []
+                       (some #(and (= :warn (::l/level %))
+                                   (= "shared key is not allowed for this method"
+                                      (get (::l/props %) :hint))
+                                   (= :nexus (get (::l/props %) :key-id))
+                                   (= "test-method" (get (::l/props %) :handler-name)))
+                             @records))]
+        (loop []
+          (when-not (or (logged?)
+                        (>= (System/currentTimeMillis) deadline))
+            (Thread/sleep 10)
+            (recur)))
+        (t/is (some? (logged?))))
+      (finally
+        (remove-watch l/log-record ::shared-key-denied)))))
+
+(t/deftest shared-key-authorization-is-applied-to-rpc-requests
+  (let [mdata   {::rpc/allowed-shared-keys #{:exporter}}
+        wrapped (partial (#'rpc/wrap-shared-key-authorization
+                          nil (fn [_ params] params) mdata)
+                         nil)
+        handler (make-handler {:shared-key-test [mdata wrapped]})]
+    (t/is (= :exporter
+             (::rpc/auth-key-id
+              (call-body handler
+                         {:path-params {:method-name "shared-key-test"}
+                          :extras {::http/auth-key-id :exporter}}))))
+    (t/is (th/ex-of-code?
+           (call-ex handler
+                    {:path-params {:method-name "shared-key-test"}
+                     :extras {::http/auth-key-id :nexus}})
+           :shared-key-not-allowed))))
 
 ;; --- PARAMS VALIDATION: SERVER AUTH CONTEXT VS CLIENT PARAMS
 

@@ -147,6 +147,14 @@ export class PenpotMcpServer {
      */
     private readonly tenant: string;
 
+    /**
+     * Maximum size of a JSON request body, read from the `PENPOT_MCP_MAX_BODY_SIZE` environment variable.
+     *
+     * Accepts any value supported by Express' `json` body parser (e.g. `"10mb"`). Defaults to `"10mb"`,
+     * since tool calls such as `execute_code` can carry large payloads.
+     */
+    private readonly maxBodySize: string;
+
     constructor(private isMultiUser: boolean = false) {
         this.authentication = new McpAuthentication(process.env.PENPOT_MCP_AUTH_URI, isMultiUser);
         // read port configuration from environment variables
@@ -156,6 +164,7 @@ export class PenpotMcpServer {
         this.replHost = process.env.PENPOT_MCP_REPL_HOST ?? "localhost";
         this.replPort = parseInt(process.env.PENPOT_MCP_REPL_PORT ?? "4403", 10);
         this.tenant = process.env.PENPOT_TENANT ?? "default";
+        this.maxBodySize = process.env.PENPOT_MCP_MAX_BODY_SIZE ?? "10mb";
         const toolTimeoutSecs = parseInt(process.env.PENPOT_MCP_TOOL_TIMEOUT_S ?? "120", 10);
 
         this.configLoader = new ConfigurationLoader(process.cwd());
@@ -323,7 +332,7 @@ export class PenpotMcpServer {
     async start(): Promise<void> {
         const { default: express } = await import("express");
         this.app = express();
-        this.app.use(express.json());
+        this.app.use(express.json({ limit: this.maxBodySize }));
 
         this.setupHttpEndpoints();
 

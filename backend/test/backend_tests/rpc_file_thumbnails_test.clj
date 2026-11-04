@@ -921,39 +921,44 @@
       (t/is (= 1 (count rows2)))
       (t/is (nil? (:deleted-at (first rows2)))))))
 
-
-(t/deftest create-file-thumbnail-rejects-forged-media
-  ;; A transit body like {"~:media": {"~:path": ["~#path", "/etc/passwd"]}}
-  ;; decodes to this exact map. Without a multipart request it must fail at
-  ;; params validation, before any file is read. NOTE: plain command! on
-  ;; purpose, a multipart header would make it legitimate.
+(t/deftest rejects-forged-path-on-create-file-thumbnail
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
                                     :project-id (:default-project-id profile)
                                     :is-shared false})
-        out     (th/command! {::th/type :create-file-thumbnail
-                              ::rpc/profile-id (:id profile)
-                              :file-id (:id file)
-                              :revn 0
-                              :media {:filename "evil.jpg"
-                                      :size 123
-                                      :path (fs/path "/etc/passwd")
-                                      :mtype "image/jpeg"}})]
-    (t/is (th/ex-of-code? (:error out) :params-validation))))
+        data    {::th/type :create-file-thumbnail
+                 ::rpc/profile-id (:id profile)
+                 :file-id (:id file)
+                 :revn 1
+                 :media {:filename "x.png"
+                         :size 1
+                         :path (fs/path "/etc/passwd")
+                         :mtype "image/png"}}
+        out     (th/command! data)
+        error   (:error out)]
+    (t/is (nil? (:result out)))
+    (t/is (th/ex-info? error))
+    (t/is (th/ex-of-type? error :validation))
+    (t/is (th/ex-of-code? error :params-validation))
+    (t/is (= 0 (count (th/db-query :file-thumbnail {:file-id (:id file)}))))))
 
-(t/deftest create-file-object-thumbnail-rejects-forged-media
-  ;; Same transit-forgery vector through object thumbnails. NOTE: plain
-  ;; command! on purpose, a multipart header would make it legitimate.
+(t/deftest rejects-forged-path-on-create-file-object-thumbnail
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
                                     :project-id (:default-project-id profile)
                                     :is-shared false})
-        out     (th/command! {::th/type :create-file-object-thumbnail
-                              ::rpc/profile-id (:id profile)
-                              :file-id (:id file)
-                              :object-id "obj"
-                              :media {:filename "evil.jpg"
-                                      :size 123
-                                      :path (fs/path "/etc/passwd")
-                                      :mtype "image/jpeg"}})]
-    (t/is (th/ex-of-code? (:error out) :params-validation))))
+        data    {::th/type :create-file-object-thumbnail
+                 ::rpc/profile-id (:id profile)
+                 :file-id (:id file)
+                 :object-id "test-key-forged"
+                 :media {:filename "x.png"
+                         :size 1
+                         :path (fs/path "/etc/passwd")
+                         :mtype "image/png"}}
+        out     (th/command! data)
+        error   (:error out)]
+    (t/is (nil? (:result out)))
+    (t/is (th/ex-info? error))
+    (t/is (th/ex-of-type? error :validation))
+    (t/is (th/ex-of-code? error :params-validation))
+    (t/is (= 0 (count (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)}))))))
