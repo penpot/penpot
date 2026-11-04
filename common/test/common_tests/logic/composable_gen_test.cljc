@@ -1077,3 +1077,10 @@
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :variant-diff false :rich-variants true
                                     :layout-copies true :text true}]
                        :ops [[:resize 0 0 0 0] [:rotate 1 0 0 0] [:switch 4 0 0 0]]}))))
+
+(t/deftest generated-reflow-of-a-copy-grid-keeps-its-cells-inherited
+  ;; a copy child switched to a hidden variant leaves its grid cell; the
+  ;; layout reflow reassigns the copy grid's cells without authoring them
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :grid :variant-diff false
+                                    :rich-variants true :layout-copies true :text true}]
+                       :ops [[:nest 6 0 0 0] [:style 8 1 1] [:switch 4 0 0 0]]}))))

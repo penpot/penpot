@@ -132,8 +132,14 @@
                   ids)))
         changes (cond-> changes
                   (seq grid-ids)
-                  (-> (pcb/update-shapes grid-ids ctl/assign-cell-positions {:with-objects? true})
-                      (pcb/reorder-grid-children ids))
+                  (as-> changes
+                        ;; a grid the update does not touch reassigns its cells as a consequence
+                        (reduce (fn [changes id]
+                                  (pcb/update-shapes changes [id] ctl/assign-cell-positions
+                                                     {:with-objects? true
+                                                      :ignore-touched (boolean (or (true? (get ignore-tree id)) ignore-touched))}))
+                                changes grid-ids)
+                    (pcb/reorder-grid-children changes ids))
 
                   (seq hidden-grid-ids)
                   (-> (pcb/update-shapes hidden-grid-ids ctl/assign-cells
