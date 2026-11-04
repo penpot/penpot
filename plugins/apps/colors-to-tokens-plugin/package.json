@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "ng build colors-to-tokens-plugin && pnpm run build:plugin",
+    "build": "pnpm run build:plugin && ng build colors-to-tokens-plugin",
     "build:dev": "ng build colors-to-tokens-plugin --configuration development",
     "build:plugin": "node ../../tools/scripts/build-plugin.mjs --plugin=colors-to-tokens-plugin",
     "watch": "node ../../tools/scripts/build-plugin.mjs --plugin=colors-to-tokens-plugin --watch",
