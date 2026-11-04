@@ -5,29 +5,31 @@
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
-@use "ds/_sizes.scss" as *;
 @use "ds/typography.scss" as *;
 
 .task-status {
   --task-status-fg-color: var(--color-foreground-secondary);
   --task-status-bg-color: var(--color-background-quaternary);
-  --task-status-dot-color: var(--task-status-fg-color);
 
   @include use-typography("body-small");
 
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
-  gap: var(--sp-xs);
   padding: var(--sp-xxs) var(--sp-s);
   border-radius: $br-4;
   background-color: var(--task-status-bg-color);
   color: var(--task-status-fg-color);
   white-space: nowrap;
 
-  &.is-done {
+  &.is-open {
     --task-status-fg-color: var(--color-accent-info);
     --task-status-bg-color: var(--color-background-info);
+  }
+
+  &.is-done {
+    --task-status-fg-color: var(--color-accent-success);
+    --task-status-bg-color: var(--color-background-success);
   }
 
   &.is-reopened {
@@ -36,21 +38,14 @@
   }
 
   &.is-verified {
-    --task-status-fg-color: var(--color-accent-success);
-    --task-status-bg-color: var(--color-background-success);
+    --task-status-fg-color: var(--color-accent-secondary);
+
+    // TODO: no DS background token pairs with the secondary accent
+    --task-status-bg-color: color-mix(in srgb, var(--color-accent-secondary) 18%, transparent);
   }
 
   &.is-wont-do {
-    // TODO: a background token as the color of a dot; no DS foreground token
-    // has this value.
-    --task-status-dot-color: var(--color-background-disabled);
+    --task-status-fg-color: var(--color-accent-error);
+    --task-status-bg-color: var(--color-background-error);
   }
-}
-
-.dot {
-  flex-shrink: 0;
-  inline-size: $sz-6;
-  block-size: $sz-6;
-  border-radius: $br-circle;
-  background-color: var(--task-status-dot-color);
 }

@@ -572,7 +572,10 @@
     :fn (mg/resource "app/migrations/sql/0811-add-file-pull-request-activity-table.sql")}
 
    {:name "0812-mod-file-task-add-position"
-    :fn (mg/resource "app/migrations/sql/0812-mod-file-task-add-position.sql")}])
+    :fn (mg/resource "app/migrations/sql/0812-mod-file-task-add-position.sql")}
+
+   {:name "0813-mod-file-task-add-comment"
+    :fn (mg/resource "app/migrations/sql/0813-mod-file-task-add-comment.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

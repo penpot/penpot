@@ -10,7 +10,6 @@
   to do next) and the form of a new task."
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -20,6 +19,7 @@
    [app.main.data.workspace.tasks :as dwtk]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.comments :as cmt]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -124,9 +124,10 @@
 
 (mf/defc task-list-item*
   {::mf/private true}
-  [{:keys [task data profiles is-selected on-open]}]
+  [{:keys [task data profiles is-selected show-review on-open]}]
   (let [objects  (page-objects data (:page-id task))
         assignee (get profiles (:assignee-id task))
+        review?  (some? (:pull-request-id task))
 
         on-click
         (mf/use-fn
@@ -139,14 +140,18 @@
                    :layer (rvc/layer-name objects task)
                    :is-layer-lost (dwtk/lost? task)
                    :is-selected is-selected
+                   :is-review review?
+                   :review (when (and show-review review?)
+                             (or (:review-title task) (tr "workspace.review.design-review")))
                    :on-click on-click
                    :assignee (when assignee
                                (mf/html [:> avatar* {:profile assignee :variant "S"}]))
                    :actions (mf/html [:> task-menu* {:task task}])}]))
 
 (mf/defc task-list*
-  "The tasks `tasks`, each one opening on the canvas when clicked."
-  [{:keys [tasks]}]
+  "The tasks `tasks`, each one opening on the canvas when clicked. With
+  `show-review`, each one names the design review it belongs to."
+  [{:keys [tasks show-review]}]
   (let [data      (mf/deref refs/workspace-data)
         profiles  (mf/deref refs/profiles)
         local     (mf/deref refs/tasks-local)
@@ -165,6 +170,7 @@
                              :data data
                              :profiles profiles
                              :is-selected (= (:id task) (:open local))
+                             :show-review show-review
                              :on-open on-open}]])]))
 
 ;; --- What happened to a task
@@ -368,6 +374,25 @@
        [:> task-event* {:key (dm/str (:id event)) :event event :thread thread}])
      [:> task-next-step* {:task task}]]))
 
+;; --- The card of a mark on the canvas
+
+(mf/defc tasks-preview*
+  "The small card of the tasks of a mark: the state, title and assignee of
+  each one."
+  [{:keys [tasks]}]
+  (let [profiles (mf/deref refs/profiles)]
+    [:> cmt/preview-card* {}
+     (for [task tasks]
+       [:div {:key (dm/str (:id task)) :class (stl/css :task-preview)}
+        [:> task-status* {:status (:status task)
+                          :label (rvc/status-label (:status task))}]
+        [:> text* {:as "span" :typography t/body-small :class (stl/css :task-preview-title)}
+         (:title task)]
+        [:> text* {:as "span" :typography t/body-small :class (stl/css :task-preview-assignee)}
+         (if (some? (:assignee-id task))
+           (tr "workspace.tasks.assigned-to" (rvc/profile-name profiles (:assignee-id task)))
+           (tr "workspace.tasks.unassigned"))]])]))
+
 ;; --- A task without a thread, open on the canvas
 
 (mf/defc task-panel*
@@ -418,8 +443,8 @@
 
 (mf/defc new-task-form*
   "The form of a new task, next to the layer it is linked to. From a
-  comment thread it is \"Make it a task\": the title comes from the
-  comment and the thread stays attached to the task."
+  message of a thread it is \"Make it a task\": the title comes from the
+  message and the thread stays attached to the task."
   [{:keys [params style class]}]
   (let [team      (mf/deref refs/team)
         profile   (mf/deref refs/profile)
@@ -510,7 +535,8 @@
        [:> select* {:options options
                     :default-selected assignee
                     :on-change on-assignee
-                    :class (stl/css :form-select)}]]
+                    :has-portal true
+                    :wrapper-class (stl/css :form-select)}]]
       [:div {:class (stl/css :form-row)}
        [:> text* {:as "span" :typography t/body-small :class (stl/css :form-label)}
         (tr "workspace.tasks.linked-to")]
@@ -572,7 +598,3 @@
   (->> (vals tasks)
        (remove dwtk/history?)
        (dwtk/sort-tasks)))
-
-(defn task-of-thread
-  [tasks thread-id]
-  (d/seek #(= thread-id (:thread-id %)) (vals tasks)))

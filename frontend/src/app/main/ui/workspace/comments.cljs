@@ -189,8 +189,8 @@
                         :class (stl/css :comments-tabs)}
       [:div {:class (stl/css :comments-tab-content)}
        (if (= tab :tasks)
-         [:> tasks-tab* {:tasks tasks :grouped true}]
-         [:> comments-tab* {:threads threads :show-page true}])]]]))
+         [:> tasks-tab* {:tasks tasks :grouped true :show-review true}]
+         [:> comments-tab* {:threads threads :show-page true :show-review true}])]]]))
 
 (mf/defc comments-list*
   "The comment threads of the file, grouped by page, with the selector of

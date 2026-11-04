@@ -53,6 +53,7 @@
    [app.main.ui.ds.product.panel-title :refer [panel-title*]]
    [app.main.ui.ds.product.preview-card :refer [preview-card*]]
    [app.main.ui.ds.product.progress-bar :refer [progress-bar*]]
+   [app.main.ui.ds.product.review-label :refer [review-label*]]
    [app.main.ui.ds.product.review-marker :refer [review-marker*]]
    [app.main.ui.ds.product.tag :refer [tag*]]
    [app.main.ui.ds.product.task-row :refer [task-row*]]
@@ -109,6 +110,7 @@
     :LayerChip layer-chip*
     :LinkButton link-button*
     :ProgressBar progress-bar*
+    :ReviewLabel review-label*
     :ReviewMarker review-marker*
     :Textarea textarea*
     :TaskRow task-row*

@@ -72,12 +72,6 @@
   padding-block: var(--sp-m);
 }
 
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-xs);
-}
-
 .groups {
   display: flex;
   flex-direction: column;
@@ -103,6 +97,8 @@
   padding-block: var(--sp-xxl);
 }
 
+// a full-width DS button does not center its label on its own
 .new-task {
+  justify-content: center;
   inline-size: 100%;
 }

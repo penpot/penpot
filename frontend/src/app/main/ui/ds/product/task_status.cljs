@@ -20,17 +20,15 @@
    [:label :string]])
 
 (mf/defc task-status*
-  "The state of a task: a dot in the colour of the state before its
-  name. Open and won't do are neutral, done is waiting to be verified,
-  reopened needs work again and verified is closed for good."
+  "The state of a task, a word in the colour of the state: open is blue,
+  done green, reopened orange, verified purple and won't do red."
   {::mf/schema schema:task-status}
   [{:keys [class status label] :rest props}]
   (let [props (mf/spread-props props
                                {:class [class (stl/css-case :task-status true
+                                                            :is-open (= status "open")
                                                             :is-done (= status "done")
                                                             :is-reopened (= status "reopened")
                                                             :is-verified (= status "verified")
                                                             :is-wont-do (= status "wont-do"))]})]
-    [:> :span props
-     [:span {:class (stl/css :dot) :aria-hidden true}]
-     label]))
+    [:> :span props label]))

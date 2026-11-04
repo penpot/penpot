@@ -40,6 +40,14 @@ export const Open = {
   },
 };
 
+export const InAReview = {
+  args: {
+    review: "Checkout redesign",
+    isReview: true,
+    isOpen: true,
+  },
+};
+
 export const Resolved = {
   args: {
     isResolved: true,

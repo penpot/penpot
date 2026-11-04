@@ -47,6 +47,14 @@ export const Selected = {
   },
 };
 
+export const InAReview = {
+  args: {
+    isSelected: true,
+    isReview: true,
+    review: "Checkout redesign",
+  },
+};
+
 export const LostLayer = {
   args: {
     title: "Replace the promo copy (waiting for marketing)",

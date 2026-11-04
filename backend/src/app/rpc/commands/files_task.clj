@@ -162,6 +162,7 @@
           coalesce(fpr.title, t.review_title) AS review_title,
           fpr.status AS review_status,
           t.thread_id,
+          t.comment_id,
           ct.seqn AS thread_seqn,
           t.title,
           t.status,
@@ -239,8 +240,10 @@
    ;; the design review the task is created in: an open pull request
    ;; of this file (the branch file it reviews)
    [:pull-request-id {:optional true} [:maybe ::sm/uuid]]
-   ;; the comment thread the task comes from, which stays attached
-   [:thread-id {:optional true} [:maybe ::sm/uuid]]])
+   ;; the comment thread the task comes from, which stays attached, and
+   ;; the message of that thread it was made from
+   [:thread-id {:optional true} [:maybe ::sm/uuid]]
+   [:comment-id {:optional true} [:maybe ::sm/uuid]]])
 
 (def ^:private sql:get-open-review-of-file
   "SELECT id, title FROM file_pull_request
@@ -249,37 +252,47 @@
       AND status = 'open'
       AND deleted_at IS NULL")
 
-(def ^:private sql:get-task-of-thread
+(def ^:private sql:get-task-of-comment
   "SELECT id FROM file_task
-    WHERE thread_id = ?
+    WHERE comment_id = ?
       AND deleted_at IS NULL")
 
 (defn- check-thread
-  "Refuse a thread of another file, and a thread that already has a task:
-  a thread stays attached to one task."
+  "Refuse a thread of another file."
   [conn thread-id file-id]
   (let [thread (db/get* conn :comment-thread {:id thread-id})]
     (when (or (nil? thread) (not= file-id (:file-id thread)))
       (ex/raise :type :validation
                 :code :thread-not-in-file
                 :hint "the comment thread does not belong to the file"
-                :thread-id thread-id))
-    (when (db/exec-one! conn [sql:get-task-of-thread thread-id])
-      (ex/raise :type :validation
-                :code :thread-already-has-task
-                :hint "the comment thread already has a task"
                 :thread-id thread-id))))
 
+(defn- check-comment
+  "Refuse a message of another thread, and a message that already has a
+  task: each message of a thread may be one task."
+  [conn comment-id thread-id]
+  (let [comment (db/get* conn :comment {:id comment-id})]
+    (when (or (nil? comment) (not= thread-id (:thread-id comment)))
+      (ex/raise :type :validation
+                :code :comment-not-in-thread
+                :hint "the comment does not belong to the thread"
+                :comment-id comment-id))
+    (when (db/exec-one! conn [sql:get-task-of-comment comment-id])
+      (ex/raise :type :validation
+                :code :comment-already-has-task
+                :hint "the comment already has a task"
+                :comment-id comment-id))))
+
 (sv/defmethod ::create-task
-  "Create an open task on a file. A task created from a comment thread
-  keeps the thread attached; a task created in a design review belongs
-  to it. The assignee, when there is one, must be a member of the team
+  "Create an open task on a file. A task created from a message of a
+  comment thread keeps the thread attached; a task created in a design
+  review belongs to it. The assignee, when there is one, must be a member of the team
   and is told by email."
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:create-task}
   [cfg {:keys [::rpc/profile-id file-id title page-id frame-id shape-id position assignee-id
-               pull-request-id thread-id]}]
+               pull-request-id thread-id comment-id]}]
   (check-tasks-enabled)
   (when (str/blank? title)
     (ex/raise :type :validation
@@ -298,6 +311,8 @@
                                    :pull-request-id pull-request-id)))
            _       (when thread-id
                      (check-thread conn thread-id file-id))
+           _       (when comment-id
+                     (check-comment conn comment-id thread-id))
            _       (check-assignee conn team-id assignee-id)
            ts      (ct/now)
            task    {:id (uuid/next)
@@ -306,6 +321,7 @@
                     :pull-request-id pull-request-id
                     :review-title (:title review)
                     :thread-id thread-id
+                    :comment-id comment-id
                     :title (str/trim title)
                     :status "open"
                     :assignee-id assignee-id

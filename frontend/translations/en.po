@@ -12247,22 +12247,6 @@ msgid "workspace.review.comments.empty"
 msgstr "No comments here yet."
 
 #: src/app/main/ui/workspace/review/panel.cljs
-msgid "workspace.review.comments.filter.mine"
-msgstr "Mine"
-
-#: src/app/main/ui/workspace/review/panel.cljs
-msgid "workspace.review.comments.filter.open"
-msgstr "Open %s"
-
-#: src/app/main/ui/workspace/review/panel.cljs
-msgid "workspace.review.comments.filter.resolved"
-msgstr "Resolved %s"
-
-#: src/app/main/ui/workspace/review/panel.cljs
-msgid "workspace.review.comments.filters"
-msgstr "Filter comments"
-
-#: src/app/main/ui/workspace/review/panel.cljs
 msgid "workspace.review.comments.no-replies"
 msgstr "No replies"
 
@@ -12488,7 +12472,7 @@ msgid "workspace.tasks.error.generic"
 msgstr "The task could not be changed. Try again."
 
 #: src/app/main/data/workspace/tasks.cljs
-msgid "workspace.tasks.error.thread-has-task"
+msgid "workspace.tasks.error.comment-has-task"
 msgstr "This comment is a task already."
 
 #: src/app/main/ui/workspace/review/tasks.cljs
@@ -12550,26 +12534,6 @@ msgstr "%s verified it"
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.wont-do"
 msgstr "%s marked it as won't do"
-
-#: src/app/main/ui/workspace/review/panel.cljs
-msgid "workspace.tasks.filter.all"
-msgstr "All %s"
-
-#: src/app/main/ui/workspace/review/panel.cljs
-msgid "workspace.tasks.filter.mine"
-msgstr "Assigned to me %s"
-
-#: src/app/main/ui/workspace/review/panel.cljs
-msgid "workspace.tasks.filter.open"
-msgstr "Open %s"
-
-#: src/app/main/ui/workspace/review/panel.cljs
-msgid "workspace.tasks.filter.to-verify"
-msgstr "To verify %s"
-
-#: src/app/main/ui/workspace/review/panel.cljs
-msgid "workspace.tasks.filters"
-msgstr "Filter tasks"
 
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.for-you"
@@ -12702,6 +12666,26 @@ msgstr "Does the change fix it? Verify to close the task, or reopen it for %s."
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.verify.message-unassigned"
 msgstr "Does the change fix it? Verify to close the task, or reopen it."
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.tasks.view.all"
+msgstr "Show all tasks"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.tasks.view.hide-closed"
+msgstr "Hide closed tasks"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.tasks.view.mine"
+msgstr "Show only your tasks"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.tasks.view.open"
+msgstr "Show only open tasks"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.tasks.view.to-verify"
+msgstr "Show only tasks to verify"
 
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.you"

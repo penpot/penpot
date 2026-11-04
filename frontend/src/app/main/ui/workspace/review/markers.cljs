@@ -22,6 +22,7 @@
    [app.main.data.workspace.tasks :as dwtk]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.comments :as cmt]
    [app.main.ui.ds.product.review-marker :refer [review-marker*]]
    [app.main.ui.workspace.review.common :as rvc]
    [app.main.ui.workspace.review.tasks :as rvt]
@@ -77,41 +78,149 @@
                        :width (dm/str (* width zoom) "px")
                        :height (dm/str (* height zoom) "px")}}]))
 
+(mf/defc marker-slot*
+  "A mark on the canvas, centered on its point. Hovering it shows `preview`
+  unless it is open, like the bubbles of the comments."
+  {::mf/private true}
+  [{:keys [position zoom is-open preview children]}]
+  (let [hover*   (mf/use-state false)
+        hover?   (deref hover*)
+        on-enter (mf/use-fn #(reset! hover* true))
+        on-leave (mf/use-fn #(reset! hover* false))
+        shown?   (and hover? (not is-open))]
+    [:div {:class (stl/css-case :marker true
+                                :is-hovered shown?)
+           :style (screen-style position zoom)
+           :on-pointer-enter on-enter
+           :on-pointer-leave on-leave}
+     children
+     (when shown? preview)]))
+
 (mf/defc thread-marker*
   {::mf/private true}
   [{:keys [thread position zoom is-open]}]
-  (let [on-click
+  (let [owner (mf/with-memo [thread]
+                (dcmt/get-owner thread))
+        on-click
         (mf/use-fn
          (mf/deps thread)
          (fn [event]
            (dom/stop-propagation event)
            (st/emit! (dcmt/open-thread thread))))]
-    [:> review-marker* {:class (stl/css :marker)
-                        :style (screen-style position zoom)
-                        :label (str (:seqn thread))
-                        :state (cond is-open "active"
-                                     (:is-resolved thread) "resolved"
-                                     :else "default")
-                        :aria-label (tr "workspace.review.marker.comment" (:seqn thread))
-                        :on-click on-click}]))
+    [:> marker-slot* {:position position
+                      :zoom zoom
+                      :is-open is-open
+                      :preview (mf/html [:> cmt/thread-preview* {:thread thread :owner owner}])}
+     [:> review-marker* {:label (str (:seqn thread))
+                         :state (cond is-open "active"
+                                      (:is-resolved thread) "resolved"
+                                      :else "default")
+                         :aria-label (tr "workspace.review.marker.comment" (:seqn thread))
+                         :on-click on-click}]]))
 
 (mf/defc task-marker*
+  "The mark of `tasks`: a task on its own, or the tasks of a thread on the
+  same layer, which open as that thread."
   {::mf/private true}
-  [{:keys [task position zoom is-open]}]
-  (let [on-click
+  [{:keys [tasks position zoom is-open]}]
+  (let [task (first tasks)
+        on-click
         (mf/use-fn
          (mf/deps task)
          (fn [event]
            (dom/stop-propagation event)
            (st/emit! (dwtk/open-task (:id task)))))]
-    [:> review-marker* {:class (stl/css :marker)
-                        :style (screen-style position zoom)
-                        :type "task"
-                        :state (cond is-open "active"
-                                     (dwtk/lost? task) "lost"
-                                     :else "default")
-                        :aria-label (tr "workspace.review.marker.task" (:title task))
-                        :on-click on-click}]))
+    [:> marker-slot* {:position position
+                      :zoom zoom
+                      :is-open is-open
+                      :preview (mf/html [:> rvt/tasks-preview* {:tasks tasks}])}
+     [:> review-marker* {:type "task"
+                         :state (cond is-open "active"
+                                      (some dwtk/lost? tasks) "lost"
+                                      :else "default")
+                         :aria-label (tr "workspace.review.marker.task" (:title task))
+                         :on-click on-click}]]))
+
+(defn- group-task-marks
+  "The marks of the tasks of a page: one per task on its own, and one per
+  layer for the tasks of a thread, which all open the same thread."
+  [tasks]
+  (->> (group-by (fn [{:keys [id thread-id shape-id]}]
+                   (if (some? thread-id) [thread-id shape-id] id))
+                 tasks)
+       (vals)
+       (mapv #(vec (sort-by :created-at %)))))
+
+(mf/defc review-markers*
+  "The marks of the page `page-id`: the threads the review layer draws
+  (`threads`) and the open tasks, the area of the open thread or draft,
+  and the panel of the open task or of the new one."
+  [{:keys [threads page-id zoom open-id draft]}]
+  (let [objects     (mf/deref refs/workspace-page-objects)
+        tasks       (mf/deref refs/tasks)
+        tasks-local (mf/deref refs/tasks-local)
+        open-task   (some->> (:open tasks-local) (get tasks))
+        new-task    (:new tasks-local)
+
+        task-thread-ids
+        (mf/with-memo [tasks]
+          (into #{} (keep :thread-id) (vals tasks)))
+
+        task-marks
+        (mf/with-memo [tasks page-id]
+          (->> (vals tasks)
+               (remove dwtk/history?)
+               (remove dwtk/closed?)
+               (filter #(= page-id (:page-id %)))
+               (group-task-marks)))
+
+        open-thread (some #(when (= open-id (:id %)) %) threads)]
+
+    [:*
+     ;; the area of the thread open now, or of the draft being written
+     (when (= :area (:anchor-type open-thread))
+       [:> area-box* {:area (:area open-thread) :zoom zoom}])
+     (when (= :area (get-in draft [:anchor :type]))
+       [:> area-box* {:area (get-in draft [:anchor :area]) :zoom zoom}])
+
+     (for [thread threads]
+       (when-not (contains? task-thread-ids (:id thread))
+         (when-let [position (thread-position objects thread)]
+           [:> thread-marker* {:key (dm/str (:id thread))
+                               :thread thread
+                               :position position
+                               :zoom zoom
+                               :is-open (= open-id (:id thread))}])))
+
+     (for [mark task-marks]
+       (let [task (first mark)]
+         (when-let [position (dwtk/anchor-position objects task)]
+           [:> task-marker* {:key (dm/str (:id task))
+                             :tasks mark
+                             :position position
+                             :zoom zoom
+                             :is-open (or (= (:id task) (:id open-task))
+                                          (and (some? (:thread-id task))
+                                               (= open-id (:thread-id task))))}])))
+
+     ;; a task without a thread opens as a panel by its mark
+     (when (and (some? open-task)
+                (nil? (:thread-id open-task))
+                (= page-id (:page-id open-task)))
+       (when-let [position (dwtk/anchor-position objects open-task)]
+         [:> rvt/task-panel* {:key (dm/str (:id open-task))
+                              :task open-task
+                              :style (panel-style position zoom)}]))
+
+     (when (and (some? new-task) (= page-id (:page-id new-task)))
+       (when-let [position (or (dwtk/anchor-position objects new-task)
+                               (:position new-task))]
+         [:> rvt/new-task-form* {:key (dm/str (:shape-id new-task) (:comment-id new-task))
+                                 :params new-task
+                                 :style (panel-style position zoom
+                                                     (if (some? (:thread-id new-task))
+                                                       thread-width
+                                                       0))}]))]))
 
 (mf/defc area-layer*
   "The area tool of the review mode, over the whole comments layer: drag on
@@ -168,72 +277,3 @@
                             :top (dm/str (* (- y (:y vbox)) zoom) "px")
                             :width (dm/str (* (mth/abs (- (:x current) (:x start))) zoom) "px")
                             :height (dm/str (* (mth/abs (- (:y current) (:y start))) zoom) "px")}}]))]))
-
-(mf/defc review-markers*
-  "The marks of the page `page-id`: the threads the review layer draws
-  (`threads`) and the open tasks, the area of the open thread or draft,
-  and the panel of the open task or of the new one."
-  [{:keys [threads page-id zoom open-id draft]}]
-  (let [objects     (mf/deref refs/workspace-page-objects)
-        tasks       (mf/deref refs/tasks)
-        tasks-local (mf/deref refs/tasks-local)
-        open-task   (some->> (:open tasks-local) (get tasks))
-        new-task    (:new tasks-local)
-
-        task-thread-ids
-        (mf/with-memo [tasks]
-          (into #{} (keep :thread-id) (vals tasks)))
-
-        page-tasks
-        (mf/with-memo [tasks page-id]
-          (->> (vals tasks)
-               (remove dwtk/history?)
-               (remove dwtk/closed?)
-               (filter #(= page-id (:page-id %)))))
-
-        open-thread (some #(when (= open-id (:id %)) %) threads)]
-
-    [:*
-     ;; the area of the thread open now, or of the draft being written
-     (when (= :area (:anchor-type open-thread))
-       [:> area-box* {:area (:area open-thread) :zoom zoom}])
-     (when (= :area (get-in draft [:anchor :type]))
-       [:> area-box* {:area (get-in draft [:anchor :area]) :zoom zoom}])
-
-     (for [thread threads]
-       (when-not (contains? task-thread-ids (:id thread))
-         (when-let [position (thread-position objects thread)]
-           [:> thread-marker* {:key (dm/str (:id thread))
-                               :thread thread
-                               :position position
-                               :zoom zoom
-                               :is-open (= open-id (:id thread))}])))
-
-     (for [task page-tasks]
-       (when-let [position (dwtk/anchor-position objects task)]
-         [:> task-marker* {:key (dm/str (:id task))
-                           :task task
-                           :position position
-                           :zoom zoom
-                           :is-open (or (= (:id task) (:id open-task))
-                                        (and (some? (:thread-id task))
-                                             (= open-id (:thread-id task))))}]))
-
-     ;; a task without a thread opens as a panel by its mark
-     (when (and (some? open-task)
-                (nil? (:thread-id open-task))
-                (= page-id (:page-id open-task)))
-       (when-let [position (dwtk/anchor-position objects open-task)]
-         [:> rvt/task-panel* {:key (dm/str (:id open-task))
-                              :task open-task
-                              :style (panel-style position zoom)}]))
-
-     (when (and (some? new-task) (= page-id (:page-id new-task)))
-       (when-let [position (or (dwtk/anchor-position objects new-task)
-                               (:position new-task))]
-         [:> rvt/new-task-form* {:key (dm/str (:shape-id new-task) (:thread-id new-task))
-                                 :params new-task
-                                 :style (panel-style position zoom
-                                                     (if (some? (:thread-id new-task))
-                                                       thread-width
-                                                       0))}]))]))

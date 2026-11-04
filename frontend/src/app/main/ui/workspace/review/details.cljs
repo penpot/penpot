@@ -42,6 +42,7 @@
    [app.main.ui.workspace.review.common :as rvc]
    [app.main.ui.workspace.review.tasks :as rvt]
    [app.main.ui.workspace.sidebar.branch-review.common :as brc]
+   [app.main.ui.workspace.sidebar.branch-review.layout :as brl]
    [app.main.ui.workspace.sidebar.branch-review.previews :as brp]
    [app.main.ui.workspace.sidebar.pull-requests :as prui :refer [pr-state-badge* dialog-header*]]
    [app.util.dom :as dom]
@@ -159,7 +160,9 @@
      (when adding?
        [:> select* {:options (into [{:id "" :label (tr "workspace.review.details.pick-reviewer")}] options)
                     :default-selected ""
-                    :on-change on-select}])
+                    :on-change on-select
+                    :has-portal true
+                    :wrapper-class (stl/css :reviewer-picker)}])
      (if (empty? (:reviews pr))
        [:> text* {:as "p" :typography t/body-small :class (stl/css :muted)}
         (tr "workspace.review.details.no-reviewers")]
@@ -276,17 +279,17 @@
   (case kind :added "success" :deleted "error" "info"))
 
 (defn- display-attr
-  "A property of a change as the hover card reads it: the token behind a
-  value when there is one."
+  "A property of a change as the hover card shows it: its label and its
+  values before and after, the token behind a value when there is one."
   [attr [before after] [tokens-before tokens-after]]
   (let [token-key (case attr :fills :fill :strokes :stroke-color nil)]
     [(brc/attr-label attr)
-     (or (some-> token-key tokens-before) (brc/display-val before))
-     (or (some-> token-key tokens-after) (brc/display-val after))]))
+     (or (get tokens-before token-key) before)
+     (or (get tokens-after token-key) after)]))
 
 (def ^:private card-width
   "The width of the card of a change, as its style sets it."
-  252)
+  320)
 
 (defn- card-style
   "Put the card beside the row box `rect` (viewport coordinates), on its
@@ -330,9 +333,9 @@
             [:* {:key (name attr)}
              [:dt {:class (stl/css :muted)} label]
              [:dd {:class (stl/css :attr-value)}
-              [:span {:class (stl/css :muted)} before]
-              [:> icon* {:icon-id i/arrow-right :size "s"}]
-              [:span {:class (stl/css :strong)} after]]]))])
+              [:> brl/value-chip* {:value before :is-old true}]
+              [:> icon* {:icon-id i/arrow-long-right :size "s" :class (stl/css :attr-arrow)}]
+              [:> brl/value-chip* {:value after}]]]))])
      (when (seq linked)
        [:div {:class (stl/css :linked)}
         [:> text* {:as "span" :typography t/body-small :class (stl/css :section-title)}
@@ -536,7 +539,7 @@
          [:> task-status* {:key status
                            :status status
                            :label (tr "workspace.review.label-count" (rvc/status-label status) (get counts status 0))}])]]
-     [:> progress-bar* {:value (count closed-tasks) :total (count tasks) :class (stl/css :mini-bar :wide-bar)}]
+     [:> progress-bar* {:value (count closed-tasks) :total (count tasks) :class (stl/css :wide-bar)}]
 
      (if (empty? tasks)
        [:> empty-state* {:icon i/view-as-list :text (tr "workspace.tasks.empty")}]

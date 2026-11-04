@@ -96,13 +96,9 @@
 (declare ^:private setup-cursor*)
 
 (defn setup-cursor [cursor alt? mod? space? panning drawing-tool drawing-path? path-editing? path-drag-cursor z? workspace-read-only? can-alt-duplicate?]
-  ;; the task tool of a design review rides on the comments tool, with a
-  ;; cursor of its own
-  ;; both refs are read on every render: a hook never goes behind a
-  ;; condition
-  (let [preview    (mf/deref refs/pull-request-preview)
-        local      (mf/deref refs/review-local)
-        task-tool? (and (some? preview) (= :task (:tool local)))]
+  ;; the task tool rides on the comments tool, with a cursor of its own
+  (let [local      (mf/deref refs/review-local)
+        task-tool? (= :task (:tool local))]
     (setup-cursor* cursor alt? mod? space? panning drawing-tool drawing-path? path-editing? path-drag-cursor z? workspace-read-only? can-alt-duplicate? task-tool?)))
 
 (defn- setup-cursor* [cursor alt? mod? space? panning drawing-tool drawing-path? path-editing? path-drag-cursor z? workspace-read-only? can-alt-duplicate? task-tool?]

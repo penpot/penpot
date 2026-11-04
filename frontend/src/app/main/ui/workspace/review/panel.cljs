@@ -29,9 +29,9 @@
    [app.main.ui.ds.product.avatar :refer [avatar*]]
    [app.main.ui.ds.product.comment-card :refer [comment-card*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
-   [app.main.ui.ds.product.filter-chip :refer [filter-chip*]]
    [app.main.ui.ds.product.layer-chip :refer [layer-chip*]]
    [app.main.ui.workspace.review.common :as rvc]
+   [app.main.ui.workspace.review.filter-menu :refer [filter-menu*]]
    [app.main.ui.workspace.review.tasks :as rvt]
    [app.main.ui.workspace.sidebar.pull-requests :as prui :refer [pr-state-badge*]]
    [app.util.dom :as dom]
@@ -40,22 +40,15 @@
 
 ;; --- Comments
 
-(defn- filter-threads
-  [threads kind profile-id]
-  (case kind
-    :resolved (filter :is-resolved threads)
-    :mine     (filter #(or (= profile-id (:owner-id %))
-                           (contains? (:participants %) profile-id))
-                      threads)
-    (remove :is-resolved threads)))
-
 (mf/defc thread-card*
   "A comment thread of the review: its number and board, who wrote it and
-  when, what it points at, its text and its replies."
+  when, what it points at, its text and its replies. With `show-review`,
+  it names the design review it belongs to."
   {::mf/private true}
-  [{:keys [thread objects is-open]}]
+  [{:keys [thread objects is-open show-review]}]
   (let [owner   (d/without-nils (dcmt/get-owner thread))
         replies (dec (or (:count-comments thread) 1))
+        review? (some? (:pull-request-id thread))
 
         on-click
         (mf/use-fn
@@ -77,6 +70,10 @@
                        :anchor (mf/html
                                 [:> layer-chip* {:label (rvc/thread-anchor-label objects thread)
                                                  :icon (rvc/thread-anchor-icon thread)}])
+                       :review (when (and show-review review?)
+                                 (or (:pull-request-title thread)
+                                     (tr "workspace.review.design-review")))
+                       :is-review review?
                        :is-open is-open
                        :is-resolved (:is-resolved thread)
                        :on-click on-click}
@@ -84,20 +81,17 @@
 
 (mf/defc comments-tab*
   "The comment threads `threads`: filters and the cards grouped by board
-  (by page and board with `show-page`)."
-  [{:keys [threads show-page]}]
+  (by page and board with `show-page`). With `show-review`, each card names
+  the design review it belongs to."
+  [{:keys [threads show-page show-review]}]
   (let [profile  (mf/deref refs/profile)
-        local    (mf/deref refs/review-local)
         clocal   (mf/deref refs/comments-local)
         data     (mf/deref refs/workspace-data)
-        kind     (get local :comment-filter :open)
+        mode     (get clocal :mode :all)
 
-        counts   (mf/with-memo [threads]
-                   {:open (count (remove :is-resolved threads))
-                    :resolved (count (filter :is-resolved threads))})
-
-        shown    (mf/with-memo [threads kind profile]
-                   (->> (filter-threads threads kind (:id profile))
+        ;; the same filters as the marks on the canvas
+        shown    (mf/with-memo [threads clocal profile]
+                   (->> (dcmt/apply-filters clocal profile threads)
                         (sort-by :seqn)))
 
         groups   (mf/with-memo [shown]
@@ -105,26 +99,26 @@
                         (group-by (juxt :page-id :frame-id))
                         (sort-by (fn [[_ items]] (:seqn (first items))))))
 
-        on-filter
+        options  [{:id :all :label (tr "labels.show-all-comments")}
+                  {:id :yours :label (tr "labels.show-your-comments")}
+                  {:id :mentions :label (tr "labels.show-mentions")}]
+
+        on-select
+        (mf/use-fn #(st/emit! (dcmt/update-filters {:mode %})))
+
+        on-toggle
         (mf/use-fn
-         (fn [event]
-           (let [kind (-> (dom/get-current-target event) (dom/get-data "filter") keyword)]
-             (st/emit! (dwrv/set-comment-filter kind)))))]
+         (mf/deps clocal)
+         (fn [_]
+           (st/emit! (dcmt/update-filters {:show (if (= :pending (:show clocal)) :all :pending)}))))]
 
     [:div {:class (stl/css :tab-content)}
-     [:div {:class (stl/css :filters) :role "group" :aria-label (tr "workspace.review.comments.filters")}
-      [:> filter-chip* {:label (tr "workspace.review.comments.filter.open" (:open counts))
-                        :is-selected (= kind :open)
-                        :data-filter "open"
-                        :on-click on-filter}]
-      [:> filter-chip* {:label (tr "workspace.review.comments.filter.resolved" (:resolved counts))
-                        :is-selected (= kind :resolved)
-                        :data-filter "resolved"
-                        :on-click on-filter}]
-      [:> filter-chip* {:label (tr "workspace.review.comments.filter.mine")
-                        :is-selected (= kind :mine)
-                        :data-filter "mine"
-                        :on-click on-filter}]]
+     [:> filter-menu* {:options options
+                       :selected mode
+                       :toggle-label (tr "labels.hide-resolved-comments")
+                       :is-toggled (= :pending (:show clocal))
+                       :on-select on-select
+                       :on-toggle on-toggle}]
 
      (if (empty? groups)
        [:div {:class (stl/css :empty)}
@@ -144,29 +138,38 @@
                [:> thread-card* {:key (dm/str (:id thread))
                                  :thread thread
                                  :objects objects
+                                 :show-review show-review
                                  :is-open (= (:id thread) (:open clocal))}])]))])]))
 
 ;; --- Tasks
 
 (mf/defc tasks-tab*
   "The tasks of the review (`pull-request-id`), or of the file when there
-  is none: its progress, filters and list."
-  [{:keys [tasks pull-request-id grouped]}]
+  is none: its progress, filters and list. With `show-review`, each task
+  names the design review it belongs to."
+  [{:keys [tasks pull-request-id grouped show-review]}]
   (let [profile  (mf/deref refs/profile)
         local    (mf/deref refs/review-local)
         selected (mf/deref refs/selected-shapes)
         objects  (mf/deref refs/workspace-page-objects)
         page-id  (mf/deref refs/current-page-id)
         kind     (get local :task-filter :all)
+        hide?    (true? (:hide-closed-tasks local))
 
-        shown    (mf/with-memo [tasks kind profile]
-                   (rvt/filter-tasks tasks kind (:id profile)))
+        shown    (mf/with-memo [tasks kind hide? profile]
+                   (cond->> (rvt/filter-tasks tasks kind (:id profile))
+                     hide? (remove dwtk/closed?)))
 
-        on-filter
-        (mf/use-fn
-         (fn [event]
-           (let [kind (-> (dom/get-current-target event) (dom/get-data "filter") keyword)]
-             (st/emit! (dwrv/set-task-filter kind)))))
+        options  [{:id :all :label (tr "workspace.tasks.view.all")}
+                  {:id :mine :label (tr "workspace.tasks.view.mine")}
+                  {:id :open :label (tr "workspace.tasks.view.open")}
+                  {:id :to-verify :label (tr "workspace.tasks.view.to-verify")}]
+
+        on-select
+        (mf/use-fn #(st/emit! (dwrv/set-task-filter %)))
+
+        on-toggle
+        (mf/use-fn #(st/emit! (dwrv/toggle-hide-closed-tasks)))
 
         on-to-verify
         (mf/use-fn #(st/emit! (dwrv/set-task-filter :to-verify)))
@@ -188,18 +191,12 @@
     [:div {:class (stl/css :tab-content)}
      [:> rvt/progress* {:tasks tasks :on-to-verify on-to-verify}]
 
-     [:div {:class (stl/css :filters) :role "group" :aria-label (tr "workspace.tasks.filters")}
-      (for [[id label] [[:all (tr "workspace.tasks.filter.all" (count tasks))]
-                        [:open (tr "workspace.tasks.filter.open" (rvt/count-by dwtk/to-do? tasks))]
-                        [:mine (tr "workspace.tasks.filter.mine"
-                                   (rvt/count-by #(= (:id profile) (:assignee-id %)) tasks))]
-                        [:to-verify (tr "workspace.tasks.filter.to-verify"
-                                        (rvt/count-by dwtk/to-verify? tasks))]]]
-        [:> filter-chip* {:key (name id)
-                          :label label
-                          :is-selected (= kind id)
-                          :data-filter (name id)
-                          :on-click on-filter}])]
+     [:> filter-menu* {:options options
+                       :selected kind
+                       :toggle-label (tr "workspace.tasks.view.hide-closed")
+                       :is-toggled hide?
+                       :on-select on-select
+                       :on-toggle on-toggle}]
 
      (cond
        (empty? shown)
@@ -215,10 +212,10 @@
             (if (= :other id)
               (tr "workspace.tasks.group.other")
               (tr "workspace.tasks.group.review" title))]
-           [:> rvt/task-list* {:tasks tasks}]])]
+           [:> rvt/task-list* {:tasks tasks :show-review show-review}]])]
 
        :else
-       [:> rvt/task-list* {:tasks shown}])
+       [:> rvt/task-list* {:tasks shown :show-review show-review}])
 
      [:> button* {:variant "secondary"
                   :icon i/add

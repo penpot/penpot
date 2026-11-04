@@ -98,6 +98,24 @@
   gap: var(--sp-s);
 }
 
+// --- The card of a mark on the canvas
+
+.task-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-xs);
+}
+
+.task-preview-title {
+  color: var(--color-foreground-primary);
+  overflow-wrap: anywhere;
+}
+
+.task-preview-assignee {
+  color: var(--color-foreground-secondary);
+}
+
 // --- Floating panels on the canvas
 
 .floating-panel {

@@ -17,9 +17,11 @@ One task of a list: its title over its state and the layer it points at.
 
 ## Variants
 
-`is-selected` outlines the task open on the canvas.
+`is-selected` outlines the task open on the canvas, in the review colour
+with `is-review`. `review` shows the name of the design review it belongs to.
 
 <Canvas of={TaskRow.Selected} />
+<Canvas of={TaskRow.InAReview} />
 
 `is-layer-lost` marks a task whose layer was deleted: the chip of the
 layer turns orange and shows a warning.

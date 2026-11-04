@@ -31,6 +31,10 @@
   &.is-selected {
     --task-row-border-color: var(--color-accent-primary);
   }
+
+  &.is-selected.is-review {
+    --task-row-border-color: var(--color-accent-info);
+  }
 }
 
 .header {

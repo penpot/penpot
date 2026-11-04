@@ -1,0 +1,28 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/mixins.scss" as *;
+@use "ds/typography.scss" as *;
+
+.review-label {
+  @include use-typography("body-small");
+
+  display: inline-flex;
+  flex-shrink: 0;
+  align-self: flex-start;
+  align-items: center;
+  gap: var(--sp-xxs);
+  max-inline-size: 100%;
+  padding: 0 var(--sp-xs);
+  border-radius: $br-4;
+  background-color: var(--color-background-info);
+  color: var(--color-accent-info);
+}
+
+.text {
+  @include text-ellipsis;
+}

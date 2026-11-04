@@ -33,6 +33,10 @@
   }
 
   &.is-open {
+    --comment-card-border-color: var(--color-accent-primary);
+  }
+
+  &.is-open.is-review {
     --comment-card-border-color: var(--color-accent-info);
   }
 
@@ -61,6 +65,19 @@
 }
 
 .muted {
+  color: var(--color-foreground-secondary);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-s);
+  inline-size: 100%;
+}
+
+.replies {
+  flex-shrink: 0;
   color: var(--color-foreground-secondary);
 }
 

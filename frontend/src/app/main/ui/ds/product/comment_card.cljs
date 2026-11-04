@@ -10,6 +10,7 @@
   (:require
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
+   [app.main.ui.ds.product.review-label :refer [review-label*]]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
@@ -23,16 +24,20 @@
    [:replies :string]
    [:avatar {:optional true} [:maybe :any]]
    [:anchor {:optional true} [:maybe :any]]
+   [:review {:optional true} [:maybe :string]]
+   [:is-review {:optional true} [:maybe :boolean]]
    [:is-open {:optional true} [:maybe :boolean]]
    [:is-resolved {:optional true} [:maybe :boolean]]
    [:on-click {:optional true} [:maybe fn?]]])
 
 (mf/defc comment-card*
   "One comment of a list: where it is, who wrote it and when (`avatar`, an
-  avatar), what it points at (`anchor`, a chip), its text (`children`) and
-  its replies. The whole card opens it."
+  avatar), its text (`children`), and its replies beside what it points at
+  (`anchor`, a chip). The whole card opens it. `review` names the design review
+  it belongs to, and `is-review` outlines it open in the review colour."
   {::mf/schema schema:comment-card}
-  [{:keys [class location author time replies avatar anchor is-open is-resolved on-click children]
+  [{:keys [class location author time replies avatar anchor review is-review is-open is-resolved
+           on-click children]
     :rest props}]
   (let [on-key-down (mf/use-fn
                      (mf/deps on-click)
@@ -46,6 +51,7 @@
         props       (mf/spread-props props
                                      {:class [class (stl/css-case :comment-card true
                                                                   :is-open is-open
+                                                                  :is-review is-review
                                                                   :is-resolved is-resolved)]
                                       :role "button"
                                       :tab-index 0
@@ -53,11 +59,14 @@
                                       :on-key-down on-key-down})]
     [:> :div props
      [:> text* {:as "span" :typography t/body-small :class (stl/css :location)} location]
+     (when review
+       [:> review-label* {:label review}])
      [:div {:class (stl/css :author)}
       avatar
       [:div {:class (stl/css :identity)}
        [:> text* {:as "span" :typography t/body-small :class (stl/css :name)} author]
        [:> text* {:as "span" :typography t/body-small :class (stl/css :muted)} time]]]
-     anchor
      [:div {:class (stl/css :content)} children]
-     [:> text* {:as "span" :typography t/body-small :class (stl/css :muted)} replies]]))
+     [:div {:class (stl/css :footer)}
+      [:> text* {:as "span" :typography t/body-small :class (stl/css :replies)} replies]
+      anchor]]))

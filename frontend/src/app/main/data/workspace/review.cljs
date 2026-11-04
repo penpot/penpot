@@ -22,6 +22,7 @@
    [app.main.data.comments :as dcmt]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.layout :as dwl]
@@ -45,6 +46,13 @@
 
 ;; --- Tools
 
+(defn- forget-task-tool
+  []
+  (ptk/reify ::forget-task-tool
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-review-local dissoc :tool))))
+
 (defn set-tool
   "Use one of the review `tools`. The commenting tools and the task tool
   take the clicks of the canvas, so they all ride on the comments drawing
@@ -59,12 +67,21 @@
           (update :comments-local dissoc :draft)))
 
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state stream]
       (if (= tool :move)
         (rx/of (dwdc/clear-drawing))
         ;; what the tool makes must be seen: comments and tasks show
-        (rx/of (dwd/select-for-drawing :comments)
-               (dwl/toggle-layout-flag :display-comments :force? true))))))
+        (rx/merge
+         (rx/of (dwd/select-for-drawing :comments)
+                (dwl/toggle-layout-flag :display-comments :force? true))
+         ;; outside a review the task tool is for one task: leaving it
+         ;; gives the clicks back to the comments
+         (when (and (= tool :task) (not (reviewing? state)))
+           (->> stream
+                (rx/filter #(or (dwc/interrupt? %)
+                                (ptk/type? ::dwdc/clear-drawing %)))
+                (rx/take 1)
+                (rx/map (fn [_] (forget-task-tool))))))))))
 
 (defn get-tool
   [state]
@@ -82,14 +99,6 @@
     (update [_ state]
       (update state :workspace-review-local assoc :panel-tab tab))))
 
-(defn set-comment-filter
-  [filter]
-  (assert (contains? #{:open :resolved :mine} filter) "expected a comment filter")
-  (ptk/reify ::set-comment-filter
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-review-local assoc :comment-filter filter))))
-
 (defn set-task-filter
   [filter]
   (assert (contains? #{:all :open :mine :to-verify} filter) "expected a task filter")
@@ -97,6 +106,13 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-review-local assoc :task-filter filter))))
+
+(defn toggle-hide-closed-tasks
+  []
+  (ptk/reify ::toggle-hide-closed-tasks
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-review-local :hide-closed-tasks] not))))
 
 ;; --- Creating from the canvas
 
@@ -110,7 +126,8 @@
   "A click on the canvas with a review tool: the comment tool starts a
   thread on the layer under the pointer (on the spot of the board when
   there is no layer), the task tool starts a task on that layer. The
-  area tool draws with the pointer instead (`start-area-comment`)."
+  area tool draws with the pointer instead (`start-area-comment`).
+  Outside a review the task tool is also in use for one click."
   [position]
   (ptk/reify ::handle-canvas-click
     ptk/WatchEvent
@@ -131,15 +148,19 @@
 
           ;; on the empty canvas the task points at the canvas itself
           :task
-          (rx/of (dwtk/start-new-task
-                  {:page-id page-id
-                   :frame-id (cond
-                               (nil? shape)              uuid/zero
-                               (= :frame (:type shape))  (:id shape)
-                               :else                     (:frame-id shape))
-                   :shape-id (:id shape)
-                   :position position
-                   :pull-request-id pr-id}))
+          (rx/concat
+           (rx/of (dwtk/start-new-task
+                   {:page-id page-id
+                    :frame-id (cond
+                                (nil? shape)              uuid/zero
+                                (= :frame (:type shape))  (:id shape)
+                                :else                     (:frame-id shape))
+                    :shape-id (:id shape)
+                    :position position
+                    :pull-request-id pr-id}))
+           (if (nil? pr-id)
+             (rx/of (forget-task-tool))
+             (rx/empty)))
 
           (rx/empty))))))
 

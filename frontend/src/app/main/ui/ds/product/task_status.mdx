@@ -11,7 +11,7 @@ import * as TaskStatus from "./task_status.stories";
 
 # TaskStatus
 
-The state of a task: a dot in the colour of the state before its name.
+The state of a task: a word in the colour of the state.
 
 <Canvas of={TaskStatus.AllStatuses} />
 
@@ -27,6 +27,6 @@ The state of a task: a dot in the colour of the state before its name.
 
 ## Usage guidelines (design)
 
-Open and won't do are neutral. Done is blue: the task waits for someone
-to verify it. Reopened is orange: it needs work again. Verified is green
-and closes the task.
+Open is blue: the task needs work. Done is green: it waits for someone to
+verify it. Reopened is orange: it needs work again. Verified is purple and
+closes the task. Won't do is red and drops it.

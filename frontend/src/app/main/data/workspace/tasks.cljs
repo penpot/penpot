@@ -6,8 +6,9 @@
 
 (ns app.main.data.workspace.tasks
   "Data layer for tasks: a piece of work on a file, assigned to someone
-  and tied to a layer. A task may come from a comment thread (the thread
-  stays attached to it) and from a design review.
+  and tied to a layer. A task may come from a message of a comment thread
+  (the thread stays attached to it, and may hold several tasks) and from
+  a design review.
 
   The tasks of the open file live in `:workspace-tasks`, the events of a
   task (what the thread of the task shows between its comments) in
@@ -30,6 +31,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.viewport-wasm :as dwvw]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.util.i18n :refer [tr]]
@@ -73,10 +75,17 @@
   [task]
   (and (some? (:merge-id task)) (closed? task)))
 
-(defn get-task-of-thread
-  "The task a comment thread is attached to, if any."
+(defn get-tasks-of-thread
+  "The tasks a comment thread is attached to, oldest first."
   [tasks thread-id]
-  (d/seek #(= thread-id (:thread-id %)) (vals tasks)))
+  (->> (vals tasks)
+       (filter #(= thread-id (:thread-id %)))
+       (sort-by :created-at)))
+
+(defn get-task-of-comment
+  "The task a message of a comment thread became, if any."
+  [tasks comment-id]
+  (d/seek #(= comment-id (:comment-id %)) (vals tasks)))
 
 ;; --- Locating a task on the canvas
 
@@ -248,8 +257,9 @@
 (defn start-new-task
   "Open the form of a new task linked to a layer: `params` carries the
   page, board and layer (`page-id`, `frame-id`, `shape-id`) and,
-  optionally, the comment thread the task comes from (`thread-id`, with
-  its text as the first `title`) and the design review it belongs to."
+  optionally, the message of a comment thread the task comes from
+  (`thread-id` and `comment-id`, with its text as the first `title`) and
+  the design review it belongs to."
   [params]
   (ptk/reify ::start-new-task
     ptk/UpdateEvent
@@ -265,6 +275,15 @@
     (update [_ state]
       (update state :workspace-tasks-local dissoc :new))))
 
+(defn- task-created
+  "Keep a new task right away: opening it needs to know its thread, before
+  the tasks of the file are fetched again."
+  [task]
+  (ptk/reify ::task-created
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-tasks :data (:id task)] task))))
+
 (defn create-task
   "Create a task from the form. It opens once created."
   [{:keys [title] :as params}]
@@ -275,7 +294,7 @@
       (let [file-id (:current-file-id state)
             params  (-> params
                         (select-keys [:title :page-id :frame-id :shape-id :assignee-id
-                                      :pull-request-id :thread-id :position])
+                                      :pull-request-id :thread-id :comment-id :position])
                         (update :position #(some-> % (gpt/point)))
                         ;; the root of the page is the canvas: no layer
                         (update :shape-id #(when (not= uuid/zero %) %))
@@ -288,13 +307,14 @@
                            :in-review (some? (:pull-request-id params))}))
          (->> (rp/cmd! :create-task params)
               (rx/mapcat (fn [task]
-                           (rx/of (cancel-new-task)
+                           (rx/of (task-created task)
+                                  (cancel-new-task)
                                   (ntf/success (tr "workspace.tasks.created"))
                                   (fetch-tasks)
                                   (open-task (:id task)))))
               (rx/catch (fn [cause]
-                          (if (= :thread-already-has-task (:code (ex-data cause)))
-                            (rx/of (ntf/warn (tr "workspace.tasks.error.thread-has-task")))
+                          (if (= :comment-already-has-task (:code (ex-data cause)))
+                            (rx/of (ntf/warn (tr "workspace.tasks.error.comment-has-task")))
                             (rx/of (ntf/error (tr "workspace.tasks.error.generic"))))))))))))
 
 ;; --- Changing a task
@@ -562,7 +582,11 @@
                   (fn [{:keys [vbox] :as local}]
                     (update local :vbox assoc
                             :x (- (:x position) (/ (:width vbox) 2))
-                            :y (- (:y position) (/ (:height vbox) 2))))))))))
+                            :y (- (:y position) (/ (:height vbox) 2))))))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-sync-workspace-local-viewport! state))))
 
 ;; --- Counting
 

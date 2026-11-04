@@ -26,6 +26,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
+   [app.main.ui.ds.product.review-label :refer [review-label*]]
    [app.main.ui.hooks :as h]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -901,8 +902,6 @@
                                   :is-disabled disabled?}]]
       [:> mentions-panel*]]]))
 
-(declare make-comments-ref)
-
 (mf/defc comment-floating-thread-header*
   {::mf/private true}
   [{:keys [thread origin]}]
@@ -948,52 +947,12 @@
          (mf/deps options)
          (fn [event]
            (dom/stop-propagation event)
-           (st/emit! (dcm/hide-comment-options))))
-
-        tasks     (mf/deref refs/tasks)
-        task      (when (some? thread) (dwtk/get-task-of-thread tasks (:id thread)))
-        comments  (mf/deref (mf/with-memo [thread] (make-comments-ref (:id thread))))
-        can-task? (and (dwtk/enabled?)
-                       (not= origin :viewer)
-                       (some? thread)
-                       (nil? task))
-
-        ;; "Make it a task": the title comes from the first comment, the
-        ;; layer is the one the thread points at (its board otherwise)
-        on-make-task
-        (mf/use-fn
-         (mf/deps thread comments)
-         (fn [event]
-           (dom/stop-propagation event)
-           (let [first-comment (first (sort-by :created-at (vals comments)))
-                 text          (str/trim (str/replace (or (:content first-comment) (:content thread) "")
-                                                      #"@\[([^\]]*)\]\([^\)]*\)" "@$1"))]
-             (st/emit! (dwtk/start-new-task
-                        {:page-id (:page-id thread)
-                         :frame-id (:frame-id thread)
-                         :shape-id (if (= :layer (:anchor-type thread))
-                                     (:shape-id thread)
-                                     (:frame-id thread))
-                         :position (:position thread)
-                         :thread-id (:id thread)
-                         :pull-request-id (when (= "open" (:pull-request-status thread))
-                                            (:pull-request-id thread))
-                         :title (subs text 0 (min 250 (count text)))})))))]
+           (st/emit! (dcm/hide-comment-options))))]
 
     [:*
      [:div {:class (stl/css :floating-thread-header-left)}
-      (tr "labels.comment") " " [:span {:class (stl/css :grayed-text)} "#" (:seqn thread)]
-      (when (some? (:pull-request-id thread))
-        [:span {:class (stl/css :review-label)
-                :title (:pull-request-title thread)}
-         [:> icon* {:icon-id i/git-pull-request-arrow :size "s"}]
-         (or (:pull-request-title thread) (tr "workspace.review.design-review"))])]
+      (tr "labels.comment") " " [:span {:class (stl/css :grayed-text)} "#" (:seqn thread)]]
      [:div {:class (stl/css :floating-thread-header-right)}
-      (when can-task?
-        [:> icon-button* {:variant "ghost"
-                          :aria-label (tr "workspace.tasks.make-task")
-                          :on-click on-make-task
-                          :icon i/view-as-list}])
       (when (some? thread)
         [:> checkbox* {:class (stl/css :checkbox-wrapper)
                        :checked (:is-resolved thread)
@@ -1011,8 +970,12 @@
         (tr "labels.delete-comment-thread")]]]]))
 
 (mf/defc comment-floating-thread-item*
+  "A message of a thread. `thread` comes only with its first message, the
+  one that cannot be deleted on its own; `parent` is the thread of any
+  message. Each message may become a task, which `task-section` shows
+  under it."
   {::mf/private true}
-  [{:keys [comment thread]}]
+  [{:keys [comment thread parent origin task task-section]}]
   (let [owner    (dcm/get-owner comment)
         profile  (mf/deref refs/profile)
         options  (mf/deref ref:comments-local-options)
@@ -1052,7 +1015,33 @@
            (st/emit! (dcm/update-comment (assoc comment :content content)))))
 
         on-cancel
-        (mf/use-fn #(reset! edition? false))]
+        (mf/use-fn #(reset! edition? false))
+
+        can-task? (and (dwtk/enabled?)
+                       (not= origin :viewer)
+                       (nil? task))
+
+        ;; "Make it a task": the title comes from the message, the layer is
+        ;; the one the thread points at (its board otherwise)
+        on-make-task
+        (mf/use-fn
+         (mf/deps comment parent)
+         (fn [event]
+           (dom/stop-propagation event)
+           (let [text (str/trim (str/replace (or (:content comment) "")
+                                             #"@\[([^\]]*)\]\([^\)]*\)" "@$1"))]
+             (st/emit! (dwtk/start-new-task
+                        {:page-id (:page-id parent)
+                         :frame-id (:frame-id parent)
+                         :shape-id (if (= :layer (:anchor-type parent))
+                                     (:shape-id parent)
+                                     (:frame-id parent))
+                         :position (:position parent)
+                         :thread-id (:id parent)
+                         :comment-id (:id comment)
+                         :pull-request-id (when (= "open" (:pull-request-status parent))
+                                            (:pull-request-id parent))
+                         :title (subs text 0 (min 250 (count text)))})))))]
 
     [:div {:class (stl/css :floating-thread-item-wrapper)}
      [:div {:class (stl/css :floating-thread-item)}
@@ -1062,6 +1051,12 @@
         [:div {:class (stl/css :author-fullname)} (:fullname owner)]
         [:div {:class (stl/css :author-timeago)}
          (ct/timeago (:modified-at comment))]]
+
+       (when ^boolean can-task?
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.tasks.make-task")
+                           :on-click on-make-task
+                           :icon i/view-as-list}])
 
        (when (= (:id profile) (:id owner))
          [:> icon-button* {:variant "ghost"
@@ -1075,7 +1070,10 @@
                                  :on-submit on-submit
                                  :on-cancel on-cancel}]
          [:span {:class (stl/css :text)}
-          [:> comment-content* {:content (:content comment)}]])]]
+          [:> comment-content* {:content (:content comment)}]])]
+
+      (when (and (some? task) (some? task-section))
+        [:> task-section {:task task :thread parent}])]
 
      [:& dropdown {:show (= options (:id comment))
                    :on-close on-hide-options}
@@ -1120,13 +1118,17 @@
         comments-map  (mf/deref comments-ref)
 
         tasks         (mf/deref refs/tasks)
-        task          (dwtk/get-task-of-thread tasks thread-id)
 
         comments      (mf/with-memo [comments-map]
                         (->> (vals comments-map)
                              (sort-by :created-at)))
 
         first-comment (first comments)
+
+        ;; the tasks whose message is gone stay at the end of their thread
+        loose-tasks   (mf/with-memo [tasks thread-id comments-map]
+                        (->> (dwtk/get-tasks-of-thread tasks thread-id)
+                             (remove #(contains? comments-map (:comment-id %)))))
 
         on-submit
         (mf/use-fn
@@ -1174,16 +1176,29 @@
          [:> comment-floating-thread-header* {:thread thread
                                               :origin origin}]]
 
+        (when (some? (:pull-request-id thread))
+          [:> review-label* {:label (or (:pull-request-title thread)
+                                        (tr "workspace.review.design-review"))}])
+
+        ;; the workspace passes what a message shows about its task
         [:div {:class (stl/css :floating-thread-main)}
          [:> comment-floating-thread-item* {:comment first-comment
-                                            :thread thread}]
+                                            :thread thread
+                                            :parent thread
+                                            :origin origin
+                                            :task (dwtk/get-task-of-comment tasks (:id first-comment))
+                                            :task-section task-section}]
          (for [item (rest comments)]
            [:* {:key (dm/str (:id item))}
-            [:> comment-floating-thread-item* {:comment item}]])
+            [:> comment-floating-thread-item* {:comment item
+                                               :parent thread
+                                               :origin origin
+                                               :task (dwtk/get-task-of-comment tasks (:id item))
+                                               :task-section task-section}]])
 
-         ;; the workspace passes what a thread shows about its task
-         (when (and (some? task) (some? task-section))
-           [:> task-section {:task task :thread thread}])]
+         (when (some? task-section)
+           (for [task loose-tasks]
+             [:> task-section {:key (dm/str (:id task)) :task task :thread thread}]))]
 
         [:> comment-reply-form* {:on-submit on-submit
                                  :on-cancel (when (= origin :viewer) on-cancel)}]
@@ -1307,6 +1322,23 @@
       {:class (stl/css :avatar-lg)
        :variant "read"}
       num-threads]]))
+
+(mf/defc preview-card*
+  "The small card that hovering a mark on the canvas shows."
+  [{:keys [children]}]
+  [:div {:class (stl/css :floating-thread-wrapper
+                         :floating-preview-displacement
+                         :floating-preview-hover-card)}
+   [:div {:class (stl/css :floating-thread-item-wrapper)}
+    [:div {:class (stl/css :floating-thread-item)}
+     children]]])
+
+(mf/defc thread-preview*
+  "The small card of a comment thread."
+  [{:keys [thread owner]}]
+  [:> preview-card* {}
+   [:> comment-info* {:item thread
+                      :profile owner}]])
 
 (mf/defc comment-floating-bubble*
   {::mf/wrap [mf/memo]}
@@ -1476,13 +1508,7 @@
                    :else "read")}]]
 
      (when (:is-hover @state)
-       [:div {:class (stl/css :floating-thread-wrapper
-                              :floating-preview-displacement
-                              :floating-preview-hover-card)}
-        [:div {:class (stl/css :floating-thread-item-wrapper)}
-         [:div {:class (stl/css :floating-thread-item)}
-          [:> comment-info* {:item thread
-                             :profile owner}]]]])]))
+       [:> thread-preview* {:thread thread :owner owner}])]))
 
 (mf/defc comment-sidebar-thread-item*
   {::mf/private true}

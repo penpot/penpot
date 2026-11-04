@@ -191,6 +191,11 @@
   gap: var(--sp-s);
 }
 
+// the tab scrolls and would cut the focus outline of a select that fills it
+.reviewer-picker {
+  padding-inline: $b-1;
+}
+
 .reviewers {
   display: flex;
   flex-direction: column;
@@ -273,12 +278,15 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-s);
-  inline-size: $sz-252;
+  inline-size: px2rem(320);
   padding: var(--sp-m);
   border: $b-1 solid var(--color-accent-info);
   border-radius: $br-8;
   background-color: var(--color-background-primary);
   box-shadow: 0 0 px2rem(12) 0 var(--color-shadow-dark);
+
+  // it goes in a portal: nothing above it sets the color of its text
+  color: var(--color-foreground-primary);
   pointer-events: none;
 }
 
@@ -319,10 +327,16 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--sp-xs);
+  gap: var(--sp-s);
+  min-inline-size: 0;
   margin: 0;
   overflow: hidden;
   white-space: nowrap;
+}
+
+.attr-arrow {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
 }
 
 .linked {

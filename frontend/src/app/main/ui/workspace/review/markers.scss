@@ -12,6 +12,11 @@
   // the mark is centered on its point
   transform: translate(-50%, -50%);
   pointer-events: auto;
+
+  // the card of a hovered mark goes over the other marks
+  &.is-hovered {
+    z-index: var(--z-index-panels);
+  }
 }
 
 // the area a thread points at: the review blue at a tenth of its strength,

@@ -132,6 +132,10 @@
             (rx/empty)
             (rx/of (dwrv/handle-canvas-click position)))
 
+          ;; outside a review, "New task" arms the task tool for one click
+          (= :task (dwrv/get-tool state))
+          (rx/of (dwrv/handle-canvas-click position))
+
           :else
           (let [page-id (:current-page-id state)
                 file-id (:current-file-id state)

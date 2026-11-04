@@ -282,6 +282,55 @@
         (t/is (= 2 (:comment-thread-seqn (th/db-get :file {:id (:id file)}
                                                     {::db/remove-deleted false}))))))))
 
+(t/deftest each-message-of-a-thread-may-be-a-task
+  (with-redefs [cf/flags flags]
+    (let [{:keys [author page-id branch-file-id]} (setup-review)
+          thread   (:result (th/command! {::th/type :create-comment-thread
+                                          ::rpc/profile-id (:id author)
+                                          :file-id branch-file-id
+                                          :page-id page-id
+                                          :frame-id uuid/zero
+                                          :position (gpt/point 0)
+                                          :content "fix the radius"}))
+          reply    (:result (th/command! {::th/type :create-comment
+                                          ::rpc/profile-id (:id author)
+                                          :thread-id (:id thread)
+                                          :content "and the shadow"}))
+          messages (:result (th/command! {::th/type :get-comments
+                                          ::rpc/profile-id (:id author)
+                                          :thread-id (:id thread)}))
+          first-id (:id (first (sort-by :created-at messages)))
+          from     (fn [comment-id]
+                     (create-task* author {:file-id branch-file-id
+                                           :page-id page-id
+                                           :thread-id (:id thread)
+                                           :comment-id comment-id}))]
+
+      (t/testing "a thread holds a task per message"
+        (t/is (nil? (:error (from first-id))))
+        (t/is (nil? (:error (from (:id reply)))))
+        (let [tasks (:result (th/command! {::th/type :get-file-tasks
+                                           ::rpc/profile-id (:id author)
+                                           :file-id branch-file-id}))]
+          (t/is (= #{first-id (:id reply)} (into #{} (map :comment-id) tasks)))))
+
+      (t/testing "a message holds one task"
+        (t/is (= :comment-already-has-task (-> (from first-id) :error ex-data :code))))
+
+      (t/testing "a message of another thread is refused"
+        (let [other (:result (th/command! {::th/type :create-comment-thread
+                                           ::rpc/profile-id (:id author)
+                                           :file-id branch-file-id
+                                           :page-id page-id
+                                           :frame-id uuid/zero
+                                           :position (gpt/point 0)
+                                           :content "another one"}))
+              out   (create-task* author {:file-id branch-file-id
+                                          :page-id page-id
+                                          :thread-id (:id other)
+                                          :comment-id (:id reply)})]
+          (t/is (= :comment-not-in-thread (-> out :error ex-data :code))))))))
+
 (t/deftest task-on-the-canvas-keeps-its-position
   (with-redefs [cf/flags flags]
     (let [{:keys [author page-id branch-file-id]} (setup-review)

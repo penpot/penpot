@@ -10330,22 +10330,6 @@ msgid "workspace.review.comments.empty"
 msgstr "Todavía no hay comentarios."
 
 #: src/app/main/ui/workspace/review/panel.cljs
-msgid "workspace.review.comments.filter.mine"
-msgstr "Míos"
-
-#: src/app/main/ui/workspace/review/panel.cljs
-msgid "workspace.review.comments.filter.open"
-msgstr "Abiertos %s"
-
-#: src/app/main/ui/workspace/review/panel.cljs
-msgid "workspace.review.comments.filter.resolved"
-msgstr "Resueltos %s"
-
-#: src/app/main/ui/workspace/review/panel.cljs
-msgid "workspace.review.comments.filters"
-msgstr "Filtrar comentarios"
-
-#: src/app/main/ui/workspace/review/panel.cljs
 msgid "workspace.review.comments.no-replies"
 msgstr "Sin respuestas"
 
@@ -10571,7 +10555,7 @@ msgid "workspace.tasks.error.generic"
 msgstr "No se pudo cambiar la tarea. Inténtalo de nuevo."
 
 #: src/app/main/data/workspace/tasks.cljs
-msgid "workspace.tasks.error.thread-has-task"
+msgid "workspace.tasks.error.comment-has-task"
 msgstr "Este comentario ya es una tarea."
 
 #: src/app/main/ui/workspace/review/tasks.cljs
@@ -10633,26 +10617,6 @@ msgstr "%s la verificó"
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.wont-do"
 msgstr "%s la marcó como que no se hará"
-
-#: src/app/main/ui/workspace/review/panel.cljs
-msgid "workspace.tasks.filter.all"
-msgstr "Todas %s"
-
-#: src/app/main/ui/workspace/review/panel.cljs
-msgid "workspace.tasks.filter.mine"
-msgstr "Mías %s"
-
-#: src/app/main/ui/workspace/review/panel.cljs
-msgid "workspace.tasks.filter.open"
-msgstr "Abiertas %s"
-
-#: src/app/main/ui/workspace/review/panel.cljs
-msgid "workspace.tasks.filter.to-verify"
-msgstr "Por verificar %s"
-
-#: src/app/main/ui/workspace/review/panel.cljs
-msgid "workspace.tasks.filters"
-msgstr "Filtrar tareas"
 
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.for-you"
@@ -10785,6 +10749,26 @@ msgstr "¿El cambio lo arregla? Verifica para cerrar la tarea, o reábrela para 
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.verify.message-unassigned"
 msgstr "¿El cambio lo arregla? Verifica para cerrar la tarea, o reábrela."
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.tasks.view.all"
+msgstr "Mostrar todas las tareas"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.tasks.view.hide-closed"
+msgstr "Ocultar las tareas cerradas"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.tasks.view.mine"
+msgstr "Mostrar solo tus tareas"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.tasks.view.open"
+msgstr "Mostrar solo las tareas abiertas"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.tasks.view.to-verify"
+msgstr "Mostrar solo las tareas por verificar"
 
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.you"
