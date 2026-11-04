@@ -323,6 +323,16 @@
                     (update-in [:remote-changes file-id] (fnil conj [])
                                {:seq number :changes changes}))))))))
 
+(defn- stale-commit?
+  "True when `commit` was made on another version of its file than the
+  loaded one, which a peer's restore replaced: its changes are not in the
+  local data and the server refuses them. A file loaded with no version
+  known is never stale."
+  [state {:keys [file-id file-vern]}]
+  (let [vern (:vern (dsh/lookup-file state file-id))]
+    (and (some? vern)
+         (not= vern file-vern))))
+
 (defn- discard-commit
   [commit-id]
   (ptk/reify ::discard-commit
@@ -687,28 +697,35 @@
     (ptk/reify ::rollback-rejected
       ptk/UpdateEvent
       (update [_ state]
-        (let [plan' (pcm/rollback-plan (:persistence state) entry rejected)]
-          (vreset! plan plan')
-          (update state :persistence pcm/without-rolled-back entry plan')))
+        ;; A save made on a version a restore replaced: the reloaded data
+        ;; holds none of it, so there is nothing to revert
+        (if (stale-commit? state entry)
+          state
+          (let [plan' (pcm/rollback-plan (:persistence state) entry rejected)]
+            (vreset! plan plan')
+            (update state :persistence pcm/without-rolled-back entry plan'))))
 
       ptk/WatchEvent
       (watch [it state stream]
-        (apply-rollback-plan it state stream @plan))
+        (if-let [plan @plan]
+          (apply-rollback-plan it state stream plan)
+          (rx/empty)))
 
       ptk/EffectEvent
       (effect [_ _ _]
-        (let [{:keys [error commit-ids]} rejected]
-          (errors/flash :cause (ex-info "The server rejected some changes"
-                                        (merge error
-                                               {:file-id file-id
-                                                :commit-ids commit-ids}
-                                               (pcm/rollback-summary @plan)))
-                        :type :unhandled
-                        :level :warning
-                        :timeout rejected-timeout-ms
-                        :tag rejected-tag
-                        :report-link? true
-                        :hint (tr "errors.save-rejected-changes-undone")))))))
+        (when-let [plan @plan]
+          (let [{:keys [error commit-ids]} rejected]
+            (errors/flash :cause (ex-info "The server rejected some changes"
+                                          (merge error
+                                                 {:file-id file-id
+                                                  :commit-ids commit-ids}
+                                                 (pcm/rollback-summary plan)))
+                          :type :unhandled
+                          :level :warning
+                          :timeout rejected-timeout-ms
+                          :tag rejected-tag
+                          :report-link? true
+                          :hint (tr "errors.save-rejected-changes-undone"))))))))
 
 (defn- update-file-request
   "Issues the `update-file` request, tracked as active for its lifetime."
@@ -736,6 +753,7 @@
       (nil? commit)                                        :missing-commit
       (::acknowledged commit)                              :acknowledged
       (contains? @active-requests (::request-id commit))   :in-flight
+      (stale-commit? state commit)                         :stale
       (not (dm/get-in state [:permissions :can-edit]))     :permission-denied
       :else                                                :ready)))
 
@@ -749,6 +767,25 @@
                    (keyword? origin)
                    (assoc :hint-origin origin)))
                commits)))
+
+(defn- save-attempt-failed
+  "Routes a failed attempt to send `commit-id`, which took `elapsed-ms`. A
+  commit made on a version a restore replaced is dropped instead: the
+  reloaded file does not hold it and no resend can save it."
+  [commit-id cause elapsed-ms]
+  (ptk/reify ::save-attempt-failed
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [commit (dm/get-in state [:persistence :index commit-id])]
+        (rx/of (cond
+                 (and (some? commit) (stale-commit? state commit))
+                 (commit-persisted commit)
+
+                 (transient-error? (ex-data cause))
+                 (persistence-transient-failure commit-id cause elapsed-ms)
+
+                 :else
+                 (persistence-failed commit-id cause)))))))
 
 (defn- send-queued-commit
   "Sends one queued commit and maps its outcome to persistence events."
@@ -790,10 +827,7 @@
                                             :code :invalid-save-response
                                             :file-id file-id})))))
          (rx/catch (fn [cause]
-                     (rx/of (if (transient-error? (ex-data cause))
-                              (persistence-transient-failure
-                               id cause (- (inst-ms (ct/now)) sent-at))
-                              (persistence-failed id cause))))))))
+                     (rx/of (save-attempt-failed id cause (- (inst-ms (ct/now)) sent-at))))))))
 
 (defn- persist-commit
   "Sends the queued commit, stamping the attempt first. A commit whose
@@ -836,6 +870,8 @@
               :acknowledged      (rx/of (commit-persisted commit))
               ;; The replacement runner listens for the original request's result.
               :in-flight         (rx/empty)
+              ;; Made on a version a restore replaced: never sent
+              :stale             (rx/of (commit-persisted commit))
               :permission-denied (fail :save-permission-denied "Edit permission was lost before changes could be saved")
               :ready             (send-queued-commit request-id (:session-id state) commit))))))))
 
@@ -980,6 +1016,19 @@
        (not= :error status)
        (not= :retrying status)))
 
+(defn forget-other-versions
+  "Forgets the commits of the freshly loaded `file` made on another version
+  (`pcm/without-other-versions`), so no rollback or rebase replays them on
+  the loaded data. A pending status with nothing left to save turns saved."
+  [state {:keys [id vern]}]
+  (update state :persistence
+          (fn [pstate]
+            (let [pstate (pcm/without-other-versions pstate id vern)]
+              (cond-> pstate
+                (and (= :pending (:status pstate))
+                     (nothing-to-save? pstate))
+                (assoc :status :saved))))))
+
 (defn pending-file-changes
   "Queued and buffered edits to restore into a freshly loaded file, oldest
   first. Only edits of the loaded version belong in its data. A
@@ -1108,8 +1157,9 @@
            (rx/empty)))))))
 
 (defn- merge-commit
+  "One queue entry per file and version: a save carries one version."
   [buffer]
-  (->> (rx/from (group-by :file-id buffer))
+  (->> (rx/from (group-by (juxt :file-id :file-vern) buffer))
        (rx/map (comp pcm/queue-entry val))))
 
 (defn- flush-buffer
@@ -1238,7 +1288,8 @@
                                     (ptk/type? ::append-commit %)
                                     (ptk/type? ::discard-commit %)
                                     (ptk/type? ::rollback-rejected %)
-                                    (ptk/type? ::release-failed-file %)))))
+                                    (ptk/type? ::release-failed-file %)
+                                    (ptk/type? ::dw/bundle-fetched %)))))
               (rx/map (fn [_] (sync-unload-guard)))
               (rx/take-until stoper-s))
 

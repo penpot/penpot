@@ -81,8 +81,12 @@
         (when restored?
           (t/is (= "Retained rectangle" (:name restored))
                 "queued edits apply in order and exclude other files"))
-        (t/is (identical? pstate (:persistence loaded))
-              "restoring the editor must preserve the save queue")))))
+        (if (zero? vern)
+          (t/is (identical? pstate (:persistence loaded))
+                "restoring the editor must preserve the save queue")
+          (t/is (= [[] [] (get-in pstate [:index other-id :commits])]
+                   (mapv #(get-in loaded [:persistence :index % :commits]) [first-id next-id other-id]))
+                "the commits made on the replaced version are forgotten"))))))
 
 ;; Scenario: a file loads again while an edit of it waits in the buffer.
 ;; Proves: buffered edits apply too, after the queued ones, and those of
