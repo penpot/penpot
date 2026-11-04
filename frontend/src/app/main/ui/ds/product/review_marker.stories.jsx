@@ -18,11 +18,14 @@ export default {
       control: { type: "select" },
     },
     state: {
-      options: ["default", "active", "resolved", "lost"],
+      options: ["default", "active", "resolved", "lost", "ghost"],
       control: { type: "select" },
     },
     label: {
       control: { type: "text" },
+    },
+    counter: {
+      control: { type: "number" },
     },
   },
   args: {
@@ -45,6 +48,14 @@ export const AllMarkers = {
       <ReviewMarker type="task" aria-label="Task" />
       <ReviewMarker type="task" state="active" aria-label="Task" />
       <ReviewMarker type="task" state="lost" aria-label="Task" />
+      <ReviewMarker type="task" counter={3} aria-label="3 tasks" />
+      <ReviewMarker counter={2} aria-label="2 comments" />
+      <ReviewMarker
+        type="task"
+        state="ghost"
+        counter={3}
+        aria-label="3 tasks"
+      />
     </div>
   ),
 };

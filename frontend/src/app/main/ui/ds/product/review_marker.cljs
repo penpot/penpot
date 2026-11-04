@@ -16,19 +16,22 @@
   [:map
    [:class {:optional true} [:maybe :string]]
    [:type {:optional true} [:maybe [:enum "comment" "task"]]]
-   [:state {:optional true} [:maybe [:enum "default" "active" "resolved" "lost"]]]
+   [:state {:optional true} [:maybe [:enum "default" "active" "resolved" "lost" "ghost"]]]
    [:label {:optional true} [:maybe :string]]
+   [:counter {:optional true} [:maybe :int]]
    [:aria-label :string]])
 
 (mf/defc review-marker*
   "The mark a design review leaves on the canvas. A comment is a round
   mark with its number; a task, a square one with the task icon. Active
   is the one open now, resolved a comment already settled (it shows a
-  tick instead of its number) and lost a mark whose layer was deleted.
-  It renders a button: the caller names it (`aria-label`) and handles
-  the click."
+  tick instead of its number), lost a mark whose layer was deleted and
+  ghost what stays where a group of marks fanned out from. `counter` is
+  the number of items a mark holds; a comment mark that holds several has
+  no number, so it shows the comments icon. It renders a button: the caller names
+  it (`aria-label`) and handles the click."
   {::mf/schema schema:review-marker}
-  [{:keys [class type state label] :rest props}]
+  [{:keys [class type state label counter] :rest props}]
   (let [type  (d/nilv type "comment")
         state (d/nilv state "default")
         props (mf/spread-props props
@@ -36,7 +39,8 @@
                                                             :is-task (= type "task")
                                                             :is-active (= state "active")
                                                             :is-resolved (= state "resolved")
-                                                            :is-lost (= state "lost"))]
+                                                            :is-lost (= state "lost")
+                                                            :is-ghost (= state "ghost"))]
                                 :type "button"})]
     [:> :button props
      (cond
@@ -46,5 +50,10 @@
        (= state "resolved")
        [:> icon* {:icon-id i/tick :size "s"}]
 
+       (nil? label)
+       [:> icon* {:icon-id i/comments :size "s"}]
+
        :else
-       label)]))
+       label)
+     (when (some? counter)
+       [:span {:class (stl/css :counter)} counter])]))

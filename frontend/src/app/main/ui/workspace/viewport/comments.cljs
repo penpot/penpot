@@ -161,7 +161,8 @@
                                 :page-id page-id
                                 :zoom zoom
                                 :open-id (:open local)
-                                :draft (:draft local)}]
+                                :draft (:draft local)
+                                :expanded (:expanded local)}]
 
        (for [thread-group (dwcm/group-bubbles zoom threads)]
          (let [group?    (> (count thread-group) 1)

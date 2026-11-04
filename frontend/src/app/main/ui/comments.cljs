@@ -658,7 +658,6 @@
                                  :avatar-darken (= variant "solved"))}]]))
 
 (mf/defc comment-info*
-  {::mf/private true}
   [{:keys [item profile]}]
   [:*
    [:div {:class (stl/css :author)}
@@ -1005,7 +1004,15 @@
         on-delete-comment
         (mf/use-fn
          (mf/deps comment)
-         #(st/emit! (dcm/delete-comment comment)))
+         (fn [event]
+           (dom/stop-propagation event)
+           (st/emit! (dcm/hide-comment-options)
+                     (modal/show
+                      {:type :confirm
+                       :title (tr "modals.delete-comment.title")
+                       :message (tr "modals.delete-comment.message")
+                       :accept-label (tr "modals.delete-comment.accept")
+                       :on-accept #(st/emit! (dcm/delete-comment comment))}))))
 
         on-submit
         (mf/use-fn
@@ -1064,7 +1071,8 @@
                            :on-click on-toggle-options
                            :icon i/menu}])]
 
-      [:div {:class (stl/css :item)}
+      [:div {:class (stl/css-case :item true
+                                  :message (not @edition?))}
        (if @edition?
          [:> comment-edit-form* {:content (:content comment)
                                  :on-submit on-submit
@@ -1073,7 +1081,7 @@
           [:> comment-content* {:content (:content comment)}]])]
 
       (when (and (some? task) (some? task-section))
-        [:> task-section {:task task :thread parent}])]
+        [:> task-section {:task task}])]
 
      [:& dropdown {:show (= options (:id comment))
                    :on-close on-hide-options}
@@ -1198,7 +1206,7 @@
 
          (when (some? task-section)
            (for [task loose-tasks]
-             [:> task-section {:key (dm/str (:id task)) :task task :thread thread}]))]
+             [:> task-section {:key (dm/str (:id task)) :task task}]))]
 
         [:> comment-reply-form* {:on-submit on-submit
                                  :on-cancel (when (= origin :viewer) on-cancel)}]

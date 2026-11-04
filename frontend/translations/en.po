@@ -3928,6 +3928,18 @@ msgstr[1] "Are you sure you want to delete these %s assets?"
 msgid "modals.delete-asset-group.title"
 msgstr "Delete group"
 
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment.accept"
+msgstr "Delete comment"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment.message"
+msgstr "Are you sure you want to delete this comment?"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment.title"
+msgstr "Delete comment"
+
 #: src/app/main/ui/comments.cljs:941
 msgid "modals.delete-comment-thread.accept"
 msgstr "Delete conversation"
@@ -3997,6 +4009,18 @@ msgstr "Deleting font"
 #: src/app/main/data/team.cljs:159
 msgid "modals.delete-organization-team-confirm.message"
 msgstr "Are you sure you want to delete this team that is part of %s org?"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "modals.delete-task.accept"
+msgstr "Delete task"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "modals.delete-task.message"
+msgstr "Are you sure you want to delete this task?"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "modals.delete-task.title"
+msgstr "Delete task"
 
 #: src/app/main/ui/workspace/context_menu.cljs:808, src/app/main/ui/workspace/sidebar/sitemap.cljs:125
 msgid "modals.delete-page.body"
@@ -12347,8 +12371,24 @@ msgid "workspace.review.marker.comment"
 msgstr "Comment %s"
 
 #: src/app/main/ui/workspace/review/markers.cljs
+msgid "workspace.review.marker.comments"
+msgstr "%s comments"
+
+#: src/app/main/ui/workspace/review/markers.cljs
+msgid "workspace.review.marker.items"
+msgstr "%s comments and tasks"
+
+#: src/app/main/ui/workspace/review/markers.cljs
+msgid "workspace.review.marker.more"
+msgstr "%s more"
+
+#: src/app/main/ui/workspace/review/markers.cljs
 msgid "workspace.review.marker.task"
 msgstr "Task: %s"
+
+#: src/app/main/ui/workspace/review/markers.cljs
+msgid "workspace.review.marker.tasks"
+msgstr "%s tasks"
 
 #: src/app/main/ui/workspace/review/panel.cljs
 msgid "workspace.review.route"
@@ -12400,6 +12440,10 @@ msgstr "Create a task"
 
 
 #: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.actions.assign"
+msgstr "Assign to"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.actions.delete"
 msgstr "Delete task"
 
@@ -12438,6 +12482,10 @@ msgstr "Won't do"
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.assigned-to"
 msgstr "Assigned to %s"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.change-assignee"
+msgstr "Change assignee. Now: %s"
 
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.assignee"
@@ -12482,14 +12530,6 @@ msgstr "%s assigned it to %s"
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.assigned-to-you"
 msgstr "%s made this a task for you"
-
-#: src/app/main/ui/workspace/review/tasks.cljs
-msgid "workspace.tasks.event.created"
-msgstr "%s created the task"
-
-#: src/app/main/ui/workspace/review/tasks.cljs
-msgid "workspace.tasks.event.created-from-thread"
-msgstr "%s created a task"
 
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.event.done"
@@ -12541,7 +12581,7 @@ msgstr "For you"
 
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.from"
-msgstr "- from"
+msgstr "from"
 
 #: src/app/main/ui/workspace/review/panel.cljs
 msgid "workspace.tasks.group.other"

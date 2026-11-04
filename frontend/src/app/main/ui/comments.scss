@@ -145,6 +145,14 @@
   white-space: pre-wrap;
 }
 
+// a message of a thread sits in a box, apart from its author and what comes
+// after it
+.message {
+  padding: var(--sp-s) var(--sp-m);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+}
+
 .replies {
   @include use-typography("body-small");
 

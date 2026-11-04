@@ -103,15 +103,21 @@
             shapes (remove cfh/frame-shape? sorted)]
         (or (last shapes) (last sorted))))))
 
+(defn anchor-shape
+  "The layer a task points at, or its board when the layer is gone. None
+  when it points at the canvas itself."
+  [objects {:keys [shape-id frame-id]}]
+  (->> [(get objects shape-id) (get objects frame-id)]
+       (remove nil?)
+       (remove cfh/root?)
+       (first)))
+
 (defn anchor-position
   "Where the mark of a task goes on the canvas: the top right corner of
   its layer, or of its board when the layer is gone, or the spot it was
   made on when it points at the canvas itself (`position`)."
-  [objects {:keys [shape-id frame-id position]}]
-  (let [shape (->> [(get objects shape-id) (get objects frame-id)]
-                   (remove nil?)
-                   (remove cfh/root?)
-                   (first))]
+  [objects {:keys [position] :as task}]
+  (let [shape (anchor-shape objects task)]
     (if (some? shape)
       (let [{:keys [x y width]} (:selrect shape)]
         {:x (+ x width) :y y})
@@ -192,7 +198,7 @@
       (-> state
           (update :workspace-tasks-local assoc :open task-id)
           (update :workspace-tasks-local dissoc :new)
-          (update :comments-local dissoc :open :draft)))
+          (update :comments-local dissoc :open :draft :expanded)))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -324,12 +330,19 @@
   [task-id params]
   (assert (uuid? task-id) "expected a valid uuid for `task-id`")
   (ptk/reify ::update-task
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/update-in-when state [:workspace-tasks :data task-id]
+                        merge (select-keys params [:title :assignee-id])))
+
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! :update-task (-> (select-keys params [:title :assignee-id])
                                      (assoc :id task-id)))
-           (rx/map (fn [_] (refresh)))
-           (rx/catch (fn [_] (rx/of (ntf/error (tr "workspace.tasks.error.generic")))))))))
+           ;; a thread may show the task without having opened it
+           (rx/mapcat (fn [_] (rx/of (refresh) (fetch-task-events task-id))))
+           (rx/catch (fn [_] (rx/of (ntf/error (tr "workspace.tasks.error.generic"))
+                                    (refresh))))))))
 
 (defn- status-toast
   [state {:keys [created-by]} status]

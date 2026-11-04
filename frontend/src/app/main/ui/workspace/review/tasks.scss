@@ -7,6 +7,7 @@
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_utils.scss" as *;
+@use "ds/mixins.scss" as *;
 
 // --- List
 
@@ -63,15 +64,119 @@
 
 // --- State and next step
 
-.task-state-line {
+.task-state {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.task-state-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-s);
+  min-inline-size: 0;
+}
+
+.task-state-status {
+  flex-shrink: 0;
+}
+
+.task-state-origin {
+  display: flex;
   align-items: center;
   gap: var(--sp-xs);
+  min-inline-size: 0;
+}
+
+.task-state-review {
+  min-inline-size: 0;
+}
+
+.task-state-review-title {
+  @include text-ellipsis;
+
+  min-inline-size: 0;
 }
 
 .task-state-text {
+  flex-shrink: 0;
   color: var(--color-foreground-primary);
+}
+
+.assignee-menu {
+  display: flex;
+
+  // the text of the trigger lines up with the tag above it
+  margin-inline-start: calc(-1 * var(--sp-xs));
+  min-inline-size: 0;
+
+  // the DS menu wraps its trigger in a div with no class to reach: a long name
+  // has to shrink through it and end in an ellipsis
+  > div {
+    min-inline-size: 0;
+  }
+}
+
+// the assignees replace the actions in the same popover, whose edge stays put:
+// a fixed width keeps long names from pushing it out of the screen
+.task-menu {
+  inline-size: $sz-224;
+}
+
+.assignee-trigger {
+  --assignee-trigger-bg-color: transparent;
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-xxs);
+  max-inline-size: 100%;
+  padding-inline: var(--sp-xs);
+  border: 0;
+  border-radius: $br-4;
+  background-color: var(--assignee-trigger-bg-color);
+  color: var(--color-foreground-primary);
+  cursor: pointer;
+
+  &:hover,
+  &[aria-expanded="true"] {
+    --assignee-trigger-bg-color: var(--color-background-quaternary);
+  }
+
+  &:focus-visible {
+    outline: $b-1 solid var(--color-accent-primary);
+  }
+}
+
+.assignee-label {
+  @include text-ellipsis;
+
+  min-inline-size: 0;
+}
+
+.assignee-icon {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.assignee-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  min-inline-size: 0;
+  inline-size: 100%;
+}
+
+.assignee-name {
+  @include text-ellipsis;
+
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.assignee-tick {
+  flex-shrink: 0;
+  color: var(--color-accent-primary);
 }
 
 .task-next-step {
@@ -171,6 +276,10 @@
 
 .task-title {
   margin: 0;
+  padding: var(--sp-s) var(--sp-m);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  overflow-wrap: anywhere;
 }
 
 // --- New task form

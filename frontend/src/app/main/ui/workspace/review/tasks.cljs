@@ -19,7 +19,6 @@
    [app.main.data.workspace.tasks :as dwtk]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.comments :as cmt]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -29,7 +28,7 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
-   [app.main.ui.ds.layout.menu :refer [menu* menu-item*]]
+   [app.main.ui.ds.layout.menu :refer [menu* menu-item* sub-menu*]]
    [app.main.ui.ds.product.avatar :refer [avatar*]]
    [app.main.ui.ds.product.layer-chip :refer [layer-chip*]]
    [app.main.ui.ds.product.progress-bar :refer [progress-bar*]]
@@ -46,16 +45,92 @@
   [data page-id]
   (dm/get-in data [:pages-index page-id :objects]))
 
+;; --- Who a task is for
+
+(def ^:private no-assignee
+  "The option of a task without an assignee."
+  "none")
+
+(defn- option->assignee-id
+  [option-id]
+  (when (not= no-assignee option-id)
+    (uuid/parse option-id)))
+
+(defn- use-assignee-options
+  "Who a task may be for: nobody, or a member of the team."
+  []
+  (let [team    (mf/deref refs/team)
+        profile (mf/deref refs/profile)
+        members (:members team)]
+    (mf/with-memo [members profile]
+      (into [{:id no-assignee :label (tr "workspace.tasks.unassigned")}]
+            (map (fn [{:keys [id fullname] :as member}]
+                   {:id (str id)
+                    :member member
+                    :label (if (= id (:id profile))
+                             (tr "workspace.tasks.assignee-me" fullname)
+                             fullname)}))
+            (sort-by :fullname members)))))
+
+(defn- assign-task
+  "Make `task` the work of the option `option-id`."
+  [task option-id]
+  (let [assignee-id (option->assignee-id option-id)]
+    (when (not= assignee-id (:assignee-id task))
+      (st/emit! (dwtk/update-task (:id task) {:assignee-id assignee-id})))))
+
+(defn- assignee-items
+  "The items of a menu that changes who `task` is for."
+  [task options]
+  (for [{:keys [id label member]} options]
+    (mf/html
+     [:> menu-item* {:key id :id id :text-value label}
+      [:div {:class (stl/css :assignee-item)}
+       (when (some? member)
+         [:> avatar* {:profile member :variant "S"}])
+       [:span {:class (stl/css :assignee-name)} label]
+       (when (= (option->assignee-id id) (:assignee-id task))
+         [:> icon* {:icon-id i/tick :size "s" :class (stl/css :assignee-tick)}])]])))
+
+(defn- keep-enter
+  "The shortcuts of the workspace take Enter on any element and cancel its
+  default: kept from them, Enter clicks the trigger of a menu."
+  [event]
+  (when (kbd/enter? event)
+    (dom/stop-propagation event)))
+
 ;; --- Menu of a task
+
+(defn- confirm-delete-task
+  "Ask before deleting `task`. The confirmation takes the place of the dialog
+  the task may be listed in, which comes back afterwards."
+  [task]
+  (let [previous (::modal/modal @st/state)
+        restore  (fn [_]
+                   (when (some? previous)
+                     (st/emit! (modal/show (:type previous) (:props previous)))))]
+    (st/emit! (modal/show {:type :confirm
+                           :title (tr "modals.delete-task.title")
+                           :message (tr "modals.delete-task.message")
+                           :accept-label (tr "modals.delete-task.accept")
+                           :on-accept (fn [props]
+                                        (st/emit! (dwtk/delete-task (:id task)))
+                                        (restore props))
+                           :on-cancel restore}))))
+
+(def ^:private menu-navigation
+  "The items of the menu of a task that lead to other items."
+  #{"assign" "__menu-back"})
 
 (mf/defc task-menu*
   "The actions of a task, behind a menu trigger: the moves its state
-  allows, linking it to another layer and deleting it."
+  allows, who it is for, linking it to another layer and deleting it."
   {::mf/private true}
   [{:keys [task]}]
   (let [open*   (mf/use-state false)
         open?   (deref open*)
         status  (:status task)
+        options (use-assignee-options)
 
         on-toggle
         (mf/use-fn
@@ -65,31 +140,27 @@
 
         on-open-change (mf/use-fn #(reset! open* %))
 
-        ;; the shortcuts of the workspace take Enter on any element and cancel
-        ;; its default: kept from them, Enter clicks the trigger of the menu
-        on-key-down
-        (mf/use-fn
-         (fn [event]
-           (when (kbd/enter? event)
-             (dom/stop-propagation event))))
-
+        ;; the assignees sit in this same menu (see `sub-menu*`): an action
+        ;; that only walks into or out of them leaves it open
         on-action
         (mf/use-fn
          (mf/deps task)
          (fn [action]
-           (reset! open* false)
-           (case action
-             "done"    (st/emit! (dwtk/set-task-status task "done"))
-             "verify"  (st/emit! (dwtk/set-task-status task "verified"))
-             "reopen"  (st/emit! (dwtk/set-task-status task "reopened"))
-             "wont-do" (st/emit! (dwtk/set-task-status task "wont-do"))
-             "relink"  (st/emit! (dwtk/start-relink (:id task)))
-             "delete"  (st/emit! (dwtk/delete-task (:id task)))
-             nil)))]
+           (when-not (contains? menu-navigation action)
+             (reset! open* false)
+             (case action
+               "done"    (st/emit! (dwtk/set-task-status task "done"))
+               "verify"  (st/emit! (dwtk/set-task-status task "verified"))
+               "reopen"  (st/emit! (dwtk/set-task-status task "reopened"))
+               "wont-do" (st/emit! (dwtk/set-task-status task "wont-do"))
+               "relink"  (st/emit! (dwtk/start-relink (:id task)))
+               "delete"  (confirm-delete-task task)
+               (assign-task task action)))))]
 
     [:div {:on-click dom/stop-propagation
-           :on-key-down on-key-down}
-     [:> menu* {:is-open open?
+           :on-key-down keep-enter}
+     [:> menu* {:class (stl/css :task-menu)
+                :is-open open?
                 :on-open-change on-open-change
                 :on-action on-action
                 :placement "bottom end"
@@ -114,6 +185,12 @@
       (when (dwtk/to-do? task)
         [:> menu-item* {:id "wont-do"}
          (tr "workspace.tasks.actions.wont-do")])
+      (when-not (dwtk/closed? task)
+        [:> sub-menu* {:id "assign"
+                       :variant "drilldown"
+                       :trigger (tr "workspace.tasks.actions.assign")
+                       :text-value (tr "workspace.tasks.actions.assign")}
+         (assignee-items task options)])
       (when-not (dwtk/closed? task)
         [:> menu-item* {:id "relink"}
          (tr "workspace.tasks.actions.relink")])
@@ -182,12 +259,11 @@
     (rvc/profile-name profiles profile-id)))
 
 (defn- event-text
-  [{:keys [type profile-id payload]} profiles me thread?]
+  "What an event says. That a task was created says nothing the task itself
+  does not show."
+  [{:keys [type profile-id payload]} profiles me]
   (let [actor (actor-name profiles profile-id me)]
     (case type
-      "created"        (if thread?
-                         (tr "workspace.tasks.event.created-from-thread" actor)
-                         (tr "workspace.tasks.event.created" actor))
       "assigned"       (let [assignee-id (:assignee-id payload)]
                          (cond
                            (nil? assignee-id)
@@ -223,10 +299,10 @@
 (mf/defc task-event*
   "One line of what happened to a task."
   {::mf/private true}
-  [{:keys [event thread]}]
+  [{:keys [event]}]
   (let [profiles (mf/deref refs/profiles)
         profile  (mf/deref refs/profile)
-        text     (event-text event profiles (:id profile) (some? thread))]
+        text     (event-text event profiles (:id profile))]
     (when text
       [:div {:class (stl/css-case :task-event true
                                   :is-warning (= "layer-deleted" (:type event)))}
@@ -238,16 +314,69 @@
 
 ;; --- State of a task and what to do next
 
+(mf/defc assignee-menu*
+  "Who a task is for, as the trigger of the menu that changes it."
+  {::mf/private true}
+  [{:keys [task label]}]
+  (let [open*   (mf/use-state false)
+        open?   (deref open*)
+        options (use-assignee-options)
+
+        on-toggle
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (swap! open* not)))
+
+        on-open-change (mf/use-fn #(reset! open* %))
+
+        on-action
+        (mf/use-fn
+         (mf/deps task)
+         (fn [option-id]
+           (reset! open* false)
+           (assign-task task option-id)))]
+
+    [:div {:class (stl/css :assignee-menu)
+           :on-click dom/stop-propagation
+           :on-key-down keep-enter}
+     [:> menu* {:is-open open?
+                :on-open-change on-open-change
+                :on-action on-action
+                :placement "bottom start"
+                :trigger (mf/html
+                          [:button {:type "button"
+                                    :class (stl/css :assignee-trigger)
+                                    :aria-label (tr "workspace.tasks.change-assignee" label)
+                                    :aria-haspopup "menu"
+                                    :aria-expanded open?
+                                    :on-click on-toggle}
+                           [:> text* {:as "span"
+                                      :typography t/body-small
+                                      :class (stl/css :assignee-label)}
+                            label]
+                           [:> icon* {:icon-id i/arrow-down
+                                      :size "s"
+                                      :class (stl/css :assignee-icon)}]])}
+      (assignee-items task options)]]))
+
 (mf/defc task-state-line*
-  "The state of a task, who it is for and the review it comes from."
+  "The state of a task and the layer it points at, over who it is for and,
+  out of a review, the review it comes from."
   {::mf/private true}
   [{:keys [task]}]
   (let [profiles  (mf/deref refs/profiles)
         profile   (mf/deref refs/profile)
+        data      (mf/deref refs/workspace-data)
         preview   (mf/deref refs/pull-request-preview)
+        objects   (page-objects data (:page-id task))
         for-me?   (= (:assignee-id task) (:id profile))
-        reviewing (= (:pull-request-id task) (:pr-id preview))
+        lost?     (dwtk/lost? task)
         file-id   (mf/use-ctx ctx/current-file-id)
+        assignee  (cond
+                    for-me?                     (tr "workspace.tasks.for-you")
+                    (some? (:assignee-id task)) (rvc/profile-name profiles (:assignee-id task))
+                    :else                       (tr "workspace.tasks.unassigned"))
 
         on-open-review
         (mf/use-fn
@@ -256,24 +385,32 @@
            (st/emit! (dwpr/open-pull-request {:id (:pull-request-id task)
                                               :source-file-id file-id}))))]
 
-    [:div {:class (stl/css :task-state-line)}
-     [:> task-status* {:status (:status task)
-                       :label (rvc/status-label (:status task))}]
-     [:> text* {:as "span" :typography t/body-small :class (stl/css :task-state-text)}
-      (cond
-        for-me?                  (tr "workspace.tasks.for-you")
-        (some? (:assignee-id task)) (tr "workspace.tasks.assigned-to"
-                                        (rvc/profile-name profiles (:assignee-id task)))
-        :else                    (tr "workspace.tasks.unassigned"))]
-     (when (and (some? (:pull-request-id task))
-                (= "open" (:review-status task))
-                (not reviewing))
-       [:*
+    [:div {:class (stl/css :task-state)}
+     [:div {:class (stl/css :task-state-row)}
+      [:> task-status* {:status (:status task)
+                        :label (rvc/status-label (:status task))
+                        :class (stl/css :task-state-status)}]
+      [:> layer-chip* {:label (rvc/layer-name objects task)
+                       :is-lost lost?
+                       :is-struck lost?}]]
+     [:div {:class (stl/css :task-state-row)}
+      ;; a closed task is settled: who it was for stays as it was
+      (if (dwtk/closed? task)
         [:> text* {:as "span" :typography t/body-small :class (stl/css :task-state-text)}
-         (tr "workspace.tasks.from")]
-        [:> link-button* {:icon i/git-pull-request-arrow
-                          :on-click on-open-review}
-         (:review-title task)]])]))
+         assignee]
+        [:> assignee-menu* {:task task :label assignee}])
+      (when (and (some? (:pull-request-id task))
+                 (= "open" (:review-status task))
+                 (nil? preview))
+        [:div {:class (stl/css :task-state-origin)}
+         [:> text* {:as "span" :typography t/body-small :class (stl/css :task-state-text)}
+          (tr "workspace.tasks.from")]
+         [:> link-button* {:icon i/git-pull-request-arrow
+                           :class (stl/css :task-state-review)
+                           :title (:review-title task)
+                           :on-click on-open-review}
+          [:span {:class (stl/css :task-state-review-title)}
+           (:review-title task)]]])]]))
 
 (mf/defc task-next-step*
   "What to do next with a task: verify a done task (or reopen it), and
@@ -366,32 +503,29 @@
 (mf/defc thread-task-section*
   "The task a thread is attached to, inside the thread: its state, what
   happened to it and what to do next."
-  [{:keys [task thread]}]
+  [{:keys [task]}]
   (let [events (use-task-events (:id task))]
     [:div {:class (stl/css :thread-task)}
      [:> task-state-line* {:task task}]
      (for [event events]
-       [:> task-event* {:key (dm/str (:id event)) :event event :thread thread}])
+       [:> task-event* {:key (dm/str (:id event)) :event event}])
      [:> task-next-step* {:task task}]]))
 
 ;; --- The card of a mark on the canvas
 
-(mf/defc tasks-preview*
-  "The small card of the tasks of a mark: the state, title and assignee of
-  each one."
-  [{:keys [tasks]}]
+(mf/defc task-preview*
+  "A task in the small card of a mark: its state, title and assignee."
+  [{:keys [task]}]
   (let [profiles (mf/deref refs/profiles)]
-    [:> cmt/preview-card* {}
-     (for [task tasks]
-       [:div {:key (dm/str (:id task)) :class (stl/css :task-preview)}
-        [:> task-status* {:status (:status task)
-                          :label (rvc/status-label (:status task))}]
-        [:> text* {:as "span" :typography t/body-small :class (stl/css :task-preview-title)}
-         (:title task)]
-        [:> text* {:as "span" :typography t/body-small :class (stl/css :task-preview-assignee)}
-         (if (some? (:assignee-id task))
-           (tr "workspace.tasks.assigned-to" (rvc/profile-name profiles (:assignee-id task)))
-           (tr "workspace.tasks.unassigned"))]])]))
+    [:div {:class (stl/css :task-preview)}
+     [:> task-status* {:status (:status task)
+                       :label (rvc/status-label (:status task))}]
+     [:> text* {:as "span" :typography t/body-small :class (stl/css :task-preview-title)}
+      (:title task)]
+     [:> text* {:as "span" :typography t/body-small :class (stl/css :task-preview-assignee)}
+      (if (some? (:assignee-id task))
+        (tr "workspace.tasks.assigned-to" (rvc/profile-name profiles (:assignee-id task)))
+        (tr "workspace.tasks.unassigned"))]]))
 
 ;; --- A task without a thread, open on the canvas
 
@@ -432,9 +566,6 @@
      [:div {:class (stl/css :floating-body)}
       [:> task-state-line* {:task task}]
       [:> text* {:as "p" :typography t/body-medium :class (stl/css :task-title)} (:title task)]
-      [:> layer-chip* {:label (rvc/layer-name objects task)
-                       :is-lost (dwtk/lost? task)
-                       :is-struck (dwtk/lost? task)}]
       (for [event events]
         [:> task-event* {:key (dm/str (:id event)) :event event}])
       [:> task-next-step* {:task task}]]]))
@@ -446,26 +577,15 @@
   message of a thread it is \"Make it a task\": the title comes from the
   message and the thread stays attached to the task."
   [{:keys [params style class]}]
-  (let [team      (mf/deref refs/team)
-        profile   (mf/deref refs/profile)
-        data      (mf/deref refs/workspace-data)
+  (let [data      (mf/deref refs/workspace-data)
         objects   (page-objects data (:page-id params))
         thread?   (some? (:thread-id params))
 
         title*    (mf/use-state (or (:title params) ""))
         title     (deref title*)
-        assignee* (mf/use-state (or (some-> (:assignee-id params) str) ""))
+        assignee* (mf/use-state (or (some-> (:assignee-id params) str) no-assignee))
         assignee  (deref assignee*)
-
-        members   (:members team)
-        options   (mf/with-memo [members profile]
-                    (into [{:id "" :label (tr "workspace.tasks.unassigned")}]
-                          (map (fn [{:keys [id fullname]}]
-                                 {:id (str id)
-                                  :label (if (= id (:id profile))
-                                           (tr "workspace.tasks.assignee-me" fullname)
-                                           fullname)}))
-                          (sort-by :fullname members)))
+        options   (use-assignee-options)
 
         valid?    (not (str/blank? title))
         heading   (if thread?
@@ -487,8 +607,7 @@
              (st/emit! (dwtk/create-task
                         (-> params
                             (assoc :title (str/trim title))
-                            (assoc :assignee-id (when-not (str/blank? assignee)
-                                                  (uuid/parse assignee)))))))))
+                            (assoc :assignee-id (option->assignee-id assignee))))))))
 
         on-key-down
         (mf/use-fn

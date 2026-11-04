@@ -12,12 +12,17 @@
   A thread written in a design review shows as a numbered review mark
   (in the review colour, wherever the file is open), a thread attached
   to a task and a task show as a task mark, and a thread on an area
-  draws its area while it is open."
+  draws its area while it is open. Marks that would overlap show as one,
+  with a counter, and fan out on a click. Hovering a mark outlines its
+  layer."
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.geom.point :as gpt]
    [app.common.math :as mth]
    [app.main.data.comments :as dcmt]
+   [app.main.data.workspace.comments :as dwcm]
+   [app.main.data.workspace.highlight :as dwh]
    [app.main.data.workspace.review :as dwrv]
    [app.main.data.workspace.tasks :as dwtk]
    [app.main.refs :as refs]
@@ -50,9 +55,13 @@
       (contains? task-thread-ids (:id thread))))
 
 (defn- screen-style
-  [{:keys [x y]} zoom]
-  #js {:left (dm/str (* x zoom) "px")
-       :top (dm/str (* y zoom) "px")})
+  "The style that puts a mark at canvas `position`, `offset` screen pixels
+  away from it. `ring` is where it starts to fan out from."
+  [{:keys [x y]} zoom offset ring]
+  #js {:left (dm/str (+ (* x zoom) (or (:x offset) 0)) "px")
+       :top (dm/str (+ (* y zoom) (or (:y offset) 0)) "px")
+       "--marker-ring-x" (some-> (:x ring) - (dm/str "px"))
+       "--marker-ring-y" (some-> (:y ring) - (dm/str "px"))})
 
 (def ^:private thread-width
   "The width of an open comment thread: a task made from a thread opens
@@ -79,38 +88,87 @@
                        :height (dm/str (* height zoom) "px")}}]))
 
 (mf/defc marker-slot*
-  "A mark on the canvas, centered on its point. Hovering it shows `preview`
-  unless it is open, like the bubbles of the comments."
+  "A mark on the canvas, centered on its point. Hovering it outlines the
+  layers `shape-ids` and shows `preview` unless it is open, like the bubbles
+  of the comments."
   {::mf/private true}
-  [{:keys [position zoom is-open preview children]}]
+  [{:keys [position zoom offset ring is-open preview shape-ids children]}]
   (let [hover*   (mf/use-state false)
         hover?   (deref hover*)
         on-enter (mf/use-fn #(reset! hover* true))
         on-leave (mf/use-fn #(reset! hover* false))
         shown?   (and hover? (not is-open))]
+
+    ;; an effect, because a mark that fans out goes away under the pointer
+    ;; and never hears it leave
+    (mf/with-effect [hover? shape-ids]
+      (when hover?
+        (apply st/emit! (map dwh/highlight-shape shape-ids))
+        (fn []
+          (apply st/emit! (map dwh/dehighlight-shape shape-ids)))))
+
     [:div {:class (stl/css-case :marker true
+                                :is-expanded (some? ring)
                                 :is-hovered shown?)
-           :style (screen-style position zoom)
+           :style (screen-style position zoom offset ring)
            :on-pointer-enter on-enter
            :on-pointer-leave on-leave}
      children
      (when shown? preview)]))
 
-(mf/defc thread-marker*
+(def ^:private preview-limit
+  "How many items the card of a mark lists: a big group at a low zoom would
+  not fit the screen."
+  5)
+
+(mf/defc thread-preview-item*
   {::mf/private true}
-  [{:keys [thread position zoom is-open]}]
+  [{:keys [thread]}]
   (let [owner (mf/with-memo [thread]
-                (dcmt/get-owner thread))
+                (dcmt/get-owner thread))]
+    [:> cmt/comment-info* {:item thread :profile owner}]))
+
+(mf/defc marks-preview*
+  "The small card of `marks`: their comments and tasks, oldest first."
+  {::mf/private true}
+  [{:keys [marks]}]
+  (let [items  (mf/with-memo [marks]
+                 (->> (sort-by :seqn marks)
+                      (mapcat (fn [{:keys [thread tasks]}]
+                                (if (some? thread)
+                                  [{:thread thread}]
+                                  (map (fn [task] {:task task}) tasks))))
+                      (vec)))
+        hidden (- (count items) preview-limit)]
+    [:> cmt/preview-card* {}
+     (for [{:keys [thread task]} (take preview-limit items)]
+       (if (some? thread)
+         [:> thread-preview-item* {:key (dm/str (:id thread)) :thread thread}]
+         [:> rvt/task-preview* {:key (dm/str (:id task)) :task task}]))
+     (when (pos? hidden)
+       [:span {:class (stl/css :preview-more)}
+        (tr "workspace.review.marker.more" hidden)])]))
+
+(mf/defc thread-marker*
+  "The mark of a thread. `offset` and `ring` place it when it is fanned out."
+  {::mf/private true}
+  [{:keys [mark zoom offset ring is-open]}]
+  (let [thread (:thread mark)
+        marks  (mf/with-memo [mark] [mark])
         on-click
         (mf/use-fn
          (mf/deps thread)
          (fn [event]
            (dom/stop-propagation event)
-           (st/emit! (dcmt/open-thread thread))))]
-    [:> marker-slot* {:position position
+           (st/emit! (dwtk/close-task)
+                     (dcmt/open-thread thread))))]
+    [:> marker-slot* {:position (:position mark)
                       :zoom zoom
+                      :offset offset
+                      :ring ring
                       :is-open is-open
-                      :preview (mf/html [:> cmt/thread-preview* {:thread thread :owner owner}])}
+                      :shape-ids (:shape-ids mark)
+                      :preview (mf/html [:> marks-preview* {:marks marks}])}
      [:> review-marker* {:label (str (:seqn thread))
                          :state (cond is-open "active"
                                       (:is-resolved thread) "resolved"
@@ -119,31 +177,104 @@
                          :on-click on-click}]]))
 
 (mf/defc task-marker*
-  "The mark of `tasks`: a task on its own, or the tasks of a thread on the
-  same layer, which open as that thread."
+  "The mark of its `tasks`: a task on its own, or the tasks of a thread on
+  the same layer, which open as that thread. `offset` and `ring` place it
+  when it is fanned out."
   {::mf/private true}
-  [{:keys [tasks position zoom is-open]}]
-  (let [task (first tasks)
+  [{:keys [mark zoom offset ring is-open]}]
+  (let [tasks (:tasks mark)
+        task  (first tasks)
+        many? (some? (next tasks))
+        marks (mf/with-memo [mark] [mark])
         on-click
         (mf/use-fn
          (mf/deps task)
          (fn [event]
            (dom/stop-propagation event)
            (st/emit! (dwtk/open-task (:id task)))))]
-    [:> marker-slot* {:position position
+    [:> marker-slot* {:position (:position mark)
                       :zoom zoom
+                      :offset offset
+                      :ring ring
                       :is-open is-open
-                      :preview (mf/html [:> rvt/tasks-preview* {:tasks tasks}])}
+                      :shape-ids (:shape-ids mark)
+                      :preview (mf/html [:> marks-preview* {:marks marks}])}
      [:> review-marker* {:type "task"
                          :state (cond is-open "active"
                                       (some dwtk/lost? tasks) "lost"
                                       :else "default")
-                         :aria-label (tr "workspace.review.marker.task" (:title task))
+                         :counter (when many? (count tasks))
+                         :aria-label (if many?
+                                       (tr "workspace.review.marker.tasks" (count tasks))
+                                       (tr "workspace.review.marker.task" (:title task)))
                          :on-click on-click}]]))
 
+(mf/defc mark-marker*
+  {::mf/private true}
+  [{:keys [mark zoom offset ring is-open]}]
+  [:> (if (some? (:thread mark)) thread-marker* task-marker*)
+   {:mark mark :zoom zoom :offset offset :ring ring :is-open is-open}])
+
+(defn- cluster-look
+  "What the one mark of `marks` shows: the square of the tasks when it holds
+  any, as they ask for work, and how many items it holds."
+  [marks]
+  (let [tasks   (into [] (mapcat :tasks) marks)
+        threads (into [] (keep :thread) marks)
+        total   (+ (count tasks) (count threads))]
+    {:type (if (seq tasks) "task" "comment")
+     :state (cond (some dwtk/lost? tasks) "lost"
+                  (and (empty? tasks) (every? :is-resolved threads)) "resolved"
+                  :else "default")
+     :counter total
+     :aria-label (cond (empty? threads) (tr "workspace.review.marker.tasks" total)
+                       (empty? tasks) (tr "workspace.review.marker.comments" total)
+                       :else (tr "workspace.review.marker.items" total))}))
+
+(mf/defc mark-cluster*
+  "The one mark of `marks`, which overlap: a click fans them out so the
+  user picks one."
+  {::mf/private true}
+  [{:keys [marks zoom is-open]}]
+  (let [look      (mf/with-memo [marks] (cluster-look marks))
+        mark-ids  (mf/with-memo [marks] (into #{} (map :id) marks))
+        shape-ids (mf/with-memo [marks] (into #{} (mapcat :shape-ids) marks))
+        on-click
+        (mf/use-fn
+         (mf/deps mark-ids)
+         (fn [event]
+           (dom/stop-propagation event)
+           (st/emit! (dwtk/close-task)
+                     (dwtk/cancel-new-task)
+                     (dcmt/expand-comment-group mark-ids))))]
+    [:> marker-slot* {:position (cmt/expanded-group-center marks)
+                      :zoom zoom
+                      :is-open is-open
+                      :shape-ids shape-ids
+                      :preview (mf/html [:> marks-preview* {:marks marks}])}
+     [:> review-marker* {:type (:type look)
+                         :state (if is-open "active" (:state look))
+                         :counter (:counter look)
+                         :aria-label (:aria-label look)
+                         :on-click on-click}]]))
+
+(mf/defc cluster-ghost*
+  "What stays at the center of `marks` while they are fanned out."
+  {::mf/private true}
+  [{:keys [marks zoom]}]
+  (let [look (mf/with-memo [marks] (cluster-look marks))]
+    [:div {:class (stl/css :marker :is-ghost)
+           :style (screen-style (cmt/expanded-group-center marks) zoom nil nil)}
+     [:> review-marker* {:type (:type look)
+                         :state "ghost"
+                         :counter (:counter look)
+                         :aria-hidden true
+                         :aria-label (:aria-label look)
+                         :tab-index -1}]]))
+
 (defn- group-task-marks
-  "The marks of the tasks of a page: one per task on its own, and one per
-  layer for the tasks of a thread, which all open the same thread."
+  "The tasks of a page by mark: one per task on its own, and one per layer
+  for the tasks of a thread, which all open the same thread."
   [tasks]
   (->> (group-by (fn [{:keys [id thread-id shape-id]}]
                    (if (some? thread-id) [thread-id shape-id] id))
@@ -151,11 +282,52 @@
        (vals)
        (mapv #(vec (sort-by :created-at %)))))
 
+(defn- thread-mark
+  [objects {:keys [id created-at anchor-type shape-id] :as thread}]
+  (when-let [position (thread-position objects thread)]
+    {:id id
+     :created-at created-at
+     :position (gpt/point position)
+     :thread thread
+     :shape-ids (when (= :layer anchor-type)
+                  (some-> (dwtk/anchor-shape objects {:shape-id shape-id}) :id vector))}))
+
+(defn- task-mark
+  [objects tasks]
+  (let [{:keys [id created-at] :as task} (first tasks)]
+    (when-let [position (dwtk/anchor-position objects task)]
+      {:id id
+       :created-at created-at
+       :position (gpt/point position)
+       :tasks tasks
+       :shape-ids (some-> (dwtk/anchor-shape objects task) :id vector)})))
+
+(defn mark-clusters
+  "The marks of `threads` and `tasks` at `zoom`, grouped when they would
+  overlap: a vector of marks for each spot of the canvas. `:seqn` keeps them
+  oldest first, whatever their kind."
+  [objects zoom threads tasks]
+  (->> (concat (keep #(thread-mark objects %) threads)
+               (keep #(task-mark objects %) (group-task-marks tasks)))
+       (sort-by :created-at)
+       (map-indexed (fn [index mark] (assoc mark :seqn index)))
+       (dwcm/group-bubbles zoom)))
+
+(defn- mark-open?
+  "Whether `mark` is open now: its thread, a task of it, or the thread of one."
+  [{:keys [thread tasks]} open-task open-id]
+  (or (and (some? thread) (= open-id (:id thread)))
+      (boolean
+       (some (fn [{:keys [id thread-id]}]
+               (or (= id (:id open-task))
+                   (and (some? thread-id) (= open-id thread-id))))
+             tasks))))
+
 (mf/defc review-markers*
   "The marks of the page `page-id`: the threads the review layer draws
   (`threads`) and the open tasks, the area of the open thread or draft,
   and the panel of the open task or of the new one."
-  [{:keys [threads page-id zoom open-id draft]}]
+  [{:keys [threads page-id zoom open-id draft expanded]}]
   (let [objects     (mf/deref refs/workspace-page-objects)
         tasks       (mf/deref refs/tasks)
         tasks-local (mf/deref refs/tasks-local)
@@ -166,13 +338,14 @@
         (mf/with-memo [tasks]
           (into #{} (keep :thread-id) (vals tasks)))
 
-        task-marks
-        (mf/with-memo [tasks page-id]
-          (->> (vals tasks)
-               (remove dwtk/history?)
-               (remove dwtk/closed?)
-               (filter #(= page-id (:page-id %)))
-               (group-task-marks)))
+        clusters
+        (mf/with-memo [objects threads tasks task-thread-ids page-id zoom]
+          (mark-clusters objects zoom
+                         (remove #(contains? task-thread-ids (:id %)) threads)
+                         (->> (vals tasks)
+                              (remove dwtk/history?)
+                              (remove dwtk/closed?)
+                              (filter #(= page-id (:page-id %))))))
 
         open-thread (some #(when (= open-id (:id %)) %) threads)]
 
@@ -183,25 +356,34 @@
      (when (= :area (get-in draft [:anchor :type]))
        [:> area-box* {:area (get-in draft [:anchor :area]) :zoom zoom}])
 
-     (for [thread threads]
-       (when-not (contains? task-thread-ids (:id thread))
-         (when-let [position (thread-position objects thread)]
-           [:> thread-marker* {:key (dm/str (:id thread))
-                               :thread thread
-                               :position position
-                               :zoom zoom
-                               :is-open (= open-id (:id thread))}])))
+     (for [marks clusters]
+       (let [mark      (first marks)
+             cluster?  (some? (next marks))
+             expanded? (and cluster?
+                            (= expanded (into #{} (map :id) marks)))]
+         (cond
+           expanded?
+           [:* {:key (dm/str (:id mark))}
+            [:> cluster-ghost* {:marks marks :zoom zoom}]
+            (for [[mark offset ring] (cmt/expanded-group-offsets zoom marks)]
+              [:> mark-marker* {:key (dm/str (:id mark))
+                                :mark mark
+                                :zoom zoom
+                                :offset offset
+                                :ring ring
+                                :is-open false}])]
 
-     (for [mark task-marks]
-       (let [task (first mark)]
-         (when-let [position (dwtk/anchor-position objects task)]
-           [:> task-marker* {:key (dm/str (:id task))
-                             :tasks mark
-                             :position position
+           cluster?
+           [:> mark-cluster* {:key (dm/str (:id mark))
+                              :marks marks
+                              :zoom zoom
+                              :is-open (some #(mark-open? % open-task open-id) marks)}]
+
+           :else
+           [:> mark-marker* {:key (dm/str (:id mark))
+                             :mark mark
                              :zoom zoom
-                             :is-open (or (= (:id task) (:id open-task))
-                                          (and (some? (:thread-id task))
-                                               (= open-id (:thread-id task))))}])))
+                             :is-open (mark-open? mark open-task open-id)}])))
 
      ;; a task without a thread opens as a panel by its mark
      (when (and (some? open-task)

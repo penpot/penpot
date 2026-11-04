@@ -367,7 +367,7 @@
                                       (not panning)
                                       (not edition)
                                       (not drawing-obj)
-                                      (not (#{:comments :path :curve} drawing-tool))
+                                      (not (#{:path :curve} drawing-tool))
                                       (not page-transition?))
 
         show-pixel-grid?         (and (contains? layout :show-pixel-grid)
@@ -807,10 +807,12 @@
                  :zoom zoom}]])]))
 
        (when show-outlines?
+         ;; the comments tool outlines only what asks for it, like the
+         ;; layer of a hovered mark
          [:> outline/shape-outlines*
           {:objects objects-for-outlines
-           :selected selected
-           :hover #{(:id @hover) @frame-hover}
+           :selected (when-not comments-mode? selected)
+           :hover (when-not comments-mode? #{(:id @hover) @frame-hover})
            :highlighted highlighted
            :edition edition
            :zoom zoom}])

@@ -590,7 +590,12 @@
                 {:id "activity" :label (tr "workspace.review.details.activity" (count entries))}
                 {:id "tasks" :label (tr "workspace.review.tab.tasks" (count tasks))}])
 
-        on-tab     (mf/use-fn #(reset! tab* %))
+        ;; kept in the props too: a confirmation takes the place of the dialog
+        ;; and brings it back with its props
+        on-tab     (mf/use-fn
+                    (fn [id]
+                      (reset! tab* id)
+                      (st/emit! (modal/update-props :review-details {:tab id}))))
         on-close   (mf/use-fn #(st/emit! (modal/hide)))
         on-open-change (mf/use-fn (fn [open?] (when-not open? (st/emit! (modal/hide)))))
         on-compare (mf/use-fn (mf/deps pr) #(prui/open-compare! pr))

@@ -21,7 +21,11 @@ number of a comment, or a square one with the task icon.
 - `type`: `comment` (default) or `task`.
 - `state`: `default`, `active` (the one open now), `resolved` (a settled
   comment: a tick replaces its number) and `lost` (its layer was deleted:
-  a dashed orange outline).
+  a dashed orange outline) and `ghost` (what stays where a group of marks
+  fanned out from).
+- `counter`: the number of items a mark holds, in a white bubble on its
+  top right corner. A comment mark with several comments has no `label`,
+  so it shows the comments icon.
 
 ## Technical notes
 
