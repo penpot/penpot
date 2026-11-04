@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "ng build icons-plugin && pnpm run build:plugin",
+    "build": "pnpm run build:plugin && ng build icons-plugin",
     "build:dev": "ng build icons-plugin --configuration development",
     "build:plugin": "node ../../tools/scripts/build-plugin.mjs --plugin=icons-plugin",
     "build:plugin:watch": "node ../../tools/scripts/build-plugin.mjs --plugin=icons-plugin --watch",
