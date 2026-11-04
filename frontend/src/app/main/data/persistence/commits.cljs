@@ -55,6 +55,30 @@
                       (fn [entries] (into [] (filter #(> (:seq %) since)) entries)))
     (update pstate :remote-changes dissoc file-id)))
 
+(defn without-other-versions
+  "`pstate` without the commits of `file-id` made on a version other than
+  `vern`, the one just loaded: a restore replaced it, so they are not in
+  the data and the server refuses them. Their queue entries stay, emptied,
+  for the runner to settle the one in flight and skip the rest."
+  [pstate file-id vern]
+  (let [other?  #(and (= file-id (:file-id %))
+                      (not= vern (:file-vern %)))
+        emptied (into {}
+                      (keep (fn [id]
+                              (let [entry (get-in pstate [:index id])]
+                                (when (and (other? entry) (seq (:commits entry)))
+                                  [id (assoc entry :commits [])]))))
+                      (:queue pstate))]
+    (if (or (seq emptied)
+            (some other? (:buffer pstate))
+            (some other? (:saved pstate)))
+      (-> pstate
+          (update :index merge emptied)
+          (update :buffer #(into [] (remove other?) %))
+          (update :saved #(into [] (remove other?) %))
+          (prune-remote-changes file-id))
+      pstate)))
+
 (defn- saved-commits
   "The `commits` of `entry` as saved commits, which carry their file."
   [entry commits]

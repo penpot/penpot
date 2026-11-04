@@ -343,7 +343,8 @@
       (let [file (restore-pending-changes state file)]
         (-> state
             (assoc :thumbnails (d/update-vals thumbnails (fn [uri] {:uri uri :rendered-at nil})))
-            (update :files assoc file-id file))))))
+            (update :files assoc file-id file)
+            (dps/forget-other-versions file))))))
 
 (defn zoom-to-frame
   []

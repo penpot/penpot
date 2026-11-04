@@ -568,6 +568,16 @@
          (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
                                 "the rollback settles")))))))
 
+;; Version restores.
+
+(defn- restore-version
+  "The load of `file-id` that a peer's restore causes: another version
+  with `data`."
+  [file-id data]
+  (#'dw/bundle-fetched {:file {:id file-id :revn 0 :vern 1 :data data}
+                        :file-id file-id
+                        :thumbnails {}}))
+
 ;; Scenario: the undo of a rejected rename cannot be applied, so the
 ;; rollback reloads the file. Proves: `::rolled-back` waits for the
 ;; reloaded data, so a listener that reads the listed shapes sees the
@@ -612,4 +622,70 @@
              (rx/dispose! sub)))))
       (finally
         (-add-method ptk/resolve ::dw/reload-current-file original)))))
+
+;; Scenario: a save of two renames is in flight and a third rename waits in
+;; the queue when a peer restores an earlier version; the file reloads to
+;; it and a peer's change to it arrives. The answer then comes: the server
+;; kept the first rename and rejected the second, before the restore.
+;; Proves: neither the peer's change, the answer nor its rollback replays
+;; the renames on the reloaded data, the user gets no rejection warning,
+;; and the queued rename, made on the replaced version, is dropped unsent.
+(t/deftest ^:async an-answer-from-before-a-restore-leaves-the-reloaded-file-alone
+  (await
+   (thp/with-persistence
+     (^:async fn [{:keys [file-id response requests store failures]}]
+       (let [page-id  (uuid/next)
+             shape-id (uuid/next)
+             commit1  (thp/rename-commit file-id page-id shape-id "A" "B")
+             commit2  (thp/rename-commit file-id page-id shape-id "B" "C")
+             commit3  (thp/rename-commit file-id page-id shape-id "C" "D")]
+         (ptk/emit! store
+                    (thp/open-file file-id page-id (thp/file-data page-id shape-id "D"))
+                    #(assoc-in % [:files file-id :vern] 0))
+         (ptk/emit! store commit1 commit2 ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests)) "the first two renames are sent"))
+         (ptk/emit! store commit3 ::dps/force-persist)
+         (await (async/wait-for #(= 2 (count (get-in @store [:persistence :queue])))
+                                "the third rename is queued"))
+
+         (ptk/emit! store (restore-version file-id (thp/file-data page-id shape-id "Restored")))
+         (ptk/emit! store (thp/remote-commit file-id 1 [(thp/set-attr page-id shape-id :opacity 0.5)]))
+         (await (async/settle))
+         (t/is (= "Restored" (thp/shape-name store file-id page-id shape-id))
+               "a peer's change does not replay the renames")
+         (rx/push! response (thp/rejection (:id @commit2)))
+         (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                      (empty? (get-in @store [:persistence :queue])))
+                                "the queue drains"))
+         (t/is (= "Restored" (thp/shape-name store file-id page-id shape-id))
+               "the file keeps the restored version")
+         (t/is (= 0.5 (thp/shape-attr store file-id page-id shape-id :opacity)))
+         (t/is (empty? @failures) "no rejection warning for a replaced version")
+         (t/is (= 1 (count @requests)) "the rename made on the replaced version is not sent"))))))
+
+;; Scenario: a save is in flight when a peer restores an earlier version and
+;; the file reloads; the server handled the save after the restore, so it
+;; refuses it for its old version. Proves: the failure of a save made on a
+;; replaced version drops it instead of halting the queue and locking the
+;; workspace.
+(t/deftest ^:async a-save-refused-after-a-restore-is-dropped
+  (await
+   (thp/with-persistence
+     (^:async fn [{:keys [file-id response requests store failures]}]
+       (let [page-id  (uuid/next)
+             shape-id (uuid/next)]
+         (ptk/emit! store
+                    (thp/open-file file-id page-id (thp/file-data page-id shape-id "B"))
+                    #(assoc-in % [:files file-id :vern] 0))
+         (ptk/emit! store (thp/rename-commit file-id page-id shape-id "A" "B") ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests)) "the rename is sent"))
+         (ptk/emit! store (restore-version file-id (thp/file-data page-id shape-id "Restored")))
+         (rx/error! response (ex-info "A different version has been restored for the file."
+                                      {:type :validation :code :vern-conflict}))
+         (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                      (empty? (get-in @store [:persistence :queue])))
+                                "the refused save is dropped"))
+         (t/is (empty? @failures))
+         (t/is (nil? (get-in @store [:workspace-global :persistence-lock])))
+         (t/is (= "Restored" (thp/shape-name store file-id page-id shape-id))))))))
 
