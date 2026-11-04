@@ -1070,3 +1070,10 @@
   (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :library true :rich-variants true
                                     :layout-copies true :text true}]
                        :ops [[:nest 4 0 0 0] [:transform 1 0 0 3] [:switch 3 0 0 0]]}))))
+
+(t/deftest generated-switch-keeps-the-inherited-turn-of-a-copy-child
+  ;; a copy child of a turned copy, whose position main is resized, keeps
+  ;; the turn it inherits through a switch without an override
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :variant-diff false :rich-variants true
+                                    :layout-copies true :text true}]
+                       :ops [[:resize 0 0 0 0] [:rotate 1 0 0 0] [:switch 4 0 0 0]]}))))
