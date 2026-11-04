@@ -181,6 +181,14 @@
          (t/is (= {:message (tr "workspace.tokens.value-not-valid")}
                   (tooltip radius [] :tokens {"radius.md" (assoc radius :errors [error])}))))))
 
+  (t/testing "a resolved error message replaces the generic one"
+    (let [error  {:error/code :error.token/name-collision
+                  :error/value "radius.md"
+                  :error/fn (fn [value] (str "Collides: " value))}
+          tokens {"radius.md" (assoc radius :errors [error])}]
+      (t/is (= {:message "Collides: radius.md"}
+               (tooltip radius [] :tokens tokens)))))
+
   (t/testing "a valid token shows its value and resolved value"
     (t/is (= {:name "radius.md"
               :value "8"
