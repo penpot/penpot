@@ -16,7 +16,6 @@
    [app.main.data.common :as dc]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
-   [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
    [app.main.data.plugins :as dpl]
    [app.main.data.websocket :as dws]
@@ -28,7 +27,6 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.router :as rt]
    [app.util.globals :refer [global]]
-   [app.util.i18n :refer [tr]]
    [app.util.mouse :as mse]
    [app.util.object :as obj]
    [app.util.rxops :as rxs]
@@ -303,10 +301,7 @@
                            :redo-changes (vec changes)
                            :undo-changes []}))
        (if (:repaired msg)
-         (rx/of (ntf/show {:content (tr "workspace.notifications.file-repaired")
-                           :type :toast
-                           :level :info
-                           :timeout nil}))
+         (rx/of (dps/notify-repaired))
          (rx/empty))))))
 
 (defn handle-file-deleted

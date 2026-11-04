@@ -94,6 +94,8 @@
     [:map
      [:commit-ids [:vector ::sm/uuid]]
      [:failed-commit-id ::sm/uuid]
+     ;; The data the failed commit touches was invalid before it
+     [:preexisting-damage {:optional true} :boolean]
      [:error
       [:map
        [:type :keyword]
@@ -654,22 +656,43 @@
            (instance? AssertionError cause))
        (not (infrastructure-error? cause))))
 
+(defn- preexisting-damage?
+  "True when `file` already fails validation on the pages and components
+  `changes` touch, before they are applied."
+  [file libs changes skip-validate]
+  (try
+    (binding [pmap/*tracked* nil]
+      (when (and (contains? cf/flags :file-validation)
+                 (not skip-validate))
+        (val/validate-file-affected! file libs changes))
+      (when (and (contains? cf/flags :file-schema-validation)
+                 (not skip-validate))
+        (val/validate-file-schema-affected! file changes)))
+    false
+    (catch Throwable cause
+      (if (change-failure? cause)
+        true
+        (throw cause)))))
+
 (defn- rejection
-  "Describes `commits` as rejected, the first one failing with `cause`."
-  [commits cause]
+  "Describes `commits` as rejected, the first one failing with `cause`.
+  With `damaged`, the data that commit touches was invalid before it."
+  [commits cause damaged]
   (let [data (ex-data cause)]
-    {:commit-ids       (mapv :commit-id commits)
-     :failed-commit-id (:commit-id (first commits))
-     ;; An ex-info without a type reports like any unexpected exception
-     :error            (if (:type data)
-                         (cond-> {:type (:type data)
-                                  :code (:code data)
-                                  :hint (or (:hint data) (ex-message cause))}
-                           (:details data)
-                           (assoc :details (mapv #(dissoc % :shape) (:details data))))
-                         {:type :internal
-                          :code :unexpected-error
-                          :hint (or (ex-message cause) (.getName (class cause)))})}))
+    (cond-> {:commit-ids       (mapv :commit-id commits)
+             :failed-commit-id (:commit-id (first commits))
+             ;; An ex-info without a type reports like any unexpected exception
+             :error            (if (:type data)
+                                 (cond-> {:type (:type data)
+                                          :code (:code data)
+                                          :hint (or (:hint data) (ex-message cause))}
+                                   (:details data)
+                                   (assoc :details (mapv #(dissoc % :shape) (:details data))))
+                                 {:type :internal
+                                  :code :unexpected-error
+                                  :hint (or (ex-message cause) (.getName (class cause)))})}
+      damaged
+      (assoc :preexisting-damage true))))
 
 (defn- apply-prefix
   "Applies and validates the first `n` commits of `attempt`, starting from
@@ -697,8 +720,10 @@
   attempts; a commit that repairs an earlier one can keep both. Leaves the
   pointers and media refs of the kept prefix in place and returns its file,
   with the accepted changes in `::changes` and the rejection in
-  `::rejected`. The whole search is timed as the `retry` step of `cfg`."
-  [cfg {:keys [file commits state tracked] :as attempt} cause]
+  `::rejected`, which tells whether the data the first rejected commit
+  touches was already invalid. The whole search is timed as the `retry`
+  step of `cfg`."
+  [cfg {:keys [file libs commits skip-validate state tracked] :as attempt} cause]
   (let [tpoint (ct/tpoint)]
     (with-validation-timing cfg :retry-ms "retry"
       (loop [lo       0
@@ -712,7 +737,10 @@
             (if (instance? Throwable result)
               (recur lo mid result (inc attempts) accepted)
               (recur mid hi cause (inc attempts) result)))
-          (let [rejected (subvec commits lo)]
+          (let [rejected (subvec commits lo)
+                base     (:file accepted file)
+                damaged  (preexisting-damage? base libs (:changes (first rejected))
+                                              skip-validate)]
             (reset! pmap/*tracked* (:tracked accepted tracked))
             (reset! state (:refs accepted {}))
             (l/error :hint "update-file commit rejected"
@@ -721,10 +749,11 @@
                      :rejected (count rejected)
                      :commits (count commits)
                      :attempts attempts
+                     :preexisting-damage damaged
                      :elapsed (ct/format-duration (tpoint))
                      :cause cause)
             (assoc (:file accepted (assoc file ::changes []))
-                   ::rejected (rejection rejected cause))))))))
+                   ::rejected (rejection rejected cause damaged))))))))
 
 (defn- fail-repair
   [cfg file errors cause]

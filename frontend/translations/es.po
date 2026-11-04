@@ -1586,7 +1586,7 @@ msgstr "No se puede cargar el archivo multimedia."
 msgid "errors.character-limit-exceeded"
 msgstr "Se ha superado el límite de caracteres"
 
-#: src/app/main/data/workspace/libraries.cljs:1836
+#: src/app/main/data/workspace/libraries.cljs:1838
 msgid "errors.circular-library-reference"
 msgstr "No se puede añadir la biblioteca: crearía una dependencia circular"
 
@@ -1725,7 +1725,7 @@ msgstr "Ha ocurrido un problema con el web worker."
 msgid "errors.invalid-color"
 msgstr "Color no válido"
 
-#: src/app/plugins/utils.cljs:537, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
+#: src/app/plugins/utils.cljs:541, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
 msgid "errors.invalid-data"
 msgstr "Datos no válidos"
 
@@ -1875,17 +1875,30 @@ msgstr[1] ""
 "Ya no puedes editar este archivo, así que %s cambios no se han podido "
 "guardar. Recarga la página para ver el archivo como está ahora."
 
-#: src/app/main/data/persistence.cljs:680
+#: src/app/main/data/persistence.cljs:701
 msgid "errors.save-rejected-changes-undone"
 msgstr ""
-"Algunos de tus últimos cambios no se han podido guardar y se han deshecho. "
-"El resto de tu trabajo está guardado."
+"Algunos cambios no se han podido guardar, así que se han deshecho tus "
+"últimos cambios."
 
-#: src/app/main/data/persistence.cljs:528
+#: src/app/main/data/persistence.cljs:686
+msgid "errors.save-rejected-changes-undone-in-file"
+msgstr ""
+"Algunos cambios en «%s» no se han podido guardar, así que se han deshecho "
+"tus últimos cambios en ese archivo."
+
+#: src/app/main/data/persistence.cljs:696
+msgid "errors.save-rejected-damaged-data"
+msgstr ""
+"Esta página tiene datos dañados que no se pueden reparar automáticamente, "
+"así que sus cambios no se pueden guardar y se han deshecho. Contacta con "
+"soporte."
+
+#: src/app/main/data/persistence.cljs:609
 msgid "errors.save-retrying"
 msgstr "Se ha perdido la conexión. Reintentando guardar los cambios."
 
-#: src/app/main/data/persistence.cljs:527
+#: src/app/main/data/persistence.cljs:608
 msgid "errors.save-retrying-busy"
 msgstr "El servidor está ocupado. Reintentando guardar tus cambios."
 
@@ -4996,15 +5009,15 @@ msgstr "Empezar a diseñar"
 msgid "options.deleted-token-with-name"
 msgstr "El token {%s} no existe o ha sido borrado."
 
-#: src/app/plugins/utils.cljs:575
+#: src/app/plugins/utils.cljs:579
 msgid "plugins.validation.invalid-value"
 msgstr "esperado %s, obtenido %s (%s)"
 
-#: src/app/plugins/utils.cljs:589
+#: src/app/plugins/utils.cljs:593
 msgid "plugins.validation.message"
 msgstr "El campo %s no es válido: %s"
 
-#: src/app/plugins/utils.cljs:578
+#: src/app/plugins/utils.cljs:582
 msgid "plugins.validation.received-value"
 msgstr "obtenido %s (%s)"
 
@@ -7146,7 +7159,7 @@ msgstr "Mostrar"
 msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
 msgstr "Mostrar grid layout"
 
-#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:926
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:932
 msgid "workspace.layout-grid.editor.track-options"
 msgstr "Opciones de la pista"
 
@@ -7364,11 +7377,18 @@ msgstr "ACTUALIZACIONES"
 msgid "workspace.notification-pill.detail"
 msgstr "Detalles"
 
-#: src/app/main/data/workspace/notifications.cljs:283
+#: src/app/main/data/persistence.cljs:669
 msgid "workspace.notifications.file-repaired"
 msgstr ""
 "Hemos corregido algunos problemas de este archivo. Hay una copia de la "
 "versión original en el historial de versiones."
+
+#: src/app/main/data/persistence.cljs:662, src/app/main/data/persistence.cljs:691
+msgid "workspace.notifications.file-repaired-changes-undone"
+msgstr ""
+"Hemos corregido algunos problemas de este archivo. Hay una copia de la "
+"versión original en el historial de versiones. Algunos cambios no se han "
+"podido guardar, así que se han deshecho tus últimos cambios."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
 msgid "workspace.options.add-interaction"

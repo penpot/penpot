@@ -1566,7 +1566,7 @@ msgstr "Cannot upload the media file."
 msgid "errors.character-limit-exceeded"
 msgstr "Character limit exceeded"
 
-#: src/app/main/data/workspace/libraries.cljs:1836
+#: src/app/main/data/workspace/libraries.cljs:1838
 msgid "errors.circular-library-reference"
 msgstr "Cannot add library: this would create a circular dependency"
 
@@ -1703,7 +1703,7 @@ msgstr "Something wrong has happened with the web worker."
 msgid "errors.invalid-color"
 msgstr "Invalid color"
 
-#: src/app/plugins/utils.cljs:537, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
+#: src/app/plugins/utils.cljs:541, ../common/src/app/common/schema/messages.cljc:33, ../common/src/app/common/schema/messages.cljc:87
 msgid "errors.invalid-data"
 msgstr "Invalid data"
 
@@ -1842,17 +1842,27 @@ msgstr[1] ""
 "You can no longer edit this file, so %s changes could not be saved. Reload "
 "the page to see the file as it is now."
 
-#: src/app/main/data/persistence.cljs:680
+#: src/app/main/data/persistence.cljs:701
 msgid "errors.save-rejected-changes-undone"
-msgstr ""
-"Some of your latest changes couldn't be saved and were undone. The rest of "
-"your work is saved."
+msgstr "Some changes couldn't be saved, so your latest changes were undone."
 
-#: src/app/main/data/persistence.cljs:528
+#: src/app/main/data/persistence.cljs:686
+msgid "errors.save-rejected-changes-undone-in-file"
+msgstr ""
+"Some changes to “%s” couldn't be saved, so your latest changes to that file "
+"were undone."
+
+#: src/app/main/data/persistence.cljs:696
+msgid "errors.save-rejected-damaged-data"
+msgstr ""
+"This page has damaged data that can't be repaired automatically, so changes "
+"to it can't be saved and were undone. Contact support."
+
+#: src/app/main/data/persistence.cljs:609
 msgid "errors.save-retrying"
 msgstr "Connection lost. Retrying to save your changes."
 
-#: src/app/main/data/persistence.cljs:527
+#: src/app/main/data/persistence.cljs:608
 msgid "errors.save-retrying-busy"
 msgstr "The server is busy. Retrying to save your changes."
 
@@ -4949,15 +4959,15 @@ msgstr "Start designing"
 msgid "options.deleted-token-with-name"
 msgstr "{%s} token does not exist or has been deleted."
 
-#: src/app/plugins/utils.cljs:575
+#: src/app/plugins/utils.cljs:579
 msgid "plugins.validation.invalid-value"
 msgstr "expected %s, got %s (%s)"
 
-#: src/app/plugins/utils.cljs:589
+#: src/app/plugins/utils.cljs:593
 msgid "plugins.validation.message"
 msgstr "Field %s is invalid: %s"
 
-#: src/app/plugins/utils.cljs:578
+#: src/app/plugins/utils.cljs:582
 msgid "plugins.validation.received-value"
 msgstr "got %s (%s)"
 
@@ -7077,7 +7087,7 @@ msgstr "Locate"
 msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
 msgstr "Locate grid layout"
 
-#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:926
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:932
 msgid "workspace.layout-grid.editor.track-options"
 msgstr "Track options"
 
@@ -7295,11 +7305,18 @@ msgstr "UPDATES"
 msgid "workspace.notification-pill.detail"
 msgstr "Details"
 
-#: src/app/main/data/workspace/notifications.cljs:283
+#: src/app/main/data/persistence.cljs:669
 msgid "workspace.notifications.file-repaired"
 msgstr ""
 "We fixed some issues in this file. You can find a copy of the original "
 "version in the version history."
+
+#: src/app/main/data/persistence.cljs:662, src/app/main/data/persistence.cljs:691
+msgid "workspace.notifications.file-repaired-changes-undone"
+msgstr ""
+"We fixed some issues in this file. You can find a copy of the original "
+"version in the version history. Some changes couldn't be saved, so your "
+"latest changes were undone."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
 msgid "workspace.options.add-interaction"
