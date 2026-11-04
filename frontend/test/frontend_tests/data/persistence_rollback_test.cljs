@@ -10,12 +10,15 @@
   changes survive, and how the UI state follows. The pure plan behind it
   is tested in `frontend-tests.data.persistence-commits-test`."
   (:require
+   [app.common.geom.point :as gpt]
+   [app.common.time :as ct]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.modal :as-alias modal]
    [app.main.data.persistence :as dps]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.comments :as dwcm]
    [app.main.data.workspace.undo :as dwu]
    [app.main.errors :as errors]
    [app.util.i18n :as i18n]
@@ -691,6 +694,85 @@
          (t/is (empty? @failures))
          (t/is (nil? (get-in @store [:workspace-global :persistence-lock])))
          (t/is (= "Restored" (thp/shape-name store file-id page-id shape-id))))))))
+
+(defn- comment-thread
+  "A comment thread of `file-id` on `page-id`, pinned on `frame-id`."
+  [file-id page-id frame-id position]
+  {:id (uuid/next) :page-id page-id :file-id file-id :project-id (uuid/next)
+   :owner-id (uuid/next) :file-name "File" :seqn 1 :content "Note"
+   :participants #{} :created-at (ct/now) :modified-at (ct/now)
+   :position position :frame-id frame-id})
+
+;; Scenario: comment #1 sits on board Y. During a save Y is moved, which
+;; moves pin #1 in the same action, and board R is drawn and gets comment
+;; #2. The server rejects the move, so the move, the pin move and R are
+;; rolled back. Comment positions are saved by their own requests, so the
+;; server already holds the moved pin and #2 on R. Proves: pin #1 goes back
+;; to its spot on screen and on the server, and #2, whose board is gone,
+;; moves to the page root, as deleting the board does.
+(t/deftest ^:async a-rollback-puts-comment-pins-back-and-detaches-them-from-removed-boards
+  (let [answer   (rx/subject)
+        respond  (fn [cmd _]
+                   (if (= :update-file cmd)
+                     (->> answer (rx/take 1) (rx/observe-on :async))
+                     (rx/of nil)))]
+    (await
+     (thp/with-persistence
+       (^:async fn [{:keys [file-id requests store]}]
+         (let [page-id  (uuid/next)
+               shape-id (uuid/next)
+               board-y  (cts/setup-shape {:id (uuid/next) :type :frame :name "Y"
+                                          :parent-id uuid/zero :frame-id uuid/zero})
+               board-r  (cts/setup-shape {:id (uuid/next) :type :frame :name "R"
+                                          :parent-id uuid/zero :frame-id uuid/zero})
+               [p0 p1 p2] [(gpt/point 610 10) (gpt/point 760 10) (gpt/point 20 20)]
+               thread-1 (comment-thread file-id page-id (:id board-y) p1)
+               thread-2 (comment-thread file-id page-id (:id board-r) p2)
+               group    (uuid/next)
+               move     (grouped (thp/rename-commit file-id page-id (:id board-y) "Y" "Y moved") group)
+               pin      (grouped (ptk/data-event
+                                  ::dch/commit
+                                  {:id (uuid/next) :file-id file-id :file-revn 0 :file-vern 0
+                                   :source :local :features #{}
+                                   :redo-changes [{:type :set-comment-thread-position :page-id page-id
+                                                   :comment-thread-id (:id thread-1)
+                                                   :frame-id (:id board-y) :position p1}]
+                                   :undo-changes [{:type :set-comment-thread-position :page-id page-id
+                                                   :comment-thread-id (:id thread-1)
+                                                   :frame-id (:id board-y) :position p0}]})
+                                 group)
+               draw     (add-shape-commit file-id page-id board-r)
+               data     (-> (thp/file-data page-id shape-id "A")
+                            (thp/add-shape page-id (assoc board-y :name "Y moved"))
+                            (thp/add-shape page-id board-r)
+                            (assoc-in [:pages-index page-id :comment-thread-positions]
+                                      {(:id thread-1) {:frame-id (:id board-y) :position p1}
+                                       (:id thread-2) {:frame-id (:id board-r) :position p2}}))
+               sent     (fn [cmd] (into [] (comp (filter #(= cmd (first %))) (map second)) @requests))]
+           ;; The local data and the rendered pins already hold the edits
+           (ptk/emit! store
+                      (thp/open-file file-id page-id data)
+                      #(assoc % :comment-threads {(:id thread-1) thread-1 (:id thread-2) thread-2})
+                      (dwcm/watch-comment-thread-position-changes (rx/subject)))
+           (ptk/emit! store move pin draw ::dps/force-persist)
+           (await (async/wait-for #(seq (sent :update-file)) "the edits are sent"))
+           (rx/push! answer (thp/rejection (:id @move)))
+           (await (async/wait-for #(seq (sent :update-comment-thread-frame))
+                                  "the rollback updates the comments"))
+           (t/is (nil? (thp/shape-attr store file-id page-id (:id board-r) :id)) "R is gone")
+           (t/is (= p0 (get-in @store [:comment-threads (:id thread-1) :position]))
+                 "pin #1 is back on screen")
+           (t/is (= [{:id (:id thread-1) :position p0 :frame-id (:id board-y)}]
+                    (sent :update-comment-thread-position))
+                 "and on the server")
+           (t/is (= uuid/zero (get-in @store [:comment-threads (:id thread-2) :frame-id]))
+                 "comment #2 leaves the removed board")
+           (t/is (= p2 (get-in @store [:comment-threads (:id thread-2) :position]))
+                 "and keeps its spot")
+           (t/is (= [{:id (:id thread-2) :frame-id uuid/zero}]
+                    (sent :update-comment-thread-frame)))
+           (rx/end! answer)))
+       respond))))
 
 
 (defn- rejection-notice

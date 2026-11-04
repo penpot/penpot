@@ -95,7 +95,7 @@
 ;; Scenario: the save of the sync's commits fails for good, so waiting for
 ;; it ends with no value; later an edit of the same file is rejected.
 ;; Proves: the library is not marked as synced, its sync date goes back,
-;; and the sync stops listening, so the later rollback leaves the date alone.
+;; and the later rollback leaves the date alone.
 (t/deftest ^:async a-failed-sync-save-ends-the-sync
   (let [saved (rx/subject)]
     (await
@@ -112,3 +112,35 @@
                        (await (async/settle))
                        (t/is (= later (get-in @store [:files library-id :synced-at]))
                              "a later rollback does not wake the ended sync")))))))
+
+;; Scenario: the user becomes a viewer right after "Update", so the save of
+;; the sync's commits fails for good; when edit rights come back, the
+;; release of the failed save undoes the sync. Proves: the update notice is
+;; checked again, as after a rejected sync, instead of waiting for a reload.
+(t/deftest ^:async a-released-sync-checks-the-update-notice-again
+  (let [file-id    (uuid/next)
+        library-id (uuid/next)
+        store      (library-store file-id library-id)
+        waits      (atom 0)
+        notified   (atom 0)]
+    (await
+     (mock/with-mocks*
+       {rx/timer             (mock/stub (fn [& _] (rx/of 0)))
+        ;; The first wait ends with the failed save, the next ones saved
+        dps/wait-persisted   (mock/stub (fn [& _]
+                                          (if (= 1 (swap! waits inc))
+                                            (rx/empty)
+                                            (rx/of :saved))))
+        dwl/notify-sync-file (mock/stub (fn []
+                                          (swap! notified inc)
+                                          (ptk/data-event ::notified {})))
+        rp/cmd!              (mock/stub (fn [_ _] (rx/of nil)))}
+       (ptk/emit! store (dwl/sync-file file-id library-id))
+       (await (async/wait-for #(= 1 @waits) "the save of the sync fails"))
+       (await (async/settle))
+       (t/is (= synced-at (get-in @store [:files library-id :synced-at])))
+       (t/is (zero? @notified) "a failed save alone shows no notice")
+
+       ;; The role change that brings edit rights back releases the save
+       (ptk/emit! store (ptk/data-event ::dps/rolled-back {:file-ids #{file-id}}))
+       (await (async/wait-for #(= 1 @notified) "the release checks the update notice"))))))

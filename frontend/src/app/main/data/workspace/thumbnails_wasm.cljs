@@ -122,16 +122,25 @@
                            (catch :default err
                              (rx/error! subs err)))))))
 
+                  (get-subtree
+                    [state]
+                    (-> (dsh/lookup-page-objects state file-id page-id)
+                        (cfh/get-children-with-self frame-id)))
+
                   (persist-to-server
                     [data-uri]
-                    (let [blob (wapi/data-uri->blob data-uri)]
-                      (->> (rp/cmd! :create-file-object-thumbnail
-                                    {:file-id file-id
-                                     :object-id object-id
-                                     :media blob
-                                     :tag "component"})
-                           (rx/catch rx/empty)
-                           (rx/ignore))))
+                    ;; A change during the render (a rollback, an edit) makes
+                    ;; it stale; that change brings its own render
+                    (if (= (get-subtree state) (get-subtree @st/state))
+                      (let [blob (wapi/data-uri->blob data-uri)]
+                        (->> (rp/cmd! :create-file-object-thumbnail
+                                      {:file-id file-id
+                                       :object-id object-id
+                                       :media blob
+                                       :tag "component"})
+                             (rx/catch rx/empty)
+                             (rx/ignore)))
+                      (rx/empty)))
 
                   (do-render-thumbnail
                     []

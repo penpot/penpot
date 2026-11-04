@@ -580,21 +580,57 @@
       (let [hover-value (if value #{id} #{})]
         (assoc-in state [:workspace-local :hover] hover-value)))))
 
+(defn- leave-focus-mode
+  "Leaves focus mode, bringing back the viewport and the selection from
+  before it. Shapes removed since then are left out of the selection."
+  [state]
+  (let [objects  (dsh/lookup-page-objects state)
+        local    (:workspace-pre-focus state)
+        selected (:selected local)]
+    (-> state
+        (assoc :workspace-local
+               (cond-> local
+                 (some? selected)
+                 (assoc :selected (into (empty selected) (filter #(contains? objects %)) selected))))
+        (dissoc :workspace-focus-selected)
+        (dissoc :workspace-pre-focus))))
+
 (defn update-focus-shapes
+  "Adds the `added` shapes to the focus set and takes the `removed` ones
+  out. Focus mode ends when no focused shape is left, so a later shape
+  never brings it back on its own."
   [added removed]
-  (ptk/reify ::update-focus-shapes
-    ptk/UpdateEvent
-    (update [_ state]
+  (let [left? (volatile! false)]
+    (ptk/reify ::update-focus-shapes
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [objects (dsh/lookup-page-objects state)
+              current (:workspace-focus-selected state)
+              focus   (-> current
+                          (set/union added)
+                          (set/difference removed))
+              focus   (cfh/clean-loops objects focus)]
+          (cond
+            (empty? current)
+            state
 
-      (let [objects (dsh/lookup-page-objects state)
+            (empty? focus)
+            (do (vreset! left? true)
+                (leave-focus-mode state))
 
-            focus (-> (:workspace-focus-selected state)
-                      (set/union added)
-                      (set/difference removed))
-            focus (cfh/clean-loops objects focus)]
+            :else
+            (assoc state :workspace-focus-selected focus))))
 
-        (-> state
-            (assoc :workspace-focus-selected focus))))))
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (if @left?
+          (rx/of (ptk/data-event ::focus-mode-left))
+          (rx/empty)))
+
+      ptk/EffectEvent
+      (effect [_ state _]
+        (when @left?
+          (dwvw/maybe-sync-workspace-local-viewport! state))))))
 
 (defn toggle-focus-mode
   "Zoom in on and center viewport on selection;
@@ -615,10 +651,7 @@
 
         (if in-mode?
           ;; Exit focus, restoring previous viewport, selection, etc
-          (-> state
-              (assoc :workspace-local (:workspace-pre-focus state))
-              (dissoc :workspace-focus-selected)
-              (dissoc :workspace-pre-focus))
+          (leave-focus-mode state)
           (if have-selection?
             ;; Enter focus and save viewport, selection, etc
             (-> state
@@ -633,6 +666,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [stopper (rx/filter #(or (= ::toggle-focus-mode (ptk/type %))
+                                    (= ::focus-mode-left (ptk/type %))
                                     (= ::dwpg/finalize-page (ptk/type %))) stream)]
         (when (d/not-empty? (:workspace-focus-selected state))
           (->> (rx/merge
