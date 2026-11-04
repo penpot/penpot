@@ -5,55 +5,40 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.fdata-upsert-test
-  "Covers the invariants of `fdata/upsert!` that the partition runbook relies
-  on."
+  "Covers the write contract of `fdata/upsert!` after the `legacy-db` backend
+  became read-only."
 
   (:require
-   [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.features.fdata :as fdata]
-   [app.features.file-changes :as fchanges]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
-(t/deftest legacy-db-snapshot-moves-the-updated-at-watermark
-  ;; The runbook of the partition picks the rows changed since the bulk copy
-  ;; with `updated_at`, so every mutation of `file_change` has to move it. The
-  ;; `legacy-db` snapshot path writes the payload into the row, and it used to
-  ;; leave the watermark behind.
-  (let [profile  (th/create-profile* 1)
-        file     (th/create-file* 1 {:profile-id (:id profile)
-                                     :project-id (:default-project-id profile)})
-        id       (uuid/next)
-        past     (ct/in-past "2h")
-        payload  (byte-array [1 2 3])]
+(defn- upsert-cause
+  [params]
+  (try
+    (fdata/upsert! th/*system* params)
+    nil
+    (catch Exception cause
+      cause)))
 
-    (th/db-insert! :file-change
-                   {:id         id
-                    :file-id    (:id file)
-                    :revn       1
-                    :label      "v1"
-                    :kind       fchanges/snapshot-kind
-                    :updated-at past})
-
-    (t/is (true? (:written (fdata/upsert! th/*system*
-                                          {:id                id
-                                           :file-id           (:id file)
-                                           :type              "snapshot"
-                                           :backend           "legacy-db"
-                                           :storage-object-id nil
-                                           :data              payload}))))
-
-    (let [row (th/db-get :file-change {:id id} {::db/remove-deleted false})]
-      (t/testing "the payload lands in the legacy column"
-        (t/is (= (seq payload) (seq ^bytes (:data row)))))
-
-      (t/testing "the watermark moves to the moment of the mutation"
-        (t/is (pos? (compare (inst-ms (:updated-at row)) (inst-ms past))))))))
+(t/deftest legacy-db-param-is-rejected
+  ;; `legacy-db` is not a write backend anymore: the schema refuses it before
+  ;; touching the database.
+  (let [cause (upsert-cause {:id (uuid/next)
+                             :file-id (uuid/next)
+                             :type "snapshot"
+                             :backend "legacy-db"
+                             :storage-object-id nil
+                             :data (byte-array [1 2 3])})]
+    (t/is (some? cause))
+    (t/is (= :assertion (:type (ex-data cause))))
+    (t/is (= :data-validation (:code (ex-data cause))))))
 
 (t/deftest upsert-reports-the-pointer-it-created
   ;; The write reports the object it created, so a caller that persists again
@@ -124,3 +109,19 @@
         (t/is (= (:backend before) (:backend after)))
         (t/is (= (:storage-object-id before) (:storage-object-id after)))
         (t/is (= (vec (:data before)) (vec (:data after))))))))
+
+(t/deftest legacy-db-config-is-rejected-as-read-only
+  ;; The configuration value is kept for reading old data, but a write with
+  ;; it as the default backend fails with a clear message.
+  (with-redefs [cf/config (assoc cf/config :file-data-backend "legacy-db")]
+    (let [cause (upsert-cause {:id (uuid/next)
+                               :file-id (uuid/next)
+                               :type "snapshot"
+                               :storage-object-id nil
+                               :data (byte-array [1 2 3])})]
+      (t/is (some? cause))
+      (t/is (= :validation (:type (ex-data cause))))
+      (t/is (= :legacy-backend-read-only (:code (ex-data cause)))))))
+
+(t/deftest file-data-backend-defaults-to-db
+  (t/is (= "db" (cf/get :file-data-backend))))
