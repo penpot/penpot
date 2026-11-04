@@ -1063,3 +1063,10 @@
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :variant-diff false :rich-variants true
                                     :layout-copies true :text true}]
                        :ops [[:delete 5 0 0 0] [:switch 3 0 0 0] [:transform 0 0 0 3] [:update-main 0 0 0 0]]}))))
+
+(t/deftest generated-switch-keeps-a-moved-copy-child-in-place-as-its-own
+  ;; a copy child of a copy moved and switched to another variant keeps the
+  ;; moved place as its own geometry
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :library true :rich-variants true
+                                    :layout-copies true :text true}]
+                       :ops [[:nest 4 0 0 0] [:transform 1 0 0 3] [:switch 3 0 0 0]]}))))
