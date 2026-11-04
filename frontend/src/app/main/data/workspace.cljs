@@ -243,7 +243,9 @@
                     :save-undo? false
                     :origin it
                     :tags #{:position-data}
-                    :skip-component-sync? true}))
+                    :skip-component-sync? true
+                    ;; Derived from the text, so it follows it while saves fail
+                    :ignore-save-lock true}))
            (rx/empty)))))))
 
 (defn- workspace-initialized
@@ -579,7 +581,9 @@
                               {:redo-changes changes :undo-changes []
                                :save-undo? false
                                :tags #{:position-data}
-                               :skip-component-sync? true})))))
+                               :skip-component-sync? true
+                               ;; Derived from commits already made, rollbacks included
+                               :ignore-save-lock true})))))
                       (rx/take-until stoper-s)))
 
                (->> stream

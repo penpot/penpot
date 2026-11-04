@@ -19,6 +19,7 @@
    [app.config :as cf]
    [app.main.data.helpers :as dsh]
    [app.main.data.persistence :as-alias dps]
+   [app.main.data.persistence.lock :as plk]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.texts :as dwt]
    [app.main.features :as features]
@@ -189,10 +190,12 @@
 
         ;; A rollback that reverts the text or its styles puts the reverted
         ;; content in the editor, which would otherwise keep showing and
-        ;; saving the rejected one
+        ;; saving the rejected one. Saves failing do the same with the last
+        ;; committed content, since the typing not yet committed is dropped.
         rolled-back-sub
         (->> st/stream
-             (rx/filter (ptk/type? ::dps/rolled-back))
+             (rx/filter #(or (ptk/type? ::dps/rolled-back %)
+                             (plk/cancel-gestures? %)))
              (rx/subs! (fn [_]
                          (let [content (-> (dsh/lookup-page-objects @st/state)
                                            (get shape-id)

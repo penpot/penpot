@@ -616,7 +616,9 @@
                                  :file-id file-id
                                  :save-undo? false
                                  ;; Its own group, never that of an open undo transaction
-                                 :undo-group (uuid/next)))
+                                 :undo-group (uuid/next)
+                                 ;; Rollbacks also run while saves fail
+                                 :ignore-save-lock true))
       (let [{:keys [file-revn file-vern features]} (peek commits)]
         (append-commit
          (pcm/queue-entry
