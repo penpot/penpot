@@ -6,16 +6,13 @@
 
 (ns performance-tests.render-wasm.merge-test
   (:require
+   [benches.render-wasm.report.summarize :as summary]
    [benches.render-wasm.result :as result]
    [cljs.test :as t :include-macros true]))
 
 (defn- metric
   [value]
-  (result/metric {:value value
-                  :unit :ms
-                  :semantics :elapsed
-                  :basis {:kind :attempt-total}
-                  :zero-policy :positive}))
+  {:command :fixture/work :metrics {:command/elapsed [value]}})
 
 (defn- case-definition
   [case-id]
@@ -33,11 +30,12 @@
 (defn- preparation
   [preparation-id case-id]
   {:preparation-id preparation-id
-   :case-id case-id
+   :case-id case-id :warmup? false
    :fingerprint {:algorithm :sha-256
                  :digest (apply str (repeat 64 "a"))}
    :effective-graphics {:webgl2 true}
-   :diagnostics {}})
+   :diagnostics {}
+   :phases [{:phase :preparation :preparation-id preparation-id :outcome :completed :events []}]})
 
 (defn- attempt
   [case-id preparation-id warmup?]
@@ -45,8 +43,8 @@
    :preparation-id preparation-id
    :warmup? warmup?
    :outcome :completed
-   :metrics {:elapsed (metric 1.0)}
-   :trace {}})
+   :phases [{:phase :main :preparation-id preparation-id
+             :outcome :completed :events [(metric 1.0)]}]})
 
 (defn- make-run
   [{:keys [run-id cases warmups repetitions git-sha build environment analysis
@@ -110,7 +108,7 @@
     (t/is (= 1 (get-in merged [:plan :warmups])))
     (t/is (= 5 (get-in merged [:plan :repetitions])))
     (t/is (= 12 (count (:attempts merged))))
-    (t/is (= (range 12) (map :ordinal (:attempts merged))))
+    (t/is (= (range 12) (map :attempt-id (:attempts merged))))
     (t/is (= [true false false true false false false false false false false false]
              (map :warmup? (:attempts merged))))
     (t/is (every? #(every? zero? (vals %)) (vals (:remaining merged))))
@@ -200,3 +198,21 @@
     (t/is (thrown-with-msg? js/Error #"duplicate preparation ids"
                             (result/merge-runs base additional
                                                {:run-id "merged"})))))
+
+(t/deftest quantity-prose-does-not-change-merge-compatibility
+  (let [base (make-run {:run-id "base" :cases [:case/load] :warmups 0 :repetitions 1})
+        additional (-> (make-run {:run-id "additional" :cases [:case/load] :warmups 0 :repetitions 1})
+                       (assoc-in [:quantities :command/elapsed :description] "Elapsed command work."))
+        merged (result/merge-runs base additional {:run-id "merged"})]
+    (t/is (= 2 (get-in merged [:plan :repetitions])))
+    (t/is (= merged (result/decode (result/encode merged))))
+    (let [malformed (assoc-in additional [:quantities :command/elapsed :description] 42)
+          report (summary/summarize malformed)]
+      (t/is (= :malformed-quantity
+               (get-in report [:cases 0 :metrics [:main :fixture/work :command/elapsed] :diagnostics 0 :reason])))
+      (t/is (thrown-with-msg? js/Error #"malformed quantity descriptions"
+                              (result/merge-runs base malformed {:run-id "invalid"}))))
+    (t/is (thrown-with-msg? js/Error #"different quantity units"
+                            (result/merge-runs base
+                                               (assoc-in additional [:quantities :command/elapsed :unit] :seconds)
+                                               {:run-id "invalid"})))))

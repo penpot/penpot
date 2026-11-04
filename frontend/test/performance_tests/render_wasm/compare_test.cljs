@@ -28,11 +28,7 @@
 
 (defn- metric
   [value]
-  (result/metric {:value value
-                  :unit :ms
-                  :semantics :elapsed
-                  :basis {:kind :attempt-total}
-                  :zero-policy :positive}))
+  {:command :fixture/work :metrics {:command/elapsed [value]}})
 
 (defn- case-definition
   [case-id scene]
@@ -68,19 +64,21 @@
         run (result/record-preparation
              run
              {:preparation-id preparation-id
-              :case-id case-id
+              :case-id case-id :warmup? false
               :fingerprint {:algorithm :sha-256
                             :digest fingerprint}
               :effective-graphics {:webgl2 true}
-              :diagnostics {}})
+              :diagnostics {}
+              :phases [{:phase :preparation :preparation-id preparation-id
+                        :outcome :completed :events []}]})
         run (result/record-attempt
              run
              {:case-id case-id
               :preparation-id preparation-id
               :warmup? false
               :outcome :completed
-              :metrics {:elapsed (metric value)}
-              :trace {}})]
+              :phases [{:phase :main :preparation-id preparation-id
+                        :outcome :completed :events [(metric value)]}]})]
     (result/finish-run run "2026-10-26T00:01:00.000Z" {:reason :completed})))
 
 (defn- write-run
@@ -111,7 +109,7 @@
                   :allow-all-differences false}
                  (:permissions comparison)))
         (t/is (empty? (get-in comparison [:pairs 0 :mismatches])))
-        (t/is (= 2 (get-in comparison [:pairs 0 :metrics :elapsed :absolute :value])))
+        (t/is (= 2 (get-in comparison [:pairs 0 :metrics [:main :fixture/work :command/elapsed] :absolute :value])))
         (t/is (str/includes? text "Baseline"))
         (t/is (str/includes? text "Candidate"))
         (t/is (str/includes? text "case/load"))

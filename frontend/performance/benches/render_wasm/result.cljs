@@ -11,33 +11,24 @@
    [app.common.transit :as transit]
    [benches.render-wasm.codec :as codec]
    [benches.render-wasm.features.plan :as feature-plan]
+   [benches.render-wasm.quantities :as quantities]
    [benches.render-wasm.report.analysis :as analysis]))
 
-(def schema:basis
-  "An attempt total or an average over a declared number of inner calls."
-  [:or
-   [:map {:closed true} [:kind [:= :attempt-total]]]
-   [:map {:closed true} [:kind [:= :per-call-average]] [:calls [:int {:min 1}]]]])
-
-(def schema:metric-definition
-  "The declared meaning and observation basis of a metric.
-  Authors define units and semantics; the schema accepts any vocabulary.
-  Comparison checks their equality without interpreting or converting them."
+(def schema:event
+  "One measured command invocation with its ordered raw values."
   [:map {:closed true}
-   [:unit :any]
-   [:semantics :any]
-   [:basis schema:basis]
-   [:zero-policy [:enum :positive :allow]]])
+   [:command qualified-keyword?]
+   [:metrics [:map-of qualified-keyword? [:vector {:min 1} number?]]]
+   [:trace {:optional true} :any]])
 
-(def schema:metric
-  "An explicit observation, including raw invalid values and their reason."
+(def schema:phase
+  "Raw command history for one phase execution, including partial failures."
   [:map {:closed true}
-   [:value :any]
-   [:unit :any]
-   [:semantics :any]
-   [:basis schema:basis]
-   [:zero-policy [:enum :positive :allow]]
-   [:invalid-reason [:maybe keyword?]]])
+   [:phase [:enum :preparation :main :reset]]
+   [:preparation-id some?]
+   [:outcome [:enum :completed :failed]]
+   [:events [:vector schema:event]]
+   [:diagnostics {:optional true} [:vector :any]]])
 
 (def schema:fingerprint
   "The content digest of the actual validated starting snapshot."
@@ -46,24 +37,26 @@
    [:digest [:re #"^[0-9a-f]{64}$"]]])
 
 (def schema:preparation
-  "Untimed setup evidence for one owned scene."
+  "Setup diagnostics and callback measurements for one owned scene."
   [:map {:closed true}
    [:preparation-id some?]
    [:case-id some?]
-   [:fingerprint schema:fingerprint]
-   [:effective-graphics map?]
-   [:diagnostics map?]])
+   [:warmup? boolean?]
+   [:fingerprint {:optional true} schema:fingerprint]
+   [:effective-graphics {:optional true} map?]
+   [:diagnostics map?]
+   [:phases [:vector schema:phase]]
+   [:failure {:optional true} map?]])
 
 (def schema:attempt
   "One chronological execution; failure consumes a slot and may retain evidence."
   [:map {:closed true}
-   [:ordinal [:int {:min 0}]]
+   [:attempt-id [:int {:min 0}]]
    [:case-id some?]
    [:preparation-id [:maybe some?]]
    [:warmup? boolean?]
    [:outcome [:enum :completed :failed]]
-   [:metrics [:map-of :any schema:metric]]
-   [:trace map?]
+   [:phases [:vector schema:phase]]
    [:failure {:optional true} map?]
    [:partial {:optional true} map?]])
 
@@ -98,6 +91,7 @@
            [:timeout-policy [:map [:attempt-ms [:int {:min 1}]]]]]]
    [:metadata schema:metadata]
    [:analysis analysis/schema:settings]
+   [:quantities [:map-of qualified-keyword? :any]]
    [:preparations [:vector schema:preparation]]
    [:attempts [:vector schema:attempt]]
    [:remaining [:map-of :any [:map {:closed true}
@@ -132,13 +126,15 @@
    [:map {:closed true} [:reason keyword?] [:count [:int {:min 0}]]]])
 
 (def schema:metric-report
-  "Every metric definition, distinct counts and computed estimates."
+  "A sum within each phase execution and statistics across eligible executions."
   [:map {:closed true}
-   [:definitions [:vector schema:metric-definition]]
+   [:definitions [:vector quantities/schema:description]]
+   [:statistic [:= :sum]]
    [:counts [:map {:closed true}
              [:valid [:int {:min 0}]] [:invalid [:int {:min 0}]] [:absent [:int {:min 0}]]
-             [:failed [:int {:min 0}]] [:unattempted [:int {:min 0}]] [:warmup [:int {:min 0}]]]]
-   [:mixed-definitions? boolean?]
+             [:failed [:int {:min 0}]] [:unattempted [:int {:min 0}]] [:warmup [:int {:min 0}]]
+             [:invocations [:int {:min 0}]] [:raw-values [:int {:min 0}]]]]
+   [:diagnostics [:vector map?]]
    [:statistics schema:statistics]])
 
 (def schema:comparison-side
@@ -146,6 +142,9 @@
   [:map {:closed true}
    [:case-id some?] [:definition [:map [:id some?]]]
    [:preparations [:vector schema:preparation]]
+   [:phases [:map-of :keyword [:map {:closed true}
+                               [:executions nat-int?] [:completed nat-int?]
+                               [:failed nat-int?] [:warmup nat-int?]]]]
    [:remaining [:map {:closed true} [:warmups [:int {:min 0}]] [:repetitions [:int {:min 0}]]]]
    [:failed-attempts [:vector schema:attempt]]
    [:metrics [:map-of :any schema:metric-report]]])
@@ -260,33 +259,6 @@
                       :base base-value
                       :additional additional-value}))))
 
-(defn invalid-reason
-  "Classifies one raw measurement without changing its value.
-  Nil denotes an explicit missing value; an absent metric has no entry.
-  Aggregate durations require positivity unless their entry permits zero."
-  [{:keys [value zero-policy]}]
-  (cond
-    (nil? value) :missing-value
-    (not (number? value)) :not-numeric
-    (not (js/Number.isFinite value)) :non-finite
-    (neg? value) :negative
-    (and (zero? value) (= zero-policy :positive)) :below-resolution
-    :else nil))
-
-(defn metric
-  "Validates an explicit metric definition and attaches its invalidity reason.
-  Authored invalidity reasons survive when the numeric value otherwise qualifies."
-  [entry]
-  (let [entry (assoc entry :invalid-reason (or (invalid-reason entry)
-                                               (:invalid-reason entry)))]
-    (require-valid! (sm/validate schema:metric entry) "invalid metric entry" {:metric entry})
-    entry))
-
-(defn metric-definition
-  "Returns unit, semantics, basis and zero policy without a measurement value."
-  [entry]
-  (select-keys entry [:unit :semantics :basis :zero-policy]))
-
 (defn- initial-remaining
   "Creates each saved case's fixed budget of unattempted slots."
   [{:keys [cases warmups repetitions]}]
@@ -304,6 +276,23 @@
                     "measured attempt precedes planned warmups" {:case-id case-id})
     (update-in remaining path dec)))
 
+(defn get-unmeasured-cases
+  "Returns saved case ids whose phase histories contain no measured commands.
+
+  Args:
+    run: constructed or decoded run record.
+
+  Returns:
+    A vector of case identifiers in plan order."
+  [run]
+  (into []
+        (keep (fn [{:keys [id]}]
+                (when-not (some (comp seq :events)
+                                (mapcat :phases (filter #(= id (:case-id %))
+                                                        (concat (:preparations run) (:attempts run)))))
+                  id)))
+        (get-in run [:plan :cases])))
+
 (defn- check-completion
   "Requires all planned attempts to succeed before a run can be completed."
   [run termination]
@@ -311,7 +300,55 @@
     (require-valid! (every? #(every? zero? (vals %)) (vals (:remaining run)))
                     "completed run still has unattempted slots" {})
     (require-valid! (not-any? #(= :failed (:outcome %)) (:attempts run))
-                    "completed run has failed attempts" {})))
+                    "completed run has failed attempts" {})
+    (require-valid! (not-any? :failure (:preparations run))
+                    "completed run has failed preparations" {})
+    (require-valid! (empty? (get-unmeasured-cases run))
+                    "completed case has no measurements" {:case-ids (get-unmeasured-cases run)})))
+
+(defn- check-phases
+  [record allowed]
+  (let [phases (:phases record)]
+    (require-valid! (= (mapv :phase phases)
+                       (filterv (set (map :phase phases)) allowed))
+                    "phase order or identity is invalid" {})
+    (doseq [phase phases]
+      (require-valid! (= (:preparation-id record) (:preparation-id phase))
+                      "phase references a different preparation" {})
+      (doseq [event (:events phase)]
+        (require-valid! (= 1 (count (get-in event [:metrics :command/elapsed])))
+                        "command needs one elapsed value" {:command (:command event)})))
+    (when-not (or (:failure record) (= :failed (:outcome record)))
+      (require-valid! (every? #(= :completed (:outcome %)) phases)
+                      "successful execution has a failed phase" {}))))
+
+(defn- check-preparation
+  [preparation]
+  (require-valid! (sm/validate schema:preparation preparation) "invalid preparation" {})
+  (check-phases preparation [:preparation])
+  (when-not (:failure preparation)
+    (require-valid! (and (:fingerprint preparation) (:effective-graphics preparation)
+                         (= [:preparation] (mapv :phase (:phases preparation))))
+                    "completed preparation needs scene, graphics and phase evidence" {})))
+
+(defn- check-attempt
+  [attempt preparation]
+  (require-valid! (sm/validate schema:attempt attempt) "invalid attempt" {})
+  (check-phases attempt [:main :reset])
+  (when (:preparation-id attempt)
+    (require-valid! (= (:case-id attempt) (:case-id preparation))
+                    "attempt references an unknown or different preparation" {}))
+  (when (= :completed (:outcome attempt))
+    (require-valid! (and preparation (not (:failure preparation))
+                         (not (:failure attempt))
+                         (= :main (get-in attempt [:phases 0 :phase])))
+                    "completed attempt needs successful preparation and main" {}))
+  (when (seq (:phases attempt))
+    (require-valid! (= :main (get-in attempt [:phases 0 :phase]))
+                    "attempt phases must start with main" {})
+    (require-valid! (not (:failure preparation)) "attempt phases need successful preparation" {}))
+  (when (= :failed (get-in attempt [:phases 0 :outcome]))
+    (require-valid! (= 1 (count (:phases attempt))) "reset follows failed main" {})))
 
 (defn check-run
   "Validates schema:run and chronological accounting at a saved-data boundary."
@@ -326,17 +363,11 @@
     (require-valid! (= (count prep-ids) (count (set prep-ids))) "duplicate preparation" {})
     (require-valid! (every? #(contains? (set case-ids) %) (map :case-id preps)) "unknown preparation case" {})
     (require-valid! (= left (:remaining run)) "remaining slots disagree with attempts" {})
-    (doseq [[ordinal attempt] (map-indexed vector (:attempts run))]
-      (require-valid! (= ordinal (:ordinal attempt)) "attempts are not chronological" {})
-      (when-some [id (:preparation-id attempt)]
-        (require-valid! (= (:case-id attempt) (:case-id (get prep-map id)))
-                        "attempt references an unknown or different preparation" {:preparation-id id}))
-      (require-valid! (or (= :failed (:outcome attempt)) (some? (:preparation-id attempt)))
-                      "completed attempt needs a preparation" {})
-      (doseq [[id entry] (:metrics attempt)]
-        (require-valid! (= (:invalid-reason entry)
-                           (or (invalid-reason entry) (:invalid-reason entry)))
-                        "metric validity disagrees with raw value" {:metric-id id})))
+    (doseq [prep preps]
+      (check-preparation prep))
+    (doseq [[attempt-id attempt] (map-indexed vector (:attempts run))]
+      (require-valid! (= attempt-id (:attempt-id attempt)) "attempts are not chronological" {})
+      (check-attempt attempt (get prep-map (:preparation-id attempt))))
     (check-completion run (:termination run)))
   run)
 
@@ -345,11 +376,12 @@
   The plan defaults to 3 warmups, 10 repetitions and a 30000 ms attempt timeout.
   For each case, all warmup slots precede measured slots. Failed attempts consume
   their slot too; attempts retain chronological order across cases."
-  [{:keys [run-id started-at plan metadata analysis]}]
+  [{:keys [run-id started-at plan metadata analysis quantities]}]
   (let [plan (merge {:warmups 3 :repetitions 10 :timeout-policy {:attempt-ms 30000}} plan)]
     (check-run {:type :run-record
                 :run-id run-id :started-at started-at :ended-at nil
                 :plan plan :metadata metadata :analysis (analysis/resolve-settings analysis)
+                :quantities (merge quantities/descriptions quantities)
                 :preparations [] :attempts [] :remaining (initial-remaining plan)
                 :termination {:reason :running}})))
 
@@ -363,7 +395,7 @@
   The run must come from create-run or decode; earlier evidence is trusted."
   [run preparation]
   (check-open! run)
-  (require-valid! (sm/validate schema:preparation preparation) "invalid preparation" {})
+  (check-preparation preparation)
   (require-valid! (contains? (:remaining run) (:case-id preparation)) "unknown preparation case" {})
   (require-valid! (not-any? #(= (:preparation-id preparation) (:preparation-id %))
                             (:preparations run))
@@ -372,20 +404,15 @@
 
 (defn record-attempt
   "Checks and appends one new execution, consuming its scheduled slot.
-  The run must come from create-run or decode, and metric entries from metric.
+  The run must come from create-run or decode.
   Missing preparation is allowed for failures before scene setup completes.
   Earlier attempts are trusted; encode and decode check the complete record."
   [run attempt]
   (check-open! run)
-  (let [attempt (-> (merge {:preparation-id nil :metrics {} :trace {}} attempt)
-                    (assoc :ordinal (count (:attempts run))))]
-    (require-valid! (sm/validate schema:attempt attempt) "invalid attempt" {})
-    (when-some [id (:preparation-id attempt)]
-      (let [preparation (some #(when (= id (:preparation-id %)) %) (:preparations run))]
-        (require-valid! (= (:case-id attempt) (:case-id preparation))
-                        "attempt references an unknown or different preparation" {:preparation-id id})))
-    (require-valid! (or (= :failed (:outcome attempt)) (some? (:preparation-id attempt)))
-                    "completed attempt needs a preparation" {})
+  (let [attempt (-> (merge {:preparation-id nil :phases []} attempt)
+                    (assoc :attempt-id (count (:attempts run))))]
+    (check-attempt attempt (some #(when (= (:preparation-id attempt) (:preparation-id %)) %)
+                                 (:preparations run)))
     (-> run
         (update :attempts conj attempt)
         (update :remaining consume-slot attempt))))
@@ -407,6 +434,7 @@
   warmups and adds `additional`'s measured repetitions. Warmup attempts
   and preparations used only by them are excluded from `additional`.
 
+  The merged record uses the base run's quantity descriptions.
   The caller supplies the merged run id and may supply its end time."
   [base additional {:keys [run-id ended-at]}]
   (let [base       (check-run base)
@@ -433,6 +461,13 @@
                           [[:metadata :environment] "runtime environment"]
                           [[:metadata :scored?] "scored flag"]]]
       (require-compatible! base additional path label))
+    (doseq [run [base additional]]
+      (require-valid! (every? #(sm/validate quantities/schema:description %)
+                              (vals (:quantities run)))
+                      "cannot merge malformed quantity descriptions" {:run-id (:run-id run)}))
+    (when-not (= (update-vals (:quantities base) #(dissoc % :description))
+                 (update-vals (:quantities additional) #(dissoc % :description)))
+      (incompatible! "cannot merge runs with different quantity units" {}))
     (let [base-attempts        (:attempts base)
           additional-measured  (filterv #(not (:warmup? %)) (:attempts additional))
           base-preparations    (:preparations base)
@@ -448,7 +483,7 @@
       (let [offset    (count base-attempts)
             attempts  (into (vec base-attempts)
                             (map-indexed (fn [index attempt]
-                                           (assoc attempt :ordinal (+ offset index)))
+                                           (assoc attempt :attempt-id (+ offset index)))
                                          additional-measured))
             plan      (assoc (:plan base)
                              :repetitions (+ (get-in base [:plan :repetitions])
@@ -476,6 +511,7 @@
                     :plan plan
                     :metadata metadata
                     :analysis (:analysis base)
+                    :quantities (:quantities base)
                     :preparations (into (vec base-preparations) additional-preparations)
                     :attempts attempts
                     :remaining remaining

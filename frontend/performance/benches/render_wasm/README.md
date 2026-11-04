@@ -93,9 +93,9 @@ The suite has three parts:
   fingerprinting, upload-order derivation, and upload. It then runs the optional
   preparation callback and drains to `Full` unless the case declares
   `:preparation {:render :none}`. One page owns one preparation.
-- **Attempt**: one execution of a case against a preparation. An attempt
-  records one outcome, one set of metrics, and a raw trace. A failed attempt
-  still consumes its allocated slot.
+- **Attempt**: one execution of a case against a preparation. It records an
+  `:attempt-id`, one outcome, main and optional reset phase blocks, and failure
+  or partial evidence. A failed attempt still consumes its allocated slot.
 - **Warmup**: an attempt that runs the case before measured attempts to warm
   caches and stabilize the page. The run records warmups but excludes them from
   statistics.
@@ -105,9 +105,9 @@ The suite has three parts:
   processes it starts, fixes warmup and repetition counts, records failures in
   chronological order, and performs no hidden retries.
 - **Run record**: the saved evidence for one run: plan, build and environment
-  provenance, preparations, attempts, metrics, traces, failures, remaining
-  slots, and termination. The runner stores it as a data file validated by a
-  schema.
+  provenance, quantity descriptions, preparations, attempts with their phase
+  histories, failures, remaining slots, and termination. The runner stores it as
+  a data file validated by a schema.
 - **Bridge**: the object that runs in the browser, receives plain requests from
   Node, owns the page's renderer context, runs preparations and attempts, and
   returns plain results.
@@ -120,13 +120,14 @@ The suite has three parts:
 - **Measurement**: a numeric result for a quantity such as elapsed duration.
   The suite measures module start, graphics start, upload, first render, and
   camera movement separately.
-- **Metric**: the name and definition of a measured quantity. Saved run metrics
-  declare a unit, semantics, basis, and zero policy. Semantics identifies what
-  the value measures. The basis states whether a value covers an attempt or
-  averages its inner calls. The zero policy states whether zero supplies a valid
-  value for analysis.
-- **Observation**: one valid value from a measured attempt for statistical
-  analysis. A batch average supplies one observation for its attempt.
+- **Metric**: the name of a measured quantity. A command event records its raw
+  numeric values in a vector. A saved run supplies a `:unit` and an optional
+  `:description` for each metric type. It stores no statistic or reduction.
+- **Metric key**: `[phase scope metric-type]`. Scope is the command that recorded
+  the metric or `:global` for every command with that type in the phase.
+- **Observation**: one eligible phase execution's sum for one metric key. Inner
+  calls, slices, and loop repetitions stay within that execution and do not add
+  observations. Warmups and failed attempts supply none.
 - **Slice**: a trace entry for one renderer call: timestamp, flags, frame type,
   and duration. Slices describe the work within an attempt.
 - **Trace**: details of the work, including individual renderer calls,
@@ -189,7 +190,7 @@ The suite has three parts:
 - **Report**: the statistics and tables computed from one or more run records.
   Reports run in Node or the browser and do not load the renderer.
 - **Comparison**: an offline analysis of two saved run records. It pairs cases,
-  checks compatibility, and reports changes for each metric with intervals.
+  checks compatibility, and reports changes for each metric key with intervals.
 - **A/B comparison**: a comparison of two runs that differ by one renderer
   feature. The feature is off in one run and on in the other.
 - **Permission**: In principle, only run records with equal builds and equal
@@ -263,8 +264,12 @@ sequenceDiagram
     B->>W: create the WebGL2 context
     B->>B: build, validate, fingerprint the snapshot
     B->>W: upload shapes in tree order
-    B->>W: render until Full
-    B-->>N: preparation evidence and raw phase blocks
+    B->>B: run preparation callback
+    B->>W: render Full unless disabled
+    B-->>N: preparation evidence and raw phase block
+    N->>N: persist the run record
+    N->>B: run main and reset
+    B-->>N: raw main and reset phase blocks
     N->>N: persist the run record
 ```
 
@@ -789,7 +794,9 @@ reading. Promise callbacks can run later as the browser schedules queued work.
 
 Measured command events keep each metric's raw values in a vector. Repeated
 commands produce separate events, including when they name the same metric.
-Raw values preserve zero, negative, and non-finite measurements for analysis.
+Raw values preserve zero, negative, and non-finite measurements in the saved
+record. Reports sum one metric type within one phase execution before computing
+statistics; saved records contain no aggregates.
 
 ### Renderer completion
 
@@ -854,25 +861,29 @@ A run record contains:
   timeout policy;
 - metadata: Git revision and dirty flag, build facts, environment, and diagnostics;
 - the resolved analysis settings;
+- saved quantity descriptions;
 - preparations in chronological order;
-- attempts in chronological order, each with its case, preparation, outcome,
-  metrics, trace, and failure evidence;
+- attempts in chronological order, each with its case, preparation,
+  `:attempt-id`, warmup flag, outcome, main/reset phase blocks, and failure or
+  partial evidence;
 - remaining slots for each case;
 - the termination reason.
 
-A preparation records its case, fingerprint, effective graphics, and setup
-diagnostics. An attempt records one outcome and its metric entries. Entries can
-describe invalid values or missing measurements. Errors retain available
-traces of render calls and waits after a failure.
+A preparation records its case, warmup flag, setup diagnostics, phase history,
+and any failure. A completed preparation also has its fingerprint and effective
+graphics. An attempt records one outcome and its main and optional reset phase
+blocks. A phase block retains ordered command events, raw metric vectors, and
+optional completion diagnostics. Errors retain available phase evidence and
+traces after a failure.
 
 ### Failures and termination
 
 A failed attempt still consumes its allocated slot. A fresh preparation failure
-records a failed attempt and consumes the slot. A warm preparation failure or a
-warm attempt failure releases the prepared page and context and leaves that
-case's remaining slots unattempted. A browser or page failure closes the browser
-it started, abandons the current case, and starts a new browser for the next
-case when possible. The run fixes its attempt count before execution and uses
+records a failed attempt and consumes the slot. A reuse case's preparation
+failure or attempt failure releases the prepared page and context and leaves
+that case's remaining slots unattempted. A browser or page failure closes the
+browser it started, abandons the current case, and starts a new browser for the
+next case when possible. The run fixes its attempt count before execution and uses
 each allocated slot at most once.
 
 A run terminates in one of four states:
@@ -890,22 +901,44 @@ that ended in failure.
 
 ### Summaries
 
-A summary reports, for each case and metric:
+A summary reports one entry per case and metric key
+`[phase scope metric-type]`. The scope is the command that recorded the metric,
+or `:global` for every command with that type in the phase. For each key, the
+report sums the raw values of one metric type within each eligible phase
+execution and computes statistics across those execution sums. It labels the
+reduction `:statistic :sum`.
+
+For each metric key, the report includes:
 
 - the observed mean, median, minimum, maximum, sample standard deviation, and
   median absolute deviation;
 - a bootstrap confidence interval for the median. The interval comes from
-  repeated resampling of the observed attempts;
-- observed p95 and p99 values, the 95th and 99th percentile durations, when the
-  sample is large enough;
-- counts in the valid, invalid, absent, failed, unattempted, and warmup
-  categories;
-- the definitions and units of the metric.
+  repeated resampling of the observed execution sums;
+- observed p95 and p99 values when the sample is large enough;
+- counts for the valid, invalid, absent, failed, unattempted, and warmup
+  categories, plus command invocation and raw-value counts;
+- the saved quantity unit and optional description, and any validity
+  diagnostics.
 
-Statistics use valid values from completed measured attempts. The record also
-retains warmups and failures. A completed attempt can supply a valid value for
-one metric and an invalid value for another. A pooled estimate combines values
-across attempts and requires matching metric definitions.
+Statistical `n` is the valid count. Invocations count command events and
+raw-values count all recorded numbers across eligible executions; neither is the
+number of observations. Warmups and failed attempts are excluded. A failed
+attempt excludes both its main and reset blocks. A completed preparation remains
+eligible after a later main or reset failure. A fresh warmup preparation is
+excluded; one reuse preparation supplies one observation, not one per attempt.
+
+A finite zero is valid. Negative and non-finite raw values remain in the saved
+record but invalidate the dependent execution sum and aggregate; independent
+metric keys remain usable. Unknown or malformed quantity metadata appears as a
+diagnostic and leaves that key without usable statistics. A phase can complete
+with no events, but a completed run requires at least one measurement across
+each case's phases.
+
+The case report also counts actual preparation, main, and reset executions.
+Completed and failed counts use each execution's own outcome, and a separate
+count records warmup executions. These phase counts do not filter by attempt
+eligibility. A completed main block from an attempt whose reset failed still
+appears in the main phase counts but supplies no observation.
 
 The default analysis settings are:
 
@@ -922,10 +955,10 @@ The run records draw count, seed, confidence, and minimum counts, and a report
 can override them at analysis time. An estimate that cannot be computed keeps a
 reason and, when applicable, the minimum count it needs.
 
-The intervals are exploratory and conditional on the observed attempts.
-Attempts within one run share evolving caches and can have dependent durations.
-Repeated whole runs provide evidence about reproducibility across those cache
-conditions.
+The intervals are exploratory and conditional on available executions.
+Incomplete and timed-out cases can select which observations survive. Attempts
+within one run share evolving caches and can have dependent durations. Repeated
+whole runs provide evidence about reproducibility across those cache conditions.
 
 ### Comparisons
 
@@ -943,15 +976,21 @@ By default, a comparison requires equal:
 - effective graphics settings and runtime environment;
 - build mode, effective features, instrumentation settings, and recorded build
   environment;
-- warmup count, timeout policy, and metric definitions.
+- warmup count, timeout policy, and saved quantity units.
+
+Comparison pairs metric keys `[phase scope metric-type]`. Quantity description
+text does not affect compatibility; changed prose is not a difference. Unknown
+or malformed quantity metadata appears in the per-side report diagnostics and
+leaves that key without usable statistics.
 
 Git revision, dirty state, run ids, timestamps, and saved analysis defaults
 provide provenance for interpreting the paired cases.
 
-The comparison reports absolute and percentage median changes, with a bootstrap
-interval for each change. A zero baseline suppresses a percentage change. The
-comparison leaves a metric with differing definitions out unless the
-all-differences permission allows raw values.
+The comparison reports absolute and percentage median changes between execution
+sums, with a bootstrap interval for each change. A zero baseline suppresses a
+percentage change. The comparison leaves a metric key with differing quantity
+units or incomplete quantity evidence out unless the all-differences
+permission allows its valid raw values.
 
 ### Comparison permissions
 
@@ -961,16 +1000,16 @@ mismatch with the rule that allowed it.
 
 - `--allow-build-differences` acknowledges recorded build settings, effective
   features, instrumentation, and the recorded build environment. Runtime
-  environment, graphics, operation settings, and metric definitions stay
+  environment, graphics, operation settings, and saved quantity units stay
   strict.
 - `--allow-scene-differences` acknowledges scene identity, scene seed, scene
   parameters, and differences in fingerprint content. Execution settings stay
   strict. Missing or varying fingerprint evidence still needs the
   all-differences permission.
 - `--allow-all-differences` acknowledges every compatibility difference,
-  including mixed metric definitions. The report compares valid raw values in
-  their recorded units. Record validation and measurement validity still govern
-  the analysis.
+  including mixed quantity units. The report compares valid raw execution sums
+  in their recorded units. Record validation and measurement validity still
+  govern the analysis.
 
 Build and scene permissions combine by union. All-differences includes both.
 A report shows the selected permissions, every recorded difference, and the
@@ -1093,7 +1132,7 @@ and makes the invocation exit 1.
 Other build differences require `--allow-build-differences`. Scene differences
 require `--allow-scene-differences`. Operation, view,
 context, preparation, completion, batch size, graphics, runtime environment, and
-metric-definition differences stay strict unless `--allow-all-differences` is
+saved quantity-unit differences stay strict unless `--allow-all-differences` is
 selected. If two configurations report the same effective feature set, the
 comparison includes their edge and labels it with that fact. Effective feature
 sets describe the code settings that accompany the observed timings.
@@ -1346,11 +1385,11 @@ frontend/performance/benches/render_wasm/
 ├── snapshot.cljs     snapshot validation and upload order
 ├── fingerprint.cljs  digest of the starting snapshot
 ├── identity.cljc     build identity and bundle compatibility checks
-├── measurement.cljs  metric normalization
+├── measurement.cljs  projection of phase evidence into attempts
 ├── random.cljs       seeded random generators
-├── result.cljs       run, comparison and feature-comparison records
+├── result.cljs       raw run, comparison and feature-comparison records
 ├── README.md         this document
-└── REPORTING.md      records, metrics, and statistics
+└── REPORTING.md      raw records, metrics, and statistics
 
 frontend/test/performance_tests/render_wasm/
 ├── runner.cljs         test entry point, namespace registration, focus selection
@@ -1366,9 +1405,9 @@ render-wasm/                   Rust renderer and build
 
 ## Further reading
 
-- [`REPORTING.md`](REPORTING.md) describes the record schemas, metric entries,
-  and statistical calculations in detail. This guide is the source for the
-  command line and the A/B workflow.
+- [`REPORTING.md`](REPORTING.md) describes the record schemas, raw command
+  histories, quantity metadata, and statistical calculations in detail. This
+  guide is the source for the command line and the A/B workflow.
 - [`render-wasm/README.md`](../../../../render-wasm/README.md) and the renderer
   source describe the Rust side.
 - [`frontend/src/app/render_wasm/`](../../../src/app/render_wasm/) contains the

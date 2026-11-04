@@ -58,7 +58,7 @@
   "Projects a bridge failure response into diagnostics evidence."
   [evidence fallback-phase]
   (if (map? evidence)
-    (cond-> (select-keys evidence [:status :phase :message :cause :partial])
+    (cond-> (select-keys evidence [:status :phase :message :cause :partial :phases])
       (nil? (:status evidence)) (assoc :status "failed")
       (nil? (:phase evidence)) (assoc :phase (name fallback-phase)))
     {:status "failed"
@@ -194,23 +194,31 @@
   (str "/renderer/" file "?build=" (js/encodeURIComponent build-id)))
 
 (defn- ^:async prepare-case
-  [state case page deadline]
+  [state case page deadline warmup?]
   (let [opts     (:opts state)
         build-id (:id (:selected-build state))
+        preparation-id (str (random-uuid))
         response (attempt
                   (await ((get-in state [:services :prepare])
                           page
                           (transit/encode-str
                            {:case case
-                            :preparation-id (str (random-uuid))
+                            :preparation-id preparation-id
                             :timeout-ms (:timeout-ms opts)
                             :module-url (renderer-url build-id "render-wasm.js")
                             :wasm-url (renderer-url build-id "render-wasm.wasm")})
                           {:deadline deadline :signal (:signal state) :phase :preparation})))]
-    (cond
-      (failure? response) {:failure (cause-evidence response :preparation)}
-      (= "ok" (:status response)) {:preparation (:preparation response)}
-      :else {:failure (failure-evidence response :preparation)})))
+    (if (and (not (failure? response)) (= "ok" (:status response)))
+      {:preparation (assoc (:preparation response) :warmup? warmup?)}
+      (let [failure (if (failure? response)
+                      (cause-evidence response :preparation)
+                      (failure-evidence response :preparation))]
+        (record-preparation state {:preparation-id preparation-id :case-id (:id case)
+                                   :warmup? warmup?
+                                   :phases (or (:phases failure) [])
+                                   :diagnostics (or (get-in failure [:partial :setup]) {})
+                                   :failure (dissoc failure :phases)})
+        {:failure failure :preparation-id preparation-id}))))
 
 (defn- ^:async run-attempt
   "Returns the bridge evidence of one attempt, or the failure."
@@ -363,10 +371,10 @@
 (defn- ^:async run-fresh-slot
   [state case page warmup? final?]
   (let [deadline (process/deadline (:timeout-ms (:opts state)))
-        prepared (await (prepare-case state case page deadline))]
+        prepared (await (prepare-case state case page deadline warmup?))]
     (if-let [evidence (:failure prepared)]
       (do
-        (record-attempt state (measurement/attempt (:id case) nil warmup? evidence))
+        (record-attempt state (measurement/attempt (:id case) (:preparation-id prepared) warmup? evidence))
         (await (finish-slot state case page
                             (if (interrupted? state) :interrupted :failed) final?)))
       (let [preparation (:preparation prepared)]
@@ -435,7 +443,7 @@
 (defn- ^:async run-reuse-page
   [state case page]
   (let [deadline (process/deadline (:timeout-ms (:opts state)))
-        prepared (await (prepare-case state case page deadline))]
+        prepared (await (prepare-case state case page deadline false))]
     (if-let [evidence (:failure prepared)]
       (await (abandon-preparation state case evidence))
       (await (run-reuse-prepared state case page (:preparation prepared))))))
@@ -563,7 +571,11 @@
 (defn- finish-run
   [state]
   (let [termination (get-termination @(:run-ref state) (interruption (:signal state))
-                                     @(:harness-failed? state))]
+                                     @(:harness-failed? state))
+        unmeasured (result/get-unmeasured-cases @(:run-ref state))
+        termination (if (and (= :completed (:reason termination)) (seq unmeasured))
+                      {:reason :no-measurements :case-ids unmeasured}
+                      termination)]
     (when (:screenshots (:opts state))
       (swap! (:run-ref state) update-in [:metadata :diagnostics :screenshots]
              complete-screenshots (:cases state)))

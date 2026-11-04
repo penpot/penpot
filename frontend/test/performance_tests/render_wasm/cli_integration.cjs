@@ -458,36 +458,35 @@ function runFixtureText({
 }) {
   const k = transit.keyword;
   const map = (pairs) => transit.map(pairs);
-  const metric = map([
-    k("value"),
-    value,
-    k("unit"),
-    k("ms"),
-    k("semantics"),
-    k("elapsed"),
-    k("basis"),
-    map([k("kind"), k("attempt-total")]),
-    k("zero-policy"),
-    k("positive"),
-    k("invalid-reason"),
-    null,
+  const event = map([
+    k("command"), k("fixture/work"),
+    k("metrics"), map([k("command/elapsed"), [value]]),
   ]);
   const preparation = map([
     k("preparation-id"),
     `${runId}-preparation`,
     k("case-id"),
     k(caseId),
+    k("warmup?"),
+    false,
     k("fingerprint"),
     map([k("algorithm"), k("sha-256"), k("digest"), fingerprint]),
     k("effective-graphics"),
     map([k("webgl2"), true]),
     k("diagnostics"),
     map([]),
+    k("phases"),
+    [map([
+      k("phase"), k("preparation"),
+      k("preparation-id"), `${runId}-preparation`,
+      k("outcome"), k("completed"),
+      k("events"), [],
+    ])],
   ]);
-  const makeAttempt = (ordinal, warmup) =>
+  const makeAttempt = (attemptId, warmup) =>
     map([
-      k("ordinal"),
-      ordinal,
+      k("attempt-id"),
+      attemptId,
       k("case-id"),
       k(caseId),
       k("preparation-id"),
@@ -496,10 +495,13 @@ function runFixtureText({
       warmup,
       k("outcome"),
       k("completed"),
-      k("metrics"),
-      map([k("elapsed"), metric]),
-      k("trace"),
-      map([]),
+      k("phases"),
+      [map([
+        k("phase"), k("main"),
+        k("preparation-id"), `${runId}-preparation`,
+        k("outcome"), k("completed"),
+        k("events"), [event],
+      ])],
     ]);
   const attempts = [
     ...Array.from({ length: warmups }, (_, index) => makeAttempt(index, true)),
@@ -583,6 +585,8 @@ function runFixtureText({
       k("min-p99"),
       500,
     ]),
+    k("quantities"),
+    map([k("command/elapsed"), map([k("unit"), k("ms")])]),
     k("preparations"),
     [preparation],
     k("attempts"),
@@ -1762,7 +1766,7 @@ test(
     assert.equal(plan.get(k("warmups")), 1);
     assert.equal(plan.get(k("repetitions")), 5);
     assert.deepEqual(
-      attempts.map((attempt) => attempt.get(k("ordinal"))),
+    attempts.map((attempt) => attempt.get(k("attempt-id"))),
       [0, 1, 2, 3, 4, 5],
     );
     assert.deepEqual(
