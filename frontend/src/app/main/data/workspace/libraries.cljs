@@ -1365,16 +1365,19 @@
               (wrf/with-pending :sync-file pending-ids frontend-sync)
 
               (when (not= file-id library-id)
-                (let [stopper-s (rx/filter (ptk/type? ::dw/finalize-workspace) stream)
-                      restore   (if (= ::unchanged @synced-at)
-                                  (rx/empty)
-                                  (rx/of (restore-library-synced-at library-id @synced-at)))]
+                (let [stopper-s     (rx/filter (ptk/type? ::dw/finalize-workspace) stream)
+                      rolled-back-s (->> stream
+                                         (rx/filter (ptk/type? ::dps/rolled-back))
+                                         (rx/filter #(contains? (:file-ids (deref %)) file-id)))
+                      restore       (if (= ::unchanged @synced-at)
+                                      (rx/empty)
+                                      (rx/of (restore-library-synced-at library-id @synced-at)))
+                      ;; Checked once the rollback has undone the sync locally
+                      notify        #(->> (dps/wait-persisted)
+                                          (rx/map (fn [_] (notify-sync-file))))]
                   (->> (rx/merge
                         ;; The server rejected the sync: its commits were undone
-                        (->> stream
-                             (rx/filter (ptk/type? ::dps/rolled-back))
-                             (rx/filter #(contains? (:file-ids (deref %)) file-id))
-                             (rx/map (constantly ::rolled-back)))
+                        (rx/map (constantly ::rolled-back) rolled-back-s)
                         ;; The flush of the sync commits starts within 3 s; a save
                         ;; that fails for good ends the wait with no value
                         (->> (rx/timer 3000)
@@ -1389,15 +1392,17 @@
                                       (mark-library-synced file-id library-id)
 
                                       ;; Never saved: the update notice can show again
+                                      ;; once the release of the failed save undoes the sync
                                       ::failed
-                                      restore
-
-                                      ::rolled-back
                                       (rx/concat
                                        restore
-                                       ;; Checked once the rollback has undone the sync locally
-                                       (->> (dps/wait-persisted)
-                                            (rx/map (fn [_] (notify-sync-file)))))))))))))))))))
+                                       (->> rolled-back-s
+                                            (rx/take 1)
+                                            (rx/take-until stopper-s)
+                                            (rx/mapcat (fn [_] (notify)))))
+
+                                      ::rolled-back
+                                      (rx/concat restore (notify))))))))))))))))
 
 
 ;; FIXME: the data should be set on the backend for clock consistency
@@ -1663,7 +1668,31 @@
             notifier-s
             (->> component-events-s
                  (rx/debounce 5000)
-                 (rx/tap #(log/trc :hint "buffer initialized")))]
+                 (rx/tap #(log/trc :hint "buffer initialized")))
+
+            ;; A rollback is a rebase, not a commit: no component change
+            ;; is detected, so the thumbnails of the mains it reverted are
+            ;; rendered and uploaded here, each rebase checked against the
+            ;; file data right before it
+            rolled-back-thumbnails-s
+            (->> stream
+                 (rx/filter (ptk/type? ::dch/rebase-commits))
+                 (rx/map deref)
+                 (rx/filter (complement :failed))
+                 ;; Its own data pairing: `workspace-data-s` is shared and
+                 ;; does not replay the current data to a late subscriber
+                 (rx/with-latest-from
+                   (->> (rx/from-atom refs/workspace-data {:emit-current-value? true})
+                        (rx/concat (rx/of nil))
+                        (rx/buffer 2 1)
+                        (rx/map first)))
+                 (rx/mapcat
+                  (fn [[{:keys [file-id changes]} old-data]]
+                    (if (= file-id (:id old-data))
+                      (->> (into #{} (mapcat (partial ch/components-changed old-data)) changes)
+                           (rx/from)
+                           (rx/map #(update-component-thumbnail % file-id)))
+                      (rx/empty)))))]
 
         (when (or (contains? cf/flags :component-thumbnails)
                   (features/active-feature? state "render-wasm/v1"))
@@ -1695,7 +1724,9 @@
                 (->> component-events-s
                      (rx/filter (ptk/type? ::touch-component))
                      (rx/map deref)
-                     (rx/map render-component-thumbnail-event)))
+                     (rx/map render-component-thumbnail-event))
+
+                rolled-back-thumbnails-s)
 
                (rx/take-until stopper-s)))))))
 

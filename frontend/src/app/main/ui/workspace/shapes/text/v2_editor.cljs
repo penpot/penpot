@@ -192,6 +192,8 @@
         ;; content in the editor, which would otherwise keep showing and
         ;; saving the rejected one. Saves failing do the same with the last
         ;; committed content, since the typing not yet committed is dropped.
+        ;; The WASM canvas draws the editor's layout, so it is laid out
+        ;; again from that content.
         rolled-back-sub
         (->> st/stream
              (rx/filter #(or (ptk/type? ::dps/rolled-back %)
@@ -203,7 +205,9 @@
                                current (content/dom->cljs (dwt/get-editor-root instance))]
                            (when (and (some? content)
                                       (not (dwt/same-styled-text? content current)))
-                             (dwt/set-editor-root! instance (content/cljs->dom content)))))))]
+                             (dwt/set-editor-root! instance (content/cljs->dom content))
+                             (when (features/active-feature? @st/state "render-wasm/v1")
+                               (st/emit! (dwt/v2-sync-wasm-text-layout shape-id content))))))))]
 
     (.addEventListener ^js global/document "keyup" on-key-up)
     (.addEventListener ^js instance "focus" on-focus)

@@ -200,14 +200,18 @@
       (:shapes change))))
 
 (defn rollback-targets
-  "The files of the commits `plan` reverts, and the pages and page shapes
-  their changes touch."
+  "The files of the commits `plan` reverts, and the pages, page shapes and
+  comment thread positions their changes touch."
   [{:keys [files compensate]}]
   (let [commits (into (vec compensate) (mapcat (comp :reverted val)) files)
         changes (into [] (mapcat :redo-changes) commits)]
-    {:file-ids  (into (set (keys files)) (map :file-id) compensate)
-     :page-ids  (into #{} (keep change-page-id) changes)
-     :shape-ids (into #{} (mapcat change-shape-ids) changes)}))
+    {:file-ids           (into (set (keys files)) (map :file-id) compensate)
+     :page-ids           (into #{} (keep change-page-id) changes)
+     :shape-ids          (into #{} (mapcat change-shape-ids) changes)
+     :comment-thread-ids (into #{}
+                               (comp (filter #(= :set-comment-thread-position (:type %)))
+                                     (map :comment-thread-id))
+                               changes)}))
 
 (defn- drop-commits
   "Removes the commits in `ids` from the queue and the buffer; an entry left
