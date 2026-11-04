@@ -106,8 +106,8 @@ The suite has three parts:
   chronological order, and performs no hidden retries.
 - **Run record**: the saved evidence for one run: plan, build and environment
   provenance, quantity descriptions, preparations, attempts with their phase
-  histories, failures, remaining slots, and termination. The runner stores it as
-  a data file validated by a schema.
+  histories, failures, terminal case outcomes, remaining slots, and termination.
+  The runner stores it as a data file validated by a schema.
 - **Bridge**: the object that runs in the browser, receives plain requests from
   Node, owns the page's renderer context, runs preparations and attempts, and
   returns plain results.
@@ -324,11 +324,22 @@ process it starts. Cases run serially. A fresh case gets a new page and context
 for each preparation. A warm case keeps one page and context for all of its
 attempts.
 
-The runner applies deadlines to startup, preparation, and attempts. When a page
-stalls past its deadline, Node stops the browser process and records the failure.
-The browser bridge also checks for context loss, expired deadlines, and work associated
-with a superseded renderer owner before and after asynchronous work. A browser
-thread occupied by synchronous work relies on the Node deadline to stop it.
+Before cases run, `--startup-timeout-ms` bounds Git provenance, server startup,
+and the initial browser launch. Each case then gets one absolute `--timeout-ms`
+deadline. The deadline covers the case's page setup, preparation, warmups,
+repetitions, reset, and screenshot diagnostics. It does not restart for a phase,
+attempt, or browser replacement. Work on a reused preparation keeps its original
+case deadline; a request timeout can only tighten that deadline. A browser
+launched after a failed case uses the next case's remaining deadline.
+
+When a page stalls past its deadline, Node stops the browser process and records
+the failure. The browser bridge also checks for context loss, expired deadlines,
+and work associated with a superseded renderer owner before and after
+asynchronous work. A browser thread occupied by synchronous work relies on the
+Node deadline to stop it. The runner persists each delivered preparation and
+attempt. It does not stream browser-local records and cannot recover in-flight
+data when a blocked browser cannot return; records delivered before the block
+remain saved.
 
 Clean-up closes the page, then the browser, then the server. The runner deletes
 a build selected with `--remove` only after the final run record is saved.
@@ -668,7 +679,9 @@ preparation block's selected events.
 Reset runs after successful main. Its returned context supplies the next reused
 attempt. A phase failure releases its owned context and returns the failed
 block with earlier events and available traces. Completed preparation retains
-its own evidence when main or reset fails.
+its own evidence when main or reset fails. Any preparation, main, or reset
+failure stops the case; the runner attempts no later slot. It disposes the
+case's browser and starts the next case in a new browser when the run continues.
 
 ### Runtime code
 
@@ -858,7 +871,7 @@ arguments. Comparing hardware and software runs requires
 A run record contains:
 
 - the plan: selected case descriptors, warmup count, repetition count, and
-  timeout policy;
+  timeout policy (`:case-ms`);
 - metadata: Git revision and dirty flag, build facts, environment, and diagnostics;
 - the resolved analysis settings;
 - saved quantity descriptions;
@@ -866,6 +879,7 @@ A run record contains:
 - attempts in chronological order, each with its case, preparation,
   `:attempt-id`, warmup flag, outcome, main/reset phase blocks, and failure or
   partial evidence;
+- terminal outcomes in `:case-outcomes`;
 - remaining slots for each case;
 - the termination reason.
 
@@ -876,23 +890,44 @@ blocks. A phase block retains ordered command events, raw metric vectors, and
 optional completion diagnostics. Errors retain available phase evidence and
 traces after a failure.
 
+Each case has a terminal entry in `:case-outcomes` with `:outcome` set to
+`:completed`, `:failed`, `:timed-out`, or `:interrupted` and an optional
+`:failure`. Recording a terminal outcome closes the case: later preparation or
+attempt evidence for that case is rejected.
+
 ### Failures and termination
 
 A failed attempt still consumes its allocated slot. A fresh preparation failure
-records a failed attempt and consumes the slot. A reuse case's preparation
-failure or attempt failure releases the prepared page and context and leaves
-that case's remaining slots unattempted. A browser or page failure closes the
-browser it started, abandons the current case, and starts a new browser for the
-next case when possible. The run fixes its attempt count before execution and uses
-each allocated slot at most once.
+records a failed attempt and consumes the current slot. A reuse preparation
+failure records no main or reset execution and consumes no main slot. Any
+preparation, main, or reset failure stops the case for fresh and reuse alike,
+so later slots stay unattempted. The runner disposes the failed case's browser
+and starts the next case in a new browser when the run continues. A browser or
+page failure follows the same case-stop rule. A failure to clean up the browser
+for a failed case aborts later cases. The run fixes its attempt count before
+execution and uses each allocated slot at most once.
+
+A malformed delivered response follows the same slot rules. An attempt response
+consumes the slot it invoked, keeps the valid phase prefix, and saves the raw
+response as partial evidence. A malformed preparation response fails its
+preparation; a fresh case still consumes the current slot.
+
+A screenshot failure is diagnostic when it is an ordinary error. A deadline
+expiry or interruption during the screenshot stops the case, while earlier
+completed attempts remain saved.
+
+A case that finishes all its slots without a measured command gets a failed
+case outcome whose failure has `:reason :no-measurements`. The run then
+terminates as failed or incomplete according to the remaining slots.
 
 A run terminates in one of four states:
 
-- **completed**: every allocated slot was attempted and every attempt completed.
-- **failed**: every allocated slot was attempted and at least one attempt
-  failed.
-- **incomplete**: slots remain because a preparation, browser, or storage
-  failure stopped the case.
+- **completed**: every allocated slot was attempted, every case outcome is
+  `:completed`, and every case has at least one measurement.
+- **failed**: every allocated slot was attempted and at least one attempt failed
+  or one case outcome is not `:completed`.
+- **incomplete**: slots remain because a case stopped early or a startup,
+  browser, or storage failure prevented execution.
 - **interrupted**: `SIGINT` or `SIGTERM` stopped the run.
 
 The runner saves partial records before it exits. Use exit status to determine
@@ -931,8 +966,10 @@ A finite zero is valid. Negative and non-finite raw values remain in the saved
 record but invalidate the dependent execution sum and aggregate; independent
 metric keys remain usable. Unknown or malformed quantity metadata appears as a
 diagnostic and leaves that key without usable statistics. A phase can complete
-with no events, but a completed run requires at least one measurement across
-each case's phases.
+with no events. Preparation-only and reset-only measured cases are valid. A
+case that finishes all its slots without any measured command gets a failed
+case outcome with `:reason :no-measurements`; the run is failed when every slot
+was attempted and incomplete when slots remain.
 
 The case report also counts actual preparation, main, and reset executions.
 Completed and failed counts use each execution's own outcome, and a separate
@@ -976,7 +1013,7 @@ By default, a comparison requires equal:
 - effective graphics settings and runtime environment;
 - build mode, effective features, instrumentation settings, and recorded build
   environment;
-- warmup count, timeout policy, and saved quantity units.
+- warmup count, timeout policy (`:case-ms`), and saved quantity units.
 
 Comparison pairs metric keys `[phase scope metric-type]`. Quantity description
 text does not affect compatibility; changed prose is not a difference. Unknown
@@ -1304,12 +1341,13 @@ mean interruption by `SIGINT` and `SIGTERM` for `build`, `run` and `ab`.
 Interruption uses those statuses to report aborted work. Errors writing the
 command's record or log also produce diagnostics.
 
-`--warmups` defaults to 3, `--repetitions` to 10, `--timeout-ms` to 30000, and
-`--startup-timeout-ms` to 30000. `build`, a run that prepares its build, and an
-A/B experiment use a default `--build-timeout-ms` of 300000; a run with
-`--build` uses the retained build's recorded provenance. The master seed
-defaults to 42 and accepts a 32-bit unsigned integer. A filter matches a
-substring of the case id.
+`--warmups` defaults to 3, `--repetitions` to 10, `--timeout-ms` (the case
+deadline) to 30000, and `--startup-timeout-ms` (host and initial browser
+readiness) to 30000. `build`, a run that prepares its build, and an A/B
+experiment use a default `--build-timeout-ms` of 300000; a run with `--build`
+uses the retained build's recorded provenance. The master seed defaults to 42
+and accepts a 32-bit unsigned integer. A filter matches a substring of the case
+id.
 
 ## Unit tests
 

@@ -623,6 +623,29 @@
          (finally
            (cleanup)))))))
 
+(t/deftest ^:async reused-preparation-keeps-its-original-case-deadline
+  (await
+   (with-entry-env
+     (^:async fn [cleanup]
+       (try
+         (unchecked-set js/globalThis "__benchNow" 0)
+         (register-phase-case {:context :reuse :preparation {:render :none}} camera/render-sync*)
+         (let [request (-> (scene-args 7 {}) transit/decode-str
+                           (assoc :timeout-ms 100) transit/encode-str)
+               prepared (transit/decode-str (await (browser/prepare-scene-request request)))
+               id (get-in prepared [:preparation :preparation-id])]
+           (unchecked-set js/globalThis "__benchNow" 60)
+           (let [first (transit/decode-str (await (browser/run-prepared
+                                                   (transit/encode-str {:preparation-id id :timeout-ms 10000}))))]
+             (t/is (= "ok" (:status first))))
+           (unchecked-set js/globalThis "__benchNow" 101)
+           (let [expired (transit/decode-str (await (browser/run-prepared
+                                                     (transit/encode-str {:preparation-id id}))))]
+             (t/is (= "failed" (:status expired)))
+             (t/is (= "deadline" (:phase expired)))))
+         (finally
+           (cleanup)))))))
+
 (t/deftest ^:async fresh-contexts-prepare-and-reset-once
   (await
    (with-entry-env

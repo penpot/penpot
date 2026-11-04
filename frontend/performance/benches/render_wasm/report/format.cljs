@@ -61,8 +61,9 @@
 
 (defn- case-status->text
   "Displays pending slots and failed attempts, including excluded warmups."
-  [{:keys [remaining failed-attempts preparations phases]}]
+  [{:keys [remaining failed-attempts preparations phases outcome]}]
   (str " remaining " (pr-str remaining)
+       (when outcome (str "\n  outcome " (pr-str outcome)))
        "\n  phases " (pr-str phases)
        " failed-warmups=" (count (filter :warmup? failed-attempts))
        (when-let [failures (seq (keep :failure preparations))]

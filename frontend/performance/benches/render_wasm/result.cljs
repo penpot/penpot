@@ -76,6 +76,11 @@
   "A run's current state or final reason, with optional diagnostic details."
   [:map [:reason keyword?]])
 
+(def schema:case-outcome
+  [:map {:closed true}
+   [:outcome [:enum :completed :failed :timed-out :interrupted]]
+   [:failure {:optional true} map?]])
+
 (def schema:run
   "schema:run stores saved case definitions, independent of any registry.
   Build :functional holds compatibility settings; :provenance holds identities."
@@ -88,12 +93,13 @@
            [:cases [:vector [:map [:id some?]]]]
            [:warmups [:int {:min 0}]]
            [:repetitions [:int {:min 0}]]
-           [:timeout-policy [:map [:attempt-ms [:int {:min 1}]]]]]]
+           [:timeout-policy [:map {:closed true} [:case-ms [:int {:min 1}]]]]]]
    [:metadata schema:metadata]
    [:analysis analysis/schema:settings]
    [:quantities [:map-of qualified-keyword? :any]]
    [:preparations [:vector schema:preparation]]
    [:attempts [:vector schema:attempt]]
+   [:case-outcomes [:map-of :any schema:case-outcome]]
    [:remaining [:map-of :any [:map {:closed true}
                               [:warmups [:int {:min 0}]]
                               [:repetitions [:int {:min 0}]]]]]
@@ -141,6 +147,7 @@
   "One saved case's definition, preparations and shared metric reports."
   [:map {:closed true}
    [:case-id some?] [:definition [:map [:id some?]]]
+   [:outcome [:maybe schema:case-outcome]]
    [:preparations [:vector schema:preparation]]
    [:phases [:map-of :keyword [:map {:closed true}
                                [:executions nat-int?] [:completed nat-int?]
@@ -276,6 +283,21 @@
                     "measured attempt precedes planned warmups" {:case-id case-id})
     (update-in remaining path dec)))
 
+(defn has-measurements?
+  "Reports whether a case has measured commands in its saved phase histories.
+
+  Args:
+    run: constructed or decoded run record.
+    case-id: exact saved case identifier.
+
+  Returns:
+    True when any preparation, main or reset block contains a command event."
+  [run case-id]
+  (boolean
+   (some (comp seq :events)
+         (mapcat :phases (filter #(= case-id (:case-id %))
+                                 (concat (:preparations run) (:attempts run)))))))
+
 (defn get-unmeasured-cases
   "Returns saved case ids whose phase histories contain no measured commands.
 
@@ -287,9 +309,7 @@
   [run]
   (into []
         (keep (fn [{:keys [id]}]
-                (when-not (some (comp seq :events)
-                                (mapcat :phases (filter #(= id (:case-id %))
-                                                        (concat (:preparations run) (:attempts run)))))
+                (when-not (has-measurements? run id)
                   id)))
         (get-in run [:plan :cases])))
 
@@ -303,6 +323,10 @@
                     "completed run has failed attempts" {})
     (require-valid! (not-any? :failure (:preparations run))
                     "completed run has failed preparations" {})
+    (require-valid! (every? #(= :completed (:outcome %)) (vals (:case-outcomes run)))
+                    "completed run has failed cases" {})
+    (require-valid! (= (set (map :id (get-in run [:plan :cases]))) (set (keys (:case-outcomes run))))
+                    "completed run needs every case outcome" {})
     (require-valid! (empty? (get-unmeasured-cases run))
                     "completed case has no measurements" {:case-ids (get-unmeasured-cases run)})))
 
@@ -350,6 +374,18 @@
   (when (= :failed (get-in attempt [:phases 0 :outcome]))
     (require-valid! (= 1 (count (:phases attempt))) "reset follows failed main" {})))
 
+(defn- check-case-outcome
+  [run case-id outcome]
+  (require-valid! (contains? (:remaining run) case-id) "unknown case outcome" {})
+  (require-valid! (sm/validate schema:case-outcome outcome) "invalid case outcome" {})
+  (when (= :completed (:outcome outcome))
+    (require-valid! (and (not (:failure outcome))
+                         (every? zero? (vals (get-in run [:remaining case-id])))
+                         (not-any? #(and (= case-id (:case-id %)) (= :failed (:outcome %))) (:attempts run))
+                         (not-any? #(and (= case-id (:case-id %)) (:failure %)) (:preparations run))
+                         (has-measurements? run case-id))
+                    "completed case has pending, failed or unmeasured work" {:case-id case-id})))
+
 (defn check-run
   "Validates schema:run and chronological accounting at a saved-data boundary."
   [run]
@@ -363,6 +399,8 @@
     (require-valid! (= (count prep-ids) (count (set prep-ids))) "duplicate preparation" {})
     (require-valid! (every? #(contains? (set case-ids) %) (map :case-id preps)) "unknown preparation case" {})
     (require-valid! (= left (:remaining run)) "remaining slots disagree with attempts" {})
+    (doseq [[case-id outcome] (:case-outcomes run)]
+      (check-case-outcome run case-id outcome))
     (doseq [prep preps]
       (check-preparation prep))
     (doseq [[attempt-id attempt] (map-indexed vector (:attempts run))]
@@ -373,16 +411,16 @@
 
 (defn create-run
   "Creates an empty raw run from externally supplied identities and facts.
-  The plan defaults to 3 warmups, 10 repetitions and a 30000 ms attempt timeout.
+  The plan defaults to 3 warmups, 10 repetitions and a 30000 ms case timeout.
   For each case, all warmup slots precede measured slots. Failed attempts consume
   their slot too; attempts retain chronological order across cases."
   [{:keys [run-id started-at plan metadata analysis quantities]}]
-  (let [plan (merge {:warmups 3 :repetitions 10 :timeout-policy {:attempt-ms 30000}} plan)]
+  (let [plan (merge {:warmups 3 :repetitions 10 :timeout-policy {:case-ms 30000}} plan)]
     (check-run {:type :run-record
                 :run-id run-id :started-at started-at :ended-at nil
                 :plan plan :metadata metadata :analysis (analysis/resolve-settings analysis)
                 :quantities (merge quantities/descriptions quantities)
-                :preparations [] :attempts [] :remaining (initial-remaining plan)
+                :preparations [] :attempts [] :case-outcomes {} :remaining (initial-remaining plan)
                 :termination {:reason :running}})))
 
 (defn- check-open!
@@ -395,6 +433,7 @@
   The run must come from create-run or decode; earlier evidence is trusted."
   [run preparation]
   (check-open! run)
+  (require-valid! (not (contains? (:case-outcomes run) (:case-id preparation))) "case already terminated" {})
   (check-preparation preparation)
   (require-valid! (contains? (:remaining run) (:case-id preparation)) "unknown preparation case" {})
   (require-valid! (not-any? #(= (:preparation-id preparation) (:preparation-id %))
@@ -409,6 +448,7 @@
   Earlier attempts are trusted; encode and decode check the complete record."
   [run attempt]
   (check-open! run)
+  (require-valid! (not (contains? (:case-outcomes run) (:case-id attempt))) "case already terminated" {})
   (let [attempt (-> (merge {:preparation-id nil :phases []} attempt)
                     (assoc :attempt-id (count (:attempts run))))]
     (check-attempt attempt (some #(when (= (:preparation-id attempt) (:preparation-id %)) %)
@@ -425,6 +465,25 @@
   (require-valid! (not= :running (:reason termination)) "termination needs an end reason" {})
   (check-completion run termination)
   (assoc run :ended-at ended-at :termination termination))
+
+(defn record-case-outcome
+  "Records the terminal outcome of one case.
+
+  Args:
+    run: constructed or decoded run that accepts new evidence.
+    case-id: exact saved case identifier.
+    outcome: completion, failure, timeout or interruption with available cause.
+
+  Returns:
+    The run with its case outcome.
+
+  Throws:
+    ExceptionInfo for unknown cases, duplicate outcomes or malformed evidence."
+  [run case-id outcome]
+  (check-open! run)
+  (require-valid! (not (contains? (:case-outcomes run) case-id)) "duplicate case outcome" {})
+  (check-case-outcome run case-id outcome)
+  (assoc-in run [:case-outcomes case-id] outcome))
 
 (defn merge-runs
   "Returns a new validated run that appends `additional`'s measured attempts to
@@ -514,6 +573,7 @@
                     :quantities (:quantities base)
                     :preparations (into (vec base-preparations) additional-preparations)
                     :attempts attempts
+                    :case-outcomes (merge (:case-outcomes base) (:case-outcomes additional))
                     :remaining remaining
                     :termination {:reason :completed}})))))
 

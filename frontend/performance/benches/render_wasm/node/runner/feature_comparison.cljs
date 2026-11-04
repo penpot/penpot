@@ -810,5 +810,5 @@
                            (:edges plan))) "\n"
        "Cases: " (count cases) "\n"
        "Attempts per case: " (:warmups options) " warmups, " (:repetitions options) " measured\n"
-       "Timeouts (ms): attempt " (:timeout-ms options)
+       "Timeouts (ms): case " (:timeout-ms options)
        ", build " (:build-timeout-ms options) ", startup " (:startup-timeout-ms options) "\n"))

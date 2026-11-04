@@ -155,6 +155,7 @@
                 (add-attempt :prep true :completed phases)
                 (add-attempt :prep false :completed phases)
                 (add-attempt :prep false :completed phases)
+                (result/record-case-outcome :saved/pan {:outcome :completed})
                 (result/finish-run "end" {:reason :completed})
                 result/encode result/decode)
         report (first (:cases (summary/summarize run)))
@@ -281,6 +282,7 @@
                   (add-attempt :prep false :completed
                                [(block :main :prep [])
                                 (block :reset :prep (if (= :reset phase) [(event :test/work [2])] []))])
+                  (result/record-case-outcome :saved/pan {:outcome :completed})
                   (result/finish-run "end" {:reason :completed})
                   result/encode result/decode)]
       (t/is (= [2] (:values (summary/observations run :saved/pan [phase :global :command/elapsed]))))))
@@ -431,3 +433,24 @@
                  (assoc-in run [:remaining :saved/pan :repetitions] 2)]]
       (t/is (= ::result/invalid-record
                (error-type #(result/decode (transit/encode-str bad))))))))
+
+(t/deftest case-outcomes-validate-completion-and-close-the-recording-boundary
+  (let [run (sample-run [1])
+        completed (result/record-case-outcome run :saved/pan {:outcome :completed})
+        ended (result/finish-run completed "end" {:reason :completed})]
+    (t/is (= ended (result/decode (result/encode ended))))
+    (doseq [bad [(assoc ended :case-outcomes {})
+                 (-> run
+                     (assoc-in [:plan :repetitions] 2)
+                     (assoc-in [:remaining :saved/pan :repetitions] 1)
+                     (assoc-in [:case-outcomes :saved/pan] {:outcome :completed}))
+                 (assoc-in ended [:case-outcomes :unknown] {:outcome :completed})]]
+      (t/is (= ::result/invalid-record (error-type #(result/decode (transit/encode-str bad))))))
+    (t/is (= ::result/invalid-record
+             (error-type #(result/record-preparation completed (preparation :other [])))))
+    (let [stopped (-> run
+                      (assoc-in [:plan :repetitions] 2)
+                      (assoc-in [:remaining :saved/pan :repetitions] 1)
+                      (result/record-case-outcome :saved/pan {:outcome :failed}))]
+      (t/is (thrown-with-msg? js/Error #"case already terminated"
+                              (add-attempt stopped :prep false :completed [(block :main :prep [])]))))))

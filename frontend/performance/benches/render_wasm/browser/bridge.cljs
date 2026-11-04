@@ -104,7 +104,7 @@
    [:module-url {:optional true} string?]
    [:wasm-url {:optional true} string?]])
 
-(def ^:const ^:private attempt-ms-budget
+(def ^:const ^:private case-ms-budget
   "Default elapsed-time deadline for setup or one attempt, checked by
   `browser-hooks`. Requests can supply a timeout. The outer process timeout
   covers blocked pages."
@@ -128,15 +128,15 @@
    :frame             #(js/Promise.
                         (fn [resolve] (.requestAnimationFrame js/window resolve)))
    :sleep             #(js/Promise. (fn [resolve] (js/setTimeout resolve %)))
-   ;; checks that this attempt still owns the page, WebGL context hasn't been
+   ;; checks that this execution still owns the page, WebGL context hasn't been
    ;; lost, and the deadline hasn't passed
    :check             (fn []
                         (when @wasm/context-lost?
                           (throw (ex-info "WebGL context lost"
                                           {:phase "context-lost"})))
                         (guard-current! epoch "protocol")
-                        (when (> (now) deadline-ms)
-                          (throw (ex-info "attempt deadline exceeded"
+                        (when (>= (now) deadline-ms)
+                          (throw (ex-info "case deadline exceeded"
                                           {:phase "deadline"}))))
    ;; WASM calls
    :render            (fn [timestamp flags]
@@ -976,7 +976,7 @@
   Validation runs before the owner changes. A valid request releases the prior
   owner, starts a new owner epoch, builds browser hooks with a deadline and
   prepares the scene. `:preparation-id` defaults to the new epoch and
-  `:timeout-ms` defaults to `attempt-ms-budget`.
+  `:timeout-ms` defaults to `case-ms-budget`.
 
   Args:
     request: Transit string matching `schema:load-scene-args`.
@@ -994,8 +994,10 @@
         (js/Promise.resolve (errors/fail-data (errors/evidence "invalid-args" parsed)))
         (let [{:keys [params case-desc]} parsed
               {:keys [epoch] :as owner}  (begin-load! case-desc)
-              timeout-ms                 (or (:timeout-ms params) attempt-ms-budget)
-              owner                      (assoc owner :hooks (browser-hooks epoch (+ (now) timeout-ms)))]
+              timeout-ms                 (or (:timeout-ms params) case-ms-budget)
+              deadline-ms                (+ (now) timeout-ms)
+              owner                      (assoc owner :deadline-ms deadline-ms
+                                                :hooks (browser-hooks epoch deadline-ms))]
           (prepare-owned-scene (assoc parsed
                                       :owner owner
                                       :timeout-ms timeout-ms
@@ -1009,8 +1011,8 @@
 
   Args:
     preparation-id: identifier of the prepared scene to use.
-    timeout-ms: optional deadline for this attempt; defaults to the
-      preparation's timeout.
+    timeout-ms: optional remaining budget in milliseconds, bounded by the
+      preparation's case deadline.
 
   Returns:
     A Promise of status ok with `:preparation` evidence, top-level `:phases`
@@ -1030,8 +1032,10 @@
       (js/Promise.resolve (errors/fail-data {:phase "invalid-args"
                                              :message "preparation unavailable, busy or already used"}))
       (let [epoch (:epoch owner)
-            timeout-ms (or timeout-ms (:timeout-ms prepared))
-            owner (assoc owner :hooks (browser-hooks epoch (+ (now) timeout-ms)))]
+            deadline-ms (if timeout-ms
+                          (min (:deadline-ms owner) (+ (now) timeout-ms))
+                          (:deadline-ms owner))
+            owner (assoc owner :hooks (browser-hooks epoch deadline-ms))]
         (swap! prepared* assoc :busy? true :used? true)
         (-> (run-case owner case-desc local-case graphics context)
             (.then (fn [evidence]

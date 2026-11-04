@@ -56,7 +56,7 @@
               :plan {:cases [(merge (case-definition case-id scene) case-settings)]
                      :warmups 0
                      :repetitions 1
-                     :timeout-policy {:attempt-ms 30000}}
+                     :timeout-policy {:case-ms 30000}}
               :metadata {:git {:sha run-id :dirty false}
                          :build {:functional functional}
                          :environment environment
@@ -79,7 +79,9 @@
               :outcome :completed
               :phases [{:phase :main :preparation-id preparation-id
                         :outcome :completed :events [(metric value)]}]})]
-    (result/finish-run run "2026-10-26T00:01:00.000Z" {:reason :completed})))
+    (-> run
+        (result/record-case-outcome case-id {:outcome :completed})
+        (result/finish-run "2026-10-26T00:01:00.000Z" {:reason :completed}))))
 
 (defn- write-run
   [file run]

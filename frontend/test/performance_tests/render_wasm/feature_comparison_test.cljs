@@ -163,7 +163,7 @@
     (t/is (empty? (fs/readdirSync (frontend-root))))
     (let [text (feature-comparison/format-plan ready)]
       (doseq [part ["a, b" "00" "01" "11" "10" "00 -> 10: a" "Cases: 1"
-                    "0 warmups, 1 measured" "attempt 2000, build 10000, startup 3000"]]
+                    "0 warmups, 1 measured" "case 2000, build 10000, startup 3000"]]
         (t/is (str/includes? text part))))))
 
 (t/deftest ^:async metadata-selects-the-package-by-manifest-not-array-position
@@ -472,7 +472,7 @@
               :plan {:cases cases
                      :warmups 0
                      :repetitions 1
-                     :timeout-policy {:attempt-ms (:timeout-ms options)}}
+                     :timeout-policy {:case-ms (:timeout-ms options)}}
               :metadata {:git {:sha nil :dirty nil}
                          :build {:functional (get-in selected-build [:manifest :functional])
                                  :provenance (get-in selected-build [:manifest :provenance])}
@@ -509,7 +509,10 @@
                       :failed {:reason :failed :failure {:message "fixture failure"}}
                       :zero-attempts {:reason :incomplete}
                       :interrupted {:reason :interrupted :signal "SIGINT"}
-                      {:reason :completed})]
+                      {:reason :completed})
+        run (if (= :completed (:reason termination))
+              (reduce #(result/record-case-outcome %1 (:id %2) {:outcome :completed}) run cases)
+              run)]
     (result/finish-run run (.toISOString (js/Date.)) termination)))
 
 (defn- execute-service
