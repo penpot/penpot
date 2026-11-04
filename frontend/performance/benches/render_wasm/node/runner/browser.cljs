@@ -88,6 +88,14 @@
                (catch :default cause
                  (failed cause))))))))))
 
+(defn- deadline-failure
+  [cause deadline]
+  (if (contains? (ex-data cause) ::deadline-exceeded)
+    cause
+    (errors/with-context cause (errors/message-of cause)
+      {::deadline-exceeded (or (= ::timeout (:type (ex-data cause)))
+                               (zero? (process/remaining deadline)))})))
+
 (defn evaluate
   "Calls a fixed bridge method, optionally with a Transit string.
   JSON quoting embeds the argument; descriptors and results remain Transit."
@@ -258,17 +266,18 @@
                                          bounds))]
           (assoc owner :browser browser :version (.version browser) :endpoint address))
         (catch :default cause
-          (try
-            (await (close owner))
-            (catch :default cleanup-cause
-              (throw (ex-info "browser shutdown failed after startup error"
-                              {:type ::startup-cleanup
-                               :endpoint @(:address endpoint) :user-data-dir user-data-dir
-                               :startup-failure (errors/describe-cause cause)}
-                              cleanup-cause))))
-          (throw (ex-info (errors/message-of cause)
-                          (assoc (ex-data cause) :endpoint @(:address endpoint) :user-data-dir user-data-dir)
-                          cause)))))))
+          (let [cause (deadline-failure cause deadline)]
+            (try
+              (await (close owner))
+              (catch :default cleanup-cause
+                (throw (ex-info "browser shutdown failed after startup error"
+                                {:type ::startup-cleanup
+                                 :endpoint @(:address endpoint) :user-data-dir user-data-dir
+                                 :startup-failure (errors/describe-cause cause)}
+                                cleanup-cause))))
+            (throw (ex-info (errors/message-of cause)
+                            (assoc (ex-data cause) :endpoint @(:address endpoint) :user-data-dir user-data-dir)
+                            cause))))))))
 
 (defn ^:async new-page
   "Creates a context and page in a browser process we own, navigates to host,
@@ -301,11 +310,13 @@
                           (transit/decode-str (await (within #(evaluate page "buildIdentity") bounds))))
           page-own
           (catch :default cause
-            (ex/ignoring (await (close-page page-own)))
-            (throw cause))))
+            (let [cause (deadline-failure cause deadline)]
+              (ex/ignoring (await (close-page page-own)))
+              (throw cause)))))
       (catch :default cause
-        (ex/ignoring (await (close-page {:context context})))
-        (throw cause)))))
+        (let [cause (deadline-failure cause deadline)]
+          (ex/ignoring (await (close-page {:context context})))
+          (throw cause))))))
 
 (defn connected?
   "True while the owned CDP connection is live."

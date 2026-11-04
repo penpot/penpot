@@ -550,7 +550,7 @@ function runFixtureText({
       k("repetitions"),
       repetitions,
       k("timeout-policy"),
-      map([k("attempt-ms"), 30000]),
+      map([k("case-ms"), 30000]),
     ]),
     k("metadata"),
     map([
@@ -591,6 +591,8 @@ function runFixtureText({
     [preparation],
     k("attempts"),
     attempts,
+    k("case-outcomes"),
+    map([k(caseId), map([k("outcome"), k("completed")])]),
     k("remaining"),
     map([k(caseId), map([k("warmups"), 0, k("repetitions"), 0])]),
     k("termination"),

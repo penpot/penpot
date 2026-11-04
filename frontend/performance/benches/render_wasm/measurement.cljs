@@ -5,7 +5,33 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.measurement
-  "Projects browser phase evidence into saved attempts.")
+  "Projects browser phase evidence into saved attempts."
+  (:require
+   [app.common.schema :as sm]
+   [benches.render-wasm.result :as result]))
+
+(defn partial-phases
+  "Returns the valid prefix of delivered phase history.
+
+  Args:
+    phases: raw blocks from a browser response.
+    preparation-id: expected owner of the blocks.
+    order: allowed phase names in execution order.
+
+  Returns:
+    Valid blocks up to the first malformed block or failed phase."
+  [phases preparation-id order]
+  (loop [phases (when (sequential? phases) (seq phases)) order order out []]
+    (if-let [phase (first phases)]
+      (if (and (sm/validate result/schema:phase phase)
+               (= preparation-id (:preparation-id phase))
+               (= (first order) (:phase phase))
+               (every? #(= 1 (count (get-in % [:metrics :command/elapsed]))) (:events phase)))
+        (let [out (conj out phase)]
+          (if (= :failed (:outcome phase)) out
+              (recur (next phases) (next order) out)))
+        out)
+      out)))
 
 (defn attempt
   "Returns an attempt with raw phase histories and available failure evidence.
@@ -21,7 +47,7 @@
   [case-id preparation-id warmup? evidence]
   (cond-> {:case-id case-id :preparation-id preparation-id :warmup? warmup?
            :outcome (if (= "ok" (:status evidence)) :completed :failed)
-           :phases (filterv #(#{:main :reset} (:phase %)) (:phases evidence))}
+           :phases (or (:phases evidence) [])}
     (not= "ok" (:status evidence))
     (assoc :failure (select-keys evidence [:status :phase :message :cause]))
     (:partial evidence) (assoc :partial (:partial evidence))))

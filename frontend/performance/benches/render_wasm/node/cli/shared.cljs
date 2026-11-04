@@ -80,7 +80,7 @@
                   "must be a nonnegative JavaScript-safe integer")
    (number-option "--repetitions N" "Measured attempts per case" schema:positive-count
                   "must be a positive JavaScript-safe integer")
-   (number-option "--timeout-ms MS" "Attempt deadline" schema:timeout-ms
+   (number-option "--timeout-ms MS" "Case deadline including setup, attempts and diagnostics" schema:timeout-ms
                   "must be a positive integer within Node's timer range")
    (number-option "--startup-timeout-ms MS" "Host/browser readiness deadline" schema:timeout-ms
                   "must be a positive integer within Node's timer range")

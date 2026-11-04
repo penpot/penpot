@@ -14,6 +14,7 @@
    [benches.render-wasm.features.plan :as feature-plan]
    [benches.render-wasm.node.cli.request :as request]
    [benches.render-wasm.node.log :as log]
+   [benches.render-wasm.node.runner.browser :as browser]
    [benches.render-wasm.node.runner.feature-comparison :as feature-comparison]
    [benches.render-wasm.node.runner.run :as run]
    [benches.render-wasm.node.storage.artifacts :as artifacts]
@@ -87,7 +88,7 @@
 (defn- fake-browser
   [{:keys [launch-failure new-page-failure close-page-failure
            prepare-failure run-failure screenshot-failure
-           interruption controller effective-graphics events]
+           interruption controller effective-graphics events close-failure]
     :or {effective-graphics (constantly {})
          events [{:command :fixture/work :metrics {:command/elapsed [1]}}]}}]
   (let [state (atom {:launches 0 :pages 0 :close-pages 0 :closes 0
@@ -100,9 +101,9 @@
           (swap! state assoc :launches n)
           (when (and launch-failure (launch-failure n))
             (throw (ex-info "browser launch failed" {:phase :browser-startup})))
-          {:version "FakeBrowser/1" :browser #js {}}))
+          {:id n :version "FakeBrowser/1" :browser #js {}}))
       :new-page
-      (fn [_ host _]
+      (fn [owner host _]
         (when-not (and (string? (:base-url host))
                        (some? (get-in host [:build :id])))
           (throw (ex-info "new-page requires the opened host"
@@ -112,7 +113,7 @@
           (swap! state assoc :pages n)
           (when (and new-page-failure (new-page-failure n))
             (throw (ex-info "browser page failed" {:phase :browser-page-startup})))
-          {:page {:id n} :context {}}))
+          {:page {:id n :browser-id (:id owner)} :context {}}))
       :close-page
       (fn [_]
         (let [n (next-count state :close-pages)]
@@ -121,7 +122,9 @@
             (throw (ex-info "page close failed" {:phase :browser-page-close})))))
       :close
       (fn [_]
-        (swap! state update :closes inc))
+        (let [n (:closes (swap! state update :closes inc))]
+          (when (and close-failure (close-failure n))
+            (throw (ex-info "browser shutdown failed" {:phase :browser-close})))))
       :connected?
       (fn [_] true)
       :prepare
@@ -143,7 +146,7 @@
                                :fingerprint {:algorithm :sha-256
                                              :digest (apply str (repeat 64 "a"))}
                                :effective-graphics (effective-graphics case-id (:id page))
-                               :diagnostics {}
+                               :diagnostics {:browser-id (:browser-id page)}
                                :phases [{:phase :preparation :preparation-id preparation-id
                                          :outcome :completed :events []}]}]
               (swap! state assoc-in [:preparations preparation-id] case-id)
@@ -211,7 +214,8 @@
                                  (options fake (path/join @temporary-root "unmeasured"))))
         saved (result/decode (fs/readFileSync (get-in response [:home :record-path]) "utf8"))]
     (t/is (= 1 (:exit-code response)))
-    (t/is (= {:reason :no-measurements :case-ids [:case/unmeasured]} (:termination saved)))
+    (t/is (= :failed (get-in saved [:termination :reason])))
+    (t/is (= :no-measurements (get-in saved [:case-outcomes :case/unmeasured :failure :reason])))
     (t/is (= :completed (get-in saved [:attempts 0 :outcome])))))
 
 (defn- preparations-for
@@ -310,7 +314,7 @@
       (t/is (= 2 (:launches state)))
       (t/is (= 2 (:closes state))))))
 
-(t/deftest ^:async failed-attempts-consume-slots-and-the-runner-continues
+(t/deftest ^:async failed-attempts-stop-the-case-and-keep-pending-slots
   (doseq [failure [:throw :response]]
     (let [fake   (fake-browser {:run-failure (fn [case-id n]
                                                (when (and (= case-id :case/fresh) (= n 1))
@@ -319,12 +323,12 @@
           result (await (execute fake [(collected :case/fresh :fresh)] opts))
           run    (:run result)
           tries  (attempts-for run :case/fresh)]
-      (t/is (= 2 (count tries)))
-      (t/is (= [:failed :completed] (mapv :outcome tries)))
-      (t/is (every? zero? (vals (get-in run [:remaining :case/fresh]))))
-      (t/is (= :failed (get-in run [:termination :reason])))
+      (t/is (= [:failed] (mapv :outcome tries)))
+      (t/is (= {:warmups 0 :repetitions 1} (get-in run [:remaining :case/fresh])))
+      (t/is (= :failed (get-in run [:case-outcomes :case/fresh :outcome])))
+      (t/is (= :incomplete (get-in run [:termination :reason])))
       (t/is (= 1 (:exit-code result)))
-      (t/is (= 2 (count (preparations-for run :case/fresh)))))))
+      (t/is (= 1 (count (preparations-for run :case/fresh)))))))
 
 (t/deftest ^:async reuse-preparation-failure-leaves-slots-and-continues-to-the-next-case
   (doseq [kind [:throw :response]]
@@ -346,7 +350,7 @@
         (t/is (= :case/reuse (:case-id failure)))
         (t/is (= "scene-build" (:phase failure)))))))
 
-(t/deftest ^:async fresh-preparation-failure-consumes-one-slot-and-retries
+(t/deftest ^:async fresh-preparation-failure-consumes-its-slot-and-stops-the-case
   (doseq [kind [:throw :response]]
     (let [preparations (atom 0)
           fake   (fake-browser {:prepare-failure #(when (and (= % :case/fresh)
@@ -356,14 +360,14 @@
                                  (assoc (options fake (output-dir)) :repetitions 2 :screenshots true)))
           run    (:run result)
           tries  (attempts-for run :case/fresh)]
-      (t/is (= [:failed :completed] (mapv :outcome tries)))
+      (t/is (= [:failed] (mapv :outcome tries)))
       (t/is (= (:preparation-id (first (preparations-for run :case/fresh)))
                (:preparation-id (first tries))))
       (t/is (= "scene-build" (get-in (first tries) [:failure :phase])))
-      (t/is (= 2 (count (preparations-for run :case/fresh))))
-      (t/is (= :ok (get-in run [:metadata :diagnostics :screenshots "case/fresh" :status])))
-      (t/is (every? zero? (vals (get-in run [:remaining :case/fresh]))))
-      (t/is (= :failed (get-in run [:termination :reason])))
+      (t/is (= 1 (count (preparations-for run :case/fresh))))
+      (t/is (= :skipped (get-in run [:metadata :diagnostics :screenshots "case/fresh" :status])))
+      (t/is (= {:warmups 0 :repetitions 1} (get-in run [:remaining :case/fresh])))
+      (t/is (= :incomplete (get-in run [:termination :reason])))
       (t/is (= 1 (:exit-code result))))))
 
 (t/deftest ^:async reuse-attempt-failure-leaves-pending-slots-and-continues-to-the-next-case
@@ -377,7 +381,7 @@
       (t/is (= [:failed] (mapv :outcome (attempts-for run :case/reuse))))
       (t/is (= {:warmups 0 :repetitions 2} (get-in run [:remaining :case/reuse])))
       (t/is (= [:completed :completed :completed] (mapv :outcome (attempts-for run :case/fresh))))
-      (t/is (= {:status :skipped :reason :case-abandoned}
+      (t/is (= {:status :skipped :reason :no-completed-measured-attempt}
                (get-in run [:metadata :diagnostics :screenshots "case/reuse"])))
       (t/is (= :incomplete (get-in run [:termination :reason])))
       (t/is (= 1 (:exit-code result))))))
@@ -399,10 +403,7 @@
       (t/is (= 1 (:exit-code result))))))
 
 (t/deftest ^:async browser-close-failure-abandons-the-case-and-relaunches-for-the-next
-  (let [fake   (fake-browser {:run-failure (fn [case-id n]
-                                             (when (and (= case-id :case/a) (= n 1))
-                                               :throw))
-                              :close-page-failure #(= % 1)})
+  (let [fake   (fake-browser {:close-page-failure #(= % 1)})
         opts   (assoc (options fake (output-dir)) :repetitions 2)
         result (await (execute fake [(collected :case/a :fresh)
                                      (collected :case/b :fresh)] opts))
@@ -410,7 +411,8 @@
         state  @(:state fake)]
     (t/is (= 2 (:launches state)))
     (t/is (= 1 (count (attempts-for run :case/a))))
-    (t/is (= :failed (:outcome (first (attempts-for run :case/a)))))
+    (t/is (= :completed (:outcome (first (attempts-for run :case/a)))))
+    (t/is (= :failed (get-in run [:case-outcomes :case/a :outcome])))
     (t/is (= 1 (get-in run [:remaining :case/a :repetitions])))
     (t/is (= 2 (count (attempts-for run :case/b))))
     (t/is (every? #(= :completed (:outcome %)) (attempts-for run :case/b)))
@@ -423,7 +425,7 @@
         result (await (execute fake [(collected :case/a :fresh)]
                                (options fake (output-dir))))
         run    (:run result)]
-    (t/is (= :completed (get-in run [:termination :reason])))
+    (t/is (= :failed (get-in run [:termination :reason])))
     (t/is (every? zero? (vals (get-in run [:remaining :case/a]))))
     (t/is (= :browser-close
              (:stage (last (get-in run [:metadata :diagnostics :failures])))))
@@ -481,7 +483,6 @@
       (t/is (str/includes? (:message failure) (pr-str (:renderer graphics))))
       (t/is (str/includes? (:message failure) "./manage.sh run-devenv --gpu"))
       (t/is (str/includes? (:message failure) "pnpm run render-bench"))
-      (t/is (= 1 (:close-pages state)))
       (t/is (= 1 (:closes state))))))
 
 (t/deftest ^:async graphics-rejection-preserves-earlier-attempts-and-stops-the-run
@@ -502,7 +503,6 @@
       (t/is (= [hardware-graphics software] (mapv :effective-graphics (:preparations run))))
       (t/is (= {:case/a {:warmups 0 :repetitions (if (= context :fresh) 1 0)}
                 :case/b {:warmups 0 :repetitions 2}} (:remaining run)))
-      (t/is (= 2 (:close-pages @(:state fake))))
       (t/is (= 1 (:closes @(:state fake)))))))
 
 (t/deftest ^:async sigint-and-sigterm-persist-partial-interrupted-records
@@ -560,7 +560,265 @@
       (t/is (= (if (and (= method :prepare) (= context :reuse)) [:preparation] [])
                (mapv :stage (get-in run [:metadata :diagnostics :failures])))))))
 
-(t/deftest ^:async fresh-preparation-and-rendering-share-the-attempt-time-budget
+(t/deftest ^:async phase-and-output-failures-retain-evidence-and-stop-the-case
+  (doseq [context [:fresh :reuse]
+          phase [:preparation :main :reset :invalid-preparation :contradictory-preparation :invalid-main :invalid-reset]]
+    (let [base (fake-browser {:prepare-failure (when (= :preparation phase)
+                                                 #(when (= :case/a %) :response))})
+          services (:service base)
+          fake (assoc base :service
+                      (assoc services
+                             :prepare (fn [page request bounds]
+                                        (let [response ((:prepare services) page request bounds)]
+                                          (if (= :case/a (get-in (transit/decode-str request) [:case :id]))
+                                            (case phase
+                                              :invalid-preparation (update response :preparation dissoc :fingerprint)
+                                              :contradictory-preparation
+                                              (-> response
+                                                  (assoc-in [:preparation :failure] {:message "callback failed"})
+                                                  (assoc-in [:preparation :phases 0 :outcome] :failed))
+                                              response)
+                                            response)))
+                             :run (fn [page request bounds]
+                                    (let [id (:preparation-id (transit/decode-str request))
+                                          case-id (get-in @(:state base) [:preparations id])
+                                          block {:phase :main :preparation-id id :outcome :completed
+                                                 :events [{:command :fixture/work :metrics {:command/elapsed [1]}}]}]
+                                      (if (= :case/a case-id)
+                                        (case phase
+                                          :main {:status "failed" :phase "main" :message "main failed"
+                                                 :phases [(assoc block :outcome :failed)]}
+                                          :reset {:status "failed" :phase "reset" :message "reset failed"
+                                                  :phases [block (assoc block :phase :reset :outcome :failed)]}
+                                          :invalid-main {:status "ok" :phases []}
+                                          :invalid-reset {:status "ok" :phases [block {:phase :reset}]})
+                                        ((:run services) page request bounds))))))
+          response (await (execute fake [(collected :case/a context) (collected :case/b context)]
+                                   (assoc (options fake (output-dir)) :repetitions 2)))
+          saved (saved-record response)
+          prep-failed? (#{:preparation :invalid-preparation :contradictory-preparation} phase)
+          attempts (attempts-for saved :case/a)]
+      (t/is (= :failed (get-in saved [:case-outcomes :case/a :outcome])))
+      (t/is (= (if (and prep-failed? (= :reuse context)) [] [:failed]) (mapv :outcome attempts)))
+      (t/is (= {:warmups 0 :repetitions (if (and prep-failed? (= :reuse context)) 2 1)}
+               (get-in saved [:remaining :case/a])))
+      (t/is (= [:completed :completed] (mapv :outcome (attempts-for saved :case/b))))
+      (when (= :contradictory-preparation phase)
+        (t/is (= "invalid-output" (get-in (first (preparations-for saved :case/a)) [:failure :phase]))))
+      (when (= :invalid-reset phase)
+        (t/is (= [:main] (mapv :phase (:phases (first attempts)))))
+        (t/is (= {:phase :reset} (get-in (first attempts) [:partial :response :phases 1]))))
+      (when (#{:invalid-main :invalid-reset} phase)
+        (t/is (= "invalid-output" (get-in (first attempts) [:failure :phase])))))))
+
+(t/deftest ^:async runner-terminates-a-blocked-page-and-completes-the-next-case
+  (let [dir (build-dir)
+        owners (atom [])
+        prepared (atom {})
+        attempts (atom {})
+        identity-text (.stringify js/JSON (transit/encode-str {:build-id "test-build"}))
+        services (assoc browser/service
+                        :launch (^:async fn [options]
+                                  (when-let [previous (last @owners)]
+                                    (t/is (false? (.isConnected ^js (:browser previous))))
+                                    (t/is (not (fs/existsSync (:user-data-dir previous)))))
+                                  (let [owner (await (browser/launch options))]
+                                    (swap! owners conj owner)
+                                    owner))
+                        :prepare (fn [_ request _]
+                                   (let [{:keys [preparation-id] definition :case} (transit/decode-str request)]
+                                     (swap! prepared assoc preparation-id (:id definition))
+                                     {:status "ok"
+                                      :preparation {:preparation-id preparation-id :case-id (:id definition)
+                                                    :fingerprint {:algorithm :sha-256 :digest (apply str (repeat 64 "a"))}
+                                                    :effective-graphics {} :diagnostics {}
+                                                    :phases [{:phase :preparation :preparation-id preparation-id
+                                                              :outcome :completed :events []}]}}))
+                        :run (^:async fn [page request bounds]
+                               (let [id (:preparation-id (transit/decode-str request))
+                                     case-id (get @prepared id)
+                                     n (get (swap! attempts update case-id (fnil inc 0)) case-id)]
+                                 (await (browser/within
+                                         #(.evaluate ^js page
+                                                     (if (and (= :case/a case-id) (= n 2))
+                                                       "while (true) {}" "1"))
+                                         bounds))
+                                 {:status "ok"
+                                  :phases [{:phase :main :preparation-id id :outcome :completed
+                                            :events [{:command :fixture/work :metrics {:command/elapsed [1]}}]}]})))]
+    (fs/writeFileSync (path/join dir "index.html")
+                      (str "<!doctype html><script>window.__benchReady=true;"
+                           "window.__benchBridge={buildIdentity:()=>" identity-text "};</script>"))
+    (try
+      (let [opts (assoc (options nil (output-dir)) :browser services :repetitions 2
+                        :timeout-ms 3000 :startup-timeout-ms 30000)
+            response (await (run/execute (artifacts/frontend-root)
+                                         (runs/create-home {:root (artifacts/frontend-root) :run-id "blocked-case"
+                                                            :output-dir (:output-dir opts)})
+                                         (selected-build dir "test-build")
+                                         [(collected :case/a :reuse) (collected :case/b :reuse)] opts nil))
+            saved (saved-record response)]
+        (t/is (= [:completed :failed] (mapv :outcome (attempts-for saved :case/a))))
+        (t/is (= :timed-out (get-in saved [:case-outcomes :case/a :outcome])))
+        (t/is (= [:completed :completed] (mapv :outcome (attempts-for saved :case/b))))
+        (t/is (= :completed (get-in saved [:case-outcomes :case/b :outcome])))
+        (t/is (= 2 (count @owners)))
+        (t/is (not= (:user-data-dir (first @owners)) (:user-data-dir (second @owners))))
+        (doseq [owner @owners]
+          (t/is (false? (.isConnected ^js (:browser owner))))
+          (t/is (not (fs/existsSync (:user-data-dir owner))))))
+      (finally
+        (doseq [owner @owners]
+          (await (browser/close owner)))))))
+
+(t/deftest ^:async opening-and-screenshot-work-share-the-case-deadline
+  (doseq [stage [:page :screenshot]]
+    (let [system-now (.-now js/Date)
+          clock (atom (system-now))
+          base (fake-browser {})
+          spend (fn [page bounds]
+                  (when (= 1 (:id page))
+                    (swap! clock + 300)
+                    (when (>= @clock (:deadline bounds))
+                      (throw (ex-info "browser work timed out" {:phase (name stage)})))))
+          fake (if (= :page stage)
+                 (assoc-in base [:service :new-page]
+                           (fn [owner host bounds]
+                             (let [opened ((get-in base [:service :new-page]) owner host bounds)]
+                               (spend (:page opened) bounds)
+                               opened)))
+                 (assoc-in base [:service :screenshot]
+                           (fn [page file bounds]
+                             (spend page bounds)
+                             ((get-in base [:service :screenshot]) page file bounds))))]
+      (try
+        (set! (.-now js/Date) (fn [] @clock))
+        (let [response (await (execute fake [(collected :case/a :reuse) (collected :case/b :reuse)]
+                                       (assoc (options fake (output-dir)) :timeout-ms 250 :screenshots true)))
+              saved (saved-record response)]
+          (t/is (= :timed-out (get-in saved [:case-outcomes :case/a :outcome])))
+          (t/is (= :completed (get-in saved [:case-outcomes :case/b :outcome])))
+          (t/is (= {:warmups 0 :repetitions (if (= :page stage) 1 0)}
+                   (get-in saved [:remaining :case/a])))
+          (when (= :screenshot stage)
+            (t/is (= [:completed] (mapv :outcome (attempts-for saved :case/a))))))
+        (finally
+          (set! (.-now js/Date) system-now))))))
+
+(t/deftest ^:async failed-browser-disposal-stops-later-cases
+  (let [fake (fake-browser {:run-failure (fn [_ _] :response) :close-failure #(= 1 %)})
+        response (await (execute fake [(collected :case/a :reuse) (collected :case/b :reuse)]
+                                 (assoc (options fake (output-dir)) :repetitions 2)))
+        saved (saved-record response)]
+    (t/is (= [:case/a] (mapv :case-id (:attempts saved))))
+    (t/is (= {:warmups 0 :repetitions 2} (get-in saved [:remaining :case/b])))
+    (t/is (= :browser-close (get-in saved [:termination :failure :stage])))))
+
+(t/deftest ^:async failed-startup-cleanup-aborts-even-after-the-case-deadline
+  (let [system-now (.-now js/Date)
+        clock (atom (system-now))
+        base (fake-browser {:run-failure (fn [_ _] :response)})
+        fake (assoc-in base [:service :launch]
+                       (fn [bounds]
+                         (let [owner ((get-in base [:service :launch]) bounds)]
+                           (when (= 2 (:id owner))
+                             (reset! clock (inc (:deadline bounds)))
+                             (throw (ex-info "browser shutdown failed after startup error"
+                                             {:type ::browser/startup-cleanup})))
+                           owner)))]
+    (try
+      (set! (.-now js/Date) (fn [] @clock))
+      (let [response (await (execute fake [(collected :case/a :reuse) (collected :case/b :reuse)
+                                           (collected :case/c :reuse)]
+                                     (assoc (options fake (output-dir)) :timeout-ms 250)))
+            saved (saved-record response)]
+        (t/is (= :failed (get-in saved [:case-outcomes :case/b :outcome])))
+        (t/is (= {:warmups 0 :repetitions 1} (get-in saved [:remaining :case/c])))
+        (t/is (= :browser-launch (get-in saved [:termination :failure :stage]))))
+      (finally
+        (set! (.-now js/Date) system-now)))))
+
+(t/deftest ^:async cleanup-time-does-not-change-the-case-failure
+  (let [system-now (.-now js/Date)
+        clock (atom (system-now))
+        base (fake-browser {:new-page-failure #(= 1 %)})
+        fake (assoc-in base [:service :close]
+                       (fn [owner]
+                         (swap! clock + 1000)
+                         ((get-in base [:service :close]) owner)))]
+    (try
+      (set! (.-now js/Date) (fn [] @clock))
+      (let [response (await (execute fake [(collected :case/a :reuse) (collected :case/b :reuse)]
+                                     (assoc (options fake (output-dir)) :timeout-ms 500)))
+            saved (saved-record response)]
+        (t/is (= :failed (get-in saved [:case-outcomes :case/a :outcome])))
+        (t/is (= :completed (get-in saved [:case-outcomes :case/b :outcome]))))
+      (finally
+        (set! (.-now js/Date) system-now)))))
+
+(t/deftest ^:async service-cleanup-preserves-the-originating-failure-classification
+  (let [system-now (.-now js/Date)
+        clock (atom (system-now))
+        base (fake-browser {:new-page-failure #(= 1 %)})
+        fake (assoc-in base [:service :new-page]
+                       (fn [owner host bounds]
+                         (try
+                           ((get-in base [:service :new-page]) owner host bounds)
+                           (catch :default cause
+                             (let [annotated (errors/with-context cause "page startup failed"
+                                               {::browser/deadline-exceeded false})]
+                               (swap! clock + 1000)
+                               (throw annotated))))))]
+    (try
+      (set! (.-now js/Date) (fn [] @clock))
+      (let [response (await (execute fake [(collected :case/a :reuse) (collected :case/b :reuse)]
+                                     (assoc (options fake (output-dir)) :timeout-ms 250)))
+            saved (saved-record response)]
+        (t/is (= :failed (get-in saved [:case-outcomes :case/a :outcome])))
+        (t/is (= :completed (get-in saved [:case-outcomes :case/b :outcome]))))
+      (finally
+        (set! (.-now js/Date) system-now)))))
+
+(t/deftest ^:async case-expiry-keeps-delivered-attempts-and-continues-in-a-new-browser
+  (doseq [context [:fresh :reuse]]
+    (let [system-now (.-now js/Date)
+          clock (atom (system-now))
+          base (fake-browser {})
+          active-case (atom nil)
+          spend (fn [duration bounds]
+                  (when (= :case/a @active-case)
+                    (swap! clock + duration)
+                    (when (>= @clock (:deadline bounds))
+                      (throw (ex-info "browser work timed out" {:phase (:phase bounds)})))))
+          services (:service base)
+          fake (assoc base :service
+                      (assoc services
+                             :prepare (fn [page request bounds]
+                                        (reset! active-case (get-in (transit/decode-str request) [:case :id]))
+                                        (spend 25 bounds)
+                                        ((:prepare services) page request bounds))
+                             :run (fn [page request bounds]
+                                    (spend 110 bounds)
+                                    ((:run services) page request bounds))))]
+      (try
+        (set! (.-now js/Date) (fn [] @clock))
+        (let [response (await (execute fake [(collected :case/a context) (collected :case/b context)]
+                                       (assoc (options fake (output-dir))
+                                              :warmups 1 :repetitions 3 :timeout-ms 350)))
+              saved (saved-record response)
+              first-prep (first (preparations-for saved :case/a))
+              next-prep (first (preparations-for saved :case/b))]
+          (t/is (= [:completed :completed :failed] (mapv :outcome (attempts-for saved :case/a))))
+          (t/is (= {:warmups 0 :repetitions 1} (get-in saved [:remaining :case/a])))
+          (t/is (= :timed-out (get-in saved [:case-outcomes :case/a :outcome])))
+          (t/is (= [:completed :completed :completed :completed]
+                   (mapv :outcome (attempts-for saved :case/b))))
+          (t/is (not= (get-in first-prep [:diagnostics :browser-id])
+                      (get-in next-prep [:diagnostics :browser-id]))))
+        (finally
+          (set! (.-now js/Date) system-now))))))
+
+(t/deftest ^:async preparation-and-rendering-share-the-case-budget
   (doseq [context [:fresh :reuse]]
     (let [system-now (.-now js/Date)
           clock      (atom (system-now))
@@ -582,8 +840,9 @@
         (let [result (await (execute fake [(collected :case/a context)]
                                      (assoc (options fake (output-dir)) :timeout-ms 250)))
               saved  (saved-record result)]
-          (t/is (= (if (= context :fresh) :failed :completed) (:outcome (first (:attempts saved)))))
-          (t/is (= (if (= context :fresh) 1 0) (:exit-code result))))
+          (t/is (= :failed (:outcome (first (:attempts saved)))))
+          (t/is (= :timed-out (get-in saved [:case-outcomes :case/a :outcome])))
+          (t/is (= 1 (:exit-code result))))
         (finally
           (set! (.-now js/Date) system-now))))))
 
@@ -797,7 +1056,7 @@
         result (await (execute fake [(collected :case/a :fresh)] opts))
         run    (:run result)
         diag   (get-in run [:metadata :diagnostics])]
-    (t/is (= {:attempt-ms 1234} (get-in run [:plan :timeout-policy])))
+    (t/is (= {:case-ms 1234} (get-in run [:plan :timeout-policy])))
     (t/is (= {:sha "build-revision" :dirty false} (get-in run [:metadata :git])))
     (t/is (= {:mode :release :default-features? true :features [] :cljs-profile-marks false}
              (get-in run [:metadata :build :functional])))
@@ -944,7 +1203,7 @@
                        :execute-run
                        (fn [root home selected cases opts signal]
                          (let [fake (fake-browser
-                                     {:close-page-failure (when close-fails #(= % 2))
+                                     {:close-failure (when close-fails (constantly true))
                                       :effective-graphics
                                       (fn [_ page-id]
                                         (if (and hardware-first (= page-id 1))
@@ -959,7 +1218,7 @@
       (t/is (= 1 (:exit-code response)))
       (t/is (= (if hardware-first 1 0) (count (:attempts run))))
       (t/is (= software (get-in failure [:partial :graphics])))
-      (t/is (= (if close-fails :browser-close :gpu) (get-in run [:termination :failure :stage])))
+      (t/is (= (if close-fails :cleanup :gpu) (get-in run [:termination :failure :stage])))
       (t/is (= :failed (get-in saved [:configurations 0 :status])))
       (t/is (= :gpu (get-in saved [:configurations 0 :failure :stage])))
       (t/is (= :unattempted (get-in saved [:configurations 1 :status]))))))

@@ -37,7 +37,7 @@
     :plan {:cases [{:id :rects/load}]
            :warmups 0
            :repetitions 1
-           :timeout-policy {:attempt-ms 30000}}
+           :timeout-policy {:case-ms 30000}}
     :metadata {:git {:sha "abc" :dirty false}
                :build {:functional {:mode :release}}
                :environment {:node "v24.0.0"}

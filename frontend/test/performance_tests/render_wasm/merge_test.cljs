@@ -62,7 +62,7 @@
               :plan {:cases (mapv case-definition cases)
                      :warmups warmups
                      :repetitions repetitions
-                     :timeout-policy {:attempt-ms timeout-ms}}
+                     :timeout-policy {:case-ms timeout-ms}}
               :metadata {:git {:sha git-sha :dirty false}
                          :build {:functional build}
                          :environment environment
@@ -87,7 +87,10 @@
                                  (result/record-attempt
                                   run (attempt case-id measured-id false)))
                                run (range repetitions))))))
-             run cases)]
+             run cases)
+        run (if (= :completed (:reason termination))
+              (reduce #(result/record-case-outcome %1 %2 {:outcome :completed}) run cases)
+              run)]
     (result/finish-run run ended-at termination)))
 
 (t/deftest merges-measured-attempts-and-updates-the-plan

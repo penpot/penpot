@@ -210,6 +210,7 @@
   [run id ids analysis]
   {:case-id id
    :definition (some #(when (= id (:id %)) %) (get-in run [:plan :cases]))
+   :outcome (get-in run [:case-outcomes id])
    :preparations (filterv #(= id (:case-id %)) (:preparations run))
    :phases (phase-counts run id)
    :remaining (get-in run [:remaining id])

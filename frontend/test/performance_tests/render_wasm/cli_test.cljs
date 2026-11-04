@@ -267,6 +267,8 @@
                            ["run" #"--warmups N\s+3"]
                            ["run" #"--seed N\s+42"]
                            ["run" #"--repetitions N\s+10"]
+                           ["run" #"--timeout-ms MS\s+30000\s+Case deadline"]
+                           ["ab" #"--timeout-ms MS\s+30000\s+Case deadline"]
                            ["run" #"--features FEATURES\s+\[\]"]
                            ["run" #"--\[no-\]default-features\s+true"]
                            ["run" #"--build-timeout-ms MS\s+300000"]
