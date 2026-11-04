@@ -6,8 +6,10 @@
 
 (ns frontend-tests.data.viewer-test
   (:require
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.viewer :as dv]
+   [app.main.data.websocket :as dws]
    [app.main.router :as rt]
    [beicon.v2.core :as rx]
    [cljs.test :as t]
@@ -87,6 +89,33 @@
    :viewer-local (cond-> {}
                    (some? zoom-type)
                    (assoc :zoom-type zoom-type))})
+
+(t/deftest applying-file-changes-updates-viewer-file-and-frames
+  (let [file-id  (uuid/custom 1 2)
+        frame-id (uuid/custom 1 3)
+        frame    (cts/setup-shape {:id frame-id :type :frame :name "Board"})
+        file     {:id file-id
+                  :data {:pages [page-id]
+                         :pages-index {page-id {:id page-id
+                                                :objects {frame-id frame}}}}}
+        state    {:files {file-id file}
+                  :viewer {:file file}}
+        changes  [{:type :mod-obj
+                   :id frame-id
+                   :page-id page-id
+                   :operations [{:type :set :attr :hide-in-viewer :val true}]}]
+        message  (ptk/data-event ::dws/message
+                                 {:type :file-change
+                                  :file-id file-id
+                                  :topic file-id
+                                  :changes changes})
+        events   (let [events (atom [])]
+                   (rx/subscribe (#'dv/file-change-events file-id (rx/of message))
+                                 #(swap! events conj %))
+                   @events)
+        updated  (ptk/update (first events) state)]
+    (t/is (true? (get-in updated [:files file-id :data :pages-index page-id :objects frame-id :hide-in-viewer])))
+    (t/is (empty? (get-in updated [:viewer :pages page-id :frames])))))
 
 (t/deftest update-zoom-querystring-does-not-navigate-when-url-already-matches
   (t/testing "zoom type already described by the query string"

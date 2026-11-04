@@ -23,11 +23,13 @@
    [app.main.data.event :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.helpers :as dsh]
+   [app.main.data.websocket :as dws]
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.render-wasm.api :as wasm.api]
    [app.util.globals :as ug]
+   [app.util.object :as obj]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -49,6 +51,7 @@
 (declare fetch-comment-threads)
 (declare fetch-bundle)
 (declare bundle-fetched)
+(declare apply-changes-viewer)
 (declare zoom-to-fill)
 (declare zoom-to-fit)
 
@@ -58,6 +61,36 @@
    [:file-id ::sm/uuid]
    [:share-id {:optional true} [:maybe ::sm/uuid]]
    [:page-id {:optional true} ::sm/uuid]])
+
+(defn- file-change-events
+  [file-id stream]
+  (->> stream
+       (rx/filter (ptk/type? ::dws/message))
+       (rx/map deref)
+       (rx/filter (fn [{:keys [type topic] :as message}]
+                    (and (= :file-change type)
+                         (= file-id topic)
+                         (= file-id (:file-id message)))))
+       (rx/map (fn [{:keys [changes]}]
+                 (apply-changes-viewer changes)))))
+
+(defn- subscribe-to-file
+  [file-id stream]
+  (let [stopper (rx/filter (ptk/type? ::finalize) stream)
+        subscribe-msg {:type :subscribe-file
+                       :file-id file-id
+                       :version (obj/get ug/global "penpotVersion")}
+        unsubscribe-msg {:type :unsubscribe-file
+                         :file-id file-id}]
+    (rx/concat
+     (->> (rx/merge
+           (rx/of (dws/send subscribe-msg))
+           (->> stream
+                (rx/filter (ptk/type? ::dws/opened))
+                (rx/map (constantly (dws/send subscribe-msg))))
+           (file-change-events file-id stream))
+          (rx/take-until stopper))
+     (rx/of (dws/send unsubscribe-msg)))))
 
 (defn initialize
   [{:keys [file-id share-id] :as params}]
@@ -80,13 +113,26 @@
           (update :comments-local dcmt/merge-persisted-filters)))
 
     ptk/WatchEvent
-    (watch [_ state _]
-      (rx/of (fetch-bundle (d/without-nils params))
-             ;; Only fetch threads for logged-in users
-             (when (some? (:profile state))
-               (fetch-comment-threads params))
-             (when (:share-id params)
-               (rx/of (ev/event {::ev/name "shared-prototipe-visited"})))))
+    (watch [_ state stream]
+      (let [fetch-events (rx/of (fetch-bundle (d/without-nils params))
+                                ;; Only fetch threads for logged-in users
+                                (when (some? (:profile state))
+                                  (fetch-comment-threads params))
+                                (when (:share-id params)
+                                  (rx/of (ev/event {::ev/name "shared-prototipe-visited"}))))
+            file-id (:file-id params)
+            subscribed? (and (some? (:profile-id state))
+                             (nil? (:share-id params)))]
+
+        (if-not subscribed?
+          fetch-events
+          (rx/merge
+           fetch-events
+           (->> stream
+                (rx/filter (ptk/type? ::bundle-fetched))
+                (rx/take 1)
+                (rx/mapcat (fn [_]
+                             (subscribe-to-file file-id stream))))))))
     ptk/EffectEvent
     (effect [_ _ _]
       ;; Set the window name, the window name is used on inter-tab
@@ -202,6 +248,7 @@
                  (into {}))]
 
         (-> state
+            (assoc-in [:files (:id file)] file)
             (assoc-in [:viewer :file] file)
             (assoc-in [:viewer :pages] pages))))))
 
