@@ -10,7 +10,7 @@
   A file has two kinds of row. Durable history: the snapshots, which a restore
   brings back. And ephemeral revisions: the xlog of an edit, born already
   scheduled for deletion one hour later, which nobody needs once the sessions
-  that were going to read them are gone.
+  that were going to read them are gone. The `kind` column tells them apart.
 
   The invariant under test is that a deletion date is assigned once and never
   moved: restoring a file must not unmark a revision, and deleting a file must
@@ -21,6 +21,7 @@
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.features.file-changes :as fchanges]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.util.blob :as blob]
@@ -64,6 +65,7 @@
                     :version    0
                     :created-by (or created-by "system")
                     :label      label
+                    :kind       (if label fchanges/snapshot-kind fchanges/revision-kind)
                     :data       data
                     :changes    changes}
                    {::db/return-keys false})
@@ -170,6 +172,7 @@
 
           out (th/command! {::th/type :update-file-snapshot
                             ::rpc/profile-id (:id profile)
+                            :file-id file-id
                             :id revision-id
                             :label "renamed"})]
 

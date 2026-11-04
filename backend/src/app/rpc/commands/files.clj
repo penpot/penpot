@@ -1401,7 +1401,9 @@
   ;; only looks at rows that carry a date, so unmarking one here would keep it
   ;; in the table for ever. The `data` half is a guard for the rows still
   ;; pending migration, not a dependency: drop it with the last one.
-  "UPDATE file_change SET deleted_at = null
+  ;; Every write moves `updated_at`: the delta passes copy the rows whose
+  ;; `updated_at` changed, so a restore that left it stale could be missed.
+  "UPDATE file_change SET deleted_at = null, updated_at = now()
     WHERE file_id = ANY(?::uuid[])
       AND (label IS NOT NULL OR data IS NOT NULL)")
 
