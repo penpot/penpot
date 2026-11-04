@@ -22,7 +22,9 @@
 .submenu {
   box-shadow: 0 0 0.75rem 0 var(--color-shadow-dark);
   display: grid;
-  inline-size: px2rem(240);
+  inline-size: max-content;
+  min-inline-size: px2rem(240);
+  max-inline-size: px2rem(360);
   padding: var(--sp-xs);
   border-radius: $br-8;
   border: $b-2 solid var(--color-background-quaternary);
@@ -94,6 +96,10 @@
   @include use-typography("body-small");
 
   color: var(--menu-item-title-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-inline-end: var(--sp-s);
 }
 
 .shortcut {
