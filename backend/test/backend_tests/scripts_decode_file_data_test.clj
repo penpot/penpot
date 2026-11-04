@@ -10,10 +10,13 @@
    [app.common.uuid :as uuid]
    [app.scripts.decode-file-data :as dfd]
    [app.util.blob :as blob]
+   [backend-tests.helpers :as th]
    [clojure.java.io :as io]
    [clojure.test :as t])
   (:import
    java.util.Base64))
+
+(t/use-fixtures :once th/state-init)
 
 (defn- sample-file-data
   []
@@ -80,3 +83,11 @@
         parsed   (json/decode (slurp tmp-out))]
     (t/is (== 2 (get-in parsed ["stats" "pages"])))
     (t/is (= ["Accueil1" "Contact"] (mapv #(get % "name") (get parsed "pages"))))))
+
+(t/deftest get-snapshot-json-fails-when-the-snapshot-does-not-exist
+  ;; The snapshot lookup returns nil when there is no match, and a nil
+  ;; snapshot used to be printed as an empty JSON instead of failing.
+  (let [file-id     (uuid/next)
+        snapshot-id (uuid/next)]
+    (t/is (thrown? clojure.lang.ExceptionInfo
+                   (dfd/get-snapshot-json th/*system* file-id snapshot-id)))))
