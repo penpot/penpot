@@ -249,14 +249,34 @@
       (->> (encode data opts)
            (bytes->str)))))
 
+#?(:cljs
+   (def ^:private json-reader
+     "Built once per handler map. Taken while in use, so nested reads build
+     their own; dropped on error, since transit leaves its cache dirty."
+     #js {:handlers nil :reader nil}))
+
+#?(:cljs
+   (defn- read-json
+     [data]
+     (let [handlers @read-handler-map
+           reader   (if (identical? handlers (.-handlers json-reader))
+                      (.-reader json-reader)
+                      nil)
+           reader   (or reader (t/reader :json {:handlers handlers}))]
+       (set! (.-reader json-reader) nil)
+       (let [result (t/read reader data)]
+         (set! (.-handlers json-reader) handlers)
+         (set! (.-reader json-reader) reader)
+         result))))
+
 (defn decode-str
   ([data] (decode-str data nil))
   ([data opts]
    #?(:cljs
-      (let [type   (:type opts :json)
-            params {:handlers @read-handler-map}
-            reader (t/reader type params)]
-        (t/read reader data))
+      (let [type (:type opts :json)]
+        (if (= type :json)
+          (read-json data)
+          (t/read (t/reader type {:handlers @read-handler-map}) data)))
       :clj
       (-> (str->bytes data)
           (decode opts)))))
