@@ -594,7 +594,7 @@
                     [(:shape-ref shape) (d/without-nils (select-keys shape [:constraints-h :constraints-v]))]))))
         ids))
 
-(defn- placed-like
+(defn placed-like
   "The main `objects` with the subtree of `shape-main` placed like `placed`,
   a copy shape expressed in the main's frame: resized to its size, its
   children following through their constraints and layouts, then turned

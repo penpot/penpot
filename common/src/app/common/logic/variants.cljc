@@ -581,6 +581,28 @@
           changes))
       changes)))
 
+(defn- keep-moved-placement
+  "A switch keeps the place of the copy shape `original-shape` it replaces.
+   Inside a copy, a first corner that the position of `new-shape` would not
+   give it needs a geometry override to survive later sync."
+  [changes original-shape new-shape page libraries]
+  (let [objects          (pcb/get-objects changes)
+        shape            (get objects (:id new-shape))
+        parent           (get objects (:parent-id shape))
+        position         (when (and (:shape-ref parent)
+                                    (ctk/touched-group? original-shape :geometry-group)
+                                    (not (ctk/touched-group? shape :geometry-group)))
+                           (ctf/find-ref-shape nil (assoc page :objects objects) libraries shape
+                                               :include-deleted? true :with-context? true))
+        position-objects (:objects (:container (meta position)))
+        position-parent  (get position-objects (:parent-id position))
+        placed           (when position-parent
+                           (get (cll/placed-like position-objects position-parent parent {}) (:id position)))]
+    (cond-> changes
+      (and placed (not (gpt/close? (first (:points shape)) (first (:points placed)))))
+      (pcb/update-shapes [(:id shape)] #(update % :touched ctk/set-touched-group :geometry-group)
+                         {:ignore-touched true}))))
+
 (defn generate-component-swap-in-place
   "Swap the copy head `shape` of `page` for a copy of the component
    `component-id` of library data `ldata`. The new head takes the old one's
@@ -611,6 +633,10 @@
                                                             :include-deleted? true :with-context? true))) []])
 
         changes (sync-restored-position changes page libraries (:id new-shape))
+
+        changes (cond-> changes
+                  keep-touched?
+                  (keep-moved-placement shape new-shape page libraries))
 
         ;; Replacement keeps the head id and its cell. Cleanup during the
         ;; temporary deletion must not change the parent's placement data.
