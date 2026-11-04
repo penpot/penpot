@@ -247,13 +247,17 @@ with `name`/`pinned`/`shared` properties and `open`, `moveTo`, `duplicate` and
 `remove` methods. `management.test.ts` shows the patterns:
 
 - Put every team and project a test creates under a name from
-  `temporaryName()` (`src/framework/temporary.ts`). Tests delete the teams they
-  create; the live CI driver deletes the teams and projects with that prefix
-  after the run. Runs from the plugin UI leave the projects behind. The tests
-  need nothing set up beforehand.
-- Assigning `name`, `pinned` or `shared` updates the object at once and saves
-  in the background. To check the saved result, list again inside
-  `waitForAsync()` (`src/tests/wait.ts`).
+  `temporaryName()` (`src/framework/temporary.ts`). The API cannot delete
+  teams, so the live CI driver deletes the teams and projects with that prefix
+  after the run. Runs from the plugin UI leave them behind. The tests need
+  nothing set up beforehand.
+- Assigning `name`, `pinned` or `shared` saves to the backend first and updates
+  the object only when the save succeeds. Wait for the new value with
+  `waitFor()` (`src/tests/wait.ts`) before reading it; to check what the
+  backend stored, list again inside `waitForAsync()`.
+- `Project.fileCount` is the count when the project was listed; creating or
+  moving files does not change it. List the project again to see the new
+  count.
 - Shape, page, file and library objects taken before `file.open()` (or
   `openFile`) are stale afterwards; look them up again in the new file.
   `ctx.board` belongs to the file the test started in, so only use it there.
