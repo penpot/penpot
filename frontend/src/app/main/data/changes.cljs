@@ -17,6 +17,7 @@
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.persistence.commits :as pcm]
+   [app.main.data.persistence.lock :as plk]
    [app.main.data.workspace :as-alias dw]
    [app.main.features :as features]
    [app.main.worker :as mw]
@@ -276,9 +277,12 @@
                  undo-group, they will be undone or redone in a single step. Without
                  it, a commit made while an undo transaction is open joins the
                  transaction's group, and any other gets a new one.
+   - ignore-save-lock: commit even while the save-failure lock holds. Only for
+                 commits that are not user edits: the undo of rolled-back
+                 commits and data derived from commits already made.
    "
   [{:keys [redo-changes undo-changes save-undo? undo-group tags stack-undo? file-id
-           translation? skip-component-sync?]
+           translation? skip-component-sync? ignore-save-lock]
     :or {save-undo? true
          stack-undo? false
          tags #{}}
@@ -296,10 +300,12 @@
 
         ;; Historical previews must not create edits to the live file. Check
         ;; this when creating commits so previously queued edits can still save.
+        ;; While saves fail, a user edit would queue behind the failed save.
         ;; Refusals answer with an empty stream (never nil) so callers can
         ;; uniformly subscribe and observe termination.
         (if (and (:can-edit permissions)
-                 (not (dm/get-in state [:workspace-global :preview-id])))
+                 (not (dm/get-in state [:workspace-global :preview-id]))
+                 (or ignore-save-lock (not (plk/locked? state))))
           (do
             (log/trace :hint "commit-changes" :redo-changes redo-changes)
             (let [selected   (dm/get-in state [:workspace-local :selected])

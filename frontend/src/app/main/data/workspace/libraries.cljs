@@ -1522,7 +1522,9 @@
         (rx/of (dch/commit-changes {:origin it
                                     :redo-changes (:redo-changes changes)
                                     :undo-changes []
-                                    :save-undo? false}))))))
+                                    :save-undo? false
+                                    ;; Follows a change already made, a rollback included
+                                    :ignore-save-lock true}))))))
 
 (defn component-changed
   "Notify that the component with the given id has changed, so it needs to be updated

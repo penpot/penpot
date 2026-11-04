@@ -46,6 +46,7 @@
    [app.main.data.changes :as dch]
    [app.main.data.common :as dcm]
    [app.main.data.helpers :as dsh]
+   [app.main.data.persistence.lock :as plk]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -331,8 +332,11 @@
       (let [objects (dsh/lookup-page-objects state)
             edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
-        (when-not (and (or (some? edition) (some? (:object drawing)))
-                       (not (ctl/grid-layout? objects edition)))
+        ;; While saves fail the history stays still: its commit would be
+        ;; refused after the index moved
+        (when-not (or (plk/locked? state)
+                      (and (or (some? edition) (some? (:object drawing)))
+                           (not (ctl/grid-layout? objects edition))))
           (let [undo  (:workspace-undo state)
                 items (:items undo)
                 index (or (:index undo) (dec (count items)))]
@@ -374,9 +378,10 @@
             edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
 
-        ;; Editors handle their own undo's
-        (when (or (and (nil? edition) (nil? (:object drawing)))
-                  (ctl/grid-layout? objects edition))
+        ;; Editors handle their own undo's; nothing is undone while saves fail
+        (when (and (not (plk/locked? state))
+                   (or (and (nil? edition) (nil? (:object drawing)))
+                       (ctl/grid-layout? objects edition)))
           (let [undo  (:workspace-undo state)
                 items (:items undo)
                 index (or (:index undo) (dec (count items)))]
@@ -416,9 +421,10 @@
             edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
 
-        ;; Editors handle their own undo's
-        (when (or (and (nil? edition) (nil? (:object drawing)))
-                  (ctl/grid-layout? objects edition))
+        ;; Editors handle their own undo's; nothing is undone while saves fail
+        (when (and (not (plk/locked? state))
+                   (or (and (nil? edition) (nil? (:object drawing)))
+                       (ctl/grid-layout? objects edition)))
           (let [undo  (:workspace-undo state)
                 items (:items undo)
                 index (or (:index undo) (dec (count items)))]
