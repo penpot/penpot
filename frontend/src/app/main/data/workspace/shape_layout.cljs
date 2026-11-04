@@ -151,7 +151,10 @@
   (ptk/reify ::initialize-shape-layout
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stopper (rx/filter (ptk/type? ::finalize-shape-layout) stream)]
+      (let [;; A workspace reload starts a new one, which replaces this one
+            stopper (rx/filter #(or (ptk/type? ::finalize-shape-layout %)
+                                    (ptk/type? ::initialize-shape-layout %))
+                               stream)]
         (->> stream
              (rx/filter (ptk/type? :layout/update))
              ;; Keeps each update's page and the shapes that can be laid out;

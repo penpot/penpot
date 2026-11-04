@@ -12,9 +12,14 @@
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
+   [app.main.data.comments :as dcmt]
+   [app.main.data.fonts :as df]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.undo :as dwu]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as async]
+   [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.state :as ths]
    [potok.v2.core :as ptk]))
 
@@ -236,3 +241,34 @@
     (t/is (= 2 (:index (forget undo-state #{(uuid/next)} 2))))
     (t/is (= 0 (:index (forget undo-state #{g2} 2)))
           "a cut history cannot point past its end")))
+
+;; Scenario: the workspace opens and then reloads twice (a peer's restore,
+;; the rollback fallback), each reload running `initialize-workspace` again
+;; without leaving the workspace; then one commit is made. Proves: each
+;; reload replaces the workspace streams, so the commit adds one undo entry,
+;; not one per reload.
+(t/deftest ^:async a-workspace-reload-adds-one-undo-entry-per-commit
+  (let [file    (cthf/sample-file :file1 :page-label :page1)
+        team-id (uuid/next)
+        store   (ths/setup-store file {:renderer :svg})
+        loaded  (fn [type] (mock/stub (fn [& _] (ptk/data-event type {}))))]
+    (await
+     (mock/with-mocks*
+       {dw/initialize-file             (loaded ::file-requested)
+        dcmt/retrieve-comment-threads  (loaded ::threads-requested)
+        dcmt/fetch-profiles            (loaded ::profiles-requested)
+        df/fetch-fonts                 (loaded ::fonts-requested)}
+       (try
+         (ptk/emit! store
+                    #(assoc % :current-team-id team-id)
+                    (dw/initialize-workspace team-id (:id file))
+                    (ptk/event ::dw/reload-current-file)
+                    (ptk/event ::dw/reload-current-file))
+         (await (async/settle))
+         (ptk/emit! store (rename-page (cthf/current-page-id file) "Renamed"))
+         (await (async/wait-for #(seq (get-in @store [:workspace-undo :items]))
+                                "the commit reaches the undo history"))
+         (await (async/settle))
+         (t/is (= 1 (count (get-in @store [:workspace-undo :items]))))
+         (finally
+           (rx/dispose! store)))))))

@@ -12,12 +12,14 @@
    [app.main.data.changes :as dch]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
+   [app.main.data.websocket :as dws]
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.notifications :as dwntf]
    [app.util.i18n :as i18n]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
+   [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
 (defn- file-change-msg
@@ -143,3 +145,95 @@
                                                :session-id (uuid/next)
                                                :vern 2}))]
     (t/is (empty? events))))
+
+(defn- ^:async subscription-messages
+  "Runs `scenario` with a store over `team-id`, `dws/send` and the pointer
+  handler stubbed. `scenario` gets the store and a function that delivers
+  a peer's pointer message for a file. Resolves to the messages sent over
+  the websocket and the number of handled pointer messages."
+  [team-id scenario]
+  (let [sent    (atom [])
+        handled (atom 0)
+        result  (atom nil)
+        store   (ptk/store {:state {:profile-id (uuid/next)
+                                    :session-id (uuid/next)
+                                    :teams {team-id {:id team-id}}}
+                            :on-error #(t/is false (str %))})
+        pointer (fn [file-id]
+                  (ptk/emit! store (ptk/data-event ::dws/message
+                                                   {:type :pointer-update
+                                                    :topic file-id
+                                                    :file-id file-id
+                                                    :session-id (uuid/next)})))]
+    (await
+     (mock/with-mocks*
+       {dws/send                    (mock/stub (fn [msg]
+                                                 (swap! sent conj msg)
+                                                 (ptk/data-event ::sent msg)))
+        dwntf/handle-pointer-update (mock/stub (fn [_]
+                                                 (swap! handled inc)
+                                                 (ptk/data-event ::handled {})))}
+       (try
+         (await (scenario store pointer))
+         ;; Taken before the store ends, which ends the subscriptions too
+         (reset! result {:sent (mapv #(select-keys % [:type :file-id]) @sent)
+                         :handled @handled})
+         (finally
+           (rx/dispose! store)))))
+    @result))
+
+;; Scenario: the open file reloads three times (a peer's restore, the
+;; restorer's own version reload, the rollback fallback), each starting a
+;; new subscription, and then a peer's message arrives. Proves: one live
+;; subscription per open file, so each message is handled once, and no
+;; unsubscribe ends the server's subscription of the reloaded file.
+(t/deftest ^:async a-reload-replaces-the-file-subscription
+  (let [team-id (uuid/next)
+        file-id (uuid/next)
+        result  (await
+                 (subscription-messages
+                  team-id
+                  (^:async fn [store pointer]
+                    (ptk/emit! store
+                               (dwntf/initialize team-id file-id)
+                               (dwntf/initialize team-id file-id)
+                               (dwntf/initialize team-id file-id))
+                    (await (async/settle))
+                    (pointer file-id)
+                    (await (async/settle)))))]
+    (t/is (= 1 (:handled result)) "the message is handled once")
+    (t/is (= 3 (count (filter #(= :subscribe-file (:type %)) (:sent result)))))
+    (t/is (not-any? #(= :unsubscribe-file (:type %)) (:sent result)))))
+
+;; Scenario: the user leaves a file, and in another case opens another file
+;; without leaving the first one. Proves: the subscription ends with an
+;; unsubscribe of the file it was for, and the old file's messages are no
+;; longer handled.
+(t/deftest ^:async leaving-or-switching-files-ends-the-file-subscription
+  (let [team-id (uuid/next)
+        file-a  (uuid/next)
+        file-b  (uuid/next)
+        left    (await
+                 (subscription-messages
+                  team-id
+                  (^:async fn [store _]
+                    (ptk/emit! store
+                               (dwntf/initialize team-id file-a)
+                               (dwntf/finalize file-a))
+                    (await (async/settle)))))
+        switch  (await
+                 (subscription-messages
+                  team-id
+                  (^:async fn [store pointer]
+                    (ptk/emit! store
+                               (dwntf/initialize team-id file-a)
+                               (dwntf/initialize team-id file-b))
+                    (await (async/settle))
+                    (pointer file-a)
+                    (pointer file-b)
+                    (await (async/settle)))))]
+    (t/is (= [{:type :unsubscribe-file :file-id file-a}]
+             (filterv #(= :unsubscribe-file (:type %)) (:sent left))))
+    (t/is (= [{:type :unsubscribe-file :file-id file-a}]
+             (filterv #(= :unsubscribe-file (:type %)) (:sent switch))))
+    (t/is (= 1 (:handled switch)) "only the new file's message is handled")))
