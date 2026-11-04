@@ -2864,7 +2864,18 @@
                                                            page
                                                            {:id (:id file)
                                                             :data file}
-                                                           libraries)))]
+                                                           libraries)))
+
+        ;; The attributes of `keep-props-values` get their value restored in the
+        ;; new shape. Keep too the touched groups they belong to, so the override
+        ;; stays marked as such (otherwise a later sync would overwrite it).
+        kept-touched-groups
+        (->> (keys keep-props-values)
+             (keep #(ctk/resolve-sync-group (:type new-shape) %))
+             (filter #(contains? (:touched shape) %))
+             (into #{}))
+
+        new-shape (update new-shape :touched (fnil into #{}) kept-touched-groups)]
 
     [new-shape (-> changes
                    ;; Restore the properties
