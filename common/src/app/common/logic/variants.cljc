@@ -534,10 +534,24 @@
         new-ldata           (or (get-in libraries [(:component-file new-shape) :data]) ldata)
         new-main            (ctf/get-component-root new-ldata (ctkl/get-component new-ldata (:component-id new-shape)))
         ;; An authored orientation carries only where both variants share it
+        parent              (get page-objects (:parent-id original-shape))
+        ref-parent          (get orig-ref-objects (:parent-id orig-base-ref-shape))
+        ;; Whether the switched copy's orientation is authored along its
+        ;; reference chain, not just its component's turned with its parent
+        authored-orientation? (let [flip (fn [key]
+                                           (odd? (count (filter identity [(get orig-base-ref-shape key) (get parent key)
+                                                                          (get ref-parent key)]))))]
+                                (or (not (mth/close? (mod (or (:rotation original-shape) 0) 360)
+                                                     (mod (+ (or (:rotation orig-base-ref-shape) 0)
+                                                             (- (or (:rotation parent) 0) (or (:rotation ref-parent) 0)))
+                                                          360)
+                                                     0.01))
+                                    (not= (boolean (:flip-x original-shape)) (flip :flip-x))
+                                    (not= (boolean (:flip-y original-shape)) (flip :flip-y))))
         carried-orientation? (and (some #(and (= (:id %) (:id original-shape))
                                               (ctk/touched-group? % :geometry-group)) orig-touched)
+                                  authored-orientation?
                                   (same-orientation? orig-base-ref-shape new-main))
-        parent              (get page-objects (:parent-id original-shape))
         ;; A switch keeps orientation even when the old main supplied it.
         ;; If no orientation was carried, placement from an enclosing copy is
         ;; still inherited rather than authored by this switch.
