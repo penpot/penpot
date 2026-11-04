@@ -165,13 +165,35 @@
         (let [file-id (:current-file-id state)
               params  {:id      id
                        :file-id file-id
-                       :label   (ct/format-inst (:created-at version) :localized-date)}]
+                       :label   (ct/format-inst (:created-at version) :localized-date)}
+              ;; the list is reloaded so it matches the server instead of
+              ;; showing the version as pinned, and the user is told
+              failed  (fn []
+                        (rx/of (fetch-versions)
+                               (ntf/show {:content (tr "errors.pin-version")
+                                          :type :toast
+                                          :level :error
+                                          :timeout 3000})))]
 
           (->> (rp/cmd! :update-file-snapshot params)
-               (rx/mapcat (fn [_]
-                            (rx/of (update-versions-state {:editing id})
-                                   (fetch-versions)
-                                   (ev/event {::ev/name "pin-version"}))))))))))
+               (rx/mapcat (fn [ok]
+                            (if ok
+                              (rx/of (update-versions-state {:editing id})
+                                     (fetch-versions)
+                                     (ev/event {::ev/name "pin-version"}))
+                              ;; a concurrent delete answered instead of
+                              ;; raising, so the row is gone all the same
+                              (failed))))
+               ;; A vanished row raises `:snapshot-not-found` before any
+               ;; answer; without this the user lands on the exceptional
+               ;; state page. Other failures keep reporting as usual.
+               (rx/catch
+                (fn [cause]
+                  (let [type (:type (ex-data cause))]
+                    (if (or (contains? #{:not-found :validation} type)
+                            (contains? rp/retryable-types type))
+                      (failed)
+                      (rx/throw cause)))))))))))
 
 (defn lock-version
   [id]

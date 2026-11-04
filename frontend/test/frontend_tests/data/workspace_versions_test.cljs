@@ -20,6 +20,7 @@
    [app.util.timers :as tm]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
@@ -221,73 +222,90 @@
       (finally
         (rx/dispose! sub)))))
 
-;; The snapshot RPC commands require the `file-id` (they use it to prune the
-;; partitions of `file_change`), so every workspace version event sends the
-;; one of the file that is open.
+(t/deftest ^:async version-events-send-the-current-file-id
+  ;; The snapshot RPC commands require the `file-id` (they need it for
+  ;; partition pruning on the `file_change` table); the workspace version
+  ;; events must always send it, taken from the current file.
+  (let [file-id    (uuid/next)
+        version-id (uuid/next)
+        requests   (atom [])
+        state      {:current-file-id file-id
+                    :workspace-versions {:data [{:id version-id
+                                                 :created-at (ct/now)
+                                                 :created-by "system"}]}}
+        call!      (fn [event]
+                     (reset! requests [])
+                     (->> (ptk/watch event state (rx/empty))
+                          (rx/subs! (fn [_])))
+                     (first @requests))]
+    (await
+     (mock/with-mocks*
+       {rp/cmd! (mock/stub (fn [cmd params]
+                             (swap! requests conj [cmd params])
+                             (rx/of true)))}
+       (doseq [[cmd event] [[:update-file-snapshot (versions/rename-version version-id "name")]
+                            [:delete-file-snapshot (versions/delete-version version-id)]
+                            [:lock-file-snapshot   (versions/lock-version version-id)]
+                            [:unlock-file-snapshot (versions/unlock-version version-id)]
+                            [:update-file-snapshot (versions/pin-version version-id)]]]
+         (t/testing (name cmd)
+           (let [[sent-cmd params] (call! event)]
+             (t/is (= cmd sent-cmd))
+             (t/is (= file-id (:file-id params))))))))))
 
-(defn- version-event-request
-  "Run a workspace version event with `file-id` open and `version-id` in the
-  history, and return the `[command params]` of the RPC request it sends."
-  [file-id version-id event]
-  (let [requests (atom [])
-        state    {:current-file-id file-id
-                  :workspace-versions {:data [{:id version-id
-                                               :created-at (ct/now)
-                                               :created-by "system"}]}}]
-    (mock/with-mocks*
-      {rp/cmd! (mock/stub (fn [cmd params]
-                            (swap! requests conj [cmd params])
-                            (rx/of true)))}
-      (->> (ptk/watch event state (rx/empty))
-           (rx/subs! (fn [_])))
-      (first @requests))))
+(t/deftest ^:async pin-version-with-a-vanished-row-reloads-and-warns
+  ;; The backend raises `:snapshot-not-found` when the autosave is gone; it
+  ;; does not answer `false`. The pin must reload the list and tell the user
+  ;; instead of landing on the exceptional-state page.
+  (let [file-id    (uuid/next)
+        version-id (uuid/next)
+        version    {:id version-id
+                    :label "Version"
+                    :created-at (ct/now)
+                    :created-by "system"}
+        state      {:current-file-id file-id
+                    :workspace-versions {:data [version]}}
+        events     (atom [])]
+    (await
+     (mock/with-mocks*
+       {rp/cmd! (mock/stub (fn [cmd _]
+                             (case cmd
+                               :update-file-snapshot
+                               (rx/throw (ex-info "gone"
+                                                  {:type :not-found
+                                                   :code :snapshot-not-found}))
+                               :get-file-snapshots (rx/of [])
+                               (rx/of nil))))}
+       (let [output (ptk/watch (versions/pin-version version-id) state (rx/empty))]
+         (await (async/observe output :on-next #(swap! events conj %)))
+         (let [final (reduce (fn [s e]
+                               (if (= ::versions/update-versions-state (ptk/type e))
+                                 (ptk/update e s)
+                                 s))
+                             state
+                             @events)]
+           (t/is (nil? (get-in final [:workspace-versions :editing]))
+                 "a failed pin must not mark the version as editing"))
+         (t/is (some #(= ::versions/fetch-versions (ptk/type %)) @events)
+               "a failed pin reloads the list")
+         (t/is (some #(= ::ntf/show (ptk/type %)) @events)
+               "a failed pin asks the user"))))))
 
-(t/deftest ^:async renaming-a-version-sends-the-current-file-id
-  (let [file-id      (uuid/next)
-        version-id   (uuid/next)
-        [cmd params] (await (version-event-request
-                             file-id version-id
-                             (versions/rename-version version-id "name")))]
-    (t/is (= :update-file-snapshot cmd))
-    (t/is (= version-id (:id params)))
-    (t/is (= file-id (:file-id params)))))
-
-(t/deftest ^:async deleting-a-version-sends-the-current-file-id
-  (let [file-id      (uuid/next)
-        version-id   (uuid/next)
-        [cmd params] (await (version-event-request
-                             file-id version-id
-                             (versions/delete-version version-id)))]
-    (t/is (= :delete-file-snapshot cmd))
-    (t/is (= version-id (:id params)))
-    (t/is (= file-id (:file-id params)))))
-
-(t/deftest ^:async locking-a-version-sends-the-current-file-id
-  (let [file-id      (uuid/next)
-        version-id   (uuid/next)
-        [cmd params] (await (version-event-request
-                             file-id version-id
-                             (versions/lock-version version-id)))]
-    (t/is (= :lock-file-snapshot cmd))
-    (t/is (= version-id (:id params)))
-    (t/is (= file-id (:file-id params)))))
-
-(t/deftest ^:async unlocking-a-version-sends-the-current-file-id
-  (let [file-id      (uuid/next)
-        version-id   (uuid/next)
-        [cmd params] (await (version-event-request
-                             file-id version-id
-                             (versions/unlock-version version-id)))]
-    (t/is (= :unlock-file-snapshot cmd))
-    (t/is (= version-id (:id params)))
-    (t/is (= file-id (:file-id params)))))
-
-(t/deftest ^:async pinning-a-version-sends-the-current-file-id
-  (let [file-id      (uuid/next)
-        version-id   (uuid/next)
-        [cmd params] (await (version-event-request
-                             file-id version-id
-                             (versions/pin-version version-id)))]
-    (t/is (= :update-file-snapshot cmd))
-    (t/is (= version-id (:id params)))
-    (t/is (= file-id (:file-id params)))))
+(t/deftest ^:async pin-version-rethrows-an-unexpected-failure
+  ;; Only the expected failures become a toast: anything else must reach the
+  ;; reporter as before, not be swallowed by the pin.
+  (let [file-id    (uuid/next)
+        version-id (uuid/next)
+        state      {:current-file-id file-id
+                    :workspace-versions {:data [{:id version-id
+                                                 :created-at (ct/now)
+                                                 :created-by "system"}]}}
+        errors     (atom [])]
+    (await
+     (mock/with-mocks*
+       {rp/cmd! (mock/stub (fn [_ _]
+                             (rx/throw (ex-info "denied" {:type :authentication}))))}
+       (let [output (ptk/watch (versions/pin-version version-id) state (rx/empty))]
+         (await (async/observe output :on-error #(swap! errors conj %)))
+         (t/is (= [:authentication] (mapv #(:type (ex-data %)) @errors))
+               "an unexpected failure still reaches the reporter"))))))

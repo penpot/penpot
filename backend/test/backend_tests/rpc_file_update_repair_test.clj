@@ -25,6 +25,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files-update :as files-update]
    [app.srepl.procs.file-repair :as file-repair]
+   [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [backend-tests.helpers :as th]
    [clojure.test :as t])
@@ -182,7 +183,7 @@
         (t/is (some? frame))
         (t/is (= "renamed"
                  (get-in stored [:data :pages-index page-id :objects shape-b :name])))
-        (t/is (= (+ n 2) (:revn stored)))
+        (t/is (= (inc n) (:revn stored)))
         (t/is (= 1 (count repair)))
         (t/is (zero? (count snap)))
         (t/is (= 1.0 (- (repair-count :repaired) before-repaired)))
@@ -306,18 +307,25 @@
   (with-repair-flags
     (fn []
       (let [{:keys [profile file-id page-id shape-b] :as ctx} (setup-file)
-            broken (break-frame ctx)
-            calls  (atom 0)
-            before (repair-count :unrepaired)
-            out    (with-redefs [cfr/repair-file (fn [_ _ _]
-                                                   (swap! calls inc)
-                                                   [])]
-                     (update-file (:id profile) file-id (:revn broken)
-                                  [(set-attr page-id shape-b :name "renamed")]))]
+            broken   (break-frame ctx)
+            calls    (atom 0)
+            messages (atom [])
+            before   (repair-count :unrepaired)
+            out      (with-redefs [cfr/repair-file (fn [_ _ _]
+                                                     (swap! calls inc)
+                                                     [])
+                                   mbus/pub!       (fn [_cfg & {:keys [topic message]}]
+                                                     (swap! messages conj
+                                                            {:topic topic :message message}))]
+                       (update-file (:id profile) file-id (:revn broken)
+                                    [(set-attr page-id shape-b :name "renamed")]))]
         (t/is (not (th/success? out)))
         (t/is (= :referential-integrity (:code (ex-data (:error out)))))
         (t/is (= 1 @calls))
-        (t/is (= 1.0 (- (repair-count :unrepaired) before)))))))
+        (t/is (= 1.0 (- (repair-count :unrepaired) before)))
+        ;; the notifications ride a defer hook attached to the result: a save
+        ;; that throws has no result and must publish nothing
+        (t/is (empty? @messages) "a save that rolls back publishes nothing")))))
 
 (t/deftest repair-writes-change-rows-and-reuses-snapshot
   (with-repair-flags
@@ -343,30 +351,44 @@
         (t/is (th/success? out))
         (t/is (= "renamed"
                  (get-in stored [:data :pages-index page-id :objects shape-b :name])))
-        (t/is (= 2 (count new)))
+        ;; one revision: the changes of the request and then the repair
+        (t/is (= 1 (count new)))
         (t/is (= (inc n) (:revn (first new))))
-        (t/is (= files-update/repair-session-id (:session-id (first new))))
-        ;; the repair is a revision like the save: no features, a changes blob
-        (t/is (= 2 (:kind (first new))))
         (t/is (nil? (:features (first new))))
+        (t/is (= session (:session-id (first new))))
+        ;; the one revision is a revision like the save: kind 2, a changes blob
+        (t/is (= 2 (:kind (first new))))
         (t/is (some? (:changes (first new))))
         (t/is (some? (:deleted-at (first new))))
         (t/is (= (:created-at (first new)) (:updated-at (first new))))
-        (t/is (= (+ n 2) (:revn (second new))))
-        (t/is (= session (:session-id (second new))))
-        (t/is (some? (:deleted-at (second new))))
-        (t/is (= (:created-at (second new)) (:updated-at (second new))))
-        (t/is (not (pos? (compare (:created-at (first new))
-                                  (:created-at (second new))))))
         (t/is (= 1 (count repair)))
         (t/is (zero? (count snap)))
-        (t/is (>= (count msgs) 2))
-        (t/is (true? (get-in (first msgs) [:message :repaired])))
-        (t/is (= files-update/repair-session-id
-                 (get-in (first msgs) [:message :session-id])))
-        (t/is (= session (get-in (second msgs) [:message :session-id])))
-        (t/is (not (true? (get-in (second msgs) [:message :repaired]))))
-        (t/is (= (+ n 2) (get-in (second msgs) [:message :revn])))))))
+        ;; two messages at the new revn: the changes of the request under the
+        ;; session of the user (the saver discards it as an echo) and then the
+        ;; repair changes under the repair session
+        (t/is (= 2 (count msgs)))
+        (let [[save fix] msgs
+              saved     (get-in save [:message :changes])
+              fixed     (get-in fix [:message :changes])]
+          (t/is (= session (get-in save [:message :session-id])))
+          (t/is (nil? (get-in save [:message :repaired])))
+          (t/is (= (inc n) (get-in save [:message :revn])))
+          (t/is (= files-update/repair-session-id
+                   (get-in fix [:message :session-id])))
+          (t/is (= session (get-in fix [:message :origin-session-id])))
+          (t/is (true? (get-in fix [:message :repaired])))
+          (t/is (= (inc n) (get-in fix [:message :revn])))
+          (t/is (= 1 (count saved)))
+          (t/is (pos? (count fixed)))
+          ;; the response carries the repair changes (the saver applies them
+          ;; when its commit is confirmed) and the same vector the message
+          ;; carries to the rest
+          (t/is (true? (get-in out [:result :repaired])))
+          (t/is (= fixed (get-in out [:result :repair-changes])))
+          ;; the revision holds the changes of the request first and the repair
+          ;; after them, the order both the saver and the rest apply
+          (t/is (= (vec (concat saved fixed))
+                   (blob/decode (:changes (first new))))))))))
 
 (t/deftest repair-library-change-keeps-saver-session
   (with-repair-flags
@@ -435,6 +457,7 @@
             labels (label-rows file-id)]
         (t/is (th/success? out))
         (t/is (= 1 (- (count (change-rows file-id)) before)))
+        (t/is (nil? (:features (last (change-rows file-id)))))
         (t/is (empty? (filter #(re-find #"^internal/repair/" (str (:label %))) labels)))))))
 
 (t/deftest repairs-several-missing-children-on-root

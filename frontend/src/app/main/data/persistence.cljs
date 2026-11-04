@@ -363,8 +363,9 @@
   server stored before it (from `lagged`, the save answer's rows), such as
   the repair of a damaged file. Until then its commits stay pending, so a
   late change is applied under them, in the server's order. A change that
-  does not arrive in time reloads the file."
-  [commit lagged]
+  does not arrive in time reloads the file. `repair-changes` ride the save
+  answer itself and reach `commit-persisted` with it."
+  [commit lagged repair-changes]
   (let [needed (volatile! nil)]
     (ptk/reify ::settle-saved-commit
       ptk/UpdateEvent
@@ -398,11 +399,11 @@
                  (rx/take 1)
                  (rx/mapcat (fn [outcome]
                               (rx/concat
-                               (rx/of (commit-persisted commit))
+                               (rx/of (commit-persisted commit repair-changes))
                                (if (= ::timeout outcome)
                                  (rx/of (ptk/event ::dw/reload-current-file))
                                  (rx/empty)))))))
-          (rx/of (commit-persisted commit)))))))
+          (rx/of (commit-persisted commit repair-changes)))))))
 
 (defn- discard-commit
   [commit-id]
@@ -430,7 +431,11 @@
     (into [] (remove #(contains? ids (:id %))) buffer)))
 
 (defn- buffer-commit
-  "Keeps a local commit in the buffer until the next flush."
+  "Keeps a local commit in the flush buffer until the next flush, stamped
+  with the current remote sequence number. The repair and remote-commit
+  paths undo and replay whatever the pending set covers, buffer included,
+  so an edit still inside the 3 s window can be replayed onto the server's
+  order."
   [commit]
   (ptk/reify ::buffer-commit
     ptk/UpdateEvent
@@ -440,7 +445,8 @@
 
 (defn- append-commit
   "Event used internally to append the current change to the
-  persistence queue."
+  persistence queue. The commits it groups leave the flush buffer and
+  become visible in the queue."
   [{:keys [id] :as commit}]
   (let [run-id (uuid/next)]
     (ptk/reify ::append-commit
@@ -615,17 +621,48 @@
              (->> (rx/timer delay-ms)
                   (rx/map (fn [_] (persist-commit commit-id {:token token})))))))))))
 
-(defn- commit-persisted
-  [commit]
-  (ptk/reify ::commit-persisted
-    IDeref
-    (-deref [_] commit)
+(defn- pending-for
+  "The commits of the same file that still have to be undone and replayed
+  around `commit`, oldest first: the ones already in the queue and the
+  ones still waiting in the flush buffer. Commits of other files are never
+  replayed on this file's data. `commit` is a queue entry, so every commit
+  it groups stays out: they are already applied and the repair goes after
+  all of them, as it does on the server."
+  [pstate {:keys [id file-id] :as commit}]
+  (let [entry   (or (get-in pstate [:index id]) commit)
+        own-ids (conj (into #{} (map :id) (:commits entry)) (:id entry))]
+    (into [] (remove #(own-ids (:id %)))
+          (pcm/pending-commits pstate file-id))))
 
-    ptk/UpdateEvent
-    (update [_ state]
-      ;; Keep the acknowledgment even if the queue runner has stopped.
-      (d/update-in-when state [:persistence :index (:id commit)]
-                        assoc ::acknowledged true))))
+(defn- commit-persisted
+  ([commit] (commit-persisted commit nil))
+  ([commit repair-changes]
+   (ptk/reify ::commit-persisted
+     IDeref
+     (-deref [_] commit)
+
+     ptk/UpdateEvent
+     (update [_ state]
+       ;; Keep the acknowledgment even if the queue runner has stopped.
+       (d/update-in-when state [:persistence :index (:id commit)]
+                         assoc ::acknowledged true))
+
+     ptk/WatchEvent
+     (watch [_ state _]
+       ;; The repair changes come in the response, not in the websocket
+       ;; message: by the time they arrive the commit of the save is already
+       ;; confirmed. The commits queued behind it are undone, the repair is
+       ;; applied and they are replayed, so the local order (`C1;R;C2`)
+       ;; matches the server's instead of leaving the repair at the end.
+       (when (seq repair-changes)
+         (rx/of (dch/apply-remote-changes
+                 {:file-id (:file-id commit)
+                  :redo-changes (vec repair-changes)}
+                 (pending-for (:persistence state) commit))
+                (ntf/show {:content (tr "workspace.notifications.file-repaired")
+                           :type :toast
+                           :level :info
+                           :timeout nil})))))))
 
 (def rejected-tag
   "Tag of the notice that changes to the open file were rejected."
@@ -768,6 +805,7 @@
                                  ;; Rollbacks also run while saves fail
                                  :ignore-save-lock true))
       (let [{:keys [file-revn file-vern features]} (peek commits)]
+        ;; the compensation commit is fresh: it is not in the buffer
         (append-commit
          (pcm/queue-entry
           [(assoc changes
@@ -953,8 +991,14 @@
          (rx/take 1)
          ;; A response that carries no revision, including one that never
          ;; arrived, is treated as a failed save rather than a saved file.
+         ;;
+         ;; The repair convergence assumes this response arrives: a retry of
+         ;; a save whose response was lost applies the changes again over the
+         ;; already-repaired file, computes a second repair, and the client
+         ;; never saw the first one. That case needs idempotency by
+         ;; `:commit-id`; it is documented, not fixed here.
          (rx/if-empty nil)
-         (rx/mapcat (fn [{:keys [revn rejected lagged]}]
+         (rx/mapcat (fn [{:keys [revn rejected lagged repair-changes]}]
                       (if (and (int? revn) (<= 0 revn))
                         (rx/concat
                          (rx/of (update-file-revn file-id revn))
@@ -962,7 +1006,11 @@
                          (if (some? rejected)
                            (rx/of (rollback-rejected commit rejected))
                            (rx/empty))
-                         (rx/of (settle-saved-commit commit lagged)))
+                         ;; The repair changes travel in the response, not in
+                         ;; the websocket message, so `settle-saved-commit`
+                         ;; only waits for rows of another session: the
+                         ;; repair row is this session's.
+                         (rx/of (settle-saved-commit commit lagged repair-changes)))
                         (rx/throw (ex-info "The save response has no valid revision"
                                            {:type :persistence
                                             :code :invalid-save-response
@@ -1450,6 +1498,10 @@
                         (update-status :pending)))
               (rx/take-until stoper-s))
 
+         ;; Record every local commit from the moment it is applied: the
+         ;; 3 s flush window is invisible to the rest of the system, and a
+         ;; repair or a remote rebase landing in between can undo and replay
+         ;; it.
          ;; Buffers local commits; each notification queues the buffer
          (->> local-commits-s
               (rx/map buffer-commit)

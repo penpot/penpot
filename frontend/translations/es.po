@@ -1841,6 +1841,10 @@ msgstr "La contraseña debe tener 8 caracteres como mínimo"
 msgid "errors.paste-data-validation"
 msgstr "Datos inválidos en el portapapeles"
 
+#: src/app/main/data/workspace/versions.cljs:180
+msgid "errors.pin-version"
+msgstr "No se pudo fijar la versión"
+
 #: src/app/main/data/auth.cljs:342, src/app/main/ui/auth/login.cljs:92, src/app/main/ui/auth/login.cljs:100
 msgid "errors.profile-blocked"
 msgstr "El perfil esta blockeado"

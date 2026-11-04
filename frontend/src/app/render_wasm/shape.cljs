@@ -360,9 +360,8 @@
 
 (defn- track-change!
   [self k]
-  (when-let [changes shape/*shape-changes*]
-    (let [id (:id self)]
-      (.set changes id (conj* (.get changes id) k)))))
+  (when shape/*shape-changes*
+    (vswap! shape/*shape-changes* update (:id self) conj* k)))
 
 (defn- assoc-delegate
   "Keeps an array map delegate as an array map when adding a new key."

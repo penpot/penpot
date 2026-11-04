@@ -53,10 +53,21 @@
            (u/not-valid plugin-id :label value)
 
            :else
-           (do (swap! data assoc :label value :created-by "user")
-               (->> (rp/cmd! :update-file-snapshot {:id (:id @data) :file-id file-id :label value})
-                    (rx/take 1)
-                    (rx/subs! #(st/emit! (se/event plugin-id "rename-version" :file-id file-id)))))))}
+           (let [previous (select-keys @data [:label :created-by])]
+             ;; The plugin reads the new label at once; a refused or failed
+             ;; rename puts the old one back.
+             (swap! data assoc :label value :created-by "user")
+             (->> (rp/cmd! :update-file-snapshot {:id (:id @data) :file-id file-id :label value})
+                  (rx/take 1)
+                  (rx/subs!
+                   (fn [ok]
+                     (if ok
+                       (st/emit! (se/event plugin-id "rename-version" :file-id file-id))
+                       (do (swap! data merge previous)
+                           (u/not-valid plugin-id :label value))))
+                   (fn [_cause]
+                     (swap! data merge previous)
+                     (u/not-valid plugin-id :label value)))))))}
 
       :createdBy
       {:get
@@ -96,8 +107,13 @@
              :else
              (let [version-id (:id @data)]
                (->> (rp/cmd! :delete-file-snapshot {:id version-id :file-id file-id})
-                    (rx/map (constantly nil))
-                    (rx/subs! resolve reject)))))))
+                    (rx/take 1)
+                    (rx/subs!
+                     (fn [ok]
+                       (if ok
+                         (resolve nil)
+                         (u/reject-not-valid reject :remove "the version could not be removed")))
+                     reject)))))))
 
       :pin
       (fn []
@@ -117,16 +133,18 @@
                (->> (rx/zip (rp/cmd! :get-team-users {:file-id file-id})
                             (rp/cmd! :update-file-snapshot params))
                     (rx/subs!
-                     (fn [[users _]]
-                       (let [users (d/index-by :id users)]
-                         (st/emit! (se/event plugin-id "pin-version" :file-id file-id))
-                         ;; the command answers `true`: the pinned row is the
-                         ;; current one with the new label, as a user version
-                         (resolve (file-version-proxy plugin-id file-id users
-                                                      (assoc @data
-                                                             :label (:label params)
-                                                             :created-by "user"
-                                                             :deleted-at nil)))))
+                     (fn [[users ok]]
+                       (if ok
+                         (let [users (d/index-by :id users)]
+                           (st/emit! (se/event plugin-id "pin-version" :file-id file-id))
+                           ;; the command answers `true`: the pinned row is the
+                           ;; current one with the new label, as a user version
+                           (resolve (file-version-proxy plugin-id file-id users
+                                                        (assoc @data
+                                                               :label (:label params)
+                                                               :created-by "user"
+                                                               :deleted-at nil))))
+                         (u/reject-not-valid reject :pin "the version could not be pinned")))
                      reject))))))))))
 
 (defn file-proxy? [p]

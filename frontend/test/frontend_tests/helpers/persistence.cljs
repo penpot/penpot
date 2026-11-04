@@ -46,19 +46,23 @@
 
   By default the transport responds through the `:response` subject. Pass a
   `respond` function (`(fn [cmd params] observable)`) to drive the transport
-  response directly instead. Delivery through the subject is asynchronous
+  response directly instead, and a `state-fn`
+  (`(fn [file-id] map)`) to extend the initial store state (for example to
+  load a file with data). Delivery through the subject is asynchronous
   (`observe-on :async`): await each effect — via `wait-for` — before
   asserting it."
-  [f & [respond]]
+  [f & [respond state-fn]]
   (let [file-id   (uuid/next)
         response  (rx/subject)
         failures  (atom [])
         requests  (atom [])
         requests$ (rx/subject)
         tasks     (atom #{})
-        store     (ptk/store {:state {:current-file-id file-id
-                                      :permissions {:can-edit true}
-                                      :files {file-id {:id file-id :revn 0}}}
+        store     (ptk/store {:state (merge {:current-file-id file-id
+                                             :permissions {:can-edit true}
+                                             :files {file-id {:id file-id :revn 0}}}
+                                            (when state-fn
+                                              (state-fn file-id)))
                               :on-error #(t/is false (str %))})]
     (mock/with-mocks*
       {rp/cmd!          (mock/stub (fn [cmd params]

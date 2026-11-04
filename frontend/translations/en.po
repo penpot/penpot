@@ -1811,6 +1811,10 @@ msgstr "Password should at least be 8 characters"
 msgid "errors.paste-data-validation"
 msgstr "Invalid data in clipboard"
 
+#: src/app/main/data/workspace/versions.cljs:180
+msgid "errors.pin-version"
+msgstr "The version could not be pinned"
+
 #: src/app/main/data/auth.cljs:342, src/app/main/ui/auth/login.cljs:92, src/app/main/ui/auth/login.cljs:100
 msgid "errors.profile-blocked"
 msgstr "The profile is blocked"
