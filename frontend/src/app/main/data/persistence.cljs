@@ -37,6 +37,7 @@
 (declare ^:private resume-persistence)
 (declare ^:private slow-retry-cycle)
 (declare ^:private flush-buffer)
+(declare ^:private commit-persisted)
 
 (log/set-level! :warn)
 
@@ -64,6 +65,9 @@
   "Slow failures a queued commit may collect before the slow cycle stops
   sending it. Fast failures, such as being offline, never count."
   3)
+
+;; Wait for the changes stored before a saved commit, then reload the file.
+(def ^:private unseen-changes-timeout-ms 10000)
 
 (def ^:private saving-stall-timeout-ms (* 5 60 1000))
 (def ^:private saving-check-interval-ms 30000)
@@ -309,16 +313,22 @@
       (swap! revn-data update file-id (fnil max 0) revn))))
 
 (defn- record-remote-changes
-  "Numbers a remote commit and, while `file-id` has pending commits, keeps
-  its changes for a rollback to apply again."
-  [file-id changes]
+  "Numbers a remote commit, keeps the highest revision received per file
+  (`:remote-revn`) and, while `file-id` has pending commits, keeps its
+  changes for a rollback to apply again."
+  [file-id revn changes]
   (ptk/reify ::record-remote-changes
+    IDeref
+    (-deref [_] {:file-id file-id :revn revn})
+
     ptk/UpdateEvent
     (update [_ state]
       (update state :persistence
               (fn [pstate]
                 (let [number (inc (:remote-seq pstate 0))]
-                  (cond-> (assoc pstate :remote-seq number)
+                  (cond-> (-> pstate
+                              (assoc :remote-seq number)
+                              (update-in [:remote-revn file-id] (fnil max revn) revn))
                     (seq (pcm/pending-commits pstate file-id))
                     (update-in [:remote-changes file-id] (fnil conj [])
                                {:seq number :changes changes}))))))))
@@ -332,6 +342,67 @@
   (let [vern (:vern (dsh/lookup-file state file-id))]
     (and (some? vern)
          (not= vern file-vern))))
+
+(defn- last-unseen-revn
+  "The highest revision above `seen` (the highest one received) of the rows
+  other sessions stored in `lagged`, the rows a save answer lists after
+  the revision it was sent with. Nil when there is none, or when the save
+  stored nothing (the last row is not this session's)."
+  [lagged session-id seen]
+  (let [own? #(= session-id (:session-id %))]
+    (when (own? (last lagged))
+      (transduce (comp (remove own?)
+                       (map :revn)
+                       (filter #(> % seen)))
+                 (completing (fnil max 0))
+                 nil
+                 lagged))))
+
+(defn- settle-saved-commit
+  "Acknowledges the saved `commit` once this tab received every change the
+  server stored before it (from `lagged`, the save answer's rows), such as
+  the repair of a damaged file. Until then its commits stay pending, so a
+  late change is applied under them, in the server's order. A change that
+  does not arrive in time reloads the file."
+  [commit lagged]
+  (let [needed (volatile! nil)]
+    (ptk/reify ::settle-saved-commit
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [file-id (:file-id commit)
+              seen    (dm/get-in state [:persistence :remote-revn file-id] -1)
+              revn    (when (and (= file-id (:current-file-id state))
+                                 (not (stale-commit? state commit)))
+                        (last-unseen-revn lagged (:session-id state) seen))]
+          (vreset! needed revn)
+          (cond-> state
+            (some? revn)
+            (d/update-in-when [:persistence :index (:id commit)] assoc ::awaiting revn))))
+
+      ptk/WatchEvent
+      (watch [_ _ stream]
+        (if-let [revn @needed]
+          (let [file-id   (:file-id commit)
+                arrived-s (->> stream
+                               (rx/filter (ptk/type? ::record-remote-changes))
+                               (rx/map deref)
+                               (rx/filter #(and (= file-id (:file-id %))
+                                                (>= (:revn %) revn)))
+                               (rx/map (constantly ::arrived)))
+                left-s    (->> stream
+                               (rx/filter (ptk/type? ::dw/finalize-workspace))
+                               (rx/map (constantly ::left)))
+                timeout-s (->> (rx/timer unseen-changes-timeout-ms)
+                               (rx/map (constantly ::timeout)))]
+            (->> (rx/merge arrived-s left-s timeout-s)
+                 (rx/take 1)
+                 (rx/mapcat (fn [outcome]
+                              (rx/concat
+                               (rx/of (commit-persisted commit))
+                               (if (= ::timeout outcome)
+                                 (rx/of (ptk/event ::dw/reload-current-file))
+                                 (rx/empty)))))))
+          (rx/of (commit-persisted commit)))))))
 
 (defn- discard-commit
   [commit-id]
@@ -753,6 +824,8 @@
       (nil? commit)                                        :missing-commit
       (::acknowledged commit)                              :acknowledged
       (contains? @active-requests (::request-id commit))   :in-flight
+      ;; Saved, waiting for the changes stored before it
+      (::awaiting commit)                                  :in-flight
       (stale-commit? state commit)                         :stale
       (not (dm/get-in state [:permissions :can-edit]))     :permission-denied
       :else                                                :ready)))
@@ -813,7 +886,7 @@
          ;; A response that carries no revision, including one that never
          ;; arrived, is treated as a failed save rather than a saved file.
          (rx/if-empty nil)
-         (rx/mapcat (fn [{:keys [revn rejected]}]
+         (rx/mapcat (fn [{:keys [revn rejected lagged]}]
                       (if (and (int? revn) (<= 0 revn))
                         (rx/concat
                          (rx/of (update-file-revn file-id revn))
@@ -821,7 +894,7 @@
                          (if (some? rejected)
                            (rx/of (rollback-rejected commit rejected))
                            (rx/empty))
-                         (rx/of (commit-persisted commit)))
+                         (rx/of (settle-saved-commit commit lagged)))
                         (rx/throw (ex-info "The save response has no valid revision"
                                            {:type :persistence
                                             :code :invalid-save-response
@@ -1327,6 +1400,6 @@
               (rx/map deref)
               (rx/filter #(= :remote (:source %)))
               (rx/mapcat (fn [{:keys [file-id file-revn redo-changes]}]
-                           (rx/of (record-remote-changes file-id redo-changes)
+                           (rx/of (record-remote-changes file-id file-revn redo-changes)
                                   (update-file-revn file-id file-revn))))
               (rx/take-until stoper-s)))))))

@@ -1307,6 +1307,155 @@
          (t/is (= "A" (thp/shape-name store file-id page-id shape-id))
                "the library edit is not replayed on this file"))))))
 
+;; Changes the server stored before a save.
+
+(def ^:private repair-session-id
+  #uuid "a11c0de5-0000-4000-8000-000000000001")
+
+(defn- add-child-commit
+  "A local commit of `file-id` that adds `shape` as the last child of the
+  root of `page-id`."
+  [file-id page-id {:keys [id] :as shape}]
+  (ptk/data-event ::dch/commit
+                  {:id (uuid/next)
+                   :file-id file-id
+                   :file-revn 0
+                   :file-vern 0
+                   :source :local
+                   :features #{}
+                   :undo-group (uuid/next)
+                   :redo-changes [{:type :add-obj :id id :page-id page-id
+                                   :parent-id uuid/zero :frame-id uuid/zero :obj shape}]
+                   :undo-changes [{:type :del-obj :id id :page-id page-id}]}))
+
+(defn- set-root-children
+  "A change that sets the children of the root of `page-id`."
+  [page-id ids]
+  {:type :mod-obj :id uuid/zero :page-id page-id
+   :operations [{:type :set :attr :shapes :val ids}]})
+
+(defn- lagged-row
+  "A row of a save answer's `:lagged`: a change stored at `revn` by
+  `session-id`."
+  [file-id revn session-id changes]
+  {:id (uuid/next) :file-id file-id :revn revn :session-id session-id :changes changes})
+
+(defn- root-children
+  [store file-id page-id]
+  (thp/shape-attr store file-id page-id uuid/zero :shapes))
+
+(defn- open-with-new-child
+  "Opens a page whose root holds `shape-id` and the new child `child`, as
+  the local data does once the user adds it."
+  [store file-id session-id page-id shape-id child]
+  (ptk/emit! store
+             (thp/open-file file-id page-id
+                            (thp/add-shape (thp/file-data page-id shape-id "S") page-id child))
+             #(assoc % :session-id session-id)))
+
+;; Scenario: the user adds a child to a page with old damage. The server
+;; repairs the page first, storing a repair that sets the root's children
+;; without the new child, then stores the user's change, which adds it. The
+;; save answer reaches the tab before the repair's message. Proves: the
+;; saved commit stays pending until the repair arrives, so the repair goes
+;; under it and the tab ends as the server does.
+(t/deftest ^:async a-repair-answered-before-its-message-goes-under-the-saved-commit
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id response requests store]}]
+       (let [session-id (uuid/next)
+             page-id    (uuid/next)
+             shape-id   (uuid/next)
+             child      (cts/setup-shape {:id (uuid/next) :type :rect :name "Rectangle"
+                                          :parent-id uuid/zero :frame-id uuid/zero})
+             commit     (add-child-commit file-id page-id child)
+             repair     [(set-root-children page-id [shape-id])]]
+         (open-with-new-child store file-id session-id page-id shape-id child)
+         (ptk/emit! store commit ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests)) "the new child is sent"))
+         (rx/push! response {:revn 0
+                             :lagged [(lagged-row file-id 1 repair-session-id repair)
+                                      (lagged-row file-id 2 session-id (:redo-changes @commit))]})
+         (await (async/wait-for #(get-in @store [:persistence :index (:id @commit) ::dps/awaiting])
+                                "the saved commit waits for the repair"))
+         (t/is (= [(:id @commit)] (vec (get-in @store [:persistence :queue]))))
+
+         (ptk/emit! store (thp/remote-commit file-id 1 repair))
+         (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                      (empty? (get-in @store [:persistence :queue])))
+                                "the saved commit is acknowledged once the repair arrives"))
+         (t/is (= [shape-id (:id child)] (root-children store file-id page-id))
+               "the repair goes under the new child, as on the server"))))))
+
+;; Scenario: the repair's message reaches the tab before the save answer.
+;; Proves: the answer does not wait for a change the tab already applied.
+(t/deftest ^:async a-save-answer-does-not-wait-for-changes-already-received
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id response requests store]}]
+       (let [session-id (uuid/next)
+             page-id    (uuid/next)
+             shape-id   (uuid/next)
+             child      (cts/setup-shape {:id (uuid/next) :type :rect :name "Rectangle"
+                                          :parent-id uuid/zero :frame-id uuid/zero})
+             commit     (add-child-commit file-id page-id child)
+             repair     [(set-root-children page-id [shape-id])]]
+         (open-with-new-child store file-id session-id page-id shape-id child)
+         (ptk/emit! store commit ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests)) "the new child is sent"))
+         (ptk/emit! store (thp/remote-commit file-id 1 repair))
+         (rx/push! response {:revn 0
+                             :lagged [(lagged-row file-id 1 repair-session-id repair)
+                                      (lagged-row file-id 2 session-id (:redo-changes @commit))]})
+         (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                      (empty? (get-in @store [:persistence :queue])))
+                                "the save lands at once"))
+         (t/is (= [shape-id (:id child)] (root-children store file-id page-id))))))))
+
+;; Scenario: the save answer lists a repair whose message never reaches the
+;; tab. Proves: the wait is bounded; the saved commit is acknowledged and
+;; the file reloads to get the server's data.
+(t/deftest ^:async a-change-that-never-arrives-reloads-the-file
+  (let [reloads   (atom 0)
+        timeout-s (rx/subject)
+        original  (get-method ptk/resolve ::dw/reload-current-file)]
+    (-add-method ptk/resolve ::dw/reload-current-file
+                 (fn [_ _]
+                   (swap! reloads inc)
+                   (ptk/data-event ::reloaded {})))
+    (try
+      (await
+       (with-persistence
+         (^:async fn [{:keys [file-id response requests store]}]
+           (await
+            (mock/with-mocks*
+              {rx/timer (mock/stub (fn [ms]
+                                     (if (= ms @#'dps/unseen-changes-timeout-ms)
+                                       timeout-s
+                                       (rx/subject))))}
+              (let [session-id (uuid/next)
+                    page-id    (uuid/next)
+                    shape-id   (uuid/next)
+                    child      (cts/setup-shape {:id (uuid/next) :type :rect :name "Rectangle"
+                                                 :parent-id uuid/zero :frame-id uuid/zero})
+                    commit     (add-child-commit file-id page-id child)]
+                (open-with-new-child store file-id session-id page-id shape-id child)
+                (ptk/emit! store commit ::dps/force-persist)
+                (await (async/wait-for #(= 1 (count @requests)) "the new child is sent"))
+                (rx/push! response {:revn 0
+                                    :lagged [(lagged-row file-id 1 repair-session-id
+                                                         [(set-root-children page-id [shape-id])])
+                                             (lagged-row file-id 2 session-id (:redo-changes @commit))]})
+                (await (async/wait-for #(get-in @store [:persistence :index (:id @commit) ::dps/awaiting])
+                                       "the saved commit waits for the repair"))
+                (t/is (zero? @reloads))
+                (rx/push! timeout-s :tick)
+                (await (async/wait-for #(= 1 @reloads) "the file reloads"))
+                (t/is (empty? (get-in @store [:persistence :queue]))
+                      "the saved commit is acknowledged")))))))
+      (finally
+        (-add-method ptk/resolve ::dw/reload-current-file original)))))
+
 ;; Commit boundaries.
 
 ;; Scenario: two edits are buffered and saved together. The request carries
