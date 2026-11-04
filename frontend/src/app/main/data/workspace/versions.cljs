@@ -22,7 +22,15 @@
    [app.main.repo :as rp]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
+
+(defn repair-snapshot?
+  "True when `snapshot` is the copy the backend keeps of a file before it
+  repairs it."
+  [{:keys [label]}]
+  (and (string? label)
+       (str/starts-with? label "internal/repair/")))
 
 (defonce default-state
   {:status :loading
@@ -303,6 +311,10 @@
             ;;   localized date, instead of the internal snapshot
             ;;   label (e.g. `internal/snapshot/20`).
             label    (cond
+                       (repair-snapshot? snapshot)
+                       (tr "workspace.versions.repair.version"
+                           (ct/format-inst (:created-at snapshot) :localized-date))
+
                        (= "system" (:created-by snapshot))
                        (tr "workspace.versions.autosaved.version"
                            (ct/format-inst (:created-at snapshot) :localized-date))
