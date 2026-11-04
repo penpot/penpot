@@ -99,6 +99,17 @@
 
 ;; --- HANDLERS
 
+#?(:cljs
+   (defn- keyword-reader
+     "Return a reader that gives the same keyword instance for each name."
+     []
+     (let [cache (js/Map.)]
+       (fn [value]
+         (or (.get cache value)
+             (let [kw (keyword value)]
+               (.set cache value kw)
+               kw))))))
+
 (add-handlers!
  #?@(:clj
      [{:id "file"
@@ -118,6 +129,10 @@
  #?(:cljs
     {:id "u"
      :rfn parse-uuid})
+
+ #?(:cljs
+    {:id ":"
+     :rfn (keyword-reader)})
 
  {:id "ordered-map"
   :class #?(:clj LinkedMap :cljs lkm/LinkedMap)
