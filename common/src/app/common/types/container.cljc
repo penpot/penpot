@@ -324,7 +324,6 @@
          delta           (gpt/subtract position orig-pos)
 
          objects         (:objects page)
-         unames          (volatile! (cfh/get-used-names objects))
 
          component-children
          (d/index-by :id (cfh/get-children-with-self objects (:id component-shape)))
@@ -352,9 +351,6 @@
          (fn [new-shape original-shape]
            (let [new-name (:name new-shape)
                  root?    (ctk/instance-root? original-shape)]
-
-             (when root?
-               (vswap! unames conj new-name))
 
              (vswap! ids-map assoc (:id original-shape) (:id new-shape))
 
