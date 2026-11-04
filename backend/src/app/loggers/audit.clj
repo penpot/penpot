@@ -407,8 +407,9 @@
   "Normalize a hand-written `::audit/profile-id` override to a uuid.
 
   `schema:event` requires a uuid and `submit*` propagates the validation
-  error; inside a command, `wrap-audit` runs in its transaction, so an
-  invalid override would abort the whole action. Commands read the
+  error; `wrap-audit` runs after the command commits (moving it inside the
+  transaction is project P8 in `TODO.md`), so an invalid override would fail
+  the response over an already committed action. Commands read the
   override from places that are not typed by us (token claims,
   stringly-typed drivers), so a string has to be accepted. Anything that
   cannot become a uuid is discarded, and the event falls back to the

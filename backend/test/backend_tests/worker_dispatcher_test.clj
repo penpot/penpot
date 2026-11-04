@@ -244,6 +244,45 @@
     (wdisp/run-batch cfg)
     (t/is (= "aborted" (:status (get-row lost))))))
 
+(t/deftest lost-sweep-pages-the-cap-branch
+  ;; A row past the cap is lost whatever its queue holds, and the read is
+  ;; bounded: with a batch of one, each pass aborts the oldest candidate
+  ;; and the next pass continues. Only the grace rows pay the LLEN.
+  (let [cfg (mk-cfg)
+        q   "test-lost-cap"
+        a   (mk-job {:status      "scheduled"
+                     :queue       q
+                     :modified-at (ct/minus (ct/now) (ct/duration {:hours 30}))})
+        b   (mk-job {:status      "scheduled"
+                     :queue       q
+                     :modified-at (ct/minus (ct/now) (ct/duration {:hours 29}))})]
+    (fill-queue q)
+    (with-redefs-fn {#'wdisp/lost-batch-size 1}
+      #(wdisp/run-batch cfg))
+    (t/is (= 1 (count (filter #(= "aborted" (:status (get-row %))) [a b]))))
+    (with-redefs-fn {#'wdisp/lost-batch-size 1}
+      #(wdisp/run-batch cfg))
+    (t/is (every? #(= "aborted" (:status (get-row %))) [a b]))))
+
+(t/deftest lost-sweep-pages-the-grace-window
+  ;; Inside the grace window the read is bounded and the queue decides: an
+  ;; empty queue makes the row lost, and with a batch of one the next pass
+  ;; continues where the previous one stopped.
+  (let [cfg (mk-cfg)
+        q   "test-lost-grace"
+        a   (mk-job {:status      "scheduled"
+                     :queue       q
+                     :modified-at (ct/minus (ct/now) (ct/duration {:minutes 7}))})
+        b   (mk-job {:status      "scheduled"
+                     :queue       q
+                     :modified-at (ct/minus (ct/now) (ct/duration {:minutes 6}))})]
+    (with-redefs-fn {#'wdisp/lost-batch-size 1}
+      #(wdisp/run-batch cfg))
+    (t/is (= 1 (count (filter #(= "aborted" (:status (get-row %))) [a b]))))
+    (with-redefs-fn {#'wdisp/lost-batch-size 1}
+      #(wdisp/run-batch cfg))
+    (t/is (every? #(= "aborted" (:status (get-row %))) [a b]))))
+
 (t/deftest dispatcher-does-not-abort-a-job-whose-heartbeat-renews-it
   ;; The heartbeat accepts a `scheduled` row (a previous attempt may still
   ;; beat): it refreshes `modified_at`, so the outer WHERE must re-check it.

@@ -137,6 +137,11 @@
    ::jobs/schema    schema:params
    ::jobs/handler
    (fn [_context _params]
+     ;; The no-consumer branch deletes nothing on purpose: deleting would
+     ;; lose events for a consumer that may start later. Without this line
+     ;; the operator only sees `discarded 0` at `dbg` and the buffer grows.
+     (when (empty? (consumers/enabled-consumers))
+       (l/wrn :hint "audit log GC is on with no consumer enabled; the buffer will not be cleaned"))
      (let [total (delete-consumed cfg)]
        (l/dbg :hint "audit log buffer cleaned" :discarded total)
        total))

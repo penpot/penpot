@@ -63,15 +63,39 @@
 ;; they are the queries where a missing tenant filter does the most
 ;; damage: without it any instance with a worker aborts another
 ;; instance's jobs.
-(def ^:private sql:lost-candidates
-  "The `scheduled` rows of one tenant that have been waiting longer than
-  the grace. `modified_at` is the hand-off time (the push), so it measures
-  time in the queue, not the due time."
+(def ^:private lost-batch-size
+  "Rows per lost-sweep read. The dispatcher loops without pausing while it
+  finds work, so an unbounded read would turn a big `scheduled` backlog
+  into a repeated scan. Aborting a row takes it out of the candidate set,
+  so the next pass continues where this one stopped."
+  1000)
+
+(def ^:private sql:lost-past-cap
+  "The `scheduled` rows of one tenant that have waited past the cap, oldest
+  first. They are lost behind a backlog or in a queue with no consumer
+  whatever the queue holds, so the sweep aborts them without an `LLEN`.
+  `modified_at` is the hand-off time (the push), so it measures time in the
+  queue, not the due time."
   "SELECT id, queue, modified_at
      FROM job
     WHERE status = 'scheduled'
       AND tenant = ?
-      AND modified_at < ?::timestamptz")
+      AND modified_at < ?::timestamptz
+    ORDER BY modified_at ASC
+    LIMIT ?")
+
+(def ^:private sql:lost-in-grace
+  "The `scheduled` rows of one tenant inside the grace window, oldest first.
+  These are the only candidates that need the per-queue `LLEN`: they are
+  lost when nothing is waiting for them."
+  "SELECT id, queue, modified_at
+     FROM job
+    WHERE status = 'scheduled'
+      AND tenant = ?
+      AND modified_at >= ?::timestamptz
+      AND modified_at < ?::timestamptz
+    ORDER BY modified_at ASC
+    LIMIT ?")
 
 (def ^:private sql:abort-lost
   "Abort the lost rows by id. The status, the tenant and the hand-off time
@@ -163,26 +187,34 @@ RETURNING job.id, job.queue, job.name, job.created_at")
 
 (defn- abort-lost-jobs
   "Abort the rows that were handed to a queue and never claimed. A row is
-  lost when its queue has nothing waiting and it has been `scheduled`
-  longer than the grace (a worker that popped it died before claiming), or
-  when it has been `scheduled` past the cap (lost behind a backlog, or a
-  queue without a consumer). Lost rows are never re-dispatched: nothing
-  returns to `new`, which keeps the dedupe index out of this path.
+  lost when it has been `scheduled` past the cap (behind a backlog, or in a
+  queue without a consumer), or when its queue has nothing waiting and it
+  has been `scheduled` longer than the grace (a worker that popped it died
+  before claiming). Lost rows are never re-dispatched: nothing returns to
+  `new`, which keeps the dedupe index out of this path.
+
+  The two branches read a bounded page of candidates, oldest first: the
+  dispatcher loops without pausing while it finds work, so an unbounded
+  read would scan a big `scheduled` backlog on every iteration. Aborting
+  removes a row from the next read. Only the grace rows pay the `LLEN`; a
+  row past the cap is lost whatever its queue holds, so a younger lost row
+  behind a large legitimate backlog may wait for the cap instead of the
+  grace.
 
   The grace is measured from the push, so a worker that pops a message
   older than the grace and stalls before claiming it can still lose that
   job: the sweep cannot tell a slow worker from a dead one."
   [cfg]
   (let [{:keys [::db/conn ::timestamp ::wrk/tenant]} cfg
-        grace   (ct/minus timestamp lost-grace)
-        cap     (ct/minus timestamp lost-cap)
-        rows    (db/exec! conn [sql:lost-candidates tenant grace])
-        waiting (get-waiting cfg (into #{} (map :queue) rows))
-        lost    (into []
-                      (filter (fn [{:keys [queue modified-at]}]
-                                (or (< (inst-ms modified-at) (inst-ms cap))
-                                    (zero? (get waiting queue)))))
-                      rows)]
+        grace    (ct/minus timestamp lost-grace)
+        cap      (ct/minus timestamp lost-cap)
+        capped   (db/exec! conn [sql:lost-past-cap tenant cap lost-batch-size])
+        in-grace (db/exec! conn [sql:lost-in-grace tenant cap grace lost-batch-size])
+        waiting  (get-waiting cfg (into #{} (map :queue) in-grace))
+        lost     (into (vec capped)
+                       (filter (fn [{:keys [queue]}]
+                                 (zero? (get waiting queue))))
+                       in-grace)]
     (when (seq lost)
       (let [aborted (db/exec! conn [sql:abort-lost
                                     timestamp

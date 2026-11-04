@@ -143,26 +143,24 @@
     WHERE consumer = ?::smallint")
 
 (def ^:private sql:ensure-cursor
-  "A consumer born after the migration starts at the current end of the
-  buffer (it does not process the history), or at zero when the buffer
-  is empty. ON CONFLICT keeps an existing position untouched."
+  "A consumer with no cursor starts at the beginning of the buffer: it
+  processes what the buffer holds, not only what arrives from now on.
+  (0, 0) sits below any real position, so the first chunk includes the
+  oldest row; the table starts empty because the migration cannot know
+  which consumers are enabled. ON CONFLICT keeps an existing position
+  untouched."
   "INSERT INTO audit_log_consumer_cursor (consumer, xid, seq)
-   SELECT ?::smallint,
-          COALESCE((SELECT xid FROM audit_log ORDER BY xid DESC, seq DESC LIMIT 1),
-                   '0'::xid8),
-          COALESCE((SELECT seq FROM audit_log ORDER BY xid DESC, seq DESC LIMIT 1),
-                   0)
+   VALUES (?::smallint, '0'::xid8, 0)
    ON CONFLICT (consumer) DO NOTHING")
 
 (defn ensure-cursor
-  "Create the cursor of a consumer when it does not exist yet: at the end
-  of the buffer, or at zero when the buffer is empty. The end is the last
-  committed row: a transaction that was open at that instant and commits
-  afterwards keeps a lower `(xid, seq)`, so it is history for this
-  consumer. The snapshot cut is not applied here on purpose: starting at
-  the cut would replay the rows already committed above it. Only the
-  drain calls this; the GC treats a missing cursor as position 0 and
-  waits for the consumer to create it."
+  "Create the cursor of a consumer when it does not exist yet: at the
+  beginning of the buffer, so the first pass drains what is there. The
+  cursor means 'last row processed' and the chunk query is a strict
+  `(xid, seq) > cursor`, so the starting position must sit *before* the
+  oldest row: (0, 0) is below any real position and needs no extra read.
+  Only the drain calls this; the GC treats a missing cursor as position
+  0 and waits for the consumer to create it."
   [cfg consumer]
   (db/exec-one! cfg [sql:ensure-cursor consumer]))
 
@@ -348,7 +346,10 @@
   "Run one pass of a consumer: take the tick lock, drain its cursor chunk by
   chunk (one transaction per chunk) up to the frontier of the pass, and
   record the summary. Answers ::busy without doing anything when another
-  instance is draining this consumer.
+  instance is draining this consumer, and ::disabled without touching the
+  data when the consumer's flag is off: the loop is gated at boot, but a
+  direct caller (REPL, tests, a helper) must not advance a cursor or send
+  events for a consumer the deployment has disabled.
 
   The processor receives the rows of each chunk and returns
   {:processed n :skipped n}; the cursor advances past every row of the
@@ -367,65 +368,67 @@
   and `failed` (anything the pass throws: the frontier read, a chunk or the
   lag query), so a failure cannot leave the family flat."
   [cfg consumer-id process-chunk]
-  (let [consumer (or (get consumers-by-id consumer-id)
-                     (ex/raise :type :internal
-                               :code :unknown-audit-consumer
-                               :hint "unknown audit-log consumer"
-                               :consumer consumer-id))
-        label    (consumer-label consumer-id)
-        metrics  (mtx/instance cfg)
-        totals   (volatile! {:processed 0 :skipped 0 :chunks 0})
-        result   (with-tick-lock cfg consumer-id
-                   (fn [conn]
-                     (try
-                       (if-let [watermark (db/exec-one! conn [sql:last-visible])]
-                         (let [tpoint    (ct/tpoint)
-                               drained   (drain-chunks cfg conn consumer process-chunk watermark totals)
-                               _         (record-lag conn metrics consumer)
-                               _         (record-totals metrics label drained)
-                               _         (record-count metrics :audit-consumer-passes [label "ok"] 1)
-                               processed (:processed drained)
-                               skipped   (:skipped drained)
-                               chunks    (:chunks drained)
-                               ;; Strict binding on purpose: log props evaluate lazily in
-                               ;; the logger thread, so the elapsed must be frozen here.
-                               elapsed   (ct/format-duration (tpoint))]
-                           (if (and (zero? processed)
-                                    (zero? skipped))
+  (if-not (enabled? consumer-id)
+    ::disabled
+    (let [consumer (or (get consumers-by-id consumer-id)
+                       (ex/raise :type :internal
+                                 :code :unknown-audit-consumer
+                                 :hint "unknown audit-log consumer"
+                                 :consumer consumer-id))
+          label    (consumer-label consumer-id)
+          metrics  (mtx/instance cfg)
+          totals   (volatile! {:processed 0 :skipped 0 :chunks 0})
+          result   (with-tick-lock cfg consumer-id
+                     (fn [conn]
+                       (try
+                         (if-let [watermark (db/exec-one! conn [sql:last-visible])]
+                           (let [tpoint    (ct/tpoint)
+                                 drained   (drain-chunks cfg conn consumer process-chunk watermark totals)
+                                 _         (record-lag conn metrics consumer)
+                                 _         (record-totals metrics label drained)
+                                 _         (record-count metrics :audit-consumer-passes [label "ok"] 1)
+                                 processed (:processed drained)
+                                 skipped   (:skipped drained)
+                                 chunks    (:chunks drained)
+                                 ;; Strict binding on purpose: log props evaluate lazily in
+                                 ;; the logger thread, so the elapsed must be frozen here.
+                                 elapsed   (ct/format-duration (tpoint))]
+                             (if (and (zero? processed)
+                                      (zero? skipped))
+                               (l/dbg :hint "no new audit events"
+                                      :consumer label)
+                               (l/dbg :hint "audit events processed"
+                                      :consumer label
+                                      :elapsed elapsed
+                                      :processed processed
+                                      :skipped skipped
+                                      :chunks chunks)))
+                           ;; Nothing was visible when the pass started: no chunk query.
+                           (do
+                             (record-lag conn metrics consumer)
+                             (record-count metrics :audit-consumer-passes [label "ok"] 1)
                              (l/dbg :hint "no new audit events"
                                     :consumer label)
-                             (l/dbg :hint "audit events processed"
-                                    :consumer label
-                                    :elapsed elapsed
-                                    :processed processed
-                                    :skipped skipped
-                                    :chunks chunks)))
-                         ;; Nothing was visible when the pass started: no chunk query.
-                         (do
-                           (record-lag conn metrics consumer)
-                           (record-count metrics :audit-consumer-passes [label "ok"] 1)
-                           (l/dbg :hint "no new audit events"
-                                  :consumer label)
-                           nil))
-                       (catch Throwable cause
-                         ;; The counter covers the whole pass: a failed frontier
-                         ;; read or lag query counts as a failed pass too, not
-                         ;; only a refused chunk.
-                         (record-totals metrics label @totals)
-                         (record-count metrics :audit-consumer-passes [label "failed"] 1)
-                         ;; The failed event count comes from the error data: the
-                         ;; send fns carry the attempted events as :events. A local
-                         ;; DB failure carries none and is not counted as a
-                         ;; destination failure.
-                         (let [n (:events (ex-data cause))]
-                           (when (and (integer? n) (pos? n))
-                             (record-count metrics :audit-consumer-events [label "failed"] n)))
-                         (throw cause)))))]
-    (if (= ::busy result)
-      (do
-        (record-count metrics :audit-consumer-passes [label "busy"] 1)
-        ::busy)
-      result)))
+                             nil))
+                         (catch Throwable cause
+                           ;; The counter covers the whole pass: a failed frontier
+                           ;; read or lag query counts as a failed pass too, not
+                           ;; only a refused chunk.
+                           (record-totals metrics label @totals)
+                           (record-count metrics :audit-consumer-passes [label "failed"] 1)
+                           ;; The failed event count comes from the error data: the
+                           ;; send fns carry the attempted events as :events. A local
+                           ;; DB failure carries none and is not counted as a
+                           ;; destination failure.
+                           (let [n (:events (ex-data cause))]
+                             (when (and (integer? n) (pos? n))
+                               (record-count metrics :audit-consumer-events [label "failed"] n)))
+                           (throw cause)))))]
+      (if (= ::busy result)
+        (do
+          (record-count metrics :audit-consumer-passes [label "busy"] 1)
+          ::busy)
+        result))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; LOOP

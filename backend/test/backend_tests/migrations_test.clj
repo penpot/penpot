@@ -201,19 +201,18 @@
   (t/is (contains? (table-columns "audit_log_pending") "consumer"))
   (t/is (empty? (table-foreign-keys "audit_log_pending"))))
 
-(t/deftest the-migration-seeds-the-existing-consumers-at-the-start
-  ;; The first deploy replays the buffer: Nexus and admin console start at
-  ;; (0, 0). A consumer enabled later has no row and `ensure-cursor` starts
-  ;; it at the end on its first pass.
+(t/deftest the-migration-does-not-seed-consumer-cursors
+  ;; The migration cannot know which consumers are enabled, so the cursor
+  ;; table starts empty; `ensure-cursor` creates the row at (0, 0) on a
+  ;; consumer's first pass, which is what makes the first deploy replay the
+  ;; unarchived buffer.
   (th/db-exec! ["DELETE FROM audit_log_consumer_cursor WHERE consumer IN (1, 2)"])
   (let [apply! (mg/resource "app/migrations/sql/0158-consumer-generalization.sql")]
     (t/is (true? (apply! th/*pool*))))
-  (let [rows (th/db-exec! ["SELECT consumer, xid::text AS xid, seq
+  (let [rows (th/db-exec! ["SELECT consumer
                               FROM audit_log_consumer_cursor
-                             ORDER BY consumer"])]
-    (t/is (= [1 2] (mapv :consumer rows)))
-    (t/is (= ["0" "0"] (mapv :xid rows)))
-    (t/is (= [0 0] (mapv :seq rows)))))
+                             WHERE consumer IN (1, 2)"])]
+    (t/is (empty? rows))))
 
 (t/deftest audit-log-rows-get-seq-and-xid-by-default
   ;; The previous version keeps inserting rows during the rollout, so the
@@ -324,7 +323,7 @@
   []
   (:last-value (th/db-exec-one! ["SELECT last_value FROM audit_log_seq_seq"])))
 
-(defn- insert-audit-row!
+(defn- insert-audit-row
   "Insert one row with the columns the previous version filled, so the
   database gives it `seq` and `xid` from their defaults."
   []
@@ -353,7 +352,7 @@
   ;; Inserting a row advances the sequence; deleting it drops `count(*)`
   ;; again. The old unconditional setval lowered the sequence in that case.
   (let [apply! (mg/resource "app/migrations/sql/0158-consumer-generalization.sql")
-        id (insert-audit-row!)]
+        id (insert-audit-row)]
     (try
       (let [before (sequence-last-value)]
         (th/db-exec! ["DELETE FROM audit_log WHERE id = ?" id])

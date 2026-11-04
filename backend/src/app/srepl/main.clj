@@ -797,15 +797,16 @@
                                            {:id file-id}
                                            {::db/remove-deleted false
                                             ::sql/columns [:id :name :project-id]})]
-                    (audit/insert system
-                                  {:name "restore-file"
-                                   :type "action"
-                                   :props (assoc file
-                                                 :team-id (first (audit/get-team-ids
-                                                                  system
-                                                                  {:project-ids [(:project-id file)]})))
-                                   :context {:triggered-by "srepl"
-                                             :cause "explicit call to restore-file!"}})
+                    (let [team-id (first (audit/get-team-ids
+                                          system
+                                          {:project-ids [(:project-id file)]}))]
+                      (audit/insert system
+                                    {:name "restore-file"
+                                     :type "action"
+                                     :props (cond-> file
+                                              (some? team-id) (assoc :team-id team-id))
+                                     :context {:triggered-by "srepl"
+                                               :cause "explicit call to restore-file!"}}))
 
                     (#'files/restore-files conn [file-id]))
                   :restored))))

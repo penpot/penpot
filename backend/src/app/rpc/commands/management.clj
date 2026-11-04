@@ -369,7 +369,7 @@
 (sv/defmethod ::move-files
   "Move a set of files from one project to other."
   {::doc/added "1.16"
-   ::doc/changes [["2.19" "Files from more than one source team are rejected with :cant-move-from-multiple-teams"]]
+   ::doc/changes [["2.20" "Files from more than one source team are rejected with :cant-move-from-multiple-teams"]]
    ::webhooks/event? true
    ::sm/params schema:move-files}
   [cfg {:keys [::rpc/profile-id] :as params}]

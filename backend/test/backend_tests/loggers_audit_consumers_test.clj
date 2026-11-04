@@ -733,9 +733,10 @@
       (finally
         (ig/halt-key! :app.db/pool pool)))))
 
-(t/deftest consumer-without-a-cursor-starts-at-the-end
-  ;; A consumer enabled after the deploy does not process the history: its
-  ;; first pass creates the cursor at the current end of the buffer.
+(t/deftest consumer-without-a-cursor-starts-at-the-beginning
+  ;; The migration does not seed cursors: a consumer with no row creates
+  ;; one at (0, 0), so its first pass processes the buffer that is already
+  ;; there instead of skipping the history.
   (let [prof (th/create-profile* 45 {:is-active true})]
     (with-redefs [cf/flags #{:nexus}]
       (with-mocks [http-mock {:target 'app.http.client/req :return {:status 204}}]
@@ -745,9 +746,39 @@
                         WHERE consumer = ?::smallint"
                       consumer/nexus])
         (run-nexus {:uri archive-uri})
-        (t/is (false? (:called? @http-mock)))
+        (t/is (:called? @http-mock))
         (t/is (some? (cursor-of consumer/nexus)))
         (t/is (= 0 (unread-count consumer/nexus)))))))
+
+(t/deftest consumer-pass-with-its-flag-off-sends-nothing
+  ;; `run-pass` is public and its docstring invites direct calls. The loop
+  ;; is gated at boot, so the pass checks the flag too: with it off nothing
+  ;; is sent and the cursor is neither created nor advanced.
+  (let [prof (th/create-profile* 46 {:is-active true})]
+    (with-redefs [cf/flags #{}]
+      (with-mocks [http-mock {:target 'app.http.client/req :return {:status 204}}]
+        (insert-audit-row (:id prof) "create-project")
+        (th/db-exec! ["DELETE FROM audit_log_consumer_cursor
+                        WHERE consumer = ?::smallint"
+                      consumer/nexus])
+        (t/is (= ::consumer/disabled (run-nexus {:uri archive-uri})))
+        (t/is (false? (:called? @http-mock)))
+        (t/is (nil? (cursor-of consumer/nexus)))))))
+
+(t/deftest admin-console-pass-with-its-flag-off-sends-nothing
+  ;; `nitrate/call` returns nil when `:admin-console` is off, so without the
+  ;; gate the pass would count the nil as success and advance the cursor
+  ;; over events that never reached the destination.
+  (let [prof (th/create-profile* 47 {:is-active true})]
+    (with-redefs [cf/flags #{:audit-log}]
+      (with-mocks [http-mock {:target 'app.http.client/req :return {:status 204}}]
+        (insert-audit-row (:id prof) "create-project")
+        (th/db-exec! ["DELETE FROM audit_log_consumer_cursor
+                        WHERE consumer = ?::smallint"
+                      consumer/admin-console])
+        (t/is (= ::consumer/disabled (run-admin-console)))
+        (t/is (false? (:called? @http-mock)))
+        (t/is (nil? (cursor-of consumer/admin-console)))))))
 
 (t/deftest consumer-pass-stops-at-the-watermark
   ;; A pass drains up to the newest row that existed when it started: a

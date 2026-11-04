@@ -53,7 +53,8 @@ ALTER TABLE audit_log
   ADD COLUMN IF NOT EXISTS seq bigint,
   -- Fast default (no table rewrite): the rows that already exist get 0
   -- and sort before every real xid8. They are the history, and the first
-  -- deploy replays them (see the cursor seed below).
+  -- deploy replays them (the consumers create their cursor at (0, 0) on
+  -- their first pass).
   ADD COLUMN IF NOT EXISTS xid xid8 NOT NULL DEFAULT '0'::xid8;
 
 ALTER SEQUENCE audit_log_seq_seq OWNED BY audit_log.seq;
@@ -115,23 +116,18 @@ CREATE UNIQUE INDEX IF NOT EXISTS audit_log__xid__seq__idx
 -- One row per consumer: its position, updated in the same transaction
 -- that sends the chunk. Consumer ids live in app.loggers.audit.consumers
 -- and are never reused: 1 = nexus, 2 = admin console.
+--
+-- The table starts empty on purpose: the migration does not know which
+-- consumers are enabled. `ensure-cursor` creates the row at (0, 0) on a
+-- consumer's first pass, so the first deploy **replays** the unarchived
+-- buffer instead of dropping it (the old archiver is disabled and the
+-- already-archived rows are deleted before deploying, see the NOTE).
 CREATE TABLE IF NOT EXISTS audit_log_consumer_cursor (
   consumer   smallint    NOT NULL,
   xid        xid8        NOT NULL,
   seq        bigint      NOT NULL,
   updated_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (consumer));
-
--- The two consumers that already existed start at the beginning of the
--- buffer, so the first deploy **replays** the history instead of dropping
--- it: the old archiver is disabled and the already-archived rows are
--- deleted before deploying (see the NOTE), so the buffer holds only the
--- backlog that was never archived. ON CONFLICT keeps the position of a
--- consumer that already ran.
-INSERT INTO audit_log_consumer_cursor (consumer, xid, seq)
-VALUES (1, '0'::xid8, 0),
-       (2, '0'::xid8, 0)
-ON CONFLICT (consumer) DO NOTHING;
 
 -- ---------------------------------------------------------------------
 -- The old pending queue never shipped: this release's producer does not

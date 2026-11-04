@@ -850,8 +850,9 @@
 (t/deftest prepare-rpc-event-coerces-string-metadata-profile-id
   ;; `::audit/profile-id` is set by hand in a dozen commands, and some of
   ;; them read the value from token claims or other stringly-typed sources.
-  ;; The audit schema demands a uuid, and `submit*` swallows the validation
-  ;; error, so an unconverted string would drop the event on the floor.
+  ;; The audit schema demands a uuid, and `submit*` propagates the validation
+  ;; error, so an unconverted string would fail the response instead of only
+  ;; losing the event.
   (let [caller (th/create-profile* 1 {:is-active true})
         target "33601240-a00b-11ea-ba1b-c554cc60e361"
         result (with-meta {:some-data "value"}
