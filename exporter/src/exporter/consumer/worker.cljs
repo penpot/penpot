@@ -19,10 +19,11 @@
   `penpot.worker.queue:<tenant>:exporter`. Corrupt payloads are logged
   and dropped; a Redis hiccup is a lost turn, not a lost job: the
   poller waits a bit and pops again (what was already delivered is
-  claimed, and the loop does not stop the process). Stopping quits
-  every connection and ends every loop: unlike the legacy worker,
-  whose loops kept failing turns after the stop, no poller survives
-  its handle.
+  claimed, and the loop does not stop the process). Stopping falls the
+  running flag, lets every poller finish the turn it already started,
+  and only then quits the connections: a payload that arrives in that
+  window goes back to its queue instead of starting an export the
+  shutdown is about to cut, and no poller survives its handle.
 
   The worker is a system component (`:exporter.consumer/worker`): its
   config carries the queue knobs (`:concurrency`, `:queue-key`, the
@@ -32,6 +33,7 @@
   (:require
    ["ioredis" :as redis]
    [app.common.logging :as l]
+   [app.common.types.job :as ctj]
    [exporter.config :as cf]
    [exporter.consumer :as consumer]
    [exporter.consumer.api :as api]
@@ -49,12 +51,19 @@
 
 (defn read-payload
   "The JSON payload of the dispatcher: `job-id` and the `scheduled-at`
-  of the row when it was pushed. Anything else is a corrupt payload:
+  of the row when it was pushed, decoded against the shape both sides
+  share (`app.common.types.job`). Anything else is a corrupt payload:
   none, and the caller drops it."
   [payload]
   (try
-    (let [[job-id scheduled-at] (js->clj (js/JSON.parse payload))]
-      {:job-id job-id :scheduled-at scheduled-at})
+    (let [decoded (js->clj (js/JSON.parse payload))]
+      ;; `sm/decoder` hands an invalid value back untouched, so the shape
+      ;; is checked first: a payload that is not the pair is dropped, not
+      ;; turned into a claim with nil ids.
+      (if (ctj/valid-queue-payload? decoded)
+        (let [[job-id scheduled-at] (ctj/decode-queue-payload decoded)]
+          {:job-id job-id :scheduled-at scheduled-at})
+        (throw (ex-info "unexpected queue payload" {:payload decoded}))))
     (catch :default cause
       (l/warn :hint "corrupt queue payload dropped"
               :payload (str payload) :cause cause)
@@ -81,14 +90,21 @@
 (defn ^:async poll-once
   "One turn: pop the queue, claim what came, and wait for the settle.
   An empty pop and a dropped payload both resolve; a claimed job is
-  awaited the whole run."
-  [conn key on-payload]
+  awaited the whole run. A payload popped after the stop flag fell goes
+  back to the queue: the shutdown must not start an export it is about
+  to cut, and the next worker (or the next start) claims it."
+  [handle conn key on-payload]
   (let [answer  (await (.blpop ^js conn key poll-timeout-s))
-        payload (second answer)
-        claim   (when (some? payload) (read-payload payload))]
-    (when (some? claim)
-      (await (on-payload claim))
-      nil)))
+        payload (second answer)]
+    (if (and (some? payload) (not @(:running handle)))
+      (do
+        (await (.lpush ^js conn key payload))
+        (l/info :hint "payload handed back to the queue" :key key)
+        nil)
+      (let [claim (when (some? payload) (read-payload payload))]
+        (when (some? claim)
+          (await (on-payload claim))
+          nil)))))
 
 (defn- ^:async poll-loop
   "The wait of one poller, turn after turn, until the handle stops. A
@@ -101,7 +117,7 @@
   (loop []
     (when @(:running handle)
       (try
-        (await (poll-once conn key on-payload))
+        (await (poll-once handle conn key on-payload))
         (catch :default cause
           (l/error :hint "poller turn failed" :key key :cause cause)
           (await (wait reconnect-delay-ms))))
@@ -123,7 +139,8 @@
   [{:keys [concurrency queue-key connect] :as cfg}]
   (let [running    (atom true)
         inflight   (atom 0)
-        handle     {:running running :conns (atom []) :inflight inflight}
+        handle     {:running running :conns (atom []) :loops (atom [])
+                    :inflight inflight}
         on-payload (^:async fn [claim]
                      (swap! inflight inc)
                      (try
@@ -136,7 +153,7 @@
     (doseq [_ (range k)]
       (let [conn (open)]
         (swap! (:conns handle) conj conn)
-        (poll-loop handle conn queue-key on-payload)))
+        (swap! (:loops handle) conj (poll-loop handle conn queue-key on-payload))))
     handle))
 
 (defn- ^:async drain-inflight
@@ -148,14 +165,25 @@
 
 (defn ^:async stop
   "Ends the pollers, closing their connections and their loops: the
-  running flag falls first, so a turn that ends after the quit does
-  not pop again, then the in-flight runs drain within the grace
+  running flag falls first, so a turn that ends after the stop hands
+  its payload back instead of starting an export, then the pollers
+  finish the turn they already began (bounded by the pop timeout, so a
+  running export never holds the shutdown here) and only after that
+  the connections quit. The in-flight runs drain within the grace
   period before the pools halt behind them. Idempotent: a second stop
   quits nothing."
   ([handle] (stop handle nil))
-  ([handle {:keys [grace-ms] :or {grace-ms default-shutdown-grace-ms}}]
+  ([handle {:keys [grace-ms turn-ms]
+            :or {grace-ms default-shutdown-grace-ms
+                 turn-ms (* 1000 (inc poll-timeout-s))}}]
    (when (and (some? handle)
               (compare-and-set! (:running handle) true false))
+     ;; The blocking pop cannot be cancelled, so the wait is bounded by
+     ;; its own timeout: after it, every poller is either idle or
+     ;; running an export, which the drain below handles.
+     (await (js/Promise.race
+             #js [(js/Promise.allSettled @(or (:loops handle) (atom [])))
+                  (wait turn-ms)]))
      (await (js/Promise.allSettled
              (mapv (fn [conn] (.quit ^js conn)) @(:conns handle))))
      (let [inflight (or (:inflight handle) (atom 0))]

@@ -427,6 +427,37 @@
 ;; Scenario: an export starts while its file has a change not saved yet.
 ;; Proves: the user is warned that the export may miss it, and the export
 ;; runs anyway.
+(t/deftest ^:async a-failed-persist-releases-the-export-flag
+  ;; The persist runs before the job exists: if it fails, the flag must
+  ;; not stay set, or the leave-page warning never turns off.
+  (let [tasks        (atom #{})
+        store-errors (atom [])
+        store        (export-store (test-state) store-errors)]
+    (await
+     (mock/with-mocks*
+       {dwp/force-persist-files-and-wait
+        (mock/stub (fn [_ _] (rx/throw (ex-info "persist failed" {:type :internal}))))
+        st/ongoing-tasks tasks}
+       (ptk/emit! store (de/request-simple-export {:export export}))
+       (await (async/wait-for #(not (contains? @tasks :export))
+                              "the leave-page warning is released"))
+       (t/is (empty? @tasks))))))
+
+(t/deftest ^:async a-failed-persist-releases-the-export-flag-of-a-multiple-run
+  (let [tasks        (atom #{})
+        store-errors (atom [])
+        store        (export-store (test-state) store-errors)]
+    (await
+     (mock/with-mocks*
+       {dwp/force-persist-files-and-wait
+        (mock/stub (fn [_ _] (rx/throw (ex-info "persist failed" {:type :internal}))))
+        st/ongoing-tasks tasks}
+       (ptk/emit! store (de/request-multiple-export
+                         {:exports [(assoc export :enabled true)]}))
+       (await (async/wait-for #(not (contains? @tasks :export))
+                              "the leave-page warning is released"))
+       (t/is (empty? @tasks))))))
+
 (t/deftest ^:async export-warns-when-the-file-has-unsaved-changes
   (let [file-id    (uuid/next)
         downloaded (atom false)

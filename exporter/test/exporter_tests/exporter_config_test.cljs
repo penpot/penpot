@@ -10,7 +10,8 @@
   schema, with the management key derived the way the backend expects."
   (:require
    [cljs.test :as t :include-macros true]
-   [exporter.config :as cf]))
+   [exporter.config :as cf]
+   [exporter.consumer.config :as ccfg]))
 
 (t/deftest read-env-keeps-only-the-prefixed-keys
   (let [env (cf/read-env #js {"PENPOT_SECRET_KEY" "s"
@@ -35,6 +36,29 @@
   ;; wiring entry exits, on the live environment.
   (let [cause (try
                 (cf/prepare-config #js {})
+                nil
+                (catch :default cause
+                  cause))]
+    (t/is (some? cause))
+    (t/is (= :invalid-config (:code (ex-data cause))))))
+
+(t/deftest prepare-config-normalizes-the-tenant-to-lowercase
+  ;; The backend lowercases the tenant it reads; a worker configured with
+  ;; another spelling would derive another key and pop another queue.
+  (let [config (cf/prepare-config #js {"PENPOT_SECRET_KEY" "s"
+                                       "PENPOT_TENANT" "ACME"})]
+    (t/is (= "acme" (:tenant config)))
+    (t/testing "the key derived from the normalized value is the same"
+      (t/is (= (cf/derive-management-key "s" "acme")
+               (cf/derive-management-key "s" (:tenant config)))))
+    (t/testing "and the queue key lands where the dispatcher pushes"
+      (t/is (= "penpot.worker.queue:acme:exporter"
+               (ccfg/queue-key (:tenant config)))))))
+
+(t/deftest prepare-config-refuses-a-tenant-outside-the-label-form
+  (let [cause (try
+                (cf/prepare-config #js {"PENPOT_SECRET_KEY" "s"
+                                        "PENPOT_TENANT" "acme!"})
                 nil
                 (catch :default cause
                   cause))]

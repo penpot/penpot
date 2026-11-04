@@ -94,10 +94,15 @@
                     :hint (tr "errors.export-failed")))))
 
 (defn normalize-export
-  [{:keys [object-id name] :as export}]
-  (assoc export :name (if (str/blank? name)
-                        (str object-id)
-                        name)))
+  "The export item of the shared contract: the name filled from the
+  object id when blank, and the suffix defaulted to empty for items
+  created before the contract required it."
+  [{:keys [object-id name suffix] :as export}]
+  (assoc export
+         :name (if (str/blank? name)
+                 (str object-id)
+                 name)
+         :suffix (or suffix "")))
 
 (defn- normalize-exports
   [exports]
@@ -534,11 +539,13 @@
           (let [ws-conn  (:ws-conn state)
                 file-ids (export-file-ids [export])]
             (swap! st/ongoing-tasks conj :export)
-            (rx/concat
-             (dwp/force-persist-files-and-wait file-ids save-wait-timeout-ms)
-             (rx/of (warn-unsaved-changes file-ids))
-             (export-stream! ws-conn [export] :export-shapes
-                             {:is-wasm (wasm-export-enabled? state)}))))))))
+            (->> (rx/concat
+                  (dwp/force-persist-files-and-wait file-ids save-wait-timeout-ms)
+                  (rx/of (warn-unsaved-changes file-ids))
+                  (export-stream! ws-conn [export] :export-shapes
+                                  {:is-wasm (wasm-export-enabled? state)}))
+                 (rx/finalize (fn []
+                                (swap! st/ongoing-tasks disj :export))))))))))
 
 (defn- export-file-page-ids
   [state exports]
@@ -575,7 +582,7 @@
            :type type
            :scale (or scale 1)
            :name name
-           :suffix suffix})
+           :suffix (or suffix "")})
         exports))
 
 (defn- request-local-export-wasm
@@ -676,14 +683,16 @@
             ;; export is a shapes one
             kind     (if (= :export-frames cmd) :frames :shapes)]
         (swap! st/ongoing-tasks conj :export)
-        (rx/concat
-         (dwp/force-persist-files-and-wait file-ids save-wait-timeout-ms)
-         (rx/of (warn-unsaved-changes file-ids))
-         (export-stream! ws-conn exports cmd
-                         {:force-multiple true
-                          :name name
-                          :kind kind
-                          :is-wasm (wasm-export-enabled? state)}))))))
+        (->> (rx/concat
+              (dwp/force-persist-files-and-wait file-ids save-wait-timeout-ms)
+              (rx/of (warn-unsaved-changes file-ids))
+              (export-stream! ws-conn exports cmd
+                              {:force-multiple true
+                               :name name
+                               :kind kind
+                               :is-wasm (wasm-export-enabled? state)}))
+             (rx/finalize (fn []
+                            (swap! st/ongoing-tasks disj :export))))))))
 
 (defn request-multiple-export
   [{:keys [exports cmd]

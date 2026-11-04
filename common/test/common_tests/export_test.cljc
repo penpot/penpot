@@ -52,6 +52,14 @@
                :scale     2}]
     (t/is (= typed (decode typed)))))
 
+(t/deftest an-item-without-suffix-is-not-a-valid-export
+  ;; The renderer needs the suffix always (it builds the file name), so
+  ;; the contract requires it: the job is refused at creation instead of
+  ;; failing at render time.
+  (let [item (-> stored-item decode (dissoc :suffix))]
+    (t/is (not (sm/valid? export/schema:params {:exports [item]})))
+    (t/is (sm/valid? export/schema:params {:exports [(assoc item :suffix "")]}))))
+
 (t/deftest params-schema-owns-kind-and-options
   (let [decode-params (sm/decoder export/schema:params sm/json-transformer)
         params        (decode-params {:exports [stored-item]

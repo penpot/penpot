@@ -38,7 +38,12 @@
   [^js worker params cancel-buffer on-object timeout-ms]
   (js/Promise.
    (fn [resolve reject]
-     (let [timer (volatile! nil)]
+     (let [timer (volatile! nil)
+           ;; The worker posts every object and `done` back to back, so
+           ;; the message handler must wait for `on-object` before it
+           ;; settles the render: the callback may still be appending to
+           ;; the artifact. A rejected callback rejects the render.
+           chain (serializer)]
        (letfn [(disarm []
                  (when-let [t @timer]
                    (js/clearTimeout t)
@@ -82,12 +87,20 @@
                    ;; A failure while the main thread handles the object
                    ;; (moving the file, appending to the zip) has to end
                    ;; the render too, or nothing ever settles this promise.
-                   "object" (try
-                              (on-object (t/decode-str (unchecked-get data "payload")))
-                              (catch :default cause
-                                (cleanup)
-                                (reject cause)))
-                   "done"   (do (cleanup) (resolve nil))
+                   "object" (-> (chain (fn []
+                                         (on-object (t/decode-str (unchecked-get data "payload")))))
+                                (.catch (fn [cause]
+                                          (cleanup)
+                                          (reject cause))))
+                   ;; `done` queues behind every object of this render, so
+                   ;; the settle never overtakes a pending append.
+                   "done"   (-> (chain (fn [] nil))
+                                (.then (fn [_]
+                                         (cleanup)
+                                         (resolve nil)))
+                                (.catch (fn [cause]
+                                          (cleanup)
+                                          (reject cause))))
                    "error"  (do (cleanup)
                                 (reject (ex/error :type :internal
                                                   :code (or (some-> (unchecked-get data "code") keyword)

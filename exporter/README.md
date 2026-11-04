@@ -58,14 +58,14 @@ packs it for the image.
 | `PENPOT_PUBLIC_URI`                      | —       | The frontend the assets render through             |
 | `PENPOT_INTERNAL_URI`                    | `public-uri` | Same network's frontend; the management API too |
 | `PENPOT_REDIS_URI`                       | `redis://redis/0` | The queue and the rest of redis           |
-| `PENPOT_TENANT`                          | `default` | Queue prefix (workspace name in devenv)          |
+| `PENPOT_TENANT`                          | `default` | Queue prefix (workspace name in devenv); lowercased on read |
 | `PENPOT_TEMPDIR`                         | `/tmp/penpot` | Temp area owned by the tmpdir service          |
 | `PENPOT_SECRET_KEY`                      | —       | Required; the management key derives from it when no shared key is set |
 | `PENPOT_EXPORTER_SHARED_KEY`             | —       | The shared key; derived from the secret otherwise   |
 | `PENPOT_EXPORTER_JOB_TTL`                | `3600`  | Lifetime of the temp files a job owns, in seconds  |
 | `PENPOT_EXPORTER_WORKER_CONCURRENCY`     | `2`     | `K`: pollers, running exports, pool sizes          |
 | `PENPOT_WASM_WORKER_POOL_MIN`            | `1`     | Render workers kept warm; clamped to the max       |
-| `PENPOT_WASM_WORKER_IDLE_TIMEOUT`        | `300`   | Silence before a worker is terminated, in seconds  |
+| `PENPOT_WASM_WORKER_IDLE_TIMEOUT`        | `300`   | How long an idle pooled worker is kept before eviction, in seconds |
 | `PENPOT_WASM_WORKER_IMAGE_CACHE_SIZE`    | `134217728` | Per-worker image cache budget, in bytes        |
 
 ## Inspecting the backend

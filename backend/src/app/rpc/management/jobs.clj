@@ -277,22 +277,20 @@
   content)
 
 (defn- completable-job
-  "The row a completion may land on: running (or retrying), whatever
-  the JSON form asks for."
-  [cfg job-id]
-  (let [job (jobs/get-job cfg job-id)]
-    (when (and (some? job)
-               (contains? #{"running" "retry"} (:status job)))
-      job)))
+  "The row a completion may land on: running (or retrying), whatever the
+  form asks for."
+  [job]
+  (when (contains? #{"running" "retry"} (:status job))
+    job))
 
 (defn- artifact-owner
-  "The job an artifact completion may land on: completable AND owned,
+  "The row an artifact completion may land on: completable AND owned,
   because the object needs an owner and a job without one owns nothing
   (it may only settle without an artifact). Read before anything is
   stored: a lost race with a cancel never turns the bytes of the worker
   into an object."
-  [cfg job-id]
-  (let [job (completable-job cfg job-id)]
+  [job]
+  (let [job (completable-job job)]
     (when (and (some? job)
                (uuid? (:profile-id job)))
       job)))
@@ -368,43 +366,43 @@
    ::rpc/multipart-only-params [:content]
    ::rpc/allowed-shared-keys exporter-key?}
   [cfg {:keys [job-id result resource-id content session-id] :as params}]
-  (cond
-    ;; the multipart form stores the artifact itself: only for a job
-    ;; that can still complete and has an owner, because the object
-    ;; needs one
-    (some? content)
-    (if-let [job (artifact-owner cfg job-id)]
-      (if (tenant-ok? (::rpc/auth-key-id params) job)
-        (do
-          (check-artifact! content)
-          (complete-with-artifact cfg job content session-id))
-        ;; a job of another tenant answers like a missing row, and its
-        ;; session is not ours to close
-        {:action :skip})
-      (do
-        ;; a completion that lost the race is not a session to keep either
-        (close-job-session! cfg job-id session-id)
-        (skip-with-status cfg job-id)))
-
-    ;; the params form: nothing to store here, the resource (if any)
-    ;; already lives in storage
-    :else
-    (if-let [job (completable-job cfg job-id)]
-      (if (tenant-ok? (::rpc/auth-key-id params) job)
-        (if (pos? (jobs/complete cfg
-                                 :job-id job-id
-                                 :result result
-                                 :resource-id resource-id))
+  ;; One read, one gate: a job of another tenant answers like a missing
+  ;; row before any storage, write or session close, so neither its
+  ;; existence nor its state leaks.
+  (let [row (jobs/get-job cfg job-id)]
+    (if-not (tenant-ok? (::rpc/auth-key-id params) row)
+      {:action :skip}
+      (cond
+        ;; the multipart form stores the artifact itself: only for a job
+        ;; that can still complete and has an owner, because the object
+        ;; needs one
+        (some? content)
+        (if-let [job (artifact-owner row)]
           (do
-            (close-job-session! cfg job-id session-id)
-            {:action :run})
+            (check-artifact! content)
+            (complete-with-artifact cfg job content session-id))
           (do
+            ;; a completion that lost the race is not a session to keep either
             (close-job-session! cfg job-id session-id)
             (skip-with-status cfg job-id)))
-        {:action :skip})
-      (do
-        (close-job-session! cfg job-id session-id)
-        (skip-with-status cfg job-id)))))
+
+        ;; the params form: nothing to store here, the resource (if any)
+        ;; already lives in storage
+        :else
+        (if (completable-job row)
+          (if (pos? (jobs/complete cfg
+                                   :job-id job-id
+                                   :result result
+                                   :resource-id resource-id))
+            (do
+              (close-job-session! cfg job-id session-id)
+              {:action :run})
+            (do
+              (close-job-session! cfg job-id session-id)
+              (skip-with-status cfg job-id)))
+          (do
+            (close-job-session! cfg job-id session-id)
+            (skip-with-status cfg job-id)))))))
 
 ;; ---- RPC METHOD: FAIL-JOB
 

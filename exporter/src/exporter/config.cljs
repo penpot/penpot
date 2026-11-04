@@ -50,7 +50,7 @@
    [:public-uri {:optional true} ::sm/uri]
    [:internal-uri {:optional true} ::sm/uri]
    [:exporter-shared-key {:optional true} :string]
-   [:tenant {:optional true} :string]
+   [:tenant {:optional true} [:re #"^[a-z0-9-]+$"]]
    [:flags {:optional true} [::sm/set :keyword]]
    [:redis-uri {:optional true} :string]
    [:tempdir {:optional true} :string]
@@ -72,6 +72,15 @@
 (defn- parse-flags
   [config]
   (flags/parse (:flags config)))
+
+(defn- normalize-tenant
+  "Lowercase the configured tenant before it is validated, so `ACME` and
+  `acme` name the same tenant: the key derivation, the key id and the
+  queue key all compare it as an exact string, and the backend
+  normalizes its side too."
+  [config]
+  (cond-> config
+    (string? (:tenant config)) (update :tenant str/lower)))
 
 (defn read-env
   "The `PENPOT_`-prefixed variables of `env` as kebab-case keys, the
@@ -95,6 +104,7 @@
   environment."
   [env]
   (let [data (-> (merge defaults (d/without-nils (read-env env)))
+                 (normalize-tenant)
                  (decode-config))]
     (when-not (valid-config? data)
       (throw (ex/error :type :internal

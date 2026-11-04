@@ -12,9 +12,10 @@
   behave the same way for both render backends. A worker is expensive
   to build (it boots its own render-wasm module), hence the pooling.
 
-  Acquisition is not capped: the admission scheduler is the
-  backpressure, and the idle watchdog guarantees a wedged worker gives
-  its slot back.
+  Acquisition is not capped beyond the pool maximum: the K pollers of
+  the worker are the real concurrency, and a worker that stops answering
+  is cut by the silence watchdog of `exporter.wasm.scope`, which
+  terminates it and frees the slot.
 
   Workers run the same bundle as the main thread. There is always at
   least one worker, since a headless render has nowhere else to go.

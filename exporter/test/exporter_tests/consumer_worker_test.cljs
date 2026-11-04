@@ -79,14 +79,19 @@
                (worker/read-payload (encoded-claim job-id
                                                    "2026-10-07T09:00:00Z"))))))
   (t/testing "a corrupt payload is dropped, not thrown at the loop"
-    (t/is (nil? (worker/read-payload "{not a payload")))))
+    (t/is (nil? (worker/read-payload "{not a payload"))))
+  (t/testing "valid JSON of another shape is corrupt too"
+    (doseq [payload ["{}" "null" "[]" "\"foo\"" "[1,2]" "[\"a\",\"b\",\"c\"]"]]
+      (t/is (nil? (worker/read-payload payload)) payload))))
 
 (t/deftest ^:async poll-once-awaits-what-it-claims
   (try
     (let [queue   (atom [(encoded-claim (uuid/next) "2026-10-07T09:00:00Z")])
           conn    (fake-conn queue)
+          handle  {:running (atom true)}
           handled (atom [])]
-      (await (worker/poll-once conn
+      (await (worker/poll-once handle
+                               conn
                                "the.queue.key"
                                (fn [claim]
                                  (swap! handled conj claim)
@@ -95,15 +100,42 @@
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
 
+(t/deftest ^:async poll-once-hands-back-a-payload-popped-after-the-stop
+  ;; The pop cannot be cancelled, so the payload it returns during the
+  ;; shutdown goes back to the queue: the export is not started by a
+  ;; process that is about to halt.
+  (try
+    (let [payload (encoded-claim (uuid/next) "2026-10-07T09:00:00Z")
+          queue   (atom [payload])
+          conn    (fake-conn queue)
+          pushed  (atom [])
+          handle  {:running (atom false)}]
+      (set! (.-lpush conn)
+            (fn [key value]
+              (swap! pushed conj [key value])
+              (js/Promise.resolve 1)))
+      (await (worker/poll-once handle conn "the.queue.key"
+                               (fn [_claim]
+                                 (t/is false "a stopping poller must not claim"))))
+      (t/testing "the payload went back to the same queue, untouched"
+        (t/is (= [["the.queue.key" payload]] @pushed)))
+      (t/testing "and nothing was handled"
+        (t/is (empty? @queue))))
+    (catch :default cause
+      (t/is false (str "unexpected failure: " (ex-message cause))))))
+
 (t/deftest ^:async poll-once-drops-empty-pops-and-corrupt-payloads
   (try
-    (let [queue (atom ["{corrupt"])
-          conn  (fake-conn queue)]
-      (await (worker/poll-once conn
+    (let [queue  (atom ["{corrupt"])
+          conn   (fake-conn queue)
+          handle {:running (atom true)}]
+      (await (worker/poll-once handle
+                               conn
                                "the.queue.key"
                                (fn [_claim]
                                  (t/is false "corrupt must not be handled"))))
-      (await (worker/poll-once conn
+      (await (worker/poll-once handle
+                               conn
                                "the.queue.key"
                                (fn [_claim]
                                  (t/is false "a corrupt pop has nothing to handle"))))
@@ -188,10 +220,10 @@
                      c))
           handle (await (worker/start (test-cfg {:concurrency 2 :connect conn})))]
       (t/is (= 2 (count @opened)))
-      (await (worker/stop handle))
+      (await (worker/stop handle {:turn-ms 20}))
       (t/is (= 2 (count @quit)))
       (t/testing "a second stop is a no-op"
-        (await (worker/stop handle))
+        (await (worker/stop handle {:turn-ms 20}))
         (t/is (= 2 (count @quit)))))
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))

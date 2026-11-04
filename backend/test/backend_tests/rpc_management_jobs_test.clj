@@ -216,6 +216,18 @@
     (t/is (= {:action :skip :status "completed"} (:result out)))
     (t/is (= [] (get-progresss job-id)))))
 
+(t/deftest report-job-progress-skips-a-missing-row
+  ;; The worker sends the beat with the id it claimed: a row that is
+  ;; gone answers a bare skip, the same contract the claim pins.
+  (let [job-id (uuid/next)
+        out    (mgmt :report-job-progress {:job-id job-id
+                                           :progress {:stage    :pages
+                                                      :counters {:pages {:current 1
+                                                                         :total 2}}}})]
+    (t/is (nil? (:error out)))
+    (t/is (= {:action :skip} (:result out)))
+    (t/is (zero? (count-job-events job-id)))))
+
 (t/deftest report-job-progress-persists-rapid-reports
   (let [job-id (mk-job {})
         _      (jobs/claim (make-cfg) job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
@@ -687,6 +699,33 @@
     (t/is (= {:action :skip} (:result out)))
     (t/is (= "running" (:status (get-row job-id))))
     (t/is (nil? (:completed-at (get-row job-id))))))
+
+(t/deftest complete-job-skips-a-terminal-job-of-another-tenant
+  ;; The row already ended, so the multipart form does not even reach
+  ;; the "completable" branch: the tenant gate still answers first, and
+  ;; the state of a foreign row never leaks.
+  (let [profile    (mk-profile)
+        job-id     (mk-job {:status     "completed"
+                            :profile-id (:id profile)
+                            :tenant     "other-tenant"})
+        owner-sess (session/create-session (get th/*system* :app.http.session/manager)
+                                           {:profile-id (:id profile)})
+        out        (multipart-complete job-id (artifact-tempfile "penpot")
+                                       :session-id (:id owner-sess))]
+    (t/is (nil? (:error out)))
+    (t/is (= {:action :skip} (:result out)))
+    (t/testing "nothing was stored, written or closed"
+      (t/is (zero? (count (th/db-exec! ["SELECT id FROM storage_object"]))))
+      (t/is (= "completed" (:status (get-row job-id))))
+      (t/is (some? (get-session-row (:id owner-sess)))))))
+
+(t/deftest complete-job-params-form-skips-a-terminal-job-of-another-tenant
+  (let [job-id (mk-job {:status "completed" :tenant "other-tenant"})
+        out    (mgmt :complete-job {:job-id job-id
+                                    :result {:x 1}})]
+    (t/is (nil? (:error out)))
+    (t/is (= {:action :skip} (:result out)))
+    (t/is (= "completed" (:status (get-row job-id))))))
 
 (t/deftest complete-job-refuses-an-upload-outside-multipart
   ;; The upload map names a server path: only a request the multipart

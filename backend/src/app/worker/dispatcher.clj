@@ -11,6 +11,7 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.job :as ctj]
    [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
@@ -100,8 +101,17 @@ RETURNING job.id, job.queue, job.name, job.created_at")
    SELECT unnest(?::uuid[]), 'end', ?::jsonb")
 
 (defn- encode-payload
+  "The payload the queue carries: the job id and its `scheduled-at`, in
+  the shape the consumer decodes (`app.common.types.job`). A drift
+  fails here, on the producer, instead of at the claim."
   [{:keys [id scheduled-at]}]
-  (json/encode [(str id) (ct/format-inst scheduled-at)]))
+  (let [payload [(str id) (ct/format-inst scheduled-at)]]
+    (when-not (ctj/valid-queue-payload? payload)
+      (throw (ex-info "invalid queue payload"
+                      {:type :assertion
+                       :code :invalid-queue-payload
+                       :payload payload})))
+    (json/encode payload)))
 
 (defn- reschedule-lost-jobs
   [{:keys [::db/conn ::timestamp ::wrk/tenant] :as cfg}]

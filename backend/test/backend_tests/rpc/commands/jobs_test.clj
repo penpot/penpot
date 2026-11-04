@@ -223,8 +223,8 @@
            :object-id (or object-id (uuid/next))
            :type      (or type :png)
            :name      (or name "shape")
+           :suffix    (or suffix "")
            :scale     (or scale 1)}
-    suffix   (assoc :suffix suffix)
     share-id (assoc :share-id share-id)))
 
 (defn- create-export-assets-job

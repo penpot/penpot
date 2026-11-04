@@ -54,6 +54,40 @@
       (finally
         (await (fsp/rm dir #js {:recursive true :force true}))))))
 
+(t/deftest ^:async abort-zip-destroys-the-write-stream
+  (let [dir      (test-area)
+        _        (await (fsp/mkdir dir #js {:recursive true}))
+        resource (rsc/create dir :zip "the export")
+        zip      (rsc/create-zip :resource resource)
+        ^js out  (unchecked-get zip "__out")]
+    (try
+      (t/testing "the stream is open before the abort"
+        (t/is (false? (.-destroyed out))))
+      (rsc/abort-zip zip)
+      (t/testing "the abort releases the descriptor"
+        (t/is (true? (.-destroyed out))))
+      (t/testing "a second abort is harmless"
+        (t/is (nil? (rsc/abort-zip zip)))
+        (t/is (true? (.-destroyed out))))
+      (finally
+        (await (fsp/rm dir #js {:recursive true :force true}))))))
+
+(t/deftest ^:async abort-zip-after-close-is-a-no-op
+  (let [dir      (test-area)
+        _        (await (fsp/mkdir dir #js {:recursive true}))
+        resource (rsc/create dir :zip "the export")
+        member   (path/join dir "member.txt")
+        _        (await (fsp/writeFile member "member!"))
+        zip      (rsc/create-zip :resource resource)]
+    (try
+      (rsc/add-to-zip zip member "member.txt")
+      (await (rsc/close-zip zip {:timeout-ms 1000}))
+      (t/testing "an abort after the close does not disturb the artifact"
+        (t/is (nil? (rsc/abort-zip zip)))
+        (t/is (pos? (.-size (await (fsp/stat (:path resource)))))))
+      (finally
+        (await (fsp/rm dir #js {:recursive true :force true}))))))
+
 (defn- fake-zip
   "An event-emitter stand-in for `close-zip`: records its listeners and
   runs `on-finalize` with them once finalized."

@@ -39,10 +39,21 @@
 
 ;; The tests that ride the mock http must never leave a rejected promise
 ;; dangling: a dangling one kills the whole run with ERR_UNHANDLED_REJECTION
-;; and without any way to point at the chain that broke. Log and keep going.
+;; and without any way to point at the chain that broke. The run keeps
+;; going so it can report every test, but the summary counts each one as
+;; a failure: a broken chain is a regression, not a log line.
+(def ^:private dangling-rejections (atom []))
+
 (js/process.on "unhandledRejection"
                (fn [reason _promise]
-                 (println (str "UNHANDLED-REJECTION: " reason))))
+                 (swap! dangling-rejections conj reason)))
+
+(defn- rejection-text
+  [reason]
+  (let [stack (unchecked-get reason "stack")]
+    (if (string? stack)
+      (str reason "\n" stack)
+      (str reason))))
 
 (def test-namespaces
   ['exporter-tests.browser-scope-test
@@ -194,6 +205,11 @@
                         (partial merge-with +)
                         (:report-counters (t/get-current-env))))
               (fn []
+                (let [dangling @dangling-rejections]
+                  (when (seq dangling)
+                    (doseq [reason dangling]
+                      (println (str "UNHANDLED-REJECTION: " (rejection-text reason))))
+                    (vswap! summary update :fail + (count dangling))))
                 (t/report @summary)
                 (t/report (assoc @summary :type :end-run-tests)))]))))
 

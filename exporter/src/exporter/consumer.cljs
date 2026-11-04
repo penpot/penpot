@@ -261,18 +261,23 @@
                                                 plan/sanitize-file-regex
                                                 "_"))
                    nil)]
-    (check-beat (await (beat :rendering (counter counter-kind 0 total) :force? true)))
-    (await (render {:exports         (mapv #(cond-> (assoc % :job-id job-id)
-                                              (some? (:skip-children plan))
-                                              (assoc :skip-children (:skip-children plan)))
-                                           prepared)
-                    :on-object       append
-                    :check-cancelled check-cancelled}))
-    (when-let [cause @failure]
-      (throw cause))
-    (await (rsc/close-zip zip))
-    (check-beat (await (beat :packaging (counter counter-kind total total) :force? true)))
-    resource))
+    (try
+      (check-beat (await (beat :rendering (counter counter-kind 0 total) :force? true)))
+      (await (render {:exports         (mapv #(cond-> (assoc % :job-id job-id)
+                                                (some? (:skip-children plan))
+                                                (assoc :skip-children (:skip-children plan)))
+                                             prepared)
+                      :on-object       append
+                      :check-cancelled check-cancelled}))
+      (when-let [cause @failure]
+        (throw cause))
+      (await (rsc/close-zip zip))
+      (check-beat (await (beat :packaging (counter counter-kind total total) :force? true)))
+      resource
+      (finally
+        ;; A render that failed or was cancelled never reaches the close
+        ;; above: destroying the stream is what releases the descriptor.
+        (rsc/abort-zip zip)))))
 
 (defn- ^:async join-pdf
   "The pages render one file per page; `pdfunite` stitches one pdf out

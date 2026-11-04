@@ -74,6 +74,18 @@
   [calls]
   (some #(and (vector? %) (= :post (first %))) calls))
 
+(defn- multi-behavior
+  "Posts every object back to back and then the settle, the way the real
+  worker does: nothing waits for the main thread between messages."
+  [payloads]
+  (fn [^js emitter _msg]
+    (js/setTimeout
+     (fn []
+       (doseq [payload payloads]
+         (.emit emitter "message" #js {:type "object" :payload (transit/encode-str payload)}))
+       (.emit emitter "message" #js {:type "done"}))
+     0)))
+
 (t/deftest ^:async run-shares-one-worker-across-renders
   (try
     (let [calls  (atom [])
@@ -152,6 +164,47 @@
                           (await (render-fn (test-params))))))
       (t/is (some #{:first-failed} @calls))
       (t/is (= [{:id "o1"}] @seen)))
+    (catch :default cause
+      (t/is false (str "unexpected failure: " (ex-message cause))))))
+
+(t/deftest ^:async a-slow-on-object-settles-before-the-render
+  ;; The worker posts every object and `done` in one burst; the settle
+  ;; must wait for the callbacks, or a multi-object export can close its
+  ;; artifact with entries still pending.
+  (try
+    (let [calls  (atom [])
+          worker (stub-worker calls (multi-behavior [{:id "o1"} {:id "o2"}]))
+          seen   (atom [])
+          cfg    (test-cfg calls worker
+                           (fn [object]
+                             ;; resolves on a later tick, like a beat does
+                             (js/Promise.
+                              (fn [resolve]
+                                (js/setTimeout
+                                 (fn []
+                                   (swap! seen conj (:id object))
+                                   (resolve nil))
+                                 5))))
+                           (atom false))]
+      (await (scope/run cfg (fn [render-fn] (render-fn (test-params)))))
+      (t/testing "every object landed before the render resolved"
+        (t/is (= ["o1" "o2"] @seen))))
+    (catch :default cause
+      (t/is false (str "unexpected failure: " (ex-message cause))))))
+
+(t/deftest ^:async a-rejected-on-object-rejects-the-render
+  (try
+    (let [calls  (atom [])
+          worker (stub-worker calls (multi-behavior [{:id "o1"}]))
+          cfg    (test-cfg calls worker
+                           (fn [_object]
+                             (js/Promise.reject (ex-info "append broke" {})))
+                           (atom false))]
+      (try
+        (await (scope/run cfg (fn [render-fn] (render-fn (test-params)))))
+        (t/is false "a rejected on-object must reject the render")
+        (catch :default cause
+          (t/is (= "append broke" (ex-message cause))))))
     (catch :default cause
       (t/is false (str "unexpected failure: " (ex-message cause))))))
 

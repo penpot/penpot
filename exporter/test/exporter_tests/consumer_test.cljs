@@ -23,6 +23,7 @@
    [exporter.consumer.api :as api]
    [exporter.jobs :as jobs]
    [exporter.renderer :as renderer]
+   [exporter.resources :as rsc]
    [exporter.shell :as shell]))
 
 ;; ---- THE MANAGEMENT FAKE
@@ -359,6 +360,34 @@
       (catch :default cause
         (t/is false (str "unexpected failure: " (ex-message cause))))
       (finally
+        (restore-fetch)))))
+
+(t/deftest ^:async a-failed-multi-run-aborts-the-zip
+  ;; A render that fails after an object landed must destroy the write
+  ;; stream: removing the temp path does not close the handle.
+  (let [restore-fetch (fake-fetch (answer-with (uuid/next) (volatile! [])))
+        original      rsc/abort-zip
+        aborted       (atom 0)
+        render        (fn [{:keys [on-object]}]
+                        (let [path (shell/tempfile (os/tmpdir) :prefix "penpot.abort."
+                                                   :suffix ".png")]
+                          (-> (.then (fsp/writeFile path "rendered!")
+                                     (fn [_] (on-object {:path path :filename "one.png"})))
+                              (.then (fn [_] (js/Promise.reject (ex-info "render boom" {})))))))
+        job-id        (uuid/next)]
+    (set! rsc/abort-zip (fn [zip] (swap! aborted inc) (original zip)))
+    (try
+      (await (consumer/run-export render (os/tmpdir) {:job-id job-id}
+                                  {:exports [(one-shape "one") (one-shape "two")]
+                                   :name    "the export"}))
+      (t/testing "the run settled as failed"
+        (t/is (= "fail-job" (last (steps-of)))))
+      (t/testing "the zip was aborted, not left open"
+        (t/is (= 1 @aborted)))
+      (catch :default cause
+        (t/is false (str "unexpected failure: " (ex-message cause))))
+      (finally
+        (set! rsc/abort-zip original)
         (restore-fetch)))))
 
 (t/deftest ^:async cancel-before-the-render-settles-cancelled

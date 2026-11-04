@@ -31,7 +31,7 @@
    ;; a plain string on purpose, empty included: the export form sends
    ;; `""` when the user types no suffix, and the legacy `/api/export`
    ;; surface took it that way; the worker concatenates it as-is
-   [:suffix    {:optional true} :string]
+   [:suffix    :string]
    [:scale     ::sm/number]
    [:share-id  {:optional true} ::sm/uuid]])
 
@@ -48,7 +48,7 @@
   joins pages into one pdf); absent it is a shapes export. The worker
   reads it as declared instead of inferring it from the items."
   [:map {:title "export-assets-params" :closed true}
-   [:exports        [:vector {:min 1} schema:export-item]]
+   [:exports        schema:export-items]
    [:kind           {:optional true} [::sm/one-of #{:shapes :frames}]]
    [:name           {:optional true} ::sm/text]
    [:skip-children  {:optional true} ::sm/boolean]

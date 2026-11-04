@@ -18,6 +18,7 @@
    ["archiver" :as arc]
    ["node:fs" :as fs]
    ["node:path" :as path]
+   [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
    [cljs.core :as c]
    [cuerdas.core :as str]
@@ -43,6 +44,8 @@
   (let [^js zip  (new arc/ZipArchive)
         ^js out  (fs/createWriteStream (:path resource))
         on-complete (or on-complete (constantly nil))
+        on-progress (or on-progress (constantly nil))
+        on-error    (or on-error (constantly nil))
         progress (atom 0)]
     (.on zip "error" on-error)
     (.on zip "end" on-complete)
@@ -51,6 +54,9 @@
                              num  (swap! progress inc)]
                          (on-progress {:done num :filename name}))))
     (.pipe zip out)
+    ;; The stream belongs to the archiver: `abort-zip` needs it to close
+    ;; the descriptor of a run that never reaches the happy path.
+    (unchecked-set zip "__out" out)
     zip))
 
 (defn add-to-zip
@@ -73,4 +79,19 @@
                            (reject cause))]
                (.on ^js zip "close" (fn [] (done)))
                (.on ^js zip "error" (fn [cause] (fail cause)))
-               (.finalize ^js zip)))))))
+               (.finalize ^js zip)))))
+   (unchecked-set zip "__closed" true)
+   nil))
+
+(defn abort-zip
+  "Abort `zip` and destroy the write stream behind it, so a render that
+  fails or is cancelled does not leave the descriptor open: releasing
+  the temp path removes the name, not the handle. Idempotent, and safe
+  after `close-zip` (the archiver is then already settled)."
+  [zip]
+  (when (and (some? zip) (not (unchecked-get zip "__closed")))
+    (ex/ignoring (.abort ^js zip))
+    (when-let [out (unchecked-get zip "__out")]
+      (ex/ignoring (.destroy ^js out)))
+    (unchecked-set zip "__closed" true))
+  nil)
