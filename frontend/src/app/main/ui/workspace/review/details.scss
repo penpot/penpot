@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
@@ -79,26 +79,10 @@
   background-color: var(--color-accent-success);
 }
 
-.link {
-  @include use-typography("body-small");
-
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-xs);
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--color-accent-primary);
-  cursor: pointer;
-
-  &:hover {
-    text-decoration: underline;
-  }
-
-  &.is-muted {
-    color: var(--color-foreground-secondary);
-    text-transform: uppercase;
-  }
+// TODO: No exact DS typography match found.
+// Closest match: headline-small (weight 400 vs 500, line-height 1.3 vs 1.2).
+.closed-toggle {
+  text-transform: uppercase;
 }
 
 // --- Overview
@@ -160,23 +144,12 @@
 }
 
 .mini-bar {
-  display: block;
   flex: 1;
   min-inline-size: $sz-32;
-  block-size: var(--sp-xs);
-  border-radius: $br-4;
-  background-color: var(--color-background-quaternary);
-  overflow: hidden;
-
-  &.is-wide {
-    inline-size: 100%;
-  }
 }
 
-.mini-bar-fill {
-  display: block;
-  block-size: 100%;
-  background-color: var(--color-accent-info);
+.wide-bar {
+  inline-size: 100%;
 }
 
 .section {
@@ -194,6 +167,9 @@
 .section-title {
   margin: 0;
   color: var(--color-foreground-secondary);
+
+  // TODO: No exact DS typography match found.
+  // Closest match: headline-small (weight 400 vs 500, line-height 1.3 vs 1.2).
   text-transform: uppercase;
 }
 
@@ -207,22 +183,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-s);
-}
-
-.textarea {
-  @include use-typography("body-small");
-
-  padding: var(--sp-s);
-  border: $b-1 solid var(--color-background-quaternary);
-  border-radius: $br-8;
-  background-color: var(--color-background-tertiary);
-  color: var(--color-foreground-primary);
-  resize: vertical;
-
-  &:focus {
-    outline: none;
-    border-color: var(--color-accent-primary);
-  }
 }
 
 .edit-actions {
@@ -318,7 +278,7 @@
   border: $b-1 solid var(--color-accent-info);
   border-radius: $br-8;
   background-color: var(--color-background-primary);
-  box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);
+  box-shadow: 0 0 px2rem(12) 0 var(--color-shadow-dark);
   pointer-events: none;
 }
 

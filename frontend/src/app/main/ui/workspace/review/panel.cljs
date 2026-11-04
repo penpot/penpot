@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.review.panel
   "The right panel of the review mode and the tasks tab of the comments
@@ -23,12 +23,15 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.ds.product.avatar :refer [avatar*]]
+   [app.main.ui.ds.product.comment-card :refer [comment-card*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.ds.product.filter-chip :refer [filter-chip*]]
-   [app.main.ui.workspace.review.common :as rvc :refer [layer-chip*]]
+   [app.main.ui.ds.product.layer-chip :refer [layer-chip*]]
+   [app.main.ui.workspace.review.common :as rvc]
    [app.main.ui.workspace.review.tasks :as rvt]
    [app.main.ui.workspace.sidebar.pull-requests :as prui :refer [pr-state-badge*]]
    [app.util.dom :as dom]
@@ -46,7 +49,7 @@
                       threads)
     (remove :is-resolved threads)))
 
-(mf/defc comment-card*
+(mf/defc thread-card*
   "A comment thread of the review: its number and board, who wrote it and
   when, what it points at, its text and its replies."
   {::mf/private true}
@@ -61,29 +64,23 @@
            (dom/stop-propagation event)
            (st/emit! (dwcm/navigate-to-comment thread))))]
 
-    [:button {:class (stl/css-case :comment-card true
-                                   :is-open is-open
-                                   :is-resolved (:is-resolved thread))
-              :type "button"
-              :on-click on-click}
-     [:> text* {:as "span" :typography t/body-small :class (stl/css :card-location)}
-      "#" (:seqn thread) " - " (rvc/board-name objects (:frame-id thread))]
-     [:div {:class (stl/css :card-author)}
-      [:> avatar* {:profile owner :variant "M"}]
-      [:div {:class (stl/css :card-author-identity)}
-       [:> text* {:as "span" :typography t/body-small :class (stl/css :card-author-name)}
-        (:fullname owner)]
-       [:> text* {:as "span" :typography t/body-small :class (stl/css :card-muted)}
-        (ct/timeago (:modified-at thread))]]]
-     [:> layer-chip* {:label (rvc/thread-anchor-label objects thread)
-                      :icon (rvc/thread-anchor-icon thread)}]
-     [:div {:class (stl/css :card-content)}
-      [:> cmt/comment-content* {:content (:content thread)}]]
-     [:> text* {:as "span" :typography t/body-small :class (stl/css :card-muted)}
-      (case replies
-        0 (tr "workspace.review.comments.no-replies")
-        1 (tr "workspace.review.comments.one-reply")
-        (tr "workspace.review.comments.replies" replies))]]))
+    [:> comment-card* {:location (tr "workspace.review.text-and-detail"
+                                     (tr "workspace.review.comment-number" (:seqn thread))
+                                     (rvc/board-name objects (:frame-id thread)))
+                       :author (:fullname owner)
+                       :time (ct/timeago (:modified-at thread))
+                       :replies (case replies
+                                  0 (tr "workspace.review.comments.no-replies")
+                                  1 (tr "workspace.review.comments.one-reply")
+                                  (tr "workspace.review.comments.replies" replies))
+                       :avatar (mf/html [:> avatar* {:profile owner :variant "M"}])
+                       :anchor (mf/html
+                                [:> layer-chip* {:label (rvc/thread-anchor-label objects thread)
+                                                 :icon (rvc/thread-anchor-icon thread)}])
+                       :is-open is-open
+                       :is-resolved (:is-resolved thread)
+                       :on-click on-click}
+     [:> cmt/comment-content* {:content (:content thread)}]]))
 
 (mf/defc comments-tab*
   "The comment threads `threads`: filters and the cards grouped by board
@@ -137,15 +134,17 @@
         (for [[[page-id frame-id] items] groups]
           (let [objects (dm/get-in data [:pages-index page-id :objects])]
             [:section {:key (dm/str page-id frame-id) :class (stl/css :group)}
-             [:> text* {:as "h3" :typography t/body-small :class (stl/css :group-title)}
+             [:> heading* {:level 3 :typography t/body-small :class (stl/css :group-title)}
               (if show-page
-                (dm/str (:page-name (first items)) " - " (rvc/board-name objects frame-id))
+                (tr "workspace.review.text-and-detail"
+                    (:page-name (first items))
+                    (rvc/board-name objects frame-id))
                 (rvc/board-name objects frame-id))]
              (for [thread items]
-               [:> comment-card* {:key (dm/str (:id thread))
-                                  :thread thread
-                                  :objects objects
-                                  :is-open (= (:id thread) (:open clocal))}])]))])]))
+               [:> thread-card* {:key (dm/str (:id thread))
+                                 :thread thread
+                                 :objects objects
+                                 :is-open (= (:id thread) (:open clocal))}])]))])]))
 
 ;; --- Tasks
 
@@ -212,7 +211,7 @@
        [:div {:class (stl/css :groups)}
         (for [{:keys [id title tasks]} (rvt/group-tasks shown)]
           [:section {:key (dm/str id) :class (stl/css :group)}
-           [:> text* {:as "h3" :typography t/body-small :class (stl/css :group-title)}
+           [:> heading* {:level 3 :typography t/body-small :class (stl/css :group-title)}
             (if (= :other id)
               (tr "workspace.tasks.group.other")
               (tr "workspace.tasks.group.review" title))]
@@ -232,16 +231,17 @@
 (mf/defc review-header*
   {::mf/private true}
   [{:keys [pr]}]
-  (let [[approvals total] (prui/current-approvals pr)]
+  (let [[approvals total] (prui/current-approvals pr)
+        route (tr "workspace.review.route" (:branch-name pr) (tr "workspace.branches.main"))]
     [:div {:class (stl/css :review-header)}
      [:div {:class (stl/css :review-title-row)}
-      [:> text* {:as "h2" :typography t/body-large :class (stl/css :review-title)}
+      [:> heading* {:level 2 :typography t/body-large :class (stl/css :review-title)}
        (:title pr)]
       [:> pr-state-badge* {:pr pr}]]
      [:> text* {:as "span" :typography t/body-small :class (stl/css :review-route)}
-      (dm/str (:branch-name pr) " → " (tr "workspace.branches.main"))
-      (when (pos? total)
-        (dm/str " - " (tr "workspace.review.approved-of" approvals total)))]]))
+      (if (pos? total)
+        (tr "workspace.review.text-and-detail" route (tr "workspace.review.approved-of" approvals total))
+        route)]]))
 
 (mf/defc review-panel*
   "The right panel of the review mode: the inspect of the selection
@@ -290,7 +290,9 @@
                           :on-change on-tab
                           :scrollable-panel (not= tab :inspect)
                           :class (stl/css :review-tabs)}
-        (case tab
-          :inspect [:div {:class (stl/css :inspect-tab)} inspect]
-          :tasks   [:> tasks-tab* {:tasks tasks :pull-request-id pr-id}]
-          [:> comments-tab* {:threads threads}])]])))
+        (if (= tab :inspect)
+          [:div {:class (stl/css :inspect-tab)} inspect]
+          [:div {:class (stl/css :review-tab-content)}
+           (if (= tab :tasks)
+             [:> tasks-tab* {:tasks tasks :pull-request-id pr-id}]
+             [:> comments-tab* {:threads threads}])])]])))

@@ -15,6 +15,7 @@
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
    [app.main.ui.workspace.review.markers :as rvm]
+   [app.main.ui.workspace.review.tasks :as rvt]
    [app.main.ui.workspace.viewport.rulers :as rulers]
    [rumext.v2 :as mf]))
 
@@ -69,7 +70,8 @@
      {:thread thread
       :viewport viewport
       :position-modifier position-modifier
-      :zoom zoom}]))
+      :zoom zoom
+      :task-section rvt/thread-task-section*}]))
 
 (mf/defc comments-layer*
   {::mf/wrap [mf/memo]}

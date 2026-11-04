@@ -27,7 +27,6 @@
    [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as h]
-   [app.main.ui.workspace.review.tasks :as rvt]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -1093,21 +1092,9 @@
   [thread-id]
   (l/derived (l/in [:comments thread-id]) st/state))
 
-(mf/defc thread-task-section*
-  "The task a thread is attached to, inside the thread: its state, what
-  happened to it and what to do next."
-  {::mf/private true}
-  [{:keys [task thread]}]
-  (let [events (rvt/use-task-events (:id task))]
-    [:div {:class (stl/css :thread-task)}
-     [:> rvt/task-state-line* {:task task}]
-     (for [event events]
-       [:> rvt/task-event* {:key (dm/str (:id event)) :event event :thread thread}])
-     [:> rvt/task-next-step* {:task task}]]))
-
 (mf/defc comment-floating-thread*
   {::mf/wrap [mf/memo]}
-  [{:keys [thread zoom origin position-modifier viewport]}]
+  [{:keys [thread zoom origin position-modifier viewport task-section]}]
   (let [ref           (mf/use-ref)
         mentions-s    (mf/use-memo #(rx/subject))
         thread-id     (:id thread)
@@ -1194,8 +1181,9 @@
            [:* {:key (dm/str (:id item))}
             [:> comment-floating-thread-item* {:comment item}]])
 
-         (when (and (some? task) (not= origin :viewer))
-           [:> thread-task-section* {:task task :thread thread}])]
+         ;; the workspace passes what a thread shows about its task
+         (when (and (some? task) (some? task-section))
+           [:> task-section {:task task :thread thread}])]
 
         [:> comment-reply-form* {:on-submit on-submit
                                  :on-cancel (when (= origin :viewer) on-cancel)}]

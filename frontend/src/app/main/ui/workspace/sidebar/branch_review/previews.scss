@@ -2,10 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
-@use "ds/_utils.scss" as *;
 @use "ds/typography.scss" as *;
 
 .preview-svg {
@@ -18,6 +17,7 @@
 .preview-highlight {
   --preview-highlight-color: var(--color-accent-success);
 
+  // TODO: no DS token for these tints of the state colors.
   fill: color-mix(in srgb, var(--preview-highlight-color) 12%, transparent);
   stroke: var(--preview-highlight-color);
   stroke-width: 2;
@@ -38,6 +38,9 @@
   @include use-typography("headline-medium");
 
   color: var(--color-static-black);
+
+  // TODO: No exact DS typography match found.
+  // Closest match: headline-medium (line-height 1 vs 1.4).
   line-height: 1;
 }
 
@@ -51,6 +54,7 @@
 // the empty stage sits on the light checkerboard of `preview-card*`, the
 // same in both themes, so its text is dark whatever the theme
 .preview-missing {
+  // TODO: no DS token for the tints of this color in this block.
   --preview-missing-color: var(--color-static-black);
 
   display: flex;

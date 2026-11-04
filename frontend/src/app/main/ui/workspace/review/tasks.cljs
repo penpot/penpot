@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.review.tasks
   "Tasks in the workspace: the list of tasks, the menu of a task, what a
@@ -23,15 +23,19 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.buttons.link-button :refer [link-button*]]
    [app.main.ui.ds.controls.select :refer [select*]]
+   [app.main.ui.ds.controls.textarea :refer [textarea*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.layout.menu :refer [menu* menu-item*]]
    [app.main.ui.ds.product.avatar :refer [avatar*]]
+   [app.main.ui.ds.product.layer-chip :refer [layer-chip*]]
+   [app.main.ui.ds.product.progress-bar :refer [progress-bar*]]
    [app.main.ui.ds.product.task-row :refer [task-row*]]
    [app.main.ui.ds.product.task-status :refer [task-status*]]
-   [app.main.ui.workspace.review.common :as rvc :refer [layer-chip*]]
+   [app.main.ui.workspace.review.common :as rvc]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -47,6 +51,7 @@
 (mf/defc task-menu*
   "The actions of a task, behind a menu trigger: the moves its state
   allows, linking it to another layer and deleting it."
+  {::mf/private true}
   [{:keys [task]}]
   (let [open*   (mf/use-state false)
         open?   (deref open*)
@@ -60,52 +65,59 @@
 
         on-open-change (mf/use-fn #(reset! open* %))
 
-        set-status
-        (fn [status]
-          (fn [_]
-            (reset! open* false)
-            (st/emit! (dwtk/set-task-status task status))))
+        ;; the shortcuts of the workspace take Enter on any element and cancel
+        ;; its default: kept from them, Enter clicks the trigger of the menu
+        on-key-down
+        (mf/use-fn
+         (fn [event]
+           (when (kbd/enter? event)
+             (dom/stop-propagation event))))
 
-        on-relink
+        on-action
         (mf/use-fn
          (mf/deps task)
-         (fn [_]
+         (fn [action]
            (reset! open* false)
-           (st/emit! (dwtk/start-relink (:id task)))))
+           (case action
+             "done"    (st/emit! (dwtk/set-task-status task "done"))
+             "verify"  (st/emit! (dwtk/set-task-status task "verified"))
+             "reopen"  (st/emit! (dwtk/set-task-status task "reopened"))
+             "wont-do" (st/emit! (dwtk/set-task-status task "wont-do"))
+             "relink"  (st/emit! (dwtk/start-relink (:id task)))
+             "delete"  (st/emit! (dwtk/delete-task (:id task)))
+             nil)))]
 
-        on-delete
-        (mf/use-fn
-         (mf/deps task)
-         (fn [_]
-           (reset! open* false)
-           (st/emit! (dwtk/delete-task (:id task)))))]
-
-    [:div {:on-click dom/stop-propagation}
+    [:div {:on-click dom/stop-propagation
+           :on-key-down on-key-down}
      [:> menu* {:is-open open?
                 :on-open-change on-open-change
+                :on-action on-action
                 :placement "bottom end"
                 :trigger (mf/html
                           [:> icon-button* {:variant "ghost"
                                             :icon i/menu
                                             :aria-label (tr "labels.options")
+                                            :aria-haspopup "menu"
+                                            :aria-expanded open?
+                                            ;; the DS button draws its pressed look from this
                                             :aria-pressed open?
                                             :on-click on-toggle}])}
       (when (dwtk/to-do? task)
-        [:> menu-item* {:id "done" :on-action (set-status "done")}
+        [:> menu-item* {:id "done"}
          (tr "workspace.tasks.actions.mark-done")])
       (when (= "done" status)
-        [:> menu-item* {:id "verify" :on-action (set-status "verified")}
+        [:> menu-item* {:id "verify"}
          (tr "workspace.tasks.actions.verify")])
       (when (or (= "done" status) (dwtk/closed? task))
-        [:> menu-item* {:id "reopen" :on-action (set-status "reopened")}
+        [:> menu-item* {:id "reopen"}
          (tr "workspace.tasks.actions.reopen")])
       (when (dwtk/to-do? task)
-        [:> menu-item* {:id "wont-do" :on-action (set-status "wont-do")}
+        [:> menu-item* {:id "wont-do"}
          (tr "workspace.tasks.actions.wont-do")])
       (when-not (dwtk/closed? task)
-        [:> menu-item* {:id "relink" :on-action on-relink}
+        [:> menu-item* {:id "relink"}
          (tr "workspace.tasks.actions.relink")])
-      [:> menu-item* {:id "delete" :on-action on-delete}
+      [:> menu-item* {:id "delete"}
        (tr "workspace.tasks.actions.delete")]]]))
 
 ;; --- List of tasks
@@ -204,6 +216,7 @@
 
 (mf/defc task-event*
   "One line of what happened to a task."
+  {::mf/private true}
   [{:keys [event thread]}]
   (let [profiles (mf/deref refs/profiles)
         profile  (mf/deref refs/profile)
@@ -221,6 +234,7 @@
 
 (mf/defc task-state-line*
   "The state of a task, who it is for and the review it comes from."
+  {::mf/private true}
   [{:keys [task]}]
   (let [profiles  (mf/deref refs/profiles)
         profile   (mf/deref refs/profile)
@@ -251,15 +265,14 @@
        [:*
         [:> text* {:as "span" :typography t/body-small :class (stl/css :task-state-text)}
          (tr "workspace.tasks.from")]
-        [:button {:class (stl/css :task-review-link)
-                  :type "button"
-                  :on-click on-open-review}
-         [:> icon* {:icon-id i/git-pull-request-arrow :size "s"}]
+        [:> link-button* {:icon i/git-pull-request-arrow
+                          :on-click on-open-review}
          (:review-title task)]])]))
 
 (mf/defc task-next-step*
   "What to do next with a task: verify a done task (or reopen it), and
   decide about a task whose layer was deleted."
+  {::mf/private true}
   [{:keys [task]}]
   (let [profiles  (mf/deref refs/profiles)
         data      (mf/deref refs/workspace-data)
@@ -333,7 +346,7 @@
 
       :else nil)))
 
-(defn use-task-events
+(defn- use-task-events
   "The events of `task`, loaded once the task is shown."
   [task-id]
   (let [events (mf/deref refs/task-events)]
@@ -341,6 +354,19 @@
       (when task-id
         (st/emit! (dwtk/fetch-task-events task-id))))
     (get events task-id)))
+
+;; --- The task a comment thread is attached to
+
+(mf/defc thread-task-section*
+  "The task a thread is attached to, inside the thread: its state, what
+  happened to it and what to do next."
+  [{:keys [task thread]}]
+  (let [events (use-task-events (:id task))]
+    [:div {:class (stl/css :thread-task)}
+     [:> task-state-line* {:task task}]
+     (for [event events]
+       [:> task-event* {:key (dm/str (:id event)) :event event :thread thread}])
+     [:> task-next-step* {:task task}]]))
 
 ;; --- A task without a thread, open on the canvas
 
@@ -370,7 +396,9 @@
            :on-click dom/stop-propagation}
      [:div {:class (stl/css :floating-header)}
       [:> text* {:as "span" :typography t/body-small :class (stl/css :floating-title)}
-       (tr "workspace.tasks.task") " - " (rvc/board-name objects (:frame-id task))]
+       (tr "workspace.review.text-and-detail"
+           (tr "workspace.tasks.task")
+           (rvc/board-name objects (:frame-id task)))]
       [:> task-menu* {:task task}]
       [:> icon-button* {:variant "ghost"
                         :icon i/close
@@ -465,14 +493,14 @@
                         :aria-label (tr "labels.close")
                         :on-click on-cancel}]]
      [:div {:class (stl/css :floating-body)}
-      [:textarea {:class (stl/css :task-title-input)
-                  :value title
-                  :auto-focus true
-                  :rows 3
-                  :max-length 250
-                  :aria-label (tr "workspace.tasks.title")
-                  :placeholder (tr "workspace.tasks.title-placeholder")
-                  :on-change on-title-change}]
+      [:> textarea* {:class (stl/css :task-title-input)
+                     :value title
+                     :auto-focus true
+                     :rows 3
+                     :max-length 250
+                     :aria-label (tr "workspace.tasks.title")
+                     :placeholder (tr "workspace.tasks.title-placeholder")
+                     :on-change on-title-change}]
       (when thread?
         [:> text* {:as "p" :typography t/body-small :class (stl/css :form-hint)}
          (tr "workspace.tasks.make-task.hint")])
@@ -517,17 +545,9 @@
       [:> text* {:as "span" :typography t/body-small :class (stl/css :progress-label)}
        (tr "workspace.tasks.closed-of" closed total)]
       (when (pos? to-verify)
-        [:button {:class (stl/css :progress-link)
-                  :type "button"
-                  :on-click on-to-verify}
+        [:> link-button* {:tone "info" :on-click on-to-verify}
          (tr "workspace.tasks.to-verify" to-verify)])]
-     [:div {:class (stl/css :progress-bar)
-            :role "progressbar"
-            :aria-valuemin 0
-            :aria-valuemax total
-            :aria-valuenow closed}
-      [:div {:class (stl/css :progress-fill)
-             :style #js {:width (dm/str (if (pos? total) (* 100 (/ closed total)) 0) "%")}}]]]))
+     [:> progress-bar* {:value closed :total total :class (stl/css :progress-bar)}]]))
 
 (defn count-by
   [f tasks]

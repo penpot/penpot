@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.review.details
   "The details of a design review: an overview (who opened it, where it
@@ -10,6 +10,7 @@
   of the branch did since it opened) and its tasks."
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -20,9 +21,12 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.link-button :refer [link-button*]]
    [app.main.ui.ds.controls.select :refer [select*]]
+   [app.main.ui.ds.controls.textarea :refer [textarea*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.layout.modal :refer [modal* modal-content* modal-footer*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
@@ -31,6 +35,7 @@
    [app.main.ui.ds.product.change-row :refer [change-row*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.ds.product.filter-chip :refer [filter-chip*]]
+   [app.main.ui.ds.product.progress-bar :refer [progress-bar*]]
    [app.main.ui.ds.product.tag :refer [tag*]]
    [app.main.ui.ds.product.task-status :refer [task-status*]]
    [app.main.ui.hooks :as hooks]
@@ -80,20 +85,19 @@
 
     [:section {:class (stl/css :section)}
      [:div {:class (stl/css :section-head)}
-      [:> text* {:as "h3" :typography t/body-small :class (stl/css :section-title)}
+      [:> heading* {:level 3 :typography t/body-small :class (stl/css :section-title)}
        (tr "workspace.pull-requests.info.description")]
       (when (and can-edit (not editing?))
-        [:button {:class (stl/css :link) :type "button" :on-click on-edit}
+        [:> link-button* {:on-click on-edit}
          (tr "labels.edit")])]
      (if editing?
        [:div {:class (stl/css :edit-block)}
-        [:textarea {:class (stl/css :textarea)
-                    :value value
-                    :rows 3
-                    :max-length 4000
-                    :auto-focus true
-                    :aria-label (tr "workspace.pull-requests.info.description")
-                    :on-change on-change}]
+        [:> textarea* {:value value
+                       :rows 3
+                       :max-length 4000
+                       :auto-focus true
+                       :aria-label (tr "workspace.pull-requests.info.description")
+                       :on-change on-change}]
         [:div {:class (stl/css :edit-actions)}
          [:> button* {:variant "ghost" :on-click on-cancel} (tr "labels.cancel")]
          [:> button* {:variant "primary" :on-click on-save} (tr "labels.save")]]]
@@ -147,11 +151,10 @@
 
     [:section {:class (stl/css :section)}
      [:div {:class (stl/css :section-head)}
-      [:> text* {:as "h3" :typography t/body-small :class (stl/css :section-title)}
+      [:> heading* {:level 3 :typography t/body-small :class (stl/css :section-title)}
        (tr "workspace.pull-requests.info.reviewers")]
       (when (and can-edit (seq options) (not adding?))
-        [:button {:class (stl/css :link) :type "button" :on-click on-add}
-         [:> icon* {:icon-id i/add :size "s"}]
+        [:> link-button* {:icon i/add :on-click on-add}
          (tr "workspace.review.details.add-reviewer")])]
      (when adding?
        [:> select* {:options (into [{:id "" :label (tr "workspace.review.details.pick-reviewer")}] options)
@@ -176,7 +179,7 @@
                (verdict-label review)]]
              (when-not (str/blank? (:comment review))
                [:> text* {:as "p" :typography t/body-small :class (stl/css :reviewer-comment)}
-                "“" (:comment review) "”"])]))])]))
+                (tr "workspace.review.details.quoted-comment" (:comment review))])]))])]))
 
 (mf/defc overview-tab*
   {::mf/private true}
@@ -237,9 +240,7 @@
         (tr "workspace.review.details.comments-resolved" (:comments-resolved counts 0))]]
       [:> stat-card* {:label (tr "workspace.review.tab.tasks-plain")}
        [:span (tr "workspace.review.details.x-of-y" closed (count tasks))]
-       [:span {:class (stl/css :mini-bar)}
-        [:span {:class (stl/css :mini-bar-fill)
-                :style #js {:width (dm/str (if (seq tasks) (* 100 (/ closed (count tasks))) 0) "%")}}]]]
+       [:> progress-bar* {:value closed :total (count tasks) :class (stl/css :mini-bar)}]]
       [:> stat-card* {:label (tr "workspace.review.details.branch")}
        (cond
          (pos? (or (:conflicts pr) 0))
@@ -273,13 +274,6 @@
 (defn- kind-tone
   [kind]
   (case kind :added "success" :deleted "error" "info"))
-
-(defn- kind-label
-  [kind]
-  (case kind
-    :added   (tr "workspace.review.change.added")
-    :deleted (tr "workspace.review.change.deleted")
-    (tr "workspace.review.change.modified")))
 
 (defn- display-attr
   "A property of a change as the hover card reads it: the token behind a
@@ -324,7 +318,7 @@
     [:div {:class (stl/css :change-card) :role "tooltip" :style (card-style rect)}
      [:div {:class (stl/css :change-card-head)}
       [:> text* {:as "span" :typography t/body-small :class (stl/css :strong)} (:name entry)]
-      [:> tag* {:tone (kind-tone (:kind entry))} (kind-label (:kind entry))]]
+      [:> tag* {:tone (kind-tone (:kind entry))} (rvc/change-kind-label (:kind entry))]]
      [:div {:class (stl/css :change-card-preview)}
       (if (and (some? shape) (not= :deleted (:kind entry)))
         [:> brp/shape-preview* {:shape shape :objects objects}]
@@ -352,8 +346,9 @@
               (tr "workspace.review.activity.now-points-to"
                   (rvc/board-name objects (:frame-id task)))])])])
      [:> text* {:as "span" :typography t/body-small :class (stl/css :muted)}
-      (dm/str (rvc/profile-name profiles (:profile-id entry)) " - "
-              (ct/format-inst (:changed-at entry) :localized-time))]
+      (tr "workspace.review.text-and-detail"
+          (rvc/profile-name profiles (:profile-id entry))
+          (ct/format-inst (:changed-at entry) :localized-time))]
      [:> text* {:as "span" :typography t/body-small :class (stl/css :muted)}
       (if (seq linked)
         (tr "workspace.review.activity.open-task-to-relink")
@@ -363,6 +358,35 @@
   "The changes a group lists before it folds the rest."
   4)
 
+(mf/defc change-item*
+  "One change of a group: a click shows it on the canvas, and hovering it
+  shows what it did."
+  {::mf/private true}
+  [{:keys [entry tasks portal]}]
+  (let [id       (:id entry)
+        tone     (kind-tone (:kind entry))
+        rect*    (mf/use-state nil)
+        rect     (deref rect*)
+
+        on-enter (mf/use-fn #(reset! rect* (dom/get-bounding-rect (dom/get-current-target %))))
+        on-leave (mf/use-fn #(reset! rect* nil))
+        on-show  (mf/use-fn (mf/deps id) #(st/emit! (dwrv/show-change-of id)))]
+
+    [:li {:class (stl/css :change-item)
+          :on-pointer-enter on-enter
+          :on-pointer-leave on-leave}
+     [:> change-row* {:title (or (:name entry) (tr "workspace.review.unknown-name"))
+                      :subtitle (:frame-name entry)
+                      :tone tone
+                      :is-muted (= :deleted (:kind entry))
+                      :end (mf/html [:> tag* {:tone tone}
+                                     (rvc/change-kind-label (:kind entry))])
+                      :on-click on-show}]
+     (when (some? rect)
+       (mf/portal
+        (mf/html [:> change-card* {:entry entry :tasks tasks :rect rect}])
+        portal))]))
+
 (mf/defc change-group*
   {::mf/private true}
   [{:keys [session tasks is-open]}]
@@ -371,8 +395,6 @@
         open?     (deref open*)
         all*      (mf/use-state false)
         all?      (deref all*)
-        hover*    (mf/use-state nil)
-        hover     (deref hover*)
         portal    (hooks/use-portal-container :tooltip)
         entries   (:entries session)
         shown     (if all? entries (take rows-shown entries))
@@ -397,27 +419,29 @@
      (when open?
        [:ul {:class (stl/css :change-rows)}
         (for [entry shown]
-          (let [id (:id entry)]
-            [:li {:key (dm/str id)
-                  :class (stl/css :change-item)
-                  :on-pointer-enter #(reset! hover* {:id id
-                                                     :rect (dom/get-bounding-rect (dom/get-current-target %))})
-                  :on-pointer-leave #(reset! hover* nil)}
-             [:> change-row* {:title (or (:name entry) "—")
-                              :subtitle (:frame-name entry)
-                              :tone (kind-tone (:kind entry))
-                              :is-muted (= :deleted (:kind entry))
-                              :end (mf/html [:> tag* {:tone (kind-tone (:kind entry))}
-                                             (kind-label (:kind entry))])
-                              :on-click #(st/emit! (dwrv/show-change-of id))}]
-             (when (= (:id hover) id)
-               (mf/portal
-                (mf/html [:> change-card* {:entry entry :tasks tasks :rect (:rect hover)}])
-                portal))]))
+          [:> change-item* {:key (dm/str (:id entry))
+                            :entry entry
+                            :tasks tasks
+                            :portal portal}])
         (when (and (not all?) (> (count entries) rows-shown))
           [:li
-           [:button {:class (stl/css :link) :type "button" :on-click on-all}
+           [:> link-button* {:on-click on-all}
             (tr "workspace.review.activity.more" (i18n/c (- (count entries) rows-shown)))]])])]))
+
+(mf/defc day-group*
+  "The changes of one day: only the group of its last session opens."
+  {::mf/private true}
+  [{:keys [sessions tasks]}]
+  (let [sessions (mf/with-memo [sessions]
+                   (into [] d/xf:add-index sessions))]
+    [:section {:class (stl/css :section)}
+     [:> heading* {:level 3 :typography t/body-small :class (stl/css :section-title)}
+      (day-label (:end (first sessions)))]
+     (for [session sessions]
+       [:> change-group* {:key (dm/str (inst-ms (:start session)) (:profile-id session))
+                          :session session
+                          :tasks tasks
+                          :is-open (zero? (::d/index session))}])]))
 
 (mf/defc activity-tab*
   {::mf/private true}
@@ -434,7 +458,8 @@
                                 (let [es (cond->> (:entries s)
                                            (not= :all kind) (filterv #(= kind (:kind %))))]
                                   (when (seq es) (assoc s :entries es)))))))
-        by-day   (partition-by #(day-label (:end %)) sessions)
+        by-day   (mf/with-memo [sessions]
+                   (partition-by #(day-label (:end %)) sessions))
 
         on-filter
         (mf/use-fn
@@ -456,7 +481,7 @@
                              [:modified (tr "workspace.review.change.modified") (:modified counts 0)]
                              [:deleted (tr "workspace.review.change.deleted") (:deleted counts 0)]]]
            [:> filter-chip* {:key (name id)
-                             :label (dm/str label " " n)
+                             :label (tr "workspace.review.label-count" label n)
                              :tone (case id :added "success" :deleted "error" :modified "info" "neutral")
                              :is-selected (= kind id)
                              :data-filter (name id)
@@ -469,14 +494,9 @@
          [:> empty-state* {:icon i/history
                            :text (tr "workspace.review.activity.empty")}]
          (for [day by-day]
-           [:section {:key (day-label (:end (first day))) :class (stl/css :section)}
-            [:> text* {:as "h3" :typography t/body-small :class (stl/css :section-title)}
-             (day-label (:end (first day)))]
-            (for [[index session] (map-indexed vector day)]
-              [:> change-group* {:key (dm/str (inst-ms (:start session)) (:profile-id session))
-                                 :session session
-                                 :tasks tasks
-                                 :is-open (zero? index)}])]))
+           [:> day-group* {:key (day-label (:end (first day)))
+                           :sessions day
+                           :tasks tasks}]))
 
        [:div {:class (stl/css :opened-line)}
         [:> icon* {:icon-id i/git-pull-request-arrow :size "s"}]
@@ -515,10 +535,8 @@
        (for [status ["open" "done" "reopened" "verified" "wont-do"]]
          [:> task-status* {:key status
                            :status status
-                           :label (dm/str (rvc/status-label status) " " (get counts status 0))}])]]
-     [:span {:class (stl/css :mini-bar :is-wide)}
-      [:span {:class (stl/css :mini-bar-fill)
-              :style #js {:width (dm/str (if (seq tasks) (* 100 (/ (count closed-tasks) (count tasks))) 0) "%")}}]]
+                           :label (tr "workspace.review.label-count" (rvc/status-label status) (get counts status 0))}])]]
+     [:> progress-bar* {:value (count closed-tasks) :total (count tasks) :class (stl/css :mini-bar :wide-bar)}]
 
      (if (empty? tasks)
        [:> empty-state* {:icon i/view-as-list :text (tr "workspace.tasks.empty")}]
@@ -526,18 +544,17 @@
         [:> rvt/task-list* {:tasks (vec open-tasks)}]
         (when (seq closed-tasks)
           [:section {:class (stl/css :section)}
-           [:button {:class (stl/css :link :is-muted)
-                     :type "button"
-                     :aria-expanded closed-open?
-                     :on-click on-toggle}
-            [:> icon* {:icon-id (if closed-open? i/arrow-down i/arrow-right) :size "s"}]
+           [:> link-button* {:icon (if closed-open? i/arrow-down i/arrow-right)
+                             :tone "neutral"
+                             :class (stl/css :closed-toggle)
+                             :aria-expanded closed-open?
+                             :on-click on-toggle}
             (tr "workspace.review.details.closed" (count closed-tasks))]
            (when closed-open?
              [:> rvt/task-list* {:tasks (vec closed-tasks)}])])])
 
      [:div {:class (stl/css :push-end-row)}
-      [:button {:class (stl/css :link) :type "button" :on-click on-new}
-       [:> icon* {:icon-id i/add :size "s"}]
+      [:> link-button* {:icon i/add :on-click on-new}
        (tr "workspace.tasks.new-task")]]]))
 
 ;; --- Dialog
@@ -592,10 +609,11 @@
         [:div {:class (stl/css :subtitle)}
          [:> pr-state-badge* {:pr pr}]
          [:> text* {:as "span" :typography t/body-small :class (stl/css :muted)}
-          (dm/str (:branch-name pr) " → " (tr "workspace.branches.main") " - "
-                  (tr "workspace.review.details.opened-by"
-                      (ct/format-inst (:created-at pr) :localized-date)
-                      (get author :fullname "—")))]])}]
+          (tr "workspace.review.text-and-detail"
+              (tr "workspace.review.route" (:branch-name pr) (tr "workspace.branches.main"))
+              (tr "workspace.review.details.opened-by"
+                  (ct/format-inst (:created-at pr) :localized-date)
+                  (or (:fullname author) (tr "workspace.review.unknown-name"))))]])}]
 
      [:> modal-content* {:class (stl/css :content)}
       [:> tab-switcher* {:tabs tabs

@@ -2,11 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
-@use "ds/_sizes.scss" as *;
-@use "ds/typography.scss" as *;
 
 .task-row {
   --task-row-bg-color: var(--color-background-tertiary);
@@ -57,30 +55,6 @@
   align-items: center;
   gap: var(--sp-s);
   min-inline-size: 0;
-}
-
-.layer {
-  @include use-typography("body-small");
-
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-xs);
-  min-inline-size: 0;
-  padding: var(--sp-xxs) var(--sp-s);
-  border-radius: $br-4;
-  background-color: var(--color-background-quaternary);
-  color: var(--color-foreground-secondary);
-
-  &.is-lost {
-    background-color: var(--color-background-warning);
-    color: var(--color-accent-warning);
-  }
-}
-
-.layer-name {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 
 .assignee {

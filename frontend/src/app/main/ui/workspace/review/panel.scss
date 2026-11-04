@@ -2,11 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
-
-@use "ds/_borders.scss" as *;
-@use "ds/_sizes.scss" as *;
-@use "ds/typography.scss" as *;
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
 .review-panel {
   display: flex;
@@ -14,14 +10,14 @@
   gap: var(--sp-m);
   block-size: 100%;
   min-block-size: 0;
-  padding: var(--sp-m) var(--sp-s) 0;
+  padding-block-start: var(--sp-m);
 }
 
 .review-header {
   display: flex;
   flex-direction: column;
   gap: var(--sp-xs);
-  padding-inline: var(--sp-s);
+  padding-inline: var(--sp-m);
 }
 
 .review-title-row {
@@ -45,16 +41,28 @@
 }
 
 .review-tabs {
+  --tabs-nav-padding-inline-start: var(--sp-m);
+  --tabs-nav-padding-inline-end: var(--sp-m);
+
   flex: 1;
   min-block-size: 0;
 }
 
-// the inspect of the workspace, sized to the room the tab leaves it
+// the inspect of the workspace, sized to the room the tab leaves it and with
+// the margins it has there: a review is read-only, but it is no narrower
 .inspect-tab {
   --options-available-height: 100%;
+  --inspect-block-size: 100%;
+  --inspect-content-display: flex;
+  --inspect-tab-block-size: auto;
+  --options-read-only-padding: var(--sp-s) 0 0;
 
   block-size: 100%;
   min-block-size: 0;
+}
+
+.review-tab-content {
+  padding-inline: var(--sp-m);
 }
 
 .tab-content {
@@ -85,6 +93,9 @@
 .group-title {
   margin: 0;
   color: var(--color-foreground-secondary);
+
+  // TODO: No exact DS typography match found.
+  // Closest match: headline-small (weight 400 vs 500, line-height 1.3 vs 1.2).
   text-transform: uppercase;
 }
 
@@ -94,70 +105,4 @@
 
 .new-task {
   inline-size: 100%;
-}
-
-// --- Comment card
-
-.comment-card {
-  --comment-card-bg-color: var(--color-background-tertiary);
-  --comment-card-border-color: transparent;
-
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--sp-s);
-  inline-size: 100%;
-  padding: var(--sp-m);
-  border: $b-1 solid var(--comment-card-border-color);
-  border-radius: $br-8;
-  background-color: var(--comment-card-bg-color);
-  color: var(--color-foreground-primary);
-  text-align: start;
-  cursor: pointer;
-
-  &:hover {
-    --comment-card-bg-color: var(--color-background-quaternary);
-  }
-
-  &:focus-visible {
-    outline: $b-1 solid var(--color-accent-primary);
-  }
-
-  &.is-open {
-    --comment-card-border-color: var(--color-accent-info);
-  }
-
-  &.is-resolved {
-    opacity: 0.7;
-  }
-}
-
-.card-location {
-  color: var(--color-foreground-secondary);
-}
-
-.card-author {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-s);
-}
-
-.card-author-identity {
-  display: flex;
-  flex-direction: column;
-}
-
-.card-author-name {
-  color: var(--color-foreground-primary);
-}
-
-.card-muted {
-  color: var(--color-foreground-secondary);
-}
-
-.card-content {
-  @include use-typography("body-small");
-
-  color: var(--color-foreground-primary);
-  overflow-wrap: anywhere;
 }

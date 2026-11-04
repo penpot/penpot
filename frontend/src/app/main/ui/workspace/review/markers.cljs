@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.review.markers
   "The marks of the design reviews and the tasks on the canvas. They live
@@ -23,6 +23,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.product.review-marker :refer [review-marker*]]
+   [app.main.ui.workspace.review.common :as rvc]
    [app.main.ui.workspace.review.tasks :as rvt]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -112,21 +113,14 @@
                         :aria-label (tr "workspace.review.marker.task" (:title task))
                         :on-click on-click}]))
 
-(mf/defc area-drawer*
-  "The area tool: drag on the canvas to comment on a rectangle."
-  {::mf/private true}
+(mf/defc area-layer*
+  "The area tool of the review mode, over the whole comments layer: drag on
+  the canvas to comment on a rectangle."
   [{:keys [vbox zoom]}]
   (let [start*  (mf/use-state nil)
         start   (deref start*)
         current* (mf/use-state nil)
         current (deref current*)
-
-        to-canvas
-        (fn [event]
-          (let [rect (dom/get-bounding-rect (dom/get-current-target event))
-                pt   (dom/get-client-position event)]
-            {:x (+ (:x vbox) (/ (- (:x pt) (:left rect)) zoom))
-             :y (+ (:y vbox) (/ (- (:y pt) (:top rect)) zoom))}))
 
         on-down
         (mf/use-fn
@@ -134,7 +128,7 @@
          (fn [event]
            (dom/stop-propagation event)
            (dom/capture-pointer event)
-           (let [pt (to-canvas event)]
+           (let [pt (rvc/event->canvas event vbox zoom)]
              (reset! start* pt)
              (reset! current* pt))))
 
@@ -143,7 +137,7 @@
          (mf/deps vbox zoom start)
          (fn [event]
            (when (some? start)
-             (reset! current* (to-canvas event)))))
+             (reset! current* (rvc/event->canvas event vbox zoom)))))
 
         on-up
         (mf/use-fn
@@ -243,8 +237,3 @@
                                                      (if (some? (:thread-id new-task))
                                                        thread-width
                                                        0))}]))]))
-
-(mf/defc area-layer*
-  "The area tool of the review mode, over the whole comments layer."
-  [{:keys [vbox zoom]}]
-  [:> area-drawer* {:vbox vbox :zoom zoom}])

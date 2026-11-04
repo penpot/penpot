@@ -500,23 +500,7 @@
 }
 
 .branch-banner-tasks {
-  @include use-typography("body-small");
-
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-xs);
-  padding: var(--sp-xs) var(--sp-s);
-  border: none;
-  border-radius: $br-8;
-  background: none;
-  color: var(--color-foreground-secondary);
-  white-space: nowrap;
-  cursor: pointer;
-
-  &:hover {
-    background-color: var(--color-background-tertiary);
-    color: var(--color-foreground-primary);
-  }
+  --banner-button-gap: var(--sp-xs);
 }
 
 .branch-banner-icon-warning {

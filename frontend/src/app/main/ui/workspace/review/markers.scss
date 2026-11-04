@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
 
@@ -20,6 +20,8 @@
   position: absolute;
   border: $b-1 dashed var(--color-accent-info);
   border-radius: $br-4;
+
+  // TODO: no DS token for this tint of the review blue.
   background-color: color-mix(in srgb, var(--color-accent-info) 10%, transparent);
   pointer-events: none;
 }

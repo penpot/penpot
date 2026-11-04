@@ -1,0 +1,30 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
+
+.textarea {
+  --textarea-border-color: var(--color-background-quaternary);
+
+  @include use-typography("body-small");
+
+  inline-size: 100%;
+  padding: var(--sp-s);
+  border: $b-1 solid var(--textarea-border-color);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+
+  // a caller may fix its height
+  resize: var(--textarea-resize, vertical);
+
+  &:focus {
+    --textarea-border-color: var(--color-accent-primary);
+
+    outline: none;
+  }
+}

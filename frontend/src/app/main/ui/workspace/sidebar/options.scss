@@ -41,7 +41,10 @@
 
 .read-only {
   grid-template-areas: "right-sidebar";
-  padding: var(--sp-s);
+  padding: var(--options-read-only-padding, var(--sp-s));
+
+  // the grid row of `.tool-window` must not grow with what the inspect holds
+  min-block-size: 0;
 }
 
 .design-options,

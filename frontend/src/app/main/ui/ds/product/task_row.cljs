@@ -2,17 +2,18 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.ds.product.task-row
   (:require-macros
    [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
+   [app.main.ui.ds.product.layer-chip :refer [layer-chip*]]
    [app.main.ui.ds.product.task-status :as ts :refer [task-status*]]
+   [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
 
@@ -25,6 +26,8 @@
    [:layer {:optional true} [:maybe :string]]
    [:is-layer-lost {:optional true} [:maybe :boolean]]
    [:is-selected {:optional true} [:maybe :boolean]]
+   [:assignee {:optional true} [:maybe :any]]
+   [:actions {:optional true} [:maybe :any]]
    [:on-click {:optional true} [:maybe fn?]]])
 
 (mf/defc task-row*
@@ -40,8 +43,11 @@
         on-key-down   (mf/use-fn
                        (mf/deps on-click)
                        (fn [event]
-                         (when (and on-click (or (kbd/enter? event) (kbd/space? event)))
-                           (.preventDefault event)
+                         ;; the keys on the actions of the row are theirs
+                         (when (and on-click
+                                    (identical? (dom/get-target event) (dom/get-current-target event))
+                                    (or (kbd/enter? event) (kbd/space? event)))
+                           (dom/prevent-default event)
                            (on-click event))))
         props         (mf/spread-props props
                                        {:class [class (stl/css-case :task-row true
@@ -59,9 +65,6 @@
      [:div {:class (stl/css :footer)}
       [:> task-status* {:status status :label status-label}]
       (when layer
-        [:span {:class (stl/css-case :layer true
-                                     :is-lost is-layer-lost)}
-         [:> icon* {:icon-id (if is-layer-lost i/triangle-alert i/board) :size "s"}]
-         [:span {:class (stl/css :layer-name)} layer]])
+        [:> layer-chip* {:label layer :is-lost is-layer-lost}])
       (when assignee
         [:div {:class (stl/css :assignee)} assignee])]]))

@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
@@ -11,7 +11,7 @@
 .task-status {
   --task-status-fg-color: var(--color-foreground-secondary);
   --task-status-bg-color: var(--color-background-quaternary);
-  --task-status-dot-color: var(--color-foreground-secondary);
+  --task-status-dot-color: var(--task-status-fg-color);
 
   @include use-typography("body-small");
 
@@ -28,22 +28,21 @@
   &.is-done {
     --task-status-fg-color: var(--color-accent-info);
     --task-status-bg-color: var(--color-background-info);
-    --task-status-dot-color: var(--color-accent-info);
   }
 
   &.is-reopened {
     --task-status-fg-color: var(--color-accent-warning);
     --task-status-bg-color: var(--color-background-warning);
-    --task-status-dot-color: var(--color-accent-warning);
   }
 
   &.is-verified {
     --task-status-fg-color: var(--color-accent-success);
     --task-status-bg-color: var(--color-background-success);
-    --task-status-dot-color: var(--color-accent-success);
   }
 
   &.is-wont-do {
+    // TODO: a background token as the color of a dot; no DS foreground token
+    // has this value.
     --task-status-dot-color: var(--color-background-disabled);
   }
 }

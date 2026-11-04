@@ -10273,13 +10273,25 @@ msgstr "%s/%s tareas"
 msgid "workspace.review.change.added"
 msgstr "Añadido"
 
+#: src/app/main/ui/workspace/review/common.cljs
+msgid "workspace.review.change.added-lower"
+msgstr "añadido"
+
 #: src/app/main/ui/workspace/review/overlays.cljs
 msgid "workspace.review.change.deleted"
 msgstr "Borrado"
 
+#: src/app/main/ui/workspace/review/common.cljs
+msgid "workspace.review.change.deleted-lower"
+msgstr "borrado"
+
 #: src/app/main/ui/workspace/review/overlays.cljs
 msgid "workspace.review.change.modified"
 msgstr "Modificado"
+
+#: src/app/main/ui/workspace/review/common.cljs
+msgid "workspace.review.change.modified-lower"
+msgstr "modificado"
 
 #: src/app/main/ui/workspace/review/overlays.cljs
 msgid "workspace.review.changes.back"
@@ -10302,8 +10314,16 @@ msgid "workspace.review.changes.none"
 msgstr "No hay cambios que mostrar"
 
 #: src/app/main/ui/workspace/review/overlays.cljs
+msgid "workspace.review.changes.position"
+msgstr "%s / %s"
+
+#: src/app/main/ui/workspace/review/overlays.cljs
 msgid "workspace.review.changes.previous"
 msgstr "Cambio anterior"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.review.comment-number"
+msgstr "#%s"
 
 #: src/app/main/ui/workspace/review/panel.cljs
 msgid "workspace.review.comments.empty"
@@ -10406,12 +10426,20 @@ msgid "workspace.review.details.pick-reviewer"
 msgstr "Elige un revisor"
 
 #: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.quoted-comment"
+msgstr "“%s”"
+
+#: src/app/main/ui/workspace/review/details.cljs
 msgid "workspace.review.details.up-to-date"
 msgstr "Al día"
 
 #: src/app/main/ui/workspace/review/details.cljs
 msgid "workspace.review.details.x-of-y"
 msgstr "%s de %s"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.label-count"
+msgstr "%s %s"
 
 #: src/app/main/ui/workspace/review/markers.cljs
 msgid "workspace.review.marker.comment"
@@ -10420,6 +10448,10 @@ msgstr "Comentario %s"
 #: src/app/main/ui/workspace/review/markers.cljs
 msgid "workspace.review.marker.task"
 msgstr "Tarea: %s"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.review.route"
+msgstr "%s → %s"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs
 msgid "workspace.review.submit"
@@ -10436,6 +10468,10 @@ msgstr "Tareas (%s)"
 #: src/app/main/ui/workspace/review/details.cljs
 msgid "workspace.review.tab.tasks-plain"
 msgstr "Tareas"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.review.text-and-detail"
+msgstr "%s - %s"
 
 #: src/app/main/ui/workspace/top_toolbar.cljs
 msgid "workspace.review.toolbar.comment"
@@ -10807,6 +10843,10 @@ msgid "workspace.review.details.behind"
 msgid_plural "workspace.review.details.behind"
 msgstr[0] "1 cambio por detrás de main"
 msgstr[1] "%s cambios por detrás de main"
+
+#: src/app/main/ui/workspace/review/common.cljs
+msgid "workspace.review.unknown-name"
+msgstr "—"
 
 #: src/app/main/ui/workspace/sidebar/layer_item.cljs
 msgid "workspace.sidebar.layers.comments"

@@ -2,7 +2,7 @@
   License, v. 2.0. If a copy of the MPL was not distributed with this
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-  Copyright (c) KALEIDOS INC Sucursal en España SL */ }
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
 
 import { Canvas, Meta } from '@storybook/addon-docs/blocks';
 import * as TaskRow from "./task_row.stories";
@@ -28,7 +28,8 @@ layer turns orange and shows a warning.
 
 ## Technical notes
 
-The row is a `role="button"` that reacts to Enter and Space. Two slots
+The row is a `role="button"` that reacts to Enter and Space while the focus
+is on the row itself. Two slots
 take elements: `assignee` (an avatar, at the end of the second line)
 and `actions` (a menu trigger, at the end of the title). A click inside
 a slot must stop its propagation when it should not open the task.

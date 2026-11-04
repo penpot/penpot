@@ -7,7 +7,7 @@
 @use "ds/_utils.scss" as *;
 @use "ds/borders.scss" as *;
 @use "ds/_sizes.scss" as *;
-@use "ds/typography.scss" as t;
+@use "ds/typography.scss" as *;
 
 .layer-row {
   --layer-indentation-size: var(--sp-xxl);
@@ -331,7 +331,7 @@
 }
 
 .comments-count {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: inline-flex;
   flex-shrink: 0;

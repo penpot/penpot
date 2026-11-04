@@ -2,7 +2,7 @@
 ;; License v. 2.0. If a copy of the MPL was not distributed with this
 ;; file You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.branch-review.compare
   "The compare dialog: what a branch changes, in words. It opens on the
@@ -34,6 +34,7 @@
    [app.main.ui.workspace.sidebar.branch-review.facts :as brf]
    [app.main.ui.workspace.sidebar.branch-review.layout :as brl]
    [app.main.ui.workspace.sidebar.branch-review.previews :as brp]
+   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -53,10 +54,6 @@
   "The key a row's review mark is stored under."
   [item]
   (or (:key item) (dm/str (name (:kind item)) ":" (:id item))))
-
-(defn- category-label
-  [cat]
-  (tr (brc/category->label cat)))
 
 ;; --- List rows
 
@@ -144,6 +141,7 @@
                       (dm/str " - " (tr "workspace.branches.review.copies.row-follow"
                                         (i18n/c follows))))
         on-click    (mf/use-fn (mf/deps index on-select) #(on-select {:kind :item :index index}))
+        on-check    (mf/use-fn (mf/deps toggle-keys on-toggle) #(on-toggle toggle-keys))
         start       (when selectable?
                       (mf/html
                        [:span {:class (stl/css :row-check)
@@ -151,7 +149,7 @@
                                :on-click dom-stop}
                         [:> checkbox* {:id (dm/str "change-" change-key)
                                        :checked (not excluded)
-                                       :on-change #(on-toggle toggle-keys)}]]))]
+                                       :on-change on-check}]]))]
     [:> change-row* {:title (or (:label item) "")
                      :subtitle subtitle
                      :icon (brc/entry-icon item)
@@ -190,72 +188,113 @@
                       :on-click on-click}]
      (when open? children)]))
 
-(mf/defc change-list*
+(mf/defc decisions-group*
+  "The changes both sides made, which wait for a decision."
   {::mf/private true}
-  [{:keys [groups conflicts cascades follow-counts selected excluded reviewed collapsed
-           on-select on-toggle on-fold]}]
-  [:*
-   (when (seq conflicts)
-     (let [open? (not (contains? collapsed "decisions"))]
-       [:div {:class (stl/css :group)}
-        [:> brl/group-head* {:label (tr "workspace.branches.review.group.decisions"
-                                        (str (count conflicts)))
-                             :is-open open?
-                             :on-toggle #(on-fold "decisions")}]
-        (when open?
-          (for [[idx item] conflicts]
-            [:> item-row* {:key idx :index idx :item item
-                           :follows (follows-of follow-counts item)
-                           :selected selected
-                           :reviewed (contains? reviewed (review-key item))
-                           :on-select on-select :on-toggle on-toggle}]))]))
+  [{:keys [conflicts follow-counts selected reviewed collapsed on-select on-toggle on-fold]}]
+  (let [open?     (not (contains? collapsed "decisions"))
+        on-header (mf/use-fn (mf/deps on-fold) #(on-fold "decisions"))]
+    [:div {:class (stl/css :group)}
+     [:> brl/group-head* {:label (tr "workspace.branches.review.group.decisions"
+                                     (str (count conflicts)))
+                          :is-open open?
+                          :on-toggle on-header}]
+     (when open?
+       (for [[idx item] conflicts]
+         [:> item-row* {:key idx :index idx :item item
+                        :follows (follows-of follow-counts item)
+                        :selected selected
+                        :reviewed (contains? reviewed (review-key item))
+                        :on-select on-select :on-toggle on-toggle}]))]))
 
-   (for [{:keys [id name rows boards count] :as group} groups]
-     (let [open?     (not (contains? collapsed id))
-           row-keys  (into #{} (comp (filter (fn [[_ it]] (selectable-item? it)))
-                                     (mapcat (fn [[idx it]] (row-keys it (get cascades idx)))))
-                           (concat rows (mapcat :rows boards)))
-           included? (not-any? excluded row-keys)]
-       [:div {:class (stl/css :group) :key id}
-        [:> brl/group-head*
-         {:label (dm/str name " (" count ")")
-          :is-open open?
-          :on-toggle #(on-fold id)
-          :start (when (seq row-keys)
-                   (mf/html
-                    [:span {:class (stl/css :row-check)}
-                     [:> checkbox* {:id (dm/str "group-" id)
-                                    :checked included?
-                                    :on-change #(on-toggle row-keys (not included?))}]]))}]
-        (when open?
-          [:*
-           (for [[idx item] rows]
+(mf/defc change-group*
+  "The changes of one page: the group folds, and its checkbox takes all of
+  them."
+  {::mf/private true}
+  [{:keys [group cascades follow-counts selected excluded reviewed collapsed
+           on-select on-toggle on-fold]}]
+  (let [{:keys [id name rows boards count]} group
+        open?     (not (contains? collapsed id))
+        toggles   (into #{} (comp (filter (fn [[_ it]] (selectable-item? it)))
+                                  (mapcat (fn [[idx it]] (row-keys it (get cascades idx)))))
+                        (concat rows (mapcat :rows boards)))
+        included? (not-any? excluded toggles)
+        on-header (mf/use-fn (mf/deps id on-fold) #(on-fold id))
+        on-check  (mf/use-fn (mf/deps toggles included? on-toggle) #(on-toggle toggles (not included?)))]
+    [:div {:class (stl/css :group)}
+     [:> brl/group-head*
+      {:label (dm/str name " (" count ")")
+       :is-open open?
+       :on-toggle on-header
+       :start (when (seq toggles)
+                (mf/html
+                 [:span {:class (stl/css :row-check)}
+                  [:> checkbox* {:id (dm/str "group-" id)
+                                 :checked included?
+                                 :on-change on-check}]]))}]
+     (when open?
+       [:*
+        (for [[idx item] rows]
+          [:> item-row* {:key idx :index idx :item item
+                         :inner (get cascades idx)
+                         :follows (follows-of follow-counts item)
+                         :selected selected
+                         :excluded (contains? excluded (:key item))
+                         :reviewed (contains? reviewed (review-key item))
+                         :on-select on-select :on-toggle on-toggle}])
+        (for [board boards]
+          [:> board-row* {:key (str (:id board))
+                          :group group :board board
+                          :selected selected :collapsed collapsed
+                          :on-select on-select :on-fold on-fold}
+           (for [[idx item] (:rows board)]
              [:> item-row* {:key idx :index idx :item item
                             :inner (get cascades idx)
                             :follows (follows-of follow-counts item)
                             :selected selected
                             :excluded (contains? excluded (:key item))
                             :reviewed (contains? reviewed (review-key item))
-                            :on-select on-select :on-toggle on-toggle}])
-           (for [board boards]
-             [:> board-row* {:key (str (:id board))
-                             :group group :board board
-                             :selected selected :collapsed collapsed
-                             :on-select on-select :on-fold on-fold}
-              (for [[idx item] (:rows board)]
-                [:> item-row* {:key idx :index idx :item item
-                               :inner (get cascades idx)
-                               :follows (follows-of follow-counts item)
-                               :selected selected
-                               :excluded (contains? excluded (:key item))
-                               :reviewed (contains? reviewed (review-key item))
-                               :on-select on-select :on-toggle on-toggle}])])])]))])
+                            :on-select on-select :on-toggle on-toggle}])])])]))
+
+(mf/defc change-list*
+  {::mf/private true}
+  [{:keys [groups conflicts cascades follow-counts selected excluded reviewed collapsed
+           on-select on-toggle on-fold]}]
+  [:*
+   (when (seq conflicts)
+     [:> decisions-group* {:conflicts conflicts
+                           :follow-counts follow-counts
+                           :selected selected
+                           :reviewed reviewed
+                           :collapsed collapsed
+                           :on-select on-select
+                           :on-toggle on-toggle
+                           :on-fold on-fold}])
+
+   (for [group groups]
+     [:> change-group* {:key (:id group)
+                        :group group
+                        :cascades cascades
+                        :follow-counts follow-counts
+                        :selected selected
+                        :excluded excluded
+                        :reviewed reviewed
+                        :collapsed collapsed
+                        :on-select on-select
+                        :on-toggle on-toggle
+                        :on-fold on-fold}])])
 
 ;; --- Previews
 
 (def ^:private view-modes
-  [[:side    i/side-by-side         "workspace.branches.review.view.side"]
-   [:overlay i/boolean-intersection "workspace.branches.review.view.overlay"]])
+  [[:side    i/side-by-side]
+   [:overlay i/boolean-intersection]])
+
+(defn- view-mode-label
+  [mode]
+  (case mode
+    :side    (tr "workspace.branches.review.view.side")
+    :overlay (tr "workspace.branches.review.view.overlay")))
 
 (defn- library-entity
   "A library entry (colour, typography) as the open file holds it."
@@ -314,22 +353,29 @@
   leaves the view toggles out for a change with nothing to overlay."
   {::mf/private true}
   [{:keys [mode on-change show-modes expanded on-expand]}]
-  [:div {:class (stl/css :view-modes)}
-   (when show-modes
-     (for [[m icon label] view-modes]
-       [:> icon-button* {:key (name m)
-                         :variant "ghost"
-                         :class (stl/css :view-toggle)
-                         :icon icon
-                         :aria-label (tr label)
-                         :aria-pressed (= m mode)
-                         :on-click #(on-change m)}]))
-   [:> icon-button* {:variant "ghost"
-                     :icon (if expanded i/collapse i/expand)
-                     :aria-label (tr (if expanded
-                                       "workspace.branches.review.view.collapse"
-                                       "workspace.branches.review.view.expand"))
-                     :on-click on-expand}]])
+  (let [on-mode (mf/use-fn
+                 (mf/deps on-change)
+                 (fn [event]
+                   (on-change (-> (dom/get-current-target event)
+                                  (dom/get-data "mode")
+                                  (keyword)))))]
+    [:div {:class (stl/css :view-modes)}
+     (when show-modes
+       (for [[m icon] view-modes]
+         [:> icon-button* {:key (name m)
+                           :variant "ghost"
+                           :class (stl/css :view-toggle)
+                           :icon icon
+                           :aria-label (view-mode-label m)
+                           :aria-pressed (= m mode)
+                           :data-mode (name m)
+                           :on-click on-mode}]))
+     [:> icon-button* {:variant "ghost"
+                       :icon (if expanded i/collapse i/expand)
+                       :aria-label (if expanded
+                                     (tr "workspace.branches.review.view.collapse")
+                                     (tr "workspace.branches.review.view.expand"))
+                       :on-click on-expand}]]))
 
 (mf/defc item-visual*
   "The visual comparison of one change, in the view `mode`."
@@ -396,7 +442,7 @@
   {::mf/private true}
   [{:keys [item items indexed cascades copies excluded excluded-keys reviewed selected open-side
            incoming data diff-meta on-resolve on-select on-toggle expanded on-expand]}]
-  (let [type-lbl (brc/type-label-key item)
+  (let [type-lbl (brc/type-label item)
         cat      (brc/category item)
         attrs    (:changed-attrs item)
         visible  (brc/visible-attrs attrs)
@@ -405,24 +451,25 @@
                     (brc/copies-entry copies item
                                       (get-in data [:pages-index (:page-id item) :objects])))
         mode*    (mf/use-state :side)
-        mode     (deref mode*)]
+        mode     (deref mode*)
+        on-mode  (mf/use-fn #(reset! mode* %))]
     [:*
      [:div {:class (stl/css :detail-head)}
       [:div {:class (stl/css :detail-head-main)}
        [:> heading* {:level 3 :typography t/body-large :class (stl/css :detail-title)}
         (:label item)]
        (when type-lbl
-         [:> tag* {} (tr type-lbl)])
+         [:> tag* {} type-lbl])
        ;; a decision already shows as one (the warning row, the notice);
        ;; its category tag would only repeat it
        (when-not conflict?
          [:> tag* {:tone (brc/category->tone cat)
                    :icon (brc/category->icon cat)}
-          (category-label cat)])
+          (brc/category-label cat)])
        (when (and excluded (selectable-item? item))
          [:> tag* {} (tr "workspace.branches.review.row.left-out")])]
       [:> view-modes* {:mode mode
-                       :on-change #(reset! mode* %)
+                       :on-change on-mode
                        :show-modes (= :shape (:kind item))
                        :expanded expanded
                        :on-expand on-expand}]]
@@ -507,6 +554,7 @@
            reviewed on-select on-toggle expanded on-expand]}]
   (let [mode*    (mf/use-state :side)
         mode     (deref mode*)
+        on-mode  (mf/use-fn #(reset! mode* %))
         group    (some #(when (= page-id (:page-id %)) %) groups)
         board    (some #(when (= board-id (:id %)) %) (:boards group))
         rows     (:rows board)
@@ -525,7 +573,7 @@
           (:name board)]
          [:> tag* {} (tr "workspace.branches.compare.shape.board")]]
         [:> view-modes* {:mode mode
-                         :on-change #(reset! mode* %)
+                         :on-change on-mode
                          :show-modes true
                          :expanded expanded
                          :on-expand on-expand}]]
@@ -658,6 +706,12 @@
         on-filter  (mf/use-fn (fn [f]
                                 (reset! filter* f)
                                 (reset! selected* nil)))
+        on-chip    (mf/use-fn
+                    (mf/deps on-filter)
+                    (fn [event]
+                      (on-filter (-> (dom/get-current-target event)
+                                     (dom/get-data "filter")
+                                     (keyword)))))
         on-swap    (mf/use-fn (mf/deps branch direction)
                               #(st/emit! (dwb/fetch-branch-diff
                                           (:id branch)
@@ -746,21 +800,24 @@
                   [:*
                    [:> filter-chip* {:label (dm/str (tr "labels.all") " (" (count counted) ")")
                                      :is-selected (= active-filter :all)
-                                     :on-click #(on-filter :all)}]
-                   (for [[cat tone label icon] brc/categories
+                                     :data-filter "all"
+                                     :on-click on-chip}]
+                   (for [[cat tone icon] brc/categories
                          :let [n (count (get counts cat))]
                          :when (pos? n)]
                      [:> filter-chip* {:key (name cat)
-                                       :label (dm/str (tr label) " (" n ")")
+                                       :label (dm/str (brc/category-label cat) " (" n ")")
                                        :icon icon
                                        :tone tone
                                        :is-selected (= active-filter cat)
-                                       :on-click #(on-filter cat)}])
+                                       :data-filter (name cat)
+                                       :on-click on-chip}])
                    (when (pos? left-out)
                      [:> filter-chip* {:label (dm/str (tr "workspace.branches.review.row.left-out")
                                                       " (" left-out ")")
                                        :is-selected (= active-filter :left-out)
-                                       :on-click #(on-filter :left-out)}])]))
+                                       :data-filter "left-out"
+                                       :on-click on-chip}])]))
       :list (when (and (= status :loaded) (seq items) (not expanded))
               (mf/html
                [:> change-list* {:groups groups

@@ -2,23 +2,23 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.review.common
   "Pieces shared by the review mode and the tasks: who someone is, what a
-  task points at, and the chip that names a layer."
-  (:require-macros [app.main.style :as stl])
+  task points at, and what a change did."
   (:require
    [app.common.files.helpers :as cfh]
    [app.common.math :as mth]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
-   [app.util.i18n :refer [tr]]
-   [rumext.v2 :as mf]))
+   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]))
 
 (defn profile-name
   "The name of the person `profile-id`, or a dash when nobody knows it."
   [profiles profile-id]
-  (get-in profiles [profile-id :fullname] "—"))
+  (or (get-in profiles [profile-id :fullname])
+      (tr "workspace.review.unknown-name")))
 
 (defn status-label
   [status]
@@ -67,12 +67,27 @@
     :area  i/comment-area
     i/pin))
 
-(mf/defc layer-chip*
-  "A chip naming a layer (or what a thread points at). A lost layer reads
-  in the warning tone, struck through when `is-struck`."
-  [{:keys [label icon is-lost is-struck class]}]
-  [:span {:class [class (stl/css-case :layer-chip true
-                                      :is-lost is-lost
-                                      :is-struck is-struck)]}
-   [:> icon* {:icon-id (if is-lost i/triangle-alert (or icon i/board)) :size "s"}]
-   [:span {:class (stl/css :layer-chip-label)} label]])
+(defn change-kind-label
+  "What a change did to its layer."
+  [kind]
+  (case kind
+    :added   (tr "workspace.review.change.added")
+    :deleted (tr "workspace.review.change.deleted")
+    (tr "workspace.review.change.modified")))
+
+(defn change-kind-label-lower
+  "What a change did to its layer, in the middle of a sentence."
+  [kind]
+  (case kind
+    :added   (tr "workspace.review.change.added-lower")
+    :deleted (tr "workspace.review.change.deleted-lower")
+    (tr "workspace.review.change.modified-lower")))
+
+(defn event->canvas
+  "The canvas point under a pointer `event` on a layer that covers the
+  viewport."
+  [event vbox zoom]
+  (let [rect (dom/get-bounding-rect (dom/get-current-target event))
+        pt   (dom/get-client-position event)]
+    {:x (+ (:x vbox) (/ (- (:x pt) (:left rect)) zoom))
+     :y (+ (:y vbox) (/ (- (:y pt) (:top rect)) zoom))}))

@@ -160,6 +160,7 @@
 }
 
 .floating-preview-wrapper {
+  // TODO: no DS z-index token for 1.
   z-index: 1;
   position: absolute;
   user-select: none;
@@ -179,6 +180,7 @@
 }
 
 .floating-preview-expanded {
+  // TODO: no DS z-index token for 2.
   z-index: 2;
   animation: comment-bubble-fan-out 0.18s ease-out;
 }
@@ -196,10 +198,12 @@
 }
 
 .floating-preview-hovered {
+  // TODO: no DS z-index token for 10.
   z-index: 10;
 }
 
 .floating-preview-ghost {
+  // TODO: no DS z-index token for 1.
   z-index: 1;
   opacity: 0.6;
   pointer-events: none;
@@ -319,12 +323,6 @@
   text-overflow: ellipsis;
 }
 
-.thread-task {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-s);
-}
-
 .floating-thread-header-right {
   display: flex;
   align-items: center;
@@ -363,8 +361,8 @@
   border-radius: $br-8;
   z-index: var(--z-index-dropdown);
   overflow: hidden auto;
-  background-color: var(--menu-background-color);
-  color: var(--menu-foreground-color);
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
   border: $b-2 solid var(--color-background-quaternary);
   box-shadow: 0 0 var(--sp-m) 0 var(--color-shadow-dark);
   max-inline-size: $sz-200;
@@ -375,6 +373,10 @@
 }
 
 .dropdown-menu-option {
+  --dropdown-menu-option-bg-color: transparent;
+  --dropdown-menu-option-fg-color: var(--color-foreground-secondary);
+  --dropdown-menu-option-icon-color: var(--color-foreground-secondary);
+
   @include use-typography("body-small");
 
   display: flex;
@@ -383,9 +385,11 @@
   block-size: $sz-32;
   padding: 0 var(--sp-s);
   border-radius: $br-6;
+  background-color: var(--dropdown-menu-option-bg-color);
   cursor: pointer;
-  color: var(--menu-foreground-color-rest);
+  color: var(--dropdown-menu-option-fg-color);
 
+  // span: the text of an option has no class in comments.cljs
   span {
     justify-content: center;
     align-items: center;
@@ -395,24 +399,22 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 
+    // svg: the icon of an option has no class in comments.cljs
     svg {
       display: flex;
       justify-content: center;
       align-items: center;
       block-size: $sz-12;
       inline-size: $sz-12;
-      stroke-width: 1.33px;
-      stroke: var(--icon-foreground);
+      stroke-width: px2rem(1.33);
+      stroke: var(--dropdown-menu-option-icon-color);
     }
   }
 
   &:hover {
-    background-color: var(--menu-background-color-hover);
-    color: var(--menu-foreground-color);
-
-    svg {
-      stroke: var(--menu-foreground-color-hover);
-    }
+    --dropdown-menu-option-bg-color: var(--color-background-quaternary);
+    --dropdown-menu-option-fg-color: var(--color-foreground-primary);
+    --dropdown-menu-option-icon-color: var(--color-foreground-primary);
   }
 }
 
@@ -490,7 +492,7 @@
 }
 
 .comments-mentions-entry.is-selected {
-  border: 1px solid var(--color-accent-primary-muted);
+  border: $b-1 solid var(--color-accent-primary-muted);
   background: var(--color-background-quaternary);
 }
 

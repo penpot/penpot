@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.ds.product.review-marker
   (:require-macros
@@ -17,7 +17,8 @@
    [:class {:optional true} [:maybe :string]]
    [:type {:optional true} [:maybe [:enum "comment" "task"]]]
    [:state {:optional true} [:maybe [:enum "default" "active" "resolved" "lost"]]]
-   [:label {:optional true} [:maybe :string]]])
+   [:label {:optional true} [:maybe :string]]
+   [:aria-label :string]])
 
 (mf/defc review-marker*
   "The mark a design review leaves on the canvas. A comment is a round

@@ -2,12 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_utils.scss" as *;
-@use "ds/typography.scss" as *;
 
 // --- List
 
@@ -20,9 +19,18 @@
   list-style: none;
 }
 
+// --- The task of a comment thread
+
+.thread-task {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
 // --- Events
 
 .task-event {
+  --task-event-fg-color: var(--color-foreground-primary);
   --task-event-icon-color: var(--color-accent-info);
 
   display: flex;
@@ -31,12 +39,11 @@
   padding: var(--sp-s);
   border-radius: $br-8;
   background-color: var(--color-background-tertiary);
-  color: var(--color-foreground-primary);
+  color: var(--task-event-fg-color);
 
   &.is-warning {
+    --task-event-fg-color: var(--color-accent-warning);
     --task-event-icon-color: var(--color-accent-warning);
-
-    color: var(--color-accent-warning);
   }
 }
 
@@ -65,23 +72,6 @@
 
 .task-state-text {
   color: var(--color-foreground-primary);
-}
-
-.task-review-link {
-  @include use-typography("body-small");
-
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-xs);
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--color-accent-primary);
-  cursor: pointer;
-
-  &:hover {
-    text-decoration: underline;
-  }
 }
 
 .task-next-step {
@@ -119,7 +109,7 @@
   border: $b-1 solid var(--color-background-quaternary);
   border-radius: $br-8;
   background-color: var(--color-background-primary);
-  box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);
+  box-shadow: 0 0 px2rem(12) 0 var(--color-shadow-dark);
   color: var(--color-foreground-primary);
   overflow: hidden;
   cursor: auto;
@@ -139,15 +129,17 @@
 }
 
 .floating-title {
+  --floating-title-color: var(--color-foreground-secondary);
+
   flex: 1;
   min-inline-size: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  color: var(--color-foreground-secondary);
+  color: var(--floating-title-color);
 
   &.is-strong {
-    color: var(--color-foreground-primary);
+    --floating-title-color: var(--color-foreground-primary);
   }
 }
 
@@ -166,20 +158,7 @@
 // --- New task form
 
 .task-title-input {
-  @include use-typography("body-small");
-
-  inline-size: 100%;
-  padding: var(--sp-s);
-  border: $b-1 solid var(--color-background-quaternary);
-  border-radius: $br-8;
-  background-color: var(--color-background-tertiary);
-  color: var(--color-foreground-primary);
-  resize: none;
-
-  &:focus {
-    outline: none;
-    border-color: var(--color-accent-primary);
-  }
+  --textarea-resize: none;
 }
 
 .form-hint {
@@ -200,7 +179,7 @@
 }
 
 .form-select {
-  max-inline-size: px2rem(160);
+  max-inline-size: $sz-160;
 }
 
 .form-actions {
@@ -227,29 +206,6 @@
   color: var(--color-foreground-primary);
 }
 
-.progress-link {
-  @include use-typography("body-small");
-
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--color-accent-info);
-  cursor: pointer;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
 .progress-bar {
-  block-size: var(--sp-xs);
-  border-radius: $br-4;
-  background-color: var(--color-background-quaternary);
-  overflow: hidden;
-}
-
-.progress-fill {
-  block-size: 100%;
-  border-radius: $br-4;
-  background-color: var(--color-accent-info);
+  --progress-bar-fill-radius: #{$br-4};
 }

@@ -506,10 +506,10 @@
                                    :status-merged merged?
                                    :status-archived (= "archived" status)
                                    :status-open (= "open" status))}
-       (tr (case status
-             "merged"   "workspace.branches.info.status.merged"
-             "archived" "workspace.branches.info.status.archived"
-             "workspace.branches.info.status.open"))]]
+       (case status
+         "merged"   (tr "workspace.branches.info.status.merged")
+         "archived" (tr "workspace.branches.info.status.archived")
+         (tr "workspace.branches.info.status.open"))]]
 
      [:> modal-content* {:class (stl/css :dialog-content)}
       ;; description: shown read-only, editable inline by the author
@@ -870,9 +870,9 @@
           ;; a merged branch cannot go back to work: its changes are in main
           (when-not merged?
             [:> menu-item* {:id "archive" :on-action on-archive}
-             (tr (if archived?
-                   "workspace.branches.menu.restore"
-                   "workspace.branches.menu.archive"))])
+             (if archived?
+               (tr "workspace.branches.menu.restore")
+               (tr "workspace.branches.menu.archive"))])
           ;; a merged branch has its work in main already: only an open or an
           ;; archived branch can leave the branch engine as an ordinary file
           (when-not merged?
@@ -1234,6 +1234,10 @@
 
         status     (banner-status ctx open-pr)
 
+        handle-label (if collapsed?
+                       (tr "workspace.branches.banner.expand")
+                       (tr "workspace.branches.banner.collapse"))
+
         ;; the tasks of the open review that still need the user's work
         tasks      (mf/deref refs/tasks)
         my-tasks   (mf/with-memo [tasks open-pr profile]
@@ -1289,12 +1293,8 @@
                                   :branch-banner-merged (or merged? archived?)
                                   :is-collapsed collapsed?)}
        [:button {:class (stl/css :branch-banner-handle)
-                 :title (tr (if collapsed?
-                              "workspace.branches.banner.expand"
-                              "workspace.branches.banner.collapse"))
-                 :aria-label (tr (if collapsed?
-                                   "workspace.branches.banner.expand"
-                                   "workspace.branches.banner.collapse"))
+                 :title handle-label
+                 :aria-label handle-label
                  :on-click on-toggle}
         [:div {:class (stl/css :branch-banner-handle-btn)}]]
        ;; the header row names the branch; the banner says where it
@@ -1311,9 +1311,8 @@
 
         (when (pos? (or my-tasks 0))
           [:*
-           [:button {:class (stl/css :branch-banner-tasks)
-                     :type "button"
-                     :on-click on-my-tasks}
+           [:> prui/banner-button* {:class (stl/css :branch-banner-tasks)
+                                    :on-click on-my-tasks}
             [:> i/icon* {:icon-id i/view-as-list :size "s"}]
             (tr "workspace.tasks.for-you-count" (i18n/c my-tasks))]
            [:div {:class (stl/css :branch-banner-separator)}]])

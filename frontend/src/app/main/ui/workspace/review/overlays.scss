@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
-@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 @use "ds/typography.scss" as *;
 
 .overlays {
@@ -40,6 +40,9 @@
 }
 
 .change-tag {
+  --change-tag-bg-color: var(--color-background-info);
+  --change-tag-fg-color: var(--color-accent-info);
+
   @include use-typography("body-small");
 
   position: absolute;
@@ -48,29 +51,30 @@
   margin-block-end: var(--sp-xxs);
   padding: 0 var(--sp-xs);
   border-radius: $br-4 $br-4 0 0;
-  background-color: var(--color-background-info);
-  color: var(--color-accent-info);
+  background-color: var(--change-tag-bg-color);
+  color: var(--change-tag-fg-color);
   white-space: nowrap;
 
   &.is-added {
-    background-color: var(--color-background-success);
-    color: var(--color-accent-success);
+    --change-tag-bg-color: var(--color-background-success);
+    --change-tag-fg-color: var(--color-accent-success);
   }
 
   &.is-active {
+    --change-tag-bg-color: var(--color-accent-info);
+    --change-tag-fg-color: var(--color-background-primary);
+
     inset-inline: 0 auto;
-    background-color: var(--color-accent-info);
-    color: var(--color-background-primary);
   }
 
   &.is-pick {
-    background-color: var(--color-accent-primary);
+    --change-tag-bg-color: var(--color-accent-primary);
   }
 }
 
 .navigator {
   position: absolute;
-  inset-block-end: $sz-88;
+  inset-block-end: px2rem(88);
   inset-inline-start: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -115,7 +119,7 @@
   position: absolute;
 
   // below the toolbar, which sits at the top center of the canvas
-  inset-block-start: $sz-120;
+  inset-block-start: px2rem(120);
   inset-inline-start: 50%;
   transform: translateX(-50%);
   display: flex;

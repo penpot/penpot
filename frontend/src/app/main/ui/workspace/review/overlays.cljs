@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.review.overlays
   "What the review mode and the tasks draw over the canvas: the changes of
@@ -10,6 +10,7 @@
   the layer picker that links a task to another layer."
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.time :as ct]
@@ -26,15 +27,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
-
-(defn- kind-label
-  [kind]
-  (case kind
-    :added    (tr "workspace.review.change.added")
-    :deleted  (tr "workspace.review.change.deleted")
-    (tr "workspace.review.change.modified")))
 
 (defn- screen-rect
   "The box of `shape` on the screen, inside a layer translated by the
@@ -60,8 +53,8 @@
                                   :is-active is-active
                                   :is-added (= kind :added))}
       (if is-active
-        (dm/str (:name shape) " - " (kind-label kind))
-        (kind-label kind))]]))
+        (tr "workspace.review.text-and-detail" (:name shape) (rvc/change-kind-label kind))
+        (rvc/change-kind-label kind))]]))
 
 (mf/defc changes-navigator*
   "The bar that goes through the changes shown on the canvas."
@@ -83,7 +76,7 @@
                        :disabled (zero? total)
                        :on-click on-prev}]
      [:> text* {:as "span" :typography t/body-small :class (stl/css :navigator-count)}
-      (if (pos? total) (dm/str (inc index) " / " total) "0 / 0")]
+      (tr "workspace.review.changes.position" (if (pos? total) (inc index) 0) total)]
      [:> icon-button* {:variant "ghost"
                        :icon i/arrow-right
                        :aria-label (tr "workspace.review.changes.next")
@@ -94,7 +87,7 @@
         [:strong {:class (stl/css :navigator-name)} (:name entry)]
         " "
         (tr "workspace.review.changes.by"
-            (str/lower (kind-label (:kind entry)))
+            (rvc/change-kind-label-lower (:kind entry))
             (rvc/profile-name profiles (:profile-id entry))
             (ct/format-inst (:changed-at entry) :localized-time))]
        [:> text* {:as "span" :typography t/body-small :class (stl/css :navigator-text)}
@@ -120,9 +113,11 @@
 (mf/defc change-boxes*
   {::mf/private true}
   [{:keys [entries zoom page-id index]}]
-  (let [objects (mf/deref refs/workspace-page-objects)]
+  (let [objects (mf/deref refs/workspace-page-objects)
+        entries (mf/with-memo [entries]
+                  (into [] d/xf:add-index entries))]
     [:*
-     (for [[i entry] (map-indexed vector entries)]
+     (for [entry entries]
        (let [shape (get objects (:id entry))]
          (when (and (= page-id (:page-id entry))
                     (some? shape)
@@ -131,7 +126,7 @@
                             :entry entry
                             :shape shape
                             :zoom zoom
-                            :is-active (= i index)}])))]))
+                            :is-active (= (::d/index entry) index)}])))]))
 
 ;; --- Picking the layer of a task
 
@@ -146,26 +141,18 @@
         hover    (deref hover*)
         start    (mf/use-ref selected)
 
-        to-canvas
-        (fn [event]
-          (let [node (dom/get-current-target event)
-                rect (dom/get-bounding-rect node)
-                pt   (dom/get-client-position event)]
-            {:x (+ (:x vbox) (/ (- (:x pt) (:left rect)) zoom))
-             :y (+ (:y vbox) (/ (- (:y pt) (:top rect)) zoom))}))
-
         on-move
         (mf/use-fn
          (mf/deps objects vbox zoom)
          (fn [event]
-           (reset! hover* (dwtk/shape-at-position objects (to-canvas event)))))
+           (reset! hover* (dwtk/shape-at-position objects (rvc/event->canvas event vbox zoom)))))
 
         on-click
         (mf/use-fn
          (mf/deps objects vbox zoom)
          (fn [event]
            (dom/stop-propagation event)
-           (when-let [shape (dwtk/shape-at-position objects (to-canvas event))]
+           (when-let [shape (dwtk/shape-at-position objects (rvc/event->canvas event vbox zoom))]
              (st/emit! (dwtk/relink-task shape)))))
 
         on-cancel

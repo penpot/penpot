@@ -2,7 +2,7 @@
 ;; License v. 2.0. If a copy of the MPL was not distributed with this
 ;; file You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.pull-requests
   "Pull request UI. A pull request is presented as a STATE of its branch
@@ -33,6 +33,7 @@
    [app.main.ui.ds.layout.modal :refer [modal* modal-header* modal-content* modal-footer*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.ds.product.avatar :refer [avatar*]]
+   [app.main.ui.ds.product.progress-bar :refer [progress-bar*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -53,13 +54,15 @@
       "in-review"         :in-review
       :open)))
 
-(def ^:private state->label
-  {:open              "workspace.pull-requests.state.open"
-   :in-review         "workspace.pull-requests.state.in-review"
-   :approved          "workspace.pull-requests.state.approved"
-   :changes-requested "workspace.pull-requests.state.changes-requested"
-   :merged            "workspace.pull-requests.state.merged"
-   :closed            "workspace.pull-requests.state.closed"})
+(defn- state-label
+  [state]
+  (case state
+    :open              (tr "workspace.pull-requests.state.open")
+    :in-review         (tr "workspace.pull-requests.state.in-review")
+    :approved          (tr "workspace.pull-requests.state.approved")
+    :changes-requested (tr "workspace.pull-requests.state.changes-requested")
+    :merged            (tr "workspace.pull-requests.state.merged")
+    :closed            (tr "workspace.pull-requests.state.closed")))
 
 (mf/defc pr-state-badge*
   [{:keys [pr]}]
@@ -71,7 +74,7 @@
                                  :badge-changes (= state :changes-requested)
                                  :badge-merged (= state :merged)
                                  :badge-closed (= state :closed))}
-     (tr (get state->label state))]))
+     (state-label state)]))
 
 (defn current-approvals
   "[current-approvals total-reviewers] of a pull request; stale verdicts
@@ -120,6 +123,16 @@
                          :accept-label (tr "workspace.pull-requests.actions.close")
                          :accept-style :danger
                          :on-accept (fn [_] (st/emit! (dwpr/close-pull-request (:id pr))))})))
+
+;; --- The action of a banner
+
+(mf/defc banner-button*
+  "A quiet action inside a banner on the canvas, with what it does as
+  `children`."
+  [{:keys [class children] :rest props}]
+  (let [props (mf/spread-props props {:class [class (stl/css :banner-button)]
+                                      :type "button"})]
+    [:> :button props children]))
 
 ;; --- Dialog header
 
@@ -247,15 +260,17 @@
               [:> avatar* {:profile member :variant "S"}]
               [:span {:class (stl/css :reviewer-name)} (:fullname member)]
               (when (contains? selected (:id member))
-                [:> i/icon* {:icon-id i/tick :size "s"}])]])])]
+                [:> i/icon* {:icon-id i/tick :size "s" :class (stl/css :reviewer-tick)}])]])])]
 
       [:> context-notification* {:level :info :type :context}
        (tr "workspace.pull-requests.create.info")]]
 
      [:> modal-footer* {:class (stl/css :dialog-footer)}
-      [:> button* {:variant "secondary" :on-click on-close}
+      [:> button* {:class (stl/css :dialog-action)
+                   :variant "secondary" :on-click on-close}
        (tr "labels.cancel")]
-      [:> button* {:variant "primary"
+      [:> button* {:class (stl/css :dialog-action)
+                   :variant "primary"
                    :icon i/git-pull-request-create-arrow
                    :disabled (not valid?)
                    :on-click on-submit}
@@ -334,9 +349,11 @@
                    :rows 3}]]]
 
      [:> modal-footer* {:class (stl/css :dialog-footer)}
-      [:> button* {:variant "secondary" :on-click on-close}
+      [:> button* {:class (stl/css :dialog-action)
+                   :variant "secondary" :on-click on-close}
        (tr "labels.cancel")]
-      [:> button* {:variant "primary"
+      [:> button* {:class (stl/css :dialog-action)
+                   :variant "primary"
                    :on-click on-submit}
        (tr "workspace.pull-requests.review.submit")]]]))
 
@@ -408,7 +425,7 @@
           ;; the route reads branch → target BRANCH (reviews always merge
           ;; into main); the target file name would be redundant here,
           ;; inside the file itself
-          (dm/str (:branch-name pr) " → " (tr "workspace.branches.main"))]
+          (tr "workspace.review.route" (:branch-name pr) (tr "workspace.branches.main"))]
          (when (and open? (:outdated pr))
            [:span {:class (stl/css :pr-badge :badge-outdated)}
             (tr "workspace.pull-requests.badge.outdated")])
@@ -471,30 +488,36 @@
                    :else
                    (tr "workspace.pull-requests.review-state.pending"))]
                 (when-not (str/blank? (:comment review))
-                  [:p {:class (stl/css :reviewer-comment)} (:comment review)])]))]])]
+                  [:> text* {:as "p" :typography t/body-small :class (stl/css :reviewer-comment)}
+                   (:comment review)])]))]])]
 
       (when-not (str/blank? (:description pr))
         [:div {:class (stl/css :pr-info-description-block)}
          [:label {:class (stl/css :field-label)}
           (tr "workspace.pull-requests.info.description")]
-         [:p {:class (stl/css :pr-info-description)} (:description pr)]])]
+         [:> text* {:as "p" :typography t/body-medium :class (stl/css :pr-info-description)}
+          (:description pr)]])]
 
      [:> modal-footer* {:class (stl/css :dialog-footer)}
       (when (and (or author? admin?) open?)
-        [:> button* {:variant "secondary"
+        [:> button* {:class (stl/css :dialog-action)
+                     :variant "secondary"
                      :on-click on-close-pr}
          (tr "workspace.pull-requests.actions.close")])
       (when (and (or author? admin?) closed?)
-        [:> button* {:variant "secondary"
+        [:> button* {:class (stl/css :dialog-action)
+                     :variant "secondary"
                      :on-click on-reopen-pr}
          (tr "workspace.pull-requests.actions.reopen")])
       (when (and open? (not reviewing?))
-        [:> button* {:variant "primary"
+        [:> button* {:class (stl/css :dialog-action)
+                     :variant "primary"
                      :icon i/arrow-up-right
                      :on-click on-open-review}
          (tr "workspace.pull-requests.actions.open-review")])
       (when (and open? can-merge?)
-        [:> button* {:variant "primary"
+        [:> button* {:class (stl/css :dialog-action)
+                     :variant "primary"
                      :icon i/git-merge
                      :on-click on-merge}
          (tr "workspace.pull-requests.actions.merge")])]]))
@@ -573,15 +596,13 @@
         ;; the progress of the tasks shows once the review has any
         (when (pos? total)
           [:*
-           [:button {:class (stl/css :pr-banner-tasks)
-                     :type "button"
-                     :on-click on-tasks}
+           [:> banner-button* {:on-click on-tasks}
             [:> i/icon* {:icon-id i/view-as-list :size "s"}]
             [:span (tr "workspace.review.bar.tasks" closed total)]
-            [:span {:class (stl/css :pr-banner-progress)
-                    :aria-hidden true}
-             [:span {:class (stl/css :pr-banner-progress-fill)
-                     :style #js {:width (dm/str (if (pos? total) (* 100 (/ closed total)) 0) "%")}}]]]
+            [:> progress-bar* {:value closed
+                               :total total
+                               :class (stl/css :pr-banner-progress)
+                               :aria-hidden true}]]
 
            [:div {:class (stl/css :pr-banner-separator)}]])
 

@@ -2,12 +2,15 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
 @use "ds/typography.scss" as *;
 
 .layer-chip {
+  --layer-chip-bg-color: var(--color-background-quaternary);
+  --layer-chip-fg-color: var(--color-foreground-secondary);
+
   @include use-typography("body-small");
 
   display: inline-flex;
@@ -17,21 +20,21 @@
   max-inline-size: 100%;
   padding: var(--sp-xxs) var(--sp-s);
   border-radius: $br-4;
-  background-color: var(--color-background-quaternary);
-  color: var(--color-foreground-secondary);
+  background-color: var(--layer-chip-bg-color);
+  color: var(--layer-chip-fg-color);
 
   &.is-lost {
-    background-color: var(--color-background-warning);
-    color: var(--color-accent-warning);
-  }
-
-  &.is-struck .layer-chip-label {
-    text-decoration: line-through;
+    --layer-chip-bg-color: var(--color-background-warning);
+    --layer-chip-fg-color: var(--color-accent-warning);
   }
 }
 
-.layer-chip-label {
+.label {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+.is-struck {
+  text-decoration: line-through;
 }

@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
@@ -26,12 +26,11 @@
   border-radius: $br-circle;
   background-color: var(--marker-bg-color);
   color: var(--marker-fg-color);
+
+  // TODO: No exact DS typography match found.
+  // Closest match: body-small (weight 700 vs 400).
   font-weight: 700;
   cursor: pointer;
-
-  &:hover {
-    --marker-border-color: var(--color-foreground-primary);
-  }
 
   &:focus-visible {
     outline: $b-1 solid var(--color-accent-primary);
@@ -58,5 +57,10 @@
     --marker-bg-color: var(--color-background-warning);
     --marker-border-color: var(--color-accent-warning);
     --marker-border-style: dashed;
+  }
+
+  // after the states, which set the same color with the same specificity
+  &:hover {
+    --marker-border-color: var(--color-foreground-primary);
   }
 }
