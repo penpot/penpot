@@ -2086,10 +2086,6 @@ msgstr "请重新生成 MCP 密钥，并在客户端配置中更新为新密钥�
 msgid "integrations.mcp-server.title"
 msgstr "MCP 服务器"
 
-#: src/app/main/ui/settings/integrations.cljs:493
-msgid "integrations.mcp-server.title.beta"
-msgstr "测试版"
-
 #: src/app/main/ui/settings/integrations.cljs:200
 msgid "integrations.name.label"
 msgstr "名称"

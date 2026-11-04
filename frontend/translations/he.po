@@ -2240,10 +2240,6 @@ msgstr "התוקף של מפתח MCP המשמש לחיבור לשרת MCP פג. 
 msgid "integrations.mcp-server.title"
 msgstr "שרת MCP"
 
-#: src/app/main/ui/settings/integrations.cljs:493
-msgid "integrations.mcp-server.title.beta"
-msgstr "בטא"
-
 #: src/app/main/ui/dashboard/comments.cljs:94
 msgid "label.mark-all-as-read"
 msgstr "לסמן הכול כנקרא"
