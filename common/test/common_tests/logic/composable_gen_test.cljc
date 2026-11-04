@@ -1093,3 +1093,10 @@
                        :ops [[:edit 18 0 0 0] [:delete 0 0 0 0] [:edit 3 0 1 1] [:update-main 3] [:update-main 0 0 0 0]
                              [:resize 6 0 0 0] [:nest 16 0 0 0] [:swap 16 0 0 0] [:detach 2 0 0 0] [:style 8 20 2 0]
                              [:reset 13 0 0 0]]}))))
+
+(t/deftest generated-switch-keeps-the-layout-item-override-it-carries
+  ;; a nested copy in a main with its own layout item margin keeps the
+  ;; margin through a switch, and the override that authors it
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout :flex :variant-diff false :rich-variants true
+                                    :layout-children true :layout-copies true :text true}]
+                       :ops [[:delete 6 0 0 0] [:swap 20 0 0 0] [:nest 7 0 0 0] [:style 13 27 1] [:switch 0 0 0 0]]}))))

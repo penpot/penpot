@@ -617,6 +617,20 @@
       (pcb/update-shapes [(:id shape)] #(update % :touched ctk/set-touched-group :geometry-group)
                          {:ignore-touched true}))))
 
+(defn- keep-placement-overrides
+  "A switch gives the new head the `swap-keep-attrs` of the copy head
+   `original-shape` it replaces, and with them the overrides that authored
+   them."
+  [changes original-shape new-shape]
+  (let [groups (into #{}
+                     (comp (keep #(ctk/resolve-sync-group (:type original-shape) %))
+                           (filter #(ctk/touched-group? original-shape %)))
+                     ctk/swap-keep-attrs)]
+    (cond-> changes
+      (seq groups)
+      (pcb/update-shapes [(:id new-shape)] #(update % :touched (fnil into #{}) groups)
+                         {:ignore-touched true}))))
+
 (defn generate-component-swap-in-place
   "Swap the copy head `shape` of `page` for a copy of the component
    `component-id` of library data `ldata`. The new head takes the old one's
@@ -650,7 +664,8 @@
 
         changes (cond-> changes
                   keep-touched?
-                  (keep-moved-placement shape new-shape page libraries))
+                  (-> (keep-moved-placement shape new-shape page libraries)
+                      (keep-placement-overrides shape new-shape)))
 
         ;; Replacement keeps the head id and its cell. Cleanup during the
         ;; temporary deletion must not change the parent's placement data.
