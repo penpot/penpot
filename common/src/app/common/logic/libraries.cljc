@@ -2157,11 +2157,16 @@
                                                          (pcb/with-objects objects))
                                                      file (assoc libraries (:id file) file)
                                                      container (:id head) false)
-                placed   (pcb/get-objects proposal)]
+                placed   (pcb/get-objects proposal)
+                ;; the sync places the parent before its layout does; follow the parent where it is
+                offset   (if-let [proposed (get placed (:id parent))]
+                           (gpt/subtract (first (:points parent)) (first (:points proposed)))
+                           (gpt/point 0 0))]
             (pcb/update-shapes
              changes (cfh/get-children-ids-with-self objects shape-id)
              (fn [shape]
-               (let [expected (get placed (:id shape))
+               (let [expected (cond-> (get placed (:id shape))
+                                (not (gpt/close? offset (gpt/point 0 0))) (gsh/move offset))
                      attrs    (cond-> placement-geometry-attrs
                                 (= :path (:type shape)) (conj :content))]
                  (if (= (:type shape) (:type expected))
