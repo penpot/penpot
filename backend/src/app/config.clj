@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.flags :as flags]
+   [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uri :as u]
@@ -362,13 +363,29 @@
 (def explain-config
   (sm/explainer schema:config))
 
+(defn- normalize-file-data-backend
+  "Since the file data moved to `file_change`, the `legacy-db` back end is
+  read-only: a write against it fails on every save. Accepting it would
+  start a healthy instance that cannot save a single file, so it reads as
+  `db`, which serves the legacy rows too. Warn instead of aborting: the
+  operator may still be halfway through the migration."
+  [config]
+  (if (= "legacy-db" (c/get config :file-data-backend))
+    (do
+      (l/warn :hint "file-data-backend=legacy-db is read-only, using db"
+              :file-data-backend "legacy-db"
+              :replacement "db")
+      (assoc config :file-data-backend "db"))
+    config))
+
 (defn read-config
   "Reads the configuration from environment variables and decodes all
   known values."
   [& {:keys [prefix default] :or {prefix "penpot"}}]
   (->> (read-env prefix)
        (merge default)
-       (decode-config)))
+       (decode-config)
+       (normalize-file-data-backend)))
 
 (def version
   (v/parse (or (some-> (io/resource "version.txt")

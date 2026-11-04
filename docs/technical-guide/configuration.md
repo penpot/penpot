@@ -776,11 +776,12 @@ These settings are equally useful if you have a Minio storage system.
 
 __Since version 2.11.0__
 
-You can change the default file data storage backend with `PENPOT_FILE_DATA_BACKEND` environment variable. Possible values are:
+You can change the file data storage backend with `PENPOT_FILE_DATA_BACKEND` environment variable. Possible values are:
 
-- `legacy-db`: the current default backend, continues storing the file data of files and snapshots in the same location as previous versions of Penpot (< 2.11.0), this is a conservative default behaviour and will be changed to `db` in next versions.
-- `db`: stores the file data on an specific table (the future default backend).
+- `db`: the default. Stores the file data on an specific table.
 - `storage`: stores the file data using the objects storage system (S3 or FS, depending on which one is configured)
+
+The `legacy-db` value is still accepted as a **read-only** alias for the payloads written by versions before 2.11.0: the backend reads them, but it no longer writes file data there. **If you upgrade a deployment with `PENPOT_FILE_DATA_BACKEND=legacy-db`, remove the variable (or set it to `db`) before the upgrade**: the backend reads `legacy-db` as `db` and logs a warning, so saves keep working, but remove the variable anyway so the deployment does not claim a read-only backend.
 
 This also comes with an additional feature that allows offload the "inactive" files on file storage backend and leaves the database only for the active files. To enable it, you should use the `enable-tiered-file-data-storage` flag and `db` as file data storage backend.
 

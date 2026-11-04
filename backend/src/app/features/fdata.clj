@@ -147,7 +147,7 @@
                        data])))
 
 (defn- handle-persistence
-  [cfg {:keys [type backend id file-id data] :as params}]
+  [cfg {:keys [backend id file-id data] :as params}]
 
   (cond
     (= backend "storage")
@@ -179,39 +179,6 @@
           params   (assoc params :metadata metadata)]
       (upsert-in-database cfg params))
 
-    (= backend "legacy-db")
-    (cond
-      (= type "main")
-      (do
-        (db/delete! cfg :file-data
-                    {:id id :file-id file-id :type "main"}
-                    {::db/return-keys false})
-        (db/update! cfg :file
-                    {:data data}
-                    {:id file-id}
-                    {::db/return-keys false}))
-
-      (= type "snapshot")
-      (do
-        (db/delete! cfg :file-data
-                    {:id id :file-id file-id :type "snapshot"}
-                    {::db/return-keys false})
-        ;; every mutation of `file_change` moves `updated_at`: the partition
-        ;; runbook uses it as the watermark of the delta passes
-        (db/update! cfg :file-change
-                    {:data data
-                     :updated-at (ct/now)}
-                    {:file-id file-id :id id}
-                    {::db/return-keys false}))
-
-      (= type "fragment")
-      (upsert-in-database cfg
-                          (-> (dissoc params :metadata)
-                              (assoc :backend "db")))
-
-      :else
-      (throw (RuntimeException. "not implemented")))
-
     :else
     (throw (IllegalArgumentException.
             (str "backend '" backend "' not supported")))))
@@ -224,7 +191,13 @@
 
 (defn- default-backend
   [backend]
-  (or backend (cf/get :file-data-backend)))
+  (let [backend (or backend (cf/get :file-data-backend))]
+    (when (= "legacy-db" backend)
+      (ex/raise :type :validation
+                :code :legacy-backend-read-only
+                :hint "the legacy-db file data backend is read-only; set the file data backend to db or storage"
+                :backend backend))
+    backend))
 
 (defn decode-metadata
   [metadata]
@@ -237,7 +210,7 @@
    [:id ::sm/uuid]
    [:type [:enum "main" "snapshot" "fragment"]]
    [:file-id ::sm/uuid]
-   [:backend {:optional true} [:enum "db" "legacy-db" "storage"]]
+   [:backend {:optional true} [:enum "db" "storage"]]
    [:metadata {:optional true} ctf/schema:file-metadata]
    [:data {:optional true} bytes?]
    [:created-at {:optional true} ::ct/inst]
