@@ -17,9 +17,12 @@
    [app.main.data.persistence :as dps]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.errors :as errors]
+   [app.util.i18n :as i18n]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
+   [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.persistence :as thp]
    [potok.v2.core :as ptk]))
 
@@ -689,3 +692,70 @@
          (t/is (nil? (get-in @store [:workspace-global :persistence-lock])))
          (t/is (= "Restored" (thp/shape-name store file-id page-id shape-id))))))))
 
+
+(defn- rejection-notice
+  "Saves a rename of the open file and answers it with `answer` applied to
+  a rejection of it, after `prepare` updates the state (given the file
+  id) while the save is in flight. Resolves with the params the notice was
+  flashed with; `tr` answers each key with its arguments."
+  [prepare answer]
+  (let [flashes (atom [])]
+    (-> (thp/with-persistence
+          (^:async fn [{:keys [file-id response requests store]}]
+            (await
+             (mock/with-mocks*
+               {errors/flash (fn [& {:as params}]
+                               (swap! flashes conj params)
+                               (js/Promise.resolve nil))
+                i18n/tr      (fn ([key] [key]) ([key & args] (into [key] args)))}
+               (let [page-id  (uuid/next)
+                     shape-id (uuid/next)
+                     commit1  (thp/rename-commit file-id page-id shape-id "A" "B")]
+                 (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "B")))
+                 (ptk/emit! store commit1 ::dps/force-persist)
+                 (await (async/wait-for #(= 1 (count @requests)) "the rename is sent"))
+                 (ptk/emit! store #(prepare % file-id))
+                 (rx/push! response (answer (thp/rejection (:id @commit1))))
+                 (await (async/wait-for #(seq @flashes) "the notice is flashed")))))))
+        (.then (fn [_] (first @flashes))))))
+
+;; Scenario: an edit made while the save was in flight is undone with the
+;; rejected one. Proves: the notice says the latest changes were undone,
+;; and goes away by itself.
+(t/deftest ^:async a-rejection-notice-says-the-latest-changes-were-undone
+  (let [{:keys [hint tag timeout]} (await (rejection-notice (fn [state _] state) identity))]
+    (t/is (= ["errors.save-rejected-changes-undone"] hint))
+    (t/is (= dps/rejected-tag tag))
+    (t/is (some? timeout))))
+
+;; Scenario: the user went to another file before the answer came back.
+;; Proves: the notice names the file it is about.
+(t/deftest ^:async a-rejection-in-a-file-not-open-names-it
+  (let [{:keys [hint]} (await (rejection-notice
+                               (fn [state file-id]
+                                 (-> state
+                                     (assoc-in [:files file-id :name] "Brand kit")
+                                     (assoc :current-file-id (uuid/next))))
+                               identity))]
+    (t/is (= ["errors.save-rejected-changes-undone-in-file" "Brand kit"] hint))))
+
+;; Scenario: the page holds data that was invalid before the change, so the
+;; backend flags the rejection. Proves: the notice says the data is damaged.
+(t/deftest ^:async a-rejection-on-damaged-data-says-so
+  (let [{:keys [hint]} (await (rejection-notice
+                               (fn [state _] state)
+                               #(assoc-in % [:rejected :preexisting-damage] true)))]
+    (t/is (= ["errors.save-rejected-damaged-data"] hint))))
+
+;; Scenario: the repair notice of the open file is still on screen when a
+;; save of it comes back rejected. The store holds one toast. Proves: the
+;; notice tells both, and stays like the repair notice did.
+(t/deftest ^:async a-rejection-keeps-the-repair-notice-on-screen
+  (let [{:keys [hint tag timeout]}
+        (await (rejection-notice
+                (fn [state _]
+                  (assoc state :notification {:content "repaired" :tag dps/file-repaired-tag}))
+                identity))]
+    (t/is (= ["workspace.notifications.file-repaired-changes-undone"] hint))
+    (t/is (= dps/repaired-rejected-tag tag))
+    (t/is (nil? timeout))))

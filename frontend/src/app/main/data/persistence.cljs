@@ -627,13 +627,80 @@
       (d/update-in-when state [:persistence :index (:id commit)]
                         assoc ::acknowledged true))))
 
-(def ^:private rejected-tag
-  "Tag of the rejected changes notice."
+(def rejected-tag
+  "Tag of the notice that changes to the open file were rejected."
   :persistence-rejected)
+
+(def ^:private other-file-rejected-tag
+  "Tag of the notice that changes to a file not open were rejected."
+  :persistence-rejected-other-file)
+
+(def file-repaired-tag
+  "Tag of the notice that the backend repaired the open file."
+  :file-repaired)
+
+(def repaired-rejected-tag
+  "Tag of the notice that tells both of a repair and of rejected changes."
+  :file-repaired-rejected)
 
 (def ^:private rejected-timeout-ms
   "How long the rejected changes notice stays; the report is sent anyway."
   10000)
+
+(defn notify-repaired
+  "Tells the user the backend repaired the open file. The store holds one
+  toast, so a notice of rejected changes to that file still on screen is
+  folded into it, keeping its report link."
+  []
+  (ptk/reify ::notify-repaired
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [{:keys [tag links]} (:notification state)]
+        (rx/of
+         (ntf/show
+          (if (contains? #{rejected-tag repaired-rejected-tag} tag)
+            (cond-> {:content (tr "workspace.notifications.file-repaired-changes-undone")
+                     :type :toast
+                     :level :warning
+                     :timeout nil
+                     :tag repaired-rejected-tag}
+              (seq links)
+              (assoc :links links))
+            {:content (tr "workspace.notifications.file-repaired")
+             :type :toast
+             :level :info
+             :timeout nil
+             :tag file-repaired-tag})))))))
+
+(defn- rejection-notice
+  "Text, tag and timeout of the notice that the changes `rejected` in a
+  save of `file-id` were undone. A file other than the open one is named;
+  a repair notice of the open file still on screen is folded into it."
+  [state file-id {:keys [preexisting-damage]}]
+  (let [file-name (dm/get-in state [:files file-id :name])
+        current?  (= file-id (:current-file-id state))
+        repaired? (contains? #{file-repaired-tag repaired-rejected-tag}
+                             (dm/get-in state [:notification :tag]))]
+    (cond
+      (and (not current?) (some? file-name))
+      {:hint    (tr "errors.save-rejected-changes-undone-in-file" file-name)
+       :tag     other-file-rejected-tag
+       :timeout rejected-timeout-ms}
+
+      (and current? repaired?)
+      {:hint    (tr "workspace.notifications.file-repaired-changes-undone")
+       :tag     repaired-rejected-tag
+       :timeout nil}
+
+      (and current? preexisting-damage)
+      {:hint    (tr "errors.save-rejected-damaged-data")
+       :tag     rejected-tag
+       :timeout rejected-timeout-ms}
+
+      :else
+      {:hint    (tr "errors.save-rejected-changes-undone")
+       :tag     (if current? rejected-tag other-file-rejected-tag)
+       :timeout rejected-timeout-ms})))
 
 (defn- discard-path-edit
   "Forgets the path editor's state for `id`, so leaving the edition saves
@@ -783,9 +850,10 @@
           (rx/empty)))
 
       ptk/EffectEvent
-      (effect [_ _ _]
+      (effect [_ state _]
         (when-let [plan @plan]
-          (let [{:keys [error commit-ids]} rejected]
+          (let [{:keys [error commit-ids]} rejected
+                {:keys [hint tag timeout]} (rejection-notice state file-id rejected)]
             (errors/flash :cause (ex-info "The server rejected some changes"
                                           (merge error
                                                  {:file-id file-id
@@ -793,10 +861,10 @@
                                                  (pcm/rollback-summary plan)))
                           :type :unhandled
                           :level :warning
-                          :timeout rejected-timeout-ms
-                          :tag rejected-tag
+                          :timeout timeout
+                          :tag tag
                           :report-link? true
-                          :hint (tr "errors.save-rejected-changes-undone"))))))))
+                          :hint hint)))))))
 
 (defn- update-file-request
   "Issues the `update-file` request, tracked as active for its lifetime."

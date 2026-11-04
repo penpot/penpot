@@ -6,12 +6,12 @@
 
 (ns frontend-tests.data.workspace-notifications-test
   (:require
-   [app.common.data :as d]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
+   [app.main.data.persistence :as dps]
    [app.main.data.websocket :as dws]
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.notifications :as dwntf]
@@ -40,17 +40,40 @@
                           :on-next #(swap! events conj %)))
     @events))
 
+(defn- ^:async shown-notice
+  "The notification the watch of `event` shows on `state`."
+  [event state]
+  (let [events (atom [])]
+    (await (async/observe (ptk/watch event state (rx/empty))
+                          :on-next #(swap! events conj %)))
+    (some #(when (= ::ntf/show (ptk/type %))
+             (:notification (ptk/update % {})))
+          @events)))
+
 (t/deftest ^:async repaired-file-change-applies-and-notifies
   (let [events (await (watch-file-change (file-change-msg {:repaired true})))
-        types  (mapv ptk/type events)
-        show   (d/seek #(= ::ntf/show (ptk/type %)) events)
-        state  (ptk/update show {})]
-    (t/is (= [::dch/commit ::ntf/show] types))
-    (t/is (= :info (get-in state [:notification :level])))
-    (t/is (nil? (get-in state [:notification :timeout]))
-          "the toast stays until the user closes it")
-    (t/is (= (i18n/tr "workspace.notifications.file-repaired")
-             (get-in state [:notification :content])))))
+        notice (await (shown-notice (second events) {}))]
+    (t/is (= [::dch/commit ::dps/notify-repaired] (mapv ptk/type events)))
+    (t/is (= :info (:level notice)))
+    (t/is (nil? (:timeout notice)) "the toast stays until the user closes it")
+    (t/is (= dps/file-repaired-tag (:tag notice)))
+    (t/is (= (i18n/tr "workspace.notifications.file-repaired") (:content notice)))))
+
+;; Scenario: a save of the open file came back rejected and its notice is
+;; still on screen when the backend repairs the file. The store holds one
+;; toast. Proves: the repair notice tells both and keeps the report link.
+(t/deftest ^:async a-repair-notice-keeps-a-rejection-notice-on-screen
+  (let [link   {:label "report.txt" :callback identity}
+        notice (await (shown-notice (dps/notify-repaired)
+                                    {:notification {:content "rejected"
+                                                    :tag dps/rejected-tag
+                                                    :links [link]}}))]
+    (t/is (= (i18n/tr "workspace.notifications.file-repaired-changes-undone")
+             (:content notice)))
+    (t/is (= :warning (:level notice)))
+    (t/is (= dps/repaired-rejected-tag (:tag notice)))
+    (t/is (= [link] (:links notice)))
+    (t/is (nil? (:timeout notice)))))
 
 (t/deftest ^:async ordinary-file-change-does-not-notify
   (let [events (await (watch-file-change (file-change-msg {})))]

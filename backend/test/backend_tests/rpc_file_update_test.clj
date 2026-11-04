@@ -110,7 +110,8 @@
         (t/is (= [(:commit-id commit2) (:commit-id commit3)] (:commit-ids rejected)))
         (t/is (= (:commit-id commit2) (:failed-commit-id rejected)))
         (t/is (= :validation (-> rejected :error :type)))
-        (t/is (= :referential-integrity (-> rejected :error :code)))))
+        (t/is (= :referential-integrity (-> rejected :error :code)))
+        (t/is (nil? (:preexisting-damage rejected)))))
 
     (t/testing "the file holds the accepted commit only"
       (let [objects (-> (get-file-data ctx) :pages-index (get page-id) :objects)]
@@ -184,8 +185,36 @@
     (t/is (= [(:commit-id commit2) (:commit-id commit3)]
              (-> out :result :rejected :commit-ids)))
     (t/is (= :schema-validation (-> out :result :rejected :error :code)))
+    (t/is (nil? (-> out :result :rejected :preexisting-damage))
+          "the data was valid before the rejected commit")
     (t/is (= "rect" (get-in objects [shape-a :name])))
     (t/is (not (contains? objects shape-c)))))
+
+(t/deftest flags-a-rejection-on-data-damaged-before-the-commit
+  (let [{:keys [page-id] :as ctx} (create-file)
+        shape-a  (uuid/next)
+        _        (update-file ctx {:changes [(th/add-rect-change page-id shape-a)
+                                             {:type :mod-obj
+                                              :page-id page-id
+                                              :id shape-a
+                                              :operations [{:type :set :attr :name :val "damaged"}]}]})
+        commit1  (commit (th/add-rect-change page-id (uuid/next)))
+        validate val/validate-file-schema-affected!
+        ;; The page fails the schema check whenever it holds the "damaged"
+        ;; shape, as stored data that an older version saved invalid would
+        out      (with-redefs [val/validate-file-schema-affected!
+                               (fn [file changes]
+                                 (when (= "damaged"
+                                          (get-in file [:data :pages-index page-id :objects shape-a :name]))
+                                   (ex/raise :type :validation :code :schema-validation :hint "schema"))
+                                 (validate file changes))]
+                   (update-file ctx {:revn 1 :changes-with-metadata [commit1]}))
+        rejected (-> out :result :rejected)]
+
+    (t/is (nil? (:error out)))
+    (t/is (= [(:commit-id commit1)] (:commit-ids rejected)))
+    (t/is (true? (:preexisting-damage rejected)))
+    (t/is (= 1 (:revn (th/db-get :file {:id (:file-id ctx)}))))))
 
 (t/deftest saves-every-commit-when-all-are-valid
   (let [{:keys [page-id] :as ctx} (create-file)
