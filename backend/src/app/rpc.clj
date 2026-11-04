@@ -370,14 +370,19 @@
   "Authorizes a shared-key caller against the method's `::allowed-shared-keys`.
 
   A management method declares the shared-key ids allowed to call it with
-  `::allowed-shared-keys`. When the metadata is absent any configured shared key is
-  accepted, preserving the previous behavior. When it is present and empty no
-  key is accepted."
+  `::allowed-shared-keys`: a set of ids, or a predicate over the calling
+  key id (e.g. the exporter family with per-tenant ids). When the metadata
+  is absent any configured shared key is accepted, preserving the previous
+  behavior. When it is present and empty no key is accepted."
   [_ f mdata]
   (if (contains? mdata ::allowed-shared-keys)
-    (let [allowed-keys (::allowed-shared-keys mdata)]
+    (let [allowed (::allowed-shared-keys mdata)]
       (fn [cfg params]
-        (if (contains? allowed-keys (::auth-key-id params))
+        (if (if (set? allowed)
+              (contains? allowed (::auth-key-id params))
+              ;; A predicate (e.g. the exporter family with per-tenant
+              ;; ids): the set form stays for every other method.
+              (allowed (::auth-key-id params)))
           (f cfg params)
           (do
             (l/wrn :hint "shared key is not allowed for this method"
@@ -541,7 +546,7 @@
   ["/api"
    ["/management"
     ["/methods/:method-name"
-     {:middleware [[mw/shared-key-auth shared-keys]
+     {:middleware [[mw/shared-key-auth shared-keys (:secret-key (::setup/props cfg))]
                    [session/authz cfg]]
       :handler (make-rpc-handler management-methods)}]
 

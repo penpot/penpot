@@ -16,6 +16,7 @@
    [app.binfile.v3 :as bf.v3]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.export :as export]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.config :as cf]
@@ -43,6 +44,19 @@
   job-def declares."
   [:map {:title "create-export-binfile-job" :closed true}
    [:params export-binfile/schema:params]])
+
+(def ^:private schema:create-export-assets-job
+  "The shapes and frames frozen in the params, rendered as image files
+  by the external exporter worker; the business params are what the
+  `:export-assets` job-def declares.
+
+  `:transient` marks a single-use export (a clipboard image, a plugin
+  shape export): the caller consumes the artifact in the same flow and
+  never comes back for it, so its row and object live minutes, not the
+  user ledger's days."
+  [:map {:title "create-export-assets-job" :closed true}
+   [:params export/schema:params]
+   [:transient {:optional true} ::sm/boolean]])
 
 (def ^:private schema:create-import-binfile-job
   "The `.penpot` package the caller uploaded, imported into a project by
@@ -93,18 +107,26 @@
 (defn- submit-job
   "Create the job row with what every user job shares: the queue its
   job-def routes the heavy work to (`::jobs/queue-name`, `:binfile` when
-  the def says nothing), no automatic retry and the expiry of the ledger."
-  [cfg job-def name params profile-id & {:keys [resource-id]}]
+  the def says nothing), no automatic retry and the expiry of the ledger
+  (or the one the caller names, for a single-use job)."
+  [cfg job-def name params profile-id & {:keys [resource-id expires-at]}]
   (jobs/submit cfg (cond-> {::jobs/name        name
                             ::jobs/params      params
                             ::jobs/queue       (or (::jobs/queue-name job-def)
                                                    :binfile)
                             ::jobs/profile-id  profile-id
                             ::jobs/max-retries 0
-                            ::jobs/expires-at  (ct/plus (ct/now)
-                                                        (cf/get-jobs-user-ttl))}
+                            ::jobs/expires-at  (or expires-at
+                                                   (ct/plus (ct/now)
+                                                            (cf/get-jobs-user-ttl)))}
                      (some? resource-id)
                      (assoc ::jobs/resource-id resource-id))))
+
+(def ^:private transient-job-ttl
+  "How long a single-use export lives. The legacy tempfile paths these
+  flows replace lived ten minutes, and the artifact is downloaded in the
+  same flow: nothing reads it later."
+  (ct/duration {:minutes 10}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; EXPORT
@@ -128,6 +150,49 @@
                  (when (and (= (count file-ids) (count rows))
                             (= 1 (count teams)))
                    (first teams)))))))
+
+(defn- check-file-permissions
+  "The files the job will read, checked before anything is stored: a
+  refusal arrives synchronously. The handler checks it again before
+  reading, because a permission can be revoked while the job waits.
+  This is the binfile flavour: whole files, no share ids."
+  [cfg profile-id file-ids]
+  (when (empty? file-ids)
+    (ex/raise :type :validation
+              :code :no-files-to-export
+              :hint "expected at least one file to export"))
+  (doseq [file-id file-ids]
+    (files/check-read-permissions! cfg profile-id file-id)))
+
+(defn- check-items-scope!
+  "One job renders one batch: every item names the same file, page and
+  share (a missing share-id is its own group). The worker groups by
+  scale and type and renders each group against the page of its first
+  item, so a mixed batch would render objects against the wrong page
+  instead of failing. The legacy surface only took one file; refuse
+  here, synchronously, the way permissions refuse."
+  [items]
+  (let [scopes (into #{} (map (juxt :file-id :page-id :share-id)) items)]
+    (when (> (count scopes) 1)
+      (ex/raise :type :validation
+                :code :mixed-export-scope
+                :hint "all the items of an export belong to the same file, page and share"))))
+
+(defn- check-item-permissions
+  "The assets flavour: the items name files, and a viewer that reached
+  them through a share link names the share, so the permission goes the
+  same way every share fetch goes (a logged viewer of a public share is
+  allowed; the workspace path stays for the plain items). The command
+  is not anonymous: an anonymous visitor has no profile to own the
+  artifact, the same as the exporter cookie this cutover replaces."
+  [cfg profile-id items]
+  (check-items-scope! items)
+  (doseq [item items]
+    (let [file-id  (:file-id item)
+          share-id (:share-id item)]
+      (if (some? share-id)
+        (files/check-read-permissions! cfg profile-id file-id share-id)
+        (files/check-read-permissions! cfg profile-id file-id)))))
 
 (sv/defmethod ::create-export-binfile-job
   "Create a durable job that exports a set of files as a `.penpot`
@@ -153,13 +218,7 @@
         params   (jobs/validate-params job-def (:params envelope))
         file-ids (:file-ids params)]
 
-    (when (empty? file-ids)
-      (ex/raise :type :validation
-                :code :no-files-to-export
-                :hint "expected at least one file to export"))
-
-    (doseq [file-id file-ids]
-      (files/check-read-permissions! cfg profile-id file-id))
+    (check-file-permissions cfg profile-id file-ids)
 
     (quotes/check! cfg {::quotes/id ::quotes/export-jobs-per-profile
                         ::quotes/profile-id profile-id})
@@ -172,6 +231,42 @@
                                 :files       (count file-ids)
                                 :export-type (d/name (:export-type params))}
                          team-id (assoc :team-id team-id))}))))
+
+(sv/defmethod ::create-export-assets-job
+  "Create a durable job that renders shapes and frames as image files.
+
+   Its params freeze the items to render (file, page, object, type,
+   scale, name and the optional share id) the way the exporter receives
+   them. The work runs on the external exporter worker, which consumes
+   the queue the job-def names; the backend ships no runner for it.
+
+   The job is created, not run: the caller follows it by its id. The
+   read permission of every file named in the items is checked here so a
+   refusal arrives synchronously, and the handler checks it again before
+   reading."
+  {::doc/added "2.20"
+   ::webhooks/event? true
+   ::sm/params schema:create-export-assets-job
+   ::sm/result schema:job-summary}
+  [cfg {:keys [::rpc/profile-id] :as envelope}]
+  (let [job-def (resolve-job-def cfg :export :export-assets)
+        ;; the RPC layer decoded the params against the job-def schema
+        ;; before the command ran
+        params  (jobs/validate-params job-def (:params envelope))]
+
+    (check-item-permissions cfg profile-id (:exports params))
+
+    (quotes/check! cfg {::quotes/id ::quotes/export-jobs-per-profile
+                        ::quotes/profile-id profile-id})
+
+    (let [expires-at (when (:transient envelope)
+                       (ct/plus (ct/now) transient-job-ttl))
+          summary    (get-job-summary cfg (submit-job cfg job-def :export-assets
+                                                      params profile-id
+                                                      :expires-at expires-at))]
+      (with-meta summary
+        {::audit/props {:job-id (:id summary)
+                        :files  (count (:exports params))}}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMPORT

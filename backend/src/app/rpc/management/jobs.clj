@@ -15,19 +15,63 @@
   (app.http.middleware) to authenticate the `<id> <secret>` header, and
   wrap-management applies wrap-shared-key-authorization (app.rpc) to
   check the key id against ::rpc/allowed-shared-keys. If the route
-  middleware or wrap-management changes, revisit these methods."
+  middleware or wrap-management changes, revisit these methods.
+
+  Every write method answers `{:action :run}` when it landed and
+  `{:action :skip}` when it did not, with the state of the row it found
+  (read fresh after the failed write) in `:status`: the worker tells a
+  cancelled job apart from one it was too late for, without guessing."
   (:require
    [app.common.exceptions :as ex]
+   [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.config :as cf]
+   [app.db :as db]
+   [app.http.session :as session]
    [app.jobs :as jobs]
+   [app.jobs.storage :as js]
+   [app.media.validation :as media.v]
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as doc]
-   [app.util.services :as sv]))
+   [app.setup :as-alias setup]
+   [app.storage :as sto]
+   [app.util.services :as sv]
+   [clojure.string :as str]))
 
-(def ^:private allowed-shared-key-ids
-  "Only the exporter worker claims and settles durable jobs today."
-  #{:exporter})
+(def ^:private exporter-key-prefix
+  "Prefix of the per-tenant exporter key ids (`exporter:<tenant>`). The
+  bare `exporter` id is the legacy form, bound to this backend's own
+  tenant below."
+  "exporter:")
+
+(defn- exporter-key?
+  "A key id of the exporter family: the bare legacy id, or one suffixed
+  with the tenant it renders for (lowercase — the middleware lowercases
+  every id before comparing)."
+  [key-id]
+  (and (some? key-id)
+       (let [id-name (if (keyword? key-id) (name key-id) (str key-id))]
+         (or (= id-name "exporter")
+             (str/starts-with? id-name exporter-key-prefix)))))
+
+(defn- key-tenant
+  "The tenant the calling exporter renders for: the suffix of a
+  per-tenant key id, or this backend's own tenant for the bare legacy
+  id (single-tenant deploys only ever see their own)."
+  [key-id]
+  (let [id-name (name key-id)]
+    (if (str/starts-with? id-name exporter-key-prefix)
+      (subs id-name (count exporter-key-prefix))
+      (cf/get :tenant))))
+
+(defn- tenant-ok?
+  "The job belongs to the calling exporter's tenant. Anything else is
+  answered exactly like a missing row, so the caller learns nothing
+  about rows it cannot see."
+  [key-id job]
+  (and (some? job)
+       (= (key-tenant key-id) (:tenant job))))
 
 ;; ---- RPC METHOD: CLAIM-JOB
 
@@ -40,27 +84,66 @@
   [:map {:title "claim-job-result"}
    [:action [:enum :run :skip]]
    [:name {:optional true} ::sm/text]
-   ;; Opaque per-job params blob; intentionally untyped.
-   [:params {:optional true} :any]])
+   ;; Params decoded with the row's job-def (typed values); a row
+   ;; whose job-def is gone answers the stored shapes untouched.
+   [:params {:optional true} :any]
+   ;; On `:skip`, the state of the row the write lost against.
+   [:status {:optional true} ::sm/text]])
+
+(defn- decode-claim-params
+  "The frozen params through the decoder of the row's job-def, so the
+  worker gets typed values (uuids, keywords, instants) instead of the
+  stored JSON shapes — transit carries the types natively. A row whose
+  job-def is gone (retired) answers untouched, mirroring what
+  `jobs/decode-result-of` does for results."
+  [cfg row]
+  (let [params (:params row)]
+    (if-let [job-def (and (some? params)
+                          (get (jobs/get-defs cfg) (keyword (:name row))))]
+      (jobs/decode-params job-def params)
+      params)))
+
+(defn- row-status
+  "The state of the row after a write that touched nothing: one fresh
+  read, never the row the method already saw, so the answer names the
+  state the race produced."
+  [cfg job-id]
+  (:status (jobs/get-job cfg job-id)))
+
+(defn- skip-with-status
+  "The answer of a landed-nowhere write: one fresh read of the row
+  after the failure, so the worker sees the state the race produced."
+  [cfg job-id]
+  (if-let [status (row-status cfg job-id)]
+    {:action :skip :status status}
+    {:action :skip}))
 
 (sv/defmethod ::claim-job
   {::doc/added "2.20"
    ::sm/params schema:claim-job-params
    ::sm/result schema:claim-job-result
    ::rpc/auth false
-   ::rpc/allowed-shared-keys allowed-shared-key-ids}
-  [cfg {:keys [job-id scheduled-at]}]
+   ::rpc/allowed-shared-keys exporter-key?}
+  [cfg {:keys [job-id scheduled-at] :as params}]
   (let [row (jobs/get-job cfg job-id)]
     ;; Race condition: if the job is claimed between get-job and claim! by
     ;; another worker, claim! returns 0 and we return :skip. The conditional
     ;; claim (UPDATE ... WHERE status IN ('new','scheduled','retry') AND
     ;; scheduled_at=?) handles this correctly: only a pending row with an
     ;; exact scheduled-at match is claimed, a stale payload is skipped.
-    (if (and row (pos? (jobs/claim cfg job-id scheduled-at)))
+    (cond
+      ;; A job of another tenant is indistinguishable from a missing one:
+      ;; a bare skip, never the row's state.
+      (and (some? row) (not (tenant-ok? (::rpc/auth-key-id params) row)))
+      {:action :skip}
+
+      (and row (pos? (jobs/claim cfg job-id scheduled-at)))
       {:action :run
        :name   (:name row)
-       :params (:params row)}
-      {:action :skip})))
+       :params (decode-claim-params cfg row)}
+
+      :else
+      (skip-with-status cfg job-id))))
 
 ;; ---- RPC METHOD: REPORT-JOB-PROGRESS
 
@@ -74,15 +157,16 @@
 
 (def ^:private schema:report-job-progress-result
   [:map {:title "report-job-progress-result"}
-   [:action [:enum :run :skip]]])
+   [:action [:enum :run :skip]]
+   [:status {:optional true} ::sm/text]])
 
 (sv/defmethod ::report-job-progress
   {::doc/added "2.20"
    ::sm/params schema:report-job-progress-params
    ::sm/result schema:report-job-progress-result
    ::rpc/auth false
-   ::rpc/allowed-shared-keys allowed-shared-key-ids}
-  [cfg {:keys [job-id progress]}]
+   ::rpc/allowed-shared-keys exporter-key?}
+  [cfg {:keys [job-id progress] :as params}]
   ;; A lost race (row already terminal) reports :skip so the worker
   ;; stops retrying a report that can never land, mirroring claim-job.
   ;; The forced route propagates database errors: the external worker
@@ -90,62 +174,237 @@
   ;; the beat raises when the job is no longer active is caught here for
   ;; the same reason, and it never reaches the HTTP error mapping: it is
   ;; an internal signal, not a failure of the request.
+  ;;
+  ;; The tenant rides in the write itself (`:tenant`), so the hot path is
+  ;; one statement and needs no row read. A beat for another tenant's job
+  ;; matches nothing and the substrate says why; the answer is a bare
+  ;; skip, never the row's state.
   (let [result (ex/try! (jobs/heartbeat cfg
                                         :job-id job-id
                                         :progress progress
+                                        :tenant (key-tenant (::rpc/auth-key-id params))
                                         ::jobs/force? true))]
     (cond
       (ex/exception? result)
-      (if (= :interrupt (:type (ex-data result)))
-        {:action :skip}
-        (throw result))
+      (let [data (ex-data result)]
+        (cond
+          (= :foreign-tenant (:reason data))
+          {:action :skip}
+
+          (= :interrupt (:type data))
+          (skip-with-status cfg job-id)
+
+          :else
+          (throw result)))
 
       (pos? result)
       {:action :run}
 
       :else
-      {:action :skip})))
+      (skip-with-status cfg job-id))))
 
 ;; ---- RPC METHOD: COMPLETE-JOB
 
 (def ^:private schema:complete-job-params
-  [:map {:title "complete-job-params"}
-   [:job-id ::sm/uuid]
-   ;; Per-job result: any JSON-encodable value, nil when the job returns
-   ;; nothing. Nested maps and vectors are allowed; unserializable
-   ;; values are dropped to nil by jobs/encode-result with a warning. A
-   ;; job whose job-def declares a result schema has its result validated
-   ;; against it: one that does not conform is rejected and the job is
-   ;; not completed.
-   [:result [:maybe :any]]
-   ;; Storage object the worker produced for this job. A resource is only
-   ;; set, never replaced: a job that already has one is rejected.
-   [:resource-id {:optional true} ::sm/uuid]])
+  [:and
+   [:map {:title "complete-job-params"}
+    [:job-id ::sm/uuid]
+    ;; Per-job result: any JSON-encodable value, nil when the job returns
+    ;; nothing. Nested maps and vectors are allowed; unserializable
+    ;; values are dropped to nil by jobs/encode-result with a warning. A
+    ;; job whose job-def declares a result schema has its result validated
+    ;; against it: one that does not conform is rejected and the job is
+    ;; not completed.
+    [:result {:optional true} [:maybe :any]]
+    ;; Storage object the worker produced for this job. A resource is only
+    ;; set, never replaced: a job that already has one is rejected.
+    [:resource-id {:optional true} ::sm/uuid]
+    ;; The multipart form: the worker sends the artifact itself, the
+    ;; server stores it. The part is the single source of what the user
+    ;; will download: its filename and type travel in the part itself
+    ;; (`schema:upload` requires the name; `check-artifact!` enforces
+    ;; the allowlist on the type), never as separate text fields.
+    [:content {:optional true} media.v/schema:upload]
+    ;; The render session the worker used, closed once the job settles:
+    ;; complete is terminal, the session has no reader after it.
+    [:session-id {:optional true} ::sm/uuid]]
+   [:fn {:error/message "one of :content, :result or :resource-id is required"}
+    (fn [{:keys [content resource-id] :as params}]
+      (boolean (or (some? content)
+                   (contains? params :result)
+                   (some? resource-id))))]])
+
 
 (def ^:private schema:complete-job-result
   [:map {:title "complete-job-result"}
-   [:action [:enum :run :skip]]])
+   [:action [:enum :run :skip]]
+   [:status {:optional true} ::sm/text]])
+
+(defn- close-job-session!
+  "The session a worker rendered with, deleted once the job settles, and
+  only when it really belongs to that job's owner: the id travels in the
+  request, so a shared-key holder must not be able to delete another
+  profile's login.
+
+  Best-effort: the settle already decided the outcome, and a session that
+  cannot be deleted now is swept later by the sessions idle GC. With no
+  job row to match (it was already gone) nothing is deleted."
+  [cfg job-id session-id]
+  (when (and (uuid? session-id) (uuid? job-id))
+    (ex/ignoring
+     (when-let [job (jobs/get-job cfg job-id)]
+       (when-let [session (session/read-session (::session/manager cfg) session-id)]
+         (when (= (:profile-id job) (:profile-id session))
+           (session/delete-session (::session/manager cfg) session-id)))))))
+
+(defn- check-artifact!
+  "The bytes a worker offers as the result: the path must be one the
+  multipart parser wrote (`media.v/check-upload-path`), the type one the
+  export produces and the size under the configured cap. Every check
+  refuses to *use* the bytes, not to receive them (the parser already
+  wrote them to a server tempfile); refusing early costs nothing,
+  storing early costs a GC cycle."
+  [content]
+  (media.v/check-upload-path content)
+  (media.v/check-media-type content cm/export-artifact-types)
+  (let [max-size (cf/get-exporter-max-result-size)]
+    (when (> (:size content) max-size)
+      (ex/raise :type :validation
+                :code :request-body-too-large
+                :hint "the result of the job is over the maximum size"
+                :size (:size content)
+                :max-size max-size)))
+  content)
+
+(defn- completable-job
+  "The row a completion may land on: running (or retrying), whatever
+  the JSON form asks for."
+  [cfg job-id]
+  (let [job (jobs/get-job cfg job-id)]
+    (when (and (some? job)
+               (contains? #{"running" "retry"} (:status job)))
+      job)))
+
+(defn- artifact-owner
+  "The job an artifact completion may land on: completable AND owned,
+  because the object needs an owner and a job without one owns nothing
+  (it may only settle without an artifact). Read before anything is
+  stored: a lost race with a cancel never turns the bytes of the worker
+  into an object."
+  [cfg job-id]
+  (let [job (completable-job cfg job-id)]
+    (when (and (some? job)
+               (uuid? (:profile-id job)))
+      job)))
+
+(defn- complete-with-artifact
+  "The multipart form of a completion, on a job that is still
+  completable: the artifact is stored out of any transaction (storage
+  waits for no database), owned by the profile of the job, and the
+  completion itself writes the `resource_id` and the result descriptor
+  `{resource-uri filename mtype size}` in its own transaction, where
+  the first terminal state wins. A completion that lost the race
+  releases the artifact it stored: no object lingers for the storage GC
+  to find later."
+  [cfg job content session-id]
+  (let [resource (js/put-resource cfg
+                                  (:profile-id job)
+                                  {:content  (sto/content (:path content))
+                                   :filename (:filename content)
+                                   :mtype    (:mtype content)})]
+    (if (pos? (jobs/complete cfg
+                             :job-id (:id job)
+                             :resource-id (:resource-id resource)
+                             :result {:resource-uri (:resource-uri resource)
+                                      :filename     (:filename content)
+                                      :mtype        (:mtype content)
+                                      :size         (:size resource)}))
+      (do
+        (close-job-session! cfg (:id job) session-id)
+        {:action :run})
+      (do
+        (js/release-resource cfg (:resource-id resource))
+        (close-job-session! cfg (:id job) session-id)
+        (skip-with-status cfg (:id job))))))
 
 (sv/defmethod ::complete-job
-  "Complete a job on behalf of the worker that ran it, with the result it
-  produced and, when it wrote one, the resource it stores.
+  "Close a running job as completed, in one of two forms.
+
+  The params form carries the plain `:result` the job produced and an
+  optional storage object (`:resource-id`) the worker wrote itself: the
+  internal binfile path.
+
+  The artifact form carries the artifact itself (`:content`, a multipart
+  part with `:filename` and `:mtype` naming the download): the server
+  stores it, owned by the profile of the job, and coalesces the resource
+  into the same completion. The checks (completable, path, type, size)
+  run before any object is written: a lost race against a cancel never
+  stores bytes.
 
   The result of a job whose job-def declares a result schema is validated
   against it before it is stored: one that does not conform is rejected and
   the job is not completed. A job that is no longer completable is skipped,
-  and nothing is validated for it."
+  and nothing is validated for it.
+
+  Both forms belong to the calling exporter's tenant: a job of another
+  tenant answers like a missing row, and nothing is stored, written or
+  revealed for it.
+
+  With `:session-id`, the render session the worker minted through
+  `create-job-session` is deleted once the completion is answered,
+  whatever it says: the settle of the run is what ends the life of the
+  session it minted, even a settle that lost against a cancel. The
+  session is deleted only when it belongs to the job's owner.
+
+  A completion of a job that already ended answers `{:action :skip,
+  :status ...}` and changes nothing."
   {::doc/added "2.20"
    ::sm/params schema:complete-job-params
    ::sm/result schema:complete-job-result
    ::rpc/auth false
-   ::rpc/allowed-shared-keys allowed-shared-key-ids}
-  [cfg {:keys [job-id result resource-id]}]
-  (if (pos? (jobs/complete cfg
-                           :job-id job-id
-                           :result result
-                           :resource-id resource-id))
-    {:action :run}
-    {:action :skip}))
+   ;; The artifact arrives as a multipart part: the parser writes it to a
+   ;; server tempfile and only a request flagged multipart server-side can
+   ;; carry it. Without this, a transit body could name any internal path.
+   ::rpc/multipart-only-params [:content]
+   ::rpc/allowed-shared-keys exporter-key?}
+  [cfg {:keys [job-id result resource-id content session-id] :as params}]
+  (cond
+    ;; the multipart form stores the artifact itself: only for a job
+    ;; that can still complete and has an owner, because the object
+    ;; needs one
+    (some? content)
+    (if-let [job (artifact-owner cfg job-id)]
+      (if (tenant-ok? (::rpc/auth-key-id params) job)
+        (do
+          (check-artifact! content)
+          (complete-with-artifact cfg job content session-id))
+        ;; a job of another tenant answers like a missing row, and its
+        ;; session is not ours to close
+        {:action :skip})
+      (do
+        ;; a completion that lost the race is not a session to keep either
+        (close-job-session! cfg job-id session-id)
+        (skip-with-status cfg job-id)))
+
+    ;; the params form: nothing to store here, the resource (if any)
+    ;; already lives in storage
+    :else
+    (if-let [job (completable-job cfg job-id)]
+      (if (tenant-ok? (::rpc/auth-key-id params) job)
+        (if (pos? (jobs/complete cfg
+                                 :job-id job-id
+                                 :result result
+                                 :resource-id resource-id))
+          (do
+            (close-job-session! cfg job-id session-id)
+            {:action :run})
+          (do
+            (close-job-session! cfg job-id session-id)
+            (skip-with-status cfg job-id)))
+        {:action :skip})
+      (do
+        (close-job-session! cfg job-id session-id)
+        (skip-with-status cfg job-id)))))
 
 ;; ---- RPC METHOD: FAIL-JOB
 
@@ -154,19 +413,125 @@
    [:job-id ::sm/uuid]
    ;; Rich error report: type/code/hint are required, the map stays
    ;; open to worker-defined details (see jobs/fail).
-   [:error jobs/schema:job-error]])
+   [:error jobs/schema:job-error]
+   ;; The render session the worker used, closed once the job settles:
+   ;; fail is terminal too.
+   [:session-id {:optional true} ::sm/uuid]])
 
 (def ^:private schema:fail-job-result
   [:map {:title "fail-job-result"}
-   [:action [:enum :run :skip]]])
+   [:action [:enum :run :skip]]
+   [:status {:optional true} ::sm/text]])
 
 (sv/defmethod ::fail-job
   {::doc/added "2.20"
    ::sm/params schema:fail-job-params
    ::sm/result schema:fail-job-result
    ::rpc/auth false
-   ::rpc/allowed-shared-keys allowed-shared-key-ids}
-  [cfg {:keys [job-id error]}]
-  (if (pos? (jobs/fail cfg job-id error))
-    {:action :run}
-    {:action :skip}))
+   ::rpc/allowed-shared-keys exporter-key?}
+  [cfg {:keys [job-id error session-id] :as params}]
+  ;; A job of another tenant answers like a missing row, before any
+  ;; write lands and without touching its session.
+  (let [job (jobs/get-job cfg job-id)]
+    (if (and (some? job)
+             (not (tenant-ok? (::rpc/auth-key-id params) job)))
+      {:action :skip}
+      ;; The session is closed whatever the write says: the worker that
+      ;; settles (even a settle that loses against a cancel it cannot
+      ;; see) is what ends the life of the render session it minted. It
+      ;; is deleted only when it belongs to the job's owner.
+      (let [landed? (pos? (jobs/fail cfg job-id error))]
+        (close-job-session! cfg job-id session-id)
+        (if landed?
+          {:action :run}
+          (skip-with-status cfg job-id))))))
+
+;; ---- RPC METHOD: CREATE-JOB-SESSION
+
+(def ^:private schema:create-job-session-params
+  [:map {:title "create-job-session-params"}
+   [:job-id ::sm/uuid]])
+
+(def ^:private schema:create-job-session-result
+  [:map {:title "create-job-session-result"}
+   [:session-id ::sm/uuid]
+   [:session-token ::sm/text]])
+
+(defn- validate-job!
+  "The job whose owner will render: it must exist, be `running` (the
+  claim already passed: a session for a waiting job would outlive a
+  job that may never run) and have an owner. A job of another tenant
+  is indistinguishable from a missing one on purpose: the tenant is
+  the boundary of what the key can touch, and the profile the boundary
+  of what the session can touch."
+  [cfg key-id job-id]
+  (let [job (jobs/get-job cfg job-id)]
+    (when (nil? job)
+      (ex/raise :type :not-found
+                :code :job-not-found
+                :hint "the job does not exist"
+                :job-id job-id))
+    (when-not (tenant-ok? key-id job)
+      (ex/raise :type :not-found
+                :code :job-not-found
+                :hint "the job does not exist"
+                :job-id job-id))
+    (when-not (= "running" (:status job))
+      (ex/raise :type :validation
+                :code :invalid-job-state
+                :hint "the session is minted for a running job"
+                :status (:status job)
+                :job-id job-id))
+    (when-not (uuid? (:profile-id job))
+      (ex/raise :type :validation
+                :code :job-without-profile
+                :hint "the job has no owner profile to mint the session for"
+                :job-id job-id))
+    (:profile-id job)))
+
+(defn- validate-owner!
+  "The profile the session will render as: the same one the login
+  accepts (exists, active, not blocked, not deleted). A session is a
+  key to everything the owner can touch, so a worker that settles a job
+  of a dead profile never gets one."
+  [cfg profile-id]
+  (let [profile (db/get* cfg :profile {:id profile-id})]
+    (when (or (nil? profile) (some? (:deleted-at profile)))
+      (ex/raise :type :not-found
+                :code :profile-not-found
+                :hint "the owner profile of the job does not exist"
+                :profile-id profile-id))
+    (when-not (:is-active profile)
+      (ex/raise :type :validation
+                :code :profile-not-active
+                :hint "the owner profile of the job is not active"
+                :profile-id profile-id))
+    (when (:is-blocked profile)
+      (ex/raise :type :restriction
+                :code :profile-blocked
+                :hint "the owner profile of the job is marked as blocked"
+                :profile-id profile-id))))
+
+(sv/defmethod ::create-job-session
+  "Mint an authentication session of the owner of a running job, for
+  the worker to render as the user: render.html and assets authenticate
+  by cookie and the RPC by Bearer, through the surfaces that already
+  exist. Every call mints a fresh session (worker retries never wait on
+  one a settle may have closed), and the token carries the short `:exp`
+  of `:job-session-ttl`: a worker that dies without settling leaves
+  nothing usable for long, and the sessions idle GC sweeps the row."
+  {::doc/added "2.20"
+   ::sm/params schema:create-job-session-params
+   ::sm/result schema:create-job-session-result
+   ::rpc/auth false
+   ::rpc/allowed-shared-keys exporter-key?}
+  [cfg {:keys [job-id] :as params}]
+  (let [profile-id (validate-job! cfg (::rpc/auth-key-id params) job-id)]
+    (validate-owner! cfg profile-id)
+    (let [session (session/create-session (::session/manager cfg)
+                                          {:profile-id profile-id})
+          token   (session/generate-token cfg session
+                                          :exp (ct/plus (ct/now)
+                                                        (cf/get-job-session-ttl)))]
+      {:session-id    (:id session)
+       :session-token token})))

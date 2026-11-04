@@ -29,11 +29,21 @@
           "every management namespace must be scanned")
     (doseq [[method-name [mdata _]] methods]
       (let [ns-name  (:ns mdata)
-            expected (get expected-shared-keys ns-name)]
+            expected (get expected-shared-keys ns-name)
+            allowed  (::rpc/allowed-shared-keys mdata)]
         (t/is (some? expected)
               (str "unexpected management namespace for " method-name ": " ns-name))
-        (t/is (= expected (::rpc/allowed-shared-keys mdata))
-              (str "wrong ::rpc/allowed-shared-keys for " method-name " in " ns-name))))))
+        (if (= "app.rpc.management.jobs" ns-name)
+          ;; The jobs methods declare a predicate: the bare legacy id
+          ;; plus any `exporter:<tenant>` suffix.
+          (do
+            (t/is (fn? allowed))
+            (t/is (allowed :exporter))
+            (t/is (allowed :exporter:acme))
+            (t/is (not (allowed :nexus)))
+            (t/is (not (allowed nil))))
+          (t/is (= expected allowed)
+                (str "wrong ::rpc/allowed-shared-keys for " method-name " in " ns-name)))))))
 
 (t/deftest management-command-uses-the-key-from-the-request-metadata
   (let [out (th/management-command!

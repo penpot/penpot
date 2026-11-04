@@ -76,7 +76,7 @@ No `--delete` on the working-tree pass: gitignored caches in the workspace survi
 - `run-devenv-shell [--instance 0|wsN|N] [cmd...]`: bash in target instance. (`--instance` flag not yet renamed to `--ws`.)
 - `start-devenv` / `log-devenv` / `drop-devenv`: legacy paths around ws0 + shared infra. `drop-devenv` never removes volumes.
 
-`exporter/scripts/run` and `wait-and-start.sh` source `backend/scripts/_env` then `_env.local` if present.
+`exporter/scripts/run` and `wait-and-start.sh` source `backend/scripts/_env` then `_env.local` if present, and default `PENPOT_INTERNAL_URI` to the in-container nginx loopback (`http://localhost:4449`, `:-` so an explicit value wins). The loopback is invariant across instances, so it is defined at the exporter start scripts — the only in-container consumer — not in compose or `_env`.
 
 ## Image and dependency pins
 

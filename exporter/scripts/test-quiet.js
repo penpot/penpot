@@ -24,6 +24,13 @@ progress("Running tests...");
 const result = spawnSync(
   "node",
   ["target/tests/test.js", ...process.argv.slice(2)],
-  { stdio: "inherit" },
-);
+  {
+    stdio: "inherit",
+    // the config of the process needs a secret to even boot: same
+    // default the `test` script uses when the environment says nothing
+    env: {
+      ...process.env,
+      PENPOT_SECRET_KEY: process.env.PENPOT_SECRET_KEY || "test-secret-key",
+    },
+  });
 process.exit(result.status ?? 1);

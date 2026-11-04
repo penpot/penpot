@@ -573,7 +573,11 @@
                     (:app.http/auth-key-id request)
 
                     :else
-                    (first (::rpc/allowed-shared-keys mdata)))
+                    ;; A predicate declares a family, not an enumerable
+                    ;; set: fall back to the legacy id, which every such
+                    ;; method accepts.
+                    (let [allowed (::rpc/allowed-shared-keys mdata)]
+                      (if (set? allowed) (first allowed) :exporter)))
           data    (if (or (contains? data ::rpc/auth-key-id)
                           (nil? key-id))
                     data

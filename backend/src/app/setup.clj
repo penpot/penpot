@@ -103,8 +103,10 @@
   (let [secret (get props :secret-key)]
     (reduce (fn [keys id]
               (let [key (or (get cfg id)
-                            (-> (keys/derive secret :salt (name id))
-                                (bc/bytes->b64-str true)))]
+                            (if (= id :exporter)
+                              (keys/derive-exporter-key secret (cf/get :tenant))
+                              (-> (keys/derive secret :salt (name id))
+                                  (bc/bytes->b64-str true))))]
                 (if (or (str/empty? key)
                         (str/blank? key))
                   (do

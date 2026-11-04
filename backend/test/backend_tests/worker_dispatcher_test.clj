@@ -325,3 +325,15 @@
         (t/is (= "running" (:status row)))
         (t/is (nil? (:error row)))
         (t/is (= [] (:events row)))))))
+
+(t/deftest dispatcher-payload-bytes-are-the-exporter-contract
+  ;; The only bytes the exporter parses: a JSON array of exactly two
+  ;; items, [job-id scheduled-at], the instant in ct/format-inst shape.
+  ;; The worker echoes scheduled-at back byte-identical on claim, so any
+  ;; drift here breaks the claim-back rule (and the exporter test pins
+  ;; the same literal from its side).
+  (let [payload (#'wdisp/encode-payload
+                 {:id           (uuid/parse "03b7300f-11e6-8131-8008-e4b09b780a0e")
+                  :scheduled-at (ct/inst "2026-10-07T09:00:00Z")})]
+    (t/is (= "[\"03b7300f-11e6-8131-8008-e4b09b780a0e\",\"2026-10-07T09:00:00Z\"]"
+             payload))))

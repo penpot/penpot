@@ -6,13 +6,11 @@
   {:target :esm
    :runtime :node
    :output-dir "target/"
-   :devtools {:before-load-async app.core/stop
-              :after-load app.core/start}
 
    :modules
    {:app
     {:entries []
-     :init-fn app.core/main}}
+     :init-fn exporter.main/main}}
 
    :js-options
    {:entry-keys ["module" "browser" "main"]
