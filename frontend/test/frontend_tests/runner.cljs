@@ -163,6 +163,7 @@
    [frontend-tests.worker-snap-test]
    [frontend-tests.worker.exports-test]
    [frontend-tests.worker.index-test]
+   [frontend-tests.worker.messages-test]
    [goog.object :as gobj]))
 
 (enable-console-print!)
@@ -199,6 +200,7 @@
    'frontend-tests.data.jobs-test
    'frontend-tests.worker.exports-test
    'frontend-tests.worker.index-test
+   'frontend-tests.worker.messages-test
    'frontend-tests.data.svg-upload-test
    'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test
