@@ -239,12 +239,13 @@ describe("BackendClient", () => {
 
   describe("uploadResult", () => {
     it("uploads the result as multipart and returns the object", async () => {
-      let seen: { contentType?: string; key?: string; body?: string } = {};
+      let seen: { contentType?: string; key?: string; accept?: string; body?: string } = {};
       await withServer(
         async (req, res) => {
           seen = {
             contentType: req.headers["content-type"] as string,
             key: req.headers["x-shared-key"] as string,
+            accept: req.headers["accept"] as string,
             body: (await readBody(req)).toString("utf8"),
           };
           res.writeHead(200, { "content-type": "application/json" });
@@ -263,6 +264,8 @@ describe("BackendClient", () => {
 
       expect(seen.contentType).toMatch(/^multipart\/form-data; boundary=/);
       expect(seen.key).toBe("media-processor test-key");
+      // The backend answers transit when nobody asks for JSON.
+      expect(seen.accept).toBe("application/json");
       expect(seen.body).toContain('name="content"');
       expect(seen.body).toContain('filename="thumb.png"');
       expect(seen.body).toContain("PNGDATA");

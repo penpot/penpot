@@ -86,8 +86,11 @@ export class JobsClient {
   }
 
   private get headers(): Record<string, string> {
+    // The backend answers transit by default: ask for the JSON dialect and
+    // speak its key names (camelCase), the ones the JSON writer produces.
     return {
       "X-Shared-Key": `media-processor ${this.sharedKey}`,
+      Accept: "application/json",
       "content-type": "application/json",
     };
   }
@@ -158,7 +161,7 @@ export class JobsClient {
    */
   public async claim(jobId: string, scheduledAt: string): Promise<ClaimedJob> {
     const method = "claim-job";
-    const body = await this.call(method, { "job-id": jobId, "scheduled-at": scheduledAt });
+    const body = await this.call(method, { jobId, scheduledAt });
     const action = this.action(body, method, ["run", "skip"]) as JobsAction;
 
     if (action === "skip") {
@@ -172,15 +175,15 @@ export class JobsClient {
 
   public async progress(jobId: string, progress: JobProgress): Promise<JobsAction> {
     const method = "report-job-progress";
-    const body = await this.call(method, { "job-id": jobId, progress });
+    const body = await this.call(method, { jobId, progress });
     return this.action(body, method, ["run", "skip"]) as JobsAction;
   }
 
   public async complete(jobId: string, result: unknown, resourceId?: string): Promise<JobsAction> {
     const method = "complete-job";
-    const params: Record<string, unknown> = { "job-id": jobId, result };
+    const params: Record<string, unknown> = { jobId, result };
     if (resourceId !== undefined) {
-      params["resource-id"] = resourceId;
+      params.resourceId = resourceId;
     }
     const body = await this.call(method, params);
     return this.action(body, method, ["run", "skip"]) as JobsAction;
@@ -188,7 +191,7 @@ export class JobsClient {
 
   public async fail(jobId: string, error: JobError, retriable = false): Promise<FailAction> {
     const method = "fail-job";
-    const body = await this.call(method, { "job-id": jobId, error, "retriable?": retriable });
+    const body = await this.call(method, { jobId, error, retriable });
     return this.action(body, method, ["run", "retry", "skip"]) as FailAction;
   }
 }

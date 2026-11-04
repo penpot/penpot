@@ -10,6 +10,7 @@ interface Seen {
   url?: string;
   key?: string;
   contentType?: string;
+  accept?: string;
   body?: Record<string, unknown>;
 }
 
@@ -43,6 +44,7 @@ function responder(body: Record<string, unknown>, seen: Seen): Handler {
     seen.url = req.url;
     seen.key = req.headers["x-shared-key"] as string;
     seen.contentType = req.headers["content-type"] as string;
+    seen.accept = req.headers["accept"] as string;
     seen.body = await readBody(req);
     res.writeHead(200, { "content-type": "application/json" });
     res.end(JSON.stringify(body));
@@ -82,7 +84,9 @@ describe("JobsClient", () => {
     expect(seen.url).toBe("/api/management/methods/claim-job");
     expect(seen.key).toBe("media-processor test-key");
     expect(seen.contentType).toBe("application/json");
-    expect(seen.body).toEqual({ "job-id": "job-1", "scheduled-at": "2026-11-03T10:00:00.000Z" });
+    // The backend answers transit when nobody asks for JSON.
+    expect(seen.accept).toBe("application/json");
+    expect(seen.body).toEqual({ jobId: "job-1", scheduledAt: "2026-11-03T10:00:00.000Z" });
   });
 
   it("answers a skip when the claim is no longer valid", async () => {
@@ -104,7 +108,7 @@ describe("JobsClient", () => {
       await expect(makeClient(uri).progress("job-1", progress)).resolves.toBe("run");
     });
     expect(seen.url).toBe("/api/management/methods/report-job-progress");
-    expect(seen.body).toEqual({ "job-id": "job-1", progress });
+    expect(seen.body).toEqual({ jobId: "job-1", progress });
 
     seen = {};
     await withServer(responder({ action: "skip" }, seen), async (uri) => {
@@ -119,14 +123,14 @@ describe("JobsClient", () => {
       await expect(makeClient(uri).complete("job-1", result)).resolves.toBe("run");
     });
     expect(seen.url).toBe("/api/management/methods/complete-job");
-    expect(seen.body).toEqual({ "job-id": "job-1", result });
+    expect(seen.body).toEqual({ jobId: "job-1", result });
   });
 
   it("sends an optional resource id when completing", async () => {
     await withServer(responder({ action: "run" }, seen), async (uri) => {
       await makeClient(uri).complete("job-1", { v: 1 }, "resource-1");
     });
-    expect(seen.body).toEqual({ "job-id": "job-1", result: { v: 1 }, "resource-id": "resource-1" });
+    expect(seen.body).toEqual({ jobId: "job-1", result: { v: 1 }, resourceId: "resource-1" });
   });
 
   it("fails a job with retriable and understands retry", async () => {
@@ -136,13 +140,13 @@ describe("JobsClient", () => {
       await expect(makeClient(uri).fail("job-1", error, true)).resolves.toBe("retry");
     });
     expect(seen.url).toBe("/api/management/methods/fail-job");
-    expect(seen.body).toEqual({ "job-id": "job-1", error, "retriable?": true });
+    expect(seen.body).toEqual({ jobId: "job-1", error, retriable: true });
 
     seen = {};
     await withServer(responder({ action: "run" }, seen), async (uri) => {
       await expect(makeClient(uri).fail("job-1", error)).resolves.toBe("run");
     });
-    expect(seen.body).toEqual({ "job-id": "job-1", error, "retriable?": false });
+    expect(seen.body).toEqual({ jobId: "job-1", error, retriable: false });
   });
 
   it("never confuses an HTTP error with a skip", async () => {
@@ -186,6 +190,41 @@ describe("JobsClient", () => {
     await withServer(responder({ action: "later" }, seen), async (uri) => {
       await expect(makeClient(uri).progress("job-1", { stage: "x" })).rejects.toBeInstanceOf(JobsClientError);
     });
+  });
+
+  it("leaves the camelCase params of the answer untouched", async () => {
+    // What the backend's JSON writer produces for `:media-id`/`:source-mtype`.
+    const params = {
+      input: { id: "x", mtype: "image/png", size: 10 },
+      mediaId: "22222222-2222-4222-8222-222222222222",
+      format: "jpeg",
+      quality: 85,
+      width: 100,
+      height: 100,
+    };
+
+    await withServer(responder({ action: "run", name: "media-thumbnail", params }, seen), async (uri) => {
+      const job = await makeClient(uri).claim("job-1", "2026-11-03T10:00:00.000Z");
+      expect(job).toEqual({ action: "run", name: "media-thumbnail", params });
+    });
+  });
+
+  it("rejects a transit-shaped answer with a clear error", async () => {
+    // A transit map is a JSON array: without `Accept: application/json` this
+    // is what arrives, and it must not be read as a record.
+    await withServer(
+      (_req, res) => {
+        res.writeHead(200, { "content-type": "application/transit+json" });
+        res.end(JSON.stringify(["^ ", "~:action", "run"]));
+      },
+      async (uri) => {
+        const error = await makeClient(uri)
+          .claim("job-1", "2026-11-03T10:00:00.000Z")
+          .catch((cause) => cause);
+        expect(error).toBeInstanceOf(JobsClientError);
+        expect(error.message).toContain("non-object body");
+      }
+    );
   });
 
   it("times out a request that never answers", async () => {

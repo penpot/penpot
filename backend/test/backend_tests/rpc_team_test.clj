@@ -16,6 +16,7 @@
    [app.email.blacklist :as email.blacklist]
    [app.http :as http]
    [app.loggers.audit :as-alias audit]
+   [app.media.jobs :as media.jobs]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.teams :as teams]
@@ -1522,6 +1523,48 @@
                                   :path (fs/path "/etc/passwd")
                                   :mtype "image/jpeg"}})]
     (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+(defn- insert-active-team-job!
+  "An active `:profile-thumbnail` job labelled for the team, as if a previous
+  upload were still in flight."
+  [label]
+  (let [id (uuid/next)]
+    (th/db-insert! :job {:id           id
+                         :name         "profile-thumbnail"
+                         :tenant       (cf/get :tenant)
+                         :queue        "media-fast"
+                         :params       (db/json {:input {:id (uuid/next)
+                                                         :mtype "image/jpeg"
+                                                         :size 123123}})
+                         :priority     100
+                         :max-retries  3
+                         :retry-num    0
+                         :status       "running"
+                         :scheduled-at (ct/now)
+                         :started-at   (ct/now)
+                         :label        label})
+    id))
+
+(t/deftest update-team-photo-cancels-the-previous-job
+  ;; Two quick uploads of a team logo must not race: the last one wins.
+  (let [prof     (th/create-profile* 1 {:is-active true})
+        team     (th/create-team* 1 {:profile-id (:id prof)})
+        label    (media.jobs/team-label (:id team))
+        previous (insert-active-team-job! label)
+        out      (th/command! (th/with-multipart
+                                {::th/type :update-team-photo
+                                 ::rpc/profile-id (:id prof)
+                                 :team-id (:id team)
+                                 :file {:filename "sample.jpg"
+                                        :size 123123
+                                        :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                                        :mtype "image/jpeg"}}))]
+
+    (t/is (nil? (:error out)))
+    (t/is (= "cancelled" (:status (th/db-get :job {:id previous})))
+          "the previous job of the team is cancelled before the new submit")
+    (t/is (uuid? (:photo-id (th/db-get :team {:id (:id team)})))
+          "the new upload stored its photo")))
 
 (t/deftest update-team-photo-stores-the-generated-photo
   (let [prof    (th/create-profile* 1 {:is-active true})

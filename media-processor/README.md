@@ -33,6 +33,18 @@ flag. The flag changes the executor and the queues, never the contract.
 
 - Queue: `penpot.worker.queue:<tenant>:<queue>`.
 - Payload: `[job-id, scheduled-at]` as JSON.
+- **Wire format: JSON, not Transit.** The backend answers Transit by default,
+  so both clients send `Accept: application/json`; without it the answer is a
+  transit array and nothing parses. The worker uses the key names the backend's
+  JSON writer produces: `claim-job` params arrive as `mediaId`, `sourceMtype`
+  and `variantId` (the backend's `:media-id`/`:source-mtype`/`:variant-id`
+  camelCased), and the bodies the worker sends are camelCase too (`jobId`,
+  `scheduledAt`, `resourceId`, `retriable`). The backend's reader kebab-cases
+  them back.
+- **No `?` in any key that crosses JSON.** `read-kebab-key` (`str/kebab`) and
+  `write-camel-key` (`str/camel`) drop the suffix, so `retriable?` arrives as
+  `retriable` and the schema never sees it. That silently disabled the retry
+  flag once.
 - Each payload is claimed with `claim-job`; the answer names the job and its
   params, or `skip` when the row is not runnable (cancelled, already taken,
   terminal).

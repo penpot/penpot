@@ -375,19 +375,17 @@
 
   The profile row does not exist yet, so the `:profile-thumbnail` job has no
   owner: its hook leaves the result in `tempfile` and this function moves it
-  to the `profile` bucket. Answers the storage object id, or nil on error."
+  to the `profile` bucket. Only jpeg, png and webp are photo formats: any
+  other image the URL serves (an svg, a gif) is rejected by the job schema and
+  the profile is created without a photo. Answers the storage object id, or
+  nil on error."
   [cfg uri]
   (try
     (let [input (media/download-image cfg uri)
           input (media.jobs/materialize-input cfg input)]
       (try
-        (let [result (media/profile-photo cfg {:input input})
-              photo  (get result :photo)
-              object (media.jobs/store-result cfg
-                                              (uuid/parse (:id photo))
-                                              "profile"
-                                              {:content-type (:mtype photo)})]
-          (:id object))
+        (let [result (media/profile-photo cfg {:input input})]
+          (:id (media.jobs/store-ownerless-photo! cfg result)))
         (finally
           (media.jobs/release-temporary! cfg (:id input)))))
     (catch Throwable cause

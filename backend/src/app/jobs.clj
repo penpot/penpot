@@ -1279,18 +1279,27 @@
   The row is read locked inside that same transaction, so the rules are
   applied in a fixed order against the row and not against the clock: a
   job that is no longer completable is skipped, only a job that is still
-  completable can be refused for its resource, and the result is checked
-  against the schema its job-def declares before it is stored (a def
-  without one has nothing to check). A concurrent completion waits for
-  the lock and then sees the outcome."
+  completable can be refused for its resource, and the result is decoded
+  with the codec its job-def compiles and then checked against the schema
+  that def declares (a def without one has nothing to check). Decoding is
+  not optional: a JSON caller sends uuids as text, and the hook and the
+  row both need the typed value. A concurrent completion waits for the
+  lock and then sees the outcome."
   [cfg & {:keys [job-id result resource-id]}]
   (assert (mtx/instance cfg) "missing ::mtx/metrics on the jobs cfg")
   (check-resource-id resource-id)
   (let [n (try
             (db/tx-run! (own-transaction cfg)
                         (fn [{:keys [::db/conn] :as tx-cfg}]
-                          (let [job    (some-> (db/exec-one! conn [sql:lock-job job-id])
-                                               decode-row)
+                          (let [job     (some-> (db/exec-one! conn [sql:lock-job job-id])
+                                                decode-row)
+                                job-def (get (get-defs tx-cfg) (keyword (:name job)))
+                                ;; The result crosses a wire (a JSON caller
+                                ;; sends uuids as text): decode it with the
+                                ;; job-def codec before validating, storing or
+                                ;; handing it on. Idempotent for a caller that
+                                ;; already passes a typed value.
+                                result  (decode-result job-def result)
                                 encoded (when (some? result)
                                           (encode-result (:name job) result))]
                             (if-not (contains? #{"running" "retry"} (:status job))
@@ -1303,9 +1312,7 @@
                                             :hint "the job already has a resource, it cannot be replaced"
                                             :job-id job-id
                                             :resource-id (:resource-id job)))
-                                (check-result (get (get-defs tx-cfg)
-                                                   (keyword (:name job)))
-                                              result)
+                                (check-result job-def result)
                                 (if (db/exec-one! conn [sql:complete-job (ct/now) (ct/now)
                                                         encoded resource-id job-id])
                                   (do
@@ -1662,7 +1669,10 @@
 
   The job-def must declare `::notifies?`: the terminal writers publish
   `{ok result}` or `{error ...}` on
-  `penpot.worker.reply:<tenant>:<job-id>` after their commit. The job is
+  `penpot.worker.reply:<tenant>:<job-id>` after their commit. The answer is
+  decoded with the result codec of the job-def, the same one the row read
+  applies, so the caller sees one type whether the reply arrived or the row
+  had to be re-read. The job is
   committed before the wait (the submission owns its transaction), so the
   worker can claim it while the caller blocks. The wait uses
   `:media-wait-deadline` (60 s by default, under the 300 s gateway
@@ -1732,7 +1742,10 @@
                     :response reply))
 
         :else
-        (:ok reply)))))
+        ;; The reply travels as JSON: restore the typed value with the same
+        ;; codec the row read applies, so a caller sees one shape whichever
+        ;; path settled the job.
+        (decode-result job-def (:ok reply))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IN-PROCESS INVOCATION

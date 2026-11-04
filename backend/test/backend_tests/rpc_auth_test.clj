@@ -279,3 +279,21 @@
           (t/is (= "image/jpeg" (-> object meta :content-type))))))
     (t/testing "the job input is released"
       (t/is (empty? (live-tempfiles))))))
+
+(t/deftest import-profile-picture-skips-an-avatar-that-is-not-a-photo
+  ;; Only jpeg, png and webp are photo formats. An svg or gif avatar cannot be
+  ;; rasterized here, so the profile is created without a photo instead of
+  ;; storing the raw file in the `profile` bucket. The caller sees nil.
+  (let [path (th/tempfile "backend_tests/test_files/sample1.svg")]
+    (with-redefs [media/download-image (fn [_ _] {:path path
+                                                  :mtype "image/svg+xml"
+                                                  :size 1024})]
+      (t/is (nil? (auth/import-profile-picture th/*system* "http://example.com/avatar.svg"))))
+
+    (t/testing "nothing is stored in the profile bucket"
+      (t/is (empty? (th/db-exec! ["SELECT id FROM storage_object
+                                    WHERE COALESCE(metadata->>'bucket', metadata->>'~:bucket') = 'profile'
+                                      AND deleted_at IS NULL"]))))
+
+    (t/testing "the job input is released anyway"
+      (t/is (empty? (live-tempfiles))))))

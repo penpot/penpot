@@ -112,13 +112,17 @@
 
   With a `profile-id` the job owns the profile and its hook makes the new
   photo the current one. Without it (profile creation imports the picture
-  before the row exists) the hook leaves the result in `tempfile` and the
-  caller stores it."
-  [cfg {:keys [input profile-id]}]
+  before the row exists, a team photo belongs to a team) the hook leaves the
+  result in `tempfile` and the caller stores it. A `label` lets the caller
+  cancel the previous job of the same resource before submitting this one."
+  [cfg {:keys [input profile-id label]}]
   (jobs/submit-and-wait cfg
                         (cond-> {::jobs/name   :profile-thumbnail
                                  ::jobs/params {:input input}
                                  ::jobs/queue  (:fast (media.jobs/queue-pair))}
+                          (some? label)
+                          (assoc ::jobs/label label)
+
                           (uuid? profile-id)
                           (assoc ::jobs/profile-id profile-id))))
 

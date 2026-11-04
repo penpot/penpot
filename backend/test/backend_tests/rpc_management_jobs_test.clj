@@ -6,6 +6,7 @@
 
 (ns backend-tests.rpc-management-jobs-test
   (:require
+   [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -326,7 +327,7 @@
         job-id (mk-job {})]
     (jobs/claim cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
     (let [out (mgmt :fail-job {:job-id    job-id
-                               :retriable? true
+                               :retriable true
                                :error     {:type :internal
                                            :code "worker-shutdown"
                                            :hint "worker is going away"}})]
@@ -352,7 +353,7 @@
         job-id (mk-job {:retry-num 3 :max-retries 3})]
     (jobs/claim cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
     (let [out (mgmt :fail-job {:job-id    job-id
-                               :retriable? true
+                               :retriable true
                                :error     {:type :internal
                                            :code "worker-shutdown"
                                            :hint "worker is going away"}})]
@@ -365,7 +366,7 @@
         job-id (mk-job {})]
     (jobs/claim cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
     (let [out (mgmt :fail-job {:job-id    job-id
-                               :retriable? true
+                               :retriable true
                                :error     {:type :validation
                                            :code "data-validation"
                                            :hint "invalid params"}})]
@@ -508,3 +509,29 @@
                                :attempt 3})]
         (t/is (nil? (:error out)))
         (t/is (= 3 (:attempt (jobs/decode-job-error (:error (get-row job-id))))))))))
+
+(t/deftest fail-job-honours-the-retriable-flag-of-a-json-body
+  ;; The worker sends `retriable`, and the plain JSON body reader kebab-cases
+  ;; the keys. A `?` suffix does not survive that reader (str/kebab drops it),
+  ;; so the method must not use one or the retry is silently lost and the row
+  ;; ends failed.
+  (let [cfg    (make-cfg)
+        job-id (mk-job {})
+        body   (json/read
+                (java.io.StringReader.
+                 (str "{\"jobId\":\"" job-id "\","
+                      "\"retriable\":true,"
+                      "\"error\":{\"type\":\"internal\","
+                      "\"code\":\"worker-shutdown\","
+                      "\"hint\":\"worker is going away\"}}"))
+                :key-fn json/read-kebab-key)]
+
+    (t/is (true? (:retriable body))
+          "sanity: the reader keeps a key that JSON clients can send")
+
+    (jobs/claim cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
+
+    (let [out (th/management-command! (assoc body ::th/type :fail-job))]
+      (t/is (nil? (:error out)))
+      (t/is (= {:action :retry} (:result out)))
+      (t/is (= "retry" (:status (get-row job-id)))))))

@@ -231,3 +231,30 @@
                                     {:content-type "image/png"})]
         (t/is (uuid? (:id result)))
         (t/is (some? (sto/get-object (storage) (:id result))))))))
+
+(t/deftest media-thumbnail-complete-decodes-the-wire-result
+  ;; The worker sends the result as plain JSON, with the artifact id as text.
+  ;; The substrate decodes it with the job-def codec before validating and
+  ;; storing it, so the hook and the row see the typed value.
+  (let [{:keys [file]} (make-context)
+        media          (create-media-object!)
+        row            (th/create-file-media-object* {:file-id (:id file)
+                                                      :media-id (:id media)})
+        {:keys [job-id params]} (make-job! (:id media))
+        result         (th/run-task! :media-thumbnail params)
+        thumb          (:thumbnail result)
+        wire           {:thumbnail {:id    (str (:id thumb))
+                                    :uri   (:uri thumb)
+                                    :mtype (:mtype thumb)
+                                    :size  (:size thumb)}}]
+
+    (t/is (= 1 (jobs/complete th/*system* :job-id job-id :result wire)))
+
+    (t/testing "the stored result is the typed value, not the wire text"
+      (let [job (jobs/get-job th/*system* job-id)]
+        (t/is (= "completed" (:status job)))
+        (t/is (uuid? (get-in job [:result :thumbnail :id])))
+        (t/is (= (:id thumb) (get-in job [:result :thumbnail :id])))))
+
+    (t/testing "the hook stored the artifact"
+      (t/is (uuid? (:thumbnail-id (fmo (:id row))))))))

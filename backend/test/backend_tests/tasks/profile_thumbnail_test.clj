@@ -184,3 +184,20 @@
                                      :code :processing-error
                                      :hint "storage down"})
       (t/is (= "failed" (:status (jobs/get-job th/*system* job-id)))))))
+
+(t/deftest store-ownerless-photo-accepts-the-decoded-result
+  ;; `submit-and-wait` decodes the result with the job-def codec, so the id
+  ;; reaches the caller as a uuid, not as the text the JSON wire carries.
+  (let [path   (th/tempfile "backend_tests/test_files/sample.jpg")
+        ref    (mj/materialize-input th/*system* {:path path :mtype "image/jpeg"})
+        result (th/run-task! :profile-thumbnail {:input ref})]
+
+    (t/is (uuid? (get-in result [:photo :id]))
+          "the handler answers a typed id")
+
+    (let [object (mj/store-ownerless-photo! th/*system* result)]
+      (t/is (uuid? (:id object)))
+      (t/is (= "profile" (-> object meta :bucket)))
+      (t/is (= "image/jpeg" (-> object meta :content-type)))
+      (t/is (nil? (sto/get-object (storage) (get-in result [:photo :id])))
+            "the temporary artifact is released"))))

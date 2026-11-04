@@ -198,7 +198,7 @@ export function makeMediaHandlers(options: MediaHandlerOptions): Record<string, 
       throw invalidParams(parsed.error);
     }
     const { input, targets } = parsed.data;
-    const sourceMtype = parsed.data["source-mtype"];
+    const sourceMtype = parsed.data.sourceMtype;
 
     return withWorkdir(async (dir) => {
       const path = join(dir, "input");

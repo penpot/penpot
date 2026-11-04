@@ -2136,3 +2136,31 @@
                                                   ::jobs/params (make-params)}))]
     (t/is (= :assertion (:type (ex-data cause))))
     (t/is (= :job-does-not-notify (:code (ex-data cause))))))
+
+(t/deftest submit-and-wait-decodes-the-reply-with-the-job-def-codec
+  ;; The reply travels as JSON, so the uuid keys and values of a typed result
+  ;; arrive as text. `submit-and-wait` restores them with the job-def codec,
+  ;; the same one the row read applies, so the caller sees one shape.
+  (let [cfg    (make-cfg (update (get-job-defs) :typed assoc ::jobs/notifies? true))
+        label  (str "wait-typed-" (uuid/next))
+        ids    {:file-ids   [(uuid/next)]
+                :resolution {(uuid/next) {:id (uuid/next)}}}
+        wire   {:file-ids   (mapv str (:file-ids ids))
+                :resolution (into {}
+                                  (map (fn [[key value]] [(str key) {:id (str (:id value))}]))
+                                  (:resolution ids))}
+        wait   @#'jobs/wait-reply]
+
+    (with-redefs-fn
+      {#'jobs/wait-reply
+       (fn [cfg key timeout]
+         (let [row (first (th/db-query :job {:label label}))]
+           (jobs/claim cfg (:id row) (:scheduled-at row))
+           (t/is (= 1 (jobs/complete cfg :job-id (:id row) :result wire)))
+           (wait cfg key timeout)))}
+      #(let [result (jobs/submit-and-wait cfg {::jobs/name   :typed
+                                               ::jobs/params (make-params)
+                                               ::jobs/label  label})]
+         (t/is (= ids result))
+         (t/is (uuid? (first (:file-ids result))))
+         (t/is (every? uuid? (keys (:resolution result))))))))

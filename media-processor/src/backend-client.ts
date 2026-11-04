@@ -83,7 +83,11 @@ export class BackendClient {
   }
 
   private get headers(): Record<string, string> {
-    return { "X-Shared-Key": `media-processor ${this.sharedKey}` };
+    // Same JSON dialect as the jobs client: the backend defaults to transit.
+    return {
+      "X-Shared-Key": `media-processor ${this.sharedKey}`,
+      Accept: "application/json",
+    };
   }
 
   private failure(code: string, hint: string): ProcessingError {

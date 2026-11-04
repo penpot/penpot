@@ -1113,18 +1113,19 @@
   The job runs without an owner (the team row already exists but the hook
   only moves owned photos), so this function stores the result itself and
   updates `team.photo_id`. The previous photo is touched for the GC. The
-  admin check runs before the upload is materialized."
+  admin check runs before the upload is materialized. The job is labelled per
+  team and the previous one is cancelled first: the last upload wins."
   [{:keys [::db/pool ::sto/storage] :as cfg} {:keys [profile-id team-id file] :as params}]
   (let [team  (get-team pool :profile-id profile-id :team-id team-id)
         _     (check-admin-permissions! pool profile-id team-id)
+        label (media.jobs/team-label team-id)
         input (media.jobs/materialize-input cfg file)]
     (try
-      (let [result (media/profile-photo cfg {:input input})
-            photo  (get result :photo)
-            object (media.jobs/store-result cfg
-                                            (uuid/parse (:id photo))
-                                            "profile"
-                                            {:content-type (:mtype photo)})]
+      ;; The last upload wins: the previous job of this team is cancelled
+      ;; before the new one is submitted, like the profile photo.
+      (jobs/cancel-by-label cfg :profile-thumbnail label)
+      (let [result (media/profile-photo cfg {:input input :label label})
+            object (media.jobs/store-ownerless-photo! cfg result)]
 
         ;; Mark object as touched for make it ellegible for tentative
         ;; garbage collection.

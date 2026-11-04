@@ -87,7 +87,12 @@ export function parseJobPayload(raw: string): JobPayload | null {
   }
 }
 
-/* ---- job params (mirror app.media.jobs) ---- */
+/* ---- job params (mirror app.media.jobs, camelCase on the wire) ----
+ *
+ * The backend writes a JSON response with `json/write-camel-key`, so a
+ * kebab-case key of `app.media.jobs` (`:media-id`) arrives here as `mediaId`.
+ * The `.strict()` schemas fail closed on any other shape.
+ */
 
 export const mediaInfoJobSchema = z
   .object({
@@ -98,7 +103,7 @@ export const mediaInfoJobSchema = z
 export const mediaThumbnailJobSchema = z
   .object({
     input: inputRefSchema,
-    "media-id": z.string().regex(uuidRegex, "media-id must be a uuid"),
+    mediaId: z.string().regex(uuidRegex, "mediaId must be a uuid"),
     format: z.enum(["jpeg", "webp", "png"]),
     quality: z.number().int().min(1).max(100),
     width: z.number().int().positive(),
@@ -125,8 +130,8 @@ export const profileThumbnailJobSchema = z
 export const fontVariantsJobSchema = z
   .object({
     input: inputRefSchema,
-    "variant-id": z.string().regex(uuidRegex, "variant-id must be a uuid"),
-    "source-mtype": z.string().min(1),
+    variantId: z.string().regex(uuidRegex, "variantId must be a uuid"),
+    sourceMtype: z.string().min(1),
     /* The backend derives the targets from `missing-variants`; `font/woff2`
        is never generated, only used as an uploaded source. */
     targets: z.array(z.enum(["font/ttf", "font/otf", "font/woff"])).min(1),

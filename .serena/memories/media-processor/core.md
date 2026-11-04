@@ -15,12 +15,13 @@ Media worker of the unified jobs substrate. It runs the durable media jobs (imag
 - `src/jobs/media.ts` — handlers of `media-info`, `media-thumbnail`, `profile-thumbnail` and `font-variants`.
 - `src/index.ts` — config, logger, health server, worker start and SIGTERM/SIGINT.
 - `src/health.ts` — `GET`/`HEAD /health`, matched by pathname (query string tolerated).
-- `src/services/image.ts` and `font.ts`; `src/http.ts` holds the URL and error helpers shared by the two HTTP clients.
+- `src/services/image.ts` and `font.ts`; `src/http.ts` holds the URL, error-snippet and JSON-record helpers shared by the two HTTP clients (the record check rejects arrays on purpose, so a transit body fails loudly).
 
 ## Job contract
 
 - Queue key: `penpot.worker.queue:<tenant>:<queue>`, with `<queue>` from `PENPOT_MEDIA_PROCESSOR_JOBS_FAST_QUEUE` (default `media-fast`) and `PENPOT_MEDIA_PROCESSOR_JOBS_QUEUE` (default `media`). They must match `app.media.jobs/queue-pair`.
 - Payload: `[job-id, scheduled-at]` as JSON, the same tuples the backend dispatcher and the immediate push of `jobs/submit` produce.
+- **Wire format: JSON, not Transit.** The backend answers Transit by default, so `jobs-client` and `backend-client` send `Accept: application/json`; without it the answer is a transit array (`["^ ", "~:action", …]`), which `JSON.parse` accepts as an array and the client then rejects as an unexpected action. The params of `claim-job` arrive with the key names the backend's JSON writer produces (`json/write-camel-key`): `mediaId`, `sourceMtype`, `variantId`, and the schemas of `protocol.ts` declare exactly those; the bodies the worker sends are camelCase too (`jobId`, `scheduledAt`, `resourceId`, `retriable`), which the backend's reader converts back to kebab. No `?` in any of those keys: `str/kebab`/`str/camel` drop it.
 - Claim answers `{action: run, name, params}` or `{action: skip}`. `skip` means the row is not runnable (cancelled, taken by another attempt, terminal): nothing runs and nothing is written.
 - A job name without a handler is failed with `internal/no-job-handler` and `retriable: false`.
 - A `ProcessingError` is terminal and keeps its `errorBody`; any other throw is `internal/processing-error` with a generic hint and `retriable: true`.

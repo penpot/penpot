@@ -178,6 +178,15 @@
   [profile-id]
   (str "profile:" profile-id))
 
+(defn team-label
+  "Label of the photo job of a team.
+
+  The job has no owner (the hook only moves owned photos), so the caller
+  stores the result; the label is what lets a second upload cancel the first,
+  so the last upload wins instead of racing."
+  [team-id]
+  (str "team:" team-id))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; THUMBNAIL FORMAT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -303,6 +312,18 @@
             (.close ^InputStream input)
             (fs/delete path)
             (release-temporary! system result-id)))))))
+
+(defn store-ownerless-photo!
+  "Move the photo a `:profile-thumbnail` job produced, whose job has no
+  owner, to the `profile` bucket and answer the new storage object.
+
+  Two callers reach it: profile creation imports the picture before the row
+  exists, and a team photo belongs to a team, so the terminal hook leaves the
+  artifact in `tempfile` for the caller. The result is already decoded by the
+  substrate, so its `:id` is a uuid; passing wire text here would be a bug."
+  [system result]
+  (let [{:keys [id mtype]} (get result :photo)]
+    (store-result system id "profile" {:content-type mtype})))
 
 (defn fetch-input
   "Copy the referenced `tempfile` object to a local file the local handlers

@@ -115,9 +115,11 @@
    ;; Per-job result: any JSON-encodable value, nil when the job returns
    ;; nothing. Nested maps and vectors are allowed; unserializable
    ;; values are dropped to nil by jobs/encode-result with a warning. A
-   ;; job whose job-def declares a result schema has its result validated
-   ;; against it: one that does not conform is rejected and the job is
-   ;; not completed.
+   ;; job whose job-def declares a result schema has its result decoded
+   ;; with that def's codec and then validated against the schema: one
+   ;; that does not conform is rejected and the job is not completed.
+   ;; The shape belongs to the job-def, not to this route, which is why
+   ;; the value is not typed here.
    [:result [:maybe :any]]
    ;; Storage object the worker produced for this job. A resource is only
    ;; set, never replaced: a job that already has one is rejected.
@@ -131,10 +133,11 @@
   "Complete a job on behalf of the worker that ran it, with the result it
   produced and, when it wrote one, the resource it stores.
 
-  The result of a job whose job-def declares a result schema is validated
-  against it before it is stored: one that does not conform is rejected and
-  the job is not completed. A job that is no longer completable is skipped,
-  and nothing is validated for it."
+  The result of a job whose job-def declares a result schema is decoded
+  with that def's codec (a JSON caller sends uuids as text) and validated
+  against the schema before it is stored: one that does not conform is
+  rejected and the job is not completed. A job that is no longer
+  completable is skipped, and nothing is validated for it."
   {::doc/added "2.20"
    ::sm/params schema:complete-job-params
    ::sm/result schema:complete-job-result
@@ -158,8 +161,10 @@
    [:error jobs/schema:job-error]
    ;; The worker decides whether the failure may be retried (a network
    ;; timeout, a worker shutting down). The substrate still refuses a
-   ;; code that no retry can heal and a job without budget.
-   [:retriable? {:optional true} ::sm/boolean]])
+   ;; code that no retry can heal and a job without budget. No `?` on the
+   ;; key: the JSON body reader and writer drop it, so `retriable?` never
+   ;; reaches this map.
+   [:retriable {:optional true} ::sm/boolean]])
 
 (def ^:private schema:fail-job-result
   [:map {:title "fail-job-result"}
@@ -171,8 +176,8 @@
    ::sm/result schema:fail-job-result
    ::rpc/auth false
    ::rpc/allowed-shared-keys allowed-shared-key-ids}
-  [cfg {:keys [job-id error retriable?]}]
-  (let [job (when retriable? (jobs/get-job cfg job-id))]
+  [cfg {:keys [job-id error retriable]}]
+  (let [job (when retriable (jobs/get-job cfg job-id))]
     (if (and job (jobs/retriable-error? job error))
       (let [nretry (inc (long (:retry-num job)))
             delay  (jobs/retry-delay nretry)

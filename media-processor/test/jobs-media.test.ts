@@ -112,7 +112,7 @@ describe("media job handlers", () => {
     const result = (await handlers["media-thumbnail"](
       {
         input: input(content.length),
-        "media-id": "22222222-2222-4222-8222-222222222222",
+        mediaId: "22222222-2222-4222-8222-222222222222",
         format: "jpeg",
         quality: 85,
         width: 100,
@@ -153,8 +153,8 @@ describe("media job handlers", () => {
     const result = (await handlers["font-variants"](
       {
         input: input(content.length, "font/ttf"),
-        "variant-id": "33333333-3333-4333-8333-333333333333",
-        "source-mtype": "font/ttf",
+        variantId: "33333333-3333-4333-8333-333333333333",
+        sourceMtype: "font/ttf",
         targets: ["font/otf", "font/woff"],
       },
       { ...context, name: "font-variants", queue: "media" }
@@ -223,8 +223,8 @@ describe("media job handlers", () => {
     const error = await handlers["font-variants"](
       {
         input: input(content.length, "font/ttf"),
-        "variant-id": "44444444-4444-4444-8444-444444444444",
-        "source-mtype": "font/ttf",
+        variantId: "44444444-4444-4444-8444-444444444444",
+        sourceMtype: "font/ttf",
         targets: ["font/otf", "font/woff"],
       },
       context
