@@ -32,6 +32,7 @@
    [app.main.errors]
    [app.main.features :as features]
    [app.main.router :as rt]
+   [app.main.store :as st]
    [app.main.worker :as mw]
    [app.render-wasm.shape :as wasm.shape]
    [app.util.http :as http]
@@ -78,11 +79,13 @@
           (omap/release-encoded! objects))))))
 
 (defn- encode-page-on-idle!
-  "Encode the page again in idle time, so the next send is cheap."
-  [objects]
+  "Encode the page again in idle time, so the next send is cheap. Stop
+  once the state no longer holds these objects."
+  [file-id page-id objects]
   (when (omap/objects-map? objects)
     (letfn [(step [deadline]
-              (when-not (omap/encode-pending! objects ##Inf deadline)
+              (when (and (identical? objects (dsh/lookup-page-objects @st/state file-id page-id))
+                         (not (omap/encode-pending! objects ##Inf deadline)))
                 (tm/schedule-on-idle-until step)))]
       (tm/schedule-on-idle-until step))))
 
@@ -176,7 +179,7 @@
     (effect [_ state _]
       ;; Free the worker's copy of the page and its indexes
       (mw/emit! {:cmd :index/finalize :page-id page-id})
-      (encode-page-on-idle! (dsh/lookup-page-objects state file-id page-id)))))
+      (encode-page-on-idle! file-id page-id (dsh/lookup-page-objects state file-id page-id)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace Page CRUD
