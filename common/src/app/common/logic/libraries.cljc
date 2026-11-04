@@ -304,13 +304,6 @@
                                                                   :include-deleted? true))]
             (recur shape-inst' next-data component')))))))
 
-(defn- geometry-sync-delta
-  "Offset the sync applies to the top-left of `dest-shape` when it copies the
-  geometry of `origin-shape`."
-  [dest-shape origin-shape dest-root origin-root]
-  (gpt/subtract (grc/rect->point (:selrect (reposition-shape origin-shape origin-root dest-root)))
-                (grc/rect->point (:selrect dest-shape))))
-
 (defn- follow-parent-modifiers
   "Modifiers that make `child` follow the change of its parent from
   `parent-before` to `parent-after`, through the child constraints."
