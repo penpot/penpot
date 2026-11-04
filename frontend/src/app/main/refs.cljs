@@ -238,6 +238,11 @@
 (def workspace-global
   (l/derived :workspace-global st/state))
 
+(def bottom-bar
+  "Which bar at the bottom of the canvas of a branch is open, without a branch
+  nil (see `app.main.data.workspace.layout`)."
+  (l/derived :bottom-bar workspace-global))
+
 (def mcp
   (l/derived :mcp st/state))
 

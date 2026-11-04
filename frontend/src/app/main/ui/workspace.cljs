@@ -78,6 +78,7 @@
         colorpalette?  (:colorpalette layout)
         textpalette?   (:textpalette layout)
         hide-ui?       (:hide-ui layout)
+        bottom-bar     (mf/deref refs/bottom-bar)
 
         on-resize
         (mf/use-fn
@@ -129,8 +130,12 @@
          :selected selected
          :layout layout
          :palete-size
-         (when (and (or colorpalette? textpalette?) (not hide-ui?))
-           @palete-size)}]]]
+         (when (and (or colorpalette? textpalette?)
+                    (not hide-ui?)
+                    (contains? #{nil :palette} bottom-bar))
+           ;; on a branch the palettes sit higher, at the level of its bar
+           (cond-> @palete-size
+             (some? bottom-bar) (+ 8)))}]]]
 
      (when-not hide-ui?
        [:> sidebar* {:layout layout

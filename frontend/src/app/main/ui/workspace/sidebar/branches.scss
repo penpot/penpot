@@ -386,22 +386,15 @@
 
 .branch-banner {
   position: absolute;
-  inset-block-end: var(--sp-xs);
+
+  // clear of the scroll of the canvas, at the level of the review banner
+  inset-block-end: var(--sp-m);
   inset-inline-start: 50%;
   transform: translateX(-50%);
   max-inline-size: 90vw;
   border-radius: $br-8;
   border: $b-2 solid var(--color-background-quaternary);
   background-color: var(--color-background-primary);
-
-  // The floating colour and typography palette bar hangs from the same bottom
-  // edge of the canvas, and it draws over the banner's controls. The banner
-  // publishes the room it takes from that edge, measured from its own box, as
-  // `--branch-banner-clearance` on the app root
-  // (`branches.cljs::publish-banner-clearance!`), and the palette bar lifts
-  // itself by that value (`workspace/palette.scss`). One measured value, so
-  // the bar follows the banner's collapsed and expanded states and the two
-  // cannot drift apart.
 
   // it must beat the viewport controls, which are raised to z-index 1
   // while a drawing tool is active

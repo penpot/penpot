@@ -12,12 +12,7 @@
   position: absolute;
   inline-size: 100vw;
   inset-inline-start: 0;
-
-  // The branch banner hangs from this same bottom edge and publishes the room
-  // it takes from it (`branches.cljs::publish-banner-clearance!`), so the bar
-  // sits above the banner instead of over its controls. With no banner the
-  // property is unset and the bar keeps its plain bottom anchor.
-  inset-block-end: var(--branch-banner-clearance, 0);
+  inset-block-end: 0;
   padding-block-end: var(--sp-xs);
 
   /** Aligns AI Chat button **/
@@ -25,6 +20,11 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-s);
+
+  // the level of the bar of the branch, clear of the scroll of the canvas
+  &.on-branch {
+    padding-block-end: var(--sp-m);
+  }
 }
 
 // `right` and `width` stay physical: they are the transitioned properties.

@@ -7,12 +7,14 @@
 (ns app.main.ui.workspace.sidebar.branches
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.time :as ct]
    [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.branches :as dwb]
    [app.main.data.workspace.drawing :as dwd]
+   [app.main.data.workspace.layout :as dwlo]
    [app.main.data.workspace.pull-requests :as dwpr]
    [app.main.data.workspace.review :as dwrv]
    [app.main.data.workspace.tasks :as dwtk]
@@ -31,7 +33,6 @@
    [app.main.ui.ds.product.avatar :refer [avatar*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
-   [app.main.ui.hooks.resize :as r]
    [app.main.ui.workspace.review.tasks :as rvt]
    [app.main.ui.workspace.sidebar.branch-review.common :as brc]
    [app.main.ui.workspace.sidebar.branch-review.compare]
@@ -1062,22 +1063,17 @@
 
 ;; --- Branch context banner (shown while editing a branch)
 
-(defn- publish-banner-clearance!
-  "Publish the room the branch banner takes from the bottom edge of the
-  canvas as `--branch-banner-clearance` on the app root, which the floating
-  colour/typography palette bar reads to lift itself clear (`palette.scss`):
-  the banner and the bar hang from the same edge and the bar draws over the
-  banner's controls. The room is measured from the banner's live box rather
-  than written down, so it follows the banner in both the collapsed and the
-  expanded state, where one fixed offset would be wrong in one of the two."
-  []
-  (when-let [root (dom/get-root)]
-    (when-let [node (dom/get-element "branch-banner")]
-      (let [room (- (:bottom (dom/get-bounding-rect root))
-                    (:top (dom/get-bounding-rect node)))]
-        (dom/set-css-property! root
-                               "--branch-banner-clearance"
-                               (dm/str (max 0 room) "px"))))))
+(defn- canvas-center
+  "The middle of the canvas, in pixels from the left of the window. The bar of
+  the branch centers there and not on the window, or at a usual width it would
+  cover the folded palettes, on the left of the canvas."
+  [vport rulers?]
+  (let [left-sidebar (dom/get-element "left-sidebar-aside")
+        left         (-> (dom/get-data left-sidebar "width")
+                         (d/parse-integer)
+                         (d/nilv 0))
+        rulers       (if rulers? 22 0)]
+    (+ left rulers (/ (- (:width vport) rulers) 2))))
 
 (defn- banner-status
   "What the bottom banner says about the open branch, most pressing
@@ -1136,9 +1132,13 @@
         merged?     (= "merged" (:status ctx))
         archived?   (= "archived" (:status ctx))
 
-        collapsed*  (mf/use-state false)
-        collapsed?  (deref collapsed*)
-        on-toggle   (mf/use-fn #(swap! collapsed* not))
+        ;; it shares its level with the palettes: only one of them is open
+        has-bar?    (some? ctx)
+        vport       (mf/deref refs/workspace-vport)
+        rulers?     (mf/deref refs/rulers?)
+        bottom-bar  (mf/deref refs/bottom-bar)
+        collapsed?  (and (some? bottom-bar) (not= :branch bottom-bar))
+        on-toggle   (mf/use-fn #(st/emit! (dwlo/toggle-bottom-bar :branch)))
 
         ;; persistence status drives a refetch of the change counts on save
         persistence (mf/deref refs/persistence)
@@ -1225,13 +1225,6 @@
              "delete"         (confirm-delete! ctx (:source-file-id ctx))
              nil)))
 
-        ;; publishes the room the banner takes from the bottom of the canvas
-        ;; whenever its box changes size, which is what keeps the floating
-        ;; colour/typography palette bar clear of it in both the collapsed and
-        ;; the expanded state (see `publish-banner-clearance!`)
-        banner-ref (r/use-resize-observer
-                    (mf/use-fn (fn [_ _] (publish-banner-clearance!))))
-
         status     (banner-status ctx open-pr)
 
         handle-label (if collapsed?
@@ -1274,21 +1267,16 @@
                                    (st/emit! (dwb/fetch-branch-context)))))]
         (fn [] (events/unlistenByKey key))))
 
-    ;; it is cleared when there is no banner to clear, so a file that is not a
-    ;; branch leaves the palette bar on its plain bottom anchor
-    (mf/with-effect [ctx]
-      (if (some? ctx)
-        (publish-banner-clearance!)
-        (dom/unset-css-property! (dom/get-root) "--branch-banner-clearance")))
-
-    ;; the same goes when the banner goes away with the component, so nothing
-    ;; is left behind for the palette bar to clear later
-    (mf/with-effect []
-      (fn [] (dom/unset-css-property! (dom/get-root) "--branch-banner-clearance")))
+    ;; a file that is not a branch has no bar, and the palettes stay as ever
+    (mf/with-effect [has-bar?]
+      (when has-bar?
+        (st/emit! (dwlo/mount-bottom-bars))
+        (fn [] (st/emit! (dwlo/unmount-bottom-bars)))))
 
     (when ctx
       [:div {:id "branch-banner"
-             :ref banner-ref
+             :style (when (some? vport)
+                      #js {"insetInlineStart" (dm/str (canvas-center vport rulers?) "px")})
              :class (stl/css-case :branch-banner true
                                   :branch-banner-merged (or merged? archived?)
                                   :is-collapsed collapsed?)}
