@@ -1084,3 +1084,12 @@
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :grid :variant-diff false
                                     :rich-variants true :layout-copies true :text true}]
                        :ops [[:nest 6 0 0 0] [:style 8 1 1] [:switch 4 0 0 0]]}))))
+
+(t/deftest generated-reset-in-a-reversed-flex-copy-stays-with-its-parent
+  ;; a copy inside a nested copy that a resized, reversed flex copy places
+  ;; elsewhere than its main is reset beside that parent
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :layout :flex :library true :rich-variants true
+                                    :layout-copies true :text true}]
+                       :ops [[:edit 18 0 0 0] [:delete 0 0 0 0] [:edit 3 0 1 1] [:update-main 3] [:update-main 0 0 0 0]
+                             [:resize 6 0 0 0] [:nest 16 0 0 0] [:swap 16 0 0 0] [:detach 2 0 0 0] [:style 8 20 2 0]
+                             [:reset 13 0 0 0]]}))))
