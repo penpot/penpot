@@ -540,6 +540,33 @@ RETURNING id, deleted_at;")
     (profile-to-map profile)))
 
 
+;; ---- API: get-profiles-by-ids
+
+(def ^:private sql:get-profiles-by-ids
+  "SELECT DISTINCT id, fullname, email, photo_id
+     FROM profile
+    WHERE id = ANY(?)
+      AND deleted_at IS NULL;")
+
+(def ^:private schema:get-profiles-by-ids-params
+  [:map [:ids [:vector ::sm/uuid]]])
+
+(sv/defmethod ::get-profiles-by-ids
+  "Get multiple profiles by id. Unknown ids are simply absent from the result."
+  {::doc/added "2.20"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
+   ::sm/params schema:get-profiles-by-ids-params
+   ::sm/result [:vector schema:profile]
+   ::nitrate/sso false}
+  [cfg {:keys [ids]}]
+  (if (empty? ids)
+    []
+    (db/run! cfg (fn [{:keys [::db/conn]}]
+                   (let [ids-array (db/create-array conn "uuid" ids)]
+                     (->> (db/exec! conn [sql:get-profiles-by-ids ids-array])
+                          (mapv profile-to-map)))))))
+
+
 ;; ---- API: get-organization-member-team-counts
 
 (def ^:private sql:get-organization-member-team-counts
