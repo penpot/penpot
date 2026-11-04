@@ -296,6 +296,16 @@
                            (pcb/change-parent (:parent-id related-shape-in-new) [child-at-root] pos
                                               {:allow-altering-copies true}))
 
+        ;; the child and its subtree follow the change from the old parent to
+        ;; the new one, each through its own constraints
+        changes        (-> (cll/generate-follow-parent changes
+                                                       (ctn/make-container (assoc page :objects (pcb/get-objects changes)) :page)
+                                                       (get (pcb/get-objects changes) (:id orig-swapped-child))
+                                                       (get (:objects page) (:parent-id orig-swapped-child))
+                                                       current-parent
+                                                       nil)
+                           (pcb/apply-changes-local))
+
         objects        (pcb/get-objects changes)
         child-id       (:id orig-swapped-child)
         file           {:id (:id ldata) :data ldata}
