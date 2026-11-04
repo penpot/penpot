@@ -416,7 +416,10 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stoper-s     (rx/filter (ptk/type? ::finalize-workspace) stream)
+      (let [;; A reload starts a new `initialize-workspace`, which replaces these streams
+            stoper-s     (rx/filter #(or (ptk/type? ::finalize-workspace %)
+                                         (ptk/type? ::initialize-workspace %))
+                                    stream)
             rparams      (rt/get-params state)
             features     (features/get-enabled-features state team-id)
             render-wasm-enabled? (features/active-feature? state "render-wasm/v1")

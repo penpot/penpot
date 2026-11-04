@@ -96,7 +96,10 @@
   (ptk/reify ::initialize-text-reflow
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stopper      (rx/filter (ptk/type? ::finalize-text-reflow) stream)
+      (let [;; A workspace reload starts a new one, which replaces this one
+            stopper      (rx/filter #(or (ptk/type? ::finalize-text-reflow %)
+                                         (ptk/type? ::initialize-text-reflow %))
+                                    stream)
             page-stopper (rx/filter page-finalize? stream)]
         (->> stream
              (rx/filter (ptk/type? :text/reflow))

@@ -48,12 +48,29 @@
 (declare handle-pointer-send)
 (declare handle-export-update)
 
+(defn- resubscribed?
+  "True when `event` is a new subscription to `file-id`, which a reload of
+  the open file starts."
+  [file-id event]
+  (and (ptk/type? ::initialize event)
+       (= file-id (:file-id (deref event)))))
+
 (defn initialize
+  "Subscribes to the notifications of `file-id` and its team until the file
+  is left or a new subscription starts. A new subscription to the same file
+  replaces this one, so a reload never doubles the handled messages."
   [team-id file-id]
   (ptk/reify ::initialize
+    IDeref
+    (-deref [_] {:file-id file-id})
+
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stopper     (rx/filter (ptk/type? ::finalize) stream)
+      (let [stopped-by  (volatile! nil)
+            stopper     (->> stream
+                             (rx/filter #(or (ptk/type? ::finalize %)
+                                             (ptk/type? ::initialize %)))
+                             (rx/tap #(vreset! stopped-by %)))
             profile-id (:profile-id state)
             organization-id (dm/get-in state [:teams team-id :organization :id])
 
@@ -107,7 +124,13 @@
 
                             (rx/take-until stopper))]
 
-        (rx/concat stream (rx/of (dws/send endmsg)))))))
+        (rx/concat
+         stream
+         ;; The server keeps one file subscription per connection: an
+         ;; unsubscribe sent after the new subscribe would end it
+         (rx/defer #(if (resubscribed? file-id @stopped-by)
+                      (rx/empty)
+                      (rx/of (dws/send endmsg)))))))))
 
 (defn- handle-change-team-role
   [{:keys [role] :as msg}]
