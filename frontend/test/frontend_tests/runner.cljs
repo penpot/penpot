@@ -94,6 +94,7 @@
    [frontend-tests.render-dimensions-test]
    [frontend-tests.render-wasm.process-objects-test]
    [frontend-tests.render-wasm.serialization-test]
+   [frontend-tests.render-wasm.shape-proxy-test]
    [frontend-tests.render-wasm.text-editor-apply-styles-test]
    [frontend-tests.render-wasm.text-editor-caret-color-test]
    [frontend-tests.render-wasm.text-editor-content-range-test]
@@ -273,6 +274,7 @@
    'frontend-tests.plugins.value-objects-test
    'frontend-tests.render-wasm.process-objects-test
    'frontend-tests.render-wasm.serialization-test
+   'frontend-tests.render-wasm.shape-proxy-test
    'frontend-tests.render-wasm.text-editor-apply-styles-test
    'frontend-tests.render-wasm.text-editor-caret-color-test
    'frontend-tests.render-wasm.text-editor-content-range-test
