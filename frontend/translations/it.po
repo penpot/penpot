@@ -2265,10 +2265,6 @@ msgstr ""
 msgid "integrations.mcp-server.title"
 msgstr "Server MCP"
 
-#: src/app/main/ui/settings/integrations.cljs:493
-msgid "integrations.mcp-server.title.beta"
-msgstr "Beta"
-
 #: src/app/main/ui/settings/integrations.cljs:392
 msgid "integrations.no-expiration"
 msgstr "Nessuna data di scadenza"

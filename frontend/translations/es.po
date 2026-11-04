@@ -2718,10 +2718,6 @@ msgstr ""
 msgid "integrations.mcp-server.title"
 msgstr "Servidor MCP"
 
-#: src/app/main/ui/settings/integrations.cljs:493
-msgid "integrations.mcp-server.title.beta"
-msgstr "Beta"
-
 #: src/app/main/ui/settings/integrations.cljs:200
 msgid "integrations.name.label"
 msgstr "Nombre"
