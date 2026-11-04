@@ -3096,7 +3096,7 @@ msgstr "Panel"
 msgid "labels.default"
 msgstr "Valor por defecto"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:334, src/app/main/ui/dashboard/fonts.cljs:303, src/app/main/ui/dashboard/fonts.cljs:380, src/app/main/ui/dashboard/fonts.cljs:414, src/app/main/ui/dashboard/import.cljs:319, src/app/main/ui/dashboard/project_menu.cljs:116, src/app/main/ui/dashboard/team.cljs:1454, src/app/main/ui/settings/integrations.cljs:376, src/app/main/ui/settings/profile.cljs:123, src/app/main/ui/settings/profile.cljs:137, src/app/main/ui/settings/profile.cljs:138, src/app/main/ui/workspace/sidebar/assets/common.cljs:231, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:228, src/app/main/ui/workspace/sidebar/versions.cljs:257, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:353, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:111, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:394
+#: src/app/main/ui/dashboard/file_menu.cljs:334, src/app/main/ui/dashboard/fonts.cljs:303, src/app/main/ui/dashboard/fonts.cljs:380, src/app/main/ui/dashboard/fonts.cljs:414, src/app/main/ui/dashboard/import.cljs:319, src/app/main/ui/dashboard/project_menu.cljs:116, src/app/main/ui/dashboard/team.cljs:1454, src/app/main/ui/settings/integrations.cljs:376, src/app/main/ui/settings/profile.cljs:123, src/app/main/ui/settings/profile.cljs:137, src/app/main/ui/settings/profile.cljs:138, src/app/main/ui/workspace/sidebar/assets/common.cljs:231, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:228, src/app/main/ui/workspace/sidebar/versions.cljs:263, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:353, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:111, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:394
 msgid "labels.delete"
 msgstr "Borrar"
 
@@ -3168,7 +3168,7 @@ msgstr "Vacío"
 msgid "labels.error"
 msgstr "Error"
 
-#: src/app/main/data/workspace/versions.cljs:320
+#: src/app/main/data/workspace/versions.cljs:332
 msgid "labels.exit"
 msgstr "Salir"
 
@@ -3314,7 +3314,7 @@ msgstr "Bibliotecas y Plantillas"
 msgid "labels.loading"
 msgstr "Cargando…"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:251
+#: src/app/main/ui/workspace/sidebar/versions.cljs:257
 msgid "labels.lock"
 msgstr "Bloquear"
 
@@ -3516,7 +3516,7 @@ msgstr "Quitar"
 msgid "labels.remove-member"
 msgstr "Eliminar integrante"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:297, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:204, src/app/main/ui/dashboard/project_menu.cljs:90, src/app/main/ui/workspace/sidebar/assets/groups.cljs:187, src/app/main/ui/workspace/sidebar/versions.cljs:228, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:76, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:101, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
+#: src/app/main/ui/dashboard/file_menu.cljs:297, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:204, src/app/main/ui/dashboard/project_menu.cljs:90, src/app/main/ui/workspace/sidebar/assets/groups.cljs:187, src/app/main/ui/workspace/sidebar/versions.cljs:234, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:76, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:101, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
 msgid "labels.rename"
 msgstr "Renombrar"
 
@@ -3552,7 +3552,7 @@ msgstr "Reenviar"
 msgid "labels.resend-invitation"
 msgstr "Reenviar invitacion"
 
-#: src/app/main/data/workspace/versions.cljs:252, src/app/main/data/workspace/versions.cljs:325, src/app/main/ui/workspace/sidebar/versions.cljs:238
+#: src/app/main/data/workspace/versions.cljs:260, src/app/main/data/workspace/versions.cljs:337, src/app/main/ui/workspace/sidebar/versions.cljs:244
 msgid "labels.restore"
 msgstr "Restaurar"
 
@@ -3715,7 +3715,7 @@ msgstr "Tipografía"
 msgid "labels.unknown-error"
 msgstr "Error desconocido"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:245
+#: src/app/main/ui/workspace/sidebar/versions.cljs:251
 msgid "labels.unlock"
 msgstr "Desbloquear"
 
@@ -9980,7 +9980,7 @@ msgstr "tipografía"
 msgid "workspace.undo.entry.unknown"
 msgstr "Operación sobre %s"
 
-#: src/app/main/data/workspace/libraries.cljs:1500, src/app/main/data/workspace/versions.cljs:247
+#: src/app/main/data/workspace/libraries.cljs:1500, src/app/main/data/workspace/versions.cljs:255
 msgid "workspace.updates.dismiss"
 msgstr "Ignorar"
 
@@ -10000,31 +10000,31 @@ msgstr "Actualizar"
 msgid "workspace.versions.autosaved.entry"
 msgstr "%s versiones de autoguardado"
 
-#: src/app/main/data/workspace/versions.cljs:307, src/app/main/ui/workspace/sidebar/versions.cljs:300
+#: src/app/main/data/workspace/versions.cljs:319, src/app/main/ui/workspace/sidebar/versions.cljs:309
 msgid "workspace.versions.autosaved.version"
 msgstr "Autoguardado %s"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:323
+#: src/app/main/ui/workspace/sidebar/versions.cljs:331
 msgid "workspace.versions.button.pin"
 msgstr "Fijar versión"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:233, src/app/main/ui/workspace/sidebar/versions.cljs:313
+#: src/app/main/ui/workspace/sidebar/versions.cljs:239, src/app/main/ui/workspace/sidebar/versions.cljs:321
 msgid "workspace.versions.button.preview"
 msgstr "Previsualizar versión"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:318
+#: src/app/main/ui/workspace/sidebar/versions.cljs:326
 msgid "workspace.versions.button.restore"
 msgstr "Restaurar versión"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:425, src/app/main/ui/workspace/sidebar/versions.cljs:427
+#: src/app/main/ui/workspace/sidebar/versions.cljs:433, src/app/main/ui/workspace/sidebar/versions.cljs:435
 msgid "workspace.versions.button.save"
 msgstr "Guardar versión"
 
-#: src/app/main/data/workspace/versions.cljs:85
+#: src/app/main/data/workspace/versions.cljs:93
 msgid "workspace.versions.create-failed-unsaved"
 msgstr "No se ha creado la versión porque tus cambios no se han podido guardar."
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:434
+#: src/app/main/ui/workspace/sidebar/versions.cljs:442
 msgid "workspace.versions.empty"
 msgstr "No hay versiones aún"
 
@@ -10032,35 +10032,39 @@ msgstr "No hay versiones aún"
 msgid "workspace.versions.expand-snapshot"
 msgstr "Expandir versiones"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:398
+#: src/app/main/ui/workspace/sidebar/versions.cljs:406
 msgid "workspace.versions.filter.all"
 msgstr "Todas las versiones"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:412
+#: src/app/main/ui/workspace/sidebar/versions.cljs:420
 msgid "workspace.versions.filter.label"
 msgstr "Filtro de versiones"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:399
+#: src/app/main/ui/workspace/sidebar/versions.cljs:407
 msgid "workspace.versions.filter.mine"
 msgstr "Mis versiones"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:403
+#: src/app/main/ui/workspace/sidebar/versions.cljs:411
 msgid "workspace.versions.filter.user"
 msgstr "Versiones de %s"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:420
+#: src/app/main/ui/workspace/sidebar/versions.cljs:428
 msgid "workspace.versions.loading"
 msgstr "Cargando..."
 
-#: src/app/main/data/workspace/versions.cljs:318
+#: src/app/main/data/workspace/versions.cljs:330
 msgid "workspace.versions.preview-banner-title"
 msgstr "Previsualizando version: %s"
 
-#: src/app/main/data/workspace/versions.cljs:312
+#: src/app/main/data/workspace/versions.cljs:324
 msgid "workspace.versions.preview.unnamed"
 msgstr "Versión sin nombre"
 
-#: src/app/main/data/workspace/versions.cljs:245
+#: src/app/main/data/workspace/versions.cljs:315, src/app/main/ui/workspace/sidebar/versions.cljs:308
+msgid "workspace.versions.repair.version"
+msgstr "Antes de la reparación automática, %s"
+
+#: src/app/main/data/workspace/versions.cljs:253
 msgid "workspace.versions.restore-warning"
 msgstr "¿Quieres restaurar esta versión?"
 
@@ -10081,6 +10085,6 @@ msgstr "Abrir menu de versiones"
 msgid "workspace.versions.warning.subtext"
 msgstr "Si quieres aumentar este límite, contáctanos en [support@penpot.app](%s)"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:462
+#: src/app/main/ui/workspace/sidebar/versions.cljs:470
 msgid "workspace.versions.warning.text"
 msgstr "Los autoguardados duran %s días."
