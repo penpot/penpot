@@ -643,6 +643,7 @@
                       (not (gpt/close? (gsh/shape->center before) (gsh/shape->center after))))
         changed? (and after
                       (or moved?
+                          resized?
                           (not (mth/close? (or (:rotation before) 0) (or (:rotation after) 0) 1e-10))
                           (not= (boolean (:flip-x before)) (boolean (:flip-x after)))
                           (not= (boolean (:flip-y before)) (boolean (:flip-y after)))))
