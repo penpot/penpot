@@ -447,11 +447,7 @@
 
 (defn- metric-entry
   [value]
-  (result/metric {:value value
-                  :unit :ms
-                  :semantics :duration
-                  :basis {:kind :attempt-total}
-                  :zero-policy :positive}))
+  {:command :fixture/work :metrics {:command/elapsed [value]}})
 
 (defn- fingerprint
   [character]
@@ -460,11 +456,12 @@
 
 (defn- preparation
   [case-id digest]
-  {:preparation-id (str (random-uuid))
-   :case-id case-id
-   :fingerprint (fingerprint digest)
-   :effective-graphics {:backend :fixture}
-   :diagnostics {}})
+  (let [id (str (random-uuid))]
+    {:preparation-id id :case-id case-id :warmup? false
+     :fingerprint (fingerprint digest)
+     :effective-graphics {:backend :fixture}
+     :diagnostics {}
+     :phases [{:phase :preparation :preparation-id id :outcome :completed :events []}]}))
 
 (defn- fake-run-record
   [selected-build run-home cases options {:keys [kind digest metric-value]
@@ -494,8 +491,7 @@
                            :preparation-id nil
                            :warmup? false
                            :outcome :failed
-                           :metrics {}
-                           :trace {}
+                           :phases []
                            :failure {:message "fixture failure"}})
                          (let [prep (preparation case-id digest)]
                            (-> run
@@ -505,8 +501,8 @@
                                  :preparation-id (:preparation-id prep)
                                  :warmup? false
                                  :outcome :completed
-                                 :metrics {:fixture/total-ms (metric-entry metric-value)}
-                                 :trace {}}))))))
+                                 :phases [{:phase :main :preparation-id (:preparation-id prep)
+                                           :outcome :completed :events [(metric-entry metric-value)]}]}))))))
                    run
                    cases))
         termination (case kind

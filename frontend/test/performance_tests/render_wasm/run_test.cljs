@@ -87,8 +87,9 @@
 (defn- fake-browser
   [{:keys [launch-failure new-page-failure close-page-failure
            prepare-failure run-failure screenshot-failure
-           interruption controller effective-graphics metrics]
-    :or {effective-graphics (constantly {}) metrics {}}}]
+           interruption controller effective-graphics events]
+    :or {effective-graphics (constantly {})
+         events [{:command :fixture/work :metrics {:command/elapsed [1]}}]}}]
   (let [state (atom {:launches 0 :pages 0 :close-pages 0 :closes 0
                      :host nil :runs {} :preparations {}})]
     {:state state
@@ -142,7 +143,9 @@
                                :fingerprint {:algorithm :sha-256
                                              :digest (apply str (repeat 64 "a"))}
                                :effective-graphics (effective-graphics case-id (:id page))
-                               :diagnostics {}}]
+                               :diagnostics {}
+                               :phases [{:phase :preparation :preparation-id preparation-id
+                                         :outcome :completed :events []}]}]
               (swap! state assoc-in [:preparations preparation-id] case-id)
               {:status "ok" :preparation preparation}))))
       :run
@@ -165,7 +168,9 @@
             :response
             {:status "failed" :phase "interact" :message "attempt rejected"}
 
-            {:status "ok" :metrics metrics :trace {}})))
+            {:status "ok"
+             :phases [{:phase :main :preparation-id preparation-id :outcome :completed
+                       :events events}]})))
       :screenshot
       (fn [page file _]
         (check-page page)
@@ -199,6 +204,15 @@
 (defn- attempts-for
   [run case-id]
   (filterv #(= case-id (:case-id %)) (:attempts run)))
+
+(t/deftest ^:async unmeasured-successful-work-saves-a-terminal-failure
+  (let [fake (fake-browser {:events []})
+        response (await (execute fake [(collected :case/unmeasured :reuse)]
+                                 (options fake (path/join @temporary-root "unmeasured"))))
+        saved (result/decode (fs/readFileSync (get-in response [:home :record-path]) "utf8"))]
+    (t/is (= 1 (:exit-code response)))
+    (t/is (= {:reason :no-measurements :case-ids [:case/unmeasured]} (:termination saved)))
+    (t/is (= :completed (get-in saved [:attempts 0 :outcome])))))
 
 (defn- preparations-for
   [run case-id]
@@ -343,9 +357,10 @@
           run    (:run result)
           tries  (attempts-for run :case/fresh)]
       (t/is (= [:failed :completed] (mapv :outcome tries)))
-      (t/is (nil? (:preparation-id (first tries))))
+      (t/is (= (:preparation-id (first (preparations-for run :case/fresh)))
+               (:preparation-id (first tries))))
       (t/is (= "scene-build" (get-in (first tries) [:failure :phase])))
-      (t/is (= 1 (count (preparations-for run :case/fresh))))
+      (t/is (= 2 (count (preparations-for run :case/fresh))))
       (t/is (= :ok (get-in run [:metadata :diagnostics :screenshots "case/fresh" :status])))
       (t/is (every? zero? (vals (get-in run [:remaining :case/fresh]))))
       (t/is (= :failed (get-in run [:termination :reason])))
@@ -886,11 +901,7 @@
 (t/deftest ^:async feature-comparison-completes-with-managed-output
   (let [root     @temporary-root
         cases    [(collected :case/a :fresh)]
-        fake     (fake-browser {:metrics {:first-render-ms
-                                          (result/metric {:value 1 :unit :ms
-                                                          :semantics :prepared-scene-to-full
-                                                          :basis {:kind :attempt-total}
-                                                          :zero-policy :positive})}})
+        fake     (fake-browser {})
         prepared {:plan (feature-plan/plan ["a"] {:dry-run true})
                   :cases cases
                   :output-dir nil

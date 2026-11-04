@@ -8,7 +8,7 @@
   "Text formatting for run summaries and saved comparisons.
 
   Text leads with observed median, bootstrap interval and distinct counts.
-  Full statistics and acknowledged differences retain units and observation bases."
+  Full statistics and acknowledged differences include units and phase identity."
   (:require
    [benches.render-wasm.result :as result]
    [clojure.string :as str]))
@@ -32,16 +32,25 @@
 
 (defn- counts->text
   "Prints valid, invalid, absent, failed, unattempted and excluded warmup counts."
-  [{:keys [valid invalid absent failed unattempted warmup]}]
+  [{:keys [valid invalid absent failed unattempted warmup invocations raw-values]}]
   (str "valid=" valid " invalid=" invalid " absent=" absent " failed=" failed
-       " unattempted=" unattempted " warmup=" warmup))
+       " unattempted=" unattempted " warmup=" warmup
+       " invocations=" invocations " raw-values=" raw-values " n=" valid))
 
 (defn metric->text
-  "Formats all statistics for one metric, including batch basis and support limits."
-  [id {:keys [definitions counts statistics]}]
-  (str (pr-str id) " median " (estimate->text (or (:median statistics) statistics))
+  "Formats statistics across phase execution sums with their units and counts.
+
+  Args:
+    id: vector of phase, command or global scope, and metric type.
+    report: quantity descriptions, accounting counts, statistics and diagnostics.
+
+  Returns:
+    Text with observed estimates, support limits and raw-value counts."
+  [id {:keys [definitions counts statistics diagnostics]}]
+  (str (pr-str id) " sum per execution; median " (estimate->text (or (:median statistics) statistics))
        " CI " (estimate->text (or (:median-ci statistics) statistics)) " | " (counts->text counts)
        "\n  definitions " (pr-str definitions)
+       (when (seq diagnostics) (str "\n  diagnostics " (pr-str diagnostics)))
        (if-let [reason (:reason statistics)]
          (str "\n  unavailable (" (name reason) ")")
          (str "\n  mean " (estimate->text (:mean statistics))
@@ -52,9 +61,12 @@
 
 (defn- case-status->text
   "Displays pending slots and failed attempts, including excluded warmups."
-  [{:keys [remaining failed-attempts]}]
+  [{:keys [remaining failed-attempts preparations phases]}]
   (str " remaining " (pr-str remaining)
+       "\n  phases " (pr-str phases)
        " failed-warmups=" (count (filter :warmup? failed-attempts))
+       (when-let [failures (seq (keep :failure preparations))]
+         (str "\n  preparation failures " (pr-str failures)))
        (when (seq failed-attempts)
          (str "\n  failed attempts " (pr-str failed-attempts)))))
 

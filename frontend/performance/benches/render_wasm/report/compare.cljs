@@ -67,7 +67,8 @@
   [field baseline candidate]
   (concat
    (when-let [d (difference field baseline candidate)] [d])
-   (when (or (not= 1 (count baseline)) (not= 1 (count candidate)))
+   (when (or (not= 1 (count baseline)) (not= 1 (count candidate))
+             (contains? baseline nil) (contains? candidate nil))
      [{:field [field :incomplete-or-varying-evidence]
        :baseline baseline :candidate candidate :waived? false}])))
 
@@ -114,8 +115,8 @@
       (evidence-differences :effective-graphics (preparation-facts baseline b :effective-graphics)
                             (preparation-facts candidate c :effective-graphics))
       (mapcat (fn [metric-id]
-                (let [bdefs (summary/definitions baseline b metric-id)
-                      cdefs (summary/definitions candidate c metric-id)]
+                (let [bdefs (map #(dissoc % :description) (summary/definitions baseline b metric-id))
+                      cdefs (map #(dissoc % :description) (summary/definitions candidate c metric-id))]
                   (evidence-differences [:metric metric-id] (set bdefs) (set cdefs))))
               shared)))))
 
@@ -168,14 +169,8 @@
 
 (defn- side-report
   "Reports one side with saved definitions, setup evidence and sample accounting."
-  [run id shared analysis allow-all-differences]
-  {:case-id id
-   :definition (some #(when (= id (:id %)) %) (get-in run [:plan :cases]))
-   :preparations (preparations run id)
-   :remaining (get-in run [:remaining id])
-   :failed-attempts (summary/get-failed-attempts run id)
-   :metrics (into {} (map (fn [metric-id]
-                            [metric-id (summary/summarize-metric run id metric-id analysis allow-all-differences)])) shared)})
+  [run id shared analysis]
+  (summary/case-report run id shared analysis))
 
 (defn- metric-changes
   "Keeps diagnostic changes unavailable for differing or varying definitions.
@@ -209,8 +204,8 @@
                       {:type ::incompatible :baseline b :candidate c :mismatches mismatches})))
     {:explicit? explicit?
      :mismatches mismatches
-     :baseline (side-report baseline b shared analysis allow-all-differences)
-     :candidate (side-report candidate c shared analysis allow-all-differences)
+     :baseline (side-report baseline b shared analysis)
+     :candidate (side-report candidate c shared analysis)
      :metrics (into {}
                     (map (fn [id]
                            [id (metric-changes baseline candidate b c id mismatches
