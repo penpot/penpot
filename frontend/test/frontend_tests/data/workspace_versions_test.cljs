@@ -9,6 +9,7 @@
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
+   [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.pages :as dwpg]
@@ -18,6 +19,7 @@
    [app.util.timers :as tm]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
@@ -219,3 +221,35 @@
            (let [[sent-cmd params] (call! event)]
              (t/is (= cmd sent-cmd))
              (t/is (= file-id (:file-id params))))))))))
+
+(t/deftest ^:async pin-version-with-a-false-answer-reloads-instead-of-editing
+  (let [file-id    (uuid/next)
+        version-id (uuid/next)
+        version    {:id version-id
+                    :label "Version"
+                    :created-at (ct/now)
+                    :created-by "system"}
+        state      {:current-file-id file-id
+                    :workspace-versions {:data [version]}}
+        events     (atom [])]
+    (await
+     (mock/with-mocks*
+       {rp/cmd! (mock/stub (fn [cmd _]
+                             (case cmd
+                               :update-file-snapshot (rx/of false)
+                               :get-file-snapshots   (rx/of [])
+                               (rx/of nil))))}
+       (let [output (ptk/watch (versions/pin-version version-id) state (rx/empty))]
+         (await (async/observe output :on-next #(swap! events conj %)))
+         (let [final (reduce (fn [s e]
+                               (if (= ::versions/update-versions-state (ptk/type e))
+                                 (ptk/update e s)
+                                 s))
+                             state
+                             @events)]
+           (t/is (nil? (get-in final [:workspace-versions :editing]))
+                 "a failed pin must not mark the version as editing"))
+         (t/is (some #(= ::versions/fetch-versions (ptk/type %)) @events)
+               "a failed pin reloads the list")
+         (t/is (some #(= ::ntf/show (ptk/type %)) @events)
+               "a failed pin asks the user"))))))

@@ -293,11 +293,25 @@
                                                :slow-failures :attempts :retry-token
                                                :retry-for)))))))
 
+(defn- buffer-commit
+  "Event used internally to keep a commit visible from the moment it is
+  applied locally, while it waits for the next flush. Without it the
+  repair path cannot undo and replay an edit that is still inside the 3 s
+  window, and the local state would end in a different order than the
+  server's."
+  [commit]
+  (ptk/reify ::buffer-commit
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:persistence :buffer] (fnil conj []) commit))))
+
 (defn- append-commit
   "Event used internally to append the current change to the
-  persistence queue."
-  [{:keys [id] :as commit}]
-  (let [run-id (uuid/next)]
+  persistence queue. `sources` are the local commits folded into
+  `commit`: they leave the flush buffer and become visible in the queue."
+  [{:keys [id] :as commit} sources]
+  (let [run-id (uuid/next)
+        done?  (set sources)]
     (ptk/reify ::append-commit
       ptk/UpdateEvent
       (update [_ state]
@@ -308,7 +322,9 @@
                       (cond-> (not= :error (:status pstate))
                         (update :run-id d/nilv run-id))
                       (update :queue queue-conj id)
-                      (update :index assoc id commit)))))
+                      (update :index assoc id commit)
+                      (update :buffer (fn [buffer]
+                                        (into [] (remove #(done? (:id %))) buffer)))))))
 
       ptk/WatchEvent
       (watch [_ state _]
@@ -453,17 +469,46 @@
              (->> (rx/timer delay-ms)
                   (rx/map (fn [_] (persist-commit commit-id {:token token})))))))))))
 
-(defn- commit-persisted
-  [commit]
-  (ptk/reify ::commit-persisted
-    IDeref
-    (-deref [_] commit)
+(defn- pending-for
+  "The commits of the same file that still have to be undone and replayed
+  around `commit`, oldest first: the ones already in the queue and the
+  ones still waiting in the flush buffer. Commits of other files are never
+  replayed on this file's data."
+  [{:keys [queue index buffer]} {:keys [id file-id]}]
+  (->> (concat (keep index queue) (vec buffer))
+       (filter #(= file-id (:file-id %)))
+       (remove #(= id (:id %)))
+       (vec)))
 
-    ptk/UpdateEvent
-    (update [_ state]
-      ;; Keep the acknowledgment even if the queue runner has stopped.
-      (d/update-in-when state [:persistence :index (:id commit)]
-                        assoc ::acknowledged true))))
+(defn- commit-persisted
+  ([commit] (commit-persisted commit nil))
+  ([commit repair-changes]
+   (ptk/reify ::commit-persisted
+     IDeref
+     (-deref [_] commit)
+
+     ptk/UpdateEvent
+     (update [_ state]
+       ;; Keep the acknowledgment even if the queue runner has stopped.
+       (d/update-in-when state [:persistence :index (:id commit)]
+                         assoc ::acknowledged true))
+
+     ptk/WatchEvent
+     (watch [_ state _]
+       ;; The repair changes come in the response, not in the websocket
+       ;; message: by the time they arrive the commit of the save is already
+       ;; confirmed. The commits queued behind it are undone, the repair is
+       ;; applied and they are replayed, so the local order (`C1;R;C2`)
+       ;; matches the server's instead of leaving the repair at the end.
+       (when (seq repair-changes)
+         (rx/of (dch/apply-remote-changes
+                 {:file-id (:file-id commit)
+                  :redo-changes (vec repair-changes)}
+                 (pending-for (:persistence state) commit))
+                (ntf/show {:content (tr "workspace.notifications.file-repaired")
+                           :type :toast
+                           :level :info
+                           :timeout nil})))))))
 
 (defn- update-file-request
   "Issues the `update-file` request, tracked as active for its lifetime."
@@ -519,11 +564,17 @@
          (rx/take 1)
          ;; A response that carries no revision, including one that never
          ;; arrived, is treated as a failed save rather than a saved file.
+         ;;
+         ;; The repair convergence assumes this response arrives: a retry of
+         ;; a save whose response was lost applies the changes again over the
+         ;; already-repaired file, computes a second repair, and the client
+         ;; never saw the first one. That case needs idempotency by
+         ;; `:commit-id`; it is documented, not fixed here.
          (rx/if-empty nil)
-         (rx/mapcat (fn [{:keys [revn]}]
+         (rx/mapcat (fn [{:keys [revn repair-changes]}]
                       (if (and (int? revn) (<= 0 revn))
                         (rx/of (update-file-revn file-id revn)
-                               (commit-persisted commit))
+                               (commit-persisted commit repair-changes))
                         (rx/throw (ex-info "The save response has no valid revision"
                                            {:type :persistence
                                             :code :invalid-save-response
@@ -728,6 +779,12 @@
   when the user acts on them."
   []
   (ptk/reify ::initialize-persistence-state
+    ptk/UpdateEvent
+    (update [_ state]
+      ;; The flush buffer belongs to the pipeline that is being replaced:
+      ;; its commits will never be flushed by the new one.
+      (d/update-in-when state [:persistence] dissoc :buffer))
+
     ptk/WatchEvent
     (watch [_ state _]
       (let [{:keys [queue status run-id]} (:persistence state)]
@@ -803,15 +860,20 @@
   (mapcat :redo-changes))
 
 (defn- merge-commit
+  "Folds the commits of each file collected by one flush into a single
+  commit. Answers `[sources commit]`, where `sources` are the ids of the
+  local commits it folded, so the buffer can drop them once they are
+  visible in the queue."
   [buffer]
   (->> (rx/from (group-by :file-id buffer))
        (rx/map (fn [[_ [item :as commits]]]
                  (let [uchg (into [] xf-mapcat-undo commits)
                        rchg (into [] xf-mapcat-redo commits)]
-                   (-> item
-                       (assoc :undo-changes uchg)
-                       (assoc :redo-changes rchg)
-                       (assoc :changes rchg)))))))
+                   [(mapv :id commits)
+                    (-> item
+                        (assoc :undo-changes uchg)
+                        (assoc :redo-changes rchg)
+                        (assoc :changes rchg))])))))
 
 (defn- resume-on-online
   "Re-enters the runner for a retrying episode when the browser reports
@@ -934,6 +996,15 @@
                         (update-status :pending)))
               (rx/take-until stoper-s))
 
+         ;; Record every local commit from the moment it is applied: the
+         ;; 3 s flush window is invisible to the rest of the system, and a
+         ;; repair landing in between has to undo and replay it. Emitted as
+         ;; its own branch, so the event reaches the store that owns this
+         ;; watcher (`st/emit!` would target the default one).
+         (->> local-commits-s
+              (rx/take-until stoper-s)
+              (rx/map buffer-commit))
+
          ;; Here we watch for local commits, buffer them in a small
          ;; chunks (very near in time commits) and append them to the
          ;; persistence queue
@@ -942,7 +1013,8 @@
               (rx/buffer-until notifier-s)
               (rx/tap (fn [_] (vreset! buffered? false)))
               (rx/mapcat merge-commit)
-              (rx/map append-commit)
+              (rx/map (fn [[sources commit]]
+                        (append-commit commit sources)))
               (rx/finalize (fn []
                              (log/debug :hint "finalize persistence: changes watcher"))))
 

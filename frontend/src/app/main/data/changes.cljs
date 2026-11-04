@@ -69,9 +69,13 @@
              (rx/ignore))))))
 
 (defn- get-pending-commits
-  [{:keys [persistence]}]
-  (->> (:queue persistence)
-       (map (d/getf (:index persistence)))
+  "The commits of `file-id` that still have to be undone and replayed
+  around a remote change, oldest first: those already queued and those
+  still waiting in the flush buffer."
+  [{:keys [persistence]} file-id]
+  (->> (concat (map (d/getf (:index persistence)) (:queue persistence))
+               (:buffer persistence))
+       (filter #(= file-id (:file-id %)))
        (not-empty)))
 
 (def ^:private xf:map-page-id
@@ -131,23 +135,23 @@
               (let [fdata (cpc/process-changes fdata undo-changes false)
                     fdata (cpc/process-changes fdata redo-changes false)
                     pids (into #{} xf:map-page-id redo-changes)]
-                (reduce #(ctst/update-object-indices %1 %2) fdata pids)))]
+                (reduce #(ctst/update-object-indices %1 %2) fdata pids)))
 
-        (if (and (not ignore-wasm?) (features/active-feature? state "render-wasm/v1"))
-          ;; Update the wasm model
-          (let [shape-changes (volatile! {})
+            shape-changes (volatile! {})
+            state
+            (binding [cts/*shape-changes* shape-changes]
+              (d/update-in-when state [:files file-id :data] apply-changes))]
 
-                state
-                (binding [cts/*shape-changes* shape-changes]
-                  (update-in state [:files file-id :data] apply-changes))]
+        ;; The wasm model only follows when the file still has data: after
+        ;; closing it there is nothing to sync, and `update-in-when` has
+        ;; already left the entry alone.
+        (when (and (not ignore-wasm?)
+                   (features/active-feature? state "render-wasm/v1")
+                   (some? (dm/get-in state [:files file-id :data])))
+          (let [objects (dm/get-in state [:files file-id :data :pages-index (:current-page-id state) :objects])]
+            (wasm.shape/process-shape-changes! objects @shape-changes)))
 
-            (let [objects (dm/get-in state [:files file-id :data :pages-index (:current-page-id state) :objects])]
-              (wasm.shape/process-shape-changes! objects @shape-changes))
-
-            state)
-
-          ;; wasm renderer deactivated
-          (update-in state [:files file-id :data] apply-changes))))
+        state))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -157,6 +161,19 @@
                  (features/active-feature? state "render-wasm/v1")
                  (redo-changes-need-wasm-object-sync? redo-changes))
         (rx/of (sync-wasm-structural-changes {:redo-changes redo-changes}))))))
+
+(defn- index-commits
+  "Emits the index updates for a confirmed commit and the commits queued
+  behind it, in the same order they are undone and re-applied."
+  [commit pending]
+  (if pending
+    (rx/concat
+     (->> (rx/from (reverse pending))
+          (rx/map (fn [commit] (update-indexes commit :undo-changes))))
+     (rx/of (update-indexes commit :redo-changes))
+     (->> (rx/from pending)
+          (rx/map (fn [commit] (update-indexes commit :redo-changes)))))
+    (rx/of (update-indexes commit :redo-changes))))
 
 (defn commit
   "Create a commit event instance"
@@ -200,17 +217,10 @@
       ptk/WatchEvent
       (watch [_ state _]
         (let [pending (when-not local?
-                        (get-pending-commits state))]
+                        (get-pending-commits state file-id))]
           (rx/concat
            (rx/of (apply-changes-localy commit pending))
-           (if pending
-             (rx/concat
-              (->> (rx/from (reverse pending))
-                   (rx/map (fn [commit] (update-indexes commit :undo-changes))))
-              (rx/of (update-indexes commit :redo-changes))
-              (->> (rx/from pending)
-                   (rx/map (fn [commit] (update-indexes commit :redo-changes)))))
-             (rx/of (update-indexes commit :redo-changes)))))))))
+           (index-commits commit pending)))))))
 
 (defn- resolve-file-revn
   [state file-id]
@@ -219,6 +229,18 @@
 (defn- resolve-file-vern
   [state file-id]
   (:vern (dsh/lookup-file state file-id)))
+
+(defn apply-remote-changes
+  "Applies changes the server already confirmed. `pending` are the commits
+  queued behind the acknowledged one: they are undone, the changes applied,
+  and they are replayed, so the local order matches the server's."
+  [commit pending]
+  (ptk/reify ::apply-remote-changes
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/concat
+       (rx/of (apply-changes-localy commit pending))
+       (index-commits commit pending)))))
 
 (defn commit-changes
   "Schedules a list of changes to execute now, and add the corresponding undo changes to

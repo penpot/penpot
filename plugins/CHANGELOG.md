@@ -12,6 +12,7 @@
 
 ### 🩹 Fixes
 
+- **plugins-runtime**: Renaming a version with `FileVersion.label` now reads the new value at once and rolls it back when the server refuses the rename, instead of leaving it only after the request lands. `FileVersion.remove()` and `FileVersion.pin()` now reject when the change is not saved, instead of reporting success.
 - **plugins-runtime:** `LibraryComponent.remove()` now rejects linked-library and missing component handles, and does nothing for an already deleted component.
 - **plugins-runtime**: An interaction obtained from `Shape.interactions` now keeps addressing that interaction instead of the position it held when the array was read. Removing every interaction of a shape from a single read removes all of them rather than leaving some behind, and writing through a held interaction after an earlier one is removed no longer lands on a different interaction.
 - **plugins-runtime**: `Shape.removeInteraction()` now rejects an interaction belonging to a different shape with a validation error, instead of removing whichever interaction sat at the same position on the target shape.

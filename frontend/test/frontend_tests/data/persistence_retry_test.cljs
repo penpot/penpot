@@ -22,6 +22,7 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
+   [app.render-wasm.shape :as wasm.shape]
    [app.util.i18n :as i18n]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -56,15 +57,17 @@
   response directly instead. Delivery through the subject is asynchronous
   (`observe-on :async`): await each effect — via `wait-for` — before
   asserting it."
-  [f & [respond]]
+  [f & [respond state-fn]]
   (let [file-id  (uuid/next)
         response (rx/subject)
         failures (atom [])
         requests (atom [])
         tasks    (atom #{})
-        store    (ptk/store {:state {:current-file-id file-id
-                                     :permissions {:can-edit true}
-                                     :files {file-id {:id file-id :revn 0}}}
+        store    (ptk/store {:state (merge {:current-file-id file-id
+                                            :permissions {:can-edit true}
+                                            :files {file-id {:id file-id :revn 0}}}
+                                           (when state-fn
+                                             (state-fn file-id)))
                              :on-error #(t/is false (str %))})]
     (mock/with-mocks*
       {rp/cmd!          (mock/stub (fn [cmd params]
@@ -944,3 +947,258 @@
              (< n 4) (rx/throw (ex-info "offline" {:type :offline}))
              (= n 4) last-s
              :else   (rx/of {:revn 1}))))))))
+
+;; Repair delivery: the repair changes travel in the response, not in the
+;; websocket message. The saver applies them once its own commit is
+;; acknowledged, so it ends in the same order as the server (`U;R`).
+(t/deftest ^:async repaired-save-applies-the-repair-after-the-commit
+  (let [page-id (uuid/next)
+        repair  [{:type :mod-page :id page-id :name "repaired"}]]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id store]}]
+         (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+         (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
+                                "the repaired save lands"))
+         (t/is (empty? (get-in @store [:persistence :queue])))
+         (t/is (= "repaired"
+                  (get-in @store [:files file-id :data :pages-index page-id :name]))
+               "the repair changes are applied after the commit is acknowledged")
+         (t/is (= (i18n/tr "workspace.notifications.file-repaired")
+                  (get-in @store [:notification :content]))
+               "the saver sees the repair toast"))
+       (fn [_ _] (rx/of {:revn 1 :repair-changes repair}))
+       (fn [file-id]
+         {:files {file-id {:id file-id
+                           :revn 0
+                           :data {:id file-id
+                                  :pages-index {page-id {:id page-id
+                                                         :name "page"
+                                                         :objects {}}}
+                                  :pages [page-id]
+                                  :components {}}}}})))))
+
+(defn- local-mod
+  "A local edit of a page name with its inverse, so the pending queue can be
+  undone and replayed by the repair path."
+  [file-id page-id name previous]
+  (ptk/data-event ::dch/commit
+                  {:id (uuid/next)
+                   :file-id file-id
+                   :file-revn 0
+                   :file-vern 0
+                   :source :local
+                   :features #{}
+                   :redo-changes [{:type :mod-page :id page-id :name name}]
+                   :undo-changes [{:type :mod-page :id page-id :name previous}]}))
+
+(t/deftest ^:async repaired-save-keeps-the-pending-commits-after-the-repair
+  ;; C1 is in flight and C2 is queued. The repair of C1 must be applied
+  ;; between them (`C1;R;C2`), not after C2 (`C1;C2;R`), or the saver ends in
+  ;; a different state than the server when both touch the same attribute.
+  (let [page-id (uuid/next)
+        repair  [{:type :mod-page :id page-id :name "repaired"}]
+        response (rx/subject)
+        calls    (atom 0)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id store]}]
+         (ptk/emit! store (local-mod file-id page-id "c1" "page") ::dps/force-persist)
+         (ptk/emit! store (local-mod file-id page-id "c2" "c1") ::dps/force-persist)
+         (await (async/wait-for #(= 2 (count (get-in @store [:persistence :queue])))
+                                "C2 is queued behind C1"))
+         (rx/push! response {:revn 1 :repair-changes repair})
+         (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                      (empty? (get-in @store [:persistence :queue])))
+                                "both commits land"))
+         (t/is (= "c2"
+                  (get-in @store [:files file-id :data :pages-index page-id :name]))
+               "the repair goes between C1 and C2, so the later edit wins")
+         (t/is (= 1 (count (get-in @store [:files file-id :data :pages-index])))
+               "the repair did not create pages"))
+       (fn [_ _]
+         (if (= 1 (swap! calls inc))
+           (->> response (rx/take 1) (rx/observe-on :async))
+           (rx/of {:revn 2})))
+       (fn [file-id]
+         {:files {file-id {:id file-id
+                           :revn 0
+                           :vern 0
+                           :data {:id file-id
+                                  :pages-index {page-id {:id page-id
+                                                         :name "page"
+                                                         :objects {}}}
+                                  :pages [page-id]
+                                  :components {}}}}})))))
+
+(t/deftest ^:async repaired-save-replays-an-edit-still-in-the-flush-buffer
+  ;; C1 is in flight and C2 is still inside the 3 s flush window: it is
+  ;; applied locally but not queued yet. The repair of C1 has to undo and
+  ;; replay it too (`C1;R;C2`), or it lands on top of C2 (`C1;C2;R`) and the
+  ;; saver diverges from the server.
+  (let [page-id (uuid/next)
+        repair  [{:type :mod-page :id page-id :name "repaired"}]
+        response (rx/subject)
+        calls    (atom 0)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id store]}]
+         (ptk/emit! store (local-mod file-id page-id "c1" "page") ::dps/force-persist)
+         ;; no force-persist: C2 waits for the 3 s beat
+         (ptk/emit! store (local-mod file-id page-id "c2" "c1"))
+         (await (async/wait-for #(= 1 (count (get-in @store [:persistence :buffer])))
+                                "C2 is recorded in the flush buffer"))
+         (t/is (= 1 (count (get-in @store [:persistence :queue])))
+               "C2 is not queued yet")
+         (rx/push! response {:revn 1 :repair-changes repair})
+         (await (async/wait-for #(= "c2"
+                                    (get-in @store [:files file-id :data :pages-index page-id :name]))
+                                "the repair goes before the buffered edit"))
+         (t/is (= (i18n/tr "workspace.notifications.file-repaired")
+                  (get-in @store [:notification :content]))
+               "the saver sees the repair toast"))
+       (fn [_ _]
+         (if (= 1 (swap! calls inc))
+           (->> response (rx/take 1) (rx/observe-on :async))
+           (rx/of {:revn 2})))
+       (fn [file-id]
+         {:files {file-id {:id file-id
+                           :revn 0
+                           :vern 0
+                           :data {:id file-id
+                                  :pages-index {page-id {:id page-id
+                                                         :name "page"
+                                                         :objects {}}}
+                                  :pages [page-id]
+                                  :components {}}}}})))))
+
+(t/deftest ^:async repaired-save-never-replays-commits-of-another-file
+  ;; The buffer and the queue are shared by every open file. A repair of
+  ;; file A must undo and replay A's edits, and only A's: replaying B's edit
+  ;; on A's data would end with B's value, a state the server never had.
+  (let [page-id  (uuid/next)
+        other-id (uuid/next)
+        repair   [{:type :mod-page :id page-id :name "repaired"}]
+        response (rx/subject)
+        calls    (atom 0)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id store]}]
+         (ptk/emit! store (local-mod file-id page-id "a1" "page") ::dps/force-persist)
+         ;; both wait for the 3 s beat: one of this file, one of another one
+         (ptk/emit! store (local-mod file-id page-id "a2" "a1"))
+         (ptk/emit! store (local-mod other-id page-id "b2" "b1"))
+         (await (async/wait-for #(and (= 2 (count (get-in @store [:persistence :buffer])))
+                                      (= 1 (count (get-in @store [:persistence :queue]))))
+                                "the buffered edits are recorded"))
+         (rx/push! response {:revn 1 :repair-changes repair})
+         (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
+                                "the repaired save lands"))
+         (t/is (= "a2"
+                  (get-in @store [:files file-id :data :pages-index page-id :name]))
+               "the repaired file's own buffered edit is replayed, and only it")
+         (t/is (= "b1"
+                  (get-in @store [:files other-id :data :pages-index page-id :name]))
+               "the other file's data is untouched"))
+       (fn [_ _]
+         (if (= 1 (swap! calls inc))
+           (->> response (rx/take 1) (rx/observe-on :async))
+           (rx/of {:revn 2})))
+       (fn [file-id]
+         {:files {file-id {:id file-id
+                           :revn 0
+                           :vern 0
+                           :data {:id file-id
+                                  :pages-index {page-id {:id page-id
+                                                         :name "page"
+                                                         :objects {}}}
+                                  :pages [page-id]
+                                  :components {}}}
+                  other-id {:id other-id
+                            :revn 0
+                            :vern 0
+                            :data {:id other-id
+                                   :pages-index {page-id {:id page-id
+                                                          :name "b1"
+                                                          :objects {}}}
+                                   :pages [page-id]
+                                   :components {}}}}})))))
+
+(t/deftest ^:async remote-commits-never-replay-commits-of-another-file
+  ;; Same rule on the remote path (`get-pending-commits`): a websocket commit
+  ;; for file A undoes and replays A's local edits only.
+  (let [page-id  (uuid/next)
+        other-id (uuid/next)
+        file-id  (uuid/next)
+        store
+        (ptk/store
+         {:state {:current-file-id file-id
+                  :files {file-id {:id file-id
+                                   :revn 0
+                                   :vern 0
+                                   :data {:id file-id
+                                          :pages-index {page-id {:id page-id
+                                                                 :name "page"
+                                                                 :objects {}}}
+                                          :pages [page-id]
+                                          :components {}}}
+                          other-id {:id other-id
+                                    :revn 0
+                                    :vern 0
+                                    :data {:id other-id
+                                           :pages-index {page-id {:id page-id
+                                                                  :name "b1"
+                                                                  :objects {}}}
+                                           :pages [page-id]
+                                           :components {}}}}
+                  :persistence {:queue []
+                                :index {}
+                                :buffer [{:id (uuid/next)
+                                          :file-id file-id
+                                          :redo-changes [{:type :mod-page :id page-id :name "a2"}]
+                                          :undo-changes [{:type :mod-page :id page-id :name "page"}]}
+                                         {:id (uuid/next)
+                                          :file-id other-id
+                                          :redo-changes [{:type :mod-page :id page-id :name "b2"}]
+                                          :undo-changes [{:type :mod-page :id page-id :name "b1"}]}]}}})]
+    (ptk/emit! store (dch/commit {:file-id file-id
+                                  :file-revn 1
+                                  :file-vern 0
+                                  :source :remote
+                                  :save-undo? false
+                                  :redo-changes [{:type :mod-page :id page-id :name "remote"}]
+                                  :undo-changes []}))
+    (await (async/settle))
+    (t/is (= "a2"
+             (get-in @store [:files file-id :data :pages-index page-id :name]))
+          "the remote change goes between the two edits of its own file")
+    (t/is (= "b1"
+             (get-in @store [:files other-id :data :pages-index page-id :name]))
+          "the other file is untouched")
+    (rx/dispose! store)))
+
+(t/deftest ^:async remote-changes-do-not-create-data-after-closing-the-file
+  ;; `finalize-workspace` leaves the file entry without `:data`. A repair
+  ;; response that lands after that must not fabricate a partial `:data`, not
+  ;; even on the WASM branch, which used to read the objects of the missing
+  ;; `:data`.
+  (let [file-id   (uuid/next)
+        page-id   (uuid/next)
+        shape-sync (atom 0)
+        store     (ptk/store {:state {:current-file-id file-id
+                                      :features #{:render-wasm/v1}
+                                      :files {file-id {:id file-id :revn 0}}}})]
+    (await
+     (mock/with-mocks*
+       {wasm.shape/process-shape-changes! (mock/stub
+                                           (fn [_ _] (swap! shape-sync inc)))}
+       (ptk/emit! store (dch/apply-remote-changes
+                         {:file-id file-id
+                          :redo-changes [{:type :mod-page :id page-id :name "repaired"}]}
+                         nil))
+       (await (async/settle 0))
+       (t/is (nil? (get-in @store [:files file-id :data]))
+             "a closed file has no data to repair")
+       (t/is (zero? @shape-sync)
+             "the wasm model is not synced without file data")))
+    (rx/dispose! store)))

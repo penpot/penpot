@@ -185,7 +185,8 @@
   (files/check-read-permissions! cfg profile-id file-id)
   (let [psub (::file-subscription @state)
         fch  (sp/chan :buf (sp/dropping-buffer 64)
-                      :xf  (remove #(= (:session-id %) session-id)))]
+                      :xf  (remove #(or (= (:session-id %) session-id)
+                                        (= (:origin-session-id %) session-id))))]
 
     (let [subs {:file-id file-id :channel fch :topic file-id}]
       (swap! state assoc ::file-subscription subs))

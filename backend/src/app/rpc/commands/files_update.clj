@@ -76,13 +76,16 @@
 
 (def ^:private
   schema:update-file-result
-  [:vector {:title "update-file-result"}
-   [:map
-    [:changes [:vector cpc/schema:change]]
-    [:file-id ::sm/uuid]
-    [:id ::sm/uuid]
-    [:revn {:min 0} ::sm/int]
-    [:session-id ::sm/uuid]]])
+  [:map {:title "update-file-result"}
+   [:revn {:min 0} ::sm/int]
+   [:repaired ::sm/boolean]
+   [:repair-changes {:optional true} [:maybe [:vector cpc/schema:change]]]
+   [:lagged [:vector [:map
+                      [:id ::sm/uuid]
+                      [:file-id ::sm/uuid]
+                      [:revn {:min 0} ::sm/int]
+                      [:session-id [:maybe ::sm/uuid]]
+                      [:changes [:vector cpc/schema:change]]]]]])
 
 ;; --- HELPERS
 
@@ -127,8 +130,8 @@
       (contains? token-change-types type)
       (contains? file-change-types type)))
 
-;; Not a real editor session: file-change messages with this id are
-;; delivered to every connected session, including the saver.
+;; Not a real editor session: the internal snapshot a repair leaves behind
+;; carries it, so the version history marks where the repair happened.
 (def repair-session-id
   #uuid "a11c0de5-0000-4000-8000-000000000001")
 
@@ -311,10 +314,17 @@
           snapshot-deleted-at
           (ct/plus timestamp (ldel/get-deletion-delay team))
 
-          change-created-at
-          (cond-> timestamp
-            repair
-            (ct/plus (ct/duration {:millis 1})))]
+          ;; A repaired save goes in one revision. The changes of the
+          ;; request go first and the repair after them, the order a client
+          ;; that saved applies them in: it already has its own changes
+          ;; locally, so it receives the repair changes afterwards.
+          user-changes
+          changes
+
+          changes
+          (if repair
+            (into user-changes (:changes repair))
+            changes)]
 
       (if repair
         (let [snapshot-file (or (::snapshot file)
@@ -333,41 +343,20 @@
                           :profile-id profile-id
                           :session-id session-id})))
 
-      (when repair
-        (db/insert! conn :file-change
-                    {:id (uuid/next)
-                     :kind fchanges/revision-kind
-                     :session-id repair-session-id
-                     :profile-id profile-id
-                     :created-at timestamp
-                     :updated-at timestamp
-                     :deleted-at deleted-at
-                     :file-id (:id file)
-                     :revn (:revn repair)
-                     :version (:version file)
-                     :features (into-array (:features file))
-                     :changes (blob/encode (:changes repair))}
-                    {::db/return-keys false})
-        (l/wrn :hint "file auto-repaired"
-               :file-id (str (:id file))
-               :error-codes (error-codes (:errors repair))
-               :error-count (count (:errors repair))
-               :change-count (count (:changes repair)))
-        (record-repair-outcome cfg :repaired))
-
       ;; Insert change (xlog) with deleted_at in a future data for
       ;; make them automatically eleggible for GC once they expires
       ;;
-      ;; The revision carries only the delta of the save: the features of the
-      ;; file are not repeated here (nobody reads them from a revision, and
-      ;; they are duplicated on every save).
+      ;; A repaired save goes in the same revision as the request: the
+      ;; changes of the request and the repair changes, in that order. The
+      ;; features of the file are not repeated here (nobody reads them from
+      ;; a revision, and they are duplicated on every save).
       (db/insert! conn :file-change
                   {:id (uuid/next)
                    :kind fchanges/revision-kind
                    :session-id session-id
                    :profile-id profile-id
-                   :created-at change-created-at
-                   :updated-at change-created-at
+                   :created-at timestamp
+                   :updated-at timestamp
                    :deleted-at deleted-at
                    :file-id (:id file)
                    :revn (:revn file)
@@ -375,30 +364,52 @@
                    :changes (blob/encode changes)}
                   {::db/return-keys false})
 
+      (when repair
+        (l/wrn :hint "file auto-repaired"
+               :file-id (str (:id file))
+               :error-codes (error-codes (:errors repair))
+               :error-count (count (:errors repair))
+               :change-count (count (:changes repair)))
+        (record-repair-outcome cfg :repaired))
+
       (persist-file! cfg (dissoc file ::repair))
 
       (when (contains? cf/flags :redis-cache)
         (invalidate-caches! cfg file))
 
-      ;; Send asynchronous notifications
-      (when repair
-        (send-repair-notifications cfg params file repair))
-      (send-notifications! cfg params file)
-
-      (with-meta {:revn revn :lagged (get-lagged-changes conn params)}
-        {::audit/replace-props
-         {:id          (:id file)
-          :name        (:name file)
-          :features    (:features file)
-          :project-id  (:project-id file)
-          :team-id     (:team-id file)
-          ;; NOTE: `file` carries the post-update revn here (`revn`
-          ;; above is the pre-update one kept for the response), and
-          ;; `modified-at` mirrors `persist-file!`: same `::timestamp`
-          ;; fallback, so both agree to the millisecond when the
-          ;; request timestamp exists.
-          :revn        (:revn file)
-          :modified-at (or timestamp (ct/now))}}))))
+      ;; Send asynchronous notifications after the transaction commits: a
+      ;; save that rolls back must not reach any client. The message of the
+      ;; save goes first, with the changes of the request and the session of
+      ;; the user (the saver discards it as an echo); the message of the
+      ;; repair goes after it, with the repair changes, the repair session
+      ;; and the session of the user as its origin, so the rest applies the
+      ;; two sets in the same order and the saver does not receive it (it
+      ;; applies the repair from the response).
+      (-> (with-meta {:revn revn
+                      :lagged (get-lagged-changes conn params)
+                      :repaired (some? repair)
+                      :repair-changes (:changes repair)}
+            {::audit/replace-props
+             {:id          (:id file)
+              :name        (:name file)
+              :features    (:features file)
+              :project-id  (:project-id file)
+              :team-id     (:team-id file)
+              ;; NOTE: `file` carries the post-update revn here (`revn`
+              ;; above is the pre-update one kept for the response), and
+              ;; `modified-at` mirrors `persist-file!`: same `::timestamp`
+              ;; fallback, so both agree to the millisecond when the
+              ;; request timestamp exists.
+              :revn        (:revn file)
+              :modified-at (or timestamp (ct/now))}})
+          (rph/with-defer
+            (fn []
+              (send-notifications! cfg (assoc params
+                                              :changes user-changes
+                                              :repair (:changes repair))
+                                   file)
+              (when repair
+                (send-repair-notifications cfg params file repair))))))))
 
 (defn get-file
   "Get not-decoded file, only decodes the features set."
@@ -528,14 +539,22 @@
   (throw cause))
 
 (defn- repair-preexisting-damage
-  "Repair damage that was already in `original` on the pages/components
-  the client's `changes` touch, then re-apply those changes. Throws
-  `cause` when the client's changes are at fault or the repair cannot
-  fix the file."
+  "Apply the `changes` of the request to `original` first, then repair the
+  damage that was already in the result on the pages and components those
+  changes touch. Throws `cause` when the changes are at fault or the repair
+  cannot fix the file.
+
+  The changes go first and the repair is computed over them on purpose: a
+  client that saved already has its own changes applied locally, so it
+  applies the repair changes after them. Server and client end in the same
+  state because they apply the two sets in the same order."
   [cfg original libs changes tracked tracked-0 cause]
   (let [libs (or libs {})]
     (try
-      (let [pre-errors
+      (let [;; Errors that were already in `original`: only they allow a repair.
+            ;; If `original` is clean the client broke it, so the save fails
+            ;; instead of being repaired silently.
+            pre-errors
             (binding [pmap/*tracked* nil]
               (val/validate-file-affected original libs changes))]
 
@@ -545,17 +564,31 @@
         (when tracked
           (reset! tracked tracked-0))
 
-        (let [trepair (ct/tpoint)
+        (let [treprocess (ct/tpoint)
+              applied    (try
+                           (binding [pmap/*tracked* tracked]
+                             (apply-changes cfg original changes))
+                           (finally
+                             (record-validation-timing cfg :reprocess-changes-ms "reprocess-changes"
+                                                       (inst-ms (treprocess)))))
+
+              ;; The changes may have fixed or widened the pre-existing damage;
+              ;; this is what the repair starts from.
+              initial-errors
+              (binding [pmap/*tracked* nil]
+                (val/validate-file-affected applied libs changes))
+
+              trepair (ct/tpoint)
 
               result
               (try
                 (binding [pmap/*tracked* tracked]
                   (cfr/repair-file-until-valid
-                   original libs
-                   (fn [file applied]
+                   applied libs
+                   (fn [file applied-changes]
                      (binding [pmap/*tracked* nil]
-                       (val/validate-file-affected file libs (into applied changes))))
-                   :initial-errors pre-errors))
+                       (val/validate-file-affected file libs (into applied-changes changes))))
+                   :initial-errors initial-errors))
                 (finally
                   (record-validation-timing cfg :repair-ms "repair" (inst-ms (trepair)))))
 
@@ -564,14 +597,9 @@
           (when (seq (:errors result))
             (fail-repair cfg original (:errors result) cause))
 
-          (let [treprocess (ct/tpoint)
-                repaired   (try
-                             (binding [pmap/*tracked* tracked]
-                               (apply-changes cfg (:file result) changes))
-                             (finally
-                               (record-validation-timing cfg :reprocess-changes-ms "reprocess-changes"
-                                                         (inst-ms (treprocess)))))
-                scope      (into repair-changes changes)]
+          (let [repaired (:file result)
+                ;; the changes of the request go first, the repair after them
+                scope    (into changes repair-changes)]
 
             (binding [pmap/*tracked* nil]
               (val/validate-file-affected! repaired libs scope)
@@ -584,10 +612,9 @@
                       (record-validation-timing cfg :validate-schema-ms "validate-schema" (inst-ms (t))))))))
 
             (-> repaired
-                (assoc :revn (+ (:revn original) 2))
+                (assoc :revn (inc (:revn original)))
                 (assoc ::repair {:changes repair-changes
                                  :errors  pre-errors
-                                 :revn    (inc (:revn original))
                                  :original (dissoc original ::snapshot)})))))
       (catch Throwable inner
         (if (identical? inner cause)
@@ -704,37 +731,9 @@
        (mapv (fn [row]
                (update row :changes blob/decode)))))
 
-(defn- send-repair-notifications
-  [cfg {:keys [team session-id] :as params} file repair]
-  (let [changes  (:changes repair)
-        lchanges (filter library-change? changes)
-        msgbus   (::mbus/msgbus cfg)]
-
-    (mbus/pub! msgbus
-               :topic (:id file)
-               :message {:type :file-change
-                         :profile-id (:profile-id params)
-                         :file-id (:id file)
-                         :session-id repair-session-id
-                         :revn (:revn repair)
-                         :vern (:vern file)
-                         :changes changes
-                         :repaired true})
-
-    (when (and (:is-shared file) (seq lchanges))
-      (mbus/pub! msgbus
-                 :topic (:id team)
-                 :message {:type :library-change
-                           :profile-id (:profile-id params)
-                           :file-id (:id file)
-                           :session-id session-id
-                           :revn (:revn repair)
-                           :modified-at (ct/now)
-                           :changes lchanges}))))
-
 (defn- send-notifications!
-  [cfg {:keys [team changes session-id] :as params} file]
-  (let [lchanges (filter library-change? changes)
+  [cfg {:keys [team changes session-id repair] :as params} file]
+  (let [lchanges (filter library-change? (concat changes repair))
         msgbus   (::mbus/msgbus cfg)]
 
     (mbus/pub! msgbus
@@ -757,3 +756,25 @@
                            :revn (:revn file)
                            :modified-at (ct/now)
                            :changes lchanges}))))
+
+(defn- send-repair-notifications
+  "Publish the repair changes as their own `:file-change` message, after the
+  message of the save. It carries the repair session as its `session-id` and
+  the session of the user as its `origin-session-id`: the channel of the
+  file hides it from the saver, which applies the repair from the response,
+  and delivers it to the rest like any other remote change."
+  [cfg {:keys [profile-id session-id]} file repair]
+  (let [changes (:changes repair)
+        msgbus  (::mbus/msgbus cfg)]
+
+    (mbus/pub! msgbus
+               :topic (:id file)
+               :message {:type :file-change
+                         :profile-id profile-id
+                         :file-id (:id file)
+                         :session-id repair-session-id
+                         :origin-session-id session-id
+                         :revn (:revn file)
+                         :vern (:vern file)
+                         :changes changes
+                         :repaired true})))

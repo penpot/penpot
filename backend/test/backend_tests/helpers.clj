@@ -490,7 +490,13 @@
                 :hint (str/ffmt "rpc method '%' not found" (name type))))
 
     (let [params (prepare-rpc-params data)]
-      (try-on! (method-fn params)))))
+      (try-on! (let [result (method-fn params)]
+                 ;; the HTTP layer runs the deferred hooks in
+                 ;; `handle-response`, ignoring their errors; run them here
+                 ;; too so a test sees the same effects as production
+                 (doseq [hook (::rpc/before-complete-fns (meta result))]
+                   (ex/ignoring (hook)))
+                 result)))))
 
 (defn command-raw!
   "Like `command!`, but returns the raw result without unwrapping it, so a test
@@ -503,8 +509,11 @@
                 :code :rpc-method-not-found
                 :hint (str/ffmt "rpc method '%' not found" (name type))))
 
-    (let [params (prepare-rpc-params data)]
-      (method-fn params))))
+    (let [params (prepare-rpc-params data)
+          result (method-fn params)]
+      (doseq [hook (::rpc/before-complete-fns (meta result))]
+        (ex/ignoring (hook)))
+      result)))
 
 (defn management-command!
   [{:keys [::type] :as data}]

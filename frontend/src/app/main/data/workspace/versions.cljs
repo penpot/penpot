@@ -154,10 +154,19 @@
                        :label   (ct/format-inst (:created-at version) :localized-date)}]
 
           (->> (rp/cmd! :update-file-snapshot params)
-               (rx/mapcat (fn [_]
-                            (rx/of (update-versions-state {:editing id})
-                                   (fetch-versions)
-                                   (ev/event {::ev/name "pin-version"}))))))))))
+               (rx/mapcat (fn [ok]
+                            (if ok
+                              (rx/of (update-versions-state {:editing id})
+                                     (fetch-versions)
+                                     (ev/event {::ev/name "pin-version"}))
+                              ;; the row vanished (the GC may have removed the
+                              ;; autosave): reload so the list matches the
+                              ;; server instead of showing a pinned version
+                              (rx/of (fetch-versions)
+                                     (ntf/show {:content (tr "errors.pin-version")
+                                                :type :toast
+                                                :level :error
+                                                :timeout 3000})))))))))))
 
 (defn lock-version
   [id]
