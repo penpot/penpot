@@ -58,17 +58,6 @@
   (and (not (identical? old-object new-object))
        (not= old-object new-object)))
 
-(defn- retrim-objects
-  "Trims again the objects at `ids`: the replay may have written
-  attributes the worker does not keep."
-  [objects ids]
-  (reduce (fn [objects id]
-            (cond-> objects
-              (contains? objects id)
-              (update id trim/trim-shape)))
-          objects
-          ids))
-
 (defmethod impl/handler :index/initialize
   [{:keys [page] :as message}]
   (let [tpoint (ct/tpoint-ms)
@@ -109,7 +98,7 @@
 
             (let [old-objects (:objects old-page)
                   ids         (ch/get-candidate-object-ids old-objects (:objects new-page) page-id changes)
-                  new-page    (update new-page :objects retrim-objects ids)
+                  new-page    (update new-page :objects #(trim/retrim-objects old-objects % ids))
                   new-objects (:objects new-page)
                   ids         (into #{}
                                     (filter #(changed-object? (get old-objects %) (get new-objects %)))

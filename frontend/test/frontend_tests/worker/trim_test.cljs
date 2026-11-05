@@ -164,12 +164,7 @@
                         (get-page-objects page-id)
                         (unwrap-objects))
         ids         (ch/get-candidate-object-ids old-objects new-objects page-id changes)]
-    (reduce (fn [objects id]
-              (cond-> objects
-                (contains? objects id)
-                (update id trim/trim-shape)))
-            new-objects
-            ids)))
+    (trim/retrim-objects old-objects new-objects ids)))
 
 (defn- set-attrs-change
   [page-id id attrs]

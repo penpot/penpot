@@ -83,6 +83,18 @@
                 (transient {})
                 objects))))
 
+(defn retrim-objects
+  "Trims again the objects at `ids` that differ from `old-objects`: the
+  replay may have written attributes the worker does not keep."
+  [old-objects new-objects ids]
+  (reduce (fn [objects id]
+            (let [shape (get objects id)]
+              (cond-> objects
+                (and (some? shape) (not (identical? shape (get old-objects id))))
+                (assoc id (trim-shape shape)))))
+          new-objects
+          ids))
+
 (defn trim-page
   [page]
   (cond-> {:id (get page :id)
