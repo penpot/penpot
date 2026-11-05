@@ -117,6 +117,13 @@ moves outside a reading on its side. The underline band reserves 0.18 em,
 a POC bound around the existing 1/9-em gap and stroke width. Disabling
 clearance retains fixed line-height behavior and can allow overlap/clipping.
 
+Horizontal marks are shaped once per span and placed by their measured
+box (advance by ascent and descent at half the base size). Paint, text
+bounds and selection use that one box, so bounds cover exactly what paints.
+Position data carries the mark's em box centred on it, because SVG export
+draws the mark at a font size of that box's width. Vertical marks already
+centre the glyph and their position-data box on the same point.
+
 Decoration edits that intersect a reading or note apply to its whole base,
 so changing a side cannot duplicate its reading on split spans. Other text
 styles remain unchanged. Selection snapshots, Plugin API properties,

@@ -961,9 +961,8 @@ impl TextContent {
                 continue;
             };
             let x = selrect.x() + plan.x_offset(model, selrect.width());
-            for placement in horizontal_emphasis_placements(model, &plan.offsets, paragraph) {
-                let span = &model.children()[placement.span];
-                bounds.join(horizontal_emphasis_mark_box(span, &placement).with_offset((x, y)));
+            for (_, ink_box) in horizontal_emphasis_mark_boxes(model, &plan.offsets, paragraph) {
+                bounds.join(ink_box.with_offset((x, y)));
             }
             y += paragraph.height();
         }
@@ -3106,14 +3105,14 @@ impl HorizontalPositionEntries<'_> {
             entry.y += self.layout.y;
             entries.push(entry);
         }
-        for placement in
-            horizontal_emphasis_placements(self.paragraph, self.offsets, &self.layout.paragraph)
+        for (placement, ink_box) in
+            horizontal_emphasis_mark_boxes(self.paragraph, self.offsets, &self.layout.paragraph)
         {
             if let Some(span) = self.paragraph.children().get(placement.span) {
                 entries.push(self.entry(
                     placement.span,
                     placement.range.clone(),
-                    horizontal_emphasis_mark_box(span, &placement),
+                    horizontal_emphasis_mark_em_box(span, &ink_box),
                     DIRECTION_EMPHASIS_MARK,
                 ));
             }
