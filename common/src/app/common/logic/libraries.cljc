@@ -904,14 +904,36 @@
                      (update :undo-changes #(into [] xf %)))))]
     [(part :local-change?) (part (complement :local-change?))]))
 
+(defn- kept-geometry?
+  "Whether the copy shape `shape-inst` shows a geometry that sync kept for
+   it instead of one it authors: its own constraint keeps its size
+   (`constraint-kept?`), or it follows an ancestor that does (`kept?`)."
+  [container shape-inst shape-main kept?]
+  (and (not (ctk/touched-group? shape-inst :geometry-group))
+       (or kept? (constraint-kept? container shape-inst shape-main))))
+
+(defn- with-main-geometry
+  "`shape-inst` with the geometry of `shape-main`, its main shape, placed in
+   the copy's frame."
+  [shape-inst shape-main root-inst root-main]
+  (let [attrs (cond-> placement-geometry-attrs
+                (= :path (:type shape-inst)) (conj :content))]
+    (merge shape-inst (select-keys (reposition-shape shape-main root-main root-inst) attrs))))
+
 (defn- update-main-shape
   "Push the copy shape `shape-inst` into `shape-main`, the main shape it
   pairs with: the copy's values, overrides included, go into the main, and
-  its touched groups move there (the copy keeps a swap)."
-  [changes {:keys [container main-container root-inst root-main remote-synced inherited-turn]} shape-inst shape-main]
+  its touched groups move there (the copy keeps a swap). A geometry that
+  sync kept for the copy (`:kept?`) is not the copy's, so the main keeps
+  its own."
+  [changes {:keys [container main-container root-inst root-main remote-synced inherited-turn kept?]} shape-inst shape-main]
   (cond-> (-> changes
               (update-attrs shape-main
-                            (cond-> shape-inst (some? inherited-turn) inherited-turn)
+                            (cond-> shape-inst
+                              (some? inherited-turn) inherited-turn
+                              kept? (with-main-geometry shape-main
+                                      (cond-> root-inst (some? inherited-turn) inherited-turn)
+                                      root-main))
                             root-main
                             (cond-> root-inst (some? inherited-turn) inherited-turn)
                             main-container false)
@@ -947,7 +969,9 @@
     (let [children-inst (vec (ctn/get-direct-children container shape-inst))
           children-main (vec (ctn/get-direct-children main-container shape-main))
           ;; the main shapes added for copy children, by copy child id
-          added         (volatile! {})]
+          added         (volatile! {})
+          kept?         (kept-geometry? container shape-inst shape-main (:kept? ctx))
+          ctx           (assoc ctx :kept? kept?)]
       (vswap! synced-ids conj (:id shape-inst))
       (cond-> (-> changes
                   (update-main-shape ctx shape-inst shape-main)
