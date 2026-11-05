@@ -102,7 +102,7 @@
                     :type "main"
                     :backend "fs"
                     :deleted-at (ct/in-past {:days 1})
-                    :metadata (db/json {"storage-ref-id" (str sobject)})})
+                    :storage-object-id sobject})
     (mark-object! sobject)
 
     (restore-file! (:id file))

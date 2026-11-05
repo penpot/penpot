@@ -41,7 +41,8 @@
           c.data AS legacy_data,
           fd.data AS data,
           coalesce(fd.backend, 'legacy-db') AS backend,
-          fd.metadata AS metadata
+          fd.metadata AS metadata,
+          fd.storage_object_id AS storage_object_id
      FROM file_change AS c
      LEFT JOIN file_data AS fd ON (fd.file_id = c.file_id
                                    AND fd.id = c.id
@@ -64,12 +65,16 @@
               (d/update-when :features db/decode-pgarray #{}))))
 
 (def ^:private sql:get-minimal-file
+  ;; `fd.storage_object_id` is load-bearing: `restore!` hands this map to
+  ;; `update-file!` so the previous main object is touched before the row is
+  ;; replaced. Removing it would leave the old blob unreclaimed with no error.
   "SELECT f.id,
           f.revn,
           f.modified_at,
           f.deleted_at,
           fd.backend AS backend,
-          fd.metadata AS metadata
+          fd.metadata AS metadata,
+          fd.storage_object_id AS storage_object_id
      FROM file AS f
      LEFT JOIN file_data AS fd ON (fd.file_id = f.id AND fd.id = f.id)
     WHERE f.id = ?")
@@ -117,14 +122,16 @@
 
 (defn get-snapshot
   "Get a fully decoded snapshot for read-only preview or restoration.
-  Returns the snapshot map with decoded :data field."
+  Returns the snapshot map with decoded :data field. The internal storage
+  pointer of the row is not part of the result."
   [cfg file-id snapshot-id]
-  (let [now (ct/now)]
-    (->> (db/get-with-sql cfg [sql:get-snapshot file-id snapshot-id now]
-                          {::db/remove-deleted false})
-         (decode-snapshot)
-         (fdata/resolve-file-data cfg)
-         (fdata/decode-file-data cfg))))
+  (let [now (ct/now)
+        snapshot (->> (db/get-with-sql cfg [sql:get-snapshot file-id snapshot-id now]
+                                       {::db/remove-deleted false})
+                      (decode-snapshot)
+                      (fdata/resolve-file-data cfg)
+                      (fdata/decode-file-data cfg))]
+    (bfc/file->response snapshot)))
 
 (def ^:private sql:get-visible-snapshots
   (str "WITH "
@@ -277,6 +284,7 @@
                    {:id snapshot-id
                     :file-id (:id file)
                     :type "snapshot"
+                    :storage-object-id nil
                     :data (blob/encode (:data file))
                     :created-at created-at
                     :deleted-at deleted-at})

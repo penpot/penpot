@@ -1007,6 +1007,10 @@
           file       (th/create-file* 1 {:profile-id (:id owner)
                                          :project-id (:id proj)})
 
+          ;; Cold storage makes the file map carry the internal pointer, so the
+          ;; response assertion below is meaningful.
+          _          (th/run-task! :offload-file-data {:file-id (:id file)})
+
           data       {::th/type :create-team-access-request
                       ::rpc/profile-id (:id requester)
                       :file-id (:id file)}]
@@ -1019,7 +1023,8 @@
                                      :requester-id (:id requester)})]
         (t/is (th/success? out))
         (t/is (= 1 (:call-count @mock)))
-        (t/is (= 1 (count requests))))
+        (t/is (= 1 (count requests)))
+        (t/is (not (contains? (:result out) :storage-object-id))))
 
       ;; request again fails
       (th/reset-mock! mock)

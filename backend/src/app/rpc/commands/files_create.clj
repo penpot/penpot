@@ -68,7 +68,10 @@
                     {:modified-at (ct/now)}
                     {:id project-id})
 
-        (bfc/get-file cfg (:id file))))))
+        ;; The storage pointer is internal bookkeeping: it never leaves the
+        ;; backend in a response.
+        (-> (bfc/get-file cfg (:id file))
+            (bfc/file->response))))))
 
 (def ^:private schema:create-file
   [:map {:title "create-file" :closed true}

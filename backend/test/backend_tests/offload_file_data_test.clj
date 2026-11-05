@@ -62,6 +62,42 @@
       (t/is (every? #(= "storage" (:backend %)) after))
       (t/is (every? #(nil? (:data %)) after)))))
 
+(t/deftest offloads-a-file-data-row-with-metadata
+  ;; `SELECT fd.*` returns jsonb metadata as a `PGobject`; the offload has to
+  ;; decode it before `fdata/upsert!` validates the row. Imported files carry
+  ;; metadata, so without the normalization the job never offloads them.
+  (let [profile (th/create-profile* 1)
+        file    (create-file 1 profile)]
+
+    (th/db-update! :file-data
+                   {:metadata (db/json {"generated-by" "offload-test"})}
+                   {:file-id (:id file) :id (:id file)})
+
+    (let [result (th/run-task! :offload-file-data {:file-id (:id file)})
+          row    (th/db-get :file-data {:file-id (:id file) :id (:id file)})]
+      (t/is (pos? (:offloaded result)))
+      (t/is (= "storage" (:backend row)))
+      (t/is (uuid? (:storage-object-id row)))
+      (t/is (= {:generated-by "offload-test"}
+               (fdata/decode-metadata (:metadata row)))))))
+
+(t/deftest offloads-a-file-data-row-with-a-json-null-metadata
+  ;; A jsonb `null` decodes to nil; the key must disappear from the row instead
+  ;; of travelling as `:metadata nil`, which the update schema rejects.
+  (let [profile (th/create-profile* 1)
+        file    (create-file 1 profile)]
+
+    (th/db-exec! ["UPDATE file_data SET metadata = 'null'::jsonb
+                    WHERE file_id = ? AND id = ?"
+                  (:id file) (:id file)])
+
+    (let [result (th/run-task! :offload-file-data {:file-id (:id file)})
+          row    (th/db-get :file-data {:file-id (:id file) :id (:id file)})]
+      (t/is (pos? (:offloaded result)))
+      (t/is (= "storage" (:backend row)))
+      (t/is (uuid? (:storage-object-id row)))
+      (t/is (nil? (:metadata row))))))
+
 (t/deftest skips-file-locked-by-another-transaction
   (let [profile (th/create-profile* 1)
         file    (create-file 1 profile)
@@ -385,36 +421,65 @@
     (let [result (th/run-task! :offload-file-data {:file-id (:id file)})]
       (t/is (pos? (:offloaded result))))
 
-    (t/testing "live snapshot rows moved to cold storage"
-      (let [snapshots (th/db-query :file-data {:file-id (:id file)
-                                               :type "snapshot"
-                                               :deleted-at nil})]
-        (t/is (pos? (count snapshots)))
-        (t/is (every? #(= "storage" (:backend %)) snapshots))
-        (t/is (every? #(nil? (:data %)) snapshots))))
+    (th/run-task! :storage-gc-touched {:skip-delay true})
 
-    (t/testing "snapshots are still listed"
-      (let [out (th/command! {::th/type :get-file-snapshots
-                              ::rpc/profile-id (:id profile)
-                              :file-id (:id file)})]
-        (t/is (nil? (:error out)))
-        (t/is (some #(= "before-offload" (:label %)) (:result out)))))
+    ;; The main row points at a cold object, and the storage GC froze it
+    ;; because the row still references it. The restore must touch it before
+    ;; replacing the row, or the blob is never reclaimed.
+    (let [sobject (:storage-object-id (th/db-get :file-data {:file-id (:id file)
+                                                             :id (:id file)}))]
+      (t/is (uuid? sobject))
+      (t/is (nil? (:touched-at (th/db-get :storage-object {:id sobject}
+                                          {::db/remove-deleted false}))))
 
-    (t/testing "snapshot restores from cold storage"
+      (t/testing "live snapshot rows moved to cold storage"
+        (let [snapshots (th/db-query :file-data {:file-id (:id file)
+                                                 :type "snapshot"
+                                                 :deleted-at nil})]
+          (t/is (pos? (count snapshots)))
+          (t/is (every? #(= "storage" (:backend %)) snapshots))
+          (t/is (every? #(nil? (:data %)) snapshots))))
+
+      (t/testing "snapshots are still listed"
+        (let [out (th/command! {::th/type :get-file-snapshots
+                                ::rpc/profile-id (:id profile)
+                                :file-id (:id file)})]
+          (t/is (nil? (:error out)))
+          (t/is (some #(= "before-offload" (:label %)) (:result out)))))
+
       (let [snap-id (->> (:result (th/command! {::th/type :get-file-snapshots
                                                 ::rpc/profile-id (:id profile)
                                                 :file-id (:id file)}))
                          (filter #(= "before-offload" (:label %)))
                          first
-                         :id)
-            out     (th/command! {::th/type :restore-file-snapshot
+                         :id)]
+        (t/is (some? snap-id))
+
+        (t/testing "snapshot preview does not expose the storage pointer"
+          (let [out (th/command! {::th/type :get-file-snapshot
                                   ::rpc/profile-id (:id profile)
                                   :file-id (:id file)
                                   :id snap-id})]
-        (t/is (some? snap-id))
-        (t/is (nil? (:error out)))
-        (t/is (some? (get-in (get-file-data profile (:id file))
-                             [:pages-index page-id :objects shape-id])))))))
+            (t/is (nil? (:error out)))
+            (t/is (not (contains? (:result out) :storage-object-id)))))
+
+        (t/testing "snapshot restores from cold storage"
+          (let [out (th/command! {::th/type :restore-file-snapshot
+                                  ::rpc/profile-id (:id profile)
+                                  :file-id (:id file)
+                                  :id snap-id})]
+            (t/is (nil? (:error out)))
+            (t/is (some? (get-in (get-file-data profile (:id file))
+                                 [:pages-index page-id :objects shape-id]))))))
+
+      (t/testing "the replaced main object is touched for the storage GC"
+        (t/is (some? (:touched-at (th/db-get :storage-object {:id sobject}
+                                             {::db/remove-deleted false})))))
+
+      (t/testing "the main row is back on hot storage without the old pointer"
+        (let [row (th/db-get :file-data {:file-id (:id file) :id (:id file)})]
+          (t/is (= "db" (:backend row)))
+          (t/is (nil? (:storage-object-id row))))))))
 
 (t/deftest write-after-offload-returns-to-hot-storage
   (let [profile  (th/create-profile* 1 {:is-active true})
@@ -483,11 +548,7 @@
     (let [result (th/run-task! :offload-file-data {:file-id (:id file)})]
       (t/is (pos? (:offloaded result))))
 
-    (let [ref-ids (into #{}
-                        (comp (map :metadata)
-                              (map fdata/decode-metadata)
-                              (keep :storage-ref-id))
-                        (db-rows (:id file)))]
+    (let [ref-ids (into #{} (keep :storage-object-id) (db-rows (:id file)))]
       (t/is (pos? (count ref-ids)))
       (t/is (every? some? (map #(sto/get-object storage %) ref-ids)))
 
