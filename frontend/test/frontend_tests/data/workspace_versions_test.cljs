@@ -6,6 +6,7 @@
 
 (ns frontend-tests.data.workspace-versions-test
   (:require
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.persistence :as dps]
@@ -187,3 +188,34 @@
         (t/is (nil? (get-in result [:workspace-versions :backup]))))
       (finally
         (rx/dispose! sub)))))
+
+(t/deftest ^:async version-events-send-the-current-file-id
+  ;; The snapshot RPC commands require the `file-id` (they need it for
+  ;; partition pruning on the `file_change` table); the workspace version
+  ;; events must always send it, taken from the current file.
+  (let [file-id    (uuid/next)
+        version-id (uuid/next)
+        requests   (atom [])
+        state      {:current-file-id file-id
+                    :workspace-versions {:data [{:id version-id
+                                                 :created-at (ct/now)
+                                                 :created-by "system"}]}}
+        call!      (fn [event]
+                     (reset! requests [])
+                     (->> (ptk/watch event state (rx/empty))
+                          (rx/subs! (fn [_])))
+                     (first @requests))]
+    (await
+     (mock/with-mocks*
+       {rp/cmd! (mock/stub (fn [cmd params]
+                             (swap! requests conj [cmd params])
+                             (rx/of true)))}
+       (doseq [[cmd event] [[:update-file-snapshot (versions/rename-version version-id "name")]
+                            [:delete-file-snapshot (versions/delete-version version-id)]
+                            [:lock-file-snapshot   (versions/lock-version version-id)]
+                            [:unlock-file-snapshot (versions/unlock-version version-id)]
+                            [:update-file-snapshot (versions/pin-version version-id)]]]
+         (t/testing (name cmd)
+           (let [[sent-cmd params] (call! event)]
+             (t/is (= cmd sent-cmd))
+             (t/is (= file-id (:file-id params))))))))))

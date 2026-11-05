@@ -8,8 +8,10 @@
   (:require
    [app.common.logging :as l]
    [app.common.time :as ct]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.file-changes :as fchanges]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [app.tasks.objects-gc :as ogc]
@@ -72,6 +74,69 @@
 
     (t/is (pos? (:processed result)))
     (t/is (nil? (find-file (:id file))))))
+
+(t/deftest deletes-the-pending-file-changes
+  ;; The pending file changes are locked per file, with a constant `file_id`,
+  ;; so the rows of a file that is pending deletion are gone after the run.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+
+        _       (th/db-insert! :file-change
+                               {:file-id (:id file)
+                                :kind fchanges/revision-kind
+                                :deleted-at (ct/in-past "10m")})
+
+        result  (th/run-task! :objects-gc {})]
+
+    (t/is (pos? (:processed result)))
+    (t/is (nil? (th/db-get :file-change {:file-id (:id file)}
+                           {::db/remove-deleted false})))))
+
+(t/deftest deletes-the-pending-file-changes-of-several-chunks
+  ;; More pending rows than the chunk size: the plan walks the cursor and each
+  ;; chunk locks its own rows, one query per file, with a constant `file_id`
+  ;; so the planner prunes the partition.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+        ids     (repeatedly 5 uuid/next)
+        _       (doseq [id ids]
+                  (th/db-insert! :file-change
+                                 {:id id
+                                  :file-id (:id file)
+                                  :kind fchanges/revision-kind
+                                  :deleted-at (ct/in-past "10m")}))
+        result  (th/run-task! :objects-gc {:chunk-size 2})]
+
+    (t/is (pos? (:processed result)))
+    (t/is (empty? (th/db-query :file-change {:file-id (:id file)}
+                               {::db/remove-deleted false})))))
+
+(t/deftest a-chunk-spanning-several-files-deletes-all-of-them
+  ;; The rows of one chunk can belong to different files. Each group is locked
+  ;; with its own `file_id`, and every row is still deleted; buffering the
+  ;; groups instead of locking them would leave them behind.
+  (let [profile (th/create-profile* 1)
+        opts    {:profile-id (:id profile)
+                 :project-id (:default-project-id profile)}
+        files   [(th/create-file* 1 opts)
+                 (th/create-file* 2 opts)]
+
+        _       (doseq [file files]
+                  (dotimes [_ 2]
+                    (th/db-insert! :file-change
+                                   {:file-id (:id file)
+                                    :kind fchanges/revision-kind
+                                    :deleted-at (ct/in-past "10m")})))
+
+        ;; one chunk holds the rows of both files
+        result  (th/run-task! :objects-gc {:chunk-size 4})]
+
+    (t/is (pos? (:processed result)))
+    (doseq [file files]
+      (t/is (empty? (th/db-query :file-change {:file-id (:id file)}
+                                 {::db/remove-deleted false}))))))
 
 (t/deftest profile-cascade-keeps-profile-deletion-date
   ;; The cascade marks the owned rows with the deletion date of the profile,
