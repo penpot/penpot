@@ -1,4 +1,4 @@
-use super::justify::{horizontal_justify_spacing, horizontal_squeeze_sheds};
+use super::justify::{horizontal_jlreq_justify_spacing, horizontal_squeeze_sheds};
 use super::ruby::{
     horizontal_ruby_paint, horizontal_ruby_spacing_with, horizontal_ruby_targets, ruby_glyph_refs,
     split_counts_by_extent, RubyGlyphRef, RubyLine,
@@ -56,7 +56,7 @@ fn cjk_layout_paragraph(
                 &mut builder,
                 span,
                 &plan.texts[index],
-                &plan.sheds[index],
+                &plan.pair_spacing[index],
                 &plan.ruby_spacing.adjustments[index],
                 &style,
                 fonts,
@@ -88,8 +88,8 @@ fn horizontal_chinese_regions_apply_compression_across_styles() {
         KoreanWrap::Syllable,
         1000.0,
     );
-    assert!(!cn.sheds[0].is_empty());
-    assert!(tw.sheds.iter().all(Vec::is_empty));
+    assert!(!cn.pair_spacing[0].is_empty());
+    assert!(tw.pair_spacing.iter().all(Vec::is_empty));
     assert!((tw_layout.longest_line() - cn_layout.longest_line() - 10.0).abs() < 0.1);
     assert_eq!(cn.texts.concat().replace('\u{2060}', ""), "文，。文");
 }
@@ -256,14 +256,14 @@ fn horizontal_cjk_justification_is_bounded_and_word_mode_only_expands_spaces() {
     let (paragraph, plan, layout) =
         cjk_horizontal_layout(&["文文", "文文"], "zh-Hant-TW", KoreanWrap::Syllable, 52.0);
     let extras =
-        super::justify::horizontal_policy_justify_spacing(&paragraph, &layout, &plan, 52.0);
+        super::justify::horizontal_pairwise_justify_spacing(&paragraph, &layout, &plan, 52.0);
     assert!(extras[1].is_empty(), "last line stays unexpanded");
     let total: f32 = extras[0].iter().map(|(_, gap)| *gap).sum();
     assert!(total > 9.0 && total <= 10.0);
     let (paragraph, plan, layout) =
         cjk_horizontal_layout(&["한 한 한 한"], "ko", KoreanWrap::KeepWords, 72.0);
     let extras =
-        super::justify::horizontal_policy_justify_spacing(&paragraph, &layout, &plan, 72.0);
+        super::justify::horizontal_pairwise_justify_spacing(&paragraph, &layout, &plan, 72.0);
     assert!(!extras[0].is_empty());
     for (at, amount) in &extras[0] {
         assert_eq!(plan.texts[0].chars().nth(*at), Some(' '));
@@ -272,7 +272,7 @@ fn horizontal_cjk_justification_is_bounded_and_word_mode_only_expands_spaces() {
     let (paragraph, plan, layout) =
         cjk_horizontal_layout(&["한한한한"], "ko", KoreanWrap::KeepWords, 52.0);
     assert!(
-        super::justify::horizontal_policy_justify_spacing(&paragraph, &layout, &plan, 52.0)
+        super::justify::horizontal_pairwise_justify_spacing(&paragraph, &layout, &plan, 52.0)
             .iter()
             .all(Vec::is_empty)
     );
@@ -295,7 +295,7 @@ fn distribution_fills_the_last_line_between_hangul_graphemes_across_styles() {
     paragraph.set_language("ko".to_owned());
     paragraph.set_korean_wrap(KoreanWrap::KeepWords);
     let extras =
-        super::justify::horizontal_policy_justify_spacing(&paragraph, &layout, &plan, 310.0);
+        super::justify::horizontal_pairwise_justify_spacing(&paragraph, &layout, &plan, 310.0);
     let total: f32 = extras.iter().flatten().map(|(_, amount)| amount).sum();
     assert!((layout.longest_line() + total - 310.0).abs() < 0.1);
     let gaps: Vec<_> = extras.iter().flatten().map(|(_, amount)| *amount).collect();
@@ -335,7 +335,7 @@ fn distribution_keeps_graphemes_nonbreaking_pairs_and_ruby_bases_solid() {
         paragraph.set_korean_wrap(KoreanWrap::KeepWords);
         let (plan, layout) = cjk_layout_paragraph(&paragraph, 310.0, &fonts);
         let extras =
-            super::justify::horizontal_policy_justify_spacing(&paragraph, &layout, &plan, 310.0);
+            super::justify::horizontal_pairwise_justify_spacing(&paragraph, &layout, &plan, 310.0);
         assert_eq!(
             extras.iter().map(Vec::len).sum::<usize>(),
             expected_gaps,
@@ -356,7 +356,7 @@ fn distribution_keeps_graphemes_nonbreaking_pairs_and_ruby_bases_solid() {
     );
     let (plan, layout) = cjk_layout_paragraph(&paragraph, 310.0, &fonts);
     assert!(
-        super::justify::horizontal_policy_justify_spacing(&paragraph, &layout, &plan, 310.0)
+        super::justify::horizontal_pairwise_justify_spacing(&paragraph, &layout, &plan, 310.0)
             .iter()
             .all(Vec::is_empty)
     );
@@ -370,7 +370,7 @@ fn chinese_proportional_punctuation_is_not_compressed_twice() {
     let mut paragraph = make_paragraph(vec![span], 0.0);
     paragraph.set_language("zh-Hans-CN".into());
     let plan = HorizontalParagraphPlan::new(&paragraph);
-    assert!(plan.sheds.iter().all(Vec::is_empty));
+    assert!(plan.pair_spacing.iter().all(Vec::is_empty));
 }
 
 #[test]
@@ -389,7 +389,7 @@ fn untagged_cjk_keeps_plain_layout() {
         let (texts, offsets) = paragraph.layout_span_texts();
         assert_eq!(texts, vec![text.to_string()]);
         assert!(offsets.is_empty());
-        assert!(horizontal_aki_sheds(&paragraph, &texts)[0].is_empty());
+        assert!(horizontal_pair_spacing(&paragraph, &texts)[0].is_empty());
     }
 }
 
@@ -407,7 +407,7 @@ fn explicit_profiles_use_distinct_rules_across_styles() {
         assert_eq!(map.to_original(map.to_shifted(offset)), offset);
     }
     let plan = HorizontalParagraphPlan::new(&paragraph);
-    assert!(plan.sheds.iter().all(Vec::is_empty));
+    assert!(plan.pair_spacing.iter().all(Vec::is_empty));
 
     let mut paragraph =
         make_paragraph(vec![make_span("한", 0.0), make_span("국어 문장", 0.0)], 0.0);
@@ -463,7 +463,7 @@ fn same_paragraph_wraps_differently_by_profile_in_both_orientations() {
             &mut builder,
             span,
             &plan.texts[0],
-            &plan.sheds[0],
+            &plan.pair_spacing[0],
             &[],
             &style,
             &fonts,
@@ -677,8 +677,8 @@ fn layout_span_texts_sets_western_spaces_inside_japanese_text() {
         texts,
         vec![format!(
             "日本{}hello{}world",
-            kinsoku::WESTERN_WORD_SPACE,
-            kinsoku::WESTERN_WORD_SPACE
+            line_breaks::WESTERN_WORD_SPACE,
+            line_breaks::WESTERN_WORD_SPACE
         )]
     );
 }
@@ -991,12 +991,12 @@ fn warichu_sub_lines_paint_on_one_line() {
 }
 
 #[test]
-fn horizontal_aki_sheds_follow_punctuation_pairs() {
+fn horizontal_pair_spacing_follow_punctuation_pairs() {
     init_state();
     let texts = vec!["あ。」い、".to_string(), "「「う".to_string()];
     let paragraph = make_paragraph(texts.iter().map(|text| make_span(text, 0.0)).collect(), 0.0);
     assert_eq!(
-        horizontal_aki_sheds(&paragraph, &texts),
+        horizontal_pair_spacing(&paragraph, &texts),
         vec![vec![(1, 8.0), (4, 8.0)], vec![(0, 8.0)]],
         "。 before 」, 、 before 「 across spans, and 「 before 「"
     );
@@ -1010,20 +1010,20 @@ fn leading_aki_shed_uses_the_bracket_font_size() {
     large.font_size = 32.0;
     let paragraph = make_paragraph(vec![make_span("「", 0.0), large], 0.0);
     assert_eq!(
-        horizontal_aki_sheds(&paragraph, &texts),
+        horizontal_pair_spacing(&paragraph, &texts),
         vec![vec![(0, 16.0)], vec![]],
         "the 16px 「 gives up half of the next 32px bracket's em"
     );
 }
 
 #[test]
-fn horizontal_aki_sheds_skip_curly_quotes() {
+fn horizontal_pair_spacing_skip_curly_quotes() {
     init_state();
     for text in ["“‘Hi’”", "あ“い”。", "あ‘い’、"] {
         let texts = vec![text.to_string()];
         let paragraph = make_paragraph(vec![make_span(text, 0.0)], 0.0);
         assert_eq!(
-            horizontal_aki_sheds(&paragraph, &texts),
+            horizontal_pair_spacing(&paragraph, &texts),
             vec![Vec::<(usize, f32)>::new()],
             "no aki shed in {text:?}"
         );
@@ -1031,12 +1031,12 @@ fn horizontal_aki_sheds_skip_curly_quotes() {
 }
 
 #[test]
-fn horizontal_aki_sheds_skip_word_joiners_and_palt() {
+fn horizontal_pair_spacing_skip_word_joiners_and_palt() {
     init_state();
     let joined = vec!["。\u{2060}」".to_string()];
     let paragraph = make_paragraph(vec![make_span(&joined[0], 0.0)], 0.0);
     assert_eq!(
-        horizontal_aki_sheds(&paragraph, &joined),
+        horizontal_pair_spacing(&paragraph, &joined),
         vec![vec![(0, 8.0)]]
     );
 
@@ -1044,7 +1044,7 @@ fn horizontal_aki_sheds_skip_word_joiners_and_palt() {
     palt.font_features = FontFeatures::Palt;
     let paragraph = make_paragraph(vec![palt], 0.0);
     assert_eq!(
-        horizontal_aki_sheds(&paragraph, &["。」".to_string()]),
+        horizontal_pair_spacing(&paragraph, &["。」".to_string()]),
         vec![Vec::<(usize, f32)>::new()]
     );
 }
@@ -1360,7 +1360,7 @@ fn latin_readings_share_one_baseline_whatever_their_letters() {
         )
     };
     let base = skia::Rect::from_xywh(0.0, 0.0, EM, EM);
-    for side in [RubySide::Over, RubySide::Under] {
+    for side in [AnnotationSide::Over, AnnotationSide::Under] {
         let baseline = |text: &str| {
             let span = TextSpan {
                 ruby: text.to_string(),
@@ -1388,7 +1388,7 @@ fn latin_readings_share_one_baseline_whatever_their_letters() {
             (descender - plain).abs() < 0.01,
             "{side:?}: yu at {descender}, lia at {plain}"
         );
-        if side == RubySide::Over {
+        if side == AnnotationSide::Over {
             let mut bounds = [skia::Rect::default()];
             shaped[0]
                 .font
@@ -1426,10 +1426,10 @@ fn emphasis_position_overrides_the_language_and_stacks_on_its_own_side() {
         let plain = super::emphasis::horizontal_emphasis_mark_box(&span, &placement);
         assert_eq!(plain.top() >= placement.rect.bottom(), under);
         span.ruby = "zhōng wén".to_string();
-        for side in [RubySide::Over, RubySide::Under] {
+        for side in [AnnotationSide::Over, AnnotationSide::Under] {
             span.ruby_side = side;
             let stacked = super::emphasis::horizontal_emphasis_mark_box(&span, &placement);
-            let expected = if (side == RubySide::Under) == under {
+            let expected = if (side == AnnotationSide::Under) == under {
                 span.ruby_font_size()
             } else {
                 0.0
@@ -1708,7 +1708,7 @@ fn horizontal_justify_spreads_every_line_evenly() {
             &mut builder,
             &paragraph.children()[0],
             &plan.texts[0],
-            &plan.sheds[0],
+            &plan.pair_spacing[0],
             extra,
             &style,
             &fonts,
@@ -1719,7 +1719,7 @@ fn horizontal_justify_spreads_every_line_evenly() {
     };
 
     let natural = lay_out(&[]);
-    let spacing = horizontal_justify_spacing(&natural, &plan, width);
+    let spacing = horizontal_jlreq_justify_spacing(&natural, &plan, width);
     let justified = lay_out(&spacing[0]);
 
     let natural_lines = natural.get_line_metrics();
@@ -1774,7 +1774,7 @@ fn horizontal_squeeze_keeps_the_next_character_on_the_line() {
     // Seven characters fit; the eighth overflows by less than the 、 aki.
     let width = advance * 7.6;
     let lay_out = |extra: &[Vec<(usize, f32)>], window: std::ops::Range<usize>| {
-        let sheds: Vec<(usize, f32)> = plan.sheds[0]
+        let sheds: Vec<(usize, f32)> = plan.pair_spacing[0]
             .iter()
             .chain(extra.first().into_iter().flatten())
             .copied()
@@ -1901,7 +1901,7 @@ fn horizontal_indivisible_punctuation_unit_overflows_a_narrow_box() {
 
 #[test]
 fn japanese_narrow_box_keeps_ruby_bases_whole_and_respects_kinsoku() {
-    use crate::shapes::kinsoku::forbidden_at_line_start;
+    use crate::shapes::jlreq::forbidden_at_line_start;
     use crate::shapes::text_vertical::test_support::provider;
     init_state();
     let mut fonts = skia::textlayout::FontCollection::new();

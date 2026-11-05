@@ -3,12 +3,12 @@
 // (aki, oikomi, inter-script spacing) and pick column breaks (kinsoku,
 // burasage, oidashi).
 
-use crate::shapes::japanese::{
+use crate::shapes::jlreq::{
     aki_class, break_allowed_between, classify, pair_rule, punctuation_aki_sheds, AkiShed,
-    JapaneseClass,
+    JlreqClass,
 };
-use crate::shapes::kinsoku::{forbidden_at_line_end, forbidden_at_line_start};
-use crate::shapes::text_japanese::capped_equal_allocations;
+use crate::shapes::jlreq::{forbidden_at_line_end, forbidden_at_line_start};
+use crate::shapes::text_allocation::capped_equal_allocations;
 use crate::shapes::text_policy::TextLayoutPolicy;
 use crate::shapes::{LineAdjustment, TextAlign};
 use unicode_segmentation::UnicodeSegmentation;
@@ -98,7 +98,7 @@ impl FlowCell {
     fn end_slack(&self) -> f32 {
         let closing = self
             .ch
-            .is_some_and(|ch| classify(ch) == JapaneseClass::ClosingBracket);
+            .is_some_and(|ch| classify(ch) == JlreqClass::ClosingBracket);
         if closing {
             (self.cell.extent - (0.5 * self.cell.font_size + self.trailing_spacing)).max(0.0)
         } else {
@@ -259,7 +259,7 @@ fn column_break(
 /// overflow: the next non-hanging item sees the overflowed cursor and wraps,
 /// and oidashi never pulls a hung mark since it is forbidden-at-line-start,
 /// not -end.
-pub(super) fn plan_columns(items: &[FlowItem], max_height: f32) -> Vec<(usize, f32)> {
+pub(super) fn plan_jlreq_columns(items: &[FlowItem], max_height: f32) -> Vec<(usize, f32)> {
     let mut placements: Vec<(usize, f32)> = Vec::with_capacity(items.len());
     let mut column = 0usize;
     let mut cursor = 0.0f32;
@@ -283,9 +283,11 @@ pub(super) fn plan_columns(items: &[FlowItem], max_height: f32) -> Vec<(usize, f
     placements
 }
 
-/// Basic non-Japanese flow. Boundaries use the entire paragraph, so font
-/// and style runs cannot split a grapheme or create a word boundary.
-pub(super) fn plan_policy_columns(
+/// Column planning of the pairwise policies (plain, Chinese and Korean):
+/// break opportunities come from `TextLayoutPolicy::break_allowed`.
+/// Boundaries use the entire paragraph, so font and style runs cannot split
+/// a grapheme or create a word boundary.
+pub(super) fn plan_pairwise_columns(
     cells: &[FlowCell],
     text: &str,
     policy: TextLayoutPolicy,
@@ -383,7 +385,7 @@ pub(super) fn plan_policy_columns(
 
 /// Source edge characters of every cell, including sideways runs. Offsets
 /// stay in UTF-16 source space; typography never inserts saved spaces.
-fn policy_cell_edges(cells: &[FlowCell], text: &str) -> Vec<(Option<char>, Option<char>)> {
+fn pairwise_cell_edges(cells: &[FlowCell], text: &str) -> Vec<(Option<char>, Option<char>)> {
     let mut offset = 0;
     let chars: Vec<_> = text
         .chars()
@@ -409,8 +411,8 @@ fn policy_cell_edges(cells: &[FlowCell], text: &str) -> Vec<(Option<char>, Optio
         .collect()
 }
 
-pub(super) fn apply_policy_spacing(cells: &mut [FlowCell], text: &str, policy: TextLayoutPolicy) {
-    let edges = policy_cell_edges(cells, text);
+pub(super) fn apply_pairwise_spacing(cells: &mut [FlowCell], text: &str, policy: TextLayoutPolicy) {
+    let edges = pairwise_cell_edges(cells, text);
     for i in 1..cells.len() {
         if cells[i].keep_with_previous || cells[i].shares_previous_box {
             continue;
@@ -435,14 +437,14 @@ pub(super) fn apply_policy_spacing(cells: &mut [FlowCell], text: &str, policy: T
         };
         cells[i - 1].cell.extent = (cells[i - 1].cell.extent + gap - compression)
             .max(cells[i - 1].trailing_spacing.max(0.0));
-        cells[i - 1].cell.minimum_oikomi_extent = cells[i - 1].cell.extent;
+        cells[i - 1].cell.min_squeezed_extent = cells[i - 1].cell.extent;
     }
 }
 
 /// Justify non-final columns over policy-approved gaps with bounded amounts.
 /// Korean word mode only expands spaces; grapheme and annotation interiors
 /// never become opportunities merely because a font/style run split them.
-pub(super) fn policy_aligned_tops(
+pub(super) fn pairwise_aligned_tops(
     cells: &[FlowCell],
     text: &str,
     policy: TextLayoutPolicy,
@@ -451,7 +453,7 @@ pub(super) fn policy_aligned_tops(
     budget: f32,
 ) -> Vec<f32> {
     let mut tops: Vec<f32> = placements.iter().map(|(_, top)| *top).collect();
-    let edges = policy_cell_edges(cells, text);
+    let edges = pairwise_cell_edges(cells, text);
     let graphemes: Vec<usize> = text
         .graphemes(true)
         .scan(0, |at, g| {
@@ -592,7 +594,7 @@ fn inter_script_spacing(previous: &FlowCell, next: &FlowCell) -> f32 {
 /// between ink edges: side bearings differ across fonts, so advances alone
 /// would space `うpenあ` unevenly. Adjusts the preceding cell's extent and
 /// keeps its trailing letter-spacing.
-pub(super) fn apply_inter_script_spacing(cells: &mut [FlowCell]) {
+pub(super) fn apply_jlreq_inter_script_spacing(cells: &mut [FlowCell]) {
     for i in 1..cells.len() {
         let target_gap = inter_script_spacing(&cells[i - 1], &cells[i]);
         if target_gap <= 0.0 {
@@ -608,16 +610,16 @@ pub(super) fn apply_inter_script_spacing(cells: &mut [FlowCell]) {
 
 /// JLREQ character class of each cell. Ruby bases count as simple ruby, so
 /// `ruby_spans[span]` overrides the cell's own class.
-pub(super) fn flow_classes(cells: &[FlowCell], ruby_spans: &[bool]) -> Vec<Option<JapaneseClass>> {
+pub(super) fn flow_classes(cells: &[FlowCell], ruby_spans: &[bool]) -> Vec<Option<JlreqClass>> {
     cells
         .iter()
         .map(|flow| {
             if ruby_spans[flow.cell.span] {
-                return Some(JapaneseClass::SimpleRuby);
+                return Some(JlreqClass::SimpleRuby);
             }
             match flow.cell.kind {
-                CellKind::TateChuYoko { .. } => Some(JapaneseClass::TateChuYoko),
-                CellKind::Rotated { .. } => Some(JapaneseClass::Western),
+                CellKind::TateChuYoko { .. } => Some(JlreqClass::TateChuYoko),
+                CellKind::Rotated { .. } => Some(JlreqClass::Western),
                 _ => flow.ch.map(classify),
             }
         })
@@ -628,7 +630,7 @@ pub(super) fn flow_classes(cells: &[FlowCell], ruby_spans: &[bool]) -> Vec<Optio
 /// aki in punctuation advances. Ordinary text keeps it; at the internal
 /// boundaries of §3.1.4 one half-em goes (see `punctuation_aki_sheds`), and
 /// middle dots keep their quarter-em sides.
-pub(super) fn shed_punctuation_aki(cells: &mut [FlowCell], aki_classes: &[Option<JapaneseClass>]) {
+pub(super) fn shed_punctuation_aki(cells: &mut [FlowCell], aki_classes: &[Option<JlreqClass>]) {
     for (index, shed) in punctuation_aki_sheds(aki_classes) {
         cells[index].shed_to_half_em(shed == AkiShed::Leading);
     }
@@ -640,9 +642,9 @@ pub(super) fn shed_punctuation_aki(cells: &mut [FlowCell], aki_classes: &[Option
 /// `flow_classes` class.
 pub(super) fn aki_classes(
     cells: &[FlowCell],
-    classes: &[Option<JapaneseClass>],
+    classes: &[Option<JlreqClass>],
     proportional_spans: &[bool],
-) -> Vec<Option<JapaneseClass>> {
+) -> Vec<Option<JlreqClass>> {
     cells
         .iter()
         .zip(classes)
@@ -658,7 +660,7 @@ pub(super) fn aki_classes(
 /// Smallest legal flow extent after oikomi. Full-width punctuation floors at
 /// a half-em frame, or at its shaped extent when `vpal` has already removed
 /// the aki.
-pub(super) fn minimum_oikomi_extent(
+pub(super) fn min_squeezed_extent(
     ch: Option<char>,
     extent: f32,
     font_size: f32,
@@ -667,11 +669,11 @@ pub(super) fn minimum_oikomi_extent(
     let half_em_frame = ch.is_some_and(|ch| {
         matches!(
             classify(ch),
-            JapaneseClass::OpeningBracket
-                | JapaneseClass::ClosingBracket
-                | JapaneseClass::FullStop
-                | JapaneseClass::Comma
-                | JapaneseClass::MiddleDot
+            JlreqClass::OpeningBracket
+                | JlreqClass::ClosingBracket
+                | JlreqClass::FullStop
+                | JlreqClass::Comma
+                | JlreqClass::MiddleDot
         )
     });
     if half_em_frame {
@@ -690,8 +692,8 @@ fn boundary_em(cells: &[FlowCell], boundary: usize) -> f32 {
         .min(cells[boundary + 1].cell.font_size)
 }
 
-fn explicit_pair_spacing_em(before: JapaneseClass, after: JapaneseClass) -> f32 {
-    if matches!(before, JapaneseClass::DividingPunctuation) {
+fn explicit_pair_spacing_em(before: JlreqClass, after: JlreqClass) -> f32 {
+    if matches!(before, JlreqClass::DividingPunctuation) {
         pair_rule(before, after).preferred_em
     } else {
         0.0
@@ -700,14 +702,14 @@ fn explicit_pair_spacing_em(before: JapaneseClass, after: JapaneseClass) -> f32 
 
 /// Adjacent classes at `boundary`, when both cells have one.
 fn boundary_classes(
-    classes: &[Option<JapaneseClass>],
+    classes: &[Option<JlreqClass>],
     boundary: usize,
-) -> Option<(JapaneseClass, JapaneseClass)> {
+) -> Option<(JlreqClass, JlreqClass)> {
     Some((classes[boundary]?, classes[boundary + 1]?))
 }
 
 /// Preferred pair spacing (in em) at every boundary, per the JLREQ table.
-pub(super) fn preferred_pair_spacing(classes: &[Option<JapaneseClass>]) -> Vec<f32> {
+pub(super) fn preferred_pair_spacing(classes: &[Option<JlreqClass>]) -> Vec<f32> {
     (0..classes.len().saturating_sub(1))
         .map(|boundary| {
             boundary_classes(classes, boundary)
@@ -721,7 +723,7 @@ pub(super) fn preferred_pair_spacing(classes: &[Option<JapaneseClass>]) -> Vec<f
 /// to the flow extent, where oikomi can reduce it.
 pub(super) fn materialize_explicit_pair_spacing(
     cells: &mut [FlowCell],
-    classes: &[Option<JapaneseClass>],
+    classes: &[Option<JlreqClass>],
 ) {
     for boundary in 0..cells.len().saturating_sub(1) {
         let Some((before, after)) = boundary_classes(classes, boundary) else {
@@ -736,13 +738,10 @@ pub(super) fn materialize_explicit_pair_spacing(
 
 /// Cell holding the removable spacing of a boundary, and whether that space
 /// leads the cell (its glyph then moves up with the reduction).
-fn spacing_owner(before: JapaneseClass, after: JapaneseClass, boundary: usize) -> (usize, bool) {
+fn spacing_owner(before: JlreqClass, after: JlreqClass, boundary: usize) -> (usize, bool) {
     if explicit_pair_spacing_em(before, after) > 0.0 {
         (boundary, false)
-    } else if matches!(
-        after,
-        JapaneseClass::OpeningBracket | JapaneseClass::MiddleDot
-    ) {
+    } else if matches!(after, JlreqClass::OpeningBracket | JlreqClass::MiddleDot) {
         // After sequence shedding, the remaining aki is the next glyph's
         // embedded leading space.
         (boundary + 1, true)
@@ -755,7 +754,7 @@ fn spacing_owner(before: JapaneseClass, after: JapaneseClass, boundary: usize) -
 /// below its oikomi floor. Returns the amount removed.
 fn reduce_cell_spacing(cells: &mut [FlowCell], index: usize, amount: f32, leading: bool) -> f32 {
     let cell = &mut cells[index].cell;
-    let removable = (cell.extent - cell.minimum_oikomi_extent).max(0.0);
+    let removable = (cell.extent - cell.min_squeezed_extent).max(0.0);
     let amount = amount.min(cell.extent.max(0.0)).min(removable);
     cell.extent -= amount;
     if leading {
@@ -768,7 +767,7 @@ fn reduce_cell_spacing(cells: &mut [FlowCell], index: usize, amount: f32, leadin
 /// column bottom). Returns true when it removed any.
 fn discard_explicit_spacing_at_column_edges(
     cells: &mut [FlowCell],
-    classes: &[Option<JapaneseClass>],
+    classes: &[Option<JlreqClass>],
     pair_spacing_em: &mut [f32],
     placements: &[(usize, f32)],
 ) -> bool {
@@ -811,16 +810,16 @@ fn break_needs_adjustment(cells: &[FlowCell], i: usize, cursor: f32, max_height:
 /// JLREQ oikomi: before wrapping a non-hanging item whose break needs line
 /// adjustment, try to keep it in the column by reducing legal aki in table
 /// priority order. When the whole deficit cannot be recovered, leave the
-/// line to the oidashi/kinsoku planner. `policy` decides whether squeezing
+/// line to the oidashi/kinsoku planner. `adjustment` decides whether squeezing
 /// comes first, only when pushing out would break kinsoku, or never.
 pub(super) fn apply_ordered_oikomi(
     cells: &mut [FlowCell],
-    classes: &[Option<JapaneseClass>],
+    classes: &[Option<JlreqClass>],
     pair_spacing_em: &mut [f32],
     max_height: f32,
-    policy: LineAdjustment,
+    adjustment: LineAdjustment,
 ) {
-    if !is_bounded(max_height) || policy == LineAdjustment::PushOutOnly {
+    if !is_bounded(max_height) || adjustment == LineAdjustment::PushOutOnly {
         return;
     }
     let mut column_start = 0usize;
@@ -830,7 +829,7 @@ pub(super) fn apply_ordered_oikomi(
         if overflows(cursor, &item, max_height) {
             let needed = item.extent - item.end_slack;
             let squeeze = break_needs_adjustment(cells, i, cursor, max_height)
-                && (policy == LineAdjustment::PushInFirst
+                && (adjustment == LineAdjustment::PushInFirst
                     || !push_out_resolves(cells, column_start, i, max_height));
             if squeeze {
                 let deficit = cursor + needed - max_height;
@@ -862,7 +861,7 @@ fn push_out_resolves(cells: &[FlowCell], column_start: usize, i: usize, max_heig
 /// Returns the extent removed from the line.
 fn compress_line(
     cells: &mut [FlowCell],
-    classes: &[Option<JapaneseClass>],
+    classes: &[Option<JlreqClass>],
     pair_spacing_em: &mut [f32],
     line: std::ops::Range<usize>,
     deficit: f32,
@@ -882,7 +881,7 @@ fn compress_line(
         let (owner, _) = spacing_owner(before, after, boundary);
         let owner = &cells[owner].cell;
         let rule_capacity = (pair_spacing_em[boundary] - rule.minimum_em) * em;
-        let physical_capacity = (owner.extent - owner.minimum_oikomi_extent).max(0.0);
+        let physical_capacity = (owner.extent - owner.min_squeezed_extent).max(0.0);
         let capacity = rule_capacity.min(physical_capacity);
         if capacity > EPSILON {
             opportunities.push((boundary, rule.shrink_priority, capacity));
@@ -935,16 +934,16 @@ fn compress_line(
 /// re-plan is undone.
 pub(super) fn plan_with_edge_trimming(
     cells: &mut [FlowCell],
-    classes: &[Option<JapaneseClass>],
+    classes: &[Option<JlreqClass>],
     pair_spacing_em: &mut [f32],
     max_height: f32,
 ) -> Vec<(usize, f32)> {
-    let mut placements = plan_columns(&flow_items(cells), max_height);
+    let mut placements = plan_jlreq_columns(&flow_items(cells), max_height);
     for _ in 0..cells.len() {
         if !discard_explicit_spacing_at_column_edges(cells, classes, pair_spacing_em, &placements) {
             break;
         }
-        placements = plan_columns(&flow_items(cells), max_height);
+        placements = plan_jlreq_columns(&flow_items(cells), max_height);
     }
     // Cells whose trim moved them off the edge keep their aki for good, so
     // the loop cannot oscillate.
@@ -959,7 +958,7 @@ pub(super) fn plan_with_edge_trimming(
             }
             let opening = flow
                 .ch
-                .is_some_and(|ch| classify(ch) == JapaneseClass::OpeningBracket);
+                .is_some_and(|ch| classify(ch) == JlreqClass::OpeningBracket);
             if at_column_head(&placements, index) && opening && flow.shed_to_half_em(true) {
                 trimmed.push((index, true));
             }
@@ -973,7 +972,7 @@ pub(super) fn plan_with_edge_trimming(
         if trimmed.is_empty() {
             break;
         }
-        let replanned = plan_columns(&flow_items(cells), max_height);
+        let replanned = plan_jlreq_columns(&flow_items(cells), max_height);
         let mut moved = false;
         for (index, head) in trimmed {
             let still_at_edge = if head {
@@ -988,7 +987,7 @@ pub(super) fn plan_with_edge_trimming(
             }
         }
         placements = if moved {
-            plan_columns(&flow_items(cells), max_height)
+            plan_jlreq_columns(&flow_items(cells), max_height)
         } else {
             replanned
         };
@@ -1012,7 +1011,7 @@ fn at_column_end(placements: &[(usize, f32)], index: usize) -> bool {
 /// Skips the last column.
 pub(super) fn ordered_expansion_offsets(
     cells: &[FlowCell],
-    classes: &[Option<JapaneseClass>],
+    classes: &[Option<JlreqClass>],
     pair_spacing_em: &[f32],
     placements: &[(usize, f32)],
     column_used: &[f32],
@@ -1102,7 +1101,7 @@ mod tests {
     #[test]
     fn plan_columns_keeps_upright_latin_words_whole() {
         let items: Vec<FlowItem> = "あいPenpot".chars().map(|c| item(10.0, c)).collect();
-        let placements = plan_columns(&items, 70.0);
+        let placements = plan_jlreq_columns(&items, 70.0);
         assert_eq!(columns(&placements), vec![0, 0, 1, 1, 1, 1, 1, 1]);
     }
 
@@ -1113,14 +1112,14 @@ mod tests {
             run_item(44.0, false),
             run_item(38.0, true),
         ];
-        let placements = plan_columns(&items, 90.0);
+        let placements = plan_jlreq_columns(&items, 90.0);
         assert_eq!(placements, vec![(0, 0.0), (1, 0.0), (1, 44.0)]);
     }
 
     #[test]
     fn plan_columns_keeps_full_width_numbers_whole() {
         let items: Vec<FlowItem> = "あいう２０２６年".chars().map(|c| item(10.0, c)).collect();
-        let placements = plan_columns(&items, 40.0);
+        let placements = plan_jlreq_columns(&items, 40.0);
         assert_eq!(columns(&placements), vec![0, 0, 0, 1, 1, 1, 1, 2]);
     }
 
@@ -1151,21 +1150,21 @@ mod tests {
     #[test]
     fn plan_columns_keeps_a_numeral_with_its_unit() {
         let items: Vec<FlowItem> = "体重60㎏".chars().map(|c| item(10.0, c)).collect();
-        let placements = plan_columns(&items, 40.0);
+        let placements = plan_jlreq_columns(&items, 40.0);
         assert_eq!(columns(&placements), vec![0, 0, 1, 1, 1]);
     }
 
     #[test]
     fn plan_columns_never_leaves_an_empty_column() {
         let items: Vec<FlowItem> = "「「あ".chars().map(|c| item(10.0, c)).collect();
-        let placements = plan_columns(&items, 25.0);
+        let placements = plan_jlreq_columns(&items, 25.0);
         assert_eq!(columns(&placements), vec![0, 0, 1]);
     }
 
     #[test]
     fn plan_columns_oidashi_ignores_float_noise_in_the_budget() {
         let items = vec![item(22.0, 'あ'), item(22.0, 'い'), item(22.0, '」')];
-        let placements = plan_columns(&items, 44.0 - 0.00002);
+        let placements = plan_jlreq_columns(&items, 44.0 - 0.00002);
         assert_eq!(columns(&placements), vec![0, 1, 1]);
     }
 
@@ -1208,7 +1207,7 @@ mod tests {
     #[test]
     fn plan_columns_breaks_on_overflow() {
         let items: Vec<FlowItem> = "あいうえお".chars().map(|c| item(10.0, c)).collect();
-        let placements = plan_columns(&items, 25.0);
+        let placements = plan_jlreq_columns(&items, 25.0);
         assert_eq!(
             placements,
             vec![(0, 0.0), (0, 10.0), (1, 0.0), (1, 10.0), (2, 0.0)]
@@ -1218,14 +1217,14 @@ mod tests {
     #[test]
     fn plan_columns_ignores_float_noise_in_the_budget() {
         let items: Vec<FlowItem> = "あいう".chars().map(|c| item(22.0, c)).collect();
-        let placements = plan_columns(&items, 66.0 - 0.00002);
+        let placements = plan_jlreq_columns(&items, 66.0 - 0.00002);
         assert!(placements.iter().all(|(column, _)| *column == 0));
     }
 
     #[test]
     fn plan_columns_oversized_item_gets_own_column() {
         let items = vec![item(10.0, 'あ'), item(100.0, 'い'), item(10.0, 'う')];
-        let placements = plan_columns(&items, 25.0);
+        let placements = plan_jlreq_columns(&items, 25.0);
         assert_eq!(placements, vec![(0, 0.0), (1, 0.0), (2, 0.0)]);
     }
 
@@ -1239,7 +1238,7 @@ mod tests {
             item(10.0, '。'),
             item(10.0, 'う'),
         ];
-        let placements = plan_columns(&items, 25.0);
+        let placements = plan_jlreq_columns(&items, 25.0);
         assert_eq!(placements, vec![(0, 0.0), (0, 10.0), (0, 20.0), (1, 0.0)]);
         assert_eq!(placements[2].0, 0, "。 hangs in the current column");
     }
@@ -1253,7 +1252,7 @@ mod tests {
             item(10.0, 'い'),
             item(10.0, 'う'),
         ];
-        let placements = plan_columns(&items, 25.0);
+        let placements = plan_jlreq_columns(&items, 25.0);
         assert_eq!(placements, vec![(0, 0.0), (1, 0.0), (1, 10.0), (2, 0.0)]);
     }
 
@@ -1262,7 +1261,7 @@ mod tests {
         // A column full of open brackets cannot be emptied: oidashi moves at
         // most four of them along with the overflowing あ.
         let items: Vec<FlowItem> = "「「「「「「あ".chars().map(|c| item(10.0, c)).collect();
-        let placements = plan_columns(&items, 60.0);
+        let placements = plan_jlreq_columns(&items, 60.0);
         let first_column_count = placements.iter().filter(|(c, _)| *c == 0).count();
         assert_eq!(first_column_count, 2);
     }
@@ -1277,7 +1276,7 @@ mod tests {
             item(10.0, '「'),
             item(10.0, 'い'),
         ];
-        let placements = plan_columns(&items, 20.0);
+        let placements = plan_jlreq_columns(&items, 20.0);
         let mut column_used = std::collections::BTreeMap::new();
         for (it, (column, top)) in items.iter().zip(&placements) {
             let used: &mut f32 = column_used.entry(*column).or_default();
@@ -1297,7 +1296,7 @@ mod tests {
             .chars()
             .map(|c| item(10.0, c))
             .collect();
-        let placements = plan_columns(&items, 50.0);
+        let placements = plan_jlreq_columns(&items, 50.0);
         assert_eq!(columns(&placements), vec![0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1]);
     }
 

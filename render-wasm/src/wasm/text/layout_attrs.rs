@@ -1,6 +1,6 @@
 use crate::shapes::{
-    self, AnnotationClearance, FontFeatures, LineAdjustment, RubyAlign, RubyOverhang, RubySide,
-    RubySize, TextCombineUpright, TextEmphasis,
+    self, AnnotationClearance, AnnotationSide, FontFeatures, LineAdjustment, RubyAlign,
+    RubyOverhang, RubySize, TextCombineUpright, TextEmphasis,
 };
 use macros::ToJs;
 
@@ -308,11 +308,11 @@ pub enum RawRubySide {
 
 raw_enum_from_byte!(RawRubySide, Over, [Over, Under]);
 
-impl From<RawRubySide> for RubySide {
+impl From<RawRubySide> for AnnotationSide {
     fn from(value: RawRubySide) -> Self {
         match value {
-            RawRubySide::Over => RubySide::Over,
-            RawRubySide::Under => RubySide::Under,
+            RawRubySide::Over => AnnotationSide::Over,
+            RawRubySide::Under => AnnotationSide::Under,
         }
     }
 }

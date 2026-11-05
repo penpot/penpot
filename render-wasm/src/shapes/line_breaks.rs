@@ -1,11 +1,14 @@
-//! Japanese line-breaking rules (kinsoku shori).
+//! Layout-text rewrite for horizontal CJK line breaking.
 //!
-//! Skia's default break iterator allows closing punctuation, the prolonged
-//! sound mark or small kana at a line start, and opening brackets at a line
-//! end. skia-safe exposes no ICU BreakIterator, so this module suppresses
-//! those breaks by inserting U+2060 WORD JOINER into the text handed to
-//! skparagraph. UAX #14 also forbids a break before … and ‥, which JLREQ
-//! allows; U+200B ZERO WIDTH SPACE reopens it. The same transform inserts the JLREQ quarter-em space at
+//! skia-safe exposes no ICU BreakIterator, so the layout policy steers
+//! skparagraph's breaker by editing the text handed to it. U+2060 WORD
+//! JOINER suppresses a break the policy forbids (Japanese kinsoku shori,
+//! Chinese and Korean punctuation, nonbreaking units and annotations).
+//! U+200B ZERO WIDTH SPACE reopens a break that UAX #14 forbids but the
+//! policy allows, such as before … and ‥ in JLREQ, or an emergency break
+//! inside an overlong unit. U+2028 LINE SEPARATOR keeps the original wrap
+//! budget around an indivisible unit that overflows its box. In Japanese
+//! text the same transform inserts the JLREQ quarter-em space at
 //! Japanese/Western boundaries and sets Western word spaces to one third em.
 //!
 //! Inserted characters shift every UTF-16 offset the laid-out paragraph
@@ -35,17 +38,9 @@ pub const WESTERN_WORD_SPACE: char = '\u{2004}';
 /// question or exclamation mark.
 pub const IDEOGRAPHIC_SPACE: char = '\u{3000}';
 
-use super::japanese::{classify, keeps_together_classified, pair_rule, JapaneseClass};
+use super::jlreq::{classify, keeps_together_classified, pair_rule, JlreqClass};
 use super::text_policy::TextLayoutPolicy;
 use unicode_segmentation::UnicodeSegmentation;
-
-pub fn forbidden_at_line_start(c: char) -> bool {
-    classify(c).forbids_line_start()
-}
-
-pub fn forbidden_at_line_end(c: char) -> bool {
-    classify(c).forbids_line_end()
-}
 
 /// Translates between original UTF-16 offsets (the source-of-truth span text)
 /// and layout-text UTF-16 offsets (the text handed to skparagraph).
@@ -92,7 +87,8 @@ impl OffsetMap {
     }
 }
 
-/// Applies the horizontal Japanese layout-text transform: inserts WORD
+/// Applies the horizontal Japanese layout-text transform (the `Japanese`
+/// policy of `apply_policy_with_breaks`): inserts WORD
 /// JOINER wherever a break would violate kinsoku, inserts a quarter-em space
 /// between Japanese letters and Western letters or digits, and sets
 /// breakable ASCII spaces to one third em. Span boundaries are transparent;
@@ -130,7 +126,7 @@ pub fn apply_policy_with_breaks(
     let mut inserted: Vec<usize> = Vec::new();
     let mut out: Vec<String> = Vec::with_capacity(span_texts.len());
     // Base character of the previous grapheme cluster, with its class.
-    let mut prev: Option<(char, JapaneseClass)> = None;
+    let mut prev: Option<(char, JlreqClass)> = None;
     let mut changed = false;
     // Running position in shifted UTF-16 coordinates.
     let mut shifted_pos: usize = 0;
@@ -190,7 +186,7 @@ pub fn apply_policy_with_breaks(
                     WORD_JOINER
                 });
             } else if policy == TextLayoutPolicy::Japanese
-                && current.1 == JapaneseClass::Inseparable
+                && current.1 == JlreqClass::Inseparable
                 && prev.is_some_and(|p| pair_rule(p.1, current.1).break_allowed)
             {
                 insert(BREAK_OPPORTUNITY);
@@ -218,8 +214,8 @@ pub fn apply_policy_with_breaks(
 /// JLREQ §3.2.6 boundary between Japanese text and a Western letter or
 /// digit. Western symbols, brackets and emoji set solid.
 fn is_japanese_western_boundary(
-    (before, before_class): (char, JapaneseClass),
-    (after, after_class): (char, JapaneseClass),
+    (before, before_class): (char, JlreqClass),
+    (after, after_class): (char, JlreqClass),
 ) -> bool {
     (before_class.is_japanese_text() && after_class.is_western_run() && after.is_alphanumeric())
         || (before_class.is_western_run()
@@ -230,16 +226,17 @@ fn is_japanese_western_boundary(
 /// A question or exclamation mark that ends a sentence takes a one-em space
 /// (JLREQ §3.1.6), as in vertical layout.
 fn takes_em_space_after(
-    (_, before_class): (char, JapaneseClass),
-    (_, after_class): (char, JapaneseClass),
+    (_, before_class): (char, JlreqClass),
+    (_, after_class): (char, JlreqClass),
 ) -> bool {
-    before_class == JapaneseClass::DividingPunctuation
+    before_class == JlreqClass::DividingPunctuation
         && pair_rule(before_class, after_class).preferred_em >= 1.0
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::shapes::jlreq::{forbidden_at_line_end, forbidden_at_line_start};
     use skia_safe::textlayout::{
         FontCollection, ParagraphBuilder, ParagraphStyle, TextStyle, TypefaceFontProvider,
     };
@@ -254,30 +251,6 @@ mod tests {
     fn apply(texts: &[&str]) -> (Vec<String>, OffsetMap) {
         apply_to_span_texts_with_ruby_breaks(&strings(texts), &[])
             .expect("expected kinsoku insertions")
-    }
-
-    // -----------------------------------------------------------------
-    // Character classes
-    // -----------------------------------------------------------------
-
-    #[test]
-    fn classes_forbidden_at_start() {
-        for c in "、。」』）ーっゃァッ々・！？".chars() {
-            assert!(forbidden_at_line_start(c), "expected start-forbidden: {c}");
-        }
-        for c in "あ漢A1「（ ".chars() {
-            assert!(!forbidden_at_line_start(c), "not start-forbidden: {c}");
-        }
-    }
-
-    #[test]
-    fn classes_forbidden_at_end() {
-        for c in "「『（［【〈《".chars() {
-            assert!(forbidden_at_line_end(c), "expected end-forbidden: {c}");
-        }
-        for c in "あ漢A1」）。".chars() {
-            assert!(!forbidden_at_line_end(c), "not end-forbidden: {c}");
-        }
     }
 
     // -----------------------------------------------------------------

@@ -2,7 +2,7 @@
 //! Regional presets use CLREQ (2026-10-07); Korean restrictions use KLREQ
 //! (2026-03-21). These are named presets, not universal regional mandates.
 
-use super::japanese::break_allowed_between;
+use super::jlreq::break_allowed_between;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
@@ -143,8 +143,8 @@ impl TextLayoutPolicy {
             && !closing(after)
             && !(self.is_korean() && "‐‑–-・·々〻ー".contains(after))
             && !(self == Self::Japanese
-                && (crate::shapes::kinsoku::forbidden_at_line_start(after)
-                    || crate::shapes::kinsoku::forbidden_at_line_end(before)))
+                && (crate::shapes::jlreq::forbidden_at_line_start(after)
+                    || crate::shapes::jlreq::forbidden_at_line_end(before)))
             && !(before == after && matches!(after, '…' | '‥' | '—' | '―'))
             && !("$＄£€₩￥¥₽₺₫+＋-－−".contains(before) && numeric(after))
             && !(numeric(before) && "%％‰℃℉°".contains(after))

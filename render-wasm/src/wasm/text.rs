@@ -12,9 +12,9 @@ use crate::{with_current_shape, with_current_shape_mut, with_state};
 use crate::error::Error;
 
 pub mod helpers;
-mod japanese_layout;
+mod layout_attrs;
 
-pub use japanese_layout::*;
+pub use layout_attrs::*;
 
 const RAW_SPAN_DATA_SIZE: usize = std::mem::size_of::<RawTextSpan>();
 const RAW_PARAGRAPH_DATA_SIZE: usize = std::mem::size_of::<RawParagraphData>();
@@ -151,7 +151,8 @@ pub struct RawTextSpan {
     ruby_size: u8,
     ruby_align: u8,
     ruby_overhang: u8,
-    ruby_side: u8,
+    /// Bit 0: over/under side of normal ruby. Bit 1: Zhuyin.
+    ruby_flags: u8,
     text_emphasis_position: u8,
     text_underline_position: u8,
     font_size: f32,
@@ -229,8 +230,8 @@ impl From<RawTextSpan> for shapes::TextSpan {
         span.ruby_overhang = RawRubyOverhang::from(value.ruby_overhang).into();
         // Bit 1 selects Zhuyin; bit 0 retains the existing over/under side.
         // Reject unknown flags instead of treating corrupt bytes as Zhuyin.
-        let ruby_flags = if value.ruby_side <= 3 {
-            value.ruby_side
+        let ruby_flags = if value.ruby_flags <= 3 {
+            value.ruby_flags
         } else {
             0
         };
@@ -526,7 +527,7 @@ pub extern "C" fn calculate_position_data() -> *mut u8 {
 mod tests {
     use super::*;
     use crate::shapes::{
-        AnnotationClearance, FontFeatures, RubyAlign, RubyOverhang, RubySide, RubySize,
+        AnnotationClearance, AnnotationSide, FontFeatures, RubyAlign, RubyOverhang, RubySize,
     };
 
     /// The shared CLJS writer writes PARAGRAPH-ATTR-U8-SIZE (20)
@@ -536,11 +537,11 @@ mod tests {
     #[test]
     fn zhuyin_flags_keep_legacy_side_and_header_size() {
         for (flags, zhuyin, side) in [
-            (0, false, RubySide::Over),
-            (1, false, RubySide::Under),
-            (2, true, RubySide::Over),
-            (3, true, RubySide::Under),
-            (255, false, RubySide::Over),
+            (0, false, AnnotationSide::Over),
+            (1, false, AnnotationSide::Under),
+            (2, true, AnnotationSide::Over),
+            (3, true, AnnotationSide::Under),
+            (255, false, AnnotationSide::Over),
         ] {
             let mut bytes = [0u8; std::mem::size_of::<RawTextSpan>()];
             bytes[13] = flags;
@@ -683,7 +684,7 @@ mod tests {
         assert_eq!(span.ruby_size, RubySize::Quarter);
         assert_eq!(span.ruby_align, RubyAlign::SpaceBetween);
         assert_eq!(span.ruby_overhang, RubyOverhang::None);
-        assert_eq!(span.ruby_side, RubySide::Under);
+        assert_eq!(span.ruby_side, AnnotationSide::Under);
     }
 
     #[test]
@@ -702,7 +703,7 @@ mod tests {
         assert_eq!(span.ruby_size, RubySize::Half);
         assert_eq!(span.ruby_align, RubyAlign::SpaceAround);
         assert_eq!(span.ruby_overhang, RubyOverhang::Auto);
-        assert_eq!(span.ruby_side, RubySide::Over);
+        assert_eq!(span.ruby_side, AnnotationSide::Over);
     }
 
     #[test]

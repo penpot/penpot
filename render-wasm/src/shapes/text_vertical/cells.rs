@@ -8,12 +8,12 @@ use unicode_segmentation::UnicodeSegmentation;
 use skia_safe::{textlayout::TypefaceFontProvider, FontMgr, Typeface};
 
 use crate::render::FallbackFonts;
-use crate::shapes::japanese::{classify, JapaneseClass};
-use crate::shapes::kinsoku::{forbidden_at_line_end, forbidden_at_line_start};
-use crate::shapes::text_japanese::{warichu_split_chars, WARICHU_FONT_SCALE};
+use crate::shapes::jlreq::{classify, JlreqClass};
+use crate::shapes::jlreq::{forbidden_at_line_end, forbidden_at_line_start};
+use crate::shapes::text_warichu::{warichu_split_chars, WARICHU_FONT_SCALE};
 use crate::shapes::{FontFeatures, TextCombineUpright, TextSpan};
 
-use super::flow::{minimum_oikomi_extent, FlowCell, FlowScript, FIT_TOLERANCE};
+use super::flow::{min_squeezed_extent, FlowCell, FlowScript, FIT_TOLERANCE};
 use super::font_tables::{upright_baseline, vertical_metrics, vpal_table};
 use super::layout::{CellKind, VerticalCell};
 use super::orientation::{
@@ -50,7 +50,7 @@ pub(super) struct Fonts<'a> {
 /// Centered punctuation (jlreq cl-05 中点類: middle dot, full-width colon and
 /// semicolon), set at the centre of the em box in vertical writing.
 fn is_centered_punctuation(c: char) -> bool {
-    classify(c) == JapaneseClass::MiddleDot
+    classify(c) == JlreqClass::MiddleDot
 }
 
 /// Flow-axis shift that centres a glyph's ink band in its em body.
@@ -212,7 +212,7 @@ impl<'a> SpanCells<'a> {
             column: 0,
             top: 0.0,
             extent,
-            minimum_oikomi_extent: extent,
+            min_squeezed_extent: extent,
             h_advance: self.span.font_size,
             ink_top: 0.0,
             ink_bottom: extent - self.span.letter_spacing,
@@ -432,7 +432,7 @@ impl<'a> SpanCells<'a> {
             let start = piece_base + utf16.at(cluster_utf8);
             let end = piece_base + utf16.at(next_cluster_utf8);
             let cell = VerticalCell {
-                minimum_oikomi_extent: minimum_oikomi_extent(ch, extent, font_size, letter_spacing),
+                min_squeezed_extent: min_squeezed_extent(ch, extent, font_size, letter_spacing),
                 h_advance,
                 ink_top,
                 ink_bottom,
@@ -749,7 +749,7 @@ impl<'a> WarichuNote<'a> {
             if index > 0 {
                 flow.shares_previous_box = true;
                 flow.cell.extent = 0.0;
-                flow.cell.minimum_oikomi_extent = 0.0;
+                flow.cell.min_squeezed_extent = 0.0;
             }
             cells.push(flow);
         }
