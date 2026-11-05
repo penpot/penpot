@@ -585,6 +585,15 @@
                               (grc/rect->center (:selrect (get objects (:id shape-main)))))]
     (reduce #(update %1 %2 gsh/move delta) objects ids)))
 
+(defn- axes-matrix
+  "The directions of the axes of the transform of `shape`, without their
+   lengths: the transform of a tiny shape scales them by its rounding."
+  [shape]
+  (let [{:keys [a b c d]} (or (:transform shape) (gmt/matrix))
+        horizontal (gpt/unit (gpt/point a b))
+        vertical   (gpt/unit (gpt/point c d))]
+    (gmt/matrix (:x horizontal) (:y horizontal) (:x vertical) (:y vertical) 0 0)))
+
 (defn- sync-descendant-orientation
   "A parent turned or moved by sync carries its whole subtree, including
    geometry overrides. Resize remains the job of constraints, not matrix
@@ -606,11 +615,7 @@
         ids      (when changed? (cfh/get-children-ids (:objects container) (:id before)))]
     (if (seq ids)
       (let [orientation (fn [shape]
-                          (let [{:keys [a b c d]} (or (:transform shape) (gmt/matrix))
-                                horizontal (gpt/unit (gpt/point a b))
-                                vertical   (gpt/unit (gpt/point c d))
-                                matrix     (gmt/matrix (:x horizontal) (:y horizontal)
-                                                       (:x vertical) (:y vertical) 0 0)]
+                          (let [matrix (axes-matrix shape)]
                             (assoc shape :transform matrix :transform-inverse (gmt/inverse matrix))))
             turn        (orient-like (orientation before) (orientation after) (gsh/shape->center before))
             delta       (gpt/subtract (gsh/shape->center after) (gsh/shape->center before))
@@ -1708,8 +1713,8 @@
         oriented   (cond-> shape-inst (some? orient) (orient))
         ;; turned alike, both take their place at their first corner
         turned?    (and (some? (:transform placed))
-                        (not (gmt/unit? (:transform placed)))
-                        (gmt/close? (:transform placed) (or (:transform oriented) (gmt/matrix))))
+                        (not (gmt/unit? (axes-matrix placed)))
+                        (gmt/close? (axes-matrix placed) (axes-matrix oriented)))
         position   (fn [shape]
                      (or (when turned? (first (:points shape)))
                          (gpt/point (dm/get-in shape [:selrect :x])
