@@ -61,6 +61,15 @@
       :auth-backend    (:auth-backend profile)
       :from-invitation (some? (:invitation-token profile))})))
 
+(def ^:private iss->origin
+  {:auth         {:source "login"}
+   :verify-email {:source "register" :activation "email-verification"}})
+
+(defn- origin-meta
+  [{:keys [source activation]}]
+  (d/without-nils {::ev/source source
+                   ::ev/activation activation}))
+
 ;; --- EVENT: login
 
 (defn- logged-in
@@ -165,7 +174,7 @@
                                    (rx/filter is-authenticated?)
                                    (rx/map (fn [profile]
                                              (with-meta (merge data profile)
-                                               {::ev/source "login"})))
+                                               (origin-meta {:source "login"}))))
                                    (rx/tap on-success)
                                    (rx/map logged-in)
                                    (rx/observe-on :async)))))
@@ -191,7 +200,7 @@
              (rx/tap on-success)
              (rx/map (fn [profile]
                        (-> profile
-                           (with-meta {::ev/source "login-with-ldap"})
+                           (with-meta (origin-meta {:source "login"}))
                            (logged-in))))
              (rx/catch on-error))))))
 
@@ -223,7 +232,7 @@
 
 (defn login-from-token
   "Used mainly as flow continuation after token validation."
-  [{:keys [profile invitation-token] :as tdata}]
+  [{:keys [profile invitation-token iss] :as tdata}]
   (ptk/reify ::login-from-token
     ptk/WatchEvent
     (watch [_ _ _]
@@ -234,7 +243,7 @@
                                      (assoc :invitation-token invitation-token)
 
                                      :always
-                                     (with-meta {::ev/source "login-with-token"}))]
+                                     (with-meta (origin-meta (iss->origin iss))))]
                        (logged-in profile))))))))
 
 (defn login-from-register
@@ -254,7 +263,7 @@
             (rx/filter is-authenticated?)
             (rx/map (fn [profile]
                       (with-meta profile
-                        {::ev/source "register"})))
+                        (origin-meta {:source "register" :activation "immediate"}))))
             (rx/map logged-in)
             (rx/observe-on :async))))))
 

@@ -30,6 +30,20 @@
                  (da/auth-origin {:source "login"
                                   :auth-backend "foo"}))))
 
+(t/deftest origin-meta-omits-the-fields-that-do-not-apply
+  (let [origin-meta @#'da/origin-meta]
+    (t/is (= {::ev/source "login"}
+             (origin-meta {:source "login"})))
+    (t/is (= {::ev/source "register" ::ev/activation "immediate"}
+             (origin-meta {:source "register" :activation "immediate"})))))
+
+(t/deftest iss-maps-to-an-origin
+  (let [iss->origin @#'da/iss->origin]
+    (t/is (= {:source "login"} (iss->origin :auth)))
+    (t/is (= {:source "register" :activation "email-verification"}
+             (iss->origin :verify-email)))
+    (t/is (nil? (iss->origin :unknown)))))
+
 (t/deftest profile-origin-composes-the-event-props
   (let [profile-origin @#'da/profile-origin]
     (t/is (= {:source "login" :auth-backend "google"
