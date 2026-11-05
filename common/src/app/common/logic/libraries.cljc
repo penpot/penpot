@@ -1788,11 +1788,29 @@
          changes)))
    changes ids))
 
+(defn- turned-like-parent?
+  "Whether `shape` has the size of `main` and the orientation `main` takes
+   when turned from `main-parent` to `parent`, wherever each one is. A
+   main at the root of its page has an unturned parent."
+  [shape main main-parent parent]
+  (let [main-parent (when-not (cfh/root? main-parent) main-parent)
+        flip?       (fn [key] (odd? (count (filter key [main main-parent parent]))))]
+    (and (mth/close? (-> shape :selrect :width) (-> main :selrect :width))
+         (mth/close? (-> shape :selrect :height) (-> main :selrect :height))
+         (gmt/close? (axes-matrix shape)
+                     (gmt/multiply (axes-matrix parent)
+                                   (gmt/inverse (axes-matrix main-parent))
+                                   (axes-matrix main)))
+         (= (boolean (:flip-x shape)) (flip? :flip-x))
+         (= (boolean (:flip-y shape)) (flip? :flip-y)))))
+
 (defn generate-keep-advanced-placement
   "Make authored the geometry of the copy shapes `ids`, whose references
    advanced, when their next sync would place them elsewhere: their copy
-   parent keeps overrides that the new main lacks. Parents come before
-   their children, so each child is checked in its parent's settled frame."
+   parent keeps overrides that the new main lacks. Under a plain parent a
+   copy is placed freely, and only its orientation and size follow its
+   main, turned like that parent. Parents come before their children, so each child is checked in
+   its parent's settled frame."
   [changes container libraries ids]
   (reduce
    (fn [changes id]
@@ -1804,11 +1822,14 @@
                                             :include-deleted? true :with-context? true)
            main-objects (:objects (:container (meta main)))
            main-parent  (get main-objects (:parent-id main))]
-       (if (and (some? (:shape-ref parent)) (some? main-parent)
+       (if (and (some? main)
                 (not (ctk/touched-group? shape :geometry-group))
-                (not (close-geometry? shape (get (placed-like main-objects main-parent parent
-                                                              (authored-constraints objects [id]))
-                                                 (:id main)))))
+                (if (some? (:shape-ref parent))
+                  (and (some? main-parent)
+                       (not (close-geometry? shape (get (placed-like main-objects main-parent parent
+                                                                     (authored-constraints objects [id]))
+                                                        (:id main)))))
+                  (not (turned-like-parent? shape main main-parent parent))))
          (pcb/update-shapes changes [id] #(update % :touched ctk/set-touched-group :geometry-group)
                             {:ignore-touched true})
          changes)))

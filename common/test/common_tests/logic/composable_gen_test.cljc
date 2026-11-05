@@ -1134,3 +1134,21 @@
                                     :grid-square false :library true :rich-variants true :layout-children false
                                     :grid-empty false :layout-copies true :text true}]
                        :ops [[:style 16 8 1] [:edit 11 11 0 0] [:resize 0 0 0 0] [:update-main 4 0 0 0]]}))))
+
+(t/deftest generated-detach-keeps-the-turn-a-swapped-head-had-from-its-position
+  ;; a swapped head turned by its position becomes a copy root of its own
+  ;; unturned component when its copy root is detached; it keeps the turn
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:swap 15 0 0 0] [:nest 7 0 0 0] [:edit 3 0 1 1] [:update-main 3]
+                             [:text-style 18 0 1] [:duplicate 0 0 0 0] [:nest 15 0 0 0] [:switch 6 0 0 0]
+                             [:rotate 19 0 0 0] [:detach 3 0 0 0]]}))))
+
+(t/deftest generated-detach-leaves-a-nested-copy-that-only-takes-its-parents-turn
+  ;; a turned copy root is detached; its nested copy, whose main sits at the
+  ;; root of its page, only shows the turn of its now plain parent
+  (t/is (map? (cg/run {:world [2 2 {:text true :text-styles true :layout nil :layout-children false
+                                    :layout-item-margins false :grid-square false :grid-empty false}]
+                       :ops [[:delete 0] [:restore 0] [:undo 0 0 0 0] [:delete 11] [:restore 11]
+                             [:delete 1 0 0 0] [:delete 3 0 0 0] [:rotate 4 0 0 0] [:detach 11 0 0 0]]}))))
