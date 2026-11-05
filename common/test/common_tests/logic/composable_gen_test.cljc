@@ -1116,3 +1116,12 @@
                                     :layout-item-margins false :grid-square false :rich-variants true
                                     :layout-children false :grid-empty false :layout-copies true :text true}]
                        :ops [[:text 14 0 0 0] [:nest 0 0 0 0] [:transform 0 0 0 18] [:swap 12 0 0 0]]}))))
+
+(t/deftest a-swapped-minimum-size-head-takes-the-first-corner-of-its-turned-place
+  ;; a 0.01 px head swapped into a turned copy; its transform is noisy at
+  ;; that size, and it still takes the first corner of the place it fills
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square true :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:delete 5 0 0 0] [:swap 4 0 0 0] [:nest 0 0 0 0] [:duplicate 1 0 0 0]
+                             [:rotate 1 0 0 0] [:resize 1 0 0 0] [:rotate 4 0 2 0] [:update-main 0 0 0 0]]}))))
