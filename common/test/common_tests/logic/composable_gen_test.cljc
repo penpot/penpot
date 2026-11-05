@@ -1145,6 +1145,14 @@
                              [:text-style 18 0 1] [:duplicate 0 0 0 0] [:nest 15 0 0 0] [:switch 6 0 0 0]
                              [:rotate 19 0 0 0] [:detach 3 0 0 0]]}))))
 
+(t/deftest generated-turned-fill-child-of-a-grid-settles
+  ;; a grid main's child board fills its width and is turned 45 degrees
+  (t/is (map? (cg/run {:world [2 1 {:variants true :text-styles true :library-variants true :stale-libraries true
+                                    :layout :grid :layout-item-margins false :grid-square false :library-depth 1
+                                    :library true :rich-variants true :layout-children true :library-text true
+                                    :grid-empty true :layout-copies true :text true}]
+                       :ops [[:style 13 29 1] [:rotate 5 0 0 0]]}))))
+
 (t/deftest generated-detach-leaves-a-nested-copy-that-only-takes-its-parents-turn
   ;; a turned copy root is detached; its nested copy, whose main sits at the
   ;; root of its page, only shows the turn of its now plain parent

@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.bounds-map :as cgb]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.modif-tree :as cgt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
@@ -21,6 +22,7 @@
    [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.geom.shapes.tree-seq :as cgst]
+   [app.common.math :as mth]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]))
@@ -195,8 +197,19 @@
   ([objects bounds ignore-constraints modif-tree shapes]
    (reduce #(set-modifiers-layout objects bounds ignore-constraints %1 %2) modif-tree shapes)))
 
+(defn- turned-in-parent?
+  "Whether the axes of `shape` are turned against those of `parent`, so that
+   a size along one of them does not follow a size along the other."
+  [shape parent]
+  (let [{:keys [b c]} (gmt/multiply (or (:transform-inverse parent) (gmt/matrix))
+                                    (or (:transform shape) (gmt/matrix)))]
+    (not (and (mth/close? b 0 0.0001) (mth/close? c 0 0.0001)))))
+
 (defn- calc-auto-modifiers
-  "Calculates the modifiers to adjust the bounds for auto-width/auto-height shapes"
+  "Calculates the modifiers to adjust the bounds for auto-width/auto-height
+   shapes. A fill child of a grid takes the size of its content, unless it
+   is turned in the grid: the grid's fill then sizes it along the grid's
+   axes, and its content's size counts as its minimum there."
   [objects bounds parent]
   (let [parent-id     (:id parent)
         parent-bounds (get bounds parent-id)
@@ -221,15 +234,14 @@
                       (remove ctl/position-absolute?)
                       (remove gco/invalid-geometry?))
 
+        grid-fill?   (and (ctl/grid-layout? objects (:parent-id parent))
+                          (not (turned-in-parent? parent (get objects (:parent-id parent)))))
         auto?        (or (ctl/auto? parent)
-                         (and (ctl/grid-layout? objects (:parent-id parent))
-                              (ctl/fill? parent)))
+                         (and grid-fill? (ctl/fill? parent)))
         auto-width?  (or (ctl/auto-width? parent)
-                         (and (ctl/grid-layout? objects (:parent-id parent))
-                              (ctl/fill-width? parent)))
+                         (and grid-fill? (ctl/fill-width? parent)))
         auto-height? (or (ctl/auto-height? parent)
-                         (and (ctl/grid-layout? objects (:parent-id parent))
-                              (ctl/fill-height? parent)))
+                         (and grid-fill? (ctl/fill-height? parent)))
 
         content-bounds
         (when (and (d/not-empty? children) auto?)
