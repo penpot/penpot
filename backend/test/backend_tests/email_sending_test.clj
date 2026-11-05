@@ -15,6 +15,7 @@
    [clojure.test :as t]
    [cuerdas.core :as str]
    [integrant.core :as ig]
+   [lambdaisland.uri :as u]
    [promesa.core :as p]))
 
 (t/use-fixtures :once th/state-init)
@@ -211,8 +212,13 @@
             rendered-html (count (get-in rendered [:body "text/html"]))]
         (t/is (< stored-size rendered-html))))
     (t/testing "the worker renders the same mail from the stored recipe"
-      (t/is (= rendered ((get emails/templates (:template params))
-                         (dissoc params :template)))))))
+      (t/is (= rendered (emails/render-template (:template params)
+                                                (dissoc params :template)))))))
+
+(defn- decode-template-data
+  [params]
+  (let [decode (get-in emails/templates [(:template params) ::emails/decode])]
+    (decode (dissoc params :template))))
 
 (t/deftest send-template-roundtrips-uuids-and-profile
   (let [sent     (atom nil)
@@ -227,8 +233,9 @@
                                                   ::emails/template "join-team"))
         params   (jobs/decode-params job-def (:params (th/db-get :job {:id job-id})))]
     (t/testing "uuids survive the plain-JSON queue roundtrip typed"
-      (t/is (uuid? (:team-id params)))
-      (t/is (= team-id (:team-id params))))
+      (let [data (decode-template-data params)]
+        (t/is (uuid? (:team-id data)))
+        (t/is (= team-id (:team-id data)))))
     (t/testing "the handler renders and delivers the mail"
       ((::jobs/handler job-def) nil params)
       (t/is (= (:subject (emails/render emails/join-team recipe))
@@ -248,11 +255,50 @@
                                                   ::emails/template "feedback"))
         params   (jobs/decode-params job-def (:params (th/db-get :job {:id job-id})))]
     (t/testing "nested profile id survives the roundtrip typed"
-      (t/is (uuid? (get-in params [:profile :id]))))
+      (t/is (uuid? (get-in (decode-template-data params) [:profile :id]))))
     (t/testing "the handler renders the feedback mail"
       ((::jobs/handler job-def) nil params)
       (t/is (= (:subject (emails/render emails/user-feedback recipe))
                (:subject @sent))))))
+
+(def ^:private organization-with-uris
+  {:id (random-uuid)
+   :name "Acme Inc"
+   :initials "AI"
+   :logo (u/uri "https://example.com/assets/by-id/logo")
+   :avatar-bg-url (u/uri "https://example.com/images/avatar-bg.jpg")
+   :sso-active false})
+
+(t/deftest send-template-roundtrips-organization-uris
+  (doseq [[template factory recipe]
+          [["invite-to-team" emails/invite-to-team
+            {:to "invitee@example.com"
+             :public-uri (cf/get :public-uri)
+             :invited-by "Owner User"
+             :team "Design Team"
+             :organization organization-with-uris
+             :token "test-token"}]
+           ["invite-to-organization" emails/invite-to-organization
+            {:to "invitee@example.com"
+             :public-uri (cf/get :public-uri)
+             :invited-by "Owner User"
+             :user-name "Invitee"
+             :organization organization-with-uris
+             :token "test-token"}]
+           ["renewal-notice" emails/renewal-notice
+            {:to "billing@example.com"
+             :public-uri (cf/get :public-uri)
+             :user-name "Billing"
+             :renewal-date "2026-12-01"
+             :estimated-amount "$10.00"
+             :organizations [organization-with-uris]}]]]
+    (t/testing template
+      (let [sent    (atom nil)
+            job-def (templated-job-def (fn [_ email] (reset! sent email)))
+            job-id  (submit-templated job-def (assoc recipe ::emails/template template))
+            params  (jobs/decode-params job-def (:params (th/db-get :job {:id job-id})))]
+        ((::jobs/handler job-def) nil params)
+        (t/is (= (emails/render factory recipe) @sent))))))
 
 (t/deftest send-templated-mail-handler-rejects-unknown-template
   (let [job-def (templated-job-def (fn [_] nil))

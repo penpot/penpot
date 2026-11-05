@@ -401,7 +401,7 @@
    [:feedback-subject ::sm/text]
    [:feedback-type ::sm/text]
    [:feedback-content ::sm/text]
-   [:profile :map]])
+   [:profile [:map [:id ::sm/uuid]]]])
 
 (def user-feedback
   "A profile feedback email."
@@ -604,33 +604,52 @@
 ;; TEMPLATED SEND (render inside the worker)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Registry of template id to factory. This map is the single source
-;; of truth for templated mail: `send-template` validates membership
-;; here before submitting (so a job that could never be rendered is
-;; rejected up front), and the worker resolves the factory here to
-;; render. Callers pass the id string itself (e.g. `"invite-to-team"`);
-;; keys stay `::eml/`-namespaced and values stay plain data, following
-;; the params convention. Plain strings are also plain-JSON safe for
-;; the `params` column.
-(def templates
-  {"feedback"                             user-feedback
-   "register"                             register
-   "password-recovery"                    password-recovery
-   "password-changed"                     password-changed
-   "change-email"                         change-email
-   "invite-to-team"                       invite-to-team
-   "invite-to-organization"               invite-to-organization
-   "organization-setup-sso"               organization-setup-sso
-   "renewal-notice"                       renewal-notice
-   "join-team"                            join-team
-   "request-file-access"                  request-file-access
-   "request-file-access-yourpenpot"       request-file-access-yourpenpot
-   "request-file-access-yourpenpot-view"  request-file-access-yourpenpot-view
-   "request-team-access"                  request-team-access
-   "comment-mention"                      comment-mention
-   "comment-thread"                       comment-thread
-   "comment-notification"                 comment-notification})
+(defn- template-entry
+  "Registry entry for a templated email: the factory that renders it and
+  the JSON encoder/decoder of its data schema. The job `params` column
+  is plain JSON, so values without a JSON form (e.g. the URIs of an
+  organization) are encoded to strings before submit and decoded back
+  to their types before the factory validates and renders them."
+  [factory schema]
+  {::factory factory
+   ::encode  (sm/encoder schema sm/json-transformer)
+   ::decode  (sm/decoder schema sm/json-transformer)})
 
+;; Registry of template id to entry. This map is the single source of
+;; truth for templated mail: `send-template` validates membership and
+;; encodes the data here before submitting (so a job that could never
+;; be rendered is rejected up front), and the worker decodes the data
+;; and renders it with the entry factory. Callers pass the id string
+;; itself (e.g. `"invite-to-team"`); keys stay `::eml/`-namespaced and
+;; values stay plain data, following the params convention.
+(def templates
+  {"feedback"                            (template-entry user-feedback schema:feedback)
+   "register"                            (template-entry register schema:register)
+   "password-recovery"                   (template-entry password-recovery schema:password-recovery)
+   "password-changed"                    (template-entry password-changed schema:password-changed)
+   "change-email"                        (template-entry change-email schema:change-email)
+   "invite-to-team"                      (template-entry invite-to-team schema:invite-to-team)
+   "invite-to-organization"              (template-entry invite-to-organization schema:invite-to-organization)
+   "organization-setup-sso"              (template-entry organization-setup-sso schema:organization-setup-sso)
+   "renewal-notice"                      (template-entry renewal-notice schema:renewal-notice)
+   "join-team"                           (template-entry join-team schema:join-team)
+   "request-file-access"                 (template-entry request-file-access schema:request-file-access)
+   "request-file-access-yourpenpot"      (template-entry request-file-access-yourpenpot schema:request-file-access)
+   "request-file-access-yourpenpot-view" (template-entry request-file-access-yourpenpot-view schema:request-file-access)
+   "request-team-access"                 (template-entry request-team-access schema:request-team-access)
+   "comment-mention"                     (template-entry comment-mention schema:comment-mention)
+   "comment-thread"                      (template-entry comment-thread schema:comment-thread)
+   "comment-notification"                (template-entry comment-notification schema:comment-notification)})
+
+(defn render-template
+  "Render the templated email `template-id` from its JSON-decoded data,
+  as the worker does before sending it."
+  [template-id params]
+  (let [{:keys [::factory ::decode]} (get templates template-id)]
+    (factory (decode params))))
+
+;; Envelope of the job params only: the template data travels encoded
+;; by the template schema and is decoded by `render-template`.
 (def ^:private schema:templated-params
   [:map {:title "Templated Email Params"}
    [:template (into [:enum] (sort (keys templates)))]
@@ -640,12 +659,6 @@
    [:lang {:optional true} ::sm/text]
    [:priority {:optional true} [:enum :high :low]]
    [:extra-data {:optional true} ::sm/text]
-   [:team-id {:optional true} ::sm/uuid]
-   [:file-id {:optional true} ::sm/uuid]
-   [:page-id {:optional true} ::sm/uuid]
-   [:profile {:optional true}
-    [:map
-     [:id ::sm/uuid]]]
    [:attachments {:optional true}
     [:map-of :string :string]]])
 
@@ -670,12 +683,14 @@
     (ex/raise :type :validation
               :code :unknown-email-template
               :hint (str/ffmt "unknown email template: %", template)))
-  (let [recipe (-> params
+  (let [encode (get-in templates [template ::encode])
+        recipe (-> params
                    (dissoc ::reuse-conn ::template)
                    ;; Present-but-nil extras (e.g. `:file-id` when there is
                    ;; no file) would fail the job schema, while the old
                    ;; inline render simply ignored them.
-                   (d/without-nils))]
+                   (d/without-nils)
+                   (encode))]
     (jobs/submit (cond-> (dissoc cfg ::db/conn)
                    reuse-conn (assoc ::db/conn (::db/conn cfg)))
                  {::jobs/name :send-templated-mail
@@ -695,13 +710,12 @@
   {::jobs/name      :send-templated-mail
    ::jobs/schema    schema:templated-params
    ::jobs/handler   (fn [context params]
-                      (let [template-id (:template params)
-                            factory     (get templates template-id)]
-                        (when-not factory
+                      (let [template-id (:template params)]
+                        (when-not (contains? templates template-id)
                           (ex/raise :type :internal
                                     :code :unknown-email-template
                                     :template-id template-id))
-                        (sendmail context (factory (dissoc params :template)))))
+                        (sendmail context (render-template template-id (dissoc params :template)))))
    ::jobs/decoder   (sm/decoder schema:templated-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:templated-params)})
 
