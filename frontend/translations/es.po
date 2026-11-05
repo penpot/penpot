@@ -10117,11 +10117,11 @@ msgid "dashboard.text-layout.title"
 msgstr "Disposición del texto por idioma"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.profile-japanese"
+msgid "workspace.options.text-options.language-japanese"
 msgstr "Japonés"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.profile-korean"
+msgid "workspace.options.text-options.language-korean"
 msgstr "Coreano"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
@@ -10137,19 +10137,19 @@ msgid "workspace.options.text-options.korean-wrap-spaces-only"
 msgstr "En los espacios (experimental)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.profile-chinese-mainland-simplified"
+msgid "workspace.options.text-options.language-chinese-mainland-simplified"
 msgstr "China continental (simplificado)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.profile-chinese-mainland-traditional"
+msgid "workspace.options.text-options.language-chinese-mainland-traditional"
 msgstr "China continental (tradicional)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.profile-chinese-taiwan"
+msgid "workspace.options.text-options.language-chinese-taiwan"
 msgstr "Taiwán"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.profile-chinese-hong-kong"
+msgid "workspace.options.text-options.language-chinese-hong-kong"
 msgstr "Hong Kong"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs

@@ -822,8 +822,8 @@
   [para]
   (apply + (map (fn [span] (count (:text span))) (:children para))))
 
-(defn- span-japanese-styles
-  "Japanese span attributes with their defaults filled in. Every selection
+(defn- span-cjk-styles
+  "CJK span attributes with their defaults filled in. Every selection
    snapshot carries all of them, so moving onto an unstyled span resets the
    controls."
   [span]
@@ -902,8 +902,8 @@
              text (apply str (map :text (:children paragraph)))]
          (cjk/zhuyin-base? (subs text start-offset end-offset)))))
 
-(defn selection-japanese-styles
-  "Japanese span styles of a WASM selection, read from the cached content.
+(defn selection-cjk-styles
+  "CJK span styles of a WASM selection, read from the cached content.
    A range with differing values reports :multiple; a caret reports its
    span's style."
   [content selection]
@@ -921,12 +921,12 @@
             (selected-spans paragraphs sel-range))]
       (when (seq spans)
         (reduce (fn [result span]
-                  (merge-selection-styles result (span-japanese-styles span)))
+                  (merge-selection-styles result (span-cjk-styles span)))
                 {}
                 spans)))))
 
 (defn selection-paragraph-styles
-  "Profile attrs of the selected paragraphs, including unset and mixed values."
+  "Language attrs of the selected paragraphs, including unset and mixed values."
   [content selection]
   (when (and content selection)
     (let [{:keys [start-para end-para]} (normalize-selection selection)
@@ -942,18 +942,18 @@
                        :multiple
                        value))))
           result
-          [:text-language :korean-wrap]))
+          cjk/language-paragraph-attrs))
        {}
        (subvec paragraphs start-para (inc end-para))))))
 
-(defn text-editor-get-current-japanese-styles
-  "Japanese span styles and paragraph profiles of the active editor selection."
+(defn text-editor-get-current-cjk-styles
+  "CJK span styles and paragraph language attrs of the active editor selection."
   []
   (when (wasm/ready?)
     (let [shape-id  (text-editor-get-active-shape-id)
           selection (text-editor-get-selection)
           content (get-cached-content shape-id)]
-      (merge (selection-japanese-styles content selection)
+      (merge (selection-cjk-styles content selection)
              (selection-paragraph-styles content selection)))))
 
 (defn- annotation-style-range

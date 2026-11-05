@@ -92,15 +92,15 @@
           (recur (when continue? (rest styles)) taking? to result))
         result))))
 
-(def ^:private japanese-range-defaults
+(def ^:private cjk-range-defaults
   ;; A range without ruby reports null to plugins.
   (assoc cjk/span-attr-defaults :ruby nil))
 
-(defn- shape-japanese-value
-  "Value of a Japanese span `attr` over a whole text shape proxy, with unset
+(defn- shape-cjk-value
+  "Value of a CJK span `attr` over a whole text shape proxy, with unset
    spans at their default: 'mixed' when spans differ."
   [shape-proxy attr]
-  (let [default (get japanese-range-defaults attr)
+  (let [default (get cjk-range-defaults attr)
         values  (->> (-> shape-proxy u/proxy->shape :content)
                      (txt/node-seq txt/is-text-node?)
                      (map #(get % attr default)))]
@@ -112,16 +112,16 @@
   [shape-proxy attr]
   (-> shape-proxy u/proxy->shape :content (cjk/whole-shape-attr attr) (d/nilv (cjk/enum-default attr))))
 
-(defn- range-japanese-value
-  "Value of a Japanese span `attr` over a text range proxy's characters."
+(defn- range-cjk-value
+  "Value of a CJK span `attr` over a text range proxy's characters."
   [range-proxy start end attr]
-  (let [default (get japanese-range-defaults attr)]
+  (let [default (get cjk-range-defaults attr)]
     (->> (-> range-proxy u/proxy->shape :content (content-range->text+styles start end))
          (map #(get % attr default))
          (u/mixed-value))))
 
 (defn- enum-value?
-  "Validator accepting the values of the Japanese layout enum `attr`."
+  "Validator accepting the values of the CJK layout enum `attr`."
   [attr]
   (fn [value]
     (cjk/valid-enum-value? attr value)))
@@ -477,72 +477,72 @@
 
     :fontFeatures
     {:this true
-     :get (fn [self] (range-japanese-value self start end :font-features))
+     :get (fn [self] (range-cjk-value self start end :font-features))
      :set (range-attr-setter plugin-id page-id id start end :fontFeatures :font-features (enum-value? :font-features))}
 
     :textCombineUpright
     {:this true
-     :get (fn [self] (range-japanese-value self start end :text-combine-upright))
+     :get (fn [self] (range-cjk-value self start end :text-combine-upright))
      :set (range-attr-setter plugin-id page-id id start end :textCombineUpright :text-combine-upright (enum-value? :text-combine-upright))}
 
     :textEmphasis
     {:this true
-     :get (fn [self] (range-japanese-value self start end :text-emphasis))
+     :get (fn [self] (range-cjk-value self start end :text-emphasis))
      :set (range-attr-setter plugin-id page-id id start end :textEmphasis :text-emphasis (enum-value? :text-emphasis))}
 
     :textEmphasisPosition
     {:this true
-     :get (fn [self] (range-japanese-value self start end :text-emphasis-position))
+     :get (fn [self] (range-cjk-value self start end :text-emphasis-position))
      :set (range-attr-setter plugin-id page-id id start end :textEmphasisPosition :text-emphasis-position (enum-value? :text-emphasis-position))}
 
     :textUnderlinePosition
     {:this true
-     :get (fn [self] (range-japanese-value self start end :text-underline-position))
+     :get (fn [self] (range-cjk-value self start end :text-underline-position))
      :set (range-attr-setter plugin-id page-id id start end :textUnderlinePosition :text-underline-position (enum-value? :text-underline-position))}
 
     :warichu
     {:this true
-     :get (fn [self] (range-japanese-value self start end :warichu))
+     :get (fn [self] (range-cjk-value self start end :warichu))
      :set (range-annotation-setter plugin-id page-id id start end :warichu :warichu (enum-value? :warichu))}
 
     :annotationClearance
     {:this true
-     :get (fn [self] (range-japanese-value self start end :annotation-clearance))
+     :get (fn [self] (range-cjk-value self start end :annotation-clearance))
      :set (range-attr-setter plugin-id page-id id start end :annotationClearance :annotation-clearance (enum-value? :annotation-clearance))}
 
     :ruby
     {:this true
-     :get (fn [self] (range-japanese-value self start end :ruby))
+     :get (fn [self] (range-cjk-value self start end :ruby))
      :set (range-annotation-setter plugin-id page-id id start end :ruby :ruby optional-string?)}
 
     :rubyHidden
     {:this true
-     :get (fn [self] (range-japanese-value self start end :ruby-hidden))
+     :get (fn [self] (range-cjk-value self start end :ruby-hidden))
      :set (range-attr-setter plugin-id page-id id start end :rubyHidden :ruby-hidden boolean?)}
 
     :rubyZhuyin
     {:this true
-     :get (fn [self] (range-japanese-value self start end :ruby-zhuyin))
+     :get (fn [self] (range-cjk-value self start end :ruby-zhuyin))
      :set (range-attr-setter plugin-id page-id id start end :rubyZhuyin :ruby-zhuyin boolean?)}
 
     :rubySize
     {:this true
-     :get (fn [self] (range-japanese-value self start end :ruby-size))
+     :get (fn [self] (range-cjk-value self start end :ruby-size))
      :set (range-attr-setter plugin-id page-id id start end :rubySize :ruby-size (enum-value? :ruby-size))}
 
     :rubyAlign
     {:this true
-     :get (fn [self] (range-japanese-value self start end :ruby-align))
+     :get (fn [self] (range-cjk-value self start end :ruby-align))
      :set (range-attr-setter plugin-id page-id id start end :rubyAlign :ruby-align (enum-value? :ruby-align))}
 
     :rubyOverhang
     {:this true
-     :get (fn [self] (range-japanese-value self start end :ruby-overhang))
+     :get (fn [self] (range-cjk-value self start end :ruby-overhang))
      :set (range-attr-setter plugin-id page-id id start end :rubyOverhang :ruby-overhang (enum-value? :ruby-overhang))}
 
     :rubySide
     {:this true
-     :get (fn [self] (range-japanese-value self start end :ruby-side))
+     :get (fn [self] (range-cjk-value self start end :ruby-side))
      :set (range-attr-setter plugin-id page-id id start end :rubySide :ruby-side (enum-value? :ruby-side))}
 
     :lang
@@ -979,59 +979,59 @@
       :set (shape-attr-setter plugin-id page-id :textOrientation :text-orientation (enum-value? :text-orientation))}
 
      {:name "textCombineUpright"
-      :get #(shape-japanese-value % :text-combine-upright)
+      :get #(shape-cjk-value % :text-combine-upright)
       :set (shape-attr-setter plugin-id page-id :textCombineUpright :text-combine-upright (enum-value? :text-combine-upright))}
 
      {:name "textEmphasis"
-      :get #(shape-japanese-value % :text-emphasis)
+      :get #(shape-cjk-value % :text-emphasis)
       :set (shape-attr-setter plugin-id page-id :textEmphasis :text-emphasis (enum-value? :text-emphasis))}
 
      {:name "textEmphasisPosition"
-      :get #(shape-japanese-value % :text-emphasis-position)
+      :get #(shape-cjk-value % :text-emphasis-position)
       :set (shape-attr-setter plugin-id page-id :textEmphasisPosition :text-emphasis-position (enum-value? :text-emphasis-position))}
 
      {:name "textUnderlinePosition"
-      :get #(shape-japanese-value % :text-underline-position)
+      :get #(shape-cjk-value % :text-underline-position)
       :set (shape-attr-setter plugin-id page-id :textUnderlinePosition :text-underline-position (enum-value? :text-underline-position))}
 
      {:name "warichu"
-      :get #(shape-japanese-value % :warichu)
+      :get #(shape-cjk-value % :warichu)
       :set (shape-annotation-setter plugin-id page-id :warichu :warichu (enum-value? :warichu))}
 
      {:name "fontFeatures"
-      :get #(shape-japanese-value % :font-features)
+      :get #(shape-cjk-value % :font-features)
       :set (shape-attr-setter plugin-id page-id :fontFeatures :font-features (enum-value? :font-features))}
 
      {:name "annotationClearance"
-      :get #(shape-japanese-value % :annotation-clearance)
+      :get #(shape-cjk-value % :annotation-clearance)
       :set (shape-attr-setter plugin-id page-id :annotationClearance :annotation-clearance (enum-value? :annotation-clearance))}
 
      {:name "ruby"
-      :get #(shape-japanese-value % :ruby)
+      :get #(shape-cjk-value % :ruby)
       :set (shape-annotation-setter plugin-id page-id :ruby :ruby optional-string?)}
 
      {:name "rubyHidden"
-      :get #(shape-japanese-value % :ruby-hidden)
+      :get #(shape-cjk-value % :ruby-hidden)
       :set (shape-attr-setter plugin-id page-id :rubyHidden :ruby-hidden boolean?)}
 
      {:name "rubyZhuyin"
-      :get #(shape-japanese-value % :ruby-zhuyin)
+      :get #(shape-cjk-value % :ruby-zhuyin)
       :set (shape-attr-setter plugin-id page-id :rubyZhuyin :ruby-zhuyin boolean?)}
 
      {:name "rubySize"
-      :get #(shape-japanese-value % :ruby-size)
+      :get #(shape-cjk-value % :ruby-size)
       :set (shape-attr-setter plugin-id page-id :rubySize :ruby-size (enum-value? :ruby-size))}
 
      {:name "rubyAlign"
-      :get #(shape-japanese-value % :ruby-align)
+      :get #(shape-cjk-value % :ruby-align)
       :set (shape-attr-setter plugin-id page-id :rubyAlign :ruby-align (enum-value? :ruby-align))}
 
      {:name "rubyOverhang"
-      :get #(shape-japanese-value % :ruby-overhang)
+      :get #(shape-cjk-value % :ruby-overhang)
       :set (shape-attr-setter plugin-id page-id :rubyOverhang :ruby-overhang (enum-value? :ruby-overhang))}
 
      {:name "rubySide"
-      :get #(shape-japanese-value % :ruby-side)
+      :get #(shape-cjk-value % :ruby-side)
       :set (shape-attr-setter plugin-id page-id :rubySide :ruby-side (enum-value? :ruby-side))}
 
      {:name "lang"

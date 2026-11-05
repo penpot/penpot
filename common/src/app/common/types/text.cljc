@@ -108,8 +108,8 @@
   (d/concat-vec
    text-align-attrs
    text-direction-attrs
-   [:text-language :korean-wrap]
-   cjk/whole-shape-paragraph-attrs))
+   cjk/language-paragraph-attrs
+   cjk/vertical-writing-attrs))
 
 (def text-node-attrs
   (d/concat-vec

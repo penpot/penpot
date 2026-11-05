@@ -9,11 +9,36 @@
 @use "ds/_borders.scss" as *;
 @use "ds/spacing.scss" as *;
 
-.writing-mode-options,
-.text-orientation-options,
-.text-combine-upright-options,
-.warichu-options {
+.radio-options {
   block-size: $sz-32;
+}
+
+.icon-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.option-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.option-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  align-items: center;
+  gap: var(--sp-s);
+  inline-size: 100%;
+  min-block-size: $sz-32;
+}
+
+.option-label {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
 }
 
 .ruby-advanced-options {
@@ -39,40 +64,4 @@
   padding: var(--sp-xs);
   border: $b-1 solid var(--color-background-quaternary);
   border-radius: $br-8;
-}
-
-.japanese-layout-options,
-.japanese-layout-controls {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-xs);
-}
-
-.japanese-layout-options {
-  padding-block: var(--sp-xs);
-}
-
-.ruby-hidden-option {
-  min-block-size: $sz-32;
-}
-
-.japanese-icon-options {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-xs);
-}
-
-.japanese-select-option {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
-  align-items: center;
-  gap: var(--sp-s);
-  inline-size: 100%;
-}
-
-.japanese-option-label {
-  @include t.use-typography("body-small");
-
-  color: var(--color-foreground-secondary);
 }

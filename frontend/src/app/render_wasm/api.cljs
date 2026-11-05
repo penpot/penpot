@@ -431,7 +431,7 @@
           (when (= ev TEXT_EDITOR_EVENT_STYLES_CHANGED)
             (let [current-styles (merge
                                   (text-editor/text-editor-get-current-styles)
-                                  (text-editor/text-editor-get-current-japanese-styles))
+                                  (text-editor/text-editor-get-current-cjk-styles))
                   shape-id (text-editor/text-editor-get-active-shape-id)]
               ;; Keep the caret color matching the text at the caret position.
               (text-editor/text-editor-apply-caret-color (:fills current-styles))

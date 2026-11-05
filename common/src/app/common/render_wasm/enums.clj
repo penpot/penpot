@@ -49,6 +49,7 @@
    ["ruby-align" "RawRubyAlign"]
    ["ruby-overhang" "RawRubyOverhang"]
    ["ruby-side" "RawRubySide"]
+   ["korean-wrap" "RawKoreanWrap"]
    ["line-adjustment" "RawLineAdjustment"]
    ["text-decoration" "RawTextDecoration"]
    ["text-transform" "RawTextTransform"]

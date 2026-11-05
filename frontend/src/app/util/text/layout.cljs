@@ -34,39 +34,50 @@
        :multiple
        (first languages)))))
 
+(def ^:private language-groups
+  "Languages a text can take, grouped as the language dropdown lists them:
+  `[tag label-key]` pairs per group."
+  [{:id "japanese"
+    :label "workspace.options.text-options.language-group-japanese"
+    :languages [["ja" "workspace.options.text-options.language-japanese"]]}
+   {:id "korean"
+    :label "workspace.options.text-options.language-group-korean"
+    :languages [["ko" "workspace.options.text-options.language-korean"]]}
+   {:id "chinese"
+    :label "workspace.options.text-options.language-group-chinese"
+    ;; Variant names, shown as "Chinese · <variant>" outside the group.
+    :variants true
+    :languages [["zh-Hans-CN" "workspace.options.text-options.language-chinese-mainland-simplified"]
+                ["zh-Hant-CN" "workspace.options.text-options.language-chinese-mainland-traditional"]
+                ["zh-Hant-TW" "workspace.options.text-options.language-chinese-taiwan"]
+                ["zh-Hant-HK" "workspace.options.text-options.language-chinese-hong-kong"]]}])
+
+(def ^:private language-entries
+  (into {}
+        (for [{:keys [variants languages]} language-groups
+              [tag label] languages]
+          [tag {:label label :variant variants}])))
+
 (defn language-label
   "Name of the language `tag` in the Language panel row: \"Mixed\" for
   `:multiple`, the tag itself when it is not one of the listed languages."
   [tag]
-  (case tag
-    :multiple    (tr "settings.multiple")
-    "ja"         (tr "workspace.options.text-options.profile-japanese")
-    "ko"         (tr "workspace.options.text-options.profile-korean")
-    "zh-Hans-CN" (tr "workspace.options.text-options.language-chinese-variant"
-                     (tr "workspace.options.text-options.profile-chinese-mainland-simplified"))
-    "zh-Hant-CN" (tr "workspace.options.text-options.language-chinese-variant"
-                     (tr "workspace.options.text-options.profile-chinese-mainland-traditional"))
-    "zh-Hant-TW" (tr "workspace.options.text-options.language-chinese-variant"
-                     (tr "workspace.options.text-options.profile-chinese-taiwan"))
-    "zh-Hant-HK" (tr "workspace.options.text-options.language-chinese-variant"
-                     (tr "workspace.options.text-options.profile-chinese-hong-kong"))
-    tag))
+  (if (= :multiple tag)
+    (tr "settings.multiple")
+    (if-let [{:keys [label variant]} (get language-entries tag)]
+      (if variant
+        (tr "workspace.options.text-options.language-chinese-variant" (tr label))
+        (tr label))
+      tag)))
 
 (defn language-options
   "Rows of the language dropdown: one group per language, the `selected`
   tag checked."
   [selected]
-  (let [option (fn [tag label]
-                 {:id tag :label label :selected (= selected tag)})]
-    [{:id "japanese" :header true
-      :label (tr "workspace.options.text-options.language-group-japanese")}
-     (option "ja" (tr "workspace.options.text-options.profile-japanese"))
-     {:id "korean" :header true
-      :label (tr "workspace.options.text-options.language-group-korean")}
-     (option "ko" (tr "workspace.options.text-options.profile-korean"))
-     {:id "chinese" :header true
-      :label (tr "workspace.options.text-options.language-group-chinese")}
-     (option "zh-Hans-CN" (tr "workspace.options.text-options.profile-chinese-mainland-simplified"))
-     (option "zh-Hant-CN" (tr "workspace.options.text-options.profile-chinese-mainland-traditional"))
-     (option "zh-Hant-TW" (tr "workspace.options.text-options.profile-chinese-taiwan"))
-     (option "zh-Hant-HK" (tr "workspace.options.text-options.profile-chinese-hong-kong"))]))
+  (into []
+        (mapcat (fn [{:keys [id label languages]}]
+                  (into [{:id id :header true :label (tr label)}]
+                        (map (fn [[tag label]]
+                               {:id tag :label (tr label) :selected (= selected tag)}))
+                        languages)))
+        language-groups))

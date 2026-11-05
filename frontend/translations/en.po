@@ -10198,11 +10198,11 @@ msgid "workspace.versions.warning.text"
 msgstr "Autosaved versions will be kept for %s days."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.profile-japanese"
+msgid "workspace.options.text-options.language-japanese"
 msgstr "Japanese"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.profile-korean"
+msgid "workspace.options.text-options.language-korean"
 msgstr "Korean"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
@@ -10218,19 +10218,19 @@ msgid "workspace.options.text-options.korean-wrap-spaces-only"
 msgstr "At spaces (experimental)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.profile-chinese-mainland-simplified"
+msgid "workspace.options.text-options.language-chinese-mainland-simplified"
 msgstr "Mainland China (Simplified)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.profile-chinese-mainland-traditional"
+msgid "workspace.options.text-options.language-chinese-mainland-traditional"
 msgstr "Mainland China (Traditional)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.profile-chinese-taiwan"
+msgid "workspace.options.text-options.language-chinese-taiwan"
 msgstr "Taiwan"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.profile-chinese-hong-kong"
+msgid "workspace.options.text-options.language-chinese-hong-kong"
 msgstr "Hong Kong"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs

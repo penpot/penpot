@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.types.text :as txt]
+   [app.common.types.text.cjk-layout :as cjk]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.workspace.libraries :as dwl]
@@ -266,6 +267,14 @@
   (->> (:typography tokens)
        (d/seek #(= (:id %) (uuid/uuid id)))))
 
+;; CJK attrs the text options show: language, writing mode, readings and
+;; the other span, paragraph and root attrs.
+(def ^:private cjk-option-attrs
+  (d/concat-vec cjk/language-paragraph-attrs
+                cjk/vertical-writing-attrs
+                cjk/span-attrs
+                [:line-adjustment]))
+
 (defn- check-props [n-props o-props]
   (let [o-values      (unchecked-get o-props "values")
         n-values      (unchecked-get n-props "values")
@@ -314,42 +323,6 @@
                      (get n-values :text-decoration))
          (identical? (get o-values :text-direction)
                      (get n-values :text-direction))
-         (identical? (get o-values :text-language)
-                     (get n-values :text-language))
-         (identical? (get o-values :korean-wrap)
-                     (get n-values :korean-wrap))
-         (identical? (get o-values :writing-mode)
-                     (get n-values :writing-mode))
-         (identical? (get o-values :text-orientation)
-                     (get n-values :text-orientation))
-         (identical? (get o-values :text-combine-upright)
-                     (get n-values :text-combine-upright))
-         (identical? (get o-values :warichu)
-                     (get n-values :warichu))
-         (identical? (get o-values :font-features)
-                     (get n-values :font-features))
-         (identical? (get o-values :annotation-clearance)
-                     (get n-values :annotation-clearance))
-         (identical? (get o-values :text-emphasis)
-                     (get n-values :text-emphasis))
-         (identical? (get o-values :text-emphasis-position)
-                     (get n-values :text-emphasis-position))
-         (identical? (get o-values :text-underline-position)
-                     (get n-values :text-underline-position))
-         (identical? (get o-values :ruby)
-                     (get n-values :ruby))
-         (identical? (get o-values :ruby-zhuyin)
-                     (get n-values :ruby-zhuyin))
-         (identical? (get o-values :ruby-hidden)
-                     (get n-values :ruby-hidden))
-         (identical? (get o-values :ruby-size)
-                     (get n-values :ruby-size))
-         (identical? (get o-values :ruby-align)
-                     (get n-values :ruby-align))
-         (identical? (get o-values :ruby-overhang)
-                     (get n-values :ruby-overhang))
-         (identical? (get o-values :ruby-side)
-                     (get n-values :ruby-side))
          (identical? (get o-values :text-transform)
                      (get n-values :text-transform))
          (identical? (get o-values :typography-ref-file)
@@ -358,8 +331,7 @@
                      (get n-values :typography-ref-id))
          (identical? (get o-values :vertical-align)
                      (get n-values :vertical-align))
-         (identical? (get o-values :line-adjustment)
-                     (get n-values :line-adjustment)))))
+         (every? #(identical? (get o-values %) (get n-values %)) cjk-option-attrs))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Main component

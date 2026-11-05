@@ -8,7 +8,11 @@
   (:require
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.types.text :as txt]))
+   [app.common.types.text :as txt]
+   [app.common.types.text.cjk-layout :as cjk]))
+
+(def ^:private language-paragraph-attrs
+  (set cjk/language-paragraph-attrs))
 
 (defn- get-attr
   [obj attr]
@@ -42,9 +46,9 @@
             :multiple)
           (get obj attr ::unset)))
 
-      ;; An absent language is the plain profile, so it must participate
-      ;; when reporting mixed text selections.
-      (#{:text-language :korean-wrap} attr)
+      ;; A text without language differs from one with a language, so an
+      ;; absent value must count when reporting mixed text selections.
+      (contains? language-paragraph-attrs attr)
       (get obj attr)
 
       :else

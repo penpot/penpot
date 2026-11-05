@@ -26,7 +26,7 @@
    (generate-root-styles props node false))
   ([{:keys [width height]} node code?]
    (let [valign (:vertical-align node "top")
-         writing-mode (cjk/content-writing-mode node)
+         writing-mode (cjk/stored-writing-mode node)
          base   #js {:height (when-not code? (fmt/format-pixels height))
                      :width  (when-not code? (fmt/format-pixels width))
                      :display "flex"
@@ -138,7 +138,7 @@
       (when (pos? room)
         (str "calc(" base " + " (fmt/format-number room) ")")))))
 
-(defn- add-japanese-text-styles!
+(defn- add-cjk-text-styles!
   [style data]
   (let [text-combine-upright (:text-combine-upright data)
         text-emphasis        (:text-emphasis data)
@@ -271,7 +271,7 @@
        (obj/set! "whiteSpace" "pre")
 
        :always
-       (add-japanese-text-styles! data)))))
+       (add-cjk-text-styles! data)))))
 
 (defn- ruby-font-size
   "Pixel size of a span's ruby text. Paragraphs set font-size 0, so a
@@ -299,7 +299,7 @@
       (obj/unset! "inlineSize")))
 
 (defn- enum-or-default
-  "Value of the Japanese layout enum `attr` in `data`, or its default when
+  "Value of the CJK layout enum `attr` in `data`, or its default when
    unset or unknown."
   [data attr]
   (let [value (get data attr)]

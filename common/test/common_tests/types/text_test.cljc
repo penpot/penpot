@@ -397,7 +397,7 @@
                  {:korean-wrap "keep-all"}]]
     (t/is (not (ctst/valid-content? (with-paragraph-attrs attrs))) (pr-str attrs)))
   (t/is (contains? (set cttx/paragraph-attrs) :text-language))
-  (t/is (not (contains? (set cjk/whole-shape-paragraph-attrs) :text-language))))
+  (t/is (not (contains? (set cjk/vertical-writing-attrs) :text-language))))
 
 (t/deftest japanese-span-attrs-accept-supported-values
   (t/is (ctst/valid-content?
