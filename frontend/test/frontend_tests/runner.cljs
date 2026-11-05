@@ -51,6 +51,7 @@
    [frontend-tests.logic.copying-and-duplicating-test]
    [frontend-tests.logic.frame-guides-test]
    [frontend-tests.logic.groups-test]
+   [frontend-tests.logic.multi-variant-switch-test]
    [frontend-tests.logic.nudge-selected-shapes-test]
    [frontend-tests.logic.pasting-in-containers-test]
    [frontend-tests.logic.path-actions-test]
@@ -202,6 +203,7 @@
    'frontend-tests.logic.copying-and-duplicating-test
    'frontend-tests.logic.frame-guides-test
    'frontend-tests.logic.groups-test
+   'frontend-tests.logic.multi-variant-switch-test
    'frontend-tests.logic.nudge-selected-shapes-test
    'frontend-tests.logic.path-actions-test
    'frontend-tests.logic.path-clipboard-test

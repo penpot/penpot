@@ -1057,67 +1057,121 @@
           (cfh/get-children-with-self (:objects page) (:id root))
           (cfh/get-parents-with-self objects (:parent-id shape))))))
 
+(def component-swap-layout-ids-type
+  "Companion DataEvent type emitted by `component-swap` when `:skip-layout?`
+   is set. Batch callers filter this exact keyword (libraries ns) — never a
+   bare `::component-swap-layout-ids` in another namespace."
+  ::component-swap-layout-ids)
+
+(def ^:private component-swap-batch-done-type
+  ::component-swap-batch-done)
+
+(defn coalesce-skipped-layout
+  "While `swap-source` runs, collect companion layout-id DataEvents from
+   `stream`, then emit one `:layout/update` with the union.
+
+   `swap-source` must emit WatchEvents already configured with
+   `:skip-layout? true`. Uses a done marker (not `(rx/take (count …))`) so
+   no-op swaps cannot hang the fold. Reads the buffer inside `rx/defer` so
+   the id set is not frozen empty when `watch` returns."
+  [stream swap-source]
+  (let [layout-acc (volatile! [])]
+    (rx/concat
+     (rx/merge
+      (->> stream
+           (rx/take-until (rx/filter (ptk/type? component-swap-batch-done-type) stream))
+           (rx/filter (ptk/type? component-swap-layout-ids-type))
+           (rx/tap (fn [ev]
+                     (vswap! layout-acc into (:ids (deref ev)))))
+           (rx/ignore))
+      (rx/concat
+       swap-source
+       (rx/of (ptk/data-event component-swap-batch-done-type {}))))
+     (rx/defer
+      #(rx/of (ptk/data-event :layout/update {:ids @layout-acc}))))))
+
 (defn component-swap
-  "Swaps a component with another one"
-  [shape file-id id-new-component keep-touched?]
-  (dm/assert! (uuid? id-new-component))
-  (dm/assert! (uuid? file-id))
-  (ptk/reify ::component-swap
-    ptk/WatchEvent
-    (watch [it state _]
-      ;; First delete shapes so we have space in the layout otherwise we can have problems
-      ;; in the grid creating new rows/columns to make space
-      (let [libraries   (dsh/lookup-libraries state)
-            page        (dsh/lookup-page state)
-            objects     (:objects page)
-            parent      (get objects (:parent-id shape))
+  "Swaps a component with another one.
 
-            ldata       (dsh/lookup-file-data state file-id)
-            orig-shapes (when keep-touched? (cfh/get-children-with-self objects (:id shape)))
+   Optional `opts`:
+   - `:skip-select?` — do not emit `select-shape` after the swap (batch callers
+     restore selection once).
+   - `:skip-layout?` — do not emit `:layout/update`; emit a companion
+     `component-swap-layout-ids-type` DataEvent instead so the batch can
+     coalesce one layout update."
+  ([shape file-id id-new-component keep-touched?]
+   (component-swap shape file-id id-new-component keep-touched? nil))
+  ([shape file-id id-new-component keep-touched?
+    {:keys [skip-select? skip-layout?] :or {skip-select? false skip-layout? false}}]
+   (dm/assert! (uuid? id-new-component))
+   (dm/assert! (uuid? file-id))
+   (ptk/reify ::component-swap
+     ptk/WatchEvent
+     (watch [it state _]
+       ;; First delete shapes so we have space in the layout otherwise we can have problems
+       ;; in the grid creating new rows/columns to make space
+       (let [libraries   (dsh/lookup-libraries state)
+             page        (dsh/lookup-page state)
+             objects     (:objects page)
+             ;; Re-read from live state: sibling swaps / layout can move this head.
+             shape       (or (get objects (:id shape)) shape)
+             parent      (get objects (:parent-id shape))
 
-            ;; If the target parent is a grid layout we need to pass the target cell
-            target-cell (when (ctsl/grid-layout? parent)
-                          (ctsl/get-cell-by-shape-id parent (:id shape)))
+             ldata       (dsh/lookup-file-data state file-id)
+             orig-shapes (when keep-touched? (cfh/get-children-with-self objects (:id shape)))
 
-            index (find-shape-index objects (:parent-id shape) (:id shape))
+             ;; If the target parent is a grid layout we need to pass the target cell
+             target-cell (when (ctsl/grid-layout? parent)
+                           (ctsl/get-cell-by-shape-id parent (:id shape)))
 
-            ;; Store the properties that need to be maintained when the component is swapped
-            keep-props-values (select-keys shape ctk/swap-keep-attrs)
+             index (find-shape-index objects (:parent-id shape) (:id shape))
 
-            undo-id (js/Symbol)
-            undo-group (uuid/next)
+             ;; Store the properties that need to be maintained when the component is swapped
+             keep-props-values (select-keys shape ctk/swap-keep-attrs)
 
-            [new-shape all-parents changes]
-            (-> (pcb/empty-changes it (:id page))
-                (pcb/set-undo-group undo-group)
-                (cll/generate-component-swap objects shape ldata page libraries id-new-component
-                                             index target-cell keep-props-values keep-touched?))
+             undo-id (js/Symbol)
+             undo-group (uuid/next)
 
-            updated-objects  (pcb/get-objects changes)
-            new-children-ids (cfh/get-children-ids-with-self updated-objects (:id new-shape))
-            new-text-ids     (->> new-children-ids
-                                  (keep (fn [id]
-                                          (when-let [child (get updated-objects id)]
-                                            (when (and (cfh/text-shape? child)
-                                                       (not= :fixed (:grow-type child)))
-                                              id))))
-                                  (vec))
+             [new-shape all-parents changes]
+             (-> (pcb/empty-changes it (:id page))
+                 (pcb/set-undo-group undo-group)
+                 (cll/generate-component-swap objects shape ldata page libraries id-new-component
+                                              index target-cell keep-props-values keep-touched?))
 
-            [changes parents-of-swapped]
-            (if keep-touched?
-              (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
-              [changes []])
-            update-layout-ids (concat all-parents parents-of-swapped new-children-ids)]
-        (rx/of
-         (dwu/start-undo-transaction undo-id)
-         (dch/commit-changes changes)
-         (dwtp/propagate-workspace-tokens)  ;; Make the new instance get the token values from the current file, not from the component's library
-         (when (and (features/active-feature? state "render-wasm/v1")
-                    (seq new-text-ids))
-           (dwwt/resize-wasm-text-all new-text-ids {:skip-component-sync? true}))
-         (ptk/data-event :layout/update {:ids update-layout-ids :undo-group undo-group})
-         (dwu/commit-undo-transaction undo-id)
-         (dws/select-shape (:id new-shape) false))))))
+             updated-objects  (pcb/get-objects changes)
+             new-children-ids (cfh/get-children-ids-with-self updated-objects (:id new-shape))
+             new-text-ids     (->> new-children-ids
+                                   (keep (fn [id]
+                                           (when-let [child (get updated-objects id)]
+                                             (when (and (cfh/text-shape? child)
+                                                        (not= :fixed (:grow-type child)))
+                                               id))))
+                                   (vec))
+
+             [changes parents-of-swapped]
+             (if keep-touched?
+               (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
+               [changes []])
+             update-layout-ids (concat all-parents parents-of-swapped new-children-ids)]
+         (cond-> (rx/of
+                  (dwu/start-undo-transaction undo-id)
+                  (dch/commit-changes changes)
+                  ;; Make the new instance get the token values from the current file,
+                  ;; not from the component's library
+                  (dwtp/propagate-workspace-tokens)
+                  (when (and (features/active-feature? state "render-wasm/v1")
+                             (seq new-text-ids))
+                    (dwwt/resize-wasm-text-all new-text-ids {:skip-component-sync? true})))
+           (not skip-layout?)
+           (rx/concat (rx/of (ptk/data-event :layout/update
+                                             {:ids update-layout-ids :undo-group undo-group})))
+           skip-layout?
+           (rx/concat (rx/of (ptk/data-event component-swap-layout-ids-type
+                                             {:ids update-layout-ids})))
+           true
+           (rx/concat (rx/of (dwu/commit-undo-transaction undo-id)))
+           (not skip-select?)
+           (rx/concat (rx/of (dws/select-shape (:id new-shape) false)))))))))
 
 (defn component-multi-swap
   "Swaps several components with another one"
@@ -1131,17 +1185,21 @@
       {::ev/name "component-swap"})
 
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [undo-id (js/Symbol)]
+    (watch [_ state stream]
+      (let [undo-id   (js/Symbol)
+            swap-opts {:skip-select? true :skip-layout? true}]
         (log/info :msg "COMPONENT-SWAP"
                   :file (debug-pretty-file file-id state)
                   :id-new-component id-new-component
                   :undo-id undo-id)
         (rx/concat
          (rx/of (dwu/start-undo-transaction undo-id))
-         (rx/map #(component-swap % file-id id-new-component false) (rx/from shapes))
-         (rx/of (dwu/commit-undo-transaction undo-id))
-         (rx/of (dwsp/open-specialized-panel :component-swap)))))))
+         (coalesce-skipped-layout
+          stream
+          (->> (rx/from shapes)
+               (rx/map #(component-swap % file-id id-new-component false swap-opts))))
+         (rx/of (dwu/commit-undo-transaction undo-id)
+                (dwsp/open-specialized-panel :component-swap)))))))
 
 (def valid-asset-types
   #{:colors :components :typographies})
