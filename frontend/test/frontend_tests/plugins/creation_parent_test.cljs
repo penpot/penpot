@@ -86,7 +86,9 @@
              (t/is (not (some #{id} (get-in @store (into path [(thi/id :board) :shapes])))))
              (t/is (= 1 (count (get-in @store [:workspace-undo :items])))))
            (when (= creation :svg-with-images)
-             (t/is (= [:create-file-media-object-from-url] (mapv first @uploads))))
+             ;; Other RPCs (e.g. the delayed thumbnail cleanup) may land too.
+             (t/is (= 1 (count (filter #{:create-file-media-object-from-url}
+                                       (map first @uploads))))))
            (ptk/emit! store dwu/undo)
            (await (async/wait-for #(nil? (get-in @store (conj path id))) "creation undone"))
            (t/is (nil? (get-in @store (conj path id))))
