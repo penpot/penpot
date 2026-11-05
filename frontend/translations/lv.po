@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-15 17:18+0000\n"
-"Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
-"Language-Team: Latvian "
-"<https://hosted.weblate.org/projects/penpot/frontend/lv/>\n"
+"PO-Revision-Date: 2026-11-05 22:20+0000\n"
+"Last-Translator: Andrey Antukh <niwinz@users.noreply.hosted.weblate.org>\n"
+"Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
+"lv/>\n"
 "Language: lv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 "
-"<= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 2026.10.dev0\n"
+"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
+"19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"X-Generator: Weblate 2026.11.2.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:191, src/app/main/ui/viewer/login.cljs:119
 msgid "auth.already-have-account"
@@ -3223,10 +3223,12 @@ msgid "shortcuts.flip-vertical"
 msgstr "Apvērst stateniski"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:263
+#, fuzzy
 msgid "shortcuts.font-size-dec"
 msgstr "Samazināt fonta izmēru"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:256
+#, fuzzy
 msgid "shortcuts.font-size-inc"
 msgstr "Palielināt fonta izmēru"
 
@@ -3335,6 +3337,7 @@ msgid "shortcuts.next-frame"
 msgstr "Nākamā plātne"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:154
+#, fuzzy
 msgid "shortcuts.not-found"
 msgstr "Saīsnes nav atrastas"
 
@@ -3545,6 +3548,7 @@ msgid "shortcuts.subsection.shape"
 msgstr "Formas"
 
 #: src/app/main/ui/shortcuts.cljs:143
+#, fuzzy
 msgid "shortcuts.subsection.text-editor"
 msgstr "Teksti"
 
@@ -3806,6 +3810,7 @@ msgid "subscription.settings.management.dialog.title"
 msgstr "Pielietot %s savām komandām"
 
 #: src/app/main/ui/settings/subscription.cljs:714
+#, fuzzy
 msgid "subscription.settings.member-since"
 msgstr "Penpot dalībnieks kopš: %s"
 
