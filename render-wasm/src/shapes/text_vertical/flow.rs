@@ -3,12 +3,16 @@
 // (aki, oikomi, inter-script spacing) and pick column breaks (kinsoku,
 // burasage, oidashi).
 
+use crate::shapes::cjk_chars::is_punctuation;
 use crate::shapes::jlreq::{
     aki_class, break_allowed_between, classify, pair_rule, punctuation_aki_sheds, AkiShed,
     JlreqClass,
 };
 use crate::shapes::jlreq::{forbidden_at_line_end, forbidden_at_line_start};
-use crate::shapes::text_allocation::capped_equal_allocations;
+use crate::shapes::line_breaks::PolicyBoundaries;
+use crate::shapes::text_allocation::{
+    allocate_bounded_expansion, bounded_expansion, capped_equal_allocations,
+};
 use crate::shapes::text_policy::TextLayoutPolicy;
 use crate::shapes::{LineAdjustment, TextAlign};
 use unicode_segmentation::UnicodeSegmentation;
@@ -293,34 +297,21 @@ pub(super) fn plan_pairwise_columns(
     policy: TextLayoutPolicy,
     max_height: f32,
 ) -> Vec<(usize, f32)> {
-    let mut boundaries = Vec::new();
-    let mut offset = 0;
-    let mut previous = None;
-    for grapheme in text.graphemes(true) {
-        let first = grapheme.chars().next().unwrap();
-        let allowed = previous.is_none_or(|before| policy.break_allowed(before, first));
-        let emergency = previous.is_none_or(|before| policy.emergency_break_allowed(before, first));
-        boundaries.push((offset, allowed, emergency));
-        previous = Some(first);
-        offset += grapheme.encode_utf16().count();
-    }
-    boundaries.push((offset, true, true));
+    let boundaries = PolicyBoundaries::new(text, policy);
     let mut emergency_start = Vec::with_capacity(cells.len());
     let mut unit_start = Vec::with_capacity(cells.len());
     let mut prefix = vec![0.0];
     for (i, flow) in cells.iter().enumerate() {
-        let boundary = boundaries
-            .binary_search_by_key(&flow.cell.start, |b| b.0)
-            .ok();
+        let boundary = boundaries.at(flow.cell.start);
         let atomic =
             i > 0 && (flow.keep_with_previous || flow.shares_previous_box || boundary.is_none());
-        let emergency_joined = atomic || boundary.is_some_and(|at| !boundaries[at].2);
+        let emergency_joined = atomic || boundary.is_some_and(|(_, emergency)| !emergency);
         emergency_start.push(if i > 0 && emergency_joined {
             emergency_start[i - 1]
         } else {
             i
         });
-        let joined = atomic || boundary.is_some_and(|at| !boundaries[at].1);
+        let joined = atomic || boundary.is_some_and(|(allowed, _)| !allowed);
         unit_start.push(if i > 0 && joined {
             unit_start[i - 1]
         } else {
@@ -339,12 +330,7 @@ pub(super) fn plan_pairwise_columns(
     let mut placements = Vec::with_capacity(cells.len());
     let (mut column, mut column_start, mut cursor) = (0, 0, 0.0);
     for (i, flow) in cells.iter().enumerate() {
-        let punctuation = |at: usize| {
-            cells
-                .get(at)
-                .and_then(|c| c.ch)
-                .is_some_and(|c| "，。、．！？：；…‥—―「」『』（）〔〕［］｛｝〈〉《》【】〖〗〘〙〚〛‘’“”.,;!?:()[]{}".contains(c))
-        };
+        let punctuation = |at: usize| cells.get(at).and_then(|c| c.ch).is_some_and(is_punctuation);
         let solitary = (i == 0 || !punctuation(i - 1)) && !punctuation(i + 1);
         let hang = if solitary {
             flow.ch
@@ -425,7 +411,8 @@ pub(super) fn apply_pairwise_spacing(cells: &mut [FlowCell], text: &str, policy:
             - cells[i - 1].trailing_spacing
             - 0.5 * cells[i - 1].cell.font_size)
             .max(0.0);
-        let compression = (policy.compression_em(before, after, true) * em).min(available);
+        let spacing = policy.pair_spacing_em(before, after, true);
+        let compression = (spacing.compression * em).min(available);
         // A tate-chu-yoko composite sets in one ideograph's cell, so the
         // Han/Western gap of its digits or letters does not apply.
         let tate_chu_yoko =
@@ -433,7 +420,7 @@ pub(super) fn apply_pairwise_spacing(cells: &mut [FlowCell], text: &str, policy:
         let gap = if tate_chu_yoko(&cells[i - 1]) || tate_chu_yoko(&cells[i]) {
             0.0
         } else {
-            policy.script_spacing_em(before, after) * em
+            spacing.script_gap * em
         };
         cells[i - 1].cell.extent = (cells[i - 1].cell.extent + gap - compression)
             .max(cells[i - 1].trailing_spacing.max(0.0));
@@ -475,7 +462,7 @@ pub(super) fn pairwise_aligned_tops(
         if (align == TextAlign::Distribute || (align == TextAlign::Justify && column < last_column))
             && is_bounded(budget)
         {
-            let mut remaining = (budget - used).max(0.0);
+            let remaining = (budget - used).max(0.0);
             let mut extras = vec![0.0; end - start];
             let mut opportunities = Vec::new();
             for i in start..end - 1 {
@@ -495,34 +482,16 @@ pub(super) fn pairwise_aligned_tops(
                 {
                     continue;
                 }
-                let (priority, cap) = if align == TextAlign::Distribute {
-                    (
-                        1,
-                        budget
-                            / cells[i]
-                                .cell
-                                .font_size
-                                .min(cells[i + 1].cell.font_size)
-                                .max(0.01),
-                    )
-                } else {
-                    policy.expansion_em(before, after)
-                };
                 let em = cells[i].cell.font_size.min(cells[i + 1].cell.font_size);
-                if priority > 0 {
-                    opportunities.push((i, priority, cap * em));
+                let distribute = (align == TextAlign::Distribute).then_some(budget);
+                if let Some((priority, cap)) =
+                    bounded_expansion(policy, before, after, em, distribute)
+                {
+                    opportunities.push((i, priority, cap));
                 }
             }
-            for priority in 1..=2 {
-                let caps: Vec<_> = opportunities
-                    .iter()
-                    .filter(|(_, p, _)| *p == priority)
-                    .map(|(i, _, cap)| (*i, *cap))
-                    .collect();
-                for (i, amount) in capped_equal_allocations(&caps, remaining) {
-                    extras[i - start] += amount;
-                    remaining -= amount;
-                }
+            for (i, amount) in allocate_bounded_expansion(&opportunities, remaining) {
+                extras[i - start] += amount;
             }
             let mut extra = 0.0;
             for i in start..end {

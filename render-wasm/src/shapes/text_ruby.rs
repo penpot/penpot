@@ -1,6 +1,9 @@
 //! Ruby (furigana, Pinyin) piece, distribution and overhang rules shared by
 //! the horizontal and vertical engines (JLREQ §3.3).
 
+use std::collections::HashMap;
+use std::hash::Hash;
+
 use crate::shapes::jlreq::{classify, JlreqClass};
 use crate::shapes::{RubyAlign, RubyOverhang};
 
@@ -52,6 +55,43 @@ pub(crate) fn ruby_overhangs(overflow: f32, room: (f32, f32)) -> (f32, f32) {
         .max((overflow - after).min(before))
         .max(0.0);
     (hang_before, (overflow - hang_before).clamp(0.0, after))
+}
+
+/// Overhang that earlier readings already take on the character after them.
+/// A kana between two readings lends the later one only what the earlier one
+/// leaves (JLREQ Fig 138), so the two readings never meet over it. `K`
+/// identifies a neighbouring character.
+pub(crate) struct OverhangClaims<K> {
+    claimed: HashMap<K, f32>,
+}
+
+impl<K: Eq + Hash> OverhangClaims<K> {
+    pub(crate) fn new() -> Self {
+        Self {
+            claimed: HashMap::new(),
+        }
+    }
+
+    /// Room (before, after) left for a reading `overflow` longer than its
+    /// base, given the `room` its neighbours `before` and `after` offer, in
+    /// reading order. Records how far the reading hangs over `after`.
+    pub(crate) fn room(
+        &mut self,
+        before: Option<K>,
+        after: Option<K>,
+        room: (f32, f32),
+        overflow: f32,
+    ) -> (f32, f32) {
+        let taken = before
+            .and_then(|key| self.claimed.get(&key))
+            .copied()
+            .unwrap_or(0.0);
+        let room = ((room.0 - taken).max(0.0), room.1);
+        if let Some(after) = after {
+            self.claimed.insert(after, ruby_overhangs(overflow, room).1);
+        }
+        room
+    }
 }
 
 /// Gap that spreads a base under a reading longer than itself (JLREQ

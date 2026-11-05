@@ -4,6 +4,7 @@ use std::ops::Range;
 
 use skia_safe::{self as skia, textlayout::TypefaceFontProvider, FontMgr};
 
+use super::cjk_chars::is_zhuyin_base;
 use super::text_vertical::{shape_segment_with_fallbacks, span_font_families, ShapedRun};
 use super::TextSpan;
 use crate::render::FallbackFonts;
@@ -89,7 +90,7 @@ pub(crate) fn single_han(text: &str) -> bool {
     let Some(first) = chars.next() else {
         return false;
     };
-    matches!(first as u32, 0x3400..=0x9fff | 0xf900..=0xfaff | 0x20000..=0x323af)
+    is_zhuyin_base(first)
         && chars.next().is_none_or(|ch| {
             matches!(ch as u32, 0xfe00..=0xfe0f | 0xe0100..=0xe01ef) && chars.next().is_none()
         })

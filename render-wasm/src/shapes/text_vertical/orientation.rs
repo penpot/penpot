@@ -12,9 +12,10 @@ pub(crate) fn is_emoji_char(c: char) -> bool {
     )
 }
 
-/// Characters that stay upright in vertical flow: kana, kanji, CJK
-/// punctuation, full-width forms and emoji. Everything else rotates sideways
-/// under `text-orientation: mixed`.
+/// Characters that stay upright in vertical flow: kana, kanji, hangul,
+/// bopomofo, CJK punctuation, full-width forms and emoji. Everything else
+/// rotates sideways under `text-orientation: mixed`. A table of its own: it
+/// leaves half-width katakana sideways, unlike `cjk_chars::is_kana`.
 pub(crate) fn is_upright_char(c: char) -> bool {
     is_emoji_char(c)
         || matches!(u32::from(c),
