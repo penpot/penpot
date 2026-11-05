@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-10-31 15:51+0000\n"
-"Last-Translator: AntonPalmqvist <apq@users.noreply.hosted.weblate.org>\n"
+"PO-Revision-Date: 2026-11-05 22:20+0000\n"
+"Last-Translator: Andrey Antukh <niwinz@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
 "sv/>\n"
 "Language: sv\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.11.dev0\n"
+"X-Generator: Weblate 2026.11.2.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:191, src/app/main/ui/viewer/login.cljs:119
 msgid "auth.already-have-account"
@@ -1691,6 +1691,7 @@ msgid "errors.registration-disabled"
 msgstr "Registreringen är för närvarande inaktiverad."
 
 #: src/app/main/errors.cljs:538
+#, fuzzy
 msgid "errors.save-failed"
 msgstr ""
 "Dina senaste ändringar har inte bekräftats som sparade. Sparandet kanske "
@@ -2077,14 +2078,15 @@ msgid "generic.error"
 msgstr "Ett fel har inträffat"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:161
+#, fuzzy
 msgid "import-shortcuts.apply"
 msgstr "Tillämpa"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:102
+#, fuzzy
 msgid "import-shortcuts.diff-modal-text"
 msgstr ""
-"Följande kortkommandon kommer att ändras med den importerade "
-"konfigurationen."
+"Följande kortkommandon kommer att ändras med den importerade konfigurationen."
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:98
 msgid "import-shortcuts.diff-modal-title"
@@ -4619,14 +4621,17 @@ msgid "restore-shortcuts.action"
 msgstr "Åtgärd"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:94
+#, fuzzy
 msgid "restore-shortcuts.modal-text"
 msgstr "Följande kortkommandon kommer att återställas till sina standardvärden."
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:90
+#, fuzzy
 msgid "restore-shortcuts.modal-title"
 msgstr "Återställ till standardkonfiguration"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:170
+#, fuzzy
 msgid "restore-shortcuts.restore"
 msgstr "Återställ"
 
@@ -4819,20 +4824,26 @@ msgid "shortcuts.duplicate"
 msgstr "Duplicera"
 
 #: src/app/main/ui/shortcuts.cljs:645
+#, fuzzy
 msgid "shortcuts.edit-modal.conflict"
 msgstr ""
 "Kombinationen är tilldelad \"%s\". Om du sparar kommer den att tas bort "
 "därifrån."
 
 #: src/app/main/ui/shortcuts.cljs:636
+#, fuzzy
 msgid "shortcuts.edit-modal.reset-pending"
-msgstr "Om du sparar återgår det här kortkommandot till det ursprungliga värdet:"
+msgstr ""
+"Om du sparar återgår det här kortkommandot till det ursprungliga värdet:"
 
 #: src/app/main/ui/shortcuts.cljs:647
+#, fuzzy
 msgid "shortcuts.edit-modal.success"
-msgstr "Denna tangentkombination är tillgänglig och kan tilldelas utan konflikter."
+msgstr ""
+"Denna tangentkombination är tillgänglig och kan tilldelas utan konflikter."
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:157
+#, fuzzy
 msgid "shortcuts.edit-on-settings"
 msgstr "Anpassa i inställningarna"
 
@@ -4865,10 +4876,12 @@ msgid "shortcuts.flip-vertical"
 msgstr "Vänd vertikalt"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:263
+#, fuzzy
 msgid "shortcuts.font-size-dec"
 msgstr "Minska teckenstorleken"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:256
+#, fuzzy
 msgid "shortcuts.font-size-inc"
 msgstr "Öka teckenstorleken"
 
@@ -4917,6 +4930,7 @@ msgid "shortcuts.join-nodes"
 msgstr "Sammanfoga noder"
 
 #: src/app/main/ui/shortcuts.cljs:624
+#, fuzzy
 msgid "shortcuts.key-combo"
 msgstr "Tryck tangentkombinationen"
 
@@ -4985,18 +4999,22 @@ msgid "shortcuts.next-frame"
 msgstr "Nästa tavla"
 
 #: src/app/main/ui/settings/shortcuts.cljs:510
+#, fuzzy
 msgid "shortcuts.no-disabled"
 msgstr "Det finns inga inaktiverade kortkommandon"
 
 #: src/app/main/ui/settings/shortcuts.cljs:500
+#, fuzzy
 msgid "shortcuts.no-personalized"
 msgstr "Gå till Alla för att börja anpassa dina kortkommandon."
 
 #: src/app/main/ui/settings/shortcuts.cljs:242, src/app/main/ui/settings/shortcuts.cljs:491
+#, fuzzy
 msgid "shortcuts.no-shortcuts"
 msgstr "Det finns inga genvägar som matchar din sökning"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:154
+#, fuzzy
 msgid "shortcuts.not-found"
 msgstr "Inga genvägar hittades"
 
@@ -5073,6 +5091,7 @@ msgid "shortcuts.or"
 msgstr " eller "
 
 #: src/app/main/ui/shortcuts.cljs:605, src/app/main/ui/shortcuts.cljs:747
+#, fuzzy
 msgid "shortcuts.overwritten-by"
 msgstr "Den här genvägen har tilldelats om till %s"
 
@@ -5093,6 +5112,7 @@ msgid "shortcuts.paste-replace"
 msgstr "Klistra in och ersätt"
 
 #: src/app/main/ui/settings/shortcuts.cljs:296, src/app/main/ui/settings/shortcuts.cljs:523
+#, fuzzy
 msgid "shortcuts.personalized"
 msgstr "Personanpassad"
 
@@ -5237,6 +5257,7 @@ msgid "shortcuts.subsection.shape"
 msgstr "Former"
 
 #: src/app/main/ui/shortcuts.cljs:143
+#, fuzzy
 msgid "shortcuts.subsection.text-editor"
 msgstr "Texter"
 
@@ -5689,6 +5710,7 @@ msgstr ""
 "Med 25+ redaktörer över teamen åtnjuter du en fast avgift på $175/månad."
 
 #: src/app/main/ui/settings/subscription.cljs:714
+#, fuzzy
 msgid "subscription.settings.member-since"
 msgstr "Penpot-medlem sedan: %s"
 
