@@ -31,6 +31,24 @@
 (def write-handler-map (atom nil))
 (def read-handler-map (atom nil))
 
+;; Readers are built lazily on first use and reused afterwards. Building a
+;; reader on every call is expensive: transit merges the handlers, allocates
+;; a read cache and prepares the marshaller machinery. A reader captures the
+;; handler maps it was created with, so `add-handlers!` replaces them.
+#?(:cljs
+   (def ^:private ^:dynamic *json-reader* nil))
+
+#?(:cljs
+   (def ^:private ^:dynamic *json-verbose-reader* nil))
+
+#?(:cljs
+   (defn- rebuild-readers
+     []
+     (set! *json-reader*
+           (delay (t/reader :json {:handlers @read-handler-map})))
+     (set! *json-verbose-reader*
+           (delay (t/reader :json-verbose {:handlers @read-handler-map})))))
+
 ;; A generic pointer; mainly used for deserialize backend pointer-map
 ;; instances that serializes to pointer but may in other ways.
 (deftype Pointer [id metadata]
@@ -95,6 +113,10 @@
 
       (reset! write-handler-map #?(:clj (t/write-handler-map cwh) :cljs cwh))
       (reset! read-handler-map #?(:clj (t/read-handler-map crh) :cljs crh))
+      ;; A reader captures the handler maps, so build new ones from the maps
+      ;; just stored. A handler registered after a read then applies on the
+      ;; next read.
+      #?(:cljs (rebuild-readers))
       nil)))
 
 ;; --- HANDLERS
@@ -249,28 +271,22 @@
       (->> (encode data opts)
            (bytes->str)))))
 
-;; A cache used by `decode-str` of `[handlers type reader]`.
-#?(:cljs
-   (def ^:private reader-cache (atom nil)))
-
 (defn decode-str
   ([data] (decode-str data nil))
   ([data opts]
    #?(:cljs
-      (let [type     (:type opts :json)
-            handlers @read-handler-map
-            [cached-handlers cached-type cached] @reader-cache
-            reader (if (and (identical? cached-handlers handlers)
-                            (= cached-type type))
-                     cached
-                     (let [reader (t/reader type {:handlers handlers})]
-                       (reset! reader-cache [handlers type reader])
-                       reader))]
+      (let [reader (case (:type opts :json)
+                     :json         @*json-reader*
+                     :json-verbose @*json-verbose-reader*)]
         (try
           (t/read reader data)
           (catch :default cause
-            ;; A failed read leaves the reader's read cache dirty.
-            (reset! reader-cache nil)
+            ;; The reader clears its internal read cache after a successful
+            ;; read but not after a failed one, so a reused reader would
+            ;; resolve cache codes against the failed read. Clear it before
+            ;; propagating the error.
+            (when-let [cache (.-cache reader)]
+              (.clear cache))
             (throw cause))))
       :clj
       (-> (str->bytes data)

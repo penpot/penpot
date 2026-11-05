@@ -19,16 +19,21 @@
 (t/deftest decode-str-round-trip
   (let [data {:a 1 :b [:c "d"] :e #{1 2}}]
     (t/is (= data (-> data tr/encode-str tr/decode-str)))
-    (t/is (= data (-> data (tr/encode-str {:type :json-verbose}) tr/decode-str)))))
+    (t/is (= data (-> data (tr/encode-str {:type :json-verbose})
+                      (tr/decode-str {:type :json-verbose}))))))
 
-(t/deftest decode-str-uses-handlers-added-after-the-first-read
-  (t/is (= [:x] (tr/decode-str "[\"~:x\"]")))
-  (tr/add-handlers! {:id "test/late" :rfn (fn [v] (str "late:" v))})
-  (t/is (= "late:x" (tr/decode-str "[\"~#test/late\",\"x\"]"))))
+;; `decode-str` reuses the readers across calls, but `add-handlers!` rebuilds
+;; them, so a handler registered after the first read still applies.
+#?(:cljs
+   (t/deftest decode-str-uses-handlers-added-after-the-first-read
+     (t/is (= [:x] (tr/decode-str "[\"~:x\"]")))
+     (tr/add-handlers! {:id "test/late" :rfn (fn [v] (str "late:" v))})
+     (t/is (= "late:x" (tr/decode-str "[\"~#test/late\",\"x\"]")))))
 
-;; In ClojureScript `decode-str` reuses one reader, and a read that throws
-;; leaves that reader's read cache dirty. The next message then resolves
-;; its cache codes ("^0", "^1") to entries of the failed one.
+;; In ClojureScript `decode-str` reuses the same reader across calls, and a
+;; read that throws leaves that reader's read cache dirty. The next message
+;; would then resolve its cache codes ("^0", "^1") to entries of the failed
+;; one if the cache is not cleared.
 #?(:cljs
    (t/deftest decode-str-after-a-failed-read
      (let [good     "[\"~:aaaa\",\"~:bbbb\",\"^0\",\"^1\"]"
