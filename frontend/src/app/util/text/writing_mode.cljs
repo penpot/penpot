@@ -62,7 +62,7 @@
   does not match."
   [content]
   (and (not ^boolean (vertical-layout-active?))
-       (cjk/vertical-text-content? content)))
+       (cjk/stored-vertical? content)))
 
 (defn renderable-paragraph
   "Paragraph attrs as the active renderer lays them out: without the vertical
@@ -70,7 +70,7 @@
   [paragraph]
   (if ^boolean (vertical-layout-active?)
     paragraph
-    (apply dissoc paragraph cjk/whole-shape-paragraph-attrs)))
+    (apply dissoc paragraph cjk/vertical-writing-attrs)))
 
 (defn renderable-content
   "Text content as the active renderer lays it out (see `active-content` and

@@ -64,7 +64,7 @@
       (t/is (false? (text-editor/reading-selection? content range))))
     (t/is (false? (text-editor/reading-selection? nil nil)))))
 
-(t/deftest japanese-styles-follow-the-selected-span
+(t/deftest cjk-styles-follow-the-selected-span
   (let [content (editor-content
                  [{:text "日" :ruby "にち" :text-emphasis "filled-dot"}
                   {:text "本"}])]
@@ -82,7 +82,7 @@
               :warichu "none"
               :font-features "none"
               :annotation-clearance "none"}
-             (text-editor/selection-japanese-styles
+             (text-editor/selection-cjk-styles
               content (selection 0 0 0 1))))
     (t/is (= {:text-combine-upright "none"
               :text-emphasis "none"
@@ -98,7 +98,7 @@
               :warichu "none"
               :font-features "none"
               :annotation-clearance "none"}
-             (text-editor/selection-japanese-styles
+             (text-editor/selection-cjk-styles
               content (selection 0 1 0 2))))))
 
 (t/deftest paragraph-profiles-follow-the-editor-selection
@@ -117,7 +117,7 @@
     (t/is (= {:text-language :multiple :korean-wrap :multiple}
              (text-editor/selection-paragraph-styles content (selection 1 1 0 0))))))
 
-(t/deftest japanese-styles-report-mixed-ranges-and-follow-the-caret
+(t/deftest cjk-styles-report-mixed-ranges-and-follow-the-caret
   (let [content (editor-content
                  [{:text "平成"
                    :text-combine-upright "digits2"
@@ -150,16 +150,16 @@
               :warichu :multiple
               :font-features :multiple
               :annotation-clearance :multiple}
-             (text-editor/selection-japanese-styles
+             (text-editor/selection-cjk-styles
               content (selection 0 0 0 3))))
     ;; A caret at the boundary belongs to the preceding span, as in WASM.
     (t/is (= "digits2"
              (:text-combine-upright
-              (text-editor/selection-japanese-styles
+              (text-editor/selection-cjk-styles
                content (selection 0 2 0 2)))))
     (t/is (= "warichu"
              (:warichu
-              (text-editor/selection-japanese-styles
+              (text-editor/selection-cjk-styles
                content (selection 0 3 0 3)))))))
 
 (t/deftest japanese-selection-offsets-are-utf16-code-units
@@ -168,7 +168,7 @@
                   {:text "日" :ruby "にち"}])]
     (t/is (= "にち"
              (:ruby
-              (text-editor/selection-japanese-styles
+              (text-editor/selection-cjk-styles
                content (selection 0 2 0 3)))))))
 
 (t/deftest editor-history-restores-styled-content-and-selection
@@ -545,7 +545,7 @@
          (@#'v3-editor/follow-ime-caret! wrapper anchor)
          (t/is (= "translate(24px, 72px)" (.. wrapper -style -transform))))))))
 
-(t/deftest whole-shape-paragraph-attrs-apply-to-every-paragraph
+(t/deftest vertical-writing-attrs-apply-to-every-paragraph
   (let [content (-> (editor-content [{:text "一"}] [{:text "二"}] [{:text "三"}])
                     (assoc-in [:children 0 :children 2 :text-orientation] "upright"))
         result  (text-editor/apply-paragraph-attrs-to-range
@@ -776,12 +776,12 @@
   (t/is (= #{:japanese}
            (cfnt/resolve-ambiguous-cjk (langs "東京都渋谷区神南一丁目") nil "ja"))))
 
-(t/deftest wasm-enum-exports-match-the-japanese-value-table
+(t/deftest wasm-enum-exports-match-the-cjk-value-table
   (doseq [[attr values] cjk/enum-values]
     (let [exported (js->clj (unchecked-get wasm/serializers (name attr)))]
       (t/is (= values (mapv key (sort-by val exported))) (name attr)))))
 
-(t/deftest unset-or-unknown-japanese-values-serialize-as-the-default
+(t/deftest unset-or-unknown-cjk-values-serialize-as-the-default
   (t/is (= 0 (sr/translate-text-layout-enum :ruby-side nil)))
   (t/is (= 0 (sr/translate-text-layout-enum :ruby-side "")))
   (t/is (= 0 (sr/translate-text-layout-enum :ruby-side "left")))

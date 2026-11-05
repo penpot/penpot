@@ -16,7 +16,7 @@
    [app.main.ui.shapes.text.styles :as text-styles]
    [app.main.ui.workspace.sidebar.options.common :refer [radio-selected]]
    [app.main.ui.workspace.sidebar.options.menus.text :as text-menu]
-   [app.main.ui.workspace.sidebar.options.menus.text-japanese-layout :as tjl]
+   [app.main.ui.workspace.sidebar.options.menus.text-cjk-controls :as tcc]
    [app.main.ui.workspace.sidebar.options.menus.text-language-layout :as tll]
    [app.util.text.layout :as tl]
    [app.util.text.writing-mode :as wm]
@@ -95,7 +95,7 @@
 
 (t/deftest language-row-names-mixed-and-unlisted-languages
   (t/is (= "settings.multiple" (tl/language-label :multiple)))
-  (t/is (= "workspace.options.text-options.profile-japanese" (tl/language-label "ja")))
+  (t/is (= "workspace.options.text-options.language-japanese" (tl/language-label "ja")))
   (t/is (= "zh-Hans" (tl/language-label "zh-Hans"))
         "a tag outside the list shows as it is"))
 
@@ -119,7 +119,7 @@
 
 (t/deftest file-language-shows-its-options-without-a-remove-button
   (let [markup (render-language-section "ja" nil)]
-    (t/is (str/includes? markup "workspace.options.text-options.profile-japanese"))
+    (t/is (str/includes? markup "workspace.options.text-options.language-japanese"))
     (t/is (str/includes? markup "workspace.options.text-options.line-adjustment"))
     (t/is (not (str/includes? markup "data-testid=\"text-language-remove\"")))
     (t/is (not (str/includes? markup "data-testid=\"text-language-add\"")))))
@@ -225,22 +225,22 @@
       (t/is (= 3 (count (filter #(str/includes? % "checked=\"\"") inputs)))))))
 
 (t/deftest text-emphasis-select-reports-and-restores-canonical-values
-  (let [options     (tjl/text-emphasis-options identity)
+  (let [options     (tcc/text-emphasis-options identity)
         reported-id (:id (select/get-option options "filled-dot"))]
     (t/is (= "filled-dot" reported-id))
     (t/is (= "filled-dot"
              (:id (select/get-option options reported-id))))))
 
 (t/deftest annotation-clearance-select-reports-canonical-values
-  (let [options (tjl/annotation-clearance-options identity)]
+  (let [options (tcc/annotation-clearance-options identity)]
     (t/is (= ["none" "auto"] (mapv :id options)))
     (t/is (= "auto" (:id (select/get-option options "auto"))))))
 
 (t/deftest unrestricted-tcy-is-only-offered-for-a-text-selection
   (t/is (= ["none" "digits"]
-           (mapv :value (tjl/text-combine-upright-options false identity))))
+           (mapv :value (tll/text-combine-upright-options false identity))))
   (t/is (= ["none" "all" "digits"]
-           (mapv :value (tjl/text-combine-upright-options true identity)))))
+           (mapv :value (tll/text-combine-upright-options true identity)))))
 
 (t/deftest ruby-container-styles-preserve-customization
   (let [style (text-styles/generate-ruby-container-styles
@@ -253,8 +253,9 @@
 
 (t/deftest advanced-furigana-options-are-collapsed-by-default
   (let [markup (rds/renderToStaticMarkup
-                (mf/element tjl/ruby-presentation-options*
+                (mf/element tcc/ruby-presentation-options*
                             #js {:values {}
+                                 :labels {:advanced "workspace.options.text-options.ruby-advanced-options"}
                                  :on-change identity
                                  :on-blur identity}))]
     (t/is (str/includes? markup "data-testid=\"ruby-presentation-options-toggle\""))
@@ -263,7 +264,7 @@
 
 (t/deftest advanced-furigana-options-include-hide-toggle
   (let [markup (rds/renderToStaticMarkup
-                (mf/element tjl/ruby-hidden-option*
+                (mf/element tcc/ruby-hidden-option*
                             #js {:values {:ruby-hidden true}
                                  :on-change identity
                                  :on-blur identity}))]
@@ -311,12 +312,12 @@
     (t/is (false? (:ruby-hidden (second spans))))))
 
 (t/deftest mixed-span-values-select-a-disabled-mixed-option
-  (let [options (tjl/with-mixed-span-option (tjl/text-emphasis-options identity) :multiple)]
-    (t/is (= "mixed" (tjl/span-select-value :multiple "none")))
-    (t/is (= "none" (tjl/span-select-value nil "none")))
+  (let [options (tcc/with-mixed-span-option (tcc/text-emphasis-options identity) :multiple)]
+    (t/is (= "mixed" (tcc/span-select-value :multiple "none")))
+    (t/is (= "none" (tcc/span-select-value nil "none")))
     (t/is (= "mixed" (:id (last options))))
     (t/is (true? (:disabled (last options))))
-    (t/is (= options (tjl/with-mixed-span-option options "none"))
+    (t/is (= options (tcc/with-mixed-span-option options "none"))
           "an unmixed value adds no entry")))
 
 (t/deftest mixed-radio-values-select-nothing
@@ -384,35 +385,35 @@
     (t/is (= "digits2" (:text-combine-upright text-values)))))
 
 (t/deftest japanese-controls-distinguish-horizontal-and-vertical-modes
-  (t/is (false? (tjl/vertical-japanese-layout? {})))
-  (t/is (false? (tjl/vertical-japanese-layout?
+  (t/is (false? (tcc/vertical-writing? {})))
+  (t/is (false? (tcc/vertical-writing?
                  {:writing-mode "horizontal-tb"})))
-  (t/is (true? (tjl/vertical-japanese-layout?
+  (t/is (true? (tcc/vertical-writing?
                 {:writing-mode "vertical-rl"})))
   (t/is (= "palt"
-           (tjl/proportional-metrics-feature "horizontal-tb")))
+           (tll/proportional-metrics-feature "horizontal-tb")))
   (t/is (= "palt"
-           (tjl/proportional-metrics-feature nil)))
+           (tll/proportional-metrics-feature nil)))
   (t/is (= "vpal"
-           (tjl/proportional-metrics-feature "vertical-rl"))))
+           (tll/proportional-metrics-feature "vertical-rl"))))
 
 (t/deftest sidebar-options-offer-the-japanese-enum-values
   (let [ids    #(mapv :id %)
         values #(mapv :value %)]
-    (t/is (= (:writing-mode cjk/enum-values) (values (tjl/writing-mode-options identity))))
-    (t/is (= (:text-orientation cjk/enum-values) (values (tjl/text-orientation-options identity))))
-    (t/is (= (:warichu cjk/enum-values) (values (tjl/warichu-options identity))))
-    (t/is (= (:text-emphasis cjk/enum-values) (ids (tjl/text-emphasis-options identity))))
-    (t/is (= (:annotation-clearance cjk/enum-values) (ids (tjl/annotation-clearance-options identity))))
-    (t/is (= (:ruby-size cjk/enum-values) (ids (tjl/ruby-size-options identity))))
-    (t/is (= (:ruby-align cjk/enum-values) (ids (tjl/ruby-align-options identity))))
-    (t/is (= (:ruby-overhang cjk/enum-values) (ids (tjl/ruby-overhang-options identity))))
-    (t/is (= (:ruby-side cjk/enum-values) (ids (tjl/position-options :ruby-side false))))
-    (t/is (= (:ruby-side cjk/enum-values) (ids (tjl/position-options :ruby-side true))))
-    (t/is (= (:line-adjustment cjk/enum-values) (ids (tjl/line-adjustment-options identity))))
+    (t/is (= (:writing-mode cjk/enum-values) (values (tcc/writing-mode-options identity))))
+    (t/is (= (:text-orientation cjk/enum-values) (values (tcc/text-orientation-options identity))))
+    (t/is (= (:warichu cjk/enum-values) (values (tll/warichu-options identity))))
+    (t/is (= (:text-emphasis cjk/enum-values) (ids (tcc/text-emphasis-options identity))))
+    (t/is (= (:annotation-clearance cjk/enum-values) (ids (tcc/annotation-clearance-options identity))))
+    (t/is (= (:ruby-size cjk/enum-values) (ids (tcc/ruby-size-options identity))))
+    (t/is (= (:ruby-align cjk/enum-values) (ids (tcc/ruby-align-options identity))))
+    (t/is (= (:ruby-overhang cjk/enum-values) (ids (tcc/ruby-overhang-options identity))))
+    (t/is (= (:ruby-side cjk/enum-values) (ids (tcc/position-options :ruby-side false))))
+    (t/is (= (:ruby-side cjk/enum-values) (ids (tcc/position-options :ruby-side true))))
+    (t/is (= (:line-adjustment cjk/enum-values) (ids (tll/line-adjustment-options identity))))
     (t/is (every? #(cjk/valid-enum-value? :text-combine-upright %)
-                  (values (tjl/text-combine-upright-options true identity))))
-    (t/is (every? cjk/digit-combine? (ids (tjl/text-combine-upright-count-options identity))))))
+                  (values (tll/text-combine-upright-options true identity))))
+    (t/is (every? cjk/digit-combine? (ids (tll/text-combine-upright-count-options identity))))))
 
 (t/deftest html-text-drops-vertical-writing-under-a-horizontal-renderer
   (let [shape  {:id (random-uuid) :width 100 :height 100
@@ -557,7 +558,7 @@
 
 
 (t/deftest japanese-layout-controls-include-line-adjustment
-  (let [markup (alignment-markup tjl/japanese-layout-options* "vertical-rl" true)]
+  (let [markup (alignment-markup tll/japanese-layout-options* "vertical-rl" true)]
     (t/is (str/includes? markup "workspace.options.text-options.line-adjustment"))))
 
 
@@ -603,35 +604,35 @@
     (t/is (not (str/includes? html "<rt")))))
 
 (t/deftest positions-show-only-the-sides-of-the-writing-mode
-  (let [labels #(mapv :label (tjl/position-options %1 %2))]
+  (let [labels #(mapv :label (tcc/position-options %1 %2))]
     (t/is (= ["workspace.options.text-options.position-over"
               "workspace.options.text-options.position-under"]
              (labels :ruby-side false)))
     (t/is (= ["workspace.options.text-options.position-right"
               "workspace.options.text-options.position-left"]
              (labels :ruby-side true)))
-    (t/is (= ["auto" "over" "under"] (mapv :id (tjl/position-options :text-emphasis-position false))))
-    (t/is (= ["auto" "right" "left"] (mapv :id (tjl/position-options :text-emphasis-position true))))
-    (t/is (= ["auto" "under"] (mapv :id (tjl/position-options :text-underline-position false))))
-    (t/is (= ["auto" "right" "left"] (mapv :id (tjl/position-options :text-underline-position true))))))
+    (t/is (= ["auto" "over" "under"] (mapv :id (tcc/position-options :text-emphasis-position false))))
+    (t/is (= ["auto" "right" "left"] (mapv :id (tcc/position-options :text-emphasis-position true))))
+    (t/is (= ["auto" "under"] (mapv :id (tcc/position-options :text-underline-position false))))
+    (t/is (= ["auto" "right" "left"] (mapv :id (tcc/position-options :text-underline-position true))))))
 
 (t/deftest picking-a-position-keeps-the-side-of-the-other-writing-mode
-  (t/is (= "under" (tjl/position-choice :text-emphasis-position false "under-left")))
-  (t/is (= "left" (tjl/position-choice :text-emphasis-position true "under-left")))
-  (t/is (= "auto" (tjl/position-choice :text-emphasis-position true "auto")))
-  (t/is (= "under-left" (tjl/position-value :text-emphasis-position false "over-left" "under")))
-  (t/is (= "under-right" (tjl/position-value :text-emphasis-position true "under-left" "right")))
-  (t/is (= "over-right" (tjl/position-value :text-emphasis-position false "auto" "over")))
-  (t/is (= "auto" (tjl/position-value :text-emphasis-position false "under-left" "auto")))
-  (t/is (= "under" (tjl/position-choice :text-underline-position false "under-right")))
-  (t/is (= "auto" (tjl/position-choice :text-underline-position false "left")))
-  (t/is (= "right" (tjl/position-choice :text-underline-position true "under-right")))
-  (t/is (= "under-left" (tjl/position-value :text-underline-position false "left" "under")))
-  (t/is (= "left" (tjl/position-value :text-underline-position false "under-left" "auto")))
-  (t/is (= "under-right" (tjl/position-value :text-underline-position true "under" "right")))
-  (t/is (= "under" (tjl/position-value :text-underline-position true "under-left" "auto")))
-  (t/is (= "under" (tjl/position-value :ruby-side true "over" "under")))
-  (t/is (= :multiple (tjl/position-choice :text-emphasis-position false :multiple))))
+  (t/is (= "under" (tcc/position-choice :text-emphasis-position false "under-left")))
+  (t/is (= "left" (tcc/position-choice :text-emphasis-position true "under-left")))
+  (t/is (= "auto" (tcc/position-choice :text-emphasis-position true "auto")))
+  (t/is (= "under-left" (tcc/position-value :text-emphasis-position false "over-left" "under")))
+  (t/is (= "under-right" (tcc/position-value :text-emphasis-position true "under-left" "right")))
+  (t/is (= "over-right" (tcc/position-value :text-emphasis-position false "auto" "over")))
+  (t/is (= "auto" (tcc/position-value :text-emphasis-position false "under-left" "auto")))
+  (t/is (= "under" (tcc/position-choice :text-underline-position false "under-right")))
+  (t/is (= "auto" (tcc/position-choice :text-underline-position false "left")))
+  (t/is (= "right" (tcc/position-choice :text-underline-position true "under-right")))
+  (t/is (= "under-left" (tcc/position-value :text-underline-position false "left" "under")))
+  (t/is (= "left" (tcc/position-value :text-underline-position false "under-left" "auto")))
+  (t/is (= "under-right" (tcc/position-value :text-underline-position true "under" "right")))
+  (t/is (= "under" (tcc/position-value :text-underline-position true "under-left" "auto")))
+  (t/is (= "under" (tcc/position-value :ruby-side true "over" "under")))
+  (t/is (= :multiple (tcc/position-choice :text-emphasis-position false :multiple))))
 
 (t/deftest distribute-comes-after-the-writing-mode-row
   (with-redefs [hooks/use-portal-container (fn ([] nil) ([_] nil))]

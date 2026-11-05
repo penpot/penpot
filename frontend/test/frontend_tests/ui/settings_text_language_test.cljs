@@ -22,4 +22,4 @@
 (t/deftest profile-text-language-shows-the-chosen-language
   (t/is (str/includes? (render nil) "dashboard.text-language.none"))
   (t/is (str/includes? (render "zh-Hant-TW") "workspace.options.text-options.language-chinese-variant"))
-  (t/is (str/includes? (render "ja") "workspace.options.text-options.profile-japanese")))
+  (t/is (str/includes? (render "ja") "workspace.options.text-options.language-japanese")))

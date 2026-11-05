@@ -16,9 +16,9 @@
 
 (def node-types #{"root" "paragraph-set" "paragraph"})
 
-;; Values of a Japanese layout enum attr; paragraphs set the orientation
+;; Values of a CJK layout enum attr; paragraphs set the orientation
 ;; of the whole shape and spans carry a copy.
-(defn- schema:jl-enum
+(defn- schema:cjk-enum
   [attr]
   (into [:enum] (get cjk/enum-values attr)))
 
@@ -31,7 +31,7 @@
   [:map
    [:type [:= "root"]]
    [:key {:optional true} :string]
-   [:line-adjustment {:optional true} (schema:jl-enum :line-adjustment)]
+   [:line-adjustment {:optional true} (schema:cjk-enum :line-adjustment)]
    [:children
     [:vector {:min 1 :gen/max 2 :gen/min 1}
      [:map
@@ -52,9 +52,9 @@
          ;; Paragraph language selects typography; it never follows the UI locale.
          [:text-language {:optional true} schema:text-language]
          ;; Word mode keeps punctuation rules; retain the old POC value on reload.
-         [:korean-wrap {:optional true} [:enum "syllable" "spaces-only" "keep-words"]]
-         [:writing-mode {:optional true} (schema:jl-enum :writing-mode)]
-         [:text-orientation {:optional true} (schema:jl-enum :text-orientation)]
+         [:korean-wrap {:optional true} (schema:cjk-enum :korean-wrap)]
+         [:writing-mode {:optional true} (schema:cjk-enum :writing-mode)]
+         [:text-orientation {:optional true} (schema:cjk-enum :text-orientation)]
          [:text-decoration {:optional true} ::sm/text]
          [:text-transform {:optional true} ::sm/text]
          [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
@@ -71,21 +71,21 @@
             [:font-style {:optional true} ::sm/text]
             [:font-weight {:optional true} ::sm/text]
             [:direction {:optional true} ::sm/text]
-            [:text-combine-upright {:optional true} (schema:jl-enum :text-combine-upright)]
-            [:text-emphasis {:optional true} (schema:jl-enum :text-emphasis)]
-            [:text-emphasis-position {:optional true} (schema:jl-enum :text-emphasis-position)]
-            [:text-underline-position {:optional true} (schema:jl-enum :text-underline-position)]
+            [:text-combine-upright {:optional true} (schema:cjk-enum :text-combine-upright)]
+            [:text-emphasis {:optional true} (schema:cjk-enum :text-emphasis)]
+            [:text-emphasis-position {:optional true} (schema:cjk-enum :text-emphasis-position)]
+            [:text-underline-position {:optional true} (schema:cjk-enum :text-underline-position)]
             [:ruby {:optional true} :string]
             [:ruby-hidden {:optional true} :boolean]
             [:ruby-zhuyin {:optional true} :boolean]
-            [:ruby-size {:optional true} (schema:jl-enum :ruby-size)]
-            [:ruby-align {:optional true} (schema:jl-enum :ruby-align)]
-            [:ruby-overhang {:optional true} (schema:jl-enum :ruby-overhang)]
-            [:ruby-side {:optional true} (schema:jl-enum :ruby-side)]
-            [:warichu {:optional true} (schema:jl-enum :warichu)]
-            [:font-features {:optional true} (schema:jl-enum :font-features)]
-            [:annotation-clearance {:optional true} (schema:jl-enum :annotation-clearance)]
-            [:text-orientation {:optional true} (schema:jl-enum :text-orientation)]
+            [:ruby-size {:optional true} (schema:cjk-enum :ruby-size)]
+            [:ruby-align {:optional true} (schema:cjk-enum :ruby-align)]
+            [:ruby-overhang {:optional true} (schema:cjk-enum :ruby-overhang)]
+            [:ruby-side {:optional true} (schema:cjk-enum :ruby-side)]
+            [:warichu {:optional true} (schema:cjk-enum :warichu)]
+            [:font-features {:optional true} (schema:cjk-enum :font-features)]
+            [:annotation-clearance {:optional true} (schema:cjk-enum :annotation-clearance)]
+            [:text-orientation {:optional true} (schema:cjk-enum :text-orientation)]
             [:text-decoration {:optional true} ::sm/text]
             [:text-transform {:optional true} ::sm/text]
             [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]

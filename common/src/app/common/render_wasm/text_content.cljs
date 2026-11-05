@@ -118,6 +118,7 @@
         text-transform   (sr/translate-text-transform (get paragraph :text-transform))
         writing-mode     (sr/translate-text-layout-enum :writing-mode (get paragraph :writing-mode))
         text-orientation (sr/translate-text-layout-enum :text-orientation (get paragraph :text-orientation))
+        korean-wrap      (sr/translate-text-layout-enum :korean-wrap (get paragraph :korean-wrap))
         line-height      (serialize-line-height (get paragraph :line-height))
         letter-spacing   (serialize-letter-spacing (get paragraph :letter-spacing))]
     (-> offset
@@ -127,7 +128,7 @@
         (mem/write-u8 dview text-transform)
         (mem/write-u8 dview writing-mode)
         (mem/write-u8 dview text-orientation)
-        (mem/write-u8 dview (case (:korean-wrap paragraph) "spaces-only" 1 "keep-words" 2 0))
+        (mem/write-u8 dview korean-wrap)
         ;; Alignment padding; must match RawParagraphData in Rust.
         (mem/write-u8 dview 0)
         (mem/write-f32 dview line-height)

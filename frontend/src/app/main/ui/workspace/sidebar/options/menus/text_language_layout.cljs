@@ -5,6 +5,8 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.text-language-layout
+  "Language panel of the text options, and the options of each CJK
+  language below it. The controls they share are in `text-cjk-controls`."
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.types.text.cjk-layout :as cjk]
@@ -18,10 +20,252 @@
    [app.main.ui.ds.controls.switch :refer [switch*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.workspace.sidebar.options.common :refer [radio-selected]]
-   [app.main.ui.workspace.sidebar.options.menus.text-japanese-layout :as tjl]
+   [app.main.ui.workspace.sidebar.options.menus.text-cjk-controls :as tcc]
    [app.util.i18n :refer [tr]]
    [app.util.text.layout :as tl]
    [rumext.v2 :as mf]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Japanese
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn proportional-metrics-feature
+  "Proportional metrics feature for the writing mode: `vpal` or `palt`."
+  [writing-mode]
+  (if (= writing-mode "vertical-rl") "vpal" "palt"))
+
+(defn text-combine-upright-options
+  [text-selection-active translate]
+  (cond-> [{:value "none"
+            :id    "none-text-combine-upright"
+            :label (translate "workspace.options.text-options.text-combine-upright-none")
+            :icon  i/text-combine-upright-none}]
+    text-selection-active
+    (conj {:value "all"
+           :id    "all-text-combine-upright"
+           :label (translate "workspace.options.text-options.text-combine-upright-all")
+           :icon  i/text-combine-upright-all})
+
+    true
+    (conj {:value "digits"
+           :id    "digits-text-combine-upright"
+           :label (translate "workspace.options.text-options.text-combine-upright-digits")
+           :icon  i/text-combine-upright-digits})))
+
+;; select* matches options by :id, so each id is the stored value.
+(defn text-combine-upright-count-options
+  [translate]
+  [{:id    "digits2"
+    :label (translate "workspace.options.text-options.text-combine-upright-digits-2")}
+   {:id    "digits3"
+    :label (translate "workspace.options.text-options.text-combine-upright-digits-3")}
+   {:id    "digits"
+    :label (translate "workspace.options.text-options.text-combine-upright-digits-4")}])
+
+;; Warichu (割注): renders the selection as two half-size lines in one inline
+;; position (top/bottom horizontally, right/left vertically).
+(defn warichu-options
+  [translate]
+  [{:value "none"
+    :id    "none-warichu"
+    :label (translate "workspace.options.text-options.warichu-none")
+    :icon  i/warichu-none}
+   {:value "warichu"
+    :id    "warichu-warichu"
+    :label (translate "workspace.options.text-options.warichu")
+    :icon  i/warichu}])
+
+(defn line-adjustment-options
+  ([]
+   (line-adjustment-options tr))
+  ([translate]
+   [{:id "push-in-first"
+     :label (translate "workspace.options.text-options.line-adjustment-push-in-first")}
+    {:id "push-out-first"
+     :label (translate "workspace.options.text-options.line-adjustment-push-out-first")}
+    {:id "push-out-only"
+     :label (translate "workspace.options.text-options.line-adjustment-push-out-only")}]))
+
+(defn- text-combine-upright-value
+  [values]
+  (radio-selected (:text-combine-upright values) (cjk/enum-default :text-combine-upright)))
+
+(mf/defc japanese-writing-mode-options*
+  "Radio groups Japanese adds to the writing mode row: tate-chu-yoko for
+  vertical text, warichu for a text selection. Digit tate-chu-yoko finds
+  eligible runs itself, so it applies to a whole shape; `all` is offered
+  only for a text selection."
+  [{:keys [values on-change on-blur text-selection-active]}]
+  (let [props   (mf/props {:on-change on-change :on-blur on-blur})
+        value   (:text-combine-upright values)
+        ;; The digit counts are picked in their own select.
+        tcy     (if (cjk/digit-combine? (radio-selected value)) "digits" value)
+        options (mf/with-memo [text-selection-active]
+                  {:text-combine-upright (text-combine-upright-options text-selection-active tr)
+                   :warichu              (warichu-options tr)})]
+    [:*
+     (when (tcc/vertical-writing? values)
+       [:> tcc/attr-radio-options* (mf/spread-props props
+                                                    {:values        {:text-combine-upright tcy}
+                                                     :attr          :text-combine-upright
+                                                     :default-value (cjk/enum-default :text-combine-upright)
+                                                     :name          "text-combine-upright-options"
+                                                     :options       (:text-combine-upright options)})])
+     (when ^boolean text-selection-active
+       [:> tcc/attr-radio-options* (mf/spread-props props
+                                                    {:values        values
+                                                     :attr          :warichu
+                                                     :default-value (cjk/enum-default :warichu)
+                                                     :name          "warichu-options"
+                                                     :options       (:warichu options)})])]))
+
+(mf/defc text-combine-upright-count-option*
+  [{:keys [values on-change on-blur]}]
+  (let [value   (text-combine-upright-value values)
+        options (mf/with-memo [] (text-combine-upright-count-options tr))]
+    (when (cjk/digit-combine? value)
+      [:> tcc/span-select-option* {:values        {:text-combine-upright value}
+                                   :on-change     on-change
+                                   :on-blur       on-blur
+                                   :attr          :text-combine-upright
+                                   :default-value value
+                                   :label         (tr "workspace.options.text-options.text-combine-upright-digits-count")
+                                   :options       options}])))
+
+(mf/defc font-features-option*
+  "Proportional metric alternates, per span: `palt` for horizontal text,
+  `vpal` for vertical."
+  [{:keys [values on-change on-blur]}]
+  (let [feature  (proportional-metrics-feature (:writing-mode values))
+        value    (:font-features values)
+        enabled? (cond
+                   (tcc/mixed-span-value? value) nil
+                   (= feature value) true
+                   :else false)
+        label    (tr "workspace.options.text-options.font-features")
+
+        handle-change
+        (mf/use-fn
+         (mf/deps feature on-change on-blur)
+         (fn [checked?]
+           (on-change {:font-features (if checked? feature "none")})
+           (when (some? on-blur) (on-blur))))]
+
+    [:> tcc/option-row* {:label label}
+     [:> switch* {:default-checked enabled?
+                  :aria-label      label
+                  :on-change       handle-change}]]))
+
+(mf/defc line-adjustment-option*
+  "Whole-shape setting: how lines slightly too long are fitted."
+  [{:keys [values on-change on-blur]}]
+  (let [options (mf/with-memo [] (line-adjustment-options))]
+    [:> tcc/span-select-option* {:values        values
+                                 :on-change     on-change
+                                 :on-blur       on-blur
+                                 :attr          :line-adjustment
+                                 :default-value (cjk/enum-default :line-adjustment)
+                                 :label         (tr "workspace.options.text-options.line-adjustment")
+                                 :options       options}]))
+
+(defn- japanese-reading-labels
+  []
+  {:input       (tr "workspace.options.text-options.ruby")
+   :placeholder (tr "workspace.options.text-options.ruby-placeholder")
+   :advanced    (tr "workspace.options.text-options.ruby-advanced-options")})
+
+(mf/defc japanese-layout-options*
+  "Japanese options below the writing mode row."
+  [{:keys [values ruby-values text-selection-active on-change on-ruby-presentation-change on-blur]}]
+  (let [vertical? (tcc/vertical-writing? values)
+        labels    (japanese-reading-labels)
+        props     (mf/props {:values values :on-change on-change :on-blur on-blur
+                             :vertical vertical? :labels labels})]
+    [:*
+     (when ^boolean vertical?
+       [:> text-combine-upright-count-option* props])
+     [:> font-features-option* props]
+     [:> line-adjustment-option* props]
+     ;; Emphasis marks (圏点 / bouten) apply to the selected characters.
+     (when ^boolean text-selection-active
+       [:> tcc/text-emphasis-option* props])
+     [:> tcc/annotation-clearance-option* props]
+     (if ^boolean text-selection-active
+       [:> tcc/ruby-advanced-options* props]
+       [:> tcc/ruby-presentation-options*
+        (mf/spread-props props {:values ruby-values
+                                :on-change on-ruby-presentation-change})])]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Chinese
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(mf/defc chinese-decoration-options*
+  [{:keys [values on-change on-blur]}]
+  (let [props (mf/props {:values values :on-change on-change :on-blur on-blur
+                         :vertical (tcc/vertical-writing? values)})]
+    [:*
+     [:> tcc/text-emphasis-option* props]
+     [:> tcc/position-select-option*
+      (mf/spread-props props {:attr :text-emphasis-position
+                              :label (tr "workspace.options.text-options.emphasis-position")})]
+     [:> tcc/position-select-option*
+      (mf/spread-props props {:attr :text-underline-position
+                              :label (tr "workspace.options.text-options.underline-position")})]
+     [:> tcc/annotation-clearance-option* props]]))
+
+(defn- chinese-reading-labels
+  [zhuyin?]
+  (if zhuyin?
+    {:input       (tr "workspace.options.text-options.zhuyin")
+     :placeholder (tr "workspace.options.text-options.zhuyin-placeholder")
+     :advanced    (tr "workspace.options.text-options.pinyin-advanced-options")
+     :validate    cjk/zhuyin-reading?
+     :invalid     (tr "workspace.options.text-options.zhuyin-invalid")}
+    {:input       (tr "workspace.options.text-options.pinyin")
+     :placeholder (tr "workspace.options.text-options.pinyin-placeholder")
+     :advanced    (tr "workspace.options.text-options.pinyin-advanced-options")}))
+
+(mf/defc chinese-reading-options*
+  "Pinyin or zhuyin readings. Zhuyin annotates one Han character at a time."
+  [{:keys [values ruby-values text-selection-active reading-selection-active zhuyin-selection-active
+           on-change on-ruby-presentation-change on-blur]}]
+  (let [zhuyin? (true? (:ruby-zhuyin values))
+        format-label (tr "workspace.options.text-options.chinese-reading-format")
+        handle-format-change (mf/use-fn
+                              (mf/deps on-change)
+                              (fn [value] (on-change {:ruby-zhuyin (= "zhuyin" value)})))
+        props (mf/props {:values values :on-change on-change :on-blur on-blur
+                         :vertical (tcc/vertical-writing? values)
+                         :labels (chinese-reading-labels zhuyin?)})
+        presentation-props (mf/spread-props props {:values ruby-values
+                                                   :on-change on-ruby-presentation-change})]
+    [:*
+     (when reading-selection-active
+       [:> tcc/option-row* {:label format-label}
+        [:> select* {:default-selected (if zhuyin? "zhuyin" "pinyin")
+                     :aria-label format-label
+                     :options [{:id "pinyin" :label (tr "workspace.options.text-options.pinyin")}
+                               {:id "zhuyin" :label (tr "workspace.options.text-options.zhuyin")
+                                :disabled (not zhuyin-selection-active)}]
+                     :on-change handle-format-change}]])
+     (if (and reading-selection-active (or (not zhuyin?) zhuyin-selection-active))
+       (if zhuyin?
+         [:* [:p {:class (stl/css :selection-hint)} (tr "workspace.options.text-options.zhuyin-selection-hint")]
+          [:> tcc/ruby-options* props]
+          [:> tcc/ruby-hidden-option* props]]
+         [:> tcc/ruby-advanced-options* props])
+       [:*
+        [:p {:class (stl/css :selection-hint)}
+         (if zhuyin? (tr "workspace.options.text-options.zhuyin-selection-hint") (tr "workspace.options.text-options.pinyin-selection-hint"))]
+        (when-not text-selection-active
+          (if zhuyin?
+            [:> tcc/ruby-hidden-option* presentation-props]
+            [:> tcc/ruby-presentation-options* presentation-props]))])]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Korean
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn korean-wrap-options
   [value translate]
@@ -30,67 +274,19 @@
     (= value "spaces-only")
     (conj {:id "spaces-only" :label (translate "workspace.options.text-options.korean-wrap-spaces-only")})))
 
-(mf/defc chinese-decoration-options*
+(mf/defc korean-layout-options*
   [{:keys [values on-change on-blur]}]
-  (let [props (mf/props {:values values :on-change on-change :on-blur on-blur
-                         :vertical (tjl/vertical-japanese-layout? values)})]
-    [:div {:class (stl/css :decoration-options)}
-     [:> tjl/span-select-option*
-      (mf/spread-props props {:attr :text-emphasis :default-value "none"
-                              :label (tr "workspace.options.text-options.text-emphasis")
-                              :options (tjl/text-emphasis-options tr)})]
-     [:> tjl/position-select-option*
-      (mf/spread-props props {:attr :text-emphasis-position
-                              :label (tr "workspace.options.text-options.emphasis-position")})]
-     [:> tjl/position-select-option*
-      (mf/spread-props props {:attr :text-underline-position
-                              :label (tr "workspace.options.text-options.underline-position")})]
-     [:> tjl/span-select-option*
-      (mf/spread-props props {:attr :annotation-clearance :default-value "none"
-                              :label (tr "workspace.options.text-options.annotation-clearance")
-                              :options (tjl/annotation-clearance-options)})]]))
+  [:> tcc/span-select-option* {:values        values
+                               :on-change     on-change
+                               :on-blur       on-blur
+                               :attr          :korean-wrap
+                               :default-value (cjk/enum-default :korean-wrap)
+                               :label         (tr "workspace.options.text-options.korean-wrap")
+                               :options       (korean-wrap-options (:korean-wrap values) tr)}])
 
-(mf/defc chinese-reading-options*
-  [{:keys [values ruby-values text-selection-active reading-selection-active zhuyin-selection-active
-           on-change on-ruby-presentation-change on-blur]}]
-  (let [zhuyin? (true? (:ruby-zhuyin values))
-        labels {:input (if zhuyin? (tr "workspace.options.text-options.zhuyin") (tr "workspace.options.text-options.pinyin"))
-                :placeholder (if zhuyin? (tr "workspace.options.text-options.zhuyin-placeholder") (tr "workspace.options.text-options.pinyin-placeholder"))
-                :advanced (tr "workspace.options.text-options.pinyin-advanced-options")}
-        handle-format-change (mf/use-fn
-                              (mf/deps on-change)
-                              (fn [value] (on-change {:ruby-zhuyin (= "zhuyin" value)})))
-        props (mf/props {:values values :on-change on-change :on-blur on-blur
-                         :vertical (tjl/vertical-japanese-layout? values)
-                         :labels (cond-> labels zhuyin?
-                                         (assoc :validate cjk/zhuyin-reading?
-                                                :invalid (tr "workspace.options.text-options.zhuyin-invalid")))})]
-    [:div {:class (stl/css :pinyin-options)}
-     (when reading-selection-active
-       [:div {:class (stl/css :reading-format-option)}
-        [:span {:class (stl/css :option-label)} (tr "workspace.options.text-options.chinese-reading-format")]
-        [:> select* {:default-selected (if zhuyin? "zhuyin" "pinyin")
-                     :aria-label (tr "workspace.options.text-options.chinese-reading-format")
-                     :options [{:id "pinyin" :label (tr "workspace.options.text-options.pinyin")}
-                               {:id "zhuyin" :label (tr "workspace.options.text-options.zhuyin")
-                                :disabled (not zhuyin-selection-active)}]
-                     :on-change handle-format-change}]])
-     (if (and reading-selection-active (or (not zhuyin?) zhuyin-selection-active))
-       (if zhuyin?
-         [:* [:p {:class (stl/css :selection-hint)} (tr "workspace.options.text-options.zhuyin-selection-hint")]
-          [:> tjl/ruby-options* props]
-          [:> tjl/ruby-hidden-option* props]]
-         [:> tjl/ruby-advanced-options* props])
-       [:*
-        [:p {:class (stl/css :selection-hint)}
-         (if zhuyin? (tr "workspace.options.text-options.zhuyin-selection-hint") (tr "workspace.options.text-options.pinyin-selection-hint"))]
-        (when-not text-selection-active
-          (if zhuyin?
-            [:> tjl/ruby-hidden-option*
-             (mf/spread-props props {:values ruby-values :on-change on-ruby-presentation-change})]
-            [:> tjl/ruby-presentation-options*
-             (mf/spread-props props {:values ruby-values
-                                     :on-change on-ruby-presentation-change})]))])]))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Language panel
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (mf/defc distribute-option*
   "Distributed alignment (均等割り付け, 分散对齐, 배분 정렬): spreads the
@@ -104,44 +300,31 @@
          (fn [checked?]
            (on-change {:text-align (if checked? "distribute" "left")})
            (when (some? on-blur) (on-blur))))]
-    [:div {:class (stl/css :distribute-option)}
-     [:span {:class (stl/css :option-label)} label]
+    [:> tcc/option-row* {:label label}
      [:> switch* {:default-checked (= "distribute" (radio-selected (:text-align values)))
                   :aria-label      label
                   :on-change       handle-change}]]))
 
 (mf/defc language-layout-options*
-  "Options of the CJK `language` (`:japanese`, `:chinese` or `:korean`)."
-  [{:keys [language values ruby-values text-selection-active reading-selection-active zhuyin-selection-active
-           on-change on-ruby-presentation-change on-blur]}]
-  (let [props (mf/props {:values values :on-change on-change :on-blur on-blur})]
-    [:div {:class (stl/css :language-layout-options)}
-     ;; Distribute goes below the writing mode row.
-     (if (= :japanese language)
-       [:> tjl/japanese-layout-options*
-        (mf/spread-props props {:ruby-values ruby-values
-                                :text-selection-active text-selection-active
-                                :on-ruby-presentation-change on-ruby-presentation-change})
-        [:> distribute-option* props]]
-       [:*
-        [:> tjl/writing-mode-controls* props]
-        [:> distribute-option* props]])
-     (when (= :chinese language)
-       [:> chinese-decoration-options* props])
-     (when (= :chinese language)
-       [:> chinese-reading-options*
-        (mf/spread-props props {:ruby-values ruby-values
-                                :text-selection-active text-selection-active
-                                :reading-selection-active reading-selection-active
-                                :zhuyin-selection-active zhuyin-selection-active
-                                :on-ruby-presentation-change on-ruby-presentation-change})])
-     (when (= :korean language)
-       [:> tjl/span-select-option*
-        (mf/spread-props props
-                         {:attr :korean-wrap
-                          :default-value "syllable"
-                          :label (tr "workspace.options.text-options.korean-wrap")
-                          :options (korean-wrap-options (:korean-wrap values) tr)})])]))
+  "Options of the CJK `language` (`:japanese`, `:chinese` or `:korean`):
+  the writing mode row and Distribute, which all share, then the options
+  of the language."
+  [{:keys [language values text-selection-active on-change on-blur] :as props}]
+  [:div {:class (stl/css :language-layout-options)}
+   [:> tcc/writing-mode-controls* {:values values :on-change on-change :on-blur on-blur}
+    (when (= :japanese language)
+      [:> japanese-writing-mode-options* {:values values
+                                          :on-change on-change
+                                          :on-blur on-blur
+                                          :text-selection-active text-selection-active}])]
+   [:> distribute-option* props]
+   (case language
+     :japanese [:> japanese-layout-options* props]
+     :chinese  [:*
+                [:> chinese-decoration-options* props]
+                [:> chinese-reading-options* props]]
+     :korean   [:> korean-layout-options* props]
+     nil)])
 
 (mf/defc language-row*
   "The language of the texts, opening the language dropdown, and the button
