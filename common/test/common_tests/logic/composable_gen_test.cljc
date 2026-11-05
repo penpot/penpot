@@ -1178,3 +1178,12 @@
                                     :library true :rich-variants true :layout-children true :library-text true
                                     :grid-empty true :layout-copies true :text true}]
                        :ops [[:style 13 29 1] [:rotate 6 0 0 0]]}))))
+
+(t/deftest generated-switch-finds-the-main-of-a-copy-in-a-swapped-copy
+  ;; a switch of a nested copy inside a swapped copy, itself inside a copy of
+  ;; a deleted component, carries its child's text override from the main
+  ;; the swapped copy holds
+  (t/is (map? (cg/run {:world [2 1 {:variants true :text-styles true :layout nil :layout-item-margins false
+                                    :grid-square false :library true :rich-variants true :layout-children false
+                                    :grid-empty false :layout-copies true :text true}]
+                       :ops [[:nest 6 0 0 0] [:text 6 0 0 0] [:delete 6 0 0 0] [:swap 6 0 0 0] [:switch 0 0 0 0]]}))))

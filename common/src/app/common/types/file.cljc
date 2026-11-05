@@ -549,13 +549,15 @@
         [remote-shape component-container component-file]
         (if (some? remote-shape)
           [remote-shape component-container component-file]
-          ;; If not found, try the case of this being a fostered or swapped children
-          (let [head-instance        (ctn/get-head-shape (:objects container) shape)
-                component-file       (get-in libraries [(:component-file head-instance) :data])
-                head-component       (ctkl/get-component component-file (:component-id head-instance) true)
-                remote-shape'        (get-ref-shape component-file head-component shape)
-                component-container' (get-component-container component-file head-component)]
-            [remote-shape' component-container' component-file]))]
+          ;; A fostered or swapped child refers to the main of a nested
+          ;; head, tried from the nearest one up
+          (some (fn [head]
+                  (let [component-file (get-in libraries [(:component-file head) :data])
+                        head-component (ctkl/get-component component-file (:component-id head) true)
+                        remote-shape'  (get-ref-shape component-file head-component shape)]
+                    (when (some? remote-shape')
+                      [remote-shape' (get-component-container component-file head-component) component-file])))
+                (reverse (ctn/get-parent-heads (:objects container) shape))))]
 
     (if (nil? remote-shape)
       nil
