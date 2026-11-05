@@ -463,19 +463,21 @@
                             (d/ordered-map)
                             (keep (fn [id]
                                     (let [shape (get objects id)
-                                          root (when (:component-id shape) (ctn/get-component-shape objects shape))
+                                          root (when (:shape-ref shape) (ctn/get-component-shape objects shape))
                                           old (get before id)
-                                          reflected-head? (and (:component-id shape)
-                                                               (:shape-ref shape)
-                                                               (or (not= (boolean (:flip-x old)) (boolean (:flip-x shape)))
-                                                                   (not= (boolean (:flip-y old)) (boolean (:flip-y shape)))))]
+                                          ;; a copy head, or a plain copy shape with children
+                                          reflected? (and (some? root)
+                                                          (or (:component-id shape) (seq (:shapes shape)))
+                                                          (or (not= (boolean (:flip-x old)) (boolean (:flip-x shape)))
+                                                              (not= (boolean (:flip-y old)) (boolean (:flip-y shape)))))]
                                       (cond
-                                        (and (ctk/swapped? shape)
+                                        (and (some? root)
+                                             (ctk/swapped? shape)
                                              (not (ctk/touched-group? shape :geometry-group))
                                              (not= (orientation old) (orientation shape)))
                                         [(:id root) true]
 
-                                        reflected-head?
+                                        reflected?
                                         [(:id root) false])))
                                   ids))]
     (reduce (fn [changes [id resize?]]

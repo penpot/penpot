@@ -312,6 +312,14 @@
   (t/is (map? (cg/run {:world [2 1 {:text true :layout :grid}]
                        :ops [[:rotate 1] [:transform 2 16 0 9]]}))))
 
+(t/deftest reflecting-a-plain-copy-child-settles-descendant-flips
+  ;; the main detaches its nested copy, so the copy's nested head is a plain
+  ;; copy child; reflecting it leaves its turned child as a full sync does
+  (t/is (map? (cg/run {:world [3 1 {:text true :text-styles true :layout nil :layout-children false
+                                    :layout-item-margins false :grid-square false :grid-empty false}]
+                       :ops [[:transform 3 9 1 7] [:remove-child 0 0 0 0] [:detach 4 0 0 0]
+                             [:transform 0 4 0 7]]}))))
+
 (t/deftest swapping-after-a-resized-variant-keeps-child-placement
   (t/is (map? (cg/run {:world [2 2 {:variants true :variant-diff false :rich-variants true
                                     :text true :layout nil :layout-copies true}]
