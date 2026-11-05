@@ -1100,3 +1100,11 @@
   (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout :flex :variant-diff false :rich-variants true
                                     :layout-children true :layout-copies true :text true}]
                        :ops [[:delete 6 0 0 0] [:swap 20 0 0 0] [:nest 7 0 0 0] [:style 13 27 1] [:switch 0 0 0 0]]}))))
+
+(t/deftest generated-swap-keeps-a-moved-copy-child-in-place-as-its-own
+  ;; a copy child of a copy moved and swapped for another component keeps
+  ;; the moved place as its own geometry
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:text 14 0 0 0] [:nest 0 0 0 0] [:transform 0 0 0 18] [:swap 12 0 0 0]]}))))
