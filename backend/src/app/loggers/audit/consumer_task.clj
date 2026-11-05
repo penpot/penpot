@@ -255,6 +255,7 @@
     "success-activate-organization-sso"
     "success-apply-organization-sso-changes"
     "unassign-organization-attribute"
+    "update-organization-attribute"
     "update-organization-invitation"
     "update-organization-permissions"
     "update-team-invitation"
