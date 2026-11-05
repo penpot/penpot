@@ -1169,3 +1169,12 @@
                                     :layout-children false :grid-empty false :layout-copies true :text true}]
                        :ops [[:transform 1 4 0 0] [:delete 5 0 0 0] [:delete 0] [:restore 0]
                              [:transform 1 4 0 0] [:switch 0 0 0 0]]}))))
+
+(t/deftest generated-turning-a-grid-turns-its-fill-child-rigidly
+  ;; a grid copy whose child fills its width is turned 45 degrees: the child
+  ;; turns with it, unskewed, as a full sync places it
+  (t/is (map? (cg/run {:world [2 1 {:variants true :text-styles true :library-variants true :stale-libraries true
+                                    :layout :grid :layout-item-margins false :grid-square false :library-depth 1
+                                    :library true :rich-variants true :layout-children true :library-text true
+                                    :grid-empty true :layout-copies true :text true}]
+                       :ops [[:style 13 29 1] [:rotate 6 0 0 0]]}))))
