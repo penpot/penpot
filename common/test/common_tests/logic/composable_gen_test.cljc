@@ -1197,3 +1197,16 @@
                                       :layout-item-margins false :grid-square false :rich-variants true
                                       :layout-children false :grid-empty true :layout-copies true :text true}]
                          :ops [[:style 0 29 1] [:nest 9 0 0 0] [:duplicate 5 1 0 0]]})))))
+
+(t/deftest generated-switch-carries-no-geometry-the-new-copy-already-shows
+  ;; a switched head inherits a turn its new copy already shows up to float
+  ;; noise in the transform; the switch carries no geometry override for it
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :layout-item-margins false
+                                    :grid-square false :library true :rich-variants true :layout-children false
+                                    :grid-empty false :layout-copies true :text true}]
+                       :ops [[:nest 6 0 0 0] [:rotate 21 0 0 0] [:duplicate 21 0 0 0] [:switch 0 0 0 0]
+                             [:switch 0 0 0 0] [:edit 6 0 1 1] [:update-main 6] [:switch 9 0 0 0]]})))
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:rotate 0 0 0 0] [:update-main 0 0 0 0] [:resize 0 0 0 0] [:switch 4 0 0 0]]}))))

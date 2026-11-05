@@ -175,8 +175,11 @@
          ;; If the attribute is not valid for the destiny, don't copy it
          (not (cts/is-allowed-switch-keep-attr? attr (:type current-shape)))
 
-         ;; If the values are already equal, don't copy them
-         (= (get previous-shape attr) (get current-shape attr))
+         ;; If the values are already equal, don't copy them; geometry
+         ;; within its precision
+         (if (= sync-group :geometry-group)
+           (gsh/close-attrs? attr (get previous-shape attr) (get current-shape attr))
+           (= (get previous-shape attr) (get current-shape attr)))
 
          ;; If :selrect/:points values are already equal ignoring displacement,
          ;; don't copy them
