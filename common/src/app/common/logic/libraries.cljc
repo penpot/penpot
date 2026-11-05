@@ -38,6 +38,7 @@
    [app.common.types.text :as txt]
    [app.common.types.token :as cto]
    [app.common.types.typography :as cty]
+   [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
@@ -565,9 +566,10 @@
                   objects
                   (let [modif-tree (gm/set-objects-modifiers
                                     {(:id shape-main) {:modifiers (ctm/change-size shape-main width height)}}
-                                    ;; the copy keeps its own size, which no layout of the main owns
+                                    ;; the subtree alone, under the root: no layout of the main's
+                                    ;; parent owns the copy's size
                                     (-> (reduce-kv #(d/update-when %1 %2 merge %3) objects authored)
-                                        (assoc-in [(:id shape-main) :layout-item-absolute] true)))]
+                                        (update (:id shape-main) assoc :parent-id uuid/zero)))]
                     (reduce-kv (fn [objects id {:keys [modifiers]}]
                                  (d/update-when objects id gsh/transform-shape modifiers))
                                objects
