@@ -32,6 +32,20 @@
   [f]
   (try (f) nil (catch Throwable cause cause)))
 
+(defn- race
+  "Run every thunk on a thread of its own and return what each returned,
+  in the order they were given. They all wait on the same gate, so they
+  contend for whatever they share instead of running one after another."
+  [& thunks]
+  (let [gate    (promise)
+        results (mapv (fn [f]
+                        (future
+                          @gate
+                          (f)))
+                      thunks)]
+    (deliver gate true)
+    (mapv deref results)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JOB-DEF (plain handler + precompiled init-key)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -107,14 +121,6 @@
    :deleted-at (ct/now)
    :id        (uuid/next)
    :file-id   (uuid/next)})
-
-(defn- insert-job-statement?
-  "True when a `db/exec-one!` call is the job INSERT, whatever the
-  argument shape (a `[sql & params]` vector or a bare SQL string)."
-  [args]
-  (let [stmt (second args)
-        sql  (if (string? stmt) stmt (first stmt))]
-    (and (string? sql) (str/starts-with? sql "insert into job"))))
 
 (def ^:private test-error
   {:type :internal
@@ -433,70 +439,74 @@
             (t/is (uuid? (:file-id decoded)))
             (t/is (ct/inst? (:deleted-at decoded)))))))))
 
-(t/deftest submit-dedupe-replaces-not-due-new-rows
+;; --- DEDUPE / DEBOUNCE
+
+(t/deftest submit-dedupe-skips-a-pending-job
   (let [cfg    (make-cfg (get-job-defs))
-        params (make-params)
         label  "dedupe-label"
-        id1    (jobs/submit cfg {::jobs/name   :echo
-                                 ::jobs/params params
-                                 ::jobs/label  label
-                                 ::jobs/dedupe true
-                                 ::jobs/delay  10000})
-        id2    (jobs/submit cfg {::jobs/name   :echo
-                                 ::jobs/params params
-                                 ::jobs/label  label
-                                 ::jobs/dedupe true
-                                 ::jobs/delay  10000})]
+        opts   {::jobs/name   :echo
+                ::jobs/label  label
+                ::jobs/dedupe true
+                ::jobs/delay  10000}
+        id1    (jobs/submit cfg (assoc opts ::jobs/params (make-params)))
+        row1   (jobs/get-job cfg id1)
+        id2    (jobs/submit cfg (assoc opts
+                                       ::jobs/params (assoc (make-params)
+                                                            :text "second")))]
 
     (t/is (uuid? id1))
-    (t/is (uuid? id2))
-    (t/is (not= id1 id2))
+    (t/testing "the pending job is not touched and nothing is inserted"
+      (t/is (nil? id2))
+      (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                          WHERE label = ?" label]))))
+      (let [row2 (jobs/get-job cfg id1)]
+        (t/is (= (:scheduled-at row1) (:scheduled-at row2))
+              "the schedule of the pending job does not move")
+        (t/is (= "hello" (:text (:params row2)))
+              "and it keeps its own params")))))
 
-    (t/testing "the first new row (not due yet) is removed"
-      (t/is (nil? (jobs/get-job cfg id1)))
+(t/deftest submit-dedupe-checks-any-schedule
+  (let [cfg    (make-cfg (get-job-defs))
+        params (make-params)]
 
-      (t/testing "and only the new row remains"
+    (t/testing "a due `new` row still counts as pending"
+      (let [label "dedupe-due-label"
+            id1   (jobs/submit cfg {::jobs/name   :echo
+                                    ::jobs/params params
+                                    ::jobs/label  label
+                                    ::jobs/dedupe true
+                                    ::jobs/delay  10000})
+            _     (th/db-update! :job {:scheduled-at (ct/minus (ct/now)
+                                                               (ct/duration {:seconds 5}))}
+                                 {:id id1})
+            id2   (jobs/submit cfg {::jobs/name   :echo
+                                    ::jobs/params params
+                                    ::jobs/label  label
+                                    ::jobs/dedupe true})]
+        (t/is (nil? id2))
         (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
-                                            WHERE label = ?" label]))))))))
+                                            WHERE label = ?" label]))))))
 
-(t/deftest submit-dedupe-keeps-due-and-running-rows
-  (let [cfg    (make-cfg (get-job-defs))
-        params (make-params)
-        label  "dedupe-active-label"
-        id1    (jobs/submit cfg {::jobs/name   :echo
-                                 ::jobs/params params
-                                 ::jobs/label  label})
-        _      (th/db-update! :job {:status "running"} {:id id1})
-        id2    (jobs/submit cfg {::jobs/name   :echo
-                                 ::jobs/params params
-                                 ::jobs/label  label
-                                 ::jobs/dedupe true})]
-
-    (t/is (some? (jobs/get-job cfg id1)))
-    (t/is (= 2 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
-                                        WHERE label = ?" label])))))
-
-  (let [cfg    (make-cfg (get-job-defs))
-        params (make-params)
-        label  "dedupe-due-label"
-        id1    (jobs/submit cfg {::jobs/name   :echo
-                                 ::jobs/params params
-                                 ::jobs/label  label})
-        _      (th/db-update! :job {:scheduled-at (ct/minus (ct/now)
-                                                            (ct/duration {:seconds 5}))}
-                              {:id id1})
-        id2    (jobs/submit cfg {::jobs/name   :echo
-                                 ::jobs/params params
-                                 ::jobs/label  label
-                                 ::jobs/dedupe true})]
-
-    (t/is (some? (jobs/get-job cfg id1)))
-    (t/is (= 2 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
-                                        WHERE label = ?" label]))))))
+    (t/testing "a started row does not block the next one"
+      (doseq [status ["scheduled" "running" "retry"]]
+        (let [label (str "dedupe-started-" status)
+              id1   (jobs/submit cfg {::jobs/name   :echo
+                                      ::jobs/params params
+                                      ::jobs/label  label
+                                      ::jobs/dedupe true})
+              _     (th/db-update! :job {:status status} {:id id1})
+              id2   (jobs/submit cfg {::jobs/name   :echo
+                                      ::jobs/params params
+                                      ::jobs/label  label
+                                      ::jobs/dedupe true})]
+          (t/is (uuid? id2))
+          (t/is (= 2 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                              WHERE label = ?" label])))))))))
 
 (t/deftest submit-dedupe-leaves-another-tenants-rows-alone
-  ;; The DELETE matches name, queue and label. Without the tenant in the
-  ;; match it would reach into another instance's not-started jobs.
+  ;; The tenant is part of the key of the index. Without it this submit
+  ;; would see the not-started job of another instance sharing the
+  ;; database and skip its own work.
   (let [cfg        (make-cfg (get-job-defs))
         params     (make-params)
         label      "dedupe-shared-label"
@@ -511,22 +521,149 @@
                          :priority     100
                          :max-retries  3
                          :retry-num    0
+                         :dedupe       true
                          :scheduled-at (ct/plus (ct/now) (ct/duration {:seconds 10}))
                          :created-at   (ct/now)
                          :modified-at  (ct/now)})
-    (jobs/submit cfg {::jobs/name   :echo
-                      ::jobs/params params
-                      ::jobs/queue  :default
-                      ::jobs/label  label
-                      ::jobs/dedupe true
-                      ::jobs/delay  10000})
-    (t/is (some? (jobs/get-job cfg foreign-id))
-          "another tenant's matching job must survive our dedupe")
-    (t/testing "and only our own row was written"
+    (let [id (jobs/submit cfg {::jobs/name   :echo
+                               ::jobs/params params
+                               ::jobs/queue  :default
+                               ::jobs/label  label
+                               ::jobs/dedupe true
+                               ::jobs/delay  10000})]
+      (t/is (uuid? id))
+      (t/is (some? (jobs/get-job cfg foreign-id))
+            "another tenant's matching job must survive our submit")
+      (t/testing "and only our own row was written"
+        (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                            WHERE label = ?
+                                              AND tenant = ?"
+                                           label (cf/get :tenant)]))))))))
+
+(t/deftest submit-dedupe-does-not-block-on-plain-jobs
+  ;; Only the jobs submitted with the option are part of its key, so the
+  ;; label of an ordinary job stays a label.
+  (let [cfg    (make-cfg (get-job-defs))
+        params (make-params)
+        label  "dedupe-over-plain"]
+    (t/is (uuid? (jobs/submit cfg {::jobs/name   :echo
+                                   ::jobs/params params
+                                   ::jobs/label  label})))
+    (t/is (uuid? (jobs/submit cfg {::jobs/name   :echo
+                                   ::jobs/params params
+                                   ::jobs/label  label
+                                   ::jobs/dedupe true})))
+    (t/is (= 2 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                        WHERE label = ?" label]))))))
+
+(t/deftest two-concurrent-dedupe-submits-leave-one-row
+  ;; The exclusion is the index, not a read before the write: two
+  ;; backends submitting the same key at the same time cannot both win.
+  (let [cfg    (make-cfg (get-job-defs))
+        params (make-params)
+        label  "dedupe-race"
+        submit #(jobs/submit cfg {::jobs/name   :echo
+                                  ::jobs/params params
+                                  ::jobs/label  label
+                                  ::jobs/dedupe true})]
+    (let [[a b] (race submit submit)]
+      (t/is (= 1 (count (filter uuid? [a b])))
+            "exactly one of the two submits got a job")
       (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
-                                          WHERE label = ?
-                                            AND tenant = ?"
-                                         label (cf/get :tenant)])))))))
+                                          WHERE label = ?" label])))))))
+
+(t/deftest submit-debounce-refreshes-the-pending-job
+  (let [cfg    (make-cfg (get-job-defs))
+        label  "debounce-label"
+        opts   {::jobs/name     :echo
+                ::jobs/label    label
+                ::jobs/debounce true}
+        id1    (jobs/submit cfg (assoc opts
+                                       ::jobs/params (make-params)
+                                       ::jobs/delay  10000))
+        row1   (jobs/get-job cfg id1)
+        id2    (jobs/submit cfg (assoc opts
+                                       ::jobs/params (assoc (make-params)
+                                                            :text "second")
+                                       ::jobs/delay  60000))
+        row2   (jobs/get-job cfg id1)]
+
+    (t/is (= id1 id2)
+          "a refresh answers with the id the row already had")
+    (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                        WHERE label = ?" label]))))
+    (t/testing "the pending job keeps its id and its creation date"
+      (t/is (some? row2))
+      (t/is (= (:id row1) (:id row2)))
+      (t/is (= (:created-at row1) (:created-at row2))))
+    (t/testing "and takes the new schedule and the new params"
+      (t/is (pos? (compare (:scheduled-at row2) (:scheduled-at row1))))
+      (t/is (= "second" (:text (:params row2)))))))
+
+(t/deftest submit-debounce-inserts-when-nothing-is-pending
+  (let [cfg    (make-cfg (get-job-defs))
+        params (make-params)
+        label  "debounce-idle-label"
+        id     (jobs/submit cfg {::jobs/name     :echo
+                                 ::jobs/params   params
+                                 ::jobs/label    label
+                                 ::jobs/debounce true})]
+    (t/is (uuid? id))
+    (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                        WHERE label = ?" label]))))))
+
+(t/deftest submit-debounce-inserts-past-started-rows
+  (doseq [status ["scheduled" "running" "retry"]]
+    (t/testing (str "started status " status)
+      (let [cfg    (make-cfg (get-job-defs))
+            params (make-params)
+            label  (str "debounce-started-" status)
+            id1    (jobs/submit cfg {::jobs/name     :echo
+                                     ::jobs/params   params
+                                     ::jobs/label    label
+                                     ::jobs/debounce true})
+            _      (th/db-update! :job {:status status} {:id id1})
+            id2    (jobs/submit cfg {::jobs/name     :echo
+                                     ::jobs/params   params
+                                     ::jobs/label    label
+                                     ::jobs/debounce true})]
+        (t/is (uuid? id2))
+        (t/is (not= id1 id2))
+        (t/is (= 2 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                            WHERE label = ?" label]))))))))
+
+(t/deftest submit-keyed-options-need-a-label-and-are-exclusive
+  (let [cfg    (make-cfg (get-job-defs))
+        params (make-params)]
+    (t/testing "dedupe"
+      (t/is (thrown-with-msg? Exception #"dedupe requires"
+                              (jobs/submit cfg {::jobs/name   :echo
+                                                ::jobs/params params
+                                                ::jobs/dedupe true})))
+      (t/is (thrown-with-msg? Exception #"dedupe requires"
+                              (jobs/submit cfg {::jobs/name   :echo
+                                                ::jobs/params params
+                                                ::jobs/label  "   "
+                                                ::jobs/dedupe true}))))
+    (t/testing "debounce"
+      (t/is (thrown-with-msg? Exception #"debounce requires"
+                              (jobs/submit cfg {::jobs/name     :echo
+                                                ::jobs/params   params
+                                                ::jobs/debounce true}))))
+    (t/testing "and they contradict each other"
+      (t/is (thrown-with-msg? Exception #"cannot be used together"
+                              (jobs/submit cfg {::jobs/name     :echo
+                                                ::jobs/params   params
+                                                ::jobs/label    "both-label"
+                                                ::jobs/dedupe   true
+                                                ::jobs/debounce true}))))
+    (t/testing "and neither fits an exclusive submit"
+      (t/is (thrown-with-msg? Exception #"cannot be combined"
+                              (jobs/submit cfg {::jobs/name          :echo
+                                                ::jobs/params        params
+                                                ::jobs/label         "both-label"
+                                                ::jobs/dedupe        true
+                                                ::jobs/skip-if-active true}))))))
 
 (t/deftest submit-skip-if-active-skips-live-jobs
   (doseq [status ["new" "scheduled" "running" "retry"]]
@@ -534,13 +671,14 @@
       (let [cfg    (make-cfg (get-job-defs))
             params (make-params)
             label  (str "skip-active-" status)
-            id1    (jobs/submit cfg {::jobs/name   :echo
-                                     ::jobs/params params
-                                     ::jobs/label  label})
+            id1    (jobs/submit cfg {::jobs/name          :echo
+                                     ::jobs/params        params
+                                     ::jobs/label         label
+                                     ::jobs/skip-if-active true})
             _      (th/db-update! :job {:status status} {:id id1})
-            id2    (jobs/submit cfg {::jobs/name   :echo
-                                     ::jobs/params params
-                                     ::jobs/label  label
+            id2    (jobs/submit cfg {::jobs/name          :echo
+                                     ::jobs/params        params
+                                     ::jobs/label         label
                                      ::jobs/skip-if-active true})]
         (t/is (nil? id2))
         (t/testing "no row deleted, none inserted"
@@ -554,17 +692,108 @@
       (let [cfg    (make-cfg (get-job-defs))
             params (make-params)
             label  (str "skip-terminal-" status)
-            id1    (jobs/submit cfg {::jobs/name   :echo
-                                     ::jobs/params params
-                                     ::jobs/label  label})
+            id1    (jobs/submit cfg {::jobs/name          :echo
+                                     ::jobs/params        params
+                                     ::jobs/label         label
+                                     ::jobs/skip-if-active true})
             _      (th/db-update! :job {:status status} {:id id1})
-            id2    (jobs/submit cfg {::jobs/name   :echo
-                                     ::jobs/params params
-                                     ::jobs/label  label
+            id2    (jobs/submit cfg {::jobs/name          :echo
+                                     ::jobs/params        params
+                                     ::jobs/label         label
                                      ::jobs/skip-if-active true})]
         (t/is (uuid? id2))
         (t/is (= 2 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
                                             WHERE label = ?" label]))))))))
+
+(t/deftest submit-skip-if-active-does-not-block-on-plain-jobs
+  ;; The exclusion is between the jobs that asked for it: a live job
+  ;; that was not submitted as exclusive (a webhook delivery, a
+  ;; notification) does not block an exclusive submit. The label stays
+  ;; a label, and two plain jobs can share it.
+  (let [cfg    (make-cfg (get-job-defs))
+        params (make-params)
+        label  "skip-over-plain"
+        plain  (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params params
+                                 ::jobs/label  label})
+        excl   (jobs/submit cfg {::jobs/name          :echo
+                                 ::jobs/params        params
+                                 ::jobs/label         label
+                                 ::jobs/skip-if-active true})]
+    (t/is (uuid? plain))
+    (t/is (uuid? excl))
+    (t/is (= 2 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                        WHERE label = ?" label]))))
+    (t/testing "and two plain jobs share the label too"
+      (let [other (jobs/submit cfg {::jobs/name   :echo
+                                    ::jobs/params params
+                                    ::jobs/label  label})]
+        (t/is (uuid? other))
+        (t/is (= 3 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                            WHERE label = ?" label]))))))))
+
+(t/deftest exclusive-jobs-are-scoped-by-their-key
+  ;; The key of the exclusion is (tenant, name, queue, label): a job
+  ;; that differs in any of them is a different job and lives with the
+  ;; first one.
+  (let [cfg    (make-cfg (get-job-defs))
+        params (make-params)
+        base   {::jobs/name          :echo
+                ::jobs/params        params
+                ::jobs/skip-if-active true}]
+    (t/is (uuid? (jobs/submit cfg (assoc base ::jobs/label "scope-a"))))
+    (t/is (uuid? (jobs/submit cfg (assoc base ::jobs/label "scope-a"
+                                         ::jobs/queue :storage))))
+    (t/is (uuid? (jobs/submit cfg (assoc base ::jobs/label "scope-a"
+                                         ::jobs/name :typed))))
+    (t/is (nil? (jobs/submit cfg (assoc base ::jobs/label "scope-a"))))))
+
+(t/deftest the-job-table-refuses-two-live-exclusive-rows
+  ;; The exclusion does not live in the submit: the unique index of the
+  ;; live exclusive jobs refuses the second row, whoever writes it.
+  (let [cfg    (make-cfg (get-job-defs))
+        params (make-params)
+        label  "db-enforced"
+        id1    (jobs/submit cfg {::jobs/name          :echo
+                                 ::jobs/params        params
+                                 ::jobs/label         label
+                                 ::jobs/skip-if-active true})
+        row    {:name         "echo"
+                :tenant       (cf/get :tenant)
+                :queue        "default"
+                :label        label
+                :params       (db/json params)
+                :priority     100
+                :max-retries  3
+                :retry-num    0
+                :exclusive    true
+                :scheduled-at (ct/now)
+                :created-at   (ct/now)
+                :modified-at  (ct/now)}]
+    (t/is (uuid? id1))
+    (t/is (thrown? Exception
+                   (th/db-insert! :job (assoc row :id (uuid/next)))))
+    (t/testing "and the row that was there is untouched"
+      (t/is (some? (jobs/get-job cfg id1)))
+      (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                          WHERE label = ?" label])))))))
+
+(t/deftest two-concurrent-exclusive-submits-leave-one-row
+  ;; The check and the insert are the same statement, so two backends
+  ;; submitting the same exclusive key at the same time cannot both
+  ;; win: the second one is rejected by the index.
+  (let [cfg    (make-cfg (get-job-defs))
+        params (make-params)
+        label  "exclusive-race"
+        submit #(jobs/submit cfg {::jobs/name          :echo
+                                  ::jobs/params        params
+                                  ::jobs/label         label
+                                  ::jobs/skip-if-active true})]
+    (let [[a b] (race submit submit)]
+      (t/is (= 1 (count (filter uuid? [a b])))
+            "exactly one of the two submits got a job")
+      (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                          WHERE label = ?" label])))))))
 
 (t/deftest submit-skip-if-active-requires-an-explicit-label
   (let [cfg    (make-cfg (get-job-defs))
@@ -590,55 +819,6 @@
     (t/is (uuid? id1))
     (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
                                         WHERE label = ?" label]))))))
-
-(t/deftest submit-dedupe-rolls-back-on-insert-failure
-  (let [cfg    (make-cfg (get-job-defs))
-        params (make-params)
-        opts   {::jobs/name   :echo
-                ::jobs/params params
-                ::jobs/dedupe true
-                ::jobs/label  "atomic-label"}
-        kept   (jobs/submit cfg opts)
-        orig   @#'db/exec-one!]
-    ;; fault the INSERT: the DELETE before it must roll back too
-    (alter-var-root #'db/exec-one!
-                    (constantly (fn [& args]
-                                  (when (insert-job-statement? args)
-                                    (throw (ex-info "boom" {})))
-                                  (apply orig args))))
-    (try
-      (t/is (thrown? Exception (jobs/submit cfg opts)))
-      (t/testing "the original row survives, no duplicate left behind"
-        (t/is (some? (jobs/get-job cfg kept)))
-        (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job WHERE label = ?" "atomic-label"])))))
-      (finally
-        (alter-var-root #'db/exec-one! (constantly orig))))))
-
-(t/deftest submit-dedupe-atomic-on-autocommit-conn
-  (let [cfg    (make-cfg (get-job-defs))
-        params (make-params)
-        opts   {::jobs/name   :echo
-                ::jobs/params params
-                ::jobs/dedupe true
-                ::jobs/label  "atomic-autocommit-label"}
-        kept   (jobs/submit cfg opts)
-        orig   @#'db/exec-one!]
-    ;; a raw connection outside any transaction: DELETE+INSERT must
-    ;; still share one transaction opened on it
-    (with-open [conn (db/open th/*pool*)]
-      (alter-var-root #'db/exec-one!
-                      (constantly (fn [& args]
-                                    (when (insert-job-statement? args)
-                                      (throw (ex-info "boom" {})))
-                                    (apply orig args))))
-      (try
-        (t/is (thrown? Exception
-                       (jobs/submit (assoc cfg ::db/conn conn) opts)))
-        (t/testing "the original row survives, no duplicate left behind"
-          (t/is (some? (jobs/get-job cfg kept)))
-          (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job WHERE label = ?" "atomic-autocommit-label"])))))
-        (finally
-          (alter-var-root #'db/exec-one! (constantly orig)))))))
 
 (t/deftest submit-requires-metrics-on-bare-connectable
   (let [defs (get-job-defs)
@@ -1682,20 +1862,6 @@
 ;; that only the first caller can win, and a row lock the loser waits
 ;; on. Both are only meaningful when two callers arrive at once, so the
 ;; tests below put real threads in front of them.
-
-(defn- race
-  "Run every thunk on a thread of its own and return what each returned,
-  in the order they were given. They all wait on the same gate, so they
-  contend for whatever they share instead of running one after another."
-  [& thunks]
-  (let [gate    (promise)
-        results (mapv (fn [f]
-                        (future
-                          @gate
-                          (f)))
-                      thunks)]
-    (deliver gate true)
-    (mapv deref results)))
 
 (t/deftest the-first-terminal-transition-wins
   (let [cfg    (make-cfg (get-job-defs))

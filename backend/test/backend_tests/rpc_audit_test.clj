@@ -14,6 +14,7 @@
    [app.db :as db]
    [app.jobs :as-alias jobs]
    [app.loggers.audit :as audit]
+   [app.loggers.webhooks :as-alias webhooks]
    [app.main :as main]
    [app.metrics :as mtx]
    [app.metrics.definition :as-alias mdef]
@@ -138,9 +139,7 @@
         (t/is (= 1 (count rows)))
         (t/is (= (:id prof) (:profile-id row)))
         (t/is (= "navigate" (:name row)))
-        (t/is (= "frontend" (:source row)))
-        ;; The row is born pending for the enabled consumer.
-        (t/is (= 1 (count (th/db-exec! ["select * from audit_log_pending"]))))))))
+        (t/is (= "frontend" (:source row)))))))
 
 (t/deftest push-events-2
   (with-redefs [app.config/flags #{:audit-log}]
@@ -273,9 +272,7 @@
           (t/is (= "0.0.0.0" (str (:ip-addr row2))))
           (let [day-now (ct/truncate (ct/now) :days)]
             (t/is (= day-now (:created-at row2)))
-            (t/is (= day-now (:tracked-at row2))))
-          ;; Both rows are born pending for the enabled consumers.
-          (t/is (= 4 (count (th/db-exec! ["select * from audit_log_pending"])))))))))
+            (t/is (= day-now (:tracked-at row2)))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; BACKEND PROCESS-EVENT PATH (RPC commands)
@@ -853,8 +850,9 @@
 (t/deftest prepare-rpc-event-coerces-string-metadata-profile-id
   ;; `::audit/profile-id` is set by hand in a dozen commands, and some of
   ;; them read the value from token claims or other stringly-typed sources.
-  ;; The audit schema demands a uuid, and `submit*` swallows the validation
-  ;; error, so an unconverted string would drop the event on the floor.
+  ;; The audit schema demands a uuid, and `submit*` propagates the validation
+  ;; error, so an unconverted string would fail the response instead of only
+  ;; losing the event.
   (let [caller (th/create-profile* 1 {:is-active true})
         target "33601240-a00b-11ea-ba1b-c554cc60e361"
         result (with-meta {:some-data "value"}
@@ -931,8 +929,7 @@
                                   (push-params (:id prof)))
       (t/is (= 1.0 (ingest-counter metrics "full" "inserted")))
       (t/is (= 1.0 (ingest-counter metrics "shadow" "inserted")))
-      (t/is (= 2 (count (th/db-exec! ["select * from audit_log"]))))
-      (t/is (= 4 (count (th/db-exec! ["select * from audit_log_pending"])))))))
+      (t/is (= 2 (count (th/db-exec! ["select * from audit_log"])))))))
 
 (t/deftest push-handle-events-records-failed-on-error
   (let [prof    (th/create-profile* 1 {:is-active true})
@@ -945,8 +942,7 @@
                                                    (push-params (:id prof)))))
         (t/is (= 1.0 (ingest-counter metrics "full" "failed")))
         (t/is (= 1.0 (ingest-counter metrics "shadow" "failed")))
-        (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))
-        (t/is (= 0 (count (th/db-exec! ["select * from audit_log_pending"]))))))))
+        (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))))))
 
 (t/deftest push-handle-events-single-face-emits-no-empty-series
   ;; With only :audit-log on, exactly one ingest series exists: the
@@ -959,5 +955,38 @@
                                   (push-params (:id prof)))
       (t/is (= 1.0 (ingest-counter metrics "full" "inserted")))
       (t/is (= #{["full" "inserted"]} (counter-label-sets metrics)))
-      (t/is (= 1 (count (th/db-exec! ["select * from audit_log"]))))
-      (t/is (= 0 (count (th/db-exec! ["select * from audit_log_pending"])))))))
+      (t/is (= 1 (count (th/db-exec! ["select * from audit_log"])))))))
+
+(t/deftest backend-webhook-batch-debounces-on-the-pending-job
+  ;; Two events of the same batch key share one pending job: the second
+  ;; moves its schedule and leaves the last payload behind, so the
+  ;; receiver is told once about the burst and with the newest event.
+  (with-redefs [cf/flags #{:webhooks}]
+    (let [prof  (th/create-profile* 1 {:is-active true})
+          label "rpc:update-file:the-key"
+          event (fn [n batch-timeout]
+                  {:id (uuid/next)
+                   :type "action"
+                   :name "update-file"
+                   :profile-id (:id prof)
+                   :props {:n n}
+                   :context {:version "2.0.0" :initiator "app"}
+                   :tracked-at (ct/now)
+                   :created-at (ct/now)
+                   :source "backend"
+                   ::webhooks/event? true
+                   ::webhooks/batch-key "the-key"
+                   ::webhooks/batch-timeout batch-timeout})]
+      (audit/submit* th/*system* (event 1 (ct/duration "2m")))
+      (let [[row1 :as rows] (th/db-exec! ["select * from job where label = ?" label])]
+        (t/is (= 1 (count rows)))
+        (audit/submit* th/*system* (event 2 (ct/duration "1h")))
+        (let [[row2 :as rows] (th/db-exec! ["select * from job where label = ?" label])]
+          (t/is (= 1 (count rows)) "the burst keeps a single pending job")
+          (t/is (= (:id row1) (:id row2)) "and the job keeps its id")
+          (t/is (pos? (compare (:scheduled-at row2) (:scheduled-at row1)))
+                "the second event slides the window to its own delay")
+          (let [params (db/decode-json-pgobject (:params row2))
+                blob   (transit/decode-str (:event-blob params))]
+            (t/is (= 2 (get-in blob [:props :n]))
+                  "and the payload delivered is the last event")))))))

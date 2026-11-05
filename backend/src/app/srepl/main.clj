@@ -767,12 +767,16 @@
   "Mark a project for deletion"
   [file-id]
   (let [file-id (h/parse-uuid file-id)
-        tnow    (ct/now)]
+        tnow    (ct/now)
+        ;; The event carries its team, so a consumer can key on it
+        ;; without joining production tables.
+        team-id (first (audit/get-team-ids sys/system {:file-ids [file-id]}))]
 
     (audit/insert sys/system
                   {:name "delete-file"
                    :type "action"
-                   :props {:id file-id}
+                   :props (cond-> {:id file-id}
+                            (some? team-id) (assoc :team-id team-id))
                    :context {:triggered-by "srepl"
                              :cause "explicit call to delete-file!"}
                    :tracked-at tnow})
@@ -792,13 +796,17 @@
                   (when-let [file (db/get* system :file
                                            {:id file-id}
                                            {::db/remove-deleted false
-                                            ::sql/columns [:id :name]})]
-                    (audit/insert system
-                                  {:name "restore-file"
-                                   :type "action"
-                                   :props file
-                                   :context {:triggered-by "srepl"
-                                             :cause "explicit call to restore-file!"}})
+                                            ::sql/columns [:id :name :project-id]})]
+                    (let [team-id (first (audit/get-team-ids
+                                          system
+                                          {:project-ids [(:project-id file)]}))]
+                      (audit/insert system
+                                    {:name "restore-file"
+                                     :type "action"
+                                     :props (cond-> file
+                                              (some? team-id) (assoc :team-id team-id))
+                                     :context {:triggered-by "srepl"
+                                               :cause "explicit call to restore-file!"}}))
 
                     (#'files/restore-files conn [file-id]))
                   :restored))))
@@ -920,7 +928,7 @@
                     (audit/insert system
                                   {:name "restore-team"
                                    :type "action"
-                                   :props team
+                                   :props (assoc team :team-id (:id team))
                                    :context {:triggered-by "srepl"
                                              :cause "explicit call to restore-team!"}})
 
@@ -948,7 +956,8 @@
     :deleted))
 
 (defn restore-profile!
-  "Mark a team and all related objects as not deleted"
+  "Mark a profile and the teams its deletion cascade soft-deleted as not
+  deleted"
   [profile-id]
   (let [profile-id (h/parse-uuid profile-id)]
     (db/tx-run! sys/system
@@ -957,20 +966,29 @@
                                                       {:id profile-id}
                                                       {::db/remove-deleted false})
                                              (profile/decode-row))]
-                    (audit/insert system
-                                  {:name "restore-profile"
-                                   :type "action"
-                                   :props (audit/profile->props profile)
-                                   :context {:triggered-by "srepl"
-                                             :cause "explicit call to restore-profile!"}})
-
                     (db/update! system :profile
                                 {:deleted-at nil}
                                 {:id profile-id}
                                 {::db/return-keys false})
 
-                    (doseq [{:keys [id]} (profile/get-owned-teams system profile-id)]
-                      (restore-team* system id))
+                    ;; Owned teams are still soft-deleted here, so resolve
+                    ;; them through the membership table, and only the ones
+                    ;; the cascade stamped with the profile's own instant: a
+                    ;; team the owner deleted earlier stays deleted.
+                    (let [team-ids (mapv :id (profile/get-owned-teams system (:id profile)
+                                                                      :deleted-at (:deleted-at profile)))]
+                      (doseq [id team-ids]
+                        (restore-team* system id))
+
+                      ;; The event carries the restored teams explicitly,
+                      ;; so a consumer never joins production tables.
+                      (audit/insert system
+                                    {:name "restore-profile"
+                                     :type "action"
+                                     :props (assoc (audit/profile->props profile)
+                                                   :team-ids team-ids)
+                                     :context {:triggered-by "srepl"
+                                               :cause "explicit call to restore-profile!"}}))
 
                     :restored)))))
 
@@ -1007,13 +1025,15 @@
   the whole table, and enqueues the job instead of running it inline, so it
   can be used against production in bounded batches. The job is idempotent (it
   only marks the children with the row's own date), `label` is the row id and
-  `dedupe` drops not-yet-due duplicates.
+  `dedupe` skips the row when its job is still not started.
 
   Options: `:limit` (max rows read), `:ids` (restrict the run to these row ids)
   and `:dry-run?` (count without enqueueing). `table` and `object` are internal
   constants, never operator input.
 
-  Returns `{:found n :submitted m}`.
+  Returns `{:found n :submitted m}`. `m` counts the rows whose job was
+  really enqueued: a row whose `dedupe` key still holds a not-started job
+  is counted in `n` but not in `m`.
 
   Note: the submissions are given the outer `system` (with the pool) on
   purpose; handing them the read-only transaction cfg would write on it."
@@ -1028,20 +1048,22 @@
                 (fn [{:keys [::db/conn]}]
                   (let [query (cond-> [sql]
                                 (seq ids) (conj (db/create-array conn "uuid" ids)))
-                        found (reduce (fn [total {:keys [id deleted-at]}]
-                                        (when-not dry-run?
-                                          (jobs/submit system
-                                                       {::jobs/name :delete-object
-                                                        ::jobs/params {:object object
-                                                                       :deleted-at deleted-at
-                                                                       :id id}
-                                                        ::jobs/label (str id)
-                                                        ::jobs/dedupe true}))
-                                        (inc total))
-                                      0
-                                      (db/plan conn query))]
+                        [found submitted]
+                        (reduce (fn [[found submitted] {:keys [id deleted-at]}]
+                                  (if (and (not dry-run?)
+                                           (jobs/submit system
+                                                        {::jobs/name :delete-object
+                                                         ::jobs/params {:object object
+                                                                        :deleted-at deleted-at
+                                                                        :id id}
+                                                         ::jobs/label (str id)
+                                                         ::jobs/dedupe true}))
+                                    [(inc found) (inc submitted)]
+                                    [(inc found) submitted]))
+                                [0 0]
+                                (db/plan conn query))]
                     {:found found
-                     :submitted (if dry-run? 0 found)})))))
+                     :submitted submitted})))))
 
 (defn process-deleted-profiles-cascade
   "Replay the deletion cascade of every soft-deleted profile."

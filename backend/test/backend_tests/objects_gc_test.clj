@@ -153,8 +153,10 @@
         (th/reset-mock! audit-mock)
         (th/run-task! :objects-gc {:skip-delay true})
         (t/is (nil? (th/db-get :team {:id (:id team)} {::db/remove-deleted false})))
-        (let [events (filter #(contains? (:props %) :team-ids)
+        (let [events (filter #(= #{:team-ids} (set (keys (:props %))))
                              (events-named audit-mock "hard-delete-objects"))]
+          ;; Every chunk carries exactly its own entity key and nothing
+          ;; else: no flat team-ids are resolved after the delete.
           (t/is (= 1 (count events)))
           (let [event (first events)]
             (t/is (= "command" (:type event)))
@@ -180,6 +182,7 @@
           (t/is (= 1 (count events)))
           (let [event (first events)]
             (t/is (= "command" (:type event)))
+            (t/is (= #{:project-ids} (set (keys (:props event)))))
             (t/is (= [(:id project)] (get-in event [:props :project-ids])))
             (t/is (= "objects-gc" (get-in event [:context :triggered-by])))))))))
 
@@ -204,6 +207,7 @@
           (t/is (= 1 (count events)))
           (let [event (first events)]
             (t/is (= "command" (:type event)))
+            (t/is (= #{:file-ids} (set (keys (:props event)))))
             (t/is (= [(:id file)] (get-in event [:props :file-ids])))
             (t/is (= "objects-gc" (get-in event [:context :triggered-by])))))))))
 

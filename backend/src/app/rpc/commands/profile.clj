@@ -644,6 +644,11 @@
 
 ;; --- HELPERS
 
+;; Owned teams with their participant count. The predicate over
+;; `t.deleted_at` is injected: the read path asks for live teams, and the
+;; restore path asks for the ones the delete cascade stamped with the
+;; profile's own instant. Both predicates are constants of this namespace,
+;; never operator input.
 (def sql:owned-teams
   "WITH owner_teams AS (
       SELECT tpr.team_id AS id
@@ -651,7 +656,7 @@
         JOIN team AS t ON (t.id = tpr.team_id)
        WHERE tpr.is_owner IS TRUE
          AND tpr.profile_id = ?
-         AND t.deleted_at IS NULL
+         AND %s
    )
    SELECT tpr.team_id AS id,
           count(tpr.profile_id) - 1 AS participants
@@ -660,8 +665,16 @@
     GROUP BY 1")
 
 (defn get-owned-teams
-  [conn profile-id]
-  (db/exec! conn [sql:owned-teams profile-id]))
+  "Teams the profile owns. `:deleted-at` returns the ones soft-deleted at
+  that exact instant: the delete cascade stamps the children with the
+  parent's date, so the restore path uses it to bring back only what the
+  cascade took. Without it the answer holds live teams only."
+  [conn profile-id & {:keys [deleted-at]}]
+  (if (some? deleted-at)
+    (db/exec! conn [(format sql:owned-teams "t.deleted_at = ?::timestamptz")
+                    profile-id deleted-at])
+    (db/exec! conn [(format sql:owned-teams "t.deleted_at IS NULL")
+                    profile-id])))
 
 (def ^:private sql:profile-existence
   "select exists (select * from profile
