@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-10-21 09:52+0000\n"
-"Last-Translator: Stas Haas <girafic@users.noreply.hosted.weblate.org>\n"
+"PO-Revision-Date: 2026-11-05 22:19+0000\n"
+"Last-Translator: Andrey Antukh <niwinz@users.noreply.hosted.weblate.org>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.11.dev0\n"
+"X-Generator: Weblate 2026.11.2.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:191, src/app/main/ui/viewer/login.cljs:119
 msgid "auth.already-have-account"
@@ -3624,10 +3624,12 @@ msgid "shortcuts.flip-vertical"
 msgstr "Vertikal spiegeln"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:263
+#, fuzzy
 msgid "shortcuts.font-size-dec"
 msgstr "Schriftgröße verkleinern"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:256
+#, fuzzy
 msgid "shortcuts.font-size-inc"
 msgstr "Schriftgröße erhöhen"
 
@@ -3736,6 +3738,7 @@ msgid "shortcuts.next-frame"
 msgstr "Nächstes Board"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:154
+#, fuzzy
 msgid "shortcuts.not-found"
 msgstr "Kein Tastaturkürzel gefunden"
 
@@ -3942,6 +3945,7 @@ msgid "shortcuts.subsection.shape"
 msgstr "Formen"
 
 #: src/app/main/ui/shortcuts.cljs:143
+#, fuzzy
 msgid "shortcuts.subsection.text-editor"
 msgstr "Texte"
 
@@ -4135,6 +4139,7 @@ msgid "subscription.settings.management.dialog.price-month"
 msgstr "**$%s**/Monat"
 
 #: src/app/main/ui/settings/subscription.cljs:714
+#, fuzzy
 msgid "subscription.settings.member-since"
 msgstr "Penpot-Mitglied seit %s"
 
@@ -7377,12 +7382,12 @@ msgid "dashboard.select-organization-modal.title"
 msgstr "Team zu einer Organisation hinzufügen"
 
 #: src/app/main/data/common.cljs:266
-#, backend
+#, backend, fuzzy
 msgid "dashboard.team-belong-organization"
 msgstr "Dieses Team gehört jetzt zur Organisation %s"
 
 #: src/app/main/data/common.cljs:267
-#, backend
+#, backend, fuzzy
 msgid "dashboard.team-no-longer-belong-organization"
 msgstr "Dieses Team gehört nicht mehr zur Organisation %s"
 
@@ -7509,6 +7514,7 @@ msgid "errors.organization-not-found"
 msgstr "Diese Organisation existiert nicht"
 
 #: src/app/main/errors.cljs:538
+#, fuzzy
 msgid "errors.save-failed"
 msgstr ""
 "Die automatische Speicherung funktioniert wegen eines Fehlers nicht. "
@@ -7630,10 +7636,12 @@ msgid "files-export-modal.options.merge-libraries.title"
 msgstr "Bibliotheks-Assets in die Datei einbetten"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:161
+#, fuzzy
 msgid "import-shortcuts.apply"
 msgstr "Übernehmen"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:102
+#, fuzzy
 msgid "import-shortcuts.diff-modal-text"
 msgstr ""
 "Die folgenden Tastaturkürzel werden durch die importierte Konfiguration "
