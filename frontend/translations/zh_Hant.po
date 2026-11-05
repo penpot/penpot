@@ -670,34 +670,6 @@ msgstr "部分檔案含有無效物件，這些物件已移除。"
 msgid "dashboard.import.no-perms"
 msgstr "您沒有權限將檔案匯入此團隊"
 
-#: src/app/main/ui/dashboard/import.cljs:134
-msgid "dashboard.import.progress.process-colors"
-msgstr "正在處理色彩"
-
-#: src/app/main/ui/dashboard/import.cljs:143, src/app/main/ui/dashboard/import.cljs:146
-msgid "dashboard.import.progress.process-components"
-msgstr "正在處理元件"
-
-#: src/app/main/ui/dashboard/import.cljs:140
-msgid "dashboard.import.progress.process-media"
-msgstr "正在處理媒體"
-
-#: src/app/main/ui/dashboard/import.cljs:131
-msgid "dashboard.import.progress.process-page"
-msgstr "正在處理頁面：%s"
-
-#: src/app/main/ui/dashboard/import.cljs:137
-msgid "dashboard.import.progress.process-typographies"
-msgstr "正在處理文字樣式"
-
-#: src/app/main/ui/dashboard/import.cljs:125
-msgid "dashboard.import.progress.upload-data"
-msgstr "正在將資料上傳至伺服器 (%s/%s)"
-
-#: src/app/main/ui/dashboard/import.cljs:128
-msgid "dashboard.import.progress.upload-media"
-msgstr "正在上傳檔案：%s"
-
 #: src/app/main/ui/dashboard/import.cljs:443
 msgid "dashboard.import.resolve-libraries"
 msgstr "部分資料庫無法自動連結。請為每一項選擇正確的資料庫："
@@ -1946,10 +1918,6 @@ msgstr "想法"
 msgid "feedback.type.issue"
 msgstr "問題"
 
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.title"
-msgstr "下載檔案"
-
 #: src/app/main/ui/exports/files.cljs:183
 msgid "files-export-modal.options.detach-libraries.message"
 msgstr "檔案將不包含已連結資料庫中的資產。"
@@ -2041,18 +2009,6 @@ msgstr "大小與位置"
 #: src/app/main/ui/inspect/attributes/stroke.cljs:105
 msgid "inspect.attributes.stroke"
 msgstr "筆畫"
-
-#, permanent, unused
-msgid "inspect.attributes.stroke.alignment.center"
-msgstr "置中"
-
-#, permanent, unused
-msgid "inspect.attributes.stroke.alignment.inner"
-msgstr "內側"
-
-#, permanent, unused
-msgid "inspect.attributes.stroke.alignment.outer"
-msgstr "外側"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:53, src/app/main/ui/inspect/attributes/text.cljs:158
 msgid "inspect.attributes.typography"
@@ -2662,10 +2618,6 @@ msgstr "下載 %s"
 msgid "labels.download-simple"
 msgstr "下載"
 
-#: src/app/main/ui/exports/files.cljs:217
-msgid "labels.downloading-file"
-msgstr "正在下載檔案…"
-
 #: src/app/main/ui/dashboard/file_menu.cljs:28, src/app/main/ui/dashboard/files.cljs:86, src/app/main/ui/dashboard/files.cljs:207, src/app/main/ui/dashboard/projects.cljs:225, src/app/main/ui/dashboard/projects.cljs:228, src/app/main/ui/dashboard/sidebar.cljs:362
 msgid "labels.drafts"
 msgstr "草稿"
@@ -3240,10 +3192,6 @@ msgstr "上傳自訂字型"
 #: src/app/main/ui/dashboard/fonts.cljs:269
 msgid "labels.uploading"
 msgstr "正在上傳…"
-
-#: src/app/main/ui/dashboard/import.cljs:648
-msgid "labels.uploading-file"
-msgstr "正在上傳檔案…"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:65, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1034
 msgid "labels.variant"
@@ -8701,10 +8649,6 @@ msgstr "直線（%s）"
 #: src/app/main/ui/workspace/top_toolbar.cljs:333
 msgid "workspace.toolbar.mcp"
 msgstr "MCP"
-
-#: src/app/main/ui/workspace/top_toolbar.cljs:345
-msgid "workspace.toolbar.mcp-connect-here"
-msgstr "在此連線"
 
 #: src/app/main/ui/workspace/top_toolbar.cljs:342
 msgid "workspace.toolbar.mcp-connected"

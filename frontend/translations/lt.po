@@ -338,34 +338,6 @@ msgstr "Oi! Nepavyko importuoti šio failo"
 msgid "dashboard.import.import-warning"
 msgstr "Kai kuriuose failuose buvo netinkamų objektų, kurie buvo pašalinti."
 
-#: src/app/main/ui/dashboard/import.cljs:134
-msgid "dashboard.import.progress.process-colors"
-msgstr "Apdorojimo spalvos"
-
-#: src/app/main/ui/dashboard/import.cljs:143, src/app/main/ui/dashboard/import.cljs:146
-msgid "dashboard.import.progress.process-components"
-msgstr "Komponentų apdorojimas"
-
-#: src/app/main/ui/dashboard/import.cljs:140
-msgid "dashboard.import.progress.process-media"
-msgstr "Apdorojamos laikmenos"
-
-#: src/app/main/ui/dashboard/import.cljs:131
-msgid "dashboard.import.progress.process-page"
-msgstr "Apdorojamas puslapis: %s"
-
-#: src/app/main/ui/dashboard/import.cljs:137
-msgid "dashboard.import.progress.process-typographies"
-msgstr "Tipografijų apdorojimas"
-
-#: src/app/main/ui/dashboard/import.cljs:125
-msgid "dashboard.import.progress.upload-data"
-msgstr "Įkeliami duomenys į serverį (%s/%s)"
-
-#: src/app/main/ui/dashboard/import.cljs:128
-msgid "dashboard.import.progress.upload-media"
-msgstr "Įkeliamas failas: %s"
-
 #: src/app/main/data/dashboard.cljs:506, src/app/main/data/dashboard.cljs:618
 msgid "dashboard.new-file-prefix"
 msgstr "Naujas failas"

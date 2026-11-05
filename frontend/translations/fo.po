@@ -333,34 +333,6 @@ msgstr "Ups! Tað riggaði ikki at innflyta hesa fílu"
 msgid "dashboard.import.import-message"
 msgstr "% fílur eru innfluttir."
 
-#: src/app/main/ui/dashboard/import.cljs:134
-msgid "dashboard.import.progress.process-colors"
-msgstr "Viðgerð litir"
-
-#: src/app/main/ui/dashboard/import.cljs:143, src/app/main/ui/dashboard/import.cljs:146
-msgid "dashboard.import.progress.process-components"
-msgstr "Viðgerð staklutir"
-
-#: src/app/main/ui/dashboard/import.cljs:140
-msgid "dashboard.import.progress.process-media"
-msgstr "Viðgerð miðlar"
-
-#: src/app/main/ui/dashboard/import.cljs:131
-msgid "dashboard.import.progress.process-page"
-msgstr "Viðger síðu: %s"
-
-#: src/app/main/ui/dashboard/import.cljs:137
-msgid "dashboard.import.progress.process-typographies"
-msgstr "Viðgerð stavsnið"
-
-#: src/app/main/ui/dashboard/import.cljs:125
-msgid "dashboard.import.progress.upload-data"
-msgstr "Sendur upp dátur til ambætara (%s/%s)"
-
-#: src/app/main/ui/dashboard/import.cljs:128
-msgid "dashboard.import.progress.upload-media"
-msgstr "Innleggur fílu: %s"
-
 #: src/app/main/ui/dashboard/team.cljs:149, src/app/main/ui/dashboard/team.cljs:860
 msgid "dashboard.invite-profile"
 msgstr "Bjóða við í toymi"

@@ -291,18 +291,6 @@ msgstr "No hay elementos con configuración de exportación."
 msgid "dashboard.export-shapes.title"
 msgstr "Selección de exportación"
 
-#: src/app/main/ui/dashboard/import.cljs:137
-msgid "dashboard.import.progress.process-typographies"
-msgstr "Procesamiento de tipografías"
-
-#: src/app/main/ui/dashboard/import.cljs:125
-msgid "dashboard.import.progress.upload-data"
-msgstr "Subiendo datos al servidor (%s/%s)"
-
-#: src/app/main/ui/dashboard/import.cljs:128
-msgid "dashboard.import.progress.upload-media"
-msgstr "Subiendo archivo: %s"
-
 #: src/app/main/ui/dashboard/team.cljs:149, src/app/main/ui/dashboard/team.cljs:860
 msgid "dashboard.invite-profile"
 msgstr "Invitar a la gente"

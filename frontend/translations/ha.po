@@ -337,34 +337,6 @@ msgstr[1] "%s kundaye sun shiga."
 msgid "dashboard.import.import-warning"
 msgstr "wasu kundayen na dauke da abubuwan da ba su da amfani."
 
-#: src/app/main/ui/dashboard/import.cljs:134
-msgid "dashboard.import.progress.process-colors"
-msgstr "aikin rini"
-
-#: src/app/main/ui/dashboard/import.cljs:143, src/app/main/ui/dashboard/import.cljs:146
-msgid "dashboard.import.progress.process-components"
-msgstr "aikin sassa"
-
-#: src/app/main/ui/dashboard/import.cljs:140
-msgid "dashboard.import.progress.process-media"
-msgstr "kammala aiki"
-
-#: src/app/main/ui/dashboard/import.cljs:131
-msgid "dashboard.import.progress.process-page"
-msgstr "fejin kasuwar duniya: %s"
-
-#: src/app/main/ui/dashboard/import.cljs:137
-msgid "dashboard.import.progress.process-typographies"
-msgstr "kula da rubutu"
-
-#: src/app/main/ui/dashboard/import.cljs:125
-msgid "dashboard.import.progress.upload-data"
-msgstr "xora bayani akan sabis (%s/%s)"
-
-#: src/app/main/ui/dashboard/import.cljs:128
-msgid "dashboard.import.progress.upload-media"
-msgstr "xora kundaye: %s"
-
 #: src/app/main/ui/dashboard/team.cljs:149, src/app/main/ui/dashboard/team.cljs:860
 msgid "dashboard.invite-profile"
 msgstr "neman mutane"
@@ -880,18 +852,6 @@ msgstr "wurin daxa girma"
 #: src/app/main/ui/inspect/attributes/stroke.cljs:105
 msgid "inspect.attributes.stroke"
 msgstr "yankewa"
-
-#, permanent, unused
-msgid "inspect.attributes.stroke.alignment.center"
-msgstr "tsakiya"
-
-#, permanent, unused
-msgid "inspect.attributes.stroke.alignment.inner"
-msgstr "daga ciki"
-
-#, permanent, unused
-msgid "inspect.attributes.stroke.alignment.outer"
-msgstr "daga waje"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:53, src/app/main/ui/inspect/attributes/text.cljs:158
 msgid "inspect.attributes.typography"

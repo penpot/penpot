@@ -352,30 +352,6 @@ msgstr[0] "นำเข้าสำเร็จแล้ว %s ไฟล์"
 msgid "dashboard.import.import-warning"
 msgstr "บางไฟล์มีวัตถุที่ไม่ถูกต้อง ซึ่งถูกนำออกให้แล้ว"
 
-#: src/app/main/ui/dashboard/import.cljs:134
-msgid "dashboard.import.progress.process-colors"
-msgstr "กำลังประมวลผลสี"
-
-#: src/app/main/ui/dashboard/import.cljs:143, src/app/main/ui/dashboard/import.cljs:146
-msgid "dashboard.import.progress.process-components"
-msgstr "กำลังประมวลผลคอมโพเนนต์"
-
-#: src/app/main/ui/dashboard/import.cljs:140
-msgid "dashboard.import.progress.process-media"
-msgstr "กำลังประมวลผลสื่อ"
-
-#: src/app/main/ui/dashboard/import.cljs:131
-msgid "dashboard.import.progress.process-page"
-msgstr "กำลังประมวลผลหน้า: %s"
-
-#: src/app/main/ui/dashboard/import.cljs:125
-msgid "dashboard.import.progress.upload-data"
-msgstr "กำลังอัปโหลดข้อมูลไปยังเซิร์ฟเวอร์ (%s/%s)"
-
-#: src/app/main/ui/dashboard/import.cljs:128
-msgid "dashboard.import.progress.upload-media"
-msgstr "กำลังอัปโหลดไฟล์: %s"
-
 #: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:210, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:216, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:221, src/app/main/ui/dashboard/team.cljs:464
 msgid "dashboard.leave-team"
 msgstr "ออกจากทีม"
