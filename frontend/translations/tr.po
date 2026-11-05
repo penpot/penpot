@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-28 08:13+0000\n"
+"PO-Revision-Date: 2026-09-29 08:51+0000\n"
 "Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
-"Language-Team: Turkish "
-"<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
+"Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
+"tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -9382,3 +9382,182 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/versions.cljs:462
 msgid "workspace.versions.warning.text"
 msgstr "Otomatik kaydedilen sürümler %s gün boyunca saklanacaktır."
+
+#: src/app/main/ui/dashboard/import.cljs:709
+msgid "dashboard.import.connect-selected-libraries"
+msgstr "Seçilen kütüphaneleri bağla"
+
+#: src/app/main/ui/dashboard/import.cljs:296
+msgid "dashboard.import.file-name-label"
+msgstr "Dosya adı"
+
+#: src/app/main/ui/dashboard/import.cljs:710
+msgid "dashboard.import.next-file"
+msgstr "Sonraki dosya"
+
+#: src/app/main/ui/dashboard/import.cljs:459
+msgid "dashboard.import.resolve-libraries.connect-to"
+msgstr "şuna bağla"
+
+#: src/app/main/ui/dashboard/import.cljs:453
+msgid "dashboard.import.resolve-libraries.original-library"
+msgstr "orijinal kütüphane"
+
+#: src/app/main/ui/dashboard/import.cljs:529
+msgid "dashboard.import.summary.manually-linked"
+msgstr "elle bağlandı"
+
+#: src/app/main/ui/dashboard/import.cljs:537
+msgid "dashboard.import.summary.new"
+msgstr "Yeni"
+
+#: src/app/main/ui/dashboard/import.cljs:534
+msgid "dashboard.import.summary.original"
+msgstr "Orijinal"
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:185
+msgid "dashboard.no-organizations-yet"
+msgstr "Henüz organizasyon yok."
+
+#: src/app/main/ui/auth/login.cljs:113
+msgid "errors.account-locked"
+msgstr ""
+"Çok fazla başarısız deneme yapıldı. Hesabınız %s dakika kilitlendi. Lütfen "
+"daha sonra tekrar deneyin."
+
+#: src/app/main/errors.cljs:499
+msgid "errors.connection-error"
+msgstr "Sunucuya erişilemiyor. Bağlantınızı gözden geçirin ve tekrar deneyin."
+
+#: src/app/main/data/persistence.cljs:307
+msgid "errors.save-retrying"
+msgstr "Bağlantı kesildi. Değişikliklerinizi kaydetmek için yeniden deneniyor."
+
+#: src/app/main/ui/inspect/attributes/text.cljs:117
+msgid "inspect.attributes.typography.text-decoration.strikethrough"
+msgstr "Üstü çizili"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:176
+msgid "inspect.tabs-switcher-label"
+msgstr "Sekme incelemeye geç"
+
+#: src/app/main/ui/dashboard/import.cljs:703
+msgid "labels.skip"
+msgstr "Atla"
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:562
+msgid "labels.team-management"
+msgstr "Takım yönetimi"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:447
+msgid "workspace.colorpicker.color-picker"
+msgstr "Ekrandan renk seç"
+
+#: src/app/main/ui/workspace/left_header.cljs:125
+msgid "workspace.header.retrying"
+msgstr "Kaydetme yeniden deneniyor"
+
+#: src/app/main/ui/workspace/libraries.cljs:842
+msgid "workspace.libraries.connected-libraries"
+msgstr "Bağlantılı kütüphane"
+
+#: src/app/main/ui/workspace/libraries.cljs:183
+msgid "workspace.libraries.connected-through"
+msgstr "Şununla bağlandı"
+
+#: src/app/main/ui/workspace/libraries.cljs:812
+msgid "workspace.libraries.empty.no-assets"
+msgstr "Henüz varlık yok"
+
+#: src/app/main/ui/workspace/libraries.cljs:895
+msgid "workspace.libraries.empty.no-connected-libraries"
+msgstr "Henüz bağlantılı kütüphane yok."
+
+#: src/app/main/ui/workspace/libraries.cljs:827, src/app/main/ui/workspace/libraries.cljs:874
+msgid "workspace.libraries.set-as-tokens-source"
+msgstr "Token kaynağı olarak ayarla"
+
+#: src/app/main/ui/workspace/libraries.cljs:621
+msgid "workspace.libraries.shared-library-added"
+msgstr "Eklendi"
+
+#: src/app/main/ui/workspace/libraries.cljs:167, src/app/main/ui/workspace/libraries.cljs:211
+msgid "workspace.libraries.token-sets"
+msgid_plural "workspace.libraries.token-sets"
+msgstr[0] "1 küme"
+msgstr[1] "%s küme"
+
+#: src/app/main/ui/workspace/libraries.cljs:170, src/app/main/ui/workspace/libraries.cljs:215
+msgid "workspace.libraries.token-themes"
+msgid_plural "workspace.libraries.token-themes"
+msgstr[0] "1 tema"
+msgstr[1] "%s tema"
+
+#: src/app/main/ui/workspace/libraries.cljs:164, src/app/main/ui/workspace/libraries.cljs:207
+msgid "workspace.libraries.tokens"
+msgid_plural "workspace.libraries.tokens"
+msgstr[0] "1 token"
+msgstr[1] "%s token"
+
+#: src/app/main/ui/workspace/libraries.cljs:820, src/app/main/ui/workspace/libraries.cljs:866
+msgid "workspace.libraries.tokens-source"
+msgstr "Token kaynağı"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:75
+msgid "workspace.options.canvas-background-section"
+msgstr "Tuval arka plan bölümü"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:526
+msgid "workspace.options.font-not-available"
+msgstr ""
+"Bu metinde kullanılan yazı tipi (%s) artık kullanılabilir değil. Bir "
+"tipografi biçimi oluşturmak için yazı tipini yeniden yükleyin"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:99, src/app/main/ui/workspace/sidebar/options/page.cljs:106
+msgid "workspace.options.pixel-grid-color"
+msgstr "Piksel ızgara rengi"
+
+#: src/app/main/data/plugins.cljs:158
+msgid "workspace.plugins.error.unreachable"
+msgstr "Eklenti URL'sine erişilemedi."
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:106
+msgid "workspace.tokens.add-set"
+msgstr "Küme ekle"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:98
+msgid "workspace.tokens.change-token-source"
+msgstr "Token kaynağını değiştir"
+
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:101
+msgid "workspace.tokens.current-tokens-source-tooltip"
+msgstr "Bu geçerli token kaynağıdır"
+
+#: src/app/main/data/workspace/libraries.cljs:847
+msgid "workspace.tokens.notifications.source-sets-or-themes-updated"
+msgstr "Token kaynağı kümeleri veya temaları değiştirildi"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:438, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:67
+msgid "workspace.tokens.only-first-fill-or-stroke"
+msgstr ""
+"Tasarım tokenleri, listedeki yalnızca ilk dolgu veya çerçeveye uygulanabilir."
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:104
+msgid "workspace.tokens.open-source-new-tab"
+msgstr "Tokenlerin kaynağını yeni sekmede aç"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:75
+msgid "workspace.tokens.source"
+msgstr "Kaynak:"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:311, src/app/main/ui/workspace/tokens/management/context_menu.cljs:335
+msgid "workspace.tokens.stroke-width"
+msgstr "Çerçeve Genişliği"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:80
+msgid "workspace.tokens.this-file"
+msgstr "Bu dosya"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:413
+msgid "workspace.toolbar.label"
+msgstr "Çizim araçları"

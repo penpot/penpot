@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-28 08:13+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: German "
-"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
+"PO-Revision-Date: 2026-10-21 09:52+0000\n"
+"Last-Translator: Stas Haas <girafic@users.noreply.hosted.weblate.org>\n"
+"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
+"de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.10.dev0\n"
+"X-Generator: Weblate 2026.11.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:191, src/app/main/ui/viewer/login.cljs:119
 msgid "auth.already-have-account"
@@ -7226,3 +7226,799 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/versions.cljs:462
 msgid "workspace.versions.warning.text"
 msgstr "Automatisch gespeicherte Versionen werden für %s Tage aufbewahrt."
+
+#: src/app/main/ui/auth/verify_token.cljs:81
+msgid "auth.notifications.organization-invitation-accepted"
+msgstr "Sie gehören jetzt zu %s"
+
+#: src/app/main/data/nitrate.cljs:602
+msgid "dashboard.change-organization-modal.accept"
+msgstr "TEAM VERSCHIEBEN"
+
+#: src/app/main/data/nitrate.cljs:599
+msgid "dashboard.change-organization-modal.description"
+msgstr ""
+"Projekte und Dateien bleiben für die Teammitglieder verfügbar. Das Team "
+"übernimmt die Einstellungen der neuen Organisation."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:334
+msgid "dashboard.check-updates.available-message"
+msgstr ""
+"Neuere Versionen bringen Leistungsverbesserungen, neue Funktionen und "
+"Korrekturen, damit Ihre Installation aktuell bleibt."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:230
+msgid "dashboard.check-updates.unable-hint"
+msgstr ""
+"Überprüfen Sie Ihr Netzwerk oder die Instanzkonfiguration und versuchen Sie "
+"es erneut."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:265
+msgid "dashboard.check-updates.uptodate-message"
+msgstr "Sie verwenden die neueste stabile Version:"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:254
+msgid "dashboard.check-updates.uptodate-title"
+msgstr "PENPOT IST AUF DEM NEUESTEN STAND"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:374
+msgid "dashboard.check-updates.view-release-notes"
+msgstr "Versionshinweise anzeigen"
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:240
+msgid "dashboard.go-to-admin-console"
+msgstr "Zur Admin-Konsole"
+
+#: src/app/main/ui/dashboard/import.cljs:597
+msgid "dashboard.import.auto-linked-libraries"
+msgid_plural "dashboard.import.auto-linked-libraries"
+msgstr[0] "1 Bibliothek wurde automatisch anhand des Namens verknüpft."
+msgstr[1] "%s Bibliotheken wurden automatisch anhand des Namens verknüpft."
+
+#: src/app/main/ui/dashboard/import.cljs:733
+msgid "dashboard.import.confirm-library-links"
+msgstr "Bibliotheksverknüpfungen bestätigen"
+
+#: src/app/main/ui/dashboard/import.cljs:296
+msgid "dashboard.import.file-name-label"
+msgstr "Dateiname"
+
+#: src/app/main/ui/dashboard/import.cljs:626
+msgid "dashboard.import.import-error.unknown-error"
+msgstr "Beim Verarbeiten dieser Datei ist ein Fehler aufgetreten."
+
+#: src/app/main/ui/dashboard/import.cljs:443
+msgid "dashboard.import.resolve-libraries"
+msgstr ""
+"Einige Bibliotheken konnten nicht automatisch verknüpft werden. Wählen Sie "
+"für jede die richtige Bibliothek:"
+
+#: src/app/main/ui/dashboard/import.cljs:565
+msgid "dashboard.import.resolve-libraries-summary"
+msgstr "Prüfen Sie die Bibliotheksverknüpfungen, bevor Sie bestätigen:"
+
+#: src/app/main/ui/dashboard/import.cljs:521
+msgid "dashboard.import.summary.linked"
+msgstr "Automatisch verknüpft"
+
+#: src/app/main/ui/dashboard/import.cljs:537
+msgid "dashboard.import.summary.new"
+msgstr "Neu"
+
+#: src/app/main/ui/dashboard/import.cljs:558
+msgid "dashboard.import.summary.no-selection"
+msgstr "Keine Bibliothek ausgewählt"
+
+#: src/app/main/ui/dashboard/team.cljs:861, src/app/main/ui/dashboard/team.cljs:1202, src/app/main/ui/dashboard/team_form.cljs:156
+msgid "dashboard.invitations.no-permission"
+msgstr ""
+"Sie haben keine Berechtigung, Personen in dieses Team einzuladen oder "
+"Einladungen zu bearbeiten oder zu löschen."
+
+#: src/app/main/ui/dashboard/team.cljs:152
+msgid "dashboard.invite-profile-disabled"
+msgstr "Sie haben keine Berechtigung, Personen in dieses Team einzuladen"
+
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:235, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:266
+msgid "dashboard.leave-organization"
+msgstr "Organisation verlassen"
+
+#: src/app/main/data/nitrate.cljs:259
+msgid "dashboard.leave-organization.toast"
+msgstr "Sie gehören nicht mehr zur Organisation %s."
+
+#: src/app/main/ui/dashboard/team_form.cljs:158
+msgid "dashboard.no-organization-allows-create-team.message"
+msgstr ""
+"Sie haben keine Berechtigung, Teams zu einer Ihrer Organisationen "
+"hinzuzufügen."
+
+#: src/app/main/ui/dashboard/import.cljs:534
+msgid "dashboard.import.summary.original"
+msgstr "Original"
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:185
+msgid "dashboard.no-organizations-yet"
+msgstr "Noch keine Organisationen."
+
+#: src/app/main/ui/dashboard/team_form.cljs:152
+msgid "dashboard.no-permission-create-team.message"
+msgstr ""
+"Sie dürfen in der Organisation %s keine Teams erstellen. Wenn Sie mehr "
+"Informationen benötigen, wenden Sie sich an den Eigentümer der Organisation."
+
+#: src/app/main/ui/dashboard/team_form.cljs:154
+msgid "dashboard.no-permission-delete-team.message"
+msgstr ""
+"Sie dürfen keine Teams löschen, die zur Organisation %s gehören. Wenn Sie "
+"mehr Informationen benötigen, wenden Sie sich an den Eigentümer der "
+"Organisation."
+
+#: src/app/main/ui/dashboard/team_form.cljs:160
+msgid "dashboard.no-permission-move-team.message"
+msgstr ""
+"Sie dürfen keine Teams verschieben, die zur Organisation %s gehören. Wenn "
+"Sie mehr Informationen benötigen, wenden Sie sich an den Eigentümer der "
+"Organisation."
+
+#: src/app/main/data/dashboard.cljs:703
+msgid "dashboard.organization-deleted"
+msgstr "Die Organisation %s wurde gelöscht."
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:208, src/app/main/ui/dashboard/organization_team_switch.cljs:209
+msgid "dashboard.other-teams"
+msgstr "Weitere Teams"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:38, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:58, src/app/main/ui/dashboard/organization_team_switch.cljs:57, src/app/main/ui/dashboard/projects.cljs:50, src/app/main/ui/dashboard/projects.cljs:364, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/team.cljs:647, src/app/main/ui/dashboard/team.cljs:1257, src/app/main/ui/dashboard/team.cljs:1537, src/app/main/ui/dashboard/team.cljs:1644
+msgid "dashboard.personal-projects"
+msgstr "Persönliche Projekte"
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:180
+msgid "dashboard.section.organizations"
+msgstr "Organisationen"
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:249
+msgid "dashboard.section.teams"
+msgstr "Teams"
+
+#: src/app/main/data/nitrate.cljs:517
+msgid "dashboard.select-organization-modal.accept"
+msgstr "ZUR ORGANISATION HINZUFÜGEN"
+
+#: src/app/main/data/nitrate.cljs:515
+msgid "dashboard.select-organization-modal.choose"
+msgstr "Organisation auswählen:"
+
+#: src/app/main/ui/dashboard/team.cljs:1041
+msgid "dashboard.select-organization-modal.external-invitations-warning"
+msgstr ""
+"„%s“ erlaubt nur Mitgliedern der Organisation, ihren Teams beizutreten. "
+"Ausstehende Einladungen an Personen außerhalb der Organisation werden "
+"widerrufen."
+
+#: src/app/main/ui/dashboard/team.cljs:1037
+msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
+msgstr "Ausstehende Einladungen an externe Benutzer werden storniert."
+
+#: src/app/main/data/nitrate.cljs:583
+msgid "dashboard.select-organization-modal.permission-info"
+msgstr ""
+"Hier finden Sie die Organisationen, denen Sie angehören und in die Sie das "
+"Team verschieben dürfen."
+
+#: src/app/main/data/nitrate.cljs:507
+msgid "dashboard.select-organization-modal.permission-info-add"
+msgstr ""
+"Hier finden Sie die Organisationen, denen Sie angehören und in denen Sie "
+"Teams erstellen oder hinzufügen dürfen."
+
+#: src/app/main/data/nitrate.cljs:516
+msgid "dashboard.select-organization-modal.select"
+msgstr "Organisation auswählen"
+
+#: src/app/main/data/nitrate.cljs:514, src/app/main/data/nitrate.cljs:534, src/app/main/ui/dashboard/team_form.cljs:157
+msgid "dashboard.select-organization-modal.title"
+msgstr "Team zu einer Organisation hinzufügen"
+
+#: src/app/main/data/common.cljs:266
+#, backend
+msgid "dashboard.team-belong-organization"
+msgstr "Dieses Team gehört jetzt zur Organisation %s"
+
+#: src/app/main/data/common.cljs:267
+#, backend
+msgid "dashboard.team-no-longer-belong-organization"
+msgstr "Dieses Team gehört nicht mehr zur Organisation %s"
+
+#: src/app/main/ui/dashboard/team.cljs:1676
+msgid "dashboard.team-organization"
+msgstr "Teamorganisation"
+
+#: src/app/main/ui/dashboard/team.cljs:1710
+msgid "dashboard.team-organization.add"
+msgstr "Zu einer Organisation hinzufügen"
+
+#: src/app/main/data/nitrate.cljs:533, src/app/main/data/nitrate.cljs:590
+msgid "dashboard.team-organization.add.no-valid-organizations"
+msgstr ""
+"Sie haben keine Berechtigung, dieses Team zu einer Ihrer Organisationen "
+"hinzuzufügen."
+
+#: src/app/main/ui/dashboard/team.cljs:1699
+msgid "dashboard.team-organization.change"
+msgstr "Organisation des Teams ändern"
+
+#: src/app/main/ui/dashboard/team.cljs:948
+msgid "dashboard.team-organization.disabled-organization-tooltip"
+msgstr "Es können nur Personen aus Ihrer Organisation eingeladen werden."
+
+#: src/app/main/ui/dashboard/team.cljs:1706
+msgid "dashboard.team-organization.none"
+msgstr "Dieses Team gehört zu keiner Organisation"
+
+#: src/app/main/ui/dashboard/team.cljs:1702
+msgid "dashboard.team-organization.remove"
+msgstr "Team aus der Organisation entfernen"
+
+#: src/app/main/data/dashboard.cljs:671
+#, backend
+msgid "dashboard.user-no-longer-belong-organization"
+msgstr "Sie sind kein Mitglied der Organisation %s mehr"
+
+#: src/app/main/ui/settings/options.cljs:109
+msgid "dashboard.webgl-switch.beta"
+msgstr "Beta"
+
+#: src/app/main/ui/settings/options.cljs:110
+msgid "dashboard.webgl-switch.description"
+msgstr ""
+"Die WebGL-Darstellung kann die Leistung verbessern, befindet sich aber in "
+"der Beta und kann weniger stabil sein. Zwischen Arbeitsfläche, Exporten (SVG/"
+"PDF) und der Ansicht können sichtbare Unterschiede auftreten."
+
+#: src/app/main/ui/settings/options.cljs:113
+msgid "dashboard.webgl-switch.disabled"
+msgstr "Deaktiviert"
+
+#: src/app/main/ui/settings/options.cljs:113
+msgid "dashboard.webgl-switch.enabled"
+msgstr "Aktiviert"
+
+#: src/app/main/ui/settings/options.cljs:116
+msgid "dashboard.webgl-switch.feedback"
+msgstr "Feedback geben"
+
+#: src/app/main/ui/settings/options.cljs:112
+msgid "dashboard.webgl-switch.status"
+msgstr "Status"
+
+#: src/app/main/ui/settings/options.cljs:108
+msgid "dashboard.webgl-switch.title"
+msgstr "WebGL-Darstellung"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:54, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:118, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:134
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr ""
+"Das Token {%s} ist in keinem aktiven Set oder hat einen ungültigen Wert."
+
+#: src/app/main/data/workspace/libraries.cljs:1691
+msgid "errors.circular-library-reference"
+msgstr ""
+"Bibliothek kann nicht hinzugefügt werden: Das würde eine zirkuläre "
+"Abhängigkeit erzeugen"
+
+#: src/app/main/ui/settings/integrations.cljs:93, src/app/util/clipboard.cljs:248
+msgid "errors.clipboard-api-unavailable"
+msgstr ""
+"Die Zwischenablage-API ist nicht verfügbar. Stellen Sie Penpot über HTTPS "
+"bereit, damit der Zugriff auf die Zwischenablage funktioniert"
+
+#: src/app/util/clipboard.cljs:245
+msgid "errors.clipboard-permission-denied"
+msgstr ""
+"Zugriff auf die Zwischenablage verweigert. Erlauben Sie in Ihrem Browser den "
+"Zugriff auf die Zwischenablage, um Inhalte einzufügen"
+
+#: src/app/main/ui/dashboard/fonts.cljs:341
+msgid "errors.font-family-invalid-chars"
+msgstr ""
+"Der Name der Schriftfamilie darf nur Buchstaben, Ziffern, Leerzeichen, "
+"Bindestriche, Unterstriche und Punkte enthalten."
+
+#: src/app/main/ui/static.cljs:88
+msgid "errors.invite-email-mismatch"
+msgstr ""
+"Diese Einladung gilt für eine andere E-Mail-Adresse. Melden Sie sich ab und "
+"mit dem eingeladenen Konto an, oder bitten Sie den Teameigentümer um eine "
+"neue Einladung."
+
+#: src/app/main/ui/static.cljs:92
+msgid "errors.invite-expired"
+msgstr ""
+"Diese Einladung ist abgelaufen. Bitten Sie den Teameigentümer, Ihnen eine "
+"neue zu senden."
+
+#: src/app/main/data/nitrate.cljs:209
+msgid "errors.organization-leave.no-valid-teams"
+msgstr ""
+"Beim Verlassen der Organisation ist ein Problem aufgetreten. Bitte versuchen "
+"Sie es erneut."
+
+#: src/app/main/data/nitrate.cljs:210
+msgid "errors.organization-leave.organization-owner-cannot-leave"
+msgstr "Der Eigentümer der Organisation kann die Organisation nicht verlassen."
+
+#: src/app/main/ui/auth/verify_token.cljs:125
+msgid "errors.organization-not-found"
+msgstr "Diese Organisation existiert nicht"
+
+#: src/app/main/errors.cljs:538
+msgid "errors.save-failed"
+msgstr ""
+"Die automatische Speicherung funktioniert wegen eines Fehlers nicht. "
+"Kontaktieren Sie den Support, um den Fehler zu melden, und laden Sie neu, um "
+"mit Ihrer zuletzt gespeicherten Version weiterzuarbeiten."
+
+#: src/app/main/data/nitrate.cljs:191
+msgid "errors.team-leave.only-owner-can-delete"
+msgstr "Nur der Eigentümer eines Teams kann es löschen."
+
+#: ../common/src/app/common/types/team.cljc:27
+msgid "errors.team-name-invalid-chars"
+msgstr ""
+"Der Teamname darf keines der folgenden Zeichen enthalten: '.', ':' oder '/'"
+
+#: ../common/src/app/common/files/tokens.cljc:351
+msgid "errors.token-theme-not-existing-sets"
+msgstr "Das Theme verweist auf Sets, die nicht existieren: %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:50, ../common/src/app/common/files/tokens.cljc:230
+msgid "errors.tokens.circular-reference"
+msgstr "Das Token hat einen zirkulären Verweis"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:116, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:245
+msgid "errors.tokens.composite-line-height-needs-font-size"
+msgstr ""
+"Die Zeilenhöhe hängt von der Schriftgröße ab. Fügen Sie eine Schriftgröße "
+"hinzu, um den aufgelösten Wert zu erhalten."
+
+#: src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:350, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:436
+msgid "errors.tokens.empty-field"
+msgstr "Dieses Feld darf nicht leer sein"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:108
+msgid "errors.tokens.invalid-font-family-token-value"
+msgstr ""
+"Ungültiger Token-Wert: Sie können nur auf ein Schriftfamilien-Token verweisen"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:132
+msgid "errors.tokens.invalid-token-value-shadow"
+msgstr ""
+"Ungültiger Wert: Er muss auf ein zusammengesetztes Schatten-Token verweisen."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:68, src/app/main/ui/workspace/tokens/management/forms/controls/utils.cljs:126
+msgid "errors.tokens.name-collision"
+msgstr ""
+"Der Gruppenname von %s kollidiert mit einem Token desselben Namens in einem "
+"anderen aktiven Set."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:128
+msgid "errors.tokens.shadow-spread-range"
+msgstr "Die Schattenausbreitung muss größer oder gleich 0 sein."
+
+#: src/app/main/ui/auth/recovery.cljs:44, src/app/main/ui/auth/register.cljs:125, src/app/main/ui/settings/password.cljs:42
+msgid "errors.weak-password"
+msgstr "Das Passwort erfüllt die Anforderungen nicht"
+
+#: src/app/main/ui/auth/recovery.cljs:37, src/app/main/ui/auth/register.cljs:119, src/app/main/ui/settings/password.cljs:35
+#, backend
+msgid "errors.weak-password.insufficient-digits"
+msgstr "Mindestens 1 Ziffer"
+
+#: src/app/main/ui/auth/recovery.cljs:38, src/app/main/ui/auth/register.cljs:120, src/app/main/ui/settings/password.cljs:36
+#, backend
+msgid "errors.weak-password.insufficient-lowercase"
+msgstr "Mindestens 1 Kleinbuchstabe"
+
+#: src/app/main/ui/auth/recovery.cljs:40, src/app/main/ui/auth/register.cljs:122, src/app/main/ui/settings/password.cljs:38
+#, backend
+msgid "errors.weak-password.insufficient-special"
+msgstr "Mindestens 1 Sonderzeichen"
+
+#: src/app/main/ui/auth/recovery.cljs:39, src/app/main/ui/auth/register.cljs:121, src/app/main/ui/settings/password.cljs:37
+#, backend
+msgid "errors.weak-password.insufficient-uppercase"
+msgstr "Mindestens 1 Großbuchstabe"
+
+#: src/app/main/ui/auth/recovery.cljs:36, src/app/main/ui/auth/register.cljs:118, src/app/main/ui/settings/password.cljs:34
+#, backend
+msgid "errors.weak-password.too-short"
+msgstr "Mindestens 8 Zeichen"
+
+#: src/app/main/ui/exports/files.cljs:183
+msgid "files-export-modal.options.detach-libraries.message"
+msgstr "Verknüpfte Bibliotheks-Assets werden nicht in die Datei aufgenommen."
+
+#: src/app/main/ui/exports/files.cljs:177
+msgid "files-export-modal.options.detach-libraries.title"
+msgstr "Assets als einfache Objekte behandeln"
+
+#: src/app/main/ui/exports/files.cljs:181
+msgid "files-export-modal.options.include-libraries.message"
+msgstr ""
+"Dateien mit verknüpften Bibliotheken werden in den Export aufgenommen, die "
+"Verknüpfung bleibt erhalten. "
+
+#: src/app/main/ui/exports/files.cljs:175
+msgid "files-export-modal.options.include-libraries.title"
+msgstr "Datei und Bibliotheken exportieren"
+
+#: src/app/main/ui/exports/files.cljs:184
+msgid "files-export-modal.options.link-later.message"
+msgstr ""
+"Beim Import können Sie vorhandene Bibliotheken mit passenden Namen "
+"verknüpfen."
+
+#: src/app/main/ui/exports/files.cljs:178
+msgid "files-export-modal.options.link-later.title"
+msgstr "Passende Bibliotheken beim Import verknüpfen"
+
+#: src/app/main/ui/exports/files.cljs:182
+msgid "files-export-modal.options.merge-libraries.message"
+msgstr ""
+"Ihre Datei wird exportiert, wobei die Bibliotheks-Assets in die lokale "
+"Bibliothek übernommen werden."
+
+#: src/app/main/ui/exports/files.cljs:176
+msgid "files-export-modal.options.merge-libraries.title"
+msgstr "Bibliotheks-Assets in die Datei einbetten"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:161
+msgid "import-shortcuts.apply"
+msgstr "Übernehmen"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:102
+msgid "import-shortcuts.diff-modal-text"
+msgstr ""
+"Die folgenden Tastaturkürzel werden durch die importierte Konfiguration "
+"geändert."
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:98
+msgid "import-shortcuts.diff-modal-title"
+msgstr "Tastaturkürzel importieren"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:148
+msgid "import-shortcuts.no-changes"
+msgstr ""
+"Zwischen den aktuellen und den importierten Tastaturkürzeln wurden keine "
+"Unterschiede gefunden."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:594
+msgid "inspect.attributes.typography.mixed-font-family"
+msgstr "Gemischte Schriftfamilie"
+
+#: src/app/main/ui/inspect/attributes/text.cljs:117
+msgid "inspect.attributes.typography.text-decoration.strikethrough"
+msgstr "Durchgestrichen"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:176
+msgid "inspect.tabs-switcher-label"
+msgstr "Inspektionsansicht"
+
+#: src/app/main/ui/settings/integrations.cljs:616
+msgid "integrations.access-tokens.create"
+msgstr "Neues Zugangstoken erstellen"
+
+#: src/app/main/ui/settings/integrations.cljs:632
+msgid "integrations.access-tokens.empty.add-one"
+msgstr ""
+"Drücken Sie die Schaltfläche „Neues Zugangstoken erstellen“, um eines zu "
+"erzeugen."
+
+#: src/app/main/ui/settings/integrations.cljs:631
+msgid "integrations.access-tokens.empty.no-access-tokens"
+msgstr "Sie haben noch keine Token."
+
+#: src/app/main/ui/settings/integrations.cljs:606
+msgid "integrations.access-tokens.personal"
+msgstr "Persönliche Zugangstoken"
+
+#: src/app/main/ui/settings/integrations.cljs:611
+msgid "integrations.access-tokens.personal.description"
+msgstr ""
+"Persönliche Zugangstoken funktionieren als Alternative zur Anmeldung mit "
+"Benutzername und Passwort und können einer Anwendung Zugriff auf die interne "
+"Penpot-API geben"
+
+#: src/app/main/ui/settings/integrations.cljs:68
+msgid "integrations.copy-to-clipboard"
+msgstr "In die Zwischenablage kopieren"
+
+#: src/app/main/ui/settings/integrations.cljs:253
+msgid "integrations.create-access-token.title"
+msgstr "Zugangstoken erstellen"
+
+#: src/app/main/ui/settings/integrations.cljs:252
+msgid "integrations.create-access-token.title.created"
+msgstr "Zugangstoken erstellt"
+
+#: src/app/main/ui/settings/integrations.cljs:371
+msgid "integrations.delete-token.accept"
+msgstr "Token löschen"
+
+#: src/app/main/ui/settings/integrations.cljs:370
+msgid "integrations.delete-token.message"
+msgstr "Sind Sie sicher, dass Sie dieses Token löschen möchten?"
+
+#: src/app/main/ui/settings/integrations.cljs:369
+msgid "integrations.delete-token.title"
+msgstr "Token löschen"
+
+#: src/app/main/ui/settings/integrations.cljs:213
+msgid "integrations.expiration-180-days"
+msgstr "180 Tage"
+
+#: src/app/main/ui/settings/integrations.cljs:210
+msgid "integrations.expiration-30-days"
+msgstr "30 Tage"
+
+#: src/app/main/ui/settings/integrations.cljs:211
+msgid "integrations.expiration-60-days"
+msgstr "60 Tage"
+
+#: src/app/main/ui/settings/integrations.cljs:212
+msgid "integrations.expiration-90-days"
+msgstr "90 Tage"
+
+#: src/app/main/ui/settings/integrations.cljs:208
+msgid "integrations.expiration-date.label"
+msgstr "Ablaufdatum"
+
+#: src/app/main/ui/settings/integrations.cljs:209
+msgid "integrations.expiration-never"
+msgstr "Nie"
+
+#: src/app/main/ui/settings/integrations.cljs:393
+msgid "integrations.expired-on"
+msgstr "Abgelaufen am %s"
+
+#: src/app/main/ui/settings/integrations.cljs:394
+msgid "integrations.expires-on"
+msgstr "Läuft ab am %s"
+
+#: src/app/main/ui/settings/integrations.cljs:294
+msgid "integrations.generate-mcp-key.title"
+msgstr "MCP-Schlüssel erzeugen"
+
+#: src/app/main/ui/settings/integrations.cljs:292
+msgid "integrations.generate-mcp-key.title.created"
+msgstr "MCP-Schlüssel erzeugt"
+
+#: src/app/main/ui/settings/integrations.cljs:193
+msgid "integrations.info.mcp-server"
+msgstr ""
+"Der Penpot-MCP-Server ermöglicht MCP-Clients, direkt mit Penpot-"
+"Designdateien zu arbeiten."
+
+#: src/app/main/ui/settings/integrations.cljs:119
+msgid "integrations.mcp-key.will-expire"
+msgstr "Der MCP-Schlüssel läuft am %s ab"
+
+#: src/app/main/ui/settings/integrations.cljs:122
+msgid "integrations.mcp-key.will-not-expire"
+msgstr "Der MCP-Schlüssel hat kein Ablaufdatum"
+
+#: src/app/main/ui/settings/integrations.cljs:498
+msgid "integrations.mcp-server.description"
+msgstr ""
+"Der Penpot-MCP-Server ermöglicht MCP-Clients, direkt mit Penpot-"
+"Designdateien zu arbeiten."
+
+#: src/app/main/ui/settings/integrations.cljs:581
+msgid "integrations.mcp-server.mcp-keys.help"
+msgstr "MCP-Clients einrichten"
+
+#: src/app/main/ui/settings/integrations.cljs:568
+msgid "integrations.mcp-server.mcp-keys.info"
+msgstr ""
+"Das ist die Server-URL, die Sie brauchen, um Ihren MCP-Client mit dem Penpot-"
+"MCP-Server zu verbinden."
+
+#: src/app/main/ui/settings/integrations.cljs:548
+msgid "integrations.mcp-server.mcp-keys.regenerate"
+msgstr "MCP-Schlüssel neu erzeugen"
+
+#: src/app/main/ui/settings/integrations.cljs:541
+msgid "integrations.mcp-server.mcp-keys.title"
+msgstr "MCP-Schlüssel"
+
+#: src/app/main/ui/settings/integrations.cljs:549
+msgid "integrations.mcp-server.mcp-keys.tootip"
+msgstr "Der MCP-Schlüssel wird für die Einrichtung des MCP-Clients benötigt"
+
+#: src/app/main/ui/settings/integrations.cljs:504
+msgid "integrations.mcp-server.status"
+msgstr "Status"
+
+#: src/app/main/ui/settings/integrations.cljs:524
+msgid "integrations.mcp-server.status.disabled"
+msgstr "Deaktiviert"
+
+#: src/app/main/ui/settings/integrations.cljs:523
+msgid "integrations.mcp-server.status.enabled"
+msgstr "Aktiviert"
+
+#: src/app/main/ui/settings/integrations.cljs:514
+msgid "integrations.mcp-server.status.expired.0"
+msgstr ""
+"Der MCP-Schlüssel für die Verbindung zum MCP-Server ist abgelaufen. Die "
+"Verbindung kann deshalb nicht hergestellt werden."
+
+#: src/app/main/ui/settings/integrations.cljs:519
+msgid "integrations.mcp-server.status.expired.1"
+msgstr ""
+"Erzeugen Sie den MCP-Schlüssel neu und aktualisieren Sie die Client-"
+"Konfiguration mit dem neuen Schlüssel."
+
+#: src/app/main/ui/settings/integrations.cljs:489
+msgid "integrations.mcp-server.title"
+msgstr "MCP-Server"
+
+#: src/app/main/ui/settings/integrations.cljs:493
+msgid "integrations.mcp-server.title.beta"
+msgstr "Beta"
+
+#: src/app/main/ui/settings/integrations.cljs:200
+msgid "integrations.name.label"
+msgstr "Name"
+
+#: src/app/main/ui/settings/integrations.cljs:201
+msgid "integrations.name.placeholder"
+msgstr "Der Name hilft zu erkennen, wofür das Token gedacht ist"
+
+#: src/app/main/ui/settings/integrations.cljs:392
+msgid "integrations.no-expiration"
+msgstr "Kein Ablaufdatum"
+
+#: src/app/main/ui/settings/integrations.cljs:478
+msgid "integrations.notification.success.copied-link"
+msgstr "Link in die Zwischenablage kopiert"
+
+#: src/app/main/ui/settings/integrations.cljs:241, src/app/main/ui/settings/integrations.cljs:274, src/app/main/ui/settings/integrations.cljs:319
+msgid "integrations.notification.success.created"
+msgstr "Token erfolgreich erstellt"
+
+#: src/app/main/ui/settings/integrations.cljs:87
+msgid "integrations.notification.success.mcp-key-copied"
+msgstr "MCP-Schlüssel kopiert"
+
+#: src/app/main/ui/settings/integrations.cljs:444
+msgid "integrations.notification.success.mcp-server-disabled"
+msgstr "MCP-Server deaktiviert"
+
+#: src/app/main/ui/settings/integrations.cljs:443
+msgid "integrations.notification.success.mcp-server-enabled"
+msgstr "MCP-Server aktiviert"
+
+#: src/app/main/ui/settings/integrations.cljs:88
+msgid "integrations.notification.success.token-copied"
+msgstr "Token kopiert"
+
+#: src/app/main/ui/settings/integrations.cljs:337
+msgid "integrations.regenerate-mcp-key.info"
+msgstr ""
+"Wenn Sie den MCP-Schlüssel neu erzeugen, wird der aktuelle sofort "
+"widerrufen. Anwendungen, die ihn verwenden, funktionieren dann nicht mehr."
+
+#: src/app/main/ui/settings/integrations.cljs:336
+msgid "integrations.regenerate-mcp-key.title"
+msgstr "MCP-Schlüssel neu erzeugen"
+
+#: src/app/main/ui/settings/integrations.cljs:334
+msgid "integrations.regenerate-mcp-key.title.created"
+msgstr "MCP-Schlüssel neu erzeugt"
+
+#: src/app/main/ui/settings/integrations.cljs:655
+msgid "integrations.title"
+msgstr "Integrationen"
+
+#: src/app/main/ui/settings/integrations.cljs:108
+msgid "integrations.token.info.non-recuperable"
+msgstr ""
+"Dieses eindeutige Token kann nicht wiederhergestellt werden. Wenn Sie es "
+"verlieren, müssen Sie ein neues erstellen."
+
+#: src/app/main/ui/settings/integrations.cljs:120
+msgid "integrations.token.will-expire"
+msgstr "Das Token läuft am %s ab"
+
+#: src/app/main/ui/settings/integrations.cljs:123
+msgid "integrations.token.will-not-expire"
+msgstr "Das Token hat kein Ablaufdatum"
+
+#: src/app/main/ui/inspect/attributes/blur.cljs:31, src/app/main/ui/inspect/styles/style_box.cljs:32, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:262, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:274
+msgid "labels.blur-effects"
+msgstr "Weichzeichner"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:553
+msgid "labels.check-for-updates"
+msgstr "Nach Updates suchen"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:552
+msgid "labels.checking-for-updates"
+msgstr "Suche nach Updates…"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:111, src/app/main/ui/settings/restore_shortcuts_modal.cljs:102
+msgid "labels.current"
+msgstr "Aktuell"
+
+#: src/app/main/ui/settings/profile.cljs:116
+msgid "labels.delete-profile-photo.message"
+msgstr "Sind Sie sicher, dass Sie Ihr Profilfoto löschen möchten?"
+
+#: src/app/main/ui/settings/profile.cljs:115
+msgid "labels.delete-profile-photo.title"
+msgstr "Profilfoto löschen"
+
+#: src/app/main/ui/dashboard/fonts.cljs:283
+msgid "labels.download-simple"
+msgstr "Herunterladen"
+
+#: src/app/main/ui/exports/files.cljs:217
+msgid "labels.downloading-file"
+msgstr "Datei wird heruntergeladen…"
+
+#: src/app/main/data/workspace/versions.cljs:314
+msgid "labels.exit"
+msgstr "Beenden"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1284
+msgid "labels.flex-layout"
+msgstr "Flex-Layout"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1288
+msgid "labels.grid-layout"
+msgstr "Raster-Layout"
+
+#: src/app/main/ui/settings/sidebar.cljs:134
+msgid "labels.integrations"
+msgstr "Integrationen"
+
+#: src/app/main/ui/static.cljs:362
+msgid "labels.nitrate-not-configured.desc-message"
+msgstr ""
+"Diese Instanz braucht einen Einrichtungsschritt aus der neuesten Version."
+
+#: src/app/main/ui/static.cljs:365
+msgid "labels.nitrate-not-configured.learn-more"
+msgstr "Sehen Sie sich unsere"
+
+#: src/app/main/ui/static.cljs:360
+msgid "labels.nitrate-not-configured.main-message"
+msgstr "Penpot kann noch nicht starten."
+
+#: src/app/main/ui/static.cljs:370
+msgid "labels.nitrate-not-configured.technical-guide"
+msgstr "technische Anleitung"
+
+#: src/app/main/ui/static.cljs:350
+msgid "labels.nitrate-unavailable.main-message"
+msgstr ""
+"Penpot ist wegen eines Systemproblems vorübergehend nicht verfügbar. Bitte "
+"versuchen Sie es in Kürze erneut."
+
+#: src/app/main/ui/dashboard/team.cljs:855
+msgid "labels.no-invitations-gather-people"
+msgstr "Holen Sie Ihre Leute zusammen und erschaffen Sie gemeinsam Großes."
+
+#: src/app/main/ui/components/select.cljs:256
+msgid "labels.no-matches"
+msgstr "Keine Treffer"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:994
+msgid "labels.open"
+msgstr "Öffnen"
+
+#: src/app/main/ui/dashboard/import.cljs:703
+msgid "labels.skip"
+msgstr "Überspringen"

@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-28 08:14+0000\n"
-"Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
-"Language-Team: French (Canada) "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr_CA/>\n"
+"PO-Revision-Date: 2026-11-05 14:51+0000\n"
+"Last-Translator: Alexis Morin <alexismo@users.noreply.hosted.weblate.org>\n"
+"Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
+"frontend/fr_CA/>\n"
 "Language: fr_CA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 2026.10.dev0\n"
+"X-Generator: Weblate 2026.11.2.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:191, src/app/main/ui/viewer/login.cljs:119
 msgid "auth.already-have-account"
@@ -9155,3 +9155,231 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/versions.cljs:462
 msgid "workspace.versions.warning.text"
 msgstr "Les versions auto-sauvegardées seront conservées pendant %s jours."
+
+#: src/app/main/data/nitrate.cljs:599
+msgid "dashboard.change-organization-modal.description"
+msgstr ""
+"Les projets et fichiers resteront disponibles aux membres de l'équipe. "
+"L'équipe recevra la configuration de la nouvelle organisation."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:334
+msgid "dashboard.check-updates.available-message"
+msgstr ""
+"Les nouvelles versions incluent des améliorations à la performance, des "
+"nouvelles fonctionnalités et des correctifs qui maintiennent ton "
+"installation à jour."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:309
+msgid "dashboard.check-updates.available-title"
+msgstr "UNE NOUVELLE VERSION DE PENPOT EST DISPONIBLE"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:341
+msgid "dashboard.check-updates.highlights-title"
+msgstr "Nouveautés - Points forts"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:318
+msgid "dashboard.check-updates.installed-version"
+msgstr "Version installée"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:326
+msgid "dashboard.check-updates.latest-version"
+msgstr "Dernière version"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:235
+msgid "dashboard.check-updates.try-again"
+msgstr "Réessayer"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:230
+msgid "dashboard.check-updates.unable-hint"
+msgstr "Vérifier le réseau ou la configuration de l'instance et réessayer."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:226
+msgid "dashboard.check-updates.unable-message"
+msgstr "Cette installation n'a pu rejoindre le service des versions de Penpot."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:215
+msgid "dashboard.check-updates.unable-title"
+msgstr "IMPOSSIBLE DE VÉRIFIER LES MISES À JOUR"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:265
+msgid "dashboard.check-updates.uptodate-message"
+msgstr "Tu utilises la version stable la plus récente :"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:254
+msgid "dashboard.check-updates.uptodate-title"
+msgstr "PENPOT EST À JOUR"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:371
+msgid "dashboard.check-updates.view-changelog"
+msgstr "Voir le journal des modifications"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:374
+msgid "dashboard.check-updates.view-release-notes"
+msgstr "Voir les notes de la version"
+
+#: src/app/main/ui/dashboard/grid.cljs:252
+msgid "dashboard.grid.last-modified-at"
+msgstr "Dernière modification %s"
+
+#: src/app/main/ui/dashboard/import.cljs:597
+msgid "dashboard.import.auto-linked-libraries"
+msgid_plural "dashboard.import.auto-linked-libraries"
+msgstr[0] "1 bibliothèque a été liée automatiquement par nom."
+msgstr[1] "%s bibliothèques ont été liées automatiquement par nom."
+
+#: src/app/main/ui/dashboard/import.cljs:733
+msgid "dashboard.import.confirm-library-links"
+msgstr "Confirmer les liens de bibliothèque"
+
+#: src/app/main/ui/dashboard/import.cljs:709
+msgid "dashboard.import.connect-selected-libraries"
+msgstr "Connecter les bibliothèques sélectionnées"
+
+#: src/app/main/ui/dashboard/import.cljs:296
+msgid "dashboard.import.file-name-label"
+msgstr "Nom du fichier"
+
+#: src/app/main/ui/dashboard/import.cljs:710
+msgid "dashboard.import.next-file"
+msgstr "Fichier suivant"
+
+#: src/app/main/ui/dashboard/import.cljs:443
+msgid "dashboard.import.resolve-libraries"
+msgstr ""
+"Certaines bibliothèques n'ont pu être liées automatiquement. Sélectionner la "
+"bonne bibliothèque pour chacun :"
+
+#: src/app/main/ui/dashboard/import.cljs:565
+msgid "dashboard.import.resolve-libraries-summary"
+msgstr "Réviser les liens de bibliothèque avant de confirmer :"
+
+#: src/app/main/ui/dashboard/import.cljs:459
+msgid "dashboard.import.resolve-libraries.connect-to"
+msgstr "connecter à"
+
+#: src/app/main/ui/dashboard/import.cljs:453
+msgid "dashboard.import.resolve-libraries.original-library"
+msgstr "bibliothèque originale"
+
+#: src/app/main/ui/dashboard/import.cljs:521
+msgid "dashboard.import.summary.linked"
+msgstr "liée automatiquement"
+
+#: src/app/main/ui/dashboard/import.cljs:529
+msgid "dashboard.import.summary.manually-linked"
+msgstr "liée manuellement"
+
+#: src/app/main/ui/dashboard/import.cljs:537
+msgid "dashboard.import.summary.new"
+msgstr "Nouveau"
+
+#: src/app/main/ui/dashboard/import.cljs:558
+msgid "dashboard.import.summary.no-selection"
+msgstr "Aucune bibliothèque sélectionnée"
+
+#: src/app/main/ui/dashboard/import.cljs:534
+msgid "dashboard.import.summary.original"
+msgstr "Original"
+
+#: src/app/main/ui/dashboard/team.cljs:152
+msgid "dashboard.invite-profile-disabled"
+msgstr "Tu n'as pas la permission d'inviter des gens à cette équipe"
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:185
+msgid "dashboard.no-organizations-yet"
+msgstr "Aucune organisation."
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:208, src/app/main/ui/dashboard/organization_team_switch.cljs:209
+msgid "dashboard.other-teams"
+msgstr "Autres équipes"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:38, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:58, src/app/main/ui/dashboard/organization_team_switch.cljs:57, src/app/main/ui/dashboard/projects.cljs:50, src/app/main/ui/dashboard/projects.cljs:364, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/team.cljs:647, src/app/main/ui/dashboard/team.cljs:1257, src/app/main/ui/dashboard/team.cljs:1537, src/app/main/ui/dashboard/team.cljs:1644
+msgid "dashboard.personal-projects"
+msgstr "Projets personnels"
+
+#: src/app/main/data/nitrate.cljs:507
+msgid "dashboard.select-organization-modal.permission-info-add"
+msgstr ""
+"Ici tu trouveras les organisations auxquelles tu appartiens où tu peux créer "
+"ou ajouter des équipes."
+
+#: src/app/main/ui/auth/login.cljs:113
+msgid "errors.account-locked"
+msgstr ""
+"Trop d'essais erronés. Ton compte a été verrouillé pour %s minutes. "
+"Réessayer plus tard."
+
+#: src/app/main/errors.cljs:499
+msgid "errors.connection-error"
+msgstr ""
+"Impossible de joindre le serveur. Vérifier la connexion et essayer à nouveau."
+
+#: src/app/main/errors.cljs:538
+msgid "errors.save-failed"
+msgstr ""
+"La sauvegarde automatique ne fonctionne pas dû à une erreur. Contacter le "
+"support pour la rapporter et rafraîchir pour continuer à partir de la "
+"dernière version sauvegardée."
+
+#: src/app/main/data/persistence.cljs:307
+msgid "errors.save-retrying"
+msgstr ""
+"Connexion interrompue. Nouvelle tentative de sauvegarde des modifications."
+
+#: src/app/main/ui/auth/recovery.cljs:44, src/app/main/ui/auth/register.cljs:125, src/app/main/ui/settings/password.cljs:42
+msgid "errors.weak-password"
+msgstr "Le mot de passe ne remplit pas les exigences"
+
+#: src/app/main/ui/auth/recovery.cljs:37, src/app/main/ui/auth/register.cljs:119, src/app/main/ui/settings/password.cljs:35
+#, backend
+msgid "errors.weak-password.insufficient-digits"
+msgstr "Au moins 1 chiffre"
+
+#: src/app/main/ui/auth/recovery.cljs:38, src/app/main/ui/auth/register.cljs:120, src/app/main/ui/settings/password.cljs:36
+#, backend
+msgid "errors.weak-password.insufficient-lowercase"
+msgstr "Au moins 1 lettre minuscule"
+
+#: src/app/main/ui/auth/recovery.cljs:40, src/app/main/ui/auth/register.cljs:122, src/app/main/ui/settings/password.cljs:38
+#, backend
+msgid "errors.weak-password.insufficient-special"
+msgstr "Au moins 1 caractère spécial"
+
+#: src/app/main/ui/auth/recovery.cljs:39, src/app/main/ui/auth/register.cljs:121, src/app/main/ui/settings/password.cljs:37
+#, backend
+msgid "errors.weak-password.insufficient-uppercase"
+msgstr "Au moins 1 lettre majuscule"
+
+#: src/app/main/ui/auth/recovery.cljs:36, src/app/main/ui/auth/register.cljs:118, src/app/main/ui/settings/password.cljs:34
+#, backend
+msgid "errors.weak-password.too-short"
+msgstr "Au moins 8 caractères"
+
+#: src/app/main/ui/exports/files.cljs:183
+msgid "files-export-modal.options.detach-libraries.message"
+msgstr ""
+"Les atouts des bibliothèques liées ne seront pas inclus dans le fichier."
+
+#: src/app/main/ui/exports/files.cljs:177
+msgid "files-export-modal.options.detach-libraries.title"
+msgstr "Traiter les atouts comme des objets de base"
+
+#: src/app/main/ui/exports/files.cljs:181
+msgid "files-export-modal.options.include-libraries.message"
+msgstr ""
+"Les fichiers avec des bibliothèques liées seront inclus dans l'export et "
+"maintiendront leurs liens. "
+
+#: src/app/main/ui/exports/files.cljs:175
+msgid "files-export-modal.options.include-libraries.title"
+msgstr "Exporter fichier + bibliothèques"
+
+#: src/app/main/ui/exports/files.cljs:184
+msgid "files-export-modal.options.link-later.message"
+msgstr ""
+"À l'import, il sera possible de lier des bibliothèques existantes qui ont le "
+"même nom."
+
+#: src/app/main/ui/exports/files.cljs:178
+msgid "files-export-modal.options.link-later.title"
+msgstr "Lier les bibliothèques correspondantes à l'import"
