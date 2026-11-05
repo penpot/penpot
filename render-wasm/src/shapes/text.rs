@@ -27,13 +27,13 @@ use std::collections::HashSet;
 use std::rc::Rc;
 use unicode_segmentation::UnicodeSegmentation;
 
+use super::text_attrs::*;
 use super::text_horizontal::*;
-use super::text_japanese::*;
 use super::{FontFamily, FontStyle};
 use crate::math::Point;
 use crate::render::FallbackFonts;
 #[cfg(test)]
-use crate::shapes::kinsoku;
+use crate::shapes::line_breaks;
 use crate::shapes::{self, merge_fills, Shape, Type, VerticalAlign};
 use crate::utils::{get_fallback_fonts, get_font_collection};
 use crate::Uuid;
@@ -765,12 +765,12 @@ impl TextContent {
             (sheds, laid_out)
         };
         let spacing = if paragraph.text_align() == TextAlign::Distribute {
-            horizontal_policy_justify_spacing(paragraph, &laid_out, plan, width)
+            horizontal_pairwise_justify_spacing(paragraph, &laid_out, plan, width)
         } else if paragraph.text_align() == TextAlign::Justify {
             if paragraph.layout_policy() == super::text_policy::TextLayoutPolicy::Japanese {
-                horizontal_justify_spacing(&laid_out, plan, width)
+                horizontal_jlreq_justify_spacing(&laid_out, plan, width)
             } else {
-                horizontal_policy_justify_spacing(paragraph, &laid_out, plan, width)
+                horizontal_pairwise_justify_spacing(paragraph, &laid_out, plan, width)
             }
         } else {
             vec![Vec::new(); plan.texts.len()]
@@ -798,7 +798,7 @@ impl TextContent {
             .children()
             .iter()
             .zip(&plan.texts)
-            .zip(&plan.sheds)
+            .zip(&plan.pair_spacing)
             .enumerate()
         {
             let combined: Vec<(usize, f32)> = sheds
@@ -1489,7 +1489,7 @@ impl TextContent {
                 .children()
                 .iter()
                 .zip(&plan.texts)
-                .zip(&plan.sheds)
+                .zip(&plan.pair_spacing)
                 .zip(&plan.ruby_spacing.adjustments)
                 .enumerate()
             {
@@ -2379,7 +2379,7 @@ impl Paragraph {
     /// of laid-out offsets must translate through the map. Only paragraphs
     /// with an explicit typography profile are transformed.
     #[cfg(test)]
-    pub fn layout_span_texts(&self) -> (Vec<String>, kinsoku::OffsetMap) {
+    pub fn layout_span_texts(&self) -> (Vec<String>, line_breaks::OffsetMap) {
         layout_span_texts(self)
     }
 
@@ -2539,7 +2539,7 @@ pub struct TextSpan {
     pub ruby_size: RubySize,
     pub ruby_align: RubyAlign,
     pub ruby_overhang: RubyOverhang,
-    pub ruby_side: RubySide,
+    pub ruby_side: AnnotationSide,
     /// Warichu (割注): two half-size lines stacked in one column position.
     pub warichu: bool,
     pub font_features: FontFeatures,
@@ -2573,7 +2573,7 @@ impl Default for TextSpan {
             ruby_size: RubySize::default(),
             ruby_align: RubyAlign::default(),
             ruby_overhang: RubyOverhang::default(),
-            ruby_side: RubySide::default(),
+            ruby_side: AnnotationSide::default(),
             warichu: false,
             font_features: FontFeatures::default(),
             annotation_clearance: AnnotationClearance::default(),
@@ -2657,9 +2657,9 @@ impl TextSpan {
         super::text_zhuyin::syllable(self).is_some()
     }
 
-    pub fn effective_ruby_side(&self) -> RubySide {
+    pub fn effective_ruby_side(&self) -> AnnotationSide {
         if self.is_zhuyin() {
-            RubySide::Over
+            AnnotationSide::Over
         } else {
             self.ruby_side
         }
@@ -2682,11 +2682,11 @@ impl TextSpan {
     /// the line height: the ruby at its size plus the emphasis marks. `None`
     /// keeps the set line height, so annotations sit in the line gap.
     pub fn annotation_room_em(&self) -> f32 {
-        self.annotation_side_room_em(RubySide::Over, false)
-            + self.annotation_side_room_em(RubySide::Under, false)
+        self.annotation_side_room_em(AnnotationSide::Over, false)
+            + self.annotation_side_room_em(AnnotationSide::Under, false)
     }
 
-    pub fn emphasis_side(&self, vertical: bool) -> RubySide {
+    pub fn emphasis_side(&self, vertical: bool) -> AnnotationSide {
         self.text_emphasis_position.side(
             vertical,
             super::text_policy::TextLayoutPolicy::for_language(&self.language, false).is_chinese(),
@@ -2707,14 +2707,14 @@ impl TextSpan {
             && self.effective_ruby_side() == self.emphasis_side(vertical)
     }
 
-    pub fn decoration_room_em(&self, side: RubySide, vertical: bool) -> f32 {
+    pub fn decoration_room_em(&self, side: AnnotationSide, vertical: bool) -> f32 {
         let underline = self
             .text_decoration
             .is_some_and(|kind| kind.contains(TextDecoration::UNDERLINE));
         let underline_side = if vertical {
             self.text_underline_position.side()
         } else {
-            RubySide::Under
+            AnnotationSide::Under
         };
         let positioned = self.text_underline_position != TextUnderlinePosition::Auto
             || self.text_emphasis_position != TextEmphasisPosition::Auto
@@ -2741,7 +2741,7 @@ impl TextSpan {
         ruby + self.font_size * self.decoration_room_em(self.emphasis_side(vertical), vertical)
     }
 
-    pub fn annotation_side_room_em(&self, side: RubySide, vertical: bool) -> f32 {
+    pub fn annotation_side_room_em(&self, side: AnnotationSide, vertical: bool) -> f32 {
         if !self.annotation_clearance.is_auto() {
             return 0.0;
         }
@@ -2754,7 +2754,7 @@ impl TextSpan {
             0.0
         };
         let emphasis = if !self.text_emphasis.is_none() && self.emphasis_side(vertical) == side {
-            super::text_japanese::EMPHASIS_FONT_SCALE
+            super::text_attrs::EMPHASIS_FONT_SCALE
         } else {
             0.0
         };

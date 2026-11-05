@@ -188,7 +188,7 @@ pub fn stroke_paragraph_builder_group_from_text(
             .children()
             .iter()
             .zip(&plan.texts)
-            .zip(&plan.sheds)
+            .zip(&plan.pair_spacing)
             .zip(&plan.ruby_spacing.adjustments)
             .enumerate()
         {

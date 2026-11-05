@@ -1,7 +1,9 @@
+// Horizontal CJK layout on top of SkParagraph: the policy's layout texts
+// (break joiners and spacing characters), punctuation and inter-script
+// spacing, offset maps between source, layout and builder text, line
+// adjustment, and the ruby, emphasis and warichu painters.
+
 use crate::shapes::text_paragraph::{LayoutParagraph, SpacedParagraphBuilder};
-// Horizontal Japanese layout on top of SkParagraph: the kinsoku layout
-// texts, punctuation aki, offset maps between source, layout and builder
-// text, and the ruby, emphasis and warichu painters.
 
 mod emphasis;
 mod justify;
@@ -20,17 +22,19 @@ pub(crate) use ruby::*;
 pub(crate) use warichu::*;
 
 use super::text::{add_text_with_tabs, Paragraph, TextContent, TextSpan};
-use super::text_japanese::*;
+use super::text_attrs::*;
+use super::text_ruby::*;
 use super::text_vertical::{
     is_upright_char, shape_segment_with_fallbacks, single_glyph_blob, span_font_families, ShapedRun,
 };
+use super::text_warichu::*;
 use crate::globals::get_resources;
 use crate::math::Point;
-use crate::shapes::japanese::{
-    aki_class, is_japanese_text_char, pair_rule, punctuation_aki_sheds, AkiShed, JapaneseClass,
+use crate::shapes::jlreq::{
+    aki_class, is_cjk_text_char, pair_rule, punctuation_aki_sheds, AkiShed, JlreqClass,
 };
 use crate::shapes::text_policy::TextLayoutPolicy;
-use crate::shapes::{kinsoku, merge_fills};
+use crate::shapes::{line_breaks, merge_fills};
 use crate::utils::{get_fallback_fonts, get_font_collection};
 use skia_safe::{
     self as skia,
@@ -42,17 +46,15 @@ use skia_safe::{
 };
 
 /// True when a paragraph with layout texts `texts` needs the Japanese passes:
-/// it has ruby or a Japanese character.
+/// its policy is Japanese and it has ruby or a CJK text character.
 pub(crate) fn uses_japanese_layout(paragraph: &Paragraph, texts: &[String]) -> bool {
     paragraph.layout_policy() == TextLayoutPolicy::Japanese
         && (paragraph.children().iter().any(TextSpan::has_ruby)
-            || texts
-                .iter()
-                .any(|text| text.chars().any(is_japanese_text_char)))
+            || texts.iter().any(|text| text.chars().any(is_cjk_text_char)))
 }
 
 #[cfg(test)]
-pub(crate) fn layout_span_texts(paragraph: &Paragraph) -> (Vec<String>, kinsoku::OffsetMap) {
+pub(crate) fn layout_span_texts(paragraph: &Paragraph) -> (Vec<String>, line_breaks::OffsetMap) {
     layout_span_texts_with_breaks(paragraph, &[], &[])
 }
 
@@ -60,7 +62,7 @@ fn layout_span_texts_with_breaks(
     paragraph: &Paragraph,
     emergency: &[usize],
     forced: &[usize],
-) -> (Vec<String>, kinsoku::OffsetMap) {
+) -> (Vec<String>, line_breaks::OffsetMap) {
     let texts: Vec<String> = paragraph
         .children()
         .iter()
@@ -75,12 +77,26 @@ fn layout_span_texts_with_breaks(
             .map(|span| span.has_ruby().then(Vec::new))
             .collect();
         let shifted =
-            kinsoku::apply_policy_with_breaks(&texts, &ruby_breaks, policy, emergency, forced);
+            line_breaks::apply_policy_with_breaks(&texts, &ruby_breaks, policy, emergency, forced);
         if let Some((shifted, map)) = shifted {
             return (shifted, map);
         }
     }
-    (texts, kinsoku::OffsetMap::default())
+    (texts, line_breaks::OffsetMap::default())
+}
+
+/// Advance changes between adjacent characters of the layout `texts`, as
+/// (char index, amount) per span: positive narrows the character, negative
+/// widens it. Japanese sheds JLREQ punctuation aki; the other policies use
+/// their pairwise punctuation compression and script spacing.
+pub(crate) fn horizontal_pair_spacing(
+    paragraph: &Paragraph,
+    texts: &[String],
+) -> Vec<Vec<(usize, f32)>> {
+    if paragraph.layout_policy() != TextLayoutPolicy::Japanese {
+        return horizontal_pairwise_spacing(paragraph, texts);
+    }
+    jlreq_aki_sheds(paragraph, texts)
 }
 
 /// (char index, amount) per span of the layout `texts` for the characters
@@ -88,24 +104,18 @@ fn layout_span_texts_with_breaks(
 /// sheds half of its own em, and the character before an opening bracket
 /// gives up half of the bracket's em. Inserted word joiners are transparent;
 /// `palt` spans set punctuation proportionally.
-pub(crate) fn horizontal_aki_sheds(
-    paragraph: &Paragraph,
-    texts: &[String],
-) -> Vec<Vec<(usize, f32)>> {
-    if paragraph.layout_policy() != TextLayoutPolicy::Japanese {
-        return horizontal_policy_spacing(paragraph, texts);
-    }
+fn jlreq_aki_sheds(paragraph: &Paragraph, texts: &[String]) -> Vec<Vec<(usize, f32)>> {
     let spans = paragraph.children();
     let half_em = |span: usize| spans.get(span).map_or(0.0, |span| span.font_size * 0.5);
     // (span, char index in the span text) of every real character.
     let mut chars: Vec<(usize, usize)> = Vec::new();
-    let mut classes: Vec<Option<JapaneseClass>> = Vec::new();
+    let mut classes: Vec<Option<JlreqClass>> = Vec::new();
     for (span_index, text) in texts.iter().enumerate() {
         let span = spans.get(span_index);
         let ruby_base = span.is_some_and(TextSpan::has_ruby);
         let proportional = span.is_some_and(|span| span.font_features == FontFeatures::Palt);
         for (index, ch) in text.chars().enumerate() {
-            if kinsoku::is_inserted_zero_width(ch) {
+            if line_breaks::is_inserted_zero_width(ch) {
                 continue;
             }
             chars.push((span_index, index));
@@ -125,13 +135,13 @@ pub(crate) fn horizontal_aki_sheds(
 
 /// Signed advance changes: positive removes punctuation space, negative adds
 /// the regional Han/Latin gap. Source and builder text stay unchanged.
-fn horizontal_policy_spacing(paragraph: &Paragraph, texts: &[String]) -> Vec<Vec<(usize, f32)>> {
+fn horizontal_pairwise_spacing(paragraph: &Paragraph, texts: &[String]) -> Vec<Vec<(usize, f32)>> {
     let mut result = vec![Vec::new(); texts.len()];
     let policy = paragraph.layout_policy();
     let mut previous: Option<(usize, usize, char)> = None;
     for (span, text) in texts.iter().enumerate() {
         for (index, ch) in text.chars().enumerate() {
-            if kinsoku::is_inserted_zero_width(ch) {
+            if line_breaks::is_inserted_zero_width(ch) {
                 continue;
             }
             if let Some((before_span, before_index, before)) = previous {
@@ -160,7 +170,7 @@ fn horizontal_policy_spacing(paragraph: &Paragraph, texts: &[String]) -> Vec<Vec
 
 /// Add a span to a horizontal paragraph builder. A warichu span becomes one
 /// inline placeholder so its two lines wrap as a unit; its glyphs are painted
-/// after layout. The characters at `sheds` (from `horizontal_aki_sheds`)
+/// after layout. The characters at `sheds` (from `horizontal_pair_spacing`)
 /// set narrower by their amounts; `extra` (from `horizontal_ruby_spacing`)
 /// adds letter-spacing to characters.
 pub(crate) fn add_horizontal_span(
@@ -174,8 +184,8 @@ pub(crate) fn add_horizontal_span(
 ) {
     if span.is_warichu() {
         let builder = builder.paragraph_builder();
-        if builder_text.starts_with(kinsoku::FORCED_LINE_BREAK) {
-            builder.add_text(kinsoku::FORCED_LINE_BREAK.to_string());
+        if builder_text.starts_with(line_breaks::FORCED_LINE_BREAK) {
+            builder.add_text(line_breaks::FORCED_LINE_BREAK.to_string());
         }
         let text = span.apply_text_transform();
         let (first, second) = warichu_text_lines(&text);
@@ -295,7 +305,7 @@ fn add_text_with_sheds(
         let at = utf16;
         utf16 += ch.len_utf16();
         let (added, shed) = amounts[index];
-        let letter_spacing = if kinsoku::is_inserted_zero_width(ch) {
+        let letter_spacing = if line_breaks::is_inserted_zero_width(ch) {
             0.0
         } else {
             tracking + added - shed
@@ -329,12 +339,12 @@ fn add_text_with_sheds(
 }
 
 /// The horizontal passes of one paragraph that layout, painting, position
-/// data and the editor share: kinsoku layout texts, offsets, punctuation aki
-/// sheds and long-ruby spacing. `TextContent::horizontal_plans` caches them.
+/// data and the editor share: layout texts, offsets, pair spacing
+/// (punctuation aki and script gaps) and long-ruby spacing. `TextContent::horizontal_plans` caches them.
 pub(crate) struct HorizontalParagraphPlan {
     pub(crate) texts: Vec<String>,
     pub(crate) offsets: HorizontalOffsets,
-    pub(crate) sheds: Vec<Vec<(usize, f32)>>,
+    pub(crate) pair_spacing: Vec<Vec<(usize, f32)>>,
     pub(crate) ruby_spacing: HorizontalRubySpacing,
     emergency_breaks: Vec<usize>,
     overflow_width: Option<f32>,
@@ -457,13 +467,13 @@ impl HorizontalParagraphPlan {
 
     fn with_breaks(paragraph: &Paragraph, emergency: &[usize], forced: &[usize]) -> Self {
         let (texts, offset_map) = layout_span_texts_with_breaks(paragraph, emergency, forced);
-        let sheds = horizontal_aki_sheds(paragraph, &texts);
+        let pair_spacing = horizontal_pair_spacing(paragraph, &texts);
         let ruby_spacing = horizontal_ruby_spacing(paragraph, &texts, &offset_map);
         let offsets = HorizontalOffsets::from_layout_texts(paragraph, &texts, offset_map);
         Self {
             texts,
             offsets,
-            sheds,
+            pair_spacing,
             ruby_spacing,
             emergency_breaks: emergency.to_vec(),
             overflow_width: None,

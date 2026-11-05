@@ -721,7 +721,7 @@ fn decoration_bar(
     let bar_x = if line_through {
         x_center
     } else {
-        let sign = if cell.underline_side == crate::shapes::RubySide::Over {
+        let sign = if cell.underline_side == crate::shapes::AnnotationSide::Over {
             1.0
         } else {
             -1.0

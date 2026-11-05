@@ -756,7 +756,7 @@ mod tests {
                 assert!(content.horizontal_plans().iter().all(|plan| !plan
                     .texts
                     .concat()
-                    .contains(crate::shapes::kinsoku::FORCED_LINE_BREAK)));
+                    .contains(crate::shapes::line_breaks::FORCED_LINE_BREAK)));
                 content.update_layout(shape.selrect);
                 assert_eq!(
                     content

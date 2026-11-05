@@ -80,8 +80,9 @@ pub(crate) struct HorizontalRubySpacing {
 /// the character, searching from (span, index) in `step` direction and
 /// skipping inserted word joiners.
 fn layout_neighbour(texts: &[String], span: usize, forward: bool) -> Option<(usize, usize, char)> {
-    let real =
-        |(index, ch): (usize, char)| (!kinsoku::is_inserted_zero_width(ch)).then_some((index, ch));
+    let real = |(index, ch): (usize, char)| {
+        (!line_breaks::is_inserted_zero_width(ch)).then_some((index, ch))
+    };
     if forward {
         texts
             .iter()
@@ -121,7 +122,7 @@ fn layout_neighbour(texts: &[String], span: usize, forward: bool) -> Option<(usi
 pub(crate) fn horizontal_ruby_spacing(
     paragraph: &Paragraph,
     texts: &[String],
-    offset_map: &kinsoku::OffsetMap,
+    offset_map: &line_breaks::OffsetMap,
 ) -> HorizontalRubySpacing {
     if !paragraph.children().iter().any(TextSpan::has_ruby) {
         return HorizontalRubySpacing::empty(texts.len());
@@ -150,7 +151,7 @@ impl HorizontalRubySpacing {
 pub(super) fn horizontal_ruby_spacing_with(
     paragraph: &Paragraph,
     texts: &[String],
-    offset_map: &kinsoku::OffsetMap,
+    offset_map: &line_breaks::OffsetMap,
     font_provider: &skia::textlayout::TypefaceFontProvider,
     fallback_families: &FallbackFonts,
 ) -> HorizontalRubySpacing {
@@ -661,7 +662,7 @@ impl RubyLine<'_> {
     /// Baseline of the line that attaches its ink to the base: above the base
     /// em for over ruby, below the base rect for under ruby.
     pub(super) fn baseline(&self, y: f32) -> f32 {
-        let over = self.span.ruby_side == RubySide::Over;
+        let over = self.span.ruby_side == AnnotationSide::Over;
         let edge = ruby_line_ink_edge(self.shaped, self.glyphs, over);
         if over {
             y + self.em_top - edge - self.span.ruby_decoration_offset(false)

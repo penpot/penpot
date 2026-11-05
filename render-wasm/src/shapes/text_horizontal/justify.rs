@@ -1,7 +1,12 @@
+// Line adjustment of horizontal CJK text. SkParagraph only expands around
+// ideographs, which bunches the space next to kanji. Japanese justification
+// (JLREQ §3.8) spreads each line's slack evenly between its characters, and
+// Japanese squeezing (oikomi) reduces punctuation aki to keep the next
+// character. The other policies justify over their pairwise expansion
+// opportunities with bounded amounts.
+
+use crate::shapes::text_allocation::capped_equal_allocations;
 use crate::shapes::text_paragraph::LayoutParagraph;
-// Justification of horizontal Japanese text (JLREQ §3.8). SkParagraph only
-// expands around ideographs, which bunches the space next to kanji; this pass
-// spreads each line's slack evenly between its characters instead.
 
 use super::*;
 
@@ -11,7 +16,7 @@ const JUSTIFY_EPSILON: f32 = 0.05;
 /// True for a character that belongs to a Western word: no space opens
 /// between two of them.
 fn is_word_char(ch: char) -> bool {
-    !ch.is_whitespace() && !is_japanese_text_char(ch) && !kinsoku::is_inserted_zero_width(ch)
+    !ch.is_whitespace() && !is_cjk_text_char(ch) && !line_breaks::is_inserted_zero_width(ch)
 }
 
 /// Per-span letter-spacing (char index in the layout text, amount) that
@@ -19,7 +24,7 @@ fn is_word_char(ch: char) -> bool {
 /// `width`. Every line but the last spreads its slack evenly over the gaps
 /// between its characters, skipping gaps inside a Western word and the
 /// zero-width word joiners; warichu notes take none.
-pub(crate) fn horizontal_justify_spacing(
+pub(crate) fn horizontal_jlreq_justify_spacing(
     laid_out: &LayoutParagraph,
     plan: &HorizontalParagraphPlan,
     width: f32,
@@ -36,7 +41,7 @@ pub(crate) fn horizontal_justify_spacing(
         };
         let mut utf16 = range.builder_start;
         for (index, ch) in text.chars().enumerate() {
-            if !kinsoku::is_inserted_zero_width(ch) {
+            if !line_breaks::is_inserted_zero_width(ch) {
                 chars.push((utf16, range.span, index, ch));
             }
             utf16 += ch.len_utf16();
@@ -73,9 +78,9 @@ pub(crate) fn horizontal_justify_spacing(
     spacing
 }
 
-/// Policy-based, bounded justification; explicit distribution fills every
+/// Pairwise, bounded justification; explicit distribution fills every
 /// line without a per-gap cap. Annotation and grapheme interiors stay solid.
-pub(crate) fn horizontal_policy_justify_spacing(
+pub(crate) fn horizontal_pairwise_justify_spacing(
     paragraph: &Paragraph,
     laid_out: &LayoutParagraph,
     plan: &HorizontalParagraphPlan,
@@ -190,7 +195,7 @@ struct LineChar {
     /// Char index in the span's layout text.
     index: usize,
     ch: char,
-    class: Option<JapaneseClass>,
+    class: Option<JlreqClass>,
     font_size: f32,
     /// A WORD JOINER before it forbids a break.
     joined: bool,
@@ -210,9 +215,9 @@ fn line_chars(paragraph: &Paragraph, plan: &HorizontalParagraphPlan) -> Vec<Line
         let mut utf16 = range.builder_start;
         let mut joined = false;
         for (index, ch) in text.chars().enumerate() {
-            if ch == kinsoku::WORD_JOINER {
+            if ch == line_breaks::WORD_JOINER {
                 joined = true;
-            } else if !kinsoku::is_inserted_zero_width(ch) {
+            } else if !line_breaks::is_inserted_zero_width(ch) {
                 chars.push(LineChar {
                     utf16,
                     span: range.span,
@@ -350,7 +355,7 @@ pub(crate) fn horizontal_squeeze_sheds(
             .sum::<f32>();
         let last = &chars[unit.end - 1];
         let trailing_aki = match last.class {
-            Some(JapaneseClass::ClosingBracket | JapaneseClass::Comma) => last.font_size / 2.0,
+            Some(JlreqClass::ClosingBracket | JlreqClass::Comma) => last.font_size / 2.0,
             _ => 0.0,
         };
         let needed = line.width as f32 + unit_width - trailing_aki - width + JUSTIFY_EPSILON;
@@ -453,7 +458,7 @@ mod tests {
                 .sum::<f32>();
             let last = &chars[unit.end - 1];
             let trailing_aki = match last.class {
-                Some(JapaneseClass::ClosingBracket | JapaneseClass::Comma) => last.font_size / 2.0,
+                Some(JlreqClass::ClosingBracket | JlreqClass::Comma) => last.font_size / 2.0,
                 _ => 0.0,
             };
             let needed = line.width as f32 + unit_width - trailing_aki - width + JUSTIFY_EPSILON;
@@ -534,7 +539,7 @@ mod tests {
             if window == FULL_WINDOW {
                 full_layouts.set(full_layouts.get() + 1);
             }
-            let sheds: Vec<(usize, f32)> = plan.sheds[0]
+            let sheds: Vec<(usize, f32)> = plan.pair_spacing[0]
                 .iter()
                 .chain(extra.first().into_iter().flatten())
                 .copied()

@@ -83,7 +83,7 @@ pub(crate) fn horizontal_emphasis_mark_box(
     placement: &HorizontalEmphasisPlacement,
 ) -> skia::Rect {
     let size = span.font_size * EMPHASIS_FONT_SCALE;
-    let top = if span.emphasis_side(false) == RubySide::Over {
+    let top = if span.emphasis_side(false) == AnnotationSide::Over {
         placement.em_top - span.emphasis_outside_offset(false) - size
     } else {
         placement.rect.bottom() + span.emphasis_outside_offset(false)
@@ -144,7 +144,7 @@ pub(crate) fn paint_horizontal_emphasis(
             .filter(|placement| placement.span == range.span && placement.mark == mark)
         {
             let mark_x = x + placement.rect.center_x() - mark_width / 2.0;
-            let mark_y = y + if span.emphasis_side(false) == RubySide::Over {
+            let mark_y = y + if span.emphasis_side(false) == AnnotationSide::Over {
                 placement.em_top - mark_ink_bottom - span.emphasis_outside_offset(false)
             } else {
                 placement.rect.bottom() - mark_ink_top + span.emphasis_outside_offset(false)

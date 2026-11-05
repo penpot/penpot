@@ -9,11 +9,11 @@ use skia_safe::{
 use crate::globals::get_resources;
 use crate::math::Rect;
 use crate::render::FallbackFonts;
-use crate::shapes::japanese::JapaneseClass;
+use crate::shapes::jlreq::JlreqClass;
 use crate::shapes::text_policy::TextLayoutPolicy;
 use crate::shapes::{
-    merge_fills, AppliedTextTransform, FontFeatures, GrowType, LineAdjustment, Paragraph, RubySide,
-    TextAlign, TextContent, TextSpan, VerticalAlign,
+    merge_fills, AnnotationSide, AppliedTextTransform, FontFeatures, GrowType, LineAdjustment,
+    Paragraph, TextAlign, TextContent, TextSpan, VerticalAlign,
 };
 use crate::utils::get_fallback_fonts;
 
@@ -24,10 +24,10 @@ use super::annotations::{
 };
 use super::cells::{Fonts, SpanCells, WarichuNote};
 use super::flow::{
-    aki_classes, align_offset_along_column, apply_inter_script_spacing, apply_ordered_oikomi,
-    apply_policy_spacing, flow_classes, is_bounded, materialize_explicit_pair_spacing,
-    ordered_expansion_offsets, plan_policy_columns, plan_with_edge_trimming, policy_aligned_tops,
-    preferred_pair_spacing, shed_punctuation_aki, FlowCell, FIT_TOLERANCE,
+    aki_classes, align_offset_along_column, apply_jlreq_inter_script_spacing, apply_ordered_oikomi,
+    apply_pairwise_spacing, flow_classes, is_bounded, materialize_explicit_pair_spacing,
+    ordered_expansion_offsets, pairwise_aligned_tops, plan_pairwise_columns,
+    plan_with_edge_trimming, preferred_pair_spacing, shed_punctuation_aki, FlowCell, FIT_TOLERANCE,
 };
 use super::paint::LayoutDraws;
 use super::shaping::ShapedRun;
@@ -89,7 +89,7 @@ pub struct VerticalCell {
     /// Flow-axis advance, from `vmtx` when present, else the horizontal one.
     pub extent: f32,
     /// Oikomi lower bound: the glyph frame before removable pair spacing.
-    pub minimum_oikomi_extent: f32,
+    pub min_squeezed_extent: f32,
     /// Shaped horizontal advance, used to centre the glyph in the column.
     pub h_advance: f32,
     /// Visible glyph-ink edges along the flow axis, relative to `top`.
@@ -100,7 +100,7 @@ pub struct VerticalCell {
     pub font_size: f32,
     /// Span text decoration, painted as vertical bars along the column.
     pub decoration: Option<TextDecoration>,
-    pub underline_side: RubySide,
+    pub underline_side: AnnotationSide,
     /// Draw-only flow shift for half-width opening punctuation (jlreq aki).
     pub glyph_flow_shift: f32,
 }
@@ -272,7 +272,7 @@ impl ColumnGeometry {
                         && !span.text_emphasis.is_none()
                         && span.emphasis_side(true) == side
                 })
-                .map(|span| span.font_size * crate::shapes::text_japanese::EMPHASIS_FONT_SCALE)
+                .map(|span| span.font_size * crate::shapes::text_attrs::EMPHASIS_FONT_SCALE)
                 .fold(0.0, f32::max);
             let decoration = spans
                 .iter()
@@ -294,8 +294,8 @@ impl ColumnGeometry {
         };
         Self {
             base_width: max_font_size * line_height,
-            under_gutter: gutter(RubySide::Under),
-            over_gutter: gutter(RubySide::Over),
+            under_gutter: gutter(AnnotationSide::Under),
+            over_gutter: gutter(AnnotationSide::Over),
         }
     }
 
@@ -490,9 +490,9 @@ fn keep_ruby_bases_together(flow: &mut [FlowCell], paragraph: &Paragraph) {
 /// Final flow-axis top of each cell: its planned offset plus the text-align
 /// shift. Justify stretches every column but the last to fill a bounded wrap
 /// height.
-fn aligned_tops(
+fn jlreq_aligned_tops(
     flow: &[FlowCell],
-    classes: &[Option<JapaneseClass>],
+    classes: &[Option<JlreqClass>],
     pair_spacing_em: &[f32],
     placements: &[(usize, f32)],
     align: TextAlign,
@@ -531,7 +531,7 @@ struct PlannedParagraph {
     text: String,
     flow: Vec<FlowCell>,
     ruby_units: Vec<RubyBaseUnit>,
-    classes: Vec<Option<JapaneseClass>>,
+    classes: Vec<Option<JlreqClass>>,
     pair_spacing_em: Vec<f32>,
     /// (column, offset from the column top) of each flow cell.
     placements: Vec<(usize, f32)>,
@@ -576,8 +576,8 @@ impl PlannedParagraph {
                     .iter()
                     .map(|t| t.text.as_str())
                     .collect();
-                apply_policy_spacing(&mut flow, &text, policy);
-                let placements = plan_policy_columns(&flow, &text, policy, max_height);
+                apply_pairwise_spacing(&mut flow, &text, policy);
+                let placements = plan_pairwise_columns(&flow, &text, policy, max_height);
                 return Self {
                     policy,
                     text,
@@ -589,7 +589,7 @@ impl PlannedParagraph {
                 };
             }
 
-            apply_inter_script_spacing(&mut flow);
+            apply_jlreq_inter_script_spacing(&mut flow);
             let classes = flow_classes(&flow, &ruby_spans);
             let aki = aki_classes(&flow, &classes, &vpal_spans);
             shed_punctuation_aki(&mut flow, &aki);
@@ -648,7 +648,7 @@ impl PlannedParagraph {
                 align
             };
         let tops = if self.policy == TextLayoutPolicy::Japanese && align != TextAlign::Distribute {
-            aligned_tops(
+            jlreq_aligned_tops(
                 &self.flow,
                 &self.classes,
                 &self.pair_spacing_em,
@@ -657,7 +657,7 @@ impl PlannedParagraph {
                 max_height,
             )
         } else {
-            policy_aligned_tops(
+            pairwise_aligned_tops(
                 &self.flow,
                 &self.text,
                 self.policy,
@@ -677,7 +677,7 @@ impl PlannedParagraph {
                 if let Some(piece) = cells.last() {
                     cell.top = piece.top;
                     cell.extent = piece.extent;
-                    cell.minimum_oikomi_extent = piece.minimum_oikomi_extent;
+                    cell.min_squeezed_extent = piece.min_squeezed_extent;
                     cell.ink_top = piece.ink_top;
                     cell.ink_bottom = piece.ink_bottom;
                 }
@@ -1043,7 +1043,7 @@ mod tests {
         assert!(layout
             .cells
             .iter()
-            .all(|cell| cell.minimum_oikomi_extent <= cell.extent));
+            .all(|cell| cell.min_squeezed_extent <= cell.extent));
     }
 
     #[test]

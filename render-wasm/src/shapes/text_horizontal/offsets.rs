@@ -20,7 +20,7 @@ pub(crate) struct HorizontalSpanRange {
 /// kinsoku pass; reuse it for every lookup in the paragraph.
 pub(crate) struct HorizontalOffsets {
     /// Map between the transformed text and the kinsoku-adjusted text.
-    pub(crate) offset_map: kinsoku::OffsetMap,
+    pub(crate) offset_map: line_breaks::OffsetMap,
     pub(crate) ranges: Vec<HorizontalSpanRange>,
     /// Transformed-text UTF-16 offset of every source character boundary.
     boundaries: Vec<usize>,
@@ -37,7 +37,7 @@ impl HorizontalOffsets {
     pub(super) fn from_layout_texts(
         paragraph: &Paragraph,
         span_texts: &[String],
-        offset_map: kinsoku::OffsetMap,
+        offset_map: line_breaks::OffsetMap,
     ) -> Self {
         let ranges = span_ranges(paragraph, span_texts, &offset_map);
         Self {
@@ -162,7 +162,7 @@ pub(crate) fn horizontal_builder_to_source(paragraph: &Paragraph, builder_offset
 fn span_ranges(
     paragraph: &Paragraph,
     span_texts: &[String],
-    offset_map: &kinsoku::OffsetMap,
+    offset_map: &line_breaks::OffsetMap,
 ) -> Vec<HorizontalSpanRange> {
     let mut builder_cursor = 0usize;
     let mut builder_byte_cursor = 0usize;
@@ -180,9 +180,9 @@ fn span_ranges(
             let source_end = offset_map.to_original(shifted_end);
             let warichu = span.is_warichu();
             let leading_break =
-                usize::from(warichu && text.starts_with(kinsoku::FORCED_LINE_BREAK));
+                usize::from(warichu && text.starts_with(line_breaks::FORCED_LINE_BREAK));
             builder_cursor += leading_break;
-            builder_byte_cursor += leading_break * kinsoku::FORCED_LINE_BREAK.len_utf8();
+            builder_byte_cursor += leading_break * line_breaks::FORCED_LINE_BREAK.len_utf8();
             let builder_start = builder_cursor;
             let (style_anchor_start, style_anchor_utf16) = if warichu {
                 (
