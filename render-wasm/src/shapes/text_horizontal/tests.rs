@@ -6,7 +6,7 @@ use super::ruby::{
 use super::*;
 use crate::shapes::text_paragraph::LayoutParagraph;
 use crate::shapes::text_policy::TextLayoutPolicy;
-use crate::shapes::{TextAlign, TextDirection, TextTransform};
+use crate::shapes::{LineAdjustment, TextAlign, TextDirection, TextTransform};
 use crate::Uuid;
 
 fn cjk_horizontal_layout(
@@ -1730,7 +1730,7 @@ fn horizontal_justify_spreads_every_line_evenly() {
     };
 
     let natural = lay_out(&[]);
-    let spacing = horizontal_jlreq_justify_spacing(&natural, &plan, width);
+    let spacing = horizontal_jlreq_justify_spacing(&paragraph, &natural, &plan, width);
     let justified = lay_out(&spacing[0]);
 
     let natural_lines = natural.get_line_metrics();
@@ -1817,7 +1817,13 @@ fn horizontal_squeeze_keeps_the_next_character_on_the_line() {
         builder_text[natural_end], 'か',
         "the natural line ends before か"
     );
-    let (sheds, squeezed) = horizontal_squeeze_sheds(&paragraph, &plan, width, &lay_out);
+    let (sheds, squeezed) = horizontal_squeeze_sheds(
+        &paragraph,
+        &plan,
+        width,
+        crate::shapes::LineAdjustment::PushInFirst,
+        &lay_out,
+    );
 
     assert_eq!(
         squeezed.get_line_metrics()[0].end_index,
@@ -2545,6 +2551,260 @@ fn horizontal_emphasis_mark_box_is_the_painted_mark_on_either_side() {
                 && ink.top as f32 >= painted.top.floor()
                 && ink.bottom as f32 <= painted.bottom.ceil(),
             "{position:?}: mark paints {ink:?} outside its box {painted:?}"
+        );
+    }
+}
+
+/// Gaps, in em, of the first line of ああAああPenpot justified horizontally
+/// with `extra_em` of slack on that line: (ああ, あA, Aあ, ああ).
+fn horizontal_justified_gaps(extra_em: f32) -> Vec<f32> {
+    use crate::shapes::text_vertical::test_support::{
+        provider_with_fallback, EM, TEST_FONT, VPAL_TEST_FONT,
+    };
+    init_state();
+    let mut fonts = skia::textlayout::FontCollection::new();
+    fonts.set_asset_font_manager(Some(
+        provider_with_fallback(VPAL_TEST_FONT, TEST_FONT).into(),
+    ));
+    let span = TextSpan {
+        font_size: EM,
+        ..make_span("ああAああPenpot", 0.0)
+    };
+    let paragraph = make_paragraph(vec![span], 0.0);
+    let (plan, wide) = cjk_layout_paragraph(&paragraph, 1000.0, &fonts);
+    // Builder offset after the fifth real character, past both inserted
+    // inter-script spaces.
+    let texts: Vec<char> = plan.texts[0].chars().collect();
+    let fifth = texts
+        .iter()
+        .enumerate()
+        .filter(|(_, ch)| **ch != line_breaks::JAPANESE_WESTERN_SPACE)
+        .nth(4)
+        .map(|(index, _)| index)
+        .unwrap();
+    let five =
+        wide.get_rects_for_range(0..fifth + 1, RectHeightStyle::Tight, RectWidthStyle::Tight);
+    let five_width = five.last().unwrap().rect.right() - five[0].rect.left();
+    let width = five_width + extra_em * EM;
+    let (plan, natural) = cjk_layout_paragraph(&paragraph, width, &fonts);
+    let lines = natural.get_line_metrics();
+    assert_eq!(lines.len(), 2, "Penpot moves to the second line");
+    let spacing = horizontal_jlreq_justify_spacing(&paragraph, &natural, &plan, width);
+    let at = |index: usize| -> f32 {
+        spacing[0]
+            .iter()
+            .filter(|(at, _)| *at == index)
+            .map(|(_, amount)| amount)
+            .sum::<f32>()
+            / EM
+    };
+    // あ0 あ1 U+2005 A3 U+2005 あ5 あ6: each gap takes the spacing of the
+    // character before it.
+    assert_eq!(texts[2], line_breaks::JAPANESE_WESTERN_SPACE);
+    vec![at(0), at(1), at(3), at(5)]
+}
+
+/// The same gaps of ああAああPenpot justified as a vertical column.
+fn vertical_justified_gaps(extra_em: f32) -> Vec<f32> {
+    use crate::shapes::text_vertical::test_support::{
+        layout_with_fallback, provider_with_fallback, spans_content, vertical_paragraph, EM,
+        TEST_FONT, VPAL_TEST_FONT,
+    };
+    let provider = provider_with_fallback(VPAL_TEST_FONT, TEST_FONT);
+    let fallback = ["fallback".to_string()];
+    let content = |align: TextAlign, height: f32| {
+        let span = TextSpan {
+            text: "ああAああPenpot".to_string(),
+            font_size: EM,
+            line_height: 1.0,
+            ..TextSpan::default()
+        };
+        let mut content = spans_content(vec![], height);
+        *content.paragraphs_mut() = vec![vertical_paragraph(vec![span], align, 1.0)];
+        content
+    };
+    let wide = layout_with_fallback(
+        &provider,
+        &content(TextAlign::Left, 1000.0),
+        1000.0,
+        &fallback,
+    );
+    let five: f32 = wide.cells[..5].iter().map(|cell| cell.extent).sum();
+    let height = five + extra_em * EM;
+    let layout = layout_with_fallback(
+        &provider,
+        &content(TextAlign::Justify, height),
+        height,
+        &fallback,
+    );
+    assert!(layout.cells[..5].iter().all(|cell| cell.column == 0));
+    assert!(layout.cells[5..].iter().all(|cell| cell.column == 1));
+    (0..4)
+        .map(|i| {
+            let (cell, next) = (&layout.cells[i], &layout.cells[i + 1]);
+            let natural = wide.cells[i + 1].top - wide.cells[i].top;
+            (next.top - cell.top - natural) / EM
+        })
+        .collect()
+}
+
+#[test]
+fn horizontal_and_vertical_justify_widen_gaps_in_the_same_jlreq_order() {
+    for (axis, gaps) in [
+        (
+            "horizontal",
+            horizontal_justified_gaps as fn(f32) -> Vec<f32>,
+        ),
+        ("vertical", vertical_justified_gaps),
+    ] {
+        // Little slack: only the two Japanese/Western gaps widen.
+        let small = gaps(0.3);
+        assert!(
+            small[1] > 0.1 && (small[1] - small[2]).abs() < 0.01,
+            "{axis}: {small:?}"
+        );
+        assert!(
+            small[0].abs() < 0.001 && small[3].abs() < 0.001,
+            "{axis}: {small:?}"
+        );
+        // More slack: they stop at their half-em maximum (a quarter em past
+        // the preferred quarter), then the kana gaps share the rest.
+        let large = gaps(0.9);
+        assert!(
+            (large[1] - 0.25).abs() < 0.01 && (large[2] - 0.25).abs() < 0.01,
+            "{axis}: {large:?}"
+        );
+        assert!(
+            large[0] > 0.1 && (large[0] - large[3]).abs() < 0.01,
+            "{axis}: {large:?}"
+        );
+    }
+}
+
+/// `paragraph` with the plan's sheds plus `extra`, restricted to the builder
+/// `window`, laid out at `width` as the squeeze pass measures it.
+fn squeeze_window_layout(
+    paragraph: &Paragraph,
+    plan: &HorizontalParagraphPlan,
+    fonts: &skia::textlayout::FontCollection,
+    width: f32,
+    extra: &[Vec<(usize, f32)>],
+    window: std::ops::Range<usize>,
+) -> LayoutParagraph {
+    let mut paragraph_style = paragraph.paragraph_to_style();
+    paragraph_style.set_apply_rounding_hack(false);
+    let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+    let span = &paragraph.children()[0];
+    let style = span.to_style(
+        &crate::math::Rect::from_xywh(0.0, 0.0, width, 200.0),
+        &crate::render::FallbackFonts::default(),
+        false,
+        1.0,
+    );
+    let sheds: Vec<(usize, f32)> = plan.pair_spacing[0]
+        .iter()
+        .chain(extra.first().into_iter().flatten())
+        .copied()
+        .collect();
+    let (text, from) =
+        window_slice(&plan.texts[0], &plan.offsets.ranges[0], &window).unwrap_or(("", 0));
+    let sheds = window_entries(&sheds, from, text.chars().count());
+    builder.push_style(&style);
+    add_horizontal_span(&mut builder, span, text, &sheds, &[], &style, fonts);
+    let mut laid_out = LayoutParagraph::build(&mut builder);
+    laid_out.layout(width);
+    laid_out
+}
+
+/// Squeeze `text` under each line adjustment, at a width that fits the
+/// first line up to the `nth` (from zero) `fits` character plus `extra_em`.
+/// Returns the line adjustment, whether squeezing kept the next line's first
+/// unit and whether the push-out-first gate expects a squeeze.
+fn squeeze_outcomes(
+    text: &str,
+    (fits, nth): (char, usize),
+    extra_em: f32,
+) -> Vec<(LineAdjustment, bool, bool)> {
+    use crate::shapes::text_vertical::test_support::{provider, EM, VPAL_TEST_FONT};
+    init_state();
+    let mut fonts = skia::textlayout::FontCollection::new();
+    fonts.set_asset_font_manager(Some(provider(VPAL_TEST_FONT).into()));
+    let span = TextSpan {
+        font_size: EM,
+        ..make_span(text, 0.0)
+    };
+    let paragraph = make_paragraph(vec![span], 0.0);
+    let plan = HorizontalParagraphPlan::new(&paragraph);
+    let chars: Vec<char> = plan.texts[0].chars().collect();
+    let fits_at = chars
+        .iter()
+        .enumerate()
+        .filter(|(_, ch)| **ch == fits)
+        .nth(nth)
+        .map(|(at, _)| at)
+        .unwrap();
+    let wide = squeeze_window_layout(&paragraph, &plan, &fonts, 1000.0, &[], FULL_WINDOW);
+    let right = wide.get_rects_for_range(
+        fits_at..fits_at + 1,
+        RectHeightStyle::Tight,
+        RectWidthStyle::Tight,
+    )[0]
+    .rect
+    .right();
+    let width = right + extra_em * EM;
+    let natural = squeeze_window_layout(&paragraph, &plan, &fonts, width, &[], FULL_WINDOW);
+    let natural_end = natural.get_line_metrics()[0].end_index;
+    assert!(
+        natural_end <= fits_at,
+        "the unit at {fits:?} moves down whole"
+    );
+    let may_fail = super::justify::horizontal_push_out_may_fail(&paragraph, &plan);
+    [
+        LineAdjustment::PushInFirst,
+        LineAdjustment::PushOutFirst,
+        LineAdjustment::PushOutOnly,
+    ]
+    .into_iter()
+    .map(|adjustment| {
+        let lay_out = |extra: &[Vec<(usize, f32)>], window: std::ops::Range<usize>| {
+            squeeze_window_layout(&paragraph, &plan, &fonts, width, extra, window)
+        };
+        let (sheds, squeezed) =
+            horizontal_squeeze_sheds(&paragraph, &plan, width, adjustment, &lay_out);
+        let kept = squeezed.get_line_metrics()[0].end_index > fits_at;
+        assert_eq!(kept, !sheds[0].is_empty(), "{adjustment:?}");
+        (adjustment, kept, may_fail)
+    })
+    .collect()
+}
+
+#[test]
+fn push_out_first_squeezes_when_push_out_leaves_a_closing_bracket_at_the_line_start() {
+    // Without kinsoku the line would break before the fifth 」. Moving that
+    // break back to あ crosses five kinsoku pairs, more than oidashi moves
+    // over, so push-out first squeezes the commas as push-in first does.
+    let outcomes = squeeze_outcomes("あく、あく、あ」」」」」くあく", ('」', 3), 0.0);
+    for (adjustment, kept, may_fail) in outcomes {
+        assert!(may_fail);
+        assert_eq!(
+            kept,
+            adjustment != LineAdjustment::PushOutOnly,
+            "{adjustment:?}"
+        );
+    }
+}
+
+#[test]
+fn push_out_first_keeps_push_out_when_it_resolves_the_line_start() {
+    // Without kinsoku the line would break before 」; moving あ」 down
+    // resolves it, so only push-in first squeezes.
+    let outcomes = squeeze_outcomes("あく、あく、あ」くあく", ('あ', 2), 0.3);
+    for (adjustment, kept, may_fail) in outcomes {
+        assert!(!may_fail);
+        assert_eq!(
+            kept,
+            adjustment == LineAdjustment::PushInFirst,
+            "{adjustment:?}"
         );
     }
 }

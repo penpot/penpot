@@ -43,6 +43,23 @@ Syllable mode may then expand eligible character gaps by at most one eighth
 of an em. Word mode never expands inside a word. Original spaces remain in
 source text; no Japanese word-space substitution applies.
 
+## Japanese line adjustment
+
+Japanese justification uses the JLREQ §3.8.4 ordered expansion in both
+orientations (`jlreq_ordered_expansion`). Gaps widen by pair-table stage:
+Western word spaces, then Japanese/Western gaps up to half an em, then
+solid kana and kanji up to a quarter em. Slack left after the three stages
+spreads evenly over the same gaps. Punctuation aki, gaps beside a ruby base,
+gaps inside a Western word and gaps across a warichu note take none. The
+final line or column stays unexpanded; distribution keeps its own path.
+
+Squeezing (oikomi) follows the line adjustment setting in both orientations.
+Push-in first squeezes whenever the aki on the line can hold the next unit.
+Push-out first squeezes only when pushing out cannot resolve a kinsoku
+break, which horizontally means the break would move back over more than
+four kinsoku pairs. Horizontal text keeps a unit wider than the box whole
+on its own line instead. Push-out only never squeezes.
+
 ## Horizontal emergency wrapping and offsets
 
 SkParagraph can ignore word joins during emergency wrapping. The horizontal
