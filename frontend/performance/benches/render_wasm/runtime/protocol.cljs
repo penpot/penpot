@@ -303,6 +303,21 @@
                                              :active-end-ms (now) :cached-slices slices))))))
                        (.catch (fn [cause] (throw (partial-error cause evidence)))))))))))
 
+(defn- interpolate
+  "Interpolates $v(t) = (1-t)a + tb$ between finite endpoints.
+
+  Args:
+    a: starting value.
+    b: target value.
+    t: interpolation fraction in [0, 1].
+
+  Returns:
+    The interpolated value, preserving positive endpoints near zero."
+  [a b t]
+  (if (< t 0.5)
+    (+ a (* t (- b a)))
+    (+ b (* (- 1 t) (- a b)))))
+
 (defn animate-view!
   "Moves to `to` through `steps` linearly interpolated views in sequence.
   Each update waits for an animation frame and draws one cached preview.
@@ -316,11 +331,14 @@
                                  {:type ::invalid-steps :steps steps
                                   :partial (select-keys session [:cached-slices :authored-sleeps])})))
                (reduce (fn [session-p i]
-                         (let [t (/ i steps)]
+                         (let [t    (/ i steps)
+                               view (if (= i steps)
+                                      to
+                                      {:scale (interpolate (:scale from) (:scale to) t)
+                                       :x (interpolate (:x from) (:x to) t)
+                                       :y (interpolate (:y from) (:y to) t)})]
                            (preview-view! session-p
-                                          {:scale (+ (:scale from) (* t (- (:scale to) (:scale from))))
-                                           :x (+ (:x from) (* t (- (:x to) (:x from))))
-                                           :y (+ (:y from) (* t (- (:y to) (:y from))))})))
+                                          view)))
                        (js/Promise.resolve session)
                        (range 1 (inc steps)))))))
 

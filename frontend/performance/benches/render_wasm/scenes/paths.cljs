@@ -61,18 +61,18 @@
 
 
 (decl/defcase :paths/load
-  {:params default-params :view base-view :context :fresh}
+  {:params default-params :view base-view :context :fresh :preparation {:render :none}}
   [rtx]
-  (camera/load! rtx))
+  (camera/load* rtx))
 
 (decl/defcase :paths/pan
   {:params default-params :view base-view :context :reuse
-   :operation {:steps 20 :dx 160 :dy 40 :settle-ms 100}}
+   :reset #(camera/restore % (get-in % [:case :view]))}
   [rtx]
-  (camera/pan! rtx))
+  (camera/pan* rtx {:steps 20 :dx 160 :dy 40 :settle-ms 100}))
 
 (decl/defcase :paths/zoom
   {:params default-params :view base-view :context :reuse
-   :operation {:steps 20 :factor 1.5 :settle-ms 100}}
+   :reset #(camera/restore % (get-in % [:case :view]))}
   [rtx]
-  (camera/zoom! rtx))
+  (camera/zoom* rtx {:steps 20 :factor 1.5 :settle-ms 100}))

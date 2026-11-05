@@ -7,7 +7,10 @@
 (ns performance-tests.render-wasm.commands-test
   (:require
    [app.common.render-wasm.wasm :as wasm]
+   [app.common.schema :as sm]
    [benches.render-wasm.builder :as builder]
+   [benches.render-wasm.cases :as cases]
+   [benches.render-wasm.declarations :as decl]
    [benches.render-wasm.errors :as errors]
    [benches.render-wasm.runtime.camera :as camera]
    [benches.render-wasm.runtime.commands :as cmd :refer [defcommand]]
@@ -299,8 +302,12 @@
     (t/is (= [{:command ::camera/render-sync :metrics {:command/elapsed [7]}}]
              (:events next-run)))))
 
-(t/deftest ^:async pan-commands-return-the-view-and-renderer-evidence
-  (doseq [command [camera/pan camera/pan*]]
+(t/deftest ^:async camera-gestures-return-the-view-and-renderer-evidence
+  (doseq [[command options target command-id measured]
+          [[camera/pan {:dx 10 :dy 5 :steps 2 :settle-ms 5} {:scale 1 :x 10 :y 5} ::camera/pan false]
+           [camera/pan* {:dx 10 :dy 5 :steps 2 :settle-ms 5} {:scale 1 :x 10 :y 5} ::camera/pan true]
+           [camera/zoom {:factor 2 :steps 2 :settle-ms 5} {:scale 2 :x 0 :y 0} ::camera/zoom false]
+           [camera/zoom* {:factor 2 :steps 2 :settle-ms 5} {:scale 2 :x 0 :y 0} ::camera/zoom true]]]
     (let [clock     (volatile! 0)
           view      (volatile! nil)
           remaining (volatile! [wasm/FRAME_TYPE_PARTIAL wasm/FRAME_TYPE_FULL])
@@ -313,14 +320,13 @@
                                          (when (= wasm/FRAME_TYPE_FULL frame-type)
                                            (js/queueMicrotask #(vswap! clock + 500)))
                                          frame-type))})
-          options   {:dx 10 :dy 5 :steps 2 :settle-ms 5}
           result    (await (cmd/execute rtx #(command % options)))]
       (t/is (= :completed (:outcome result)))
-      (t/is (= {:scale 1 :x 10 :y 5} @view (get-in result [:context :view])))
+      (t/is (= target @view (get-in result [:context :view])))
       (t/is (= 574 @clock))
-      (if (= command camera/pan*)
+      (if measured
         (do
-          (t/is (= ::camera/pan (get-in result [:events 0 :command])))
+          (t/is (= command-id (get-in result [:events 0 :command])))
           (t/is (= {:command/elapsed [74]
                     :renderer/call-elapsed [7 7]
                     :renderer/cache-call-elapsed [2 2]
@@ -334,6 +340,88 @@
         (t/is (= ::cmd/invalid-arguments (:type (ex-data (:error invalid)))))
         (t/is (= [] (:events invalid)))
         (t/is (zero? @clock))))))
+
+(t/deftest ^:async load-and-restore-finish-at-the-renderer-endpoint
+  (doseq [[command restore measured] [[camera/load false false] [camera/load* false true]
+                                      [camera/restore true false] [camera/restore* true true]]]
+    (let [clock  (volatile! 0)
+          view   (volatile! nil)
+          target {:scale 2 :x 30 :y -10}
+          rtx    (update (context clock) :hooks merge
+                         {:set-view #(vreset! view %)
+                          :render (fn [_ _]
+                                    (vswap! clock + 7)
+                                    (js/queueMicrotask #(vswap! clock + 500))
+                                    wasm/FRAME_TYPE_FULL)})
+          result (await (cmd/execute rtx #(if restore
+                                            (command (js/Promise.resolve %) target)
+                                            (command (js/Promise.resolve %)))))]
+      (t/is (= :completed (:outcome result)))
+      (t/is (= (if restore target (:view rtx)) (get-in result [:context :view])))
+      (when restore (t/is (= target @view)))
+      (t/is (= (if restore 510 523) @clock))
+      (when measured
+        (let [event (first (:events result))]
+          (t/is (= (if restore ::camera/restore ::camera/load) (:command event)))
+          (t/is (= [(if restore 10 23)] (get-in event [:metrics :command/elapsed])))
+          (t/is (= [7] (get-in event [:metrics :renderer/call-elapsed])))
+          (t/is (= (if restore 10 23) (get-in event [:trace :end-ms])))
+          (when-not restore
+            (t/is (= [23] (get-in event [:metrics :renderer/prepared-scene-to-full])))))))))
+
+(t/deftest ^:async invalid-camera-targets-fail-before-changing-renderer-state
+  (doseq [[command options view]
+          [[camera/pan* {:dx sm/max-safe-int :dy 0 :steps 1 :settle-ms 0} {:scale 1 :x 1 :y 0}]
+           [camera/zoom* {:factor sm/max-safe-int :steps 1 :settle-ms 0} {:scale 2 :x 0 :y 0}]
+           [camera/restore* {:scale 1 :x 10 :y 0 :viewport {:width 800}} {:scale 1 :x 0 :y 0}]]]
+    (let [clock   (volatile! 0)
+          applied (volatile! view)
+          rtx     (-> (context clock)
+                      (assoc :view view)
+                      (assoc-in [:hooks :set-view] #(vreset! applied %)))
+          result  (await (cmd/execute rtx #(command % options)))]
+      (t/is (= :failed (:outcome result)))
+      (t/is (= ::cmd/invalid-arguments (:type (ex-data (:error result)))))
+      (t/is (= view @applied))
+      (t/is (zero? @clock)))))
+
+(t/deftest ^:async declared-reference-cases-execute-selected-work-and-reset-the-view
+  (let [clock      (volatile! 0)
+        descriptor (first (cases/collect-cases {:master-seed 42 :filter "rects/blocking-full"}))
+        result     (await (cmd/execute (assoc (context clock) :case descriptor)
+                                       (:run! (decl/registered-case (:id descriptor)))))]
+    (t/is (= :completed (:outcome result)))
+    (t/is (= [{:command ::camera/render-sync :metrics {:command/elapsed [7]}}] (:events result))))
+  (let [clock      (volatile! 0)
+        descriptor (first (cases/collect-cases {:master-seed 42 :filter "rects/mixed-pans"}))
+        registered (decl/registered-case (:id descriptor))
+        applied    (volatile! (:view descriptor))
+        initial    (-> (context clock) (assoc :case descriptor)
+                       (assoc-in [:hooks :set-view] #(vreset! applied %)))]
+    (loop [rtx initial remaining 2]
+      (when (pos? remaining)
+        (let [main  (await (cmd/execute rtx (:run! registered)))
+              _     (t/is (= {:scale 1 :x 0 :y 80} @applied (get-in main [:context :view])))
+              reset (await (cmd/execute (:context main) (:reset registered)))]
+          (t/is (= :completed (:outcome main) (:outcome reset)))
+          (t/is (= [::camera/pan ::camera/pan] (mapv :command (:events main))))
+          (t/is (= [::camera/restore] (mapv :command (:events reset))))
+          (t/is (= (:view descriptor) @applied (get-in reset [:context :view])))
+          (recur (:context reset) (dec remaining)))))))
+
+(t/deftest ^:async small-positive-zoom-scales-stay-positive-and-reach-the-target
+  (doseq [[scale factor] [[1 1e-20] [js/Number.MIN_VALUE 1]]]
+    (let [applied (volatile! {:scale scale :x 0 :y 0})
+          minimum (volatile! scale)
+          rtx     (-> (context (volatile! 0))
+                      (assoc :view @applied)
+                      (assoc-in [:hooks :set-view]
+                                #(do (vreset! applied %)
+                                     (vswap! minimum min (:scale %)))))
+          result  (await (cmd/execute rtx #(camera/zoom* % {:factor factor :steps 2 :settle-ms 0})))]
+      (t/is (= :completed (:outcome result)))
+      (t/is (pos? @minimum))
+      (t/is (= (* scale factor) (:scale @applied) (get-in result [:context :view :scale]))))))
 
 (t/deftest ^:async failed-work-retains-earlier-observations
   (let [unhandled (atom [])

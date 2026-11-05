@@ -5,12 +5,8 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 ;; Discovery loads each scene and its transitive requires, including any
-;; colocated operation functions. Stripping :run! only makes output plain
-;; data; it cannot isolate browser dependencies. Keep this entire import
-;; graph safe for Node. Browser adapters will supply execution capabilities in
-;; rtx; discovery must never invoke operation bodies. Collection with a
-;; real body present is proven by `contracts-scene/case`, not by the
-;; metadata-only rects cases.
+;; colocated operation functions.
+;; Keep this entire import subgraph safe for Node.
 
 (ns benches.render-wasm.cases
   "Case collection for the renderer benchmarks.
@@ -32,9 +28,7 @@
       :params {:count 1000 :width 1920 :height 1080 :min-size 20 :max-size 100}
       :view {:scale 1 :x 0 :y 0}
       :context :fresh
-      :completion :render-full
-      :batch-size 1
-      :preparation {}}
+      :preparation {:render :none}}
      {:id :rects/pan ...}
      {:id :rects/zoom ...}]"
   (:require

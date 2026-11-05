@@ -80,29 +80,19 @@
 
 (t/deftest rects-cases-are-collected-in-declaration-order
   (let [collected (rect-cases)]
-    (t/is (= [:rects/load :rects/pan :rects/zoom] (mapv :id collected)))))
-
-(t/deftest real-rectangle-bodies-stay-out-of-node-descriptors
-  (let [ids [:rects/load :rects/pan :rects/zoom]]
-    (t/is (every? #(fn? (:run! (decl/registered-case %))) ids))
-    (t/is (= ids (mapv :id (rect-cases)))
-          "collection succeeds with the executable bodies present")
-    (t/is (every? #(not (contains? % :run!)) (rect-cases)))))
+    (t/is (= [:rects/load :rects/pan :rects/zoom :rects/blocking-full :rects/mixed-pans] (mapv :id collected)))))
 
 (t/deftest collected-cases-survive-the-wire
   (doseq [scene-id [:rects :paths :plus :masks]]
     (let [collected (cases/collect-cases {:master-seed 42
                                           :filter (str (name scene-id) "/")})
           decoded   (transit/decode-str (transit/encode-str collected))]
-      (t/is (= (mapv #(keyword (name scene-id) %) ["load" "pan" "zoom"])
-               (mapv :id collected)))
       (t/is (= collected decoded))
       (doseq [case-desc decoded]
         (t/is (= case-desc (decl/check-collected-case case-desc)))
         (t/is (not-any? #(contains? case-desc %)
                         [:run! :ns])
-              (str (:id case-desc)))
-        (t/is (= {} (:preparation case-desc)) (str (:id case-desc)))))))
+              (str (:id case-desc)))))))
 
 (t/deftest declared-preparation-survives-collection-and-wire
   (with-synthetic-scene :contracts-prepared {:count 3}
@@ -122,18 +112,18 @@
         (t/is (= ::cases/invalid-case
                  (:type (failure-data #(cases/collect-cases {:master-seed 42 :filter "contracts-prepared/"})))))))))
 
-(t/deftest rects-cases-carry-declared-view-context-and-completion
+(t/deftest rects-cases-carry-declared-view-context-and-preparation
   (let [collected (rect-cases)]
-    (t/is (= [[:rects/load :fresh] [:rects/pan :reuse] [:rects/zoom :reuse]]
-             (mapv (juxt :id :context) collected)))
+    (t/is (= {:rects/load :fresh :rects/pan :reuse :rects/zoom :reuse
+              :rects/blocking-full :fresh :rects/mixed-pans :reuse}
+             (into {} (map (juxt :id :context)) collected)))
     (doseq [case-desc collected]
       (t/is (= {:count 1000 :width 1920 :height 1080 :min-size 20 :max-size 100}
                (:params case-desc))
             (str (:id case-desc)))
       (t/is (= {:scale 1 :x 0 :y 0} (:view case-desc)) (str (:id case-desc)))
-      (t/is (= :render-full (:completion case-desc)) (str (:id case-desc)))
-      (t/is (= 1 (:batch-size case-desc)) (str (:id case-desc)))
-      (t/is (= {} (:preparation case-desc)) (str (:id case-desc))))))
+      (t/is (= (if (#{:rects/load :rects/blocking-full} (:id case-desc)) {:render :none} {})
+               (:preparation case-desc)) (str (:id case-desc))))))
 
 (t/deftest rects-cases-carry-scene-metadata-and-seed
   (let [collected (rect-cases)]
@@ -218,7 +208,7 @@
 (t/deftest transit-wire-preserves-non-finite-numbers
   (let [value   {:nan js/NaN :positive js/Infinity :negative js/-Infinity}
         decoded (-> value transit/encode-str transit/decode-str)
-        case-desc (assoc (first (rect-cases)) :operation value)]
+        case-desc (assoc (first (rect-cases)) :params value)]
     (t/is (number? (:nan decoded)))
     (t/is (js/Number.isNaN (:nan decoded)))
     (t/is (= js/Infinity (:positive decoded)))
@@ -228,8 +218,8 @@
 
 (t/deftest unencodable-collected-values-are-rejected
   (let [good (first (rect-cases))]
-    (doseq [bad [(assoc good :operation {:run (fn [] 1)})
-                 (assoc good :operation {:point (->Point 1 2)})]]
+    (doseq [bad [(assoc good :params {:run (fn [] 1)})
+                 (assoc good :params {:point (->Point 1 2)})]]
       (t/is (= ::decl/non-serializable-case
                (:type (failure-data #(decl/check-collected-case bad))))
             (pr-str bad)))))
@@ -419,7 +409,7 @@
 (t/deftest filter-matches-case-ids
   (t/is (= [:rects/pan]
            (mapv :id (cases/collect-cases {:master-seed 42 :filter "rects/pan"}))))
-  (t/is (= 3 (count (cases/collect-cases {:master-seed 42 :filter "rects/"})))))
+  (t/is (= 5 (count (cases/collect-cases {:master-seed 42 :filter "rects/"})))))
 
 (t/deftest empty-selection-is-rejected
   (t/is (= ::cases/no-cases

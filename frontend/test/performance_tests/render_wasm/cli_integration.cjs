@@ -391,10 +391,6 @@ function installPreparedCompiler(fixture, breakLog) {
     m([k("scale"), 1, k("x"), 0, k("y"), 0]),
     k("context"),
     k("fresh"),
-    k("completion"),
-    k("render-full"),
-    k("batch-size"),
-    1,
     k("preparation"),
     m([]),
   ]);
@@ -450,8 +446,8 @@ function runFixtureText({
   sceneSeed = 7,
   count = 10,
   fingerprint = "a".repeat(64),
-  operation = "load",
-  operationArgs = { distance: 10 },
+  view = { scale: 1, x: 0, y: 0 },
+  context = "fresh",
   warmups = 0,
   repetitions = 1,
   gitSha = runId,
@@ -531,18 +527,12 @@ function runFixtureText({
           sceneSeed,
           k("params"),
           map([k("count"), count]),
-          k("operation"),
-          map([
-            k("id"),
-            k(operation),
-            k("args"),
-            map(
-              Object.entries(operationArgs).flatMap(([key, entry]) => [
-                k(key),
-                entry,
-              ]),
-            ),
-          ]),
+          k("view"),
+          map(Object.entries(view).flatMap(([key, entry]) => [k(key), entry])),
+          k("context"),
+          k(context),
+          k("preparation"),
+          map([]),
         ]),
       ],
       k("warmups"),
@@ -1646,7 +1636,7 @@ test(
 );
 
 test(
-  "scoped compare permissions keep operation arguments and runtime environment strict",
+  "scoped compare permissions keep execution settings and runtime environment strict",
   testOptions,
   async (t) => {
     const fixture = createFrontend(t);
@@ -1657,8 +1647,8 @@ test(
       runFixtureText({ runId: "baseline", caseId: "case/load", value: 10 }),
     );
     for (const [field, changes] of [
-      ["execution", { operation: "pan" }],
-      ["execution", { operationArgs: { distance: 20 } }],
+      ["execution", { context: "reuse" }],
+      ["execution", { view: { scale: 2, x: 0, y: 0 } }],
       ["environment", { environment: { node: "v25" } }],
     ]) {
       fs.writeFileSync(

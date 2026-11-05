@@ -77,24 +77,42 @@
 (decl/defcase :rects/load
   {:params default-params
    :view base-view
-   :context :fresh}
+   :context :fresh
+   :preparation {:render :none}}
   [rtx]
-  (camera/load! rtx))
+  (camera/load* rtx))
 
 (decl/defcase :rects/pan
   {:params default-params
    :view base-view
    :context :reuse
-   :completion :render-full
-   :operation {:steps 20 :dx 200 :dy 0 :settle-ms 100}}
+   :reset #(camera/restore % (get-in % [:case :view]))}
   [rtx]
-  (camera/pan! rtx))
+  (camera/pan* rtx {:steps 20 :dx 200 :dy 0 :settle-ms 100}))
 
 (decl/defcase :rects/zoom
   {:params default-params
    :view base-view
    :context :reuse
-   :completion :render-full
-   :operation {:steps 20 :factor 1.5 :settle-ms 100}}
+   :reset #(camera/restore % (get-in % [:case :view]))}
   [rtx]
-  (camera/zoom! rtx))
+  (camera/zoom* rtx {:steps 20 :factor 1.5 :settle-ms 100}))
+
+(decl/defcase :rects/blocking-full
+  {:params default-params
+   :view base-view
+   :context :fresh
+   :preparation {:render :none}}
+  [rtx]
+  (camera/render-sync* rtx))
+
+(decl/defcase :rects/mixed-pans
+  {:params default-params
+   :view base-view
+   :context :reuse
+   :reset #(camera/restore* % (get-in % [:case :view]))}
+  [rtx]
+  (-> rtx
+      (camera/pan* {:dx 120 :dy 0 :steps 12 :settle-ms 50})
+      (camera/pan {:dx 0 :dy 80 :steps 8 :settle-ms 50})
+      (camera/pan* {:dx -120 :dy 0 :steps 12 :settle-ms 50})))

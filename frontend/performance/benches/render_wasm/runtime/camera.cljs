@@ -5,72 +5,35 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.runtime.camera
-  "Control rendering and camera movement in a scene case.
+  "Rendering and camera commands over a prepared snapshot.
 
-  Recap: A `scene` is a recipe for shapes, and a `snapshot` is just an instance
-  of the scene. A `case` is what we benchmark: a set of operations executed on
-  a snapshot. This namespace provides operations to control rendering and camera.
+  Commands accept a context or its Promise and return a Promise of the next
+  context. Pan, zoom and restore update its view. Starred variants record raw
+  elapsed time and renderer evidence in the current execution phase.
 
-  ## Runtime data
+  Load waits for an animation frame and renders through Full. Pan and zoom
+  submit paced cached previews, settle, then render through Full. Restore
+  applies a view and renders immediately with SyncTiles. Render-sync uses the
+  blocking renderer path. Full denotes renderer submission completion.
 
-  A view contains zoom `:scale`, offsets `:x` and `:y`, and optional viewport
-  settings for canvas dimensions and device pixel ratio. Hooks are functions
-  that supply clocks, scheduling and renderer operations. A guard returns to
-  authorize work or throws an error to reject it. A command context contains:
-
-  - `:case`: the case descriptor, which contains its data settings.
-  - `:scene`: the prepared snapshot of shapes and references.
-  - `:view`: the current view.
-  - `:hooks`: the clock, scheduling, renderer and execution guard functions.
-
-  `pan!` and `zoom!` read movement settings from `[:case :operation]`.
-
-  ## Rendering and camera sessions
-
-  A frame type describes the progress of a renderer call. `Full`
-  (`FRAME_TYPE_FULL`) marks the renderer's completion of the request. GPU
-  execution and display proceed asynchronously after renderer submission.
-
-  A cached preview applies a view and draws once from cached tiles. A camera
-  session starts the interaction, submits interpolated views, waits for the
-  requested settling time, ends the interaction and renders until Full.
-  Each view update waits for the next animation frame and draws one cached
-  preview. `:settle-ms` gives the requested settling wait in milliseconds.
-
-  `render-sync` renders synchronously. `pan` receives explicit offsets, step
-  count and settling time, and returns the context with its updated view.
-  These commands accept a command context or its Promise and return a Promise
-  of the next context. Their measured functions, `render-sync*` and `pan*`,
-  require a command execution, which runs a function over a command context and
-  collects its measured calls. Each call records an event with the command's
-  metric values and optional traces. A metric names a measured quantity, such
-  as elapsed time.
-
-  `load!` renders an uploaded snapshot until Full. `pan!` adds `:dx` and `:dy`
-  to the starting offsets; `zoom!` multiplies the starting scale by `:factor`.
-  Both submit `:steps` interpolated views and finish a camera session. These
-  operations resolve to the recorded render calls and measured durations.
-
-  ## Timing
-
-  Each trace entry records a render call's timestamp, flags, frame type and
-  duration. Camera measurements also contain cached previews, requested and
-  observed waits, and completion durations. `:end-ms` is the clock reading
-  immediately after the final renderer call returns Full.
-
-  `pan!` and `zoom!` calculate their target view before camera timing starts.
-  The `:interact-ms` duration runs from camera start through the final renderer
-  return. `pan*` measures its command body, including the target calculation,
-  through that same endpoint. Command input resolution and argument validation
-  precede the measured interval. Output validation and event recording follow
-  the endpoint."
+  Measured async commands finish at the final renderer return captured in
+  `:end-ms`. Input resolution and argument validation precede timing; output
+  validation and event recording follow it. Traces retain renderer calls,
+  cached previews, waits and protocol endpoints."
   (:require
    [app.common.schema :as sm]
+   [benches.render-wasm.declarations :as decl]
    [benches.render-wasm.runtime.commands :refer [defcommand]]
    [benches.render-wasm.runtime.protocol :as protocol]))
 
 (defcommand render-sync
-  "Renders the prepared scene synchronously and returns the command context."
+  "Renders the prepared scene synchronously.
+
+  Args:
+    rtx: context or Promise of it.
+
+  Returns:
+    A Promise of the context after the blocking renderer call."
   [rtx]
   ((get-in rtx [:hooks :render-sync]))
   rtx)
@@ -83,6 +46,35 @@
     [:steps [:int {:min 1}]]
     [:settle-ms [:and ::sm/safe-number [:>= 0]]]]))
 
+(def ^:private valid-zoom?
+  (sm/validator
+   [:map {:closed true}
+    [:factor [:and ::sm/safe-number [:> 0]]]
+    [:steps [:int {:min 1}]]
+    [:settle-ms [:and ::sm/safe-number [:>= 0]]]]))
+
+(def ^:private valid-view? (sm/validator decl/schema:view))
+
+(defn- pan-view
+  [view dx dy]
+  (-> view (update :x + dx) (update :y + dy)))
+
+(defn- zoom-view
+  [view factor]
+  (update view :scale * factor))
+
+(defn- render-evidence
+  [evidence]
+  {:end-ms (:end-ms evidence)
+   :metrics {:renderer/call-elapsed (mapv :duration-ms (:slices evidence))}
+   :trace evidence})
+
+(defn- camera-evidence
+  [evidence]
+  (-> (render-evidence evidence)
+      (assoc-in [:metrics :renderer/cache-call-elapsed] (mapv :duration-ms (:cached-slices evidence)))
+      (assoc-in [:metrics :camera/finalization-to-full] [(:time-to-full-ms evidence)])))
+
 (defn- run-camera
   [rtx target {:keys [steps settle-ms]}]
   (-> (protocol/start-camera! rtx {:settle-ms settle-ms})
@@ -92,57 +84,72 @@
 (defcommand pan
   "Moves the view by `:dx` and `:dy` through `:steps` cached previews.
   Waits `:settle-ms` milliseconds, ends the interaction and renders until Full.
-  Resolves to the command context with its updated view. Steps must be positive;
-  the settling wait must be nonnegative."
+
+  Args:
+    rtx: context or Promise of it.
+    options: finite offsets, positive step count and nonnegative settling wait.
+
+  Returns:
+    A Promise of the context with its updated view."
   {:async [complete fail]}
   [rtx {:keys [dx dy] :as options}]
-  {:pre [(valid-pan? options)]}
-  (let [target (-> (:view rtx)
-                   (update :x + dx)
-                   (update :y + dy))]
+  {:pre [(valid-pan? options) (valid-view? (pan-view (:view rtx) dx dy))]}
+  (let [target (pan-view (:view rtx) dx dy)]
     (-> (run-camera rtx target options)
         (.then (fn [evidence]
-                 (complete (assoc rtx :view target)
-                           {:end-ms (:end-ms evidence)
-                            :metrics {:renderer/call-elapsed (mapv :duration-ms (:slices evidence))
-                                      :renderer/cache-call-elapsed (mapv :duration-ms (:cached-slices evidence))
-                                      :camera/finalization-to-full [(:time-to-full-ms evidence)]}
-                            :trace evidence})))
+                 (complete (assoc rtx :view target) (camera-evidence evidence))))
         (.catch fail))))
 
-(defn load!
+(defcommand load
   "Renders the uploaded snapshot until the renderer returns Full.
-  Waits for an animation frame before the first render call. Returns a Promise
-  with recorded render calls, completion durations and the final clock reading
-  `:end-ms`. The context supplies clock, scheduling and renderer hooks."
+  Waits for an animation frame before the first renderer call.
+
+  Args:
+    rtx: context or Promise of it.
+
+  Returns:
+    A Promise of the context after renderer completion."
+  {:async [complete fail]}
   [rtx]
   (let [hooks (:hooks rtx)]
-    (protocol/drain hooks {:flags 0
-                           :origin ((:now hooks))
-                           :immediate false})))
+    (-> (protocol/drain hooks {:flags 0 :origin ((:now hooks)) :immediate false})
+        (.then (fn [evidence]
+                 (complete rtx (assoc-in (render-evidence evidence)
+                                         [:metrics :renderer/prepared-scene-to-full] [(:full-ms evidence)]))))
+        (.catch fail))))
 
-(defn pan!
-  "Moves the starting view by the offsets in `[:case :operation]`.
-  `:dx` and `:dy` give the offsets; `:steps` gives the number of interpolated
-  views. Each update waits for an animation frame and draws a cached preview.
-  After the `:settle-ms` wait, ends the interaction and renders until Full.
-  Returns a Promise with recorded render calls, waits and camera durations."
-  [rtx]
-  (let [view (:view rtx)
-        {:keys [steps dx dy settle-ms]} (get-in rtx [:case :operation])
-        target (-> view
-                   (update :x + dx)
-                   (update :y + dy))]
-    (run-camera rtx target {:steps steps :settle-ms settle-ms})))
+(defcommand zoom
+  "Multiplies view scale through paced cached previews, then renders through Full.
 
-(defn zoom!
-  "Changes the starting scale using settings in `[:case :operation]`.
-  `:factor` multiplies the scale; `:steps` gives the number of interpolated
-  views. Each update waits for an animation frame and draws a cached preview.
-  After the `:settle-ms` wait, ends the interaction and renders until Full.
-  Returns a Promise with recorded render calls, waits and camera durations."
-  [rtx]
-  (let [view (:view rtx)
-        {:keys [steps factor settle-ms]} (get-in rtx [:case :operation])
-        target (update view :scale * factor)]
-    (run-camera rtx target {:steps steps :settle-ms settle-ms})))
+  Args:
+    rtx: context or Promise of it.
+    options: positive finite factor, positive steps and nonnegative settle-ms.
+
+  Returns:
+    A Promise of the context with its updated scale."
+  {:async [complete fail]}
+  [rtx {:keys [factor] :as options}]
+  {:pre [(valid-zoom? options) (valid-view? (zoom-view (:view rtx) factor))]}
+  (let [target (zoom-view (:view rtx) factor)]
+    (-> (run-camera rtx target options)
+        (.then (fn [evidence]
+                 (complete (assoc rtx :view target) (camera-evidence evidence))))
+        (.catch fail))))
+
+(defcommand restore
+  "Restores a view and renders immediately through Full with SyncTiles.
+
+  Args:
+    rtx: context or Promise of it.
+    view: scale and offsets to restore. Its resolved viewport must match rtx.
+
+  Returns:
+    A Promise of the context with the restored view."
+  {:async [complete fail]}
+  [rtx view]
+  {:pre [(valid-view? view)
+         (= (decl/resolve-viewport view) (decl/resolve-viewport (:view rtx)))]}
+  (-> (protocol/restore (:hooks rtx) view)
+      (.then (fn [evidence]
+               (complete (assoc rtx :view view) (render-evidence evidence))))
+      (.catch fail)))
