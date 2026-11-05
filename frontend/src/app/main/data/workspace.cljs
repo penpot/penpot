@@ -591,13 +591,14 @@
                     (rx/filter dch/commit?)
                     (rx/map deref)
                     (rx/mapcat
-                     (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo? selected-before]}]
+                     (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo? selected-before translation?]}]
                        (if (and save-undo? (seq undo-changes))
                          (let [entry {:undo-changes undo-changes
                                       :redo-changes redo-changes
                                       :undo-group undo-group
                                       :tags tags
-                                      :selected-before selected-before}]
+                                      :selected-before selected-before
+                                      :translation? (boolean translation?)}]
                            (rx/of (dwu/append-undo entry stack-undo?)))
                          (rx/empty))))))
 
