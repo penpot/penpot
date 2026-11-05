@@ -28,6 +28,7 @@
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.text :as ctsx]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
@@ -435,6 +436,11 @@
      [:before-path [:maybe [:vector :string]]]
      [:before-group [:maybe :boolean]]]]
 
+   [:set-default-text-language
+    [:map {:title "SetDefaultTextLanguage"}
+     [:type [:= :set-default-text-language]]
+     [:language [:maybe ctsx/schema:text-language]]]]
+
    [:set-base-font-size
     [:map {:title "ModBaseFontSize"}
      [:type [:= :set-base-font-size]]
@@ -444,13 +450,7 @@
     [:map {:title "SetTokensSource"}
      [:type [:= :set-tokens-source]]
      [:file-id ::sm/uuid]
-     [:library-id [:maybe ::sm/uuid]]]]
-
-   [:set-text-layout
-    [:map {:title "SetTextLayout"}
-     [:type [:= :set-text-layout]]
-     [:language [:enum :japanese :chinese :korean]]
-     [:enabled ::sm/boolean]]]])
+     [:library-id [:maybe ::sm/uuid]]]]])
 
 (def schema:changes
   [:sequential {:gen/max 5 :gen/min 1} schema:change])
@@ -1159,6 +1159,10 @@
 
 ;; === Design Tokens configuration
 
+(defmethod process-change :set-default-text-language
+  [data {:keys [language]}]
+  (ctf/set-default-text-language data language))
+
 (defmethod process-change :set-base-font-size
   [data {:keys [base-font-size]}]
   (ctf/set-base-font-size data base-font-size))
@@ -1166,10 +1170,6 @@
 (defmethod process-change :set-tokens-source
   [data {:keys [library-id]}]
   (cfo/set-tokens-source data library-id))
-
-(defmethod process-change :set-text-layout
-  [data {:keys [language enabled]}]
-  (ctf/set-text-layout-enabled data language enabled))
 
 ;; === Operations
 

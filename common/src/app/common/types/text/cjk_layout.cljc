@@ -6,6 +6,7 @@
 
 (ns app.common.types.text.cjk-layout
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [cuerdas.core :as str]))
 
@@ -52,6 +53,11 @@
 ;; the first one's value.
 (def whole-shape-paragraph-attrs
   [:writing-mode :text-orientation])
+
+;; Paragraph attrs the text options write to every paragraph, whatever the
+;; editor selection: a text has one writing mode and one language.
+(def whole-text-paragraph-attrs
+  (conj whole-shape-paragraph-attrs :text-language))
 
 ;; Ruby attrs that change how a reading looks, not the reading itself.
 (def ruby-presentation-attrs
@@ -219,3 +225,80 @@
   "True when the text content flows vertically (vertical-rl)."
   [content]
   (= "vertical-rl" (content-writing-mode content)))
+
+;; --- Active language
+
+(defn language-family
+  "CJK language of a BCP 47 `tag` (`:japanese`, `:chinese` or `:korean`),
+  or nil for any other value."
+  [tag]
+  (when (string? tag)
+    (case (-> tag (str/split "-") first str/lower)
+      "ja" :japanese
+      "zh" :chinese
+      "ko" :korean
+      nil)))
+
+;; Span attrs each language renders; the others stay in the content and come
+;; back when the text takes that language again.
+(def ^:private language-span-attrs
+  {:japanese #{:text-combine-upright :warichu :text-emphasis :annotation-clearance
+               :ruby :ruby-hidden :ruby-size :ruby-align :ruby-overhang :ruby-side
+               :font-features}
+   :chinese  #{:text-emphasis :text-emphasis-position :text-underline-position
+               :annotation-clearance :ruby :ruby-zhuyin :ruby-hidden :ruby-size
+               :ruby-align :ruby-overhang :ruby-side}
+   :korean   #{}})
+
+(defn content-language
+  "Language of a text content: the first paragraph's `:text-language`, as a
+  text has one language. Nil when unset."
+  [content]
+  (whole-shape-attr content :text-language))
+
+(defn- active-span
+  [span family]
+  (let [kept (get language-span-attrs family #{})]
+    (reduce (fn [span attr]
+              (if (contains? kept attr) span (dissoc span attr)))
+            span
+            span-attrs)))
+
+(defn- active-paragraph
+  [paragraph default-language]
+  (let [language (or (:text-language paragraph) default-language)
+        family   (language-family language)]
+    (cond-> (d/update-when paragraph :children (partial mapv #(active-span % family)))
+      (some? language)
+      (assoc :text-language language)
+
+      (nil? family)
+      (d/without-keys whole-shape-paragraph-attrs)
+
+      (and (nil? family) (= "distribute" (:text-align paragraph)))
+      (assoc :text-align "left")
+
+      (not= :korean family)
+      (dissoc :korean-wrap))))
+
+(defn active-content
+  "Text `content` as the renderer lays it out. A paragraph without language
+  takes `default-language` (the file language), and the CJK attrs its
+  language does not use are left out: without a CJK language a text is
+  horizontal and not distributed. The stored content keeps every attr."
+  [content default-language]
+  (let [family (language-family (or (content-language content) default-language))]
+    (cond-> (d/update-when content :children
+                           (partial mapv
+                                    (fn [paragraph-set]
+                                      (d/update-when paragraph-set :children
+                                                     (partial mapv #(active-paragraph % default-language))))))
+      (not= :japanese family)
+      (dissoc :line-adjustment))))
+
+(defn active-writing-mode
+  "Writing mode the renderer lays `content` out with (see `active-content`):
+  nil when unset or when the text has no CJK language."
+  [content default-language]
+  (when (some? (language-family (or (content-language content) default-language)))
+    (content-writing-mode content)))

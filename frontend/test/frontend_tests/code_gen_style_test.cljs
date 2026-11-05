@@ -186,7 +186,7 @@
 (def ^:private ruby-text-content
   {:type "root"
    :children [{:type "paragraph-set"
-               :children [{:type "paragraph"
+               :children [{:type "paragraph" :text-language "ja"
                            :writing-mode "vertical-rl"
                            :text-orientation "upright"
                            :children [{:text "漢字"
@@ -224,7 +224,7 @@
 (def ^:private warichu-text-content
   {:type "root"
    :children [{:type "paragraph-set"
-               :children [{:type "paragraph"
+               :children [{:type "paragraph" :text-language "ja"
                            :writing-mode "vertical-rl"
                            :text-orientation "upright"
                            :children [{:text "割注入り"
@@ -236,7 +236,7 @@
 (def ^:private palt-text-content
   {:type "root"
    :children [{:type "paragraph-set"
-               :children [{:type "paragraph"
+               :children [{:type "paragraph" :text-language "ja"
                            :children [{:text "かな"
                                        :font-features "palt"
                                        :font-size "20"
@@ -267,7 +267,7 @@
 (def ^:private tcy-digits2-text-content
   {:type "root"
    :children [{:type "paragraph-set"
-               :children [{:type "paragraph"
+               :children [{:type "paragraph" :text-language "ja"
                            :writing-mode "vertical-rl"
                            :children [{:text "平成31年"
                                        :text-combine-upright "digits2"

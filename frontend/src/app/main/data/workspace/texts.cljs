@@ -1009,6 +1009,17 @@
           (not multiple?)
           (update :workspace-global assoc :default-font font))))))
 
+(defn remember-text-language
+  "Remember `language` for the next new texts of the file; nil forgets it,
+  so they take the file language."
+  [language]
+  (ptk/reify ::remember-text-language
+    ptk/UpdateEvent
+    (update [_ state]
+      (if (some? language)
+        (assoc-in state [:workspace-global :default-text-language] language)
+        (update state :workspace-global dissoc :default-text-language)))))
+
 (defn apply-text-modifier
   [shape text-modifier]
 

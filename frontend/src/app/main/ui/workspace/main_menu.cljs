@@ -46,6 +46,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.text.layout :as tl]
+   [app.util.text.writing-mode :as wm]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
@@ -231,28 +232,11 @@
         [:span {:class (stl/css :feedback :item-name)}
          (tr "labels.give-feedback")]])]))
 
-(mf/defc language-layout-menu-item*
-  [{:keys [language config can-edit read-only label on-toggle]}]
-  (let [toggle (mf/use-fn
-                (mf/deps language on-toggle)
-                #(on-toggle language %))]
-    (when (tl/file-action-visible? config can-edit read-only)
-      [:> dropdown-menu-item* {:on-click toggle
-                               :class (stl/css :base-menu-item :submenu-item)
-                               :on-key-down (fn [event]
-                                              (when (kbd/enter? event) (toggle event)))
-                               :data-testid (str (name language) "-layout")
-                               :id (str "file-menu-" (name language) "-layout")}
-       [:span {:class (stl/css :item-name)} label]])))
-
 (mf/defc preferences-menu*
   {::mf/private true
    ::mf/wrap [mf/memo]}
-  [{:keys [layout-config layout profile toggle-flag
-           on-close toggle-theme toggle-render toggle-text-layout]}]
-  (let [renderer                    (or (-> profile :props :renderer) :svg)
-        read-only?                  (mf/use-ctx ctx/workspace-read-only?)
-        can-edit                    (:can-edit (mf/deref refs/permissions))
+  [{:keys [layout profile toggle-flag on-close toggle-theme toggle-render]}]
+  (let [renderer (or (-> profile :props :renderer) :svg)
 
         show-nudge-options
         (mf/use-fn
@@ -334,25 +318,6 @@
                               :data-testid "snap-pixel-grid"
                               :id          "file-menu-nudge"}
       [:span {:class (stl/css :item-name)} (tr "modals.nudge-title")]]
-
-     [:> language-layout-menu-item*
-      {:language :japanese :config (:japanese layout-config)
-       :can-edit can-edit :read-only read-only? :on-toggle toggle-text-layout
-       :label (if (get-in layout-config [:japanese :file?])
-                (tr "workspace.header.menu.disable-japanese-layout")
-                (tr "workspace.header.menu.enable-japanese-layout"))}]
-     [:> language-layout-menu-item*
-      {:language :chinese :config (:chinese layout-config)
-       :can-edit can-edit :read-only read-only? :on-toggle toggle-text-layout
-       :label (if (get-in layout-config [:chinese :file?])
-                (tr "workspace.header.menu.disable-chinese-layout")
-                (tr "workspace.header.menu.enable-chinese-layout"))}]
-     [:> language-layout-menu-item*
-      {:language :korean :config (:korean layout-config)
-       :can-edit can-edit :read-only read-only? :on-toggle toggle-text-layout
-       :label (if (get-in layout-config [:korean :file?])
-                (tr "workspace.header.menu.disable-korean-layout")
-                (tr "workspace.header.menu.enable-korean-layout"))}]
 
      [:> dropdown-menu-item* {:on-click    toggle-theme
                               :class       (stl/css :base-menu-item :submenu-item)
@@ -602,9 +567,78 @@
          (tr "workspace.header.menu.redo")]
         [:> shortcuts* {:id :redo}]])]))
 
+(mf/defc file-language-menu*
+  "File > Language: the language of the file texts without one of their own,
+  and of the new texts. The choices open beside the item."
+  {::mf/private true}
+  [{:keys [on-close-all]}]
+  (let [language (mf/deref refs/file-text-language)
+        open*    (mf/use-state false)
+        open?    (deref open*)
+        options  (mf/with-memo [language] (tl/language-options language))
+
+        show     (mf/use-fn #(reset! open* true))
+        hide     (mf/use-fn #(reset! open* false))
+
+        toggle
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (swap! open* not)))
+
+        on-select
+        (mf/use-fn
+         (mf/deps on-close-all)
+         (fn [event]
+           (dom/stop-propagation event)
+           (let [tag (dom/get-data (dom/get-current-target event) "language")]
+             (st/emit! (-> (dw/set-default-text-language (when (not= "none" tag) tag))
+                           (vary-meta assoc ::ev/origin "workspace:menu")))
+             (on-close-all))))]
+
+    [:> dropdown-menu-item* {:class (stl/css :base-menu-item :menu-item :language-menu-item)
+                             :on-click toggle
+                             :on-pointer-enter show
+                             :on-pointer-leave hide
+                             :aria-haspopup "menu"
+                             :aria-expanded open?
+                             :id "file-menu-language"}
+     [:span {:class (stl/css :item-name)}
+      (tr "workspace.header.menu.option.language")]
+     [:> icon* {:icon-id i/arrow-right
+                :class (stl/css :item-arrow)}]
+
+     (when ^boolean open?
+       [:div {:class (stl/css :language-submenu)}
+        [:ul {:class (stl/css :base-menu :language-submenu-list)
+              :role "menu"}
+         [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item)
+                                  :data-language "none"
+                                  :on-click on-select
+                                  :id "file-menu-language-none"}
+          [:span {:class (stl/css :item-name)}
+           (tr "workspace.header.menu.language-none")]
+          (when (nil? language)
+            [:> icon* {:icon-id i/tick :class (stl/css :item-icon)}])]
+
+         (for [{:keys [id label header selected]} options]
+           (if ^boolean header
+             [:li {:key id
+                   :class (stl/css :language-header)
+                   :role "presentation"}
+              label]
+             [:> dropdown-menu-item* {:key id
+                                      :class (stl/css :base-menu-item :submenu-item)
+                                      :data-language id
+                                      :on-click on-select
+                                      :id (str "file-menu-language-" id)}
+              [:span {:class (stl/css :item-name)} label]
+              (when ^boolean selected
+                [:> icon* {:icon-id i/tick :class (stl/css :item-icon)}])]))]])]))
+
 (mf/defc file-menu*
   {::mf/private true}
-  [{:keys [on-close file]}]
+  [{:keys [on-close on-close-all file]}]
   (let [file-id      (:id file)
         shared?      (:is-shared file)
 
@@ -619,6 +653,7 @@
 
         perms        (mf/use-ctx ctx/permissions)
         can-edit     (:can-edit perms)
+        cjk-feature? (features/use-feature "cjk-support")
 
         on-remove-shared
         (mf/use-fn
@@ -780,7 +815,12 @@
                                 :on-key-down on-export-frames-key-down
                                 :id          "file-menu-export-frames"}
         [:span {:class (stl/css :item-name)}
-         (tr "dashboard.export-frames")]])]))
+         (tr "dashboard.export-frames")]])
+
+     (when (and can-edit ^boolean cjk-feature? ^boolean (wm/vertical-layout-active?))
+       [:*
+        [:div {:class (stl/css :separator)}]
+        [:> file-language-menu* {:on-close-all on-close-all}]])]))
 
 (mf/defc plugins-menu*
   {::mf/private true
@@ -923,7 +963,6 @@
 (mf/defc menu*
   [{:keys [layout file]}]
   (let [profile            (mf/deref refs/profile)
-        layout-config      (mf/deref refs/text-layout-config)
 
         show-menu*         (mf/use-state false)
         show-menu?         (deref show-menu*)
@@ -984,15 +1023,6 @@
          (fn [event]
            (dom/stop-propagation event)
            (st/emit! (du/toggle-theme))))
-
-        toggle-text-layout
-        (mf/use-fn
-         (mf/deps layout-config)
-         (fn [language event]
-           (dom/stop-propagation event)
-           (st/emit! (dw/set-text-layout language (not (get-in layout-config [language :file?]))))
-           (reset! show-menu* false)
-           (reset! selected-sub-menu* nil)))
 
         toggle-render
         (mf/use-fn
@@ -1179,7 +1209,8 @@
      (case selected-sub-menu
        :file
        [:> file-menu* {:file file
-                       :on-close close-sub-menu}]
+                       :on-close close-sub-menu
+                       :on-close-all close-all-menus}]
 
        :edit
        [:> edit-menu* {:on-close close-sub-menu}]
@@ -1193,12 +1224,10 @@
        :preferences
        [:> preferences-menu* {:layout layout
                               :profile profile
-                              :layout-config layout-config
                               :toggle-flag toggle-flag
                               :toggle-theme toggle-theme
                               :toggle-render toggle-render
                               :show-shortcuts show-shortcuts
-                              :toggle-text-layout toggle-text-layout
                               :on-close close-sub-menu}]
 
        :plugins

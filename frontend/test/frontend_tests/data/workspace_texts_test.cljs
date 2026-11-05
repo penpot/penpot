@@ -30,15 +30,25 @@
    [potok.v2.core :as ptk]))
 
 (defn- writing-mode-content
+  "Japanese text content with `writing-mode`: vertical writing needs a CJK
+  language."
   [writing-mode]
-  {:children [{:children [{:writing-mode writing-mode}]}]})
+  {:children [{:children [{:writing-mode writing-mode :text-language "ja"}]}]})
 
 (t/deftest vertical-auto-height-grows-width
-  (let [selrect   {:width 100 :height 200}
-        dimension {:width 240 :height 360}
-        content   (writing-mode-content "vertical-rl")]
-    (t/is (= {:width 240 :height 200}
-             (dwwt/resolve-text-size selrect :auto-height content dimension)))))
+  (with-redefs [cts/wasm-enabled? true]
+    (let [selrect   {:width 100 :height 200}
+          dimension {:width 240 :height 360}
+          content   (writing-mode-content "vertical-rl")]
+      (t/is (= {:width 240 :height 200}
+               (dwwt/resolve-text-size selrect :auto-height content dimension))))))
+
+(t/deftest vertical-writing-without-language-grows-as-horizontal
+  (with-redefs [cts/wasm-enabled? true]
+    (let [content {:children [{:children [{:writing-mode "vertical-rl"}]}]}]
+      (t/is (= {:width 100 :height 360}
+               (dwwt/resolve-text-size {:width 100 :height 200} :auto-height
+                                       content {:width 240 :height 360}))))))
 
 (t/deftest horizontal-auto-height-grows-height
   (let [selrect   {:width 100 :height 200}
@@ -48,32 +58,34 @@
              (dwwt/resolve-text-size selrect :auto-height content dimension)))))
 
 (t/deftest vertical-auto-grow-keeps-the-block-anchor
-  (doseq [[align expected-x] [["top" -90] ["center" -40] ["bottom" 10]]]
-    (let [shape (cts/setup-shape
-                 {:type :text :x 10 :y 20 :width 100 :height 200
-                  :grow-type :auto-height
-                  :content (assoc (text-content "vertical-rl") :vertical-align align)})
-          resized (with-redefs [dwwt/get-wasm-text-new-size
-                                (fn ([_] {:width 200 :height 200})
-                                  ([_ _] {:width 200 :height 200}))]
-                    (let [modifiers (dwwt/resize-wasm-text-modifiers shape)]
-                      (gsh/transform-shape shape (get-in modifiers [(:id shape) :modifiers]))))]
-      (t/is (= expected-x (:x resized)) align)
-      (t/is (= 200 (:height resized)) align))))
+  (with-redefs [cts/wasm-enabled? true]
+    (doseq [[align expected-x] [["top" -90] ["center" -40] ["bottom" 10]]]
+      (let [shape (cts/setup-shape
+                   {:type :text :x 10 :y 20 :width 100 :height 200
+                    :grow-type :auto-height
+                    :content (assoc (writing-mode-content "vertical-rl") :vertical-align align)})
+            resized (with-redefs [dwwt/get-wasm-text-new-size
+                                  (fn ([_] {:width 200 :height 200})
+                                    ([_ _] {:width 200 :height 200}))]
+                      (let [modifiers (dwwt/resize-wasm-text-modifiers shape)]
+                        (gsh/transform-shape shape (get-in modifiers [(:id shape) :modifiers]))))]
+        (t/is (= expected-x (:x resized)) align)
+        (t/is (= 200 (:height resized)) align)))))
 
 (t/deftest live-vertical-bounds-grow-left-and-keep-the-wrap-height
-  (let [selrect {:x 10 :y 20 :width 100 :height 200}
-        content (text-content "vertical-rl")]
-    (t/is (= {:x -130 :y 20 :width 240 :height 200}
-             (text.geom/live-rect selrect :auto-height content {:width 240 :height 360})))
-    (t/is (= {:x -130 :y 20 :width 240 :height 360}
-             (text.geom/live-rect selrect :auto-width content {:width 240 :height 360})))
-    (t/is (= selrect (text.geom/live-rect selrect :fixed content {:width 240 :height 360})))
-    (t/is (= selrect (text.geom/live-rect selrect :auto-width content nil)))))
+  (with-redefs [cts/wasm-enabled? true]
+    (let [selrect {:x 10 :y 20 :width 100 :height 200}
+          content (writing-mode-content "vertical-rl")]
+      (t/is (= {:x -130 :y 20 :width 240 :height 200}
+               (text.geom/live-rect selrect :auto-height content {:width 240 :height 360})))
+      (t/is (= {:x -130 :y 20 :width 240 :height 360}
+               (text.geom/live-rect selrect :auto-width content {:width 240 :height 360})))
+      (t/is (= selrect (text.geom/live-rect selrect :fixed content {:width 240 :height 360})))
+      (t/is (= selrect (text.geom/live-rect selrect :auto-width content nil))))))
 
 (t/deftest live-horizontal-bounds-grow-down-and-keep-the-wrap-width
   (let [selrect {:x 10 :y 20 :width 100 :height 200}
-        content (text-content "horizontal-tb")]
+        content (writing-mode-content "horizontal-tb")]
     (t/is (= {:x 10 :y 20 :width 100 :height 360}
              (text.geom/live-rect selrect :auto-height content {:width 240 :height 360})))
     (t/is (= {:x 10 :y 20 :width 240 :height 360}
@@ -81,29 +93,30 @@
 
 (t/deftest live-bounds-keep-committed-axes-when-the-measure-is-missing
   (let [selrect {:x 10 :y 20 :width 100 :height 200}
-        content (text-content "horizontal-tb")]
+        content (writing-mode-content "horizontal-tb")]
     (t/is (= selrect (text.geom/live-rect selrect :auto-width content {:width 0 :height 0})))
     (t/is (= selrect (text.geom/live-rect selrect :auto-width content {:width nil :height nil})))
     (t/is (= {:x 10 :y 20 :width 100 :height 360}
              (text.geom/live-rect selrect :auto-width content {:width 0 :height 360})))))
 
 (t/deftest vertical-auto-grow-keeps-the-anchor-after-rotation
-  (let [base (cts/setup-shape
-              {:type :text :x 10 :y 20 :width 100 :height 200
-               :grow-type :auto-height :content (text-content "vertical-rl")})
-        shape (gsh/transform-shape base (ctm/rotation-modifiers base (gpt/point 60 120) 45))
-        resized (with-redefs [dwwt/get-wasm-text-new-size
-                              (fn ([_] {:width 200 :height 200})
-                                ([_ _] {:width 200 :height 200}))]
-                  (let [modifiers (dwwt/resize-wasm-text-modifiers shape)]
-                    (gsh/transform-shape shape (get-in modifiers [(:id shape) :modifiers]))))]
-    (t/is (gpt/almost-zero? (gpt/subtract (nth (:points shape) 1) (nth (:points resized) 1))))))
+  (with-redefs [cts/wasm-enabled? true]
+    (let [base (cts/setup-shape
+                {:type :text :x 10 :y 20 :width 100 :height 200
+                 :grow-type :auto-height :content (writing-mode-content "vertical-rl")})
+          shape (gsh/transform-shape base (ctm/rotation-modifiers base (gpt/point 60 120) 45))
+          resized (with-redefs [dwwt/get-wasm-text-new-size
+                                (fn ([_] {:width 200 :height 200})
+                                  ([_ _] {:width 200 :height 200}))]
+                    (let [modifiers (dwwt/resize-wasm-text-modifiers shape)]
+                      (gsh/transform-shape shape (get-in modifiers [(:id shape) :modifiers]))))]
+      (t/is (gpt/almost-zero? (gpt/subtract (nth (:points shape) 1) (nth (:points resized) 1)))))))
 
 (t/deftest clicking-vertical-text-anchors-its-right-edge-at-the-click
   (with-redefs [cts/wasm-enabled? true]
     (let [shape (drawing/click-draw-text
                  (cts/setup-shape {:type :text :x 100 :y 50 :width 1 :height 1
-                                   :content (text-content "vertical-rl")}))]
+                                   :content (writing-mode-content "vertical-rl")}))]
       (t/is (= 100 (+ (:x shape) (:width shape))))
       (t/is (= 50 (:y shape)))
       (t/is (= [4 17] [(:width shape) (:height shape)]))
@@ -112,7 +125,7 @@
 (t/deftest clicking-horizontal-text-keeps-its-left-edge-at-the-click
   (let [shape (drawing/click-draw-text
                (cts/setup-shape {:type :text :x 100 :y 50 :width 1 :height 1
-                                 :content (text-content "horizontal-tb")}))]
+                                 :content (writing-mode-content "horizontal-tb")}))]
     (t/is (= 100 (:x shape)))
     (t/is (= 50 (:y shape)))
     (t/is (= [4 17] [(:width shape) (:height shape)]))))
@@ -122,7 +135,7 @@
     (let [shape (cts/setup-shape
                  {:type :text :x 10 :y 20 :width 100 :height 200
                   :grow-type :auto-height
-                  :content (assoc (text-content "horizontal-tb") :vertical-align align)})
+                  :content (assoc (writing-mode-content "horizontal-tb") :vertical-align align)})
           resized (with-redefs [dwwt/get-wasm-text-new-size
                                 (fn ([_] {:width 100 :height 360})
                                   ([_ _] {:width 100 :height 360}))]

@@ -7,7 +7,6 @@
 (ns app.main.ui.settings.options
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.types.file :as ctf]
    [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
@@ -17,6 +16,7 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.controls.switch :refer [switch*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.ds.foundations.typography :as t]
@@ -24,6 +24,7 @@
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.text.layout :as tl]
    [app.util.theme :as theme]
    [rumext.v2 :as mf]))
 
@@ -123,46 +124,45 @@
                    :on-change handle-render-change}]]
      [:> text* {:typography t/body-medium :class (stl/css :feedback)} [:a {:href "#" :on-click go-settings-feedback :class (stl/css :link)} (tr "dashboard.webgl-switch.feedback") [:> icon* {:icon-id "arrow-up-right" :size "s"}]]]]))
 
-(mf/defc language-layout-setting*
-  [{:keys [language label enabled]}]
-  (let [handle-change
-        (mf/use-fn
-         (mf/deps language)
-         (fn [enabled?]
-           (st/emit! (ev/event {::ev/name (str (if enabled? "enable-" "disable-")
-                                               (name language) "-layout-all-files")
-                                ::ev/origin "settings"})
-                     (du/update-profile-props
-                      {(ctf/text-layout-preference language) enabled?})
-                     (ntf/success (tr "notifications.profile-saved")))))]
-    [:> switch* {:label label
-                 :default-checked enabled
-                 :on-change handle-change}]))
+(def ^:private no-text-language
+  "Id of the \"None\" choice: the DS select shows \"--\" for a blank id."
+  "none")
 
-(mf/defc language-layout-settings*
-  [{:keys [config]}]
-  [:section {:class (stl/css :text-layout-container)}
-   [:> heading* {:class (stl/css :title) :level 2 :typography t/title-large}
-    (tr "dashboard.text-layout.title")]
-   [:> text* {:class (stl/css :description) :typography t/body-medium}
-    (tr "dashboard.text-layout.description")]
-   [:div {:class (stl/css :text-layout-form)}
-    [:> language-layout-setting* {:language :japanese
-                                  :label (tr "dashboard.japanese-layout.enable-all-files")
-                                  :enabled (get-in config [:japanese :all-files?])}]
-    [:> language-layout-setting* {:language :chinese
-                                  :label (tr "dashboard.chinese-layout.enable-all-files")
-                                  :enabled (get-in config [:chinese :all-files?])}]
-    [:> language-layout-setting* {:language :korean
-                                  :label (tr "dashboard.korean-layout.enable-all-files")
-                                  :enabled (get-in config [:korean :all-files?])}]]])
+(mf/defc text-language-settings*
+  "Text language the new files of the profile start with."
+  {::mf/private true}
+  [{:keys [language]}]
+  (let [options
+        (mf/with-memo []
+          (into [{:id no-text-language :label (tr "dashboard.text-language.none")}]
+                (comp (remove :header)
+                      (map (fn [{:keys [id]}] {:id id :label (tl/language-label id)})))
+                (tl/language-options nil)))
+
+        handle-change
+        (mf/use-fn
+         (fn [id]
+           (st/emit! (du/update-profile-props
+                      {:default-text-language (when (not= no-text-language id) id)})
+                     (ntf/success (tr "notifications.profile-saved")))))]
+
+    [:section {:class (stl/css :text-language-container)}
+     [:> heading* {:class (stl/css :title) :level 2 :typography t/title-large}
+      (tr "dashboard.text-language.title")]
+     [:> text* {:class (stl/css :description) :typography t/body-medium}
+      (tr "dashboard.text-language.description")]
+     [:div {:class (stl/css :text-language-form)}
+      [:> select* {:default-selected (or language no-text-language)
+                   :aria-label (tr "dashboard.text-language.title")
+                   :options options
+                   :on-change handle-change
+                   :data-testid "setting-text-language"}]]]))
 
 (mf/defc options-page*
   []
-  (let [profile (mf/deref refs/profile)
-        renderer (or (-> profile :props :renderer) :svg)
-        layout-config (mf/deref refs/text-layout-config)
-        layout-feature? (features/use-feature "vertical-text-layout")]
+  (let [profile      (mf/deref refs/profile)
+        renderer     (or (-> profile :props :renderer) :svg)
+        cjk-feature? (features/use-feature "cjk-support")]
     (mf/use-effect
      #(dom/set-html-title (tr "title.settings.options")))
 
@@ -176,7 +176,7 @@
                      :id "options-section-title"}
         (tr "labels.settings")]
        [:> options-form*]]
-      (when layout-feature?
-        [:> language-layout-settings* {:config layout-config}])
+      (when ^boolean cjk-feature?
+        [:> text-language-settings* {:language (-> profile :props :default-text-language)}])
       (when (contains? cf/flags :render-switch)
         [:> webgl-settings* {:renderer renderer}])]]))

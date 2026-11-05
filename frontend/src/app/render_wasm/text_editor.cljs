@@ -1219,12 +1219,12 @@
 
 (defn apply-paragraph-attrs-to-range
   "Apply paragraph attrs to the paragraphs `selection` touches (a caret
-   touches one). Whole-shape attrs (writing mode, orientation) go to every
-   paragraph; a nil value removes them."
+   touches one). Whole-text attrs (writing mode, orientation, language) go
+   to every paragraph; a nil value removes them."
   [content selection attrs]
   (let [{:keys [start-para end-para]} (normalize-selection selection)
-        whole-attrs    (select-keys attrs cjk/whole-shape-paragraph-attrs)
-        range-attrs    (apply dissoc attrs cjk/whole-shape-paragraph-attrs)
+        whole-attrs    (select-keys attrs cjk/whole-text-paragraph-attrs)
+        range-attrs    (apply dissoc attrs cjk/whole-text-paragraph-attrs)
         apply-whole    (fn [para]
                          (reduce-kv (fn [para attr value]
                                       (if (some? value)

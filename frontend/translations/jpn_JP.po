@@ -749,18 +749,6 @@ msgstr "メンバーを招待"
 msgid "dashboard.invite-profile-disabled"
 msgstr "このチームにユーザーを招待する権限がありません"
 
-#: src/app/main/ui/settings/options.cljs
-msgid "dashboard.japanese-layout.description"
-msgstr "すべてのファイルで日本語組版コントロールを利用できるようにします。"
-
-#: src/app/main/ui/settings/options.cljs
-msgid "dashboard.japanese-layout.enable-all-files"
-msgstr "すべてのファイルで日本語組版を有効にする"
-
-#: src/app/main/ui/settings/options.cljs
-msgid "dashboard.japanese-layout.title"
-msgstr "日本語組版"
-
 #: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:235, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:266
 msgid "dashboard.leave-organization"
 msgstr "組織から退出"
@@ -6120,10 +6108,6 @@ msgstr "放射状グラデーション"
 msgid "workspace.header.menu.disable-dynamic-alignment"
 msgstr "動的整列を無効化"
 
-#: src/app/main/ui/workspace/main_menu.cljs
-msgid "workspace.header.menu.disable-japanese-layout"
-msgstr "日本語組版を無効にする"
-
 #: src/app/main/ui/workspace/main_menu.cljs:255
 msgid "workspace.header.menu.disable-scale-content"
 msgstr "比率を保った拡大縮小を無効化"
@@ -6147,10 +6131,6 @@ msgstr "WebGL レンダリングを無効化（ベータ）"
 #: src/app/main/ui/workspace/main_menu.cljs:295
 msgid "workspace.header.menu.enable-dynamic-alignment"
 msgstr "動的整列を有効化"
-
-#: src/app/main/ui/workspace/main_menu.cljs
-msgid "workspace.header.menu.enable-japanese-layout"
-msgstr "日本語組版を有効にする"
 
 #: src/app/main/ui/workspace/main_menu.cljs:256
 msgid "workspace.header.menu.enable-scale-content"
@@ -7712,10 +7692,6 @@ msgstr "幅の自動調整"
 msgid "workspace.options.text-options.grow-fixed"
 msgstr "固定"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.japanese-layout"
-msgstr "日本語組版"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:732
 msgid "workspace.options.text-options.letter-spacing"
 msgstr "文字間隔"
@@ -7726,7 +7702,7 @@ msgstr "行の高さ"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby"
-msgstr "ルビ"
+msgstr "ふりがな"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-advanced-options"
@@ -7734,7 +7710,7 @@ msgstr "ふりがなの詳細設定"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-align"
-msgstr "ルビの配置"
+msgstr "配置"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-align-center"
@@ -7754,11 +7730,11 @@ msgstr "先頭"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
 msgid "workspace.options.text-options.ruby-hidden"
-msgstr "ふりがなを非表示"
+msgstr "非表示"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-overhang"
-msgstr "ルビのはみ出し"
+msgstr "はみ出し"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-overhang-auto"
@@ -7774,19 +7750,11 @@ msgstr "ふりがな"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-side"
-msgstr "ルビの側"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.ruby-side-over"
-msgstr "上／右"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.ruby-side-under"
-msgstr "下／左"
+msgstr "位置"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-size"
-msgstr "ルビの大きさ"
+msgstr "大きさ"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-size-half"

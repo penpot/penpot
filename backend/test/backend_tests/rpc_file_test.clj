@@ -145,6 +145,43 @@
         (let [result (:result out)]
           (t/is (= 0 (count result))))))))
 
+(t/deftest new-files-take-the-profile-text-language
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        proj-id (:default-project-id prof)
+        create  (fn []
+                  (let [out (th/command! {::th/type :create-file
+                                          ::rpc/profile-id (:id prof)
+                                          :project-id proj-id
+                                          :name "foobar"})]
+                    (t/is (nil? (:error out)))
+                    (let [out (th/command! {::th/type :get-file
+                                            ::rpc/profile-id (:id prof)
+                                            :id (:id (:result out))})]
+                      (t/is (nil? (:error out)))
+                      (get-in out [:result :data :options :text-language]))))
+        set-language (fn [language]
+                       (let [out (th/command! {::th/type :update-profile-props
+                                               ::rpc/profile-id (:id prof)
+                                               :props {:default-text-language language}})]
+                         (t/is (nil? (:error out)))))]
+
+    (t/testing "without a profile language new files have none"
+      (t/is (nil? (create))))
+
+    (t/testing "new files start with the profile language"
+      (set-language "zh-Hant-TW")
+      (t/is (= "zh-Hant-TW" (create))))
+
+    (t/testing "removing the profile language stops applying it"
+      (set-language nil)
+      (t/is (nil? (create))))
+
+    (t/testing "the profile language must be a language tag"
+      (let [out (th/command! {::th/type :update-profile-props
+                              ::rpc/profile-id (:id prof)
+                              :props {:default-text-language "not a tag!"}})]
+        (t/is (th/ex-of-type? (:error out) :validation))))))
+
 (t/deftest file-gc-with-fragments
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)

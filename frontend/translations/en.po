@@ -873,18 +873,6 @@ msgstr "Invite people"
 msgid "dashboard.invite-profile-disabled"
 msgstr "You don't have permission to invite people to this team"
 
-#: src/app/main/ui/settings/options.cljs
-msgid "dashboard.japanese-layout.description"
-msgstr "Makes Japanese text layout controls available in every file."
-
-#: src/app/main/ui/settings/options.cljs
-msgid "dashboard.japanese-layout.enable-all-files"
-msgstr "Enable Japanese text layout for all files"
-
-#: src/app/main/ui/settings/options.cljs
-msgid "dashboard.japanese-layout.title"
-msgstr "Japanese text layout"
-
 #: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:235, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:266
 msgid "dashboard.leave-organization"
 msgstr "Leave org"
@@ -6799,10 +6787,6 @@ msgstr "Radial gradient"
 msgid "workspace.header.menu.disable-dynamic-alignment"
 msgstr "Disable dynamic alignment"
 
-#: src/app/main/ui/workspace/main_menu.cljs
-msgid "workspace.header.menu.disable-japanese-layout"
-msgstr "Disable Japanese text layout"
-
 #: src/app/main/ui/workspace/main_menu.cljs:255
 msgid "workspace.header.menu.disable-scale-content"
 msgstr "Disable proportional scale"
@@ -6826,10 +6810,6 @@ msgstr "Disable WebGL rendering (beta)"
 #: src/app/main/ui/workspace/main_menu.cljs:295
 msgid "workspace.header.menu.enable-dynamic-alignment"
 msgstr "Enable dynamic alignment"
-
-#: src/app/main/ui/workspace/main_menu.cljs
-msgid "workspace.header.menu.enable-japanese-layout"
-msgstr "Enable Japanese text layout"
 
 #: src/app/main/ui/workspace/main_menu.cljs:256
 msgid "workspace.header.menu.enable-scale-content"
@@ -8476,10 +8456,6 @@ msgstr "Auto width"
 msgid "workspace.options.text-options.grow-fixed"
 msgstr "Fixed"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.japanese-layout"
-msgstr "Japanese text layout"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:732
 msgid "workspace.options.text-options.letter-spacing"
 msgstr "Letter Spacing"
@@ -8490,15 +8466,15 @@ msgstr "Line height"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby"
-msgstr "Ruby"
+msgstr "Furigana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-advanced-options"
-msgstr "Advanced furigana options"
+msgstr "Furigana options"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-align"
-msgstr "Ruby alignment"
+msgstr "Alignment"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-align-center"
@@ -8518,11 +8494,11 @@ msgstr "Start"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
 msgid "workspace.options.text-options.ruby-hidden"
-msgstr "Hide furigana"
+msgstr "Hide"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-overhang"
-msgstr "Ruby overhang"
+msgstr "Overhang"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-overhang-auto"
@@ -8538,19 +8514,11 @@ msgstr "Furigana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-side"
-msgstr "Ruby side"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.ruby-side-over"
-msgstr "Over / right"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.ruby-side-under"
-msgstr "Under / left"
+msgstr "Position"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-size"
-msgstr "Ruby size"
+msgstr "Size"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-size-half"
@@ -10229,65 +10197,9 @@ msgstr ""
 msgid "workspace.versions.warning.text"
 msgstr "Autosaved versions will be kept for %s days."
 
-#: src/app/main/ui/settings/options.cljs
-msgid "dashboard.text-layout.title"
-msgstr "Text layout by language"
-
-#: src/app/main/ui/settings/options.cljs
-msgid "dashboard.text-layout.description"
-msgstr "Choose which text layout controls are available in all files."
-
-#: src/app/main/ui/settings/options.cljs
-msgid "dashboard.chinese-layout.enable-all-files"
-msgstr "Enable Chinese text layout for all files"
-
-#: src/app/main/ui/settings/options.cljs
-msgid "dashboard.korean-layout.enable-all-files"
-msgstr "Enable Korean text layout for all files"
-
-#: src/app/main/ui/workspace/main_menu.cljs
-msgid "workspace.header.menu.enable-chinese-layout"
-msgstr "Enable Chinese text layout"
-
-#: src/app/main/ui/workspace/main_menu.cljs
-msgid "workspace.header.menu.disable-chinese-layout"
-msgstr "Disable Chinese text layout"
-
-#: src/app/main/ui/workspace/main_menu.cljs
-msgid "workspace.header.menu.enable-korean-layout"
-msgstr "Enable Korean text layout"
-
-#: src/app/main/ui/workspace/main_menu.cljs
-msgid "workspace.header.menu.disable-korean-layout"
-msgstr "Disable Korean text layout"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.chinese-layout"
-msgstr "Chinese text layout"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.korean-layout"
-msgstr "Korean text layout"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.language-profile"
-msgstr "Language profile"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.profile-plain"
-msgstr "No language profile"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.profile-japanese"
 msgstr "Japanese"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.profile-chinese-simplified"
-msgstr "Simplified Chinese"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.profile-chinese-traditional"
-msgstr "Traditional Chinese"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.profile-korean"
@@ -10307,11 +10219,11 @@ msgstr "At spaces (experimental)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.profile-chinese-mainland-simplified"
-msgstr "Mainland China · Simplified"
+msgstr "Mainland China (Simplified)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.profile-chinese-mainland-traditional"
-msgstr "Mainland China · Traditional"
+msgstr "Mainland China (Traditional)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.profile-chinese-taiwan"
@@ -10338,26 +10250,6 @@ msgid "workspace.options.text-options.pinyin-advanced-options"
 msgstr "Pinyin options"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.pinyin-hidden"
-msgstr "Hide Pinyin"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.pinyin-size"
-msgstr "Pinyin size"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.pinyin-align"
-msgstr "Pinyin alignment"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.pinyin-overhang"
-msgstr "Pinyin overhang"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.pinyin-side"
-msgstr "Pinyin side"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.pinyin-selection-hint"
 msgstr "Select characters within one text style to add a reading. Select the whole base to edit an existing reading."
 
@@ -10374,32 +10266,16 @@ msgid "workspace.options.text-options.position-auto"
 msgstr "Automatic"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.position-over-right"
-msgstr "Above / right"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.position-over-left"
-msgstr "Above / left"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.position-under-right"
-msgstr "Below / right"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
-msgid "workspace.options.text-options.position-under-left"
-msgstr "Below / left"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.position-under"
-msgstr "Below text"
+msgstr "Below"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.position-left"
-msgstr "Left in vertical"
+msgstr "Left"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
 msgid "workspace.options.text-options.position-right"
-msgstr "Right in vertical"
+msgstr "Right"
 
 msgid "workspace.options.text-options.zhuyin"
 msgstr "Zhuyin"
@@ -10416,5 +10292,54 @@ msgstr "Select one Han character. Enter 1–3 Zhuyin symbols and an optional ton
 msgid "workspace.options.text-options.zhuyin-invalid"
 msgstr "Enter 1–3 Zhuyin symbols with at most one tone. Place a neutral tone before or after the symbols; place other tones at the end."
 
-msgid "workspace.options.text-options.zhuyin-hidden"
-msgstr "Hide Zhuyin"
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language"
+msgstr "Language"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.add-language"
+msgstr "Add language"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.remove-language"
+msgstr "Remove language"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-group-japanese"
+msgstr "Japanese"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-group-korean"
+msgstr "Korean"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-group-chinese"
+msgstr "Chinese"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-chinese-variant"
+msgstr "Chinese · %s"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.option.language"
+msgstr "Language"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.language-none"
+msgstr "None"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.text-language.title"
+msgstr "Text language"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.text-language.description"
+msgstr "New files start with this language for their texts. Each file can change it in File > Language."
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.text-language.none"
+msgstr "None"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
+msgid "workspace.options.text-options.position-over"
+msgstr "Above"

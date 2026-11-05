@@ -148,12 +148,19 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      ;; `:add-obj` / `:mov-objects` are not tracked via `*shape-changes*`.
-      ;; Emit only for structural commits, after file data is in state.
-      (when (and (not ignore-wasm?)
-                 (features/active-feature? state "render-wasm/v1")
-                 (redo-changes-need-wasm-object-sync? redo-changes))
-        (rx/of (sync-wasm-structural-changes {:redo-changes redo-changes}))))))
+      (let [wasm? (and (not ignore-wasm?)
+                       (features/active-feature? state "render-wasm/v1"))]
+        (rx/merge
+         ;; `:add-obj` / `:mov-objects` are not tracked via `*shape-changes*`.
+         ;; Emit only for structural commits, after file data is in state.
+         (if (and wasm? (redo-changes-need-wasm-object-sync? redo-changes))
+           (rx/of (sync-wasm-structural-changes {:redo-changes redo-changes}))
+           (rx/empty))
+         ;; The texts without language take the file one, so they render
+         ;; differently when it changes (handled by the workspace).
+         (if (and wasm? (some #(= :set-default-text-language (:type %)) redo-changes))
+           (rx/of (ptk/data-event ::default-text-language-changed {}))
+           (rx/empty)))))))
 
 (defn commit
   "Create a commit event instance"

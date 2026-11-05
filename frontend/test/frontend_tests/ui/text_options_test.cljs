@@ -9,6 +9,7 @@
    ["react-dom/server" :as rds]
    [app.common.types.text.cjk-layout :as cjk]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.refs :as refs]
    [app.main.ui.ds.controls.select :as select]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.text.html-text :as html-text]
@@ -21,6 +22,7 @@
    [app.util.text.writing-mode :as wm]
    [cljs.test :as t :include-macros true]
    [cuerdas.core :as str]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (def ^:private japanese-span-attrs
@@ -37,110 +39,147 @@
    :annotation-clearance])
 
 
-(t/deftest layout-controls-follow-file-or-profile-configuration
-  (with-redefs [wm/vertical-layout-active? (constantly true)]
-    (t/is (false? (tl/controls-enabled? {})))
-    (t/is (false? (tl/controls-enabled? {:feature-enabled true :file? false :all-files? false})))
-    (t/is (true? (tl/controls-enabled? {:feature-enabled true :file? true :all-files? false})))
-    (t/is (true? (tl/controls-enabled? {:feature-enabled true :file? false :all-files? true}))))
-  (with-redefs [wm/vertical-layout-active? (constantly false)]
-    (t/is (false? (tl/controls-enabled? {:feature-enabled true :file? true :all-files? true})))))
+(defn- text-content
+  "Text content with one paragraph per language in `languages`; nil leaves
+  the paragraph without language."
+  [& languages]
+  {:type "root"
+   :children
+   [{:type "paragraph-set"
+     :children
+     (mapv (fn [language]
+             (cond-> {:type "paragraph" :children [{:text "文"}]}
+               (some? language) (assoc :text-language language)))
+           languages)}]})
 
-(t/deftest language-controls-and-menu-actions-respect-independent-preferences
-  (with-redefs [wm/vertical-layout-active? (constantly true)]
-    (doseq [file? [true false] all-files? [true false]]
-      (let [config {:feature-enabled true :file? file? :all-files? all-files?}]
-        (t/is (= (or file? all-files?) (tl/controls-enabled? config)))
-        (t/is (= (not all-files?) (tl/file-action-visible? config true false)))
-        (t/is (false? (tl/file-action-visible? config false false)))
-        (t/is (false? (tl/file-action-visible? config true true)))
-        (t/is (false? (tl/controls-enabled? (assoc config :feature-enabled false)))))))
-  (with-redefs [wm/vertical-layout-active? (constantly false)]
-    (t/is (false? (tl/controls-enabled? {:feature-enabled true :file? true})))
-    (t/is (false? (tl/file-action-visible? {:feature-enabled true :file? true} true false)))))
+(defn- render-language-section
+  "Static markup of the Language panel for texts that render with `language`
+  and store `own` (the same by default)."
+  ([language]
+   (render-language-section language language))
+  ([language own]
+   (with-redefs [refs/texts-language (fn [_] (l/atom {:language language :own own}))
+                 hooks/use-portal-container (fn ([] nil) ([_] nil))]
+     (rds/renderToStaticMarkup
+      (mf/element tll/language-section*
+                  (mf/props {:ids [(random-uuid)]
+                             :options-props (mf/props {:values {:text-language own}
+                                                       :on-change identity})
+                             :on-change identity}))))))
 
-(t/deftest choosing-a-profile-only-changes-the-paragraph-language
-  (t/is (= {:text-language "ko"} (tll/profile-change "ko")))
-  (t/is (= {:text-language nil} (tll/profile-change tll/plain-profile)))
-  (t/is (tl/profile-matches? :japanese "ja-JP"))
-  (t/is (tl/profile-matches? :chinese "zh-Hant-TW"))
-  (t/is (tl/profile-matches? :korean "KO-kr"))
-  (t/is (not (tl/profile-matches? :chinese "ja")))
-  (t/is (not (tl/profile-matches? :korean :multiple)))
-  (t/is (not (tl/profile-matches? :japanese nil))))
+(t/deftest texts-without-language-take-the-default-language
+  (t/is (= "ja" (tl/get-texts-language [(text-content nil) (text-content "ja")] "ja")))
+  (t/is (= "ko" (tl/get-texts-language [(text-content nil) nil] "ko")))
+  (t/is (= :multiple (tl/get-texts-language [(text-content nil) (text-content "zh-Hant-TW")] "ja"))))
 
-(t/deftest profile-choices-keep-mixed-and-other-language-values-visible
-  (let [mixed (last (tll/profile-options :korean :multiple identity))
-        other (last (tll/profile-options :chinese "ja" identity))]
-    (t/is (= {:id "multiple" :label "settings.multiple" :disabled true :dimmed true} mixed))
-    (t/is (= {:id "ja" :label "ja" :disabled true :dimmed true} other))
-    (t/is (= ["plain" "zh-Hans" "zh-Hant" "zh-Hans-CN" "zh-Hant-CN" "zh-Hant-TW" "zh-Hant-HK"]
-             (mapv :id (tll/profile-options :chinese nil identity))))
-    ;; The DS select shows "--" for a blank id, so the plain choice needs one.
-    (t/is (not-any? (comp str/blank? :id) (tll/profile-options :korean nil identity)))
-    (t/is (= "plain" (tll/selected-profile nil)))
-    (t/is (= "multiple" (tll/selected-profile :multiple)))
-    (t/is (= "ko" (tll/selected-profile "ko")))))
+(t/deftest texts-language-is-mixed-when-any-paragraph-differs
+  (t/is (= "ja" (tl/get-texts-language [(text-content "ja" "ja") (text-content "ja")])))
+  (t/is (nil? (tl/get-texts-language [(text-content nil nil)])))
+  (t/is (nil? (tl/get-texts-language [])))
+  (t/is (= :multiple (tl/get-texts-language [(text-content "ja" nil)]))
+        "a paragraph without language differs from one with it")
+  (t/is (= :multiple (tl/get-texts-language [(text-content "ko") (text-content "zh-Hant-TW")])))
+  (t/is (= :multiple (tl/get-texts-language [(text-content "ko") (text-content nil)])))
+  (t/is (= :multiple (tl/get-texts-language [(text-content "ko") nil]))
+        "a text that has no content yet has no language"))
+
+(t/deftest language-dropdown-groups-the-regional-languages
+  (let [options (tl/language-options "zh-Hant-TW")]
+    (t/is (= ["japanese" "ja" "korean" "ko" "chinese"
+              "zh-Hans-CN" "zh-Hant-CN" "zh-Hant-TW" "zh-Hant-HK"]
+             (mapv :id options)))
+    (t/is (= ["japanese" "korean" "chinese"] (mapv :id (filter :header options))))
+    (t/is (= ["zh-Hant-TW"] (mapv :id (filter :selected options))))
+    (t/is (not-any? :detail options) "the list shows no language tags")
+    (t/is (not-any? :selected (tl/language-options :multiple)))))
+
+(t/deftest language-row-names-mixed-and-unlisted-languages
+  (t/is (= "settings.multiple" (tl/language-label :multiple)))
+  (t/is (= "workspace.options.text-options.profile-japanese" (tl/language-label "ja")))
+  (t/is (= "zh-Hans" (tl/language-label "zh-Hans"))
+        "a tag outside the list shows as it is"))
+
+(t/deftest language-panel-without-language-only-offers-to-add-one
+  (let [markup (render-language-section nil)]
+    (t/is (str/includes? markup "data-testid=\"text-language-add\""))
+    (t/is (not (str/includes? markup "data-testid=\"text-language-select\"")))
+    (t/is (not (str/includes? markup "horizontal-tb-writing-mode"))
+          "writing mode needs a language")))
+
+(t/deftest language-panel-shows-the-options-of-the-chosen-language
+  (doseq [[language label] [["ja" "workspace.options.text-options.line-adjustment"]
+                            ["ko" "workspace.options.text-options.korean-wrap"]
+                            ["zh-Hant-HK" "workspace.options.text-options.text-emphasis"]]]
+    (let [markup (render-language-section language)]
+      (t/is (not (str/includes? markup "data-testid=\"text-language-add\"")))
+      (t/is (str/includes? markup "data-testid=\"text-language-select\""))
+      (t/is (str/includes? markup "data-testid=\"text-language-remove\""))
+      (t/is (str/includes? markup "horizontal-tb-writing-mode"))
+      (t/is (str/includes? markup label)))))
+
+(t/deftest file-language-shows-its-options-without-a-remove-button
+  (let [markup (render-language-section "ja" nil)]
+    (t/is (str/includes? markup "workspace.options.text-options.profile-japanese"))
+    (t/is (str/includes? markup "workspace.options.text-options.line-adjustment"))
+    (t/is (not (str/includes? markup "data-testid=\"text-language-remove\"")))
+    (t/is (not (str/includes? markup "data-testid=\"text-language-add\"")))))
+
+(t/deftest mixed-languages-hide-the-language-options
+  (let [markup (render-language-section :multiple)]
+    (t/is (str/includes? markup "settings.multiple"))
+    (t/is (str/includes? markup "data-testid=\"text-language-remove\""))
+    (t/is (not (str/includes? markup "data-testid=\"text-language-add\"")))
+    (t/is (not (str/includes? markup "horizontal-tb-writing-mode")))))
 
 (t/deftest korean-word-wrapping-is-distinct-from-the-saved-experiment
   (t/is (= ["syllable" "keep-words"]
            (mapv :id (tll/korean-wrap-options nil identity))))
   (t/is (= ["syllable" "keep-words" "spaces-only"]
-           (mapv :id (tll/korean-wrap-options "spaces-only" identity))))
-  (t/is (= "workspace.options.text-options.profile-chinese-taiwan"
-           (:label (select/get-option (tll/profile-options :chinese "zh-Hant-TW" identity) "zh-Hant-TW"))))
-  (t/is (= {:text-language "zh-Hant-CN"} (tll/profile-change "zh-Hant-CN"))))
+           (mapv :id (tll/korean-wrap-options "spaces-only" identity)))))
 
-(t/deftest language-specific-controls-require-an-explicit-matching-profile
+(t/deftest language-controls-follow-the-language
   (with-redefs [hooks/use-portal-container (fn ([] nil) ([_] nil))]
-    (doseq [[language attr label] [[:japanese "ja" "workspace.options.text-options.line-adjustment"]
-                                   [:korean "ko" "workspace.options.text-options.korean-wrap"]]
-            profile [nil :multiple "zh-Hans" attr]]
+    (doseq [[language label] [[:japanese "workspace.options.text-options.line-adjustment"]
+                              [:korean "workspace.options.text-options.korean-wrap"]]
+            shown [:japanese :chinese :korean]]
       (let [changes (atom [])
             markup (rds/renderToStaticMarkup
                     (mf/element tll/language-layout-options*
-                                #js {:language language
-                                     :values {:text-language profile}
+                                #js {:language shown
+                                     :values {}
                                      :on-change #(swap! changes conj %)}))]
-        (t/is (= (= profile attr) (str/includes? markup label)))
+        (t/is (= (= shown language) (str/includes? markup label)))
         (t/is (str/includes? markup "horizontal-tb-writing-mode"))
-        (t/is (empty? @changes) "Showing controls must not assign a profile")))))
+        (t/is (empty? @changes) "Showing controls must not edit text")))))
 
-
-(t/deftest chinese-decoration-controls-require-a-matching-profile
+(t/deftest chinese-decoration-controls-only-show-for-chinese
   (with-redefs [hooks/use-portal-container (fn ([] nil) ([_] nil))]
-    (doseq [profile [nil :multiple "ja" "ko" "zh-Hans-CN" "zh-Hant-TW"]]
-      (let [changes (atom [])
-            markup (rds/renderToStaticMarkup
+    (doseq [language [:japanese :chinese :korean]]
+      (let [markup (rds/renderToStaticMarkup
                     (mf/element tll/language-layout-options*
-                                (mf/props {:language :chinese
-                                           :values {:text-language profile}
-                                           :on-change #(swap! changes conj %)})))]
-        (doseq [label ["workspace.options.text-options.text-emphasis"
-                       "workspace.options.text-options.emphasis-position"
+                                (mf/props {:language language
+                                           :values {}
+                                           :on-change identity})))]
+        (doseq [label ["workspace.options.text-options.emphasis-position"
                        "workspace.options.text-options.underline-position"]]
-          (t/is (= (tl/profile-matches? :chinese profile) (str/includes? markup label))))
-        (t/is (empty? @changes))))))
+          (t/is (= (= :chinese language) (str/includes? markup label))))))))
 
-(t/deftest pinyin-reading-editor-requires-a-chinese-profile-and-text-selection
+(t/deftest pinyin-reading-editor-requires-a-text-selection
   (with-redefs [hooks/use-portal-container (fn ([] nil) ([_] nil))]
-    (doseq [profile [nil :multiple "ja" "ko" "zh-Hans" "zh-Hant-TW"]
-            selected [false true]]
+    (doseq [selected [false true]]
       (let [changes (atom [])
             markup (rds/renderToStaticMarkup
                     (mf/element tll/language-layout-options*
                                 (mf/props {:language :chinese
-                                           :values {:text-language profile :ruby "nǐ hǎo"}
+                                           :values {:text-language "zh-Hant-TW" :ruby "nǐ hǎo"}
                                            :ruby-values {:ruby-hidden true}
                                            :text-selection-active selected
                                            :reading-selection-active selected
                                            :on-change #(swap! changes conj %)
-                                           :on-ruby-presentation-change #(swap! changes conj %)})))
-            chinese (tl/profile-matches? :chinese profile)]
-        (t/is (= (and chinese selected)
+                                           :on-ruby-presentation-change #(swap! changes conj %)})))]
+        (t/is (= selected
                  (str/includes? markup "workspace.options.text-options.pinyin-placeholder")))
-        (t/is (= chinese
-                 (str/includes? markup "workspace.options.text-options.pinyin-advanced-options")))
+        (t/is (str/includes? markup "workspace.options.text-options.pinyin-advanced-options"))
         (t/is (not (str/includes? markup "workspace.options.text-options.ruby-placeholder")))
         (t/is (empty? @changes) "Showing Pinyin controls must not edit text")))))
 
@@ -368,7 +407,8 @@
     (t/is (= (:ruby-size cjk/enum-values) (ids (tjl/ruby-size-options identity))))
     (t/is (= (:ruby-align cjk/enum-values) (ids (tjl/ruby-align-options identity))))
     (t/is (= (:ruby-overhang cjk/enum-values) (ids (tjl/ruby-overhang-options identity))))
-    (t/is (= (:ruby-side cjk/enum-values) (ids (tjl/ruby-side-options identity))))
+    (t/is (= (:ruby-side cjk/enum-values) (ids (tjl/position-options :ruby-side false))))
+    (t/is (= (:ruby-side cjk/enum-values) (ids (tjl/position-options :ruby-side true))))
     (t/is (= (:line-adjustment cjk/enum-values) (ids (tjl/line-adjustment-options identity))))
     (t/is (every? #(cjk/valid-enum-value? :text-combine-upright %)
                   (values (tjl/text-combine-upright-options true identity))))
@@ -381,6 +421,7 @@
                           [{:type "paragraph-set"
                             :children
                             [{:type "paragraph"
+                              :text-language "ja"
                               :writing-mode "vertical-rl"
                               :text-orientation "upright"
                               :children [{:text "縦"}]}]}]}}
@@ -390,6 +431,37 @@
     (with-redefs [wm/vertical-layout-active? (constantly true)]
       (t/is (str/includes? (markup) "writing-mode:vertical-rl")))))
 
+(t/deftest vertical-writing-only-renders-under-a-cjk-language
+  (let [shape  {:id (random-uuid) :width 100 :height 100
+                :content {:type "root"
+                          :children
+                          [{:type "paragraph-set"
+                            :children
+                            [{:type "paragraph"
+                              :writing-mode "vertical-rl"
+                              :children [{:text "縦"}]}]}]}}
+        markup #(rds/renderToStaticMarkup (mf/element html-text/text-shape* #js {:shape shape}))]
+    (with-redefs [wm/vertical-layout-active? (constantly true)
+                  wm/get-file-language (constantly nil)]
+      (t/is (not (str/includes? (markup) "vertical-rl"))
+            "a text without language renders horizontal"))
+    (with-redefs [wm/vertical-layout-active? (constantly true)
+                  wm/get-file-language (constantly "zh-Hant-TW")]
+      (t/is (str/includes? (markup) "writing-mode:vertical-rl")
+            "a text without language takes the file language"))))
+
+(t/deftest vertical-controls-need-a-cjk-language
+  (with-redefs [wm/vertical-layout-active? (constantly true)
+                wm/get-file-language (constantly nil)]
+    (t/is (true? (wm/vertical-values? {:writing-mode "vertical-rl" :text-language "ko"})))
+    (t/is (true? (wm/vertical-values? {:writing-mode "vertical-rl" :text-language :multiple})))
+    (t/is (false? (wm/vertical-values? {:writing-mode "vertical-rl"})))
+    (t/is (false? (wm/vertical-values? {:writing-mode "vertical-rl" :text-language "en"})))
+    (t/is (false? (wm/vertical-values? {:writing-mode "horizontal-tb" :text-language "ja"}))))
+  (with-redefs [wm/vertical-layout-active? (constantly true)
+                wm/get-file-language (constantly "ja")]
+    (t/is (true? (wm/vertical-values? {:writing-mode "vertical-rl"})))))
+
 (defn- alignment-markup
   ([component writing-mode wasm-enabled]
    (alignment-markup component writing-mode wasm-enabled {}))
@@ -398,7 +470,7 @@
    (with-redefs [wm/vertical-layout-active? (constantly wasm-enabled)
                  hooks/use-portal-container (fn ([] nil) ([_] nil))]
      (rds/renderToStaticMarkup
-      (mf/element component #js {:values (assoc values :writing-mode writing-mode)
+      (mf/element component #js {:values (merge {:text-language "ja"} values {:writing-mode writing-mode})
                                  :on-change identity})))))
 
 (defn- alignment-labels
@@ -529,3 +601,45 @@
     (t/is (str/includes? html "ㄧ"))
     (t/is (str/includes? html "ˇ"))
     (t/is (not (str/includes? html "<rt")))))
+
+(t/deftest positions-show-only-the-sides-of-the-writing-mode
+  (let [labels #(mapv :label (tjl/position-options %1 %2))]
+    (t/is (= ["workspace.options.text-options.position-over"
+              "workspace.options.text-options.position-under"]
+             (labels :ruby-side false)))
+    (t/is (= ["workspace.options.text-options.position-right"
+              "workspace.options.text-options.position-left"]
+             (labels :ruby-side true)))
+    (t/is (= ["auto" "over" "under"] (mapv :id (tjl/position-options :text-emphasis-position false))))
+    (t/is (= ["auto" "right" "left"] (mapv :id (tjl/position-options :text-emphasis-position true))))
+    (t/is (= ["auto" "under"] (mapv :id (tjl/position-options :text-underline-position false))))
+    (t/is (= ["auto" "right" "left"] (mapv :id (tjl/position-options :text-underline-position true))))))
+
+(t/deftest picking-a-position-keeps-the-side-of-the-other-writing-mode
+  (t/is (= "under" (tjl/position-choice :text-emphasis-position false "under-left")))
+  (t/is (= "left" (tjl/position-choice :text-emphasis-position true "under-left")))
+  (t/is (= "auto" (tjl/position-choice :text-emphasis-position true "auto")))
+  (t/is (= "under-left" (tjl/position-value :text-emphasis-position false "over-left" "under")))
+  (t/is (= "under-right" (tjl/position-value :text-emphasis-position true "under-left" "right")))
+  (t/is (= "over-right" (tjl/position-value :text-emphasis-position false "auto" "over")))
+  (t/is (= "auto" (tjl/position-value :text-emphasis-position false "under-left" "auto")))
+  (t/is (= "under" (tjl/position-choice :text-underline-position false "under-right")))
+  (t/is (= "auto" (tjl/position-choice :text-underline-position false "left")))
+  (t/is (= "right" (tjl/position-choice :text-underline-position true "under-right")))
+  (t/is (= "under-left" (tjl/position-value :text-underline-position false "left" "under")))
+  (t/is (= "left" (tjl/position-value :text-underline-position false "under-left" "auto")))
+  (t/is (= "under-right" (tjl/position-value :text-underline-position true "under" "right")))
+  (t/is (= "under" (tjl/position-value :text-underline-position true "under-left" "auto")))
+  (t/is (= "under" (tjl/position-value :ruby-side true "over" "under")))
+  (t/is (= :multiple (tjl/position-choice :text-emphasis-position false :multiple))))
+
+(t/deftest distribute-comes-after-the-writing-mode-row
+  (with-redefs [hooks/use-portal-container (fn ([] nil) ([_] nil))]
+    (doseq [language [:japanese :chinese :korean]]
+      (let [markup (rds/renderToStaticMarkup
+                    (mf/element tll/language-layout-options*
+                                (mf/props {:language language :values {} :on-change identity})))]
+        (t/is (< (str/index-of markup "horizontal-tb-writing-mode")
+                 (str/index-of markup "workspace.options.text-options.text-align-distribute"))
+              (name language))))))
+

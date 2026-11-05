@@ -31,7 +31,6 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.common :refer [radio-selected]]
-   [app.main.ui.workspace.sidebar.options.menus.text-japanese-layout :as tjl]
    [app.main.ui.workspace.sidebar.options.menus.text-language-layout :as tll]
    [app.main.ui.workspace.sidebar.options.menus.token-typography-row :refer [token-typography-row*]]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [text-options* typography-entry*]]
@@ -40,7 +39,6 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
    [app.util.text.content :as content]
-   [app.util.text.layout :as tl]
    [app.util.text.ui :as txu]
    [app.util.text.writing-mode :as wm]
    [app.util.timers :as ts]
@@ -59,8 +57,7 @@
 
 (mf/defc text-align-options*
   [{:keys [values on-change on-blur]}]
-  (let [vertical? (and (wm/vertical-layout-active?)
-                       (tjl/vertical-japanese-layout? values))
+  (let [vertical? (wm/vertical-values? values)
         options
         (mf/with-memo [vertical?]
           [{:value "left"
@@ -101,8 +98,7 @@
 
 (mf/defc text-direction-options*
   [{:keys [values on-change on-blur]}]
-  (let [vertical? (and (wm/vertical-layout-active?)
-                       (tjl/vertical-japanese-layout? values))
+  (let [vertical? (wm/vertical-values? values)
         direction (radio-selected (:text-direction values))
         options
         (mf/with-memo []
@@ -131,8 +127,7 @@
 
 (mf/defc vertical-align*
   [{:keys [values on-change on-blur]}]
-  (let [vertical? (and (wm/vertical-layout-active?)
-                       (tjl/vertical-japanese-layout? values))
+  (let [vertical? (wm/vertical-values? values)
         vertical-align (radio-selected (:vertical-align values) "top")
         options
         (mf/with-memo [vertical?]
@@ -170,8 +165,7 @@
 
 (mf/defc grow-options*
   [{:keys [ids values on-blur]}]
-  (let [vertical?       (and (wm/vertical-layout-active?)
-                             (tjl/vertical-japanese-layout? values))
+  (let [vertical?       (wm/vertical-values? values)
         grow-type       (:grow-type values)
         selected        (radio-selected grow-type)
         editor-instance (mf/deref refs/workspace-editor)
@@ -371,26 +365,6 @@
 ;; Main component
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(mf/defc language-layout-section*
-  [{:keys [language title config options-props]}]
-  (let [open* (mf/use-state true)
-        open? (deref open*)
-        toggle-open (mf/use-fn #(swap! open* not))]
-    (when (tl/controls-enabled? config)
-      [:section {:class (stl/css :element-set)
-                 :data-keep-editing-on-blur true
-                 :aria-label title}
-       [:div {:class (stl/css :element-title)}
-        [:> title-bar* {:collapsable true
-                        :collapsed (not open?)
-                        :on-collapsed toggle-open
-                        :title title
-                        :class (stl/css :title-spacing-text)}]]
-       (when open?
-         [:div {:class (stl/css :element-content)}
-          [:> tll/language-layout-options*
-           (mf/spread-props options-props {:language language})]])])))
-
 (mf/defc text-menu*
   {::mf/wrap [#(mf/memo' % check-props)]}
   [{:keys [ids type values ruby-values text-selection-active reading-selection-active zhuyin-selection-active
@@ -402,7 +376,7 @@
         menu-state           (deref menu-state*)
         main-menu-open?      (:main-menu menu-state)
         more-options-open?   (:more-options menu-state)
-        layout-config (mf/deref refs/text-layout-config)
+        cjk-feature?         (features/use-feature "cjk-support")
 
         font-id         (or (:font-id values) (:font-id txt/default-typography))
 
@@ -713,15 +687,7 @@
             [:> text-decoration-options* (mf/spread-props common-props {:token-applied current-token-name})]
             [:> text-direction-options* common-props]])])]
 
-     [:> language-layout-section* {:language :japanese
-                                   :title (tr "workspace.options.text-options.japanese-layout")
-                                   :config (:japanese layout-config)
-                                   :options-props language-layout-props}]
-     [:> language-layout-section* {:language :chinese
-                                   :title (tr "workspace.options.text-options.chinese-layout")
-                                   :config (:chinese layout-config)
-                                   :options-props language-layout-props}]
-     [:> language-layout-section* {:language :korean
-                                   :title (tr "workspace.options.text-options.korean-layout")
-                                   :config (:korean layout-config)
-                                   :options-props language-layout-props}]]))
+     (when (and ^boolean cjk-feature? ^boolean (wm/vertical-layout-active?))
+       [:> tll/language-section* {:ids ids
+                                  :options-props language-layout-props
+                                  :on-change on-change}])]))

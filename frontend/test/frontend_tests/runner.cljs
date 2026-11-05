@@ -153,6 +153,7 @@
    [frontend-tests.ui.error-boundary-test]
    [frontend-tests.ui.file-restored-modal-test]
    [frontend-tests.ui.gradient-handlers-test]
+   [frontend-tests.ui.grouped-dropdown-test]
    [frontend-tests.ui.history-test]
    [frontend-tests.ui.inspect-geometry-test]
    [frontend-tests.ui.inspect-stroke-tokens-test]
@@ -165,6 +166,7 @@
    [frontend-tests.ui.routes-test]
    [frontend-tests.ui.settings-password-schema-test]
    [frontend-tests.ui.settings-shortcuts-test]
+   [frontend-tests.ui.settings-text-language-test]
    [frontend-tests.ui.shape-filters-test]
    [frontend-tests.ui.shortcuts-labels-test]
    [frontend-tests.ui.sidebar-scroll-test]
@@ -359,6 +361,7 @@
    'frontend-tests.ui.error-boundary-test
    'frontend-tests.ui.file-restored-modal-test
    'frontend-tests.ui.gradient-handlers-test
+   'frontend-tests.ui.grouped-dropdown-test
    'frontend-tests.ui.history-test
    'frontend-tests.ui.inspect-geometry-test
    'frontend-tests.ui.inspect-stroke-tokens-test
@@ -373,6 +376,7 @@
    'frontend-tests.text-editor-paste-guard-test
    'frontend-tests.ui.settings-password-schema-test
    'frontend-tests.ui.settings-shortcuts-test
+   'frontend-tests.ui.settings-text-language-test
    'frontend-tests.ui.shape-filters-test
    'frontend-tests.ui.shortcuts-labels-test
    'frontend-tests.ui.sidebar-scroll-test

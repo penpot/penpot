@@ -2424,3 +2424,47 @@ fn spread_lines_start_and_end_at_the_box_edges() {
         first.rect.left
     );
 }
+
+/// Japanese text distributes like the other languages (均等割り付け).
+#[test]
+fn japanese_distribution_reaches_the_box_edges() {
+    use skia::textlayout::{RectHeightStyle, RectWidthStyle};
+    init_state();
+    let mut resources =
+        crate::render::RenderResources::try_new_headless().expect("headless resources");
+    let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+    for text in ["日本", "にほんご", "東京都"] {
+        let mut paragraph = Paragraph::new(
+            TextAlign::Distribute,
+            TextDirection::LTR,
+            None,
+            None,
+            1.0,
+            0.0,
+            vec![TextSpan {
+                fills: vec![crate::shapes::Fill::Solid(crate::shapes::SolidColor(
+                    skia::Color::BLACK,
+                ))],
+                ..make_span(text, 0.0)
+            }],
+        );
+        paragraph.set_language("ja".to_string());
+        let bounds = crate::math::Rect::from_xywh(0.0, 0.0, 200.0, 200.0);
+        let mut content = TextContent::new(bounds, crate::shapes::GrowType::Fixed);
+        content.add_paragraph(paragraph);
+        content.update_layout(bounds);
+        let layout = &content.layout.paragraphs[0][0];
+        let line = &layout.get_line_metrics()[0];
+        let last = layout.get_rects_for_range(
+            line.end_excluding_whitespaces - 1..line.end_excluding_whitespaces,
+            RectHeightStyle::Tight,
+            RectWidthStyle::Tight,
+        )[0]
+        .rect;
+        assert!(
+            (last.right - 200.0).abs() < 0.1,
+            "{text}: ends at {}",
+            last.right
+        );
+    }
+}

@@ -21,6 +21,7 @@
    [app.main.data.workspace.tokens.selected-set :as dwts]
    [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.util.text.layout :as tl]
    [beicon.v2.core :as rx]
    [clojure.string :as str]
    [okulary.core :as l]))
@@ -247,6 +248,10 @@
 (def default-font
   (l/derived :default-font workspace-global))
 
+(def default-text-language
+  "Language the last text option change picked, for the next new texts."
+  (l/derived :default-text-language workspace-global))
+
 (def inspect-expanded
   (l/derived :inspect-expanded workspace-local))
 
@@ -289,22 +294,6 @@
 (def workspace-data
   "Currently working file data on workspace"
   (l/derived dsh/lookup-file-data st/state))
-
-(def text-layout-config
-  "Control availability by language; it never changes paragraph profiles."
-  (l/derived
-   (fn [state]
-     (let [file-data (dsh/lookup-file-data state)
-           props (dm/get-in state [:profile :props])
-           feature? (contains? (:features state) "vertical-text-layout")
-           config (fn [language]
-                    {:feature-enabled feature?
-                     :file? (ctf/text-layout-enabled? file-data language)
-                     :all-files? (true? (get props (ctf/text-layout-preference language)))})]
-       {:japanese (config :japanese)
-        :chinese (config :chinese)
-        :korean (config :korean)}))
-   st/state =))
 
 (def workspace-file-colors
   (l/derived (fn [{:keys [id] :as data}]
@@ -371,6 +360,39 @@
 (defn objects-by-id
   [ids]
   (l/derived #(into [] (keep (d/getf %)) ids) workspace-page-objects =))
+
+(def file-text-language
+  "Language of the texts of the open file that have none of their own."
+  (l/derived ctf/get-default-text-language workspace-data))
+
+(defn texts-language
+  "Language of the texts among `ids` and of the texts inside the groups
+  among them (see `tl/get-texts-language`): `:language` is the one they
+  render with, taking the file language when they have none, and `:own` the
+  one they store."
+  [ids]
+  (l/derived
+   (fn [state]
+     (let [objects  (dsh/lookup-page-objects state)
+           contents (into []
+                          (mapcat
+                           (fn [id]
+                             (let [shape (get objects id)]
+                               (cond
+                                 (cph/text-shape? shape)
+                                 [(:content shape)]
+
+                                 (cph/group-shape? shape)
+                                 (into []
+                                       (comp (map (d/getf objects))
+                                             (filter cph/text-shape?)
+                                             (map :content))
+                                       (cph/get-children-ids objects id))))))
+                          ids)]
+       {:language (tl/get-texts-language contents (ctf/get-default-text-language
+                                                   (dsh/lookup-file-data state)))
+        :own      (tl/get-texts-language contents)}))
+   st/state =))
 
 (defn parents-by-ids
   [ids]

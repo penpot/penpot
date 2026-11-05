@@ -18,6 +18,7 @@
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.profile :as profile]
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
@@ -38,7 +39,7 @@
   [{:keys [::db/conn] :as cfg}
    {:keys [id name project-id is-shared revn
            modified-at deleted-at create-page page-id
-           ignore-sync-until features]
+           ignore-sync-until features text-language]
     :or {is-shared false revn 0 create-page true}
     :as params}]
 
@@ -57,7 +58,10 @@
                                  :created-at modified-at
                                  :deleted-at deleted-at}
                                 {:create-page create-page
-                                 :page-id page-id})]
+                                 :page-id page-id})
+            file (cond-> file
+                   (some? text-language)
+                   (update :data ctf/set-default-text-language text-language))]
 
         (bfc/insert-file! cfg file)
 
@@ -102,9 +106,14 @@
                      (set/difference cfeat/frontend-only-features)
                      (set/union features))
 
+        ;; New files start with the text language the profile picked.
+        language (-> (profile/get-profile conn profile-id)
+                     (get-in [:props :default-text-language]))
+
         params   (-> params
                      (assoc :profile-id profile-id)
-                     (assoc :features features))]
+                     (assoc :features features)
+                     (assoc :text-language language))]
 
     (quotes/check! cfg {::quotes/id ::quotes/files-per-project
                         ::quotes/team-id team-id

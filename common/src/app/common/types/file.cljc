@@ -28,6 +28,7 @@
    [app.common.types.plugins :refer [schema:plugin-data]]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.text :as ctsx]
    [app.common.types.text :as txt]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
@@ -78,9 +79,9 @@
   [:map {:title "FileOptions"}
    [:components-v2 {:optional true} ::sm/boolean]
    [:base-font-size {:optional true} :string]
-   [:japanese-layout {:optional true} ::sm/boolean]
-   [:chinese-layout {:optional true} ::sm/boolean]
-   [:korean-layout {:optional true} ::sm/boolean]])
+   ;; Language of the texts that have none of their own (see
+   ;; `get-default-text-language`).
+   [:text-language {:optional true} ctsx/schema:text-language]])
 
 (def schema:data
   [:map {:title "FileData"}
@@ -1265,33 +1266,20 @@
   [file-data base-font-size]
   (assoc-in file-data [:options :base-font-size] base-font-size))
 
+;; Default text language
 
-;; Text layout controls
+(defn get-default-text-language
+  "Language (a BCP 47 tag) of the texts of the file that have none of their
+  own, or nil."
+  [file-data]
+  (get-in file-data [:options :text-language]))
 
-(defn text-layout-option
-  [language]
-  (case language
-    :japanese :japanese-layout
-    :chinese :chinese-layout
-    :korean :korean-layout))
-
-(defn text-layout-preference
-  [language]
-  (case language
-    :japanese :japanese-layout-all-files
-    :chinese :chinese-layout-all-files
-    :korean :korean-layout-all-files))
-
-(defn text-layout-enabled?
+(defn set-default-text-language
+  "Set the file text language; nil removes it."
   [file-data language]
-  (true? (get-in file-data [:options (text-layout-option language)])))
-
-(defn set-text-layout-enabled
-  [file-data language enabled?]
-  (let [option (text-layout-option language)]
-    (if enabled?
-      (assoc-in file-data [:options option] true)
-      (d/update-in-when file-data [:options] dissoc option))))
+  (if (some? language)
+    (assoc-in file-data [:options :text-language] language)
+    (d/update-in-when file-data [:options] dissoc :text-language)))
 
 
 ;; Ref Chains

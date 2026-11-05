@@ -24,11 +24,13 @@
 
 (defn v2-default-text-content
   "Build the base text tree (root -> paragraph-set -> paragraph -> span) with the
-  current default typography. Used by the V2 editor/WASM path when a shape is
-  created with no content yet."
+  current default typography and the remembered text language. Used by the V2
+  editor/WASM path when a shape is created with no content yet."
   []
   (let [default-font  (deref refs/default-font)
-        text-defaults (merge (txt/get-default-text-attrs) default-font)
+        language      (deref refs/default-text-language)
+        text-defaults (cond-> (merge (txt/get-default-text-attrs) default-font)
+                        (some? language) (assoc :text-language language))
         default-span  (merge {:text ""}
                              (select-keys text-defaults txt/text-node-attrs))
         default-paragraph (merge {:type "paragraph"

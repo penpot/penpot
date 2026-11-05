@@ -9,7 +9,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.common.types.text.cjk-layout :as cjk]
    [app.config :as cf]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
@@ -24,6 +23,7 @@
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.text.geometry :as text.geom]
+   [app.util.text.writing-mode :as wm]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -351,7 +351,7 @@
 
         clip-id   (dm/str "text-edition-clip" shape-id)
 
-        vertical? (cjk/vertical-text-content? (:content shape))
+        vertical? (wm/vertical-text-content? (:content shape))
 
         contenteditable-ref (mf/use-ref nil)
 

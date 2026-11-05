@@ -415,7 +415,7 @@
           (assoc :recent-fonts (:recent-fonts storage/user))
           (assoc :current-file-id file-id)
           (assoc :workspace-presence {})
-          (update :workspace-global dissoc :default-font)
+          (update :workspace-global dissoc :default-font :default-text-language)
           (update :comments-local dcmt/merge-persisted-filters)))
 
     ptk/WatchEvent
@@ -530,6 +530,13 @@
                     (rx/map (fn [{:keys [ids]}]
                               (dwwt/resize-wasm-text-all ids {:skip-component-sync? true}))))
 
+               ;; Lay out again the texts that take the file language when it
+               ;; changes, also on undo, redo and changes from other sessions.
+               (->> stream
+                    (rx/filter (ptk/type? ::dch/default-text-language-changed))
+                    (rx/filter render-wasm-ready?)
+                    (rx/map #(dwwt/refresh-file-language-texts)))
+
                (let [local-commits-s
                      (->> stream
                           (rx/filter dch/commit?)
@@ -627,7 +634,7 @@
            :workspace-undo
            :workspace-versions)
           (update :workspace-global dissoc :read-only? :preview-id :default-font
-                  :persistence-lock)
+                  :default-text-language :persistence-lock)
           (assoc-in [:workspace-global :options-mode] :design)
           (update :files d/update-vals #(dissoc % :data))))
 
@@ -690,16 +697,20 @@
 (dm/export layout/toggle-layout-flag)
 (dm/export layout/remove-layout-flag)
 
-(defn set-text-layout
-  [language enabled?]
-  (ptk/reify ::set-text-layout
+(defn set-default-text-language
+  "Set the language of the file texts that have none of their own; nil
+  removes it. The language remembered for new texts is dropped, so they take
+  the new file language. The workspace lays the texts out again once the
+  change applies (see `initialize-workspace`)."
+  [language]
+  (ptk/reify ::set-default-text-language
     ptk/WatchEvent
     (watch [it state _]
-      (let [file-data (dsh/lookup-file-data state)
-            changes (-> (pcb/empty-changes it)
-                        (pcb/with-file-data file-data)
-                        (pcb/set-text-layout language enabled?))]
-        (rx/of (dch/commit-changes changes))))))
+      (let [changes (-> (pcb/empty-changes it)
+                        (pcb/with-file-data (dsh/lookup-file-data state))
+                        (pcb/set-default-text-language language))]
+        (rx/of (dch/commit-changes changes)
+               (dwtxt/remember-text-language nil))))))
 
 ;; --- Profile
 
