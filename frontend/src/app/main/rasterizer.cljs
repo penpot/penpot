@@ -25,6 +25,7 @@
 (defonce ready? false)
 (defonce queue #js [])
 (defonce instance nil)
+(defonce started? false)
 (defonce msgbus (rx/subject))
 (defonce origin
   (-> cf/rasterizer-uri
@@ -32,6 +33,7 @@
       (dm/str)))
 
 (declare send-message!)
+(declare init!)
 
 (defn- process-queued-messages!
   []
@@ -86,6 +88,8 @@
                      :scope "penpot/rasterizer"
                      :payload payload}]
 
+    (init!)
+
     (if ^boolean ready?
       (send-message! message)
       (queue-message! message))
@@ -108,39 +112,42 @@
     (render {:data data :styles styles :width width :result result})))
 
 (defn init!
-  "Initializes the rasterizer."
+  "Creates the rasterizer iframe once. It is only needed by the SVG
+  renderer, so sessions with render-wasm never load it."
   []
-  (let [iframe (dom/create-element "iframe")]
-    (dom/set-attribute! iframe "id" "rasterizer")
-    (dom/set-attribute! iframe "src" origin)
-    (dom/set-attribute! iframe "hidden" true)
-    (.addEventListener js/window "message" on-message)
-    (->> (http/fetch {:method :head
-                      :uri cf/rasterizer-uri
-                      :mode :no-cors})
-         (rx/map (fn [response]
-                   (let [allowed? (not (.-redirected response))]
-                     (when-not allowed?
-                       (log/err :hint "rasterizer iframe blocked by adblocker" :origin origin))
-                     allowed?)))
-         (rx/catch (fn [cause]
-                     (log/err :hint "rasterizer iframe blocked by adblocker" :origin origin :cause cause)
-                     (rx/of false)))
+  (when-not ^boolean started?
+    (set! started? true)
+    (let [iframe (dom/create-element "iframe")]
+      (dom/set-attribute! iframe "id" "rasterizer")
+      (dom/set-attribute! iframe "src" origin)
+      (dom/set-attribute! iframe "hidden" true)
+      (.addEventListener js/window "message" on-message)
+      (->> (http/fetch {:method :head
+                        :uri cf/rasterizer-uri
+                        :mode :no-cors})
+           (rx/map (fn [response]
+                     (let [allowed? (not (.-redirected response))]
+                       (when-not allowed?
+                         (log/err :hint "rasterizer iframe blocked by adblocker" :origin origin))
+                       allowed?)))
+           (rx/catch (fn [cause]
+                       (log/err :hint "rasterizer iframe blocked by adblocker" :origin origin :cause cause)
+                       (rx/of false)))
 
-         (rx/subs! (fn [allowed?]
-                     (if allowed?
-                       (do
-                         (dom/append-child! js/document.body iframe)
-                         (set! instance iframe))
+           (rx/subs! (fn [allowed?]
+                       (if allowed?
+                         (do
+                           (dom/append-child! js/document.body iframe)
+                           (set! instance iframe))
 
-                       (let [new-origin (-> cf/public-uri
-                                            (u/join "rasterizer.html")
-                                            (dm/str))]
-                         (log/warn :hint "fallback to main domain" :origin new-origin)
+                         (let [new-origin (-> cf/public-uri
+                                              (u/join "rasterizer.html")
+                                              (dm/str))]
+                           (log/warn :hint "fallback to main domain" :origin new-origin)
 
-                         (dom/set-attribute! iframe "src" new-origin)
-                         (dom/append-child! js/document.body iframe)
+                           (dom/set-attribute! iframe "src" new-origin)
+                           (dom/append-child! js/document.body iframe)
 
-                         (set! origin new-origin)
-                         (set! cf/rasterizer-uri cf/public-uri)
-                         (set! instance iframe))))))))
+                           (set! origin new-origin)
+                           (set! cf/rasterizer-uri cf/public-uri)
+                           (set! instance iframe)))))))))

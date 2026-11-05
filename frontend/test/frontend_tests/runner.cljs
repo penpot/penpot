@@ -41,6 +41,7 @@
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
    [frontend-tests.data.workspace-variant-rename-test]
+   [frontend-tests.data.workspace-variants-test]
    [frontend-tests.data.workspace-versions-test]
    [frontend-tests.debug-logging-test]
    [frontend-tests.errors-governor-test]
@@ -71,6 +72,7 @@
    [frontend-tests.main.refs-test]
    [frontend-tests.plugins.comments-test]
    [frontend-tests.plugins.context-shapes-test]
+   [frontend-tests.plugins.creation-parent-test]
    [frontend-tests.plugins.events-test]
    [frontend-tests.plugins.file-test]
    [frontend-tests.plugins.flex-test]
@@ -93,6 +95,7 @@
    [frontend-tests.render-dimensions-test]
    [frontend-tests.render-wasm.process-objects-test]
    [frontend-tests.render-wasm.serialization-test]
+   [frontend-tests.render-wasm.shape-proxy-test]
    [frontend-tests.render-wasm.text-editor-apply-styles-test]
    [frontend-tests.render-wasm.text-editor-caret-color-test]
    [frontend-tests.render-wasm.text-editor-content-range-test]
@@ -111,10 +114,15 @@
    [frontend-tests.tokens.logic.tokens-source-test]
    [frontend-tests.tokens.logic.tokens-status-test]
    [frontend-tests.tokens.referenced-token-value-test]
+   [frontend-tests.tokens.shadow-form-test]
    [frontend-tests.tokens.style-dictionary-test]
    [frontend-tests.tokens.token-errors-test]
+   [frontend-tests.tokens.token-parsing-test]
    [frontend-tests.tokens.token-path-test]
+   [frontend-tests.tokens.token-pill-test]
+   [frontend-tests.tokens.token-tree-test]
    [frontend-tests.tokens.tokenscript-test]
+   [frontend-tests.tokens.typography-form-test]
    [frontend-tests.tokens.workspace-tokens-remap-test]
    [frontend-tests.ui.check-updates-test]
    [frontend-tests.ui.color-token-position-test]
@@ -164,6 +172,7 @@
    [frontend-tests.worker.exports-test]
    [frontend-tests.worker.index-test]
    [frontend-tests.worker.messages-test]
+   [frontend-tests.worker.trim-test]
    [goog.object :as gobj]))
 
 (enable-console-print!)
@@ -201,6 +210,7 @@
    'frontend-tests.worker.exports-test
    'frontend-tests.worker.index-test
    'frontend-tests.worker.messages-test
+   'frontend-tests.worker.trim-test
    'frontend-tests.data.svg-upload-test
    'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test
@@ -217,6 +227,7 @@
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
    'frontend-tests.data.workspace-variant-rename-test
+   'frontend-tests.data.workspace-variants-test
    'frontend-tests.data.workspace-versions-test
    'frontend-tests.debug-logging-test
    'frontend-tests.errors-governor-test
@@ -247,6 +258,7 @@
    'frontend-tests.logic.wasm-pixel-snap-test
    'frontend-tests.plugins.comments-test
    'frontend-tests.plugins.context-shapes-test
+   'frontend-tests.plugins.creation-parent-test
    'frontend-tests.plugins.events-test
    'frontend-tests.plugins.management-test
    'frontend-tests.plugins.file-test
@@ -268,6 +280,7 @@
    'frontend-tests.plugins.value-objects-test
    'frontend-tests.render-wasm.process-objects-test
    'frontend-tests.render-wasm.serialization-test
+   'frontend-tests.render-wasm.shape-proxy-test
    'frontend-tests.render-wasm.text-editor-apply-styles-test
    'frontend-tests.render-wasm.text-editor-caret-color-test
    'frontend-tests.render-wasm.text-editor-content-range-test
@@ -284,10 +297,15 @@
    'frontend-tests.tokens.logic.token-data-test
    'frontend-tests.tokens.logic.token-remapping-test
    'frontend-tests.tokens.referenced-token-value-test
+   'frontend-tests.tokens.shadow-form-test
    'frontend-tests.tokens.style-dictionary-test
    'frontend-tests.tokens.token-errors-test
+   'frontend-tests.tokens.token-parsing-test
    'frontend-tests.tokens.token-path-test
+   'frontend-tests.tokens.token-pill-test
+   'frontend-tests.tokens.token-tree-test
    'frontend-tests.tokens.tokenscript-test
+   'frontend-tests.tokens.typography-form-test
    'frontend-tests.tokens.logic.tokens-source-test
    'frontend-tests.tokens.logic.tokens-status-test
    'frontend-tests.tokens.workspace-tokens-remap-test

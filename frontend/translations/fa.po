@@ -2491,10 +2491,6 @@ msgstr ""
 msgid "integrations.mcp-server.title"
 msgstr "سرور MCP"
 
-#: src/app/main/ui/settings/integrations.cljs:493
-msgid "integrations.mcp-server.title.beta"
-msgstr "بتا"
-
 #: src/app/main/ui/settings/integrations.cljs:200
 msgid "integrations.name.label"
 msgstr "نام"

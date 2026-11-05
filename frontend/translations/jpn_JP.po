@@ -2438,10 +2438,6 @@ msgstr "MCPキーを再生成し、新しいキーでクライアントの設定
 msgid "integrations.mcp-server.title"
 msgstr "MCPサーバー"
 
-#: src/app/main/ui/settings/integrations.cljs:493
-msgid "integrations.mcp-server.title.beta"
-msgstr "ベータ"
-
 #: src/app/main/ui/settings/integrations.cljs:200
 msgid "integrations.name.label"
 msgstr "名前"

@@ -2370,10 +2370,6 @@ msgstr "請重新產生 MCP 金鑰，並使用新金鑰更新用戶端設定。"
 msgid "integrations.mcp-server.title"
 msgstr "MCP 伺服器"
 
-#: src/app/main/ui/settings/integrations.cljs:493
-msgid "integrations.mcp-server.title.beta"
-msgstr "測試版"
-
 #: src/app/main/ui/settings/integrations.cljs:200
 msgid "integrations.name.label"
 msgstr "名稱"

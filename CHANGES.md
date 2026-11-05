@@ -120,6 +120,19 @@
 - Delete selected path handles with Backspace or Delete [#11858](https://github.com/penpot/penpot/issues/11858) (PR: [#11896](https://github.com/penpot/penpot/pull/11896))
 - Use the tooltip component in the token pill info [#11886](https://github.com/penpot/penpot/issues/11886) (PR: [#11900](https://github.com/penpot/penpot/pull/11900))
 - Hide the duplicate cursor when alt-dragging a shape that cannot be duplicated (by @0xTHAC0) [#11905](https://github.com/penpot/penpot/issues/11905) (PR: [#11195](https://github.com/penpot/penpot/pull/11195))
+
+## 2.18.6
+
+### :bug: Bugs fixed
+
+- Fix upload endpoints storing server files when the path points outside the temp dir [#12771](https://github.com/penpot/penpot/issues/12771) (PR: [#12772](https://github.com/penpot/penpot/pull/12772))
+
+## 2.18.5
+
+### :bug: Bugs fixed
+
+- Fix the Admin Console failing on every URL on Docker deployments by reverting the subpath support [#12358](https://github.com/penpot/penpot/pull/12358)
+
 ## 2.18.4
 
 ### :bug: Bugs fixed

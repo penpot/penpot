@@ -94,23 +94,34 @@
 
     [:header {:class (stl/css :dashboard-header :team) :data-testid "dashboard-header"}
      [:div {:class (stl/css :dashboard-title)}
-      [:h1 (cond
-             members-section? (tr "labels.members")
-             settings-section? (tr "labels.settings")
-             invitations-section? (tr "labels.invitations")
-             webhooks-section? (tr "labels.webhooks")
-             :else nil)]]
+      [:> heading* {:level 1
+                    :typography t/title-large
+                    :class (stl/css :dashboard-title-text)}
+       (cond
+         members-section? (tr "labels.members")
+         settings-section? (tr "labels.settings")
+         invitations-section? (tr "labels.invitations")
+         webhooks-section? (tr "labels.webhooks")
+         :else nil)]]
      [:nav {:class (stl/css :dashboard-header-menu)}
       [:ul {:class (stl/css :dashboard-header-options)}
-       [:li {:class (when members-section? (stl/css :active))}
-        [:a {:on-click on-nav-members} (tr "labels.members")]]
-       [:li {:class (when invitations-section? (stl/css :active))}
-        [:a {:on-click on-nav-invitations} (tr "labels.invitations")]]
+       [:li
+        [:a {:class (stl/css-case :dashboard-header-link true
+                                  :active members-section?)
+             :on-click on-nav-members} (tr "labels.members")]]
+       [:li
+        [:a {:class (stl/css-case :dashboard-header-link true
+                                  :active invitations-section?)
+             :on-click on-nav-invitations} (tr "labels.invitations")]]
        (when (contains? cfg/flags :webhooks)
-         [:li {:class (when webhooks-section? (stl/css :active))}
-          [:a {:on-click on-nav-webhooks} (tr "labels.webhooks")]])
-       [:li {:class (when settings-section? (stl/css :active))}
-        [:a {:on-click on-nav-settings} (tr "labels.settings")]]]]
+         [:li
+          [:a {:class (stl/css-case :dashboard-header-link true
+                                    :active webhooks-section?)
+               :on-click on-nav-webhooks} (tr "labels.webhooks")]])
+       [:li
+        [:a {:class (stl/css-case :dashboard-header-link true
+                                  :active settings-section?)
+             :on-click on-nav-settings} (tr "labels.settings")]]]]
      [:div {:class (stl/css :dashboard-buttons)}
       (when (and (or invitations-section? members-section?) (not-empty invitations))
         (let [invite-button (mf/html

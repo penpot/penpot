@@ -52,6 +52,13 @@
     (t/is (= :authentication (th/ex-type (:error out))))
     (t/is (= :authentication-required (th/ex-code (:error out))))))
 
+(t/deftest authenticate-rejects-a-key-it-does-not-declare
+  (let [out (th/management-command! {::th/type :authenticate
+                                     ::rpc/auth-key-id :exporter})]
+    (t/is (not (th/success? out)))
+    (t/is (= :authorization (th/ex-type (:error out))))
+    (t/is (= :shared-key-not-allowed (th/ex-code (:error out))))))
+
 (t/deftest create-and-update-organization-invitations-audit-props
   (let [owner-id-ref (atom nil)]
     (with-mocks [email-mock {:target 'app.email/send :return nil}
@@ -816,6 +823,34 @@
       (t/is (not (th/success? ko-out)))
       (t/is (= :not-found (th/ex-type (:error ko-out))))
       (t/is (= :profile-not-found (th/ex-code (:error ko-out)))))))
+
+(t/deftest get-profiles-by-ids-existing-only-deduped-and-empty
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile-a (th/create-profile* 1 {:is-active true
+                                           :fullname "Batch A"})
+          profile-b (th/create-profile* 2 {:is-active true
+                                           :fullname "Batch B"})
+          unknown   (uuid/random)
+          params    {::th/type :get-profiles-by-ids
+                     ::rpc/profile-id (:id profile-a)}
+          out       (th/management-command! (assoc params :ids [(:id profile-a)
+                                                                (:id profile-b)
+                                                                unknown]))
+          dup-out   (th/management-command! (assoc params :ids [(:id profile-a)
+                                                                (:id profile-a)]))
+          empty-out (th/management-command! (assoc params :ids []))]
+      (t/is (th/success? out))
+      (t/is (= #{(:id profile-a) (:id profile-b)}
+               (set (map :id (:result out)))))
+      (t/is (= #{"Batch A" "Batch B"}
+               (set (map :name (:result out)))))
+      (t/is (every? #(contains? % :email) (:result out)))
+
+      (t/is (th/success? dup-out))
+      (t/is (= 1 (count (:result dup-out))))
+
+      (t/is (th/success? empty-out))
+      (t/is (= [] (:result empty-out))))))
 
 (t/deftest get-organization-invitations-returns-valid-deduped-by-email
   ;; --- Deferred organization-summary: nil during setup, filled before RPC ---

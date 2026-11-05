@@ -243,7 +243,8 @@
                     (+ (:x2 (:selrect shape)) (get-in shape [:layout-item-margin :m2])))
                 y (:y1 block)
                 h (- (:y2 block) (:y1 block))]
-            {:x x
+            {:key (str frame-id "-" (:id shape))
+             :x x
              :y y
              :height h
              :width (:column-gap gap)
@@ -254,7 +255,7 @@
              :gap-type (if is-col? :row-gap :column-gap)}))
 
         create-cgdd-block
-        (fn [block]
+        (fn [index block]
           (let [x (if flip-x
                     (- (:x1 block) (:column-gap gap))
                     (:x2 block))
@@ -262,7 +263,8 @@
                     (+ y1 (:p3 padding))
                     (+ y1 (:p1 padding)))
                 h (- height (+ (:p1 padding) (:p3 padding)))]
-            {:x x
+            {:key (str frame-id "-block-" index)
+             :x x
              :y y
              :width (:column-gap gap)
              :height h
@@ -282,7 +284,8 @@
                        (:row-gap gap))
                     (+ (:y2 (:selrect shape)) (get-in shape [:layout-item-margin :m3])))
                 w (- (:x2 block) (:x1 block))]
-            {:x x
+            {:key (str frame-id "-" (:id shape))
+             :x x
              :y y
              :width w
              :height (:row-gap gap)
@@ -293,7 +296,7 @@
              :gap-type (if is-col? :row-gap :column-gap)}))
 
         create-rgdd-block
-        (fn [block]
+        (fn [index block]
           (let [x (if flip-x
                     (+ x1 (:p2 padding))
                     (+ x1 (:p4 padding)))
@@ -301,7 +304,8 @@
                     (- (:y1 block) (:row-gap gap))
                     (:y2 block))
                 w (- width (+ (:p2 padding) (:p4 padding)))]
-            {:x x
+            {:key (str frame-id "-block-" index)
+             :x x
              :y y
              :width w
              :height (:row-gap gap)
@@ -313,9 +317,9 @@
 
         display-blocks (if is-col?
                          (->> (drop-last wrap-blocks)
-                              (map create-cgdd-block))
+                              (map-indexed create-cgdd-block))
                          (->> (drop-last wrap-blocks)
-                              (map create-rgdd-block)))
+                              (map-indexed create-rgdd-block)))
 
         display-children (if is-col?
                            (->> children-to-display
@@ -324,10 +328,10 @@
                                 (map create-cgdd)))]
 
     [:g.gaps {:pointer-events "visible"}
-     (for [[index display-item] (d/enumerate (concat display-blocks display-children))]
+     (for [display-item (concat display-blocks display-children)]
        (let [gap-type (:gap-type display-item)]
          [:> gap-display*
-          {:key (str frame-id index)
+          {:key (:key display-item)
            :frame-id frame-id
            :zoom zoom
            :gap-type gap-type

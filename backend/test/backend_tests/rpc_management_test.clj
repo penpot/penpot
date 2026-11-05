@@ -82,6 +82,29 @@
     (t/is (= :validation (th/ex-type (:error out))))
     (t/is (= :media-type-not-allowed (th/ex-code (:error out))))))
 
+(t/deftest upload-tempfile-rejects-a-key-it-does-not-declare
+  (let [out (th/management-command! {::th/type :upload-tempfile
+                                     ::rpc/auth-key-id :nexus})]
+    (t/is (some? (:error out)))
+    (t/is (= :authorization (th/ex-type (:error out))))
+    (t/is (= :shared-key-not-allowed (th/ex-code (:error out))))))
+
+(t/deftest upload-tempfile-accepts-both-declared-keys
+  (let [profile (th/create-profile* 1 {:is-active true})]
+    (doseq [key-id [:exporter :media-processor]]
+      (let [path (fs/create-tempfile :dir "/tmp/penpot"
+                                     :prefix (str "test-upload-" (name key-id) "-"))
+            _    (io/write* path "content")
+            out  (th/multipart-management-command!
+                  {::th/type :upload-tempfile
+                   ::rpc/auth-key-id key-id
+                   ::rpc/profile-id (:id profile)
+                   :content {:filename "export.png"
+                             :path path
+                             :mtype "image/png"
+                             :size 7}})]
+        (t/is (nil? (:error out)) (name key-id))))))
+
 (t/deftest duplicate-file
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
