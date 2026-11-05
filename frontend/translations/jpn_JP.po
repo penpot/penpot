@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-15 17:18+0000\n"
-"Last-Translator: Tatsuto Yamamoto <me@laminne33569.net>\n"
-"Language-Team: Japanese "
-"<https://hosted.weblate.org/projects/penpot/frontend/ja/>\n"
+"PO-Revision-Date: 2026-11-05 22:19+0000\n"
+"Last-Translator: Andrey Antukh <niwinz@users.noreply.hosted.weblate.org>\n"
+"Language-Team: Japanese <https://hosted.weblate.org/projects/penpot/frontend/"
+"ja/>\n"
 "Language: jpn_JP\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 2026.10.dev0\n"
+"X-Generator: Weblate 2026.11.2.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:191, src/app/main/ui/viewer/login.cljs:119
 msgid "auth.already-have-account"
@@ -1652,8 +1652,11 @@ msgid "errors.registration-disabled"
 msgstr "新規登録は現在無効になっています。"
 
 #: src/app/main/errors.cljs:538
+#, fuzzy
 msgid "errors.save-failed"
-msgstr "エラーのため自動保存が機能していません。サポートに連絡してエラーを報告し、再読み込みして最後に保存されたバージョンから続けてください。"
+msgstr ""
+"エラーのため自動保存が機能していません。サポートに連絡してエラーを報告し、再"
+"読み込みして最後に保存されたバージョンから続けてください。"
 
 #: src/app/main/data/persistence.cljs:307
 msgid "errors.save-retrying"
@@ -2013,10 +2016,12 @@ msgid "generic.error"
 msgstr "エラーが発生しました"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:161
+#, fuzzy
 msgid "import-shortcuts.apply"
 msgstr "適用"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:102
+#, fuzzy
 msgid "import-shortcuts.diff-modal-text"
 msgstr "インポートした設定により、次のショートカットが変更されます。"
 
@@ -4434,14 +4439,17 @@ msgid "restore-shortcuts.action"
 msgstr "アクション"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:94
+#, fuzzy
 msgid "restore-shortcuts.modal-text"
 msgstr "次のショートカットがデフォルト値に戻されます。"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:90
+#, fuzzy
 msgid "restore-shortcuts.modal-title"
 msgstr "デフォルト設定に戻す"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:170
+#, fuzzy
 msgid "restore-shortcuts.restore"
 msgstr "復元"
 
@@ -4634,18 +4642,24 @@ msgid "shortcuts.duplicate"
 msgstr "複製"
 
 #: src/app/main/ui/shortcuts.cljs:645
+#, fuzzy
 msgid "shortcuts.edit-modal.conflict"
-msgstr "このキーの組み合わせは「%s」に割り当てられています。保存すると、そちらの割り当ては削除されます。"
+msgstr ""
+"このキーの組み合わせは「%s」に割り当てられています。保存すると、そちらの割り"
+"当ては削除されます。"
 
 #: src/app/main/ui/shortcuts.cljs:636
+#, fuzzy
 msgid "shortcuts.edit-modal.reset-pending"
 msgstr "保存すると、このショートカットは元の値に戻ります："
 
 #: src/app/main/ui/shortcuts.cljs:647
+#, fuzzy
 msgid "shortcuts.edit-modal.success"
 msgstr "このキーの組み合わせは使用可能で、競合なく割り当てられます。"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:157
+#, fuzzy
 msgid "shortcuts.edit-on-settings"
 msgstr "設定でカスタマイズ"
 
@@ -4678,10 +4692,12 @@ msgid "shortcuts.flip-vertical"
 msgstr "上下反転"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:263
+#, fuzzy
 msgid "shortcuts.font-size-dec"
 msgstr "フォントサイズを小さく"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:256
+#, fuzzy
 msgid "shortcuts.font-size-inc"
 msgstr "フォントサイズを大きく"
 
@@ -4730,6 +4746,7 @@ msgid "shortcuts.join-nodes"
 msgstr "ノードを連結"
 
 #: src/app/main/ui/shortcuts.cljs:624
+#, fuzzy
 msgid "shortcuts.key-combo"
 msgstr "キーの組み合わせを押してください"
 
@@ -4798,18 +4815,22 @@ msgid "shortcuts.next-frame"
 msgstr "次のボード"
 
 #: src/app/main/ui/settings/shortcuts.cljs:510
+#, fuzzy
 msgid "shortcuts.no-disabled"
 msgstr "無効なショートカットはありません"
 
 #: src/app/main/ui/settings/shortcuts.cljs:500
+#, fuzzy
 msgid "shortcuts.no-personalized"
 msgstr "「すべて」からショートカットのカスタマイズを始めましょう。"
 
 #: src/app/main/ui/settings/shortcuts.cljs:242, src/app/main/ui/settings/shortcuts.cljs:491
+#, fuzzy
 msgid "shortcuts.no-shortcuts"
 msgstr "検索に一致するショートカットはありません"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:154
+#, fuzzy
 msgid "shortcuts.not-found"
 msgstr "ショートカットが見つかりません"
 
@@ -4886,6 +4907,7 @@ msgid "shortcuts.or"
 msgstr " または "
 
 #: src/app/main/ui/shortcuts.cljs:605, src/app/main/ui/shortcuts.cljs:747
+#, fuzzy
 msgid "shortcuts.overwritten-by"
 msgstr "このショートカットは%sに再割り当てされました"
 
@@ -4906,6 +4928,7 @@ msgid "shortcuts.paste-replace"
 msgstr "貼り付けて置換"
 
 #: src/app/main/ui/settings/shortcuts.cljs:296, src/app/main/ui/settings/shortcuts.cljs:523
+#, fuzzy
 msgid "shortcuts.personalized"
 msgstr "カスタマイズ済み"
 
@@ -5048,6 +5071,7 @@ msgid "shortcuts.subsection.shape"
 msgstr "シェイプ"
 
 #: src/app/main/ui/shortcuts.cljs:143
+#, fuzzy
 msgid "shortcuts.subsection.text-editor"
 msgstr "テキスト"
 
@@ -5470,6 +5494,7 @@ msgid "subscription.settings.management.dialog.unlimited-capped-warning"
 msgstr "ヒント：招待に備えて、今のうちにシート数を増やしておけます。チーム全体で編集者が25人以上になると、月額$175の定額料金になります。"
 
 #: src/app/main/ui/settings/subscription.cljs:714
+#, fuzzy
 msgid "subscription.settings.member-since"
 msgstr "Penpotメンバー登録日：%s"
 
