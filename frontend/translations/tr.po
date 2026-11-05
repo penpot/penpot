@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-29 08:51+0000\n"
-"Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
+"PO-Revision-Date: 2026-11-05 22:19+0000\n"
+"Last-Translator: Andrey Antukh <niwinz@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
 "Language: tr\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.10.dev0\n"
+"X-Generator: Weblate 2026.11.2.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:191, src/app/main/ui/viewer/login.cljs:119
 msgid "auth.already-have-account"
@@ -1695,12 +1695,13 @@ msgid "errors.registration-disabled"
 msgstr "Kayıt olma şu anda devre dışı."
 
 #: src/app/main/errors.cljs:538
+#, fuzzy
 msgid "errors.save-failed"
 msgstr ""
 "En son yaptığınız değişiklikler kaydedildi olarak onaylanmadı. Kaydetme "
 "işlemi otomatik devam etmeyebilir. Bu sekmeyi kapatmayın veya yeniden "
-"yüklemeyin: değişiklikleriniz kaybolabilir. Yardım için destek ile "
-"iletişime geçin."
+"yüklemeyin: değişiklikleriniz kaybolabilir. Yardım için destek ile iletişime "
+"geçin."
 
 #: src/app/main/errors.cljs:764
 msgid "errors.svg-parser.invalid-svg"
@@ -2076,10 +2077,12 @@ msgid "generic.error"
 msgstr "Bir hata oluştu"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:161
+#, fuzzy
 msgid "import-shortcuts.apply"
 msgstr "Uygula"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:102
+#, fuzzy
 msgid "import-shortcuts.diff-modal-text"
 msgstr "Şu kısayollar içe aktarılan yapılandırma ile değiştirilecek."
 
@@ -4615,14 +4618,17 @@ msgid "restore-shortcuts.action"
 msgstr "Eylem"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:94
+#, fuzzy
 msgid "restore-shortcuts.modal-text"
 msgstr "Şu kısayollar öntanımlı değerlerine geri yüklenecek."
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:90
+#, fuzzy
 msgid "restore-shortcuts.modal-title"
 msgstr "Öntanımlı yapılandırmayı geri yükle"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:170
+#, fuzzy
 msgid "restore-shortcuts.restore"
 msgstr "Geri yükle"
 
@@ -4815,20 +4821,24 @@ msgid "shortcuts.duplicate"
 msgstr "Çoğalt"
 
 #: src/app/main/ui/shortcuts.cljs:645
+#, fuzzy
 msgid "shortcuts.edit-modal.conflict"
 msgstr "Birleşim \"%s\" olarak atandı. Kaydedildiğinde buradan kaldırılacak."
 
 #: src/app/main/ui/shortcuts.cljs:636
+#, fuzzy
 msgid "shortcuts.edit-modal.reset-pending"
 msgstr "Kaydederseniz, bu kısayol orijinal değerine geri dönecek:"
 
 #: src/app/main/ui/shortcuts.cljs:647
+#, fuzzy
 msgid "shortcuts.edit-modal.success"
 msgstr ""
 "Bu tuş birleşimi kullanılabilir durumda ve herhangi bir çakışma olmadan "
 "atanabilir."
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:157
+#, fuzzy
 msgid "shortcuts.edit-on-settings"
 msgstr "Ayarlarda özelleştir"
 
@@ -4861,10 +4871,12 @@ msgid "shortcuts.flip-vertical"
 msgstr "Dikey olarak çevir"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:263
+#, fuzzy
 msgid "shortcuts.font-size-dec"
 msgstr "Yazı boyutunu azalt"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:256
+#, fuzzy
 msgid "shortcuts.font-size-inc"
 msgstr "Yazı boyutunu artır"
 
@@ -4913,6 +4925,7 @@ msgid "shortcuts.join-nodes"
 msgstr "Düğümlere katıl"
 
 #: src/app/main/ui/shortcuts.cljs:624
+#, fuzzy
 msgid "shortcuts.key-combo"
 msgstr "Tuş birleşimine basın"
 
@@ -4981,18 +4994,22 @@ msgid "shortcuts.next-frame"
 msgstr "Sonraki çalışma yüzeyi"
 
 #: src/app/main/ui/settings/shortcuts.cljs:510
+#, fuzzy
 msgid "shortcuts.no-disabled"
 msgstr "Devre dışı bırakılan kısayol yok"
 
 #: src/app/main/ui/settings/shortcuts.cljs:500
+#, fuzzy
 msgid "shortcuts.no-personalized"
 msgstr "Kısayollarınızı özelleştirmeye başlamak için Tümü bölümüne gidin."
 
 #: src/app/main/ui/settings/shortcuts.cljs:242, src/app/main/ui/settings/shortcuts.cljs:491
+#, fuzzy
 msgid "shortcuts.no-shortcuts"
 msgstr "Aramanızla eşleşen kısayol yok"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:154
+#, fuzzy
 msgid "shortcuts.not-found"
 msgstr "Kısayol bulunamadı"
 
@@ -5069,6 +5086,7 @@ msgid "shortcuts.or"
 msgstr " veya "
 
 #: src/app/main/ui/shortcuts.cljs:605, src/app/main/ui/shortcuts.cljs:747
+#, fuzzy
 msgid "shortcuts.overwritten-by"
 msgstr "Bu kısayol %s olarak yeniden atandı"
 
@@ -5089,6 +5107,7 @@ msgid "shortcuts.paste-replace"
 msgstr "Yapıştır ve değiştir"
 
 #: src/app/main/ui/settings/shortcuts.cljs:296, src/app/main/ui/settings/shortcuts.cljs:523
+#, fuzzy
 msgid "shortcuts.personalized"
 msgstr "Kişiselleştirildi"
 
@@ -5233,6 +5252,7 @@ msgid "shortcuts.subsection.shape"
 msgstr "Şekiller"
 
 #: src/app/main/ui/shortcuts.cljs:143
+#, fuzzy
 msgid "shortcuts.subsection.text-editor"
 msgstr "Metinler"
 
@@ -5689,6 +5709,7 @@ msgstr ""
 "sabit ücretten sahip olacaksınız."
 
 #: src/app/main/ui/settings/subscription.cljs:714
+#, fuzzy
 msgid "subscription.settings.member-since"
 msgstr "Penpot üyelik tarihi: %s"
 
