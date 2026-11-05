@@ -655,9 +655,12 @@
                           :command (ds/ca-mod "h")
                           :subsections [:panels]
                           :section [:workspace]
-                          :fn #(emit-when-no-readonly
-                                (-> (dwh/initialize-history)
-                                    (vary-meta assoc ::ev/origin "workspace:shortcuts")))}
+                          ;; Same rule as the header button: editors, also in
+                          ;; Inspect mode, but not during a version preview.
+                          :fn #(when (and (:can-edit (deref refs/permissions))
+                                          (nil? (deref refs/workspace-preview-id)))
+                                 (st/emit! (-> (dwh/initialize-history)
+                                               (vary-meta assoc ::ev/origin "workspace:shortcuts"))))}
 
    :toggle-colorpalette  {:tooltip (ds/alt "P")
                           :label (fn [] (tr "shortcuts.toggle-colorpalette"))
