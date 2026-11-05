@@ -8,6 +8,7 @@
   (:require
    [app.main.data.auth :as da]
    [app.main.data.event :as ev]
+   [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]))
 
 (t/deftest auth-origin-keeps-only-the-fields-that-apply
@@ -76,3 +77,18 @@
     (t/is (not (contains? profile :invitation-token)))
     (t/is (= {::ev/source "register" ::ev/activation "immediate"}
              (meta profile)))))
+
+(t/deftest invitation-nav-only-emits-with-an-invitation-token
+  (let [get-invitation-nav @#'da/get-invitation-nav
+        collect           (fn [profile]
+                            (let [events (atom [])]
+                              (rx/subs! #(swap! events conj %)
+                                        (get-invitation-nav profile))
+                              @events))]
+    (t/is (= [] (collect {:auth-backend "penpot"})))
+    (let [events (collect {:auth-backend "penpot"
+                           :invitation-token "tok"})
+          event  (deref (first events))]
+      (t/is (= 1 (count events)))
+      (t/is (= :auth-verify-token (:id event)))
+      (t/is (= {:token "tok"} (:params event))))))

@@ -72,14 +72,29 @@
 
 ;; --- EVENT: login
 
+(defn- get-invitation-nav
+  "Observable that emits the navigation to the token verification screen
+  when the profile carries an invitation token, and nothing otherwise.
+
+  It does not depend on the teams: `fetch-teams` has no error handling,
+  so waiting for it would leave the invitation unaccepted when that call
+  fails."
+  [profile]
+  (->> (rx/of (:invitation-token profile))
+       (rx/filter some?)
+       (rx/map #(rt/nav :auth-verify-token {:token %}))))
+
 (defn- logged-in
   "This is the main event that is executed once we have logged in
   profile. The profile can proceed from standard login or from
   accepting invitation, or third party auth signup or singin."
   [profile]
   (letfn [(get-redirect-events [teams]
-            (if-let [token (:invitation-token profile)]
-              (rx/of (rt/nav :auth-verify-token {:token token}))
+            (if (some? (:invitation-token profile))
+              ;; The invitation navigates on its own, without waiting for
+              ;; the teams; this branch must not move the user away from
+              ;; the token verification screen.
+              (rx/empty)
               (if-let [redirect-href (:login-redirect storage/session)]
                 (binding [storage/*sync* true]
                   (swap! storage/session dissoc :login-redirect)
@@ -107,6 +122,11 @@
               (rx/of (dp/set-profile profile)
                      (ws/initialize)
                      (dtm/fetch-teams))
+
+              ;; The invitation resolves on its own, without waiting for the
+              ;; teams.
+              (->> (get-invitation-nav profile)
+                   (rx/observe-on :async))
 
               ;; We schedule this event to be executed a bit later,
               ;; when the profile is already set
