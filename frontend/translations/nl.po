@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-10-02 05:51+0000\n"
-"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
+"PO-Revision-Date: 2026-11-05 22:20+0000\n"
+"Last-Translator: Andrey Antukh <niwinz@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/"
 "nl/>\n"
 "Language: nl\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.10\n"
+"X-Generator: Weblate 2026.11.2.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:191, src/app/main/ui/viewer/login.cljs:119
 msgid "auth.already-have-account"
@@ -1708,6 +1708,7 @@ msgid "errors.registration-disabled"
 msgstr "De registratie is momenteel uitgeschakeld."
 
 #: src/app/main/errors.cljs:538
+#, fuzzy
 msgid "errors.save-failed"
 msgstr ""
 "Autom. opslaan werkt niet vanwege een fout. Neem contact op met de "
@@ -2100,12 +2101,15 @@ msgid "generic.error"
 msgstr "er is een fout opgetreden"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:161
+#, fuzzy
 msgid "import-shortcuts.apply"
 msgstr "Toepassen"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:102
+#, fuzzy
 msgid "import-shortcuts.diff-modal-text"
-msgstr "De volgende sneltoetsen worden gewijzigd door de geïmporteerde configuratie."
+msgstr ""
+"De volgende sneltoetsen worden gewijzigd door de geïmporteerde configuratie."
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:98
 msgid "import-shortcuts.diff-modal-title"
@@ -4668,14 +4672,17 @@ msgid "restore-shortcuts.action"
 msgstr "Actie"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:94
+#, fuzzy
 msgid "restore-shortcuts.modal-text"
 msgstr "De volgende sneltoetsen worden teruggezet naar hun standaardwaarden."
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:90
+#, fuzzy
 msgid "restore-shortcuts.modal-title"
 msgstr "Standaardconfiguratie herstellen"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:170
+#, fuzzy
 msgid "restore-shortcuts.restore"
 msgstr "Herstellen"
 
@@ -4868,20 +4875,24 @@ msgid "shortcuts.duplicate"
 msgstr "Dupliceren"
 
 #: src/app/main/ui/shortcuts.cljs:645
+#, fuzzy
 msgid "shortcuts.edit-modal.conflict"
 msgstr "Combinatie toegewezen aan \"%s\". Opslaan zal het daar verwijderen."
 
 #: src/app/main/ui/shortcuts.cljs:636
+#, fuzzy
 msgid "shortcuts.edit-modal.reset-pending"
 msgstr "Als je opslaat, neemt deze sneltoets de oorspronkelijke waarde aan:"
 
 #: src/app/main/ui/shortcuts.cljs:647
+#, fuzzy
 msgid "shortcuts.edit-modal.success"
 msgstr ""
 "Deze toetsencombinatie is beschikbaar en kan zonder conflicten worden "
 "toegewezen."
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:157
+#, fuzzy
 msgid "shortcuts.edit-on-settings"
 msgstr "Aanpassen op instellingen"
 
@@ -4914,10 +4925,12 @@ msgid "shortcuts.flip-vertical"
 msgstr "Verticaal spiegelen"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:263
+#, fuzzy
 msgid "shortcuts.font-size-dec"
 msgstr "Lettergrootte verkleinen"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:256
+#, fuzzy
 msgid "shortcuts.font-size-inc"
 msgstr "Lettergrootte vergroten"
 
@@ -4966,6 +4979,7 @@ msgid "shortcuts.join-nodes"
 msgstr "Knooppunten verbinden"
 
 #: src/app/main/ui/shortcuts.cljs:624
+#, fuzzy
 msgid "shortcuts.key-combo"
 msgstr "Druk op de toetsencombinatie"
 
@@ -5034,18 +5048,22 @@ msgid "shortcuts.next-frame"
 msgstr "Volgend bord"
 
 #: src/app/main/ui/settings/shortcuts.cljs:510
+#, fuzzy
 msgid "shortcuts.no-disabled"
 msgstr "Er zijn geen uitgeschakelde sneltoetsen"
 
 #: src/app/main/ui/settings/shortcuts.cljs:500
+#, fuzzy
 msgid "shortcuts.no-personalized"
 msgstr "Ga naar Alles om te beginnen met het aanpassen van je sneltoetsen."
 
 #: src/app/main/ui/settings/shortcuts.cljs:242, src/app/main/ui/settings/shortcuts.cljs:491
+#, fuzzy
 msgid "shortcuts.no-shortcuts"
 msgstr "Er zijn geen sneltoetsen die overeenkomen met de zoekopdracht"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:154
+#, fuzzy
 msgid "shortcuts.not-found"
 msgstr "Geen sneltoets gevonden"
 
@@ -5122,6 +5140,7 @@ msgid "shortcuts.or"
 msgstr " of "
 
 #: src/app/main/ui/shortcuts.cljs:605, src/app/main/ui/shortcuts.cljs:747
+#, fuzzy
 msgid "shortcuts.overwritten-by"
 msgstr "Deze sneltoets is opnieuw toegewezen aan %s"
 
@@ -5142,6 +5161,7 @@ msgid "shortcuts.paste-replace"
 msgstr "Plakken en vervangen"
 
 #: src/app/main/ui/settings/shortcuts.cljs:296, src/app/main/ui/settings/shortcuts.cljs:523
+#, fuzzy
 msgid "shortcuts.personalized"
 msgstr "Gepersonaliseerd"
 
@@ -5286,6 +5306,7 @@ msgid "shortcuts.subsection.shape"
 msgstr "Vormen"
 
 #: src/app/main/ui/shortcuts.cljs:143
+#, fuzzy
 msgid "shortcuts.subsection.text-editor"
 msgstr "Teksten"
 
@@ -5742,6 +5763,7 @@ msgstr ""
 "van $175/maand."
 
 #: src/app/main/ui/settings/subscription.cljs:714
+#, fuzzy
 msgid "subscription.settings.member-since"
 msgstr "Lid van Penpot sinds: %s"
 
