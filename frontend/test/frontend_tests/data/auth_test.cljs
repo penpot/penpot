@@ -61,3 +61,18 @@
              (profile-origin
               (with-meta {:auth-backend "penpot"}
                 {::ev/source "register" ::ev/activation "email-verification"}))))))
+
+(t/deftest with-register-origin-attaches-the-invitation-token
+  (let [with-register-origin @#'da/with-register-origin
+        profile            (with-register-origin {:id "x"} "tok")]
+    (t/is (= {:id "x" :invitation-token "tok"} profile))
+    (t/is (= {::ev/source "register" ::ev/activation "immediate"}
+             (meta profile)))))
+
+(t/deftest with-register-origin-keeps-the-profile-without-a-token
+  (let [with-register-origin @#'da/with-register-origin
+        profile            (with-register-origin {:id "x"} nil)]
+    (t/is (= {:id "x"} profile))
+    (t/is (not (contains? profile :invitation-token)))
+    (t/is (= {::ev/source "register" ::ev/activation "immediate"}
+             (meta profile)))))

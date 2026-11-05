@@ -246,26 +246,32 @@
                                      (with-meta (origin-meta (iss->origin iss))))]
                        (logged-in profile))))))))
 
+(defn- with-register-origin
+  [profile invitation-token]
+  (-> profile
+      (cond-> (some? invitation-token)
+        (assoc :invitation-token invitation-token))
+      (with-meta (origin-meta {:source "register" :activation "immediate"}))))
+
 (defn login-from-register
   "Event used mainly for mark current session as logged-in in after the
   user successfully registered using third party auth provider (in this
   case we dont need to verify the email)."
-  []
-  (ptk/reify ::login-from-register
-    ptk/WatchEvent
-    (watch [_ _ stream]
-      (rx/merge
-       (rx/of (dp/fetch-profile))
-       (->> stream
-            (rx/filter dp/profile-fetched?)
-            (rx/take 1)
-            (rx/map deref)
-            (rx/filter is-authenticated?)
-            (rx/map (fn [profile]
-                      (with-meta profile
-                        (origin-meta {:source "register" :activation "immediate"}))))
-            (rx/map logged-in)
-            (rx/observe-on :async))))))
+  ([] (login-from-register nil))
+  ([{:keys [invitation-token]}]
+   (ptk/reify ::login-from-register
+     ptk/WatchEvent
+     (watch [_ _ stream]
+       (rx/merge
+        (rx/of (dp/fetch-profile))
+        (->> stream
+             (rx/filter dp/profile-fetched?)
+             (rx/take 1)
+             (rx/map deref)
+             (rx/filter is-authenticated?)
+             (rx/map #(with-register-origin % invitation-token))
+             (rx/map logged-in)
+             (rx/observe-on :async)))))))
 
 ;; --- EVENT: logout
 
