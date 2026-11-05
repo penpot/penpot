@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-15 17:17+0000\n"
-"Last-Translator: Aryiu <aryiu@users.noreply.hosted.weblate.org>\n"
-"Language-Team: Catalan "
-"<https://hosted.weblate.org/projects/penpot/frontend/ca/>\n"
+"PO-Revision-Date: 2026-11-05 22:19+0000\n"
+"Last-Translator: Andrey Antukh <niwinz@users.noreply.hosted.weblate.org>\n"
+"Language-Team: Catalan <https://hosted.weblate.org/projects/penpot/frontend/"
+"ca/>\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.10.dev0\n"
+"X-Generator: Weblate 2026.11.2.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:191, src/app/main/ui/viewer/login.cljs:119
 msgid "auth.already-have-account"
@@ -1711,6 +1711,7 @@ msgid "errors.registration-disabled"
 msgstr "El registre està desactivat."
 
 #: src/app/main/errors.cljs:538
+#, fuzzy
 msgid "errors.save-failed"
 msgstr ""
 "Els vostres últims canvis no s'han confirmat com a desats. Pot ser que el "
@@ -2096,10 +2097,12 @@ msgid "generic.error"
 msgstr "S'ha produït un error"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:161
+#, fuzzy
 msgid "import-shortcuts.apply"
 msgstr "Aplica"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:102
+#, fuzzy
 msgid "import-shortcuts.diff-modal-text"
 msgstr "Les dreceres següents canviaran amb la configuració importada."
 
@@ -4658,14 +4661,17 @@ msgid "restore-shortcuts.action"
 msgstr "Acció"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:94
+#, fuzzy
 msgid "restore-shortcuts.modal-text"
 msgstr "Les dreceres següents es restauraran als valors predeterminats."
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:90
+#, fuzzy
 msgid "restore-shortcuts.modal-title"
 msgstr "Restaura la configuració predeterminada"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:170
+#, fuzzy
 msgid "restore-shortcuts.restore"
 msgstr "Restaura"
 
@@ -4858,20 +4864,24 @@ msgid "shortcuts.duplicate"
 msgstr "Duplica"
 
 #: src/app/main/ui/shortcuts.cljs:645
+#, fuzzy
 msgid "shortcuts.edit-modal.conflict"
 msgstr "Combinació assignada a \"%s\". Si la deseu, s'eliminarà d'allà."
 
 #: src/app/main/ui/shortcuts.cljs:636
+#, fuzzy
 msgid "shortcuts.edit-modal.reset-pending"
 msgstr "Si la deseu, aquesta drecera tornarà al valor original:"
 
 #: src/app/main/ui/shortcuts.cljs:647
+#, fuzzy
 msgid "shortcuts.edit-modal.success"
 msgstr ""
 "Aquesta combinació de tecles està disponible i es pot assignar sense "
 "conflictes."
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:157
+#, fuzzy
 msgid "shortcuts.edit-on-settings"
 msgstr "Personalitzeu-les a la configuració"
 
@@ -4904,10 +4914,12 @@ msgid "shortcuts.flip-vertical"
 msgstr "Gira verticalment"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:263
+#, fuzzy
 msgid "shortcuts.font-size-dec"
 msgstr "Disminueix la mida de la lletra"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:256
+#, fuzzy
 msgid "shortcuts.font-size-inc"
 msgstr "Augmenta la mida de la lletra"
 
@@ -4956,6 +4968,7 @@ msgid "shortcuts.join-nodes"
 msgstr "Uneix nodes"
 
 #: src/app/main/ui/shortcuts.cljs:624
+#, fuzzy
 msgid "shortcuts.key-combo"
 msgstr "Premeu la combinació de tecles"
 
@@ -5024,18 +5037,22 @@ msgid "shortcuts.next-frame"
 msgstr "Següent tauler"
 
 #: src/app/main/ui/settings/shortcuts.cljs:510
+#, fuzzy
 msgid "shortcuts.no-disabled"
 msgstr "No hi ha dreceres deshabilitades"
 
 #: src/app/main/ui/settings/shortcuts.cljs:500
+#, fuzzy
 msgid "shortcuts.no-personalized"
 msgstr "Ves a Totes per començar a personalitzar les dreceres."
 
 #: src/app/main/ui/settings/shortcuts.cljs:242, src/app/main/ui/settings/shortcuts.cljs:491
+#, fuzzy
 msgid "shortcuts.no-shortcuts"
 msgstr "No hi ha cap drecera que coincideixi amb la cerca"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:154
+#, fuzzy
 msgid "shortcuts.not-found"
 msgstr "No s'han trobat dreceres"
 
@@ -5112,6 +5129,7 @@ msgid "shortcuts.or"
 msgstr " o "
 
 #: src/app/main/ui/shortcuts.cljs:605, src/app/main/ui/shortcuts.cljs:747
+#, fuzzy
 msgid "shortcuts.overwritten-by"
 msgstr "Aquesta drecera s'ha reassignat a %s"
 
@@ -5132,6 +5150,7 @@ msgid "shortcuts.paste-replace"
 msgstr "Enganxa i reemplaça"
 
 #: src/app/main/ui/settings/shortcuts.cljs:296, src/app/main/ui/settings/shortcuts.cljs:523
+#, fuzzy
 msgid "shortcuts.personalized"
 msgstr "Personalitzades"
 
@@ -5276,6 +5295,7 @@ msgid "shortcuts.subsection.shape"
 msgstr "Formes"
 
 #: src/app/main/ui/shortcuts.cljs:143
+#, fuzzy
 msgid "shortcuts.subsection.text-editor"
 msgstr "Textos"
 
@@ -5739,6 +5759,7 @@ msgstr ""
 "plana de 175 $ al mes."
 
 #: src/app/main/ui/settings/subscription.cljs:714
+#, fuzzy
 msgid "subscription.settings.member-since"
 msgstr "Membre del Penpot des de: %s"
 
