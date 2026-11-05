@@ -1,6 +1,7 @@
 import Redis from "ioredis";
 import { PluginTaskRequest, PluginTaskResponse, PenpotSession } from "@penpot/mcp-common";
 import { createLogger } from "./logger";
+import { penpotSessionSchema } from "./PenpotSessionSchema";
 import { z } from "zod";
 
 /** Query for the user's sessions held by each subscribed MCP instance. */
@@ -30,13 +31,7 @@ const sessionClaimSchema = z.object({
 
 const discoveryResponseSchema = z.object({
     instanceId: z.string().min(1),
-    sessions: z.array(
-        z.object({
-            sessionId: z.string().min(1).max(128),
-            fileId: z.string().min(1).max(128),
-            fileName: z.string(),
-        })
-    ),
+    sessions: z.array(penpotSessionSchema),
 });
 
 /**
@@ -248,19 +243,29 @@ export class RedisBridge {
         return `penpot.mcp.${this.tenant}.discovery.res.${this.channelKey(requestId)}`;
     }
 
-    /** Subscribes to replies before publishing; returns the actual recipient count. */
+    /**
+     * Subscribes to replies before publishing; returns the actual recipient count.
+     *
+     * A reply that cannot be parsed is passed to `onInvalidResponse` with a readable description of the problem.
+     */
     async sendDiscoveryRequest(
         userToken: string,
         requestId: string,
-        onResponse: (response: SessionDiscoveryResponse) => void
+        onResponse: (response: SessionDiscoveryResponse) => void,
+        onInvalidResponse: (error: Error) => void
     ): Promise<number> {
         const channel = this.discoveryResponseChannel(requestId);
         this.handlers.set(channel, (raw) => {
+            let response: SessionDiscoveryResponse;
             try {
-                onResponse(discoveryResponseSchema.parse(JSON.parse(raw)));
+                response = discoveryResponseSchema.parse(JSON.parse(raw));
             } catch (error) {
                 this.logger.error(error, "Invalid discovery response");
+                const reason = error instanceof z.ZodError ? z.prettifyError(error) : String(error);
+                onInvalidResponse(new Error(reason));
+                return;
             }
+            onResponse(response);
         });
         try {
             await this.subscriber.subscribe(channel);
