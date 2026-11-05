@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-15 17:18+0000\n"
-"Last-Translator: \"Amerey.eu\" <info@amerey.eu>\n"
-"Language-Team: Czech "
-"<https://hosted.weblate.org/projects/penpot/frontend/cs/>\n"
+"PO-Revision-Date: 2026-11-05 22:19+0000\n"
+"Last-Translator: Andrey Antukh <niwinz@users.noreply.hosted.weblate.org>\n"
+"Language-Team: Czech <https://hosted.weblate.org/projects/penpot/frontend/"
+"cs/>\n"
 "Language: cs\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=((n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2);\n"
-"X-Generator: Weblate 2026.10.dev0\n"
+"X-Generator: Weblate 2026.11.2.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:191, src/app/main/ui/viewer/login.cljs:119
 msgid "auth.already-have-account"
@@ -2710,10 +2710,12 @@ msgid "shortcuts.flip-vertical"
 msgstr "Překlopit svisle"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:263
+#, fuzzy
 msgid "shortcuts.font-size-dec"
 msgstr "Zmenšit velikost písma"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:256
+#, fuzzy
 msgid "shortcuts.font-size-inc"
 msgstr "Zvětšit velikost písma"
 
@@ -2822,6 +2824,7 @@ msgid "shortcuts.next-frame"
 msgstr "Další tabule"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:154
+#, fuzzy
 msgid "shortcuts.not-found"
 msgstr "Nebyly nalezeny žádné zkratky"
 
@@ -3020,6 +3023,7 @@ msgid "shortcuts.subsection.shape"
 msgstr "Tvary"
 
 #: src/app/main/ui/shortcuts.cljs:143
+#, fuzzy
 msgid "shortcuts.subsection.text-editor"
 msgstr "Texty"
 
