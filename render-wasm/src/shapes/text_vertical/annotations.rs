@@ -1575,6 +1575,69 @@ mod tests {
         assert!(ruby.glyph_tops.last().unwrap() + ruby.font_size <= base.top + base.extent + 0.01);
     }
 
+    /// 文 中(zhuang) ， 文 in vertical Chinese: the reading is longer than
+    /// its base, with a Han character before and a comma after.
+    fn chinese_pinyin_neighbour_layout(overhang: RubyOverhang) -> VerticalLayout {
+        let mut content = spans_content(
+            vec![
+                make_span("文"),
+                TextSpan {
+                    ruby: "zhuangzhuang".to_string(),
+                    ruby_overhang: overhang,
+                    ..make_span("中")
+                },
+                make_span("，文"),
+            ],
+            1000.0,
+        );
+        content.paragraphs_mut()[0].set_language("zh-Hant-TW".to_string());
+        layout_with_height(&provider(PINYIN_TEST_FONT), &content, 1000.0)
+    }
+
+    fn column_extent(layout: &VerticalLayout) -> f32 {
+        layout
+            .cells
+            .iter()
+            .map(|cell| cell.top + cell.extent)
+            .fold(0.0, f32::max)
+    }
+
+    #[test]
+    fn vertical_chinese_pinyin_overhangs_a_following_comma() {
+        let overhung = chinese_pinyin_neighbour_layout(RubyOverhang::Auto);
+        let grown = chinese_pinyin_neighbour_layout(RubyOverhang::None);
+        assert!(
+            column_extent(&overhung) < column_extent(&grown) - 0.5,
+            "overhang shortens the column: {} vs {}",
+            column_extent(&overhung),
+            column_extent(&grown)
+        );
+        let ruby = ruby_of_span(&overhung, 1);
+        let base = overhung.cells.iter().find(|cell| cell.span == 1).unwrap();
+        let ruby_end = ruby.glyph_tops.last().unwrap() + ruby.glyphs.last().unwrap().extent;
+        assert!(
+            ruby_end > base.top + base.extent + 0.5,
+            "the reading hangs over the comma"
+        );
+        assert!(
+            ruby.glyph_tops[0] >= base.top - 0.01,
+            "a Han neighbour takes no overhang, as in horizontal text"
+        );
+    }
+
+    #[test]
+    fn vertical_chinese_pinyin_without_overhang_grows_its_base() {
+        let layout = chinese_pinyin_neighbour_layout(RubyOverhang::None);
+        let ruby = ruby_of_span(&layout, 1);
+        let base = layout.cells.iter().find(|cell| cell.span == 1).unwrap();
+        let ruby_length: f32 = ruby.glyphs.iter().map(|glyph| glyph.extent).sum();
+        assert!(ruby_length > EM, "the reading is longer than its base");
+        assert!((base.extent - ruby_length).abs() < 0.01);
+        assert!(ruby.glyph_tops[0] >= base.top - 0.01);
+        let ruby_end = ruby.glyph_tops.last().unwrap() + ruby.glyphs.last().unwrap().extent;
+        assert!(ruby_end <= base.top + base.extent + 0.01);
+    }
+
     #[test]
     fn ruby_base_moves_to_the_next_column_whole() {
         let content = |height: f32| {

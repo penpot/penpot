@@ -569,6 +569,11 @@ impl PlannedParagraph {
 
             let policy = cells.paragraph.layout_policy();
             if !policy.uses_jlreq() {
+                // Warichu pieces never split here: only Japanese renders
+                // warichu, and the frontend drops it for other languages.
+                // Readings overhang neighbours by the rule horizontal text
+                // applies to every language (`ruby_overhang_room`).
+                set_ruby_overhang_rooms(&flow, &mut ruby_units);
                 grow_ruby_bases(&mut flow, &ruby_units);
                 let text: String = cells
                     .text_map

@@ -81,7 +81,11 @@ merges their styles. Emphasis marks retain their per-base placement across
 wraps; text bounds include the marks so individual exports keep them whole.
 Without a text selection, presentation changes affect existing readings.
 Horizontal readings form one Latin group above or below the base; vertical
-readings form one sideways Latin group beside it. Pronunciation is entered
+readings form one sideways Latin group beside it. A reading longer than its
+base overhangs an adjacent comma, full stop or middle dot (or kana) without
+its own reading, by at most one ruby character and half the neighbour, in
+both orientations. Han neighbours take no overhang. What overhang cannot
+absorb, or all of it under ruby-overhang `none`, spreads the base. Pronunciation is entered
 by the author; the editor does not generate or distribute syllables.
 
 Composed and combining tone marks retain their source text and shaping.
