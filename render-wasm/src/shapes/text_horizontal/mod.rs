@@ -24,7 +24,7 @@ pub(crate) use warichu::*;
 use super::text::{add_text_with_tabs, Paragraph, TextContent, TextSpan};
 use super::text_attrs::*;
 use super::text_ruby::*;
-use super::text_vertical::{
+use super::text_shaping::{
     is_upright_char, shape_segment_with_fallbacks, single_glyph_blob, span_font_families, ShapedRun,
 };
 use super::text_warichu::*;
@@ -433,6 +433,6 @@ pub(crate) fn horizontal_base_em_top(
         return rect.top.max(rect.bottom - font_size);
     };
     let font = laid_out.font_at_utf16(base_start.max(line.start_index));
-    let (ascent, descent) = super::text_vertical::upright_centre_metrics(&font);
+    let (ascent, descent) = super::text_shaping::upright_centre_metrics(&font);
     line.baseline as f32 + (ascent + descent - font_size) / 2.0
 }

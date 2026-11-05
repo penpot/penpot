@@ -41,7 +41,7 @@ pub(crate) fn provider(font: &[u8]) -> TypefaceFontProvider {
 }
 
 /// `provider(font)` plus `fallback` registered as the "fallback" family.
-pub(super) fn provider_with_fallback(font: &[u8], fallback: &[u8]) -> TypefaceFontProvider {
+pub(crate) fn provider_with_fallback(font: &[u8], fallback: &[u8]) -> TypefaceFontProvider {
     let mut provider = provider(font);
     let typeface = FontMgr::new()
         .new_from_data(skia_safe::Data::new_copy(fallback), None)
@@ -50,7 +50,7 @@ pub(super) fn provider_with_fallback(font: &[u8], fallback: &[u8]) -> TypefaceFo
     provider
 }
 
-pub(super) fn make_span(text: &str) -> TextSpan {
+pub(crate) fn make_span(text: &str) -> TextSpan {
     TextSpan {
         text: text.to_string(),
         font_size: EM,
@@ -59,7 +59,7 @@ pub(super) fn make_span(text: &str) -> TextSpan {
     }
 }
 
-pub(super) fn vertical_paragraph(
+pub(crate) fn vertical_paragraph(
     spans: Vec<TextSpan>,
     align: TextAlign,
     line_height: f32,
@@ -93,7 +93,7 @@ pub(crate) fn content_of(
 }
 
 /// One left-aligned paragraph holding `spans`.
-pub(super) fn spans_content(spans: Vec<TextSpan>, height: f32) -> TextContent {
+pub(crate) fn spans_content(spans: Vec<TextSpan>, height: f32) -> TextContent {
     content_of(
         vec![vertical_paragraph(spans, TextAlign::Left, 1.0)],
         height,
@@ -102,7 +102,7 @@ pub(super) fn spans_content(spans: Vec<TextSpan>, height: f32) -> TextContent {
 }
 
 /// One paragraph per text, each a single span.
-pub(super) fn make_content(texts: &[&str], height: f32) -> TextContent {
+pub(crate) fn make_content(texts: &[&str], height: f32) -> TextContent {
     let paragraphs = texts
         .iter()
         .map(|text| vertical_paragraph(vec![make_span(text)], TextAlign::Left, 1.0))
@@ -111,11 +111,11 @@ pub(super) fn make_content(texts: &[&str], height: f32) -> TextContent {
 }
 
 /// One paragraph with a span per text.
-pub(super) fn make_content_with_spans(texts: &[&str], height: f32) -> TextContent {
+pub(crate) fn make_content_with_spans(texts: &[&str], height: f32) -> TextContent {
     spans_content(texts.iter().map(|text| make_span(text)).collect(), height)
 }
 
-pub(super) fn ruby_content(base: &str, ruby: &str, height: f32) -> TextContent {
+pub(crate) fn ruby_content(base: &str, ruby: &str, height: f32) -> TextContent {
     spans_content(
         vec![TextSpan {
             ruby: ruby.to_string(),
@@ -125,7 +125,7 @@ pub(super) fn ruby_content(base: &str, ruby: &str, height: f32) -> TextContent {
     )
 }
 
-pub(super) fn warichu_content(base: &str, height: f32) -> TextContent {
+pub(crate) fn warichu_content(base: &str, height: f32) -> TextContent {
     spans_content(
         vec![TextSpan {
             warichu: true,
@@ -136,7 +136,7 @@ pub(super) fn warichu_content(base: &str, height: f32) -> TextContent {
     )
 }
 
-pub(super) fn spaced_content(text: &str, letter_spacing: f32) -> TextContent {
+pub(crate) fn spaced_content(text: &str, letter_spacing: f32) -> TextContent {
     spans_content(
         vec![TextSpan {
             letter_spacing,
@@ -146,7 +146,7 @@ pub(super) fn spaced_content(text: &str, letter_spacing: f32) -> TextContent {
     )
 }
 
-pub(super) fn decorated_content(text: &str, decoration: TextDecoration) -> TextContent {
+pub(crate) fn decorated_content(text: &str, decoration: TextDecoration) -> TextContent {
     spans_content(
         vec![TextSpan {
             text_decoration: Some(decoration),
@@ -156,7 +156,7 @@ pub(super) fn decorated_content(text: &str, decoration: TextDecoration) -> TextC
     )
 }
 
-pub(super) fn layout_with_fallback(
+pub(crate) fn layout_with_fallback(
     provider: &TypefaceFontProvider,
     content: &TextContent,
     max_height: f32,
@@ -181,7 +181,7 @@ pub(crate) fn layout_with_height(
 }
 
 /// Layout with `provider` and a 1000px wrap budget.
-pub(super) fn layout_with(
+pub(crate) fn layout_with(
     provider: &TypefaceFontProvider,
     content: &TextContent,
 ) -> VerticalLayout {
@@ -189,6 +189,6 @@ pub(super) fn layout_with(
 }
 
 /// Layout with the Latin test face.
-pub(super) fn layout_content(content: &TextContent, max_height: f32) -> VerticalLayout {
+pub(crate) fn layout_content(content: &TextContent, max_height: f32) -> VerticalLayout {
     layout_with_height(&provider(TEST_FONT), content, max_height)
 }

@@ -14,12 +14,14 @@ use crate::shapes::text_warichu::{warichu_split_chars, WARICHU_FONT_SCALE};
 use crate::shapes::{FontFeatures, TextCombineUpright, TextSpan};
 
 use super::flow::{min_squeezed_extent, FlowCell, FlowScript, FIT_TOLERANCE};
-use super::font_tables::{upright_baseline, vertical_metrics, vpal_table};
 use super::layout::{CellKind, VerticalCell};
-use super::orientation::{
+use crate::shapes::text_shaping::{
     is_upright_char, segment_by_orientation, uses_rotated_vertical_fallback, Segment,
 };
-use super::shaping::{resolve_typefaces, shape_with_typefaces, span_font_families, ShapedRun};
+use crate::shapes::text_shaping::{
+    resolve_typefaces, shape_with_typefaces, span_font_families, ShapedRun,
+};
+use crate::shapes::text_shaping::{upright_baseline, vertical_metrics, vpal_table};
 
 /// Smallest horizontal scale for `all` tate-chu-yoko, except short Western
 /// runs; digit modes use 1 / run length.
@@ -757,9 +759,9 @@ impl<'a> WarichuNote<'a> {
 #[cfg(test)]
 mod tests {
     use super::super::layout::VerticalCell;
-    use super::super::shaping::WESTERN_WORD_SPACING_EM;
     use super::super::test_support::*;
     use super::*;
+    use crate::shapes::text_shaping::WESTERN_WORD_SPACING_EM;
     use crate::shapes::{Fill, SolidColor, TextDecoration, TextOrientation};
     use skia_safe as skia;
 

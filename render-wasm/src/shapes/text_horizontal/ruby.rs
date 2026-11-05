@@ -78,7 +78,7 @@ pub(crate) fn horizontal_zhuyin_entries(
                 y: origin.y + glyph.origin.y - size,
                 width: size,
                 height: size,
-                direction: super::super::text_zhuyin::DIRECTION_ZHUYIN,
+                direction: crate::shapes::DIRECTION_ZHUYIN,
             });
         }
     }

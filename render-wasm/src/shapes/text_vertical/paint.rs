@@ -8,9 +8,9 @@ use crate::math::Rect;
 use crate::shapes::{Stroke, StrokeKind, TextContent, VerticalAlign};
 
 use super::annotations::{emphasis_mark_center, EmphasisMark, RubyCell};
-use super::font_tables::{upright_baseline, upright_centre_metrics};
 use super::layout::{column_base_center, CellKind, VerticalCell, VerticalLayout};
-use super::shaping::{single_glyph_blob, ShapedRun};
+use crate::shapes::text_shaping::{single_glyph_blob, ShapedRun};
+use crate::shapes::text_shaping::{upright_baseline, upright_centre_metrics};
 
 /// How glyphs reach the canvas.
 #[derive(Debug, Clone, Copy, PartialEq)]

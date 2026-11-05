@@ -21,8 +21,10 @@ use super::flow::FlowCell;
 use super::layout::{
     column_base_center, CellKind, ParagraphTextMap, VerticalCell, VerticalColumn, VerticalLayout,
 };
-use super::orientation::segment_by_orientation;
-use super::shaping::{shape_segment, shape_segment_with_fallbacks, span_font_families, ShapedRun};
+use crate::shapes::text_shaping::segment_by_orientation;
+use crate::shapes::text_shaping::{
+    shape_segment, shape_segment_with_fallbacks, span_font_families, ShapedRun,
+};
 
 /// One shaped ruby glyph, retaining its fallback-font run and source range.
 #[derive(Debug, Clone, Copy)]
@@ -739,9 +741,10 @@ pub(super) fn emphasis_mark_center(layout: &VerticalLayout, mark: &EmphasisMark)
 #[cfg(test)]
 mod tests {
     use super::super::layout::VerticalLayout;
-    use super::super::positions::{position_data, DIRECTION_VERTICAL_RUBY};
+    use super::super::positions::position_data;
     use super::super::test_support::*;
     use super::*;
+    use crate::shapes::DIRECTION_VERTICAL_RUBY;
     use crate::shapes::{AnnotationClearance, GrowType, RubySize};
     use crate::shapes::{
         TextAlign, TextEmphasis, TextOrientation, TextSpan, TextTransform, VerticalAlign,
@@ -772,7 +775,6 @@ mod tests {
 
     #[test]
     fn zhuyin_is_upright_per_base_and_tones_have_exact_source_ranges() {
-        use crate::shapes::text_zhuyin;
         let content = spans_content(
             vec![
                 TextSpan {
@@ -814,7 +816,7 @@ mod tests {
         );
         let readings: Vec<_> = entries
             .iter()
-            .filter(|p| p.direction == text_zhuyin::DIRECTION_ZHUYIN)
+            .filter(|p| p.direction == crate::shapes::DIRECTION_ZHUYIN)
             .collect();
         assert_eq!(readings.len(), 6);
         assert!(readings

@@ -46,7 +46,7 @@ fn table_data(font: &Font, tag: &[u8; 4]) -> Option<skia_safe::Data> {
 /// advance by the glyph's vertical advance, not its shaped horizontal one;
 /// the two differ for vertical alternates and proportional glyphs (e.g. the
 /// vertical kana repeat marks).
-pub(super) struct VerticalMetrics {
+pub(crate) struct VerticalMetrics {
     units_per_em: f32,
     /// Advance heights of the first `advances.len()` glyph ids.
     advances: Vec<u16>,
@@ -57,7 +57,7 @@ pub(super) struct VerticalMetrics {
 impl VerticalMetrics {
     /// Parses `vhea`/`vmtx`. `None` when the font has no vertical metrics
     /// (callers keep horizontal advances).
-    pub(super) fn from_font(font: &Font) -> Option<Self> {
+    pub(crate) fn from_font(font: &Font) -> Option<Self> {
         let units_per_em = units_per_em(font)?;
         let vhea = table_data(font, b"vhea")?;
         let vmtx = table_data(font, b"vmtx")?;
@@ -87,7 +87,7 @@ impl VerticalMetrics {
 
     /// Vertical advance of `glyph` at `font_size`, in pixels (same units as
     /// the horizontal advances).
-    pub(super) fn advance(&self, glyph: GlyphId, font_size: f32) -> f32 {
+    pub(crate) fn advance(&self, glyph: GlyphId, font_size: f32) -> f32 {
         let raw = self
             .advances
             .get(glyph as usize)
@@ -97,12 +97,12 @@ impl VerticalMetrics {
     }
 }
 
-pub(super) fn vertical_metrics(font: &Font) -> Option<Rc<VerticalMetrics>> {
+pub(crate) fn vertical_metrics(font: &Font) -> Option<Rc<VerticalMetrics>> {
     cached_table(&VERTICAL_METRICS, font, VerticalMetrics::from_font)
 }
 
 /// GPOS `vpal` deltas for one typeface, in font units.
-pub(super) struct VpalTable {
+pub(crate) struct VpalTable {
     units_per_em: f32,
     deltas: HashMap<u16, VpalDelta>,
 }
@@ -122,7 +122,7 @@ impl VpalTable {
     /// (negative when the cell tightens) and flow-axis ink shift (positive
     /// down the column; GPOS `yPlacement` is y-up, so its sign flips).
     /// `None` when no glyph of the cluster is covered.
-    pub(super) fn cluster_delta(&self, glyphs: &[GlyphId], font_size: f32) -> Option<(f32, f32)> {
+    pub(crate) fn cluster_delta(&self, glyphs: &[GlyphId], font_size: f32) -> Option<(f32, f32)> {
         let scale = font_size / self.units_per_em;
         let mut advance = 0.0f32;
         let mut flow_shift = None;
@@ -136,7 +136,7 @@ impl VpalTable {
     }
 }
 
-pub(super) fn vpal_table(font: &Font) -> Option<Rc<VpalTable>> {
+pub(crate) fn vpal_table(font: &Font) -> Option<Rc<VpalTable>> {
     cached_table(&VPAL_TABLES, font, VpalTable::from_font)
 }
 
@@ -183,20 +183,20 @@ pub(crate) fn upright_centre_metrics(font: &Font) -> (f32, f32) {
 /// glyph's line box in the em cell, as Tate-chu-yoko does. CJK faces have an
 /// ascent larger than the em, so hanging glyphs from the ascent would push
 /// them below their cells and overflow the column.
-pub(super) fn upright_baseline_offset(ascent: f32, descent: f32, font_size: f32) -> f32 {
+pub(crate) fn upright_baseline_offset(ascent: f32, descent: f32, font_size: f32) -> f32 {
     font_size / 2.0 - (ascent + descent) / 2.0
 }
 
 /// Baseline offset for an upright glyph of `font` in an em cell of `font_size`.
-pub(super) fn upright_baseline(font: &Font, font_size: f32) -> f32 {
+pub(crate) fn upright_baseline(font: &Font, font_size: f32) -> f32 {
     let (ascent, descent) = upright_centre_metrics(font);
     upright_baseline_offset(ascent, descent, font_size)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::super::test_support::{TEST_FONT, VMTX_TEST_FONT};
     use super::*;
+    use crate::shapes::text_vertical::test_support::{TEST_FONT, VMTX_TEST_FONT};
     use skia_safe::FontMgr;
 
     #[test]

@@ -5,13 +5,12 @@ use std::ops::Range;
 use skia_safe::{self as skia, textlayout::TypefaceFontProvider, FontMgr};
 
 use super::cjk_chars::is_zhuyin_base;
-use super::text_vertical::{shape_segment_with_fallbacks, span_font_families, ShapedRun};
+use super::text_shaping::{shape_segment_with_fallbacks, span_font_families, ShapedRun};
 use super::TextSpan;
 use crate::render::FallbackFonts;
 
 pub(crate) const FONT_SCALE: f32 = 0.3;
 pub(crate) const STRIP_WIDTH: f32 = 0.6;
-pub(crate) const DIRECTION_ZHUYIN: u32 = 5;
 
 pub(crate) struct Slot {
     pub ch: char,

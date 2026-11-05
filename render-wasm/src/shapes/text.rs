@@ -645,7 +645,7 @@ impl TextContent {
             .iter()
             .flat_map(|p| p.children())
             .flat_map(|span| span.text.chars())
-            .any(|c| super::text_vertical::is_emoji_char(c) || matches!(c, '\u{FE0F}' | '\u{20E3}'))
+            .any(|c| super::text_shaping::is_emoji_char(c) || matches!(c, '\u{FE0F}' | '\u{20E3}'))
     }
 
     pub fn paragraphs_mut(&mut self) -> &mut Vec<Paragraph> {
@@ -2945,6 +2945,23 @@ pub struct TextLayoutData {
     pub paragraphs: Vec<ParagraphLayout>,
 }
 
+// Position-data `direction` values. 0 and 1 are the horizontal rtl and ltr
+// runs (`direction_to_int`); the others mark vertical strips and annotation
+// boxes the frontend reads differently.
+
+/// A vertical-rl strip.
+pub const DIRECTION_VERTICAL_RL: u32 = 2;
+
+/// A vertical ruby strip; offsets index the *ruby* string.
+pub const DIRECTION_VERTICAL_RUBY: u32 = 3;
+
+/// One emphasis mark (圏点) box, in any mode.
+pub const DIRECTION_EMPHASIS_MARK: u32 = 4;
+
+/// A single upright Zhuyin glyph, in any mode; offsets index the *ruby*
+/// string and the box carries its drawing baseline.
+pub const DIRECTION_ZHUYIN: u32 = 5;
+
 pub(crate) fn direction_to_int(direction: TextDirection) -> u32 {
     match direction {
         TextDirection::RTL => 0,
@@ -3097,7 +3114,7 @@ impl HorizontalPositionEntries<'_> {
                     placement.span,
                     placement.range.clone(),
                     horizontal_emphasis_mark_box(span, &placement),
-                    super::text_vertical::DIRECTION_EMPHASIS_MARK,
+                    DIRECTION_EMPHASIS_MARK,
                 ));
             }
         }

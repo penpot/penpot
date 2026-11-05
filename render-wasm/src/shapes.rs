@@ -38,6 +38,7 @@ pub mod text_paragraph;
 pub mod text_paths;
 pub mod text_policy;
 mod text_ruby;
+mod text_shaping;
 pub mod text_vertical;
 mod text_warichu;
 mod text_zhuyin;
