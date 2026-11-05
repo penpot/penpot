@@ -691,6 +691,67 @@ test.describe("Guides", () => {
   });
 });
 
+test.describe("Path actions", () => {
+  test("Shows the path editing bar and its menus", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+
+    // A path with a curve node, so the handler menu shows.
+    await page.keyboard.press("p");
+    await workspace.clickAt(200, 200);
+    await workspace.clickAndMove(400, 200, 450, 300);
+    await workspace.clickAt(300, 400);
+    await page.keyboard.press("Enter");
+
+    const bar = page.locator("[class*='sub-actions']").first();
+    await expect(bar).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(bar).toHaveScreenshot("path-actions-draw.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    // Select every node so all the node actions show.
+    await bar.getByRole("button", { name: /Move nodes/ }).click();
+    await workspace.clickWithDragViewportAt(150, 150, 350, 300);
+    await page.mouse.move(640, 600);
+    await expect(bar).toHaveScreenshot("path-actions.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    const box = await bar.boundingBox();
+    const clip = {
+      x: box.x - 40,
+      y: box.y,
+      width: box.width + 80,
+      height: box.height + 46,
+    };
+
+    await bar.getByRole("button", { name: /Merge nodes/ }).hover();
+    // Let the tooltip show.
+    await page.waitForTimeout(1000);
+    await expect(page).toHaveScreenshot("path-actions-hover.png", {
+      clip,
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await bar.getByRole("button", { name: /Handler/ }).click();
+    await expect(
+      bar.getByRole("button", { name: "Independent" }),
+    ).toBeVisible();
+    // Let the menu fade in.
+    await page.waitForTimeout(500);
+    await expect(page).toHaveScreenshot("path-actions-handlers.png", {
+      clip,
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
 test.describe("Viewport top bar", () => {
   test("Shows the view only bar of the inspect tab", async ({ page }) => {
     const workspace = new WorkspacePage(page);
