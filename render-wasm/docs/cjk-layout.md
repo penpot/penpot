@@ -193,3 +193,22 @@ dialectal symbols/tones, automatic pronunciation, native IME acceptance and
 native-reader approval remain outside this slice. Changing a base into a
 group preserves the reading and uses normal ruby until a single base is
 restored. Existing Pinyin and Japanese readings keep their saved behavior.
+
+## Renderer modules
+
+- `shapes/text_policy.rs`: `TextLayoutPolicy` (`Plain`, `Japanese`,
+  `Chinese(ChineseRegion)`, `Korean(KoreanWrap)`), parsed once per
+  paragraph from `LanguageTag`. Layout code asks it named questions.
+- `shapes/jlreq.rs`: JLREQ classes (`JlreqClass`), pair rules and kinsoku.
+- `shapes/line_breaks.rs`: horizontal layout-text rewrite, `OffsetMap` and
+  `PolicyBoundaries`.
+- `shapes/cjk_chars.rs`: shared Han, kana, hangul and punctuation ranges.
+- `shapes/text_attrs.rs`, `text_ruby.rs`, `text_warichu.rs` and
+  `text_allocation.rs`: span attributes, ruby rules, warichu and the
+  justify/squeeze allocators both axes share.
+- `shapes/text_shaping/`: glyph shaping, orientation and font tables.
+- `text_vertical/flow/`: JLREQ column planning, with the pairwise policies
+  in `flow/pairwise.rs`. Horizontal and vertical helpers use the same
+  `jlreq_*` and `pairwise_*` prefixes.
+- `wasm/text/layout_attrs.rs`: the `Raw*` enums the frontend writes, including
+  `RawKoreanWrap`.
