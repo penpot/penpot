@@ -305,6 +305,48 @@
       (t/is (th/success? out))
       (t/is (= [] (:result out))))))
 
+(t/deftest get-organization-team-roles-returns-owners-and-admins-only
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [owner        (th/create-profile* 1 {:is-active true})
+          admin        (th/create-profile* 2 {:is-active true})
+          editor       (th/create-profile* 3 {:is-active true})
+          viewer       (th/create-profile* 4 {:is-active true})
+          deleted      (th/create-profile* 5 {:is-active true})
+          team         (th/create-team* 1 {:profile-id (:id owner)})
+          deleted-team (th/create-team* 2 {:profile-id (:id owner)})
+          _            (th/db-update! :team
+                                      {:deleted-at (ct/now)}
+                                      {:id (:id deleted-team)})
+          _            (doseq [[profile role] [[admin :admin]
+                                               [editor :editor]
+                                               [viewer :viewer]
+                                               [deleted :admin]]]
+                         (th/create-team-role* {:team-id (:id team)
+                                                :profile-id (:id profile)
+                                                :role role}))
+          _            (th/db-update! :profile
+                                      {:deleted-at (ct/now)}
+                                      {:id (:id deleted)})
+          team-ids     (mapv :id [team deleted-team {:id (:default-team-id owner)}])
+          out          (th/management-command! {::th/type :get-organization-team-roles
+                                                ::rpc/profile-id (:id owner)
+                                                :team-ids team-ids})]
+      (t/is (th/success? out))
+      (t/is (= {(:id owner) :owner
+                (:id admin) :admin}
+               (->> out :result (map (juxt :profile-id :role)) (into {}))))
+      (t/is (= #{(:id team)} (into #{} (map :team-id) (:result out))))
+      (t/is (= [(:name team)] (->> out :result (map :team-name) distinct))))))
+
+(t/deftest get-organization-team-roles-empty-team-ids
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          out     (th/management-command! {::th/type :get-organization-team-roles
+                                           ::rpc/profile-id (:id profile)
+                                           :team-ids []})]
+      (t/is (th/success? out))
+      (t/is (= [] (:result out))))))
+
 (t/deftest update-profile-theme-updates-only-theme
   (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
     (let [profile (th/create-profile* 1 {:is-active true

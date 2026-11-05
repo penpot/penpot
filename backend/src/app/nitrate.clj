@@ -444,7 +444,8 @@
                       [:map
                        [:organization-id ::sm/uuid]
                        [:owner-id ::sm/uuid]
-                       [:permissions [:map-of :keyword :string]]]
+                       [:permissions [:map-of :keyword :string]]
+                       [:restrictions-met {:optional true} [:maybe [:map-of :keyword :boolean]]]]
                       params))
 
 (defn- get-organization-sso-api

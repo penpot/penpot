@@ -386,7 +386,7 @@
   [{:keys [::db/conn] :as cfg} {:keys [profile team role emails invitations] :as params}]
   (let [;; Enrich team with organization info once for all invitations when nitrate is active
         team             (if (contains? cf/flags :admin-console)
-                           (nitrate/add-organization-info-to-team cfg team {})
+                           (nitrate/add-organization-info-to-team cfg team {::rpc/profile-id (:id profile)})
                            team)
         organization              (:organization team)
         organization-id           (:id organization)
@@ -489,7 +489,7 @@
         profile  (db/get-by-id cfg :profile profile-id)
         team     (db/get-by-id cfg :team team-id)
         team-with-org (when (contains? cf/flags :admin-console)
-                        (nitrate/add-organization-info-to-team cfg team {}))
+                        (nitrate/add-organization-info-to-team cfg team {::rpc/profile-id profile-id}))
         organization (:organization team-with-org)
         ;; Determine which format is being used
         using-emails-format? (and emails role)
@@ -509,8 +509,7 @@
     (when (and (contains? cf/flags :admin-console)
                organization
                (not (cto/allowed? :send-invitations
-                                  {:organization-perms {:owner-id    (:owner-id organization)
-                                                        :permissions (:permissions organization)}
+                                  {:organization-perms organization
                                    :profile-id profile-id
                                    :team-perms perms})))
       (ex/raise :type :validation
