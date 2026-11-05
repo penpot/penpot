@@ -371,13 +371,18 @@
   and `failed` (anything the pass throws: the frontier read, a chunk or the
   lag query), so a failure cannot leave the family flat."
   [cfg consumer-id process-chunk]
-  (if-not (enabled? consumer-id)
+  (cond
+    (not (contains? consumers-by-id consumer-id))
+    (ex/raise :type :internal
+              :code :unknown-audit-consumer
+              :hint "unknown audit-log consumer"
+              :consumer consumer-id)
+
+    (not (enabled? consumer-id))
     ::disabled
-    (let [consumer (or (get consumers-by-id consumer-id)
-                       (ex/raise :type :internal
-                                 :code :unknown-audit-consumer
-                                 :hint "unknown audit-log consumer"
-                                 :consumer consumer-id))
+
+    :else
+    (let [consumer (get consumers-by-id consumer-id)
           label    (consumer-label consumer-id)
           metrics  (mtx/instance cfg)
           totals   (volatile! {:processed 0 :skipped 0 :chunks 0})

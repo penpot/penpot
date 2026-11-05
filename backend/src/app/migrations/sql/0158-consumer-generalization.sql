@@ -65,14 +65,16 @@ ALTER SEQUENCE audit_log_seq_seq OWNED BY audit_log.seq;
 -- the rows the previous version may insert between this count and the
 -- SET DEFAULT (a few statements away).
 --
--- Only the first application sets it: a sequence that already left its
--- initial value (1) is reserved by the operator or in use, and a re-run
--- must leave it alone (moving it back would reuse values above the
--- history and break the reserve).
+-- Only the first application sets it: a sequence that was never called
+-- (`last_value = 1` with `is_called = false`) is intact; any other state
+-- (reserved by the operator, in use, or already reserved by a previous
+-- run) must be left alone, because moving it back would reuse values above
+-- the history and break the reserve.
 SELECT setval('audit_log_seq_seq',
               (SELECT count(*) + 1000000 FROM audit_log),
               false)
- WHERE (SELECT last_value FROM audit_log_seq_seq) = 1;
+ WHERE (SELECT last_value FROM audit_log_seq_seq) = 1
+   AND NOT (SELECT is_called FROM audit_log_seq_seq);
 
 -- From here no new row can be NULL: the previous version keeps inserting
 -- during the rollout and must leave the columns filled.

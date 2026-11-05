@@ -119,6 +119,16 @@
         (and (<= 200 status 299)
              (or (= status 204) (nil? schema)))
         nil
+        ;; A redirect is a configuration error (a proxy normalising the url,
+        ;; a trailing slash, an auth hop), never a success: raise a typed
+        ;; error so the caller does not read it as an empty or confirmed
+        ;; response. This sits outside `with-retries` on purpose.
+        (<= 300 status 399)
+        (do
+          (l/error :hint "nitrate request was redirected" :uri uri :status status)
+          (ex/raise :type :nitrate-http-error
+                    :status status
+                    :hint (str "nitrate redirected, HTTP " status " at " uri)))
         :else ;; For success status codes, validate the response
         (let [coercer-http (sm/coercer schema
                                        :type :validation

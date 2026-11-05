@@ -790,6 +790,18 @@
         (t/is (false? (:called? @http-mock)))
         (t/is (nil? (cursor-of consumer/nexus)))))))
 
+(t/deftest drain-consumer-rejects-an-unknown-id
+  ;; The flag lookup answers false for an id outside the registry, so the
+  ;; unknown-consumer raise must happen first: a typo must fail, not silently
+  ;; disable the pass.
+  (let [data (try
+               (consumer/drain-consumer (nexus-cfg nil) 999 (fn [_ _] nil))
+               nil
+               (catch clojure.lang.ExceptionInfo e (ex-data e)))]
+    (t/is (= :internal (:type data)))
+    (t/is (= :unknown-audit-consumer (:code data)))
+    (t/is (= 999 (:consumer data)))))
+
 (t/deftest admin-console-pass-with-its-flag-off-sends-nothing
   ;; `nitrate/call` returns nil when `:admin-console` is off, so without the
   ;; gate the pass would count the nil as success and advance the cursor
@@ -938,6 +950,40 @@
         instance  (::mdef/instance collector)
         child     (.labels ^Gauge instance (into-array String labels))]
     (.get ^Gauge$Child child)))
+
+(t/deftest consumer-admin-console-rejects-a-3xx-response
+  ;; A redirect is a configuration error, not a success: the chunk rolls
+  ;; back, the cursor does not advance and the pass counts failed. The test
+  ;; pins the typed error: without the 3xx branch the pass also fails, but
+  ;; with :malli.core/invalid-schema.
+  (let [prof    (th/create-profile* 76 {:is-active true})
+        metrics (make-consumer-metrics)]
+    (with-redefs [cf/flags  #{:admin-console}
+                  cf/config (assoc cf/config
+                                   :admin-console-uri "http://ac.example/admin-console/"
+                                   :admin-console-shared-key "ac-key"
+                                   :nexus-shared-key "nexus-key")]
+      (let [shared-keys  {:admin-console "ac-key" :nexus "nexus-key"}
+            client       (ig/init-key :app.nitrate/client
+                                      {::http/client       (Object.)
+                                       ::setup/shared-keys shared-keys})
+            consumer-cfg {::db/pool           (:app.db/pool th/*system*)
+                          ::mtx/metrics       metrics
+                          :app.nitrate/client client}]
+        (with-mocks [http-mock {:target 'app.http.client/req
+                                :return {:status 302
+                                         :headers {"location" "http://ac.example/admin-console/api/audit-log"}
+                                         :body ""}}]
+          (insert-audit-row (:id prof) "create-project")
+          (let [err (try
+                      (consumer.admin-console/run-pass consumer-cfg)
+                      nil
+                      (catch clojure.lang.ExceptionInfo e e))]
+            (t/is (= :admin-console-send-failed (:code (ex-data err))))
+            (t/is (= :nitrate-http-error (:type (ex-data (ex-cause err)))))
+            (t/is (= 302 (:status (ex-data (ex-cause err))))))
+          (t/is (= 1 (unread-count consumer/admin-console)))
+          (t/is (= 1.0 (counter-value metrics :audit-consumer-passes ["admin-console" "failed"]))))))))
 
 (t/deftest consumer-empty-pass-records-lag-zero
   (let [metrics (make-consumer-metrics)]

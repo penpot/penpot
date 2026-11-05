@@ -364,6 +364,18 @@
       (finally
         (th/db-exec! ["DELETE FROM audit_log WHERE id = ?" id])))))
 
+(t/deftest the-sequence-reserve-is-not-applied-to-a-used-once-sequence
+  ;; A sequence that was called once has last_value = 1 with is_called = true:
+  ;; it is not intact, so the reserve must leave it alone.
+  (let [apply! (mg/resource "app/migrations/sql/0158-consumer-generalization.sql")
+        before (sequence-last-value)]
+    (try
+      (th/db-exec! ["SELECT setval('audit_log_seq_seq', 1, true)"])
+      (t/is (true? (apply! th/*pool*)))
+      (t/is (= 1 (sequence-last-value)))
+      (finally
+        (th/db-exec! ["SELECT setval('audit_log_seq_seq', ?::bigint, false)" before])))))
+
 (t/deftest job-live-exclusive-index-admits-one-live-row-per-key
   ;; The exclusion of the live jobs is the index, not a check that races
   ;; an insert: it is unique, it covers the whole key, and it only
