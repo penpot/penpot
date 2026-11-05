@@ -1201,8 +1201,10 @@ fn horizontal_emphasis_mark_stacks_outside_auto_clearance_ruby() {
     stacked.ruby = "かん".to_string();
     stacked.annotation_clearance = AnnotationClearance::Auto;
 
-    let plain_box = horizontal_emphasis_mark_box(&plain, &placement);
-    let stacked_box = horizontal_emphasis_mark_box(&stacked, &placement);
+    let size = plain.font_size * EMPHASIS_FONT_SCALE;
+    let ink = skia::Rect::from_wh(size, size);
+    let plain_box = horizontal_emphasis_mark_box(&plain, &placement, &ink);
+    let stacked_box = horizontal_emphasis_mark_box(&stacked, &placement, &ink);
 
     assert_eq!(plain_box.width(), plain.font_size * EMPHASIS_FONT_SCALE);
     assert_eq!(plain_box.center_x(), placement.rect.center_x());
@@ -1427,12 +1429,13 @@ fn emphasis_position_overrides_the_language_and_stacks_on_its_own_side() {
         span.text_emphasis = TextEmphasis::FilledDot;
         span.text_emphasis_position = position;
         span.annotation_clearance = AnnotationClearance::Auto;
-        let plain = super::emphasis::horizontal_emphasis_mark_box(&span, &placement);
+        let ink = skia::Rect::from_wh(8.0, 8.0);
+        let plain = super::emphasis::horizontal_emphasis_mark_box(&span, &placement, &ink);
         assert_eq!(plain.top() >= placement.rect.bottom(), under);
         span.ruby = "zhōng wén".to_string();
         for side in [AnnotationSide::Over, AnnotationSide::Under] {
             span.ruby_side = side;
-            let stacked = super::emphasis::horizontal_emphasis_mark_box(&span, &placement);
+            let stacked = super::emphasis::horizontal_emphasis_mark_box(&span, &placement, &ink);
             let expected = if (side == AnnotationSide::Under) == under {
                 span.ruby_font_size()
             } else {
@@ -1527,7 +1530,8 @@ fn below_emphasis_clears_an_underline_on_the_same_side() {
         rect: skia::Rect::from_xywh(0.0, 20.0, 16.0, 18.0),
         em_top: 20.0,
     };
-    let mark = super::emphasis::horizontal_emphasis_mark_box(&span, &placement);
+    let ink = skia::Rect::from_wh(8.0, 8.0);
+    let mark = super::emphasis::horizontal_emphasis_mark_box(&span, &placement, &ink);
     assert!(mark.top() > placement.rect.bottom() + span.font_size / 9.0);
 }
 
@@ -1546,7 +1550,8 @@ fn chinese_horizontal_emphasis_defaults_below_the_base() {
         rect: skia::Rect::from_xywh(0.0, 20.0, 16.0, 18.0),
         em_top: 20.0,
     };
-    let mark = super::emphasis::horizontal_emphasis_mark_box(&span, &placement);
+    let ink = skia::Rect::from_wh(8.0, 8.0);
+    let mark = super::emphasis::horizontal_emphasis_mark_box(&span, &placement, &ink);
     assert!(mark.top() >= placement.rect.bottom());
 }
 
@@ -2256,15 +2261,13 @@ fn horizontal_emphasis_export_bounds_include_every_adjacent_ruby_mark() {
         let export = content.calculate_bounds(&shape, false).to_rect();
         let plans = content.horizontal_plans();
         let paragraph = &content.paragraphs()[0];
-        let placements = horizontal_emphasis_placements(
+        let marks = horizontal_emphasis_mark_boxes(
             paragraph,
             &plans[0].offsets,
             &content.layout.paragraphs[0][0],
         );
-        assert_eq!(placements.len(), 4);
-        for placement in placements {
-            let mark =
-                horizontal_emphasis_mark_box(&paragraph.children()[placement.span], &placement);
+        assert_eq!(marks.len(), 4);
+        for (_, mark) in marks {
             assert!(
                 export.bottom() >= mark.bottom(),
                 "{grow:?}: export {export:?} crops mark {mark:?}"
@@ -2472,6 +2475,76 @@ fn japanese_distribution_reaches_the_box_edges() {
             (last.right - 200.0).abs() < 0.1,
             "{text}: ends at {}",
             last.right
+        );
+    }
+}
+
+#[test]
+fn horizontal_emphasis_mark_box_is_the_painted_mark_on_either_side() {
+    init_state();
+    let mut resources =
+        crate::render::RenderResources::try_new_headless().expect("headless resources");
+    let fonts = resources.fonts.font_collection().clone();
+    let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+    for position in [
+        TextEmphasisPosition::OverRight,
+        TextEmphasisPosition::UnderRight,
+    ] {
+        let span = TextSpan {
+            font_size: 48.0,
+            fills: vec![crate::shapes::Fill::Solid(crate::shapes::SolidColor(
+                skia::Color::BLACK,
+            ))],
+            text_emphasis: TextEmphasis::FilledCircle,
+            text_emphasis_position: position,
+            ..make_span("A", 0.0)
+        };
+        let paragraph = make_paragraph(vec![span], 0.0);
+        let (plan, layout) = cjk_layout_paragraph(&paragraph, 400.0, &fonts);
+        let marks = horizontal_emphasis_mark_boxes(&paragraph, &plan.offsets, &layout);
+        assert_eq!(marks.len(), 1);
+        let (placement, mark_box) = &marks[0];
+        let span = &paragraph.children()[0];
+        let shaped = super::emphasis::HorizontalEmphasisMark::measure(
+            &layout,
+            &plan.offsets.ranges[0],
+            span,
+            placement.mark,
+        )
+        .expect("shaped mark");
+        assert_eq!(mark_box.width(), shaped.ink.width());
+        assert_eq!(mark_box.height(), shaped.ink.height());
+        assert_eq!(mark_box.center_x(), placement.rect.center_x());
+        let offset = span.emphasis_outside_offset(false);
+        if position == TextEmphasisPosition::OverRight {
+            assert_eq!(mark_box.bottom(), placement.em_top - offset);
+        } else {
+            assert_eq!(mark_box.top(), placement.rect.bottom() + offset);
+        }
+
+        let (x, y) = (20.0, 60.0);
+        let mut surface = skia::surfaces::raster_n32_premul((440, 220)).unwrap();
+        surface.canvas().clear(skia::Color::TRANSPARENT);
+        paint_horizontal_emphasis(surface.canvas(), &paragraph, &plan, &layout, x, y);
+        let image = surface.image_snapshot();
+        let pixels = image.peek_pixels().expect("raster pixels");
+        let mut ink: Option<skia::IRect> = None;
+        for py in 0..220 {
+            for px in 0..440 {
+                if pixels.get_color((px, py)).a() > 0 {
+                    let pixel = skia::IRect::from_xywh(px, py, 1, 1);
+                    ink = Some(ink.map_or(pixel, |rect| skia::IRect::join(&rect, &pixel)));
+                }
+            }
+        }
+        let ink = ink.expect("the mark paints");
+        let painted = mark_box.with_offset((x, y));
+        assert!(
+            ink.left as f32 >= painted.left.floor()
+                && ink.right as f32 <= painted.right.ceil()
+                && ink.top as f32 >= painted.top.floor()
+                && ink.bottom as f32 <= painted.bottom.ceil(),
+            "{position:?}: mark paints {ink:?} outside its box {painted:?}"
         );
     }
 }
