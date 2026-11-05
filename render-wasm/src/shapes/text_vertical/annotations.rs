@@ -9,7 +9,7 @@ use skia_safe::{self as skia, Font};
 
 use crate::shapes::text_attrs::{emphasis_char_allowed, EMPHASIS_FONT_SCALE};
 use crate::shapes::text_ruby::{
-    distribute_ruby_pieces, long_ruby_gap, ruby_overhang_room, ruby_overhangs, ruby_pieces,
+    distribute_ruby_pieces, long_ruby_gap, ruby_overhang_room, ruby_pieces, OverhangClaims,
 };
 use crate::shapes::{
     AnnotationSide, AppliedTextTransform, FontFeatures, Paragraph, RubyOverhang, TextContent,
@@ -208,7 +208,7 @@ pub(super) fn set_ruby_overhang_rooms(flow: &[FlowCell], ruby_units: &mut [RubyB
             .is_some_and(|unit| ruby_units[*unit].annotates(cell))
     };
     let indices = annotated_indices(flow.iter().map(|item| &item.cell), ruby_units);
-    let mut claimed: HashMap<usize, f32> = HashMap::new();
+    let mut claims = OverhangClaims::new();
     let rooms: Vec<(f32, f32)> = ruby_units
         .iter()
         .zip(&indices)
@@ -229,13 +229,13 @@ pub(super) fn set_ruby_overhang_rooms(flow: &[FlowCell], ruby_units: &mut [RubyB
             };
             let before = first.checked_sub(1);
             let after = Some(last + 1).filter(|index| *index < flow.len());
-            let taken = before.and_then(|index| claimed.get(&index)).copied();
-            let room = ((room(before) - taken.unwrap_or(0.0)).max(0.0), room(after));
-            if let Some(after) = after {
-                let base: f32 = indices.iter().map(|index| flow[*index].cell.extent).sum();
-                claimed.insert(after, ruby_overhangs(unit.ruby_line() - base, room).1);
-            }
-            room
+            let base: f32 = indices.iter().map(|index| flow[*index].cell.extent).sum();
+            claims.room(
+                before,
+                after,
+                (room(before), room(after)),
+                unit.ruby_line() - base,
+            )
         })
         .collect();
     for (unit, room) in ruby_units.iter_mut().zip(rooms) {

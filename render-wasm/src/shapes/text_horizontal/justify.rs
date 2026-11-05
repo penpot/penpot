@@ -5,7 +5,9 @@
 // character. The other policies justify over their pairwise expansion
 // opportunities with bounded amounts.
 
-use crate::shapes::text_allocation::capped_equal_allocations;
+use crate::shapes::text_allocation::{
+    allocate_bounded_expansion, bounded_expansion, capped_equal_allocations,
+};
 use crate::shapes::text_paragraph::LayoutParagraph;
 
 use super::*;
@@ -118,7 +120,7 @@ pub(crate) fn horizontal_pairwise_justify_spacing(
         lines.len().saturating_sub(1)
     };
     for line in lines.iter().take(count) {
-        let mut remaining = (width - line.width as f32 - JUSTIFY_EPSILON).max(0.0);
+        let remaining = (width - line.width as f32 - JUSTIFY_EPSILON).max(0.0);
         let mut opportunities = Vec::new();
         let start = chars.partition_point(|c| c.utf16 < line.start_index);
         let end = chars.partition_point(|c| c.utf16 < line.end_excluding_whitespaces);
@@ -148,30 +150,16 @@ pub(crate) fn horizontal_pairwise_justify_spacing(
             {
                 continue;
             }
-            let (priority, capacity) = if distribute {
-                (1, width / before.font_size.min(after.font_size).max(0.01))
-            } else {
-                policy.expansion_em(before.ch, after.ch)
-            };
-            if priority > 0 {
-                opportunities.push((
-                    index,
-                    priority,
-                    capacity * before.font_size.min(after.font_size),
-                ));
+            let em = before.font_size.min(after.font_size);
+            if let Some((priority, cap)) =
+                bounded_expansion(policy, before.ch, after.ch, em, distribute.then_some(width))
+            {
+                opportunities.push((index, priority, cap));
             }
         }
-        for priority in 1..=2 {
-            let caps: Vec<_> = opportunities
-                .iter()
-                .filter(|(_, p, _)| *p == priority)
-                .map(|(i, _, cap)| (*i, *cap))
-                .collect();
-            for (index, amount) in capped_equal_allocations(&caps, remaining) {
-                let ch = &chars[index];
-                result[ch.span].push((ch.index, amount));
-                remaining -= amount;
-            }
+        for (index, amount) in allocate_bounded_expansion(&opportunities, remaining) {
+            let ch = &chars[index];
+            result[ch.span].push((ch.index, amount));
         }
     }
     result

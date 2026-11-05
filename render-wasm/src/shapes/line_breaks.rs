@@ -42,6 +42,70 @@ use super::jlreq::{classify, pair_rule, JlreqClass};
 use super::text_policy::TextLayoutPolicy;
 use unicode_segmentation::UnicodeSegmentation;
 
+/// One grapheme of a paragraph's text with the policy's rules for the
+/// boundary before it. The first grapheme allows both kinds of break.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PolicyBoundary {
+    /// UTF-16 offset of the grapheme in the text.
+    pub utf16: usize,
+    /// First character of the grapheme, which the policy rules read.
+    pub first: char,
+    /// `TextLayoutPolicy::break_allowed` before this grapheme.
+    pub allowed: bool,
+    /// `TextLayoutPolicy::emergency_break_allowed` before this grapheme.
+    pub emergency: bool,
+}
+
+/// Break boundaries of a whole paragraph text (all spans, transformed), so
+/// font and style runs cannot split a grapheme or create a boundary.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct PolicyBoundaries {
+    pub graphemes: Vec<PolicyBoundary>,
+    /// UTF-16 length of the text.
+    pub length: usize,
+}
+
+impl PolicyBoundaries {
+    pub fn new(text: &str, policy: TextLayoutPolicy) -> Self {
+        let mut length = 0;
+        let mut previous: Option<char> = None;
+        let graphemes = text
+            .graphemes(true)
+            .map(|grapheme| {
+                let first = grapheme.chars().next().unwrap();
+                let boundary = PolicyBoundary {
+                    utf16: length,
+                    first,
+                    allowed: previous.is_none_or(|before| policy.break_allowed(before, first)),
+                    emergency: previous
+                        .is_none_or(|before| policy.emergency_break_allowed(before, first)),
+                };
+                previous = Some(first);
+                length += grapheme.encode_utf16().count();
+                boundary
+            })
+            .collect();
+        Self { graphemes, length }
+    }
+
+    /// (allowed, emergency) at a UTF-16 offset: a grapheme start, or the
+    /// text end, which allows both. `None` inside a grapheme.
+    pub fn at(&self, utf16: usize) -> Option<(bool, bool)> {
+        if utf16 == self.length {
+            return Some((true, true));
+        }
+        self.graphemes
+            .binary_search_by_key(&utf16, |g| g.utf16)
+            .ok()
+            .map(|index| {
+                (
+                    self.graphemes[index].allowed,
+                    self.graphemes[index].emergency,
+                )
+            })
+    }
+}
+
 /// Translates between original UTF-16 offsets (the source-of-truth span text)
 /// and layout-text UTF-16 offsets (the text handed to skparagraph).
 #[derive(Debug, Clone, Default, PartialEq)]

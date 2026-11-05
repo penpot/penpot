@@ -575,6 +575,34 @@ pub fn try_paint_from_layout_cache(
     Ok(false)
 }
 
+/// Paint the warichu, emphasis marks and ruby of the laid-out horizontal
+/// paragraph `index` at `origin`, with the paint of this pass.
+fn paint_horizontal_annotations(
+    canvas: &Canvas,
+    text_content: &TextContent,
+    index: usize,
+    laid_out: &LayoutParagraph,
+    origin: (f32, f32),
+) {
+    paint_horizontal_notes_and_marks(canvas, text_content, index, laid_out, origin);
+    crate::shapes::paint_horizontal_ruby(canvas, text_content, index, laid_out, origin.0, origin.1);
+}
+
+/// The warichu and emphasis marks of `paint_horizontal_annotations`.
+fn paint_horizontal_notes_and_marks(
+    canvas: &Canvas,
+    text_content: &TextContent,
+    index: usize,
+    laid_out: &LayoutParagraph,
+    (x, y): (f32, f32),
+) {
+    let plans = text_content.horizontal_plans();
+    if let (Some(paragraph), Some(plan)) = (text_content.paragraphs().get(index), plans.get(index))
+    {
+        crate::shapes::paint_horizontal_warichu(canvas, paragraph, plan, laid_out, x, y);
+        crate::shapes::paint_horizontal_emphasis(canvas, paragraph, plan, laid_out, x, y);
+    }
+}
 fn paint_from_cached_layout(canvas: &Canvas, shape: &Shape, text_content: &TextContent) {
     let selrect = shape.selrect();
     // Absolute image/gradient shaders were baked at `layout_paint_origin`. Paint
@@ -612,33 +640,10 @@ fn paint_from_cached_layout(canvas: &Canvas, shape: &Shape, text_content: &TextC
             .zip(text_content.paragraphs().get(index))
             .map_or(0.0, |(plan, model)| plan.x_offset(model, selrect.width()));
         paragraph.paint(canvas, (x, y_accum));
+        paint_horizontal_annotations(canvas, text_content, index, paragraph, (x, y_accum));
         if let (Some(text_paragraph), Some(plan)) =
             (text_content.paragraphs().get(index), plans.get(index))
         {
-            crate::shapes::paint_horizontal_warichu(
-                canvas,
-                text_paragraph,
-                plan,
-                paragraph,
-                x,
-                y_accum,
-            );
-            crate::shapes::paint_horizontal_emphasis(
-                canvas,
-                text_paragraph,
-                plan,
-                paragraph,
-                x,
-                y_accum,
-            );
-            crate::shapes::paint_horizontal_ruby(
-                canvas,
-                text_content,
-                index,
-                paragraph,
-                x,
-                y_accum,
-            );
             if draw_decorations {
                 for deco in
                     decoration_segments(paragraph, text_paragraph, &plan.offsets, x, y_accum)
@@ -791,45 +796,23 @@ fn paint_text_with_emoji_overlay(
 
     let mut layout_info =
         calculate_text_layout_data(shape, text_content, paragraph_builder_groups, true);
-    let plans = text_content.horizontal_plans();
 
     for para in &mut layout_info.paragraphs {
         para.paragraph.paint(canvas, (para.x, para.y));
-
-        if let (Some(source_paragraph), Some(plan)) = (
-            text_content.paragraphs().get(para.source_paragraph),
-            plans.get(para.source_paragraph),
-        ) {
-            crate::shapes::paint_horizontal_warichu(
-                canvas,
-                source_paragraph,
-                plan,
-                &para.paragraph,
-                para.x,
-                para.y,
-            );
-            crate::shapes::paint_horizontal_emphasis(
-                canvas,
-                source_paragraph,
-                plan,
-                &para.paragraph,
-                para.x,
-                para.y,
-            );
-        }
-
+        let (index, origin) = (para.source_paragraph, (para.x, para.y));
+        paint_horizontal_notes_and_marks(canvas, text_content, index, &para.paragraph, origin);
+        // The emoji overlay goes over the marks and under the ruby, which
+        // takes the paint of this pass like warichu and emphasis.
         if overlay_emoji {
             paint_emoji_overlay(canvas, para);
         }
-
-        // Like warichu and emphasis, ruby takes the paint of this pass.
         crate::shapes::paint_horizontal_ruby(
             canvas,
             text_content,
-            para.source_paragraph,
+            index,
             &para.paragraph,
-            para.x,
-            para.y,
+            origin.0,
+            origin.1,
         );
 
         for deco in &para.decorations {

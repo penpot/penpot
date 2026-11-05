@@ -11,6 +11,7 @@ use std::iter::once;
 mod blend;
 mod blurs;
 mod bools;
+pub mod cjk_chars;
 mod corners;
 mod fills;
 mod fonts;

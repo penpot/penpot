@@ -148,14 +148,16 @@ fn horizontal_pairwise_spacing(paragraph: &Paragraph, texts: &[String]) -> Vec<V
                 let b = &paragraph.children()[span];
                 if !a.has_ruby() && !b.has_ruby() && !a.is_warichu() && !b.is_warichu() {
                     let em = a.font_size.min(b.font_size);
+                    let spacing = policy.pair_spacing_em(before, ch, false);
+                    // `palt` already sets punctuation proportionally.
                     let compression = if a.font_features == FontFeatures::Palt
                         || b.font_features == FontFeatures::Palt
                     {
                         0.0
                     } else {
-                        policy.compression_em(before, ch, false)
+                        spacing.compression
                     };
-                    let amount = (compression - policy.script_spacing_em(before, ch)) * em;
+                    let amount = (compression - spacing.script_gap) * em;
                     if amount != 0.0 {
                         result[before_span].push((before_index, amount));
                     }
@@ -354,113 +356,15 @@ impl HorizontalParagraphPlan {
         Self::with_emergency_breaks(paragraph, &[])
     }
 
-    /// SkParagraph's emergency fallback can ignore punctuation joins inside
-    /// an overlong word. Measure whole units once, then reopen only safe
-    /// grapheme boundaries of units that cannot fit an empty line. The
-    /// replacement markers have identical UTF-8/UTF-16 lengths, so every
-    /// source/builder offset remains identical to the unrelaxed plan.
-    pub(crate) fn relax_overlong_words(
-        &mut self,
-        paragraph: &Paragraph,
-        width: f32,
-        measure: impl FnOnce(&Self) -> LayoutParagraph,
-    ) {
-        use unicode_segmentation::UnicodeSegmentation;
-        let policy = paragraph.layout_policy();
-        if !policy.reopens_overlong_words()
-            || !width.is_finite()
-            || width <= 0.0
-            || width == f32::MAX
-        {
-            return;
-        }
-        let source: String = paragraph
-            .children()
-            .iter()
-            .map(TextSpan::apply_text_transform)
-            .collect();
-        let mut utf16 = 0;
-        let graphemes: Vec<_> = source
-            .graphemes(true)
-            .map(|g| {
-                let at = utf16;
-                utf16 += g.encode_utf16().count();
-                (at, g.chars().next().unwrap())
-            })
-            .collect();
-        let mut offset = 0;
-        let protected: Vec<_> = paragraph
-            .children()
-            .iter()
-            .filter_map(|span| {
-                let start = offset;
-                offset += span.apply_text_transform().encode_utf16().count();
-                (span.has_ruby() || span.is_warichu()).then_some(start..offset)
-            })
-            .collect();
-        let mut units = Vec::new();
-        let mut start = 0;
-        for at in 1..graphemes.len() {
-            if policy.break_allowed(graphemes[at - 1].1, graphemes[at].1) {
-                if at - start > 1 {
-                    units.push(start..at);
-                }
-                start = at;
-            }
-        }
-        if graphemes.len() - start > 1 {
-            units.push(start..graphemes.len());
-        }
-        if units.is_empty() {
-            return;
-        }
-        let measured = measure(self);
-        let line_starts: Vec<_> = measured
-            .get_line_metrics()
-            .iter()
-            .skip(1)
-            .map(|line| line.start_index)
-            .collect();
-        let mut emergency = Vec::new();
-        for unit in units {
-            let first = graphemes[unit.start].0;
-            let last = graphemes.get(unit.end).map_or(utf16, |g| g.0);
-            let from = self.offsets.transformed_to_builder(first);
-            let to = self.offsets.transformed_to_builder(last);
-            let split = line_starts.partition_point(|at| *at <= from);
-            if line_starts.get(split).is_none_or(|at| *at >= to) {
-                continue;
-            }
-            let extent: f32 = measured
-                .get_rects_for_range(from..to, RectHeightStyle::Tight, RectWidthStyle::Tight)
-                .iter()
-                .map(|box_| box_.rect.width())
-                .sum();
-            if extent <= width + 0.01 {
-                continue;
-            }
-            for at in unit.start + 1..unit.end {
-                let (position, after) = graphemes[at];
-                let before = graphemes[at - 1].1;
-                if policy.emergency_break_allowed(before, after)
-                    && protected
-                        .get(protected.partition_point(|r| r.end <= position))
-                        .is_none_or(|r| position <= r.start)
-                {
-                    emergency.push(position);
-                }
-            }
-        }
-        if !emergency.is_empty() {
-            *self = Self::with_emergency_breaks(paragraph, &emergency);
-        }
-    }
-
-    fn with_emergency_breaks(paragraph: &Paragraph, emergency: &[usize]) -> Self {
+    pub(super) fn with_emergency_breaks(paragraph: &Paragraph, emergency: &[usize]) -> Self {
         Self::with_breaks(paragraph, emergency, &[])
     }
 
-    fn with_breaks(paragraph: &Paragraph, emergency: &[usize], forced: &[usize]) -> Self {
+    pub(super) fn with_breaks(
+        paragraph: &Paragraph,
+        emergency: &[usize],
+        forced: &[usize],
+    ) -> Self {
         let (texts, offset_map) = layout_span_texts_with_breaks(paragraph, emergency, forced);
         let pair_spacing = horizontal_pair_spacing(paragraph, &texts);
         let ruby_spacing = horizontal_ruby_spacing(paragraph, &texts, &offset_map);

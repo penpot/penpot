@@ -2,6 +2,7 @@ use skia_safe::{self as skia, textlayout, Font, FontMgr};
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 use crate::error::{Error, Result};
+use crate::shapes::cjk_chars::{is_hangul, is_kana};
 use crate::shapes::text_policy::LanguageTag;
 use crate::shapes::{FontFamily, FontStyle};
 use crate::uuid::Uuid;
@@ -69,14 +70,6 @@ impl CjkFace {
             &[]
         }
     }
-}
-
-fn is_kana(c: char) -> bool {
-    matches!(c, '\u{3040}'..='\u{30FF}' | '\u{31F0}'..='\u{31FF}' | '\u{FF66}'..='\u{FF9F}')
-}
-
-fn is_hangul(c: char) -> bool {
-    matches!(c, '\u{1100}'..='\u{11FF}' | '\u{3130}'..='\u{318F}' | '\u{AC00}'..='\u{D7AF}')
 }
 
 /// Families that take part in character fallback, with the CJK region of

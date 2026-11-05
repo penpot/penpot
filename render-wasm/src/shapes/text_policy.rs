@@ -2,6 +2,9 @@
 //! Regional presets use CLREQ (2026-10-07); Korean restrictions use KLREQ
 //! (2026-03-21). These are named presets, not universal regional mandates.
 
+use super::cjk_chars::{
+    is_han, COMMAS_AND_FULL_STOPS, FULLWIDTH_CLOSING_BRACKETS, FULLWIDTH_OPENING_BRACKETS,
+};
 use super::jlreq::{
     break_allowed_between, forbidden_at_line_end, forbidden_at_line_start,
     keeps_together_classified, pair_rule, JlreqClass,
@@ -38,6 +41,15 @@ pub enum TextLayoutPolicy {
     Japanese,
     Chinese(ChineseRegion),
     Korean(KoreanWrap),
+}
+
+/// Spacing between two adjacent characters of a pairwise policy, in em.
+#[derive(Debug, Default, Clone, Copy, PartialEq)]
+pub struct PairSpacing {
+    /// Removable punctuation side bearings.
+    pub compression: f32,
+    /// Han/Latin gap to add.
+    pub script_gap: f32,
 }
 
 /// The parts of a BCP 47 language tag the layout and font choices read.
@@ -93,20 +105,18 @@ impl<'a> LanguageTag<'a> {
     }
 }
 
-pub fn is_han(ch: char) -> bool {
-    matches!(ch as u32, 0x3400..=0x4dbf | 0x4e00..=0x9fff | 0xf900..=0xfaff | 0x20000..=0x323af)
-}
-
 fn numeric(ch: char) -> bool {
     ch.is_numeric() || "一二三四五六七八九十百千萬万億亿〇零".contains(ch)
 }
 
 fn opening(ch: char) -> bool {
-    "（［｛〈《「『【〔〖〘〚‘“([{".contains(ch)
+    FULLWIDTH_OPENING_BRACKETS.contains(ch) || "‘“([{".contains(ch)
 }
 
 fn closing(ch: char) -> bool {
-    "，。、．！？：；）］｝〉》」』】〕〗〙〛’”)]},.!?:;".contains(ch)
+    COMMAS_AND_FULL_STOPS.contains(ch)
+        || FULLWIDTH_CLOSING_BRACKETS.contains(ch)
+        || "！？：；’”)]},.!?:;".contains(ch)
 }
 
 fn protected(ch: char) -> bool {
@@ -263,13 +273,13 @@ impl TextLayoutPolicy {
         else {
             return (0.0, 0.0);
         };
-        if "（［｛〈《「『【〔〖〘〚".contains(ch) {
+        if FULLWIDTH_OPENING_BRACKETS.contains(ch) {
             return (0.5, 0.0);
         }
-        if "）］｝〉》」』】〕〗〙〛".contains(ch) {
+        if FULLWIDTH_CLOSING_BRACKETS.contains(ch) {
             return (0.0, 0.5);
         }
-        let adjustable = "，。、．".contains(ch)
+        let adjustable = COMMAS_AND_FULL_STOPS.contains(ch)
             || (!vertical && region == ChineseRegion::Mainland && "：；！？".contains(ch))
             || (!vertical && region == ChineseRegion::HongKong && "：；".contains(ch));
         if !adjustable {
@@ -294,6 +304,16 @@ impl TextLayoutPolicy {
         }
     }
 
+    /// Pairwise spacing between two adjacent characters, in em: punctuation
+    /// compression to remove and the script gap to add. Each axis applies
+    /// its own caps and skips.
+    pub fn pair_spacing_em(self, before: char, after: char, vertical: bool) -> PairSpacing {
+        PairSpacing {
+            compression: self.compression_em(before, after, vertical),
+            script_gap: self.script_spacing_em(before, after),
+        }
+    }
+
     /// This preset permits hanging only in vertical traditional composition.
     /// Consecutive marks are excluded by the planner. Horizontal CN uses
     /// compression and push-out; no preset silently enables horizontal hanging.
@@ -303,7 +323,7 @@ impl TextLayoutPolicy {
                 self,
                 Self::Chinese(ChineseRegion::Taiwan | ChineseRegion::HongKong)
             )
-            && "，。、．".contains(ch)
+            && COMMAS_AND_FULL_STOPS.contains(ch)
         {
             0.5
         } else {

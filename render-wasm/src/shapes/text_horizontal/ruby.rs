@@ -1,6 +1,5 @@
 use crate::render::FallbackFonts;
 use crate::shapes::text_paragraph::LayoutParagraph;
-use std::collections::HashMap;
 
 use super::*;
 
@@ -15,6 +14,25 @@ pub(crate) fn horizontal_zhuyin_origin(
         rect.right() - span.font_size * super::super::text_zhuyin::STRIP_WIDTH,
         em_top,
     )
+}
+
+/// Zhuyin glyphs of a horizontal base whose builder text starts at UTF-16
+/// `base_start` and whose first line rect is `rect`, with the strip's
+/// top-left in the laid-out paragraph. Position data, painting and bounds
+/// share it.
+fn horizontal_zhuyin_glyphs(
+    span: &TextSpan,
+    syllable: &super::super::text_zhuyin::Syllable,
+    laid_out: &LayoutParagraph,
+    lines: &[skia::textlayout::LineMetrics],
+    base_start: usize,
+    rect: skia::Rect,
+    fonts: (&skia::textlayout::TypefaceFontProvider, &FallbackFonts),
+) -> (skia::Point, Vec<super::super::text_zhuyin::Glyph>) {
+    let em_top = horizontal_base_em_top(laid_out, lines, base_start, span.font_size, rect);
+    let origin = horizontal_zhuyin_origin(span, rect, em_top);
+    let glyphs = super::super::text_zhuyin::shape(span, syllable, fonts.0, fonts.1);
+    (origin, glyphs)
 }
 
 pub(crate) fn horizontal_zhuyin_entries(
@@ -40,11 +58,17 @@ pub(crate) fn horizontal_zhuyin_entries(
         let Some(rect) = rects.first() else {
             continue;
         };
-        let em_top =
-            horizontal_base_em_top(laid_out, &lines, base_start, span.font_size, rect.rect);
-        let origin = horizontal_zhuyin_origin(span, rect.rect, em_top);
+        let (origin, glyphs) = horizontal_zhuyin_glyphs(
+            span,
+            &syllable,
+            laid_out,
+            &lines,
+            base_start,
+            rect.rect,
+            (provider, fallbacks),
+        );
         let size = span.ruby_font_size();
-        for glyph in super::super::text_zhuyin::shape(span, &syllable, provider, fallbacks) {
+        for glyph in glyphs {
             entries.push(crate::shapes::PositionData {
                 paragraph: 0,
                 span: index as u32,
@@ -173,8 +197,7 @@ pub(super) fn horizontal_ruby_spacing_with(
         .flat_map(|run| run.advances.iter().copied())
         .collect()
     };
-    // Overhang an earlier reading already takes on a character after it.
-    let mut claimed: HashMap<(usize, usize), f32> = HashMap::new();
+    let mut claims = OverhangClaims::new();
     let mut span_start = 0usize;
     for (index, (span, text)) in spans.iter().zip(texts).enumerate() {
         let text_start = span_start;
@@ -240,16 +263,14 @@ pub(super) fn horizontal_ruby_spacing_with(
                 )
             })
         };
-        let taken = previous
-            .and_then(|(owner, char_index, _)| claimed.get(&(owner, char_index)))
-            .copied()
-            .unwrap_or(0.0);
-        let rooms = ((room(previous) - taken).max(0.0), room(next));
+        let key = |(owner, char_index, _): (usize, usize, char)| (owner, char_index);
+        let rooms = claims.room(
+            previous.map(key),
+            next.map(key),
+            (room(previous), room(next)),
+            ruby_length - base_width,
+        );
         spacing.rooms[index] = rooms;
-        if let Some((owner, char_index, _)) = next {
-            let hang_after = ruby_overhangs(ruby_length - base_width, rooms).1;
-            claimed.insert((owner, char_index), hang_after);
-        }
         let gap = long_ruby_gap(ruby_length, base_width, rooms, base.len());
         if gap <= 0.0 {
             continue;
@@ -534,15 +555,16 @@ fn visit_horizontal_ruby_glyphs(
         );
         if let Some(syllable) = super::super::text_zhuyin::syllable(span) {
             if let Some(rect) = rects.first() {
-                let em_top =
-                    horizontal_base_em_top(laid_out, &lines, base_start, span.font_size, rect.rect);
-                let origin = horizontal_zhuyin_origin(span, rect.rect, em_top);
-                for glyph in super::super::text_zhuyin::shape(
+                let (origin, glyphs) = horizontal_zhuyin_glyphs(
                     span,
                     &syllable,
-                    font_provider,
-                    fallback_families,
-                ) {
+                    laid_out,
+                    &lines,
+                    base_start,
+                    rect.rect,
+                    (font_provider, fallback_families),
+                );
+                for glyph in glyphs {
                     visit(
                         &glyph.run.font,
                         glyph.run.glyphs[glyph.glyph],

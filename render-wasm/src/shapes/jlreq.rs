@@ -6,6 +6,8 @@
 //! characters, and callers assign the virtual classes when building
 //! reference marks, ruby, grouped numerals, warichu, or tate-chu-yoko.
 
+use super::cjk_chars::{is_bmp_unified_han, is_hiragana, is_katakana};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u8)]
 pub enum JlreqClass {
@@ -386,6 +388,8 @@ pub const fn pair_rule(before: JlreqClass, after: JlreqClass) -> PairRule {
     PAIR_RULES[before.index()][after.index()]
 }
 
+// JLREQ Appendix A class tables. They are wider than the `cjk_chars`
+// punctuation sets the pairwise policies use.
 const OPENING_BRACKETS: &str = "（〔［｛〈《「『【〖〘〚‘“〝«⦅｟｢";
 const CLOSING_BRACKETS: &str = "）〕］｝〉》」』】〗〙〛’”〟〞»⦆｠｣";
 const HYPHENS: &str = "‐゠–〜～";
@@ -408,7 +412,7 @@ const MATH_OPERATORS: &str = "＋+－−-÷×±∓∗∙√∫∬∭∑∏";
 pub fn classify(c: char) -> JlreqClass {
     // Common letters skip the table scans.
     match c {
-        '\u{4E00}'..='\u{9FFF}' | '\u{3400}'..='\u{4DBF}' => JlreqClass::Ideographic,
+        c if is_bmp_unified_han(c) => JlreqClass::Ideographic,
         'a'..='z' | 'A'..='Z' => JlreqClass::Western,
         _ => classify_by_tables(c),
     }
@@ -517,14 +521,8 @@ pub fn is_cjk_text_char(c: char) -> bool {
         || matches!(u32::from(c), 0x3000..=0x30FF | 0x31F0..=0x31FF | 0xFF00..=0xFFEF)
 }
 
-fn is_hiragana(c: char) -> bool {
-    matches!(u32::from(c), 0x3041..=0x309F)
-}
-
-fn is_katakana(c: char) -> bool {
-    matches!(u32::from(c), 0x30A0..=0x30FF | 0x31F0..=0x31FF | 0xFF66..=0xFF9F)
-}
-
+/// JLREQ cl-19 ideographs. Wider than `cjk_chars::is_han` (radicals, strokes,
+/// the compatibility supplement and a few marks), as JLREQ Appendix A lists.
 fn is_ideographic(c: char) -> bool {
     matches!(u32::from(c),
         0x2E80..=0x2FDF
