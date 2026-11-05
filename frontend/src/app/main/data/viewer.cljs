@@ -23,6 +23,8 @@
    [app.main.data.event :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.helpers :as dsh]
+   [app.main.data.profile :as dp]
+   [app.main.data.websocket :as dws]
    [app.main.features :as features]
    [app.main.features.pointer-map :as fpmap]
    [app.main.repo :as rp]
@@ -52,6 +54,8 @@
 (declare bundle-fetched)
 (declare zoom-to-fill)
 (declare zoom-to-fit)
+(declare subscribe-file-changes)
+(declare update-page-position-data)
 
 (def ^:private
   schema:initialize
@@ -87,7 +91,10 @@
              (when (some? (:profile state))
                (fetch-comment-threads params))
              (when (:share-id params)
-               (rx/of (ev/event {::ev/name "shared-prototipe-visited"})))))
+               (rx/of (ev/event {::ev/name "shared-prototipe-visited"})))
+             ;; Only logged-in users have a websocket connection
+             (when (dp/is-authenticated? (:profile state))
+               (subscribe-file-changes file-id))))
     ptk/EffectEvent
     (effect [_ _ _]
       ;; Set the window name, the window name is used on inter-tab
@@ -204,7 +211,69 @@
 
         (-> state
             (assoc-in [:viewer :file] file)
-            (assoc-in [:viewer :pages] pages))))))
+            (assoc-in [:viewer :pages] pages)
+            (assoc-in [:files (:id file)] file))))))
+
+(defn- keep-current-frame
+  "Moves the index query param to where the frame with `frame-id` is
+  after the page frames change, so the viewer keeps showing the same
+  board. If the board is gone, it keeps the index inside the bounds."
+  [frame-id]
+  (ptk/reify ::keep-current-frame
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [params  (rt/get-params state)
+            page-id (some-> (:page-id params) uuid/parse)
+            index   (some-> (rt/get-query-param params :index) parse-long)
+            frames  (dm/get-in state [:viewer :pages page-id :frames])
+            index'  (or (d/index-of-pred frames #(= (:id %) frame-id))
+                        (min (or index 0) (max 0 (dec (count frames)))))]
+        (when (not= index index')
+          (rx/of (rt/nav :viewer (assoc params :index index') {::rt/replace true})))))))
+
+(defn- handle-file-change
+  [{:keys [file-id revn changes]}]
+  (ptk/reify ::handle-file-change
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file (dm/get-in state [:viewer :file])]
+        ;; Skip changes that arrive before the bundle or that the
+        ;; bundle already holds
+        (when (and (= file-id (:id file))
+                   (> revn (:revn file)))
+          (let [params   (rt/get-params state)
+                page-id  (some-> (:page-id params) uuid/parse)
+                index    (some-> (rt/get-query-param params :index) parse-long)
+                frame-id (dm/get-in state [:viewer :pages page-id :frames (or index 0) :id])]
+            (rx/of (apply-changes-viewer changes)
+                   #(assoc-in % [:viewer :file :revn] revn)
+                   (keep-current-frame frame-id)
+                   (update-page-position-data file-id page-id))))))))
+
+(defn- subscribe-file-changes
+  "Listens to the changes other sessions make to the file over the
+  websocket and applies them to the viewer, until it finalizes."
+  [file-id]
+  (ptk/reify ::subscribe-file-changes
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (let [stopper (rx/filter (ptk/type? ::finalize) stream)
+            message {:type :subscribe-file :file-id file-id}]
+        (rx/concat
+         (->> (rx/merge
+               (rx/of (dws/send message))
+               ;; Subscribe again on reconnect
+               (->> stream
+                    (rx/filter (ptk/type? ::dws/opened))
+                    (rx/map #(dws/send message)))
+               (->> stream
+                    (rx/filter (ptk/type? ::dws/message))
+                    (rx/map deref)
+                    (rx/filter #(and (= :file-change (:type %))
+                                     (= file-id (:file-id %))))
+                    (rx/map handle-file-change)))
+              (rx/take-until stopper))
+         (rx/of (dws/send {:type :unsubscribe-file :file-id file-id})))))))
 
 (defn- generate-update-position-data-changes
   [shapes page-id]
