@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-15 17:18+0000\n"
-"Last-Translator: TheScientistPT <joao.ed.reis.gomes@gmail.com>\n"
-"Language-Team: Portuguese (Portugal) "
-"<https://hosted.weblate.org/projects/penpot/frontend/pt_PT/>\n"
+"PO-Revision-Date: 2026-11-05 22:20+0000\n"
+"Last-Translator: Andrey Antukh <niwinz@users.noreply.hosted.weblate.org>\n"
+"Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
+"penpot/frontend/pt_PT/>\n"
 "Language: pt_PT\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 2026.10.dev0\n"
+"X-Generator: Weblate 2026.11.2.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:191, src/app/main/ui/viewer/login.cljs:119
 msgid "auth.already-have-account"
@@ -2770,10 +2770,12 @@ msgid "shortcuts.flip-vertical"
 msgstr "Virar verticalmente"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:263
+#, fuzzy
 msgid "shortcuts.font-size-dec"
 msgstr "Decrementar tamanho de fonte"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:256
+#, fuzzy
 msgid "shortcuts.font-size-inc"
 msgstr "Incrementar tamanho da fonte"
 
@@ -2882,6 +2884,7 @@ msgid "shortcuts.next-frame"
 msgstr "Próximo quadro"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:154
+#, fuzzy
 msgid "shortcuts.not-found"
 msgstr "Nenhum atalho encontrado"
 
@@ -3084,6 +3087,7 @@ msgid "shortcuts.subsection.shape"
 msgstr "Formas"
 
 #: src/app/main/ui/shortcuts.cljs:143
+#, fuzzy
 msgid "shortcuts.subsection.text-editor"
 msgstr "Textos"
 
