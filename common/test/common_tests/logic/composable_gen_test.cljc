@@ -1187,3 +1187,13 @@
                                     :grid-square false :library true :rich-variants true :layout-children false
                                     :grid-empty false :layout-copies true :text true}]
                        :ops [[:nest 6 0 0 0] [:text 6 0 0 0] [:delete 6 0 0 0] [:swap 6 0 0 0] [:switch 0 0 0 0]]}))))
+
+(t/deftest generated-duplicate-in-a-grid-resizes-a-copy-subtree-alone
+  ;; a sync that resizes a copy in a grid lays out the copy's subtree while
+  ;; the grid has a duplicated child with no cell yet; the program reaches
+  ;; that sync on every other run, so it runs twice
+  (dotimes [_ 2]
+    (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :grid :variant-diff false
+                                      :layout-item-margins false :grid-square false :rich-variants true
+                                      :layout-children false :grid-empty true :layout-copies true :text true}]
+                         :ops [[:style 0 29 1] [:nest 9 0 0 0] [:duplicate 5 1 0 0]]})))))
