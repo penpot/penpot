@@ -1125,3 +1125,12 @@
                                     :layout-children false :grid-empty false :layout-copies true :text true}]
                        :ops [[:delete 5 0 0 0] [:swap 4 0 0 0] [:nest 0 0 0 0] [:duplicate 1 0 0 0]
                              [:rotate 1 0 0 0] [:resize 1 0 0 0] [:rotate 4 0 2 0] [:update-main 0 0 0 0]]}))))
+
+(t/deftest generated-update-main-keeps-the-mains-size-over-a-size-a-constraint-keeps
+  ;; a copy child keeps its size through its own scale constraint while its
+  ;; main, a main's nested copy, takes a height of 80; update main pushes
+  ;; the constraint and the main keeps its 80
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :layout nil :layout-item-margins false
+                                    :grid-square false :library true :rich-variants true :layout-children false
+                                    :grid-empty false :layout-copies true :text true}]
+                       :ops [[:style 16 8 1] [:edit 11 11 0 0] [:resize 0 0 0 0] [:update-main 4 0 0 0]]}))))
