@@ -38,6 +38,7 @@
    ["text-direction" "RawTextDirection"]
    ["text-decoration" "RawTextDecoration"]
    ["text-transform" "RawTextTransform"]
+   ["list-style-type" "RawListStyleType"]
    ["multiple-state" "MultipleState"]
    ["transform-entry-kind" "RawTransformEntryKind"]
    ["segment-data" "RawSegmentData"]

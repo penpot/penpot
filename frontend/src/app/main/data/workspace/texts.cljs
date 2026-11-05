@@ -434,7 +434,9 @@
 
                               (-> (merge default-text-attrs node)
                                   (assoc :fills fills)))
-                            node))))]
+                            (cond->> node
+                              (txt/is-paragraph-node? node)
+                              (merge txt/default-list-attrs))))))]
     (attrs/get-attrs-multi nodes attrs)))
 
 (defn current-root-values

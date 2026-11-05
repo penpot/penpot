@@ -2,8 +2,8 @@ use super::fixtures::*;
 
 use crate::shapes::{
     radius_to_sigma, AlignContent, AlignItems, BlendMode, Blur, BlurType, Fill, FlexDirection,
-    ImageFill, ImageFillTransform, JustifyContent, JustifyItems, Shadow, ShadowStyle, SolidColor,
-    StrokeCap, StrokeKind, WrapType,
+    ImageFill, ImageFillTransform, JustifyContent, JustifyItems, ListStyleType, Shadow,
+    ShadowStyle, SolidColor, StrokeCap, StrokeKind, WrapType,
 };
 use crate::state::ShapesPool;
 use crate::uuid::Uuid;
@@ -2023,6 +2023,33 @@ fn exports_text_with_multiple_solid_fills() {
         blue_pos.unwrap() < red_pos.unwrap(),
         "bottom fill must appear before top fill in SVG: {svg}"
     );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_list_bullets_before_list_paragraphs_only() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_text_with_list_paragraphs(
+        &mut pool,
+        id,
+        (40.0, 0.0, 300.0, 120.0),
+        30.0,
+        skia::Color::RED,
+        vec![
+            ("Bullet", ListStyleType::Disc),
+            ("Plain", ListStyleType::None),
+        ],
+    );
+    pool.get_mut(&id)
+        .unwrap()
+        .add_stroke(solid_stroke(StrokeKind::Center, 2.0, skia::Color::BLUE));
+
+    let svg = render(&pool, id);
+    // One bullet, before "Bullet" only: a red fill and a blue stroke.
+    assert_eq!(svg.matches("<ellipse").count(), 2, "{svg}");
+    assert!(svg.contains("<ellipse fill=\"red\""), "{svg}");
+    assert!(svg.contains("stroke=\"blue\""), "{svg}");
     insta::assert_snapshot!(svg);
 }
 

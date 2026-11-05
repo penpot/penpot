@@ -825,6 +825,7 @@ pub fn split_paragraph_at_cursor(
     let text_transform = para.text_transform();
     let line_height = para.line_height();
     let letter_spacing = para.letter_spacing();
+    let list_style_type = para.list_style_type();
 
     let para = &mut paragraphs[cursor.paragraph];
     let children = para.children_mut();
@@ -846,7 +847,8 @@ pub fn split_paragraph_at_cursor(
         line_height,
         letter_spacing,
         new_para_children,
-    );
+    )
+    .with_list_style_type(list_style_type);
 
     paragraphs.insert(cursor.paragraph + 1, new_para);
 
@@ -857,7 +859,7 @@ pub fn split_paragraph_at_cursor(
 mod tests {
     use super::*;
     use crate::math::Rect;
-    use crate::shapes::{FontFamily, FontStyle, GrowType, TextAlign, TextSpan};
+    use crate::shapes::{FontFamily, FontStyle, GrowType, ListStyleType, TextAlign, TextSpan};
     use crate::uuid::Uuid;
 
     fn span(text: &str) -> TextSpan {
@@ -949,6 +951,19 @@ mod tests {
 
     fn caret(paragraph: usize, offset: usize) -> TextPositionWithAffinity {
         TextPositionWithAffinity::new_downstream_affinity(paragraph, offset)
+    }
+
+    #[test]
+    fn split_paragraph_keeps_the_list_style_type() {
+        let mut content = content(vec![
+            paragraph(&["Hello world"]).with_list_style_type(ListStyleType::Disc)
+        ]);
+        assert!(split_paragraph_at_cursor(&mut content, &caret(0, 5)));
+
+        let paragraphs = content.paragraphs();
+        assert_eq!(paragraphs.len(), 2);
+        assert_eq!(paragraphs[0].list_style_type(), ListStyleType::Disc);
+        assert_eq!(paragraphs[1].list_style_type(), ListStyleType::Disc);
     }
 
     #[test]

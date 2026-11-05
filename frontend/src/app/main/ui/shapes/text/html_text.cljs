@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.text :as legacy.txt]
+   [app.common.types.text :as txt]
    [app.main.ui.shapes.text.styles :as sts]
    [rumext.v2 :as mf]))
 
@@ -39,17 +40,48 @@
     [:div.paragraph-set {:style style :class class} children]))
 
 (mf/defc render-paragraph*
-  [{:keys [node children shape is-code]}]
+  [{:keys [node children shape is-code is-list-item]}]
   (let [style (when-not is-code (sts/generate-paragraph-styles shape node))
         class (when is-code (:$id node))
         dir   (:text-direction node "auto")]
-    [:p.paragraph {:style style :dir dir :class class} children]))
+    (if is-list-item
+      [:li {:style style :dir dir :class class} children]
+      [:p.paragraph {:style style :dir dir :class class} children])))
+
+(declare render-node*)
+
+(defn- render-children
+  "Child elements of `parent`. In code mode, runs of list paragraphs are
+  grouped into a `<ul>` of `<li>`."
+  [props parent is-code]
+  (let [render-child
+        (fn [[index child-node] is-list-item]
+          (mf/html
+           [:> render-node*
+            (mf/spread-props props
+                             {:node child-node
+                              :parent parent
+                              :index index
+                              :key index
+                              :is-list-item is-list-item})]))
+
+        children (d/enumerate (:children parent))]
+    (if (and is-code (= "paragraph-set" (:type parent)))
+      (mapcat (fn [run]
+                (if (txt/list-paragraph? (second (first run)))
+                  [(mf/html
+                    [:ul {:key (dm/str "list-" (first (first run)))}
+                     (for [child run]
+                       (render-child child true))])]
+                  (map #(render-child % false) run)))
+              (partition-by (comp txt/list-paragraph? second) children))
+      (map #(render-child % false) children))))
 
 ;; -- Text nodes
 (mf/defc render-node*
   {::mf/props :obj}
   [{:keys [node is-code] :as props}]
-  (let [{:keys [type text children] :as parent} node]
+  (let [{:keys [type text]} node]
     (if (string? text)
       [:> render-text* props]
       (let [component (case type
@@ -59,14 +91,7 @@
                         nil)]
         (when component
           [:> component props
-           (for [[index child-node] (d/enumerate children)]
-             [:> render-node*
-              (mf/spread-props props
-                               {:node child-node
-                                :parent parent
-                                :index index
-                                :key index
-                                :is-code is-code})])])))))
+           (render-children props node is-code)])))))
 
 (mf/defc text-shape*
   {::mf/forward-ref true}

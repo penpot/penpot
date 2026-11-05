@@ -187,6 +187,8 @@
     :available-viewer-wasm
     :stroke-path
     :stroke-per-side
+    ;; Enables bullet lists in the v3 (WASM) text editor.
+    :text-editor-wasm-v1-lists
 
     :custom-shortcuts
     :remote-media-processing
