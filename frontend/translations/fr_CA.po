@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-11-05 14:51+0000\n"
-"Last-Translator: Alexis Morin <alexismo@users.noreply.hosted.weblate.org>\n"
+"PO-Revision-Date: 2026-11-05 22:20+0000\n"
+"Last-Translator: Andrey Antukh <niwinz@users.noreply.hosted.weblate.org>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
 "Language: fr_CA\n"
@@ -1918,10 +1918,12 @@ msgid "generic.error"
 msgstr "Une erreur s'est produite"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:161
+#, fuzzy
 msgid "import-shortcuts.apply"
 msgstr "Appliquer"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:102
+#, fuzzy
 msgid "import-shortcuts.diff-modal-text"
 msgstr "Les raccourcis suivants seront modifiés par la configuration importée."
 
@@ -4422,14 +4424,17 @@ msgid "restore-shortcuts.action"
 msgstr "Action"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:94
+#, fuzzy
 msgid "restore-shortcuts.modal-text"
 msgstr "Les raccourcis suivants seront restaurés à leur valeur par défaut."
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:90
+#, fuzzy
 msgid "restore-shortcuts.modal-title"
 msgstr "Restaurer la configuration par défaut"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:170
+#, fuzzy
 msgid "restore-shortcuts.restore"
 msgstr "Restaurer"
 
@@ -4614,22 +4619,26 @@ msgid "shortcuts.duplicate"
 msgstr "Dupliquer"
 
 #: src/app/main/ui/shortcuts.cljs:645
+#, fuzzy
 msgid "shortcuts.edit-modal.conflict"
 msgstr ""
 "Cette combination sert à « %s ». Enregistrer celle-ci annulera le raccourci "
 "existant."
 
 #: src/app/main/ui/shortcuts.cljs:636
+#, fuzzy
 msgid "shortcuts.edit-modal.reset-pending"
 msgstr "À l'enregistrement ce raccourci reviendra à sa valeur d'origine :"
 
 #: src/app/main/ui/shortcuts.cljs:647
+#, fuzzy
 msgid "shortcuts.edit-modal.success"
 msgstr ""
 "Cette combinaison de touches est disponible et peut être assignée sans "
 "conflits."
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:157
+#, fuzzy
 msgid "shortcuts.edit-on-settings"
 msgstr "Personaliser les raccourcis"
 
@@ -4662,10 +4671,12 @@ msgid "shortcuts.flip-vertical"
 msgstr "Retourner verticalement"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:263
+#, fuzzy
 msgid "shortcuts.font-size-dec"
 msgstr "Réduire la taille de la police"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:256
+#, fuzzy
 msgid "shortcuts.font-size-inc"
 msgstr "Augmenter la taille de la police"
 
@@ -4714,6 +4725,7 @@ msgid "shortcuts.join-nodes"
 msgstr "Joindre des nœuds"
 
 #: src/app/main/ui/shortcuts.cljs:624
+#, fuzzy
 msgid "shortcuts.key-combo"
 msgstr "Appuyer sur la combinaison de touches"
 
@@ -4782,18 +4794,22 @@ msgid "shortcuts.next-frame"
 msgstr "Tableau suivant"
 
 #: src/app/main/ui/settings/shortcuts.cljs:510
+#, fuzzy
 msgid "shortcuts.no-disabled"
 msgstr "Aucun raccourci désactivé"
 
 #: src/app/main/ui/settings/shortcuts.cljs:500
+#, fuzzy
 msgid "shortcuts.no-personalized"
 msgstr "Aller à Tout pour personnaliser les raccourcis"
 
 #: src/app/main/ui/settings/shortcuts.cljs:242, src/app/main/ui/settings/shortcuts.cljs:491
+#, fuzzy
 msgid "shortcuts.no-shortcuts"
 msgstr "Aucun raccourci correspondant à ce terme"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:154
+#, fuzzy
 msgid "shortcuts.not-found"
 msgstr "Aucun raccourci trouvé"
 
@@ -4870,6 +4886,7 @@ msgid "shortcuts.or"
 msgstr " ou "
 
 #: src/app/main/ui/shortcuts.cljs:605, src/app/main/ui/shortcuts.cljs:747
+#, fuzzy
 msgid "shortcuts.overwritten-by"
 msgstr "Ce raccourci a été réassigé à %s"
 
@@ -4890,6 +4907,7 @@ msgid "shortcuts.paste-replace"
 msgstr "Coller et remplacer"
 
 #: src/app/main/ui/settings/shortcuts.cljs:296, src/app/main/ui/settings/shortcuts.cljs:523
+#, fuzzy
 msgid "shortcuts.personalized"
 msgstr "Personalisés"
 
@@ -5034,6 +5052,7 @@ msgid "shortcuts.subsection.shape"
 msgstr "Formes"
 
 #: src/app/main/ui/shortcuts.cljs:143
+#, fuzzy
 msgid "shortcuts.subsection.text-editor"
 msgstr "Textes"
 
@@ -5495,6 +5514,7 @@ msgstr ""
 "profiter d'un tarif fixe de 175 $ / mois."
 
 #: src/app/main/ui/settings/subscription.cljs:714
+#, fuzzy
 msgid "subscription.settings.member-since"
 msgstr "Membre Penpot depuis : %s"
 
@@ -9259,6 +9279,7 @@ msgstr ""
 "Impossible de joindre le serveur. Vérifier la connexion et essayer à nouveau."
 
 #: src/app/main/errors.cljs:538
+#, fuzzy
 msgid "errors.save-failed"
 msgstr ""
 "La sauvegarde automatique ne fonctionne pas dû à une erreur. Contacter le "
