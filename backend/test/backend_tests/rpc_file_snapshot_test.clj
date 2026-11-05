@@ -861,15 +861,21 @@
                               :id (:id snapshot)}
                        (= :update-file-snapshot type)
                        (assoc :label "renamed"))
-              out    (th/command! params)]
+              out    (th/command! params)
+              row    (th/db-get :file-change {:id (:id snapshot)}
+                                {::db/remove-deleted false})]
 
           (t/is (nil? (:error out)))
           (t/is (true? (:result out)))
-          (t/is (pos? (- (inst-ms (:updated-at (th/db-get :file-change
-                                                          {:id (:id snapshot)}
-                                                          {::db/remove-deleted false})))
-                         (inst-ms stale-at)))
-                "updated_at must be bumped by the mutation"))))
+          (t/is (pos? (- (inst-ms (:updated-at row)) (inst-ms stale-at)))
+                "updated_at must be bumped by the mutation")
+          (t/is (<= (inst-ms (:updated-at row)) (inst-ms (ct/now)))
+                "updated_at must not be in the future")
+          (t/is (<= (- (inst-ms (ct/now)) (inst-ms (:updated-at row))) 60000)
+                "updated_at must be the moment of the mutation")
+          (when (= type :delete-file-snapshot)
+            (t/is (< (inst-ms (:updated-at row)) (inst-ms (:deleted-at row)))
+                  "the soft delete must not stamp updated_at with the future deleted_at")))))
 
     (t/testing "the deleted snapshot is marked as deleted"
       (t/is (some? (:deleted-at (th/db-get :file-change {:id (:id snapshot)}
