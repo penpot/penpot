@@ -10,6 +10,8 @@
 - `app.common.logic.*`: higher-level workflows/algorithms over files, shapes, components, variants, libraries, tokens, etc.
 - `app.common.geom.*`: geometry helpers and transformations.
 - `app.common.schema` / `app.common.schema.*`: Malli abstraction layer.
+- `app.common.export`: asset-export job item/params schemas, the single source of truth the backend job-def and the exporter worker validate and decode against. `:suffix` is required (the renderer builds the file name with it) and `schema:params` references `schema:export-items` instead of restating the vector.
+- `app.common.types.job`: the wire shape of a queue payload (`schema:queue-payload`, `[job-id scheduled-at]` as two strings), validated by the backend dispatcher before it encodes and by the exporter before it decodes.
 - `app.common.math`, `app.common.time`, `app.common.uuid`, `app.common.json`, etc.: cross-runtime utilities.
 - `app.common.test_helpers.*`: test builders and production-path helpers.
 

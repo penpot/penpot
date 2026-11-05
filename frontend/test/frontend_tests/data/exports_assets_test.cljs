@@ -5,10 +5,15 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.data.exports-assets-test
+  "The assets export: one job per server run (its milestones into the
+  widget, the artifact of the completed row as the download, the cancel
+  from the widget) and the client-side WASM render that never leaves the
+  browser."
   (:require
    [app.common.uuid :as uuid]
    [app.main.data.exports.assets :as de]
    [app.main.data.exports.wasm :as wasm.exports]
+   [app.main.data.jobs :as dj]
    [app.main.data.persistence :as dwp]
    [app.main.errors :as errors]
    [app.main.repo :as repo]
@@ -18,13 +23,13 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n]
    [app.util.webapi :as wapi]
-   [app.util.websocket :as ws]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.events :as the]
    [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
+
 (def ^:private export {:id (uuid/next)
                        :object-id (uuid/next)
                        :type :png
@@ -36,84 +41,16 @@
   (merge export {:name name}))
 
 (defn- test-state
-  []
-  {:profile-id (:id export)
-   :ws-conn nil})
+  ([] (test-state nil))
+  ([export-state]
+   (cond-> {:profile-id (:id export)
+            :ws-conn nil}
+     (some? export-state)
+     (assoc :export export-state))))
 
 (defn- wasm-state
   []
   (assoc (test-state) :features #{"render-wasm/v1"}))
-
-(t/deftest sanitize-filename-strips-reserved-chars-and-dedupes
-  (t/is (= "a_b.png"
-           (wasm.exports/sanitize-filename {:name "a/b" :suffix "" :type :png} #{})))
-  (t/is (= "board-2.pdf"
-           (wasm.exports/sanitize-filename {:name "board" :suffix "" :type :pdf}
-                                           #{"board.pdf"}))))
-
-(t/deftest normalize-export-preserves-existing-name
-  (t/is (= (export-with-name "Layer 1")
-           (de/normalize-export (export-with-name "Layer 1")))))
-
-(t/deftest normalize-export-replaces-nil-name-with-object-id
-  (t/is (= (export-with-name (str (:object-id export)))
-           (de/normalize-export (assoc export :name nil)))))
-
-(t/deftest normalize-export-replaces-empty-name-with-object-id
-  (t/is (= (export-with-name (str (:object-id export)))
-           (de/normalize-export (assoc export :name "")))))
-
-(t/deftest request-simple-export-sends-normalized-export
-  (t/async done
-    (let [export (export-with-name "")
-          observed (atom nil)]
-      (mock/with-mocks {repo/cmd! (mock/stub (fn [_ params]
-                                               (reset! observed params)
-                                               (rx/of {:filename "export.png"
-                                                       :mtype "image/png"
-                                                       :uri "blob:export"})))
-                        dwp/force-persist-files-and-wait (mock/stub (fn [_ _] (rx/of ::force-persisted)))
-                        dom/trigger-download-uri (mock/stub (fn [& _] nil))}
-        (fn [done']
-          (let [completed (fn [_state]
-                            (t/is (= (export-with-name (str (:object-id export)))
-                                     (-> @observed :exports first))))]
-            (ptk/emit! (the/prepare-store (test-state) done' completed)
-                       (de/request-simple-export {:export export})
-                       :the/end)))
-        done))))
-
-(t/deftest request-multiple-export-sends-normalized-enabled-exports
-  (t/async done
-    (let [exports [{:id "enabled-1"
-                    :object-id "enabled-1"
-                    :shape {:id "enabled-1"}
-                    :type :png
-                    :suffix ""
-                    :scale 1
-                    :enabled true
-                    :name ""}]
-          observed (atom nil)]
-      (mock/with-mocks {repo/cmd! (mock/stub (fn [_ params]
-                                               (reset! observed params)
-                                               (rx/of {:id (:id export)})))
-                        ws/get-rcv-stream (mock/stub (fn [_] (rx/empty)))
-                        st/ongoing-tasks (atom #{})}
-        (fn [done']
-          (let [completed (fn [_state]
-                            (t/is (= [{:id "enabled-1"
-                                       :object-id "enabled-1"
-                                       :shape {:id "enabled-1"}
-                                       :type :png
-                                       :suffix ""
-                                       :scale 1
-                                       :enabled true
-                                       :name "enabled-1"}]
-                                     (:exports @observed))))]
-            (ptk/emit! (the/prepare-store (test-state) done' completed)
-                       (de/request-multiple-export {:exports exports})
-                       :the/end)))
-        done))))
 
 (defn- export-store
   "A store for the export tests that records store errors in `store-errors`."
@@ -128,9 +65,317 @@
            :persistence {:queue (conj #queue [] commit-id)
                          :index {commit-id {:id commit-id :file-id file-id}}})))
 
-;; Scenario: the exporter fails a single export. Proves: the user gets a
-;; toast and stays in the workspace; the failure is not raised to the global
-;; error handler, which would replace the workspace with an error page.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; THE JOB FLOW
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private fake-job
+  "What the creation of the job answers: enough to follow it."
+  {:id (uuid/next) :status "queued" :name "export-assets"})
+
+(defn- milestone
+  [stage current total counter-kind]
+  {:kind :progress
+   :payload {:stage stage
+             :counters {counter-kind {:current current :total total}}}})
+
+(defn- fake-watch
+  "The channel of the job, as a stream of emissions the flow reads."
+  [emissions]
+  (apply rx/concat (map rx/of emissions)))
+
+(defn- completed-emission
+  [result]
+  {:status "completed" :result result})
+
+(t/deftest normalize-export-preserves-existing-name
+  (t/is (= (export-with-name "Layer 1")
+           (de/normalize-export (export-with-name "Layer 1")))))
+
+(t/deftest normalize-export-replaces-nil-name-with-object-id
+  (t/is (= (export-with-name (str (:object-id export)))
+           (de/normalize-export (assoc export :name nil)))))
+
+(t/deftest normalize-export-replaces-empty-name-with-object-id
+  (t/is (= (export-with-name (str (:object-id export)))
+           (de/normalize-export (assoc export :name "")))))
+
+(t/deftest initialize-export-status-shows-a-fresh-job-as-queued
+  ;; the creation answers the row status ("pending"): nobody works on
+  ;; the job yet, so the widget names it queued until the first
+  ;; milestone moves it to running
+  (let [state (ptk/update (#'de/initialize-export-status
+                           [export] nil {:id (uuid/next) :status "pending"})
+                          {})]
+    (t/is (= "queued" (get-in state [:export :status])))
+    (t/is (true? (get-in state [:export :in-progress])))
+    (t/is (= 0 (get-in state [:export :progress])))))
+
+(t/deftest add-milestone-without-figures-keeps-the-figures
+  ;; the first breath of the worker (:preparing) carries no counters:
+  ;; it moves the widget to running without blanking the figures
+  (let [before {:export {:in-progress true :status "queued"
+                         :progress 2 :total 5}}
+        after  (ptk/update (#'de/add-milestone {:stage :preparing :counters {}})
+                           before)]
+    (t/is (= "running" (get-in after [:export :status])))
+    (t/is (= 2 (get-in after [:export :progress])))
+    (t/is (= 5 (get-in after [:export :total])))))
+
+(t/deftest add-milestone-while-cancelling-keeps-cancelling
+  ;; A late beat that lands while the widget settles a cancel never
+  ;; flips it back to running (cancelling -> running flicker).
+  (let [before {:export {:in-progress true :status "cancelling"
+                         :progress 1 :total 2}}
+        after  (ptk/update (#'de/add-milestone {:stage :rendering
+                                                :counters {:objects {:current 2
+                                                                     :total 2}}})
+                           before)]
+    (t/is (= "cancelling" (get-in after [:export :status])))
+    (t/is (= 1 (get-in after [:export :progress])))))
+
+(t/deftest add-outcome-failed-without-error-after-cancel-settles-cancelled
+  ;; The backend reports a cancelled job as "failed" with no error
+  ;; (shared user-status): while the widget settles a cancel, that
+  ;; outcome is the cancel landing, not an error.
+  (let [before {:export {:in-progress true :status "cancelling"}}
+        after  (ptk/update (#'de/add-outcome {:status "failed"}) before)]
+    (t/is (= "cancelled" (get-in after [:export :status])))
+    (t/is (false? (get-in after [:export :in-progress])))))
+
+(t/deftest add-outcome-failed-with-error-stays-error
+  (let [before {:export {:in-progress true :status "running"}}
+        after  (ptk/update (#'de/add-outcome {:status "failed"
+                                              :error {:hint "boom" :code :boom}})
+                           before)]
+    (t/is (= "error" (get-in after [:export :status])))
+    (t/is (= "boom" (get-in after [:export :error])))))
+
+(t/deftest request-simple-export-runs-one-assets-job
+  (t/async done
+    (let [export    (export-with-name "")
+          observed  (atom nil)
+          downloaded (atom nil)]
+      (mock/with-mocks
+        {repo/cmd! (mock/stub (fn [cmd params]
+                                (reset! observed {:cmd cmd :params (:params params)})
+                                (rx/of fake-job)))
+         dj/watch-job (mock/stub (fn [_ _]
+                                   (fake-watch
+                                    [(milestone :rendering 1 1 :objects)
+                                     (milestone :packaging 1 1 :objects)
+                                     (completed-emission {:resource-uri "https://resources/uri"
+                                                          :filename "export.png"
+                                                          :mtype "image/png"})])))
+         dwp/force-persist-files-and-wait (mock/stub (fn [_ _] (rx/of ::force-persisted)))
+         dom/trigger-download-uri (mock/stub (fn [filename mtype uri]
+                                               (when filename
+                                                 (reset! downloaded
+                                                         {:filename filename :mtype mtype :uri uri}))))
+         st/ongoing-tasks (atom #{})}
+        (fn [done']
+          (let [completed (fn [state]
+                            (t/testing "the creation froze the normalized export"
+                              (t/is (= :create-export-assets-job (:cmd @observed)))
+                              (t/is (= [(export-with-name (str (:object-id export)))]
+                                       (get-in @observed [:params :exports]))))
+
+                            (t/is (= 1 (get-in state [:export :progress])))
+
+                            (t/testing "the widget settled the completed job"
+                              (t/is (false? (get-in state [:export :in-progress])))
+                              (t/is (= "ended" (get-in state [:export :status])))
+                              (t/is (= 1 (get-in state [:export :total]))))
+
+                            (t/testing "the artifact of the row is the download"
+                              (t/is (= {:filename "export.png"
+                                        :mtype "image/png"
+                                        :uri "https://resources/uri"}
+                                       @downloaded))))]
+            (ptk/emit! (the/prepare-store (test-state) done' completed)
+                       (de/request-simple-export {:export export})
+                       :the/end)))
+        done))))
+
+(t/deftest request-simple-export-reads-the-pages-of-a-frame-export
+  ;; A frame export is fully typed (`:type :pdf`, as the frames dialog
+  ;; builds it), and its milestones count pages, not objects.
+  (t/async done
+    (let [frame        {:id (uuid/next)
+                        :object-id (uuid/next)
+                        :type :pdf
+                        :suffix ""
+                        :scale 1
+                        :name "Frame 1"}
+          downloaded  (atom nil)]
+      (mock/with-mocks
+        {repo/cmd! (mock/stub (fn [_ _] (rx/of fake-job)))
+         dj/watch-job (mock/stub (fn [_ _]
+                                   (fake-watch
+                                    [(milestone :rendering 1 2 :pages)
+                                     (milestone :packaging 2 2 :pages)
+                                     (completed-emission {:resource-uri "https://resources/uri"
+                                                          :filename "file.pdf"
+                                                          :mtype "application/pdf"})])))
+         dwp/force-persist-files-and-wait (mock/stub (fn [_ _] (rx/of ::force-persisted)))
+         dom/trigger-download-uri (mock/stub (fn [filename _mtype _uri]
+                                               (reset! downloaded filename)))
+         st/ongoing-tasks (atom #{})}
+        (fn [done']
+          (let [completed (fn [state]
+                            (t/is (= 2 (get-in state [:export :progress])))
+                            (t/is (= 2 (get-in state [:export :total])))
+                            (t/is (= "file.pdf" @downloaded)))]
+            (ptk/emit! (the/prepare-store (test-state) done' completed)
+                       (de/request-simple-export {:export frame})
+                       :the/end)))
+        done))))
+
+(t/deftest request-multiple-export-freezes-the-run-of-many
+  (t/async done
+    (let [items    [(assoc export :name "" :enabled true)]
+          observed (atom nil)]
+      (mock/with-mocks
+        {repo/cmd! (mock/stub (fn [cmd params]
+                                (reset! observed {:cmd cmd :params (:params params)})
+                                (rx/of fake-job)))
+         dj/watch-job (mock/stub (fn [_ _]
+                                   (fake-watch
+                                    [(milestone :rendering 1 1 :objects)
+                                     (completed-emission {:resource-uri "https://resources/uri"
+                                                          :filename "export.zip"
+                                                          :mtype "application/zip"})])))
+         dwp/force-persist-files-and-wait (mock/stub (fn [_ _] (rx/of ::force-persisted)))
+         dom/trigger-download-uri (mock/stub (fn [& _] nil))
+         st/ongoing-tasks (atom #{})}
+        (fn [done']
+          (let [completed (fn [state]
+                            (t/testing "the creation froze the multiple run"
+                              (t/is (= true (get-in @observed [:params :force-multiple]))))
+                            (t/testing "the widget followed the job"
+                              (t/is (false? (get-in state [:export :in-progress])))
+                              (t/is (= "ended" (get-in state [:export :status])))))]
+            (ptk/emit! (the/prepare-store (test-state) done' completed)
+                       (de/request-multiple-export {:exports items})
+                       :the/end)))
+        done))))
+
+(t/deftest request-multiple-export-declares-the-frames-kind
+  ;; A frames run names its kind up front: the dialog freezes fully
+  ;; typed pages plus `:kind :frames`, so the worker joins them into
+  ;; one pdf instead of inferring it from missing keys.
+  (t/async done
+    (let [items    [{:page-id   (uuid/next)
+                     :file-id   (uuid/next)
+                     :object-id (uuid/next)
+                     :name      "page"
+                     :type      :pdf
+                     :scale     1
+                     :suffix    ""}]
+          observed (atom nil)]
+      (mock/with-mocks
+        {repo/cmd! (mock/stub (fn [cmd params]
+                                (reset! observed {:cmd cmd :params (:params params)})
+                                (rx/of fake-job)))
+         dj/watch-job (mock/stub (fn [_ _]
+                                   (fake-watch
+                                    [(milestone :rendering 1 1 :pages)
+                                     (completed-emission {:resource-uri "https://resources/uri"
+                                                          :filename "file.pdf"
+                                                          :mtype "application/pdf"})])))
+         dom/trigger-download-uri (mock/stub (fn [& _] nil))
+         st/ongoing-tasks (atom #{})}
+        (fn [done']
+          (let [completed (fn [state]
+                            (t/testing "the creation declared the frames run"
+                              (t/is (= :create-export-assets-job (:cmd @observed)))
+                              (t/is (= :frames (get-in @observed [:params :kind])))
+                              (t/is (= [{:page-id   (:page-id (first items))
+                                         :file-id   (:file-id (first items))
+                                         :object-id (:object-id (first items))
+                                         :name      "page"
+                                         :type      :pdf
+                                         :scale     1
+                                         :suffix    ""}]
+                                       (get-in @observed [:params :exports]))))
+                            (t/testing "the widget followed the job"
+                              (t/is (false? (get-in state [:export :in-progress])))
+                              (t/is (= "ended" (get-in state [:export :status])))))]
+            (ptk/emit! (the/prepare-store (test-state) done' completed)
+                       (de/request-multiple-export {:exports items
+                                                    :cmd :export-frames
+                                                    :name "the export"})
+                       :the/end)))
+        done))))
+
+(t/deftest request-multiple-export-reports-the-saturation
+  ;; The creation refused because the queue is full: an answer, not a
+  ;; fault — the widget names it and offers the retry.
+  (t/async done
+    (let [items [(assoc export :name "" :enabled true)]]
+      (mock/with-mocks
+        {repo/cmd! (mock/stub (fn [_ _]
+                                (rx/throw (ex-info "quote exceeded" {:code :max-quote-reached}))))
+         dwp/force-persist-files-and-wait (mock/stub (fn [_ _] (rx/of ::force-persisted)))
+         errors/flash (mock/stub (fn [& _] nil))
+         st/ongoing-tasks (atom #{})}
+        (fn [done']
+          (let [completed (fn [state]
+                            (t/testing "the widget names the exporter busy"
+                              (t/is (false? (get-in state [:export :in-progress])))
+                              (t/is (= :max-quote-reached (get-in state [:export :error-code])))))]
+            (ptk/emit! (the/prepare-store (test-state) done' completed)
+                       (de/request-multiple-export {:exports items})
+                       :the/end)))
+        done))))
+
+(t/deftest cancel-export-asks-the-backend-and-settles
+  (t/async done
+    (let [job-id  (uuid/next)
+          observed (atom nil)]
+      (mock/with-mocks
+        {repo/cmd! (mock/stub (fn [_ params]
+                                (reset! observed params)
+                                (rx/of nil)))}
+        (fn [done']
+          (let [completed (fn [state]
+                            (t/testing "the cancel of the job the widget tracks"
+                              (t/is (= {:id job-id} @observed)))
+                            (t/testing "and the widget settles without waiting for the row"
+                              (t/is (= "cancelled" (get-in state [:export :status])))
+                              (t/is (false? (get-in state [:export :in-progress])))))]
+            (ptk/emit! (the/prepare-store (test-state {:job-id job-id
+                                                       :in-progress true
+                                                       :status "running"})
+                                          done' completed)
+                       (de/cancel-export)
+                       :the/end)))
+        done))))
+
+(t/deftest clear-export-state-only-clears-the-run-it-names
+  ;; a delayed clear of a finished run must not wipe the next one: the
+  ;; guard compares the job id the slot holds
+  (let [old-id (uuid/next)
+        new-id (uuid/next)
+        state  {:export {:job-id old-id :in-progress false}}]
+    (t/testing "a clear of the run in the slot removes it"
+      (t/is (nil? (:export (ptk/update (de/clear-export-state old-id) state)))))
+    (t/testing "a clear of another run leaves the slot alone"
+      (let [state' (assoc-in state [:export :job-id] new-id)]
+        (t/is (= new-id (get-in (ptk/update (de/clear-export-state old-id) state')
+                                [:export :job-id])))))
+    (t/testing "a clear with no run in the slot still clears"
+      (t/is (nil? (:export (ptk/update (de/clear-export-state old-id)
+                                       {:export {:job-id nil}})))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; FAILURES AND PERSISTENCE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Scenario: the creation of the job fails. Proves: the user gets a
+;; toast and stays in the workspace; the failure is not raised to the
+;; global error handler, which would replace the workspace with an error
+;; page.
 (t/deftest ^:async failed-simple-export-shows-a-toast-instead-of-raising
   (let [store-errors (atom [])
         flashed      (atom [])
@@ -151,11 +396,13 @@
        (t/is (= [["translated:errors.export-failed" :unhandled]] @flashed)
              "an exporter defect reports as unhandled")
        (t/is (empty? @store-errors) "nothing reaches the global error handler")
-       (t/is (nil? (:export @store)) "the export state is cleared")))))
+       (t/is (false? (get-in @store [:export :in-progress]))
+             "the widget settled instead of waiting forever")
+       (t/is (= :unhandled (get-in @store [:export :error-code])))))))
 
-;; Scenario: the export request of a multiple export fails. Proves: the user
-;; gets a toast, and the leave-page warning the export turned on is released
-;; even though no progress message will ever arrive.
+;; Scenario: the creation of a multiple export fails. Proves: the user
+;; gets a toast, and the leave-page warning the export turned on is
+;; released even though no progress message will ever arrive.
 (t/deftest ^:async failed-multiple-export-shows-a-toast-and-releases-the-leave-warning
   (let [store-errors (atom [])
         flashed      (atom [])
@@ -167,7 +414,6 @@
                                                       (rx/throw (ex-info "exporter failed"
                                                                          {:type :server-error}))))
         dwp/force-persist-files-and-wait (mock/stub (fn [_ _] (rx/empty)))
-        ws/get-rcv-stream                (mock/stub (fn [_] (rx/subject)))
         st/ongoing-tasks                 tasks
         errors/flash                     (fn [& {:keys [hint]}] (swap! flashed conj hint))
         i18n/tr                          (mock/stub #(str "translated:" %))}
@@ -181,16 +427,51 @@
 ;; Scenario: an export starts while its file has a change not saved yet.
 ;; Proves: the user is warned that the export may miss it, and the export
 ;; runs anyway.
+(t/deftest ^:async a-failed-persist-releases-the-export-flag
+  ;; The persist runs before the job exists: if it fails, the flag must
+  ;; not stay set, or the leave-page warning never turns off.
+  (let [tasks        (atom #{})
+        store-errors (atom [])
+        store        (export-store (test-state) store-errors)]
+    (await
+     (mock/with-mocks*
+       {dwp/force-persist-files-and-wait
+        (mock/stub (fn [_ _] (rx/throw (ex-info "persist failed" {:type :internal}))))
+        st/ongoing-tasks tasks}
+       (ptk/emit! store (de/request-simple-export {:export export}))
+       (await (async/wait-for #(not (contains? @tasks :export))
+                              "the leave-page warning is released"))
+       (t/is (empty? @tasks))))))
+
+(t/deftest ^:async a-failed-persist-releases-the-export-flag-of-a-multiple-run
+  (let [tasks        (atom #{})
+        store-errors (atom [])
+        store        (export-store (test-state) store-errors)]
+    (await
+     (mock/with-mocks*
+       {dwp/force-persist-files-and-wait
+        (mock/stub (fn [_ _] (rx/throw (ex-info "persist failed" {:type :internal}))))
+        st/ongoing-tasks tasks}
+       (ptk/emit! store (de/request-multiple-export
+                         {:exports [(assoc export :enabled true)]}))
+       (await (async/wait-for #(not (contains? @tasks :export))
+                              "the leave-page warning is released"))
+       (t/is (empty? @tasks))))))
+
 (t/deftest ^:async export-warns-when-the-file-has-unsaved-changes
   (let [file-id    (uuid/next)
         downloaded (atom false)
         store      (export-store (unsaved-state file-id) (atom []))]
     (await
      (mock/with-mocks*
-       {repo/cmd!                        (mock/stub (fn [_ _]
-                                                      (rx/of {:filename "export.png"
-                                                              :mtype "image/png"
-                                                              :uri "blob:export"})))
+       {repo/cmd!                        (mock/stub (fn [_ _] (rx/of fake-job)))
+        dj/watch-job                     (mock/stub
+                                          (fn [_ _]
+                                            (fake-watch
+                                             [(completed-emission
+                                               {:resource-uri "blob:export"
+                                                :filename "export.png"
+                                                :mtype "image/png"})])))
         dwp/force-persist-files-and-wait (mock/stub (fn [_ _] (rx/empty)))
         dom/trigger-download-uri         (mock/stub (fn [& _] (reset! downloaded true)))
         i18n/tr                          (mock/stub #(str "translated:" %))}
@@ -207,16 +488,31 @@
         store      (export-store (test-state) (atom []))]
     (await
      (mock/with-mocks*
-       {repo/cmd!                        (mock/stub (fn [_ _]
-                                                      (rx/of {:filename "export.png"
-                                                              :mtype "image/png"
-                                                              :uri "blob:export"})))
+       {repo/cmd!                        (mock/stub (fn [_ _] (rx/of fake-job)))
+        dj/watch-job                     (mock/stub
+                                          (fn [_ _]
+                                            (fake-watch
+                                             [(completed-emission
+                                               {:resource-uri "blob:export"
+                                                :filename "export.png"
+                                                :mtype "image/png"})])))
         dwp/force-persist-files-and-wait (mock/stub (fn [_ _] (rx/empty)))
         dom/trigger-download-uri         (mock/stub (fn [& _] (reset! downloaded true)))}
        (ptk/emit! store (de/request-simple-export {:export (assoc export :file-id (uuid/next))}))
        (await (async/wait-for #(true? @downloaded) "the export runs"))
        (await (async/settle))
        (t/is (nil? (:notification @store)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; THE CLIENT-SIDE WASM RENDER
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest sanitize-filename-strips-reserved-chars-and-dedupes
+  (t/is (= "a_b.png"
+           (wasm.exports/sanitize-filename {:name "a/b" :suffix "" :type :png} #{})))
+  (t/is (= "board-2.pdf"
+           (wasm.exports/sanitize-filename {:name "board" :suffix "" :type :pdf}
+                                           #{"board.pdf"}))))
 
 ;; Scenario: WASM is on and the user exports one shape. Proves: the worker
 ;; builds a single blob (no ZIP); the exporter is not called.

@@ -18,6 +18,10 @@
    [beicon.v2.core :as rx]))
 
 (def ^:private terminal-statuses
+  ;; "cancelled" stays in the vocabulary: binfile flows map the outcome
+  ;; explicitly and their tests pin it, even though get-job reports
+  ;; cancelled rows as failed (shared user-status). The assets widget
+  ;; tells a mapped cancel apart through its own `cancelling` state.
   #{"completed" "failed" "cancelled"})
 
 (defn- events-of
@@ -83,6 +87,24 @@
                       (rx/share))]
     (rx/merge (rx/take-until outcomes progress)
               outcomes)))
+
+(defn outcome-result
+  "One terminal outcome of `watch-job` into its result: a completed
+  job answers its artifact, any other outcome throws its error. Lets
+  one-shot readers (clipboard, plugins) settle on failure instead of
+  filtering for `\"completed\"` and hanging when the job ends any
+  other way. The backend maps a cancelled export to `\"failed\"`
+  without an error (shared `get-user-status`, also read by binfile
+  flows, so it stays as it is): such an outcome throws a generic
+  export failure, and the widget tells it apart through its own
+  `cancelling` state."
+  [{:keys [status result error]}]
+  (if (= "completed" status)
+    result
+    (throw (ex-info "export job failed"
+                    (or error {:type :internal
+                               :code :export-failed
+                               :hint "export job failed"})))))
 
 (defn cancel-job
   "Ask the server to cancel a job the caller created. Fire and forget:

@@ -807,15 +807,31 @@
     WHERE id = ?
       AND status IN ('new', 'scheduled', 'running', 'retry')")
 
+(def ^:private sql:touch-heartbeat-of-tenant
+  "UPDATE job
+      SET modified_at = ?
+    WHERE id = ?
+      AND tenant = ?
+      AND status IN ('new', 'scheduled', 'running', 'retry')")
+
 (def ^:private sql:lock-active-job
   "SELECT id FROM job
     WHERE id = ?
       AND status IN ('new', 'scheduled', 'running', 'retry')
     FOR UPDATE")
 
+(def ^:private sql:lock-active-job-of-tenant
+  "SELECT id FROM job
+    WHERE id = ?
+      AND tenant = ?
+      AND status IN ('new', 'scheduled', 'running', 'retry')
+    FOR UPDATE")
+
 (defn- touch-job
-  [connectable job-id now]
-  (-> (db/exec-one! connectable [sql:touch-heartbeat now job-id])
+  [connectable job-id now tenant]
+  (-> (if (some? tenant)
+        (db/exec-one! connectable [sql:touch-heartbeat-of-tenant now job-id tenant])
+        (db/exec-one! connectable [sql:touch-heartbeat now job-id]))
       (db/get-update-count)))
 
 (defn- report-progress
@@ -823,14 +839,18 @@
 
   The row is locked first: a concurrent complete, fail or cancel blocks
   here, so a progress event can never land on an already terminal job.
+  With a `tenant`, the lock also filters by it, so a foreign report
+  matches nothing and writes nothing.
   Returns 1 when the event was stored.
 
   Like every lifecycle write it owns its transaction (see `own-transaction`),
   so a beat survives the rollback of the work around it."
-  [cfg job-id progress]
+  [cfg job-id progress tenant]
   (db/tx-run! (own-transaction cfg)
               (fn [{:keys [::db/conn] :as tx-cfg}]
-                (if (db/exec-one! conn [sql:lock-active-job job-id])
+                (if (if (some? tenant)
+                      (db/exec-one! conn [sql:lock-active-job-of-tenant job-id tenant])
+                      (db/exec-one! conn [sql:lock-active-job job-id]))
                   (do
                     (insert-event tx-cfg job-id "progress" progress)
                     1)
@@ -844,19 +864,35 @@
   not. The status is read from the row, because a write can only tell
   that it matched no row, not why.
 
+  With a `tenant`, a row of another tenant is inactive too, and the
+  interrupt carries `:reason :foreign-tenant` (and no `:status`): the
+  caller answers it like a missing row, without revealing state.
+
   The interrupt is an internal signal, not an error: the caller is a task
   that must stop the work in course. `heartbeat` calls this when one of
   its writes finds the job gone, and a caller can also ask explicitly,
   which is what the binfile adapter does before and after its run.
   Answers with the cfg, so a caller can thread the check into its run."
-  [cfg job-id]
+  [cfg job-id & {:keys [tenant]}]
   (let [job (get-job cfg job-id)]
-    (when-not (and (some? job) (contains? active-statuses (:status job)))
+    (cond
+      ;; a row of another tenant is not this caller's business: same
+      ;; signal, no state
+      (and (some? job) (some? tenant) (not= tenant (:tenant job)))
       (ex/raise :type :interrupt
                 :code :job-interrupted
+                :reason :foreign-tenant
+                :hint "the job belongs to another tenant"
+                :job-id job-id)
+
+      (not (and (some? job) (contains? active-statuses (:status job))))
+      (ex/raise :type :interrupt
+                :code :job-interrupted
+                :reason (if job :terminal :gone)
                 :hint "the job is no longer active"
                 :job-id job-id
                 :status (or (:status job) "gone")))
+
     cfg))
 
 (defn heartbeat
@@ -867,6 +903,9 @@
   - `:job-id`   explicit job id; defaults to `::jobs/job-id` on the cfg
                 and then to the runner-bound `*job-id*`.
   - `:progress` optional progress report (see `schema:progress`).
+  - `:tenant`   optional tenant the beat belongs to: both writes filter
+                by it, so a foreign beat matches nothing. Internal
+                runners omit it and beat as their own tenant.
   - `::force?`  internal: skips only the progress throttle.
 
   Returns the number of durable writes performed, so 0 means there was
@@ -892,7 +931,7 @@
   forgiving on the handler path, where it is logged and ignored; the
   forced path used by the management API propagates it so the external
   worker can retry."
-  [cfg & {:keys [job-id progress] :as options}]
+  [cfg & {:keys [job-id progress tenant] :as options}]
   (let [job-id   (or job-id (get cfg ::job-id) *job-id*)
         ;; a malformed report is a caller bug: never swallow it
         progress (some-> progress validate-progress)]
@@ -902,16 +941,16 @@
             force?      (boolean (::force? options))
             writes      (volatile! 0)]
         (when (should-write? heartbeats job-id now heartbeat-interval)
-          (let [n (touch-job connectable job-id now)]
+          (let [n (touch-job connectable job-id now tenant)]
             ;; the touch is conditional on the row still being active: a
             ;; write that matched no row is what raises the interrupt
             (when (zero? n)
-              (check-active cfg job-id))
+              (check-active cfg job-id :tenant tenant))
             (vswap! writes + n)))
         (when (and (some? progress)
                    (or force?
                        (should-write? progresses job-id now progress-interval)))
-          (let [store #(report-progress cfg job-id progress)
+          (let [store #(report-progress cfg job-id progress tenant)
                 n     (if force?
                         (store)
                         (try
@@ -925,7 +964,7 @@
             ;; the raise stays outside the catch above: an interrupt is
             ;; not a transient failure and must not be swallowed with it
             (when (zero? n)
-              (check-active cfg job-id))
+              (check-active cfg job-id :tenant tenant))
             (vswap! writes + n)))
         (int @writes)))))
 

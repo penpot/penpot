@@ -37,6 +37,7 @@
    [app.main.data.exports.assets :as de]
    [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.helpers :as dsh]
+   [app.main.data.jobs :as dj]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
    [app.main.data.workspace.media :as dwm]
@@ -1208,6 +1209,23 @@
            (rx/map (fn [_]
                      (ntf/info "The id has been copied to the clipboard")))))))
 
+(defn image-export
+  "The single item of a copy-as-image export, in the shape the shared
+  export contract accepts: `:enabled` and other UI flags stay in the
+  dialog, never in the payload."
+  [file-id page-id object-id]
+  (de/normalize-export {:file-id   file-id
+                        :page-id   page-id
+                        :object-id object-id
+                        ;; webp would be preferrable, but PNG is the most
+                        ;; supported image MIME type by clipboard APIs.
+                        :type      :png
+                        ;; Always use 2 to ensure good enough quality for
+                        ;; wireframes.
+                        :scale     2
+                        :suffix    ""
+                        :name      ""}))
+
 (defn copy-as-image
   []
   (ptk/reify ::copy-as-image
@@ -1217,16 +1235,7 @@
             page-id  (:current-page-id state)
             selected (first (dsh/lookup-selected state))
 
-            export (de/normalize-export {:file-id file-id
-                                         :page-id page-id
-                                         :object-id selected
-                                         ;; webp would be preferrable, but PNG is the most supported image MIME type by clipboard APIs.
-                                         :type :png
-                                         ;; Always use 2 to ensure good enough quality for wireframes.
-                                         :scale 2
-                                         :suffix ""
-                                         :enabled true
-                                         :name ""})
+            export (image-export file-id page-id selected)
 
             ;; Create a deferred promise immediately, before any async operations.
             ;; Registering the clipboard write NOW preserves the user-gesture security
@@ -1244,11 +1253,21 @@
          ;; Call exporter to get image URI, then fetch blob and resolve the deferred.
          (->> (if (features/active-feature? state "render-wasm/v1")
                 (rx/of {:uri (wasm.exports/export-image-uri export)})
-                (rp/cmd! :export
-                         {:exports [export]
-                          :profile-id (:profile-id state)
-                          :cmd :export-shapes
-                          :wait true}))
+
+                ;; One export job, its artifact under the completed row's
+                ;; result: the URI of the resource is what the blob fetch
+                ;; reads now, as the download of the exports does.
+                (->> (rp/cmd! :create-export-assets-job
+                              {:params    {:exports [export]}
+                               ;; the blob is consumed right here: nothing
+                               ;; reads the row or the object later
+                               :transient true})
+                     (rx/mapcat (fn [{job-id :id}]
+                                  (->> (dj/watch-job (:ws-conn state) job-id)
+                                       (rx/filter :status)
+                                       (rx/timeout 120000)
+                                       (rx/map dj/outcome-result))))
+                     (rx/map (fn [result] {:uri (:resource-uri result)}))))
 
               (rx/mapcat (fn [{:keys [uri]}]
                            (http/send! {:method :get

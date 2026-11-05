@@ -18,6 +18,7 @@
    [common-tests.colors-test]
    [common-tests.data-test]
    [common-tests.exceptions-test]
+   [common-tests.export-test]
    [common-tests.files-builder-test]
    [common-tests.files-changes-test]
    [common-tests.files-migrations-0025-test]
@@ -100,6 +101,7 @@
    [common-tests.types.container-test]
    [common-tests.types.fill-test]
    [common-tests.types.font-test]
+   [common-tests.types.job-test]
    [common-tests.types.modifiers-test]
    [common-tests.types.objects-map-test]
    [common-tests.types.organization-test]
@@ -126,6 +128,7 @@
    'common-tests.colors-test
    'common-tests.data-test
    'common-tests.exceptions-test
+   'common-tests.export-test
    'common-tests.files-builder-test
    #?(:cljs 'common-tests.fonts-test)
    'common-tests.files-changes-test
@@ -209,6 +212,7 @@
    'common-tests.types.container-test
    'common-tests.types.fill-test
    'common-tests.types.font-test
+   'common-tests.types.job-test
    'common-tests.types.modifiers-test
    'common-tests.types.objects-map-test
    'common-tests.types.organization-test

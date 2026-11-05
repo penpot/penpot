@@ -15,6 +15,7 @@
    [app.http :as-alias http]
    [app.http.errors :as errors]
    [app.metrics :as mtx]
+   [app.setup.keys :as keys]
    [app.tokens :as tokens]
    [app.util.inet :as inet]
    [app.util.pointer-map :as pmap]
@@ -394,16 +395,34 @@
   [^String a ^String b]
   (MessageDigest/isEqual (.getBytes a "UTF-8") (.getBytes b "UTF-8")))
 
+(def ^:private exporter-key-prefix
+  "Prefix of the per-tenant exporter key ids (`exporter:<tenant>`). The
+  setup only registers the ids it knows, but any id with this prefix
+  the secret derives is a key this deployment minted: the tenant travels
+  in the id, so no enumeration is needed."
+  "exporter:")
+
+(defn- derive-tenant-key
+  "The expected secret of a per-tenant exporter id: the shared derivation
+  with the tenant the id names, so the registry and the middleware can
+  never build two different salts."
+  [secret key-id]
+  (keys/derive-exporter-key secret (subs (name key-id) (count exporter-key-prefix))))
+
 (defn- wrap-shared-key-auth
-  [handler keys]
+  [handler keys secret]
   (if (seq keys)
     (fn [request]
       (if-let [[key-id key] (some-> (yreq/get-header request "x-shared-key")
                                     (str/split #"\s+" 2))]
         (let [key-id (-> key-id str/lower keyword)]
           (if (and (string? key)
-                   (contains? keys key-id)
-                   (constant-time-eq? key (get keys key-id)))
+                   (or (and (contains? keys key-id)
+                            (constant-time-eq? key (get keys key-id)))
+                       ;; Per-tenant exporter ids need no registry entry.
+                       (and (string? secret)
+                            (str/starts-with? (name key-id) exporter-key-prefix)
+                            (constant-time-eq? key (derive-tenant-key secret key-id)))))
             (-> request
                 (assoc ::http/auth-key-id key-id)
                 (handler))

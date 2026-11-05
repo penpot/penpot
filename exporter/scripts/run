@@ -7,4 +7,9 @@ if [ -f $SCRIPT_DIR/../../backend/scripts/_env.local ]; then
     source $SCRIPT_DIR/../../backend/scripts/_env.local;
 fi
 
+# Same default as wait-and-start.sh: the platform edge is always the
+# in-container nginx loopback, so it is defined at the start scripts,
+# not in compose or _env; an explicitly exported value always wins.
+export PENPOT_INTERNAL_URI="${PENPOT_INTERNAL_URI:-http://localhost:4449}"
+
 exec node target/app.js
