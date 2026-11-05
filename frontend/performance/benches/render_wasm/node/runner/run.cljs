@@ -56,17 +56,6 @@
     (contains? (ex-data cause) ::browser/deadline-exceeded)
     (assoc :deadline-exceeded (::browser/deadline-exceeded (ex-data cause)))))
 
-(defn- failure-evidence
-  "Projects a bridge failure response into diagnostics evidence."
-  [evidence fallback-phase]
-  (if (map? evidence)
-    (cond-> (select-keys evidence [:status :phase :message :cause :partial :phases :reason :deadline-exceeded])
-      (nil? (:status evidence)) (assoc :status "failed")
-      (nil? (:phase evidence)) (assoc :phase (name fallback-phase)))
-    {:status "failed"
-     :phase (name fallback-phase)
-     :message (str evidence)}))
-
 (defn- interruption
   [signal]
   (when-let [name (process/signal-name signal)]
@@ -142,7 +131,7 @@
 
 (defn- record-failure
   [state case-id stage evidence]
-  (let [failure (cond-> (assoc (select-keys evidence [:status :phase :message :cause :partial :reason])
+  (let [failure (cond-> (assoc (errors/project-diagnostic evidence)
                                :stage stage)
                   (some? case-id) (assoc :case-id case-id))]
     (reset! (:harness-failed? state) true)
@@ -217,52 +206,56 @@
 (defn- ^:async prepare-case
   [state case page deadline warmup?]
   (check-deadline deadline)
-  (let [build-id (:id (:selected-build state))
+  (let [build-id       (:id (:selected-build state))
         preparation-id (str (random-uuid))
-        response (attempt
-                  (await ((get-in state [:services :prepare])
-                          page
-                          (transit/encode-str
-                           {:case case
-                            :preparation-id preparation-id
-                            :timeout-ms (max 1 (process/remaining deadline))
-                            :module-url (renderer-url build-id "render-wasm.js")
-                            :wasm-url (renderer-url build-id "render-wasm.wasm")})
-                          {:deadline deadline :signal (:signal state) :phase :preparation})))
-        accepted (when (and (not (failure? response)) (= "ok" (:status response)))
-                   (attempt
-                    (let [preparation (assoc (:preparation response) :warmup? warmup?)]
-                      (when-not (and (= preparation-id (:preparation-id preparation))
-                                     (= (:id case) (:case-id preparation))
-                                     (not (:failure preparation)))
-                        (throw (ex-info "preparation success response is inconsistent" {})))
-                      (record-preparation state preparation)
-                      preparation)))]
+        response       (attempt
+                        (measurement/check-response
+                         :preparation preparation-id
+                         (await ((get-in state [:services :prepare])
+                                 page
+                                 (transit/encode-str
+                                  {:case case
+                                   :preparation-id preparation-id
+                                   :timeout-ms (max 1 (process/remaining deadline))
+                                   :module-url (renderer-url build-id "render-wasm.js")
+                                   :wasm-url (renderer-url build-id "render-wasm.wasm")})
+                                 {:deadline deadline :signal (:signal state) :phase :preparation}))))
+        accepted       (when (and (not (failure? response)) (= "ok" (:status response)))
+                         (attempt
+                          (let [preparation (assoc (:preparation response) :warmup? warmup?)]
+                            (when-not (and (= preparation-id (:preparation-id preparation))
+                                           (= (:id case) (:case-id preparation))
+                                           (not (:failure preparation)))
+                              (throw (ex-info "preparation success response is inconsistent" {})))
+                            (record-preparation state preparation)
+                            preparation)))]
     (if (and accepted (not (failure? accepted)))
       {:preparation accepted}
       (let [failure (cond
                       (failure? accepted) (assoc (cause-evidence accepted :invalid-output)
                                                  :partial {:response response})
                       (failure? response) (cause-evidence response :preparation)
-                      :else (failure-evidence response :preparation))
+                      :else response)
             phases (if (failure? accepted) (get-in response [:preparation :phases]) (:phases failure))]
         (record-preparation state {:preparation-id preparation-id :case-id (:id case)
                                    :warmup? warmup?
                                    :phases (measurement/partial-phases phases preparation-id [:preparation])
                                    :diagnostics (or (get-in failure [:partial :setup]) {})
-                                   :failure (dissoc failure :phases)})
+                                   :failure (errors/project-diagnostic failure)})
         {:failure failure :preparation-id preparation-id}))))
 
 (defn- ^:async run-attempt
   "Returns the bridge evidence of one attempt, or the failure."
   [state page preparation-id deadline]
   (attempt
-   (await ((get-in state [:services :run])
-           page
-           (transit/encode-str
-            {:preparation-id preparation-id
-             :timeout-ms (max 1 (process/remaining deadline))})
-           {:deadline deadline :signal (:signal state) :phase :attempt}))))
+   (measurement/check-response
+    :attempt preparation-id
+    (await ((get-in state [:services :run])
+            page
+            (transit/encode-str
+             {:preparation-id preparation-id
+              :timeout-ms (max 1 (process/remaining deadline))})
+            {:deadline deadline :signal (:signal state) :phase :attempt})))))
 
 (defn- ^:async recycle-browser
   [state]

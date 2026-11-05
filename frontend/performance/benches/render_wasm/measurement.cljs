@@ -8,7 +8,14 @@
   "Projects browser phase evidence into saved attempts."
   (:require
    [app.common.schema :as sm]
+   [benches.render-wasm.errors :as errors]
    [benches.render-wasm.result :as result]))
+
+(def ^:private schema:response
+  [:multi {:dispatch :status}
+   ["ok" [:map [:status [:= "ok"]]]]
+   ["failed" (sm/merge errors/schema:diagnostic [:map [:status [:= "failed"]]])]
+   ["stale" [:map {:closed true} [:status [:= "stale"]]]]])
 
 (defn partial-phases
   "Returns the valid prefix of delivered phase history.
@@ -33,6 +40,31 @@
         out)
       out)))
 
+(defn check-response
+  "Returns checked bridge evidence or an invalid-output failure.
+
+  Stale responses retain their status and gain an ownership diagnostic.
+  Malformed responses retain their valid phase prefix and raw response.
+
+  Args:
+    phase: The preparation or attempt receiving the response.
+    preparation-id: Expected owner of delivered phase blocks.
+    response: Decoded bridge envelope.
+
+  Returns:
+    Execution evidence with a known status and diagnostic fields on failure."
+  [phase preparation-id response]
+  (if (sm/validate schema:response response)
+    (if (= "stale" (:status response))
+      (assoc response :phase (name phase) :message "browser context was superseded")
+      response)
+    (assoc (errors/fail-data
+            (errors/evidence :invalid-output
+                             (ex-info "invalid bridge response"
+                                      {:type ::invalid-response :partial {:response response}})))
+           :phases (partial-phases (:phases response) preparation-id
+                                   (if (= :preparation phase) [:preparation] [:main :reset])))))
+
 (defn attempt
   "Returns an attempt with raw phase histories and available failure evidence.
 
@@ -49,5 +81,5 @@
            :outcome (if (= "ok" (:status evidence)) :completed :failed)
            :phases (or (:phases evidence) [])}
     (not= "ok" (:status evidence))
-    (assoc :failure (select-keys evidence [:status :phase :message :cause]))
+    (assoc :failure (dissoc (errors/project-diagnostic evidence) :partial))
     (:partial evidence) (assoc :partial (:partial evidence))))

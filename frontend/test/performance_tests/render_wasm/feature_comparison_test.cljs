@@ -279,7 +279,7 @@
            (mapv (fn [[index configuration]]
                    (if (zero? index)
                      (assoc (completed-configuration configuration)
-                            :status :failed :failure {:phase :run}
+                            :status :failed :failure {:phase "run" :message "run interrupted"}
                             :reason "SIGINT")
                      (assoc configuration :status :unattempted
                             :reason "stopped after failure")))
@@ -288,7 +288,7 @@
            (mapv (fn [[index edge]]
                    (if (zero? index)
                      (assoc edge :status :failed :path "/comparison.transit"
-                            :failure {:message "partial"})
+                            :failure {:phase "comparison" :message "partial"})
                      (assoc edge :status :unattempted
                             :reason "stopped after failure")))
                  (map-indexed vector (:edges record))))))
@@ -489,7 +489,7 @@
                            :warmup? false
                            :outcome :failed
                            :phases []
-                           :failure {:message "fixture failure"}})
+                           :failure {:phase "main" :message "fixture failure"}})
                          (let [prep (preparation case-id digest)]
                            (-> run
                                (result/record-preparation prep)
@@ -503,7 +503,7 @@
                    run
                    cases))
         termination (case kind
-                      :failed {:reason :failed :failure {:message "fixture failure"}}
+                      :failed {:reason :failed :failure {:phase "main" :message "fixture failure"}}
                       :zero-attempts {:reason :incomplete}
                       :interrupted {:reason :interrupted :signal "SIGINT"}
                       {:reason :completed})

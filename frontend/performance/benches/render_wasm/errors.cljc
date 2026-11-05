@@ -48,6 +48,40 @@
 
 #?(:cljs
    (do
+     (def ^:private schema:cause-value
+       [:or nil? boolean? keyword? number? string?])
+
+     (def schema:cause-detail
+       "One level of a portable exception description."
+       [:map {:closed true}
+        [:message string?]
+        [:fn {:optional true} schema:cause-value]
+        [:code {:optional true} schema:cause-value]
+        [:type {:optional true} schema:cause-value]
+        [:hint {:optional true} schema:cause-value]])
+
+     (def schema:diagnostic
+       "Failure location and message with optional cause and partial evidence."
+       [:map
+        [:phase string?]
+        [:message string?]
+        [:status {:optional true} [:enum "failed" "stale"]]
+        [:cause {:optional true} [:vector schema:cause-detail]]
+        [:partial {:optional true} map?]
+        [:reason {:optional true} :any]
+        [:deadline-exceeded {:optional true} boolean?]])
+
+     (defn project-diagnostic
+       "Returns the diagnostic fields of an execution envelope.
+
+       Args:
+         evidence: Plain execution evidence.
+
+       Returns:
+         Failure status, location, message and available diagnostic details."
+       [evidence]
+       (select-keys evidence [:status :phase :message :cause :partial :reason :deadline-exceeded]))
+
      (def ^:private fatal-cause-depth 8)
      (def ^:private evidence-cause-depth 3)
      (def ^:private max-cause-chars 500)

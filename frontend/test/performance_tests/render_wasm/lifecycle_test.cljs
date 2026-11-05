@@ -17,8 +17,13 @@
    [benches.render-wasm.cases :as cases]
    [benches.render-wasm.declarations :as decl]
    [benches.render-wasm.errors :as errors]
+   [benches.render-wasm.measurement :as measurement]
+   [benches.render-wasm.report.format :as format]
+   [benches.render-wasm.report.summarize :as summary]
+   [benches.render-wasm.result :as result]
    [benches.render-wasm.runtime.camera :as camera]
-   [cljs.test :as t :include-macros true]))
+   [cljs.test :as t :include-macros true]
+   [clojure.string :as str]))
 
 ;; Forward declaration: entry-test helpers below build args against the
 ;; fake Emscripten factory URL defined alongside the fake-DOM harness.
@@ -743,19 +748,49 @@
                                    :preparation {:callback #(work :preparation %)}
                                    :reset #(work :reset %)}
                                   #(work :main %))
-             (let [request  (-> (transit/decode-str (scene-args 7 {}))
-                                (assoc :preparation-id "phase-failure")
-                                (transit/encode-str))
-                   prepared (transit/decode-str (await (browser/prepare-scene-request request)))
-                   run      (transit/encode-str {:preparation-id "phase-failure"})
-                   evidence (if (= failed-phase :preparation)
-                              prepared
-                              (transit/decode-str (await (browser/run-prepared run))))
-                   stopped  (transit/decode-str (await (browser/run-prepared run)))
-                   blocks   (:phases evidence)]
+             (let [request     (-> (transit/decode-str (scene-args 7 {}))
+                                   (assoc :preparation-id "phase-failure")
+                                   (transit/encode-str))
+                   prepared    (transit/decode-str (await (browser/prepare-scene-request request)))
+                   run         (transit/encode-str {:preparation-id "phase-failure"})
+                   evidence    (if (= failed-phase :preparation)
+                                 prepared
+                                 (transit/decode-str (await (browser/run-prepared run))))
+                   stopped     (transit/decode-str (await (browser/run-prepared run)))
+                   blocks      (:phases evidence)
+                   diagnostic  (errors/project-diagnostic evidence)
+                   preparation (if (= failed-phase :preparation)
+                                 {:preparation-id "phase-failure" :case-id :rects/lifecycle
+                                  :warmup? false :diagnostics (get-in evidence [:partial :setup])
+                                  :phases blocks :failure diagnostic}
+                                 (assoc (:preparation prepared) :warmup? false))
+                   saved       (-> (cond->
+                                    (-> (result/create-run
+                                         {:run-id "phase-failure" :started-at "start"
+                                          :plan {:cases [(load-case)] :warmups 0 :repetitions 1}
+                                          :metadata {:git {:sha nil :dirty nil} :build {:functional {}}
+                                                     :environment {} :scored? true}})
+                                        (result/record-preparation preparation))
+                                     (or (= context :fresh) (not= failed-phase :preparation))
+                                     (result/record-attempt
+                                      (measurement/attempt :rects/lifecycle "phase-failure" false
+                                                           (if (= failed-phase :preparation)
+                                                             (dissoc evidence :phases)
+                                                             evidence))))
+                                   (result/record-case-outcome :rects/lifecycle
+                                                               {:outcome :failed})
+                                   (result/finish-run "end" {:reason :failed})
+                                   result/encode result/decode)
+                   stored      (if (= failed-phase :preparation)
+                                 (first (:preparations saved))
+                                 (first (:attempts saved)))]
                (t/is (= "failed" (:status evidence)))
                (t/is (= (name failed-phase) (:phase evidence)))
                (t/is (= "phase fixture failed" (:message evidence)))
+               (t/is (= (:cause evidence) (get-in stored [:failure :cause])))
+               (t/is (= blocks (:phases stored)))
+               (t/is (= "phase-failure" (:preparation-id stored)))
+               (t/is (str/includes? (format/format-run (summary/summarize saved)) "phase fixture failed"))
                (t/is (= (case failed-phase
                           :preparation [:preparation]
                           :main [:preparation :main]

@@ -573,7 +573,8 @@
                                               :invalid-preparation (update response :preparation dissoc :fingerprint)
                                               :contradictory-preparation
                                               (-> response
-                                                  (assoc-in [:preparation :failure] {:message "callback failed"})
+                                                  (assoc-in [:preparation :failure]
+                                                            {:phase "preparation" :message "callback failed"})
                                                   (assoc-in [:preparation :phases 0 :outcome] :failed))
                                               response)
                                             response)))
@@ -585,8 +586,14 @@
                                       (if (= :case/a case-id)
                                         (case phase
                                           :main {:status "failed" :phase "main" :message "main failed"
+                                                 :cause [{:message "WASM trap" :code "E_RENDER"}]
+                                                 :reason :renderer-rejected :deadline-exceeded false
+                                                 :partial {:completed-call 7}
                                                  :phases [(assoc block :outcome :failed)]}
                                           :reset {:status "failed" :phase "reset" :message "reset failed"
+                                                  :cause [{:message "WASM trap" :code "E_RENDER"}]
+                                                  :reason :renderer-rejected :deadline-exceeded false
+                                                  :partial {:completed-call 7}
                                                   :phases [block (assoc block :phase :reset :outcome :failed)]}
                                           :invalid-main {:status "ok" :phases []}
                                           :invalid-reset {:status "ok" :phases [block {:phase :reset}]})
@@ -601,6 +608,11 @@
       (t/is (= {:warmups 0 :repetitions (if (and prep-failed? (= :reuse context)) 2 1)}
                (get-in saved [:remaining :case/a])))
       (t/is (= [:completed :completed] (mapv :outcome (attempts-for saved :case/b))))
+      (when (#{:main :reset} phase)
+        (t/is (= {:cause [{:message "WASM trap" :code "E_RENDER"}]
+                  :reason :renderer-rejected :deadline-exceeded false}
+                 (select-keys (:failure (first attempts)) [:cause :reason :deadline-exceeded])))
+        (t/is (= {:completed-call 7} (:partial (first attempts)))))
       (when (= :contradictory-preparation phase)
         (t/is (= "invalid-output" (get-in (first (preparations-for saved :case/a)) [:failure :phase]))))
       (when (= :invalid-reset phase)
@@ -608,6 +620,65 @@
         (t/is (= {:phase :reset} (get-in (first attempts) [:partial :response :phases 1]))))
       (when (#{:invalid-main :invalid-reset} phase)
         (t/is (= "invalid-output" (get-in (first attempts) [:failure :phase])))))))
+
+(t/deftest ^:async malformed-bridge-diagnostics-stop-the-case-with-delivered-evidence
+  (doseq [stage [:prepare :run]
+          evidence [nil "unexpected response"
+                    {:status "unknown" :phase "main" :message "unexpected status"}
+                    {:status "failed" :phase "main"}
+                    {:status "failed" :phase "main" :message "bad cause" :cause [:invalid]}]]
+    (let [base      (fake-browser {})
+          service   (get-in base [:service stage])
+          delivered (atom nil)
+          fake      (assoc-in base [:service stage]
+                              (fn [page request bounds]
+                                (let [response (service page request bounds)
+                                      params   (transit/decode-str request)
+                                      case-id  (if (= :prepare stage)
+                                                 (get-in params [:case :id])
+                                                 (get-in @(:state base) [:preparations (:preparation-id params)]))]
+                                  (if (= :case/a case-id)
+                                    (let [phases (if (= :prepare stage)
+                                                   (get-in response [:preparation :phases])
+                                                   (conj (:phases response) {:phase :reset}))
+                                          rejected (cond-> evidence
+                                                     (map? evidence) (assoc :phases phases))]
+                                      (reset! delivered rejected)
+                                      (transit/decode-str (transit/encode-str rejected)))
+                                    response))))
+          response  (await (execute fake [(collected :case/a :reuse) (collected :case/b :reuse)]
+                                    (assoc (options fake (output-dir)) :repetitions 2)))
+          saved     (saved-record response)
+          failed    (if (= :prepare stage)
+                      (first (preparations-for saved :case/a))
+                      (first (attempts-for saved :case/a)))]
+      (t/is (= 1 (:exit-code response)))
+      (t/is (= "invalid-output" (get-in failed [:failure :phase])))
+      (t/is (= "invalid bridge response" (get-in failed [:failure :message])))
+      (t/is (= @delivered (if (= :prepare stage)
+                            (get-in failed [:failure :partial :response])
+                            (get-in failed [:partial :response]))))
+      (t/is (= (if (map? evidence) [(first (:phases @delivered))] []) (:phases failed)))
+      (t/is (= {:warmups 0 :repetitions (if (= :prepare stage) 2 1)}
+               (get-in saved [:remaining :case/a])))
+      (t/is (= [:completed :completed] (mapv :outcome (attempts-for saved :case/b))))
+      (t/is (str/includes? (:report response) "invalid bridge response")))))
+
+(t/deftest ^:async stale-bridge-results-stop-the-case-with-ownership-diagnostics
+  (doseq [stage [:prepare :run]]
+    (let [base     (fake-browser {})
+          fake     (assoc-in base [:service stage] (constantly {:status "stale"}))
+          response (await (execute fake [(collected :case/a :reuse)]
+                                   (assoc (options fake (output-dir)) :repetitions 2)))
+          saved    (saved-record response)
+          failure  (get-in saved [:case-outcomes :case/a :failure])]
+      (t/is (= 1 (:exit-code response)))
+      (t/is (= :failed (get-in saved [:case-outcomes :case/a :outcome])))
+      (t/is (= "stale" (:status failure)))
+      (t/is (= (if (= :prepare stage) "preparation" "attempt") (:phase failure)))
+      (t/is (= "browser context was superseded" (:message failure)))
+      (t/is (= {:warmups 0 :repetitions (if (= :prepare stage) 2 1)}
+               (get-in saved [:remaining :case/a]))))))
 
 (t/deftest ^:async runner-terminates-a-blocked-page-and-completes-the-next-case
   (let [dir (build-dir)
