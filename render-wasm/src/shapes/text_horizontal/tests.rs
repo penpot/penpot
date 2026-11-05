@@ -1181,7 +1181,7 @@ fn horizontal_position_data_carries_warichu_lines_and_emphasis_marks() {
     assert_eq!(warichu_lines, vec![(0, 2), (2, 4)]);
     let marks: Vec<(u32, u32)> = data
         .iter()
-        .filter(|entry| entry.direction == super::super::text_vertical::DIRECTION_EMPHASIS_MARK)
+        .filter(|entry| entry.direction == crate::shapes::DIRECTION_EMPHASIS_MARK)
         .map(|entry| (entry.start_pos, entry.end_pos))
         .collect();
     assert_eq!(marks, vec![(0, 1), (2, 3)], "A and B are marked; 、 is not");

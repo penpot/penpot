@@ -3,19 +3,13 @@ use std::ops::Range;
 use skia_safe::{Contains, Point as SkPoint};
 
 use crate::math::Rect;
-use crate::shapes::{PositionData, VerticalAlign};
+use crate::shapes::{
+    PositionData, VerticalAlign, DIRECTION_EMPHASIS_MARK, DIRECTION_VERTICAL_RL,
+    DIRECTION_VERTICAL_RUBY, DIRECTION_ZHUYIN,
+};
 
 use super::annotations::emphasis_mark_center;
 use super::layout::{column_base_center, CellKind, VerticalCell, VerticalLayout};
-
-/// Position-data `direction` of a vertical-rl strip; 0/1 are rtl/ltr.
-pub const DIRECTION_VERTICAL_RL: u32 = 2;
-
-/// Position-data `direction` of a ruby strip; offsets index the *ruby* string.
-pub const DIRECTION_VERTICAL_RUBY: u32 = 3;
-
-/// Position-data `direction` of one emphasis mark (圏点) box, in any mode.
-pub const DIRECTION_EMPHASIS_MARK: u32 = 4;
 
 /// Paragraph source UTF-16 range of a `transformed` span-text range.
 fn source_utf16_range(
@@ -214,7 +208,7 @@ fn ruby_entries(layout: &VerticalLayout, (origin_x, origin_y): (f32, f32)) -> Ve
                         y: origin_y + origin.y - ruby.font_size,
                         width: ruby.font_size,
                         height: ruby.font_size,
-                        direction: super::super::text_zhuyin::DIRECTION_ZHUYIN,
+                        direction: DIRECTION_ZHUYIN,
                     })
                     .collect::<Vec<_>>();
             }

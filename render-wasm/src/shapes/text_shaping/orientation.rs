@@ -46,7 +46,7 @@ pub(crate) fn is_upright_char(c: char) -> bool {
 /// horizontal glyph rotates clockwise as a fallback. Covers UAX #50 `Tr`,
 /// plus comma/full-stop punctuation whose plain glyph sits in the wrong
 /// half of the vertical em box.
-pub(super) fn uses_rotated_vertical_fallback(c: char) -> bool {
+pub(crate) fn uses_rotated_vertical_fallback(c: char) -> bool {
     matches!(u32::from(c),
         0x2018..=0x2019 // single quotation marks
         | 0x201C..=0x201D // double quotation marks
@@ -73,7 +73,7 @@ pub(super) fn uses_rotated_vertical_fallback(c: char) -> bool {
 }
 
 #[derive(Debug, PartialEq)]
-pub(super) struct Segment {
+pub(crate) struct Segment {
     pub text: String,
     /// UTF-16 offset of the segment start within its span text.
     pub utf16_start: usize,
@@ -82,7 +82,7 @@ pub(super) struct Segment {
 
 /// Split text into maximal runs of same orientation. Under
 /// `TextOrientation::Upright` every character is upright.
-pub(super) fn segment_by_orientation(text: &str, orientation: TextOrientation) -> Vec<Segment> {
+pub(crate) fn segment_by_orientation(text: &str, orientation: TextOrientation) -> Vec<Segment> {
     let mut segments: Vec<Segment> = Vec::new();
     let mut utf16_offset = 0;
     for grapheme in text.graphemes(true) {

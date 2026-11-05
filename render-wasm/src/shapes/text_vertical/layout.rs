@@ -30,7 +30,7 @@ use super::flow::{
     plan_with_edge_trimming, preferred_pair_spacing, shed_punctuation_aki, FlowCell, FIT_TOLERANCE,
 };
 use super::paint::LayoutDraws;
-use super::shaping::ShapedRun;
+use crate::shapes::text_shaping::ShapedRun;
 
 #[derive(Debug, Clone, Copy)]
 pub enum CellKind {

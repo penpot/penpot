@@ -2,8 +2,8 @@
 // right->left. Skia's skparagraph has no vertical writing mode, so this
 // module owns the whole vertical pipeline:
 //
-//   segment spans by glyph orientation (`orientation`) -> shape each segment
-//   with SkShaper, OpenType `vert`/`vrt2` for upright runs (`shaping`) ->
+//   segment spans by glyph orientation and shape each segment with
+//   SkShaper, OpenType `vert`/`vrt2` for upright runs (`text_shaping`) ->
 //   derive cells: one per upright glyph cluster, one per rotated run, one per
 //   composite (`cells`) -> JLREQ spacing and kinsoku-aware column breaks
 //   (`flow`) -> place columns and annotations (`layout`, `annotations`) ->
@@ -31,26 +31,18 @@
 mod annotations;
 mod cells;
 mod flow;
-mod font_tables;
 mod layout;
-mod orientation;
 mod paint;
 mod positions;
-mod shaping;
 
 #[cfg(test)]
 pub(crate) mod test_support;
 
-pub(crate) use font_tables::upright_centre_metrics;
+#[cfg(test)]
+pub(crate) use layout::CellKind;
 pub use layout::{block_axis_offset, layout_for_rect, VerticalLayout};
-pub(crate) use orientation::{is_emoji_char, is_upright_char};
 pub use paint::{
     paint_drop_shadow, paint_grid, paint_layout, paint_stroke, paint_text_vertical,
     paint_text_vertical_with, vertical_text_paths, GlyphOutput,
 };
-pub use positions::{
-    caret_from_point, caret_rect, intersects, position_data, range_rects, DIRECTION_EMPHASIS_MARK,
-};
-pub(crate) use shaping::{
-    shape_segment_with_fallbacks, single_glyph_blob, span_font_families, ShapedRun,
-};
+pub use positions::{caret_from_point, caret_rect, intersects, position_data, range_rects};

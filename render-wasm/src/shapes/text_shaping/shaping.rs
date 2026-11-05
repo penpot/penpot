@@ -17,7 +17,7 @@ use crate::shapes::{FontFeatures, TextSpan};
 use super::font_tables::upright_centre_metrics;
 
 /// JLREQ preferred width of a word space inside sideways Western text.
-pub(super) const WESTERN_WORD_SPACING_EM: f32 = 1.0 / 3.0;
+pub(crate) const WESTERN_WORD_SPACING_EM: f32 = 1.0 / 3.0;
 
 /// Candidate families for a span: its own font first, then emoji and the
 /// registered fallback fonts (Noto etc.) in the span language's order.
@@ -52,7 +52,7 @@ pub struct ShapedRun {
 impl ShapedRun {
     /// Glyph clusters as (first glyph, glyph count). A combining sequence
     /// shapes to one cluster and must stay in one cell.
-    pub(super) fn cluster_spans(&self) -> impl Iterator<Item = (usize, usize)> + '_ {
+    pub(crate) fn cluster_spans(&self) -> impl Iterator<Item = (usize, usize)> + '_ {
         let mut glyph = 0usize;
         std::iter::from_fn(move || {
             let cluster = *self.clusters.get(glyph)?;
@@ -69,7 +69,7 @@ impl ShapedRun {
     /// Flow offset from the run start of each scalar boundary (0..=`chars`)
     /// of a sideways run, from its glyph positions; the last boundary is
     /// `extent`. A scalar inside a ligature takes the next glyph's position.
-    pub(super) fn scalar_flow_offsets(&self, extent: f32, chars: usize) -> Option<Vec<f32>> {
+    pub(crate) fn scalar_flow_offsets(&self, extent: f32, chars: usize) -> Option<Vec<f32>> {
         let origin = self.positions.first()?.x;
         let mut offsets = Vec::with_capacity(chars + 1);
         let mut utf8 = self.utf8_range.start;
@@ -87,7 +87,7 @@ impl ShapedRun {
     }
 
     /// Summed horizontal advance of a cluster.
-    pub(super) fn cluster_advance(&self, glyph: usize, count: usize) -> f32 {
+    pub(crate) fn cluster_advance(&self, glyph: usize, count: usize) -> f32 {
         self.advances[glyph..glyph + count].iter().sum()
     }
 
@@ -101,7 +101,7 @@ impl ShapedRun {
     }
 
     /// Ink bounds of a cluster, relative to its first glyph's pen position.
-    pub(super) fn cluster_ink_bounds(&self, glyph: usize, count: usize) -> Option<skia::Rect> {
+    pub(crate) fn cluster_ink_bounds(&self, glyph: usize, count: usize) -> Option<skia::Rect> {
         glyph_run_ink_bounds(
             &self.font,
             &self.glyphs[glyph..glyph + count],
@@ -110,7 +110,7 @@ impl ShapedRun {
     }
 
     /// Ink bounds of the whole run at its shaped positions.
-    pub(super) fn ink_bounds(&self) -> Option<skia::Rect> {
+    pub(crate) fn ink_bounds(&self) -> Option<skia::Rect> {
         glyph_run_ink_bounds(&self.font, &self.glyphs, &self.positions)
     }
 
@@ -165,18 +165,18 @@ impl ShapedRun {
     }
 
     /// Text blob of one cluster, positioned from its first glyph's pen x.
-    pub(super) fn cluster_blob(&self, glyph: usize, count: usize) -> Option<TextBlob> {
+    pub(crate) fn cluster_blob(&self, glyph: usize, count: usize) -> Option<TextBlob> {
         self.text_blob(glyph, count, &self.cluster_positions(glyph, count))
     }
 
     /// Text blob of the whole run at its shaped positions.
-    pub(super) fn blob(&self) -> Option<TextBlob> {
+    pub(crate) fn blob(&self) -> Option<TextBlob> {
         self.text_blob(0, self.glyphs.len(), &self.positions)
     }
 
     /// Text blob of one glyph at its pen origin. The first glyph of a
     /// cluster carries the cluster's source text; the rest are glyph-only.
-    pub(super) fn glyph_blob(&self, glyph: usize) -> Option<TextBlob> {
+    pub(crate) fn glyph_blob(&self, glyph: usize) -> Option<TextBlob> {
         self.glyphs.get(glyph)?;
         let starts_cluster = glyph == 0 || self.clusters.get(glyph) != self.clusters.get(glyph - 1);
         if starts_cluster {
@@ -187,7 +187,7 @@ impl ShapedRun {
     }
 
     /// Local-y shift that centres a cluster's ink after a 90° rotation.
-    pub(super) fn cluster_rotated_baseline_shift(&self, glyph: usize, count: usize) -> f32 {
+    pub(crate) fn cluster_rotated_baseline_shift(&self, glyph: usize, count: usize) -> f32 {
         rotated_run_baseline_shift(
             &self.font,
             &self.glyphs[glyph..glyph + count],
@@ -197,7 +197,7 @@ impl ShapedRun {
 
     /// Spreads the glyphs by `letter_spacing` each, like horizontal
     /// per-glyph spacing. Returns the spaced run advance.
-    pub(super) fn spread_glyphs(&mut self, letter_spacing: f32) -> f32 {
+    pub(crate) fn spread_glyphs(&mut self, letter_spacing: f32) -> f32 {
         if letter_spacing != 0.0 {
             for (i, position) in self.positions.iter_mut().enumerate() {
                 position.x += letter_spacing * i as f32;
@@ -209,7 +209,7 @@ impl ShapedRun {
     /// Sets ASCII word spaces in a sideways Western run to JLREQ's one-third
     /// em. The space keeps its scalar and break opportunity; only its advance
     /// and the following glyph positions change.
-    pub(super) fn normalize_word_spaces(&mut self, segment_text: &str, font_size: f32) {
+    pub(crate) fn normalize_word_spaces(&mut self, segment_text: &str, font_size: f32) {
         let clusters: Vec<(usize, usize)> = self.cluster_spans().collect();
         let mut accumulated_shift = 0.0f32;
         for (glyph, count) in clusters {
@@ -324,7 +324,7 @@ fn font_feature(font_features: FontFeatures) -> Option<Feature> {
 /// Shape one orientation segment on a single unbounded line. Upright
 /// segments get the OpenType vertical substitution features so CJK
 /// punctuation and brackets take their vertical forms.
-pub(super) fn shape_segment(
+pub(crate) fn shape_segment(
     text: &str,
     font: &Font,
     upright: bool,
@@ -516,7 +516,7 @@ fn glyph_run_ink_bounds(
 
 /// Offset that centres a local-y band on the column axis after the run is
 /// rotated 90°.
-pub(super) fn rotated_baseline_shift(top: f32, bottom: f32) -> f32 {
+pub(crate) fn rotated_baseline_shift(top: f32, bottom: f32) -> f32 {
     -(top + bottom) / 2.0
 }
 
@@ -547,9 +547,9 @@ fn rotated_run_baseline_shift(font: &Font, glyphs: &[GlyphId], positions: &[SkPo
 
 #[cfg(test)]
 mod tests {
-    use super::super::layout::CellKind;
-    use super::super::test_support::*;
     use super::*;
+    use crate::shapes::text_vertical::test_support::*;
+    use crate::shapes::text_vertical::CellKind;
 
     #[test]
     fn selected_language_reaches_horizontal_and_vertical_localized_glyphs() {
