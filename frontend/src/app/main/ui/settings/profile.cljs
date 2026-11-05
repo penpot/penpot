@@ -73,8 +73,9 @@
 
       [:div {:class (stl/css :options)}
        [:div.change-email
-        [:a {:class (stl/css :link)
-             :on-click on-show-change-email}
+        [:button {:type "button"
+                  :class (stl/css :link)
+                  :on-click on-show-change-email}
          (tr "dashboard.change-email")]]]]
 
      [:> fm/submit-button*
@@ -84,9 +85,10 @@
 
      [:div {:class (stl/css :links)}
       [:div
-       [:a {:class (stl/css :link)
-            :on-click on-show-delete-account
-            :data-testid "remove-acount-btn"}
+       [:button {:type "button"
+                 :class (stl/css :link)
+                 :on-click on-show-delete-account
+                 :data-testid "remove-acount-btn"}
         (tr "dashboard.remove-account")]]]]))
 
 ;; --- Profile Photo Form

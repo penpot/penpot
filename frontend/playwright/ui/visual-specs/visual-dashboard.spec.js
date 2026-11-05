@@ -860,6 +860,9 @@ test.describe("Profile page controls", () => {
     await page.getByText("Change email").hover();
     await expect(container).toHaveScreenshot(shot);
 
+    await page.getByText("Want to remove your account?").hover();
+    await expect(container).toHaveScreenshot(shot);
+
     // The "Update" overlay is a button: it shows on keyboard focus too.
     await page.mouse.move(10, 700);
     await page.getByRole("button", { name: "Update" }).focus();
