@@ -16,6 +16,7 @@
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
    [app.common.test-helpers.variants :as cthv]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as-alias dws]
    [app.main.data.workspace.variants :as dwv]
@@ -42,6 +43,28 @@
          (rx/tap (fn [_] (swap! counter inc)))
          (rx/subs! (fn [_] nil)))
     counter))
+
+(defn- collect-layout-updates
+  "Atom accumulating deref'd `:layout/update` payloads from the store
+  input-stream (same subscribe-before-emit pattern as `count-events`)."
+  [store]
+  (let [acc (atom [])]
+    (->> (ptk/input-stream store)
+         (rx/filter (ptk/type? :layout/update))
+         (rx/tap #(swap! acc conj (deref %)))
+         (rx/subs! (fn [_] nil)))
+    acc))
+
+(defn- assert-coalesced-layout
+  [layout-updates flex-board-id]
+  (t/is (= 1 (count @layout-updates))
+        (str "expected one coalesced :layout/update; got "
+             (count @layout-updates)))
+  (let [ids (set (:ids (first @layout-updates)))]
+    (t/is (seq ids)
+          "coalesced :layout/update must carry non-empty :ids")
+    (t/is (contains? ids flex-board-id)
+          (str "coalesced :ids must include flex board; got " ids))))
 
 (defn- fill-color
   [shape]
@@ -86,16 +109,16 @@
 (t/deftest multi-variants-switch-emits-no-intermediate-select-shape
   (t/async
     done
-    (let [file             (setup-flex-multi-copies)
-          store            (ths/setup-store file)
-          copy1            (cths/get-shape file :copy1)
-          copy2            (cths/get-shape file :copy2)
-          copy3            (cths/get-shape file :copy3)
-          target-comp-id   (cthi/id :c02)
-          copy-ids         (d/ordered-set (:id copy1) (:id copy2) (:id copy3))
-          select-shape-n   (count-events store ::dws/select-shape)
-          layout-update-n  (count-events store :layout/update)
-          companion-n      (count-events store dwl/component-swap-layout-ids-type)
+    (let [file            (setup-flex-multi-copies)
+          store           (ths/setup-store file)
+          copy1           (cths/get-shape file :copy1)
+          copy2           (cths/get-shape file :copy2)
+          copy3           (cths/get-shape file :copy3)
+          flex-board-id   (:id (cths/get-shape file :flex-board))
+          target-comp-id  (cthi/id :c02)
+          copy-ids        (d/ordered-set (:id copy1) (:id copy2) (:id copy3))
+          select-shape-n  (count-events store ::dws/select-shape)
+          layout-updates  (collect-layout-updates store)
           events
           [(dwv/variants-switch {:shapes [copy1 copy2 copy3]
                                  :pos 0
@@ -113,12 +136,7 @@
            (t/is (zero? @select-shape-n)
                  (str "multi variants-switch must not emit intermediate "
                       "select-shape; got " @select-shape-n))
-           (t/is (= 3 @companion-n)
-                 (str "expected one companion layout-id event per swap; got "
-                      @companion-n))
-           (t/is (= 1 @layout-update-n)
-                 (str "expected one coalesced :layout/update; got "
-                      @layout-update-n))
+           (assert-coalesced-layout layout-updates flex-board-id)
 
            (t/is (= target-comp-id (:component-id copy1')))
            (t/is (= target-comp-id (:component-id copy2')))
@@ -133,16 +151,16 @@
 (t/deftest multi-variants-switch-coalesces-layout-when-some-noop
   (t/async
     done
-    (let [file             (setup-flex-mixed-copies)
-          store            (ths/setup-store file)
-          copy1            (cths/get-shape file :copy1)
-          copy2            (cths/get-shape file :copy2)
-          copy3            (cths/get-shape file :copy3)
-          target-comp-id   (cthi/id :c02)
-          copy-ids         (d/ordered-set (:id copy1) (:id copy2) (:id copy3))
-          select-shape-n   (count-events store ::dws/select-shape)
-          layout-update-n  (count-events store :layout/update)
-          companion-n      (count-events store dwl/component-swap-layout-ids-type)
+    (let [file            (setup-flex-mixed-copies)
+          store           (ths/setup-store file)
+          copy1           (cths/get-shape file :copy1)
+          copy2           (cths/get-shape file :copy2)
+          copy3           (cths/get-shape file :copy3)
+          flex-board-id   (:id (cths/get-shape file :flex-board))
+          target-comp-id  (cthi/id :c02)
+          copy-ids        (d/ordered-set (:id copy1) (:id copy2) (:id copy3))
+          select-shape-n  (count-events store ::dws/select-shape)
+          layout-updates  (collect-layout-updates store)
           events
           [(dwv/variants-switch {:shapes [copy1 copy2 copy3]
                                  :pos 0
@@ -158,12 +176,7 @@
                selected (get-in new-state [:workspace-local :selected])]
 
            (t/is (zero? @select-shape-n))
-           (t/is (= 2 @companion-n)
-                 (str "only the two Value1 copies should emit companions; got "
-                      @companion-n))
-           (t/is (= 1 @layout-update-n)
-                 (str "expected one coalesced :layout/update despite no-ops; got "
-                      @layout-update-n))
+           (assert-coalesced-layout layout-updates flex-board-id)
 
            (t/is (= target-comp-id (:component-id copy1')))
            (t/is (= target-comp-id (:component-id copy2')))
@@ -176,15 +189,15 @@
 (t/deftest component-multi-swap-skips-select-and-coalesces-layout
   (t/async
     done
-    (let [file             (setup-flex-multi-copies)
-          store            (ths/setup-store file)
-          copy1            (cths/get-shape file :copy1)
-          copy2            (cths/get-shape file :copy2)
-          copy3            (cths/get-shape file :copy3)
-          target-comp-id   (cthi/id :c02)
-          select-shape-n   (count-events store ::dws/select-shape)
-          layout-update-n  (count-events store :layout/update)
-          companion-n      (count-events store dwl/component-swap-layout-ids-type)
+    (let [file            (setup-flex-multi-copies)
+          store           (ths/setup-store file)
+          copy1           (cths/get-shape file :copy1)
+          copy2           (cths/get-shape file :copy2)
+          copy3           (cths/get-shape file :copy3)
+          flex-board-id   (:id (cths/get-shape file :flex-board))
+          target-comp-id  (cthi/id :c02)
+          select-shape-n  (count-events store ::dws/select-shape)
+          layout-updates  (collect-layout-updates store)
           events
           [(dwl/component-multi-swap [copy1 copy2 copy3]
                                      (:id file)
@@ -201,12 +214,7 @@
            (t/is (zero? @select-shape-n)
                  (str "component-multi-swap must not emit intermediate "
                       "select-shape; got " @select-shape-n))
-           (t/is (= 3 @companion-n)
-                 (str "expected one companion layout-id event per swap; got "
-                      @companion-n))
-           (t/is (= 1 @layout-update-n)
-                 (str "expected one coalesced :layout/update; got "
-                      @layout-update-n))
+           (assert-coalesced-layout layout-updates flex-board-id)
 
            (t/is (= target-comp-id (:component-id copy1')))
            (t/is (= target-comp-id (:component-id copy2')))
@@ -214,3 +222,33 @@
            (t/is (= fill-value2 (fill-color copy1')))
            (t/is (= fill-value2 (fill-color copy2')))
            (t/is (= fill-value2 (fill-color copy3')))))))))
+
+(t/deftest component-swap-noop-when-shape-missing
+  (t/async
+    done
+    (let [file   (setup-flex-multi-copies)
+          store  (ths/setup-store file)
+          copy1  (cths/get-shape file :copy1)
+          ghost  (assoc copy1 :id (uuid/next))
+          before (ths/get-file-from-state @store)]
+      (ths/run-store
+       store done
+       [(dwl/component-swap ghost (:id file) (cthi/id :c02) true)]
+       (fn [new-state]
+         (t/is (= before (ths/get-file-from-state new-state))
+               "component-swap must no-op when shape id is absent from objects"))))))
+
+(t/deftest variant-switch-noop-when-shape-missing
+  (t/async
+    done
+    (let [file   (setup-flex-multi-copies)
+          store  (ths/setup-store file)
+          copy1  (cths/get-shape file :copy1)
+          ghost  (assoc copy1 :id (uuid/next))
+          before (ths/get-file-from-state @store)]
+      (ths/run-store
+       store done
+       [(#'dwv/variant-switch ghost {:pos 0 :val "Value2"})]
+       (fn [new-state]
+         (t/is (= before (ths/get-file-from-state new-state))
+               "variant-switch must no-op when shape id is absent from objects"))))))

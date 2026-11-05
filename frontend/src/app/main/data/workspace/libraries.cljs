@@ -1110,68 +1110,70 @@
      (watch [it state _]
        ;; First delete shapes so we have space in the layout otherwise we can have problems
        ;; in the grid creating new rows/columns to make space
-       (let [libraries   (dsh/lookup-libraries state)
-             page        (dsh/lookup-page state)
-             objects     (:objects page)
-             ;; Re-read from live state: sibling swaps / layout can move this head.
-             shape       (or (get objects (:id shape)) shape)
-             parent      (get objects (:parent-id shape))
+       (let [libraries (dsh/lookup-libraries state)
+             page      (dsh/lookup-page state)
+             objects   (:objects page)]
+         ;; Re-read from live state: sibling swaps / layout can move this head.
+         ;; Gone from objects → no-op (do not swap a closed-over stale shape).
+         (if-let [shape (get objects (:id shape))]
+           (let [parent      (get objects (:parent-id shape))
 
-             ldata       (dsh/lookup-file-data state file-id)
-             orig-shapes (when keep-touched? (cfh/get-children-with-self objects (:id shape)))
+                 ldata       (dsh/lookup-file-data state file-id)
+                 orig-shapes (when keep-touched? (cfh/get-children-with-self objects (:id shape)))
 
-             ;; If the target parent is a grid layout we need to pass the target cell
-             target-cell (when (ctsl/grid-layout? parent)
-                           (ctsl/get-cell-by-shape-id parent (:id shape)))
+                 ;; If the target parent is a grid layout we need to pass the target cell
+                 target-cell (when (ctsl/grid-layout? parent)
+                               (ctsl/get-cell-by-shape-id parent (:id shape)))
 
-             index (find-shape-index objects (:parent-id shape) (:id shape))
+                 index (find-shape-index objects (:parent-id shape) (:id shape))
 
-             ;; Store the properties that need to be maintained when the component is swapped
-             keep-props-values (select-keys shape ctk/swap-keep-attrs)
+                 ;; Store the properties that need to be maintained when the component is swapped
+                 keep-props-values (select-keys shape ctk/swap-keep-attrs)
 
-             undo-id (js/Symbol)
-             undo-group (uuid/next)
+                 undo-id (js/Symbol)
+                 undo-group (uuid/next)
 
-             [new-shape all-parents changes]
-             (-> (pcb/empty-changes it (:id page))
-                 (pcb/set-undo-group undo-group)
-                 (cll/generate-component-swap objects shape ldata page libraries id-new-component
-                                              index target-cell keep-props-values keep-touched?))
+                 [new-shape all-parents changes]
+                 (-> (pcb/empty-changes it (:id page))
+                     (pcb/set-undo-group undo-group)
+                     (cll/generate-component-swap objects shape ldata page libraries id-new-component
+                                                  index target-cell keep-props-values keep-touched?))
 
-             updated-objects  (pcb/get-objects changes)
-             new-children-ids (cfh/get-children-ids-with-self updated-objects (:id new-shape))
-             new-text-ids     (->> new-children-ids
-                                   (keep (fn [id]
-                                           (when-let [child (get updated-objects id)]
-                                             (when (and (cfh/text-shape? child)
-                                                        (not= :fixed (:grow-type child)))
-                                               id))))
-                                   (vec))
+                 updated-objects  (pcb/get-objects changes)
+                 new-children-ids (cfh/get-children-ids-with-self updated-objects (:id new-shape))
+                 new-text-ids     (->> new-children-ids
+                                       (keep (fn [id]
+                                               (when-let [child (get updated-objects id)]
+                                                 (when (and (cfh/text-shape? child)
+                                                            (not= :fixed (:grow-type child)))
+                                                   id))))
+                                       (vec))
 
-             [changes parents-of-swapped]
-             (if keep-touched?
-               (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
-               [changes []])
-             update-layout-ids (concat all-parents parents-of-swapped new-children-ids)]
-         (cond-> (rx/of
-                  (dwu/start-undo-transaction undo-id)
-                  (dch/commit-changes changes)
-                  ;; Make the new instance get the token values from the current file,
-                  ;; not from the component's library
-                  (dwtp/propagate-workspace-tokens)
-                  (when (and (features/active-feature? state "render-wasm/v1")
-                             (seq new-text-ids))
-                    (dwwt/resize-wasm-text-all new-text-ids {:skip-component-sync? true})))
-           (not skip-layout?)
-           (rx/concat (rx/of (ptk/data-event :layout/update
-                                             {:ids update-layout-ids :undo-group undo-group})))
-           skip-layout?
-           (rx/concat (rx/of (ptk/data-event component-swap-layout-ids-type
-                                             {:ids update-layout-ids})))
-           true
-           (rx/concat (rx/of (dwu/commit-undo-transaction undo-id)))
-           (not skip-select?)
-           (rx/concat (rx/of (dws/select-shape (:id new-shape) false)))))))))
+                 [changes parents-of-swapped]
+                 (if keep-touched?
+                   (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
+                   [changes []])
+                 update-layout-ids (concat all-parents parents-of-swapped new-children-ids)]
+             (cond-> (rx/of
+                      (dwu/start-undo-transaction undo-id)
+                      (dch/commit-changes changes)
+                      ;; Make the new instance get the token values from the current file,
+                      ;; not from the component's library
+                      (dwtp/propagate-workspace-tokens)
+                      (when (and (features/active-feature? state "render-wasm/v1")
+                                 (seq new-text-ids))
+                        (dwwt/resize-wasm-text-all new-text-ids {:skip-component-sync? true})))
+               (not skip-layout?)
+               (rx/concat (rx/of (ptk/data-event :layout/update
+                                                 {:ids update-layout-ids :undo-group undo-group})))
+               skip-layout?
+               (rx/concat (rx/of (ptk/data-event component-swap-layout-ids-type
+                                                 {:ids update-layout-ids})))
+               true
+               (rx/concat (rx/of (dwu/commit-undo-transaction undo-id)))
+               (not skip-select?)
+               (rx/concat (rx/of (dws/select-shape (:id new-shape) false)))))
+           (rx/empty)))))))
 
 (defn component-multi-swap
   "Swaps several components with another one"

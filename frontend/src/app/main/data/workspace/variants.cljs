@@ -789,43 +789,47 @@
   (ptk/reify ::variant-switch
     ptk/WatchEvent
     (watch [it state _]
-      (let [objects      (dsh/lookup-page-objects state)
-            ;; Sibling swaps / layout can move this head before our turn.
-            shape        (or (get objects (:id shape)) shape)
-            libraries    (dsh/lookup-libraries state)
-            component-id (:component-id shape)
-            component    (ctf/get-component libraries (:component-file shape) component-id :include-deleted? false)]
-        ;; If the value is already val, do nothing
-        (when (not= val (dm/get-in component [:variant-properties pos :value]))
-          (let [variant-id             (:variant-id component)
-                component-file-data    (dm/get-in libraries [(:component-file shape) :data])
-                component-page-objects (-> (dsh/get-page component-file-data (:main-instance-page component))
-                                           (get :objects))
-                variant-comps          (cfv/find-variant-components component-file-data component-page-objects variant-id)
-                target-props           (-> (:variant-properties component)
-                                           (update pos assoc :value val))
-                valid-comps            (->> variant-comps
-                                            (remove #(= (:id %) component-id))
-                                            (filter #(= (dm/get-in % [:variant-properties pos :value]) val))
-                                            (reverse))
-                nearest-comp           (apply min-key #(ctv/distance target-props (:variant-properties %)) valid-comps)
-                shape-parents          (cfh/get-parents-with-self objects (:parent-id shape))
-                nearest-comp-children  (cfh/get-children-with-self component-page-objects (:main-instance-id nearest-comp))
-                comps-nesting-loop?    (seq? (cfh/components-nesting-loop? nearest-comp-children shape-parents))
+      (let [objects (dsh/lookup-page-objects state)]
+        ;; Sibling swaps / layout can move this head before our turn.
+        ;; Gone from objects → no-op (do not switch a closed-over stale shape).
+        (if-let [shape (get objects (:id shape))]
+          (let [libraries    (dsh/lookup-libraries state)
+                component-id (:component-id shape)
+                component    (ctf/get-component libraries (:component-file shape) component-id :include-deleted? false)]
+            ;; If the value is already val, do nothing
+            (if (not= val (dm/get-in component [:variant-properties pos :value]))
+              (let [variant-id             (:variant-id component)
+                    component-file-data    (dm/get-in libraries [(:component-file shape) :data])
+                    component-page-objects (-> (dsh/get-page component-file-data (:main-instance-page component))
+                                               (get :objects))
+                    variant-comps          (cfv/find-variant-components component-file-data component-page-objects variant-id)
+                    target-props           (-> (:variant-properties component)
+                                               (update pos assoc :value val))
+                    valid-comps            (->> variant-comps
+                                                (remove #(= (:id %) component-id))
+                                                (filter #(= (dm/get-in % [:variant-properties pos :value]) val))
+                                                (reverse))
+                    nearest-comp           (apply min-key #(ctv/distance target-props (:variant-properties %)) valid-comps)
+                    shape-parents          (cfh/get-parents-with-self objects (:parent-id shape))
+                    nearest-comp-children  (cfh/get-children-with-self component-page-objects (:main-instance-id nearest-comp))
+                    comps-nesting-loop?    (seq? (cfh/components-nesting-loop? nearest-comp-children shape-parents))
 
-                {:keys [on-error]
-                 :or {on-error rx/throw}} (meta params)]
+                    {:keys [on-error]
+                     :or {on-error rx/throw}} (meta params)]
 
-            ;; If there is no nearest-comp, do nothing
-            (when nearest-comp
-              (if comps-nesting-loop?
-                (do
-                  (on-error)
-                  (rx/empty))
-                (rx/of
-                 (dwl/component-swap shape (:component-file shape) (:id nearest-comp) true swap-opts)
-                 (ev/event (-> {::ev/name "variant-switch" ::ev/origin "workspace:design-tab"}
-                               (merge (meta it)))))))))))))
+                ;; If there is no nearest-comp, do nothing
+                (if nearest-comp
+                  (if comps-nesting-loop?
+                    (do
+                      (on-error)
+                      (rx/empty))
+                    (rx/of
+                     (dwl/component-swap shape (:component-file shape) (:id nearest-comp) true swap-opts)
+                     (ev/event (-> {::ev/name "variant-switch" ::ev/origin "workspace:design-tab"}
+                                   (merge (meta it))))))
+                  (rx/empty)))
+              (rx/empty)))
+          (rx/empty))))))
 
 (defn variants-switch
   "Switch each shape (that must be a variant copy head) for the closest one with the property value passed as parameter"
