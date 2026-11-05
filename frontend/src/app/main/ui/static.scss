@@ -208,6 +208,14 @@
 
   color: var(--color-foreground-primary);
   text-transform: lowercase;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .sign-info {

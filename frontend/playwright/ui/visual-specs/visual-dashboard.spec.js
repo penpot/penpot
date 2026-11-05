@@ -947,3 +947,54 @@ test.describe("Context notification", () => {
     await expect(warning).toHaveScreenshot(shot);
   });
 });
+
+test.describe("Download report", () => {
+  test("Error page and feedback page links", async ({ page }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    await DashboardPage.mockConfigFlags(page, [
+      "disable-onboarding",
+      "enable-user-feedback",
+    ]);
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await page.route("**/api/main/methods/get-projects?*", (route) =>
+      route.fulfill({
+        status: 500,
+        contentType: "application/transit+json",
+        body: '["^ ","~:type","~:server-error","~:code","~:unexpected"]',
+      }),
+    );
+    await page.goto(
+      `/?screen=dashboard-recent&team-id=${DashboardPage.anyTeamId}`,
+    );
+
+    const errorLink = page.getByText("Download report.txt", { exact: true });
+    await expect(errorLink).toBeVisible();
+    await page.mouse.move(10, 10);
+    await expect(errorLink).toHaveScreenshot(shot);
+    await errorLink.hover();
+    await expect(errorLink).toHaveScreenshot(shot);
+
+    const errorDownload = page.waitForEvent("download");
+    await errorLink.focus();
+    await page.keyboard.press("Enter");
+    expect((await errorDownload).suggestedFilename()).toBe("report.txt");
+
+    await page.getByRole("button", { name: "Contact support" }).click();
+    const feedbackLink = page.getByText("Download report.txt", {
+      exact: true,
+    });
+    await expect(page.getByText("Send")).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(feedbackLink).toHaveScreenshot(shot);
+    await feedbackLink.hover();
+    await expect(feedbackLink).toHaveScreenshot(shot);
+
+    const feedbackDownload = page.waitForEvent("download");
+    await feedbackLink.focus();
+    await page.keyboard.press("Enter");
+    expect((await feedbackDownload).suggestedFilename()).toBe("report.txt");
+    // The button is in the feedback form: Enter must not send it.
+    await expect(page.getByText("Send", { exact: true })).toBeVisible();
+  });
+});
