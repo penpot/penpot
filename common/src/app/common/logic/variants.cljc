@@ -606,7 +606,7 @@
       changes)))
 
 (defn- keep-moved-placement
-  "A switch keeps the place of the copy shape `original-shape` it replaces.
+  "A swap keeps the place of the copy shape `original-shape` it replaces.
    Inside a copy, a first corner that the position of `new-shape` would not
    give it needs a geometry override to survive later sync."
   [changes original-shape new-shape page libraries]
@@ -672,10 +672,9 @@
 
         changes (sync-restored-position changes page libraries (:id new-shape))
 
-        changes (cond-> changes
+        changes (cond-> (keep-moved-placement changes shape new-shape page libraries)
                   keep-touched?
-                  (-> (keep-moved-placement shape new-shape page libraries)
-                      (keep-placement-overrides shape new-shape)))
+                  (keep-placement-overrides shape new-shape))
 
         ;; Replacement keeps the head id and its cell. Cleanup during the
         ;; temporary deletion must not change the parent's placement data.
