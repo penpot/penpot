@@ -36,9 +36,10 @@
 
   A missing cursor means that consumer has not run for the first time:
   the GC treats it as position 0 and deletes nothing. The consumer
-  creates its cursor at the end of the buffer on its first drain, so
-  waiting keeps the buffer intact instead of deleting rows a consumer
-  that is about to start could still read."
+  creates its cursor at (0, 0) on its first drain and drains the buffer
+  that already exists, so waiting keeps the rows intact until it catches
+  up instead of deleting rows a consumer that is about to start could
+  still read."
   [cfg consumer-ids]
   (when (seq consumer-ids)
     (let [placeholders (str/join "," (repeat (count consumer-ids) "?"))
@@ -97,12 +98,13 @@
   skipped).
 
   If an enabled consumer has no cursor yet, nothing is deleted for that
-  run: a missing position is treated as 0 until the consumer creates it
-  on its first drain (at the end of the buffer). With no consumer
-  enabled, nothing is deleted either: the `:audit-log-gc` flag is the
-  deployment switch, and a deployment with no consumers keeps it off.
-  Deleting the buffer behind the back of a consumer that may start later
-  loses events; the disk risk is the operator's, not a reason to drain.
+  run: a missing position is treated as 0 until the consumer creates its
+  cursor at (0, 0) on its first drain and drains the buffer that already
+  exists. With no consumer enabled, nothing is deleted either: the
+  `:audit-log-gc` flag is the deployment switch, and a deployment with no
+  consumers keeps it off. Deleting the buffer behind the back of a
+  consumer that may start later loses events; the disk risk is the
+  operator's, not a reason to drain.
 
   Returns the number of discarded rows; they count in the `discarded`
   metric with reason `gc`."

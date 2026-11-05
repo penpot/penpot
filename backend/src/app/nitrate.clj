@@ -113,7 +113,11 @@
                       :status status
                       :hint (str "nitrate HTTP " status " at " uri))
             nil))
-        (= status 204) ;; 204 doesn't return any body
+        ;; A 2xx with no expected body is success: 204 by contract, and any
+        ;; other 2xx for the methods that never return a body. Building a
+        ;; coercer from a nil schema throws before the try below can catch it.
+        (and (<= 200 status 299)
+             (or (= status 204) (nil? schema)))
         nil
         :else ;; For success status codes, validate the response
         (let [coercer-http (sm/coercer schema
@@ -493,8 +497,8 @@
 
 (defn- ingest-audit-log-api
   "POST a batch of audit events to Admin Console `/api/audit-log`.
-  Expects HTTP 204; returns nil on success. 4xx raises when
-  `:throw-on-error?` is set."
+  Any 2xx is success and returns nil (the endpoint answers 204 by
+  contract). 4xx raises when `:throw-on-error?` is set."
   [cfg {:keys [events] :as params}]
   (let [request-params {:events (mapv ->audit-event events)}
         params (assoc params

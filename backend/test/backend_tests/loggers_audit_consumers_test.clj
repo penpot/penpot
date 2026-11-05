@@ -50,9 +50,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- seed-cursors
-  "Every consumer starts at zero: the test database reset deletes the
-  cursor rows, and the drain would otherwise create them at the end of
-  the buffer (the 'a new consumer sees no history' rule)."
+  "Both cursors exist at (0, 0) before every test: the database reset
+  deletes them, so seeding keeps the starting state deterministic, lets
+  the GC delete without waiting for a first pass, and leaves the
+  'no cursor' case to the tests that create it on purpose."
   [next]
   (doseq [consumer-id [consumer/nexus
                        consumer/admin-console]]
@@ -342,6 +343,30 @@
               (t/is (string? (:tracked-at event)))
               (t/is (= (str team-id) (str (get-in event [:props :team-id])))))
             (t/is (= 0 (unread-count consumer/admin-console)))))))))
+
+(t/deftest consumer-admin-console-accepts-a-2xx-response
+  ;; The ingest endpoint answers 204 by contract, but a proxy may normalize
+  ;; it to another 2xx. Any 2xx is success: the chunk commits and the cursor
+  ;; advances instead of freezing on a :malli.core/invalid-schema.
+  (let [prof (th/create-profile* 75 {:is-active true})]
+    (with-redefs [cf/flags  #{:admin-console}
+                  cf/config (assoc cf/config
+                                   :admin-console-uri "http://ac.example/admin-console/"
+                                   :admin-console-shared-key "ac-key"
+                                   :nexus-shared-key "nexus-key")]
+      (let [shared-keys  {:admin-console "ac-key" :nexus "nexus-key"}
+            client       (ig/init-key :app.nitrate/client
+                                      {::http/client       (Object.)
+                                       ::setup/shared-keys shared-keys})
+            consumer-cfg {::db/pool           (:app.db/pool th/*system*)
+                          ::mtx/metrics       (th/metrics-stub)
+                          :app.nitrate/client client}]
+        (with-mocks [http-mock {:target 'app.http.client/req
+                                :return {:status 200 :body "{}"}}]
+          (insert-audit-row (:id prof) "create-project")
+          (consumer.admin-console/run-pass consumer-cfg)
+          (t/is (= 1 (:call-count @http-mock)))
+          (t/is (= 0 (unread-count consumer/admin-console))))))))
 
 (t/deftest consumer-admin-console-enriches-team-name-and-emails
   (let [actor  (th/create-profile* 14 {:is-active true})
@@ -996,17 +1021,32 @@
 
 (t/deftest consumer-pass-survives-an-unlock-failure
   ;; A release that fails is logged and swallowed: it must not replace the
-  ;; result of the pass, and the next borrowed connection clears the lock
-  ;; before taking it.
-  (let [prof    (th/create-profile* 46 {:is-active true})
-        metrics (make-consumer-metrics)]
+  ;; result of the pass. The real unlock still runs, so the test leaves no
+  ;; session lock behind on a pooled connection.
+  (let [prof        (th/create-profile* 46 {:is-active true})
+        metrics     (make-consumer-metrics)
+        real-unlock db/session-unlock]
     (with-redefs [cf/flags           #{:nexus}
-                  db/session-unlock (fn [& _] (throw (ex-info "gone" {})))]
+                  db/session-unlock (fn [& args]
+                                      (apply real-unlock args)
+                                      (throw (ex-info "gone" {})))]
       (with-mocks [http-mock {:target 'app.http.client/req :return {:status 204}}]
         (insert-audit-row (:id prof) "create-project")
         (t/is (nil? (invoke-nexus metrics {:uri archive-uri})))
         (t/is (= 1.0 (counter-value metrics :audit-consumer-passes ["nexus" "ok"])))
-        (t/is (= 0 (unread-count consumer/nexus)))))))
+        (t/is (= 0 (unread-count consumer/nexus)))))
+    ;; No advisory lock of the tick stays in the database: the mock released
+    ;; it for real before throwing. Read pg_locks (all sessions), because a
+    ;; session that already holds a lock can re-acquire it and answer true.
+    (let [[classid objid] (#'consumer/tick-lock-key consumer/nexus)]
+      (t/is (zero? (:cnt (th/db-exec-one!
+                          ["SELECT count(*) AS cnt
+                              FROM pg_locks
+                             WHERE locktype = 'advisory'
+                               AND classid = ?::int
+                               AND objid = ?::int
+                               AND objsubid = 2"
+                           classid objid])))))))
 
 (t/deftest consumer-pass-reports-the-chunks-that-committed-before-a-failure
   ;; A refusal on the second chunk must not hide the 128 events of the
@@ -1227,7 +1267,7 @@
 (t/deftest gc-waits-for-a-missing-cursor
   ;; A consumer enabled for the first time has no cursor: the GC treats
   ;; it as position 0 and deletes nothing until the consumer runs and
-  ;; creates it at the end of the buffer.
+  ;; creates it at (0, 0).
   (let [prof (th/create-profile* 65 {:is-active true})]
     (th/db-exec! ["DELETE FROM audit_log_consumer_cursor
                     WHERE consumer = ?::smallint"
@@ -1240,9 +1280,10 @@
         ;; The row exists but the admin console has no position yet.
         (t/is (= 0 (run-gc)))
         (t/is (= 1 (count (th/db-exec! ["SELECT * FROM audit_log"]))))
-        ;; Its first drain creates the cursor at the end (it does not
-        ;; process the history), and the next GC can delete.
+        ;; Its first drain creates the cursor at (0, 0), processes the
+        ;; history and reaches the row, so the next GC can delete.
         (run-admin-console)
+        (t/is (:called? @admin-console-mock))
         (t/is (some? (cursor-of consumer/admin-console)))
         (t/is (= 1 (run-gc)))
         (t/is (= 0 (count (th/db-exec! ["SELECT * FROM audit_log"]))))))))

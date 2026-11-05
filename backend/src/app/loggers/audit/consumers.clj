@@ -282,6 +282,9 @@
   chunk and returns {:processed n :skipped n}; the cursor advances past
   every row of the chunk in the same transaction, so a refusal (or a
   throw) rolls the advance back and the chunk is retried on the next pass.
+  The send runs inside that transaction too: the `FOR UPDATE` on the
+  cursor row assigns an xid, so a slow destination holds
+  `pg_snapshot_xmin` back for every consumer until the chunk ends.
   `totals` is updated after each committed chunk, so a pass that aborts
   later still reports what it already archived. Answers the totals."
   [cfg conn consumer process-chunk watermark totals]
