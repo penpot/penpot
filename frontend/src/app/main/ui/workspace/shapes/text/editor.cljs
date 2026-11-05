@@ -256,7 +256,10 @@
        :on-blur on-blur
        :on-focus on-focus
        :handle-return handle-return
-       :strip-pasted-styles true
+       ;; Do not set strip-pasted-styles. When true, draft-js never calls
+       ;; handlePastedText, so caret/block styles are not applied on paste.
+       ;; handle-pasted-text always returns "handled", so pasted HTML/styles
+       ;; are still stripped.
        :handle-pasted-text handle-pasted-text
        :handle-drop handle-drop
        :custom-style-fn (partial styles-fn shape)
