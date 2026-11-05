@@ -381,7 +381,6 @@
                        :file-id (:id file)
                        :revn (:revn repair)
                        :version (:version file)
-                       :features (into-array (:features file))
                        :changes (blob/encode (:changes repair))}
                       {::db/return-keys false})
           (l/wrn :hint "file auto-repaired"

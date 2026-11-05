@@ -22,9 +22,9 @@
 -- they are rewritten. That is why no constraint ties the two together: the
 -- day `kind` is the source of truth, the constraint would have to go.
 --
--- The old table is kept aside as `file_change_legacy`: it is the way back if
--- something goes wrong. It is dropped by hand, days later (or right here,
--- when it is empty: on a new instance there is nothing to go back to).
+-- The old table is kept aside as `file_change_legacy`: a frozen copy of the
+-- previous layout. It is dropped by hand, days later (or right here, when it
+-- is empty: on a new instance there is nothing to keep).
 --
 -- This migration is not meant to run on a big instance: the copy of the
 -- rows of the table happens inside the transaction of the migration, and
@@ -229,15 +229,15 @@ CREATE INDEX file_change__user_snapshots__idx
 --    this migration, so it is the worst moment to leave them unanalyzed.
 ANALYZE file_change;
 
--- 9. The legacy table is kept: it is the way back. It is dropped by hand,
---    days after the cutover:
+-- 9. The legacy table is kept as a frozen copy of the previous layout. It is
+--    dropped by hand, days after the cutover:
 --    DROP TABLE file_change_legacy;
 --
 --    Its foreign key on `file_id` goes away with the copy: it is `NO
 --    ACTION`, so while the legacy table has rows, the objects GC cannot
 --    delete a file (it deletes the rows of the file first, and the legacy
---    ones are not its business). The legacy table is frozen, and the
---    rollback adds the constraint back with `NOT VALID`.
+--    ones are not its business). The legacy table is frozen: nothing writes
+--    to it again.
 ALTER TABLE file_change_legacy
   DROP CONSTRAINT file_change_file_id_fkey_legacy;
 

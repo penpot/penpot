@@ -346,6 +346,10 @@
         (t/is (= 2 (count new)))
         (t/is (= (inc n) (:revn (first new))))
         (t/is (= files-update/repair-session-id (:session-id (first new))))
+        ;; the repair is a revision like the save: no features, a changes blob
+        (t/is (= 2 (:kind (first new))))
+        (t/is (nil? (:features (first new))))
+        (t/is (some? (:changes (first new))))
         (t/is (some? (:deleted-at (first new))))
         (t/is (= (:created-at (first new)) (:updated-at (first new))))
         (t/is (= (+ n 2) (:revn (second new))))

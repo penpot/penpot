@@ -110,7 +110,10 @@
                                :created-by   "user"
                                :created-at   created-at
                                :updated-at   updated-at
-                               :deleted-at   deleted-at})
+                               :deleted-at   deleted-at
+                               ;; a row that still carries the dead columns
+                               :data-ref-id  (uuid/next)
+                               :data-backend "legacy-db"})
 
                   (db/insert! conn :file-change
                               {:id         rev-id
@@ -173,5 +176,35 @@
                                                         AND con.contype = 'f'
                                                       ORDER BY con.conname"])
                                   (mapv :name)))))
+
+                  (t/testing "the dead columns are not carried over"
+                    ;; The old row carried `data_ref_id` and `data_backend`;
+                    ;; the new table has no such columns.
+                    (t/is (= []
+                             (->> (db/exec! conn ["SELECT attname AS name
+                                                     FROM pg_attribute
+                                                    WHERE attrelid = 'file_change'::regclass
+                                                      AND attnum > 0 AND NOT attisdropped
+                                                      AND attname IN ('data_ref_id', 'data_backend')"])
+                                  (mapv :name)))))
+
+                  (db/exec! conn [(str "DROP SCHEMA " schema " CASCADE")])))))
+
+(t/deftest drops-the-legacy-table-when-it-is-empty
+  ;; On a new instance there is nothing to keep: the migration leaves no
+  ;; legacy table behind. The relation is asserted on its own, so a missing
+  ;; table can never pass for a clean one.
+  (let [schema (str "test_0158_empty_" (subs (str (uuid/next)) 0 8))]
+    (db/tx-run! th/*pool*
+                (fn [{:keys [::db/conn]}]
+                  (db/exec! conn [(str "CREATE SCHEMA " schema)])
+                  (db/exec! conn [(str "SET LOCAL search_path TO " schema)])
+                  (db/exec! conn [sql:old-schema])
+
+                  (run-migration! conn)
+
+                  (t/is (-> (db/exec-one! conn ["SELECT to_regclass('file_change_legacy') IS NULL AS empty"])
+                            :empty)
+                        "the empty legacy table is dropped")
 
                   (db/exec! conn [(str "DROP SCHEMA " schema " CASCADE")])))))
