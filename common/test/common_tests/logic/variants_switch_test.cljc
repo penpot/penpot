@@ -21,6 +21,7 @@
    [app.common.test-helpers.variants :as thv]
    [app.common.types.component :as ctk]
    [app.common.types.modifiers :as ctm]
+   [clojure.set :as set]
    [clojure.string :as string]
    [clojure.test :as t]))
 
@@ -1855,13 +1856,65 @@
    :layout-item-z-index     5
    :layout-item-align-self  :start})
 
+(def ^:private layout-item-override-groups
+  ;; The touched groups of all the overrides attributes.
+  [:layout-item-margin
+   :layout-item-h-sizing
+   :layout-item-v-sizing
+   :layout-item-max-h
+   :layout-item-min-h
+   :layout-item-max-w
+   :layout-item-min-w
+   :layout-item-absolute
+   :layout-item-z-index
+   :layout-item-align-self])
+
 (defn- check-layout-item-attrs-kept
   [shape label]
   (doseq [[attr value] layout-item-overrides]
     (t/is (= value (get shape attr))
-          (str label ": value of " attr))
-    (t/is (contains? (:touched shape) (ctk/resolve-sync-group (:type shape) attr))
-          (str label ": touched group of " attr))))
+          (str label ": value of " attr)))
+  (doseq [group layout-item-override-groups]
+    (t/is (contains? (:touched shape) group)
+          (str label ": touched group " group)))
+  (t/is (= (count layout-item-override-groups) (count (:touched shape)))
+        (str label ": number of touched groups")))
+
+(def ^:private layout-item-attrs-partial
+  (set/difference layout-item-attrs #{:layout-item-margin-type
+                                      :layout-item-v-sizing
+                                      :layout-item-min-h
+                                      :layout-item-min-w
+                                      :layout-item-z-index}))
+
+(def ^:private layout-item-partial-overrides
+  ;; User overrides on the copy root, not all of them.
+  {:layout-item-margin      {:m1 10 :m2 10 :m3 10 :m4 10}
+   :layout-item-h-sizing    :fill
+   :layout-item-max-h       500
+   :layout-item-max-w       500
+   :layout-item-absolute    true
+   :layout-item-align-self  :start})
+
+(def ^:private layout-item-partial-override-groups
+  ;; The touched groups of all the overrides attributes.
+  [:layout-item-margin
+   :layout-item-h-sizing
+   :layout-item-max-h
+   :layout-item-max-w
+   :layout-item-absolute
+   :layout-item-align-self])
+
+(defn- check-layout-item-attrs-kept-partial
+  [shape label]
+  (doseq [[attr value] layout-item-partial-overrides]
+    (t/is (= value (get shape attr))
+          (str label ": value of " attr)))
+  (doseq [group layout-item-partial-override-groups]
+    (t/is (contains? (:touched shape) group)
+          (str label ": touched group " group)))
+  (t/is (= (count layout-item-partial-override-groups) (count (:touched shape)))
+        (str label ": number of touched groups")))
 
 (t/deftest test-switch-preserves-touched-layout-item-attrs-on-root
   ;; Every layout-item override on the copy ROOT must survive a variant switch:
@@ -1885,6 +1938,26 @@
     (check-layout-item-attrs-kept copy01 "before switch")
     ;; The values and their touched groups must both survive the switch
     (check-layout-item-attrs-kept copy01' "after switch")))
+
+(t/deftest test-switch-preserves-touched-layout-item-attrs-on-root-partial
+  ;; Same as above but with only some of the layout-item attributes overridden. The rest are left untouched.
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02
+                                     {:variant1-params layout-item-main-values
+                                      :variant2-params layout-item-main-values})
+                    (thc/instantiate-component :c01 :copy01))
+        file    (tho/change-shape file :copy01 #(merge % layout-item-partial-overrides))
+        copy01  (ths/get-shape file :copy01)
+
+        ;; ==== Action
+        file'   (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
+        copy01' (ths/get-shape file' :copy01)]
+
+    (t/is (= layout-item-attrs-partial (set (keys layout-item-partial-overrides))))
+    (check-layout-item-attrs-kept-partial copy01 "before switch")
+    ;; The values and their touched groups must both survive the switch
+    (check-layout-item-attrs-kept-partial copy01' "after switch")))
 
 (t/deftest test-switch-preserved-layout-item-attrs-survive-main-sync
   ;; End-to-end consequence of the bug: after the switch, editing the new master
@@ -1915,6 +1988,33 @@
     (check-layout-item-attrs-kept copy01' "after switch")
     ;; The later sync must not overwrite the protected overrides
     (check-layout-item-attrs-kept copy01'' "after main sync")))
+
+(t/deftest test-switch-preserved-layout-item-attrs-survive-main-sync-partial
+  ;; Same as above but with only some of the layout-item attributes overridden. The rest are left untouched.
+  (let [;; ==== Setup
+        file     (-> (thf/sample-file :file1)
+                     (thv/add-variant :v01 :c01 :m01 :c02 :m02
+                                      {:variant1-params (assoc layout-item-main-values
+                                                               :layout :flex :layout-flex-dir :row)
+                                       :variant2-params (assoc layout-item-main-values
+                                                               :layout :flex :layout-flex-dir :row)})
+                     (thc/instantiate-component :c01 :copy01))
+        file     (tho/change-shape file :copy01 #(merge % layout-item-partial-overrides))
+        copy01   (ths/get-shape file :copy01)
+
+        ;; ==== Action
+        file'    (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
+        copy01'  (ths/get-shape file' :copy01)
+        file''   (-> file'
+                     (tho/change-shape :m02 #(assoc % :r1 10))
+                     (tho/propagate-component-changes :c02))
+        copy01'' (ths/get-shape file'' :copy01)]
+
+    (t/is (= layout-item-attrs-partial (set (keys layout-item-partial-overrides))))
+    (check-layout-item-attrs-kept-partial copy01 "before switch")
+    (check-layout-item-attrs-kept-partial copy01' "after switch")
+    ;; The later sync must not overwrite the protected overrides
+    (check-layout-item-attrs-kept-partial copy01'' "after main sync")))
 
 ;; ============================================================
 ;; LAYOUT ITEM SIZING - VERTICAL (fix, auto, fill, none)
