@@ -2879,7 +2879,9 @@
 
     [new-shape (-> changes
                    ;; Restore the properties
-                   (pcb/update-shapes [(:id new-shape)] #(d/patch-object % keep-props-values))
+                   (pcb/update-shapes [(:id new-shape)]
+                                      #(d/patch-object % keep-props-values)
+                                      {:ignore-touched true})  ;; Touched attribute has already been set above
 
                    ;; We need to set the same index as the original shape
                    (pcb/change-parent (:parent-id shape) [new-shape] index {:allow-altering-copies true

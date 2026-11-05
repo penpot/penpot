@@ -13,6 +13,7 @@
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
+   [clojure.set :as set]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
@@ -31,13 +32,13 @@
 ;; accepts :fix and :fill. :container-main is a top-level flex board, so it
 ;; accepts :fix and :auto but not :fill.
 (def ^:private sizing-values-container
-  [nil :fix :auto])
+  #{nil :fix :auto})
 
 (def ^:private sizing-values-child
-  [nil :fix :fill])
+  #{nil :fix :fill})
 
 (def ^:private sizing-values-both
-  [nil :fix :auto :fill])
+  (set/union sizing-values-container sizing-values-child))
 
 ;; Cases for the touched tests: [copy-value main-before main-after].
 ;; `main-before` differs from `copy-value`, so setting the copy activates the
@@ -65,8 +66,12 @@
   "Sets both sizing attrs of the shape. A nil value removes them."
   [file label value]
   (-> file
-      (ths/update-shape label :layout-item-h-sizing value)
-      (ths/update-shape label :layout-item-v-sizing value)))
+      (tho/change-shape
+       label
+       (fn [shape]
+         (cond-> shape
+           (some? value) (assoc :layout-item-h-sizing value :layout-item-v-sizing value)
+           (nil? value)  (dissoc :layout-item-h-sizing :layout-item-v-sizing))))))
 
 (defn- set-sizing-untouched
   "Sets both sizing attrs of the shape without marking it as touched."
