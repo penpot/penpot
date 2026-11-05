@@ -37,3 +37,18 @@ test.describe("Login form", () => {
     await expect(login.page).toHaveScreenshot();
   });
 });
+
+test.describe("Password recovery page", () => {
+  test("Shows the Go to login link", async ({ page }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    await page.goto("/?screen=auth-recovery&token=fake-token");
+
+    const link = page.getByText("Go to login", { exact: true });
+    await expect(link).toBeVisible();
+    await page.mouse.move(10, 10);
+    await expect(link).toHaveScreenshot(shot);
+
+    await link.hover();
+    await expect(link).toHaveScreenshot(shot);
+  });
+});
