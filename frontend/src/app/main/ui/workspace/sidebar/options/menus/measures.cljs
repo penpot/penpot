@@ -23,10 +23,9 @@
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.components.grouped-dropdown :refer [grouped-dropdown*]]
    [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
-   [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.icons :as deprecated-icon]
@@ -135,6 +134,20 @@
                        (into (conj acc head) matching-items)
                        acc))))
           acc)))))
+
+(defn size-preset-options
+  "Rows of the size presets dropdown: a preset without `:width` heads the
+  presets that follow it. A preset is selected when it has the shape size."
+  [presets width height]
+  (mapv (fn [preset]
+          (let [preset-name (:name preset)]
+            (if (:width preset)
+              {:id preset-name
+               :label preset-name
+               :detail (str (:width preset) " x " (:height preset))
+               :selected (and (= width (:width preset)) (= height (:height preset)))}
+              {:id preset-name :label preset-name :header true})))
+        presets))
 
 (defn check-measures-menu-props
   [old-props new-props]
@@ -366,16 +379,18 @@
         (mf/with-memo [preset-search-term]
           (filter-size-presets preset-search-term size-presets))
 
+        preset-width  (d/parse-integer (:width values) 0)
+        preset-height (d/parse-integer (:height values) 0)
+
+        preset-options
+        (mf/with-memo [filtered-size-presets preset-width preset-height]
+          (size-preset-options filtered-size-presets preset-width preset-height))
+
         on-preset-selected
         (mf/use-fn
          (mf/deps ids)
-         (fn [event]
-           (let [width (-> (dom/get-current-target event)
-                           (dom/get-data "width")
-                           (d/read-string))
-                 height (-> (dom/get-current-target event)
-                            (dom/get-data "height")
-                            (d/read-string))]
+         (fn [preset-name _event]
+           (let [{:keys [width height]} (d/seek #(= preset-name (:name %)) size-presets)]
              (st/emit! (udw/update-dimensions ids :width width)
                        (udw/update-dimensions ids :height height))
              (reset! preset-state* false)
@@ -498,42 +513,15 @@
          [:span {:class (stl/css :select-name)} (tr "workspace.options.size-presets")]
          [:span {:class (stl/css :collapsed-icon)} deprecated-icon/arrow]
 
-         [:& dropdown {:show show-presets-dropdown?
-                       :on-close close-presets
-                       :container preset-container-ref}
-          [:div {:class (stl/css :custom-select-dropdown)
-                 :on-click dom/stop-propagation}
-           [:div {:class (stl/css :preset-search)}
-            [:> search-bar* {:on-change on-preset-search-change
-                             :value preset-search-term
-                             :auto-focus true
-                             :placeholder (tr "workspace.options.search-size-preset")}]]
-           [:ul {:class (stl/css :preset-list)}
-            (if (empty? filtered-size-presets)
-              [:li {:class (stl/css-case :dropdown-element true
-                                         :disabled true)}
-               [:span {:class (stl/css :preset-name)}
-                (tr "workspace.options.no-size-preset-results")]]
-              (for [size-preset filtered-size-presets]
-                (if-not (:width size-preset)
-                  [:li {:key (:name size-preset)
-                        :class (stl/css-case :dropdown-element true
-                                             :disabled true)}
-                   [:span {:class (stl/css :preset-name)} (:name size-preset)]]
-
-                  (let [preset-match (and (= (:width size-preset) (d/parse-integer (:width values) 0))
-                                          (= (:height size-preset) (d/parse-integer (:height values) 0)))]
-                    [:li {:key (:name size-preset)
-                          :class (stl/css-case :dropdown-element true
-                                               :match preset-match)
-                          :data-width (str (:width size-preset))
-                          :data-height (str (:height size-preset))
-                          :on-click on-preset-selected}
-                     [:div {:class (stl/css :name-wrapper)}
-                      [:span {:class (stl/css :preset-name)} (:name size-preset)]
-                      [:span {:class (stl/css :preset-size)} (:width size-preset) " x " (:height size-preset)]]
-                     (when preset-match
-                       [:span {:class (stl/css :check-icon)} deprecated-icon/tick])]))))]]]]
+         [:> grouped-dropdown* {:show show-presets-dropdown?
+                                :on-close close-presets
+                                :container preset-container-ref
+                                :options preset-options
+                                :on-select on-preset-selected
+                                :search-term preset-search-term
+                                :search-placeholder (tr "workspace.options.search-size-preset")
+                                :on-search-change on-preset-search-change
+                                :empty-label (tr "workspace.options.no-size-preset-results")}]]
 
         [:& radio-buttons {:selected (or (d/name orientation) "")
                            :on-change on-orientation-change

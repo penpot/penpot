@@ -4,8 +4,84 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
 @use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
+
+.language-section {
+  @include sidebar.option-grid-structure;
+}
+
+.language-title {
+  position: relative;
+  grid-column: span 8;
+}
+
+.language-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  grid-column: span 8;
+  margin-block-start: var(--sp-xs);
+}
+
+.language-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+// Looks like the DS select it stands for; it opens the grouped dropdown.
+.language-select {
+  --language-select-background: var(--color-background-tertiary);
+  --language-select-icon-color: var(--color-icon-default);
+  --language-select-outline-color: none;
+
+  @include t.use-typography("body-small");
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-xs);
+  block-size: $sz-32;
+  padding: var(--sp-s);
+  border: none;
+  border-radius: $br-8;
+  outline: $b-1 solid var(--language-select-outline-color);
+  background: var(--language-select-background);
+  color: var(--color-foreground-primary);
+  text-align: start;
+  cursor: pointer;
+  appearance: none;
+
+  &:is(:hover, [aria-expanded="true"]) {
+    --language-select-background: var(--color-background-quaternary);
+    --language-select-icon-color: var(--color-foreground-primary);
+  }
+
+  &:focus-visible {
+    --language-select-background: var(--color-background-quaternary);
+    --language-select-outline-color: var(--color-accent-primary);
+  }
+}
+
+.language-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding-inline-start: var(--sp-xxs);
+}
+
+.mixed .language-name {
+  color: var(--color-foreground-secondary);
+}
+
+.language-arrow {
+  color: var(--language-select-icon-color);
+}
 
 .language-layout-options {
   display: flex;
@@ -14,7 +90,7 @@
   padding-block: var(--sp-xs);
 }
 
-.profile-option {
+.reading-format-option {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
   align-items: center;

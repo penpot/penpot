@@ -559,13 +559,13 @@
     (t/is (not-any? #(contains? % :text-orientation) paragraphs))
     (t/is (= [nil "center" nil] (mapv :text-align paragraphs)))))
 
-(t/deftest language-and-wrapping-only-change-selected-paragraphs
+(t/deftest language-applies-to-the-whole-text-and-wrapping-to-selected-paragraphs
   (let [content (editor-content [{:text "日本"}] [{:text "한국어"}] [{:text "中文"}])
         result  (text-editor/apply-paragraph-attrs-to-range
                  content (selection 1 0 1 0)
                  {:text-language "ko" :korean-wrap "spaces-only"})
         paragraphs (-> result :children first :children)]
-    (t/is (= [nil "ko" nil] (mapv :text-language paragraphs)))
+    (t/is (= ["ko" "ko" "ko"] (mapv :text-language paragraphs)))
     (t/is (= [nil "spaces-only" nil] (mapv :korean-wrap paragraphs)))
     (t/is (= result
              (text-editor/merge-exported-texts-into-content

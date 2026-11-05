@@ -16,6 +16,7 @@
    [app.common.geom.point :as gpt]
    [app.common.render-wasm.api.select :as wselect]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.text :as txt]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.modifiers :as dwm]
@@ -276,3 +277,26 @@
                        (rx/empty)
                        resize-stream)))))
            resize-stream))))))
+
+(defn- file-language-text?
+  "True when some paragraph of the text `shape` has no language of its own,
+  so it renders with the file language."
+  [shape]
+  (and (cfh/text-shape? shape)
+       (let [paragraphs (txt/node-seq txt/is-paragraph-node? (:content shape))]
+         (or (empty? paragraphs)
+             (some #(nil? (:text-language %)) paragraphs)))))
+
+(defn refresh-file-language-texts
+  "Lay out again the texts of the page that render with the file language,
+  after it changed, and resize the auto-sized ones."
+  []
+  (ptk/reify ::refresh-file-language-texts
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [shapes (into [] (filter file-language-text?) (vals (dsh/lookup-page-objects state)))]
+        (rx/concat
+         (rx/defer (fn []
+                     (wasm.api/refresh-text-contents shapes)
+                     (rx/empty)))
+         (rx/of (resize-wasm-text-all (mapv :id shapes))))))))

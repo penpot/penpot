@@ -14,6 +14,7 @@
    [app.common.time :as ct]
    [app.common.transit :as t]
    [app.common.types.plugins :as ctp]
+   [app.common.types.shape.text :as ctsx]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -62,9 +63,8 @@
   [:map {:title "ProfileProps" :closed true}
    [:plugins {:optional true} ctp/schema:plugin-registry]
    [:renderer {:optional true} [::sm/one-of #{:svg :wasm}]]
-   [:japanese-layout-all-files {:optional true} ::sm/boolean]
-   [:chinese-layout-all-files {:optional true} ::sm/boolean]
-   [:korean-layout-all-files {:optional true} ::sm/boolean]
+   ;; Text language (BCP 47 tag) the files the profile creates start with.
+   [:default-text-language {:optional true} [:maybe ctsx/schema:text-language]]
    [:mcp-enabled {:optional true} ::sm/boolean]
    [:newsletter-updates {:optional true} ::sm/boolean]
    [:newsletter-news {:optional true} ::sm/boolean]

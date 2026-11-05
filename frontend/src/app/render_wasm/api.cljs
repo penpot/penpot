@@ -61,6 +61,7 @@
    [app.util.modules :as mod]
    [app.util.text.content :as tc]
    [app.util.text.geometry :as text.geom]
+   [app.util.text.writing-mode :as wm]
    [app.util.timers :as timers]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -339,7 +340,7 @@
 
 ;; forward declare helpers so render can call them
 (declare request-render)
-(declare set-shape-vertical-align set-shape-line-adjustment fonts-from-text-content)
+(declare set-shape-vertical-align set-shape-line-adjustment fonts-from-text-content ensure-text-content)
 (declare reload-renderer!)
 (declare request-render-preserving-target)
 (declare render-pending?)
@@ -744,7 +745,9 @@
         (t/write-shape-text spans paragraph text)))))
 
 (defn set-shape-text-content
-  "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
+  "This function sets shape text content and returns a stream that loads the needed fonts asynchronously.
+  The editor caches the stored content; WASM lays out the active one, with
+  the CJK attrs of the text language only (see `wm/active-content`)."
   [shape-id content]
 
   ;; Cache content for text editor sync
@@ -757,17 +760,28 @@
   (when (wasm/live?)
     (h/call wasm/internal-module "_clear_shape_text")
 
-    (set-shape-vertical-align (get content :vertical-align))
-    (set-shape-line-adjustment (get content :line-adjustment))
+    (let [content (wm/active-content content)]
+      (set-shape-vertical-align (get content :vertical-align))
+      (set-shape-line-adjustment (get content :line-adjustment))
 
-    (let [fonts          (f/get-content-fonts content)
-          fallback-fonts (fonts-from-text-content content false)
-          all-fonts      (concat fonts fallback-fonts)
-          result         (f/store-fonts all-fonts)]
-      (write-text-content! content)
-      (f/load-fallback-fonts-for-editor! fallback-fonts)
-      (h/call wasm/internal-module "_update_shape_text_layout")
-      result)))
+      (let [fonts          (f/get-content-fonts content)
+            fallback-fonts (fonts-from-text-content content false)
+            all-fonts      (concat fonts fallback-fonts)
+            result         (f/store-fonts all-fonts)]
+        (write-text-content! content)
+        (f/load-fallback-fonts-for-editor! fallback-fonts)
+        (h/call wasm/internal-module "_update_shape_text_layout")
+        result))))
+
+(defn refresh-text-contents
+  "Lay the text `shapes` out again from their stored content, after a change
+  outside the shapes (the file language) changed how they render."
+  [shapes]
+  (when (wasm/live?)
+    (doseq [{:keys [id content]} shapes]
+      (wselect/use-shape id)
+      (set-shape-text-content id (ensure-text-content content)))
+    (request-render "refresh-text-contents")))
 
 (defn finish-text-editor-composition
   [text]

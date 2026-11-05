@@ -181,10 +181,91 @@
   [{:id "auto" :label (translate "workspace.options.text-options.ruby-overhang-auto")}
    {:id "none" :label (translate "workspace.options.text-options.ruby-overhang-none")}])
 
-(defn ruby-side-options
-  [translate]
-  [{:id "over" :label (translate "workspace.options.text-options.ruby-side-over")}
-   {:id "under" :label (translate "workspace.options.text-options.ruby-side-under")}])
+;; --- Positions
+;;
+;; Annotation positions store both axes (over or under the line, right or
+;; left of the column), but only one applies to a writing mode: above/below
+;; in horizontal text, right/left in vertical text. The controls show the
+;; one that applies and keep the stored other.
+
+(defn- position-sides
+  "Block (`\"over\"`/`\"under\"`) and inline (`\"right\"`/`\"left\"`) side
+  of a position `value`, nil for the ones it leaves to the renderer."
+  [attr value]
+  (case attr
+    :ruby-side
+    [value nil]
+
+    :text-emphasis-position
+    (when (and (string? value) (not= "auto" value))
+      (let [[block inline] (.split value "-")] [block inline]))
+
+    :text-underline-position
+    (case value
+      "under"       ["under" nil]
+      "left"        [nil "left"]
+      "right"       [nil "right"]
+      "under-left"  ["under" "left"]
+      "under-right" ["under" "right"]
+      nil)))
+
+(defn- position-of-sides
+  [attr [block inline]]
+  (case attr
+    :ruby-side               block
+    :text-emphasis-position  (if (some? block) (str block "-" inline) "auto")
+    :text-underline-position (cond
+                               (and block inline) (str block "-" inline)
+                               (or block inline)  (or block inline)
+                               :else              "auto")))
+
+(defn position-options
+  "Choices of the position `attr` for the writing mode."
+  [attr vertical]
+  (let [auto   {:id "auto" :label (tr "workspace.options.text-options.position-auto")}
+        over   {:id "over" :label (tr "workspace.options.text-options.position-over")}
+        under  {:id "under" :label (tr "workspace.options.text-options.position-under")}
+        right  {:id "right" :label (tr "workspace.options.text-options.position-right")}
+        left   {:id "left" :label (tr "workspace.options.text-options.position-left")}
+        ;; Ruby takes the block side in vertical text too: over reads right.
+        ruby-v [(assoc right :id "over") (assoc left :id "under")]]
+    (case attr
+      :ruby-side               (if ^boolean vertical ruby-v [over under])
+      :text-emphasis-position  (if ^boolean vertical [auto right left] [auto over under])
+      :text-underline-position (if ^boolean vertical [auto right left] [auto under]))))
+
+(defn position-choice
+  "Choice of `position-options` a stored position `value` shows."
+  [attr vertical value]
+  (if (mixed-span-value? value)
+    value
+    (let [[block inline] (position-sides attr value)]
+      (cond
+        (= :ruby-side attr)  (or block (cjk/enum-default :ruby-side))
+        ^boolean vertical    (or inline "auto")
+        :else                (or block "auto")))))
+
+(defn position-value
+  "Stored position for picking `choice` over the stored `value`: the side of
+  the other writing mode stays as it was."
+  [attr vertical value choice]
+  (cond
+    (= :ruby-side attr)
+    choice
+
+    ;; Emphasis is auto as a whole, or sets both sides.
+    (= :text-emphasis-position attr)
+    (if (= "auto" choice)
+      "auto"
+      (let [[block inline] (when-not (mixed-span-value? value) (position-sides attr value))]
+        (position-of-sides attr (if ^boolean vertical
+                                  [(or block "over") choice]
+                                  [choice (or inline "right")]))))
+
+    :else
+    (let [[block inline] (when-not (mixed-span-value? value) (position-sides attr value))
+          choice         (when (not= "auto" choice) choice)]
+      (position-of-sides attr (if ^boolean vertical [block choice] [choice inline])))))
 
 (mf/defc text-combine-upright-options*
   ;; Digit TCY finds eligible runs itself, so it applies to a whole shape;
@@ -307,22 +388,43 @@
                   :options          options
                   :on-change        handle-change}]]))
 
+(mf/defc position-select-option*
+  "Select of the position `attr` with the sides of the writing mode only."
+  [{:keys [values on-change on-blur attr vertical label]}]
+  (let [value    (get values attr)
+        selected (span-select-value (position-choice attr vertical value) "auto")
+        options  (mf/with-memo [attr vertical value]
+                   (with-mixed-span-option (position-options attr vertical) value))
+        handle-change
+        (mf/use-fn
+         (mf/deps attr vertical value on-change on-blur)
+         (fn [choice]
+           (on-change {attr (position-value attr vertical value choice)})
+           (when (some? on-blur) (on-blur))))]
+    [:div {:class (stl/css :japanese-select-option)}
+     [:span {:class (stl/css :japanese-option-label)} label]
+     [:> select* {:default-selected selected
+                  :aria-label       label
+                  :options          options
+                  :on-change        handle-change}]]))
+
 (defn- ruby-common-props
-  [values on-change on-blur labels]
+  [values on-change on-blur labels vertical]
   (mf/props
    {:values    values
     :on-change on-change
     :on-blur   on-blur
-    :labels    labels}))
+    :labels    labels
+    :vertical  vertical}))
 
 (mf/defc ruby-hidden-option*
-  [{:keys [values on-change on-blur labels]}]
+  [{:keys [values on-change on-blur]}]
   (let [value (:ruby-hidden values)
         enabled? (cond
                    (mixed-span-value? value) nil
                    (true? value) true
                    :else false)
-        label (or (:hidden labels) (tr "workspace.options.text-options.ruby-hidden"))
+        label (tr "workspace.options.text-options.ruby-hidden")
         handle-change
         (mf/use-fn
          (mf/deps on-change on-blur)
@@ -336,42 +438,39 @@
                   :on-change       handle-change}]]))
 
 (mf/defc ruby-customization-options*
-  [{:keys [values on-change on-blur labels]}]
-  (let [common-props (ruby-common-props values on-change on-blur labels)
+  [{:keys [values on-change on-blur labels vertical]}]
+  (let [common-props (ruby-common-props values on-change on-blur labels vertical)
         options      (mf/with-memo []
                        {:ruby-size     (ruby-size-options tr)
                         :ruby-align    (ruby-align-options tr)
-                        :ruby-overhang (ruby-overhang-options tr)
-                        :ruby-side     (ruby-side-options tr)})]
+                        :ruby-overhang (ruby-overhang-options tr)})]
     [:div {:class (stl/css :japanese-layout-controls)}
      [:> ruby-hidden-option* common-props]
      [:> span-select-option* (mf/spread-props common-props
                                               {:attr :ruby-size
                                                :default-value (cjk/enum-default :ruby-size)
-                                               :label (or (:size labels) (tr "workspace.options.text-options.ruby-size"))
+                                               :label (tr "workspace.options.text-options.ruby-size")
                                                :options (:ruby-size options)})]
      [:> span-select-option* (mf/spread-props common-props
                                               {:attr :ruby-align
                                                :default-value (cjk/enum-default :ruby-align)
-                                               :label (or (:align labels) (tr "workspace.options.text-options.ruby-align"))
+                                               :label (tr "workspace.options.text-options.ruby-align")
                                                :options (:ruby-align options)})]
      [:> span-select-option* (mf/spread-props common-props
                                               {:attr :ruby-overhang
                                                :default-value (cjk/enum-default :ruby-overhang)
-                                               :label (or (:overhang labels) (tr "workspace.options.text-options.ruby-overhang"))
+                                               :label (tr "workspace.options.text-options.ruby-overhang")
                                                :options (:ruby-overhang options)})]
-     [:> span-select-option* (mf/spread-props common-props
-                                              {:attr :ruby-side
-                                               :default-value (cjk/enum-default :ruby-side)
-                                               :label (or (:side labels) (tr "workspace.options.text-options.ruby-side"))
-                                               :options (:ruby-side options)})]]))
+     [:> position-select-option* (mf/spread-props common-props
+                                                  {:attr :ruby-side
+                                                   :label (tr "workspace.options.text-options.ruby-side")})]]))
 
 (mf/defc ruby-advanced-options*
-  [{:keys [values on-change on-blur labels]}]
+  [{:keys [values on-change on-blur labels vertical]}]
   (let [open*       (mf/use-state false)
         open?       (deref open*)
         toggle-open (mf/use-fn #(swap! open* not))
-        common-props (ruby-common-props values on-change on-blur labels)]
+        common-props (ruby-common-props values on-change on-blur labels vertical)]
     [:div {:class (stl/css :ruby-advanced-options)}
      [:> ruby-options* (mf/spread-props common-props
                                         {:advanced-open     open?
@@ -381,11 +480,11 @@
       [:> ruby-customization-options* common-props]]]))
 
 (mf/defc ruby-presentation-options*
-  [{:keys [values on-change on-blur labels]}]
+  [{:keys [values on-change on-blur labels vertical]}]
   (let [open*        (mf/use-state false)
         open?        (deref open*)
         toggle-open  (mf/use-fn #(swap! open* not))
-        common-props (ruby-common-props values on-change on-blur labels)]
+        common-props (ruby-common-props values on-change on-blur labels vertical)]
     [:div {:class (stl/css :ruby-advanced-options)}
      [:> title-bar* {:collapsable     true
                      :collapsed       (not open?)
@@ -475,17 +574,20 @@
                              :options       options}]))
 
 (mf/defc japanese-layout-options*
+  "Japanese options. `children` go below the writing mode row."
   [{:keys [values ruby-values text-selection-active
-           on-change on-ruby-presentation-change on-blur]}]
+           on-change on-ruby-presentation-change on-blur children]}]
   (let [vertical?               (vertical-japanese-layout? values)
         common-props            (mf/props
                                  {:values    values
                                   :on-change on-change
-                                  :on-blur   on-blur})
+                                  :on-blur   on-blur
+                                  :vertical  vertical?})
         ruby-presentation-props (mf/props
                                  {:values    ruby-values
                                   :on-change on-ruby-presentation-change
-                                  :on-blur   on-blur})
+                                  :on-blur   on-blur
+                                  :vertical  vertical?})
         options                 (mf/with-memo []
                                   {:writing-mode         (writing-mode-options tr)
                                    :text-orientation     (text-orientation-options tr)
@@ -522,6 +624,7 @@
                                                    :name          "warichu-options"
                                                    :class         (stl/css :warichu-options)
                                                    :options       (:warichu options)})])]
+      children
       (when ^boolean vertical?
         [:> text-combine-upright-count-options* common-props])
       [:> font-features-options* common-props]

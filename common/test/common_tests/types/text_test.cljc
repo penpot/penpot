@@ -564,3 +564,79 @@
 
   (t/testing "no spans give no spans"
     (t/is (= [] (cttx/merge-equal-spans [])))))
+
+(defn- cjk-content
+  "One paragraph with a span carrying the CJK attrs of every language."
+  [paragraph-attrs]
+  {:type "root"
+   :line-adjustment "push-out-first"
+   :children
+   [{:type "paragraph-set"
+     :children
+     [(merge {:type "paragraph"
+              :writing-mode "vertical-rl"
+              :text-orientation "upright"
+              :text-align "distribute"
+              :korean-wrap "keep-words"
+              :children [{:text "日本"
+                          :ruby "にほん"
+                          :ruby-zhuyin true
+                          :text-combine-upright "digits"
+                          :text-emphasis-position "over-left"
+                          :warichu "warichu"
+                          :font-features "palt"}]}
+             paragraph-attrs)]}]})
+
+(defn- first-paragraph
+  [content]
+  (get-in content [:children 0 :children 0]))
+
+(t/deftest language-family-follows-the-primary-subtag
+  (t/is (= :japanese (cjk/language-family "ja-JP")))
+  (t/is (= :chinese (cjk/language-family "zh-Hant-TW")))
+  (t/is (= :korean (cjk/language-family "KO-kr")))
+  (t/is (nil? (cjk/language-family "en-GB")))
+  (t/is (nil? (cjk/language-family :multiple)))
+  (t/is (nil? (cjk/language-family nil))))
+
+(t/deftest text-without-language-renders-horizontal-and-plain
+  (let [content   (cjk-content {})
+        active    (cjk/active-content content nil)
+        paragraph (first-paragraph active)]
+    (t/is (not (contains? paragraph :writing-mode)))
+    (t/is (not (contains? paragraph :text-orientation)))
+    (t/is (= "left" (:text-align paragraph)))
+    (t/is (not (contains? paragraph :korean-wrap)))
+    (t/is (= {:text "日本"} (first (:children paragraph))))
+    (t/is (not (contains? active :line-adjustment)))
+    (t/is (nil? (cjk/active-writing-mode content nil)))
+    (t/is (= content (cjk-content {})) "the stored content keeps every attr")))
+
+(t/deftest each-language-renders-only-its-own-attrs
+  (let [span #(first (:children (first-paragraph %)))]
+    (let [active (cjk/active-content (cjk-content {:text-language "ja"}) nil)]
+      (t/is (= {:text "日本" :ruby "にほん" :text-combine-upright "digits"
+                :warichu "warichu" :font-features "palt"}
+               (span active)))
+      (t/is (= "push-out-first" (:line-adjustment active)))
+      (t/is (= "vertical-rl" (:writing-mode (first-paragraph active))))
+      (t/is (= "distribute" (:text-align (first-paragraph active))))
+      (t/is (not (contains? (first-paragraph active) :korean-wrap))))
+    (let [active (cjk/active-content (cjk-content {:text-language "zh-Hant-TW"}) nil)]
+      (t/is (= {:text "日本" :ruby "にほん" :ruby-zhuyin true :text-emphasis-position "over-left"}
+               (span active)))
+      (t/is (not (contains? active :line-adjustment))))
+    (let [active (cjk/active-content (cjk-content {:text-language "ko"}) nil)]
+      (t/is (= {:text "日本"} (span active)))
+      (t/is (= "keep-words" (:korean-wrap (first-paragraph active))))
+      (t/is (= "vertical-rl" (:writing-mode (first-paragraph active)))))))
+
+(t/deftest text-without-language-takes-the-file-language
+  (let [content (cjk-content {})
+        active  (cjk/active-content content "ja")]
+    (t/is (= "ja" (:text-language (first-paragraph active))))
+    (t/is (= "vertical-rl" (:writing-mode (first-paragraph active))))
+    (t/is (= "vertical-rl" (cjk/active-writing-mode content "ja"))))
+  (let [active (cjk/active-content (cjk-content {:text-language "ko"}) "ja")]
+    (t/is (= "ko" (:text-language (first-paragraph active)))
+          "the text language wins over the file language")))
