@@ -19,5 +19,7 @@
    {:unit :ms :description "Elapsed time of each synchronous renderer call."}
    :renderer/cache-call-elapsed
    {:unit :ms :description "Elapsed time of each synchronous cached renderer call."}
+   :renderer/prepared-scene-to-full
+   {:unit :ms :description "Prepared scene render request through the renderer return at Full."}
    :camera/finalization-to-full
    {:unit :ms :description "Camera finalization through the renderer return at Full."}})

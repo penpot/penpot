@@ -190,8 +190,6 @@
   (doseq [id [:feature-plan-fixture/second :feature-plan-fixture/first]]
     (decl/register-case! {:id id :scene :feature-plan-fixture :ns "feature-comparison-test"
                           :params {:count 17} :view {:scale 2 :x 10 :y -5} :context :reuse
-                          :completion :await :batch-size 7
-                          :operation {:id :custom/work :args {:amount 3}}
                           :preparation {:reset :outside-timing :data [1 2]}
                           :run! (fn [_] (throw (js/Error. "planning must not run an operation")))}))
   (try
@@ -201,9 +199,8 @@
       (t/is (= [:feature-plan-fixture/second :feature-plan-fixture/first] (mapv :id data)))
       (t/is (= (cases/collect-cases {:master-seed 42 :filter "feature-plan-fixture/"}) data))
       (t/is (= {:params {:count 17} :view {:scale 2 :x 10 :y -5} :context :reuse
-                :completion :await :batch-size 7 :operation {:id :custom/work :args {:amount 3}}
                 :preparation {:reset :outside-timing :data [1 2]}}
-               (select-keys (first data) [:params :view :context :completion :batch-size :operation :preparation]))))
+               (select-keys (first data) [:params :view :context :preparation]))))
     (finally
       (decl/unregister-case! :feature-plan-fixture/second)
       (decl/unregister-case! :feature-plan-fixture/first)

@@ -57,10 +57,9 @@
   (select-keys definition [:scene :scene-seed :params]))
 
 (defn- execution-settings
-  "Selects operation and measurement settings that scene permission cannot ignore."
+  "Selects view, context and preparation settings for execution compatibility."
   [definition]
-  (select-keys definition [:view :context :completion
-                           :batch-size :preparation :operation]))
+  (select-keys definition [:view :context :preparation]))
 
 (defn- evidence-differences
   "Checks cross-run equality plus missing or varying preparation evidence."

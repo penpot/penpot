@@ -23,8 +23,6 @@
    :params {:count 10}
    :view {:scale 1 :x 0 :y 0}
    :context :fresh
-   :completion :render-full
-   :batch-size 1
    :preparation {}})
 
 (defn- preparation

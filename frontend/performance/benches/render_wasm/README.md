@@ -5,15 +5,6 @@ Chromium. Scenes describe shapes; cases describe the work to perform on them.
 The suite records setup, rendering, pan and zoom durations and compares runs
 with different renderer builds. [How to run](#how-to-run) gives the commands.
 
-The suite has three parts:
-
-1. A Node runner controls the experiment. It prepares or reuses a build, selects
-   cases, serves the browser code, launches Chromium, schedules attempts, saves
-   results, and prints reports. An attempt is one execution of a case.
-2. The browser creates the renderer and graphics context, constructs the scene
-   snapshot, uploads its shapes, performs the work, and records durations.
-3. The reporting code computes statistics from saved records in Node or the
-   browser without loading the renderer.
 
 ## Contents
 
@@ -55,25 +46,28 @@ The suite has three parts:
 - **Scene builder**: the construction API used inside a scene. It provides basic
   shapes (`rect`, `path`, `circle`, `frame`, `group`, and `bool`) constructors,
   and a (hopefully) self-explanatory API.
-- **Reference**: a label that a scene attaches to a shape during construction.
-  A case operation uses references to find shapes it needs.
+- **Shape reference**: a label that a scene attaches to a shape during
+  construction. A _case_ body uses references to find shapes it needs.
 - **Case**: a scene plus its execution settings: parameters, base view, context
-  policy, completion rule, optional operation settings, and a run function. A
-  case is the unit that is measured.
-- **Operation**: the function that performs a case's work during one attempt.
-  It receives a command context with the case data, scene snapshot, current
-  view, and hooks. Standard operations load, pan, and zoom.
+  policy, optional preparation callback, optional reset function, and an
+  executable body. A case is the unit that is measured.
+- **Case body**: the function declared by `defcase` that performs a case's work
+  during one attempt. It receives a command context with the case data, scene
+  snapshot, current view, and hooks. It can call `render-sync`, `load`, `pan`,
+  `zoom`, or `restore` and their measured variants.
 - **View**: the camera's zoom `:scale` and offsets `:x` and `:y`.
   Optional `:viewport` settings give the canvas width, height, and device pixel
   ratio, the number of drawing-buffer pixels per CSS pixel along each dimension.
 - **Hook**: a function supplied through `:hooks` for clock readings,
   scheduling, view updates, rendering, or checking whether work may continue.
 - **Case descriptor**: What gets sent to the browser. It contains the case id,
-  scene, derived seed, parameters, view, context policy, completion rule, batch
-  size, preparation settings, and operation settings. Any functions are removed.
+  scene, scene description, derived seed, parameters, view, context policy, and
+  preparation settings. Functions stay in the local registry and are removed
+  from the descriptor; the browser resolves them by case id.
 - **Catalogue**: the compiled list of case descriptors and scene declarations
   for one build. Node reads the catalogue to select cases. The browser executor
-  contains the same declarations and looks up the run function by case id.
+  contains the same declarations and looks up the case body by case id. The
+  current catalogue declares 14 cases.
 - **Fingerprint**: SHA-256 digest of the validated starting snapshot. A
   comparison checks it to establish equal starting scene content.
 
@@ -114,9 +108,9 @@ The suite has three parts:
 - **Runner**: the Node command line interface that builds or reuses a build,
   selects cases, serves the build, launches Chromium, runs attempts, saves
   records, and prints reports.
-- **Browser executor**: the compiled page and JavaScript that perform
-  preparation and case operations. Its bridge exposes the operations that Node
-  can request.
+- **Browser executor**: the compiled page and JavaScript that execute
+  preparations and case bodies. Its bridge exposes the requests that Node can
+  send.
 - **Measurement**: a numeric result for a quantity such as elapsed duration.
   The suite measures module start, graphics start, upload, first render, and
   camera movement separately.
@@ -217,9 +211,12 @@ The suite has three parts:
 
 ## Architecture
 
-### Components
+The suite has three components: runner, browser, and reports. They are all driven via the same CLI.
 
-The Node runner owns everything outside the page:
+### Node runner
+
+The Node runner owns everything outside the page and
+controls the experiment.
 
 - it prepares or loads a build;
 - it reads the compiled catalogue and selects cases;
@@ -230,16 +227,20 @@ The Node runner owns everything outside the page:
 - it writes the run record as work progresses;
 - it prints a final report.
 
-The browser bridge owns everything inside the page:
+### Browser bridge
+
+The bridge owns everything inside the page that runs the benchmark:
 
 - it validates a request before assigning the page to that work;
 - it imports the renderer module and creates the canvas and WebGL2 context;
 - it builds, validates, fingerprints, orders, and uploads the scene;
 - it carries each phase's returned context into the next phase or attempt;
-- it runs the case operation and records the requested measurements;
+- it runs the case body and records the measurements its commands select;
 - it returns plain data and disposes the context when asked.
 
-The shared reporting code owns analysis:
+### Reporting
+
+This code performs the analysis offline:
 
 - it normalizes run records into summaries;
 - it computes statistics and intervals for each metric;
@@ -387,7 +388,7 @@ Containers follow the same pattern:
 ### Declaring a case
 
 For a scene named `:rects`, case ids start with `:rects/`. The `defcase` form
-derives the scene from that keyword namespace and attaches the run function.
+derives the scene from that keyword namespace and attaches the case body.
 
 ```clojure
 (defcase :rects/pan
@@ -395,7 +396,7 @@ derives the scene from that keyword namespace and attaches the run function.
    :view {:scale 1 :x 0 :y 0}
    :context :reuse
    :reset (fn [rtx]
-            (camera/pan rtx {:steps 20 :dx -200 :dy 0 :settle-ms 100}))}
+            (camera/restore rtx (get-in rtx [:case :view])))}
    [rtx]
    (camera/pan* rtx {:steps 20 :dx 200 :dy 0 :settle-ms 100}))
 ```
@@ -415,6 +416,10 @@ The case declares:
 - `:reset`: an optional function that receives the context after successful
   main execution and returns the next context or its Promise. Reset runs after
   every successful main, including warmups and the final attempt.
+
+The case body owns the command sequence, arguments, and any deliberate
+repetition. The declaration supplies the starting settings; the body and the
+commands it calls own the work.
 
 Commands receive workload arguments from the case body. The callback, main body,
 and reset share the command context and can each call measured commands.
@@ -455,12 +460,22 @@ shape.
 
 ### Some example scenes
 
-| Scene   | Content                                                                 | Cases           |
-| ------- | ----------------------------------------------------------------------- | --------------- |
-| `rects` | 1000 rectangles with random size, translucent fills, strokes, and radii | load, pan, zoom |
-| `paths` | 1000 curved paths with fills and strokes                                | load, pan, zoom |
-| `plus`  | 1000 plus signs made from two open line subpaths                        | load, pan, zoom |
-| `masks` | 24 masked groups, each with a circle mask and 8 striped rectangles      | load, pan, zoom |
+| Scene   | Content                                                                 | Cases                                  |
+| ------- | ----------------------------------------------------------------------- | -------------------------------------- |
+| `rects` | 1000 rectangles with random size, translucent fills, strokes, and radii | load, pan, zoom, blocking-full, mixed-pans |
+| `paths` | 1000 curved paths with fills and strokes                                | load, pan, zoom                        |
+| `plus`  | 1000 plus signs made from two open line subpaths                        | load, pan, zoom                        |
+| `masks` | 24 masked groups, each with a circle mask and 8 striped rectangles      | load, pan, zoom                        |
+
+The current catalogue has 14 cases: load, pan, and zoom for each scene, plus
+`rects/blocking-full` and `rects/mixed-pans`. Every load case is cold, with
+`:context :fresh` and `:preparation {:render :none}`, and its body calls
+`camera/load*`. The pan and zoom cases for each scene reuse one prepared context
+and keep their declared offsets, steps, factor, and settling time; their reset
+calls the bare `camera/restore` to return to the case view without recording an
+event. `rects/blocking-full` is another fresh cold case and calls
+`camera/render-sync*`. `rects/mixed-pans` runs two measured pans around one bare
+pan and resets with measured `camera/restore*`.
 
 Scene recipes supply canonical geometry for rendering and camera workloads.
 Camera sessions submit view updates and wait for settling before their final
@@ -488,6 +503,34 @@ deadline expiry, context loss, or a superseded owner
 by throwing an error. The owner is the execution authorized to use the renderer.
 Returned contexts retain the execution's `:check` guard; replacing it rejects
 completion.
+
+### Public commands
+
+The runtime provides five public commands. Each has a bare function and a
+measured variant with `*`. Both forms accept a context or its Promise and return
+a Promise of the next context.
+
+| Command | Work | Recorded metric types |
+| --- | --- | --- |
+| `render-sync` | Runs the blocking renderer path once. | `:command/elapsed` |
+| `load` | Waits for an animation frame, then renders until `Full`. | `:command/elapsed`, `:renderer/call-elapsed`, `:renderer/prepared-scene-to-full` |
+| `pan` | Moves by `:dx` and `:dy` through `:steps` cached previews, waits `:settle-ms`, ends the interaction, and renders until `Full`. | `:command/elapsed`, `:renderer/cache-call-elapsed`, `:renderer/call-elapsed`, `:camera/finalization-to-full` |
+| `zoom` | Multiplies scale by `:factor` with the same camera session. | The same types as `pan`. |
+| `restore` | Applies a view and renders immediately with `SyncTiles` until `Full`. | `:command/elapsed`, `:renderer/call-elapsed` |
+
+Bare commands update the context but record no event. A measured command records
+one event. `load`, `pan`, `zoom`, and `restore` carry the final renderer return
+captured by the protocol into `:end-ms`; their command elapsed ends at that
+endpoint, not at a later Promise callback. `:renderer/call-elapsed` holds one
+duration per renderer call in the final drain, in call order. `pan` and `zoom`
+also record one `:renderer/cache-call-elapsed` value per cached preview and a
+single `:camera/finalization-to-full` value. `load` adds
+`:renderer/prepared-scene-to-full`, the drain's `:full-ms`. `render-sync` is
+synchronous and records only its command elapsed.
+
+`restore` requires the target view's resolved viewport to equal the current
+context's resolved viewport. A different width, height, or device pixel ratio
+fails before the command changes the renderer state.
 
 ### Declaring a command
 
@@ -555,25 +598,36 @@ The command supplies `:command/elapsed`, its body duration in milliseconds.
 `:metrics` supplies additional quantities. Command events preserve zero,
 negative, `NaN`, and infinite numeric values as raw measurements.
 
-Camera completion illustrates the callback interface:
+Camera completion illustrates the callback interface. The current helpers copy
+the protocol's captured endpoint and renderer call durations into the completion
+map:
 
 ```clojure
+(defn- render-evidence
+  [evidence]
+  {:end-ms (:end-ms evidence)
+   :metrics {:renderer/call-elapsed (mapv :duration-ms (:slices evidence))}
+   :trace evidence})
+
+(defn- camera-evidence
+  [evidence]
+  (-> (render-evidence evidence)
+      (assoc-in [:metrics :renderer/cache-call-elapsed]
+                (mapv :duration-ms (:cached-slices evidence)))
+      (assoc-in [:metrics :camera/finalization-to-full]
+                [(:time-to-full-ms evidence)])))
+
 (defcommand pan
-  "Moves the view and completes when rendering reaches Full."
+  "Moves the view by `:dx` and `:dy` through `:steps` cached previews.
+  Waits `:settle-ms` milliseconds, ends the interaction and renders until Full."
   {:async [complete fail]}
-  [rtx {:keys [dx dy steps settle-ms]}]
-  (let [target (-> (:view rtx)
-                   (update :x + dx)
-                   (update :y + dy))]
-    (-> (protocol/start-camera! rtx {:settle-ms settle-ms})
-        (protocol/animate-view! {:to target :steps steps})
-        (protocol/finish-camera!)
-        (.then (fn [trace]
+  [rtx {:keys [dx dy] :as options}]
+  {:pre [(valid-pan? options) (valid-view? (pan-view (:view rtx) dx dy))]}
+  (let [target (pan-view (:view rtx) dx dy)]
+    (-> (run-camera rtx target options)
+        (.then (fn [evidence]
                  (complete (assoc rtx :view target)
-                           {:end-ms (:end-ms trace)
-                            :metrics {:renderer/call-elapsed
-                                      (mapv :duration-ms (:slices trace))}
-                            :trace trace})))
+                           (camera-evidence evidence))))
         (.catch fail))))
 ```
 
@@ -581,22 +635,8 @@ The final renderer call can return before the Promise callback runs. The
 `:end-ms` field carries that renderer endpoint through the scheduling delay.
 For example, renderer work lasting 7 ms followed by a 500 ms callback delay
 still supplies a renderer duration of 7 ms. A clock reading in the later
-callback would measure 507 ms.
-
-The provided `camera/pan` and `camera/pan*` commands accept explicit `:dx`, `:dy`,
-`:steps`, and `:settle-ms`. They submit interpolated views on animation frames,
-draw cached previews, wait for settling, and finish rendering to `Full`. They
-resolve to the context with the final view. The measured function records:
-
-| Metric | Values in one event, in milliseconds |
-| --- | --- |
-| `:command/elapsed` | One duration from the start of the body through the renderer endpoint. |
-| `:renderer/call-elapsed` | One duration per renderer call in the final drain. |
-| `:renderer/cache-call-elapsed` | One duration per cached render call. |
-| `:camera/finalization-to-full` | One duration from before ending the interaction through the renderer endpoint. |
-
-Its trace also contains individual render calls, view-update durations, waits,
-and the final `:end-ms`. Each vector preserves the call order within its quantity.
+callback would measure 507 ms. The public commands table lists the metric types
+each measured command records.
 
 ### Composition and execution
 
@@ -615,7 +655,9 @@ function and selects measurements through the calls in its body:
 
 All three calls update the view and renderer. The first and third record
 events. Command functions resolve incoming Promises, so threading passes each
-updated context to the next command.
+updated context to the next command. `rects/mixed-pans` declares this pattern:
+two measured pans and one bare pan in main, then a measured `camera/restore*`
+in reset.
 
 A command execution runs a function from one command context to the next,
 authorizes its work, and collects events in completion order. Given a prepared
@@ -688,15 +730,15 @@ case's browser and starts the next case in a new browser when the run continues.
 [`runtime/commands.clj`](runtime/commands.clj) declares commands;
 [`runtime/commands.cljs`](runtime/commands.cljs) executes them.
 [`runtime/camera.cljs`](runtime/camera.cljs) defines rendering and camera
-operations. [`runtime/protocol.cljs`](runtime/protocol.cljs) defines render
+commands. [`runtime/protocol.cljs`](runtime/protocol.cljs) defines render
 drains, camera sessions, hook contracts, and trace fields.
 
-Case declarations such as [`scenes/rects.cljs`](scenes/rects.cljs) attach operation
+Case declarations such as [`scenes/rects.cljs`](scenes/rects.cljs) attach case
 bodies through [`declarations.cljc`](declarations.cljc). Node loads these
-declarations and functions during catalogue collection. Renderer operations run
+declarations and functions during catalogue collection. Renderer commands run
 through the supplied hooks when the functions execute in the browser.
 [`browser/bridge.cljs`](browser/bridge.cljs) constructs the runtime context for
-case operations and prepares graphics contexts, snapshots, and uploads. Reused
+case bodies and prepares graphics contexts, snapshots, and uploads. Reused
 cases carry their returned context into the next attempt; their reset function
 controls restoration.
 
@@ -724,7 +766,7 @@ Preparation diagnostics time:
 - the automatic render drain to `Full`.
 
 Measured commands record their own intervals during preparation, main, or reset.
-For a camera command, this includes view updates, cached previews, settling,
+For `pan` and `zoom`, this includes view updates, cached previews, settling,
 ending the interaction, and the final drain.
 
 ### Lifecycle of a fresh load
@@ -753,8 +795,8 @@ starts its clock immediately before its work.
 ### Warm interactions
 
 A warm case owns one prepared page. Its main body starts from the context
-returned by preparation or the preceding attempt's reset. A camera command runs
-this session:
+returned by preparation or the preceding attempt's reset. A `pan` or `zoom`
+command runs this session:
 
 1. start the camera interaction;
 2. for each view update, wait for the next animation frame, apply the view, and
@@ -764,10 +806,11 @@ this session:
 5. render until `Full`.
 
 A pure pan can reuse cached textures while it updates which tiles are visible.
-A zoom rebuilds and invalidates tile textures. Standard cases request a 100 ms
-settling wait and record the requested and observed durations separately from
-renderer calls. Camera finalization includes the call that ends the interaction;
-the run also records that call's duration.
+A zoom rebuilds and invalidates tile textures. The standard pan and zoom cases
+request a 100 ms settling wait; `rects/mixed-pans` uses 50 ms for its three
+pans. They record the requested and observed durations separately from renderer
+calls. Camera finalization includes the call that ends the interaction; the run
+also records that call's duration.
 
 ### Slices and metrics
 
@@ -782,7 +825,7 @@ A render drain retains these trace fields:
   drain origin;
 - `full-ms`: the `Full` completion from the drain origin.
 
-A camera command's trace contains the camera session and final drain:
+A `pan` or `zoom` command's trace contains the camera session and final drain:
 
 - `cached-slices`: one record per gesture frame with `timestamp`,
   `duration-ms` for the cached preview call, and `view-and-preview-ms` for the
@@ -804,6 +847,11 @@ A camera command's trace contains the camera session and final drain:
 Both drains and camera sessions return `end-ms`, the clock reading immediately
 after the final renderer call returns `Full`. Completion durations end at that
 reading. Promise callbacks can run later as the browser schedules queued work.
+
+A `load` or `restore` command uses the final drain trace directly. `load` also
+records `:renderer/prepared-scene-to-full` from `:full-ms`. `restore` starts its
+drain immediately with `SyncTiles` and records the same per-call durations as the
+final drain.
 
 Measured command events keep each metric's raw values in a vector. Repeated
 commands produce separate events, including when they name the same metric.
@@ -1008,8 +1056,7 @@ By default, a comparison requires equal:
 
 - scene identity, scene seed, and scene parameters;
 - starting-snapshot fingerprints;
-- view, context policy, completion rule, batch size, preparation settings, and
-  operation settings;
+- view, context policy, and preparation settings;
 - effective graphics settings and runtime environment;
 - build mode, effective features, instrumentation settings, and recorded build
   environment;
@@ -1037,8 +1084,7 @@ mismatch with the rule that allowed it.
 
 - `--allow-build-differences` acknowledges recorded build settings, effective
   features, instrumentation, and the recorded build environment. Runtime
-  environment, graphics, operation settings, and saved quantity units stay
-  strict.
+  environment, graphics, and saved quantity units stay strict.
 - `--allow-scene-differences` acknowledges scene identity, scene seed, scene
   parameters, and differences in fingerprint content. Execution settings stay
   strict. Missing or varying fingerprint evidence still needs the
@@ -1102,10 +1148,9 @@ and launches no browser.
 Every configuration gets its own build, catalogue, browser executor, server,
 browser, and run. Each configuration runs and cleans up before the next one
 starts. The configurations share the selected cases and their seeds, parameters,
-views, operations, budgets, preparation settings, and batch sizes. Collection
+views, context policies, preparation settings, and case deadlines. Collection
 checks each configuration's catalogue identity and requires the same selected
-case
-descriptors in the same order.
+case descriptors in the same order.
 
 ```bash
 pnpm run build:renderer-benchmarks:runner
@@ -1167,10 +1212,9 @@ retains an unacknowledged difference keeps its saved report, is marked failed,
 and makes the invocation exit 1.
 
 Other build differences require `--allow-build-differences`. Scene differences
-require `--allow-scene-differences`. Operation, view,
-context, preparation, completion, batch size, graphics, runtime environment, and
-saved quantity-unit differences stay strict unless `--allow-all-differences` is
-selected. If two configurations report the same effective feature set, the
+require `--allow-scene-differences`. View, context, preparation, graphics,
+runtime environment, and saved quantity-unit differences stay strict unless
+`--allow-all-differences` is selected. If two configurations report the same effective feature set, the
 comparison includes their edge and labels it with that fact. Effective feature
 sets describe the code settings that accompany the observed timings.
 
@@ -1198,7 +1242,10 @@ pnpm run render-bench -- run --help
 
 Command options select declared cases and control the build source, sampling,
 output and hardware policy. Case declarations own workload bodies, scene
-parameters, view and operation settings, and case lifecycle.
+parameters, view, context policy, preparation, reset, and case lifecycle.
+`--seed` is the explicit exception: it changes generated scene content
+reproducibly, but it does not replace a case body, its command arguments, or its
+lifecycle settings.
 
 Build the runner and its command module:
 
@@ -1211,6 +1258,18 @@ Run one case with one measured attempt:
 ```bash
 pnpm run render-bench -- run \
   --filter paths/pan --seed 42 --warmups 0 --repetitions 1 --screenshots
+```
+
+Run the blocking renderer and mixed gesture proof cases:
+
+```bash
+pnpm run render-bench -- run \
+  --filter rects/blocking-full --seed 42 \
+  --warmups 0 --repetitions 1 --screenshots
+
+pnpm run render-bench -- run \
+  --filter rects/mixed-pans --seed 42 \
+  --warmups 0 --repetitions 1 --screenshots
 ```
 
 Prepare a build once and reuse it:
@@ -1398,6 +1457,7 @@ module timing. These startup conditions define measurements for fresh cases.
 Attempts share evolving caches, so bootstrap intervals describe the observations
 within a run. Repeat whole runs to assess reproducibility, and judge whether the
 observed change matters for the workload.
+
 
 ## Repository map
 

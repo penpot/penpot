@@ -39,8 +39,6 @@
    :params {:count 10}
    :view {:scale 1 :x 0 :y 0}
    :context :fresh
-   :completion :render-full
-   :batch-size 1
    :preparation {}})
 
 (defn- make-run
@@ -214,11 +212,11 @@
       (finally
         (log/configure {})))))
 
-(t/deftest scoped-permissions-keep-operation-and-runtime-checks-strict
+(t/deftest scoped-permissions-keep-view-and-runtime-checks-strict
   (let [baseline (write-run (path/join @temporary-root "baseline.transit")
                             (make-run "baseline" :case/load 10))]
     (doseq [[field settings]
-            [[:execution {:case-settings {:operation {:id :pan :args {:distance 20}}}}]
+            [[:execution {:case-settings {:view {:scale 2 :x 0 :y 0}}}]
              [:environment {:environment {:node "v25" :browser "Fake"}}]]]
       (let [candidate (write-run (path/join @temporary-root "candidate.transit")
                                  (apply make-run "candidate" :case/load 12 (mapcat identity settings)))

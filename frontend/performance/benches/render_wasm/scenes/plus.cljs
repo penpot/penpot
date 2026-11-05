@@ -51,18 +51,18 @@
 (def ^:private base-view {:scale 1 :x 0 :y 0})
 
 (decl/defcase :plus/load
-  {:params default-params :view base-view :context :fresh}
+  {:params default-params :view base-view :context :fresh :preparation {:render :none}}
   [rtx]
-  (camera/load! rtx))
+  (camera/load* rtx))
 
 (decl/defcase :plus/pan
   {:params default-params :view base-view :context :reuse
-   :operation {:steps 20 :dx 140 :dy 60 :settle-ms 100}}
+   :reset #(camera/restore % (get-in % [:case :view]))}
   [rtx]
-  (camera/pan! rtx))
+  (camera/pan* rtx {:steps 20 :dx 140 :dy 60 :settle-ms 100}))
 
 (decl/defcase :plus/zoom
   {:params default-params :view base-view :context :reuse
-   :operation {:steps 20 :factor 1.4 :settle-ms 100}}
+   :reset #(camera/restore % (get-in % [:case :view]))}
   [rtx]
-  (camera/zoom! rtx))
+  (camera/zoom* rtx {:steps 20 :factor 1.4 :settle-ms 100}))

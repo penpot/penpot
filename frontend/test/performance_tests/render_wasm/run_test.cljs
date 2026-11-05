@@ -68,8 +68,6 @@
    :params {}
    :view {:scale 1 :x 0 :y 0}
    :context context
-   :completion :render-full
-   :batch-size 1
    :preparation {}})
 
 (defn- next-count

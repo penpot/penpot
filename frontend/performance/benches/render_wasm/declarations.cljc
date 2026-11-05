@@ -153,9 +153,6 @@
         [:params [:map]]
         [:view schema:view]
         [:context [:enum :fresh :reuse]]
-        [:completion {:optional true} [:enum :call :await :render-full]]
-        [:batch-size {:optional true} [:int {:min 1}]]
-        [:operation {:optional true} [:map]]
         [:preparation {:optional true}
          [:map
           [:render {:optional true} [:enum :full :none]]
@@ -172,10 +169,7 @@
         [:params [:map]]
         [:view schema:view]
         [:context [:enum :fresh :reuse]]
-        [:completion [:enum :call :await :render-full]]
-        [:batch-size [:int {:min 1}]]
-        [:preparation [:map [:render {:optional true} [:enum :full :none]]]]
-        [:operation {:optional true} [:map]]])
+        [:preparation [:map [:render {:optional true} [:enum :full :none]]]]])
 
      (defonce registry
        (atom {:scenes {}
@@ -356,14 +350,16 @@
                  (= encoded (-> encoded t/decode-str t/encode-str))))))
 
      (defn project-case
-       "Returns the case's data descriptor with defaults for completion,
-       batch size and preparation."
+       "Returns a data descriptor with the declared preparation settings.
+
+       Args:
+         bench-case: registered case with local executable functions.
+
+       Returns:
+         Case data with an explicit preparation map."
        [bench-case]
        (-> bench-case
-           (select-keys [:id :scene :params :view :context :completion :batch-size
-                         :operation :preparation])
-           (update :completion #(or % :render-full))
-           (update :batch-size #(or % 1))
+           (select-keys [:id :scene :params :view :context :preparation])
            (update :preparation #(dissoc (or % {}) :callback))))
 
      (defn check-collected-case
