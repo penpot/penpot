@@ -681,3 +681,34 @@
                                     :library true :library-text true :layout :flex
                                     :layout-children true :layout-copies true}]
                        :ops [[:style 11 27 1] [:reset 14 0 0 0] [:undo] [:redo]]}))))
+
+(t/deftest reset-of-a-resized-copy-restores-its-childs-layout-item-values
+  ;; The copy root is taller than its flex main; its child overrides the margin type.
+  (let [file    (-> (thf/sample-file :file1)
+                    (tho/add-frame :main-root {:layout :flex :layout-flex-dir :row})
+                    (tho/add-rect :main-child :parent-label :main-root)
+                    (thc/make-component :component1 :main-root)
+                    (thc/instantiate-component :component1 :copy-root
+                                               :children-labels [:copy-child]))
+        edit    (fn [file label update-fn]
+                  (let [page (thf/current-page file)]
+                    (thf/apply-changes file (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                                        #{(thi/id label)}
+                                                                        update-fn
+                                                                        (:objects page)
+                                                                        {}))))
+        file    (-> file
+                    (edit :copy-root #(gsh/transform-shape % (ctm/change-size % (:width %) 80)))
+                    (edit :copy-child #(assoc % :layout-item-margin-type :multiple)))
+        page    (thf/current-page file)
+        changes (cll/generate-reset-component (pcb/empty-changes) file {(:id file) file}
+                                              (ctn/make-container page :page)
+                                              (thi/id :copy-root))
+        file'   (thf/apply-changes file changes)]
+    (t/is (= :multiple (:layout-item-margin-type (ths/get-shape file :copy-child))))
+    (t/is (nil? (:layout-item-margin-type (ths/get-shape file' :copy-child))))
+    (t/is (nil? (:touched (ths/get-shape file' :copy-child))))
+    (t/is (map? (cg/run {:world [3 0 {:text true :text-styles true :layout :flex :layout-children false
+                                      :layout-item-margins false :grid-square false :grid-empty false}]
+                         :ops [[:delete 0 0 0 0] [:resize 8 0 0 0] [:style 16 27 1]
+                               [:edit 0 1 1 :copy-head] [:reset 0]]})))))
