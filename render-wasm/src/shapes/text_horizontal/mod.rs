@@ -33,7 +33,6 @@ use crate::math::Point;
 use crate::shapes::jlreq::{
     aki_class, is_cjk_text_char, pair_rule, punctuation_aki_sheds, AkiShed, JlreqClass,
 };
-use crate::shapes::text_policy::TextLayoutPolicy;
 use crate::shapes::{line_breaks, merge_fills};
 use crate::utils::{get_fallback_fonts, get_font_collection};
 use skia_safe::{
@@ -48,7 +47,7 @@ use skia_safe::{
 /// True when a paragraph with layout texts `texts` needs the Japanese passes:
 /// its policy is Japanese and it has ruby or a CJK text character.
 pub(crate) fn uses_japanese_layout(paragraph: &Paragraph, texts: &[String]) -> bool {
-    paragraph.layout_policy() == TextLayoutPolicy::Japanese
+    paragraph.layout_policy().uses_jlreq()
         && (paragraph.children().iter().any(TextSpan::has_ruby)
             || texts.iter().any(|text| text.chars().any(is_cjk_text_char)))
 }
@@ -70,7 +69,7 @@ fn layout_span_texts_with_breaks(
         .collect();
     // Text without Japanese characters or ruby keeps plain Skia layout.
     let policy = paragraph.layout_policy();
-    if uses_japanese_layout(paragraph, &texts) || policy.is_chinese() || policy.is_korean() {
+    if policy.plans_breaks() || uses_japanese_layout(paragraph, &texts) {
         let ruby_breaks: Vec<Option<Vec<usize>>> = paragraph
             .children()
             .iter()
@@ -93,7 +92,7 @@ pub(crate) fn horizontal_pair_spacing(
     paragraph: &Paragraph,
     texts: &[String],
 ) -> Vec<Vec<(usize, f32)>> {
-    if paragraph.layout_policy() != TextLayoutPolicy::Japanese {
+    if !paragraph.layout_policy().uses_jlreq() {
         return horizontal_pairwise_spacing(paragraph, texts);
     }
     jlreq_aki_sheds(paragraph, texts)
@@ -368,11 +367,7 @@ impl HorizontalParagraphPlan {
     ) {
         use unicode_segmentation::UnicodeSegmentation;
         let policy = paragraph.layout_policy();
-        if !(policy.is_chinese()
-            || matches!(
-                policy,
-                TextLayoutPolicy::KoreanWords | TextLayoutPolicy::KoreanSyllable
-            ))
+        if !policy.reopens_overlong_words()
             || !width.is_finite()
             || width <= 0.0
             || width == f32::MAX

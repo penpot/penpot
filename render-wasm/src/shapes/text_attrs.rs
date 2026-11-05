@@ -4,6 +4,7 @@
 //! ruby presentation enums.
 
 use crate::shapes::jlreq::classify;
+use crate::shapes::text_policy::TextLayoutPolicy;
 
 pub const EMPHASIS_FONT_SCALE: f32 = 0.5;
 
@@ -88,11 +89,13 @@ pub enum TextEmphasisPosition {
 }
 
 impl TextEmphasisPosition {
-    pub fn side(self, vertical: bool, chinese: bool) -> AnnotationSide {
+    /// Side of the marks; `Auto` takes the default of the paragraph policy.
+    pub fn side(self, vertical: bool, policy: TextLayoutPolicy) -> AnnotationSide {
         let under = if vertical {
             matches!(self, Self::OverLeft | Self::UnderLeft)
         } else {
-            matches!(self, Self::UnderRight | Self::UnderLeft) || (self == Self::Auto && chinese)
+            matches!(self, Self::UnderRight | Self::UnderLeft)
+                || (self == Self::Auto && policy.uses_clreq_positions())
         };
         if under {
             AnnotationSide::Under
@@ -123,9 +126,11 @@ impl TextUnderlinePosition {
         }
     }
 
-    pub fn below_ink(self, chinese: bool) -> bool {
+    /// Whether a horizontal underline sits below the ink; `Auto` takes the
+    /// default of the paragraph policy.
+    pub fn below_ink(self, policy: TextLayoutPolicy) -> bool {
         matches!(self, Self::Under | Self::UnderLeft | Self::UnderRight)
-            || (self == Self::Auto && chinese)
+            || (self == Self::Auto && policy.uses_clreq_positions())
     }
 }
 

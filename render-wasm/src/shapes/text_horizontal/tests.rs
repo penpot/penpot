@@ -5,6 +5,7 @@ use super::ruby::{
 };
 use super::*;
 use crate::shapes::text_paragraph::LayoutParagraph;
+use crate::shapes::text_policy::TextLayoutPolicy;
 use crate::shapes::{TextAlign, TextDirection, TextTransform};
 use crate::Uuid;
 
@@ -1419,7 +1420,10 @@ fn emphasis_position_overrides_the_language_and_stacks_on_its_own_side() {
         ("ja", TextEmphasisPosition::UnderRight, true),
     ] {
         let mut span = make_span("中文", 0.0);
-        span.language = language.to_string();
+        span.set_language(
+            language,
+            TextLayoutPolicy::for_language(language, Default::default()),
+        );
         span.text_emphasis = TextEmphasis::FilledDot;
         span.text_emphasis_position = position;
         span.annotation_clearance = AnnotationClearance::Auto;
@@ -1509,6 +1513,7 @@ fn cjk_underline_takes_the_paint_of_its_own_span() {
 fn below_emphasis_clears_an_underline_on_the_same_side() {
     let span = TextSpan {
         language: "zh-Hans".to_string(),
+        layout_policy: TextLayoutPolicy::for_language("zh-Hans", Default::default()),
         text_emphasis: TextEmphasis::FilledDot,
         text_decoration: Some(skia::textlayout::TextDecoration::UNDERLINE),
         text_underline_position: TextUnderlinePosition::Under,
@@ -1530,6 +1535,7 @@ fn below_emphasis_clears_an_underline_on_the_same_side() {
 fn chinese_horizontal_emphasis_defaults_below_the_base() {
     let span = TextSpan {
         language: "zh-Hans-CN".to_string(),
+        layout_policy: TextLayoutPolicy::for_language("zh-Hans-CN", Default::default()),
         text_emphasis: TextEmphasis::FilledDot,
         ..make_span("中文", 0.0)
     };
@@ -2231,6 +2237,7 @@ fn horizontal_emphasis_export_bounds_include_every_adjacent_ruby_mark() {
             .map(|text| TextSpan {
                 font_size: 48.0,
                 language: "zh-Hant-TW".to_string(),
+                layout_policy: TextLayoutPolicy::for_language("zh-Hant-TW", Default::default()),
                 ruby: "a".to_string(),
                 text_emphasis: TextEmphasis::FilledDot,
                 text_decoration: Some(skia::textlayout::TextDecoration::UNDERLINE),

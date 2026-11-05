@@ -453,9 +453,7 @@ impl<'a> SpanCells<'a> {
         run_index: usize,
     ) -> FlowCell {
         let letter_spacing = self.span.letter_spacing;
-        if crate::shapes::text_policy::TextLayoutPolicy::for_language(&self.span.language, false)
-            == crate::shapes::text_policy::TextLayoutPolicy::Japanese
-        {
+        if self.span.layout_policy.normalizes_western_spaces() {
             run.normalize_word_spaces(&segment.text, self.span.font_size);
         }
         let extent = run.spread_glyphs(letter_spacing);

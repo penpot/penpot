@@ -38,7 +38,7 @@ pub const WESTERN_WORD_SPACE: char = '\u{2004}';
 /// question or exclamation mark.
 pub const IDEOGRAPHIC_SPACE: char = '\u{3000}';
 
-use super::jlreq::{classify, keeps_together_classified, pair_rule, JlreqClass};
+use super::jlreq::{classify, pair_rule, JlreqClass};
 use super::text_policy::TextLayoutPolicy;
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -119,6 +119,7 @@ pub fn apply_policy_with_breaks(
     emergency_breaks: &[usize],
     forced_breaks: &[usize],
 ) -> Option<(Vec<String>, OffsetMap)> {
+    let jlreq = policy.uses_jlreq();
     let source = span_texts.concat();
     let boundaries: Vec<usize> = source.grapheme_indices(true).map(|(at, _)| at).collect();
     let mut source_byte = 0;
@@ -151,29 +152,18 @@ pub fn apply_policy_with_breaks(
                     .get(span_index)
                     .and_then(Option::as_ref)
                     .is_some_and(|breaks| !breaks.contains(&local_utf16));
-            let forbid_break = ruby_forbids_break
-                || prev.is_some_and(|p| {
-                    if policy == TextLayoutPolicy::Japanese {
-                        pair_rule(p.1, current.1).suppress_break_with_joiner
-                            || keeps_together_classified(p, current)
-                    } else {
-                        !policy.break_allowed(p.0, c)
-                    }
-                });
+            let forbid_break =
+                ruby_forbids_break || prev.is_some_and(|p| policy.needs_joiner(p, current));
             let mut insert = |ch: char| {
                 shifted_text.push(ch);
                 inserted.push(shifted_pos);
                 shifted_pos += 1;
                 changed = true;
             };
-            if policy == TextLayoutPolicy::Japanese
-                && prev.is_some_and(|p| takes_em_space_after(p, current))
-            {
+            if jlreq && prev.is_some_and(|p| takes_em_space_after(p, current)) {
                 insert(IDEOGRAPHIC_SPACE);
             }
-            if policy == TextLayoutPolicy::Japanese
-                && prev.is_some_and(|p| is_japanese_western_boundary(p, current))
-            {
+            if jlreq && prev.is_some_and(|p| is_japanese_western_boundary(p, current)) {
                 insert(JAPANESE_WESTERN_SPACE);
             }
             // After an inserted space, the joiner keeps the break blocked.
@@ -185,13 +175,13 @@ pub fn apply_policy_with_breaks(
                 } else {
                     WORD_JOINER
                 });
-            } else if policy == TextLayoutPolicy::Japanese
+            } else if jlreq
                 && current.1 == JlreqClass::Inseparable
                 && prev.is_some_and(|p| pair_rule(p.1, current.1).break_allowed)
             {
                 insert(BREAK_OPPORTUNITY);
             }
-            let layout_char = if policy == TextLayoutPolicy::Japanese && c == ' ' {
+            let layout_char = if policy.normalizes_western_spaces() && c == ' ' {
                 changed = true;
                 WESTERN_WORD_SPACE
             } else {

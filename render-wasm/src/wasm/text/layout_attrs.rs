@@ -1,3 +1,4 @@
+use crate::shapes::text_policy::KoreanWrap;
 use crate::shapes::{
     self, AnnotationClearance, AnnotationSide, FontFeatures, LineAdjustment, RubyAlign,
     RubyOverhang, RubySize, TextCombineUpright, TextEmphasis,
@@ -339,6 +340,26 @@ impl From<RawLineAdjustment> for LineAdjustment {
             RawLineAdjustment::PushInFirst => LineAdjustment::PushInFirst,
             RawLineAdjustment::PushOutFirst => LineAdjustment::PushOutFirst,
             RawLineAdjustment::PushOutOnly => LineAdjustment::PushOutOnly,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+pub enum RawKoreanWrap {
+    Syllable = 0,
+    SpacesOnly = 1,
+    KeepWords = 2,
+}
+
+raw_enum_from_byte!(RawKoreanWrap, Syllable, [Syllable, SpacesOnly, KeepWords]);
+
+impl From<RawKoreanWrap> for KoreanWrap {
+    fn from(value: RawKoreanWrap) -> Self {
+        match value {
+            RawKoreanWrap::Syllable => KoreanWrap::Syllable,
+            RawKoreanWrap::SpacesOnly => KoreanWrap::SpacesOnly,
+            RawKoreanWrap::KeepWords => KoreanWrap::KeepWords,
         }
     }
 }

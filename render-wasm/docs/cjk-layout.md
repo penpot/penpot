@@ -139,6 +139,7 @@ style boundaries, decomposed Jamo, punctuation, justification, stable offsets
 and distinct wrap protocol bytes. Editor splits preserve the complete wrap
 mode. Both WASM consumers use the same writer and byte values: 0 syllable,
 1 experiment, 2 keep-words; unknown values fall back to syllable wrapping.
+The renderer decodes the byte through the exported `RawKoreanWrap` enum.
 
 Real Pinyin, Zhuyin and Korean IME checks and native-reader review remain
 release checks. Font glyph coverage and localized forms still depend on the

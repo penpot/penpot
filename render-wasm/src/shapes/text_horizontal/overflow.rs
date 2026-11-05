@@ -16,16 +16,7 @@ impl HorizontalParagraphPlan {
     ) {
         use unicode_segmentation::UnicodeSegmentation;
         let policy = paragraph.layout_policy();
-        if !(policy.is_chinese()
-            || matches!(
-                policy,
-                TextLayoutPolicy::Japanese
-                    | TextLayoutPolicy::KoreanWords
-                    | TextLayoutPolicy::KoreanSyllable
-            ))
-            || !width.is_finite()
-            || width <= 0.0
-            || width == f32::MAX
+        if !policy.keeps_overlong_units() || !width.is_finite() || width <= 0.0 || width == f32::MAX
         {
             return;
         }
