@@ -319,7 +319,7 @@ impl From<RawParagraph> for shapes::Paragraph {
             .and_then(|end| value.text_buffer.get(ruby_offset..end))
             .unwrap_or(&[]);
         paragraph.set_language(String::from_utf8_lossy(language).into_owned());
-        paragraph.set_korean_wrap(value.attrs.korean_wrap.into());
+        paragraph.set_korean_wrap(RawKoreanWrap::from(value.attrs.korean_wrap).into());
         paragraph
     }
 }

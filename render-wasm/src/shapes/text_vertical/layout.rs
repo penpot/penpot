@@ -568,7 +568,7 @@ impl PlannedParagraph {
             let mut ruby_units = ruby_units.clone();
 
             let policy = cells.paragraph.layout_policy();
-            if policy != TextLayoutPolicy::Japanese {
+            if !policy.uses_jlreq() {
                 grow_ruby_bases(&mut flow, &ruby_units);
                 let text: String = cells
                     .text_map
@@ -641,13 +641,12 @@ impl PlannedParagraph {
     /// Final cells, aligned along their columns, numbered from `column_base`.
     /// A later span's cell of a warichu piece takes the piece's box.
     fn place(&self, align: TextAlign, max_height: f32, column_base: usize) -> Vec<VerticalCell> {
-        let align =
-            if self.policy == TextLayoutPolicy::KoreanSpacesOnly && align == TextAlign::Justify {
-                TextAlign::Left
-            } else {
-                align
-            };
-        let tops = if self.policy == TextLayoutPolicy::Japanese && align != TextAlign::Distribute {
+        let align = if !self.policy.justifies_columns() && align == TextAlign::Justify {
+            TextAlign::Left
+        } else {
+            align
+        };
+        let tops = if self.policy.uses_jlreq() && align != TextAlign::Distribute {
             jlreq_aligned_tops(
                 &self.flow,
                 &self.classes,

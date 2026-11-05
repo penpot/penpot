@@ -29,6 +29,7 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use super::text_attrs::*;
 use super::text_horizontal::*;
+use super::text_policy::{KoreanWrap, TextLayoutPolicy};
 use super::{FontFamily, FontStyle};
 use crate::math::Point;
 use crate::render::FallbackFonts;
@@ -684,16 +685,10 @@ impl TextContent {
         if paragraph.text_align() == TextAlign::Distribute {
             return true;
         }
-        let policy = paragraph.layout_policy();
         (uses_japanese_layout(paragraph, &plan.texts)
             && (self.line_adjustment == LineAdjustment::PushInFirst
                 || paragraph.text_align() == TextAlign::Justify))
-            || ((policy.is_chinese()
-                || matches!(
-                    policy,
-                    super::text_policy::TextLayoutPolicy::KoreanSyllable
-                        | super::text_policy::TextLayoutPolicy::KoreanWords
-                ))
+            || (paragraph.layout_policy().bounded_justify()
                 && paragraph.text_align() == TextAlign::Justify)
     }
 
@@ -754,8 +749,7 @@ impl TextContent {
             laid_out.layout(plan.layout_width(width));
             laid_out
         };
-        let (sheds, laid_out) = if paragraph.layout_policy()
-            == super::text_policy::TextLayoutPolicy::Japanese
+        let (sheds, laid_out) = if paragraph.layout_policy().uses_jlreq()
             && self.line_adjustment == LineAdjustment::PushInFirst
         {
             horizontal_squeeze_sheds(paragraph, plan, width, &lay_out)
@@ -767,7 +761,7 @@ impl TextContent {
         let spacing = if paragraph.text_align() == TextAlign::Distribute {
             horizontal_pairwise_justify_spacing(paragraph, &laid_out, plan, width)
         } else if paragraph.text_align() == TextAlign::Justify {
-            if paragraph.layout_policy() == super::text_policy::TextLayoutPolicy::Japanese {
+            if paragraph.layout_policy().uses_jlreq() {
                 horizontal_jlreq_justify_spacing(&laid_out, plan, width)
             } else {
                 horizontal_pairwise_justify_spacing(paragraph, &laid_out, plan, width)
@@ -2148,7 +2142,10 @@ pub struct Paragraph {
     writing_mode: WritingMode,
     text_orientation: TextOrientation,
     language: String,
-    korean_wrap: super::text_policy::KoreanWrap,
+    korean_wrap: KoreanWrap,
+    /// Policy `language` and `korean_wrap` select, parsed once when either
+    /// changes and copied to every span.
+    layout_policy: TextLayoutPolicy,
     /// Paragraph in the content tree last exchanged with the editor host.
     source_position: u32,
     line_height: f32,
@@ -2166,7 +2163,8 @@ impl Default for Paragraph {
             writing_mode: WritingMode::default(),
             text_orientation: TextOrientation::default(),
             language: String::new(),
-            korean_wrap: super::text_policy::KoreanWrap::Syllable,
+            korean_wrap: KoreanWrap::Syllable,
+            layout_policy: TextLayoutPolicy::Plain,
             source_position: u32::MAX,
             line_height: 1.0,
             letter_spacing: 0.0,
@@ -2194,7 +2192,8 @@ impl Paragraph {
             writing_mode: WritingMode::default(),
             text_orientation: TextOrientation::default(),
             language: String::new(),
-            korean_wrap: super::text_policy::KoreanWrap::Syllable,
+            korean_wrap: KoreanWrap::Syllable,
+            layout_policy: TextLayoutPolicy::Plain,
             source_position: u32::MAX,
             line_height,
             letter_spacing,
@@ -2211,25 +2210,28 @@ impl Paragraph {
     }
 
     pub fn set_language(&mut self, language: String) {
-        for span in &mut self.children {
-            span.language.clone_from(&language);
-        }
         self.language = language;
+        self.update_layout_policy();
     }
 
-    pub fn korean_wrap(&self) -> super::text_policy::KoreanWrap {
+    pub fn korean_wrap(&self) -> KoreanWrap {
         self.korean_wrap
     }
 
-    pub fn set_korean_wrap(&mut self, value: super::text_policy::KoreanWrap) {
+    pub fn set_korean_wrap(&mut self, value: KoreanWrap) {
         self.korean_wrap = value;
+        self.update_layout_policy();
     }
 
-    pub fn layout_policy(&self) -> super::text_policy::TextLayoutPolicy {
-        super::text_policy::TextLayoutPolicy::for_language_with_wrap(
-            &self.language,
-            self.korean_wrap,
-        )
+    pub fn layout_policy(&self) -> TextLayoutPolicy {
+        self.layout_policy
+    }
+
+    fn update_layout_policy(&mut self) {
+        self.layout_policy = TextLayoutPolicy::for_language(&self.language, self.korean_wrap);
+        for span in &mut self.children {
+            span.set_language(&self.language, self.layout_policy);
+        }
     }
 
     pub fn source_position(&self) -> u32 {
@@ -2263,7 +2265,7 @@ impl Paragraph {
     /// Move spans into this paragraph, inheriting its shaping language.
     pub fn extend_children(&mut self, spans: impl IntoIterator<Item = TextSpan>) {
         self.children.extend(spans.into_iter().map(|mut span| {
-            span.language.clone_from(&self.language);
+            span.set_language(&self.language, self.layout_policy);
             span
         }));
     }
@@ -2518,6 +2520,8 @@ pub struct TextSpan {
     pub text: String,
     /// Effective paragraph language, copied when the paragraph is decoded.
     pub language: String,
+    /// The paragraph's layout policy, copied with `language`.
+    pub layout_policy: TextLayoutPolicy,
     pub font_family: FontFamily,
     pub font_size: f32,
     pub line_height: f32,
@@ -2554,6 +2558,7 @@ impl Default for TextSpan {
         Self {
             text: String::default(),
             language: String::new(),
+            layout_policy: TextLayoutPolicy::Plain,
             font_family: FontFamily::new(Uuid::nil(), 400, FontStyle::Normal),
             font_size: 14.0,
             line_height: 1.2,
@@ -2686,17 +2691,20 @@ impl TextSpan {
             + self.annotation_side_room_em(AnnotationSide::Under, false)
     }
 
+    /// Sets the shaping language and the layout policy of its paragraph.
+    pub fn set_language(&mut self, language: &str, policy: TextLayoutPolicy) {
+        self.language.clear();
+        self.language.push_str(language);
+        self.layout_policy = policy;
+    }
+
     pub fn emphasis_side(&self, vertical: bool) -> AnnotationSide {
-        self.text_emphasis_position.side(
-            vertical,
-            super::text_policy::TextLayoutPolicy::for_language(&self.language, false).is_chinese(),
-        )
+        self.text_emphasis_position
+            .side(vertical, self.layout_policy)
     }
 
     pub fn underline_below_ink(&self) -> bool {
-        self.text_underline_position.below_ink(
-            super::text_policy::TextLayoutPolicy::for_language(&self.language, false).is_chinese(),
-        )
+        self.text_underline_position.below_ink(self.layout_policy)
     }
 
     /// Only readings on the same side stack with emphasis marks.
@@ -2718,8 +2726,7 @@ impl TextSpan {
         };
         let positioned = self.text_underline_position != TextUnderlinePosition::Auto
             || self.text_emphasis_position != TextEmphasisPosition::Auto
-            || super::text_policy::TextLayoutPolicy::for_language(&self.language, false)
-                .is_chinese();
+            || self.layout_policy.uses_clreq_positions();
         if self.annotation_clearance.is_auto() && underline && positioned && side == underline_side
         {
             0.18

@@ -2,6 +2,7 @@ use skia_safe::{self as skia, textlayout, Font, FontMgr};
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 use crate::error::{Error, Result};
+use crate::shapes::text_policy::LanguageTag;
 use crate::shapes::{FontFamily, FontStyle};
 use crate::uuid::Uuid;
 
@@ -47,24 +48,25 @@ impl CjkFace {
     /// tag) expects, best first. Without a CJK language, kana or hangul in
     /// `text` decide.
     fn preferred(language: &str, text: &str) -> &'static [Self] {
-        let mut subtags = language.split(['-', '_']).map(str::to_ascii_lowercase);
-        match subtags.next().as_deref() {
-            Some("ja") => &[Self::Japanese],
-            Some("ko") => &[Self::Korean],
-            Some("zh") => {
-                let subtags: Vec<String> = subtags.collect();
-                let has = |tag: &str| subtags.iter().any(|subtag| subtag == tag);
-                if has("hk") || has("mo") {
-                    &[Self::HongKongChinese, Self::TraditionalChinese]
-                } else if has("tw") || has("hant") {
-                    &[Self::TraditionalChinese, Self::HongKongChinese]
-                } else {
-                    &[Self::SimplifiedChinese]
-                }
+        let tag = LanguageTag::parse(language);
+        if tag.is("ja") {
+            &[Self::Japanese]
+        } else if tag.is("ko") {
+            &[Self::Korean]
+        } else if tag.is("zh") {
+            if tag.has_region(&["HK", "MO"]) {
+                &[Self::HongKongChinese, Self::TraditionalChinese]
+            } else if tag.has_region(&["TW"]) || tag.has_script("Hant") {
+                &[Self::TraditionalChinese, Self::HongKongChinese]
+            } else {
+                &[Self::SimplifiedChinese]
             }
-            _ if text.chars().any(is_kana) => &[Self::Japanese],
-            _ if text.chars().any(is_hangul) => &[Self::Korean],
-            _ => &[],
+        } else if text.chars().any(is_kana) {
+            &[Self::Japanese]
+        } else if text.chars().any(is_hangul) {
+            &[Self::Korean]
+        } else {
+            &[]
         }
     }
 }

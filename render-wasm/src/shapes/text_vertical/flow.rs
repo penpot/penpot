@@ -354,10 +354,10 @@ pub(super) fn plan_pairwise_columns(
         };
         if cursor > 0.0 && cursor + flow.cell.extent - hang > max_height + FIT_TOLERANCE {
             let candidate = unit_start[i];
-            let end = if policy == TextLayoutPolicy::KoreanSpacesOnly {
-                i + 1
-            } else {
+            let end = if policy.measures_whole_unit() {
                 unit_end[i]
+            } else {
+                i + 1
             };
             let fits_empty = prefix[end] - prefix[candidate] <= max_height + FIT_TOLERANCE;
             let break_at = if candidate > column_start && fits_empty {
