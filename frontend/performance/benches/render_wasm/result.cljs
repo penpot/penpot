@@ -10,6 +10,7 @@
    [app.common.schema :as sm]
    [app.common.transit :as transit]
    [benches.render-wasm.codec :as codec]
+   [benches.render-wasm.errors :as errors]
    [benches.render-wasm.features.plan :as feature-plan]
    [benches.render-wasm.quantities :as quantities]
    [benches.render-wasm.report.analysis :as analysis]))
@@ -46,7 +47,7 @@
    [:effective-graphics {:optional true} map?]
    [:diagnostics map?]
    [:phases [:vector schema:phase]]
-   [:failure {:optional true} map?]])
+   [:failure {:optional true} errors/schema:diagnostic]])
 
 (def schema:attempt
   "One chronological execution; failure consumes a slot and may retain evidence."
@@ -57,7 +58,7 @@
    [:warmup? boolean?]
    [:outcome [:enum :completed :failed]]
    [:phases [:vector schema:phase]]
-   [:failure {:optional true} map?]
+   [:failure {:optional true} errors/schema:diagnostic]
    [:partial {:optional true} map?]])
 
 (def schema:metadata
@@ -70,16 +71,19 @@
             [:environment {:optional true} [:map-of :string :string]]]]
    [:environment map?]
    [:scored? boolean?]
-   [:diagnostics {:optional true} map?]])
+   [:diagnostics {:optional true}
+    [:map [:failures {:optional true} [:vector errors/schema:diagnostic]]]]])
 
 (def schema:termination
   "A run's current state or final reason, with optional diagnostic details."
-  [:map [:reason keyword?]])
+  [:map
+   [:reason keyword?]
+   [:failure {:optional true} errors/schema:diagnostic]])
 
 (def schema:case-outcome
   [:map {:closed true}
    [:outcome [:enum :completed :failed :timed-out :interrupted]]
-   [:failure {:optional true} map?]])
+   [:failure {:optional true} errors/schema:diagnostic]])
 
 (def schema:run
   "schema:run stores saved case definitions, independent of any registry.
@@ -194,7 +198,7 @@
       [:run {:optional true} [:map [:run-id string?] [:record-path string?] [:log-path string?]
                               [:exit-code {:optional true} :int]]]
       [:effective-features {:optional true} [:vector string?]]
-      [:failure {:optional true} :map]
+      [:failure {:optional true} errors/schema:diagnostic]
       [:reason {:optional true} string?]]]]
    [:edges
     [:vector
@@ -202,7 +206,9 @@
       [:from string?] [:to string?] [:feature string?]
       [:status [:enum :planned :completed :failed :unattempted]]
       [:path {:optional true} string?]
-      [:failure {:optional true} :map]
+      [:failure {:optional true}
+       [:or errors/schema:diagnostic
+        [:map {:closed true} [:unacknowledged-differences [:int {:min 1}]]]]]
       [:reason {:optional true} string?]]]]
    [:warnings [:vector string?]]])
 

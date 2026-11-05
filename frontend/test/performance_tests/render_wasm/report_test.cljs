@@ -54,7 +54,8 @@
    run (measurement/attempt :saved/pan prep warmup?
                             (cond-> {:status (if (= :completed outcome) "ok" "failed")
                                      :phases phases}
-                              (= :failed outcome) (assoc :message "renderer failed")))))
+                              (= :failed outcome) (assoc :phase (name (:phase (last phases)))
+                                                         :message "renderer failed")))))
 
 (defn- sample-run
   [values]
@@ -223,7 +224,7 @@
   (let [run (-> (new-run 0 1 :reuse)
                 (result/record-preparation
                  (assoc (preparation :prep [(event :test/setup [9])])
-                        :failure {:message "initial Full failed"})))
+                        :failure {:phase "preparation" :message "initial Full failed"})))
         report (first (:cases (summary/summarize run)))
         metric (get-in report [:metrics [:preparation :test/setup :command/elapsed]])]
     (t/is (= {:executions 1 :completed 1 :failed 0 :warmup 0} (get-in report [:phases :preparation])))
@@ -255,7 +256,7 @@
                         initial values)
                 (result/record-attempt
                  (measurement/attempt :saved/pan :prep false
-                                      {:status "failed" :message "render failed"
+                                      {:status "failed" :phase "main" :message "render failed"
                                        :cause [{:message "WASM trap"}]
                                        :partial {:clock js/NaN}
                                        :phases [(assoc (block :main :prep [(event :test/pan [99])])
@@ -294,7 +295,7 @@
   (let [failed (-> (new-run 0 1 :reuse)
                    (result/record-preparation {:preparation-id :prep :case-id :saved/pan :warmup? false
                                                :diagnostics {} :phases []
-                                               :failure {:message "setup failed"}})
+                                               :failure {:phase "preparation" :message "setup failed"}})
                    (result/finish-run "end" {:reason :preparation-error}))]
     (t/is (str/includes? (format/format-run (summary/summarize (result/decode (result/encode failed))))
                          "setup failed"))))
@@ -409,7 +410,7 @@
                 (result/record-preparation
                  (-> (preparation :prep [(event :test/setup [9])])
                      (dissoc :fingerprint :effective-graphics)
-                     (assoc :failure {:message "setup failed"}))))]
+                     (assoc :failure {:phase "preparation" :message "setup failed"}))))]
     (doseq [options [{} {:allow-scene-differences true}]]
       (t/is (= ::compare/incompatible (error-type #(compare/compare-runs run run options)))))
     (let [report (compare/compare-runs run run {:allow-all-differences true})]
@@ -422,7 +423,7 @@
     (doseq [bad [(assoc-in run [:attempts 0 :attempt-id] 3)
                  (assoc-in run [:attempts 0 :phases] [])
                  (assoc-in run [:preparations 0 :phases] [])
-                 (assoc-in run [:preparations 0 :failure] {:message "setup failed"})
+                 (assoc-in run [:preparations 0 :failure] {:phase "preparation" :message "setup failed"})
                  (update-in run [:attempts 0] assoc :outcome :failed
                             :phases [(assoc (block :main :prep []) :outcome :failed)
                                      (block :reset :prep [])])
@@ -433,6 +434,30 @@
                  (assoc-in run [:remaining :saved/pan :repetitions] 2)]]
       (t/is (= ::result/invalid-record
                (error-type #(result/decode (transit/encode-str bad))))))))
+
+(t/deftest saved-failures-reject-malformed-diagnostics
+  (let [diagnostic {:phase "main" :message "renderer failed"}
+        failed-preparation (-> (new-run 0 1 :reuse)
+                               (result/record-preparation (assoc (preparation :prep []) :failure diagnostic))
+                               (result/finish-run "end" {:reason :failed})
+                               result/encode result/decode)
+        failed-attempt (-> (new-run 0 1 :reuse)
+                           (result/record-preparation (preparation :prep []))
+                           (add-attempt :prep false :failed [(assoc (block :main :prep []) :outcome :failed)])
+                           (result/record-case-outcome :saved/pan {:outcome :failed :failure diagnostic})
+                           (result/finish-run "end" {:reason :failed :failure diagnostic})
+                           (assoc-in [:metadata :diagnostics :failures] [diagnostic])
+                           result/encode result/decode)]
+    (doseq [[run path] [[failed-preparation [:preparations 0 :failure]]
+                        [failed-attempt [:attempts 0 :failure]]
+                        [failed-attempt [:case-outcomes :saved/pan :failure]]
+                        [failed-attempt [:termination :failure]]
+                        [failed-attempt [:metadata :diagnostics :failures 0]]]
+            invalid [{:phase 42 :message "bad location"}
+                     {:phase "main" :message nil}
+                     {:phase "main" :message "bad cause" :cause [42]}]]
+      (t/is (= ::result/invalid-record
+               (error-type #(result/decode (transit/encode-str (assoc-in run path invalid)))))))))
 
 (t/deftest case-outcomes-validate-completion-and-close-the-recording-boundary
   (let [run (sample-run [1])
