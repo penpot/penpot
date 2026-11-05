@@ -10,7 +10,8 @@ vocabulary that says why the session started.
 - `auth-backend`: `penpot` | `ldap` | `google` | `github` | `gitlab` | `oidc`.
   Same key the profile already uses. Always present.
 - `activation`: `immediate` | `email-verification`. Only on signups.
-- `from-invitation`: boolean. Always present; `(some? (:invitation-token profile))`.
+- `from-invitation`: boolean. Always present in `signin`
+  (`(some? (:invitation-token profile))`); `auth-origin` omits it when `nil`.
 
 `auth-origin` (public, validated against `schema:auth-origin`) drops the nil
 fields and checks with `(assert (sm/check ...))`: it throws in development and
@@ -32,14 +33,17 @@ value can never break a real login. Emitters never call it directly.
 | Flow | `source` | `activation` | `from-invitation` |
 |---|---|---|---|
 | Password login | login | | false |
+| Password login from an invitation link | login | | true |
 | LDAP login | login | | false |
 | Social login, existing active profile | login | | false |
 | Signup, email verification disabled | register | immediate | false |
 | Signup, email verification enabled | register | email-verification | false |
 | Social signup, active profile | register | immediate | false |
 | Social signup, inactive profile | register | email-verification | false |
-| Signup from an invitation link | register | immediate | true |
+| Signup from an invitation link, email verification disabled | register | immediate | true |
+| Signup from an invitation link, email verification enabled | register | email-verification | true |
 | Social login from an invitation link | login | | true |
+| Social signup from an invitation link, email verification enabled | register | email-verification | true |
 | LDAP login from an invitation link | login | | true |
 
 LDAP is the explicit exception: the directory provisions the account on the

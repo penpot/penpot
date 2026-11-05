@@ -6,10 +6,39 @@
 
 (ns frontend-tests.data.auth-test
   (:require
+   [app.common.uuid :as uuid]
    [app.main.data.auth :as da]
    [app.main.data.event :as ev]
+   [app.main.data.team :as dtm]
    [beicon.v2.core :as rx]
-   [cljs.test :as t :include-macros true]))
+   [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as async]
+   [potok.v2.core :as ptk]))
+
+;; --- Event runtime helpers
+
+(defn- ^:async watch-events
+  "Runs the `watch` method of `event` with an empty state and the given
+  input `stream`, and returns the events it emits."
+  [event stream]
+  (let [events (atom [])]
+    (await (async/observe (ptk/watch event {} stream)
+                          :on-next #(swap! events conj %)))
+    @events))
+
+(defn- find-data-event
+  "First `ptk/data-event` in `events` whose `::ev/name` is `name`."
+  [events name]
+  (some (fn [event]
+          (when (and (= :app.main.data.event/event (ptk/type event))
+                     (= name (::ev/name (deref event))))
+            event))
+        events))
+
+(defn- navigate-events
+  [events]
+  (filter #(= :app.main.router/navigate (ptk/type %)) events))
+
 
 (t/deftest auth-origin-keeps-only-the-fields-that-apply
   (t/is (= {:source "login" :auth-backend "penpot"}
@@ -92,3 +121,64 @@
       (t/is (= 1 (count events)))
       (t/is (= :auth-verify-token (:id event)))
       (t/is (= {:token "tok"} (:params event))))))
+
+;; --- logged-in: the invitation does not wait for the teams
+
+(t/deftest ^:async logged-in-with-invitation-navigates-to-token-verification
+  (let [logged-in     @#'da/logged-in
+        origin-meta   @#'da/origin-meta
+        profile       (with-meta {:id (uuid/next)
+                                  :auth-backend "penpot"
+                                  :invitation-token "tok"}
+                        (origin-meta {:source "login"}))
+        ;; The teams arrive: the invitation must not be diverted to the
+        ;; default team dashboard.
+        teams-fetched (ptk/data-event ::dtm/teams-fetched [])
+        events        (await (watch-events (logged-in profile)
+                                           (rx/of teams-fetched)))
+        navs          (navigate-events events)
+        nav           (some-> (first navs) deref)
+        signin        (some-> (find-data-event events "signin") deref)]
+    (t/is (= 1 (count navs)))
+    (t/is (= :auth-verify-token (:id nav)))
+    (t/is (= {:token "tok"} (:params nav)))
+    (t/is (not-any? #(= :app.main.data.common/go-to-dashboard-recent (ptk/type %))
+                    events))
+    (t/is (true? (:from-invitation signin)))))
+
+(t/deftest ^:async logged-in-without-invitation-goes-to-the-dashboard
+  (let [logged-in     @#'da/logged-in
+        origin-meta   @#'da/origin-meta
+        profile       (with-meta {:id (uuid/next) :auth-backend "penpot"}
+                        (origin-meta {:source "login"}))
+        teams-fetched (ptk/data-event ::dtm/teams-fetched [])
+        events        (await (watch-events (logged-in profile)
+                                           (rx/of teams-fetched)))]
+    (t/is (empty? (navigate-events events)))
+    (t/is (some #(= :app.main.data.common/go-to-dashboard-recent (ptk/type %))
+                events))))
+
+;; --- login-from-token: the invitation token survives the decoration
+
+(t/deftest ^:async login-from-token-with-invitation-keeps-the-token
+  (let [[event] (await (watch-events
+                        (da/login-from-token
+                         {:profile {:id (uuid/next) :auth-backend "penpot"}
+                          :iss :auth
+                          :invitation-token "tok"})
+                        (rx/empty)))
+        events  (await (watch-events event (rx/empty)))
+        signin  (some-> (find-data-event events "signin") deref)]
+    (t/is (= :app.main.data.auth/logged-in (ptk/type event)))
+    (t/is (= "login" (:source signin)))
+    (t/is (true? (:from-invitation signin)))))
+
+(t/deftest ^:async login-from-token-without-invitation-has-no-invitation
+  (let [[event] (await (watch-events
+                        (da/login-from-token
+                         {:profile {:id (uuid/next) :auth-backend "penpot"}
+                          :iss :auth})
+                        (rx/empty)))
+        events  (await (watch-events event (rx/empty)))
+        signin  (some-> (find-data-event events "signin") deref)]
+    (t/is (false? (:from-invitation signin)))))
