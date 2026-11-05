@@ -332,18 +332,28 @@
   "Give the new head of a swap, and its subtree, the flips and the rotation
   of the shape it replaces, around the head's own center. They come from
   its parent, as when the parent is rotated, and are not overrides. The
-  turned head takes the place of the old one at their first corner, so it
-  turns rigidly with its parent."
+  turned or flipped head takes the place of the old one at their first
+  corner, so it turns rigidly with its parent, also when it already has
+  the old one's orientation."
   [changes new-shape shape]
-  (if-let [orient (cll/orient-like new-shape shape (gsh/shape->center new-shape))]
-    (let [ids   (cfh/get-children-ids-with-self (pcb/get-objects changes) (:id new-shape))
-          delta (gpt/subtract (first (:points shape)) (first (:points (orient new-shape))))]
+  (let [orient (cll/orient-like new-shape shape (gsh/shape->center new-shape))
+        ids    (cfh/get-children-ids-with-self (pcb/get-objects changes) (:id new-shape))
+        delta  (gpt/subtract (first (:points shape))
+                             (first (:points (cond-> new-shape (some? orient) (orient)))))]
+    (cond
+      (some? orient)
       (pcb/update-shapes changes ids
                          (cond->> orient
                            (not (gpt/almost-zero? delta))
                            (comp #(gsh/move % delta)))
-                         {:ignore-touched true}))
-    changes))
+                         {:ignore-touched true})
+
+      (and (not (gmt/unit? (or (:transform shape) (gmt/matrix))))
+           (not (gpt/almost-zero? delta)))
+      (pcb/update-shapes changes ids #(gsh/move % delta) {:ignore-touched true})
+
+      :else
+      changes)))
 
 (defn- generate-swap-in-copy
   "A swap inside a copy keeps the position: the new head takes the place of

@@ -1160,3 +1160,12 @@
                                     :layout-item-margins false :grid-square false :grid-empty false}]
                        :ops [[:delete 0] [:restore 0] [:undo 0 0 0 0] [:delete 11] [:restore 11]
                              [:delete 1 0 0 0] [:delete 3 0 0 0] [:rotate 4 0 0 0] [:detach 11 0 0 0]]}))))
+
+(t/deftest generated-switch-keeps-a-flipped-heads-first-corner
+  ;; both variant mains are flipped; a flipped nested copy switches to the
+  ;; wider variant and keeps its first corner, its top right
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:transform 1 4 0 0] [:delete 5 0 0 0] [:delete 0] [:restore 0]
+                             [:transform 1 4 0 0] [:switch 0 0 0 0]]}))))
