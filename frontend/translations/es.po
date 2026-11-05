@@ -180,71 +180,83 @@ msgstr "No se encuentra miembros con @%s"
 msgid "common.publish"
 msgstr "Publicar"
 
-#: src/app/main/ui/viewer/share_link.cljs:304, src/app/main/ui/viewer/share_link.cljs:314
+#: src/app/main/ui/viewer/share_link.cljs:43, src/app/main/ui/viewer/share_link.cljs:366, src/app/main/ui/viewer/share_link.cljs:376
 msgid "common.share-link.all-users"
 msgstr "Todo usario de Penpot"
 
-#: src/app/main/ui/viewer/share_link.cljs:198
+#: src/app/main/ui/viewer/share_link.cljs:272
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "¿Estas seguro que quieres eliminar el enlace? Si lo haces, el enlace dejara "
 "de funcionar para cualquiera"
 
-#: src/app/main/ui/viewer/share_link.cljs:259, src/app/main/ui/viewer/share_link.cljs:289
+#: src/app/main/ui/viewer/share_link.cljs:71, src/app/main/ui/viewer/share_link.cljs:321, src/app/main/ui/viewer/share_link.cljs:351
 msgid "common.share-link.current-tag"
 msgstr "(actual)"
 
-#: src/app/main/ui/viewer/share_link.cljs:207, src/app/main/ui/viewer/share_link.cljs:214
+#: src/app/main/ui/viewer/share_link.cljs:74, src/app/main/ui/viewer/share_link.cljs:257, src/app/main/ui/viewer/share_link.cljs:281
 msgid "common.share-link.destroy-link"
 msgstr "Eliminar enlace"
 
-#: src/app/main/ui/viewer/share_link.cljs:221
+#: src/app/main/data/common.cljs:73
+msgid "common.share-link.destroy-not-owner"
+msgstr "Sólo puedes eliminar los enlaces que has creado."
+
+#: src/app/main/ui/viewer/share_link.cljs:261
 msgid "common.share-link.get-link"
 msgstr "Obtener enlace"
 
-#: src/app/main/ui/viewer/share_link.cljs:137
+#: src/app/main/ui/viewer/share_link.cljs:195
 msgid "common.share-link.link-copied-success"
 msgstr "Enlace copiado satisfactoriamente"
 
-#: src/app/main/ui/viewer/share_link.cljs:231
+#: src/app/main/ui/viewer/share_link.cljs:83
+msgid "common.share-link.links-title"
+msgstr "Enlaces de este archivo"
+
+#: src/app/main/ui/viewer/share_link.cljs:293
 msgid "common.share-link.manage-ops"
 msgstr "Gestionar permisos"
 
-#: src/app/main/ui/viewer/share_link.cljs:277
+#: src/app/main/ui/viewer/share_link.cljs:59
+msgid "common.share-link.no-pages"
+msgstr "Sin páginas"
+
+#: src/app/main/ui/viewer/share_link.cljs:339
 msgid "common.share-link.page-shared"
 msgid_plural "common.share-link.page-shared"
 msgstr[0] "1 página compartida"
 msgstr[1] "%s páginas compartidas"
 
-#: src/app/main/ui/viewer/share_link.cljs:298
+#: src/app/main/ui/viewer/share_link.cljs:63, src/app/main/ui/viewer/share_link.cljs:360
 msgid "common.share-link.permissions-can-comment"
 msgstr "Pueden comentar"
 
-#: src/app/main/ui/viewer/share_link.cljs:308
+#: src/app/main/ui/viewer/share_link.cljs:67, src/app/main/ui/viewer/share_link.cljs:370
 msgid "common.share-link.permissions-can-inspect"
 msgstr "Pueden ver código"
 
-#: src/app/main/ui/viewer/share_link.cljs:193
+#: src/app/main/ui/viewer/share_link.cljs:252
 msgid "common.share-link.permissions-hint"
 msgstr "Cualquiera con el enlace puede acceder"
 
-#: src/app/main/ui/viewer/share_link.cljs:241
+#: src/app/main/ui/viewer/share_link.cljs:56, src/app/main/ui/viewer/share_link.cljs:303
 msgid "common.share-link.permissions-pages"
 msgstr "Páginas compartidas"
 
-#: src/app/main/ui/viewer/share_link.cljs:183
+#: src/app/main/ui/viewer/share_link.cljs:243
 msgid "common.share-link.placeholder"
 msgstr "El enlace para compartir aparecerá aquí"
 
-#: src/app/main/ui/viewer/share_link.cljs:303, src/app/main/ui/viewer/share_link.cljs:313
+#: src/app/main/ui/viewer/share_link.cljs:44, src/app/main/ui/viewer/share_link.cljs:365, src/app/main/ui/viewer/share_link.cljs:375
 msgid "common.share-link.team-members"
 msgstr "Sólo integrantes del equipo"
 
-#: src/app/main/ui/viewer/share_link.cljs:171
+#: src/app/main/ui/viewer/share_link.cljs:230
 msgid "common.share-link.title"
 msgstr "Compartir prototipos"
 
-#: src/app/main/ui/viewer/share_link.cljs:269
+#: src/app/main/ui/viewer/share_link.cljs:331
 msgid "common.share-link.view-all"
 msgstr "Selecctionar todas"
 
