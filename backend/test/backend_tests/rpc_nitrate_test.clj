@@ -1197,7 +1197,7 @@
                                  :sso-active? true
                                  :set-team-params set-team-params})
                   teams/initialize-user-in-organization (fn [& _] nil)
-                  eml/send (fn [_cfg params] (swap! sent conj params))]
+                  eml/send-template (fn [_cfg params] (swap! sent conj params))]
       (let [out (th/command! {::th/type :add-team-to-organization
                               ::rpc/profile-id (:id owner)
                               :team-id (:id team)
@@ -1214,7 +1214,7 @@
       (t/is (= #{"member302@example.com"} emails))
       (doseq [email-params @sent]
         (t/is (= organization-name (:organization-name email-params)))
-        (t/is (= eml/organization-setup-sso (::eml/factory email-params)))))))
+        (t/is (= "organization-setup-sso" (::eml/template email-params)))))))
 
 (t/deftest add-team-to-organization-deletes-external-invitations-for-unregistered-users
   (let [owner      (th/create-profile* 305 {:is-active true
@@ -1328,7 +1328,7 @@
                                  :team-id (:id team)
                                  :sso-active? false})
                   teams/initialize-user-in-organization (fn [& _] nil)
-                  eml/send (fn [_cfg params] (swap! sent conj params))]
+                  eml/send-template (fn [_cfg params] (swap! sent conj params))]
       (let [out (th/command! {::th/type :add-team-to-organization
                               ::rpc/profile-id (:id owner)
                               :team-id (:id team)
