@@ -197,12 +197,24 @@
   ([objects bounds ignore-constraints modif-tree shapes]
    (reduce #(set-modifiers-layout objects bounds ignore-constraints %1 %2) modif-tree shapes)))
 
+(defn- current-transform
+  "The transform and its inverse of the shape `id` as the modifiers being
+   calculated leave it in `bounds`, or as it is stored in `objects`."
+  [objects bounds id]
+  (if-let [points (some-> (get bounds id) deref)]
+    (let [[_ transform transform-inverse] (gtr/calculate-geometry points)]
+      [(or transform (gmt/matrix)) (or transform-inverse (gmt/matrix))])
+    (let [shape (get objects id)]
+      [(or (:transform shape) (gmt/matrix)) (or (:transform-inverse shape) (gmt/matrix))])))
+
 (defn- turned-in-parent?
-  "Whether the axes of `shape` are turned against those of `parent`, so that
-   a size along one of them does not follow a size along the other."
-  [shape parent]
-  (let [{:keys [b c]} (gmt/multiply (or (:transform-inverse parent) (gmt/matrix))
-                                    (or (:transform shape) (gmt/matrix)))]
+  "Whether the axes of the shape `id` are turned against those of its parent,
+   as the modifiers being calculated leave them, so that a size along one of
+   them does not follow a size along the other."
+  [objects bounds id]
+  (let [[transform _]     (current-transform objects bounds id)
+        [_ parent-inverse] (current-transform objects bounds (get-in objects [id :parent-id]))
+        {:keys [b c]}     (gmt/multiply parent-inverse transform)]
     (not (and (mth/close? b 0 0.0001) (mth/close? c 0 0.0001)))))
 
 (defn- calc-auto-modifiers
@@ -213,6 +225,8 @@
   [objects bounds parent]
   (let [parent-id     (:id parent)
         parent-bounds (get bounds parent-id)
+        ;; the frame the modifiers being calculated leave the shape in
+        [transform transform-inverse] (current-transform objects bounds parent-id)
 
         set-parent-auto-width
         (fn [modifiers auto-width]
@@ -220,7 +234,7 @@
                 current-width  (gpo/width-points @parent-bounds)
                 scale-width   (/ auto-width current-width)]
             (-> modifiers
-                (ctm/resize (gpt/point scale-width 1) origin (:transform parent) (:transform-inverse parent)))))
+                (ctm/resize (gpt/point scale-width 1) origin transform transform-inverse))))
 
         set-parent-auto-height
         (fn [modifiers auto-height]
@@ -228,14 +242,14 @@
                 current-height (gpo/height-points @parent-bounds)
                 scale-height (/ auto-height current-height)]
             (-> modifiers
-                (ctm/resize (gpt/point 1 scale-height) origin (:transform parent) (:transform-inverse parent)))))
+                (ctm/resize (gpt/point 1 scale-height) origin transform transform-inverse))))
 
         children (->> (cfh/get-immediate-children objects parent-id)
                       (remove ctl/position-absolute?)
                       (remove gco/invalid-geometry?))
 
         grid-fill?   (and (ctl/grid-layout? objects (:parent-id parent))
-                          (not (turned-in-parent? parent (get objects (:parent-id parent)))))
+                          (not (turned-in-parent? objects bounds parent-id)))
         auto?        (or (ctl/auto? parent)
                          (and grid-fill? (ctl/fill? parent)))
         auto-width?  (or (ctl/auto-width? parent)
