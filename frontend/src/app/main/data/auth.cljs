@@ -31,6 +31,36 @@
   [{:keys [id]}]
   (and (uuid? id) (not= id uuid/zero)))
 
+;; --- AUTH ORIGIN
+
+(def schema:auth-origin
+  [:map
+   [:source          [:enum "login" "register"]]
+   [:auth-backend    [:enum "penpot" "ldap" "google" "github" "gitlab" "oidc"]]
+   [:activation      {:optional true} [:enum "immediate" "email-verification"]]
+   [:from-invitation {:optional true} :boolean]])
+
+(defn auth-origin
+  "Canonical description of how an auth flow happened. The fields that
+  do not apply are omitted: a login carries no `:activation`."
+  [{:keys [source auth-backend activation from-invitation]}]
+  (let [origin (d/without-nils
+                {:source          source
+                 :auth-backend    auth-backend
+                 :activation      activation
+                 :from-invitation from-invitation})]
+    (assert (sm/check schema:auth-origin origin) "invalid auth-origin")
+    origin))
+
+(defn- profile-origin
+  [profile]
+  (let [m (meta profile)]
+    (auth-origin
+     {:source          (::ev/source m)
+      :activation      (::ev/activation m)
+      :auth-backend    (:auth-backend profile)
+      :from-invitation (some? (:invitation-token profile))})))
+
 ;; --- EVENT: login
 
 (defn- logged-in
@@ -71,15 +101,15 @@
 
               ;; We schedule this event to be executed a bit later,
               ;; when the profile is already set
-              (->> (rx/of (ev/event {::ev/name "signin"
-                                     ::ev/type "identify"
-                                     :id (:id profile)
-                                     :email (:email profile)
-                                     :auth-backend (:auth-backend profile)
-                                     :fullname (:fullname profile)
-                                     :is-muted (:is-muted profile)
-                                     :default-team-id (:default-team-id profile)
-                                     :default-project-id (:default-project-id profile)}))
+              (->> (rx/of (ev/event (merge {::ev/name "signin"
+                                            ::ev/type "identify"
+                                            :id (:id profile)
+                                            :email (:email profile)
+                                            :fullname (:fullname profile)
+                                            :is-muted (:is-muted profile)
+                                            :default-team-id (:default-team-id profile)
+                                            :default-project-id (:default-project-id profile)}
+                                           (profile-origin profile))))
                    (rx/observe-on :async))
 
 
