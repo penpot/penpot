@@ -1,8 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-10-25 19:51+0000\n"
-"Last-Translator: Danial Shirali "
-"<danialshirali16@users.noreply.hosted.weblate.org>\n"
+"PO-Revision-Date: 2026-11-05 22:19+0000\n"
+"Last-Translator: Andrey Antukh <niwinz@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
 "fa/>\n"
 "Language: fa\n"
@@ -10,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 2026.11.dev0\n"
+"X-Generator: Weblate 2026.11.2.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:191, src/app/main/ui/viewer/login.cljs:119
 msgid "auth.already-have-account"
@@ -1687,12 +1686,13 @@ msgid "errors.registration-disabled"
 msgstr "ثبت‌نام در حال حاضر غیرفعال است."
 
 #: src/app/main/errors.cljs:538
+#, fuzzy
 msgid "errors.save-failed"
 msgstr ""
-"آخرین تغییرات شما هنوز به‌عنوان ذخیره‌شده تأیید نشده‌اند. ممکن است "
-"ذخیره‌سازی به‌طور خودکار از سر گرفته نشود. این زبانه را نبندید یا بارگیری "
-"مجدد نکنید؛ در غیر این صورت ممکن است تغییراتتان را از دست بدهید. برای "
-"دریافت کمک با پشتیبانی تماس بگیرید."
+"آخرین تغییرات شما هنوز به‌عنوان ذخیره‌شده تأیید نشده‌اند. ممکن است ذخیره‌سازی "
+"به‌طور خودکار از سر گرفته نشود. این زبانه را نبندید یا بارگیری مجدد نکنید؛ در "
+"غیر این صورت ممکن است تغییراتتان را از دست بدهید. برای دریافت کمک با "
+"پشتیبانی تماس بگیرید."
 
 #: src/app/main/errors.cljs:764
 msgid "errors.svg-parser.invalid-svg"
@@ -2064,10 +2064,12 @@ msgid "generic.error"
 msgstr "خطایی رخ داده است"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:161
+#, fuzzy
 msgid "import-shortcuts.apply"
 msgstr "اعمال"
 
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:102
+#, fuzzy
 msgid "import-shortcuts.diff-modal-text"
 msgstr "میانبرهای زیر با پیکربندی درون‌ریزی‌شده تغییر خواهند کرد."
 
@@ -4592,14 +4594,17 @@ msgid "restore-shortcuts.action"
 msgstr "اقدام"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:94
+#, fuzzy
 msgid "restore-shortcuts.modal-text"
 msgstr "میانبرهای زیر به مقادیر پیش‌فرض خود بازیابی خواهند شد."
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:90
+#, fuzzy
 msgid "restore-shortcuts.modal-title"
 msgstr "بازیابی پیکربندی پیش‌فرض"
 
 #: src/app/main/ui/settings/restore_shortcuts_modal.cljs:170
+#, fuzzy
 msgid "restore-shortcuts.restore"
 msgstr "بازیابی"
 
@@ -4792,18 +4797,23 @@ msgid "shortcuts.duplicate"
 msgstr "تکثیر"
 
 #: src/app/main/ui/shortcuts.cljs:645
+#, fuzzy
 msgid "shortcuts.edit-modal.conflict"
-msgstr "این ترکیب به «%s» اختصاص داده شده است. ذخیره کردن آن را از آنجا حذف می‌کند."
+msgstr ""
+"این ترکیب به «%s» اختصاص داده شده است. ذخیره کردن آن را از آنجا حذف می‌کند."
 
 #: src/app/main/ui/shortcuts.cljs:636
+#, fuzzy
 msgid "shortcuts.edit-modal.reset-pending"
 msgstr "اگر ذخیره کنید، این میانبر به مقدار اصلی برمی‌گردد:"
 
 #: src/app/main/ui/shortcuts.cljs:647
+#, fuzzy
 msgid "shortcuts.edit-modal.success"
 msgstr "این ترکیب کلید در دسترس است و می‌توان آن را بدون تداخل اختصاص داد."
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:157
+#, fuzzy
 msgid "shortcuts.edit-on-settings"
 msgstr "سفارشی‌سازی در تنظیمات"
 
@@ -4836,10 +4846,12 @@ msgid "shortcuts.flip-vertical"
 msgstr "حرکت عمودی"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:263
+#, fuzzy
 msgid "shortcuts.font-size-dec"
 msgstr "کاهش اندازهٔ فونت"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:256
+#, fuzzy
 msgid "shortcuts.font-size-inc"
 msgstr "افزایش اندازهٔ فونت"
 
@@ -4888,6 +4900,7 @@ msgid "shortcuts.join-nodes"
 msgstr "اتصال گره‌ها"
 
 #: src/app/main/ui/shortcuts.cljs:624
+#, fuzzy
 msgid "shortcuts.key-combo"
 msgstr "ترکیب کلید را فشار دهید"
 
@@ -4956,18 +4969,22 @@ msgid "shortcuts.next-frame"
 msgstr "آرت‌بورد بعدی"
 
 #: src/app/main/ui/settings/shortcuts.cljs:510
+#, fuzzy
 msgid "shortcuts.no-disabled"
 msgstr "میانبر غیرفعالی وجود ندارد"
 
 #: src/app/main/ui/settings/shortcuts.cljs:500
+#, fuzzy
 msgid "shortcuts.no-personalized"
 msgstr "برای شروع سفارشی‌سازی میانبرهایتان به بخش «همه» بروید."
 
 #: src/app/main/ui/settings/shortcuts.cljs:242, src/app/main/ui/settings/shortcuts.cljs:491
+#, fuzzy
 msgid "shortcuts.no-shortcuts"
 msgstr "هیچ میانبری با جست‌وجوی شما مطابقت ندارد"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:154
+#, fuzzy
 msgid "shortcuts.not-found"
 msgstr "هیچ میانبری پیدا نشد"
 
@@ -5044,6 +5061,7 @@ msgid "shortcuts.or"
 msgstr " یا "
 
 #: src/app/main/ui/shortcuts.cljs:605, src/app/main/ui/shortcuts.cljs:747
+#, fuzzy
 msgid "shortcuts.overwritten-by"
 msgstr "این میانبر به %s اختصاص داده شده است"
 
@@ -5064,6 +5082,7 @@ msgid "shortcuts.paste-replace"
 msgstr "جای‌گذاری و جایگزینی"
 
 #: src/app/main/ui/settings/shortcuts.cljs:296, src/app/main/ui/settings/shortcuts.cljs:523
+#, fuzzy
 msgid "shortcuts.personalized"
 msgstr "شخصی‌سازی‌شده"
 
@@ -5208,6 +5227,7 @@ msgid "shortcuts.subsection.shape"
 msgstr "شکل‌ها"
 
 #: src/app/main/ui/shortcuts.cljs:143
+#, fuzzy
 msgid "shortcuts.subsection.text-editor"
 msgstr "متن‌ها"
 
@@ -5662,6 +5682,7 @@ msgstr ""
 "بهره‌مند می‌شوید."
 
 #: src/app/main/ui/settings/subscription.cljs:714
+#, fuzzy
 msgid "subscription.settings.member-since"
 msgstr "عضویت در Penpot از: %s"
 
