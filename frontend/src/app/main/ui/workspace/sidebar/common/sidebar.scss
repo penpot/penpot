@@ -43,8 +43,8 @@ $column-number: 8; // total number of columns
 //   -> 8 columns (32px each) + 7 gaps (4px each) = 284px
 
 // Derived widths
-@function grid-width($cols) {
-  @return calc(#{$column-width} * #{$cols} + #{$column-gap} * #{$cols - 1});
+@function grid-width($cols, $col-width: $column-width) {
+  @return calc(#{$col-width} * #{$cols} + #{$column-gap} * #{$cols - 1});
 }
 
 $options-width: grid-width($column-number);
@@ -53,12 +53,27 @@ $three-column-width: grid-width(3);
 $four-column-width: grid-width(4);
 $seven-column-width: grid-width(7);
 
+// Compact mode dimensions
+$compact-sidebar-width: px2rem(240);
+$compact-column-width: px2rem(24);
+$compact-options-width: grid-width($column-number, $compact-column-width);
+$compact-two-column-width: grid-width(2, $compact-column-width);
+$compact-three-column-width: grid-width(3, $compact-column-width);
+$compact-four-column-width: grid-width(4, $compact-column-width);
+$compact-seven-column-width: grid-width(7, $compact-column-width);
+$compact-grid-exception-input-width: calc(
+  #{$compact-column-width} * 3.5 + 3 * #{$column-gap} - (#{$column-gap} / 2)
+);
+$compact-grid-exception-input-width-small: calc(
+  #{$compact-column-width} * 2.5 + 2 * #{$column-gap} - (#{$column-gap} / 2)
+);
+
 // ------------------------------------------------------------
 // Grid mixin — applies the standard structure to any container
 // ------------------------------------------------------------
 @mixin option-grid-structure {
   display: grid;
-  grid-template-columns: repeat(#{$column-number}, #{$column-width});
+  grid-template-columns: repeat(#{$column-number}, var(--column-width, #{$column-width}));
   column-gap: #{$column-gap};
 }
 
@@ -109,6 +124,7 @@ $grid-exception-input-width-small: calc(#{$sz-32} * 2.5 + 2 * var(--sp-xs) - (va
 // Make sidebar and layout values accessible to JS/CSS consumers.
 
 :root {
+  --column-width: #{$column-width};
   --left-sidebar-width: #{$left-sidebar-width};
   --left-sidebar-width-max: #{$left-sidebar-width-max};
   --right-sidebar-width: #{$right-sidebar-width};
@@ -120,4 +136,29 @@ $grid-exception-input-width-small: calc(#{$sz-32} * 2.5 + 2 * var(--sp-xs) - (va
   --options-width: #{$options-width};
   --grid-exception-input-width: #{$grid-exception-input-width};
   --grid-exception-input-width-small: #{$grid-exception-input-width-small};
+}
+
+:global(.workspace.compact-mode),
+:global(.compact-mode) {
+  --column-width: #{$compact-column-width};
+  --left-sidebar-width: #{$compact-sidebar-width};
+  --right-sidebar-width: #{$compact-sidebar-width};
+  --two-columns-width: #{$compact-two-column-width};
+  --three-columns-width: #{$compact-three-column-width};
+  --four-columns-width: #{$compact-four-column-width};
+  --seven-columns-width: #{$compact-seven-column-width};
+  --options-width: #{$compact-options-width};
+  --grid-exception-input-width: #{$compact-grid-exception-input-width};
+  --options-padding-inline: #{px2rem(10)};
+  --right-header-min-width: 0;
+  --right-header-gap: var(--sp-xs);
+
+  :global(.left-sidebar),
+  :global(.right-sidebar) {
+    --input-height: #{px2rem(26)};
+    --button-height: #{px2rem(26)};
+    --input-height-override: #{px2rem(26)};
+    --button-height-override: #{px2rem(26)};
+    --button-width-override: #{px2rem(26)};
+  }
 }

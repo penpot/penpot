@@ -10,7 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
-   [app.main.constants :refer [left-sidebar-default-width]]
+   [app.main.constants :refer [left-sidebar-compact-width left-sidebar-default-width]]
    [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
@@ -38,21 +38,23 @@
   (l/derived :vport refs/workspace-local))
 
 (defn- calculate-palette-style
-  [rulers?]
+  [rulers? compact?]
   (let [left-sidebar           (dom/get-element "left-sidebar-aside")
         left-sidebar-size      (-> (dom/get-data left-sidebar "width")
                                    (d/parse-integer))
         rulers-width           (if rulers? 22 0)
-        min-left-sidebar-width left-sidebar-default-width
+        min-left-sidebar-width (if compact? left-sidebar-compact-width left-sidebar-default-width)
         left-padding           4
-        calculate-padding-left (+ rulers-width (or left-sidebar-size min-left-sidebar-width) left-padding 1)]
+        calculate-padding-left (+ rulers-width (or left-sidebar-size min-left-sidebar-width) left-padding 1)
+        right-padding          (if compact? 244 322)]
 
     #js {"paddingLeft" (dm/str calculate-padding-left "px")
-         "paddingRight" "322px"}))
+         "paddingRight" (dm/str right-padding "px")}))
 
 (mf/defc palette*
   [{:keys [layout on-change-size]}]
-  (let [color-palette?   (:colorpalette layout)
+  (let [compact?         (:compact-mode layout)
+        color-palette?   (:colorpalette layout)
         text-palette?    (:textpalette layout)
         hide-palettes?   (:hide-palettes layout)
 
@@ -171,7 +173,7 @@
 
     [:section {:class (stl/css :palette-wrapper)
                :id "palette-wrapper"
-               :style  (calculate-palette-style rulers?)
+               :style  (calculate-palette-style rulers? compact?)
                :aria-label (tr "workspace.toolbar.palette-bar")
                :data-testid "palette"}
      (when-not ^boolean read-only?

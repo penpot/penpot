@@ -33,7 +33,8 @@
     :display-artboard-names
     :snap-ruler-guides
     :show-pixel-grid
-    :snap-pixel-grid})
+    :snap-pixel-grid
+    :compact-mode})
 
 (def presets
   {:assets
@@ -146,7 +147,8 @@
    :colorpalette :app.main.data.workspace/show-colorpalette?
    :textpalette :app.main.data.workspace/show-textpalette?
    :rulers :app.main.data.workspace/show-rulers?
-   :display-comments :app.main.data.workspace/show-comments?})
+   :display-comments :app.main.data.workspace/show-comments?
+   :compact-mode :app.main.data.workspace/compact-mode?})
 
 (defn load-layout-flags
   "Given the current layout flags, and updates them with the data

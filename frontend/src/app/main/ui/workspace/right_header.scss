@@ -17,9 +17,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-inline-size: px2rem(256);
+  min-inline-size: var(--right-header-min-width, px2rem(256));
   padding: var(--sp-s);
-  gap: var(--sp-m);
+  gap: var(--right-header-gap, var(--sp-m));
   background-color: var(--color-background-primary);
 }
 

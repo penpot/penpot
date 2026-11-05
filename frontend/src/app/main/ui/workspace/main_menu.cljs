@@ -484,6 +484,18 @@
                               :on-key-down (fn [event]
                                              (when (kbd/enter? event)
                                                (toggle-flag event)))
+                              :data-testid "compact-mode"
+                              :id          "file-menu-compact-mode"}
+      [:span {:class (stl/css :item-name)}
+       (if (contains? layout :compact-mode)
+         (tr "workspace.header.menu.disable-compact-mode")
+         (tr "workspace.header.menu.enable-compact-mode"))]]
+
+     [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item)
+                              :on-click    toggle-flag
+                              :on-key-down (fn [event]
+                                             (when (kbd/enter? event)
+                                               (toggle-flag event)))
                               :data-testid "hide-ui"
                               :id          "file-menu-hide-ui"}
       [:span {:class (stl/css :item-name)}

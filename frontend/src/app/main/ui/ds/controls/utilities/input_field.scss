@@ -14,7 +14,7 @@
   --input-fg-color: var(--color-foreground-primary);
   --input-icon-color: var(--color-foreground-secondary);
   --input-outline-color: none;
-  --input-height: #{$sz-32};
+  --input-height: var(--input-height-override, #{$sz-32});
   --input-margin: unset;
 
   display: inline-flex;

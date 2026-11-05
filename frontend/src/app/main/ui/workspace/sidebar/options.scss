@@ -49,7 +49,7 @@
 }
 
 .design-options {
-  padding-inline: var(--sp-m);
+  padding-inline: var(--options-padding-inline, var(--sp-m));
 }
 
 .inspect {
