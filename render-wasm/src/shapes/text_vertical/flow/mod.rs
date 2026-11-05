@@ -7,8 +7,10 @@ use crate::shapes::jlreq::{
     aki_class, break_allowed_between, classify, pair_rule, punctuation_aki_sheds, AkiShed,
     JlreqClass,
 };
-use crate::shapes::jlreq::{forbidden_at_line_end, forbidden_at_line_start};
-use crate::shapes::text_allocation::capped_equal_allocations;
+use crate::shapes::jlreq::{forbidden_at_line_end, forbidden_at_line_start, MAX_KINSOKU_SHIFT};
+use crate::shapes::text_allocation::{
+    capped_equal_allocations, jlreq_expansion_gap, jlreq_ordered_expansion,
+};
 use crate::shapes::{LineAdjustment, TextAlign};
 
 use super::layout::{CellKind, VerticalCell};
@@ -209,8 +211,6 @@ fn column_break(
     i: usize,
     max_height: f32,
 ) -> Option<usize> {
-    const MAX_KINSOKU_SHIFT: usize = 4;
-
     let skip_kept = |mut index: usize| {
         while index > column_start && items[index].keep_with_previous {
             index -= 1;
@@ -755,9 +755,8 @@ fn at_column_end(placements: &[(usize, f32)], index: usize) -> bool {
         .is_none_or(|(next_column, _)| *next_column != placements[index].0)
 }
 
-/// Ordered oidashi expansion for justified columns. Stages 1–3 respect the
-/// table caps; stage 4 spreads any remaining slack evenly over every
-/// expandable boundary (JLREQ §3.8.4). Returns each cell's extra flow offset.
+/// Ordered oidashi expansion for justified columns (JLREQ §3.8.4, see
+/// `jlreq_ordered_expansion`). Returns each cell's extra flow offset.
 /// Skips the last column.
 pub(super) fn ordered_expansion_offsets(
     cells: &[FlowCell],
@@ -771,40 +770,20 @@ pub(super) fn ordered_expansion_offsets(
     let mut boundary_expansion = vec![0.0f32; cells.len().saturating_sub(1)];
     for (column, used) in column_used.iter().enumerate().take(last_column) {
         // (boundary, priority, cap)
-        let mut boundaries: Vec<(usize, u8, f32)> = Vec::new();
-        for boundary in 0..cells.len().saturating_sub(1) {
-            if placements[boundary].0 != column || placements[boundary + 1].0 != column {
-                continue;
-            }
-            let Some((before, after)) = boundary_classes(classes, boundary) else {
-                continue;
-            };
-            let rule = pair_rule(before, after);
-            if rule.expand_priority == 0 {
-                continue;
-            }
-            let cap = (rule.maximum_em - pair_spacing_em[boundary]).max(0.0)
-                * boundary_em(cells, boundary);
-            boundaries.push((boundary, rule.expand_priority, cap));
-        }
-        let mut remaining = (max_height - used).max(0.0);
-        for priority in 1..=3 {
-            let caps: Vec<(usize, f32)> = boundaries
-                .iter()
-                .filter(|(_, p, _)| *p == priority)
-                .map(|(boundary, _, cap)| (*boundary, *cap))
-                .collect();
-            let available: f32 = caps.iter().map(|(_, cap)| *cap).sum();
-            for (boundary, expansion) in capped_equal_allocations(&caps, remaining.min(available)) {
-                boundary_expansion[boundary] += expansion;
-                remaining -= expansion;
-            }
-        }
-        if remaining > EPSILON && !boundaries.is_empty() {
-            let extra = remaining / boundaries.len() as f32;
-            for (boundary, _, _) in &boundaries {
-                boundary_expansion[*boundary] += extra;
-            }
+        let boundaries: Vec<(usize, u8, f32)> = (0..cells.len().saturating_sub(1))
+            .filter(|boundary| {
+                placements[*boundary].0 == column && placements[boundary + 1].0 == column
+            })
+            .filter_map(|boundary| {
+                let (before, after) = boundary_classes(classes, boundary)?;
+                let em = boundary_em(cells, boundary);
+                jlreq_expansion_gap(before, after, pair_spacing_em[boundary], em)
+                    .map(|(priority, cap)| (boundary, priority, cap))
+            })
+            .collect();
+        let slack = (max_height - used).max(0.0);
+        for (boundary, expansion) in jlreq_ordered_expansion(&boundaries, slack) {
+            boundary_expansion[boundary] += expansion;
         }
     }
 

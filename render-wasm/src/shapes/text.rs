@@ -686,10 +686,23 @@ impl TextContent {
             return true;
         }
         (uses_japanese_layout(paragraph, &plan.texts)
-            && (self.line_adjustment == LineAdjustment::PushInFirst
-                || paragraph.text_align() == TextAlign::Justify))
+            && (paragraph.text_align() == TextAlign::Justify
+                || self.squeezes_lines(paragraph, plan)))
             || (paragraph.layout_policy().bounded_justify()
                 && paragraph.text_align() == TextAlign::Justify)
+    }
+
+    /// True when line adjustment may squeeze lines of a horizontal Japanese
+    /// paragraph: always under push-in first; under push-out first only
+    /// when some kinsoku run is too long for push-out to resolve, as in
+    /// vertical columns; never under push-out only.
+    fn squeezes_lines(&self, paragraph: &Paragraph, plan: &HorizontalParagraphPlan) -> bool {
+        paragraph.layout_policy().uses_jlreq()
+            && match self.line_adjustment {
+                LineAdjustment::PushInFirst => true,
+                LineAdjustment::PushOutFirst => horizontal_push_out_may_fail(paragraph, plan),
+                LineAdjustment::PushOutOnly => false,
+            }
     }
 
     /// Squeeze sheds and justify spacing of each horizontal paragraph at
@@ -749,10 +762,8 @@ impl TextContent {
             laid_out.layout(plan.layout_width(width));
             laid_out
         };
-        let (sheds, laid_out) = if paragraph.layout_policy().uses_jlreq()
-            && self.line_adjustment == LineAdjustment::PushInFirst
-        {
-            horizontal_squeeze_sheds(paragraph, plan, width, &lay_out)
+        let (sheds, laid_out) = if self.squeezes_lines(paragraph, plan) {
+            horizontal_squeeze_sheds(paragraph, plan, width, self.line_adjustment, &lay_out)
         } else {
             let sheds = vec![Vec::new(); plan.texts.len()];
             let laid_out = lay_out(&sheds, FULL_WINDOW);
@@ -762,7 +773,7 @@ impl TextContent {
             horizontal_pairwise_justify_spacing(paragraph, &laid_out, plan, width)
         } else if paragraph.text_align() == TextAlign::Justify {
             if paragraph.layout_policy().uses_jlreq() {
-                horizontal_jlreq_justify_spacing(&laid_out, plan, width)
+                horizontal_jlreq_justify_spacing(paragraph, &laid_out, plan, width)
             } else {
                 horizontal_pairwise_justify_spacing(paragraph, &laid_out, plan, width)
             }

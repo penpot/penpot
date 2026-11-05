@@ -507,6 +507,15 @@ pub fn forbidden_at_line_end(c: char) -> bool {
     classify(c).forbids_line_end()
 }
 
+/// Most kinsoku pairs oidashi moves a break back over. Past that, pushing
+/// out does not resolve the break, and the line may squeeze instead.
+pub const MAX_KINSOKU_SHIFT: usize = 4;
+
+/// True when kinsoku forbids a break between `before` and `after`.
+pub fn kinsoku_blocks(before: char, after: char) -> bool {
+    forbidden_at_line_end(before) || forbidden_at_line_start(after)
+}
+
 /// Whether a line may break between two adjacent characters: the pair table
 /// (kinsoku, Western and numeral runs) plus `keeps_together`.
 pub fn break_allowed_between(before: char, after: char) -> bool {
