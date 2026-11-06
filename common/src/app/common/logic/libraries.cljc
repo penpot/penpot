@@ -2094,16 +2094,16 @@
       plus)))
 
 (defn orient-like
-  "Turn the subtree of `head` around `center` to match `target`'s matrix.
-   Compose flip flags with the roots, independent of rotation step size."
+  "Turn the subtree of `head` around `center` so its axes point like
+   `target`'s; the lengths of the axes are left to constraints. Compose flip
+   flags with the roots, independent of rotation step size."
   [head target center]
   (let [flip-x? (not= (boolean (:flip-x head)) (boolean (:flip-x target)))
         flip-y? (not= (boolean (:flip-y head)) (boolean (:flip-y target)))]
     (when-not (and (= (:transform head) (:transform target))
                    (mth/close? (or (:rotation head) 0) (or (:rotation target) 0) 0.01)
                    (not flip-x?) (not flip-y?))
-      (let [relative (gmt/multiply (or (:transform target) (gmt/matrix))
-                                   (or (:transform-inverse head) (gmt/matrix)))
+      (let [relative (gmt/multiply (axes-matrix target) (gmt/inverse (axes-matrix head)))
             transform (gmt/transform-in center relative)
             turned (gsh/apply-transform head transform)
             angle (- (or (:rotation target) 0) (or (:rotation turned) 0))]

@@ -1268,3 +1268,14 @@
                              [:update-main 10] [:undo 0 0 0 0] [:nest 19 0 0 0] [:detach 1 0 0 0]
                              [:detach 2 0 0 0] [:delete 23 0 0 0] [:restore 3 0 0 0] [:swap 13 0 0 0]
                              [:nest 21 0 0 0]]}))))
+
+(t/deftest generated-tiny-copy-in-a-resized-turned-main-keeps-its-children-size
+  ;; a turned main resized past the minimum size of a nested 0.01 px copy
+  ;; leaves a scale in that copy's transform; a full sync turns its children
+  ;; without that scale, as the settled sync does
+  (t/is (map? (cg/run {:world [2 1 {:text true :text-styles true :layout nil :layout-children false
+                                    :layout-item-margins false :grid-square false :grid-empty false}]
+                       :ops [[:duplicate 0 0 0 0] [:edit 8 0 0 0] [:resize 2 0 2 0] [:nest 0 0 0 0]
+                             [:nest 12 0 0 0] [:delete 6 0 0 0] [:detach 8 0 0 0] [:restore 0 0 0 0]
+                             [:duplicate 0 0 0 0] [:transform 3 3 0 8] [:delete 0] [:restore 0]
+                             [:edit 4 0 1 1] [:update-main 4] [:delete 0 0 0 0] [:transform 2 2 0 0]]}))))

@@ -528,3 +528,16 @@
     (t/is (every? true? (map #(mth/close? %1 %2 1e-6)
                              [a b c d]
                              [(- (/ (mth/sqrt 2) 2)) (/ (mth/sqrt 2) 2) (/ (mth/sqrt 2) 2) (/ (mth/sqrt 2) 2)])))))
+
+(t/deftest a-turn-leaves-out-the-scale-a-tiny-targets-transform-keeps
+  ;; a 0.01 px board resized below its minimum size keeps the scale in its
+  ;; transform; turning a subtree like it turns it without that scale
+  (let [head    (cts/setup-shape {:type :frame :x 0 :y 0 :width 0.01 :height 0.01})
+        scaled  (gmt/matrix 0 1 (- (/ 6 7)) 0 0 0)
+        target  (assoc head :transform scaled :transform-inverse (gmt/inverse scaled) :rotation 90)
+        child   (cts/setup-shape {:type :rect :x 10 :y 10 :width 20 :height 20})
+        turned  ((cll/orient-like head target (gsh/shape->center head)) child)
+        [p1 p2 _ p4] (:points turned)]
+    (t/is (mth/close? 90 (:rotation turned) 0.01))
+    (t/is (mth/close? 20 (gpt/distance p1 p2) 1e-6))
+    (t/is (mth/close? 20 (gpt/distance p1 p4) 1e-6))))
