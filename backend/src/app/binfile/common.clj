@@ -473,7 +473,9 @@
              :deleted-at nil}))
 
 (defn get-files-rels
-  "Given a set of file-id's, return all matching relations with the libraries"
+  "Given a set of file-id's, return all matching relations with the libraries.
+  Rows come back in stable `(file-id, library-file-id)` order so export
+  and import resolve cycles deterministically."
   [cfg ids]
 
   (assert (set? ids) "expected a set of uuids")
@@ -490,7 +492,8 @@
                                 "    ON fls.file_id = flr.file_id"
                                 "   AND fls.library_file_id = flr.library_file_id"
                                 " WHERE flr.file_id = ANY(?)"
-                                "   AND l.deleted_at IS NULL;")]
+                                "   AND l.deleted_at IS NULL"
+                                " ORDER BY flr.file_id, flr.library_file_id;")]
                    (db/exec! conn [sql ids])))))
 
 (def ^:private sql:upsert-file-library-sync
@@ -525,6 +528,20 @@
                  (let [ids' (db/create-array conn "uuid" ids)]
                    (->> (db/exec! conn [sql:get-libraries ids'])
                         (into #{} xf-map-id))))))
+
+(defn library-link-status
+  "Check whether linking `file-id` to `library-id` is safe. Returns
+  `:ok` when the link can be created, `:self-link` when both ids are
+  the same, and `:circular` when the link would close a dependency
+  cycle (i.e. `file-id` is already among the transitive libraries of
+  `library-id`). Shared by the UI command (`link-file-to-library`,
+  which raises) and the v3 importer (`import-file-relations`, which
+  skips and logs), so both stay consistent."
+  [cfg file-id library-id]
+  (cond
+    (= file-id library-id) :self-link
+    (contains? (get-libraries cfg [library-id]) file-id) :circular
+    :else :ok))
 
 (defn get-file-object-thumbnails
   "Return all file object thumbnails for a given file."
