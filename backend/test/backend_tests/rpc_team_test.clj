@@ -170,6 +170,120 @@
         (t/is (false? (get-in create-plain [:props :adds-invitee-to-organization])))
         (t/is (false? (get-in create-plain [:props :invitee-already-organization-member])))))))
 
+(t/deftest create-team-invitations-follows-send-invitations-restriction
+  (with-mocks [email-mock {:target 'app.email/send :return nil}
+               audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [org-owner       (th/create-profile* 420 {:is-active true})
+          admin           (th/create-profile* 421 {:is-active true})
+          invitee         (th/create-profile* 422 {:is-active true})
+          team            (th/create-team* 420 {:profile-id (:id org-owner)})
+          _               (th/create-team-role* {:team-id (:id team)
+                                                 :profile-id (:id admin)
+                                                 :role :admin})
+          organization-id (uuid/random)
+          team-org-params (atom nil)
+          make-organization
+          (fn [restrictions-met]
+            {:id organization-id
+             :name "Acme"
+             :slug "acme"
+             :owner-id (:id org-owner)
+             :avatar-bg-url "https://example.com/avatar.svg"
+             :permissions {:send-invitations "ownersAndAdmins"
+                           :new-team-members "anyone"}
+             :restrictions-met restrictions-met})
+          make-nitrate-call
+          (fn [restrictions-met]
+            (fn [_cfg method params]
+              (case method
+                :get-team-organization
+                (do
+                  (reset! team-org-params params)
+                  (if (= (:team-id params) (:id team))
+                    {:organization (make-organization restrictions-met) :is-your-penpot false}
+                    {:organization nil :is-your-penpot false}))
+
+                :get-organization-members
+                [(:id invitee)]
+
+                nil)))
+          invite!
+          (fn []
+            (th/command! {::th/type :create-team-invitations
+                          ::rpc/profile-id (:id admin)
+                          :team-id (:id team)
+                          :role :editor
+                          :emails [(:email invitee)]}))]
+
+      ;; Restriction not met: a team admin (not the org owner) is denied.
+      (with-redefs [cf/flags (conj cf/flags :admin-console :email-verification)
+                    nitrate/call (make-nitrate-call {:send-invitations false})]
+        (let [out (invite!)]
+          (t/is (not (th/success? out)))
+          (t/is (= :insufficient-permissions (th/ex-code (:error out))))
+          ;; the caller's profile-id travels to Nitrate on the team lookup
+          (t/is (= (:id admin) (::rpc/profile-id @team-org-params)))))
+
+      ;; Restriction met: the same team admin can invite.
+      (with-redefs [cf/flags (conj cf/flags :admin-console :email-verification)
+                    nitrate/call (make-nitrate-call {:send-invitations true})]
+        (t/is (th/success? (invite!)))))))
+
+(t/deftest create-team-invitations-fails-closed-when-organization-lookup-fails
+  (with-mocks [email-mock {:target 'app.email/send :return nil}
+               audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [owner   (th/create-profile* 430 {:is-active true})
+          admin   (th/create-profile* 431 {:is-active true})
+          invitee (th/create-profile* 432 {:is-active true})
+          team    (th/create-team* 430 {:profile-id (:id owner)})
+          _       (th/create-team-role* {:team-id (:id team)
+                                         :profile-id (:id admin)
+                                         :role :admin})
+          make-nitrate-call
+          (fn [get-team-organization]
+            (fn [_cfg method params]
+              (case method
+                :get-team-organization (get-team-organization params)
+                nil)))
+          invite!
+          (fn []
+            (th/command! {::th/type :create-team-invitations
+                          ::rpc/profile-id (:id admin)
+                          :team-id (:id team)
+                          :role :editor
+                          :emails [(:email invitee)]}))]
+
+      ;; A 4xx other than 404 must not look like a team without organization.
+      (with-redefs [cf/flags (conj cf/flags :admin-console :email-verification)
+                    nitrate/call (make-nitrate-call
+                                  (fn [_]
+                                    (throw (ex-info "forbidden"
+                                                    {:type :nitrate-http-error
+                                                     :status 403}))))]
+        (let [out (invite!)]
+          (t/is (not (th/success? out)))
+          (t/is (= :nitrate-http-error (th/ex-type (:error out))))))
+
+      ;; An invalid response body (the client returns nil) is rejected too.
+      (with-redefs [cf/flags (conj cf/flags :admin-console :email-verification)
+                    nitrate/call (make-nitrate-call (constantly nil))]
+        (let [out (invite!)]
+          (t/is (not (th/success? out)))
+          (t/is (= :nitrate-unavailable (th/ex-type (:error out))))))
+
+      ;; A 404 confirms the team has no organization: team-level rules apply.
+      (let [lookups (atom [])]
+        (with-redefs [cf/flags (conj cf/flags :admin-console :email-verification)
+                      nitrate/call (make-nitrate-call
+                                    (fn [params]
+                                      (swap! lookups conj params)
+                                      (throw (ex-info "not found"
+                                                      {:type :nitrate-http-error
+                                                       :status 404}))))]
+          (t/is (th/success? (invite!)))
+          ;; one strict lookup serves every organization rule
+          (t/is (= [true] (mapv :throw-on-error? @lookups))))))))
+
 (t/deftest create-team-invitations-blacklisted-domain
   (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active true})
@@ -830,6 +944,41 @@
                       :organization)))))))
 
 
+(t/deftest get-teams-propagates-profile-id-and-restrictions-met
+  (let [profile           (th/create-profile* 1 {:is-active true})
+        organization-team (th/create-team* 1 {:profile-id (:id profile)})
+        organization-id   (uuid/random)
+        calls             (atom [])
+        restrictions-met  {:create-teams true :move-teams false :send-invitations true}
+        organization      {:id organization-id
+                           :name "Acme"
+                           :slug "acme"
+                           :owner-id (:id profile)
+                           :avatar-bg-url "https://example.com/avatar.svg"
+                           :restrictions-met restrictions-met}
+        nitrate-call      (fn [_cfg method params]
+                            (swap! calls conj [method params])
+                            [{:id (:id organization-team)
+                              :is-your-penpot false
+                              :organization organization}])
+        params            {::th/type :get-teams
+                           ::rpc/profile-id (:id profile)}]
+    (with-redefs [cf/flags (conj cf/flags :admin-console)
+                  nitrate/call nitrate-call]
+      (let [out   (th/command! params)
+            teams (:result out)
+            team  (first (filter #(= (:id organization-team) (:id %)) teams))]
+        (t/is (th/success? out))
+        ;; The batched lookup carries the caller's profile-id so Nitrate can
+        ;; answer :restrictions-met for this profile.
+        (t/is (= :get-teams-organizations (ffirst @calls)))
+        (t/is (= (:id profile) (-> @calls first second ::rpc/profile-id)))
+        ;; :restrictions-met flows through apply-organization into the nested
+        ;; :organization map (organization->team-keys).
+        (t/is (= restrictions-met
+                 (get-in team [:organization :restrictions-met])))))))
+
+
 (t/deftest get-teams-rejects-invalid-organization-batch-response
   (let [profile (th/create-profile* 1 {:is-active true})
         calls   (atom [])
@@ -1305,6 +1454,62 @@
           (let [team (:result out)]
             (t/is (uuid? (:id team)))
             (t/is (= "Test Team" (:name team)))))))))
+
+(t/deftest create-team-in-organization-follows-attribute-restriction
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [org-owner       (th/create-profile* 410 {:is-active true})
+          member          (th/create-profile* 411 {:is-active true})
+          organization-id (uuid/random)
+          perms-params    (atom nil)
+          make-nitrate-call
+          (fn [restrictions-met]
+            (fn [_cfg method p]
+              (case method
+                :get-organization-membership
+                {:organization-id organization-id :is-member true}
+
+                :get-organization-permissions
+                (do
+                  (reset! perms-params p)
+                  {:owner-id (:id org-owner)
+                   :permissions {:create-teams "any"}
+                   :restrictions-met restrictions-met})
+
+                :set-team-organization
+                (let [team-id (:team-id p)]
+                  {:id team-id
+                   :name "Test Team"
+                   :organization-id organization-id
+                   :default-project-id (uuid/random)})
+
+                nil)))
+          create!
+          (fn [profile-id]
+            (th/command! {::th/type :create-team
+                          ::rpc/profile-id profile-id
+                          :name "Test Team"
+                          :organization-id organization-id}))]
+
+      ;; A non-owner member is denied when the create-teams restriction is not met
+      (with-redefs [cf/flags (conj cf/flags :admin-console)
+                    nitrate/call (make-nitrate-call {:create-teams false})]
+        (let [out (create! (:id member))]
+          (t/is (not (th/success? out)))
+          (t/is (= :not-allowed (th/ex-code (:error out))))
+          ;; the caller's profile-id travels to Nitrate so it can evaluate the restriction
+          (t/is (= (:id member) (::rpc/profile-id @perms-params)))))
+
+      ;; The same member is allowed when the restriction is met
+      (th/reset-mock! audit-mock)
+      (with-redefs [cf/flags (conj cf/flags :admin-console)
+                    nitrate/call (make-nitrate-call {:create-teams true})]
+        (t/is (th/success? (create! (:id member)))))
+
+      ;; The organization owner keeps the create-teams bypass even when not met
+      (th/reset-mock! audit-mock)
+      (with-redefs [cf/flags (conj cf/flags :admin-console)
+                    nitrate/call (make-nitrate-call {:create-teams false})]
+        (t/is (th/success? (create! (:id org-owner))))))))
 
 ;; --- T7-F-01: Role ceiling in team invitations ---
 

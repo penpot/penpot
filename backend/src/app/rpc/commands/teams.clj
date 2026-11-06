@@ -544,7 +544,8 @@
     (nitrate/assert-membership cfg profile-id organization-id)
 
     (let [organization-perms (nitrate/call cfg :get-organization-permissions
-                                           {:organization-id organization-id})]
+                                           {:organization-id organization-id
+                                            ::rpc/profile-id profile-id})]
       (if (nil? organization-perms)
         (ex/raise :type :validation
                   :code :not-allowed
@@ -892,8 +893,7 @@
         can-delete?
         (if in-organization?
           (cto/allowed? :delete-team
-                        {:organization-perms {:owner-id    (dm/get-in team [:organization :owner-id])
-                                              :permissions (dm/get-in team [:organization :permissions])}
+                        {:organization-perms organization
                          :profile-id profile-id
                          :team-perms perms})
           (boolean (:is-owner perms)))]

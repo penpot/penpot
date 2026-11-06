@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
+   [app.common.types.organization :as cto]
    [app.config :as cfg]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
@@ -1595,10 +1596,9 @@
         ;; Filter to organizations where user is allowed to create/add teams
         organizations (mf/with-memo [all-organizations profile-id]
                         (->> all-organizations
-                             (filter (fn [organization]
-                                       (let [perm      (get-in organization [:permissions :create-teams])
-                                             is-owner? (= profile-id (:owner-id organization))]
-                                         (or (= perm "any") is-owner?))))))
+                             (filter #(cto/allowed? :create-team
+                                                    {:organization-perms %
+                                                     :profile-id profile-id}))))
 
         ;; Keep parity with UX requirement: hide only when user belongs to one organization.
         can-change-organization? (mf/with-memo [all-organizations]

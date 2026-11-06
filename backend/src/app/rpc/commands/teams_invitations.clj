@@ -382,13 +382,12 @@
   "Unified function to handle both create and resend team invitations.
   Accepts either:
   - emails (set) + role (single role for all emails)
-  - invitations (vector of {:email :role} maps)"
+  - invitations (vector of {:email :role} maps)
+
+  `team` must already carry its organization info when nitrate is
+  active (see `nitrate/add-organization-info-to-team-strict`)."
   [{:keys [::db/conn] :as cfg} {:keys [profile team role emails invitations] :as params}]
-  (let [;; Enrich team with organization info once for all invitations when nitrate is active
-        team             (if (contains? cf/flags :admin-console)
-                           (nitrate/add-organization-info-to-team cfg team {})
-                           team)
-        organization              (:organization team)
+  (let [organization              (:organization team)
         organization-id           (:id organization)
         restricted?      (and organization-id (not (cto/allowed? :add-anybody-to-team {:organization-perms organization})))
         all-organization-member-ids
@@ -488,8 +487,10 @@
   (let [perms    (teams/get-permissions cfg profile-id team-id)
         profile  (db/get-by-id cfg :profile profile-id)
         team     (db/get-by-id cfg :team team-id)
+        ;; Strict lookup: a failed Nitrate call must not skip the
+        ;; organization policy below by looking like a team without one.
         team-with-org (when (contains? cf/flags :admin-console)
-                        (nitrate/add-organization-info-to-team cfg team {}))
+                        (nitrate/add-organization-info-to-team-strict cfg team {::rpc/profile-id profile-id}))
         organization (:organization team-with-org)
         ;; Determine which format is being used
         using-emails-format? (and emails role)
@@ -509,8 +510,7 @@
     (when (and (contains? cf/flags :admin-console)
                organization
                (not (cto/allowed? :send-invitations
-                                  {:organization-perms {:owner-id    (:owner-id organization)
-                                                        :permissions (:permissions organization)}
+                                  {:organization-perms organization
                                    :profile-id profile-id
                                    :team-perms perms})))
       (ex/raise :type :validation
@@ -540,7 +540,9 @@
     ;; Check if the current profile is allowed to send emails
     (teams/check-profile-muted cfg profile)
 
-    (let [team        (db/get-by-id cfg :team team-id)
+    (let [;; Reuse the strict organization lookup made for the policy
+          ;; check above, so every rule sees the same Nitrate answer.
+          team        (or team-with-org team)
           ;; NOTE: Is important pass RPC method params down to the
           ;; `create-team-invitations` because it uses the implicit
           ;; RPC properties from params for fill necessary data on
