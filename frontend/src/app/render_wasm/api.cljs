@@ -742,9 +742,14 @@
       (let [text (apply str (map :text spans))]
         (t/write-shape-text spans paragraph text)))))
 
-(defn set-shape-text-content
-  "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
-  [shape-id content]
+(defn- text-content-fonts
+  "Content fonts and fallback faces (emoji, Noto, ...) of a text content."
+  [content]
+  {:fonts          (f/get-content-fonts content)
+   :fallback-fonts (fonts-from-text-content content false)})
+
+(defn- upload-text-content
+  [shape-id content {:keys [fonts fallback-fonts]}]
 
   ;; Cache content for text editor sync
   (text-editor/cache-shape-text-content! shape-id content)
@@ -758,14 +763,16 @@
 
     (set-shape-vertical-align (get content :vertical-align))
 
-    (let [fonts          (f/get-content-fonts content)
-          fallback-fonts (fonts-from-text-content content false)
-          all-fonts      (concat fonts fallback-fonts)
-          result         (f/store-fonts all-fonts)]
+    (let [result (f/store-fonts (concat fonts fallback-fonts))]
       (write-text-content! content)
       (f/load-fallback-fonts-for-editor! fallback-fonts)
       (h/call wasm/internal-module "_update_shape_text_layout")
       result)))
+
+(defn set-shape-text-content
+  "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
+  [shape-id content]
+  (upload-text-content shape-id content (text-content-fonts content)))
 
 (defn apply-styles-to-selection
   "Apply style attrs to the currently selected text spans.
@@ -1523,16 +1530,10 @@
 (def ^:private empty-text-font-state
   {:font-index {} :pending-faces #{}})
 
-(defn- text-layout-fonts
-  "Content and fallback faces (emoji, Noto, ...) that `set-shape-text-content`
-  uploads, must match that path for pending-face tracking."
-  [content]
-  (into #{} (concat (f/get-content-fonts content)
-                    (fonts-from-text-content content false))))
-
 (defn- text-font-face-keys-state
-  "All font-face keys for a text content, and the subset not WASM-ready yet."
-  [content]
+  "All font-face keys for the `text-content-fonts` of a text, and the subset
+  not WASM-ready yet."
+  [{:keys [fonts fallback-fonts]}]
   (reduce
    (fn [acc font]
      (let [font-data (f/make-font-data font)
@@ -1543,7 +1544,7 @@
            (cond-> pending?
              (update :pending-font-face-keys conj key)))))
    {:font-face-keys #{} :pending-font-face-keys #{}}
-   (text-layout-fonts content)))
+   (into #{} (concat fonts fallback-fonts))))
 
 (defn- acc-text-font-state
   [{:keys [font-index pending-faces]} id font-face-keys pending-font-face-keys]
@@ -1560,7 +1561,7 @@
   (if (cfh/text-shape? shape)
     (let [content (ensure-text-content (:content shape))
           {:keys [font-face-keys pending-font-face-keys]}
-          (text-font-face-keys-state content)]
+          (text-font-face-keys-state (text-content-fonts content))]
       (acc-text-font-state empty-text-font-state
                            (:id shape)
                            font-face-keys
@@ -1613,9 +1614,10 @@
           (set-layout-data shape)))
 
     (let [is-text? (= type :text)
+          text-fonts (when is-text? (text-content-fonts content))
           {:keys [font-face-keys pending-font-face-keys]}
-          (when is-text? (text-font-face-keys-state content))
-          text-content-pending (when is-text? (set-shape-text-content id content))
+          (when is-text? (text-font-face-keys-state text-fonts))
+          text-content-pending (when is-text? (upload-text-content id content text-fonts))
           pending-thumbnails (into [] (concat
                                        text-content-pending
                                        (when is-text? (set-shape-text-images id content true))
