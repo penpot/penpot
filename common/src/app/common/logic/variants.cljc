@@ -391,14 +391,12 @@
         main-parent (if position
                       (get-in (meta position) [:container :objects (:parent-id position)])
                       main-parent)
-        parent-delta (if (and (:shape-ref parent) (nil? position)) 0
+        rotation (mod (+ (or (:rotation baseline) 0)
                          (- (or (:rotation parent) 0) (or (:rotation main-parent) 0)))
-        rotation (mod (+ (or (:rotation baseline) 0) parent-delta) 360)
+                      360)
         flip (fn [key]
-               (if (and (:shape-ref parent) (nil? position))
-                 (boolean (get baseline key))
-                 (odd? (count (filter identity [(get baseline key) (get parent key)
-                                                (get main-parent key)])))))
+               (odd? (count (filter identity [(get baseline key) (get parent key)
+                                              (get main-parent key)]))))
         changed? (or (not (mth/close? (mod (or (:rotation shape) 0) 360) rotation 0.01))
                      (not= (boolean (:flip-x shape)) (flip :flip-x))
                      (not= (boolean (:flip-y shape)) (flip :flip-y)))]
