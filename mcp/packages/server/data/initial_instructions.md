@@ -316,7 +316,7 @@ Properties are often addressed positionally: `pos` parameter in various methods 
 Use `penpotUtils.createVariantContainer(components)` — it handles the full multi-step workflow in one call:
 ```js
 // Given three main components s, m, l (here: the first three main components on the page)
-const [s, m, l] = penpot.currentPage.findAllShapes(sh => sh.isMainComponent()).slice(0, 3);
+const [s, m, l] = penpotUtils.findShapes(sh => sh.isComponentMainInstance(), penpot.root).slice(0, 3);
 // Single property:
 const container = penpotUtils.createVariantContainer([
   { shape: s, properties: { Size: 'Small' } },
