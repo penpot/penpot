@@ -389,12 +389,17 @@
              :cause cause)
       nil)))
 
+(def ^:private default-renderer-new-profiles
+  "Renderer stored on new profiles. Profiles without one fall back to SVG."
+  :wasm)
+
 (defn create-profile
   "Create the profile entry on the database with limited set of input
   attrs (all the other attrs are filled with default values)."
   [{:keys [::db/conn] :as cfg} {:keys [email] :as params}]
   (let [id        (or (:id params) (uuid/next))
         props     (-> (:props params)
+                      (update :renderer d/nilv default-renderer-new-profiles)
                       (merge {:viewed-tutorial? false
                               :viewed-walkthrough? false
                               :nudge {:big 10 :small 1}
@@ -516,8 +521,9 @@
 
         created?   (-> profile meta :created true?)
 
-        props      (-> (audit/profile->props profile)
-                       (assoc :from-invitation (some? invitation)))]
+        props      (cond-> (audit/profile->props profile)
+                     :always  (assoc :from-invitation (some? invitation))
+                     created? (assoc :renderer-default (-> profile :props :renderer)))]
 
     (cond
       ;; When profile is blocked, we just ignore it and return plain data

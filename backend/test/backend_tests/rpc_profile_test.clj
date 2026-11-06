@@ -508,6 +508,39 @@
         (t/is (= "utma" (:penpot/utm-campaign props)))
         (t/is (= "mtma" (:penpot/mtm-campaign props)))))))
 
+(defn- prepare-register-token
+  [email]
+  (-> (th/command! {::th/type :prepare-register-profile
+                    :email email
+                    :fullname "foobar"
+                    :password "Foobar12!"})
+      (get-in [:result :token])))
+
+(t/deftest register-profile-defaults-to-wasm-renderer
+  (let [token  (prepare-register-token "user@example.com")
+        result (th/command-raw! {::th/type :register-profile
+                                 :token token})
+        props  (:app.loggers.audit/replace-props (meta result))]
+    (t/is (= :wasm (:renderer-default props)))
+
+    (let [profile (-> (th/db-get :profile {:email "user@example.com"})
+                      (profile/decode-row))]
+      (t/is (= :wasm (get-in profile [:props :renderer]))))))
+
+(t/deftest register-profile-retry-has-no-renderer-default
+  (with-redefs [cf/flags (conj cf/flags :email-verification)]
+    (th/create-profile* 1 {:is-active false})
+    (let [token  (prepare-register-token "profile1.test@nodomain.com")
+          result (th/command-raw! {::th/type :register-profile
+                                   :token token})
+          props  (:app.loggers.audit/replace-props (meta result))]
+      (t/is (map? props))
+      (t/is (not (contains? props :renderer-default))))))
+
+(t/deftest create-profile-keeps-given-renderer
+  (let [profile (th/create-profile* 1 {:props {:renderer :svg}})]
+    (t/is (= :svg (get-in profile [:props :renderer])))))
+
 (t/deftest prepare-register-and-register-profile-2
   (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [current-token (atom nil)]
