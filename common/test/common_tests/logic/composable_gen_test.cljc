@@ -1210,3 +1210,12 @@
                                     :layout-item-margins false :grid-square false :rich-variants true
                                     :layout-children false :grid-empty false :layout-copies true :text true}]
                        :ops [[:rotate 0 0 0 0] [:update-main 0 0 0 0] [:resize 0 0 0 0] [:switch 4 0 0 0]]}))))
+
+(t/deftest generated-switch-in-a-copy-keeps-a-turn-that-cancels-its-parents
+  ;; a copy child shows no turn: its near main's half turn cancels its turned
+  ;; copy parent's; a switch keeps that authored turn as an override
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:duplicate 0 0 0 0] [:rotate 16 0 7 0] [:duplicate 0 0 0 0] [:rotate 16 0 7 0]
+                             [:switch 12 0 0 0]]}))))
