@@ -97,6 +97,7 @@
          (mf/deps internal-color on-change)
          (fn [saturation value]
            (let [color (-> internal-color
+                           (dissoc :hsl)
                            (assoc :s saturation)
                            (assoc :v value)
                            (enrich-color-map))]
@@ -108,6 +109,7 @@
          (mf/deps internal-color on-change)
          (fn [hue]
            (let [color (-> internal-color
+                           (dissoc :hsl)
                            (assoc :h hue)
                            enrich-color-map)]
              (reset! internal-color* color)

@@ -825,13 +825,19 @@
       (assoc :opacity alpha)
       (d/without-nils)))
 
+(defn merge-color-components
+  [color changes]
+  (cond-> (merge color changes)
+    (and (:hex changes) (not (:hsl changes)))
+    (dissoc :hsl)))
+
 (defn clear-color-components
   [data]
-  (dissoc data :hex :alpha :r :g :b :h :s :v :image))
+  (dissoc data :hex :alpha :r :g :b :h :s :v :hsl :image))
 
 (defn clear-image-components
   [data]
-  (dissoc data :hex :alpha :r :g :b :h :s :v :color))
+  (dissoc data :hex :alpha :r :g :b :h :s :v :hsl :color))
 
 (defn- create-gradient
   [type]
@@ -923,7 +929,9 @@
                             new-gradient (-> gradient
                                              (dissoc :stops)
                                              (assoc :shape-id shape-id))]
-                        (if (and (= (:stops state) new-stops) (= (:gradient state) new-gradient))
+                        (if (and (= (mapv #(dissoc % :hsl) (:stops state))
+                                    new-stops)
+                                 (= (:gradient state) new-gradient))
                           state
                           (-> state
                               (assoc :opacity (:opacity data))
@@ -1095,7 +1103,7 @@
               (fn [state]
                 (let [type  (:type state)
                       state (-> state
-                                (update :current-color merge changes)
+                                (update :current-color merge-color-components changes)
                                 (update :current-color materialize-color-components)
                                 (update :current-color #(if (not= type :image) (dissoc % :image) %))
                                 ;; current color can be a library one
@@ -1103,9 +1111,8 @@
                                 (update :current-color dissoc :ref-id :ref-file))]
 
                   (if-let [stop (:editing-stop state)]
-                    (update-in state [:stops stop] (fn [data] (->> changes
-                                                                   (merge data)
-                                                                   (materialize-color-components))))
+                    (update-in state [:stops stop] (fn [data] (-> (merge-color-components data changes)
+                                                                  (materialize-color-components))))
 
                     (-> state
                         (dissoc :gradient :stops :editing-stop)

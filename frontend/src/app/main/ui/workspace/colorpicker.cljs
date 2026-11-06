@@ -39,6 +39,7 @@
    [app.main.ui.workspace.colorpicker.color-tokens :refer [token-section*]]
    [app.main.ui.workspace.colorpicker.gradients :refer [gradients*]]
    [app.main.ui.workspace.colorpicker.harmony :refer [harmony-selector*]]
+   [app.main.ui.workspace.colorpicker.hsl :as hsl]
    [app.main.ui.workspace.colorpicker.hsva :refer [hsva-selector*]]
    [app.main.ui.workspace.colorpicker.libraries :refer [libraries*]]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
@@ -88,10 +89,10 @@
           ;; saturation 0 → 1. For L: fix current saturation, sweep
           ;; lightness 0 → 0.5 (pure hue) → 1. All computed at the
           ;; current hue.
-          [_ cur-hsl-s cur-hsl-l] (cc/rgb->hsl rgb)
-          hsl-sat-from  [h 0.0 cur-hsl-l]
-          hsl-sat-to    [h 1.0 cur-hsl-l]
-          lightness-mid [h cur-hsl-s 0.5]
+          [hsl-h cur-hsl-s cur-hsl-l] (hsl/components current-color)
+          hsl-sat-from  [hsl-h 0.0 cur-hsl-l]
+          hsl-sat-to    [hsl-h 1.0 cur-hsl-l]
+          lightness-mid [hsl-h cur-hsl-s 0.5]
 
           format-hsl (fn [[h s l]]
                        (str/fmt "hsl(%s, %s, %s)"
@@ -214,7 +215,7 @@
         (mf/use-fn
          (mf/deps current-color drag?)
          (fn [color]
-           (let [color (merge current-color color)
+           (let [color (dc/merge-color-components current-color color)
                  color (dc/materialize-color-components color)]
              (st/emit! (dc/update-colorpicker-color color (not drag?))))))
 
