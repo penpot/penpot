@@ -55,7 +55,7 @@ New frontend test namespaces must be required/listed in `frontend_tests/runner.c
 
 ## Playwright integration tests
 
-Do not add, modify, or run Playwright integration tests under `frontend/playwright` unless explicitly asked. When explicitly asked, use `pnpm run test:e2e` or `pnpm run test:e2e --grep "pattern"` from `frontend/`; ensure dependencies are installed through `./scripts/setup` if the environment is not prepared.
+Do not add, modify, or run Playwright integration tests under `frontend/playwright` unless explicitly asked. When explicitly asked, run the whole suite with a worker count sized to the machine: `pnpm run test:e2e --workers=N` from `frontend/`, about one worker per two hardware threads, because each keeps two or three busy and holds about 2 GB of browser memory. The config's default of one worker leaves it slow; four take a 16-thread host from 48 minutes to 35 and fit a 64 GB machine beside a watching devenv, while a 32 GB machine takes two, or four with a slim devenv. `--grep "pattern"` narrows the run. Ensure dependencies are installed through `./scripts/setup` if the environment is not prepared.
 
 Integration tests fake backend behavior by intercepting network/websocket traffic, so every RPC or websocket the page needs must be mocked. Use existing Page Object Models:
 - `BasePage.mockRPC` intercepts RPC calls and already prefixes `/api/rpc/command/`; pass command names such as `get-profile`, not full URLs.
