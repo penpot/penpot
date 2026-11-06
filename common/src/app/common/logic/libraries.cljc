@@ -2031,7 +2031,8 @@
   "The rotation that `shape`, just turned by `angle` with its subtree, stores:
    `rotation` plus `angle`, or minus it when only that one decomposes its
    transform with its flips. A mirror that flips after its turn turns the
-   other way."
+   other way. When neither does, as when the turn changes its flips, the
+   rotation its transform decomposes into."
   [shape rotation angle]
   (let [{:keys [a b c d]} (or (:transform shape) (gmt/matrix))
         mirrored (not= (boolean (:flip-x shape)) (boolean (:flip-y shape)))
@@ -2044,9 +2045,16 @@
                        (and (:flip-x shape) (:flip-y shape) (same? value (+ turn 180)))))
         plus     (mod (+ rotation angle) 360)
         minus    (mod (- rotation angle) 360)]
-    (if (and (= mirrored (neg? (- (* a d) (* b c))))
-             (not (stores? plus)) (stores? minus))
+    (cond
+      (and (= mirrored (neg? (- (* a d) (* b c))))
+           (not (stores? plus)) (stores? minus))
       minus
+
+      ;; a turn that drops or adds a flip leaves neither; the transform decides
+      (and (not (stores? plus)) (not (stores? minus)))
+      (mod turn 360)
+
+      :else
       plus)))
 
 (defn orient-like
