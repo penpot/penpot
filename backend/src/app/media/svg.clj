@@ -12,8 +12,10 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.storage.tmp :as tmp]
    [clojure.xml :as xml]
-   [cuerdas.core :as str])
+   [cuerdas.core :as str]
+   [datoteka.fs :as fs])
   (:import
    clojure.lang.XMLHandler
    java.io.InputStream
@@ -46,11 +48,80 @@
       (xml/parse istream secure-parser-factory))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SVG SERIALIZATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private xml-declaration
+  "Declaration written at the top of every sanitized document."
+  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
+
+(defn- escape-text
+  "Escape the characters that are special inside a XML text node."
+  [s]
+  (-> s
+      (str/replace "&" "&amp;")
+      (str/replace "<" "&lt;")
+      (str/replace ">" "&gt;")))
+
+(defn- escape-attr
+  "Escape the characters that are special inside a XML attribute value.
+   The value is written between double quotes, so the quote itself is
+   escaped too.
+
+   Tabs and line breaks become spaces: that is what the XML parser does
+   with them on the next read, and it keeps the output stable."
+  [s]
+  (-> (str s)
+      (str/replace #"[\t\r\n]" " ")
+      (str/replace "&" "&amp;")
+      (str/replace "<" "&lt;")
+      (str/replace ">" "&gt;")
+      (str/replace "\"" "&quot;")
+      (str/replace "'" "&apos;")))
+
+(defn- emit-element
+  "Serialize a parsed element, escaping every text and attribute value.
+
+   The tag and attribute names come from the parser, so they are valid
+   XML names; only their values can carry markup.
+
+   The attributes are sorted by name: the parser hands them over in the
+   reverse order of the document, so writing them as they come would
+   make the output change on every sanitization."
+  [{:keys [tag attrs content]}]
+  (let [attrs-str   (apply str
+                           (for [[k v] (sort-by (comp name key) attrs)]
+                             (str " " (name k) "=\"" (escape-attr (str v)) "\"")))
+        content-str (apply str
+                           (for [child content]
+                             (if (map? child)
+                               (emit-element child)
+                               (escape-text child))))]
+    (if (seq content)
+      (str "<" (name tag) attrs-str ">" content-str "</" (name tag) ">")
+      (str "<" (name tag) attrs-str "/>"))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SVG SANITIZATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private dangerous-attrs-pattern #"(?i)^on\w+$")
 (def ^:private javascript-href-pattern #"(?i)^javascript:")
+
+(def ^:private url-ignored-chars
+  "Characters that the URL parser discards before it interprets the
+   scheme of an URL."
+  #"[\u0000-\u0020\u007f]")
+
+(defn- javascript-url?
+  "True when the value is a javascript: URL.
+
+   The comparison drops the characters the URL parser drops (tab, CR, LF
+   and spaces), so a scheme split with one of them (`java&#x09;script:`)
+   cannot slip through."
+  [v]
+  (let [v (str/replace (str v) url-ignored-chars "")]
+    (boolean (re-find javascript-href-pattern (str/trim v)))))
 
 (def ^:private dangerous-tags
   #{"script" "foreignObject" "set"
@@ -70,6 +141,33 @@
       (last (str/split n ":"))
       n)))
 
+(def ^:private svg-namespace "http://www.w3.org/2000/svg")
+
+(defn- declared-namespace
+  "Return the namespace declared for the element `tag`: the default
+   namespace when the tag has no prefix, the prefixed declaration when
+   it has one.
+
+   The XML parser does not process namespaces, so the declarations are
+   plain attributes (`:xmlns`, `:xmlns:svg`) and the prefix is part of
+   the tag name (`:svg:svg`)."
+  [tag attrs]
+  (let [n   (name tag)
+        idx (str/last-index-of n ":")]
+    (if (nil? idx)
+      (get attrs :xmlns)
+      (get attrs (keyword (str "xmlns:" (subs n 0 idx)))))))
+
+(defn- svg-root?
+  "True when the element is an `svg` element in the SVG namespace.
+
+   The namespace matters: a root that is `svg` in the XHTML namespace
+   is rendered as HTML by the browser, so it can carry live markup that
+   the SVG blocklist does not know about."
+  [{:keys [tag attrs]}]
+  (and (= "svg" (local-name tag))
+       (= svg-namespace (declared-namespace tag attrs))))
+
 (defn- sanitize-svg-element
   "Recursively sanitize an SVG element by removing dangerous tags and attributes."
   [{:keys [tag attrs content] :as element}]
@@ -80,7 +178,7 @@
                                        (or (re-matches dangerous-attrs-pattern (local-name k))
                                            (and (= "href" (local-name k))
                                                 (string? v)
-                                                (re-find javascript-href-pattern (str/trim v))))))
+                                                (javascript-url? v)))))
                              (into {}))
             clean-content (when content
                             (->> content
@@ -97,22 +195,64 @@
 (defn sanitize-svg
   "Sanitize SVG content by removing dangerous elements and attributes.
    Removes <script> tags, <foreignObject> elements, event handlers (on*),
-   and javascript: URLs from href attributes."
+   and javascript: URLs from href attributes.
+
+   The document must be an SVG document: a root element that is not an
+   `svg` element in the SVG namespace is rejected, because the filter
+   only knows about SVG elements and attributes.
+
+   The filtered tree is written back with an escaping serializer: a
+   payload hidden in an attribute value or in a text node would become
+   live markup again if the values were written verbatim."
   [svg-text]
-  (try
-    (let [parsed (parse-svg svg-text)
-          sanitized (sanitize-svg-element parsed)]
-      (if sanitized
-        (with-out-str (xml/emit sanitized))
-        (ex/raise :type :validation
-                  :code :invalid-svg-file
-                  :hint "SVG sanitization produced no output")))
-    (catch Exception e
-      (l/warn :hint "SVG sanitization failed, rejecting upload" :cause e)
+  (let [parsed (try
+                 (parse-svg svg-text)
+                 (catch Exception e
+                   (l/warn :hint "SVG parsing failed, rejecting upload" :cause e)
+                   (ex/raise :type :validation
+                             :code :invalid-svg-file
+                             :hint "SVG parsing failed during sanitization"
+                             :cause e)))
+        sanitized (sanitize-svg-element parsed)]
+
+    (when-not sanitized
+      (l/warn :hint "SVG sanitization produced no output, rejecting upload")
       (ex/raise :type :validation
                 :code :invalid-svg-file
-                :hint "SVG parsing failed during sanitization"
-                :cause e))))
+                :hint "SVG sanitization produced no output"))
+
+    (when-not (svg-root? sanitized)
+      (ex/raise :type :validation
+                :code :invalid-svg-file
+                :hint "the uploaded document is not an svg document"))
+
+    (str xml-declaration (emit-element sanitized))))
+
+(defn sanitize-svg-upload
+  "Return the upload untouched when its mtype is not `image/svg+xml`.
+   When it is, write a sanitized copy to a temporary file and return the
+   upload pointing to it, with the size of the sanitized content.
+
+   The caller must check the size of the upload before calling this: the
+   whole file is read into memory to sanitize it. The size limit applies
+   to the upload, not to the sanitized copy, which can be up to six times
+   bigger (a single quote becomes `&apos;`).
+
+   Every path that stores an uploaded SVG as its final object must go
+   through this function, or the stored file can carry live markup. Two
+   paths store raw bytes on purpose and do not: `upload-tempfile` (a
+   channel between processes, not publicly accessible) and
+   `upload-chunk` (the chunks of an upload; the assembled object goes
+   through this function). The profile picture is not an SVG either:
+   `import-profile-picture` ignores an `image/svg+xml` download."
+  [{:keys [mtype path] :as upload}]
+  (if (= "image/svg+xml" mtype)
+    (let [content  (slurp (str path) :encoding "UTF-8")
+          clean    (sanitize-svg content)
+          tmp-path (tmp/tempfile :prefix "penpot-svg-" :suffix ".svg" :min-age "1h")]
+      (spit (str tmp-path) clean :encoding "UTF-8")
+      (assoc upload :path tmp-path :size (fs/size tmp-path)))
+    upload))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SVG INFO EXTRACTION
@@ -120,7 +260,11 @@
 
 (defn get-basic-info-from-svg
   [{:keys [tag attrs] :as data}]
-  (when (not= tag :svg)
+  ;; The local name is enough here: this function only reads the
+  ;; dimensions. Whether the document is a valid SVG is decided by
+  ;; `sanitize-svg`, which rejects anything that is not an `svg` element
+  ;; in the SVG namespace.
+  (when (not= "svg" (local-name tag))
     (ex/raise :type :validation
               :code :unable-to-parse-svg
               :hint "uploaded svg has invalid content"))

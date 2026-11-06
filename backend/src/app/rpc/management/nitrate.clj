@@ -26,6 +26,7 @@
    [app.http :as-alias http]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
+   [app.media.svg :as svg]
    [app.media.validation :as media.v]
    [app.nitrate :as nitrate]
    [app.rpc :as rpc]
@@ -140,16 +141,18 @@
    ::nitrate/sso false}
   [{:keys [::sto/storage]} {:keys [content organization-id previous-id]}]
   (media.v/check-media-type content cm/image-types)
+  (media.v/check-media-size content)
   (media.v/check-upload-path content)
   (when previous-id
     (sto/touch-object! storage previous-id))
-  (let [hash (sto/calculate-hash (:path content))
-        data (-> (sto/content (:path content))
+  (let [{:keys [path mtype]} (svg/sanitize-svg-upload content)
+        hash (sto/calculate-hash path)
+        data (-> (sto/content path)
                  (sto/wrap-with-hash hash))
         obj  (sto/put-object! storage {::sto/content      data
                                        ::sto/deduplicate? true
                                        :bucket            "organization"
-                                       :content-type      (:mtype content)
+                                       :content-type      mtype
                                        :organization-id   organization-id})]
     {:id (:id obj)}))
 

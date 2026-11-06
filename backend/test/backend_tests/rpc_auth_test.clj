@@ -14,9 +14,13 @@
    [app.http.session :as session]
    [app.loggers.audit :as-alias audit]
    [app.redis :as rds]
+   [app.rpc.commands.auth :as auth]
    [app.rpc.commands.ldap :as ldap-cmd]
+   [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
+   [datoteka.io :as io]
+   [mockery.core :refer [with-mocks]]
    [yetti.response :as yres])
   (:import
    java.lang.AutoCloseable))
@@ -253,3 +257,31 @@
               "session must not be bound to the typed-email profile")))))
 
 
+;; --- Profile picture import
+
+(def ^:private avatar-svg
+  "An SVG that smuggles a script element."
+  "<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>")
+
+(defn- mock-download
+  "Mock the http client so that any url answers with `body` and `mtype`."
+  [mtype body]
+  {:target 'app.http.client/req-with-redirects
+   :return {:status 200
+            :headers {"content-type" mtype
+                      "content-length" (str (alength ^bytes body))}
+            :body (java.io.ByteArrayInputStream. ^bytes body)}})
+
+(t/deftest import-profile-picture-rejects-svg
+  (t/testing "an svg profile picture is not imported"
+    (with-mocks [http-mock (mock-download "image/svg+xml"
+                                          (.getBytes ^String avatar-svg "UTF-8"))]
+      (let [result (auth/import-profile-picture th/*system* "https://example.com/avatar.svg")]
+        (t/is (nil? result)))))
+
+  (t/testing "a png profile picture is imported"
+    (let [body (io/read* (io/resource "backend_tests/test_files/sample.png"))]
+      (with-mocks [http-mock (mock-download "image/png" body)]
+        (let [result (auth/import-profile-picture th/*system* "https://example.com/avatar.png")]
+          (t/is (some? result))
+          (t/is (some? (sto/get-object (:app.storage/storage th/*system*) result))))))))
