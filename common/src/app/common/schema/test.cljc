@@ -90,7 +90,9 @@
   [bindings & body]
   `(tp/for-all ~bindings ~@body))
 
-(defn- environment-number
+(defn environment-number
+  "The positive integer the environment variable `name` holds (any integer
+   for PENPOT_GEN_SEED), or nil when it is not set."
   [name]
   (when-let [value #?(:clj (System/getenv name)
                       :cljs (some-> js/globalThis .-process .-env (aget name)))]
