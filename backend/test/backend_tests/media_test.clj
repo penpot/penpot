@@ -11,6 +11,7 @@
    [app.media.svg :as svg]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
+   [cuerdas.core :as str]
    [datoteka.fs :as fs]))
 
 (t/use-fixtures :once th/state-init)
@@ -60,45 +61,45 @@
   (t/testing "sanitize-svg removes script tags"
     (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><script>alert('xss')</script><rect width=\"50\" height=\"50\"/></svg>"
           result (svg/sanitize-svg svg)]
-      (t/is (not (clojure.string/includes? result "<script>")))
-      (t/is (not (clojure.string/includes? result "alert")))
-      (t/is (clojure.string/includes? result "<rect")))))
+      (t/is (not (str/includes? result "<script>")))
+      (t/is (not (str/includes? result "alert")))
+      (t/is (str/includes? result "<rect")))))
 
 (t/deftest sanitize-svg-event-handlers
   (t/testing "sanitize-svg removes event handler attributes"
     (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\" onload=\"alert('xss')\"><rect width=\"50\" height=\"50\" onmouseover=\"alert('xss')\"/></svg>"
           result (svg/sanitize-svg svg)]
-      (t/is (not (clojure.string/includes? result "onload")))
-      (t/is (not (clojure.string/includes? result "onmouseover")))
-      (t/is (not (clojure.string/includes? result "alert")))
-      (t/is (clojure.string/includes? result "<rect")))))
+      (t/is (not (str/includes? result "onload")))
+      (t/is (not (str/includes? result "onmouseover")))
+      (t/is (not (str/includes? result "alert")))
+      (t/is (str/includes? result "<rect")))))
 
 (t/deftest sanitize-svg-javascript-href
   (t/testing "sanitize-svg removes javascript: URLs from href attributes"
     (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" width=\"100\" height=\"100\"><a xlink:href=\"javascript:alert('xss')\"><rect width=\"50\" height=\"50\"/></a></svg>"
           result (svg/sanitize-svg svg)]
-      (t/is (not (clojure.string/includes? result "javascript:")))
-      (t/is (not (clojure.string/includes? result "alert")))
-      (t/is (clojure.string/includes? result "<a")))))
+      (t/is (not (str/includes? result "javascript:")))
+      (t/is (not (str/includes? result "alert")))
+      (t/is (str/includes? result "<a")))))
 
 (t/deftest sanitize-svg-foreign-object
   (t/testing "sanitize-svg removes foreignObject elements"
     (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><foreignObject width=\"100\" height=\"100\"><body xmlns=\"http://www.w3.org/1999/xhtml\"><script>alert('xss')</script></body></foreignObject><rect width=\"50\" height=\"50\"/></svg>"
           result (svg/sanitize-svg svg)]
-      (t/is (not (clojure.string/includes? result "foreignObject")))
-      (t/is (not (clojure.string/includes? result "<script>")))
-      (t/is (clojure.string/includes? result "<rect")))))
+      (t/is (not (str/includes? result "foreignObject")))
+      (t/is (not (str/includes? result "<script>")))
+      (t/is (str/includes? result "<rect")))))
 
 (t/deftest sanitize-svg-clean-content
   (t/testing "sanitize-svg preserves clean SVG content"
     (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><rect width=\"50\" height=\"50\" fill=\"red\"/><circle cx=\"75\" cy=\"75\" r=\"20\" fill=\"blue\"/></svg>"
           result (svg/sanitize-svg svg)]
-      (t/is (clojure.string/includes? result "<rect"))
-      (t/is (clojure.string/includes? result "<circle"))
-      (t/is (or (clojure.string/includes? result "fill=\"red\"")
-                (clojure.string/includes? result "fill='red'")))
-      (t/is (or (clojure.string/includes? result "fill=\"blue\"")
-                (clojure.string/includes? result "fill='blue'"))))))
+      (t/is (str/includes? result "<rect"))
+      (t/is (str/includes? result "<circle"))
+      (t/is (or (str/includes? result "fill=\"red\"")
+                (str/includes? result "fill='red'")))
+      (t/is (or (str/includes? result "fill=\"blue\"")
+                (str/includes? result "fill='blue'"))))))
 
 (t/deftest sanitize-svg-invalid-svg-rejected
   (t/testing "sanitize-svg rejects malformed SVG input"
@@ -110,98 +111,191 @@
   (t/testing "sanitize-svg preserves legitimate xlink:href attributes"
     (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" width=\"100\" height=\"100\"><use xlink:href=\"#icon\"/></svg>"
           result (svg/sanitize-svg svg)]
-      (t/is (clojure.string/includes? result "xlink:href"))
-      (t/is (clojure.string/includes? result "#icon")))))
+      (t/is (str/includes? result "xlink:href"))
+      (t/is (str/includes? result "#icon")))))
 
 (t/deftest sanitize-svg-javascript-href-whitespace
   (t/testing "sanitize-svg catches javascript: URLs with leading whitespace"
     (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><a href=\" javascript:alert('xss')\"><rect width=\"50\" height=\"50\"/></a></svg>"
           result (svg/sanitize-svg svg)]
-      (t/is (not (clojure.string/includes? result "javascript:")))
-      (t/is (not (clojure.string/includes? result "alert")))
-      (t/is (clojure.string/includes? result "<a")))))
+      (t/is (not (str/includes? result "javascript:")))
+      (t/is (not (str/includes? result "alert")))
+      (t/is (str/includes? result "<a")))))
 
 (t/deftest sanitize-svg-nested-script
   (t/testing "sanitize-svg removes script tags from nested elements"
     (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><g><script>alert('xss')</script></g></svg>"
           result (svg/sanitize-svg svg)]
-      (t/is (not (clojure.string/includes? result "<script")))
-      (t/is (not (clojure.string/includes? result "alert")))
-      (t/is (clojure.string/includes? result "<g")))))
+      (t/is (not (str/includes? result "<script")))
+      (t/is (not (str/includes? result "alert")))
+      (t/is (str/includes? result "<g")))))
 
 (t/deftest sanitize-svg-smil-bypass
   (t/testing "sanitize-svg removes SMIL animation elements that can set on* attrs"
     (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><rect width=\"100\" height=\"100\" id=\"r\"/><set attributeName=\"onmouseover\" to=\"alert('xss')\" xlink:href=\"#r\" begin=\"0s\"/></svg>"
           result (svg/sanitize-svg svg)]
-      (t/is (not (clojure.string/includes? result "<set")))
-      (t/is (not (clojure.string/includes? result "onmouseover")))
-      (t/is (clojure.string/includes? result "<rect")))))
+      (t/is (not (str/includes? result "<set")))
+      (t/is (not (str/includes? result "onmouseover")))
+      (t/is (str/includes? result "<rect")))))
 
 (t/deftest sanitize-svg-namespace-prefixed-script
   (t/testing "sanitize-svg removes script tags written with a namespace prefix bound to the SVG namespace"
     (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:x=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><x:script>alert('xss')</x:script><rect width=\"50\" height=\"50\"/></svg>"
           result (svg/sanitize-svg svg)]
-      (t/is (not (clojure.string/includes? result "<x:script")))
-      (t/is (not (clojure.string/includes? result "alert")))
-      (t/is (clojure.string/includes? result "<rect")))))
+      (t/is (not (str/includes? result "<x:script")))
+      (t/is (not (str/includes? result "alert")))
+      (t/is (str/includes? result "<rect")))))
 
 (t/deftest sanitize-svg-arbitrary-prefixed-script
   (t/testing "sanitize-svg removes script tags written with an arbitrary namespace prefix"
     (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:p=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><p:script>alert('xss')</p:script><rect width=\"50\" height=\"50\"/></svg>"
           result (svg/sanitize-svg svg)]
-      (t/is (not (clojure.string/includes? result "<p:script")))
-      (t/is (not (clojure.string/includes? result "alert")))
-      (t/is (clojure.string/includes? result "<rect")))))
+      (t/is (not (str/includes? result "<p:script")))
+      (t/is (not (str/includes? result "alert")))
+      (t/is (str/includes? result "<rect")))))
 
 (t/deftest sanitize-svg-nested-prefixed-script
   (t/testing "sanitize-svg removes namespace-prefixed script tags from nested elements"
     (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:x=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><g><x:script>alert('xss')</x:script></g></svg>"
           result (svg/sanitize-svg svg)]
-      (t/is (not (clojure.string/includes? result "<x:script")))
-      (t/is (not (clojure.string/includes? result "alert")))
-      (t/is (clojure.string/includes? result "<g")))))
+      (t/is (not (str/includes? result "<x:script")))
+      (t/is (not (str/includes? result "alert")))
+      (t/is (str/includes? result "<g")))))
 
 (t/deftest sanitize-svg-prefixed-dangerous-tags
   (t/testing "sanitize-svg removes dangerous animation elements written with a namespace prefix"
     (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:x=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><x:foreignObject width=\"10\" height=\"10\"/><x:set attributeName=\"onmouseover\" to=\"alert('xss')\"/><x:animate attributeName=\"fill\" to=\"red\"/><x:animateTransform attributeName=\"transform\"/><rect width=\"50\" height=\"50\"/></svg>"
           result (svg/sanitize-svg svg)]
-      (t/is (not (clojure.string/includes? result "foreignObject")))
-      (t/is (not (clojure.string/includes? result "<x:set")))
-      (t/is (not (clojure.string/includes? result "<x:animate")))
-      (t/is (not (clojure.string/includes? result "alert")))
-      (t/is (clojure.string/includes? result "<rect")))))
+      (t/is (not (str/includes? result "foreignObject")))
+      (t/is (not (str/includes? result "<x:set")))
+      (t/is (not (str/includes? result "<x:animate")))
+      (t/is (not (str/includes? result "alert")))
+      (t/is (str/includes? result "<rect")))))
 
 (t/deftest sanitize-svg-prefixed-javascript-href
   (t/testing "sanitize-svg removes javascript: URLs from href attributes written with a namespace prefix"
     (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:x=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><a x:href=\"javascript:alert('xss')\"><rect width=\"50\" height=\"50\"/></a></svg>"
           result (svg/sanitize-svg svg)]
-      (t/is (not (clojure.string/includes? result "javascript:")))
-      (t/is (not (clojure.string/includes? result "alert")))
-      (t/is (clojure.string/includes? result "<a")))))
+      (t/is (not (str/includes? result "javascript:")))
+      (t/is (not (str/includes? result "alert")))
+      (t/is (str/includes? result "<a")))))
 
 (t/deftest sanitize-svg-prefixed-event-handlers
   (t/testing "sanitize-svg removes event handler attributes written with a namespace prefix"
     (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:x=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\" x:onload=\"alert('xss')\"><rect width=\"50\" height=\"50\" x:onclick=\"alert('xss')\"/></svg>"
           result (svg/sanitize-svg svg)]
-      (t/is (not (clojure.string/includes? result "onload")))
-      (t/is (not (clojure.string/includes? result "onclick")))
-      (t/is (not (clojure.string/includes? result "alert")))
-      (t/is (clojure.string/includes? result "<rect")))))
+      (t/is (not (str/includes? result "onload")))
+      (t/is (not (str/includes? result "onclick")))
+      (t/is (not (str/includes? result "alert")))
+      (t/is (str/includes? result "<rect")))))
 
 (t/deftest sanitize-svg-prefixed-xlink-namespace-href
   (t/testing "sanitize-svg removes javascript: URLs from href written with a prefix bound to the xlink namespace"
     (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:y=\"http://www.w3.org/1999/xlink\" width=\"100\" height=\"100\"><a y:href=\"javascript:alert('xss')\"><rect width=\"50\" height=\"50\"/></a></svg>"
           result (svg/sanitize-svg svg)]
-      (t/is (not (clojure.string/includes? result "javascript:")))
-      (t/is (not (clojure.string/includes? result "alert")))
-      (t/is (clojure.string/includes? result "<a")))))
+      (t/is (not (str/includes? result "javascript:")))
+      (t/is (not (str/includes? result "alert")))
+      (t/is (str/includes? result "<a")))))
 
 (t/deftest sanitize-svg-preserved-prefixed-attrs
   (t/testing "sanitize-svg preserves legitimate attributes written with a namespace prefix"
     (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xml=\"http://www.w3.org/XML/1998/namespace\"><text xml:space=\"preserve\">hola</text></svg>"
           result (svg/sanitize-svg svg)]
-      (t/is (clojure.string/includes? result "xml:space"))
-      (t/is (clojure.string/includes? result "hola")))))
+      (t/is (str/includes? result "xml:space"))
+      (t/is (str/includes? result "hola")))))
+
+;; --- SVG sanitization: escaping on serialization
+;;
+;; The sanitizer filters dangerous elements and attributes by name, so the
+;; escaping happens when the tree is written back. A payload hidden in an
+;; attribute value or in a text node must not become live markup again.
+
+(def ^:private clean-svg
+  "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\"><circle r=\"4\"/></svg>")
+
+(def ^:private evil-attribute-svg
+  "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\" id=\"x' onload='alert(1)\"><rect width=\"10\" height=\"10\"/></svg>")
+
+(def ^:private evil-text-svg
+  "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><text>&lt;/text&gt;&lt;script&gt;alert(1)&lt;/script&gt;&lt;text&gt;</text></svg>")
+
+(def ^:private evil-cdata-svg
+  "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><text><![CDATA[</text><script>alert(1)</script><text>]]></text></svg>")
+
+(defn- write-temp-svg
+  "Write `text` to a temporary SVG file and return its path."
+  [text]
+  (let [path (fs/create-tempfile :dir "/tmp/penpot"
+                                 :prefix "penpot-svg-test-"
+                                 :suffix ".svg")]
+    (spit (str path) text :encoding "UTF-8")
+    path))
+
+(t/deftest sanitize-svg-escapes-attribute-values
+  (t/testing "an event handler smuggled in an attribute value is escaped"
+    (let [result (svg/sanitize-svg evil-attribute-svg)
+          parsed (svg/parse-svg result)]
+      (t/is (not (contains? (:attrs parsed) :onload)))
+      (t/is (= "x' onload='alert(1)"
+               (get (:attrs parsed) :id)))
+      (t/is (str/includes? result "&apos;")))))
+
+(t/deftest sanitize-svg-escapes-text-content
+  (t/testing "entity encoded markup in a text node is escaped"
+    (let [result (svg/sanitize-svg evil-text-svg)]
+      (t/is (not (str/includes? result "<script")))
+      (t/is (str/includes? result "&lt;script&gt;")))))
+
+(t/deftest sanitize-svg-escapes-cdata-content
+  (t/testing "markup hidden in a CDATA node is escaped"
+    (let [result (svg/sanitize-svg evil-cdata-svg)]
+      (t/is (not (str/includes? result "<script")))
+      (t/is (str/includes? result "&lt;script&gt;")))))
+
+(t/deftest sanitize-svg-escapes-ampersands
+  (t/testing "ampersands in text and attribute values are escaped"
+    (let [result (svg/sanitize-svg "<svg xmlns=\"http://www.w3.org/2000/svg\" id=\"a&amp;b\"><text>a &amp; b</text></svg>")]
+      (t/is (str/includes? result "a &amp; b"))
+      (t/is (= "a&b"
+               (get-in (svg/parse-svg result) [:attrs :id]))))))
+
+(t/deftest sanitize-svg-output-is-valid-xml
+  (t/testing "the sanitized output can be parsed back"
+    (doseq [payload [clean-svg
+                     evil-attribute-svg
+                     evil-text-svg
+                     evil-cdata-svg]]
+      (t/is (some? (svg/parse-svg (svg/sanitize-svg payload)))))))
+
+(t/deftest sanitize-svg-is-idempotent
+  (t/testing "sanitizing an already sanitized document does not change it"
+    (let [once (svg/sanitize-svg clean-svg)]
+      (t/is (= (svg/parse-svg once)
+               (svg/parse-svg (svg/sanitize-svg once)))))))
+
+(t/deftest sanitize-svg-upload-sanitizes-svg
+  (t/testing "an SVG upload is replaced by a sanitized copy"
+    (let [path   (write-temp-svg evil-attribute-svg)
+          upload {:filename "evil.svg"
+                  :path path
+                  :mtype "image/svg+xml"
+                  :size (fs/size path)}
+          result (svg/sanitize-svg-upload upload)
+          parsed (svg/parse-svg (slurp (str (:path result))))]
+      (t/is (not= path (:path result)))
+      (t/is (not (contains? (:attrs parsed) :onload)))
+      (t/is (= "x' onload='alert(1)"
+               (get (:attrs parsed) :id)))
+      (t/is (= (fs/size (:path result)) (:size result))))))
+
+(t/deftest sanitize-svg-upload-passes-non-svg
+  (t/testing "an upload that is not an SVG is returned untouched"
+    (let [path   (th/tempfile "backend_tests/test_files/sample.jpg")
+          upload {:filename "sample.jpg"
+                  :path path
+                  :mtype "image/jpeg"
+                  :size 312043}]
+      (t/is (= upload (svg/sanitize-svg-upload upload))))))
 
 (t/deftest info-invalid-image
   (t/testing "info on invalid image raises error"

@@ -14,9 +14,11 @@
    [app.db :as db]
    [app.email :as eml]
    [app.http :as-alias http]
+   [app.media.svg :as svg]
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
+   [app.storage :as sto]
    [app.util.ssrf :as ssrf]
    [app.worker :as wrk]
    [backend-tests.helpers :as th]
@@ -2086,3 +2088,29 @@
                              :size 123}}
           out     (th/management-command! params)]
       (t/is (th/ex-of-code? (:error out) :params-validation)))))
+
+(t/deftest upload-organization-logo-sanitizes-svg
+  ;; The logo lands in a public bucket, so an SVG with live markup must
+  ;; be sanitized before it is stored.
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          path    (fs/create-tempfile :dir "/tmp/penpot"
+                                      :prefix "penpot-svg-test-"
+                                      :suffix ".svg")
+          content "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\" id=\"x' onload='alert(1)\"><rect width=\"10\" height=\"10\"/></svg>"]
+      (spit (str path) content :encoding "UTF-8")
+      (let [params {::th/type :upload-organization-logo
+                    ::rpc/profile-id (:id profile)
+                    :organization-id (uuid/random)
+                    :content {:filename "evil.svg"
+                              :path path
+                              :mtype "image/svg+xml"
+                              :size (fs/size path)}}
+            out    (th/multipart-management-command! params)]
+        (t/is (th/success? out))
+        (let [storage (:app.storage/storage th/*system*)
+              sobject (sto/get-object storage (get-in out [:result :id]))
+              stored  (slurp (sto/get-object-data storage sobject))
+              parsed  (svg/parse-svg stored)]
+          (t/is (not (contains? (:attrs parsed) :onload)))
+          (t/is (= "x' onload='alert(1)" (get (:attrs parsed) :id))))))))

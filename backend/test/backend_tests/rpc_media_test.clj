@@ -10,6 +10,7 @@
    [app.db :as db]
    [app.http.client :as http]
    [app.media :as media]
+   [app.media.svg :as svg]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
@@ -22,6 +23,19 @@
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
+
+(def ^:private evil-svg
+  "An SVG that smuggles an event handler inside an attribute value."
+  "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\" id=\"x' onload='alert(1)\"><rect width=\"10\" height=\"10\"/></svg>")
+
+(defn- write-temp-svg
+  "Write `text` to a temporary SVG file and return its path."
+  [text]
+  (let [path (fs/create-tempfile :dir "/tmp/penpot"
+                                 :prefix "penpot-svg-test-"
+                                 :suffix ".svg")]
+    (spit (str path) text :encoding "UTF-8")
+    path))
 
 (t/deftest media-object-from-url
   (let [prof   (th/create-profile* 1)
@@ -93,6 +107,34 @@
         (t/is (= 312043 (:size mobj1)))
         (t/is (= 3890   (:size mobj2)))))))
 
+
+(t/deftest upload-file-media-object-sanitizes-svg
+  (let [prof   (th/create-profile* 1)
+        file   (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+        path   (write-temp-svg evil-svg)
+
+        params {::th/type :upload-file-media-object
+                ::rpc/profile-id (:id prof)
+                :file-id (:id file)
+                :is-local true
+                :name "evil.svg"
+                :content {:filename "evil.svg"
+                          :path path
+                          :mtype "image/svg+xml"
+                          :size (fs/size path)}}
+        out    (th/multipart-command! params)]
+
+    (t/is (nil? (:error out)))
+
+    (let [{:keys [media-id]} (:result out)
+          storage (:app.storage/storage th/*system*)
+          sobject (sto/get-object storage media-id)
+          content (slurp (sto/get-object-data storage sobject))
+          parsed  (svg/parse-svg content)]
+      (t/is (not (contains? (:attrs parsed) :onload)))
+      (t/is (= "x' onload='alert(1)" (get (:attrs parsed) :id))))))
 
 (t/deftest media-object-from-url-command
   (let [prof   (th/create-profile* 1)

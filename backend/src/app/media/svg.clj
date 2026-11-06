@@ -12,8 +12,10 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.storage.tmp :as tmp]
    [clojure.xml :as xml]
-   [cuerdas.core :as str])
+   [cuerdas.core :as str]
+   [datoteka.fs :as fs])
   (:import
    clojure.lang.XMLHandler
    java.io.InputStream
@@ -46,6 +48,52 @@
       (xml/parse istream secure-parser-factory))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SVG SERIALIZATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private xml-declaration
+  "Declaration written at the top of every sanitized document."
+  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
+
+(defn- escape-text
+  "Escape the characters that are special inside a XML text node."
+  [s]
+  (-> s
+      (str/replace "&" "&amp;")
+      (str/replace "<" "&lt;")
+      (str/replace ">" "&gt;")))
+
+(defn- escape-attr
+  "Escape the characters that are special inside a XML attribute value.
+   The value is written between double quotes, so the quote itself is
+   escaped too."
+  [s]
+  (-> s
+      (str/replace "&" "&amp;")
+      (str/replace "<" "&lt;")
+      (str/replace ">" "&gt;")
+      (str/replace "\"" "&quot;")
+      (str/replace "'" "&apos;")))
+
+(defn- emit-element
+  "Serialize a parsed element, escaping every text and attribute value.
+
+   The tag and attribute names come from the parser, so they are valid
+   XML names; only their values can carry markup."
+  [{:keys [tag attrs content]}]
+  (let [attrs-str   (apply str
+                           (for [[k v] attrs]
+                             (str " " (name k) "=\"" (escape-attr (str v)) "\"")))
+        content-str (apply str
+                           (for [child content]
+                             (if (map? child)
+                               (emit-element child)
+                               (escape-text child))))]
+    (if (seq content)
+      (str "<" (name tag) attrs-str ">" content-str "</" (name tag) ">")
+      (str "<" (name tag) attrs-str "/>"))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SVG SANITIZATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -97,13 +145,17 @@
 (defn sanitize-svg
   "Sanitize SVG content by removing dangerous elements and attributes.
    Removes <script> tags, <foreignObject> elements, event handlers (on*),
-   and javascript: URLs from href attributes."
+   and javascript: URLs from href attributes.
+
+   The filtered tree is written back with an escaping serializer: a
+   payload hidden in an attribute value or in a text node would become
+   live markup again if the values were written verbatim."
   [svg-text]
   (try
     (let [parsed (parse-svg svg-text)
           sanitized (sanitize-svg-element parsed)]
       (if sanitized
-        (with-out-str (xml/emit sanitized))
+        (str xml-declaration (emit-element sanitized))
         (ex/raise :type :validation
                   :code :invalid-svg-file
                   :hint "SVG sanitization produced no output")))
@@ -113,6 +165,22 @@
                 :code :invalid-svg-file
                 :hint "SVG parsing failed during sanitization"
                 :cause e))))
+
+(defn sanitize-svg-upload
+  "Return the upload untouched when it does not hold an SVG. When it
+   does, write a sanitized copy to a temporary file and return the
+   upload pointing to it, with the size of the sanitized content.
+
+   Every path that stores an uploaded SVG must go through this function,
+   or the stored file can carry live markup."
+  [{:keys [mtype path] :as upload}]
+  (if (= "image/svg+xml" mtype)
+    (let [content (slurp (str path) :encoding "UTF-8")
+          clean   (sanitize-svg content)
+          tmp     (tmp/tempfile :prefix "penpot-svg-" :suffix ".svg" :min-age "1h")]
+      (spit (str tmp) clean :encoding "UTF-8")
+      (assoc upload :path tmp :size (fs/size tmp)))
+    upload))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SVG INFO EXTRACTION
