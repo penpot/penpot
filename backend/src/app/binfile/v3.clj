@@ -847,20 +847,24 @@
 (defn- import-file-relations
   [{:keys [::db/conn ::manifest ::bfc/timestamp] :as cfg}]
   (events/tap :progress {:section :relations})
-  (doseq [[file-id libr-id] (:relations manifest)]
-
-    (let [file-id (bfc/lookup-index file-id)
-          libr-id (bfc/lookup-index libr-id)]
-
-      (when (and file-id libr-id)
-        (l/dbg :hint "create file library link"
-               :file-id (str file-id)
-               :lib-id (str libr-id)
-               ::l/sync? true)
-        (let [rel-params {:file-id file-id
-                          :library-file-id libr-id}]
-          (db/insert! conn :file-library-rel rel-params)
-          (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp)))))))
+  (let [file-ids (into #{} (map :id) (:files manifest))]
+    (doseq [[file-id libr-id] (:relations manifest)]
+      (if (and (not= file-id libr-id)
+               (contains? file-ids file-id)
+               (contains? file-ids libr-id))
+        (let [file-id (bfc/lookup-index file-id)
+              libr-id (bfc/lookup-index libr-id)]
+          (l/dbg :hint "create file library link"
+                 :file-id (str file-id)
+                 :lib-id (str libr-id)
+                 ::l/sync? true)
+          (let [rel-params {:file-id file-id
+                            :library-file-id libr-id}]
+            (db/insert! conn :file-library-rel rel-params)
+            (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp))))
+        (l/warn :hint "ignoring invalid file library relation"
+                :file-id (str file-id)
+                :lib-id (str libr-id))))))
 
 (defn- import-storage-objects
   [{:keys [::bfc/input ::entries ::bfc/timestamp] :as cfg}]
