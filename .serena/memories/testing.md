@@ -152,7 +152,7 @@ When running ANY test command (CLJS/JS or JVM):
    pnpm run test 2>&1 | tail -20
    pnpm run test 2>&1 | grep "failures"
    ```
-3. **Use `--focus` to narrow test scope** instead of filtering output.
+3. **Use `--focus` (kaocha) or a test id (warm JVM)** to narrow test scope instead of filtering output.
 4. **Read the full output file** to understand test results completely.
 
 When running CLJS/JS tests (frontend, common):
@@ -161,7 +161,8 @@ When running CLJS/JS tests (frontend, common):
 - After `build:test` has been run once, you can invoke the runner directly: `node target/tests/test.js [--focus ...] [--log-level ...]`.
 
 When running JVM tests (backend, common):
-- Use `clojure -M:dev:test` directly (no pnpm wrapper).
+- Backend loop: send the ids to the warm test JVM, `backend/scripts/test-repl test <id>`, instead of paying a cold `clojure -M:dev:test` per edit. Commands and traps: `mem:backend/testing`.
+- Cold kaocha with `clojure -M:dev:test` (no pnpm wrapper) stays for CI parity before a commit, and for every `common` JVM test, because `test-repl` is backend-only.
 - Same file-piping rule applies.
 
 ## Verification Checklist

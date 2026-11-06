@@ -13,7 +13,7 @@
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
-(t/use-fixtures :once (partial th/init-system))
+(t/use-fixtures :once th/state-init)
 (t/use-fixtures :each (partial th/init-config [:enable-account-lockout]))
 
 (t/deftest record-failed-attempt-returns-nil-when-disabled

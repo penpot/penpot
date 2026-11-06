@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import nreplClient from "nrepl-client";
 import { readFileSync, writeFileSync, existsSync, unlinkSync } from "fs";
+import { randomUUID } from "crypto";
 import path from "path";
 import os from "os";
 
@@ -51,9 +52,15 @@ function nreplSend(con, msg) {
   });
 }
 
+// Grace period for the server to acknowledge an interrupt after a timeout.
+const INTERRUPT_GRACE = 2000;
+
 function nreplEval({ host, port, code, sessionId, timeout = DEFAULT_TIMEOUT }) {
   return new Promise((resolve, reject) => {
     const con = nreplClient.connect({ host, port });
+    const evalId = randomUUID();
+    let sid = sessionId;
+    let evaluating = false;
     let finished = false;
 
     const finish = (err, result) => {
@@ -65,8 +72,16 @@ function nreplEval({ host, port, code, sessionId, timeout = DEFAULT_TIMEOUT }) {
       else resolve(result);
     };
 
+    // Closing the connection does not stop the evaluation on the server, so
+    // interrupt it first; return as soon as the interrupt is acknowledged.
     const timer = setTimeout(() => {
-      finish(new Error(`nREPL eval timed out after ${timeout}ms`));
+      const err = new Error(`nREPL eval timed out after ${timeout}ms`);
+      if (!evaluating) return finish(err);
+      setTimeout(() => finish(err), INTERRUPT_GRACE);
+      con.send({ op: "interrupt", session: sid, "interrupt-id": evalId }, () => {
+        err.message += " (interrupted)";
+        finish(err);
+      });
     }, timeout);
 
     con.on("error", (err) => {
@@ -75,8 +90,6 @@ function nreplEval({ host, port, code, sessionId, timeout = DEFAULT_TIMEOUT }) {
 
     con.once("connect", async () => {
       try {
-        let sid = sessionId;
-
         if (!sid) {
           const msgs = await nreplSend(con, { op: "clone" });
           const m = msgs.find((m) => m["new-session"]);
@@ -84,13 +97,23 @@ function nreplEval({ host, port, code, sessionId, timeout = DEFAULT_TIMEOUT }) {
           sid = m["new-session"];
         }
 
-        const messages = await nreplSend(con, { op: "eval", code, session: sid });
+        evaluating = true;
+        const messages = await nreplSend(con, { op: "eval", code, session: sid, id: evalId });
         finish(null, { messages, sessionId: sid });
       } catch (err) {
         finish(err);
       }
     });
   });
+}
+
+function statusesOf(messages) {
+  return messages.flatMap((m) => m.status || []);
+}
+
+// An evaluation failed when it threw or could not be read.
+function evalFailed(messages) {
+  return messages.some((m) => m.ex) || statusesOf(messages).includes("eval-error");
 }
 
 // ============================================================================
@@ -116,7 +139,7 @@ function formatEvalMessages(messages) {
     }
   }
   if (!hasContent) {
-    const statuses = messages.map((m) => m.status).filter(Boolean).flat();
+    const statuses = statusesOf(messages);
     return `Evaluation completed. Status: ${statuses.join(", ") || "done"}`;
   }
   return lines.join("\n");
@@ -193,14 +216,18 @@ function printHelp() {
   console.log(`Usage: ${bin} [options] [<code>]
 
 Evaluate Clojure code via a running nREPL server. Session state (defs, in-ns)
-persists across invocations via a stored session ID.
+persists across invocations via a stored session ID; a session the server no
+longer knows (the JVM restarted) is replaced by a fresh one.
+
+Exits 1 when the evaluation throws or cannot be read, and when it times out,
+in which case the evaluation is interrupted on the server.
 
 Options:
   --backend                   Connect to backend nREPL on port 6064 (default)
   --frontend                  Connect to frontend nREPL on port 3447
   -p, --port PORT             nREPL port (default: 6064; overridden by --backend/--frontend)
   -H, --host HOST             nREPL host (default: 127.0.0.1)
-  -t, --timeout MILLISECONDS  Timeout in milliseconds (default: 120000)
+  -t, --timeout MILLISECONDS  Timeout in milliseconds (default: 120000); interrupts the evaluation
   --reset-session             Discard stored session and start fresh
   -e, --last-error            Evaluate *e to retrieve the last exception
   -h, --help                  Show this help message
@@ -262,18 +289,21 @@ async function main() {
     process.exit(1);
   }
 
-  const storedSession = readSession(args.host, args.port);
+  const evalArgs = { host: args.host, port: args.port, code, timeout: args.timeout };
+  let result = await nreplEval({ ...evalArgs, sessionId: readSession(args.host, args.port) });
 
-  const { messages, sessionId } = await nreplEval({
-    host: args.host,
-    port: args.port,
-    code,
-    sessionId: storedSession,
-    timeout: args.timeout,
-  });
+  // The stored session dies with the JVM: start a fresh one instead of
+  // failing every later call.
+  if (statusesOf(result.messages).includes("unknown-session")) {
+    deleteSession(args.host, args.port);
+    result = await nreplEval({ ...evalArgs, sessionId: null });
+  }
 
-  writeSession(args.host, args.port, sessionId);
-  console.log(formatEvalMessages(messages));
+  writeSession(args.host, args.port, result.sessionId);
+  console.log(formatEvalMessages(result.messages));
+  if (evalFailed(result.messages)) {
+    process.exitCode = 1;
+  }
 }
 
 main().catch((err) => {
