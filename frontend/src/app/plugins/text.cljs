@@ -431,6 +431,7 @@
 
     :applyTypography
     (fn [typography]
+      (r/check-writable)
       (let [typography (u/proxy->library-typography typography)
             attrs (-> typography
                       (assoc :typography-ref-file file-id)

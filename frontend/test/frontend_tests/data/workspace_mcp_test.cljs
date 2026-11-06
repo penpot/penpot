@@ -13,6 +13,7 @@
    [app.main.data.profile :as du]
    [app.main.data.workspace.mcp :as mcp]
    [app.plugins.register :as preg]
+   [app.util.globals :as globals]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as a]
@@ -57,6 +58,18 @@
           result (ptk/update (mcp/update-mcp-status false) state)]
       (t/is (false? (get-in result [:profile :props :mcp-enabled])))
       (t/is (false? (get-in result [:mcp :enabled]))))))
+
+(t/deftest test-extension-status
+  (t/testing "keeps a session the plugin is reconnecting"
+    (t/is (= "connecting" (mcp/extension-status "disconnected" true))))
+
+  (t/testing "reports the disconnect once the user has stopped the connection"
+    (t/is (= "disconnected" (mcp/extension-status "disconnected" false)))
+    (t/is (= "disconnected" (mcp/extension-status "disconnected" nil))))
+
+  (t/testing "passes other statuses through"
+    (t/is (= "connected" (mcp/extension-status "connected" true)))
+    (t/is (= "error" (mcp/extension-status "error" true)))))
 
 (t/deftest test-update-mcp-connection-status
   (t/testing "sets connection status to connected"
@@ -170,6 +183,47 @@
     (await (a/observe (ptk/watch event state (rx/empty))
                       :on-next #(swap! events conj (ptk/type %))))
     (t/is (= [:app.main.data.workspace.mcp/connect] @events))))
+
+(defn- connect
+  "Runs the effect of a connection request made with the given MCP state."
+  [mcp-state]
+  (let [event (mcp/connect-mcp)]
+    (ptk/effect event (ptk/update event {:mcp mcp-state}) nil)))
+
+(t/deftest ^:async test-session-lock-follows-connection-request
+  (let [requests (atom [])
+        released (atom 0)
+        locks    #js {:request (fn [lock-name options callback]
+                                 (swap! requests conj [lock-name (.-mode options)])
+                                 (.then (callback nil) #(swap! released inc)))}]
+    (await
+     (mock/with-mocks*
+       {globals/navigator #js {:locks locks}}
+       (connect {:enabled false})
+       (t/is (empty? @requests))
+       (connect {:enabled true :token-valid true})
+       (connect {:enabled true :token-valid true})
+       (t/is (= [["penpot-mcp-session" "shared"]] @requests))
+       (ptk/effect (mcp/user-disconnect-mcp) nil nil)
+       (await (a/settle))
+       (t/is (= 1 @released))
+       (ptk/effect (mcp/user-disconnect-mcp) nil nil)
+       (await (a/settle))
+       (t/is (= 1 @released))))))
+
+(t/deftest ^:async test-session-lock-retried-after-failed-request
+  (let [requests (atom 0)
+        locks    #js {:request (fn [_ _ _]
+                                 (swap! requests inc)
+                                 (js/Promise.reject (js/Error. "lock request denied")))}]
+    (await
+     (mock/with-mocks*
+       {globals/navigator #js {:locks locks}}
+       (connect {:enabled true :token-valid true})
+       (await (a/settle))
+       (connect {:enabled true :token-valid true})
+       (await (a/settle))
+       (t/is (= 2 @requests))))))
 
 (t/deftest test-disconnect-clears-connection-intent
   (let [state  {:mcp {:connection-requested true

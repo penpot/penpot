@@ -45,6 +45,7 @@ export const validEvents = [
   'themechange',
   'shapechange',
   'contentsave',
+  'contentrollback',
 ] as const;
 
 export function createApi(

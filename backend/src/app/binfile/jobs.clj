@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.binfile.jobs
-  "The binfile work a job runs.
+  "The progress bridge of the binfile jobs.
 
   A job has no SSE channel, so the `:progress` points that `bf.v1` and
   `bf.v3` emit become `progress` events of the job through
@@ -17,20 +17,15 @@
   so the adapter holds no state between taps. The ids the taps carry are
   not part of the job event contract.
 
-  The adapter checks that the job is still active before it starts, and
-  the beat checks it on every write: a job that was cancelled, or that
+  The handlers in `app.tasks.export-binfile` and
+  `app.tasks.import-binfile` run the core through `run` and
+  guard it with `check-active`: a job that was cancelled, or that
   already reached a terminal state, raises an `:interrupt` right there on
   the run thread, so the work stops at its next event point and the
   transaction of its handler rolls back with it. A run whose last tap
   happened before the interruption is discarded once it returns, which is
   what makes that transaction roll back too."
   (:require
-   [app.binfile.common :as bfc]
-   [app.binfile.v1 :as bf.v1]
-   [app.binfile.v3 :as bf.v3]
-   [app.common.exceptions :as ex]
-   [app.common.time :as ct]
-   [app.db :as db]
    [app.jobs :as jobs]
    [app.util.events :as events]))
 
@@ -39,7 +34,7 @@
 
   The substrate owns both the check and the error; this is the adapter's
   entry point to it, used by the two handlers before their run and by the
-  tests."
+  tests. Answers with the cfg, so a handler can thread it."
   [cfg context]
   (jobs/check-active cfg (:id context)))
 
@@ -98,9 +93,12 @@
       (assoc :counters (cond-> (or outer-counters {})
                          (some? own) (assoc stage own))))))
 
-(defn- with-progress
+(defn run
   "Run `f` with the progress taps of the core turned into milestones of the
   job.
+
+  `f` is called with the cfg, so the adapter forwards what it receives
+  and a caller can pass the core directly.
 
   Every tap is reported: the substrate throttles the durable events, and
   a milestone that does not fit loses no information because the next one
@@ -117,55 +115,6 @@
                                    :job-id job-id
                                    :progress (milestone data))))]
     (binding [events/*sink* sink]
-      (let [result (f)]
+      (let [result (f cfg)]
         (check-active cfg context)
         result))))
-
-(defn export-files
-  "Export a set of files into `output` as part of a job, reporting
-  progress as job events."
-  [cfg context {:keys [ids export-type output]}]
-  (check-active cfg context)
-  (with-progress cfg context
-    #(bf.v3/export-files! (bfc/export-cfg cfg {:ids ids
-                                               :export-type export-type})
-                          output)))
-
-(defn- touch-project
-  "Mark the destination project as modified.
-
-  An import adds files, and the triggers of the schema only touch the
-  project on an update, so a project that just received files keeps its
-  old date and stays where it was in the list."
-  [cfg project-id]
-  (db/update! cfg :project
-              {:modified-at (ct/now)}
-              {:id project-id}
-              {::db/return-keys false}))
-
-(defn import-files
-  "Import the package at `input` as part of a job, reporting progress as
-  job events. The package was read from the resource of the job, so the
-  caller resolves the destination team and the adapter only fixes what
-  the legacy RPC and a job must share.
-
-  Both formats answer with the same shape: the version 1 reader returns
-  the set of files it created, and the version 3 one returns a map that
-  already carries them together with the resolution of the libraries."
-  [cfg context {:keys [profile-id project-id team name input version]}]
-  (check-active cfg context)
-  (let [cfg (bfc/import-cfg cfg {:profile-id profile-id
-                                 :project-id project-id
-                                 :team team
-                                 :name name
-                                 :input input})]
-    (with-progress cfg context
-      #(let [result (case (int version)
-                      1 (bf.v1/import-files! cfg)
-                      3 (bf.v3/import-files! cfg)
-                      (ex/raise :type :validation
-                                :code :unsupported-version
-                                :hint "unsupported binfile version"
-                                :version version))]
-         (touch-project cfg project-id)
-         result))))

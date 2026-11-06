@@ -486,11 +486,7 @@
        [:> heading* {:level 2
                      :typography t/title-medium
                      :class (stl/css :color-primary :mcp-server-title)}
-        (tr "integrations.mcp-server.title")]
-       [:> text* {:as "span"
-                  :typography t/body-small
-                  :class (stl/css :beta)}
-        (tr "integrations.mcp-server.title.beta")]]
+        (tr "integrations.mcp-server.title")]]
 
       [:> text* {:as "div"
                  :typography t/body-medium

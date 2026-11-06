@@ -5,5 +5,5 @@
     "version": 2,
     "scope": "global",
     "description": "This plugin enables interaction with the Penpot MCP server",
-    "permissions": ["user:read", "content:read", "content:write", "library:read", "library:write", "comment:read", "comment:write"]
+    "permissions": ["user:read", "content:read", "content:write", "library:read", "library:write", "comment:read", "comment:write", "allow:localstorage"]
 }

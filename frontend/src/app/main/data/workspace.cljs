@@ -144,11 +144,11 @@
   (log/inf :hint "resolve file"
            :file-id (str (:id file))
            :features (str/join " " (:features file)))
+  ;; fpmap/resolve-file guarantees resolved data or an error; there is
+  ;; no leftover-pointer case to handle here.
   (->> (fpmap/resolve-file file)
        (rx/map :data)
-       (rx/map
-        (fn [data]
-          (assoc file :data (d/removem (comp t/pointer? val) data))))))
+       (rx/map #(assoc file :data %))))
 
 (defn- check-libraries-synchronization
   [file-id libraries]
@@ -244,7 +244,9 @@
                     :save-undo? false
                     :origin it
                     :tags #{:position-data}
-                    :skip-component-sync? true}))
+                    :skip-component-sync? true
+                    ;; Derived from the text, so it follows it while saves fail
+                    :ignore-save-lock true}))
            (rx/empty)))))))
 
 (defn- workspace-initialized
@@ -342,7 +344,8 @@
       (let [file (restore-pending-changes state file)]
         (-> state
             (assoc :thumbnails (d/update-vals thumbnails (fn [uri] {:uri uri :rendered-at nil})))
-            (update :files assoc file-id file))))))
+            (update :files assoc file-id file)
+            (dps/forget-other-versions file))))))
 
 (defn zoom-to-frame
   []
@@ -417,7 +420,10 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stoper-s     (rx/filter (ptk/type? ::finalize-workspace) stream)
+      (let [;; A reload starts a new `initialize-workspace`, which replaces these streams
+            stoper-s     (rx/filter #(or (ptk/type? ::finalize-workspace %)
+                                         (ptk/type? ::initialize-workspace %))
+                                    stream)
             rparams      (rt/get-params state)
             features     (features/get-enabled-features state team-id)
             render-wasm-enabled? (features/active-feature? state "render-wasm/v1")
@@ -577,7 +583,9 @@
                               {:redo-changes changes :undo-changes []
                                :save-undo? false
                                :tags #{:position-data}
-                               :skip-component-sync? true})))))
+                               :skip-component-sync? true
+                               ;; Derived from commits already made, rollbacks included
+                               :ignore-save-lock true})))))
                       (rx/take-until stoper-s)))
 
                (->> stream
@@ -617,12 +625,14 @@
            :workspace-tokens
            :workspace-undo
            :workspace-versions)
-          (update :workspace-global dissoc :read-only? :preview-id :default-font)
+          (update :workspace-global dissoc :read-only? :preview-id :default-font
+                  :persistence-lock)
           (assoc-in [:workspace-global :options-mode] :design)
           (update :files d/update-vals #(dissoc % :data))))
 
     ptk/WatchEvent
     (watch [_ state _]
+      (t/clear-uuid-cache)
       (let [project-id (:current-project-id state)]
         (rx/of (dwn/finalize file-id)
                (dpj/finalize-project project-id)

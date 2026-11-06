@@ -60,6 +60,19 @@
   ([a b c d e f]
    (pos->Matrix a b c d e f)))
 
+(defn coerce
+  "Returns `v` as a Matrix. Matrices pass through; a plain map with
+  numeric `:a` to `:f` (the form legacy and JSON-decoded data keep) is
+  turned into one. Anything else is returned unchanged."
+  [v]
+  (if (and (map? v) (not (matrix? v)))
+    (let [{:keys [a b c d e f]} v]
+      (if (and (number? a) (number? b) (number? c)
+               (number? d) (number? e) (number? f))
+        (matrix a b c d e f)
+        v))
+    v))
+
 (def ^:private schema:matrix-attrs
   [:map {:title "MatrixAttrs"}
    [:a ::sm/safe-double]

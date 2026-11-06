@@ -1,6 +1,6 @@
 ---
 name: local-ci
-description: Run local CI-style checks with ./scripts/ci (lint, tests, format) per monorepo module. Use when verifying changes before declaring work done, running lint or tests locally, fixing formatting, or repairing Clojure delimiter errors.
+description: Run local CI-style checks with ./scripts/ci (lint, tests, format, and on request production builds) per monorepo module. Use when verifying changes before declaring work done, running lint or tests locally, fixing formatting, repairing Clojure delimiter errors, or checking that a module still compiles.
 ---
 
 # Local CI
@@ -29,10 +29,12 @@ Run from the repo root:
 ```
 
 Modules: `frontend` `backend` `common` `render-wasm` `exporter` `mcp`
-`plugins` `library`, or `--all` for every module.
+`plugins` `library` `media-processor`, or `--all` for every module.
 
 With no task flags it runs three tasks per module, in order: **lint**,
-**test**, **fmt** (format check; `--fix` formats files instead).
+**test**, **fmt** (format check; `--fix` formats files instead). **build**
+is opt-in: it compiles the module the way production does and is the slow
+one, so it never runs unless you ask for it.
 
 | Flag | Effect |
 |------|--------|
@@ -41,6 +43,7 @@ With no task flags it runs three tasks per module, in order: **lint**,
 | `--lint` / `--no-lint` | Run only lint / drop lint |
 | `--test` / `--no-test` | Run only tests / drop tests |
 | `--fmt` / `--no-fmt` | Run only format check / drop it |
+| `--build` / `--no-build` | Run only the production build / drop it |
 | `--fix` | Format files instead of checking (other tasks unaffected) |
 | `--paren-repair` | Fix delimiter errors in Clojure/CLJS files |
 | `--fail-fast` | Stop at the first failure |
@@ -72,6 +75,12 @@ log path.
 # Format the module without running the test suite
 ./scripts/ci --fix --no-test frontend
 
+# Check that the module still compiles (slow: minutes)
+./scripts/ci --build frontend
+
+# Compile every module (8 builds, ~4 min with warm caches)
+./scripts/ci --build --all
+
 # Broke delimiters in Clojure/CLJS files: repair first, then lint
 ./scripts/ci --paren-repair frontend
 ./scripts/ci --lint frontend
@@ -89,7 +98,12 @@ log path.
 - Test tasks are long-running (backend runs `clojure -M:dev:test`); give
   the bash call a generous timeout (10–20 minutes) instead of letting it
   time out mid-run.
-- `mcp` has no lint task — it shows as skipped, not failed.
+- `mcp` and `media-processor` have no lint task — they show as skipped,
+  not failed. `common` has no build task for the same reason.
+- Build runs are the slow ones (frontend ~2 min even with warm caches;
+  cold caches roughly double it). Give the shell a generous timeout and
+  do not run two builds at once in the same checkout: `render-wasm` takes
+  a build lock.
 - `--paren-repair` only fixes delimiters; run lint afterwards to catch
   what remains. See `mem:scripts/paren-repair`.
 - What to run and how to read test results: `mem:testing`.

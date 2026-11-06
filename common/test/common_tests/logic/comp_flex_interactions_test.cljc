@@ -10,7 +10,6 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
-   [app.common.logic.shapes :as cls]
    [app.common.math :as mth]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
@@ -19,6 +18,7 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
+   [app.common.types.modifiers :as ctm]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
@@ -39,17 +39,6 @@
       (ths/add-interaction :main-child :main-popup)
       (ths/add-interaction :copy-child :copy-popup)))
 
-(defn- update-shape
-  [file label update-fn]
-  (let [page (thf/current-page file)]
-    (thf/apply-changes
-     file
-     (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
-                                 #{(thi/id label)}
-                                 update-fn
-                                 (:objects page)
-                                 {}))))
-
 (defn- destinations
   [shape]
   (mapv :destination (:interactions shape)))
@@ -60,8 +49,8 @@
         margin       {:m1 5 :m2 5 :m3 5 :m4 5}
 
         ;; ==== Action
-        updated-file (update-shape file :main-child
-                                   #(assoc % :hidden true :layout-item-margin margin))
+        updated-file (tho/change-shape file :main-child
+                                       #(assoc % :hidden true :layout-item-margin margin))
         changes      (cll/generate-sync-file-changes (pcb/empty-changes)
                                                      nil
                                                      :components
@@ -85,7 +74,7 @@
         file         (setup-file)
 
         ;; ==== Action
-        updated-file (update-shape file :copy-child #(assoc % :hidden true))
+        updated-file (tho/change-shape file :copy-child #(assoc % :hidden true))
         page         (thf/current-page updated-file)
         container    (ctn/make-container page :page)
         changes      (-> (pcb/empty-changes)
@@ -144,7 +133,7 @@
 
         ;; ==== Action
         library'          (-> library
-                              (update-shape :main1-child #(gsh/move % (gpt/point 1 0)))
+                              (tho/change-shape :main1-child #(gsh/move % (gpt/point 1 0)))
                               (tho/propagate-component-changes :component1))
         file'             (thf/apply-changes file (sync-file-from-library file library'))
 
@@ -190,7 +179,7 @@
                                   :layout :flex
                                   :layout-flex-dir :row})
       (thc/instantiate-component :icon-a :nested-head {:parent-label :board-root})
-      (update-shape :nested-head #(assoc % :layout-item-absolute true))
+      (tho/change-shape :nested-head #(assoc % :layout-item-absolute true))
       (thc/make-component :board :board-root)))
 
 (t/deftest test-sync-library-keeps-swapped-nested-absolute
@@ -205,8 +194,8 @@
         swapped      (ths/get-shape file :copy-nested-head)
 
         ;; ==== Action
-        library'     (update-shape library :board-root
-                                   #(assoc % :fills (ths/sample-fills-color :fill-color "#fabada")))
+        library'     (tho/change-shape library :board-root
+                                       #(assoc % :fills (ths/sample-fills-color :fill-color "#fabada")))
         file'        (thf/apply-changes file (sync-file-from-library file library'))
         swapped'     (ths/get-shape file' :copy-nested-head)]
 
@@ -229,8 +218,8 @@
         file     (swap-to-library-component file library :copy-nested-head :icon-b)
 
         ;; ==== Action
-        library' (update-shape library :nested-head
-                               #(assoc % :layout-item-absolute false))
+        library' (tho/change-shape library :nested-head
+                                   #(assoc % :layout-item-absolute false))
         file'    (thf/apply-changes file (sync-file-from-library file library'))
         swapped' (ths/get-shape file' :copy-nested-head)]
 
@@ -250,7 +239,7 @@
                                                  :layout-flex-dir :row})
                      (thc/instantiate-component :icon-a :nested-head {:parent-label :board-root})
                      (ths/add-sample-shape :sibling :type :rect :name "Sibling" :parent-label :board-root)
-                     (update-shape :nested-head #(assoc % :layout-item-absolute true))
+                     (tho/change-shape :nested-head #(assoc % :layout-item-absolute true))
                      (thc/make-component :board :board-root))
         file     (-> (thf/sample-file :file)
                      (thc/instantiate-component :board
@@ -260,8 +249,8 @@
         file     (swap-to-library-component file library :copy-nested-head :icon-b)
 
         ;; ==== Action
-        library' (update-shape library :sibling
-                               #(assoc % :layout-item-margin margin))
+        library' (tho/change-shape library :sibling
+                                   #(assoc % :layout-item-margin margin))
         file'    (thf/apply-changes file (sync-file-from-library file library'))
         sibling' (ths/get-shape file' :copy-sibling)
         swapped' (ths/get-shape file' :copy-nested-head)]
@@ -270,3 +259,212 @@
     (t/is (= margin (:layout-item-margin sibling')))
     (t/is (true? (:layout-item-absolute swapped')))
     (t/is (some? (ctk/get-swap-slot swapped')))))
+
+(defn- setup-library-with-icon-slot
+  "Library: icon A, icon B, and a flex board whose `:slot` frame holds an
+  instance of icon A. The slot has a flex layout and the icon is absolute;
+  with `:layout? false` the slot has no layout and the icon is a plain child."
+  [& {:keys [layout?] :or {layout? true}}]
+  (-> (thf/sample-file :library)
+      (tho/add-simple-component :icon-a :icon-a-root :icon-a-child)
+      (tho/add-simple-component :icon-b :icon-b-root :icon-b-child)
+      (tho/add-frame :board-root {:name "Board"
+                                  :layout :flex
+                                  :layout-flex-dir :row})
+      (tho/add-frame :slot (cond-> {:name "Slot" :parent-label :board-root}
+                             layout? (assoc :layout :flex :layout-flex-dir :row)))
+      (thc/instantiate-component :icon-a :nested-head {:parent-label :slot})
+      (cond-> layout? (tho/change-shape :nested-head #(assoc % :layout-item-absolute true)))
+      (thc/make-component :board :board-root)))
+
+(defn- instantiate-board
+  "File with a copy of the library board, labelling its slot and nested icon."
+  [library]
+  (let [file (-> (thf/sample-file :file)
+                 (thc/instantiate-component :board
+                                            :copy-board
+                                            :library library
+                                            :children-labels [:copy-slot]))
+        slot (ths/get-shape file :copy-slot)]
+    (thi/set-id! :copy-nested-head (first (:shapes slot)))
+    file))
+
+(defn- offset-in-slot
+  [file slot-label icon-label]
+  (let [slot (ths/get-shape file slot-label)
+        icon (ths/get-shape file icon-label)]
+    (gpt/point (- (:x icon) (:x slot))
+               (- (:y icon) (:y slot)))))
+
+(defn- sync-after-unrelated-change
+  [file library root-label]
+  (let [library' (tho/change-shape library root-label
+                                   #(assoc % :fills (ths/sample-fills-color :fill-color "#fabada")))]
+    (thf/apply-changes file (sync-file-from-library file library'))))
+
+(t/deftest test-sync-places-swapped-child-in-moved-slot
+  (let [;; ==== Setup
+        library (setup-library-with-icon-slot)
+        file    (-> (instantiate-board library)
+                    (swap-to-library-component library :copy-nested-head :icon-b)
+                    ;; The layout moves the slot, and a previous sync moved the icon away
+                    (tho/move-shape-tree :copy-slot (gpt/point 800 0) :ignore-touched true)
+                    (tho/move-shape-tree :copy-nested-head (gpt/point 800 0) :ignore-touched true))
+
+        ;; ==== Action
+        file'   (sync-after-unrelated-change file library :board-root)]
+
+    ;; ==== Check
+    (t/is (gpt/close? (offset-in-slot library :slot :nested-head)
+                      (offset-in-slot file' :copy-slot :copy-nested-head)))
+    (t/is (true? (:layout-item-absolute (ths/get-shape file' :copy-nested-head))))))
+
+(t/deftest test-sync-places-swapped-child-in-moved-slot-without-layout
+  (let [;; ==== Setup
+        library (setup-library-with-icon-slot :layout? false)
+        file    (-> (instantiate-board library)
+                    (swap-to-library-component library :copy-nested-head :icon-b)
+                    ;; The layout moves the slot, and a previous sync moved the icon away
+                    (tho/move-shape-tree :copy-slot (gpt/point 800 0) :ignore-touched true)
+                    (tho/move-shape-tree :copy-nested-head (gpt/point 800 0) :ignore-touched true))
+
+        ;; ==== Action
+        file'   (sync-after-unrelated-change file library :board-root)]
+
+    ;; ==== Check
+    (t/is (gpt/close? (offset-in-slot library :slot :nested-head)
+                      (offset-in-slot file' :copy-slot :copy-nested-head)))))
+
+(t/deftest test-sync-keeps-moved-child-in-moved-slot
+  (let [;; ==== Setup
+        library (setup-library-with-icon-slot)
+        file    (-> (instantiate-board library)
+                    (tho/move-shape-tree :copy-nested-head (gpt/point 5 0))
+                    (tho/move-shape-tree :copy-slot (gpt/point 800 0) :ignore-touched true))
+        before  (offset-in-slot file :copy-slot :copy-nested-head)
+
+        ;; ==== Action
+        file'   (sync-after-unrelated-change file library :board-root)]
+
+    ;; ==== Check
+    (t/is (gpt/close? before (offset-in-slot file' :copy-slot :copy-nested-head)))))
+
+(t/deftest test-sync-keeps-user-moved-swapped-child-in-moved-slot
+  (let [;; ==== Setup
+        library (setup-library-with-icon-slot)
+        file    (-> (instantiate-board library)
+                    (swap-to-library-component library :copy-nested-head :icon-b)
+                    (tho/move-shape-tree :copy-nested-head (gpt/point 5 0))
+                    (tho/move-shape-tree :copy-slot (gpt/point 800 0) :ignore-touched true))
+        before  (offset-in-slot file :copy-slot :copy-nested-head)
+
+        ;; ==== Action
+        file'   (sync-after-unrelated-change file library :board-root)]
+
+    ;; ==== Check
+    (t/is (gpt/close? before (offset-in-slot file' :copy-slot :copy-nested-head)))))
+
+(defn- with-shapes-first
+  "Puts the shapes with the given labels first in the page objects, in that
+  order. The sync visits the shapes of a page in this order."
+  [file labels]
+  (let [page-id (:id (thf/current-page file))
+        ids     (mapv thi/id labels)]
+    (update-in file [:data :pages-index page-id :objects]
+               (fn [objects]
+                 (apply array-map (concat (mapcat #(vector % (get objects %)) ids)
+                                          (mapcat identity (apply dissoc objects ids))))))))
+
+(t/deftest test-sync-places-swapped-child-where-main-slot-occupant-is
+  (let [;; ==== Setup
+        library  (setup-library-with-icon-slot)
+        file     (-> (instantiate-board library)
+                     (swap-to-library-component library :copy-nested-head :icon-b)
+                     ;; The copy comes before its swapped icon, which the sync also syncs on its own
+                     (with-shapes-first [:copy-board :copy-nested-head]))
+
+        ;; ==== Action
+        library' (-> library
+                     (tho/move-shape-tree :nested-head (gpt/point 4 4))
+                     (tho/change-shape :icon-b-root #(gsh/transform-shape % (ctm/change-size % 32 nil))))
+        file'    (thf/apply-changes file (sync-file-from-library file library'))
+
+        ;; ==== Get
+        icon'    (ths/get-shape file' :copy-nested-head)]
+
+    ;; ==== Check
+    (t/is (gpt/close? (offset-in-slot library' :slot :nested-head)
+                      (offset-in-slot file' :copy-slot :copy-nested-head)))
+    (t/is (mth/close? (:width (ths/get-shape library' :icon-b-root)) (:width icon')))
+    (t/is (mth/close? (:x icon') (-> icon' :selrect :x)))))
+
+(defn- setup-library-with-root-icon
+  "Library: icon A, and a 300px wide flex card whose `:close` child, placed
+  directly in the root, is an absolute instance of icon A with the given
+  horizontal constraint."
+  [constraints-h]
+  (-> (thf/sample-file :library)
+      (tho/add-simple-component :icon-a :icon-a-root :icon-a-child
+                                :root-params {:width 24 :height 24}
+                                :child-params {:width 24 :height 24})
+      (tho/add-simple-component :icon-b :icon-b-root :icon-b-child
+                                :root-params {:width 24 :height 24}
+                                :child-params {:width 24 :height 24})
+      (tho/add-frame :card-root {:name "Card"
+                                 :layout :flex
+                                 :layout-flex-dir :row
+                                 :width 300
+                                 :height 48})
+      (thc/instantiate-component :icon-a :close {:parent-label :card-root})
+      (tho/change-shape :close #(assoc % :layout-item-absolute true :constraints-h constraints-h))
+      (thc/make-component :card :card-root)))
+
+(defn- instantiate-filled-card
+  "File with a copy of the card, widened by 800px and with its close icon
+  moved by `icon-shift`, the way the layout does when the copy fills a wider
+  parent."
+  [library icon-shift]
+  (-> (thf/sample-file :file)
+      (thc/instantiate-component :card
+                                 :copy-card
+                                 :library library
+                                 :children-labels [:copy-close])
+      (tho/change-shape :copy-card
+                        #(gsh/transform-shape % (ctm/change-size % (+ (:width %) 800) nil))
+                        :ignore-touched true)
+      (tho/move-shape-tree :copy-close (gpt/point icon-shift 0) :ignore-touched true)))
+
+(t/deftest test-sync-moved-root-child-follows-root-through-right-constraint
+  (let [;; ==== Setup
+        library (setup-library-with-root-icon :right)
+        file    (-> (instantiate-filled-card library 800)
+                    (tho/move-shape-tree :copy-close (gpt/point 5 0)))
+
+        ;; ==== Action
+        file'   (sync-after-unrelated-change file library :card-root)]
+
+    ;; ==== Check
+    (t/is (gpt/close? (gpt/add (offset-in-slot library :card-root :close) (gpt/point 5 0))
+                      (offset-in-slot file' :copy-card :copy-close)))))
+
+(t/deftest test-sync-scales-swapped-root-child-back-with-root
+  (let [;; ==== Setup
+        library (setup-library-with-root-icon :scale)
+        file    (-> (instantiate-filled-card library 0)
+                    (swap-to-library-component library :copy-close :icon-b)
+                    ;; The swap drops the constraints; set them again so this path runs
+                    (tho/change-shape :copy-close #(assoc % :constraints-h :scale)))
+
+        ;; ==== Action
+        file'   (sync-after-unrelated-change file library :card-root)
+
+        ;; ==== Get
+        scale   (/ (:width (ths/get-shape file' :copy-card))
+                   (:width (ths/get-shape file :copy-card)))
+        inner   #(ths/get-shape-by-id % (first (:shapes (ths/get-shape % :copy-close))))]
+
+    ;; ==== Check
+    (t/is (mth/close? (* scale (:width (ths/get-shape file :copy-close)))
+                      (:width (ths/get-shape file' :copy-close))))
+    ;; The icon content follows the icon through its own (left) constraint
+    (t/is (mth/close? (:width (inner file)) (:width (inner file'))))))

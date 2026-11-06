@@ -23,6 +23,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
+   [app.main.data.persistence :as dps]
    [app.main.data.team :as dtm]
    [app.main.data.websocket :as dws]
    [app.main.repo :as rp]
@@ -535,29 +536,60 @@
              (rx/map #(with-meta (file-created %) (meta it)))
              (rx/catch on-error))))))
 
-;; --- EVENT: duplicate-file
+;; --- EVENT: duplicate-files
 
-(defn duplicate-file
-  [{:keys [id name] :as params}]
-  (dm/assert! (uuid? id))
-  (dm/assert! (string? name))
-  (ptk/reify ::duplicate-file
+;; Longest wait for the pending changes of a file to be saved before copying it.
+(def ^:private save-wait-timeout-ms 10000)
+
+(defn- notify-duplicated
+  "Tells the user the `n` copies exist. With `unsaved`, warns instead that
+  they miss the changes not saved yet."
+  [n unsaved]
+  (if unsaved
+    (ntf/show {:content (tr "dashboard.duplicate-unsaved-changes" (i18n/c n))
+               :type :toast
+               :level :warning
+               :timeout 8000})
+    (ntf/success (tr "dashboard.success-duplicate-file" (i18n/c n)))))
+
+(defn- copy-files
+  "Copies `files` on the server, then tells the user. A copy that fails
+  ends the stream with its error, so nothing is told."
+  [files]
+  (ptk/reify ::copy-files
     ptk/WatchEvent
     (watch [_ state _]
-      (let [{:keys [on-success on-error]
-             :or {on-success identity
-                  on-error rx/throw}} (meta params)
-            unames (cfh/get-used-names (get state :files))
+      (let [file-ids  (into #{} (map :id) files)
+            ;; The copies hold the server's data, so what is unsaved now is missing
+            unsaved   (dps/unsaved-changes? state file-ids)
+            unames    (cfh/get-used-names (get state :files))
             suffix-fn (fn [copy-count]
                         (str/concat " "
                                     (tr "dashboard.copy-suffix")
                                     (when (> copy-count 1)
-                                      (str " " copy-count))))
-            new-name (cfh/generate-unique-name name unames :suffix-fn suffix-fn)]
-        (->> (rp/cmd! :duplicate-file {:file-id id :name new-name})
-             (rx/tap on-success)
-             (rx/map file-created)
-             (rx/catch on-error))))))
+                                      (str " " copy-count))))]
+        (rx/concat
+         (->> (rx/from files)
+              (rx/merge-map
+               (fn [{:keys [id name]}]
+                 (let [new-name (cfh/generate-unique-name name unames :suffix-fn suffix-fn)]
+                   (->> (rp/cmd! :duplicate-file {:file-id id :name new-name})
+                        (rx/map file-created))))))
+         (rx/of (notify-duplicated (count files) unsaved)))))))
+
+(defn duplicate-files
+  "Sends the pending changes of `files`, copies them and tells the user
+  once every copy exists."
+  [files]
+  (dm/assert! (every? (comp uuid? :id) files))
+  (dm/assert! (every? (comp string? :name) files))
+  (ptk/reify ::duplicate-files
+    ptk/WatchEvent
+    (watch [_ _ _]
+      ;; The copy is made from the server's data: send the pending changes first.
+      (rx/concat
+       (dps/force-persist-files-and-wait (into #{} (map :id) files) save-wait-timeout-ms)
+       (rx/of (copy-files files))))))
 
 ;; --- EVENT: move-files
 

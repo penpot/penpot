@@ -13,6 +13,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
    [app.common.geom.matrix :as gmt]
+   [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
@@ -27,6 +28,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.library :as ctl]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.path.segment :as segment]
@@ -577,15 +579,19 @@
     (container-log :debug (:id container) :msg "Sync page in local file" :page-id (:id container))
     (container-log :debug (:id container) :msg "Sync component in local library" :component-id (:id container)))
 
-  (let [linked-shapes (->> (vals (:objects container))
-                           (filter #(uses-assets? asset-type asset-id % library-id)))]
+  (let [objects       (:objects container)
+        ;; Deepest first, so a copy places its swapped children after their own sync
+        linked-shapes (->> (vals objects)
+                           (filter #(uses-assets? asset-type asset-id % library-id))
+                           (sort-by #(- (count (cfh/get-parent-ids objects (:id %))))))]
     (loop [shapes (seq linked-shapes)
            changes (-> changes
                        (pcb/with-container container)
-                       (pcb/with-objects (:objects container)))]
+                       (pcb/with-objects objects))]
       (if-let [shape (first shapes)]
         (recur (next shapes)
-               (let [objects' (pcb/get-objects changes)
+               (let [changes  (pcb/apply-changes-local changes)
+                     objects' (pcb/get-objects changes)
                      shape'   (get objects' (:id shape))]
                  ;; The shape could have been deleted in previous changes, if this nested component
                  ;; comes from components-v1 era or if there has been some error with the swap slot.
@@ -594,7 +600,7 @@
                    (generate-sync-shape asset-type
                                         changes
                                         library-id
-                                        container
+                                        (assoc container :objects objects')
                                         shape'
                                         libraries
                                         current-file-id)
@@ -832,7 +838,8 @@
                                                 root-inst
                                                 root-main
                                                 reset?
-                                                initial-root?)
+                                                initial-root?
+                                                nil)
 
           ;; If the component is not found, because the master component has been
           ;; deleted or the library unlinked, do nothing.
@@ -866,8 +873,88 @@
             (recur shape-inst' next-data component')
             nil))))))
 
+(defn- geometry-sync-delta
+  "Offset the sync applies to the top-left of `dest-shape` when it copies the
+  geometry of `origin-shape`."
+  [dest-shape origin-shape dest-root origin-root]
+  (gpt/subtract (grc/rect->point (:selrect (reposition-shape origin-shape origin-root dest-root)))
+                (grc/rect->point (:selrect dest-shape))))
+
+(defn- follow-parent-modifiers
+  "Modifiers that make `child` follow the change of its parent from
+  `parent-before` to `parent-after`, through the child constraints."
+  [child parent-before parent-after]
+  (let [sr-before (:selrect parent-before)
+        sr-after  (:selrect parent-after)
+        modifiers (-> (ctm/empty)
+                      (ctm/resize (gpt/point (/ (:width sr-after) (max 0.01 (:width sr-before)))
+                                             (/ (:height sr-after) (max 0.01 (:height sr-before))))
+                                  (first (:points parent-before))
+                                  (:transform parent-before)
+                                  (:transform-inverse parent-before))
+                      (ctm/move (gpt/subtract (first (:points parent-after))
+                                              (first (:points parent-before)))))]
+    ;; A move doesn't need the constraints
+    (if (or (ctm/empty? modifiers) (ctm/only-move? modifiers))
+      modifiers
+      (gsh/calc-child-modifiers parent-before child modifiers false
+                                (:points child)
+                                (:points parent-before)
+                                (delay (:points parent-after))))))
+
+(defn- follow-parent-modif-tree
+  "Modifiers that make `child` and its children follow the change of the
+  parent of `child` from `parent-before` to `parent-after`, each one through
+  its own constraints."
+  [objects child parent-before parent-after]
+  (let [modifiers (follow-parent-modifiers child parent-before parent-after)]
+    (if (ctm/empty? modifiers)
+      {}
+      (gm/set-objects-modifiers {(:id child) {:modifiers modifiers}}
+                                (select-keys objects (cfh/get-children-ids-with-self objects (:id child)))))))
+
+(defn- resize-with-parent
+  "Resizes `shape` the way its constraints do when its parent changes from
+  `parent-before` to `parent-after`, keeping its top-left."
+  [shape parent-before parent-after]
+  (let [modifiers (follow-parent-modifiers shape parent-before parent-after)]
+    (if (ctm/empty? modifiers)
+      shape
+      (let [shape' (gsh/transform-shape shape modifiers)]
+        (gsh/move shape' (gpt/subtract (grc/rect->point (:selrect shape))
+                                       (grc/rect->point (:selrect shape'))))))))
+
+(defn- update-geometry-untouched
+  "Applies `update-fn` to the shapes without marking them touched."
+  [changes ids update-fn container]
+  (pcb/concat-changes
+   changes
+   (-> (pcb/empty-changes)
+       (pcb/with-container container)
+       (pcb/with-objects (:objects container))
+       (pcb/update-shapes ids update-fn {:ignore-touched true}))))
+
+(defn generate-follow-parent
+  "Makes `child` and its children follow the change of the parent of `child`
+  from `parent-before` to `parent-after`, each one through its own
+  constraints, without marking them touched. `delta-fn`, if given, receives
+  `child` after that and returns the offset to move the subtree by."
+  [changes container child parent-before parent-after delta-fn]
+  (let [objects    (:objects container)
+        modif-tree (follow-parent-modif-tree objects child parent-before parent-after)
+        follow     #(gsh/transform-shape % (dm/get-in modif-tree [(:id %) :modifiers]))
+        delta      (if delta-fn (delta-fn (follow child)) (gpt/point 0 0))]
+    (cond-> changes
+      (or (seq modif-tree) (not (gpt/almost-zero? delta)))
+      (update-geometry-untouched (cfh/get-children-ids-with-self objects (:id child))
+                                 #(gsh/move (follow %) delta)
+                                 container))))
+
 (defn- generate-sync-shape-direct-recursive
-  [changes container shape-inst component library file libraries shape-main root-inst root-main reset? initial-root?]
+  "Syncs `shape-inst` and its children from `shape-main`. `parent-change` is
+  the geometry of the parent of `shape-inst` before and after the sync, or
+  nil."
+  [changes container shape-inst component library file libraries shape-main root-inst root-main reset? initial-root? parent-change]
   (shape-log :debug (:id shape-inst) container
              :msg "Sync shape direct recursive"
              :shape-inst (str (:name shape-inst) " " (pretty-uuid (:id shape-inst)))
@@ -879,6 +966,19 @@
     (let [omit-touched?        (not reset?)
           clear-remote-synced? (and initial-root? reset?)
           set-remote-synced?   (and (not initial-root?) reset?)
+          geometry-kept?       (and omit-touched?
+                                    (ctk/touched-group? shape-inst :geometry-group))
+          main-geometry        (reposition-shape shape-main root-main root-inst)
+          follow-modifiers     (when (and geometry-kept? (some? parent-change))
+                                 (let [[parent-before parent-after] parent-change]
+                                   (follow-parent-modifiers shape-inst parent-before parent-after)))
+          shape-after          (cond
+                                 (not geometry-kept?)   main-geometry
+                                 (some? follow-modifiers) (gsh/transform-shape shape-inst follow-modifiers)
+                                 :else                  shape-inst)
+          ;; Offset between where the sync leaves shape-inst and where the main puts it
+          main-gap             (gpt/subtract (grc/rect->point (:selrect shape-after))
+                                             (grc/rect->point (:selrect main-geometry)))
           changes
           (cond-> changes
             :always
@@ -888,6 +988,11 @@
                           root-main
                           container
                           omit-touched?)
+
+            (and (some? follow-modifiers) (not (ctm/empty? follow-modifiers)))
+            (update-geometry-untouched [(:id shape-inst)]
+                                       #(gsh/transform-shape % follow-modifiers)
+                                       container)
 
             (ctsl/flex-layout? shape-main)
             (update-flex-child-copy-attrs shape-main
@@ -962,15 +1067,20 @@
                                                        root-inst
                                                        root-main
                                                        reset?
-                                                       initial-root?))
+                                                       initial-root?
+                                                       [shape-inst shape-after]))
 
           swapped (fn [changes child-inst child-main]
                     (shape-log :trace (:id child-inst) container
                                :msg "Match slot"
                                :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
                                :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
-                    ;; For now we don't make any sync here.
-                    changes)
+                    ;; A swapped child follows its parent and, if the user didn't move it,
+                    ;; goes to the place of the slot's occupant in the main
+                    (generate-follow-parent changes container child-inst shape-inst shape-after
+                                            (when-not (ctk/touched-group? child-inst :geometry-group)
+                                              #(gpt/add (geometry-sync-delta % child-main root-inst root-main)
+                                                        main-gap))))
 
           moved (fn [changes child-inst child-main]
                   (shape-log :trace (:id child-inst) container
@@ -1338,6 +1448,12 @@
                                                       container
                                                       {:type :reg-objects
                                                        :shapes all-parents}))
+        ;; Conj reg before the deletions, so undo recalculates the parents
+        ;; after removing the shapes.
+        changes' (update changes' :undo-changes conj (make-change
+                                                      container
+                                                      {:type :reg-objects
+                                                       :shapes all-parents}))
         changes' (reduce del-obj-change changes' new-shapes)]
 
     (if (and (ctk/touched-group? parent-shape :shapes-group) omit-touched?)
@@ -1444,6 +1560,12 @@
         changes' (update changes' :redo-changes conj {:type :reg-objects
                                                       :component-id (:id component)
                                                       :shapes all-parents})
+        ;; Conj reg before the other undo changes, so undo recalculates the
+        ;; parents after removing the shapes.
+        changes' (update changes' :undo-changes conj (make-change
+                                                      component-container
+                                                      {:type :reg-objects
+                                                       :shapes all-parents}))
         changes' (reduce mod-obj-change changes' updated-shapes)
         changes' (reduce del-obj-change changes' new-shapes)]
 
@@ -1491,6 +1613,12 @@
 
         changes' (-> (reduce add-redo-change changes ids)
                      (update :redo-changes conj (make-change
+                                                 container
+                                                 {:type :reg-objects
+                                                  :shapes (vec parents)}))
+                     ;; Conj reg before the additions, so undo recalculates
+                     ;; the parents after restoring the shapes.
+                     (update :undo-changes conj (make-change
                                                  container
                                                  {:type :reg-objects
                                                   :shapes (vec parents)})))
@@ -1693,15 +1821,19 @@
                                     container
                                     {:type :reg-objects
                                      :shapes all-parents}))
-        (update :undo-changes conj (make-change
-                                    container
-                                    {:type :mod-obj
-                                     :id (:id dest-shape)
-                                     :operations (vec uoperations)}))
-        (update :undo-changes concat [(make-change
-                                       container
-                                       {:type :reg-objects
-                                        :shapes all-parents})])
+        ;; Conj reg before mod, so undo restores the shape and then its
+        ;; parents. Do not append with concat: it nests one lazy seq per
+        ;; shape and overflows the stack on big syncs.
+        (update :undo-changes conj
+                (make-change
+                 container
+                 {:type :reg-objects
+                  :shapes all-parents})
+                (make-change
+                 container
+                 {:type :mod-obj
+                  :id (:id dest-shape)
+                  :operations (vec uoperations)}))
         (pcb/apply-changes-local))))
 
 
@@ -2192,7 +2324,10 @@
   [changes current-shape previous-shape current-root prev-root origin-ref-shape container]
   (let [;; We need to sync only the position relative to the origin of the component.
         ;; (see update-attrs for a full explanation)
-        previous-shape (reposition-shape previous-shape prev-root current-root)
+        previous-shape (-> previous-shape
+                           (resize-with-parent (get (:objects container) (:parent-id previous-shape))
+                                               (get (pcb/get-objects changes) (:parent-id current-shape)))
+                           (reposition-shape prev-root current-root))
         touched        (get previous-shape :touched #{})
         text-auto?     (and (cfh/text-shape? current-shape)
                             (contains? #{:auto-height :auto-width} (:grow-type current-shape)))]
@@ -2729,11 +2864,24 @@
                                                            page
                                                            {:id (:id file)
                                                             :data file}
-                                                           libraries)))]
+                                                           libraries)))
+
+        ;; The attributes of `keep-props-values` get their value restored in the
+        ;; new shape. Keep too the touched groups they belong to, so the override
+        ;; stays marked as such (otherwise a later sync would overwrite it).
+        kept-touched-groups
+        (->> (keys keep-props-values)
+             (keep #(ctk/resolve-sync-group (:type new-shape) %))
+             (filter #(contains? (:touched shape) %))
+             (into #{}))
+
+        new-shape (update new-shape :touched (fnil into #{}) kept-touched-groups)]
 
     [new-shape (-> changes
                    ;; Restore the properties
-                   (pcb/update-shapes [(:id new-shape)] #(d/patch-object % keep-props-values))
+                   (pcb/update-shapes [(:id new-shape)]
+                                      #(d/patch-object % keep-props-values)
+                                      {:ignore-touched true})  ;; Touched attribute has already been set above
 
                    ;; We need to set the same index as the original shape
                    (pcb/change-parent (:parent-id shape) [new-shape] index {:allow-altering-copies true
@@ -2987,12 +3135,12 @@
     changes))
 
 (defn generate-duplicate-shape-change
-  ([changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id]
-   (generate-duplicate-shape-change changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id (:frame-id obj) (:parent-id obj) false false true nil))
-  ([changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id variant-props]
-   (generate-duplicate-shape-change changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id (:frame-id obj) (:parent-id obj) false false true variant-props))
+  ([changes objects page ids ids-map obj delta level-delta libraries library-data file-id]
+   (generate-duplicate-shape-change changes objects page ids ids-map obj delta level-delta libraries library-data file-id (:frame-id obj) (:parent-id obj) false false true nil))
+  ([changes objects page ids ids-map obj delta level-delta libraries library-data file-id variant-props]
+   (generate-duplicate-shape-change changes objects page ids ids-map obj delta level-delta libraries library-data file-id (:frame-id obj) (:parent-id obj) false false true variant-props))
 
-  ([changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id frame-id parent-id duplicating-component? child? remove-swap-slot? variant-props]
+  ([changes objects page ids ids-map obj delta level-delta libraries library-data file-id frame-id parent-id duplicating-component? child? remove-swap-slot? variant-props]
    (cond
      (nil? obj)
      changes
@@ -3069,7 +3217,8 @@
                (cond-> (ctsl/grid-layout? obj)
                  (ctsl/remap-grid-cells ids-map))
 
-               (cond-> (ctk/is-variant-container? parent)
+               (cond-> (and (ctk/is-variant-container? parent)
+                            (ctk/main-instance? obj))
                  (assoc :variant-id parent-id))
 
                (cond-> (and (ctk/is-variant? obj) (not (ctk/is-variant-container? parent)))
@@ -3104,8 +3253,6 @@
                  (generate-duplicate-shape-change changes
                                                   (:objects page')
                                                   page
-                                                  unames
-                                                  update-unames!
                                                   ids
                                                   ids-map
                                                   child
@@ -3132,8 +3279,6 @@
   move to the desired position, and recalculate parents and frames as needed."
   [changes all-objects page ids delta libraries library-data file-id & {:keys [variant-props alt-duplication?]}]
   (let [shapes         (map (d/getf all-objects) ids)
-        unames         (volatile! (cfh/get-used-names (:objects page)))
-        update-unames! (fn [new-name] (vswap! unames conj new-name))
         all-ids        (reduce #(into %1 (cons %2 (cfh/get-children-ids all-objects %2))) (d/ordered-set) ids)
 
         ;; We need ids-map for remapping the grid layout. But when duplicating the guides
@@ -3163,8 +3308,6 @@
              (reduce #(generate-duplicate-shape-change %1
                                                        all-objects
                                                        page
-                                                       unames
-                                                       update-unames!
                                                        ids
                                                        ids-map
                                                        %2

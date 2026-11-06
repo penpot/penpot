@@ -206,7 +206,7 @@
 
      c/IWithMeta
      (-with-meta [this new-meta]
-       (if (identical? new-meta meta)
+       (if (identical? new-meta metadata)
          this
          (ObjectsMap. new-meta
                       cache

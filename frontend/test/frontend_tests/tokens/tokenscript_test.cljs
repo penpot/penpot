@@ -85,16 +85,25 @@
     (t/is (= {:error/code :error.style-dictionary/invalid-token-value :error/value "{zero} + 1"} (error "ref"))
           "a token failing through its reference is an invalid value")))
 
-;; A token named "a" and a token named "a.b" can coexist: `{a}` resolves
-;; to the token, `{a.b}` to the nested one (#9584).
+;; A token cannot contain tokens: next to a token "a", the tokens "a.b"
+;; and "a.b.c" get a name collision error and `{a.b}` is missing (#9584).
 (t/deftest resolve-tokens-name-collision-test
   (let [resolved (ts/resolve-tokens
                   (tokens-map {:name "a" :value "8px" :type :border-radius}
                               {:name "a.b" :value "12px" :type :border-radius}
-                              {:name "c" :value "{a} + {a.b}" :type :border-radius}))]
+                              {:name "a.b.c" :value "1px" :type :border-radius}
+                              {:name "c" :value "{a} + {a.b}" :type :border-radius}))
+        error (fn [name] (select-keys (get-in resolved [name :errors 0]) [:error/code :error/value]))]
     (t/is (= 8 (get-in resolved ["a" :resolved-value])))
-    (t/is (= 12 (get-in resolved ["a.b" :resolved-value])))
-    (t/is (= 20 (get-in resolved ["c" :resolved-value])))))
+    (t/is (nil? (get-in resolved ["a" :errors])))
+    (t/is (nil? (get-in resolved ["a.b" :resolved-value])))
+    (t/is (= {:error/code :error.token/name-collision :error/value "a.b"} (error "a.b")))
+    (t/is (= {:error/code :error.token/name-collision :error/value "a.b.c"} (error "a.b.c")))
+    (t/is (= {:error/code :error.style-dictionary/missing-reference :error/value ["a.b"]} (error "c"))))
+  (t/testing "a new token below an existing one collides"
+    (let [tokens (tokens-map {:name "rad1" :value "8px" :type :border-radius})
+          resolved (ts/resolve-token tokens {:name "rad1.bad" :value "10" :type :border-radius})]
+      (t/is (= :error.token/name-collision (get-in resolved [:errors 0 :error/code]))))))
 
 (t/deftest resolve-tokens-composites-test
   (t/testing "typography and shadow tokens resolve field by field"

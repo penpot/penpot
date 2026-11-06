@@ -113,6 +113,15 @@ From the `mcp/` directory, run
 
 - Authorization/discovery URLs, self-contained client IDs, consent and PKCE/code binding, backend Redis state, deployment wiring, and compatibility limits: `mem:mcp/oauth`.
 
+## Backend tools (`submit_feedback`)
+
+- Tools that call the Penpot backend directly (not through the plugin) register only when `PENPOT_MCP_BACKEND_URI` is nonblank (`PenpotMcpServer.initTools`). Currently only `SubmitFeedbackTool`.
+- `PenpotBackendClient` owns the HTTP call and the status-to-message mapping; it posts to `api/main/methods/send-mcp-feedback` with `Authorization: Token <MCP user token>`. The token comes from the session context (OAuth bearer or `?userToken=`); without one the tool fails before calling the backend.
+- Tool zod schemas mirror the backend malli schema (lengths, blank, control characters); keep both in sync. The backend is the authority.
+- Success means the mail job was queued, not delivered; the tool text says so. `formatArgs` hides the feedback from logs.
+- Backend side: `send-mcp-feedback` in `app.rpc.commands.feedback`, configured by `PENPOT_MCP_FEEDBACK_EMAIL`; MCP-token auth rules in `mem:backend/auth-permissions-product-domains`.
+- User docs: `mcp/README.md` (env tables), `docs/mcp/index.md` (tool list), `docs/technical-guide/configuration.md` (MCP feedback section).
+
 ## Devenv plugin/server wiring
 
 In the normal Penpot devenv MCP path, the browser plugin does not discover or route through Postgres. The frontend provides the plugin extension API with `mcp.getServerUrl()`, currently derived from `frontend/src/app/config.cljs` as `penpotMcpServerURI` if set, otherwise `<public-uri>/mcp/ws`. The MCP plugin opens a direct WebSocket to that URL and appends the current MCP access token as a query parameter.
@@ -127,3 +136,7 @@ For parallel devenvs, prefer same-origin MCP routing: each Penpot instance shoul
 - The MCP server emits `1008` for a missing `userToken` in multi-user mode, for missing/invalid connection metadata, and to close a connection displaced by a newer one with the same user and session ID.
 - Session IDs are deterministic per tab and file, so a reconnect reuses its ID while the old socket may be half-open: the newest connection wins (`PluginBridge.displaceConnection`). Across instances, each new connection publishes a session claim on a per-user Redis channel; an instance displaces its local connection only on a foreign claim that arrives after its own claim (channel order, no clocks). Discovery deduplicates by session ID.
 - A tab rejected with `1008` never reaches `connected`, so the frontend's 60s reconnect watcher (`start-reconnect-watcher` in `app.main.data.workspace.mcp`, started only on `connected`) does not engage; recovery is manual via the MCP menu.
+
+## Rollback warnings
+
+- The plugin's `RollbackLog` (`packages/plugin/src/RollbackLog.ts`) holds the `contentrollback` events not yet sent with a task response; `Task.sendResponse` attaches them and acknowledges them once sent, and the server's `unclaimed-rollbacks` message (a response that came after its task timed out) puts them back. With a `RollbackStore` (`LocalStorageRollbackStore` over `penpot.localStorage`, one entry per file) every change is written through, so a reload of the tab or plugin keeps them; storage failures fall back to memory. Plugin tests run with `node --experimental-strip-types`, which rejects TypeScript parameter properties: declare fields explicitly.
