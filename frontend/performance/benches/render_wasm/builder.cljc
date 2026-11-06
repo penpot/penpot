@@ -278,8 +278,7 @@
        (let [{:keys [id frame-id]} *parent*]
          (register-ref! state label (:id shape))
          (swap! state
-                (fn [scope]
-                  (ctst/add-shape (:id shape) shape scope frame-id id nil true)))))
+                #(ctst/add-shape (:id shape) shape % frame-id id nil true))))
 
      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
      ;; Shape constructors

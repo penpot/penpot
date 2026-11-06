@@ -561,14 +561,13 @@
                               additional-end
                               base-end)))
             metadata  (update (:metadata base) :diagnostics
-                              (fn [diagnostics]
-                                (assoc (or diagnostics {})
-                                       :merge
-                                       {:base-run-id (:run-id base)
-                                        :additional-run-id (:run-id additional)
-                                        :additional-warmups-excluded
-                                        (count (filter :warmup? (:attempts additional)))
-                                        :merged-at ended-at})))]
+                              #(assoc (or % {})
+                                      :merge
+                                      {:base-run-id (:run-id base)
+                                       :additional-run-id (:run-id additional)
+                                       :additional-warmups-excluded
+                                       (count (filter :warmup? (:attempts additional)))
+                                       :merged-at ended-at}))]
         (check-run {:type :run-record
                     :run-id run-id
                     :started-at (:started-at base)

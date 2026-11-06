@@ -118,9 +118,8 @@
       (decl/check-registered-scene! scene))
     (let [selected (->> (decl/cases)
                         (map #(validate-case! % scene-by-id))
-                        (filter (fn [registered]
-                                  (or (str/blank? pattern)
-                                      (str/includes? (str (:id registered)) pattern))))
+                        (filter #(or (str/blank? pattern)
+                                     (str/includes? (str (:id %)) pattern)))
                         (mapv #(describe-case master-seed % (get scene-by-id (:scene %)))))]
       (when (empty? selected)
         (throw (ex-info "no benchmark cases match the selection"

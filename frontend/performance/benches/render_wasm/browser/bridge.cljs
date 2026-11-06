@@ -337,9 +337,8 @@
     and `:software` identity fields."
   [ctx width height dpr renderer]
   (let [attrs (ex/ignoring (.getContextAttributes ^js ctx))
-        attr  (fn [k]
-                (when (some? attrs)
-                  (unchecked-get attrs k)))
+        attr  #(when (some? attrs)
+                 (unchecked-get attrs %))
         vendor (graphics-string ctx "UNMASKED_VENDOR_WEBGL")]
     {:css-width width
      :css-height height
@@ -610,11 +609,9 @@
   [epoch params]
   (-> (ensure-module! (or (:module-url params) "./render-wasm.js")
                       (or (:wasm-url params) "./render-wasm.wasm"))
-      (.catch (fn [cause]
-                (throw (ex-info (str "module init failed: "
-                                     (or (ex-message cause) cause))
-                                {:phase "module-init"}
-                                cause))))
+      (.catch #(throw (ex-info (str "module init failed: " (or (ex-message %) %))
+                               {:phase "module-init"}
+                               %)))
       (.then (fn [installed]
                (guard-current! epoch "module-init")
                installed))))
@@ -1042,7 +1039,7 @@
                      (when (= epoch @owner-epoch*)
                        (swap! prepared* assoc :busy? false))
                      evidence))
-            (.catch (fn [cause] (terminal-failure epoch cause "attempt"))))))))
+            (.catch #(terminal-failure epoch % "attempt")))))))
 
 (defn- encode-evidence
   "Encodes bridge evidence after timing and resolves failures as bridge

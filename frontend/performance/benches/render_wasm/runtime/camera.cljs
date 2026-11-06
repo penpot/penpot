@@ -96,8 +96,7 @@
   {:pre [(valid-pan? options) (valid-view? (pan-view (:view rtx) dx dy))]}
   (let [target (pan-view (:view rtx) dx dy)]
     (-> (run-camera rtx target options)
-        (.then (fn [evidence]
-                 (complete (assoc rtx :view target) (camera-evidence evidence))))
+        (.then #(complete (assoc rtx :view target) (camera-evidence %)))
         (.catch fail))))
 
 (defcommand load
@@ -113,9 +112,8 @@
   [rtx]
   (let [hooks (:hooks rtx)]
     (-> (protocol/drain hooks {:flags 0 :origin ((:now hooks)) :immediate false})
-        (.then (fn [evidence]
-                 (complete rtx (assoc-in (render-evidence evidence)
-                                         [:metrics :renderer/prepared-scene-to-full] [(:full-ms evidence)]))))
+        (.then #(complete rtx (assoc-in (render-evidence %)
+                                        [:metrics :renderer/prepared-scene-to-full] [(:full-ms %)])))
         (.catch fail))))
 
 (defcommand zoom
@@ -132,8 +130,7 @@
   {:pre [(valid-zoom? options) (valid-view? (zoom-view (:view rtx) factor))]}
   (let [target (zoom-view (:view rtx) factor)]
     (-> (run-camera rtx target options)
-        (.then (fn [evidence]
-                 (complete (assoc rtx :view target) (camera-evidence evidence))))
+        (.then #(complete (assoc rtx :view target) (camera-evidence %)))
         (.catch fail))))
 
 (defcommand restore
@@ -150,6 +147,5 @@
   {:pre [(valid-view? view)
          (= (decl/resolve-viewport view) (decl/resolve-viewport (:view rtx)))]}
   (-> (protocol/restore (:hooks rtx) view)
-      (.then (fn [evidence]
-               (complete (assoc rtx :view view) (render-evidence evidence))))
+      (.then #(complete (assoc rtx :view view) (render-evidence %)))
       (.catch fail)))
