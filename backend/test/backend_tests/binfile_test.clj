@@ -30,6 +30,7 @@
    [app.storage.tmp :as tmp]
    [backend-tests.helpers :as th]
    [backend-tests.storage-test :as stt]
+   [clojure.data.json :as json]
    [clojure.java.io :as jio]
    [clojure.test :as t]
    [cuerdas.core :as str]
@@ -37,6 +38,9 @@
    [datoteka.io :as io])
   (:import
    java.io.ByteArrayInputStream
+   java.io.ByteArrayOutputStream
+   java.io.DataInputStream
+   java.io.DataOutputStream
    java.io.OutputStreamWriter
    java.io.Writer
    java.util.zip.Deflater
@@ -215,6 +219,63 @@
      :shape-id shape-id
      :token-radius token-radius
      :token-opacity token-opacity}))
+
+(defn- export-file
+  [file & {:keys [include-libraries]}]
+  (let [output (tmp/tempfile :suffix ".zip")]
+    (v3/export-files!
+     (cond-> (-> th/*system*
+                 (assoc ::bfc/ids #{(:id file)}))
+       include-libraries
+       (assoc ::bfc/export-type :include-libraries))
+     (io/output-stream output))
+    output))
+
+(defn- import-bundle
+  [profile path]
+  (-> th/*system*
+      (assoc ::bfc/project-id (:default-project-id profile))
+      (assoc ::bfc/team-id (:default-team-id profile))
+      (assoc ::bfc/profile-id (:id profile))
+      (assoc ::bfc/input path)
+      (v3/import-files!)
+      (:file-ids)))
+
+(defn- read-manifest
+  [path]
+  (with-open [zip (ZipFile. (.toFile ^java.nio.file.Path path))]
+    (let [entry (.getEntry zip "manifest.json")]
+      (with-open [input (.getInputStream zip entry)]
+        (json/read-str (slurp input :encoding "UTF-8"))))))
+
+(defn- tamper-manifest-relations
+  [src dst relations]
+  (with-open [zin  (ZipFile. (.toFile ^java.nio.file.Path src))
+              zout (ZipOutputStream. (io/output-stream dst))]
+    (doseq [entry (enumeration-seq (.entries zin))]
+      (let [name (.getName ^ZipEntry entry)]
+        (if (= name "manifest.json")
+          (let [manifest (-> (slurp (.getInputStream zin entry) :encoding "UTF-8")
+                             (json/read-str)
+                             (assoc "relations" relations))]
+            (.putNextEntry zout (ZipEntry. name))
+            (.write zout (.getBytes (json/write-str manifest) "UTF-8"))
+            (.closeEntry zout))
+          (do
+            (.putNextEntry zout (ZipEntry. name))
+            (with-open [input (.getInputStream zin entry)]
+              (io/copy input zout))
+            (.closeEntry zout)))))))
+
+(defn- prepare-victim-file
+  [n]
+  (let [profile  (th/create-profile* n)
+        team     (th/create-team* n {:profile-id (:id profile)})
+        project  (th/create-project* n {:team-id (:id team)
+                                        :profile-id (:id profile)})
+        file     (th/create-file* n {:profile-id (:id profile)
+                                     :project-id (:id project)})]
+    [profile file]))
 
 (def ^:private svg-raw-page-id (uuid/custom 1 1))
 (def ^:private svg-raw-root-id (uuid/custom 3 1))
@@ -2898,3 +2959,181 @@
         (t/is (= (str (first result) "/" thumb-page-id "/" thumb-frame-id "/" thumb-tag)
                  (:object-id thumb)))
         (t/is (some? (:media-id thumb)))))))
+
+;; --- Library relations security tests
+
+(t/deftest import-v3-ignores-relations-outside-package
+  (let [profile     (th/create-profile* 1)
+        file        (prepare-simple-file profile)
+        [_ victim]  (prepare-victim-file 3)
+        bundle      (export-file file)
+        evil        (tmp/tempfile :suffix ".zip")
+        _           (tamper-manifest-relations bundle evil
+                                               [[(str (:id file)) (str (:id victim))]])
+        [file-id :as result] (import-bundle profile evil)]
+    (t/is (= 1 (count result)))
+    (t/is (empty? (th/db-query :file-library-rel {:file-id file-id})))
+    (t/is (empty? (th/db-query :file-library-sync {:file-id file-id})))))
+
+(defn- prepare-other-team
+  [n]
+  (let [profile (th/create-profile* n)
+        team    (th/create-team* n {:profile-id (:id profile)})
+        project (th/create-project* n {:team-id (:id team)
+                                       :profile-id (:id profile)})
+        file    (th/create-file* n {:profile-id (:id profile)
+                                    :project-id (:id project)})
+        library (th/create-file* (inc n) {:profile-id (:id profile)
+                                          :project-id (:id project)})]
+    [profile file library]))
+
+(t/deftest import-v3-ignores-foreign-file-id
+  (let [profile     (th/create-profile* 1)
+        file        (prepare-simple-file profile)
+        [_ victim]  (prepare-victim-file 3)
+        bundle      (export-file file)
+        evil        (tmp/tempfile :suffix ".zip")
+        _           (tamper-manifest-relations bundle evil
+                                               [[(str (:id victim)) (str (:id file))]])
+        result      (import-bundle profile evil)]
+    (t/is (= 1 (count result)))
+    (t/is (empty? (th/db-query :file-library-rel {:file-id (:id victim)})))
+    (t/is (empty? (th/db-query :file-library-sync {:file-id (:id victim)})))))
+
+(t/deftest import-v3-ignores-unknown-library
+  (let [profile     (th/create-profile* 1)
+        file        (prepare-simple-file profile)
+        bundle      (export-file file)
+        evil        (tmp/tempfile :suffix ".zip")
+        _           (tamper-manifest-relations bundle evil
+                                               [[(str (:id file)) (str (uuid/random))]])
+        [file-id :as result] (import-bundle profile evil)]
+    (t/is (= 1 (count result)))
+    (t/is (empty? (th/db-query :file-library-rel {:file-id file-id})))))
+
+(t/deftest import-v3-ignores-self-library-relation
+  (let [profile     (th/create-profile* 1)
+        file        (prepare-simple-file profile)
+        bundle      (export-file file)
+        evil        (tmp/tempfile :suffix ".zip")
+        _           (tamper-manifest-relations bundle evil
+                                               [[(str (:id file)) (str (:id file))]])
+        [file-id :as result] (import-bundle profile evil)]
+    (t/is (= 1 (count result)))
+    (t/is (empty? (th/db-query :file-library-rel {:file-id file-id})))))
+
+(t/deftest import-v3-keeps-valid-library-relation
+  (let [profile  (th/create-profile* 1)
+        file     (prepare-simple-file profile)
+        library  (th/create-file* 2 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)})]
+    (th/link-file-to-library* {:file-id (:id file)
+                               :library-id (:id library)})
+    (let [bundle   (export-file file :include-libraries true)
+          result   (import-bundle profile bundle)
+          new-file (->> result
+                        (map #(bfc/get-file th/*system* %))
+                        (some #(when (= (:name %) (:name file)) %)))]
+      (t/is (= 2 (count result)))
+      (t/is (some? new-file))
+      (t/is (= 1 (count (th/db-query :file-library-rel
+                                     {:file-id (:id new-file)})))))))
+
+(t/deftest export-multi-file-includes-package-relations
+  (let [profile          (th/create-profile* 1)
+        file             (prepare-simple-file profile)
+        library          (th/create-file* 2 {:profile-id (:id profile)
+                                             :project-id (:default-project-id profile)})
+        [_ other-file other-library] (prepare-other-team 3)
+        _                (th/link-file-to-library* {:file-id (:id file)
+                                                    :library-id (:id library)})
+        _                (th/link-file-to-library* {:file-id (:id other-file)
+                                                    :library-id (:id other-library)})
+        _                (th/db-insert! :file-library-rel
+                                        {:file-id (:id file)
+                                         :library-file-id (:id other-library)})
+        output           (tmp/tempfile :suffix ".zip")]
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/ids #{(:id file) (:id other-file)})
+         (assoc ::bfc/export-type :include-libraries))
+     (io/output-stream output))
+    (let [rels (set (map vec (get (read-manifest output) "relations")))]
+      (t/is (contains? rels [(str (:id file)) (str (:id library))]))
+      (t/is (contains? rels [(str (:id other-file)) (str (:id other-library))]))
+      (t/is (contains? rels [(str (:id file)) (str (:id other-library))])))))
+
+;; --- Forbidden library relations cleanup (migration candidate)
+;;
+;; The two statements below are the exact cleanup proposed for a future
+;; migration (see tmp/CHECK-LIBRARY-RELATIONS.sql, section 6). The sync
+;; rows must go first: the second statement reads file_library_rel
+;; while it still contains the forbidden rows.
+
+(def ^:private sql:delete-forbidden-library-sync
+  "WITH forbidden AS (
+     SELECT flr.file_id, flr.library_file_id
+       FROM file_library_rel flr
+       JOIN file f ON f.id = flr.file_id
+       JOIN project fp ON fp.id = f.project_id
+       JOIN file l ON l.id = flr.library_file_id
+       JOIN project lp ON lp.id = l.project_id
+      WHERE fp.team_id <> lp.team_id
+         OR flr.file_id = flr.library_file_id
+   )
+   DELETE FROM file_library_sync fls
+   USING forbidden
+   WHERE fls.file_id = forbidden.file_id
+     AND fls.library_file_id = forbidden.library_file_id")
+
+(def ^:private sql:delete-forbidden-library-rel
+  "WITH forbidden AS (
+     SELECT flr.file_id, flr.library_file_id
+       FROM file_library_rel flr
+       JOIN file f ON f.id = flr.file_id
+       JOIN project fp ON fp.id = f.project_id
+       JOIN file l ON l.id = flr.library_file_id
+       JOIN project lp ON lp.id = l.project_id
+      WHERE fp.team_id <> lp.team_id
+         OR flr.file_id = flr.library_file_id
+   )
+   DELETE FROM file_library_rel flr
+   USING forbidden
+   WHERE flr.file_id = forbidden.file_id
+     AND flr.library_file_id = forbidden.library_file_id")
+
+(t/deftest cleanup-deletes-forbidden-library-relations
+  (let [profile    (th/create-profile* 1)
+        file       (prepare-simple-file profile)
+        library    (th/create-file* 2 {:profile-id (:id profile)
+                                       :project-id (:default-project-id profile)})
+        [_ victim] (prepare-victim-file 3)
+        _          (th/link-file-to-library* {:file-id (:id file)
+                                              :library-id (:id library)})
+        _          (th/db-insert! :file-library-rel
+                                  {:file-id (:id file)
+                                   :library-file-id (:id victim)})
+        _          (th/db-insert! :file-library-sync
+                                  {:file-id (:id file)
+                                   :library-file-id (:id victim)})
+        _          (th/db-insert! :file-library-rel
+                                  {:file-id (:id file)
+                                   :library-file-id (:id file)})
+        _          (th/db-insert! :file-library-sync
+                                  {:file-id (:id file)
+                                   :library-file-id (:id file)})]
+    (t/is (= 3 (count (th/db-query :file-library-rel {:file-id (:id file)}))))
+    (th/db-exec! [sql:delete-forbidden-library-sync])
+    (th/db-exec! [sql:delete-forbidden-library-rel])
+    (t/testing "same-team relation and its sync row survive"
+      (t/is (= [{:file-id (:id file) :library-file-id (:id library)}]
+               (map #(select-keys % [:file-id :library-file-id])
+                    (th/db-query :file-library-rel {:file-id (:id file)}))))
+      (t/is (= [{:file-id (:id file) :library-file-id (:id library)}]
+               (map #(select-keys % [:file-id :library-file-id])
+                    (th/db-query :file-library-sync {:file-id (:id file)})))))
+    (t/testing "cross-team and self relations and their sync rows are gone"
+      (t/is (empty? (th/db-query :file-library-rel {:library-file-id (:id victim)})))
+      (t/is (empty? (th/db-query :file-library-sync {:library-file-id (:id victim)})))
+      (t/is (empty? (th/db-query :file-library-rel {:library-file-id (:id file)})))
+      (t/is (empty? (th/db-query :file-library-sync {:library-file-id (:id file)}))))))

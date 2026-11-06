@@ -1,6 +1,22 @@
 # CHANGELOG
 
-## 2.19.0 (Unreleased)
+## 2.19.0
+
+### :boom: Breaking changes & Deprecations
+
+#### Migrate legacy file payloads to file_data and delete orphan revisions
+
+File payloads now live in one place: every file state and snapshot is kept in `file_data`, and the orphan `file_change` rows that kept old payloads alive forever are removed. No read path reached those rows and nothing ever collected them, so the upgrade also reclaims the database and TOAST space they held. There is no API or UI change.
+
+On small and medium instances this happens automatically on boot and there is nothing to do. On large instances (millions of snapshots, hundreds of GB in TOAST) the work does not fit in the startup transaction: run it by hand **before upgrading to 2.19.0** following the [large-instance runbook](https://github.com/penpot/penpot/blob/staging/operations/2.19.0-migrate-legacy-file-data.md). The runbook tells you whether your instance needs it, keeps the instance online while the data moves, and verifies the result before you deploy.
+
+[#12784](https://github.com/penpot/penpot/issues/12784) (PR: [#12785](https://github.com/penpot/penpot/pull/12785))
+
+#### Enable the Admin Console by default
+
+The Admin Console is now enabled by default and the `enable-admin-console` flag is no longer needed. Self-hosted instances must deploy the `penpot-admin-console` service and set `PENPOT_ADMIN_CONSOLE_URI` in frontend and backend (check the [upgrade guide](https://help.penpot.app/technical-guide/getting-started/docker/#upgrade-to-2.19)).
+
+[#12807](https://github.com/penpot/penpot/issues/12807) (PR: [#12475](https://github.com/penpot/penpot/pull/12475))
 
 ### :rocket: Epics and highlights
 
@@ -74,6 +90,37 @@
 - Fix thumbnails failing on older Chromium browsers and each thumbnail rendering several times [#11878](https://github.com/penpot/penpot/issues/11878) (PR: [#11879](https://github.com/penpot/penpot/pull/11879))
 - Fix internal error when opening the libraries modal [#11943](https://github.com/penpot/penpot/issues/11943) (PR: [#11946](https://github.com/penpot/penpot/pull/11946))
 - Fix Plugin API `connectLibrary` linking unpublished files as libraries [#12001](https://github.com/penpot/penpot/issues/12001) (PR: [#12002](https://github.com/penpot/penpot/pull/12002))
+- Fix incorrect padding at the top of the tokens and themes section [#9585](https://github.com/penpot/penpot/issues/9585) (PR: [#12422](https://github.com/penpot/penpot/pull/12422))
+- Fix token tree path handling for repeated and nested segments (by @makesomethingshit) [#11588](https://github.com/penpot/penpot/issues/11588) (PR: [#11591](https://github.com/penpot/penpot/pull/11591))
+- Fix comment input duplicating text when confirming a Japanese IME composition with Enter [#11757](https://github.com/penpot/penpot/issues/11757) (PR: [#11768](https://github.com/penpot/penpot/pull/11768))
+- Fix file not saving after deleting a variant [#11758](https://github.com/penpot/penpot/issues/11758) (PR: [#12216](https://github.com/penpot/penpot/pull/12216))
+- Fix component copies not syncing when a shape is moved out of a main component and another change follows at once [#11978](https://github.com/penpot/penpot/issues/11978) (PR: [#11981](https://github.com/penpot/penpot/pull/11981))
+- Fix MCP plugin showing a version mismatch warning on every patch release (by @robertkodra) [#12007](https://github.com/penpot/penpot/issues/12007) (PR: [#12009](https://github.com/penpot/penpot/pull/12009))
+- Fix workspace crash when switching to the path tool while drawing a shape [#12100](https://github.com/penpot/penpot/issues/12100) (PR: [#12101](https://github.com/penpot/penpot/pull/12101))
+- Fix referential integrity error when swapping a component [#12144](https://github.com/penpot/penpot/issues/12144) (PR: [#12333](https://github.com/penpot/penpot/pull/12333))
+- Fix workspace saving text shapes on every page open when a custom font is missing [#12151](https://github.com/penpot/penpot/issues/12151) (PR: [#12164](https://github.com/penpot/penpot/pull/12164))
+- Fix swapped nested components losing their absolute position after a library update [#12176](https://github.com/penpot/penpot/issues/12176) (PR: [#12556](https://github.com/penpot/penpot/pull/12556))
+- Fix theme selector showing the editor message when the tokens source is a library [#12177](https://github.com/penpot/penpot/issues/12177) (PR: [#12203](https://github.com/penpot/penpot/pull/12203))
+- Fix untranslated texts in the This file tab of the libraries modal [#12178](https://github.com/penpot/penpot/issues/12178) (PR: [#12204](https://github.com/penpot/penpot/pull/12204))
+- Fix workspace staying in the saving state and losing unsaved edits when a save request gets no answer [#12222](https://github.com/penpot/penpot/issues/12222) (PR: [#12223](https://github.com/penpot/penpot/pull/12223))
+- Fix scrub cursor showing on numeric inputs with mixed values in the sidebar [#12227](https://github.com/penpot/penpot/issues/12227) (PR: [#12229](https://github.com/penpot/penpot/pull/12229))
+- Fix internal error when copying a swapped nested component [#12289](https://github.com/penpot/penpot/issues/12289) (PR: [#12434](https://github.com/penpot/penpot/pull/12434))
+- Show an error when uploading a custom font fails [#12304](https://github.com/penpot/penpot/issues/12304) (PR: [#12315](https://github.com/penpot/penpot/pull/12315))
+- Fix React warning about the unknown `tooltipClass` prop in layout-item size inputs [#12311](https://github.com/penpot/penpot/issues/12311) (PR: [#12329](https://github.com/penpot/penpot/pull/12329))
+- Fix guides inside a board still being interactive [#12322](https://github.com/penpot/penpot/issues/12322) (PR: [#12460](https://github.com/penpot/penpot/pull/12460))
+- Fix pasted text not being visible in an empty text box until it is resized [#12438](https://github.com/penpot/penpot/issues/12438) (PR: [#12859](https://github.com/penpot/penpot/pull/12859))
+- Fix files failing referential integrity validation staying unsaveable in every session [#12464](https://github.com/penpot/penpot/issues/12464) (PR: [#12524](https://github.com/penpot/penpot/pull/12524), [#12662](https://github.com/penpot/penpot/pull/12662))
+- Fix unicode characters not rendering in text layers with the new render engine [#12469](https://github.com/penpot/penpot/issues/12469) (PR: [#12471](https://github.com/penpot/penpot/pull/12471))
+- Fix text image fills staying blank when media loads after text layout [#12563](https://github.com/penpot/penpot/issues/12563) (PR: [#12564](https://github.com/penpot/penpot/pull/12564))
+- Fix swapped nested icons moving outside the layout after a library update [#12657](https://github.com/penpot/penpot/issues/12657) (PR: [#12716](https://github.com/penpot/penpot/pull/12716))
+- Fix garbled bullets before the element counts in the libraries modal [#12677](https://github.com/penpot/penpot/issues/12677) (PR: [#12678](https://github.com/penpot/penpot/pull/12678))
+- Fix token dropdown of numeric inputs showing the scrub cursor [#12679](https://github.com/penpot/penpot/issues/12679) (PR: [#12680](https://github.com/penpot/penpot/pull/12680))
+- Fix variant property names and values accepting `,` and `=` [#12683](https://github.com/penpot/penpot/issues/12683) (PR: [#12688](https://github.com/penpot/penpot/pull/12688))
+- Fix changing a variant property from another page leaving the main component label out of date [#12692](https://github.com/penpot/penpot/issues/12692) (PR: [#12693](https://github.com/penpot/penpot/pull/12693))
+- Fix `:referential-integrity` errors when moving variant mains in or out of a set [#12696](https://github.com/penpot/penpot/issues/12696) (PR: [#12706](https://github.com/penpot/penpot/pull/12706))
+- Fix `:referential-integrity` errors when creating, combining or renaming variant sets [#12734](https://github.com/penpot/penpot/issues/12734) (PR: [#12779](https://github.com/penpot/penpot/pull/12779))
+- Fix save errors after masking a variant with Ctrl+M [#12748](https://github.com/penpot/penpot/issues/12748) (PR: [#12749](https://github.com/penpot/penpot/pull/12749))
+- Fix icons in component instances not being shown on the canvas [#12752](https://github.com/penpot/penpot/issues/12752)
 
 ### :sparkles: New features & Enhancements
 
@@ -89,7 +136,7 @@
 - Apply tokens to stroke per side [#9842](https://github.com/penpot/penpot/issues/9842) (PR: [#10913](https://github.com/penpot/penpot/pull/10913))
 - Add individual stroke widths per side (top, right, bottom, left) [#9854](https://github.com/penpot/penpot/issues/9854) (PR: [#10648](https://github.com/penpot/penpot/pull/10648))
 - Expand the token tree right after importing it (by @AKnassa) [#9819](https://github.com/penpot/penpot/issues/9819) (PR: [#10664](https://github.com/penpot/penpot/pull/10664))
-- Update the selection size badge live during resize, replacing the resize tooltip [#10259](https://github.com/penpot/penpot/issues/10259)
+- Update the selection size badge live during resize, replacing the resize tooltip [#10259](https://github.com/penpot/penpot/issues/10259) (PR: [#11884](https://github.com/penpot/penpot/pull/11884))
 - Add color variants, rotation correction, viewport flip and hide-when-too-small to the selection size badge [#10264](https://github.com/penpot/penpot/issues/10264) (PR: [#11884](https://github.com/penpot/penpot/pull/11884))
 - Support single-file SVG export with the WebGL render [#10546](https://github.com/penpot/penpot/issues/10546)
 - Persist the hide resolved comments preference and separate the filter options in the comments menu [#10686](https://github.com/penpot/penpot/issues/10686) (PR: [#10694](https://github.com/penpot/penpot/pull/10694))
@@ -113,13 +160,30 @@
 - Make "Fix when scrolling" work in the WebGL render [#11684](https://github.com/penpot/penpot/issues/11684) (PR: [#11752](https://github.com/penpot/penpot/pull/11752))
 - Complete Catalan translations [#11739](https://github.com/penpot/penpot/issues/11739) (PR: [#11741](https://github.com/penpot/penpot/pull/11741))
 - Remove the optional client-provided id from creation RPC endpoints [#11783](https://github.com/penpot/penpot/issues/11783) (PR: [#11784](https://github.com/penpot/penpot/pull/11784))
-- Allow color tokens for the canvas background [#11791](https://github.com/penpot/penpot/issues/11791) (PR: [#11923](https://github.com/penpot/penpot/pull/11923))
+- Allow color tokens for the canvas background [#11791](https://github.com/penpot/penpot/issues/11791) (PR: [#11923](https://github.com/penpot/penpot/pull/11923), [#11950](https://github.com/penpot/penpot/pull/11950))
 - Show a "no assets yet" message for empty files in the libraries modal [#11811](https://github.com/penpot/penpot/issues/11811) (PR: [#11818](https://github.com/penpot/penpot/pull/11818))
 - Upgrade the MCP SDK to v2 and adopt the new protocol version [#11827](https://github.com/penpot/penpot/issues/11827) (PR: [#11841](https://github.com/penpot/penpot/pull/11841))
 - Remove legacy SSE support from the MCP server [#11846](https://github.com/penpot/penpot/issues/11846) (PR: [#11841](https://github.com/penpot/penpot/pull/11841))
 - Delete selected path handles with Backspace or Delete [#11858](https://github.com/penpot/penpot/issues/11858) (PR: [#11896](https://github.com/penpot/penpot/pull/11896))
 - Use the tooltip component in the token pill info [#11886](https://github.com/penpot/penpot/issues/11886) (PR: [#11900](https://github.com/penpot/penpot/pull/11900))
 - Hide the duplicate cursor when alt-dragging a shape that cannot be duplicated (by @0xTHAC0) [#11905](https://github.com/penpot/penpot/issues/11905) (PR: [#11195](https://github.com/penpot/penpot/pull/11195))
+- Document the team auto-add behavior with `disable-email-verification` [#11376](https://github.com/penpot/penpot/issues/11376) (PR: [#11425](https://github.com/penpot/penpot/pull/11425))
+- Make the workspace recover from interrupted saves and show a proper error instead of the internal error page [#11799](https://github.com/penpot/penpot/issues/11799)
+- Add component management operations to the Plugin API [#12301](https://github.com/penpot/penpot/issues/12301) (PR: [#12303](https://github.com/penpot/penpot/pull/12303))
+- Record the imported file ids in the import-binfile audit event [#12485](https://github.com/penpot/penpot/issues/12485) (PR: [#12491](https://github.com/penpot/penpot/pull/12491))
+
+## 2.18.6
+
+### :bug: Bugs fixed
+
+- Fix upload endpoints storing server files when the path points outside the temp dir [#12771](https://github.com/penpot/penpot/issues/12771) (PR: [#12772](https://github.com/penpot/penpot/pull/12772))
+
+## 2.18.5
+
+### :bug: Bugs fixed
+
+- Fix the Admin Console failing on every URL on Docker deployments by reverting the subpath support [#12358](https://github.com/penpot/penpot/pull/12358)
+
 ## 2.18.4
 
 ### :bug: Bugs fixed

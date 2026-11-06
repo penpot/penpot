@@ -164,3 +164,25 @@ test.describe("Palette", () => {
     ).toBeVisible();
   });
 });
+
+test.describe("Shortcuts panel", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Wraps long key lists between combinations", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+
+    await page.keyboard.press("Shift+?");
+    const list = page.locator("[class*='shortcuts-list']");
+    await expect(list).toBeVisible();
+    await page.getByRole("textbox").first().fill("board");
+
+    const next = page.getByRole("listitem", { name: "Next board" });
+    const prev = page.getByRole("listitem", { name: "Previous board" });
+    await prev.scrollIntoViewIfNeeded();
+    await page.mouse.move(640, 300);
+    await expect(next).toHaveScreenshot(shot);
+    await expect(prev).toHaveScreenshot(shot);
+  });
+});

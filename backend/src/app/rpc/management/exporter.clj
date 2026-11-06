@@ -34,7 +34,8 @@
    ::rpc/multipart-only-params [:content]
    ::sm/result schema:upload-tempfile-result}
   [cfg {:keys [::rpc/profile-id content]}]
-  (media.v/validate-media-type! content cm/tempfile-types)
+  (media.v/check-media-type content cm/tempfile-types)
+  (media.v/check-upload-path content)
   (let [storage (sto/resolve cfg)
         hash    (sto/calculate-hash (:path content))
         data    (-> (sto/content (:path content))

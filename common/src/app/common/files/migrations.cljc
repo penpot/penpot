@@ -2296,6 +2296,45 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0034-fix-path-content-offset"
+  [data _]
+  ;; A path stores its geometry twice: the box (:selrect and :points) and the
+  ;; drawing (:content), and the box is always derived from the drawing. Some
+  ;; files have component copies whose drawing and box were moved apart, so
+  ;; the drawing renders away from where the sidebar, the layouts and the
+  ;; syncs place the shape. We move the content back onto the box. A path whose drawing
+  ;; has another size than its box is not a displaced drawing, and is left as
+  ;; it is.
+  (let [tolerance 0.1]
+    (letfn [(fix-path [shape]
+              (when (and (cfh/path-shape? shape)
+                         (some? (:selrect shape))
+                         (some? (path.segment/content->selrect (:content shape))))
+                (let [selrect  (:selrect shape)
+                      derived  (:selrect (path/update-geometry shape))
+                      offset   (gpt/subtract (grc/rect->center selrect)
+                                             (grc/rect->center derived))]
+                  (when (and (mth/close? (:width selrect) (:width derived) tolerance)
+                             (mth/close? (:height selrect) (:height derived) tolerance)
+                             (or (> (abs (:x offset)) tolerance)
+                                 (> (abs (:y offset)) tolerance)))
+                    (update shape :content path/move-content offset)))))
+
+            (fix-objects [objects]
+              (reduce-kv (fn [objects id shape]
+                           (if-let [shape (fix-path shape)]
+                             (assoc objects id shape)
+                             objects))
+                         objects
+                         objects))
+
+            (update-container [container]
+              (d/update-when container :objects fix-objects))]
+
+      (-> data
+          (update :pages-index d/update-vals update-container)
+          (d/update-when :components d/update-vals update-container)))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2386,4 +2425,5 @@
          "0030-remove-stroke-per-side-attr"
          "0031-migrate-stroke-width-token-attr"
          "0032-fix-children-not-in-parent"
-         "0033-normalize-main-instance-names"]))
+         "0033-normalize-main-instance-names"
+         "0034-fix-path-content-offset"]))
