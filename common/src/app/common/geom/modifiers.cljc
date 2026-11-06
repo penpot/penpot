@@ -110,8 +110,10 @@
 
   (letfn [(apply-modifiers [bounds child]
             (when-let [child-bounds (get bounds (:id child))]
+              ;; the child's own corners stay with its bounds in the grid's axes
               [(-> @child-bounds
-                   (gpo/parent-coords-bounds @transformed-parent-bounds))
+                   (gpo/parent-coords-bounds @transformed-parent-bounds)
+                   (vary-meta assoc :app.common.geom.shapes.grid-layout.positions/own-points @child-bounds))
                child]))
 
           (set-child-modifiers [modif-tree grid-data cell-data [child-bounds child]]

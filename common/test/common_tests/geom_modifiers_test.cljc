@@ -226,3 +226,41 @@
       (t/is (gpt/close? (gpt/scale inner-h (/ 1 3)) cell-h))
       (t/is (gpt/close? (gpt/scale inner-v (/ 1 3)) cell-v))
       (t/is (gpt/close? (first (:points inner)) (first (:points cell)))))))
+
+(t/deftest grid-fill-keeps-a-turned-child-at-least-one-pixel-thick
+  ;; a fill child turned in its grid fills along the grid's axes, which skews
+  ;; it; a fixed sibling leaves its column no width, and the child narrows
+  ;; only until it is 1px thick in its own axes
+  (let [file    (-> (thf/sample-file :file)
+                    (ths/add-sample-shape :grid {:type :frame :name "Grid" :width 100 :height 100
+                                                 :layout :grid :layout-grid-dir :row
+                                                 :layout-grid-rows [{:type :flex :value 1}]
+                                                 :layout-grid-columns [{:type :flex :value 1} {:type :flex :value 1}
+                                                                       {:type :flex :value 1}]
+                                                 :layout-gap {:row-gap 5 :column-gap 9}
+                                                 :layout-padding {:p1 8 :p2 8 :p3 8 :p4 8}})
+                    (ths/add-sample-shape :child {:type :frame :name "Child" :parent-label :grid
+                                                  :width 100 :height 100 :layout-item-h-sizing :fill})
+                    (ths/add-sample-shape :rect {:type :rect :name "Rect" :parent-label :grid
+                                                 :width 70 :height 30}))
+        page    (thf/current-page file)
+        objects (:objects page)
+        child   (get objects (thi/id :child))
+        turned  (gsh/transform-shape child (ctm/rotation-modifiers child (gsh/shape->center child) 45))
+        grid    (-> (get objects (thi/id :grid))
+                    (assoc :shapes [(thi/id :child) (thi/id :rect)])
+                    (assoc :layout-grid-cells
+                           {(thi/new-id! :cell-1) {:id (thi/id :cell-1) :row 1 :column 1 :row-span 1 :column-span 1
+                                                   :position :manual :shapes [(thi/id :child)]}
+                            (thi/new-id! :cell-2) {:id (thi/id :cell-2) :row 1 :column 2 :row-span 1 :column-span 1
+                                                   :position :manual :shapes [(thi/id :rect)]}
+                            (thi/new-id! :cell-3) {:id (thi/id :cell-3) :row 1 :column 3 :row-span 1 :column-span 1
+                                                   :position :auto :shapes []}}))
+        objects (assoc objects (thi/id :child) turned (thi/id :grid) grid)
+        tree    (gm/set-objects-modifiers {(thi/id :grid) {:modifiers (ctm/reflow-modifiers)}} objects)
+        result  (gsh/transform-shape turned (get-in tree [(thi/id :child) :modifiers]))
+        [p1 p2 _ p4] (:points result)
+        e1      (gpt/to-vec p1 p2)
+        e2      (gpt/to-vec p1 p4)
+        area    (abs (- (* (:x e1) (:y e2)) (* (:y e1) (:x e2))))]
+    (t/is (>= (/ area (max (gpt/length e1) (gpt/length e2))) 0.999))))
