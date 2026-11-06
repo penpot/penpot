@@ -10,13 +10,16 @@
    [app.common.data.macros :as dm]
    [app.common.types.fills :as types.fills]
    [app.common.types.text :as txt]
+   [app.main.data.notifications :as ntf]
    [app.main.fonts :as fonts]
+   [app.main.store :as st]
    [app.main.ui.formats :as fmt]
    [app.main.ui.inspect.common.typography :as ict]
    [app.main.ui.inspect.styles.property-detail-copiable :refer [property-detail-copiable*]]
    [app.main.ui.inspect.styles.rows.color-properties-row :refer [color-properties-row*]]
    [app.main.ui.inspect.styles.rows.properties-row :refer [properties-row*]]
    [app.util.clipboard :as clipboard]
+   [app.util.i18n :refer [tr]]
    [app.util.timers :as tm]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -87,9 +90,13 @@
            (let [formatted-text (if (= (:text-transform style) "uppercase")
                                   (.toUpperCase text)
                                   text)]
-             (reset! copied* true)
-             (clipboard/to-clipboard formatted-text)
-             (tm/schedule 1000 #(reset! copied* false)))))
+             (-> (clipboard/to-clipboard formatted-text)
+                 (.then (fn [_]
+                          (reset! copied* true)
+                          (tm/schedule 1000 #(reset! copied* false))))
+                 (.catch (fn [cause]
+                           (st/emit! (ntf/error (or (clipboard/error-message cause)
+                                                    (tr "errors.clipboard-api-unavailable"))))))))))
         composite-typography-token (get-resolved-token :typography shape resolved-tokens)]
     [:div {:class (stl/css :text-properties)}
 

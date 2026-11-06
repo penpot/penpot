@@ -134,13 +134,17 @@
 
         copy-link
         (fn [_]
-          (clipboard/to-clipboard current-link)
-          (st/emit! (ntf/show {:level :info
-                               :type :toast
-                               :content (tr "common.share-link.link-copied-success")
-                               :timeout 1000})
-                    (ev/event {::ev/name "copy-share-link"
-                               ::ev/origin "viewer"})))
+          (-> (clipboard/to-clipboard current-link)
+              (.then (fn [_]
+                       (st/emit! (ntf/show {:level :info
+                                            :type :toast
+                                            :content (tr "common.share-link.link-copied-success")
+                                            :timeout 1000})
+                                 (ev/event {::ev/name "copy-share-link"
+                                            ::ev/origin "viewer"}))))
+              (.catch (fn [cause]
+                        (st/emit! (ntf/error (or (clipboard/error-message cause)
+                                                 (tr "errors.clipboard-api-unavailable"))))))))
 
         try-delete-link
         (fn [_]
