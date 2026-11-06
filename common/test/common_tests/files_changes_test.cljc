@@ -119,6 +119,93 @@
       (t/testing label
         (assert-idempotent data [change])))))
 
+(defn- make-deleted-component
+  "File data with a deleted component, so it keeps the shapes of its main
+   instance inside its own `:objects` map. Returns the file data and the ids
+   needed to address those shapes."
+  []
+  (let [file-id      (uuid/custom 20 1)
+        page-id      (uuid/custom 20 2)
+        main-id      (uuid/custom 20 3)
+        child-id     (uuid/custom 20 4)
+        component-id (uuid/custom 20 5)
+        data         (-> (make-file-data file-id page-id)
+                         (ch/process-changes
+                          [{:type :add-obj
+                            :id main-id :page-id page-id :frame-id uuid/zero
+                            :obj (cts/setup-shape
+                                  {:id main-id :type :frame :name "Main"
+                                   :frame-id uuid/zero :parent-id uuid/zero
+                                   :component-id component-id :component-file file-id
+                                   :main-instance true :component-root true})}
+                           {:type :add-obj
+                            :id child-id :page-id page-id :frame-id main-id :parent-id main-id
+                            :obj (cts/setup-shape
+                                  {:id child-id :type :rect :name "Child"
+                                   :frame-id main-id :parent-id main-id
+                                   :x 0 :y 0 :width 10 :height 10})}
+                           {:type :add-component
+                            :id component-id :name "Component" :path ""
+                            :main-instance-id main-id :main-instance-page page-id}
+                           {:type :del-component :id component-id}]))]
+    {:data data
+     :page-id page-id
+     :main-id main-id
+     :child-id child-id
+     :component-id component-id}))
+
+(t/deftest update-component-does-not-carry-the-objects-map
+  (let [{:keys [data component-id]} (make-deleted-component)
+        changes (pcb/update-component (pcb/with-library-data (pcb/empty-changes nil) data)
+                                      component-id
+                                      #(assoc % :name "Renamed"))
+        change  (first (:redo-changes changes))]
+
+    (t/testing "the change carries component metadata only"
+      (t/is (= :mod-component (:type change)))
+      (t/is (= "Renamed" (:name change)))
+      (t/is (not (contains? change :objects))
+            "resending the whole objects map on every touch is what bloated the changes")
+      (t/is (not (contains? (first (:undo-changes changes)) :objects))))
+
+    (t/testing "applying the change keeps the component shapes"
+      (let [data' (ch/process-changes data (:redo-changes changes))]
+        (t/is (= 2 (count (get-in data' [:components component-id :objects]))))))))
+
+(t/deftest mod-component-touches-objects-only-when-it-carries-them
+  (let [{:keys [data component-id]} (make-deleted-component)
+        objects (:objects (get-in data [:components component-id]))]
+
+    (t/testing "a change without :objects leaves the stored shapes alone"
+      (let [data' (ch/process-changes data [{:type :mod-component
+                                             :id component-id :name "Renamed"}])]
+        (t/is (= objects (get-in data' [:components component-id :objects])))))
+
+    (t/testing "an explicit nil :objects drops them"
+      (let [data' (ch/process-changes data [{:type :mod-component
+                                             :id component-id :objects nil}])]
+        (t/is (not (contains? (get-in data' [:components component-id]) :objects)))))
+
+    (t/testing "a change with :objects replaces them"
+      (let [data' (ch/process-changes data [{:type :mod-component
+                                             :id component-id :objects {}}])]
+        (t/is (= {} (get-in data' [:components component-id :objects])))))))
+
+(t/deftest shape-change-scoped-to-a-component-matches-the-whole-map-change
+  (let [{:keys [data child-id component-id]} (make-deleted-component)
+        objects (:objects (get-in data [:components component-id]))
+        scoped-change {:type :mod-obj
+                       :component-id component-id :id child-id
+                       :operations [{:type :set :attr :name :val "Renamed"}]}
+        ;; what `update-component` used to emit: the whole objects map rewritten
+        whole-map-change {:type :mod-component
+                          :id component-id
+                          :objects (assoc objects child-id
+                                          (assoc (get objects child-id) :name "Renamed"))}]
+
+    (t/is (= (without-modified-at (ch/process-changes data [whole-map-change]))
+             (without-modified-at (ch/process-changes data [scoped-change]))))))
+
 (t/deftest token-changes-are-idempotent
   (let [set-id      (uuid/custom 20 1)
         other-id    (uuid/custom 20 2)
