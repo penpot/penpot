@@ -232,10 +232,9 @@
                  {:tag :rect :attrs {:x "0"} :content []}])))
 
 (def schema:svg-def-node
-  "A `:svg-defs` node: keyword tag (the JSON decoder restores keywords
-  from the stored strings), whitelisted attrs, recursive content that
-  may interleave text. Closed: birth and migration normalize def nodes
-  to exactly these keys."
+  "A `:svg-defs` node: keyword tag, whitelisted attrs, recursive content
+  that may interleave text. Closed: birth and migration normalize def
+  nodes to exactly these keys, and turn string tags into keywords."
   [:schema {:registry
             {::svg-def-node
              [:map {:closed true
@@ -427,8 +426,8 @@
    ;; string itself: `<text>hi</text>` becomes one svg-raw for the element
    ;; and another for `"hi"`. `app.common.files.shapes-builder/parse-svg-element`
    ;; carries a FIXME about exactly that. Both forms are legal and stored.
-   ;; Element nodes follow `schema:svg-content-node` (tags decode back to
-   ;; keywords, attrs stay spelling-only).
+   ;; Element nodes follow `schema:svg-content-node` (keyword tags, attrs
+   ;; kebab-ized in spelling only).
    [:content {:optional true} [:or schema:svg-content-node :string]]])
 
 (def schema:image-attrs

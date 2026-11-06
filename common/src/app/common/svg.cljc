@@ -684,24 +684,30 @@
       (d/kebab-keys)))
 
 (defn- normalize-node-tree
+  "Walks a svg node tree applying `attrs-fn` to every `:attrs` map. Tags
+  are stored as keywords in their source spelling (`:clipPath`); string
+  tags found in stored files are turned into keywords, and nil `:attrs`
+  into an empty map."
   [attrs-fn node]
   (if-not (map? node)
     node
     (-> node
-        (d/update-when :attrs attrs-fn)
+        (d/update-when :tag keyword)
+        (d/update-when :attrs #(attrs-fn (or % {})))
         (d/update-when :content #(mapv (partial normalize-node-tree attrs-fn) %)))))
 
 (defn normalize-def-node
-  "Normalizes a `:svg-defs` node to the stored kebab convention: `:attrs`
-  go through `attrs->kebab-props` (whitelist + kebab), recursively
-  through nested `:content`. Tags, ids and values are left untouched."
+  "Normalizes a `:svg-defs` node to the stored convention: keyword tags,
+  and `:attrs` through `attrs->kebab-props` (whitelist + kebab),
+  recursively through nested `:content`. Ids and values are left
+  untouched."
   [node]
   (normalize-node-tree attrs->kebab-props node))
 
 (defn kebabize-content-node
-  "Kebab-izes the `:attrs` keys of an svg-raw `:content` tree, spelling
-  only: unknown keys are kept because the sidebar reads keys outside
-  the whitelist (e.g. `:stroke-style`)."
+  "Normalizes an svg-raw `:content` tree: keyword tags, and `:attrs` keys
+  kebab-ized in spelling only. Unknown keys are kept because the sidebar
+  reads keys outside the whitelist (e.g. `:stroke-style`)."
   [node]
   (normalize-node-tree d/kebab-keys node))
 

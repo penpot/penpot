@@ -2335,6 +2335,10 @@
   ;; input passes through unchanged, so re-running is safe. This replaces
   ;; "0021-fix-shape-svg-attrs" (id withdrawn from `available-migrations`
   ;; below): files that recorded it migrate again through this one.
+  ;; Node tags in defs and svg-raw content are stored as keywords; files
+  ;; that hold them as strings get them converted here, since the closed
+  ;; node schemas reject strings. `:svg-transform` held as a plain map
+  ;; becomes a matrix, because the svg defs renderer multiplies it as one.
   ;; Non-lowercase XML ids stay lossy: the reader lowercases them before
   ;; anything runs.
   [data _]
@@ -2353,6 +2357,7 @@
                                    attrs)))
                 (d/update-when :svg-defs migrate-defs)
                 (d/update-when :svg-viewbox grc/make-rect)
+                (d/update-when :svg-transform gmt/coerce)
                 (cond-> (= :svg-raw (:type shape))
                   (d/update-when :content csvg/kebabize-content-node))))
 

@@ -15,6 +15,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.tokens :as cfo]
    [app.common.files.validate :as cfv]
+   [app.common.geom.matrix :as gmt]
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
    [app.common.types.shape :as cts]
@@ -471,6 +472,7 @@
                          :attrs {:x "10" :fill "red"}
                          :content []}
                :svg-attrs {:fill-rule "evenodd"}
+               :svg-transform (gmt/matrix 1 0 0 1 10 20)
                :svg-defs {"f1" {:tag :filter
                                 :attrs {:id "f1"}
                                 :content [{:tag :feGaussianBlur
@@ -486,12 +488,13 @@
   (let [output (tmp/tempfile :suffix ".zip")]
     (v3/export-files!
      (-> th/*system*
-         (assoc ::bfc/ids #{(:id file)})
-         (assoc ::bfc/export-type :detach-libraries))
-     (io/output-stream output))
+         (assoc ::bfc/file-ids #{(:id file)})
+         (assoc ::bfc/export-type :detach-libraries)
+         (assoc ::bfc/output (io/output-stream output))))
     (let [result (-> th/*system*
                      (assoc ::bfc/project-id (:default-project-id profile))
                      (assoc ::bfc/profile-id (:id profile))
+                     (assoc ::bfc/team-id (:default-team-id profile))
                      (assoc ::bfc/input output)
                      (v3/import-files!))]
       {:output output
@@ -517,7 +520,10 @@
     (t/is (some? node) "the filter def was found")
     (t/is (= :filter (:tag node)) "tags decode back to keywords")
     (t/is (= "f1" (get-in node [:attrs :id])) "def ids survive byte-identical")
-    (t/is (= "2" (get-in node [:content 0 :attrs :std-deviation])))))
+    (t/is (= "2" (get-in node [:content 0 :attrs :std-deviation])))
+    (t/is (gmt/matrix? (:svg-transform shape))
+          "svg-transform comes back as a matrix, not a plain map")
+    (t/is (= (gmt/matrix 1 0 0 1 10 20) (:svg-transform shape)))))
 
 (t/deftest export-import-svg-roundtrip-converges
   ;; The determinism proof: export, import, export, import. The first

@@ -7,6 +7,7 @@
 (ns common-tests.files-migrations-0035-test
   (:require
    [app.common.files.migrations :as cfm]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.rect :as grc]
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
@@ -124,6 +125,93 @@
     (t/is (= "keep-me" (get-in content [:attrs :data-foo]))
           "unknown content keys survive")
     (t/is (= "round" (get-in content [:content 0 :attrs :stroke-linecap])))))
+
+(defn- string-tag-defs
+  []
+  {:a {:tag "mask"
+       :attrs {:id "a" :maskUnits "userSpaceOnUse"}
+       :content [{:tag "rect"
+                  :attrs {:width "10" :height "10" :fill "#FFF"}
+                  :content []}]}})
+
+(defn- string-tag-content
+  []
+  {:tag "g"
+   :attrs {}
+   :content [{:tag "text"
+              :attrs {:fontSize "12"}
+              :content ["Hi"]}
+             {:tag "style"
+              :attrs nil
+              :content [".a{fill:red}"]}]})
+
+(t/deftest migration-0035-keywordizes-string-tags
+  (let [shape-id (uuid/next)
+        raw-id   (uuid/next)
+        page-id  (uuid/next)
+        data     {:pages-index
+                  {page-id
+                   {:objects
+                    {shape-id (make-shape shape-id
+                                          {:type :rect
+                                           :svg-defs (string-tag-defs)})
+                     raw-id   (make-shape raw-id
+                                          {:type :svg-raw
+                                           :content (string-tag-content)})}}}}
+        data'    (cfm/migrate-data data migration-id)
+        mask     (get-in data' [:pages-index page-id :objects shape-id :svg-defs :a])
+        content  (get-in data' [:pages-index page-id :objects raw-id :content])]
+    (t/is (= :mask (:tag mask)))
+    (t/is (= :rect (get-in mask [:content 0 :tag])) "nested def tags too")
+    (t/is (= "userSpaceOnUse" (get-in mask [:attrs :mask-units])))
+    (t/is (= :g (:tag content)))
+    (t/is (= :text (get-in content [:content 0 :tag])) "nested content tags too")
+    (t/is (= ["Hi"] (get-in content [:content 0 :content])))
+    (t/is (= {} (get-in content [:content 1 :attrs])) "nil attrs become an empty map")
+    (t/is (= data' (cfm/migrate-data data' migration-id)) "re-running is stable")))
+
+(t/deftest migration-0035-string-tag-file-passes-file-validation
+  ;; `migrate-file` validates the whole file data after migrating: a file
+  ;; with string node tags or nil node attrs must come out valid, or it
+  ;; cannot be opened.
+  (let [rect-id (uuid/next)
+        raw-id  (uuid/next)
+        file    (ctf/make-file {:name "String svg tags"})
+        page-id (first (get-in file [:data :pages]))
+        rect    (-> (cts/setup-shape {:id rect-id :type :rect :name "rect"})
+                    (assoc :svg-defs (string-tag-defs)))
+        raw     (-> (cts/setup-shape {:id raw-id :type :svg-raw :name "raw"})
+                    (assoc :content (string-tag-content)))
+        file    (-> file
+                    (assoc :migrations (disj cfm/available-migrations migration-id))
+                    (update-in [:data :pages-index page-id :objects] assoc rect-id rect raw-id raw)
+                    (update-in [:data :pages-index page-id :objects uuid/zero :shapes] conj rect-id raw-id))
+        file'   (cfm/migrate-file file {})]
+    (t/is (= :mask (get-in file' [:data :pages-index page-id :objects rect-id :svg-defs :a :tag])))
+    (t/is (= :g (get-in file' [:data :pages-index page-id :objects raw-id :content :tag])))))
+
+(t/deftest migration-0035-turns-plain-map-svg-transform-into-matrix
+  ;; The svg defs renderer multiplies `:svg-transform` as a matrix; a
+  ;; plain map there renders as `matrix(NaN, ...)`.
+  (let [plain-id  (uuid/next)
+        matrix-id (uuid/next)
+        page-id   (uuid/next)
+        data      {:pages-index
+                   {page-id
+                    {:objects
+                     {plain-id  (make-shape plain-id
+                                            {:type :path
+                                             :svg-transform {:a 1.0 :b 0.0 :c 0.0 :d 1.0 :e 10.0 :f 20.0}})
+                      matrix-id (make-shape matrix-id
+                                            {:type :path
+                                             :svg-transform (gmt/matrix 2 0 0 2 0 0)})}}}}
+        data'     (cfm/migrate-data data migration-id)
+        plain'    (get-in data' [:pages-index page-id :objects plain-id :svg-transform])
+        matrix'   (get-in data' [:pages-index page-id :objects matrix-id :svg-transform])]
+    (t/is (gmt/matrix? plain'))
+    (t/is (= (gmt/matrix 1 0 0 1 10 20) plain'))
+    (t/is (= (gmt/matrix 2 0 0 2 0 0) matrix') "matrices are left as they are")
+    (t/is (= data' (cfm/migrate-data data' migration-id)) "re-running is stable")))
 
 (t/deftest migration-0035-leaves-kebab-files-equal
   (let [shape-id (uuid/next)

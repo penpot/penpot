@@ -64,3 +64,36 @@
     (let [stored ((comp keyword str/kebab name) (svg/prop-key k))]
       (t/is (= (name k) (svg/stored-attr-display-name stored))
             (str "display round-trip for " k)))))
+
+(t/deftest normalize-def-node-keywordizes-string-tags
+  ;; Stored files can hold def node tags as strings; nested nodes too.
+  (let [node (svg/normalize-def-node
+              {:tag "mask"
+               :attrs {:id "m1" :maskUnits "userSpaceOnUse"}
+               :content [{:tag "clipPath"
+                          :attrs {}
+                          :content [{:tag "rect" :attrs {:width "10"} :content []}]}]})]
+    (t/is (= :mask (:tag node)))
+    (t/is (= :clipPath (get-in node [:content 0 :tag])) "source spelling is kept")
+    (t/is (= :rect (get-in node [:content 0 :content 0 :tag])))
+    (t/is (= "userSpaceOnUse" (get-in node [:attrs :mask-units])))))
+
+(t/deftest kebabize-content-node-keywordizes-string-tags
+  (let [node (svg/kebabize-content-node
+              {:tag "text"
+               :attrs {:fontSize "12"}
+               :content ["Hi" {:tag "tspan" :attrs {} :content ["there"]}]})]
+    (t/is (= :text (:tag node)))
+    (t/is (= "12" (get-in node [:attrs :font-size])))
+    (t/is (= "Hi" (get-in node [:content 0])) "text children are left as they are")
+    (t/is (= :tspan (get-in node [:content 1 :tag])))))
+
+(t/deftest normalize-def-node-keeps-keyword-tags
+  (let [node {:tag :linearGradient :attrs {:id "g"} :content []}]
+    (t/is (= node (svg/normalize-def-node node)))))
+
+(t/deftest normalize-nodes-turn-nil-attrs-into-empty-map
+  (t/is (= {} (:attrs (svg/kebabize-content-node {:tag :style :attrs nil :content [".a{}"]}))))
+  (t/is (= {} (:attrs (svg/normalize-def-node {:tag :g :attrs nil :content []}))))
+  (t/is (not (contains? (svg/kebabize-content-node {:tag :g :content []}) :attrs))
+        "absent attrs stay absent"))

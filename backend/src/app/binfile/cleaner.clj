@@ -9,6 +9,7 @@
   for recently imported shapes."
   (:require
    [app.common.data :as d]
+   [app.common.geom.matrix :as gmt]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]))
 
@@ -105,6 +106,12 @@
                      :reverse-column :column-reverse
                      dir))))
 
+(defn- fix-svg-transform
+  "The json reader decodes `:svg-transform` as a plain map; the svg defs
+  renderer multiplies it as a matrix, so turn it back into one."
+  [shape]
+  (d/update-when shape :svg-transform gmt/coerce))
+
 (defn clean-shape-post-decode
   "A shape procesor that expected to be executed after schema decoding
   process but before validation."
@@ -112,7 +119,8 @@
   (-> shape
       (fix-shape-shadow-color)
       (fix-root-shape)
-      (fix-legacy-flex-dir)))
+      (fix-legacy-flex-dir)
+      (fix-svg-transform)))
 
 (defn- fix-container
   [container]
