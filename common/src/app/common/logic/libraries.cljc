@@ -1920,6 +1920,54 @@
                  :layout-grid-columns (:layout-grid-columns target))
           (ctsl/fit-cells-to-tracks)))))
 
+(defn copy-grid-cells
+  "The grid copy `shape-copy` with the cells of its main `shape-main`, its
+   own children in place of the main's, laid out in its own direction: the
+   cells of a copy without cell overrides."
+  [shape-copy shape-main objects]
+  (let [ids-map
+        (into {}
+              (comp
+               (map #(get objects %))
+               (keep
+                (fn [copy-shape]
+                  ;; Paired children refer to this near main, which can
+                  ;; belong to another component when resetting nested copies.
+                  (when-let [ref (:shape-ref copy-shape)]
+                    [ref (:id copy-shape)]))))
+              (:shapes shape-copy))]
+    (-> shape-copy
+        (assoc :layout-grid-cells (-> shape-main (ctsl/remap-grid-cells ids-map) :layout-grid-cells))
+        (ctsl/assign-cells objects))))
+
+(defn grid-direction-cells
+  "The update that gives a grid shape of `page` the cells it has once its
+   direction changes to `dir`: its single-span auto cells reflow in the new
+   order. In a copy without cell overrides, a reflow that moves items makes
+   the cells an override, and one that moves none leaves the cells its
+   main gives it, laid out as sync lays them out in the new direction, so a
+   copy that changes its direction back has its main's cells again."
+  [file page libraries dir]
+  (let [container (ctn/make-container page :page)
+        objects   (:objects page)]
+    (fn [shape]
+      (let [from-dir (ctsl/grid-direction shape)]
+        (if (or (not= :grid (:layout shape)) (= from-dir dir))
+          shape
+          (let [reflowed (ctsl/reflow-grid-auto-items-for-direction shape from-dir dir)
+                main     (when (and (:shape-ref shape)
+                                    (not (ctk/touched-group? shape :layout-grid-cells)))
+                           (ctf/find-ref-shape file container libraries shape :include-deleted? true))]
+            (cond
+              (not= :grid (:layout main))
+              reflowed
+
+              (not= (:layout-grid-cells reflowed) (:layout-grid-cells shape))
+              (update reflowed :touched ctk/set-touched-group :layout-grid-cells)
+
+              :else
+              (copy-grid-cells (assoc shape :layout-grid-dir dir) main objects))))))))
+
 (defn- update-grid-copy-attrs
   "Synchronizes the `layout-grid-cells` property from the main shape to the copies"
   [changes shape-before shape-main omit-touched?]
@@ -1928,35 +1976,22 @@
       (pcb/update-shapes
        [(:id shape-before)]
        (fn [shape-copy objects]
-         (let [ids-map
-               (into {}
-                     (comp
-                      (map #(get objects %))
-                      (keep
-                       (fn [copy-shape]
-                         ;; Paired children refer to this near main, which can
-                         ;; belong to another component when resetting nested copies.
-                         (when-let [ref (:shape-ref copy-shape)]
-                           [ref (:id copy-shape)]))))
-                     (:shapes shape-copy))
-
-               remove-orphan-cells
+         (let [remove-orphan-cells
                (fn [cells {:keys [shapes]}]
                  (let [child? (set shapes)]
                    (-> cells
                        (update-vals
                         (fn [cell]
                           (update cell :shapes #(filterv child? %)))))))
-               ;; Take cells from main and remap the shapes to assign it to the copy
                copy-cells  (-> shape-copy :layout-grid-cells (remove-orphan-cells shape-copy))
-               main-cells  (-> shape-main (ctsl/remap-grid-cells ids-map) :layout-grid-cells)
                keep-cells? (and omit-touched? (contains? (:touched shape-copy) :layout-grid-cells))]
-           (let [shape-copy (assoc shape-copy :layout-grid-cells (if keep-cells? copy-cells main-cells))]
-             (if keep-cells?
-               (-> shape-copy
-                   (add-inherited-grid-cells shape-before)
-                   (assign-inherited-grid-cells shape-before objects))
-               (ctsl/assign-cells shape-copy objects)))))
+           (if keep-cells?
+             (-> shape-copy
+                 (assoc :layout-grid-cells copy-cells)
+                 (add-inherited-grid-cells shape-before)
+                 (assign-inherited-grid-cells shape-before objects))
+             ;; Take cells from main and remap the shapes to assign it to the copy
+             (copy-grid-cells shape-copy shape-main objects))))
        {:ignore-touched true :with-objects? true})))
 
 (defn- update-grid-main-attrs
