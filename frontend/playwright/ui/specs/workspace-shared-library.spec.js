@@ -162,3 +162,62 @@ test("BUG 14214 - Updates tab refreshes after syncing a freshly linked library",
     updatesPanel.getByText("There are no Shared Libraries that need update"),
   ).toBeVisible();
 });
+
+test("Swap component menu keeps the search when changing library", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile(page);
+
+  await workspace.mockRPC(
+    /get\-file\?/,
+    "workspace/get-file-9066-swap-groups.json",
+  );
+  await workspace.mockRPC(
+    new RegExp(`get\\-file\\?id=${sharedFileId}`),
+    "workspace/get-file-9056_shared.json",
+  );
+  await workspace.mockRPC(
+    "get-file-libraries?file-id=*",
+    "workspace/get-file-libraries-9056.json",
+  );
+  await workspace.mockRPC(
+    `get-file-fragment?file-id=${sharedFileId}&fragment-id=${sharedFileFragmentId1}`,
+    "workspace/get-file-fragment-9056_shared-1.json",
+  );
+  await workspace.mockRPC(
+    `get-file-fragment?file-id=${sharedFileId}&fragment-id=${sharedFileFragmentId2}`,
+    "workspace/get-file-fragment-9056_shared-2.json",
+  );
+
+  await workspace.goToWorkspace({
+    fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+    pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+  });
+
+  await workspace.clickToggableLayer("Board");
+  await workspace.clickToggableLayer("Group");
+  await workspace.layers.getByText("A", { exact: true }).click();
+  await workspace.rightSidebar.getByRole("button", { name: /^A / }).click();
+
+  const search = workspace.rightSidebar.locator(
+    "#swap-component-search-filter",
+  );
+  await search.fill("rect");
+  await expect(
+    workspace.rightSidebar.getByText("There are no assets in this library yet"),
+  ).toBeVisible();
+
+  await workspace.rightSidebar
+    .getByRole("combobox")
+    .filter({ hasText: "New File 10" })
+    .click();
+  await workspace.rightSidebar
+    .getByRole("option", { name: "published component" })
+    .click();
+
+  await expect(search).toHaveValue("rect");
+  await expect(
+    workspace.rightSidebar.getByText("Rectangle", { exact: true }),
+  ).toBeVisible();
+});
