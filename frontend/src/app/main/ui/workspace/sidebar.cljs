@@ -387,18 +387,25 @@
         tokenscript? (contains? cf/flags :tokenscript)
 
         resolved-active-tokens
-        (sd/use-resolved-tokens* active-tokens)
+        (sd/use-resolved-tokens* (when-not tokenscript? active-tokens))
 
+        ;; Tokenscript takes the sets unmerged and resolves what changed
         tokenscript-resolved-active-tokens
-        (mf/with-memo [active-tokens tokenscript?]
-          (when tokenscript? (ts/resolve-tokens active-tokens)))
+        (mf/with-memo [tokens-status tokens-lib tokenscript?]
+          (when tokenscript?
+            (if (and tokens-status tokens-lib)
+              (ts/resolve-sets (cfo/get-active-token-sets tokens-status tokens-lib))
+              {})))
 
         tokenscript-resolved-active-tokens-force-set
-        (mf/with-memo [active-tokens-force-set tokenscript?]
-          (when tokenscript? (ts/resolve-tokens active-tokens-force-set)))
+        (mf/with-memo [tokens-status tokens-lib selected-token-set-id tokenscript?]
+          (when tokenscript?
+            (if (and tokens-status tokens-lib selected-token-set-id)
+              (ts/resolve-sets (cfo/get-active-token-sets-force tokens-status tokens-lib selected-token-set-id))
+              {})))
 
         resolved-active-tokens-force-set
-        (sd/use-resolved-tokens* active-tokens-force-set)]
+        (sd/use-resolved-tokens* (when-not tokenscript? active-tokens-force-set))]
 
     [:> (mf/provider ctx/tokens-lib) {:value tokens-lib}
      [:> (mf/provider ctx/tokens-status) {:value tokens-status}
