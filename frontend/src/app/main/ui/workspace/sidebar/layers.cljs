@@ -26,13 +26,12 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.notifications.badge :refer [badge-notification]]
-   [app.main.ui.workspace.sidebar.layer-item :refer [layer-item*]]
+   [app.main.ui.workspace.sidebar.layer-item :refer [layer-item* layer-objects-ctx use-objects-ref]]
    [app.main.ui.workspace.sidebar.scroll :as sc]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.rxops :refer [throttle-fn]]
    [app.util.shape-icon :as usi]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
@@ -41,112 +40,28 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(def ^:private ref:highlighted-shapes
-  (l/derived (fn [local]
-               (-> local
-                   (get :highlighted)
-                   (not-empty)))
-             refs/workspace-local))
-
-(def ^:private ref:shape-for-rename
-  (l/derived (l/key :shape-for-rename) refs/workspace-local))
-
-(defn- use-selected-shapes
-  "A convencience hook wrapper for get selected shapes"
-  []
-  (let [selected (mf/deref refs/selected-shapes)]
-    (hooks/use-equal-memo selected)))
-
-;; This components is a piece for sharding equality check between top
-;; level frames and try to avoid rerender frames that are does not
-;; affected by the selected set.
-(mf/defc frame-wrapper*
-  [{:keys [selected] :as props}]
-  (let [pending-selected-ref
-        (mf/use-ref selected)
-
-        current-selected
-        (mf/use-state selected)
-
-        props
-        (mf/spread-object props {:selected @current-selected})
-
-        set-selected
-        (mf/with-memo []
-          (throttle-fn 50 #(when-let [pending-selected (mf/ref-val pending-selected-ref)]
-                             (reset! current-selected pending-selected))))]
-
-    (mf/with-effect [selected set-selected]
-      (mf/set-ref-val! pending-selected-ref selected)
-      (^function set-selected)
-      (fn []
-        (mf/set-ref-val! pending-selected-ref nil)
-        (rx/dispose! set-selected)))
-
-    [:> layer-item* props]))
-
 (mf/defc layers-tree*
   {::mf/wrap [mf/memo]}
-  [{:keys [objects is-filtered parent-size] :as props}]
-  (let [selected    (use-selected-shapes)
-        highlighted (mf/deref ref:highlighted-shapes)
-        root        (get objects uuid/zero)
+  [{:keys [objects is-filtered parent-size]}]
+  (let [objects-ref (use-objects-ref objects)
+        shapes      (dm/get-in objects [uuid/zero :shapes])
+        ;; Layers render in reverse order of `:shapes`
+        root-ids    (mf/with-memo [shapes]
+                      (-> shapes reverse vec))
+        last-index  (dec (count root-ids))]
 
-        rename-id   (mf/deref ref:shape-for-rename)
-
-        shapes      (get root :shapes)
-        shapes      (mf/with-memo [shapes objects]
-                      (loop [counter 0
-                             shapes (seq shapes)
-                             result (list)]
-                        (if-let [id (first shapes)]
-                          (if-let [obj (get objects id)]
-                            (do
-                              ;; NOTE: this is a bit hacky, but reduces substantially
-                              ;; the allocation; If we use enumeration, we allocate
-                              ;; new sequence and add one iteration on each render,
-                              ;; independently if objects are changed or not. If we
-                              ;; store counter on metadata, we still need to create a
-                              ;; new allocation for each shape; with this method we
-                              ;; bypass this by mutating a private property on the
-                              ;; object removing extra allocation and extra iteration
-                              ;; on every request.
-                              (unchecked-set obj "__$__counter" counter)
-                              (recur (inc counter)
-                                     (rest shapes)
-                                     (conj result obj)))
-                            (recur (inc counter)
-                                   (rest shapes)
-                                   result))
-                          result)))]
-
-    [:div {:class (stl/css :element-list)
-           :data-testid "layer-item"}
-     [:> hooks/sortable-container* {}
-      (for [obj shapes]
-        (if (cfh/frame-shape? obj)
-          [:> frame-wrapper* {:item obj
-                              :rename-id rename-id
-                              :selected selected
-                              :highlighted highlighted
-                              :index (unchecked-get obj "__$__counter")
-                              :objects objects
-                              :key (dm/str (get obj :id))
-                              :is-sortable true
-                              :is-filtered is-filtered
-                              :parent-size parent-size
-                              :depth -1}]
-          [:> layer-item* {:item obj
-                           :rename-id rename-id
-                           :selected selected
-                           :highlighted highlighted
-                           :index (unchecked-get obj "__$__counter")
-                           :objects objects
-                           :key (dm/str (get obj :id))
-                           :is-sortable true
-                           :is-filtered is-filtered
-                           :depth -1
-                           :parent-size parent-size}]))]]))
+    [:> (mf/provider layer-objects-ctx) {:value objects-ref}
+     [:div {:class (stl/css :element-list)
+            :data-testid "layer-item"}
+      [:> hooks/sortable-container* {}
+       (for [[pos id] (d/enumerate root-ids)]
+         [:> layer-item* {:id id
+                          :index (- last-index pos)
+                          :key (dm/str id)
+                          :is-sortable true
+                          :is-filtered is-filtered
+                          :depth -1
+                          :parent-size parent-size}])]]]))
 
 (mf/defc layers-tree-wrapper*
   {::mf/private true}
@@ -178,22 +93,17 @@
   {::mf/wrap [mf/memo #(mf/throttle % 50)]
    ::mf/private true}
   [{:keys [objects parent-size]}]
-  (let [selected    (use-selected-shapes)
-        highlighted (mf/deref ref:highlighted-shapes)
-        root        (get objects uuid/zero)]
-    [:ul {:class (stl/css :element-list)}
-     (for [[index id] (d/enumerate (:shapes root))]
-       (when-let [obj (get objects id)]
-         [:> layer-item* {:item obj
-                          :selected selected
-                          :highlighted highlighted
-                          :index index
-                          :objects objects
-                          :key id
-                          :is-sortable false
-                          :is-filtered true
-                          :depth -1
-                          :parent-size parent-size}]))]))
+  (let [objects-ref (use-objects-ref objects)]
+    [:> (mf/provider layer-objects-ctx) {:value objects-ref}
+     [:ul {:class (stl/css :element-list)}
+      (for [[index id] (d/enumerate (dm/get-in objects [uuid/zero :shapes]))]
+        [:> layer-item* {:id id
+                         :index index
+                         :key id
+                         :is-sortable false
+                         :is-filtered true
+                         :depth -1
+                         :parent-size parent-size}])]]))
 
 (defn calc-reparented-objects
   [objects]
