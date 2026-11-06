@@ -1255,3 +1255,16 @@
                              [:grid-cell 0 0 0 1] [:restore 0 0 0 0] [:delete 0 0 0 0] [:grid-direction 5 0 3 0]
                              [:add-child 1 0 0 0] [:update-main 0 0 0 0] [:grid-direction 0 0 0 0]
                              [:grid-direction 0 0 3 0]]}))))
+
+(t/deftest generated-tiny-swapped-head-turns-its-content-rigidly
+  ;; a swapped head shrunk to 0.01 px and turned has a transform carrying its
+  ;; rounding; a nest into its content main turns the new child by the head's
+  ;; axes alone, without scaling it
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :layout :flex :layout-item-margins true
+                                    :grid-square false :library true :rich-variants true :layout-children false
+                                    :grid-empty true :layout-copies true :text true}]
+                       :ops [[:rotate 3 0 0 0] [:delete 16] [:restore 16] [:delete 16 0 0 0]
+                             [:style 1 10 1] [:delete 1 0 0 0] [:restore 0 0 0 0] [:edit 10 0 1 1]
+                             [:update-main 10] [:undo 0 0 0 0] [:nest 19 0 0 0] [:detach 1 0 0 0]
+                             [:detach 2 0 0 0] [:delete 23 0 0 0] [:restore 3 0 0 0] [:swap 13 0 0 0]
+                             [:nest 21 0 0 0]]}))))
