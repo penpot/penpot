@@ -187,10 +187,9 @@
                             :ns ns
                             :existing-ns (:ns existing)})))
          (swap! registry
-                (fn [reg]
-                  (cond-> (assoc-in reg [entries-key id] entry)
-                    (not (contains? (get reg entries-key) id))
-                    (update order-key conj id)))))
+                #(cond-> (assoc-in % [entries-key id] entry)
+                   (not (contains? (get % entries-key) id))
+                   (update order-key conj id))))
        id)
 
      (defn register-scene!

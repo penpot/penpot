@@ -175,9 +175,7 @@
                        (.once child "exit"
                               (fn [code signal]
                                 (resolve {:exit-code code :signal signal})))
-                       (.once child "error"
-                              (fn [cause]
-                                (resolve (spawn-failed cause))))))]
+                       (.once child "error" #(resolve (spawn-failed %)))))]
       (try
         (if-not (.-pid child)
           ;; A failed spawn may not provide stdin/stdout/stderr at all.

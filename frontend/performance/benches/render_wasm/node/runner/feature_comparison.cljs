@@ -117,22 +117,20 @@
 (defn- change-config
   [record slug f]
   (update record :configurations
-          (fn [configurations]
-            (mapv (fn [configuration]
-                    (if (= slug (:slug configuration))
-                      (f configuration)
-                      configuration))
-                  configurations))))
+          #(mapv (fn [config]
+                   (if (= slug (:slug config))
+                     (f config)
+                     config))
+                 %)))
 
 (defn- change-edge
   [record from to f]
   (update record :edges
-          (fn [edges]
-            (mapv (fn [edge]
-                    (if (and (= from (:from edge)) (= to (:to edge)))
-                      (f edge)
-                      edge))
-                  edges))))
+          #(mapv (fn [edge]
+                   (if (and (= from (:from edge)) (= to (:to edge)))
+                     (f edge)
+                     edge))
+                 %)))
 
 (defn- config-by-slug
   [record slug]
