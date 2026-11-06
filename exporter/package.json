@@ -4,7 +4,7 @@
   "license": "MPL-2.0",
   "author": "Kaleidos INC Sucursal en España SL",
   "private": true,
-  "packageManager": "pnpm@12.16.1+sha512.091d1dee7927575661b25dab3c2ae31cafc1c54d6b71ed6a6600cf0c1cb10434a447eae14015f1b23e2e6bedeed79df94a932e2164d2832280dce3fb32f656d1",
+  "packageManager": "pnpm@12.18.0+sha512.9d7882d5dc82147ecfc4e062aa34834e0ad0296710a1837a1115ae012127d36b7109e321ac1598a1dd0a65597681b1e99917e12ed0d749eae91187943363beb3",
   "repository": {
     "type": "git",
     "url": "https://github.com/penpot/penpot"
