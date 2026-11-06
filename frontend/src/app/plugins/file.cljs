@@ -11,14 +11,12 @@
    [app.common.files.validate :as cfv]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.main.data.exports.files :as exports.files]
    [app.main.data.plugins :as dp]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.versions :as dwv]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.main.worker :as mw]
    [app.plugins.format :as format]
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
@@ -270,44 +268,65 @@
              (and (some? format) (not (contains? #{"penpot" "zip"} format)))
              (u/reject-not-valid reject :format (dm/str "Invalid format: " format))
 
+             (= format "zip")
+             (u/reject-not-valid reject :format "Legacy zip export is unsupported; use penpot")
+
              (not (contains? (set exports.files/valid-types) type))
              (u/reject-not-valid reject :format (dm/str "Invalid type: " type))
 
              :else
-             (let [file       (u/locate-file id)
-                   features   (:features @st/state)
-                   team-id    (:current-team-id @st/state)
-                   format     (case format
-                                "zip"    :legacy-zip
-
-                                (if (contains? cf/flags :export-file-v3)
-                                  :binfile-v3
-                                  :binfile-v1))]
-               (->> (mw/ask-many!
-                     {:cmd :export-files
-                      :format format
-                      :type type
-                      :team-id team-id
-                      :features features
-                      :files [file]})
+             (let [file (u/locate-file id)]
+               (->> (exports.files/export-files :files [file] :type type)
                     (rx/mapcat
                      (fn [msg]
-                       (.log js/console msg)
-                       (case (:type msg)
-                         :error
-                         (rx/throw (ex-info "cannot export file" {:type :export-file}))
+                       (cond
+                         (not (map? msg))
+                         (rx/throw (ex-info "unexpected export result"
+                                            {:type :export-file
+                                             :code :unexpected-export-result}))
 
-                         :progress
+                         (contains? msg :error)
+                         (rx/throw (ex-info "cannot export file"
+                                            {:type :export-file}))
+
+                         (:cancelled msg)
+                         (rx/throw (ex-info "file export cancelled"
+                                            {:type :export-file
+                                             :code :cancelled}))
+
+                         (or (:queued msg) (contains? msg :progress))
                          (rx/empty)
 
-                         :finish
+                         (and (string? (:uri msg)) (not (empty? (:uri msg))))
                          (http/send! {:method :get
                                       :uri (:uri msg)
                                       :mode :no-cors
-                                      :response-type :buffer}))))
+                                      :response-type :buffer})
+
+                         :else
+                         (rx/throw (ex-info "unexpected export result"
+                                            {:type :export-file
+                                             :code :unexpected-export-result})))))
                     (rx/take 1)
-                    (rx/map #(js/Uint8Array. (:body %)))
-                    (rx/tap #(st/emit! (se/event plugin-id "export-binary-files" :format format :type type)))
+                    (rx/if-empty ::empty-export-result)
+                    (rx/map (fn [response]
+                              (when (= response ::empty-export-result)
+                                (throw (ex-info "export completed without a file"
+                                                {:type :export-file
+                                                 :code :empty-export-result})))
+                              (when-not (http/success? response)
+                                (throw (ex-info "cannot download exported file"
+                                                {:type :export-file
+                                                 :status (:status response)})))
+                              (let [bytes (js/Uint8Array. (:body response))]
+                                (when (zero? (.-length bytes))
+                                  (throw (ex-info "empty exported file"
+                                                  {:type :export-file
+                                                   :code :empty-export})))
+                                bytes)))
+                    (rx/tap #(st/emit! (se/event plugin-id "export-binary-files"
+                                                 :format :binfile-v3
+                                                 :type type)))
                     (rx/subs! resolve reject))))))))
     :findVersions
     (fn [criteria]
