@@ -1240,3 +1240,18 @@
                                     :grid-empty false :layout-copies true :text true}]
                        :ops [[:library-transform 9 3 4 0] [:delete 5] [:restore 5] [:library-transform 9 4 0 0]
                              [:library-transform 4 3 0 0] [:library-sync 0 0 0 0] [:switch 13 0 0 0]]}))))
+
+(t/deftest generated-direction-change-in-a-copy-lays-out-its-mains-cells
+  ;; a copy without cell overrides takes its main's cells in the direction
+  ;; it changes to, pins included; changing the direction back gives the
+  ;; main's grid again
+  (t/is (map? (cg/run {:world [3 0 {:text true :text-styles true :layout :grid :layout-children false
+                                    :layout-item-margins false :grid-square true :grid-empty false}]
+                       :ops [[:grid-direction 1 0 1 0] [:add-child 5 0 0 0] [:grid-direction 0 0 0 1]
+                             [:grid-cell 0 0 0 1]]})))
+  (t/is (map? (cg/run {:world [2 0 {:text true :text-styles true :layout :grid :layout-children true
+                                    :layout-item-margins false :grid-square false :grid-empty false}]
+                       :ops [[:delete 0 0 0 0] [:restore 0 0 0 0] [:delete 0 0 0 0] [:grid-direction 0 0 0 1]
+                             [:grid-cell 0 0 0 1] [:restore 0 0 0 0] [:delete 0 0 0 0] [:grid-direction 5 0 3 0]
+                             [:add-child 1 0 0 0] [:update-main 0 0 0 0] [:grid-direction 0 0 0 0]
+                             [:grid-direction 0 0 3 0]]}))))

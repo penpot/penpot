@@ -13,6 +13,7 @@
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.point :as gpt]
    [app.common.logic.duplicate :as cld]
+   [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.types.color :as clr]
    [app.common.types.component :as ctc]
@@ -307,34 +308,30 @@
             (rx/of (with-meta event (meta it)))))))))
 
 (defn change-grid-direction
-  "Set grid direction and reflow single-span auto items in one undo step."
+  "Set grid direction and lay out the cells for it in one undo step. A copy
+  without cell overrides takes its main's cells laid out in the new
+  direction; only the direction becomes its override."
   [ids dir]
   (ptk/reify ::change-grid-direction
     ptk/WatchEvent
-    (watch [_ _ _]
-      (let [undo-id (js/Symbol)]
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dwsh/update-shapes
-                ids
-                (fn [shape]
-                  (let [from-dir (ctl/grid-direction shape)]
-                    (cond
-                      (not= :grid (:layout shape))
-                      shape
-
-                      (not (contains? #{:row :column} dir))
-                      shape
-
-                      (= from-dir dir)
-                      (assoc shape :layout-grid-dir dir)
-
-                      :else
-                      (ctl/reflow-grid-auto-items-for-direction shape from-dir dir))))
-                ;; Auto cells are already reflowed, so skip generic reassignment
-                ;; and child reordering.
-                {:skip-grid-reassignment? true})
-               (ptk/data-event :layout/update {:ids ids})
-               (dwu/commit-undo-transaction undo-id))))))
+    (watch [_ state _]
+      (if (contains? #{:row :column} dir)
+        (let [undo-id (js/Symbol)
+              cells   (cll/grid-direction-cells (dsh/lookup-file state) (dsh/lookup-page state)
+                                                (dsh/lookup-libraries state) dir)]
+          (rx/of (dwu/start-undo-transaction undo-id)
+                 ;; Auto cells are already laid out, so skip generic reassignment
+                 ;; and child reordering.
+                 (dwsh/update-shapes ids cells {:attrs #{:layout-grid-cells :touched}
+                                                :ignore-touched true
+                                                :skip-grid-reassignment? true})
+                 (dwsh/update-shapes ids
+                                     #(cond-> % (= :grid (:layout %)) (assoc :layout-grid-dir dir))
+                                     {:attrs #{:layout-grid-dir}
+                                      :skip-grid-reassignment? true})
+                 (ptk/data-event :layout/update {:ids ids})
+                 (dwu/commit-undo-transaction undo-id)))
+        (rx/empty)))))
 
 (defn update-layout
   ([ids changes] (update-layout ids changes nil))
