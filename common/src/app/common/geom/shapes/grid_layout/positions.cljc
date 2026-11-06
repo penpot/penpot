@@ -53,6 +53,22 @@
               (gpt/add $ (vv (* row-gap (dec (count span-row-tracks))))))]
         [p1 p2 p3 p4]))))
 
+(defn- turned-min-scale
+  "The smallest scale a fill applies along the grid's axes to a child turned
+   in it, from the child's own corners `own-points`: one that keeps it at
+   least 1px thick in its own axes, as the skew narrows it. Nil for a child
+   that lines up with the grid's axes or is already thinner."
+  [own-points [g1 g2]]
+  (when-let [[p1 p2 _ p4] (seq own-points)]
+    (let [own-x  (gpt/to-vec p1 p2)
+          width  (gpt/length own-x)
+          height (gpt/length (gpt/to-vec p1 p4))
+          ux     (gpt/unit own-x)
+          gx     (gpt/unit (gpt/to-vec g1 g2))
+          sin    (mth/abs (- (* (:x ux) (:y gx)) (* (:y ux) (:x gx))))]
+      (when (and (> (min width height) 1) (> sin 1e-4) (< sin (- 1 1e-4)))
+        (/ 1 (min width height))))))
+
 (defn calc-fill-width-data
   "Calculates the size and modifiers for the width of an auto-fill child"
   [_parent
@@ -60,11 +76,13 @@
    transform-inverse
    child
    child-origin child-width
-   cell-bounds]
+   cell-bounds
+   min-scale]
 
   (let [target-width (max (- (gpo/width-points cell-bounds) (ctl/child-width-margin child)) 0.01)
         max-width (max (ctl/child-max-width child) 0.01)
-        target-width (mth/clamp target-width (ctl/child-min-width child) max-width)
+        target-width (cond-> (mth/clamp target-width (ctl/child-min-width child) max-width)
+                       (some? min-scale) (max (* min-scale child-width)))
         fill-scale (/ target-width child-width)]
     {:width target-width
      :modifiers (ctm/resize-modifiers (gpt/point fill-scale 1) child-origin transform transform-inverse)}))
@@ -75,10 +93,12 @@
    transform transform-inverse
    child
    child-origin child-height
-   cell-bounds]
+   cell-bounds
+   min-scale]
   (let [target-height (max (- (gpo/height-points cell-bounds) (ctl/child-height-margin child)) 0.01)
         max-height (max (ctl/child-max-height child) 0.01)
-        target-height (mth/clamp target-height (ctl/child-min-height child) max-height)
+        target-height (cond-> (mth/clamp target-height (ctl/child-min-height child) max-height)
+                        (some? min-scale) (max (* min-scale child-height)))
         fill-scale (/ target-height child-height)]
     {:height target-height
      :modifiers (ctm/resize-modifiers (gpt/point 1 fill-scale) child-origin transform transform-inverse)}))
@@ -95,13 +115,18 @@
         (when (or (ctl/fill-width? child) (ctl/fill-height? child))
           (gtr/calculate-geometry @parent-bounds))
 
+        ;; a child turned in the grid fills along the grid's axes, which skews it
+        min-scale
+        (when (or (ctl/fill-width? child) (ctl/fill-height? child))
+          (turned-min-scale (::own-points (meta child-bounds)) @parent-bounds))
+
         fill-width
         (when (ctl/fill-width? child)
-          (calc-fill-width-data parent transform transform-inverse child child-origin child-width cell-bounds))
+          (calc-fill-width-data parent transform transform-inverse child child-origin child-width cell-bounds min-scale))
 
         fill-height
         (when (ctl/fill-height? child)
-          (calc-fill-height-data parent transform transform-inverse child child-origin child-height cell-bounds))
+          (calc-fill-height-data parent transform transform-inverse child child-origin child-height cell-bounds min-scale))
 
         child-width (or (:width fill-width) child-width)
         child-height (or (:height fill-height) child-height)]
