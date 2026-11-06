@@ -446,8 +446,9 @@
                                     (.-fills record)
                                     (.-strokes record)
                                     opts)]
-    (assert (= end (+ start size))
-            (str "upload record size mismatch: wrote " (- end start) " expected " size))
+    (when (not= end (+ start size))
+      (throw (ex-info "upload record size mismatch"
+                      {:wrote (- end start) :expected size})))
     (buf/write-u32 dview offset size)
     end))
 
@@ -462,11 +463,15 @@
           offset  (mem/alloc total)
           heap    (mem/get-heap-u8)
           dview   (js/DataView. (.-buffer heap) offset total)]
-      (.fill heap 0 offset (+ offset total))
-      (buf/write-u32 dview 0 (count records))
-      (reduce (fn [o record] (write-record! dview o record opts))
-              4
-              records)
+      (try
+        (.fill heap 0 offset (+ offset total))
+        (buf/write-u32 dview 0 (count records))
+        (reduce (fn [o record] (write-record! dview o record opts))
+                4
+                records)
+        (catch :default cause
+          (mem/free)
+          (throw cause)))
       (h/call wasm/internal-module "_set_shapes_batch")
       nil)))
 
