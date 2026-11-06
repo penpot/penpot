@@ -1219,3 +1219,14 @@
                                     :layout-children false :grid-empty false :layout-copies true :text true}]
                        :ops [[:duplicate 0 0 0 0] [:rotate 16 0 7 0] [:duplicate 0 0 0 0] [:rotate 16 0 7 0]
                              [:switch 12 0 0 0]]}))))
+
+(t/deftest generated-switch-undo-restores-a-swapped-child-the-new-variant-has-no-place-for
+  ;; a switched head holds a swapped board whose place the new variant lacks;
+  ;; the switch deletes it with the old head, and undo brings it back
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :layout nil :layout-item-margins false
+                                    :grid-square false :library true :rich-variants true :layout-children false
+                                    :grid-empty false :layout-copies true :text true}]
+                       :ops [[:swap 8 0 0 0] [:edit 18 1 1 :copy-head] [:reset 18] [:undo 0 0 0 0]
+                             [:swap 2 0 0 0] [:duplicate 4 0 0 0] [:delete 8] [:restore 8] [:undo 0 0 0 0]
+                             [:text-style 4 0 1] [:delete 0 0 0 0] [:nest 21 0 0 0] [:duplicate 0 0 0 0]
+                             [:swap 16 0 0 0] [:switch 0 0 0 0]]}))))

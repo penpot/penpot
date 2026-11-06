@@ -639,6 +639,36 @@
       (pcb/update-shapes [(:id new-shape)] #(update % :touched (fnil into #{}) groups)
                          {:ignore-touched true}))))
 
+(defn- kept-swapped-ids
+  "The swapped shapes in the subtree of the copy head `shape` that a switch
+   to the component `component-id` of `ldata` keeps: those whose place in
+   their main, by name and ancestor kinds, the new component has. The others
+   go with the old head."
+  [page libraries ldata shape component-id]
+  (let [objects      (:objects page)
+        container    (ctn/make-container page :page)
+        base-ref     (ctf/find-remote-shape container libraries shape {:with-context? true})
+        ref-objects  (:objects (:container (meta base-ref)))
+        ref-paths    (when base-ref
+                       (into {} (map (juxt :id :shape-path))
+                             (add-unique-path (reverse (cfh/get-children-with-self ref-objects (:id base-ref)))
+                                              ref-objects (:id base-ref))))
+        component    (ctkl/get-component ldata component-id)
+        main         (ctf/get-component-root ldata component)
+        main-objects (:objects (ctf/get-component-container ldata component))
+        new-paths    (into #{} (map :shape-path)
+                           (add-unique-path (reverse (cfh/get-children-with-self main-objects (:id main)))
+                                            main-objects (:id main)))]
+    (into #{}
+          (comp (filter ctk/swapped?)
+                (remove #(child-of-swapped? % objects (:id shape)))
+                (filter (fn [old]
+                          (let [old-ref (find-shape-ref-child-of container libraries old (:id base-ref))]
+                            (and (some? old-ref)
+                                 (contains? new-paths (get ref-paths (:id old-ref)))))))
+                (map :id))
+          (rest (cfh/get-children-with-self objects (:id shape))))))
+
 (defn generate-component-swap-in-place
   "Swap the copy head `shape` of `page` for a copy of the component
    `component-id` of library data `ldata`. The new head takes the old one's
@@ -658,7 +688,9 @@
 
         [new-shape all-parents changes]
         (clsw/generate-component-swap changes objects shape ldata page libraries component-id
-                                      index target-cell keep-props keep-touched?)
+                                      index target-cell keep-props
+                                      (when keep-touched?
+                                        (kept-swapped-ids page libraries ldata shape component-id)))
 
         [changes parents-of-swapped]
         (if keep-touched?
