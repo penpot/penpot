@@ -190,6 +190,16 @@
       (tho/add-simple-component :c02 :m02 :r02
                                 :root-params {:name "UI / Beta" :x 150 :y 0 :width 100 :height 80})))
 
+(defn- three-same-name-mains-file
+  []
+  (-> (cthf/sample-file :file1)
+      (tho/add-simple-component :c01 :m01 :r01
+                                :root-params {:name "Tag" :x 0 :y 0 :width 100 :height 80})
+      (tho/add-simple-component :c02 :m02 :r02
+                                :root-params {:name "Tag" :x 150 :y 0 :width 100 :height 80})
+      (tho/add-simple-component :c03 :m03 :r03
+                                :root-params {:name "Tag" :x 300 :y 0 :width 100 :height 80})))
+
 (defn- path-named-main-file
   []
   (-> (cthf/sample-file :file1)
@@ -522,6 +532,49 @@
            (t/is (= variant-id (:variant-id m01') (:variant-id m02')
                     (:variant-id c01') (:variant-id c02')))
            (t/is (= variant-id (:parent-id m01') (:parent-id m02')))))
+       after-commits-idle))))
+
+(t/deftest combine-as-variants-same-name-gives-unique-values
+  (t/async
+    done
+    (let [file       (three-same-name-mains-file)
+          ids        [(cthi/id :m01) (cthi/id :m02) (cthi/id :m03)]
+          variant-id (uuid/next)
+          store      (ths/setup-store file)]
+      (ths/run-store
+       store
+       done
+       [(dwv/combine-as-variants ids {:variant-id variant-id :trigger "test"})]
+       (fn [state]
+         (let [file'  (ths/get-file-from-state state)
+               values (mapv #(-> (cthc/get-component file' %) :variant-properties first :value)
+                            [:c01 :c02 :c03])]
+           (cthf/validate-file! file')
+           (t/is (= ["Value 1" "Value 2" "Value 3"] values))))
+       after-commits-idle))))
+
+(t/deftest combine-as-variants-same-name-values-follow-combine-order
+  ;; The combine order differs from the layer order of the mains
+  (t/async
+    done
+    (let [file       (three-same-name-mains-file)
+          ids        [(cthi/id :m03) (cthi/id :m01) (cthi/id :m02)]
+          variant-id (uuid/next)
+          store      (ths/setup-store file)]
+      (ths/run-store
+       store
+       done
+       [(dwv/combine-as-variants ids {:variant-id variant-id :trigger "test"})]
+       (fn [state]
+         (let [file'   (ths/get-file-from-state state)
+               objects (page-objects file')
+               values  (mapv #(-> (cthc/get-component file' %) :variant-properties first :value)
+                             [:c03 :c01 :c02])
+               ordered (->> (cfv/find-variant-components (:data file') objects variant-id)
+                            (mapv #(-> % :variant-properties first :value)))]
+           (cthf/validate-file! file')
+           (t/is (= ["Value 1" "Value 2" "Value 3"] values))
+           (t/is (= ["Value 1" "Value 2" "Value 3"] ordered))))
        after-commits-idle))))
 
 (t/deftest combine-as-variants-from-another-page-validates-after-every-commit
