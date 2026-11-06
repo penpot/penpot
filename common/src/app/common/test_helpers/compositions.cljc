@@ -18,6 +18,7 @@
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
+   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.types.text :as txt]))
@@ -394,6 +395,8 @@
 
         orig-shapes (when keep-touched? (cfh/get-children-with-self (:objects page) (:id shape)))
 
+        keep-props-values (select-keys shape ctk/swap-keep-attrs)
+
         [new-shape _all-parents changes]
         (cll/generate-component-swap (pcb/empty-changes)
                                      (:objects page)
@@ -405,7 +408,7 @@
                                           :id)
                                      0
                                      nil
-                                     {}
+                                     keep-props-values
                                      (true? keep-touched?))
 
         [changes _] (if keep-touched?
