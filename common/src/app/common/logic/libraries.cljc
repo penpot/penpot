@@ -104,6 +104,7 @@
 (declare reorder-copy-children)
 (declare add-shape-to-instance)
 (declare add-shape-to-main)
+(declare axes-matrix)
 (declare remove-shape)
 (declare move-shape)
 (declare reorder-main-children)
@@ -345,8 +346,8 @@
         swapped? (and (not reset?) (ctk/swapped? shape-inst))
         origin (if swapped? shape-main main-parent)
         target (if swapped? shape-inst parent)
-        relative (gmt/multiply (or (:transform target) (gmt/matrix))
-                               (or (:transform-inverse origin) (gmt/matrix)))]
+        ;; the axes only: a tiny shape's transform carries its rounding
+        relative (gmt/multiply (axes-matrix target) (gmt/inverse (axes-matrix origin)))]
     (if (or (nil? target) (and (:shape-ref parent) (not reset?) (not swapped?))
             (gmt/unit? relative))
       main-container
