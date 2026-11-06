@@ -184,6 +184,7 @@
    [frontend-tests.worker-snap-test]
    [frontend-tests.worker.exports-test]
    [frontend-tests.worker.index-test]
+   [frontend-tests.worker.messages-test]
    [frontend-tests.worker.trim-test]
    [goog.object :as gobj]))
 
@@ -224,6 +225,7 @@
    'frontend-tests.data.jobs-test
    'frontend-tests.worker.exports-test
    'frontend-tests.worker.index-test
+   'frontend-tests.worker.messages-test
    'frontend-tests.worker.trim-test
    'frontend-tests.data.svg-upload-test
    'frontend-tests.data.uploads-test
