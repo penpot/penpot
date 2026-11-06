@@ -229,6 +229,61 @@
                     nitrate/call (make-nitrate-call {:send-invitations true})]
         (t/is (th/success? (invite!)))))))
 
+(t/deftest create-team-invitations-fails-closed-when-organization-lookup-fails
+  (with-mocks [email-mock {:target 'app.email/send :return nil}
+               audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [owner   (th/create-profile* 430 {:is-active true})
+          admin   (th/create-profile* 431 {:is-active true})
+          invitee (th/create-profile* 432 {:is-active true})
+          team    (th/create-team* 430 {:profile-id (:id owner)})
+          _       (th/create-team-role* {:team-id (:id team)
+                                         :profile-id (:id admin)
+                                         :role :admin})
+          make-nitrate-call
+          (fn [get-team-organization]
+            (fn [_cfg method params]
+              (case method
+                :get-team-organization (get-team-organization params)
+                nil)))
+          invite!
+          (fn []
+            (th/command! {::th/type :create-team-invitations
+                          ::rpc/profile-id (:id admin)
+                          :team-id (:id team)
+                          :role :editor
+                          :emails [(:email invitee)]}))]
+
+      ;; A 4xx other than 404 must not look like a team without organization.
+      (with-redefs [cf/flags (conj cf/flags :admin-console :email-verification)
+                    nitrate/call (make-nitrate-call
+                                  (fn [_]
+                                    (throw (ex-info "forbidden"
+                                                    {:type :nitrate-http-error
+                                                     :status 403}))))]
+        (let [out (invite!)]
+          (t/is (not (th/success? out)))
+          (t/is (= :nitrate-http-error (th/ex-type (:error out))))))
+
+      ;; An invalid response body (the client returns nil) is rejected too.
+      (with-redefs [cf/flags (conj cf/flags :admin-console :email-verification)
+                    nitrate/call (make-nitrate-call (constantly nil))]
+        (let [out (invite!)]
+          (t/is (not (th/success? out)))
+          (t/is (= :nitrate-unavailable (th/ex-type (:error out))))))
+
+      ;; A 404 confirms the team has no organization: team-level rules apply.
+      (let [lookups (atom [])]
+        (with-redefs [cf/flags (conj cf/flags :admin-console :email-verification)
+                      nitrate/call (make-nitrate-call
+                                    (fn [params]
+                                      (swap! lookups conj params)
+                                      (throw (ex-info "not found"
+                                                      {:type :nitrate-http-error
+                                                       :status 404}))))]
+          (t/is (th/success? (invite!)))
+          ;; one strict lookup serves every organization rule
+          (t/is (= [true] (mapv :throw-on-error? @lookups))))))))
+
 (t/deftest create-team-invitations-blacklisted-domain
   (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active true})
