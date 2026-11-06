@@ -1893,6 +1893,190 @@
            (t/is (= (:type original-ref) (:type imported-ref)))
            (t/is (= (:value imported-ref) (:value original-ref))))))))
 
+(t/deftest convert-dtcg-shadow-composite
+  (let [shadow {:offset-x "1" :offset-y "2" :blur "4" :spread "0" :color "#000000" :inset false}]
+    (t/testing "DTCG keys"
+      (t/is (= [shadow]
+               (ctob/convert-dtcg-shadow-composite
+                {"offsetX" "1" "offsetY" "2" "blur" "4" "spread" "0" "color" "#000000" "inset" "false"}))))
+
+    (t/testing "legacy keys"
+      (t/is (= [(assoc shadow :inset true)]
+               (ctob/convert-dtcg-shadow-composite
+                [{"x" "1" "y" "2" "blur" "4" "spread" "0" "color" "#000000" "type" "innerShadow"}]))))
+
+    (t/testing "a value already in penpot's format is kept"
+      (t/is (= [shadow] (ctob/convert-dtcg-shadow-composite [shadow])))
+      (t/is (= [shadow] (ctob/convert-dtcg-shadow-composite shadow))))
+
+    (t/testing "references are kept"
+      (t/is (= "{shadow.sm}" (ctob/convert-dtcg-shadow-composite "{shadow.sm}"))))))
+
+(t/deftest import-warnings-for-dropped-data
+  (let [json {"core" {"color" {"$type" "color"
+                               "$description" "Colors"
+                               "old" {"$value" "#000"
+                                      "$deprecated" true
+                                      "$extensions" {"com.figma" {"scopes" ["ALL"]}}}
+                               "lab" {"$value" {"colorSpace" "lab" "components" [50 20 30]}}
+                               "oklch" {"$value" {"colorSpace" "oklch" "components" [0.628 0.2577 29.23]}}}
+                      "motion" {"fast" {"$type" "duration" "$value" {"value" 100 "unit" "ms"}}}
+                      "broken" {"$extends" "{missing}"}}
+              "$metadata" {"tokenSetOrder" ["core"]}}
+        {:keys [tokens-lib unknown-types unsupported]} (ctob/import-decoded-json json "")]
+    (t/testing "the tokens are imported without the dropped data"
+      (t/is (= "#000" (:value (ctob/get-token-by-name tokens-lib "core" "color.old")))))
+    (t/testing "colors keep their color space"
+      (t/is (= "lab(50, 20, 30)" (:value (ctob/get-token-by-name tokens-lib "core" "color.lab"))))
+      (t/is (= "oklch(0.628, 0.2577, 29.23)" (:value (ctob/get-token-by-name tokens-lib "core" "color.oklch")))))
+    (t/is (= {"core.motion.fast" "duration"} unknown-types))
+    (t/is (= #{{:property "$deprecated" :path "core.color.old"}
+               {:property "$extensions" :path "core.color.old"}
+               {:property "$description" :path "core.color"}
+               {:property "$extends" :path "core.broken"}}
+             (set unsupported)))))
+
+(t/deftest import-theme-set-statuses
+  (let [json {"core" {"a" {"$value" "1" "$type" "number"}}
+              "light" {"b" {"$value" "2" "$type" "number"}}
+              "dark" {"b" {"$value" "3" "$type" "number"}}
+              "$themes" [{"name" "light" "group" "mode"
+                          "selectedTokenSets" {"core" "source" "light" "enabled" "dark" "disabled"}}
+                         {"name" "dark" "group" "mode"
+                          "selectedTokenSets" {"core" "source" "dark" "enabled"}}]
+              "$metadata" {"tokenSetOrder" ["core" "light" "dark"]
+                           "activeThemes" ["mode/light" "mode/dark"]}}
+        lib (ctob/parse-decoded-json json "")]
+    (t/testing "source and enabled sets are part of the theme, disabled ones are not"
+      (t/is (= #{"core" "light"} (:sets (ctob/get-theme-by-name lib "mode" "light")))))
+    (t/testing "activating a theme deactivates the other themes of its group"
+      (t/is (= #{"mode/dark"} (disj (ctob/get-legacy-active-themes lib) ctob/hidden-theme-path))))))
+
+(t/deftest import-active-top-level-theme
+  (let [json {"core" {"a" {"$value" "1" "$type" "number"}}
+              "extra" {"b" {"$value" "2" "$type" "number"}}
+              "$themes" [{"name" "solo" "selectedTokenSets" {"core" "enabled"}}]
+              "$metadata" {"activeThemes" ["solo"] "activeSets" ["extra"]}}
+        lib (ctob/parse-decoded-json json "")]
+    (t/testing "a theme without group is active by its path, next to the hidden theme"
+      (t/is (= #{"/solo" ctob/hidden-theme-path} (ctob/get-legacy-active-themes lib)))
+      (t/is (= #{"extra"} (:sets (ctob/get-theme lib ctob/hidden-theme-id)))))
+    (t/testing "an export read back without encoding keeps what is active"
+      (let [lib' (ctob/parse-multi-set-dtcg-json (ctob/export-dtcg-json lib))]
+        (t/is (= (ctob/get-legacy-active-themes lib) (ctob/get-legacy-active-themes lib')))
+        (t/is (= #{"core" "extra"} (:sets (ctob/get-theme lib' ctob/hidden-theme-id))))))))
+
+(t/deftest export-default-profile-keeps-values-and-type-names
+  (let [tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set
+                                      :name "core"
+                                      :tokens {"radius.sm" (ctob/make-token {:name "radius.sm" :type :border-radius :value "4"})
+                                               "size.rem" (ctob/make-token {:name "size.rem" :type :sizing :value "1.5rem"})
+                                               "weight.bold" (ctob/make-token {:name "weight.bold" :type :font-weight :value "700"})
+                                               "color.brand" (ctob/make-token {:name "color.brand" :type :color :value "oklch(0.628, 0.2577, 29.23)"})
+                                               "typo.body" (ctob/make-token {:name "typo.body" :type :typography
+                                                                             :value {:font-weight "700" :font-size "16px" :line-height "1.5"}})})))
+        tokens-status (ctos/make-tokens-status)
+        result (ctob/export-dtcg-json tokens-lib tokens-status)]
+    (t/testing "the :default profile is the export without options"
+      (t/is (= result (ctob/export-dtcg-json tokens-lib tokens-status {:profile :default})))
+      (t/is (= (ctob/export-dtcg-multi-file tokens-lib tokens-status)
+               (ctob/export-dtcg-multi-file tokens-lib tokens-status {:profile :default}))))
+    (t/testing "values stay strings and types keep their names"
+      (t/is (= {"radius" {"sm" {"$value" "4" "$type" "borderRadius" "$description" ""}}
+                "size" {"rem" {"$value" "1.5rem" "$type" "sizing" "$description" ""}}
+                "weight" {"bold" {"$value" "700" "$type" "fontWeights" "$description" ""}}
+                "color" {"brand" {"$value" "oklch(0.628, 0.2577, 29.23)" "$type" "color" "$description" ""}}
+                "typo" {"body" {"$value" {"fontWeights" "700" "fontSizes" "16px" "lineHeights" "1.5"}
+                                "$type" "typography"
+                                "$description" ""}}}
+               (get result "core"))))))
+
+(t/deftest export-dtcg-2025-values
+  (let [tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set
+                                      :name "core"
+                                      :tokens {"radius.sm" (ctob/make-token {:name "radius.sm" :type :border-radius :value "4"})
+                                               "size.rem" (ctob/make-token {:name "size.rem" :type :sizing :value "1.5rem"})
+                                               "space.md" (ctob/make-token {:name "space.md" :type :spacing :value "{radius.sm} * 2"})
+                                               "weight.bold" (ctob/make-token {:name "weight.bold" :type :font-weight :value "700"})
+                                               "color.brand" (ctob/make-token {:name "color.brand" :type :color :value "oklch(0.628, 0.2577, 29.23)"})
+                                               "shadow.sm" (ctob/make-token {:name "shadow.sm" :type :shadow
+                                                                             :value [{:offset-x "0" :offset-y "2px" :blur "4px" :spread "0" :color "#000000" :inset false}]})})))
+        tokens-status (ctos/make-tokens-status)
+        result (ctob/export-dtcg-json tokens-lib tokens-status {:profile :dtcg})]
+    (t/testing "literals become DTCG values and types"
+      (t/is (= {"radius" {"sm" {"$value" {"value" 4 "unit" "px"}
+                                "$type" "dimension"
+                                "$description" ""}}
+                "size" {"rem" {"$value" {"value" 1.5 "unit" "rem"}
+                               "$type" "dimension"
+                               "$description" ""}}
+                "space" {"md" {"$value" "{radius.sm} * 2"
+                               "$type" "dimension"
+                               "$description" ""}}
+                "weight" {"bold" {"$value" 700
+                                  "$type" "fontWeight"
+                                  "$description" ""}}
+                "color" {"brand" {"$value" {"colorSpace" "oklch"
+                                            "components" [0.628 0.2577 29.23]
+                                            "hex" "#ff0000"}
+                                  "$type" "color"
+                                  "$description" ""}}
+                "shadow" {"sm" {"$value" [{"offsetX" {"value" 0 "unit" "px"}
+                                           "offsetY" {"value" 2 "unit" "px"}
+                                           "blur" {"value" 4 "unit" "px"}
+                                           "spread" {"value" 0 "unit" "px"}
+                                           "color" {"colorSpace" "srgb" "components" [0 0 0] "hex" "#000000"}
+                                           "inset" false}]
+                                "$type" "shadow"
+                                "$description" ""}}}
+               (get result "core"))))
+    (t/testing "a multi-file export writes the same set"
+      (t/is (= (get result "core")
+               (get (ctob/export-dtcg-multi-file tokens-lib tokens-status {:profile :dtcg}) "core.json"))))))
+
+(t/deftest export-dtcg-2025-round-trip
+  (let [tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set
+                                      :name "core"
+                                      :tokens {"space.sm" (ctob/make-token {:name "space.sm" :type :spacing :value "4px"})
+                                               "space.md" (ctob/make-token {:name "space.md" :type :spacing :value "{space.sm} * 2"
+                                                                            :description "Twice the small space"})
+                                               "size.rem" (ctob/make-token {:name "size.rem" :type :sizing :value "1.5rem"})
+                                               "color.brand" (ctob/make-token {:name "color.brand" :type :color :value "#ff0000"})
+                                               "color.oklch" (ctob/make-token {:name "color.oklch" :type :color :value "oklch(0.628, 0.2577, 29.23)"})
+                                               "color.alpha" (ctob/make-token {:name "color.alpha" :type :color :value "#0000001a"})
+                                               "family.body" (ctob/make-token {:name "family.body" :type :font-family :value ["Inter" "sans-serif"]})
+                                               "typo.body" (ctob/make-token {:name "typo.body" :type :typography
+                                                                             :value {:font-weight "bold" :font-size "16px"
+                                                                                     :letter-spacing "0.05em" :font-family ["Inter"]}})
+                                               "typo.ref" (ctob/make-token {:name "typo.ref" :type :typography :value "{typo.body}"})
+                                               "shadow.sm" (ctob/make-token {:name "shadow.sm" :type :shadow
+                                                                             :value [{:offset-x "0px" :offset-y "2px" :blur "4px" :spread "0px"
+                                                                                      :color "#0000001a" :inset false}]})}))
+                       (ctob/add-set (ctob/make-token-set :name "dark"))
+                       (ctob/add-theme (ctob/make-token-theme :id (thi/new-id! :mode-light)
+                                                              :name "light"
+                                                              :group "mode"
+                                                              :external-id "mode-light"
+                                                              :sets #{"core"})))
+        tokens-status (cfo/toggle-theme-active (ctos/make-tokens-status) tokens-lib (thi/id :mode-light))
+        exported (ctob/export-dtcg-json tokens-lib tokens-status {:profile :dtcg})
+        imported (ctob/parse-decoded-json exported "")]
+    (t/testing "penpot reads its own export back, spacing and sizing as dimensions"
+      (doseq [token (vals (ctob/get-tokens- (ctob/get-set-by-name tokens-lib "core")))]
+        (let [token' (ctob/get-token-by-name imported "core" (:name token))]
+          (t/is (= (get {:spacing :dimensions :sizing :dimensions} (:type token) (:type token))
+                   (:type token'))
+                (:name token))
+          (t/is (= (:value token) (:value token')) (:name token))
+          (t/is (= (:description token) (:description token')) (:name token)))))
+    (t/testing "sets, themes and what is active read back"
+      (t/is (= ["core" "dark"] (ctob/get-set-names imported)))
+      (t/is (= #{"core"} (:sets (ctob/get-theme-by-name imported "mode" "light"))))
+      (t/is (= #{"mode/light"} (disj (ctob/get-legacy-active-themes imported) ctob/hidden-theme-path))))))
+
 (t/deftest token-name-path-exists?-test
   (t/is (true? (ctob/token-name-path-exists? "border-radius" {"border-radius" {"sm" {:name "sm"}}})))
   (t/is (true? (ctob/token-name-path-exists? "border-radius" {"border-radius" {:name "sm"}})))
