@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-11-05 22:20+0000\n"
-"Last-Translator: Andrey Antukh <niwinz@users.noreply.hosted.weblate.org>\n"
-"Language-Team: French (Canada) "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr_CA/>\n"
+"PO-Revision-Date: 2026-11-07 07:51+0000\n"
+"Last-Translator: Alexis Morin <alexismo@users.noreply.hosted.weblate.org>\n"
+"Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
+"frontend/fr_CA/>\n"
 "Language: fr_CA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -9326,3 +9326,118 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/versions.cljs:462
 msgid "workspace.versions.warning.text"
 msgstr "Les versions auto-sauvegardées seront conservées pendant %s jours."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:228
+msgid "dashboard.clear-search"
+msgstr "Effacer la recherche"
+
+#: src/app/main/ui/dashboard/fonts.cljs:442, src/app/main/ui/dashboard/fonts.cljs:443
+msgid "dashboard.fonts.delete-variant"
+msgstr "Supprimer le style de police"
+
+#: src/app/main/ui/dashboard/import.cljs:625
+msgid "dashboard.import.check.message"
+msgstr ""
+"Nous nous assurons que chaque fichier peut être importé. Ça ne prend qu'un "
+"moment."
+
+#: src/app/main/ui/dashboard/import.cljs:624
+msgid "dashboard.import.check.title"
+msgstr "Vérification des fichiers..."
+
+#: src/app/main/ui/dashboard/import.cljs:600
+msgid "dashboard.import.importing.done"
+msgid_plural "dashboard.import.importing.done"
+msgstr[0] "1 complété"
+msgstr[1] "%s complétés"
+
+#: src/app/main/ui/dashboard/import.cljs:637
+msgid "dashboard.import.importing.message"
+msgstr "Reconstruction des pages, composants et atouts de ton projet."
+
+#: src/app/main/ui/dashboard/import.cljs:598
+msgid "dashboard.import.importing.title"
+msgid_plural "dashboard.import.importing.title"
+msgstr[0] "Importation de 1 fichier"
+msgstr[1] "Importation de %s fichiers"
+
+#: src/app/main/ui/dashboard/import.cljs:634
+msgid "dashboard.import.queued.message"
+msgstr ""
+"Les fichiers sont téléversés. L'importation commencera dès qu'un espace se "
+"libère."
+
+#: src/app/main/ui/dashboard/import.cljs:633
+msgid "dashboard.import.queued.title"
+msgstr "En attente de commencer..."
+
+#: src/app/main/ui/dashboard/import.cljs:628
+msgid "dashboard.import.ready.message"
+msgstr "Les fichiers peuvent être importés. Continue de les téléverser."
+
+#: src/app/main/ui/dashboard/import.cljs:627
+msgid "dashboard.import.ready.title"
+msgstr "Fichiers prêts"
+
+#: src/app/main/ui/dashboard/import.cljs:331
+msgid "dashboard.import.status.ready"
+msgstr "Prêt"
+
+#: src/app/main/ui/dashboard/import.cljs:568
+msgid "dashboard.import.steps.check"
+msgstr "Vérification"
+
+#: src/app/main/ui/dashboard/import.cljs:570
+msgid "dashboard.import.steps.import"
+msgstr "Importation"
+
+#: src/app/main/ui/dashboard/import.cljs:573
+msgid "dashboard.import.steps.label"
+msgstr "Étapes d'importation"
+
+#: src/app/main/ui/dashboard/import.cljs:569
+msgid "dashboard.import.steps.upload"
+msgstr "Téléversement"
+
+#: src/app/main/ui/dashboard/import.cljs:1130
+msgid "dashboard.import.title"
+msgstr "Importer un fichier"
+
+#: src/app/main/ui/dashboard/import.cljs:631
+msgid "dashboard.import.upload.message"
+msgstr ""
+"Envoi des fichiers. Garder cette boîte de dialogue ouverte jusqu'à ce que le "
+"téléversement soit terminé."
+
+#: src/app/main/ui/dashboard/import.cljs:630
+msgid "dashboard.import.upload.title"
+msgstr "Téléversement des fichiers..."
+
+#: src/app/main/data/exports/assets.cljs:64, src/app/main/data/exports/assets.cljs:93
+msgid "errors.export-failed"
+msgstr "L'exportation a échoué. Réessaye de nouveau."
+
+#: src/app/main/data/exports/assets.cljs:372
+msgid "errors.export-too-large"
+msgstr "Trop grand pour être exporté, essaye une échelle plus petite"
+
+#: src/app/main/errors.cljs:886
+msgid "errors.profile-props-too-large"
+msgstr ""
+"La configuration de ton profil est trop lourde pour sauvegader. Supprime des "
+"plugiciels et essaye à nouveau."
+
+#: src/app/main/errors.cljs:691
+msgid "errors.save-still-retrying"
+msgstr ""
+"Les changements n'ont pu être sauvegardés car Penpot ne peut joindre le "
+"serveur. Ils seront maintenus et Penpot tentera de les sauvegarder. "
+"Maintiens cet onglet ouvert jusqu'à ce qu'ils soient sauvegardés."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:62
+msgid "errors.tokens.division-by-zero"
+msgstr "Valeur de token invalide : division par zéro"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:74
+msgid "errors.tokens.function-argument-out-of-range"
+msgstr "Valeur de token invalide : l'argument %s() est hors de portée"
