@@ -2245,7 +2245,29 @@
   ;; Here we normalize the names of all main instances, and a new file integrity validation has
   ;; been added to enforce this from now on.
   ;; Main instances in variants are a special case because they need to match the variant name.
-  (letfn [(update-shape [container shape-id]
+  ;; Old files may also list in :shapes child ids stored as strings, nil, or ids that point to
+  ;; no shape. They fail the shape schema and the uuid assert of get-shape, so first parse the
+  ;; strings into uuids and drop the rest. This also removes the duplicate that 0032 adds when
+  ;; a child is listed as a string.
+  (letfn [(fix-children [objects shapes]
+            (into []
+                  (comp (keep uuid/coerce)
+                        (filter #(contains? objects %))
+                        (distinct))
+                  shapes))
+
+          (fix-object [objects shape]
+            (if-let [shapes (:shapes shape)]
+              (let [shapes' (fix-children objects shapes)]
+                (if (= shapes shapes')
+                  shape
+                  (assoc shape :shapes shapes')))
+              shape))
+
+          (fix-objects [objects]
+            (d/update-vals objects (partial fix-object objects)))
+
+          (update-shape [container shape-id]
             (let [shape (ctn/get-shape container shape-id)
 
                   shape (cond
@@ -2287,7 +2309,8 @@
 
           (update-container
             [container]
-            (let [root (ctn/get-container-root container)]
+            (let [container (d/update-when container :objects fix-objects)
+                  root      (ctn/get-container-root container)]
               (if root
                 (update-shape container (:id root))
                 container)))]

@@ -808,3 +808,42 @@
     (t/is (= "Component" (:name component1')))
     (t/is (= "Component" (:name component2')))
     (t/is (= "Group  /  Subgroup/Component" (:name copy2')))))
+
+(t/deftest migration-0033-fixes-children-ids
+  ;; Old files may list in :shapes child ids stored as strings, nil or
+  ;; ids that point to no shape; strings become uuids, the rest goes.
+  (let [migration-id "0033-normalize-main-instance-names"
+        file         (-> (thf/sample-file :file1)
+                         (tho/add-frame-with-child :frame1 :child1)
+                         (tho/add-simple-component :component1 :root1 :child2))
+        child1-id    (thi/id :child1)
+        child2-id    (thi/id :child2)
+        file         (-> file
+                         (ths/update-shape :frame1 :shapes
+                                           [nil "not-a-uuid" (str child1-id)
+                                            (uuid/next) child1-id])
+                         (ths/update-shape :root1 :shapes [(str child2-id)]))
+        data'        (cfm/migrate-data (ctf/file-data file) migration-id)
+        file'        (assoc file :data data')]
+
+    (t/is (= [child1-id] (:shapes (ths/get-shape file' :frame1))))
+    (t/is (= [child2-id] (:shapes (ths/get-shape file' :root1))))
+    (t/is (= data' (cfm/migrate-data data' migration-id))
+          "migration is idempotent")))
+
+(t/deftest migration-0033-fixes-children-ids-through-file-migration
+  ;; 0032 adds the uuid of a child listed as a string, so the child is
+  ;; listed twice before 0033; the file must still pass validation.
+  (let [file      (-> (thf/sample-file :file1)
+                      (tho/add-frame-with-child :frame1 :child1))
+        child1-id (thi/id :child1)
+        file      (-> file
+                      (ths/update-shape :frame1 :shapes [(str child1-id)])
+                      (assoc :migrations
+                             (disj cfm/available-migrations
+                                   "0032-fix-children-not-in-parent"
+                                   "0033-normalize-main-instance-names")))
+        file'     (cfm/migrate-file file {})]
+
+    (t/is (not (cfm/need-migration? file')) "new migrations recorded")
+    (t/is (= [child1-id] (:shapes (ths/get-shape file' :frame1))))))
