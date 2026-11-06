@@ -146,7 +146,7 @@
        (when (> (count children) 1)
          [:ul {:class (stl/css :submenu)
                :ref submenu-ref
-               :style {:display "none" :left 250}
+               :style {:display "none" :left "100%"}
                :on-context-menu prevent-default}
           children])])))
 
