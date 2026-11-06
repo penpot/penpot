@@ -42,10 +42,19 @@
         hsb-mode  (or mode :hsb)
 
         ;; Compute HSL from current RGB (derived; not stored on the color map)
-        [_hsl-h hsl-s hsl-l]
+        [_hsl-h derived-hsl-s hsl-l]
         (if (and red green blue)
           (cc/rgb->hsl [red green blue])
           [0 0 0])
+
+        ;; Black, white and grey have no saturation of their own, and an
+        ;; edit of L passes through them (deleting a digit of "50" leaves
+        ;; "0"). Deriving S from such a colour gives 0 and would feed 0 into
+        ;; the next edit of L, turning the colour grey, so the last chromatic
+        ;; value is remembered and used while the colour is achromatic.
+        achromatic? (= red green blue)
+        last-hsl-s  (mf/use-ref derived-hsl-s)
+        hsl-s       (if achromatic? (mf/ref-val last-hsl-s) derived-hsl-s)
 
         refs {:hex   (mf/use-ref nil)
               :r     (mf/use-ref nil)
@@ -111,9 +120,17 @@
                     new-l   (if (= property :hsl-l) val hsl-l)
                     [r g b] (cc/hsl->rgb [hue new-s new-l])
                     hex     (cc/rgb->hex [r g b])
-                    [h s v] (cc/hex->hsv hex)]
+                    [_ s v] (cc/hex->hsv hex)
+                    ;; Changing S or L never changes the hue, and reading it
+                    ;; back from 8-bit RGB loses it on black, white and grey
+                    ;; (and drifts elsewhere), so the current one is kept.
+                    ;; Black has no saturation either: keep the current HSV
+                    ;; saturation through it, as the HSV branch below does by
+                    ;; merging into `color`, so H and S hold their values
+                    ;; while L is being edited.
+                    s       (if (and (zero? v) (some? saturation)) saturation s)]
                 (on-change {:hex hex
-                            :h h :s s :v v
+                            :h hue :s s :v v
                             :r r :g g :b b}))
 
               :else
@@ -157,6 +174,8 @@
     (mf/use-effect
      (mf/deps color type hsb-mode)
      (fn []
+       (when-not achromatic?
+         (mf/set-ref-val! last-hsl-s derived-hsl-s))
        (doseq [ref-key (keys refs)]
          (let [property-val (case ref-key
                               :hsl-s hsl-s
