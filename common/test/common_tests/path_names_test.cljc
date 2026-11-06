@@ -9,6 +9,14 @@
    [app.common.path-names :as cpn]
    [clojure.test :as t]))
 
+(t/deftest remove-extension
+  (t/is (= "photo" (cpn/remove-extension "photo.svg")))
+  (t/is (= "icon" (cpn/remove-extension "icon.SVG")))
+  (t/is (= "my.svg.icon" (cpn/remove-extension "my.svg.icon.svg")))
+  (t/is (= "archive.tar" (cpn/remove-extension "archive.tar.gz")))
+  (t/is (= "design" (cpn/remove-extension "design")))
+  (t/is (= "" (cpn/remove-extension ".svg"))))
+
 (t/deftest split-group-name
   (t/is (= ["foo" "bar"] (cpn/split-group-name "foo/bar")))
   (t/is (= ["" "foo"] (cpn/split-group-name "foo")))

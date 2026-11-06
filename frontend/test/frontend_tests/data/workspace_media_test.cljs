@@ -8,12 +8,24 @@
   "Integration tests for the chunked-upload logic in
   app.main.data.workspace.media."
   (:require
+   [app.common.path-names :as cpn]
+   [app.common.test-helpers.files :as cthf]
+   [app.common.test-helpers.ids-map :as cthi]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.workspace.media :as media]
+   [app.main.store :as st]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
-   [frontend-tests.helpers.http :as http]))
+   [frontend-tests.helpers.async :as async]
+   [frontend-tests.helpers.http :as http]
+   [frontend-tests.helpers.mock :as mock]
+   [frontend-tests.helpers.state :as ths]
+   [potok.v2.core :as ptk]
+   [tubax.core :as tubax]))
+
+(t/use-fixtures :each
+  {:before cthi/reset-idmap!})
 
 ;; ---------------------------------------------------------------------------
 ;; Local helpers
@@ -187,3 +199,62 @@
                 (http/restore-fetch! orig)
                 (t/is (= 3 @chunk-calls))
                 (done))))))))
+
+;; ---------------------------------------------------------------------------
+;; SVG component creation: any file extension must be stripped from both
+;; the component name and the main instance root shape name.
+;; ---------------------------------------------------------------------------
+
+(def ^:private svg-content
+  (str "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\">"
+       "<rect x=\"0\" y=\"0\" width=\"100\" height=\"100\"/>"
+       "</svg>"))
+
+;; The `sax` XML parser used by `tubax/xml->clj` is not available in the
+;; ESM test build, so the parse step is mocked with an equivalent tree.
+;; Everything else (name handling included) runs for real.
+(def ^:private parsed-svg
+  {:tag :svg
+   :attrs {:xmlns "http://www.w3.org/2000/svg"
+           :width "100" :height "100"
+           :viewBox "0 0 100 100"}
+   :content [{:tag :rect
+              :attrs {:x "0" :y "0" :width "100" :height "100"}
+              :content []}]})
+
+(t/deftest ^:async upload-svg-component-strips-svg-extension
+  (t/testing "creating a component from an uploaded SVG removes the extension from both names"
+    ;; Any extension must be stripped (not only ".svg"), including
+    ;; uppercase ones, extensions in the middle of the name, and
+    ;; filenames with no extension at all.
+    (doseq [[filename expected]
+            [["my-component.svg" "my-component"]
+             ["icon.SVG" "icon"]
+             ["my.svg.icon.svg" "my.svg.icon"]
+             ["design" "design"]]]
+      (let [file  (cthf/sample-file :file1)
+            store (ths/setup-store file)
+            blob  (js/File. #js [svg-content]
+                            filename
+                            #js {:type "image/svg+xml"})]
+        (await
+         (mock/with-mocks*
+           {st/state       store
+            st/emit!       (mock/stub (fn [& events] (apply ptk/emit! store events)))
+            tubax/xml->clj (mock/stub (fn [_source] parsed-svg))}
+           ;; The SVG is placed at the viewport center; without a vbox the
+           ;; geometry setup would receive nil coordinates.
+           (ptk/emit! store #(assoc % :workspace-local {:vbox {:x 0 :y 0 :width 800 :height 600}}))
+           (ptk/emit! store (media/upload-media-components {:file-id (:id file)
+                                                            :blobs   [blob]}))
+           (await (async/wait-for #(seq (get-in @store [:files (:id file) :data :components]))
+                                  "component created"))
+           (let [data      (get-in @store [:files (:id file) :data])
+                 component (first (vals (:components data)))
+                 root      (get-in data [:pages-index (:main-instance-page component)
+                                         :objects (:main-instance-id component)])]
+             (t/is (some? component) (str "component not created for " filename))
+             (t/is (some? root) (str "root not created for " filename))
+             (t/is (= expected (:name component)))
+             (t/is (= expected (:name root)))
+             (t/is (= expected (cpn/merge-path-item (:path component) (:name component)))))))))))
