@@ -11,7 +11,7 @@
    The undo stack has a maximum size of `MAX-UNDO-SIZE` (50) entries.
 
    Undo entries:
-     - Consist of `:undo-changes`, `:redo-changes`, `:undo-group`, `:tags`
+     - Consist of `:undo-changes`, `:redo-changes`, `:undo-group`, `:tags`, `:translation?`
      - Can be:
        - `added`: pushes a new entry on top of the undo stack
        - `stacked`: appends undo/redo changes to the last undo item under
@@ -67,6 +67,7 @@
    [:tags [:set :keyword]]
    [:selected-before {:optional true} [:maybe [:set ::sm/uuid]]]
    [:selected-after {:optional true} [:maybe [:set ::sm/uuid]]]
+   [:translation? :boolean]
    ;; When the entry was pushed onto the stack; used by the actions
    ;; history panel to show a relative timestamp next to each entry.
    ;; Issue #7660.
@@ -140,7 +141,7 @@
    exists, or creates a new entry if it doesn't. When stacking onto an
    existing entry, the entry's original timestamp is preserved so the
    history panel keeps showing when the action originated. Issue #7660."
-  [state {:keys [undo-changes redo-changes undo-group selected-after] :as entry}]
+  [state {:keys [undo-changes redo-changes undo-group selected-after translation?] :as entry}]
   (let [index (get-in state [:workspace-undo :index] -1)]
     (if (>= index 0)
       (update-in state [:workspace-undo :items index]
@@ -149,15 +150,18 @@
                        (update :undo-changes #(into undo-changes %))
                        (update :redo-changes #(into % redo-changes))
                        (update :undo-groups (fnil conj #{}) undo-group)
+                       (update :translation? #(and % translation?))
                        (assoc :selected-after selected-after))))
       (add-undo-entry state entry))))
 
 (defn- accumulate-undo-entry
   "Extends the current undo transaction with new changes."
-  [state {:keys [undo-changes redo-changes undo-group tags selected-before selected-after]}]
+  [state {:keys [undo-changes redo-changes undo-group tags selected-before selected-after translation?]}]
   (-> state
       (update-in [:workspace-undo :transaction :undo-changes] #(into undo-changes %))
       (update-in [:workspace-undo :transaction :redo-changes] #(into % redo-changes))
+      (update-in [:workspace-undo :transaction :translation?]
+                 #(and % translation?))
       (cond-> (nil? (get-in state [:workspace-undo :transaction :undo-group]))
         (assoc-in [:workspace-undo :transaction :undo-group] undo-group))
       (update-in [:workspace-undo :transaction :undo-groups] (fnil conj #{}) undo-group)
@@ -198,7 +202,7 @@
           (add-undo-entry state entry))))))
 
 (def empty-tx
-  {:undo-changes [] :redo-changes []})
+  {:undo-changes [] :redo-changes [] :translation? true})
 
 (declare check-open-transactions)
 
@@ -355,7 +359,12 @@
                          (into [] (mapcat :undo-changes) (reverse entries))])
 
                       :else
-                      [[] []])]
+                      [[] []])
+
+                    translation? (->> (subvec items
+                                              (inc (min dest-index index))
+                                              (inc (max dest-index index)))
+                                      (every? :translation?))]
                 (when (seq redo-changes)
                   (rx/of (materialize-undo redo-changes dest-index)
                          ;; Undoable by a rollback, which also puts the index back
@@ -363,7 +372,8 @@
                                               :undo-changes undo-changes
                                               :undo-index index
                                               :origin it
-                                              :save-undo? false})))))))))))
+                                              :save-undo? false
+                                              :translation? translation?})))))))))))
 
 (declare ^:private assure-valid-current-page)
 
@@ -409,6 +419,7 @@
                                               :undo-changes (:redo-changes item)
                                               :undo-index index
                                               :save-undo? false
+                                              :translation? (:translation? item)
                                               :origin it})
                          (restore-selection (:selected-before item))
                          (assure-valid-current-page)))))))))))
@@ -449,7 +460,8 @@
                                               :undo-changes (:undo-changes item)
                                               :undo-index index
                                               :origin it
-                                              :save-undo? false})
+                                              :save-undo? false
+                                              :translation? (:translation? item)})
                          (restore-selection (:selected-after item))))))))))))
 
 (defn- assure-valid-current-page
