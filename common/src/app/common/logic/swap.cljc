@@ -439,14 +439,18 @@
                                                                             :ignore-touched true}))]))
 
 (defn generate-component-swap
+  "Replace the copy head `shape` with a copy of `id-new-component`. With
+   `ignore-swapped?`, a set of the swapped shapes of its subtree that the
+   caller keeps (or true for all of them), those are not deleted with it."
   [changes objects shape file page libraries id-new-component
    index target-cell keep-props-values ignore-swapped?]
   (let [;; When we keep the touched properties, we can't delete the
-        ;; swapped children (we will keep them too)
+        ;; swapped children we keep
         ignore-swapped-fn
-        (if ignore-swapped?
-          #(ctk/swapped? (get objects %))
-          (constantly false))
+        (cond
+          (set? ignore-swapped?) #(contains? ignore-swapped? %)
+          ignore-swapped?        #(ctk/swapped? (get objects %))
+          :else                  (constantly false))
 
         ;; In the cases where the swapped shape was the first element of the masked group it would make the group to loose the
         ;; mask property as part of the sanitization check on generate-delete-shapes, passing "ignore-mask" to prevent this
