@@ -1230,3 +1230,13 @@
                              [:swap 2 0 0 0] [:duplicate 4 0 0 0] [:delete 8] [:restore 8] [:undo 0 0 0 0]
                              [:text-style 4 0 1] [:delete 0 0 0 0] [:nest 21 0 0 0] [:duplicate 0 0 0 0]
                              [:swap 16 0 0 0] [:switch 0 0 0 0]]}))))
+
+(t/deftest generated-switch-to-a-flipped-variant-stores-the-turn-its-transform-has
+  ;; a switch to a variant whose main is flipped keeps the copy's unflipped
+  ;; turn; the new head stores the rotation its transform decomposes into
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :library-variants true :stale-libraries true
+                                    :layout nil :layout-item-margins false :grid-square false :library-depth 2
+                                    :library true :rich-variants true :layout-children false :library-text true
+                                    :grid-empty false :layout-copies true :text true}]
+                       :ops [[:library-transform 9 3 4 0] [:delete 5] [:restore 5] [:library-transform 9 4 0 0]
+                             [:library-transform 4 3 0 0] [:library-sync 0 0 0 0] [:switch 13 0 0 0]]}))))
