@@ -5207,6 +5207,10 @@ msgstr "Customize shortcuts"
 msgid "shortcuts.escape"
 msgstr "Cancel"
 
+#: src/app/main/data/workspace/shortcuts.cljs
+msgid "shortcuts.export-selection"
+msgstr "Export selection with saved settings"
+
 #: src/app/main/data/workspace/shortcuts.cljs:608
 msgid "shortcuts.export-shapes"
 msgstr "Export shapes"
@@ -6702,6 +6706,22 @@ msgstr "Remove guide"
 #: src/app/main/ui/workspace/sidebar/debug.cljs:52
 msgid "workspace.debug.title"
 msgstr "Debugging tools"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.export-selection"
+msgstr "Export selection"
+
+#: src/app/main/data/exports/assets.cljs
+msgid "workspace.export-selection.busy"
+msgstr "An export is already in progress."
+
+#: src/app/main/data/exports/assets.cljs
+msgid "workspace.export-selection.empty"
+msgstr "Select an object to export."
+
+#: src/app/main/data/exports/assets.cljs
+msgid "workspace.export-selection.no-settings"
+msgstr "Add an export setting in the right sidebar."
 
 #: src/app/main/data/exports/assets.cljs:388, src/app/main/data/exports/assets.cljs:564
 msgid "workspace.export.unsaved-changes"
