@@ -11,6 +11,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix view mode not live [#12837](https://github.com/penpot/penpot/issues/12837) (PR: [#12847](https://github.com/penpot/penpot/pull/12847))
 - Fix copying text from Penpot to the clipboard not working on MS Windows [#11303](https://github.com/penpot/penpot/issues/11303) (PR: [#11305](https://github.com/penpot/penpot/pull/11305))
 - Fix comment bubbles rendering on top of workspace dropdown menus [#10283](https://github.com/penpot/penpot/issues/10283) (PR: [#11201](https://github.com/penpot/penpot/pull/11201))
 - Fix inconsistent Mixed label in blur options and numeric inputs across 24 locales (by @filipsajdak) [#11148](https://github.com/penpot/penpot/issues/11148) (PR: [#11151](https://github.com/penpot/penpot/pull/11151))
