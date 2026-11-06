@@ -40,10 +40,33 @@ export abstract class TaskDispatcher {
     }
 }
 
-/** Error returned when discovery cannot establish the complete set of sessions. */
+/**
+ * Error returned when discovery cannot establish the complete set of sessions.
+ *
+ * The default message marks the failure as transient; subclasses describe failures that a retry does not fix.
+ */
 export class SessionDiscoveryError extends Error {
-    constructor() {
-        super("Penpot session discovery failed. This may be due to temporary server load. You can retry the request.");
+    /**
+     * @param reason - what prevented discovery from completing
+     * @param advice - what the caller can do about it
+     */
+    constructor(reason: string, advice = "This may be due to temporary server load. You can retry the request.") {
+        super(`Penpot session discovery failed: ${reason}. ${advice}`);
         this.name = "SessionDiscoveryError";
+    }
+}
+
+/** Error returned when an MCP server instance replies to discovery with a session list that cannot be read. */
+export class InvalidDiscoveryResponseError extends SessionDiscoveryError {
+    /**
+     * @param cause - the parse failure of the reply
+     */
+    constructor(cause: Error) {
+        super(
+            `an MCP server instance sent a session list that cannot be read (${cause.message})`,
+            "Retrying will not help; the MCP server instances may be running different versions. " +
+                "To work around it, ask the user for the session ID shown in the Penpot MCP menu and pass it as sessionId."
+        );
+        this.name = "InvalidDiscoveryResponseError";
     }
 }
