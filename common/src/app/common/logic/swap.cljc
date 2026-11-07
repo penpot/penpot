@@ -427,11 +427,21 @@
         (get (pcb/get-objects changes) (:id new-shape))
 
         changes
-        (generate-keep-orientation changes new-shape shape)]
+        (generate-keep-orientation changes new-shape shape)
+
+        ;; the touched groups of the restored properties, so they stay overrides
+        kept-touched-groups
+        (into #{}
+              (comp (keep #(ctk/resolve-sync-group (:type new-shape) %))
+                    (filter #(ctk/touched-group? shape %)))
+              (keys keep-props-values))]
 
     [new-shape (-> changes
                    ;; Restore the properties
-                   (pcb/update-shapes [(:id new-shape)] #(d/patch-object % keep-props-values)
+                   (pcb/update-shapes [(:id new-shape)]
+                                      #(cond-> (d/patch-object % keep-props-values)
+                                         (seq kept-touched-groups)
+                                         (update :touched (fnil into #{}) kept-touched-groups))
                                       {:ignore-touched true})
 
                    ;; We need to set the same index as the original shape
