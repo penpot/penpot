@@ -669,7 +669,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (mf/defc invitation-role-selector*
-  [{:keys [can-invite role status on-change]}]
+  [{:keys [role status on-change]}]
   (let [show?   (mf/use-state false)
         label   (cond
                   (= role :owner)  (tr "labels.owner")
@@ -690,7 +690,7 @@
              (on-change role event))))]
 
     [:*
-     (if (and can-invite (= status :pending))
+     (if (= status :pending)
        [:div {:class (stl/css :rol-selector :has-priv)
               :on-click on-show}
         [:span {:class (stl/css :rol-label)} label]
@@ -713,9 +713,16 @@
              :on-click on-change'}
         (tr "labels.viewer")]]]]))
 
+(defn invitation-link-copyable?
+  "The link of an owner invitation can only be copied by the team owner: an
+  admin cannot create nor promote an owner invitation, so the backend does
+  not mint its token for them."
+  [is-owner? role]
+  (or (not= :owner role) is-owner?))
+
 (mf/defc invitation-actions*
   {::mf/private true}
-  [{:keys [invitation team-id]}]
+  [{:keys [invitation team-id is-owner?]}]
   (let [email    (:email invitation)
         copied*  (mf/use-state false)
         copied?  (deref copied*)
@@ -761,15 +768,16 @@
               (-> (dtm/copy-invitation-link params)
                   (with-meta {::ev/origin :team}))))))]
 
-    [:> icon-button* {:variant "ghost"
-                      :aria-label (tr "labels.copy-invitation-link")
-                      :on-click on-copy
-                      :icon (if copied? "tick" "clipboard")}]))
+    (when (invitation-link-copyable? is-owner? (:role invitation))
+      [:> icon-button* {:variant "ghost"
+                        :aria-label (tr "labels.copy-invitation-link")
+                        :on-click on-copy
+                        :icon (if copied? "tick" "clipboard")}])))
 
 (mf/defc invitation-row*
   {::mf/wrap [mf/memo]
    ::mf/private true}
-  [{:keys [invitation can-invite team-id selected on-select-change]}]
+  [{:keys [invitation team-id selected on-select-change is-owner?]}]
 
   (let [expired? (:expired invitation)
         email    (:email invitation)
@@ -787,12 +795,11 @@
 
         on-change
         (mf/use-fn
-         (mf/deps can-invite on-select-change)
+         (mf/deps on-select-change)
          (fn [event]
-           (when can-invite
-             (let [email (-> (dom/get-current-target event)
-                             (dom/get-data "attr"))]
-               (on-select-change email)))))
+           (let [email (-> (dom/get-current-target event)
+                           (dom/get-data "attr"))]
+             (on-select-change email))))
 
         on-change-role
         (mf/use-fn
@@ -804,26 +811,23 @@
 
     [:div {:class (stl/css :table-row :table-row-invitations)}
      [:div {:class (stl/css :table-field :field-email)}
-      (if can-invite
-        [:div {:class (stl/css :input-wrapper)}
-         [:label
-          [:span {:class (stl/css-case :input-checkbox true
-                                       :global/checked (is-selected? email))}
-           deprecated-icon/status-tick]
+      [:div {:class (stl/css :input-wrapper)}
+       [:label
+        [:span {:class (stl/css-case :input-checkbox true
+                                     :global/checked (is-selected? email))}
+         deprecated-icon/status-tick]
 
-          [:input {:type "checkbox"
-                   :id (dm/str "email-" email)
-                   :data-attr email
-                   :value email
-                   :checked (is-selected? email)
-                   :on-change on-change}]
-          email]]
-        [:div email])]
+        [:input {:type "checkbox"
+                 :id (dm/str "email-" email)
+                 :data-attr email
+                 :value email
+                 :checked (is-selected? email)
+                 :on-change on-change}]
+        email]]]
 
      [:div {:class (stl/css :table-field :field-roles)}
       [:> invitation-role-selector*
-       {:can-invite can-invite
-        :role role
+       {:role role
         :status status
         :on-change on-change-role}]]
 
@@ -831,14 +835,14 @@
       [:& badge-notification {:type type :content badge-content}]]
 
      [:div {:class (stl/css :table-field :field-actions)}
-      (when ^boolean can-invite
-        [:> invitation-actions*
-         {:invitation invitation
-          :team-id team-id}])]]))
+      [:> invitation-actions*
+       {:invitation invitation
+        :team-id team-id
+        :is-owner? is-owner?}]]]))
 
 (mf/defc empty-invitation-table*
   {::mf/private true}
-  [{:keys [can-invite team]}]
+  [{:keys [team]}]
   (let
    [route                (mf/deref refs/route)
     invite-email         (-> route :query-params :invite-email)
@@ -850,15 +854,12 @@
                                                                      :invite-email invite-email}))))]
     [:div {:class (stl/css :empty-invitations)}
      [:div (tr "labels.no-invitations")]
-     (if ^boolean can-invite
-       [:*
-        [:div (tr "labels.no-invitations-gather-people")]
-        [:> button* {:variant "primary"
-                     :class (stl/css :btn-empty-invitations)
-                     :on-click on-invite-member
-                     :data-testid "invite-member"}
-         (tr "dashboard.invite-profile")]]
-       [:div {:class (stl/css :no-permission-text)} (tr "dashboard.invitations.no-permission")])]))
+     [:div (tr "labels.no-invitations-gather-people")]
+     [:> button* {:variant "primary"
+                  :class (stl/css :btn-empty-invitations)
+                  :on-click on-invite-member
+                  :data-testid "invite-member"}
+      (tr "dashboard.invite-profile")]]))
 
 (mf/defc invitation-modal
   {::mf/register modal/components
@@ -1057,6 +1058,16 @@
           :on-click on-confirm'}
          accept]]]]]))
 
+(defn invitations-section-content
+  "What the invitations section shows: the list of the pending invitations
+   for the ones that can invite, or just the permission notice. The pending
+   invitations are an admin only list, so a member that cannot invite does
+   not get them."
+  [can-invite?]
+  (if can-invite?
+    :list
+    :no-permission))
+
 (mf/defc invitation-section*
   {::mf/private true}
   [{:keys [team profile]}]
@@ -1069,6 +1080,8 @@
                      {:organization (:organization team)
                       :profile-id (:id profile)
                       :team-permissions permissions})
+
+        is-owner?   (boolean (:is-owner permissions))
 
         selected    (mf/use-state #{})
 
@@ -1195,57 +1208,60 @@
       (reset! sort-state {:field nil :direction :asc}))
 
     [:div {:class (stl/css :invitations)}
-     (when (and (not can-invite?)
-                (seq @invitations))
+     ;; The pending invitations are an admin only list: a member that cannot
+     ;; invite does not get them, so there is nothing to show but the
+     ;; permission notice.
+     (case (invitations-section-content can-invite?)
+       :no-permission
        [:div {:class (stl/css :empty-invitations)}
         [:div {:class (stl/css :no-permission-text)}
-         (tr "dashboard.invitations.no-permission")]])
-     (when (and can-invite?
-                (> (count @selected) 0))
+         (tr "dashboard.invitations.no-permission")]]
+
        [:*
-        [:div {:class (stl/css :invitations-actions)}
-         [:div
-          (tr "team.invitations-selected" (i18n/c (count @selected)))]
-         [:div
-          [:> button* {:variant "secondary"
-                       :type "button"
-                       :on-click on-resend}
-           (tr "labels.resend-invitation")]]
-         [:> icon-button* {:on-click on-delete
-                           :variant "destructive"
-                           :aria-label (tr "labels.delete-invitation")
-                           :icon "delete"}]]])
-     [:div {:class (stl/css :table-header)}
-      [:div {:class (stl/css :title-field-name)} (tr "labels.invitations")]
-      [:div {:class (stl/css :title-field-role)} (tr "labels.role")
-       [:> icon-button* {:variant "action"
-                         :class (stl/css-case :sort-active (= (:field @sort-state) :role)
-                                              :sort-inactive (not= (:field @sort-state) :role))
-                         :aria-label (tr "dashboard.order-invitations-by-role")
-                         :icon (if (= (:field @sort-state) :role)
-                                 (if (= (:direction @sort-state) :asc) "arrow-down" "arrow-up")
-                                 "arrow-down")
-                         :on-click on-order-by-role}]]
-      [:div {:class (stl/css :title-field-status)} (tr "labels.status")
-       [:> icon-button* {:variant "action"
-                         :class (stl/css-case :sort-active (= (:field @sort-state) :status)
-                                              :sort-inactive (not= (:field @sort-state) :status))
-                         :aria-label (tr "dashboard.order-invitations-by-status")
-                         :icon (if (= (:field @sort-state) :status)
-                                 (if (= (:direction @sort-state) :asc) "arrow-down" "arrow-up")
-                                 "arrow-down")
-                         :on-click on-order-by-status}]]]
-     (if (empty? @invitations)
-       [:> empty-invitation-table* {:can-invite can-invite? :team team}]
-       [:div {:class (stl/css :table-rows)}
-        (for [invitation @invitations]
-          [:> invitation-row*
-           {:key (:email invitation)
-            :invitation invitation
-            :can-invite can-invite?
-            :team-id team-id
-            :selected selected
-            :on-select-change on-select-change}])])]))
+        (when (> (count @selected) 0)
+          [:div {:class (stl/css :invitations-actions)}
+           [:div
+            (tr "team.invitations-selected" (i18n/c (count @selected)))]
+           [:div
+            [:> button* {:variant "secondary"
+                         :type "button"
+                         :on-click on-resend}
+             (tr "labels.resend-invitation")]]
+           [:> icon-button* {:on-click on-delete
+                             :variant "destructive"
+                             :aria-label (tr "labels.delete-invitation")
+                             :icon "delete"}]])
+        [:div {:class (stl/css :table-header)}
+         [:div {:class (stl/css :title-field-name)} (tr "labels.invitations")]
+         [:div {:class (stl/css :title-field-role)} (tr "labels.role")
+          [:> icon-button* {:variant "action"
+                            :class (stl/css-case :sort-active (= (:field @sort-state) :role)
+                                                 :sort-inactive (not= (:field @sort-state) :role))
+                            :aria-label (tr "dashboard.order-invitations-by-role")
+                            :icon (if (= (:field @sort-state) :role)
+                                    (if (= (:direction @sort-state) :asc) "arrow-down" "arrow-up")
+                                    "arrow-down")
+                            :on-click on-order-by-role}]]
+         [:div {:class (stl/css :title-field-status)} (tr "labels.status")
+          [:> icon-button* {:variant "action"
+                            :class (stl/css-case :sort-active (= (:field @sort-state) :status)
+                                                 :sort-inactive (not= (:field @sort-state) :status))
+                            :aria-label (tr "dashboard.order-invitations-by-status")
+                            :icon (if (= (:field @sort-state) :status)
+                                    (if (= (:direction @sort-state) :asc) "arrow-down" "arrow-up")
+                                    "arrow-down")
+                            :on-click on-order-by-status}]]]
+        (if (empty? @invitations)
+          [:> empty-invitation-table* {:team team}]
+          [:div {:class (stl/css :table-rows)}
+           (for [invitation @invitations]
+             [:> invitation-row*
+              {:key (:email invitation)
+               :invitation invitation
+               :is-owner? is-owner?
+               :team-id team-id
+               :selected selected
+               :on-select-change on-select-change}])])])]))
 
 (mf/defc team-invitations-page*
   [{:keys [team profile]}]

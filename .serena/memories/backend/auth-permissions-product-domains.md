@@ -27,6 +27,7 @@
 
 - Team/project commands mix DB changes, email, message bus notifications, media/storage cleanup, feature flags, quotas, and audit metadata. Keep mutations transactional when the existing command does so.
 - Invitation flows validate muted/bounced emails before sending and use tokenized invitation state. Accepting an invitation is tied to the invited member identity, not just possession of a token.
+- The whole invitation family is team-admin only: creating, updating and deleting invitations, minting the invitation token (`get-team-invitation-token`) and listing the pending ones (`get-team-invitations`, which carries the invited email and the offered role). The token of an invitation that grants the `owner` role is restricted to the team owner, because an admin cannot create nor promote an owner invitation (`cant-promote-to-owner`). This family is the exception to the rule above: it answers `:validation` / `:insufficient-permissions` instead of `:not-found`, so the five commands speak one language.
 - Logical deletion is used for many product objects; prefer existing logical-deletion helpers over hard deletes unless the command already performs permanent cleanup.
 - Bounced/spam-complaint emails can mute/block a profile for login/registration and email sending. Devenv Mailpit is the normal local path for registration/email-flow testing.
 

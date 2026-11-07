@@ -261,7 +261,16 @@
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
         (->> (rp/cmd! :get-team-invitations {:team-id team-id})
-             (rx/map (partial invitations-fetched team-id)))))))
+             (rx/map (partial invitations-fetched team-id))
+             (rx/catch (fn [cause]
+                         (let [{:keys [type code]} (ex-data cause)]
+                           (if (and (= :validation type)
+                                    (= :insufficient-permissions code))
+                             (do
+                               (log/warn :hint "fetch-invitations: no permission, skipping"
+                                         :team-id (str team-id))
+                               (rx/empty))
+                             (rx/throw cause))))))))))
 
 (defn- team-initialized
   [team-id]
