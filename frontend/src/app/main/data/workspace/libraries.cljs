@@ -58,6 +58,7 @@
    [app.main.features :as features]
    [app.main.features.pointer-map :as fpmap]
    [app.main.fonts :as fonts]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]

@@ -11,6 +11,7 @@
    [frontend-tests.config-test]
    [frontend-tests.composable-tests.completion-contract-test]
    [frontend-tests.composable-tests.generated-test]
+   [frontend-tests.composable-tests.grid-layout-test]
    [frontend-tests.copy-as-svg-test]
    [frontend-tests.data.auth-test]
    [frontend-tests.data.changes-test]
@@ -95,7 +96,6 @@
    [frontend-tests.logic.drag-on-save-failure-test]
    [frontend-tests.logic.frame-guides-test]
    [frontend-tests.logic.groups-test]
-   [frontend-tests.logic.ignore-tree-test]
    [frontend-tests.logic.move-shapes-to-frame-test]
    [frontend-tests.logic.multi-variant-switch-test]
    [frontend-tests.logic.nudge-selected-shapes-test]
@@ -261,6 +261,7 @@
    'frontend-tests.config-test
    'frontend-tests.composable-tests.completion-contract-test
    'frontend-tests.composable-tests.generated-test
+   'frontend-tests.composable-tests.grid-layout-test
    'frontend-tests.copy-as-svg-test
    'frontend-tests.data.auth-test
    'frontend-tests.data.changes-test
@@ -351,7 +352,6 @@
    'frontend-tests.logic.drag-on-save-failure-test
    'frontend-tests.logic.frame-guides-test
    'frontend-tests.logic.groups-test
-   'frontend-tests.logic.ignore-tree-test
    'frontend-tests.logic.move-shapes-to-frame-test
    'frontend-tests.logic.multi-variant-switch-test
    'frontend-tests.logic.nudge-selected-shapes-test

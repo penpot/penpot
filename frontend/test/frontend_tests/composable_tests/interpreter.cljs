@@ -19,6 +19,7 @@
    [app.common.files.tokens :as cfo]
    [app.common.geom.rect :as grc]
    [app.common.logic.shapes :as cls]
+   [app.common.logic.variants :as clv]
    [app.common.test-helpers.composable.comp.files :as cf]
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.undo-check :as uc]
@@ -140,6 +141,16 @@
    built from `situation` and from the same helpers the common node uses."
   [op situation]
   (cond
+    (instance? n/EditGrid op)
+    (let [{:keys [target action value]} op
+          id                         (tm/target-shape-id situation target)
+          shape                      (tm/shape-by-id situation id)]
+      (case action
+        :direction [(dwsl/change-grid-direction [id] value)]
+        :cell (let [cell (first (filter #(= [(:row value) (:column value)] [(:row %) (:column %)])
+                                        (vals (:layout-grid-cells shape))))]
+                [(dwsl/update-grid-cells id [(:id cell)] (:props value))])))
+
     (instance? n/ChangeProperty op)
     (let [{:keys [target property value]} op
           id (tm/target-shape-id situation target)]
@@ -150,9 +161,21 @@
           [(dwsl/update-layout-child [id] (select-keys shape [:layout-item-margin
                                                               :layout-item-margin-type]))])
 
+        (:layout-item-margin-type :layout-item-align-self
+                                  :layout-item-h-sizing :layout-item-v-sizing
+                                  :layout-item-min-w :layout-item-max-w
+                                  :layout-item-min-h :layout-item-max-h
+                                  :layout-item-absolute :layout-item-z-index)
+        [(dwsl/update-layout-child [id] {property value})]
+
         ;; the layers panel's rename, which renames a main's component too
         :name
         [(dw/end-rename-shape id value)]
+
+        ;; Container controls use the sidebar transaction and reflow event.
+        (:layout-flex-dir :layout-wrap-type :layout-justify-content
+                          :layout-align-content :layout-gap-type :layout-padding-type :layout-justify-items)
+        [(dwsl/update-layout [id] {property value})]
 
         [(dwsh/update-shapes #{id} (fn [shape] (n/set-property shape property value)))]))
 
@@ -174,9 +197,9 @@
                                             :original-content (:content shape))]))
 
     (instance? n/Rotate op)
-    ;; the sidebar rotation, which decides what it touches in copies (check-delta)
+    ;; A node turns by its angle, including after an earlier rotation.
     (let [{:keys [target angle]} op]
-      [(dwt/increase-rotation [(tm/target-shape-id situation target)] angle)])
+      [(dwt/increase-rotation [(tm/target-shape-id situation target)] angle {:delta? true})])
 
     (instance? n/MoveShape op)
     ;; the sidebar position, in page coordinates
@@ -274,8 +297,9 @@
     [(dwl/reset-component (tm/target-shape-id situation (:target op)))]
 
     (instance? n/UpdateMain op)
-    [(dwl/update-component-sync (tm/target-shape-id situation (:target op))
-                                (:id (tm/file situation)))]
+    (let [id (tm/target-shape-id situation (:target op))
+          shape (tm/shape-by-id situation id)]
+      [(dwl/update-component-sync id (:component-file shape))])
 
     (instance? n/DeleteComponent op)
     (let [root (tm/shape-by-id situation (tm/target-shape-id situation (:target op)))]
@@ -376,6 +400,17 @@
   (let [st @st/state]
     (get-in st [:files (:current-file-id st)])))
 
+(defn refresh-generated
+  "Read every generated file after events, keeping library installation
+   metadata out of the portable situation. Undo snapshots still keep it."
+  [situation]
+  (-> situation
+      (tm/with-file (current-file))
+      (tm/with-aux-files
+        (into {} (map (fn [[id _]]
+                        [id (dissoc (get-in @st/state [:files id]) :library-of)]))
+              (tm/aux-files situation)))))
+
 (defn fill-of
   "The fill color of the shape `label` in the live file."
   [label]
@@ -469,24 +504,6 @@
                     (merge (n/applied-result op before (tm/file situation))))]
     (tm/record-application situation op record)))
 
-(defn- record-op
-  "`situation` with the live file and the application of the settled op unit
-   `op`: its choices first, then the op's own fields and its
-   `n/applied-result`, if any."
-  [situation op]
-  (let [before    (tm/file situation)
-        situation (-> situation
-                      (tm/with-file (current-file))
-                      (record-choices op))
-        op        (unwrap op)
-        record    (cond-> (dissoc (into {} op) ::tm/id)
-                    (and (instance? n/SyncFromLibrary op) (nil? (:source op)))
-                    (dissoc :source)
-
-                    (satisfies? n/IAppliedResult op)
-                    (merge (n/applied-result op before (tm/file situation))))]
-    (tm/record-application situation op record)))
-
 (defn- op-events
   "The workspace events of the op unit `op` (for a choice, of the chosen op)."
   [op situation]
@@ -556,14 +573,28 @@
 
 (defn- check-step
   "The round trip of user step `op`, given the snapshot `before` and the undo
-   index `index-before` taken before it. Resolves with the situation."
-  [situation op before index-before]
-  (let [step        (uc/step situation op)
+   history taken before it. Account for entries dropped by the history cap."
+  [situation op before index-before items-before]
+  (let [items-after (get-in @st/state [:workspace-undo :items])
+        evicted     (or (first (keep-indexed (fn [index item]
+                                               (when (= item (first items-after)) index))
+                                             (take (inc index-before) items-before)))
+                        0)
+        step        (uc/step situation op)
+        baseline    (uc/baseline situation)
+        situation   (cond-> situation
+                      (pos? evicted)
+                      (uc/mark-baseline (- (:depth baseline) evicted) (:snapshot baseline))
+                      (> evicted (inc (:depth baseline)))
+                      (uc/add-error step :expired-baseline "Undo entries expired before the segment was checked"))
         after       (snapshot)
         index-after (undo-index)]
-    (if (= index-before index-after)
+    (if (and (= index-before index-after)
+             (zero? evicted)
+             (= (:undo-group (get items-before index-before))
+                (:undo-group (get items-after index-after))))
       (js/Promise.resolve (uc/compare-states situation step :no-undo-entry before after))
-      (.then (round-trip-move situation dwu/undo step :undo before index-before)
+      (.then (round-trip-move situation dwu/undo step :undo before (- index-before evicted))
              (fn [[situation settled?]]
                (if settled?
                  (.then (round-trip-move situation dwu/redo step :redo after index-after)
@@ -586,8 +617,8 @@
     (step 0)))
 
 (defn- check-variant
-  "The end-of-variant round trip: undo back to the baseline, then redo as many
-   times. Resolves with the situation."
+  "Undo the retained history segment back to its baseline, then redo it.
+   Also runs before the cap drops entries, so every segment gets checked."
   [situation]
   (let [{:keys [depth] :as baseline} (uc/baseline situation)
         final       (snapshot)
@@ -713,12 +744,22 @@
           check-step?  (and (::undo-check? situation)
                             (contains? #{:user :frontend-only} kind))
           before       (when check-step? (snapshot))
-          index-before (undo-index)]
-      (if (sync-op? op)
+          index-before (undo-index)
+          items-before (when check-step? (get-in @st/state [:workspace-undo :items]))]
+      (cond
+        ;; Check the complete segment while its baseline is still reachable.
+        ;; Leave room for a primary commit and its delayed layout entry.
+        (and check-step?
+             (>= index-before (- dwu/MAX-UNDO-SIZE 2))
+             (< (:depth (uc/baseline situation)) index-before))
+        (.then (check-variant situation) #(run-ops (mark-baseline %) ops))
+
+        (sync-op? op)
         (let [situation (run-sync-op situation op)]
           (when (and (not (::generated situation)) (contains? golden-kinds kind))
             (observe-golden-step!))
           (run-ops situation (rest ops)))
+        :else
         (do
           (reset! step-errors [])
           (.then (await-step (op-events op situation) step-timeout-ms)
@@ -745,8 +786,8 @@
                          (cond
                            check-step?
                            ;; go on from the redone file, as the pure runner does
-                           (.then (check-step situation (unwrap op) before index-before)
-                                  #(run-ops (tm/with-file % (current-file)) (rest ops)))
+                           (.then (check-step situation (unwrap op) before index-before items-before)
+                                  #(run-ops (refresh-generated %) (rest ops)))
 
                            ;; never undo past the state a case's own undo went back to
                            (and (::undo-check? situation)
@@ -827,10 +868,176 @@
       (install!)
       (mark-baseline)))
 
-(defn run-generated-step
+(defn- get-generated-references
+  [situation]
+  (into {} (for [[file-id file] (cf/all-files situation)
+                 objects (cf/object-trees file)
+                 [id shape] objects
+                 :when (:shape-ref shape)]
+             [[file-id id] {:shape shape
+                            :sources (dissoc (cf/reference-libraries situation file-id id) file-id)}])))
+
+(defn- get-reference-patches
+  [before after]
+  (reduce (fn [patches key]
+            (if (= (get before key) (get after key))
+              patches
+              (-> patches
+                  (assoc-in [:before key] (get-in before [key :sources]))
+                  (assoc-in [:after key] (get-in after [key :sources])))))
+          {} (into (set (keys before)) (keys after))))
+
+(defn- restore-generated-references
+  [situation patches]
+  (reduce-kv (fn [situation [file-id id] sources]
+               (if sources
+                 (assoc-in situation [:shape-libraries file-id id] sources)
+                 (update-in situation [:shape-libraries file-id] dissoc id)))
+             situation (or patches {})))
+
+(defn ^:async run-generated-step
   "Drive a resolved node through real events, settlement and undo/redo."
   [situation op]
-  (run-ops situation [op]))
+  (let [index-before (undo-index)
+        items-before (get-in @st/state [:workspace-undo :items])
+        after        (await (run-ops situation [op]))]
+    (if-not (and after (:accepted-libraries situation))
+      after
+      (let [index-after (undo-index)
+            items       (get-in @st/state [:workspace-undo :items])]
+        (cond
+          (instance? n/Undo op)
+          (reduce (fn [s index]
+                    (restore-generated-references s
+                                                  (get-in situation [::reference-history (:undo-group (get items-before index)) :before])))
+                  after (range index-before index-after -1))
+
+          (instance? n/Redo op)
+          (reduce (fn [s index]
+                    (restore-generated-references s
+                                                  (get-in situation [::reference-history (:undo-group (get items index)) :after])))
+                  after (range (inc index-before) (inc index-after)))
+
+          :else
+          (let [file-id (:id (tm/file situation))
+                inputs  (cf/all-files situation)
+                ;; Pull requests use the loaded before-state. Update-main
+                ;; authors the source itself; its independent intent check
+                ;; still compares that source against the copy's before-state.
+                after   (cond
+                          (instance? n/UpdateMain op)
+                          (let [shape      (tm/shape-by-id situation (tm/target-shape-id situation (:target op)))
+                                source     (:component-file shape)
+                                components (cf/affected-components (get inputs source) #{(:component-id shape)})
+                                dependents (cf/affected-components (get inputs file-id)
+                                                                   (cf/dependent-components (get inputs file-id) source components))
+                                authored   (cf/all-files after)]
+                            (-> after
+                                (cf/remember-copies source source components authored)
+                                (cf/remember-copies file-id source components authored)
+                                (cf/remember-copies file-id file-id dependents authored)))
+
+                          (instance? n/SyncFromLibrary op)
+                          (let [source (or (:source op) (n/library-id situation))]
+                            (-> after
+                                (assoc-in [:accepted-libraries file-id source] (get inputs source))
+                                (cf/remember-copies file-id source
+                                                    (set (keys (get-in inputs [source :data :components]))) inputs)))
+
+                          (or (instance? n/ResetOverrides op)
+                              (instance? n/SwapShape op)
+                              (and (instance? n/SwitchVariant op)
+                                   (clv/find-switch-target inputs
+                                                           (tm/shape-by-id situation (tm/target-shape-id situation (:target op)))
+                                                           (n/switch-pos situation op)
+                                                           (n/switch-value situation op))))
+                          (cf/remember-subtree after file-id (tm/target-shape-id situation (:target op)) inputs)
+
+                          :else after)
+                patches (get-reference-patches (get-generated-references situation) (get-generated-references after))
+                item    (get items index-after)
+                group   (:undo-group item)]
+            (cond-> after
+              ;; A no-entry request must not extend the preceding action.
+              ;; Compare entries: capped history can replace its last item
+              ;; without advancing its index.
+              (and group (not= item (get items-before index-before)) (seq (:before patches)))
+              (update-in [::reference-history group]
+                         (fn [prior]
+                           {:before (merge (:before patches) (:before prior))
+                            :after (merge (:after prior) (:after patches))})))))))))
+
+(defn- get-generated-editor
+  [situation]
+  {:situation (dissoc (refresh-generated situation) ::source-editors)
+   :undo (:workspace-undo @st/state)})
+
+(defn- resume-generated-editor
+  [{:keys [situation undo]}]
+  (let [file (tm/file situation)]
+    (uninstall!)
+    (st/emit! (ptk/reify ::resume-generated-editor
+                ptk/UpdateEvent
+                (update [_ state]
+                  (assoc state :current-file-id (:id file)
+                         :current-page-id (cthf/current-page-id file)
+                         :workspace-undo undo)))
+              (dw/initialize-edit-watchers)
+              (dwl/watch-library-changes)
+              (headless-text-measurement))
+    (let [situation (refresh-generated situation)
+          baseline  (uc/baseline situation)
+          current   (snapshot)]
+      (if (and baseline
+               (= (uc/snapshot (dissoc file :library-of)
+                               {:position-data? (not (features/active-feature? @st/state "render-wasm/v1"))})
+                  (dissoc (get-in current [:files (:id file)]) :library-of)))
+        ;; Keep the verified segment while only foreign inputs changed.
+        (uc/mark-baseline situation (:depth baseline)
+                          (assoc current :files
+                                 (assoc (:files current) (:id file)
+                                        (get-in baseline [:snapshot :files (:id file)]))))
+        ;; A foreign editor wrote this file after its last verified segment.
+        ;; Retain its undo entries, but start the next segment at this state.
+        (mark-baseline situation)))))
+
+(defn ^:async run-generated-source-step
+  "Run a source edit in its owning editor and retain both undo histories.
+   Returning to the consumer loads source data without accepting it."
+  [situation owner op]
+  (let [situation (await (check-variant situation))
+        _        (t/is (empty? (uc/failures situation)) (pr-str (uc/failures situation)))
+        consumer (get-generated-editor situation)
+        files    (cf/all-files situation)
+        editor   (or (get-in situation [::source-editors owner])
+                     {:situation (-> (tm/make-situation (get files owner))
+                                     (tm/with-aux-files (dissoc files owner))
+                                     (assoc ::undo-check? true ::generated true)
+                                     (uc/with-runner :frontend))
+                      :undo {}})
+        editor   (update editor :situation merge (select-keys situation [:accepted-libraries :shape-libraries]))
+        source   (resume-generated-editor editor)
+        before   (snapshot)
+        source   (await (run-generated-step source op))]
+    (when-not source
+      (throw (ex-info "Source editor step failed" {:owner owner})))
+    (t/is (= (dissoc (:files before) owner) (dissoc (:files (snapshot)) owner))
+          "A source editor must not write another file")
+    (let [changed? (not= before (snapshot))
+          source   (await (check-variant source))
+          editor   (get-generated-editor source)
+          consumer (update consumer :situation merge (select-keys source [:accepted-libraries :shape-libraries]))
+          baseline (uc/baseline (:situation consumer))
+          live     (resume-generated-editor consumer)
+          ;; The consumer's verified history can itself write the source.
+          ;; A real source edit closes that segment; a no-op keeps it exact.
+          live     (if changed?
+                     (mark-baseline live)
+                     (uc/mark-baseline live (:depth baseline) (:snapshot baseline)))]
+      (t/is (empty? (uc/failures source)) (pr-str (uc/failures source)))
+      (-> live
+          (assoc ::source-editors (assoc (::source-editors situation) owner editor))
+          (tm/record-application op {:library-id owner})))))
 
 (defn finish-generated
   [situation]

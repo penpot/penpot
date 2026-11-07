@@ -83,6 +83,8 @@
    [common-tests.logic.comp-sync-layout-items-test]
    [common-tests.logic.comp-sync-test]
    [common-tests.logic.comp-touched-test]
+   [common-tests.logic.composable-gen-test]
+   [common-tests.logic.composable-oracle-test]
    [common-tests.logic.composable-runner-test]
    [common-tests.logic.composable-sync-test]
    [common-tests.logic.copying-and-duplicating-test]
@@ -226,10 +228,13 @@
    'common-tests.logic.comp-flex-interactions-test
    'common-tests.logic.comp-main-edit-breaks-copy-slots-test
    'common-tests.logic.comp-move-swapped-copies-test
+   'common-tests.logic.comp-remote-synced-test
    'common-tests.logic.comp-reset-test
    'common-tests.logic.comp-sync-layout-items-test
    'common-tests.logic.comp-sync-test
    'common-tests.logic.comp-touched-test
+   'common-tests.logic.composable-gen-test
+   'common-tests.logic.composable-oracle-test
    'common-tests.logic.composable-runner-test
    'common-tests.logic.composable-sync-test
    'common-tests.logic.copying-and-duplicating-test
@@ -267,6 +272,7 @@
    'common-tests.path-names-tree-test
    'common-tests.record-test
    'common-tests.schema-test
+   'common-tests.schema-check-test
    'common-tests.spec-test
    'common-tests.svg-path-test
    'common-tests.svg-test

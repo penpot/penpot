@@ -251,7 +251,7 @@
     (when (nil? shape)
       (let [present (->> (vals (:objects page))
                          (map (comp thi/label :id))
-                         (sort)
+                         (sort-by str)
                          (vec))]
         (throw (ex-info (str "Unbound shape name: " (pr-str name)
                              ". Shapes present in current page: " (pr-str present))

@@ -23,6 +23,20 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
+(t/deftest undo-comparison-allows-only-negligible-geometry-noise
+  (let [situation (setup/simple-component-with-labeled-copy)
+        file (tm/file situation)
+        id (:id (tm/role-shape situation :copy-instance))
+        path [:data :pages-index (:id (thf/current-page file)) :objects id]
+        before (-> (uc/snapshot file)
+                   (assoc-in (conj path :height) 0.01)
+                   (assoc-in (conj path :opacity) 0.4))
+        failures #(uc/failures (uc/compare-states {} nil :undo before %))]
+    (t/is (empty? (failures (assoc-in before (conj path :height) 0.010000000000005116))))
+    (t/is (seq (failures (assoc-in before (conj path :height) 0.01001))))
+    (t/is (seq (failures (assoc-in before (conj path :opacity) (+ 0.4 5e-15)))))
+    (t/is (seq (failures (assoc-in before (conj path :touched) #{:geometry-group}))))))
+
 (t/deftest undo-main-child-structure-restores-remote-sync-state
   (let [initial (setup/nested-component-with-copy)
         updated (-> initial
@@ -210,8 +224,8 @@
       (:type (ex-data e)))))
 
 (t/deftest frontend-only-operations-are-rejected
-  (t/is (= ::r/frontend-only (error-type (n/rotate :main-root 45))))
-  (t/is (= ::r/frontend-only (error-type (n/change-height :main-root 50)))))
+  (t/is (= ::r/frontend-only (error-type (n/move-shape :main-root 20 0))))
+  (t/is (= ::r/frontend-only (error-type (n/undo-before-sync :main-child :fills red)))))
 
 ;; A user operation that forgets to record its changes.
 (defrecord UnrecordedEdit []
@@ -585,6 +599,26 @@
          (t/is false)
          (reset! counted @made))))
     (t/is (= 2 @counted))))
+
+(t/deftest duplicate-result-finds-the-user-subtree-after-propagation
+  (let [before (r/run-variant
+                {:setup setup/empty-situation
+                 :operation (tm/in-sequence [(n/create-component "a" original :size 100)
+                                             (n/make-nested-component "a" 1)
+                                             (n/instantiate-copy "a")
+                                             (n/instantiate-copy "a")])})
+        duplicate (n/duplicate (n/nested-head-of "a" 0))
+        after (r/settle (r/step before duplicate))
+        result (n/applied-result duplicate (tm/file before) (tm/file after))
+        new-head (tm/shape-by-id after (:new-head result))]
+    (t/is (= ((n/main-head-of "a") before) (:parent-id new-head)))))
+
+(t/deftest missing-shape-diagnostics-accept-mixed-label-types
+  (let [situation (setup/simple-component-with-labeled-copy)
+        error (try (tm/resolve-shape situation :missing)
+                   (catch #?(:clj Exception :cljs js/Error) error error))]
+    (t/is (= ::tm/unbound-shape-name (:type (ex-data error))))
+    (t/is (some #{:copy-child} (:present (ex-data error))))))
 
 (t/deftest library-update-main-routes-both-files-and-undoes-the-cascade
   (let [initial (setup/cross-file-component-with-copy setup/labeled-fill)

@@ -66,9 +66,10 @@
                      (cthtx/set-text :copy-child [[["Price: " (assoc in-test-font :font-variant-id "400")]
                                                    ["$10" (assoc in-test-font :weight 700 :font-variant-id "700")]]]))))
   (t/is (= [["Price: " "400"] ["$10" "700"]] (run-variants :copy-child)))
-  ;; the main makes all of it bold: the weight comes from the main, with a
-  ;; variant of the main's family ("bold")
+  ;; the main makes all of it bold: "$10" keeps its family's bold, and the
+  ;; rest takes the main's weight with a variant of the main's family
+  ;; ("bold"), which the frontend turns into the family's closest
   (t/is (= :settled (await (ftm/await-step [(dwsh/update-shapes #{(cthi/id :main-child)}
                                                                 #(assoc % :content (cthtx/content [[["Price: " {:weight 700}]
                                                                                                     ["$10" {:weight 700}]]])))]))))
-  (t/is (= [["Price: $10" "700"]] (run-variants :copy-child))))
+  (t/is (= [["Price: " "700"] ["$10" "700"]] (run-variants :copy-child))))

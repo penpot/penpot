@@ -43,3 +43,36 @@ For component touched semantics and sync groups, read `mem:common/component-data
 ## Inspection
 
 To inspect what a UI action emitted, use `mem:frontend/cljs-repl` with the snippets in `mem:common/component-debugging-recipes` rather than adding temporary source instrumentation.
+
+- Structural add/remove and change-parent inverses restore the copy parent's
+  `:remote-synced` as well as `:touched`. Removing or adding a child clears
+  the former even when touched groups do not change; restoring only the
+  groups loses prior state on undo (F157).
+
+- Undo of bulk removals moves restored siblings in original sibling order.
+  Component sync records each removal's current index from builder objects;
+  indexes in the original container become stale after earlier removals.
+  When the builder lacks a main's container (inverse sync), use that main
+  container's original index. Both rules preserve order after several
+  siblings disappear (F158).
+
+- A move inverse can restore component nesting that existed before the
+  move, even when the normal component-loop check would reject creating
+  it now (F177). `change-parent` records `:restore-component-nesting` on
+  the inverse only when the original position already repeats a component.
+  The change applier still rejects object-tree cycles and copy-structure
+  edits. Normal forward moves keep the component-loop guard.
+
+Normal duplication checks the component nesting guard too (F181). A finite
+repeated component tree can use a swapped child to cut recursion; adding
+another child in its main can open an expanding branch. cld/allow-duplicate?
+combines copy-structure and nesting guards for normal frontend/pure nodes.
+The duplicate builder checks the actual destination after ALT placement;
+a duplicate at the page root remains allowed. Undo still restores existing
+nesting through its explicit inverse flag, not through a forward bypass.
+
+Component restoration reports its component id from components-changed
+(F183). Its main does not exist in the old page objects, so add/mod-object
+detection cannot find it. Restore can rename a variant when its container
+has gone; the restored component and its dependents must sync in that same
+undo group.

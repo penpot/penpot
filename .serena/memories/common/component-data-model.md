@@ -30,7 +30,7 @@ Masters are not normally touched through `set-shape-attr`, but touched flags can
 
 - A copy sub-head the user SWAPPED to another component keeps `:shape-ref` on the near-main child it replaces (its *position*); `:component-id`/`:component-file` name the component its *content* comes from; the touched group `:swap-group` marks the swap. Its children refer into its own component's main.
 - So for a swapped head the position shape (`find-ref-shape`, X in the near main) and the content shape (its component's main root) differ. `ctf/find-ref-shape` gives position (parent heads are tried outermost first); code that needs the content of a swapped head goes through the content helper, never through `get-ref-shape` with the head's own component.
-- A copy sub-head whose component differs from its near main's component must have `:swap-group`; one that matches must not.
+- A copy sub-head whose component differs from its near main's component must have `:swap-group`. An authored swap keeps this group if a later main edit chooses the same component: equal does not mean untouched. Only an explicit swap back clears it.
 - A head takes a position only through `ctf/take-position` (swap in a copy, keep-touched switch, update-main into a copy, the `:ref-not-in-near-main` repair): it refers to the position, is swapped iff its component differs, and otherwise its descendants are remapped to the position's descendants. Setting `:shape-ref`/`:swap-group` by hand leaves the children referring to the wrong main, which validation does not catch and the next sync turns into delete + re-add.
 - Copy children are paired to main children by `shape-ref` (`is-main-of?`, seek, not index), swapped or not. `find-near-match` (positional) is only a validator/repair heuristic; validity requires membership of the ref among the near-main parent's children, not index equality (`mem:common/file-change-validation-migration-subtleties`).
 - Copy child ORDER converges to the main's via the async sync (`moved` branch of `compare-children`); local code must never reorder copy children directly (guards in `:mov-objects`/`:reorder-children`).
@@ -39,6 +39,16 @@ Masters are not normally touched through `set-shape-attr`, but touched flags can
 ## Cloning paths
 
 `make-component-instance` in `app.common.types.container` produces a clean component copy through `update-new-shape`, dissociating attrs such as `:touched`, `:remote-synced`, `:variant-id`, and `:variant-name` on cloned shapes.
+
+With `:main-instance? true` (library absorption), nested copies keep their
+`:touched` and `:remote-synced`; they remain copies inside the new main.
+
+`:content-scale` is an optional positive shape number (absent means 1),
+accumulated by scale-content transforms on both renderers. It belongs to
+`:geometry-group`, survives clone/serialization, and leaves the data when
+the accumulated scale returns to 1. Sync derives styles from the ratio of
+the copy's scale to its main's, separately from constraint resizing.
+Old files default to 1; historical scale gestures cannot be reconstructed.
 
 `duplicate-component` in `app.common.logic.duplicate` creates a new component master by cloning existing component shapes, setting component metadata, and applying a position delta. It does not have the same clean-copy semantics as `make-component-instance`, so inherited attrs on the source can matter.
 
@@ -51,3 +61,35 @@ A variant container is a frame with `:is-variant-container true`. Its children a
 Predicates are broad: `ctk/is-variant?` checks `:variant-id` and applies to both variant master shapes and component rows; `ctk/is-variant-container?` checks the container shape flag.
 
 Moving/dropping a shape into a variant container through the move-to-frame path can auto-convert it into a variant via `generate-make-shapes-variant`, which may duplicate the underlying component. Treat drag/drop into variant containers as a component/variant operation, not a plain reparent.
+
+- `ctk/remove-swap-group` removes `:touched` when it removes the final group.
+  New main clones must use the same empty-state representation as
+  `process-operation :set-touched`; otherwise a later move+undo changes
+  `:touched #{}` to a missing field and cannot restore the exact state (F156).
+
+Content ref chains (get-ref-chain-until-target-ref, including touched walks)
+take find-content-ref-shape at every link. A swapped intermediate head
+follows its own main; collecting its replaced position's content overrides
+creates phantom groups in copies of that swap (F165). Position advancement
+still uses advance-shape-ref and find-ref-shape.
+
+A swapped head pushed into a main can become a plain nested copy of its own
+component. If the old position supplied rotation or flips that differ from
+that component's expected parent placement, the new nested copy needs a
+geometry-group override. Otherwise a later sync discards the orientation
+that update-main just pushed (F168). The source copy clears its overrides.
+Compare against the parent's pushed frame: the inverse sync has already
+written its new rotation, while the original container still has the old
+one. Using that old frame creates phantom geometry overrides (F172).
+
+Pushing a swapped subtree into a nested copy can remap it to an ordinary
+position with the same component. Content differences against that new
+reference become authored overrides on the promoted head and descendants;
+otherwise a later full sync discards the values update-main just pushed
+(F174). The source copy clears its overrides and follows the new subtree.
+
+When sync turns a parent, its subtree moves with that turn before the child
+walk continues (F179). This includes ordinary and swapped children with
+authored geometry. Normalize parent axis directions for the turn: resize
+already runs through dimensions and constraints. Refresh the walk from
+current builder objects so later direct syncs do not turn stale records.
