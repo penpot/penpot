@@ -756,10 +756,15 @@
                     [attr value])))
           (select-keys style (or compare attrs)))))
 
-(def ^:private typography-units
+(def typography-units
   "The units a typography sets."
   #{:text-content-family :text-content-weight :text-content-size
     :text-content-line-height :text-content-spacing :text-content-case})
+
+(defn typography-owner?
+  "Whether `content` applies a typography, which owns every unit it sets."
+  [content]
+  (some #(some? (:typography-ref-id %)) (tree-seq map? :children content)))
 
 (defn text-overrides
   "The text override groups in the touched groups `touched`. Files older

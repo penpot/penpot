@@ -320,10 +320,15 @@
                                   (keep #(ctk/resolve-sync-group (:type previous-shape) %))
                                   updated-attrs)
         new-content (some #(when (= (:attr %) :content) (:val %)) roperations)
+        text-groups (when (and (cfh/text-shape? current-shape) (some? new-content))
+                      (txt/override-groups (:content current-shape) new-content))
         new-touched (set/union (or (:touched current-shape) #{})
                                updated-sync-groups
-                               (when (and (cfh/text-shape? current-shape) (some? new-content))
-                                 (txt/override-groups (:content current-shape) new-content)))
+                               text-groups
+                               ;; a carried typography owns every unit it sets, equal ones too
+                               (when (and (contains? text-groups :text-content-typography)
+                                          (txt/typography-owner? new-content))
+                                 txt/typography-units))
         roperations (into [{:type :set-touched :touched new-touched}] roperations)
         uoperations (into (list {:type :set-touched :touched (:touched current-shape)}) uoperations)]
     (cond-> changes

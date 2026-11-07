@@ -663,19 +663,27 @@
                                                                    (not (contains? text-differences unit)))
                                                           unit)))
                                                 text-groups)
+                       typography-units #{:family :weight :size :line-height :spacing :case}
+                       old-reference? (some #(or (:typography-ref-id %) (:typography-ref-file %))
+                                            (tree-seq map? :children (:content old)))
                        ;; a typography the copy applied carries only with all its styles
-                       mixed-typography? (and (some #(or (:typography-ref-id %) (:typography-ref-file %))
-                                                    (tree-seq map? :children (:content old)))
+                       mixed-typography? (and old-reference?
                                               (some #(not= (contains? carried-text-units :typography)
                                                            (contains? carried-text-units %))
-                                                    [:family :weight :size :line-height :spacing :case]))]
+                                                    typography-units))
+                       ;; and then owns all of them, equal ones too
+                       owned-typography? (and old-reference? (not mixed-typography?)
+                                              (contains? carried-text-units :typography)
+                                              (not (same-value? main :text-content-typography
+                                                                {:content (:content old)})))]
                    (reduce-kv
                     (fn [result group _]
                       (if-let [unit (get text-groups group)]
                         (cond-> result
                           (and (not (and (= unit :typography) mixed-typography?))
                                (not (contains? text-differences unit))
-                               (not (same-value? main group {:content (:content old)})))
+                               (or (and owned-typography? (contains? typography-units unit))
+                                   (not (same-value? main group {:content (:content old)}))))
                           (-> (assoc-in [(:id shape) group] {:content (:content old)})
                               (assoc-in [(:id shape) :content-group] {})))
                         (let [attrs (get attributes group)

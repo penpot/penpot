@@ -106,3 +106,27 @@
         new [[["Hello world" {:size 24}]]]]
     (t/is (= [[["Hello" {:weight 700 :size 24}] [" world" {:size 24}]]]
              (switch-text old [[["Hello" {:weight 700}] [" world"]]] new)))))
+
+(t/deftest copy-that-applies-a-typography-keeps-it-and-all-its-styles-across-a-switch
+  ;; the typography's family is the variants' own, so only applying it makes
+  ;; the family an override
+  (let [heading (thtx/apply-typography small :heading {:size 24 :weight 700})
+        file    (-> (thf/sample-file :file1)
+                    (ths/add-sample-typography :heading)
+                    (thv/add-variant-with-text :v01 :c01 :m01 :c02 :m02 :t01 :t02 "" ""
+                                               :text1-params {:content (thtx/content small)}
+                                               :text2-params {:content (thtx/content small)})
+                    (thc/instantiate-component :c01 :copy :children-labels [:copy-t])
+                    (thtx/set-text :copy-t heading)
+                    (ths/update-shape :copy-t :touched
+                                      #{:content-group :text-content-typography :text-content-family
+                                        :text-content-weight :text-content-size :text-content-line-height
+                                        :text-content-spacing :text-content-case})
+                    (tho/swap-component-in-shape :copy :c02 {:new-shape-label :copy-2
+                                                             :keep-touched? true}))
+        copy-t  (ths/get-shape-by-id file (first (:shapes (ths/get-shape file :copy-2))))]
+    (t/is (= (thtx/normalize heading) (thtx/view (:content copy-t))))
+    (t/is (= #{:content-group :text-content-typography :text-content-family
+               :text-content-weight :text-content-size :text-content-line-height
+               :text-content-spacing :text-content-case}
+             (:touched copy-t)))))
