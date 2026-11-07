@@ -1708,6 +1708,15 @@
                              [:text 26 3 0 0] [:add-variant 2] [:switch 0] [:variant-property 0 0 0 0]
                              [:switch 20]]}))))
 
+(t/deftest adding-a-variant-to-a-set-of-many-properties-takes-a-new-last-value
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:variant-property 0 0 0 0] [:switch 0] [:variant-property 0 0 0 0] [:switch 0]
+                             [:variant-property 0 0 0 0] [:variant-property 0 0 0 0] [:switch 0]
+                             [:variant-property 0 0 0 0] [:switch 0] [:variant-property 0 0 0 0] [:switch 0]
+                             [:add-variant 0] [:switch 0] [:add-variant 0] [:switch 0]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]

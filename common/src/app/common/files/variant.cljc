@@ -66,6 +66,19 @@
                              :value (->> v (map :value) distinct)}
                    mdata))))))
 
+(defn new-property-value
+  "A \"Value n\" no component of the variant `variant-id` has at the
+  property position `pos`, n counting up from one more than the values
+  they have there."
+  [data objects variant-id pos]
+  (let [values (->> (find-variant-components data objects variant-id)
+                    (keep #(dm/get-in % [:variant-properties pos :value]))
+                    distinct)]
+    (->> (iterate inc (inc (count values)))
+         (map #(str ctv/value-prefix %))
+         (remove (set values))
+         first)))
+
 (defn get-variant-mains
   [component data]
   (assert (ctv/valid-variant-component? component) "expected valid component variant")

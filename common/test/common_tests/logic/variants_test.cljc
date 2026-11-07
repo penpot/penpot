@@ -517,6 +517,52 @@
     (t/is (= "Value 4" (get-in file' [:data :components new-id :variant-properties 0 :value])))
     (t/is (apply distinct? values))))
 
+(t/deftest test-add-new-variant-counts-the-values-of-the-last-of-many-properties
+  (let [;; ==== Setup
+        props   (fn [size last-value]
+                  (into [{:name "Size" :value size} {:name "State" :value "Idle"} {:name "Theme" :value "Light"}]
+                        (concat (map #(hash-map :name (str "Property " %) :value "") (range 4 9))
+                                [{:name "Property 9" :value last-value}])))
+        file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                    (thc/update-component :c01 {:variant-properties (props "Small" "Value 2")})
+                    (ths/update-shape :m01 :variant-name "Small, Idle, Light, Value 2")
+                    (thc/update-component :c02 {:variant-properties (props "Large" "Value 1")})
+                    (ths/update-shape :m02 :variant-name "Large, Idle, Light, Value 1"))
+        page    (thf/current-page file)
+        new-id  (uuid/next)
+
+        ;; ==== Action
+        changes (-> (pcb/empty-changes nil (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clv/generate-add-new-variant (ths/get-shape file :m01) (thi/id :v01) new-id (uuid/next) 8))
+        file'   (thf/apply-changes file changes)]
+
+    ;; ==== Check
+    ;; nine property names group into a map whose last entry is not the last property
+    (t/is (= "Value 3" (get-in file' [:data :components new-id :variant-properties 8 :value])))))
+
+(t/deftest test-duplicate-variant-main-takes-a-value-no-member-has
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                    (thc/update-component :c02 {:variant-properties [{:name "Property 1" :value "Value 3"}]})
+                    (ths/update-shape :m02 :variant-name "Value 3"))
+
+        ;; ==== Action
+        file'   (tho/duplicate-shape file :m01)
+
+        ;; ==== Get
+        values  (->> (vals (get-in file' [:data :components]))
+                     (remove :deleted)
+                     (map #(-> % :variant-properties first :value)))]
+
+    ;; ==== Check
+    ;; two values make the next one "Value 3", which a member already has
+    (t/is (= 3 (count values)))
+    (t/is (apply distinct? values))))
+
 (t/deftest test-delete-variant
   ;; When a variant container becomes empty, it id automatically deleted
   (let [;; ==== Setup

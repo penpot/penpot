@@ -219,12 +219,8 @@
                                                         :page-id page-id
                                                         :new-component-file new-component-file})
         value             (when into-new-variant?
-                            (str ctv/value-prefix
-                                 (-> (cfv/extract-properties-values (:data library) objects (:id parent))
-                                     last
-                                     :value
-                                     count
-                                     inc)))]
+                            (cfv/new-property-value (:data library) objects (:id parent)
+                                                    (-> component :variant-properties count dec)))]
 
     [shape
      (cond-> changes
