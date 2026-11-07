@@ -68,12 +68,7 @@
   (let [data                (pcb/get-library-data changes)
         objects             (pcb/get-objects changes)
         component-id        (:component-id shape)
-        values              (-> (cfv/extract-properties-values data objects variant-id) last :value)
-        ;; the first "Value n" from the number of values up that no member has
-        value               (->> (iterate inc (inc (count values)))
-                                 (map #(str ctv/value-prefix %))
-                                 (remove (set values))
-                                 first)
+        value               (cfv/new-property-value data objects variant-id prop-num)
 
         [new-shape changes] (-> changes
                                 (cld/generate-duplicate-component
