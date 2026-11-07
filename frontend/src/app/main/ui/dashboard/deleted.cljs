@@ -21,9 +21,12 @@
    [app.main.ui.dashboard.layout-toggle :as lt :refer [layout-toggle*]]
    [app.main.ui.dashboard.subscription :refer [get-subscription-type]]
    [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -32,9 +35,6 @@
 
 (def ^:private ref:deleted-files
   (l/derived :deleted-files st/state))
-
-(def ^:private menu-icon
-  (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
 
 (defn- on-restore-project
   [project]
@@ -63,7 +63,10 @@
   [:header {:class (stl/css :dashboard-header)
             :data-testid "dashboard-header"}
    [:div#dashboard-deleted-title {:class (stl/css :dashboard-title)}
-    [:h1 (tr "dashboard.projects-title")]]
+    [:> heading* {:level 1
+                  :typography t/title-large
+                  :class (stl/css :dashboard-title-text)}
+     (tr "dashboard.projects-title")]]
    [:div {:class (stl/css :dashboard-header-actions)}
     [:> dashboard-mcp-menu*]
     [:> layout-toggle* {:layout layout :on-change on-change}]]])
@@ -158,13 +161,14 @@
          [:div {:class (stl/css :info-wrapper)}
           [:div {:class (stl/css-case :project-actions true)}
 
-           [:button {:class (stl/css :options-btn)
-                     :on-click on-menu-click
-                     :title (tr "dashboard.options")
-                     :aria-label  (tr "dashboard.options")
-                     :data-testid "project-options"
-                     :on-key-down handle-menu-click}
-            menu-icon]]
+           [:> icon-button* {:variant "ghost"
+                             :class (stl/css :options-btn)
+                             :icon i/menu
+                             :aria-label (tr "dashboard.options")
+                             :aria-pressed (boolean (:menu-open @local))
+                             :data-testid "project-options"
+                             :on-click on-menu-click
+                             :on-key-down handle-menu-click}]]
 
           (when (:menu-open @local)
             [:> project-context-menu*

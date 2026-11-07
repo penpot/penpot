@@ -16,6 +16,7 @@
    [app.main.data.common :as dc]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
+   [app.main.data.persistence :as dps]
    [app.main.data.plugins :as dpl]
    [app.main.data.websocket :as dws]
    [app.main.data.workspace :as-alias dw]
@@ -45,12 +46,29 @@
 (declare handle-pointer-send)
 (declare handle-export-update)
 
+(defn- resubscribed?
+  "True when `event` is a new subscription to `file-id`, which a reload of
+  the open file starts."
+  [file-id event]
+  (and (ptk/type? ::initialize event)
+       (= file-id (:file-id (deref event)))))
+
 (defn initialize
+  "Subscribes to the notifications of `file-id` and its team until the file
+  is left or a new subscription starts. A new subscription to the same file
+  replaces this one, so a reload never doubles the handled messages."
   [team-id file-id]
   (ptk/reify ::initialize
+    IDeref
+    (-deref [_] {:file-id file-id})
+
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stopper     (rx/filter (ptk/type? ::finalize) stream)
+      (let [stopped-by  (volatile! nil)
+            stopper     (->> stream
+                             (rx/filter #(or (ptk/type? ::finalize %)
+                                             (ptk/type? ::initialize %)))
+                             (rx/tap #(vreset! stopped-by %)))
             profile-id (:profile-id state)
             organization-id (dm/get-in state [:teams team-id :organization :id])
 
@@ -104,7 +122,13 @@
 
                             (rx/take-until stopper))]
 
-        (rx/concat stream (rx/of (dws/send endmsg)))))))
+        (rx/concat
+         stream
+         ;; The server keeps one file subscription per connection: an
+         ;; unsubscribe sent after the new subscribe would end it
+         (rx/defer #(if (resubscribed? file-id @stopped-by)
+                      (rx/empty)
+                      (rx/of (dws/send endmsg)))))))))
 
 (defn- handle-change-team-role
   [{:keys [role] :as msg}]
@@ -245,7 +269,8 @@
    [:session-id ::sm/uuid]
    [:revn :int]
    [:vern :int]
-   [:changes cpc/schema:changes]])
+   [:changes cpc/schema:changes]
+   [:repaired {:optional true} :boolean]])
 
 (def ^:private check-file-change-params!
   (sm/check-fn schema:handle-file-change))
@@ -267,13 +292,17 @@
       ;; and update the persistence internal state with the updated
       ;; file-revn
 
-      (rx/of (dch/commit {:file-id file-id
-                          :file-revn revn
-                          :file-vern vern
-                          :save-undo? false
-                          :source :remote
-                          :redo-changes (vec changes)
-                          :undo-changes []})))))
+      (rx/concat
+       (rx/of (dch/commit {:file-id file-id
+                           :file-revn revn
+                           :file-vern vern
+                           :save-undo? false
+                           :source :remote
+                           :redo-changes (vec changes)
+                           :undo-changes []}))
+       (if (:repaired msg)
+         (rx/of (dps/notify-repaired))
+         (rx/empty))))))
 
 (defn handle-file-deleted
   [{:keys [file-id] :as msg}]
@@ -292,13 +321,27 @@
   [:map {:title "handle-file-restored"}
    [:type :keyword]
    [:file-id ::sm/uuid]
-   [:vern :int]])
+   [:vern :int]
+   [:profile-id {:optional true} ::sm/uuid]
+   [:label {:optional true} :string]
+   [:created-at {:optional true} ::ct/inst]])
 
 (def ^:private check-file-restored-params
   (sm/check-fn schema:handle-file-restored))
 
+(defn- restorer-fullname
+  "Name of the user who restored the file, when known: by `profile-id`, or
+  else by the presence of the session that restored it."
+  [state profile-id session-id]
+  (when-let [profile-id (or profile-id
+                            (dm/get-in state [:workspace-presence session-id :profile-id]))]
+    (dm/get-in state [:profiles profile-id :fullname])))
+
 (defn handle-file-restored
-  [{:keys [file-id vern] :as msg}]
+  "Reloads the file a peer restored to an earlier version and tells the
+  user who restored which version, and whether their edits not saved yet
+  were dropped with the replaced version."
+  [{:keys [file-id vern session-id profile-id label created-at] :as msg}]
 
   (assert (check-file-restored-params msg)
           "expected valid parameters")
@@ -310,9 +353,16 @@
             file            (dsh/lookup-file state curr-file-id)
             curr-vern       (:vern file)]
 
-        (when (and (= file-id curr-file-id)
-                   (not= vern curr-vern))
-          (rx/of (ptk/event ::dw/reload-current-file)))))))
+        (if (and (= file-id curr-file-id)
+                 (not= vern curr-vern))
+          (rx/of (ptk/event ::dw/reload-current-file)
+                 (modal/show :file-restored
+                             {:fullname   (restorer-fullname state profile-id session-id)
+                              :label      label
+                              :created-at created-at
+                              ;; Made on the replaced version, so the reload drops them
+                              :unsaved    (boolean (seq (dps/pending-file-changes state file)))}))
+          (rx/empty))))))
 
 (def ^:private schema:handle-library-change
   [:map {:title "handle-library-change"}

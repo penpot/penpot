@@ -122,6 +122,13 @@ This will fetch the latest images. When you do <code class="language-bash">docke
     It is strongly recommended to update the Penpot version in small increments, rather than updating between two distant versions.
 </p>
 
+#### Upgrade to 2.19
+
+The Admin Console is now enabled by default, so the `enable-admin-console` flag is no longer
+needed and can be removed from `PENPOT_FLAGS`. The `penpot-admin-console` service and the
+`PENPOT_ADMIN_CONSOLE_URI` variable are now required: if you haven't set them up yet, follow
+steps 2–4 of the [2.18 upgrade](#upgrade-to-2.18).
+
 #### Upgrade to 2.18
 
 This version deploys a new service, **`penpot-admin-console`**, in the official `docker-compose.yaml`
@@ -132,10 +139,9 @@ example. If you maintain your own compose file, you need to replicate the follow
 **NOTE:** Enabling the Admin Console is not required in this version, but it will be in a future release.
 We recommend setting it up now to avoid a more complex upgrade later.
 
-This step (the `enable-admin-console` flag) only applies to this version 2.18. In a future release, the
-Admin Console will be enabled by default and this flag will be removed. If you're upgrading directly to a
-version where the flag has already been removed, skip step 1 and go straight to steps 2–4, which remain
-required.
+This step (the `enable-admin-console` flag) only applies to this version 2.18. Since 2.19 the Admin
+Console is enabled by default: if you're upgrading directly to 2.19 or later, skip step 1 and go straight
+to steps 2–4, which remain required.
 
 Wherever you set `PENPOT_FLAGS` (frontend and backend):
 
@@ -325,8 +331,7 @@ First, set the complete public URL in `docker-compose.yaml`:
 PENPOT_PUBLIC_URI: https://mycompany.com/penpot/
 ```
 
-Then route the subpath to the Penpot frontend and remove the prefix before
-forwarding the request:
+Then route the subpath to the Penpot frontend, forwarding the path unchanged:
 
 ```nginx
 server {
@@ -344,8 +349,6 @@ server {
   }
 
   location /penpot/ {
-    rewrite ^/penpot/(.*)$ /$1 break;
-
     proxy_set_header Host $http_host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Scheme $scheme;
@@ -359,9 +362,10 @@ server {
 }
 ```
 
-This single location also covers the API and WebSocket endpoints because NGINX
-forwards them after removing `/penpot`. Keep the trailing slash in
-`PENPOT_PUBLIC_URI`.
+This single location covers every Penpot endpoint, WebSockets included. Keep
+the trailing slash in `PENPOT_PUBLIC_URI`, and do not add a path to `proxy_pass`
+(such as `http://localhost:9001/`): NGINX would then replace the `/penpot/`
+prefix instead of forwarding it.
 
 ### Example with CADDY SERVER
 

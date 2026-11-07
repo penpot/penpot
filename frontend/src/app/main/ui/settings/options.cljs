@@ -49,7 +49,7 @@
                       (update :lang #(or % ""))
                       (update :theme #(if (= % "default")
                                         "dark"
-                                        (or % "dark")))))
+                                        (or % theme/default)))))
 
         form    (fm/use-form :schema schema:options-form
                              :initial initial)]
@@ -58,7 +58,10 @@
                  :on-submit on-submit
                  :form form}
 
-     [:h3 (tr "labels.language")]
+     [:> heading* {:level 3
+                   :typography t/headline-small
+                   :class (stl/css :section-title)}
+      (tr "labels.language")]
 
      [:div {:class (stl/css :fields-row)}
       [:& fm/select {:options (into [{:label "Auto (browser)" :value ""}]
@@ -68,7 +71,10 @@
                      :name :lang
                      :data-testid "setting-lang"}]]
 
-     [:h3 (tr "dashboard.theme-change")]
+     [:> heading* {:level 3
+                   :typography t/headline-small
+                   :class (stl/css :section-title)}
+      (tr "dashboard.theme-change")]
      [:div {:class (stl/css :fields-row)}
       [:& fm/select {:label (tr "dashboard.select-ui-theme")
                      :name :theme
@@ -128,7 +134,7 @@
       [:div {:class (stl/css :form-container) :data-testid "settings-form"}
        [:> heading* {:level 2
                      :typography t/title-large
-                     :class (stl/css :color-primary)
+                     :class (stl/css :page-title)
                      :id "options-section-title"}
         (tr "labels.settings")]
        [:> options-form*]]

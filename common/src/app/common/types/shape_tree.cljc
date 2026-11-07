@@ -368,15 +368,21 @@
 
 (defn start-page-index
   [objects]
-  (with-meta objects {::index-frames (get-frames (with-meta objects nil))}))
+  (with-meta objects {::index-frames (into [] (get-frames objects {:ignore-index? true}))}))
 
 (defn update-page-index
+  "Lazy, so pages that are not open are not decoded. The index reads
+  from the returned objects, so decoded shapes are shared with them."
   [objects]
-  (with-meta objects {::index-frames (get-frames (with-meta objects nil))}))
+  (let [self    (volatile! nil)
+        objects (with-meta objects
+                  {::index-frames (lazy-seq (get-frames @self {:ignore-index? true}))})]
+    (vreset! self objects)
+    objects))
 
 (defn update-object-indices
   [file page-id]
-  (update-in file [:pages-index page-id :objects] update-page-index))
+  (d/update-in-when file [:pages-index page-id :objects] update-page-index))
 
 (defn rotated-frame?
   [frame]

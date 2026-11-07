@@ -21,6 +21,7 @@
    [app.http :as-alias http]
    [app.http.access-token :as-alias actoken]
    [app.jobs :as jobs]
+   [app.loggers.audit.consumer-task :as consumer]
    [app.loggers.audit.tasks :as-alias tasks]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
@@ -46,6 +47,46 @@
     "user-info-failed"
     "incomplete-user-info"
     "unexpected-error"})
+
+(def ^:private subscription-creation-events
+  #{"create-subscription" "create-trial-subscription"})
+
+(def ^:private subscription-creation-telemetry-props
+  #{:type
+    :deployment
+    :quantity
+    :subscription-mode})
+
+(def ^:private subscription-update-telemetry-props
+  #{:type
+    :deployment
+    :previous-status
+    :status
+    :previous-cancel-at-period-end
+    :cancel-at-period-end
+    :previous-cancel-at
+    :cancel-at
+    :changed-fields})
+
+(def ^:private subscription-summary-telemetry-props
+  #{:type
+    :deployment
+    :instance-id
+    :snapshot-date
+    :trialing-count
+    :active-count
+    :active-cancel-scheduled-count
+    :past-due-count
+    :canceled-count
+    :unpaid-count
+    :incomplete-count
+    :incomplete-expired-count
+    :paused-count
+    :other-count
+    :total-count
+    :sync-succeeded
+    :sync-failed
+    :snapshot-complete})
 
 (def ^:private safe-backend-context-keys
   #{:version
@@ -241,8 +282,13 @@
                    (update :props db/tjson)
                    (update :context db/tjson)
                    (update :ip-addr db/inet))
-        params (select-keys params event-keys)]
-    (db/insert! cfg :audit-log params)))
+        params (select-keys params event-keys)
+        row    (db/insert! cfg :audit-log params)]
+    ;; The consumer queue follows the row in the same transaction: one
+    ;; pending per enabled consumer. A rollback takes both on its way
+    ;; out, so a row never outlives its queue.
+    (consumer/queue-pendings cfg [(:id row)])
+    row))
 
 (def ^:private xf:filter-telemetry-props
   "Transducer that keeps only map entries whose values are UUIDs,
@@ -342,6 +388,24 @@
 (defn filter-telemetry-props
   [{:keys [source name props type] :as params}]
   (cond
+    (and (= type "action")
+         (contains? subscription-creation-events name)
+         (or (= source "backend")
+             (= source "frontend")))
+    (let [props' (into {} xf:filter-telemetry-props props)
+          props' (merge props' (select-keys props subscription-creation-telemetry-props))]
+      (assoc params :props props'))
+
+    (and (= source "backend")
+         (= type "action")
+         (= name "update-subscription"))
+    (assoc params :props (select-keys props subscription-update-telemetry-props))
+
+    (and (= source "backend")
+         (= type "action")
+         (= name "subscription-summary"))
+    (assoc params :props (select-keys props subscription-summary-telemetry-props))
+
     (and (= source "backend")
          (= name "organization-sso-auth-failed"))
     (let [props' (into {} xf:filter-telemetry-props props)
@@ -582,6 +646,8 @@
   logic."
   [cfg event]
   (when (contains? cf/flags :audit-log)
+    ;; Transactional (not a bare connection): the row and its
+    ;; pendings commit or vanish together (see append-audit-entry).
     (let [tnow  (ct/now)
           event (-> event
                     (assoc :created-at tnow)
@@ -592,4 +658,4 @@
                     (update :source d/nilv "backend")
                     (select-keys event-keys)
                     (check-event))]
-      (db/run! cfg append-audit-entry event))))
+      (db/tx-run! cfg append-audit-entry event))))

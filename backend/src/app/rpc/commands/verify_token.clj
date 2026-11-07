@@ -302,21 +302,26 @@
               ;; for the same name, and tied the record to the browser finishing
               ;; the flow. Everything the copy carried is computed above.
               (when organization-id-on-add
-                (audit/submit cfg (-> (audit/event-from-rpc-params params)
-                                      (assoc :name "accept-organization-invitation")
-                                      (assoc :props
-                                             (-> props
-                                                 (assoc :organization-id organization-id-on-add)
-                                                 (assoc :invited-by (:created-by invitation))
-                                                 (assoc :profile-id (:id profile))
-                                                 (assoc :profile-email (:email profile))
-                                                 (assoc :organization-member-add-source
-                                                        organization-add-source)
-                                                 (assoc :belongs-to-team-on-add
-                                                        (boolean team-id))
-                                                 (assoc :organization-member-count-before
-                                                        organization-member-count-before)
-                                                 (audit/clean-props))))))
+                (let [org-props (-> props
+                                    (assoc :organization-id organization-id-on-add
+                                           :invited-by (:created-by invitation)
+                                           :profile-id (:id profile)
+                                           :profile-email (:email profile)
+                                           :organization-member-add-source
+                                           organization-add-source
+                                           :belongs-to-team-on-add
+                                           (boolean team-id)
+                                           :organization-member-count-before
+                                           organization-member-count-before)
+                                    (audit/clean-props))]
+                  (audit/submit cfg (-> (audit/event-from-rpc-params params)
+                                        (assoc :name "accept-organization-invitation"
+                                               :props org-props)))
+                  (when-let [created-by (:created-by invitation)]
+                    (audit/submit cfg (-> (audit/event-from-rpc-params params)
+                                          (assoc :profile-id created-by
+                                                 :name "accept-organization-invitation-from"
+                                                 :props org-props))))))
 
               (cond-> (assoc claims
                              :state :created

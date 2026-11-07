@@ -7,6 +7,7 @@
 (ns backend-tests.http-middleware-test
   (:require
    [app.common.exceptions :as ex]
+   [app.common.json :as json]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -16,9 +17,11 @@
    [app.http.errors :as http-errors]
    [app.http.middleware :as mw]
    [app.http.session :as session]
-   [app.main :as-alias main]
+   [app.main :as main]
+   [app.metrics :as mtx]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.access-token]
+   [app.storage.schema :as stsch]
    [app.tokens :as tokens]
    [backend-tests.helpers :as th]
    [clojure.string :as str]
@@ -28,9 +31,12 @@
    [yetti.request :as yreq]
    [yetti.response :as yres])
   (:import
+   io.prometheus.client.CollectorRegistry
    io.undertow.server.RequestTooBigException))
 
-(t/use-fixtures :once th/state-init)
+(t/use-fixtures :once (t/compose-fixtures
+                       (partial th/init-config [:enable-access-tokens])
+                       th/init-system))
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest auth-middleware-1
@@ -102,7 +108,8 @@
     (let [response (handler nil)]
       (t/is (nil? response)))
 
-    (let [response (handler {::http/auth-data {:type :token :token "foobar" :claims {:tid (:id token)}}})]
+    (let [response (handler {::http/auth-data {:type :token :token (:token token)
+                                               :claims (tokens/verify th/*system* {:token (:token token)})}})]
       (t/is (= #{} (:app.http.access-token/perms response)))
       (t/is (= (:id profile) (:app.http.access-token/profile-id response))))))
 
@@ -110,9 +117,14 @@
   (let [profile (th/create-profile* 1)
         token   (db/tx-run! th/*system* app.rpc.commands.access-token/create-access-token
                             (:id profile) "test" nil "mcp")
-        handler (#'app.http.access-token/wrap-authz identity th/*system*)
-        request {::http/auth-data {:type :token :token "foobar" :claims {:tid (:id token)}}}
+        handler (#'app.http.access-token/wrap-authz
+                 identity (assoc th/*system* :app.http.access-token/allow-mcp true))
+        request {::http/auth-data {:type :token :token (:token token)
+                                   :claims (tokens/verify th/*system* {:token (:token token)})}}
         response (handler request)]
+    (t/is (nil? (:app.http.access-token/profile-id
+                 ((#'app.http.access-token/wrap-authz identity th/*system*) request)))
+          "MCP tokens do not authenticate routes that have not opted in")
     ;; Must set ::actoken/id from claims :tid
     (t/is (= (:id token) (:app.http.access-token/id response)))
     ;; Must set ::actoken/type from database
@@ -120,6 +132,30 @@
     ;; Existing assertions still pass
     (t/is (= #{} (:app.http.access-token/perms response)))
     (t/is (= (:id profile) (:app.http.access-token/profile-id response)))))
+
+(t/deftest access-token-authz-follows-flags
+  (let [profile  (th/create-profile* 1)
+        create   #(db/tx-run! th/*system* app.rpc.commands.access-token/create-access-token
+                              (:id profile) "test" nil %)
+        request  (fn [{:keys [token]}]
+                   {::http/auth-data {:type :token :token token
+                                      :claims (tokens/verify th/*system* {:token token})}})
+        auth     (fn [flags token]
+                   (with-redefs [cf/flags flags]
+                     (let [handler (#'app.http.access-token/wrap-authz
+                                    identity (assoc th/*system* :app.http.access-token/allow-mcp true))]
+                       (:app.http.access-token/profile-id (handler (request token))))))
+        personal (create nil)
+        mcp      (create "mcp")]
+    (t/testing "only mcp: MCP tokens authenticate, personal tokens do not"
+      (t/is (= (:id profile) (auth #{:mcp} mcp)))
+      (t/is (nil? (auth #{:mcp} personal))))
+    (t/testing "only access-tokens: both authenticate"
+      (t/is (= (:id profile) (auth #{:access-tokens} mcp)))
+      (t/is (= (:id profile) (auth #{:access-tokens} personal))))
+    (t/testing "neither flag: the middleware is not installed"
+      (with-redefs [cf/flags #{}]
+        (t/is (nil? ((:compile app.http.access-token/authz))))))))
 
 (defrecord MethodAwareDummyRequest [req-method headers]
   yreq/IRequest
@@ -515,7 +551,8 @@
   ;; handler in app.http/router-handler), this test asserts on
   ;; the ex-info thrown by wrap-parse-request directly.
   (let [handler (#'app.http.middleware/wrap-parse-request
-                 (fn [_] {::yres/status 200 ::yres/body :ok}))
+                 (fn [_] {::yres/status 200 ::yres/body :ok})
+                 (th/metrics-stub))
         ;; Body contains the bytes for: {"x": "\}"}  -- a string
         ;; value with a backslash followed by '}', which
         ;; clojure.data.json v0.5.x cannot handle.
@@ -532,13 +569,44 @@
     (t/is (= :malformed-json (-> ex ex-data :code)))
     (t/is (= "invalid JSON in request body" (-> ex ex-data :hint)))))
 
+(defn- malformed-requests-count
+  "Value of the malformed-body counter of a metrics instance."
+  [metrics]
+  (.getSampleValue ^CollectorRegistry (mtx/get-registry metrics)
+                   "penpot_http_malformed_requests_total"
+                   (make-array String 0)
+                   (make-array String 0)))
+
+(t/deftest parse-request-malformed-json-body
+  ;; The body shape seen in production: an object where the parser expects a
+  ;; key. clojure.data.json signals it with a bare java.lang.Exception, which
+  ;; the class-based classification did not recognize, so it surfaced as a 500
+  ;; :unexpected with the whole stack trace in the log. It is a client error:
+  ;; 400 :malformed-json, and it is counted.
+  (let [metrics (ig/init-key :app.metrics/metrics {:default main/default-metrics})
+        handler (#'app.http.middleware/wrap-parse-request
+                 (fn [_] {::yres/status 200 ::yres/body :ok})
+                 metrics)
+        request (th/make-dummy-request
+                 {:method  :post
+                  :headers {"content-type" "application/json"}
+                  :body-bytes (.getBytes "{\"events\":[{{\"a\":1}:\"b\"}]}" "UTF-8")})
+        ex      (try
+                  (handler request)
+                  (catch clojure.lang.ExceptionInfo e e))]
+    (t/is (instance? clojure.lang.ExceptionInfo ex))
+    (t/is (= :validation (-> ex ex-data :type)))
+    (t/is (= :malformed-json (-> ex ex-data :code)))
+    (t/is (= 1.0 (malformed-requests-count metrics)))))
+
 (t/deftest parse-request-request-too-big-exception
   ;; When RequestTooBigException is raised (e.g. the request body
   ;; exceeded the configured size limit), the middleware should
   ;; convert it to a 413 :request-body-too-large validation
   ;; error.
   (let [handler (#'app.http.middleware/wrap-parse-request
-                 (fn [_] (throw (RequestTooBigException. "too large"))))
+                 (fn [_] (throw (RequestTooBigException. "too large")))
+                 (th/metrics-stub))
         request (th/make-dummy-request
                  {:method  :post
                   :headers {"content-type" "application/json"}
@@ -556,7 +624,8 @@
   ;; was closed before the parser could read it), the middleware
   ;; should convert it to a 400 :malformed-json validation error.
   (let [handler (#'app.http.middleware/wrap-parse-request
-                 (fn [_] (throw (java.io.EOFException. "stream closed"))))
+                 (fn [_] (throw (java.io.EOFException. "stream closed")))
+                 (th/metrics-stub))
         request (th/make-dummy-request
                  {:method  :post
                   :headers {"content-type" "application/json"}
@@ -579,7 +648,8 @@
         wrapped (doto (RuntimeException. "wrapped")
                   (.initCause iae))
         handler (#'app.http.middleware/wrap-parse-request
-                 (fn [_] (throw wrapped)))
+                 (fn [_] (throw wrapped))
+                 (th/metrics-stub))
         request (th/make-dummy-request
                  {:method  :post
                   :headers {"content-type" "application/json"}
@@ -597,7 +667,8 @@
   ;; path and return a 500 with :type :server-error :code
   ;; :unexpected. This is the "true internal error" path.
   (let [handler  (#'app.http.middleware/wrap-parse-request
-                  (fn [_] (throw (RuntimeException. "boom"))))
+                  (fn [_] (throw (RuntimeException. "boom")))
+                  (th/metrics-stub))
         request  (th/make-dummy-request
                   {:method  :post
                    :headers {"content-type" "application/json"}
@@ -617,7 +688,8 @@
   ;; has a dedicated handle-exception method that returns 500
   ;; with :code :io-exception.
   (let [handler  (#'app.http.middleware/wrap-parse-request
-                  (fn [_] (throw (java.io.IOException. "network gone"))))
+                  (fn [_] (throw (java.io.IOException. "network gone")))
+                  (th/metrics-stub))
         request  (th/make-dummy-request
                   {:method  :post
                    :headers {"content-type" "application/json"}
@@ -669,3 +741,23 @@
     (t/is (= "safe user-facing hint" (:hint body)))
     (t/is (nil? (:state body)))
     (t/is (nil? (:path body)))))
+
+(t/deftest validation-error-body-with-raw-explain-is-json-serializable
+  ;; A :validation error whose ex-data carries the raw malli explain
+  ;; (storage invalid-storage-metadata) must produce a response body
+  ;; that survives JSON encoding. Before the fix the live schema
+  ;; object inside the explain broke the writer mid-stream and the
+  ;; client received a truncated body.
+  (let [cause    (try
+                   (stsch/encode-metadata {})
+                   (catch clojure.lang.ExceptionInfo cause cause))
+        response (http-errors/handle cause {})
+        body     (::yres/body response)]
+    (t/is (= 400 (::yres/status response)))
+    (t/is (= :validation (:type body)))
+    (t/is (= :invalid-storage-metadata (:code body)))
+    (t/is (nil? (:app.common.schema/explain body)))
+    (let [encoded (json/encode body :key-fn json/write-camel-key)
+          decoded (json/decode encoded :key-fn json/read-kebab-key)]
+      (t/is (str/includes? encoded "invalid-storage-metadata"))
+      (t/is (string? (:explain decoded))))))

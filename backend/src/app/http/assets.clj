@@ -100,7 +100,7 @@
         headers (cond-> {"location" (str url)
                          "x-host"   (cond-> host port (str ":" port))
                          "x-mtype"  (-> obj meta :content-type)
-                         "cache-control" (str "max-age=" (inst-ms cch-max-age))}
+                         "cache-control" (str "max-age=" (ct/seconds cch-max-age))}
                   (not public?)
                   (assoc "content-disposition" "attachment"))]
     {::yres/status  307
@@ -115,7 +115,7 @@
         bucket  (:bucket mdata)
         headers (cond-> {"x-accel-redirect" (:path purl)
                          "content-type" (:content-type mdata)
-                         "cache-control" (str "max-age=" (inst-ms cch-max-age))}
+                         "cache-control" (str "max-age=" (ct/seconds cch-max-age))}
                   (not (public-bucket? bucket))
                   (assoc "content-disposition" "attachment"))]
     {::yres/status 204

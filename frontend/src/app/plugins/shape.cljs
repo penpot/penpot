@@ -66,12 +66,11 @@
    [app.plugins.strokes :as strokes]
    [app.plugins.system-events :as se]
    [app.plugins.text :as text]
-   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens expand-token-attrs token-attr? valid-token-resolution?]]
+   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens expand-token-attrs per-side-stroke-attrs-restricted? per-side-stroke-widths-message token-attr? valid-token-resolution?]]
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
-   [beicon.v2.core :as rx]
-   [cuerdas.core :as str]))
+   [beicon.v2.core :as rx]))
 
 (declare shape-proxy)
 (declare shape-proxy?)
@@ -292,7 +291,7 @@
 
        (and (not (ctt/per-side-stroke-shape? (:type (u/proxy->shape self))))
             (some #(= :multiple (types.stroke/width-type %)) value))
-       (u/not-valid plugin-id :strokes "Per-side stroke widths require a board or rectangle")
+       (u/not-valid plugin-id :strokes per-side-stroke-widths-message)
 
        :else
        (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value) options))))))
@@ -366,6 +365,7 @@
 
    (let [data (u/locate-shape file-id page-id id)]
      (-> (obj/reify {:name "ShapeProxy"
+                     :on-set u/check-shape-writable
                      :on-error (u/handle-error plugin-id)}
            :$plugin {:enumerable false :get (fn [] plugin-id)}
            :$id {:enumerable false :get (fn [] id)}
@@ -385,11 +385,8 @@
             :get #(-> % u/proxy->shape :name)
             :set
             (fn [self value]
-              (let [id (obj/get self "$id")
-                    value  (when (string? value) (-> value str/trim cpn/clean-path))
-                    valid? (and (some? value)
-                                (not (str/ends-with? value "/"))
-                                (not (str/blank? value)))]
+              (let [id    (obj/get self "$id")
+                    value (cpn/normalize-path-name value)]
                 (cond
                   (not (r/check-permission plugin-id "content:write"))
                   (u/not-valid plugin-id :name "Plugin doesn't have 'content:write' permission")
@@ -397,7 +394,7 @@
                   (not (u/page-active? page-id))
                   (u/not-valid plugin-id :name "Cannot modify a page that is not currently active")
 
-                  (not valid?)
+                  (nil? value)
                   (u/not-valid plugin-id :name value)
 
                   :else
@@ -1045,6 +1042,7 @@
            ;; Methods
            :resize
            (fn [width height]
+             (u/check-shape-located file-id page-id id)
              (cond
                (or (not (sm/valid-safe-number? width)) (<= width 0))
                (u/not-valid plugin-id :resize width)
@@ -1085,6 +1083,7 @@
 
            :rotate
            (fn [angle center]
+             (u/check-shape-located file-id page-id id)
              (let [center (when center {:x (obj/get center "x") :y (obj/get center "y")})]
                (cond
                  (not (sm/valid-safe-number? angle))
@@ -1267,6 +1266,9 @@
                  (u/changes-component-copy-structure? objects shape child-shape)
                  (u/not-valid plugin-id :appendChild "Cannot change the structure of a component copy")
 
+                 (u/non-main-into-variant-container? shape child)
+                 (u/not-valid plugin-id :appendChild "Only main instances can be added to a variant container")
+
                  :else
                  (st/emit!
                   (dwsh/relocate-shapes #{child-id} id index)
@@ -1305,6 +1307,9 @@
 
                  (u/changes-component-copy-structure? objects shape child-shape)
                  (u/not-valid plugin-id :insertChild "Cannot change the structure of a component copy")
+
+                 (u/non-main-into-variant-container? shape child)
+                 (u/not-valid plugin-id :insertChild "Only main instances can be added to a variant container")
 
                  :else
                  (st/emit!
@@ -1467,18 +1472,22 @@
 
            :bringForward
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :up) [id])))
 
            :sendBackward
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :down) [id])))
 
            :bringToFront
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :top) [id])))
 
            :sendToBack
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :bottom) [id])))
 
            ;; COMPONENTS
@@ -1839,6 +1848,11 @@
 
                       (some #(not (token-attr? %)) kw-attrs)
                       (u/not-valid plugin-id :applyToken attrs)
+
+                      ;; The uniform `strokeWidth` alias is exempt: it expands
+                      ;; to a uniform width on every side.
+                      (per-side-stroke-attrs-restricted? file-id page-id [id] attrs)
+                      (u/not-valid plugin-id :applyToken per-side-stroke-widths-message)
 
                       :else
                       (st/emit!

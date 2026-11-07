@@ -205,17 +205,29 @@
     (buf/write-i32 dview (+ offset 36) (d/nilv z-index 0))
     (+ offset 40)))
 
+(defn- coerce-fills
+  "Binary fills, or nil when there are none."
+  [fills]
+  (when-not (or (nil? fills) (and (vector? fills) (empty? fills)))
+    (types.fills/coerce fills)))
+
+(defn- fills-byte-size
+  [fills]
+  (if (some? fills) (types.fills/get-byte-size fills) 4))
+
 (defn- write-fills-section!
   "Write fills in the same layout as `_set_shape_fills`:
   [u8 n][u8;3 pad][n × FILL-U8-SIZE]. Returns next offset."
   [dview offset fills]
-  (let [fills     (types.fills/coerce (or fills []))
-        byte-size (types.fills/get-byte-size fills)
-        ;; write-to expects a Uint32Array heap + u32 element offset
-        heap-u32  (js/Uint32Array. (.-buffer dview))
-        u32-off   (quot offset 4)]
-    (types.fills/write-to fills heap-u32 u32-off)
-    (+ offset byte-size)))
+  (if (some? fills)
+    ;; write-to expects a Uint32Array heap + u32 element offset
+    (let [heap-u32 (js/Uint32Array. (.-buffer dview)
+                                    (.-byteOffset dview)
+                                    (quot (.-byteLength dview) 4))]
+      (types.fills/write-to fills heap-u32 (quot offset 4))
+      (+ offset (types.fills/get-byte-size fills)))
+    (do (buf/write-u32 dview offset 0)
+        (+ offset 4))))
 
 (defn- write-stroke-fill!
   [dview offset stroke]
@@ -288,15 +300,16 @@
 (defn write-shape-payload!
   "Serialize one shape's structural payload into `dview` starting at `offset`
   (payload only — no length prefix). Returns the offset after the payload.
+  `fills` and `strokes` come from `prepare-record`.
 
   Options:
   - `:include-layout?` — when true, emit FLEX + LAYOUT-ITEM (workspace cold load).
   - `:include-fills-strokes?` — when true, emit FILLS + STROKES sections."
-  [dview offset shape {:keys [include-layout? include-fills-strokes?]
-                       :or {include-layout? false
-                            include-fills-strokes? false}}]
+  [dview offset shape children fills strokes
+   {:keys [include-layout? include-fills-strokes?]
+    :or {include-layout? false
+         include-fills-strokes? false}}]
   (let [shape-type (dm/get-prop shape :type)
-        children   (into [] (filter uuid?) (get shape :shapes))
         blur       (get shape :blur)
         bg-blur    (get shape :background-blur)
         shadows    (or (get shape :shadow) [])
@@ -305,7 +318,6 @@
         grow-type  (when (= shape-type :text) (get shape :grow-type))
         flex?      (and include-layout? (ctl/flex-layout? shape))
         layout-item? include-layout?
-        strokes    (when include-fills-strokes? (visible-strokes shape))
 
         mask (cond-> 0
                true (bit-or SECTION-CHILDREN)
@@ -376,7 +388,7 @@
 
         offset (cond-> offset
                  include-fills-strokes?
-                 (as-> o (write-fills-section! dview o (get shape :fills))))
+                 (as-> o (write-fills-section! dview o fills)))
 
         offset (cond-> offset
                  include-fills-strokes?
@@ -384,18 +396,14 @@
     offset))
 
 (defn- payload-byte-size
-  [shape {:keys [include-layout? include-fills-strokes?]
-          :or {include-layout? false include-fills-strokes? false}}]
-  (let [children   (into [] (filter uuid?) (get shape :shapes))
-        shadows    (or (get shape :shadow) [])
+  [shape children fills strokes {:keys [include-layout? include-fills-strokes?]
+                                 :or {include-layout? false include-fills-strokes? false}}]
+  (let [shadows    (or (get shape :shadow) [])
         shape-type (dm/get-prop shape :type)
         blur       (get shape :blur)
         bg-blur    (get shape :background-blur)
         flex?      (and include-layout? (ctl/flex-layout? shape))
-        fills-size (if include-fills-strokes?
-                     (types.fills/get-byte-size (types.fills/coerce (or (get shape :fills) [])))
-                     0)
-        strokes    (when include-fills-strokes? (visible-strokes shape))
+        fills-size (if include-fills-strokes? (fills-byte-size fills) 0)
         strokes-size (if include-fills-strokes?
                        (+ 4 (* (count strokes)
                                (+ STROKE-HEADER-U8-SIZE types.fills.impl/FILL-U8-SIZE)))
@@ -414,18 +422,35 @@
        fills-size
        strokes-size)))
 
-(defn- encode-shape-record
-  "Returns a Uint8Array: [u32 payload_len][payload]."
-  [shape opts]
-  (let [capacity (+ 4 (payload-byte-size shape opts))
-        buffer   (js/ArrayBuffer. capacity)
-        dview    (js/DataView. buffer)
-        end      (write-shape-payload! dview 4 shape opts)
-        payload-len (- end 4)]
-    (assert (= end capacity)
-            (str "upload record size mismatch: wrote " end " expected " capacity))
-    (buf/write-u32 dview 0 payload-len)
-    (js/Uint8Array. buffer 0 end)))
+(defn- prepare-record
+  "Everything a record needs, computed once: children, binary fills, visible
+  strokes and payload size."
+  [shape {:keys [include-fills-strokes?] :as opts}]
+  (let [children (into [] (filter uuid?) (get shape :shapes))
+        fills    (when include-fills-strokes? (coerce-fills (get shape :fills)))
+        strokes  (when include-fills-strokes? (visible-strokes shape))]
+    #js {:shape    shape
+         :children children
+         :fills    fills
+         :strokes  strokes
+         :size     (payload-byte-size shape children fills strokes opts)}))
+
+(defn- write-record!
+  "Writes [u32 payload_len][payload] at `offset`. Returns the next offset."
+  [dview offset ^js record opts]
+  (let [size  (.-size record)
+        start (+ offset 4)
+        end   (write-shape-payload! dview start
+                                    (.-shape record)
+                                    (.-children record)
+                                    (.-fills record)
+                                    (.-strokes record)
+                                    opts)]
+    (when (not= end (+ start size))
+      (throw (ex-info "upload record size mismatch"
+                      {:wrote (- end start) :expected size})))
+    (buf/write-u32 dview offset size)
+    end))
 
 (defn flush-shapes-batch!
   "Upload `shapes` as one `_set_shapes_batch` call.
@@ -433,17 +458,20 @@
    `:include-fills-strokes?`)."
   [shapes opts]
   (when (and (wasm/live?) (seq shapes))
-    (let [records (mapv #(encode-shape-record % opts) shapes)
-          total   (reduce (fn [acc ^js u8] (+ acc (.-byteLength u8))) 4 records)
+    (let [records (mapv #(prepare-record % opts) shapes)
+          total   (reduce (fn [acc ^js record] (+ acc 4 (.-size record))) 4 records)
           offset  (mem/alloc total)
           heap    (mem/get-heap-u8)
-          dview   (js/DataView. (.-buffer heap))]
-      (buf/write-u32 dview offset (count records))
-      (reduce (fn [o ^js u8]
-                (.set heap u8 o)
-                (+ o (.-byteLength u8)))
-              (+ offset 4)
-              records)
+          dview   (js/DataView. (.-buffer heap) offset total)]
+      (try
+        (.fill heap 0 offset (+ offset total))
+        (buf/write-u32 dview 0 (count records))
+        (reduce (fn [o record] (write-record! dview o record opts))
+                4
+                records)
+        (catch :default cause
+          (mem/free)
+          (throw cause)))
       (h/call wasm/internal-module "_set_shapes_batch")
       nil)))
 

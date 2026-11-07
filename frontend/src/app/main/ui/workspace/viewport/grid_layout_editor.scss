@@ -4,17 +4,23 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/colors.scss" as *;
 @use "ds/z-index.scss" as *;
+
+// The track editor lives on the canvas: its sizes are divided by the zoom
+// so it keeps the same size on screen.
 
 .grid-track-marker {
   .marker-shape {
-    fill: var(--grid-editor-marker-color);
+    fill: var(--color-accent-quaternary);
   }
 
   .marker-text {
-    fill: var(--app-white);
-    font-size: calc(deprecated.$s-12 / var(--zoom));
+    fill: $white;
+    font-size: calc(#{px2rem(12)} / var(--zoom));
     font-family: "worksans", "vazirmatn", sans-serif;
   }
 }
@@ -22,8 +28,8 @@
 .grid-editor-wrapper {
   cursor: grab;
   position: relative;
-  width: 100%;
-  height: 80%;
+  inline-size: 100%;
+  block-size: 80%;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -31,21 +37,20 @@
 }
 
 .grid-editor-header-hover {
-  fill: var(--grid-editor-marker-color);
+  fill: var(--color-accent-quaternary);
 }
 
 .grid-editor-label {
   flex: 1;
   background: none;
   border: 0;
-  color: var(--grid-editor-marker-text);
+  color: var(--color-accent-quaternary);
   font-family: "worksans", "vazirmatn", sans-serif;
-  font-size: calc(deprecated.$fs-12 / var(--zoom));
+  font-size: calc(#{px2rem(12)} / var(--zoom));
   font-weight: 400;
   margin: 0;
-  max-width: calc(deprecated.$s-60 / var(--zoom));
-  padding: 0;
-  padding: calc(deprecated.$s-4 / var(--zoom));
+  max-inline-size: calc(#{px2rem(60)} / var(--zoom));
+  padding: calc(var(--sp-xs) / var(--zoom));
   text-align: center;
 
   &:focus {
@@ -60,21 +65,23 @@
   margin: 0;
   padding: 0;
   position: absolute;
-  top: calc(deprecated.$s-6 / var(--zoom));
-  right: calc(deprecated.$s-20 / var(--zoom));
-  width: calc(deprecated.$s-20 / var(--zoom));
-  height: calc(deprecated.$s-20 / var(--zoom));
+  inset-block-start: calc(#{px2rem(6)} / var(--zoom));
+  inset-inline-end: calc(#{px2rem(20)} / var(--zoom));
+  inline-size: calc(#{px2rem(20)} / var(--zoom));
+  block-size: calc(#{px2rem(20)} / var(--zoom));
   opacity: 0;
   pointer-events: none;
+}
 
-  svg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: calc(deprecated.$s-16 / var(--zoom));
-    height: auto;
-    stroke: var(--grid-editor-marker-color);
-  }
+// The DS icon has a fixed 16px size: scale it down with the zoom, as the
+// rest of the track editor, so it keeps the same size on screen.
+.grid-editor-button-icon {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  transform: scale(calc(1 / var(--zoom)));
+  transform-origin: top left;
+  color: var(--color-accent-quaternary);
 }
 
 .grid-editor-wrapper:hover .grid-editor-button {
@@ -83,7 +90,7 @@
 }
 
 .grid-frame {
-  fill: var(--grid-editor-marker-color);
+  fill: var(--color-accent-quaternary);
   fill-opacity: 0.1;
 }
 
@@ -92,13 +99,13 @@
   opacity: 0.5;
 
   .grid-plus-shape {
-    fill: var(--grid-editor-plus-btn-background);
-    stroke: var(--grid-editor-plus-btn-background);
-    stroke-width: calc(deprecated.$s-1 / var(--zoom));
+    fill: var(--color-accent-quaternary);
+    stroke: var(--color-accent-quaternary);
+    stroke-width: calc(#{px2rem(1)} / var(--zoom));
   }
 
   .grid-plus-icon {
-    stroke: var(--grid-editor-plus-btn-foreground);
+    stroke: $white;
   }
 
   &:hover {
@@ -108,7 +115,7 @@
 
 .grid-cell-outline {
   fill: transparent;
-  stroke: var(--grid-editor-line-color);
+  stroke: var(--color-accent-quaternary);
   stroke-opacity: 0.5;
   stroke-width: calc(1 / var(--zoom));
 
@@ -122,37 +129,32 @@
 .grid-actions {
   pointer-events: none;
   position: absolute;
-  top: deprecated.$s-44;
-  left: 50%;
+  inset-block-start: px2rem(44);
+  inset-inline-start: 50%;
   z-index: var(--z-index-notifications);
 }
 
 .grid-actions-container {
-  @include deprecated.flex-row;
-
-  background: var(--panel-background-color);
-  border-radius: deprecated.$br-12;
-  box-shadow: 0 0 deprecated.$s-12 0 var(--menu-shadow-color);
-  gap: deprecated.$s-8;
-  height: deprecated.$s-48;
-  margin-left: -50%;
-  padding: deprecated.$s-8;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  background: var(--color-background-primary);
+  border-radius: $br-12;
+  box-shadow: 0 0 px2rem(12) 0 var(--color-shadow-dark);
+  block-size: $sz-48;
+  margin-inline-start: -50%;
+  padding: var(--sp-s);
   cursor: initial;
   pointer-events: initial;
-  width: deprecated.$s-512;
+  inline-size: $sz-512;
 }
 
 .grid-actions-title {
   flex: 1;
-  font-size: deprecated.$fs-12;
+
+  // TODO: No exact DS typography match found.
+  // Closest match: body-small.
+  font-size: px2rem(12);
   color: var(--color-foreground-secondary);
-  padding-left: deprecated.$s-8;
-}
-
-.close-btn {
-  @extend %button-tertiary;
-
-  svg {
-    @extend %button-icon;
-  }
+  padding-inline-start: var(--sp-s);
 }

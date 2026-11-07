@@ -36,6 +36,9 @@
   (when-let [version (get config :version)]
     (set! cf/version version))
 
+  (when-let [version-tag (get config :version-tag)]
+    (set! cf/version-tag version-tag))
+
   (when-let [build-date (get config :build-data)]
     (set! cf/build-date build-date))
 

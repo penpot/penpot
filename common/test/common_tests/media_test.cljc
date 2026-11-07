@@ -35,7 +35,12 @@
     (t/is (= 400 (media/parse-font-weight "Lighthaus")))
     (t/is (= 400 (media/parse-font-weight "Blackwood")))
     (t/is (= 400 (media/parse-font-weight "Thinker")))
-    (t/is (= 400 (media/parse-font-weight "Mediaeval")))))
+    (t/is (= 400 (media/parse-font-weight "Mediaeval"))))
+
+  (t/testing "defaults to regular when the variant metadata is missing"
+    (t/is (= 400 (media/parse-font-weight nil)))
+    (t/is (= 400 (media/parse-font-weight "")))
+    (t/is (= 400 (media/parse-font-weight "  ")))))
 
 (t/deftest test-parse-font-style
   (t/testing "matches italic with proper boundaries"
@@ -47,7 +52,12 @@
 
   (t/testing "does not match italic embedded in words"
     (t/is (= "normal" (media/parse-font-style "Italica")))
-    (t/is (= "normal" (media/parse-font-style "Roboto-Regular")))))
+    (t/is (= "normal" (media/parse-font-style "Roboto-Regular"))))
+
+  (t/testing "defaults to normal when the variant metadata is missing"
+    (t/is (= "normal" (media/parse-font-style nil)))
+    (t/is (= "normal" (media/parse-font-style "")))
+    (t/is (= "normal" (media/parse-font-style "  ")))))
 
 (t/deftest test-strip-image-extension
   (t/testing "removes extension from supported image files"

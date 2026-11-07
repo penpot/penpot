@@ -3,7 +3,7 @@ use crate::shapes::{vertical_align_offset, Shape, TextContent, Type};
 use crate::state::{TextEditorState, TextSelection};
 use crate::view::Viewbox;
 use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
-use skia_safe::{BlendMode, Canvas, Color, Paint, Rect};
+use skia_safe::{BlendMode, Canvas, Color, Paint, Point, Rect};
 
 pub fn render_overlay(
     canvas: &Canvas,
@@ -228,10 +228,40 @@ fn calculate_selection_rects(
     text_content: &TextContent,
     shape: &Shape,
 ) -> Vec<Rect> {
-    let mut rects = Vec::new();
-
     let start = selection.start();
     let end = selection.end();
+    range_rects(
+        (start.paragraph, start.offset),
+        (end.paragraph, end.offset),
+        text_content,
+        shape,
+    )
+}
+
+/// Top-left corner of the first line box of the text between `start` and `end`
+/// (paragraph, char offset), shape-local; `None` when the range covers no text.
+pub(crate) fn range_origin(
+    start: (usize, usize),
+    end: (usize, usize),
+    text_content: &TextContent,
+    shape: &Shape,
+) -> Option<Point> {
+    range_rects(start, end, text_content, shape)
+        .first()
+        .map(|rect| Point::new(rect.left(), rect.top()))
+}
+
+/// Line boxes, shape-local, of the text between `start` and `end` (paragraph,
+/// char offset).
+fn range_rects(
+    start: (usize, usize),
+    end: (usize, usize),
+    text_content: &TextContent,
+    shape: &Shape,
+) -> Vec<Rect> {
+    let mut rects = Vec::new();
+    let (start_paragraph, start_offset) = start;
+    let (end_paragraph, end_offset) = end;
 
     let paragraphs = text_content.paragraphs();
     let layout_paragraphs: Vec<_> = text_content.layout.paragraphs.iter().flatten().collect();
@@ -242,7 +272,7 @@ fn calculate_selection_rects(
         let para_height = laid_out_para.height();
 
         // Check if this paragraph is in selection range
-        if para_idx < start.paragraph || para_idx > end.paragraph {
+        if para_idx < start_paragraph || para_idx > end_paragraph {
             y_offset += para_height;
             continue;
         }
@@ -255,14 +285,14 @@ fn calculate_selection_rects(
             .map(|span| span.text.chars().count())
             .sum();
 
-        let range_start = if para_idx == start.paragraph {
-            start.offset
+        let range_start = if para_idx == start_paragraph {
+            start_offset
         } else {
             0
         };
 
-        let range_end = if para_idx == end.paragraph {
-            end.offset
+        let range_end = if para_idx == end_paragraph {
+            end_offset
         } else {
             para_char_count
         };
@@ -290,4 +320,92 @@ fn calculate_selection_rects(
     }
 
     rects
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::globals::TestRenderResourcesGuard;
+    use crate::render::RenderResources;
+    use crate::shapes::{
+        FontFamily, FontStyle, GrowType, Paragraph, TextAlign, TextDirection, TextSpan,
+    };
+    use crate::uuid::Uuid;
+
+    /// A laid-out fixed text, `width` wide, with a single span of `text`.
+    fn text_shape(text: &str, width: f32) -> Shape {
+        let span = TextSpan::new(
+            text.to_string(),
+            FontFamily::new(Uuid::nil(), 400, FontStyle::Normal),
+            14.0,
+            1.2,
+            0.0,
+            None,
+            None,
+            TextDirection::LTR,
+            400,
+            Uuid::nil(),
+            vec![],
+        );
+        let mut content =
+            TextContent::new(Rect::from_xywh(0.0, 0.0, width, 100.0), GrowType::Fixed);
+        content.add_paragraph(Paragraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.2,
+            0.0,
+            vec![span],
+        ));
+
+        let mut shape = Shape::new(Uuid::nil());
+        shape.set_shape_type(Type::Text(content));
+        shape.set_selrect(0.0, 0.0, width, 100.0);
+        shape
+    }
+
+    fn origin_of(shape: &Shape, start: usize, end: usize) -> Option<Point> {
+        let Type::Text(content) = &shape.shape_type else {
+            unreachable!()
+        };
+        range_origin((0, start), (0, end), content, shape)
+    }
+
+    #[test]
+    fn range_origin_is_where_the_text_starts() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let shape = text_shape("hello world", 500.0);
+
+        let hello = origin_of(&shape, 0, 5).expect("hello has text");
+        let world = origin_of(&shape, 6, 11).expect("world has text");
+
+        assert!(hello.x.abs() < 0.01, "{hello:?}");
+        assert!((0.0..1.0).contains(&hello.y), "{hello:?}");
+        assert!(world.x > hello.x, "{world:?}");
+        assert!((world.y - hello.y).abs() < 0.01, "{world:?}");
+    }
+
+    #[test]
+    fn range_origin_of_wrapped_text_is_on_its_first_line() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        // Too narrow for both words on one line.
+        let shape = text_shape("hello world", 45.0);
+
+        let world = origin_of(&shape, 6, 11).expect("world has text");
+
+        assert!(world.x.abs() < 0.01, "{world:?}");
+        assert!(world.y > 10.0, "{world:?}");
+    }
+
+    #[test]
+    fn range_origin_is_none_for_an_empty_range() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let shape = text_shape("hello", 500.0);
+
+        assert!(origin_of(&shape, 2, 2).is_none());
+    }
 }

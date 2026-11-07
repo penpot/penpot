@@ -9,6 +9,7 @@
   (:require
    ["node:buffer" :as buffer]
    ["node:crypto" :as crypto]
+   ["node:os" :as os]
    ["node:process" :as process]
    [app.common.data :as d]
    [app.common.flags :as flags]
@@ -55,6 +56,7 @@
    [:exporter-max-jobs-per-profile {:optional true} ::sm/int]
    [:exporter-queue-max {:optional true} ::sm/int]
    [:exporter-job-ttl {:optional true} ::sm/int]
+   [:exporter-replica-id {:optional true} :string]
    [:wasm-worker-pool-max {:optional true} ::sm/int]
    [:wasm-worker-pool-min {:optional true} ::sm/int]
    [:wasm-worker-idle-timeout {:optional true} ::sm/int]
@@ -123,6 +125,12 @@
   []
   (or (c/get config :internal-uri)
       (c/get config :public-uri)))
+
+(def replica-id
+  "Names this exporter among its siblings. It must survive a restart, since
+  the boot sweep uses it to find the jobs the previous run left behind."
+  (or (c/get config :exporter-replica-id)
+      (os/hostname)))
 
 (def management-key
   (let [key (or (c/get config :exporter-shared-key)

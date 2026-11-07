@@ -23,7 +23,6 @@ async function openEditorAndSelectAll(workspace) {
   await workspace.page.keyboard.press("ControlOrMeta+a");
 }
 
-
 test("Typography at a collapsed caret only styles newly typed text", async ({
   page,
 }) => {
@@ -217,8 +216,6 @@ test.describe("BUG 11083 - Changing typography must not quit the editor", () => 
     await workspace.waitForSelectedShapeName("hello");
   });
 });
-
-
 
 test("BUG 10467 - Auto-width text captures every typed character", async ({
   page,
@@ -679,5 +676,76 @@ test.describe("Text Editor context menu", () => {
     await expect(menuItem(page, "Copy")).toHaveAttribute("disabled");
     await expect(menuItem(page, "Paste")).not.toHaveAttribute("disabled");
     await expect(menuItem(page, "Select all")).not.toHaveAttribute("disabled");
+  });
+});
+
+test.describe("BUG 12325 - Fit-content flex board follows an auto-width text while typing", () => {
+  // Two grey fit-content flex boards, one per test. The content
+  // (0, 0)-(121, 117) loads centred in the viewport at zoom 1.
+  const CONTENT_CENTER = { x: 60.5, y: 58.5 };
+
+  // Screenshot of a small canvas patch centred on (x, y), in canvas
+  // coordinates.
+  async function patchAt(workspace, x, y) {
+    const viewport = await workspace.viewport.boundingBox();
+    const px = viewport.x + viewport.width / 2 + x - CONTENT_CENTER.x;
+    const py = viewport.y + viewport.height / 2 + y - CONTENT_CENTER.y;
+    return workspace.page.screenshot({
+      clip: { x: px - 2, y: py - 2, width: 4, height: 4 },
+    });
+  }
+
+  async function openFile(page) {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.mockGetFile("text-editor/get-file-12325.json");
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+    return workspace;
+  }
+
+  // Shrinks `text` to its first character while editing and checks that a spot
+  // in the right part of its board, at `boardY`, shows the empty canvas.
+  async function expectBoardShrinksWhileTyping(workspace, text, boardY) {
+    const x = 80;
+    const inside = boardY + 8;
+    const outside = boardY + 50;
+    expect(await patchAt(workspace, x, inside)).not.toEqual(
+      await patchAt(workspace, x, outside),
+    );
+
+    await workspace.textEditor.startEditing();
+    await workspace.page.keyboard.press("End");
+    for (let i = 0; i < text.length - 1; i++) {
+      await workspace.page.keyboard.press("Backspace");
+    }
+
+    // Without leaving the editor, the board already shrank around the text, so
+    // the spot shows the empty canvas.
+    await expect
+      .poll(async () =>
+        (await patchAt(workspace, x, inside)).equals(
+          await patchAt(workspace, x, outside),
+        ),
+      )
+      .toBe(true);
+  }
+
+  test("The board shrinks with the text", async ({ page }) => {
+    const workspace = await openFile(page);
+    await workspace.clickToggableLayer("Text board");
+    await workspace.clickLeafLayer("Hello wide world");
+
+    await expectBoardShrinksWhileTyping(workspace, "Hello wide world", 0);
+  });
+
+  test("The board shrinks with a text inside a group", async ({ page }) => {
+    const workspace = await openFile(page);
+    await workspace.clickToggableLayer("Group board");
+    // The first "Group" match is the board row.
+    await workspace.clickToggableLayer("Group", {}, 1);
+    await workspace.clickLeafLayer("Hello grouped world");
+
+    await expectBoardShrinksWhileTyping(workspace, "Hello grouped world", 100);
   });
 });

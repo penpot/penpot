@@ -37,7 +37,6 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.layout.menu :refer [context-menu*]]
    [app.main.ui.hooks :refer [use-focus-timer-ref]]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.nitrate.nitrate-form]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
@@ -47,18 +46,6 @@
    [cuerdas.core :as str]
    [goog.functions :as f]
    [rumext.v2 :as mf]))
-
-(def ^:private clear-search-icon
-  (deprecated-icon/icon-xref :delete-text (stl/css :clear-search-icon)))
-
-(def ^:private search-icon
-  (deprecated-icon/icon-xref :search (stl/css :search-icon)))
-
-(def ^:private pin-icon
-  (deprecated-icon/icon-xref :pin (stl/css :pin-icon)))
-
-(def ^:private exit-icon
-  (deprecated-icon/icon-xref :exit (stl/css :exit-icon)))
 
 (defn schedule-focus-by-id!
   [ref element-id]
@@ -100,7 +87,6 @@
            (when (kbd/enter? event)
              (schedule-focus-by-id! focus-timer-ref (str project-id))
              (st/emit! (dcm/go-to-dashboard-files :project-id project-id)))))
-
 
         on-edit-open
         (mf/use-fn #(swap! local* assoc :edition? true))
@@ -239,15 +225,19 @@
      (if (or @focused? (seq search-term))
        [:button {:class (stl/css :search-btn :clear-search-btn)
                  :tab-index "0"
-                 :aria-label "dashboard-clear-search"
+                 :aria-label (tr "dashboard.clear-search")
                  :on-click on-clear-click
                  :on-key-down handle-clear-search}
-        clear-search-icon]
+        [:> icon* {:icon-id i/delete-text
+                   :class (stl/css :search-icon)
+                   :aria-hidden true}]]
 
        [:button {:class (stl/css :search-btn)
-                 :aria-label "dashboard-search"
+                 :aria-label (tr "labels.search")
                  :on-click on-clear-click}
-        search-icon])]))
+        [:> icon* {:icon-id i/search
+                   :class (stl/css :search-icon)
+                   :aria-hidden true}]])]))
 
 (mf/defc sidebar-content*
   {::mf/private true}
@@ -364,7 +354,6 @@
                      :keyboard-action go-drafts-with-key}
            [:span {:class (stl/css :element-title)} (tr "labels.drafts")]]]]]
 
-
        [:div {:class (stl/css :sidebar-content-section)}
         [:div {:class (stl/css :sidebar-section-title)}
          (tr "labels.sources")]
@@ -384,7 +373,6 @@
                      :keyboard-action go-libs-with-key}
            [:span {:class (stl/css :element-title)} (tr "labels.shared-libraries")]]]]]
 
-
        [:div {:class (stl/css :sidebar-content-section)
               :data-testid "pinned-projects"}
         [:div {:class (stl/css :sidebar-section-title)}
@@ -399,7 +387,9 @@
                :team-id (:id team)
                :is-selected (= (:id item) (:id project))}])]
           [:div {:class (stl/css :sidebar-empty-placeholder)}
-           pin-icon
+           [:> icon* {:icon-id i/pin
+                      :size "s"
+                      :class (stl/css :pin-icon)}]
            [:span {:class (stl/css :empty-text)} (tr "dashboard.no-projects-placeholder")]])]]
       [:div {:class (stl/css-case :separator true :overflow-separator overflow?)}]]]))
 
@@ -673,7 +663,6 @@
            [:> dashboard-cta* {:profile profile}]
            [:> subscription-sidebar* {:profile profile}])))
 
-
      (when (and team profile)
        [:& comments-section
         {:profile profile
@@ -703,7 +692,6 @@
         (tr "labels.your-account")]
 
        [:li {:class (stl/css :profile-separator)}]
-
 
        [:> dropdown-menu-item* {:class (stl/css-case :profile-dropdown-item true)
                                 :on-click    on-menu-click
@@ -749,7 +737,8 @@
        [:> dropdown-menu-item* {:class (stl/css :profile-dropdown-item :item-with-icon)
                                 :on-click handle-logout-click
                                 :data-testid "logout-profile-opt"}
-        exit-icon
+        [:> icon* {:icon-id i/exit
+                   :class (stl/css :exit-icon)}]
         (tr "labels.logout")]]
 
       (when (and team profile)

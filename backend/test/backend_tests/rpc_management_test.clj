@@ -56,9 +56,9 @@
                            :size 7}}
         config  (assoc cf/config :public-uri "https://example.com/penpot")
         out1    (binding [cf/config config]
-                  (th/management-command! params))
+                  (th/multipart-management-command! params))
         out2    (binding [cf/config config]
-                  (th/management-command! params))]
+                  (th/multipart-management-command! params))]
     (t/is (nil? (:error out1)))
     (t/is (nil? (:error out2)))
     (t/is (str/starts-with? (str (get-in out1 [:result :uri]))
@@ -77,10 +77,33 @@
                            :path path
                            :mtype "text/html"
                            :size 27}}
-        out     (th/management-command! params)]
+        out     (th/multipart-management-command! params)]
     (t/is (some? (:error out)))
     (t/is (= :validation (th/ex-type (:error out))))
     (t/is (= :media-type-not-allowed (th/ex-code (:error out))))))
+
+(t/deftest upload-tempfile-rejects-a-key-it-does-not-declare
+  (let [out (th/management-command! {::th/type :upload-tempfile
+                                     ::rpc/auth-key-id :nexus})]
+    (t/is (some? (:error out)))
+    (t/is (= :authorization (th/ex-type (:error out))))
+    (t/is (= :shared-key-not-allowed (th/ex-code (:error out))))))
+
+(t/deftest upload-tempfile-accepts-both-declared-keys
+  (let [profile (th/create-profile* 1 {:is-active true})]
+    (doseq [key-id [:exporter :media-processor]]
+      (let [path (fs/create-tempfile :dir "/tmp/penpot"
+                                     :prefix (str "test-upload-" (name key-id) "-"))
+            _    (io/write* path "content")
+            out  (th/multipart-management-command!
+                  {::th/type :upload-tempfile
+                   ::rpc/auth-key-id key-id
+                   ::rpc/profile-id (:id profile)
+                   :content {:filename "export.png"
+                             :path path
+                             :mtype "image/png"
+                             :size 7}})]
+        (t/is (nil? (:error out)) (name key-id))))))
 
 (t/deftest duplicate-file
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -720,3 +743,16 @@
                           (ct/inst? (get-in % [:props :modified-at])))
                     events))
         (t/is (every? #(= (:id team) (get-in % [:props :team-id])) events))))))
+
+(t/deftest upload-tempfile-rejects-forged-content
+  ;; Same transit-forgery vector through the management API: without a
+  ;; multipart request the wrapper must reject it at params validation.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        params  {::th/type :upload-tempfile
+                 ::rpc/profile-id (:id profile)
+                 :content {:filename "evil.png"
+                           :path (fs/path "/etc/passwd")
+                           :mtype "image/png"
+                           :size 123}}
+        out     (th/management-command! params)]
+    (t/is (th/ex-of-code? (:error out) :params-validation))))

@@ -249,17 +249,17 @@
                                      ::rpc/profile-id (:id profile)
                                      :total-chunks  1})
                        :result :session-id)
-        out        (th/command! {::th/type        :upload-chunk
-                                 ::rpc/profile-id (:id profile)
-                                 :session-id    session-id
-                                 :index         0
-                                 :content       (if (some? path)
-                                                  (let [size (.length (jio/file path))]
-                                                    {:filename "package.penpot"
-                                                     :path     path
-                                                     :mtype    "application/zip"
-                                                     :size     size})
-                                                  (upload-chunk :content content))})]
+        out        (th/multipart-command! {::th/type        :upload-chunk
+                                           ::rpc/profile-id (:id profile)
+                                           :session-id    session-id
+                                           :index         0
+                                           :content       (if (some? path)
+                                                            (let [size (.length (jio/file path))]
+                                                              {:filename "package.penpot"
+                                                               :path     path
+                                                               :mtype    "application/zip"
+                                                               :size     size})
+                                                            (upload-chunk :content content))})]
     (t/is (nil? (:error out)))
     session-id))
 

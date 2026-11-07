@@ -3,6 +3,7 @@ import "reflect-metadata";
 import { TextResponse, ToolResponse } from "./ToolResponse";
 import type { PenpotMcpServer, SessionContext } from "./PenpotMcpServer";
 import { createLogger } from "./logger";
+import { RollbackNotices } from "./RollbackNotices";
 
 /**
  * An empty arguments class for tools that do not require any parameters.
@@ -44,9 +45,22 @@ export abstract class Tool<TArgs extends object> {
      * Executes the tool with automatic validation and type safety.
      *
      * This method handles the unknown args from the MCP protocol,
-     * delegating to the type-safe implementation.
+     * delegating to the type-safe implementation. A rollback reported by a
+     * plugin task during the execution puts a warning first in the response.
      */
     async execute(args: unknown): Promise<ToolResponse> {
+        const [response, rollbacks] = await this.mcpServer.pluginBridge.rollbackNotices.collect(() =>
+            this.executeAndReport(args)
+        );
+        return RollbackNotices.withNotice(response, rollbacks);
+    }
+
+    /**
+     * Executes the tool logic, turning a failure into an error response.
+     *
+     * @param args - the tool arguments
+     */
+    private async executeAndReport(args: unknown): Promise<ToolResponse> {
         const executionId = ++Tool.executionCounter;
         try {
             let argsInstance: TArgs = args as TArgs;

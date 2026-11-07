@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cfo]
    [app.common.files.variant :as cfv]
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
@@ -22,6 +23,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.variants :as dwv]
    [app.main.fonts :as fonts]
    [app.main.repo :as rp]
@@ -777,12 +779,13 @@
 
     :renameProperty
     (fn [pos name]
-      (let [nprops (->> (get-variant-components file-id id) first :variant-properties count)]
+      (let [nprops   (->> (get-variant-components file-id id) first :variant-properties count)
+            prepared (ctv/prepare-property-name name)]
         (cond
           (or (not (nat-int? pos)) (>= pos nprops))
           (u/not-valid plugin-id :pos pos)
 
-          (not (ctv/valid-property-name? name))
+          (nil? prepared)
           (u/not-valid plugin-id :name name)
 
           (not (r/check-permission plugin-id "library:write"))
@@ -790,7 +793,7 @@
 
           :else
           (st/emit!
-           (dwv/update-property-name id pos (ctv/normalize-property-text name)
+           (dwv/update-property-name id pos prepared
                                      {:trigger "plugin:rename-property"})))))))
 
 (set! shape/variant-proxy variant-proxy)
@@ -915,6 +918,9 @@
           (not (r/check-permission plugin-id "library:write"))
           (u/not-valid plugin-id :restore "Plugin doesn't have 'library:write' permission")
 
+          (not= file-id (:current-file-id @st/state))
+          (u/not-valid plugin-id :restore "Can only restore components from the current file's library")
+
           (nil? component)
           (u/not-valid plugin-id :restore "Component does not exist")
 
@@ -930,7 +936,7 @@
 
         :else
         (let [id-ref (atom nil)]
-          (st/emit! (-> (dwl/instantiate-component file-id id (gpt/point 0 0) {:id-ref id-ref :origin "plugin"})
+          (st/emit! (-> (dwl/instantiate-component file-id id (gpt/point 0 0) {:id-ref id-ref :origin "plugin" :frame-id uuid/zero})
                         (se/add-event plugin-id)))
           (shape/shape-proxy plugin-id @id-ref))))
 
@@ -1085,12 +1091,13 @@
 
     :setVariantProperty
     (fn [pos value]
-      (let [nprops (-> (u/locate-library-component file-id id) :variant-properties count)]
+      (let [nprops   (-> (u/locate-library-component file-id id) :variant-properties count)
+            prepared (ctv/prepare-property-value value)]
         (cond
           (or (not (nat-int? pos)) (>= pos nprops))
           (u/not-valid plugin-id :pos (str pos))
 
-          (not (ctv/valid-property-value? value))
+          (nil? prepared)
           (u/not-valid plugin-id :value value)
 
           (not (r/check-permission plugin-id "library:write"))
@@ -1099,7 +1106,7 @@
           :else
           (st/emit!
            (se/event plugin-id "variant-edit-property-value")
-           (dwv/update-property-value id pos (ctv/normalize-property-text value))))))))
+           (dwv/update-property-value id pos prepared)))))))
 
 (defn library-proxy? [p]
   (obj/type-of? p "LibraryProxy"))
@@ -1318,6 +1325,37 @@
      (fn []
        (apply array (map (partial library-proxy plugin-id) (loaded-file-ids @st/state))))}
 
+    :tokensSource
+    {:get
+     (fn []
+       (let [file-id   (:current-file-id @st/state)
+             file-data (ctf/file-data (u/locate-file file-id))]
+         (library-proxy plugin-id (cfo/get-effective-tokens-source file-data))))
+     :set
+     (fn [value]
+       (let [file-id      (:current-file-id @st/state)
+             library-id   (when (library-proxy? value) (obj/get value "$id"))
+             library      (some-> library-id u/locate-file)
+             library-data (some-> library ctf/file-data)
+             file-data    (ctf/file-data (u/locate-file file-id))]
+         (cond
+           (not (r/check-permission plugin-id "content:write"))
+           (u/not-valid plugin-id :tokensSource "Plugin doesn't have 'content:write' permission")
+
+           (not (library-proxy? value))
+           (u/not-valid plugin-id :tokensSource value)
+
+           (nil? library)
+           (u/not-valid plugin-id :tokensSource "Library is not connected")
+
+           (and (not= library-id file-id)
+                (not (cfo/tokens-provider? library-data)))
+           (u/not-valid plugin-id :tokensSource "Library must have its own tokens")
+
+           (not (cfo/effective-tokens-source? file-data library-id))
+           (st/emit! (-> (dwtl/set-tokens-source library-id)
+                         (se/add-event plugin-id))))))}
+
     :availableLibraries
     (fn []
       (let [team-id (:current-team-id @st/state)]
@@ -1354,6 +1392,8 @@
                  team-id    (:current-team-id @st/state)
                  library-id (uuid/parse library-id)]
              (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
+                  ;; Saves may have failed while the list loaded
+                  (rx/tap (fn [_] (r/check-writable)))
                   (rx/subs!
                    (fn [shared-files]
                      ;; Only published libraries of the team can be linked

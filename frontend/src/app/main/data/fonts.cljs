@@ -115,6 +115,128 @@
                               :font-style  font-style
                               :uploads     uploads})))))
 
+(defn- parse-font-mtype
+  "Detects a font mime-type from the first four bytes of an ArrayBuffer.
+
+  Returns the `font/*` mime-type string, or nil when the buffer is
+  missing, too short, or carries an unknown signature. Unknown
+  signatures are treated as errors by `read-blob`, never silently
+  dropped."
+  [ba]
+  (when (and (some? ba)
+             (>= (.-byteLength ^js ba) 4))
+    (let [u8 (js/Uint8Array. ba 0 4)
+          sg (areduce u8 i ret "" (str ret (if (zero? i) "" " ") (.toString (aget u8 i) 8)))]
+      (case sg
+        "117 124 124 117" "font/otf"
+        "0 1 0 0"         "font/ttf"
+        "167 117 106 106" "font/woff"
+        "167 117 106 62"  "font/woff2"
+        nil))))
+
+(defn- parse-font
+  "Associates the opentype.js font object for TTF/OTF/WOFF blobs.
+
+  Takes a `read-blob` result map. Passes `{:error ...}` maps through
+  untouched. WOFF2 blobs cannot be parsed by opentype.js, so they keep
+  `:font nil` and metadata is derived from the filename later. Any other
+  blob is parsed with opentype.js; when parsing fails an
+  `{:error filename}` map is returned so the caller can notify the user
+  instead of silently dropping the file."
+  [{:keys [error data type name] :as params}]
+  (cond
+    (some? error)
+    params
+
+    (= type "font/woff2")
+    ;; woff2 cannot be parsed by opentype.js, extract metadata from filename
+    (assoc params :font nil)
+
+    :else
+    (try
+      (assoc params :font (ot/parse data))
+      (catch :default _e
+        (log/warn :msg (str/fmt "skipping file %s, unsupported format" name))
+        {:error name}))))
+
+(defn- prepare-font
+  "Builds a ready-to-upload font entry from a parsed blob.
+
+  Never throws for missing font metadata: a nil subfamily (opentype.js
+  returns nil when the font carries no English preferred/subfamily
+  names, as seen with some Fontshare families) defaults to regular
+  weight/style, and missing vertical-metric tables default to no
+  height warning."
+  [{:keys [font type name data] :as _params}]
+  (let [name (or name "")]
+    (if (some? font)
+      ;; Font was parsed with opentype.js (ttf, otf, woff)
+      (let [family          (or (.getEnglishName ^js font "preferredFamily")
+                                (.getEnglishName ^js font "fontFamily")
+                                "")
+            variant         (or (.getEnglishName ^js font "preferredSubfamily")
+                                (.getEnglishName ^js font "fontSubfamily")
+                                "")
+
+            ;; Vertical metrics determine the baseline in a text and the space between lines of
+            ;; text. For historical reasons, there are three pairs of ascender/descender
+            ;; values, known as hhea, OS/2 and uSWin metrics. Depending on the font, operating
+            ;; system and application a different set will be used to render text on the
+            ;; screen. On Mac, Safari and Chrome use the hhea values to render text. Firefox
+            ;; will respect the useTypoMetrics setting and will use the OS/2 if it is set.  If
+            ;; the useTypoMetrics is not set, Firefox will also use metrics from the hhea
+            ;; table. On Windows, all browsers use the usWin metrics, but respect the
+            ;; useTypoMetrics setting and if set will use the OS/2 values.
+
+            hhea            (some-> ^js font .-tables .-hhea)
+            os2             (some-> ^js font .-tables .-os2)
+
+            hhea-ascender   (some-> ^js hhea .-ascender abs)
+            hhea-descender  (some-> ^js hhea .-descender abs)
+
+            win-ascent      (some-> ^js os2 .-usWinAscent abs)
+            win-descent     (some-> ^js os2 .-usWinDescent abs)
+
+            os2-ascent      (some-> ^js os2 .-sTypoAscender abs)
+            os2-descent     (some-> ^js os2 .-sTypoDescender abs)
+
+            ;; useTypoMetrics can be read from the 7th bit
+            f-selection     (some-> ^js os2 .-fsSelection (bit-test 7))
+
+            height-warning? (boolean
+                             (and hhea-ascender hhea-descender win-ascent win-descent
+                                  (or (not= hhea-ascender win-ascent)
+                                      (not= hhea-descender win-descent)
+                                      (and f-selection os2-ascent os2-descent
+                                           (or (not= hhea-ascender os2-ascent)
+                                               (not= hhea-descender os2-descent))))))
+            data            (js/Uint8Array. data)]
+        {:content {:data data
+                   :name name
+                   :type type}
+         :font-family (or family "")
+         :font-weight (cm/parse-font-weight variant)
+         :font-style  (cm/parse-font-style variant)
+         :variant-name variant
+         :height-warning? height-warning?})
+      ;; Font could not be parsed (woff2), extract metadata from filename
+      (let [base-name       (str/replace name #"\.[^.]+$" "")
+            ;; Strip known weight/style tokens and separators to derive family name
+            ;; Use word boundaries to avoid matching substrings (e.g. "Boldini" should not match "bold")
+            raw-family-name (-> base-name
+                                (str/replace #"(?i)(^|[-_\s])(extra\s*black|ultra\s*black|extra\s*bold|ultra\s*bold|semi\s*bold|demi\s*bold|extra\s*light|ultra\s*light|hairline|thin|light|normal|regular|medium|bold|black|heavy|solid|italic)([-_\s]|$)" "$1$3")
+                                (str/replace #"[-_\s]+" " ")
+                                (str/trim))
+            family-name     (if (str/blank? raw-family-name) base-name raw-family-name)
+            data            (js/Uint8Array. data)]
+        {:content {:data data
+                   :name name
+                   :type type}
+         :font-family family-name
+         :font-weight (cm/parse-font-weight base-name)
+         :font-style  (cm/parse-font-style base-name)
+         :height-warning? false}))))
+
 (defn process-upload
   "Given a seq of blobs and the team id, creates a ready-to-use fonts
   map with temporal ID's associated to each font entry.
@@ -122,71 +244,16 @@
   Each font entry's `:data` is a map of `{mtype -> ArrayBuffer}`.  The
   raw `ArrayBuffer` is kept as-is so that `upload-font-variant` can
   wrap it in a `Blob` and hand it directly to `upload-blob-chunked`
-  without any intermediate client-side chunking."
+  without any intermediate client-side chunking.
+
+  Files that cannot be read, carry an unknown signature, fail
+  opentype.js parsing, or fail entry preparation are collected and
+  reported with a `bad-font` notification instead of silently dropped,
+  so the user always gets feedback. The returned observable never
+  errors for per-file failures; it emits the map of successfully
+  processed fonts (possibly empty)."
   [blobs team-id]
-  (letfn [(prepare [{:keys [font type name data] :as params}]
-            (if font
-              ;; Font was parsed with opentype.js (ttf, otf, woff)
-              (let [family          (or (.getEnglishName ^js font "preferredFamily")
-                                        (.getEnglishName ^js font "fontFamily"))
-                    variant         (or (.getEnglishName ^js font "preferredSubfamily")
-                                        (.getEnglishName ^js font "fontSubfamily"))
-
-                    ;; Vertical metrics determine the baseline in a text and the space between lines of
-                    ;; text. For historical reasons, there are three pairs of ascender/descender
-                    ;; values, known as hhea, OS/2 and uSWin metrics. Depending on the font, operating
-                    ;; system and application a different set will be used to render text on the
-                    ;; screen. On Mac, Safari and Chrome use the hhea values to render text. Firefox
-                    ;; will respect the useTypoMetrics setting and will use the OS/2 if it is set.  If
-                    ;; the useTypoMetrics is not set, Firefox will also use metrics from the hhea
-                    ;; table. On Windows, all browsers use the usWin metrics, but respect the
-                    ;; useTypoMetrics setting and if set will use the OS/2 values.
-
-                    hhea-ascender   (abs (-> ^js font .-tables .-hhea .-ascender))
-                    hhea-descender  (abs (-> ^js font .-tables .-hhea .-descender))
-
-                    win-ascent      (abs (-> ^js font .-tables .-os2 .-usWinAscent))
-                    win-descent     (abs (-> ^js font .-tables .-os2 .-usWinDescent))
-
-                    os2-ascent      (abs (-> ^js font .-tables .-os2 .-sTypoAscender))
-                    os2-descent     (abs (-> ^js font .-tables .-os2 .-sTypoDescender))
-
-                    ;; useTypoMetrics can be read from the 7th bit
-                    f-selection     (-> ^js font .-tables .-os2 .-fsSelection (bit-test 7))
-
-                    height-warning? (or (not= hhea-ascender win-ascent)
-                                        (not= hhea-descender win-descent)
-                                        (and f-selection (or
-                                                          (not= hhea-ascender os2-ascent)
-                                                          (not= hhea-descender os2-descent))))
-                    data            (js/Uint8Array. data)]
-                {:content {:data data
-                           :name name
-                           :type type}
-                 :font-family (or family "")
-                 :font-weight (cm/parse-font-weight variant)
-                 :font-style  (cm/parse-font-style variant)
-                 :variant-name variant
-                 :height-warning? height-warning?})
-              ;; Font could not be parsed (woff2), extract metadata from filename
-              (let [base-name       (str/replace name #"\.[^.]+$" "")
-                    ;; Strip known weight/style tokens and separators to derive family name
-                    ;; Use word boundaries to avoid matching substrings (e.g. "Boldini" should not match "bold")
-                    raw-family-name (-> base-name
-                                        (str/replace #"(?i)(^|[-_\s])(extra\s*black|ultra\s*black|extra\s*bold|ultra\s*bold|semi\s*bold|demi\s*bold|extra\s*light|ultra\s*light|hairline|thin|light|normal|regular|medium|bold|black|heavy|solid|italic)([-_\s]|$)" "$1$3")
-                                        (str/replace #"[-_\s]+" " ")
-                                        (str/trim))
-                    family-name     (if (str/blank? raw-family-name) base-name raw-family-name)
-                    data            (js/Uint8Array. data)]
-                {:content {:data data
-                           :name name
-                           :type type}
-                 :font-family family-name
-                 :font-weight (cm/parse-font-weight base-name)
-                 :font-style  (cm/parse-font-style base-name)
-                 :height-warning? false})))
-
-          (join [res {:keys [content] :as font}]
+  (letfn [(join [res {:keys [content] :as font}]
             (let [key-fn   (juxt :font-family :font-weight :font-style)
                   existing (d/seek #(= (key-fn font) (key-fn %)) (vals res))]
               (if existing
@@ -206,60 +273,42 @@
                                            (:data content)})
                              (dissoc :content)))))))
 
-          (parse-mtype [ba]
-            (let [u8 (js/Uint8Array. ba 0 4)
-                  sg (areduce u8 i ret "" (str ret (if (zero? i) "" " ") (.toString (aget u8 i) 8)))]
-              (case sg
-                "117 124 124 117" "font/otf"
-                "0 1 0 0"         "font/ttf"
-                "167 117 106 106" "font/woff"
-                "167 117 106 62"  "font/woff2")))
-
-          (parse-font [{:keys [data type name] :as params}]
-            (if (= type "font/woff2")
-              ;; woff2 cannot be parsed by opentype.js, extract metadata from filename
-              (assoc params :font nil)
-              (try
-                (assoc params :font (ot/parse data))
-                (catch :default _e
-                  (log/warn :msg (str/fmt "skipping file %s, unsupported format" name))
-                  nil))))
-
           (read-blob [blob]
-            (->> (wa/read-file-as-array-buffer blob)
-                 (rx/map (fn [data]
-                           {:data data
-                            :name (.-name blob)
-                            :type (parse-mtype data)}))
-                 (rx/catch (fn []
-                             (rx/of {:error (.-name blob)})))
-                 (rx/mapcat (fn [{:keys [type, error] :as font}]
-                              (if (or type error)
-                                (rx/of font)
-                                (rx/empty))))))]
+            (let [blob-name (.-name blob)]
+              (->> (wa/read-file-as-array-buffer blob)
+                   (rx/map (fn [data]
+                             {:data data
+                              :name blob-name
+                              :type (parse-font-mtype data)}))
+                   (rx/catch (fn []
+                               (rx/of {:error blob-name})))
+                   (rx/mapcat (fn [{:keys [type error] :as font}]
+                                (if (or type error)
+                                  (rx/of font)
+                                  ;; Unknown signature: report it instead of silently dropping it.
+                                  (rx/of {:error blob-name})))))))]
 
-    (let [fonts (->> (rx/from blobs)
-                     (rx/mapcat read-blob))
-          errors (->> fonts
-                      (rx/filter #(some? (:error %)))
-                      (rx/reduce (fn [acc font]
-                                   (conj acc (str "'" (:error font) "'")))
-                                 []))]
-
-      (rx/subscribe errors
-                    #(when
-                      (not-empty %)
-                       (st/emit!
-                        (ntf/error
-                         (if (> (count %) 1)
-                           (tr "errors.bad-font-plural" (str/join ", " %))
-                           (tr "errors.bad-font" (first %)))))))
-      (->> fonts
-           (rx/filter #(nil? (:error %)))
-           (rx/map parse-font)
-           (rx/filter some?)
-           (rx/map prepare)
-           (rx/reduce join {})))))
+    (->> (rx/from blobs)
+         (rx/mapcat read-blob)
+         (rx/map parse-font)
+         (rx/filter some?)
+         (rx/reduce (fn [acc item]
+                      (if (:error item)
+                        (update acc :errors conj (str "'" (:error item) "'"))
+                        (try
+                          (update acc :fonts #(join % (prepare-font item)))
+                          (catch :default cause
+                            (log/warn :msg "skipping font file" :cause cause :name (:name item))
+                            (update acc :errors conj (str "'" (:name item) "'"))))))
+                    {:fonts {} :errors []})
+         (rx/mapcat (fn [{:keys [fonts errors]}]
+                      (when (seq errors)
+                        (st/emit!
+                         (ntf/error
+                          (if (> (count errors) 1)
+                            (tr "errors.bad-font-plural" (str/join ", " errors))
+                            (tr "errors.bad-font" (first errors))))))
+                      (rx/of fonts))))))
 
 (defn- calculate-family-to-id-mapping
   [existing]

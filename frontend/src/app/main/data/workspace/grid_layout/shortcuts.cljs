@@ -55,7 +55,8 @@
 
    :increase-zoom   {:tooltip "+"
                      :label (fn [] (tr "shortcuts.increase-zoom"))
-                     :command "+"
+                     :command ["+" "="]
+                     :show-command "+"
                      :section [:workspace]
                      :fn #(st/emit! (dw/increase-zoom nil))}
 

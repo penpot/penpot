@@ -21,15 +21,7 @@ pub fn get_dest_rect(container: &MathRect, delta: f32) -> MathRect {
 }
 
 pub fn get_image_dest_rect(container: &MathRect, image_fill: &ImageFill) -> MathRect {
-    match image_fill.transform() {
-        Some(tf) => MathRect::from_xywh(
-            container.left + tf.x * container.width(),
-            container.top + tf.y * container.height(),
-            tf.width * container.width(),
-            tf.height * container.height(),
-        ),
-        None => *container,
-    }
+    image_fill.dest_rect(container)
 }
 
 pub fn get_source_rect(size: ISize, container: &MathRect, image_fill: &ImageFill) -> MathRect {

@@ -6,72 +6,74 @@
 ;; 60s for operations that can be slow (file updates, images, fonts, thumbnails,
 ;; snapshots, imports) and 30s for the rest.
 ;; Note: a queue bounds how many waiters pile up, a timeout bounds how long one
-;; waiter waits. Every entry sets a timeout; the by-profile ones also set a
-;; queue, which is where a pile-up hurts.
+;; waiter waits. Every entry sets a timeout and a queue: a command takes the
+;; limits it declares before the root ones, so the queue of a limit is where
+;; its own pile-up waits. The root limits bound what runs at the same time,
+;; not what waits for it.
+;; The production file lives outside this repository: mirror the shape there,
+;; not these numbers. It has to list every id a command declares: an id without
+;; an entry runs with no limiter at all.
 {:update-file/global
- {:permits 20 :timeout 60000}
+ {:permits 20 :queue 50 :timeout 60000}
  :update-file/by-profile
  {:permits 1 :queue 5 :timeout 60000}
 
  :process-font/global
- {:permits 4 :timeout 60000}
+ {:permits 4 :queue 10 :timeout 60000}
  :process-font/by-profile
- {:permits 1 :timeout 60000}
+ {:permits 1 :queue 5 :timeout 60000}
 
  :process-image/global
- {:permits 8 :timeout 60000}
+ {:permits 8 :queue 20 :timeout 60000}
  :process-image/by-profile
- {:permits 1 :timeout 60000}
+ {:permits 1 :queue 5 :timeout 60000}
 
  :auth/global
- {:permits 8 :timeout 30000}
+ {:permits 8 :queue 20 :timeout 30000}
 
  :root/global
- {:permits 40 :timeout 30000}
+ {:permits 40 :queue 100 :timeout 30000}
 
  :root/by-profile
  {:permits 10 :queue 30 :timeout 30000}
 
  :file-thumbnail-ops/global
- {:permits 20 :timeout 60000}
+ {:permits 20 :queue 50 :timeout 60000}
  :file-thumbnail-ops/by-profile
- {:permits 2 :timeout 60000}
+ {:permits 2 :queue 10 :timeout 60000}
 
  :submit-audit-events/by-profile
  {:permits 1 :queue 3 :timeout 30000}
 
  :restore-file-snapshot/global
- {:permits 3 :timeout 60000}
+ {:permits 3 :queue 5 :timeout 60000}
 
  :restore-file-snapshot/by-profile
  {:permits 1 :queue 2 :timeout 60000}
 
  :create-file-snapshot/global
- {:permits 3 :timeout 60000}
+ {:permits 3 :queue 5 :timeout 60000}
 
  :create-file-snapshot/by-profile
  {:permits 1 :queue 2 :timeout 60000}
 
  :send-user-feedback/global
- {:permits 4 :timeout 30000}
+ {:permits 4 :queue 10 :timeout 30000}
 
  :send-user-feedback/by-profile
  {:permits 1 :queue 3 :timeout 30000}
 
  :import-binfile/global
- {:permits 4 :timeout 60000}
+ {:permits 4 :queue 10 :timeout 60000}
 
  :import-binfile/by-profile
  {:permits 1 :queue 2 :timeout 60000}
 
  :create-import-binfile-job/global
- {:permits 4 :timeout 60000}
+ {:permits 4 :queue 10 :timeout 60000}
 
  :create-import-binfile-job/by-profile
  {:permits 1 :queue 2 :timeout 60000}
-
- :profile-plugin-ops/global
- {:permits 4 :timeout 30000}
 
  :profile-plugin-ops/by-profile
  {:permits 1 :queue 2 :timeout 30000}}

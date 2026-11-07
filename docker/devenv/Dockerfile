@@ -1,4 +1,4 @@
-FROM dhi.io/debian-base:trixie-debian13-dev@sha256:61dc022a1908439c478ed4b00e883fe8a7a03540fac23a8aed61352e28e6ae07 AS base
+FROM dhi.io/debian-base:trixie-debian13-dev@sha256:af61a3296b0c92f16969f11ce8c2a93722e84c9e5c1bb42ed6afec796be71b04 AS base
 
 ENV LANG='C.UTF-8' \
     LC_ALL='C.UTF-8' \
@@ -66,8 +66,8 @@ RUN set -ex; \
 
 FROM base AS setup-node
 
-ENV NODE_VERSION=v24.21.0 \
-    PNPM_VERSION=12.9.1 \
+ENV NODE_VERSION=v24.22.2 \
+    PNPM_VERSION=12.16.1 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -76,16 +76,16 @@ RUN set -eux; \
        aarch64|arm64) \
          OPENSSL_ARCH='linux-aarch64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
-         NODE_SHA256='724282c3b43aec998aa9527380465b45d229e021b58035f5f4f63095eabfe5d5'; \
+         NODE_SHA256='95c264150aceb7f3437a29fd6984924f5f8d1511ea3cbd6c508b83f6c555dae2'; \
          PNPM_ARCH='arm64'; \
-         PNPM_SHA256='468294b77633d29889c6e4a79cefb1277eba30cd62e7d6a754218cb85a1d730d'; \
+         PNPM_SHA256='f5847699e5d528f8f8e9bcfb385e58cb9fba7482af1b1aa7b70737be42277f81'; \
          ;; \
        amd64|x86_64) \
          OPENSSL_ARCH='linux-x86_64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
-         NODE_SHA256='6e1db87ef58b8819e5d5402eff1536491b18edd8eb7bee5ef7897876e88dc5ff'; \
+         NODE_SHA256='361718c444e49af2ca5a110c83ba6a8901143f23ab285ebbef0341f391f482a9'; \
          PNPM_ARCH='x64'; \
-         PNPM_SHA256='b4f58449ac02d9d24023ac89e17e05e8331f8ddc12ca1f489cf231bc2bb2bce1'; \
+         PNPM_SHA256='565ff81174a14f6f7bd5d84c1b17e51031a80230d370a1fe24be5d16bd02a825'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -105,37 +105,6 @@ RUN set -eux; \
     chown -R root /opt/node; \
     find /opt/node/include/node/openssl/archs -mindepth 1 -maxdepth 1 ! -name "$OPENSSL_ARCH" -exec rm -rf {} \; ; \
     rm -f /tmp/nodejs.tar.gz /tmp/pnpm.tar.gz;
-
-################################################################################
-## OPENCODE SETUP
-################################################################################
-
-FROM base AS setup-opencode
-
-ENV OPENCODE_VERSION=2.0.29
-
-RUN set -eux; \
-    ARCH="$(dpkg --print-architecture)"; \
-    case "${ARCH}" in \
-       aarch64|arm64) \
-         BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-${OPENCODE_VERSION}.tgz"; \
-         ESUM='0af39e75dbdfacc20f8f531ef35fb4dcc0b44c08084203518614272f232283ae'; \
-         ;; \
-       amd64|x86_64) \
-         BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-${OPENCODE_VERSION}.tgz"; \
-         ESUM='14b5a6638a1a093ac9d484599c844b10c29b445d04844b682ccc668ce26530a2'; \
-         ;; \
-       *) \
-         echo "Unsupported arch: ${ARCH}"; exit 1; \
-         ;; \
-    esac; \
-    curl -LfsSo /tmp/opencode.tgz "${BINARY_URL}"; \
-    echo "${ESUM} */tmp/opencode.tgz" | sha256sum -c -; \
-    mkdir -p /tmp/opencode; \
-    tar -xzf /tmp/opencode.tgz -C /tmp/opencode --strip-components=2 package/bin; \
-    chmod +x /tmp/opencode/opencode; \
-    rm -f /tmp/opencode.tgz;
-
 
 ################################################################################
 ## CADDYSERVER SETUP
@@ -257,17 +226,19 @@ RUN set -eux; \
 
 FROM base AS setup-utils
 
-ENV CLJKONDO_VERSION=2026.08.04 \
-    BABASHKA_VERSION=1.13.225 \
+ENV CLJKONDO_VERSION=2026.10.20 \
+    BABASHKA_VERSION=1.13.226 \
     CLJFMT_VERSION=0.16.6 \
-    PIXI_VERSION=0.81.0 \
-    GITHUB_CLI_VERSION=2.102.0 \
-    AWS_CLI_VERSION=2.37.9 \
-    UV_VERSION=0.12.23 \
+    PIXI_VERSION=0.83.0 \
+    GITHUB_CLI_VERSION=2.103.0 \
+    AWS_CLI_VERSION=2.38.5 \
+    UV_VERSION=0.13.5 \
     UV_TOOL_DIR=/opt/uv/tools \
     UV_TOOL_BIN_DIR=/opt/utils/bin \
     UV_PYTHON_INSTALL_DIR=/opt/uv/python \
-    SERENA_VERSION=1.7.0
+    SERENA_VERSION=2.1.0
+# NOTE: When updating SERENA_VERSION, also update SERENA_UPDATE_VERSION in docker-compose.main.yml.
+#   The latter results in a dynamic update without rebuilding the image, so it must never be lower than SERENA_VERSION here.
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -378,11 +349,11 @@ RUN set -ex; \
     case "${ARCH}" in \
        aarch64|arm64) \
          BINARY_ARCH="aarch64"; \
-         BINARY_SHA256="e7d2cca3622af4765871fe9ce7eeed03acd09dca10a99ebc46e92f79d78765c0"; \
+         BINARY_SHA256="07711a936e9d271045ab937d2c2c5390c25f419e4ba9e25adb9e996031e3f6be"; \
          ;; \
        amd64|x86_64) \
          BINARY_ARCH="x86_64"; \
-         BINARY_SHA256="6b3a6a3d7bb3997928f0bdf7b866914224abf242c2e54e1dcebbe84bee64f356"; \
+         BINARY_SHA256="5def7d1b7e55d892f9a381bb2cb2081a685712464be0d36d5d706af0ac48d0d3"; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -460,6 +431,8 @@ RUN set -ex; \
       fontforge \
       \
       xvfb \
+      xauth \
+      libvulkan1 \
       fonts-noto-color-emoji \
       fonts-unifont \
       libfontconfig1 \
@@ -561,7 +534,6 @@ COPY --from=setup-rust /opt/cargo /opt/cargo
 COPY --from=setup-rust /opt/rustup /opt/rustup
 COPY --from=setup-rust /opt/emsdk /opt/emsdk
 COPY --from=setup-caddy /usr/bin/caddy /usr/bin/caddy
-COPY --from=setup-opencode /tmp/opencode/opencode /opt/utils/bin/opencode
 
 COPY files/nginx.conf /etc/nginx/nginx.conf
 COPY files/nginx-mime.types /etc/nginx/mime.types

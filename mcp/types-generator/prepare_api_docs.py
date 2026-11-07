@@ -63,6 +63,8 @@ class PenpotAPIContentMarkdownConverter(MarkdownConverter):
         if node.name == "pre":
             for button in soup.find_all("button"):
                 button.decompose()
+            for br in soup.find_all("br"):
+                br.replace_with("\n")
             return f"\n```\n{soup.get_text().strip()}\n```\n\n"
 
         # convert tsd-signature elements to code blocks, converting <br> to newlines

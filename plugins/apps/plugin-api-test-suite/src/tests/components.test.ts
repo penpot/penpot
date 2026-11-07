@@ -64,6 +64,20 @@ describe('Component instances', () => {
     expect(inst.isVariantHead()).toBeFalsy();
   });
 
+  // instance() places the copy at the page origin; a board covering that point
+  // must not capture it.
+  test('instance creates the copy at the page root', (ctx) => {
+    ctx.board.x = 0;
+    ctx.board.y = 0;
+    const inst = makeComponent(ctx).instance();
+    try {
+      expect(inst.parent?.id).toBe(ctx.penpot.root?.id);
+      expect(ctx.board.children.map((c) => c.id)).not.toContain(inst.id);
+    } finally {
+      inst.remove();
+    }
+  });
+
   test('component navigation methods return shapes', (ctx) => {
     const inst = instanceOf(ctx);
     expect(inst.componentRoot()).toBeDefined();

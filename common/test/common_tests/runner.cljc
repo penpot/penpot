@@ -10,6 +10,7 @@
    #?(:cljs [app.common.logging :as l])
    #?(:cljs [clojure.string :as str])
    #?(:cljs [clojure.tools.cli :refer [parse-opts]])
+   #?(:cljs [common-tests.fonts-test])
    #?(:cljs [goog.object :as gobj])
    [clojure.test :as t]
    [common-tests.attrs-test]
@@ -21,9 +22,12 @@
    [common-tests.files-changes-test]
    [common-tests.files-migrations-0025-test]
    [common-tests.files-migrations-0026-test]
+   [common-tests.files-migrations-0034-test]
+   [common-tests.files-migrations-0035-test]
    [common-tests.files-migrations-test]
    [common-tests.files.comp-processors-test]
    [common-tests.files.helpers-test]
+   [common-tests.files.page-diff-test]
    [common-tests.files.repair-test]
    [common-tests.files.shapes-builder-test]
    [common-tests.files.tokens-test]
@@ -62,6 +66,7 @@
    [common-tests.logic.comp-main-edit-breaks-copy-slots-test]
    [common-tests.logic.comp-remove-swap-slots-test]
    [common-tests.logic.comp-reset-test]
+   [common-tests.logic.comp-sync-layout-items-test]
    [common-tests.logic.comp-sync-test]
    [common-tests.logic.comp-touched-test]
    [common-tests.logic.copying-and-duplicating-test]
@@ -71,15 +76,18 @@
    [common-tests.logic.swap-and-reset-test]
    [common-tests.logic.swap-as-override-test]
    [common-tests.logic.swap-keeps-id-test]
+   [common-tests.logic.swap-missing-library-test]
    [common-tests.logic.text-sync-test]
    [common-tests.logic.text-touched-test]
    [common-tests.logic.token-apply-test]
    [common-tests.logic.token-test]
+   [common-tests.logic.variants-reparent-test]
    [common-tests.logic.variants-switch-test]
    [common-tests.logic.variants-test]
    [common-tests.math-test]
    [common-tests.media-test]
    [common-tests.path-names-test]
+   [common-tests.path-names-tree-test]
    [common-tests.record-test]
    [common-tests.schema-test]
    [common-tests.spec-test]
@@ -103,6 +111,7 @@
    [common-tests.types.shape-decode-encode-test]
    [common-tests.types.shape-interactions-test]
    [common-tests.types.shape-layout-test]
+   [common-tests.types.shape-test]
    [common-tests.types.stroke-test]
    [common-tests.types.text-test]
    [common-tests.types.token-test]
@@ -122,12 +131,16 @@
    'common-tests.data-test
    'common-tests.exceptions-test
    'common-tests.files-builder-test
+   #?(:cljs 'common-tests.fonts-test)
    'common-tests.files-changes-test
    'common-tests.files-migrations-0025-test
    'common-tests.files-migrations-0026-test
+   'common-tests.files-migrations-0034-test
+   'common-tests.files-migrations-0035-test
    'common-tests.files-migrations-test
    'common-tests.files.comp-processors-test
    'common-tests.files.helpers-test
+   'common-tests.files.page-diff-test
    'common-tests.files.repair-test
    'common-tests.files.shapes-builder-test
    'common-tests.files.tokens-test
@@ -166,6 +179,7 @@
    'common-tests.logic.comp-main-edit-breaks-copy-slots-test
    'common-tests.logic.comp-remove-swap-slots-test
    'common-tests.logic.comp-reset-test
+   'common-tests.logic.comp-sync-layout-items-test
    'common-tests.logic.comp-sync-test
    'common-tests.logic.comp-touched-test
    'common-tests.logic.copying-and-duplicating-test
@@ -175,15 +189,18 @@
    'common-tests.logic.swap-and-reset-test
    'common-tests.logic.swap-as-override-test
    'common-tests.logic.swap-keeps-id-test
+   'common-tests.logic.swap-missing-library-test
    'common-tests.logic.text-sync-test
    'common-tests.logic.text-touched-test
    'common-tests.logic.token-apply-test
    'common-tests.logic.token-test
+   'common-tests.logic.variants-reparent-test
    'common-tests.logic.variants-switch-test
    'common-tests.logic.variants-test
    'common-tests.math-test
    'common-tests.media-test
    'common-tests.path-names-test
+   'common-tests.path-names-tree-test
    'common-tests.record-test
    'common-tests.schema-test
    'common-tests.spec-test
@@ -207,6 +224,7 @@
    'common-tests.types.shape-decode-encode-test
    'common-tests.types.shape-interactions-test
    'common-tests.types.shape-layout-test
+   'common-tests.types.shape-test
    'common-tests.types.stroke-test
    'common-tests.types.text-test
    'common-tests.types.token-test

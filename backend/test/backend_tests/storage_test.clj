@@ -250,8 +250,8 @@
                  :name "testfile"
                  :content mfile}
 
-        out1    (th/command! params)
-        out2    (th/command! params)]
+        out1    (th/multipart-command! params)
+        out2    (th/multipart-command! params)]
 
     (t/is (nil? (:error out1)))
     (t/is (nil? (:error out2)))
@@ -308,11 +308,11 @@
                                      ::rpc/profile-id (:id prof)
                                      :total-chunks 1})
                        :result :session-id)
-        out        (th/command! {::th/type :upload-chunk
-                                 ::rpc/profile-id (:id prof)
-                                 :session-id session-id
-                                 :index 0
-                                 :content mfile})]
+        out        (th/multipart-command! {::th/type :upload-chunk
+                                           ::rpc/profile-id (:id prof)
+                                           :session-id session-id
+                                           :index 0
+                                           :content mfile})]
     (assert (nil? (:error out)))
     session-id))
 
@@ -357,7 +357,7 @@
                  :font-style "normal"
                  :uploads {"font/ttf" session-id}}
 
-        out1     (th/command! params1)
+        out1     (th/multipart-command! params1)
         out2     (th/command! params2)]
 
     ;; (th/print-result! out)
@@ -424,8 +424,8 @@
                  :name "testfile"
                  :content mfile}
 
-        out1    (th/command! params)
-        out2    (th/command! params)]
+        out1    (th/multipart-command! params)
+        out2    (th/multipart-command! params)]
 
     (t/is (nil? (:error out1)))
     (t/is (nil? (:error out2)))
@@ -693,9 +693,9 @@
     (t/is (= 26 (count ids)))
     (th/db-exec! ["update storage_object set deleted_at = ?" (ct/now)])
 
-    (let [orig  @#'gcd/process-chunk
+    (let [orig  @#'gcd/process-chunk-deletion
           calls (atom 0)]
-      (alter-var-root #'gcd/process-chunk
+      (alter-var-root #'gcd/process-chunk-deletion
                       (constantly (fn [& args]
                                     (when (= 2 (swap! calls inc))
                                       (throw (ex-info "boom" {})))
@@ -708,7 +708,7 @@
         (t/testing "first chunk committed before the fault"
           (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM storage_object WHERE deleted_at IS NOT NULL"])))))
         (finally
-          (alter-var-root #'gcd/process-chunk (constantly orig)))))))
+          (alter-var-root #'gcd/process-chunk-deletion (constantly orig)))))))
 
 (t/deftest objects-gc-task-skip-delay
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -729,8 +729,8 @@
                  :is-local true
                  :name "testfile"
                  :content mfile}
-        out1    (th/command! params)
-        out2    (th/command! params)]
+        out1    (th/multipart-command! params)
+        out2    (th/multipart-command! params)]
 
     (t/is (nil? (:error out1)))
     (t/is (nil? (:error out2)))
@@ -993,25 +993,6 @@
                                 (:id object)])]
       (t/is (= 1 (:count row))))))
 
-(t/deftest gc-deleted-gives-up-after-max-attempts
-  (let [storage (-> (:app.storage/storage th/*system*)
-                    (configure-storage-backend))
-        content (sto/content "content")
-        object  (sto/put-object! storage {::sto/content content
-                                          :content-type "text/plain"})]
-
-    (th/db-update! :storage-object {:deleted-at (ct/in-past {:minutes 1})
-                                    :deletion_attempts 6}
-                   {:id (:id object)})
-
-    (with-mocks [_mock {:target 'app.storage.impl/del-objects-in-bulk
-                        :return (fn [_ ids] (set ids))}]
-      (let [res (th/run-task! :storage-gc-deleted {})]
-        (t/is (= 0 (:deleted res)))))
-
-    (let [row (th/db-exec-one! ["select count(*) from storage_object where id = ?" (:id object)])]
-      (t/is (= 0 (:count row))))))
-
 (t/deftest dedup-reuses-existing-blob-with-touch
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
@@ -1104,11 +1085,11 @@
                                      ::rpc/profile-id (:id prof)
                                      :total-chunks 1})
                        :result :session-id)
-        out        (th/command! {::th/type :upload-chunk
-                                 ::rpc/profile-id (:id prof)
-                                 :session-id session-id
-                                 :index 0
-                                 :content mfile})]
+        out        (th/multipart-command! {::th/type :upload-chunk
+                                           ::rpc/profile-id (:id prof)
+                                           :session-id session-id
+                                           :index 0
+                                           :content mfile})]
 
     (t/is (nil? (:error out)))
 
@@ -1145,11 +1126,11 @@
                                      ::rpc/profile-id (:id prof)
                                      :total-chunks 1})
                        :result :session-id)
-        out        (th/command! {::th/type :upload-chunk
-                                 ::rpc/profile-id (:id prof)
-                                 :session-id session-id
-                                 :index 0
-                                 :content mfile})]
+        out        (th/multipart-command! {::th/type :upload-chunk
+                                           ::rpc/profile-id (:id prof)
+                                           :session-id session-id
+                                           :index 0
+                                           :content mfile})]
 
     (t/is (nil? (:error out)))
     (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
@@ -1197,11 +1178,11 @@
                                      ::rpc/profile-id (:id prof)
                                      :total-chunks 1})
                        :result :session-id)
-        out        (th/command! {::th/type :upload-chunk
-                                 ::rpc/profile-id (:id prof)
-                                 :session-id session-id
-                                 :index 0
-                                 :content mfile})]
+        out        (th/multipart-command! {::th/type :upload-chunk
+                                           ::rpc/profile-id (:id prof)
+                                           :session-id session-id
+                                           :index 0
+                                           :content mfile})]
     (t/is (nil? (:error out)))
     (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
                                          session-id]))))
@@ -1236,11 +1217,11 @@
                                      ::rpc/profile-id (:id prof)
                                      :total-chunks 1})
                        :result :session-id)
-        out        (th/command! {::th/type :upload-chunk
-                                 ::rpc/profile-id (:id prof)
-                                 :session-id session-id
-                                 :index 0
-                                 :content mfile})
+        out        (th/multipart-command! {::th/type :upload-chunk
+                                           ::rpc/profile-id (:id prof)
+                                           :session-id session-id
+                                           :index 0
+                                           :content mfile})
         object-id  (:object-id (th/db-exec-one! ["select object_id from upload_session_chunk where session_id = ?"
                                                  session-id]))
         check      @#'gc-touched/has-upload-session-chunk-refs?
@@ -1281,11 +1262,11 @@
                                      ::rpc/profile-id (:id prof)
                                      :total-chunks 1})
                        :result :session-id)
-        out        (th/command! {::th/type :upload-chunk
-                                 ::rpc/profile-id (:id prof)
-                                 :session-id session-id
-                                 :index 0
-                                 :content mfile})
+        out        (th/multipart-command! {::th/type :upload-chunk
+                                           ::rpc/profile-id (:id prof)
+                                           :session-id session-id
+                                           :index 0
+                                           :content mfile})
         object-id  (:object-id (th/db-exec-one! ["select object_id from upload_session_chunk where session_id = ?"
                                                  session-id]))]
     (t/is (nil? (:error out)))
@@ -1301,10 +1282,13 @@
     (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
                                          session-id]))))))
 
-(t/deftest upload-session-deferred-keeps-mapping
-  ;; A physical-deletion failure defers the row; the session mapping is
-  ;; kept so the session survives the backend outage and the blob is
-  ;; retried the next day.
+(t/deftest upload-session-mapping-blocks-gc-deleted
+  ;; A live upload-session chunk mapping references its object with a NO
+  ;; ACTION foreign key: gc-deleted cannot purge that object while the
+  ;; session is intact. The blocked chunk fails and is skipped, and both
+  ;; the object row and the mapping stay in place, so the stalled session
+  ;; stays retryable; objects-gc owns purging the mapping before the
+  ;; object (see upload-session-consumed-purge below).
   (let [prof       (th/create-profile* 1)
         _          (th/create-project* 1 {:profile-id (:id prof)
                                           :team-id (:default-team-id prof)})
@@ -1319,25 +1303,21 @@
                                      ::rpc/profile-id (:id prof)
                                      :total-chunks 1})
                        :result :session-id)
-        out        (th/command! {::th/type :upload-chunk
-                                 ::rpc/profile-id (:id prof)
-                                 :session-id session-id
-                                 :index 0
-                                 :content mfile})
+        out        (th/multipart-command! {::th/type :upload-chunk
+                                           ::rpc/profile-id (:id prof)
+                                           :session-id session-id
+                                           :index 0
+                                           :content mfile})
         object-id  (:object-id (th/db-exec-one! ["select object_id from upload_session_chunk where session_id = ?"
                                                  session-id]))]
     (t/is (nil? (:error out)))
-    (th/db-exec! ["update storage_object set deleted_at = ? where id = ?" (ct/now) object-id])
+    (th/db-exec! ["update storage_object set deleted_at = ? where id = ?" (ct/in-past {:minutes 5}) object-id])
 
-    (with-mocks [_mock {:target 'app.storage.impl/del-objects-in-bulk
-                        :return (fn [_ ids] (set ids))}]
-      (let [res (th/run-task! :storage-gc-deleted {})]
-        (t/is (= 0 (:deleted res)))))
+    (th/run-task! :storage-gc-deleted {})
 
-    ;; row kept and deferred one day
-    (let [row (th/db-exec-one! ["select deletion_attempts, touched_at from storage_object where id = ?" object-id])]
-      (t/is (= 1 (:deletion-attempts row)))
-      (t/is (some? (:touched-at row))))
+    ;; the object row survives the run: the mapping blocks its deletion
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from storage_object where id = ?"
+                                         object-id]))))
     ;; mapping kept: the session is intact for the retry
     (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
                                          session-id]))))))
@@ -1359,11 +1339,11 @@
                                      ::rpc/profile-id (:id prof)
                                      :total-chunks 1})
                        :result :session-id)
-        out        (th/command! {::th/type :upload-chunk
-                                 ::rpc/profile-id (:id prof)
-                                 :session-id session-id
-                                 :index 0
-                                 :content mfile})]
+        out        (th/multipart-command! {::th/type :upload-chunk
+                                           ::rpc/profile-id (:id prof)
+                                           :session-id session-id
+                                           :index 0
+                                           :content mfile})]
 
     (t/is (nil? (:error out)))
 
@@ -1404,11 +1384,11 @@
                                      ::rpc/profile-id (:id prof)
                                      :total-chunks 1})
                        :result :session-id)
-        out        (th/command! {::th/type :upload-chunk
-                                 ::rpc/profile-id (:id prof)
-                                 :session-id session-id
-                                 :index 0
-                                 :content mfile})]
+        out        (th/multipart-command! {::th/type :upload-chunk
+                                           ::rpc/profile-id (:id prof)
+                                           :session-id session-id
+                                           :index 0
+                                           :content mfile})]
     (t/is (nil? (:error out)))
 
     ;; soft-delete the profile; the live session is neither consumed nor stalled

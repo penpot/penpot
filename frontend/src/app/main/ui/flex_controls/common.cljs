@@ -1,7 +1,10 @@
 (ns app.main.ui.flex-controls.common
   (:require
    [app.main.constants :as mconst]
+   [app.main.data.workspace.transforms :as dwt]
+   [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.main.ui.context :as ctx]
    [app.main.ui.formats :as fmt]
    [rumext.v2 :as mf]))
 
@@ -13,6 +16,19 @@
 ;; unmount cleanup, guarded on the resizing flag. See
 ;; `ms/clear-transform-preview!` for the rationale.
 (def clear-transform-preview! ms/clear-transform-preview!)
+
+(defn use-read-only-cancel
+  "Answers whether the workspace is read-only, and cancels the resize in
+  progress (`resizing` holds a truthy value while dragging) when it turns
+  read-only, as when saves fail: the preview is dropped and the release
+  commits nothing."
+  [resizing]
+  (let [read-only? (mf/use-ctx ctx/workspace-read-only?)]
+    (mf/with-effect [read-only?]
+      (when (and read-only? @resizing)
+        (reset! resizing nil)
+        (st/emit! (dwt/cancel-transform))))
+    read-only?))
 
 ;; ------------------------------------------------
 ;; CONSTANTS

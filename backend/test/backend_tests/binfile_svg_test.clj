@@ -146,7 +146,7 @@
 (defn- write-temp-svg
   "Write `text` to a tempfile and return `[path size]`."
   [text]
-  (let [path (fs/create-tempfile :prefix "penpot-svg-import-test-" :suffix ".svg")
+  (let [path (fs/create-tempfile :dir "/tmp/penpot" :prefix "penpot-svg-import-test-" :suffix ".svg")
         data (utf8bytes text)]
     (spit (str path) text :encoding "UTF-8")
     [path (alength data)]))
@@ -195,15 +195,15 @@
                                     :project-id (:default-project-id profile)
                                     :is-shared false})
         [svg-path svg-size] (write-temp-svg clean-svg)
-        out     (th/command! {::th/type :upload-file-media-object
-                              ::rpc/profile-id (:id profile)
-                              :file-id (:id file)
-                              :is-local true
-                              :name "benign.svg"
-                              :content {:filename "benign.svg"
-                                        :path svg-path
-                                        :mtype "image/svg+xml"
-                                        :size svg-size}})
+        out     (th/multipart-command! {::th/type :upload-file-media-object
+                                        ::rpc/profile-id (:id profile)
+                                        :file-id (:id file)
+                                        :is-local true
+                                        :name "benign.svg"
+                                        :content {:filename "benign.svg"
+                                                  :path svg-path
+                                                  :mtype "image/svg+xml"
+                                                  :size svg-size}})
         _       (t/is (nil? (:error out)) (str "upload failed: " (pr-str (:error out))))
         uploaded (:result out)
         page-id (first (get-in file [:data :pages]))
@@ -246,10 +246,10 @@
   (let [bundle (tmp/tempfile :prefix "penpot-export-" :suffix ".zip")]
     (v3/export-files!
      (-> th/*system*
-         (assoc ::bfc/ids #{(:id file)})
+         (assoc ::bfc/file-ids #{(:id file)})
          (assoc ::bfc/embed-assets false)
-         (assoc ::bfc/include-libraries false))
-     (io/output-stream bundle))
+         (assoc ::bfc/include-libraries false)
+         (assoc ::bfc/output (io/output-stream bundle))))
 
     (let [evil   (tmp/tempfile :prefix "penpot-evil-" :suffix ".zip")
           _      (tamper-svg-entry! bundle evil media-id (utf8bytes evil-text) :content-type content-type)
@@ -364,7 +364,7 @@
   (let [bundle (tmp/tempfile :prefix "penpot-export-v1-" :suffix ".bin")]
     (v1/export-files!
      (-> th/*system*
-         (assoc ::bfc/ids #{(:id file)})
+         (assoc ::bfc/file-ids #{(:id file)})
          (assoc ::bfc/embed-assets false)
          (assoc ::bfc/include-libraries false))
      (io/output-stream bundle))

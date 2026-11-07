@@ -290,7 +290,7 @@ The Penpot MCP server can be configured using environment variables.
 | Environment Variable                             | Description                                                                                                                                                                                                                                                                 | Default        |
 |--------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|
 | `PENPOT_MCP_SERVER_HOST`                         | Address on which the MCP server listens (binds to)                                                                                                                                                                                                                          | `localhost`    |
-| `PENPOT_MCP_SERVER_PORT`                         | Port for the MCP server                                                                                                                                                                                                                                                | `4401`         |
+| `PENPOT_MCP_SERVER_PORT`                         | Port for the MCP server                                                                                                                                                                                                                                                     | `4401`         |
 | `PENPOT_MCP_WEBSOCKET_PORT`                      | Port for the WebSocket server (plugin connection)                                                                                                                                                                                                                           | `4402`         |
 | `PENPOT_MCP_REPL_PORT`                           | Port for the REPL server (development/debugging)                                                                                                                                                                                                                            | `4403`         |
 | `PENPOT_MCP_REPL_HOST`                           | Address on which the REPL server listens (binds to)                                                                                                                                                                                                                         | `localhost`    |
@@ -298,8 +298,21 @@ The Penpot MCP server can be configured using environment variables.
 | `PENPOT_MCP_REMOTE_MODE`                         | Enable remote mode (disables file system access). Set to `true` to enable.                                                                                                                                                                                                  | `false`        |
 | `PENPOT_MCP_DEVENV`                              | Enable Penpot development environment tools in local single-user mode. Set to `true` to enable.                                                                                                                                                                             | `false`        |
 | `PENPOT_MCP_TOOL_TIMEOUT_S`                      | Timeout, in seconds, for tool calls dispatched to the Penpot plugin                                                                                                                                                                                                         | `120`          |
+| `PENPOT_MCP_MAX_BODY_SIZE`                       | Maximum size of a JSON request body accepted by the MCP endpoint, in any format supported by Express (e.g. `10mb`)                                                                                                                                                          | `10mb`         |
 | `PENPOT_MCP_EXPORT_SHAPE_MAX_PARALLEL_REQUESTS`  | Maximum number of parallel export shape requests (multi-user mode only).                                                                                                                                                                                                    | `0` (no limit) |
+| `PENPOT_MCP_AUTH_URI` | Public base URL of the MCP authorization service, e.g. `https://penpot.example/api/mcp/oauth`. Set to enable OAuth; requires `--multi-user`. Use HTTPS (HTTP is allowed on loopback for development), without credentials, query parameters, or a fragment. | (unset; OAuth disabled) |
 | `PENPOT_MCP_REDIS_URI`                           | Redis connection URI (e.g. `redis://host:6379`) enabling multi-instance horizontal scaling via Redis pub/sub task routing (multi-user mode only). When unset, the server runs in single-instance mode, requiring the plugin and MCP client to connect to the same instance. | (unset)        |
+| `PENPOT_MCP_BACKEND_URI` | Penpot instance base URI. Setting a nonblank value enables tools that communicate with the Penpot backend (currently only the `submit_feedback` tool). The MCP server appends suffixes such as `api/main/methods/send-mcp-feedback`. Backend interactions require MCP user tokens to be provided.  | (unset) |
+
+### Backend Configuration
+
+If `PENPOT_MCP_BACKEND_URI` is set, the backend must itself be configured correspondingly, i.e. set
+the following variables for the backend process:
+
+| Environment Variable | Description | Default |
+|----------------------|-------------|---------|
+| `PENPOT_MCP_FEEDBACK_EMAIL` | Selects the inbox for MCP feedback. Unset means the command rejects submissions. Requires the `enable-mcp` or `enable-access-tokens` flag and uses the backend's existing SMTP configuration. | (unset) |
+
 
 ### Logging Configuration
 
@@ -348,9 +361,10 @@ Some of the aforementioned configuration options control these modes.
 * Auto-formatting: Use `pnpm run fmt`
 * Generating API type data: See [types-generator/README.md](types-generator/README.md)
 * Versioning: Use `bash scripts/set-version` to set the version for the MCP package (in `package.json`).
-  - Ensure that at least the major, minor and patch components of the version are always up-to-date.
-  - The MCP plugin assumes that a mismatch between the MCP version and the Penpot version (as returned by the API) 
-    indicates incompatibility, resulting in the display of a warning message in the plugin UI.
+  - Ensure that at least the major and minor components of the version are always up-to-date.
+  - The MCP plugin assumes that a mismatch between the major.minor components of the MCP version and the Penpot
+    version (as returned by the API) indicates incompatibility, resulting in the display of a warning message in
+    the plugin UI. Patch releases are treated as compatible.
 * Packaging and publishing:
   1. Ensure that the API type data is up-to-date (see above).
   2. Ensure release version is set correctly in package.json (call `bash scripts/set-version` to update it automatically)

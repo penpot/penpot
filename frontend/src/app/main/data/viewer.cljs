@@ -24,6 +24,7 @@
    [app.main.data.fonts :as df]
    [app.main.data.helpers :as dsh]
    [app.main.features :as features]
+   [app.main.features.pointer-map :as fpmap]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.render-wasm.api :as wasm.api]
@@ -57,7 +58,7 @@
   [:map {:title "initialize"}
    [:file-id ::sm/uuid]
    [:share-id {:optional true} [:maybe ::sm/uuid]]
-   [:page-id {:optional true} ::sm/uuid]])
+   [:page-id {:optional true} [:maybe ::sm/uuid]]])
 
 (defn initialize
   [{:keys [file-id share-id] :as params}]
@@ -116,9 +117,16 @@
 (def ^:private
   schema:fetch-bundle
   [:map {:title "fetch-bundle"}
-   [:page-id ::sm/uuid]
+   [:page-id {:optional true} ::sm/uuid]
    [:file-id ::sm/uuid]
    [:share-id {:optional true} ::sm/uuid]])
+
+(defn resolve-viewer-fragment
+  "Resolves one pointer-mapped entry of the view-only bundle into a
+  [key data] pair. Thin wrapper over the shared `fpmap/resolve-pointer`
+  with share-link scoping; see it for the failure contract."
+  [file-id share-id entry]
+  (fpmap/resolve-pointer file-id share-id entry))
 
 (defn- fetch-bundle
   [{:keys [file-id share-id] :as params}]
@@ -140,14 +148,7 @@
                        (uuid? share-id)
                        (assoc :share-id share-id))
 
-            resolve  (fn [[key pointer]]
-                       (let [params {:file-id file-id :fragment-id @pointer}
-                             params (cond-> params
-                                      (uuid? share-id)
-                                      (assoc :share-id share-id))]
-                         (->> (rp/cmd! :get-file-fragment params)
-                              (rx/map :data)
-                              (rx/map #(vector key %)))))]
+            resolve  (partial resolve-viewer-fragment file-id share-id)]
 
         (->> (rp/cmd! :get-view-only-bundle params')
              (rx/mapcat
@@ -305,19 +306,27 @@
               index    (some-> (rt/get-query-param qparams :index) parse-long)
               frame-id (some-> (:frame-id qparams) uuid/parse)
               page-id (some-> (rt/get-query-param qparams :page-id) uuid/parse)
-              file-id (some-> (rt/get-query-param qparams :file-id) uuid/parse)]
+              file-id (some-> (rt/get-query-param qparams :file-id) uuid/parse)
+              first-page-id (-> file :data :pages first)]
 
-          (rx/merge
-           (rx/of (case (:zoom qparams)
-                    "fit" zoom-to-fit
-                    "fill" zoom-to-fill
-                    nil))
-           (rx/of
-            (update-page-position-data file-id page-id)
-            (cond
-              (some? frame-id) (go-to-frame frame-id)
-              (some? index) (go-to-frame-by-index index)
-              :else (go-to-frame-auto)))))))))
+          (if (and (nil? page-id) (some? first-page-id))
+            ;; Every viewer event reads the page from the route, so a URL
+            ;; without page-id names the first page; the viewer then
+            ;; initializes again on the completed route.
+            (rx/of (rt/nav :viewer
+                           (assoc (rt/get-params state) :page-id first-page-id)
+                           {::rt/replace true}))
+            (rx/merge
+             (rx/of (case (:zoom qparams)
+                      "fit" zoom-to-fit
+                      "fill" zoom-to-fill
+                      nil))
+             (rx/of
+              (update-page-position-data file-id page-id)
+              (cond
+                (some? frame-id) (go-to-frame frame-id)
+                (some? index) (go-to-frame-by-index index)
+                :else (go-to-frame-auto))))))))))
 
 (defn fetch-comment-threads
   [{:keys [file-id page-id share-id] :as params}]

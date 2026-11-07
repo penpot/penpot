@@ -76,11 +76,11 @@
                          :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                          :mtype "image/jpeg"}}]
 
-    (let [out (th/command! data1)]
+    (let [out (th/multipart-command! data1)]
       (t/is (nil? (:error out)))
       (t/is (map? (:result out))))
 
-    (let [out (th/command! data2)]
+    (let [out (th/multipart-command! data2)]
       (t/is (nil? (:error out)))
       (t/is (map? (:result out))))
 
@@ -119,8 +119,11 @@
       ;; thumbnails
       (th/run-task! :file-gc {:file-id (:id file)})
 
+      ;; Only the unused object-thumbnail row is purged: the replaced
+      ;; page fragment stays pinned by the automatic snapshot that shares
+      ;; it, and reattach means file-gc writes no churn fragments.
       (let [result (th/run-task! :objects-gc {})]
-        (t/is (= 3 (:processed result))))
+        (t/is (= 1 (:processed result))))
 
       ;; check if row2 related thumbnail row still exists
       (let [[row :as rows] (th/db-query :file-tagged-object-thumbnail
@@ -184,12 +187,12 @@
                          :path (th/tempfile "backend_tests/test_files/sample.jpg")
                          :mtype "image/jpeg"}}]
 
-    (let [out (th/command! data1)]
+    (let [out (th/multipart-command! data1)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (t/is (contains? (:result out) :uri)))
 
-    (let [out (th/command! data2)]
+    (let [out (th/multipart-command! data2)]
       (t/is (nil? (:error out)))
       (t/is (contains? (:result out) :uri)))
 
@@ -223,8 +226,11 @@
       ;; thumbnails
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
+      ;; Only the superseded revn thumbnail row is purged: the file
+      ;; itself is unchanged, so it keeps its fragment ids (no-churn)
+      ;; and no fragment row is marked.
       (let [result (th/run-task! :objects-gc {})]
-        (t/is (= 2 (:processed result))))
+        (t/is (= 1 (:processed result))))
 
       ;; check if row1 related thumbnail row still exists
       (let [[row :as rows] (th/db-query :file-thumbnail
@@ -272,7 +278,7 @@
                         :size 7923
                         :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                         :mtype "image/jpeg"}}
-        out    (th/command! data)
+        out    (th/multipart-command! data)
         error  (:error out)]
 
     (t/is (nil? (:result out)))
@@ -298,7 +304,7 @@
                          :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                          :mtype "image/jpeg"}}]
 
-    (let [out (th/command! data1)]
+    (let [out (th/multipart-command! data1)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (t/is (contains? (:result out) :uri)))
@@ -325,7 +331,7 @@
                         :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                         :mtype "image/jpeg"}}]
 
-    (let [out (th/command! data)]
+    (let [out (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (map? (:result out))))
 
@@ -341,7 +347,7 @@
     (let [params {::th/type :get-file-object-thumbnails
                   ::rpc/profile-id (:id profile)
                   :file-id (:id file)}
-          out    (th/command! params)]
+          out    (th/multipart-command! params)]
 
       ;; (th/print-result! out)
 
@@ -367,7 +373,7 @@
                          (-> media
                              (assoc :path (th/tempfile "backend_tests/test_files/sample2.jpg"))
                              (assoc :size 7923))))
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (map? (:result out))))
 
@@ -376,7 +382,7 @@
                          (-> media
                              (assoc :path (th/tempfile "backend_tests/test_files/sample.jpg"))
                              (assoc :size 312043))))
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (map? (:result out))))))
 
@@ -402,7 +408,7 @@
                             :size 7923
                             :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                             :mtype "image/jpeg"}}
-            out    (th/command! data)]
+            out    (th/multipart-command! data)]
         (t/is (nil? (:error out)))
         (t/is (map? (:result out)))))
 
@@ -419,7 +425,7 @@
     (let [data {::th/type :delete-file-object-thumbnails
                 ::rpc/profile-id (:id profile)
                 :object-ids [oid1 oid2 oid3]}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
@@ -440,7 +446,7 @@
         data    {::th/type :delete-file-object-thumbnails
                  ::rpc/profile-id (:id profile)
                  :object-ids []}
-        out     (th/command! data)]
+        out     (th/multipart-command! data)]
     (t/is (nil? (:error out)))
     (t/is (nil? (:result out)))))
 
@@ -457,7 +463,7 @@
     (let [data {::th/type :delete-file-object-thumbnails
                 ::rpc/profile-id (:id profile)
                 :object-ids [oid1 oid2]}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))))
 
@@ -480,7 +486,7 @@
                         :size 7923
                         :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                         :mtype "image/jpeg"}}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (map? (:result out))))
 
@@ -488,7 +494,7 @@
     (let [data {::th/type :delete-file-object-thumbnails
                 ::rpc/profile-id (:id profile)
                 :object-ids [oid1 oid2 oid3]}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
@@ -517,7 +523,7 @@
                         :size 7923
                         :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                         :mtype "image/jpeg"}}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (map? (:result out))))
 
@@ -525,7 +531,7 @@
     (let [data {::th/type :delete-file-object-thumbnails
                 ::rpc/profile-id (:id profile)
                 :object-ids [oid]}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
@@ -533,7 +539,7 @@
     (let [data {::th/type :delete-file-object-thumbnails
                 ::rpc/profile-id (:id profile)
                 :object-ids [oid]}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
@@ -563,7 +569,7 @@
                         :size 7923
                         :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                         :mtype "image/jpeg"}}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (map? (:result out))))
 
@@ -571,7 +577,7 @@
     (let [data {::th/type :delete-file-object-thumbnails
                 ::rpc/profile-id (:id profile2)
                 :object-ids [oid]}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (some? (:error out)))
       (t/is (th/ex-info? (:error out)))
       (t/is (= :not-found (th/ex-type (:error out)))))
@@ -606,7 +612,7 @@
                           :size 7923
                           :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                           :mtype "image/jpeg"}}
-            out  (th/command! data)]
+            out  (th/multipart-command! data)]
         (t/is (nil? (:error out)))
         (t/is (map? (:result out)))))
 
@@ -614,7 +620,7 @@
     (let [data {::th/type :delete-file-object-thumbnails
                 ::rpc/profile-id (:id profile)
                 :object-ids [oid1 oid2]}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
@@ -653,7 +659,7 @@
                         :size 7923
                         :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                         :mtype "image/jpeg"}}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (map? (:result out))))
 
@@ -665,7 +671,7 @@
                         :size 7923
                         :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                         :mtype "image/jpeg"}}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (map? (:result out))))
 
@@ -674,7 +680,7 @@
     (let [data {::th/type :delete-file-object-thumbnails
                 ::rpc/profile-id (:id profile1)
                 :object-ids [oid1 oid2]}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (some? (:error out)))
       (t/is (th/ex-info? (:error out)))
       (t/is (= :not-found (th/ex-type (:error out)))))
@@ -709,7 +715,7 @@
                         :size 7923
                         :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                         :mtype "image/jpeg"}}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (map? (:result out))))
 
@@ -721,7 +727,7 @@
                         :size 312043
                         :path (th/tempfile "backend_tests/test_files/sample.jpg")
                         :mtype "image/jpeg"}}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (map? (:result out))))
 
@@ -740,7 +746,7 @@
       (let [data {::th/type :delete-file-object-thumbnails
                   ::rpc/profile-id (:id profile)
                   :object-ids [oid1 oid2]}
-            out  (th/command! data)]
+            out  (th/multipart-command! data)]
         (t/is (nil? (:error out)))
         (t/is (nil? (:result out))))
 
@@ -770,7 +776,7 @@
                           :size 7923
                           :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                           :mtype "image/jpeg"}}
-            out  (th/command! data)]
+            out  (th/multipart-command! data)]
         (t/is (nil? (:error out)))
         (t/is (map? (:result out)))))
 
@@ -784,7 +790,7 @@
     (let [data {::th/type :delete-file-object-thumbnails
                 ::rpc/profile-id (:id profile)
                 :object-ids oids}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
@@ -813,7 +819,7 @@
                         :size 7923
                         :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                         :mtype "image/jpeg"}}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (map? (:result out))))
 
@@ -821,7 +827,7 @@
     (let [data {::th/type :delete-file-object-thumbnails
                 ::rpc/profile-id (:id profile)
                 :object-ids [oid]}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
@@ -849,7 +855,7 @@
                         :size 7923
                         :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                         :mtype "image/jpeg"}}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (map? (:result out))))
 
@@ -857,7 +863,7 @@
     (let [data {::th/type :delete-file-object-thumbnails
                 ::rpc/profile-id (:id profile)
                 :object-ids [oid oid]}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
@@ -891,7 +897,7 @@
                           :size 7923
                           :path (th/tempfile "backend_tests/test_files/sample2.jpg")
                           :mtype "image/jpeg"}}
-            out  (th/command! data)]
+            out  (th/multipart-command! data)]
         (t/is (nil? (:error out)))
         (t/is (map? (:result out)))))
 
@@ -899,7 +905,7 @@
     (let [data {::th/type :delete-file-object-thumbnails
                 ::rpc/profile-id (:id profile)
                 :object-ids [oid1]}
-          out  (th/command! data)]
+          out  (th/multipart-command! data)]
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
@@ -915,3 +921,44 @@
       (t/is (= 1 (count rows2)))
       (t/is (nil? (:deleted-at (first rows2)))))))
 
+(t/deftest rejects-forged-path-on-create-file-thumbnail
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        data    {::th/type :create-file-thumbnail
+                 ::rpc/profile-id (:id profile)
+                 :file-id (:id file)
+                 :revn 1
+                 :media {:filename "x.png"
+                         :size 1
+                         :path (fs/path "/etc/passwd")
+                         :mtype "image/png"}}
+        out     (th/command! data)
+        error   (:error out)]
+    (t/is (nil? (:result out)))
+    (t/is (th/ex-info? error))
+    (t/is (th/ex-of-type? error :validation))
+    (t/is (th/ex-of-code? error :params-validation))
+    (t/is (= 0 (count (th/db-query :file-thumbnail {:file-id (:id file)}))))))
+
+(t/deftest rejects-forged-path-on-create-file-object-thumbnail
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        data    {::th/type :create-file-object-thumbnail
+                 ::rpc/profile-id (:id profile)
+                 :file-id (:id file)
+                 :object-id "test-key-forged"
+                 :media {:filename "x.png"
+                         :size 1
+                         :path (fs/path "/etc/passwd")
+                         :mtype "image/png"}}
+        out     (th/command! data)
+        error   (:error out)]
+    (t/is (nil? (:result out)))
+    (t/is (th/ex-info? error))
+    (t/is (th/ex-of-type? error :validation))
+    (t/is (th/ex-of-code? error :params-validation))
+    (t/is (= 0 (count (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)}))))))

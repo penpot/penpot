@@ -19,6 +19,7 @@
    [app.http.errors :as errors]
    [app.http.link-preview :as-alias link-preview]
    [app.http.management :as mgmt]
+   [app.http.mcp-oauth :as-alias mcp-oauth]
    [app.http.middleware :as mw]
    [app.http.security :as sec]
    [app.http.session :as session]
@@ -236,6 +237,7 @@
    [::ws/routes schema:routes]
    [::rpc/routes schema:routes]
    [::oidc/routes schema:routes]
+   [::mcp-oauth/routes schema:routes]
    [::assets/routes schema:routes]
    [::link-preview/routes schema:routes]
    [::debug/routes schema:routes]
@@ -244,6 +246,7 @@
    [::mgmt/routes schema:routes]
    ::session/manager
    ::setup/props
+   ::mtx/metrics
    ::db/pool])
 
 (defmethod ig/assert-key ::router
@@ -260,7 +263,7 @@
                       [mw/auth {:bearer (partial session/decode-token cfg)
                                 :cookie (partial session/decode-token cfg)
                                 :token  (partial actoken/decode-token cfg)}]
-                      [mw/parse-request]
+                      [mw/parse-request (::mtx/metrics cfg)]
                       [mw/errors errors/handle]
                       [mw/restrict-methods]]}
 
@@ -277,4 +280,7 @@
 
      (::ws/routes cfg)
      (::oidc/routes cfg)
-     (::rpc/routes cfg)]]))
+     (::rpc/routes cfg)]
+    ;; OAuth owns form parsing, protocol JSON names and cross-origin handling;
+    ;; it must not inherit the RPC transformations and session middleware above.
+    (::mcp-oauth/routes cfg)]))

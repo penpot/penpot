@@ -14,13 +14,24 @@
    [app.db :as db]
    [app.jobs :as-alias jobs]
    [app.loggers.audit :as audit]
+   [app.main :as main]
+   [app.metrics :as mtx]
+   [app.metrics.definition :as-alias mdef]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
+   [app.rpc.commands.audit :as cmd-audit]
    [app.util.services :as sv]
    [backend-tests.helpers :as th]
+   [clojure.string :as str]
    [clojure.test :as t]
+   [integrant.core :as ig]
    [mockery.core :refer [with-mocks]]
-   [yetti.request]))
+   [yetti.request])
+  (:import
+   io.prometheus.client.Collector$MetricFamilySamples
+   io.prometheus.client.CollectorRegistry
+   io.prometheus.client.Counter
+   io.prometheus.client.Counter$Child))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -97,7 +108,7 @@
                                 (assoc base :app.http/auth-key-id :nexus)))))))
 
 (t/deftest push-events-1
-  (with-redefs [app.config/flags #{:audit-log}]
+  (with-redefs [app.config/flags #{:audit-log :nexus}]
     (let [prof    (th/create-profile* 1 {:is-active true})
           team-id (:default-team-id prof)
           proj-id (:default-project-id prof)
@@ -127,7 +138,9 @@
         (t/is (= 1 (count rows)))
         (t/is (= (:id prof) (:profile-id row)))
         (t/is (= "navigate" (:name row)))
-        (t/is (= "frontend" (:source row)))))))
+        (t/is (= "frontend" (:source row)))
+        ;; The row is born pending for the enabled consumer.
+        (t/is (= 1 (count (th/db-exec! ["select * from audit_log_pending"]))))))))
 
 (t/deftest push-events-2
   (with-redefs [app.config/flags #{:audit-log}]
@@ -228,36 +241,41 @@
 (t/deftest push-events-both-flags-creates-two-rows
   ;; When both :audit-log and :telemetry flags are active, two rows
   ;; should be stored: one full audit entry and one telemetry entry.
-  (with-redefs [cf/flags #{:audit-log :telemetry}]
-    (let [prof   (th/create-profile* 1 {:is-active true})
-          params {::th/type :push-audit-events
-                  ::rpc/profile-id (:id prof)
-                  :events [{:name "navigate"
-                            :props {:route "dashboard"}
-                            :context {:browser "Chrome"
-                                      :version "2.0.0"
-                                      :initiator "app"}
-                            :timestamp (ct/now)
-                            :type "action"}]}
-          params (with-meta params
-                   {:app.http/request http-request})
-          out    (th/command! params)]
+  ;; The profile is created before enabling :admin-console: team
+  ;; bootstrap calls the real nitrate client, which is unconfigured
+  ;; in tests.
+  (let [prof (th/create-profile* 1 {:is-active true})]
+    (with-redefs [cf/flags #{:audit-log :telemetry :nexus :admin-console}]
+      (let [params {::th/type :push-audit-events
+                    ::rpc/profile-id (:id prof)
+                    :events [{:name "navigate"
+                              :props {:route "dashboard"}
+                              :context {:browser "Chrome"
+                                        :version "2.0.0"
+                                        :initiator "app"}
+                              :timestamp (ct/now)
+                              :type "action"}]}
+            params (with-meta params
+                     {:app.http/request http-request})
+            out    (th/command! params)]
 
-      (t/is (nil? (:error out)))
+        (t/is (nil? (:error out)))
 
-      (let [[row1 row2 :as rows] (->> (th/db-exec! ["select * from audit_log order by source"])
-                                      (mapv decode-row))]
-        (t/is (= 2 (count rows)))
-        ;; First row: full audit-log entry
-        (t/is (= "frontend" (:source row1)))
-        (t/is (contains? (:props row1) :route))
-        (t/is (not= "0.0.0.0" (str (:ip-addr row1))))
-        ;; Second row: telemetry entry
-        (t/is (= "telemetry:frontend" (:source row2)))
-        (t/is (= "0.0.0.0" (str (:ip-addr row2))))
-        (let [day-now (ct/truncate (ct/now) :days)]
-          (t/is (= day-now (:created-at row2)))
-          (t/is (= day-now (:tracked-at row2))))))))
+        (let [[row1 row2 :as rows] (->> (th/db-exec! ["select * from audit_log order by source"])
+                                        (mapv decode-row))]
+          (t/is (= 2 (count rows)))
+          ;; First row: full audit-log entry
+          (t/is (= "frontend" (:source row1)))
+          (t/is (contains? (:props row1) :route))
+          (t/is (not= "0.0.0.0" (str (:ip-addr row1))))
+          ;; Second row: telemetry entry
+          (t/is (= "telemetry:frontend" (:source row2)))
+          (t/is (= "0.0.0.0" (str (:ip-addr row2))))
+          (let [day-now (ct/truncate (ct/now) :days)]
+            (t/is (= day-now (:created-at row2)))
+            (t/is (= day-now (:tracked-at row2))))
+          ;; Both rows are born pending for the enabled consumers.
+          (t/is (= 4 (count (th/db-exec! ["select * from audit_log_pending"])))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; BACKEND PROCESS-EVENT PATH (RPC commands)
@@ -857,3 +875,89 @@
         (t/is (= (:id caller)
                  (:profile-id (prepare-event (:id caller) result)))
               (str "override " (pr-str bad) " must fall back to the caller"))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; INGEST METRICS (bulk frontend path)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; handle-events resolves its metrics from the cfg (same pattern as
+;; the jobs substrate), so these tests drive it directly with an
+;; isolated registry instead of the shared test-system one.
+(defn- make-ingest-metrics
+  []
+  (ig/init-key :app.metrics/metrics
+               {:default (select-keys main/default-metrics [:audit-ingest-events])}))
+
+(defn- ingest-counter
+  [metrics kind outcome]
+  (let [collector (mtx/get-collector metrics :audit-ingest-events)
+        instance  (::mdef/instance collector)
+        child     (.labels ^Counter instance (into-array String [kind outcome]))]
+    (.get ^Counter$Child child)))
+
+(defn- counter-label-sets
+  "Exact label sets present for the ingest counter, read off the
+  registry so phantom series cannot hide. Matches the family by
+  prefix (Prometheus strips the `_total` suffix from the family
+  name) and only counts `_total` samples, not `_created` ones."
+  [metrics]
+  (let [full (get main/default-metrics :audit-ingest-events)
+        base (str/replace (::mdef/name full) #"_total$" "")]
+    (->> (enumeration-seq
+          (.metricFamilySamples ^CollectorRegistry (mtx/get-registry metrics)))
+         (filter (fn [^Collector$MetricFamilySamples family]
+                   (str/starts-with? (.-name family) base)))
+         (mapcat (fn [^Collector$MetricFamilySamples family]
+                   (.samples family)))
+         (filter (fn [sample] (str/ends-with? (.-name sample) "_total")))
+         (into #{} (map (fn [sample] (vec (.-labelValues sample))))))))
+
+(defn- push-params
+  [profile-id]
+  (with-meta {::rpc/profile-id profile-id
+              ::rpc/request-at (ct/now)
+              :events [{:name "navigate" :type "action"
+                        :props {:route "dashboard"}
+                        :timestamp (ct/now)}]}
+    ;; A map request (like th/command! builds): the reify IRequest
+    ;; stub only serves the IP headers and blows up on x-client.
+    {:app.http/request (th/make-dummy-request)}))
+
+(t/deftest push-handle-events-records-inserted
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        metrics (make-ingest-metrics)]
+    (with-redefs [cf/flags #{:audit-log :telemetry :nexus :admin-console}]
+      (@#'cmd-audit/handle-events {::db/pool th/*pool* ::mtx/metrics metrics}
+                                  (push-params (:id prof)))
+      (t/is (= 1.0 (ingest-counter metrics "full" "inserted")))
+      (t/is (= 1.0 (ingest-counter metrics "shadow" "inserted")))
+      (t/is (= 2 (count (th/db-exec! ["select * from audit_log"]))))
+      (t/is (= 4 (count (th/db-exec! ["select * from audit_log_pending"])))))))
+
+(t/deftest push-handle-events-records-failed-on-error
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        metrics (make-ingest-metrics)]
+    (with-redefs [cf/flags #{:audit-log :telemetry :nexus :admin-console}]
+      (with-mocks [insert-mock {:target 'app.db/insert-many!
+                                :throw (ex-info "boom" {})}]
+        (t/is (thrown? clojure.lang.ExceptionInfo
+                       (@#'cmd-audit/handle-events {::db/pool th/*pool* ::mtx/metrics metrics}
+                                                   (push-params (:id prof)))))
+        (t/is (= 1.0 (ingest-counter metrics "full" "failed")))
+        (t/is (= 1.0 (ingest-counter metrics "shadow" "failed")))
+        (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))
+        (t/is (= 0 (count (th/db-exec! ["select * from audit_log_pending"]))))))))
+
+(t/deftest push-handle-events-single-face-emits-no-empty-series
+  ;; With only :audit-log on, exactly one ingest series exists: the
+  ;; pos? guard in record-ingested emits no phantom shadow series.
+  ;; (No send flags either, so R3 leaves the row pending-less.)
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        metrics (make-ingest-metrics)]
+    (with-redefs [cf/flags #{:audit-log}]
+      (@#'cmd-audit/handle-events {::db/pool th/*pool* ::mtx/metrics metrics}
+                                  (push-params (:id prof)))
+      (t/is (= 1.0 (ingest-counter metrics "full" "inserted")))
+      (t/is (= #{["full" "inserted"]} (counter-label-sets metrics)))
+      (t/is (= 1 (count (th/db-exec! ["select * from audit_log"]))))
+      (t/is (= 0 (count (th/db-exec! ["select * from audit_log_pending"])))))))

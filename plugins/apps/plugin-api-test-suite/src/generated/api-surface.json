@@ -303,7 +303,8 @@
       "availableLibraries",
       "connectLibrary",
       "connected",
-      "local"
+      "local",
+      "tokensSource"
     ],
     "LibraryElement": ["id", "libraryId", "name", "path"],
     "LibrarySummary": [
@@ -5382,6 +5383,12 @@
         "kind": "get",
         "type": "Library",
         "array": true
+      },
+      "tokensSource": {
+        "decl": "LibraryContext",
+        "kind": "getset",
+        "type": "Library",
+        "array": false
       },
       "availableLibraries": {
         "decl": "LibraryContext",

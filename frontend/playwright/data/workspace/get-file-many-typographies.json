@@ -1,0 +1,465 @@
+{
+  "~:features": {
+    "~#set": [
+      "layout/grid",
+      "styles/v2",
+      "components/v2",
+      "fdata/shape-data-type"
+    ]
+  },
+  "~:permissions": {
+    "~:type": "~:membership",
+    "~:is-owner": true,
+    "~:is-admin": true,
+    "~:can-edit": true,
+    "~:can-read": true,
+    "~:is-logged": true
+  },
+  "~:has-media-trimmed": false,
+  "~:comment-thread-seqn": 0,
+  "~:name": "Many typographies",
+  "~:revn": 2,
+  "~:modified-at": "~m1717512948250",
+  "~:id": "~uc1249a66-fce0-8175-8004-7433fe4be8bc",
+  "~:is-shared": true,
+  "~:version": 48,
+  "~:project-id": "~uc7ce0794-0992-8105-8004-38e630f7920b",
+  "~:created-at": "~m1717512934704",
+  "~:data": {
+    "~:pages": [
+      "~uc1249a66-fce0-8175-8004-7433fe4be8bd"
+    ],
+    "~:pages-index": {
+      "~uc1249a66-fce0-8175-8004-7433fe4be8bd": {
+        "~:options": {},
+        "~:objects": {
+          "~u00000000-0000-0000-0000-000000000000": {
+            "~#shape": {
+              "~:y": 0,
+              "~:hide-fill-on-export": false,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:rotation": 0,
+              "~:name": "Root Frame",
+              "~:width": 0.01,
+              "~:type": "~:frame",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 0,
+                    "~:y": 0
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 0.01,
+                    "~:y": 0
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 0.01,
+                    "~:y": 0.01
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 0,
+                    "~:y": 0.01
+                  }
+                }
+              ],
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:id": "~u00000000-0000-0000-0000-000000000000",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": 0,
+              "~:proportion": 1.0,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 0,
+                  "~:y": 0,
+                  "~:width": 0.01,
+                  "~:height": 0.01,
+                  "~:x1": 0,
+                  "~:y1": 0,
+                  "~:x2": 0.01,
+                  "~:y2": 0.01
+                }
+              },
+              "~:fills": [
+                {
+                  "~:fill-color": "#FFFFFF",
+                  "~:fill-opacity": 1
+                }
+              ],
+              "~:flip-x": null,
+              "~:height": 0.01,
+              "~:flip-y": null,
+              "~:shapes": [
+                "~uc70224ec-c410-807b-8004-743400e00be8"
+              ]
+            }
+          },
+          "~uc70224ec-c410-807b-8004-743400e00be8": {
+            "~#shape": {
+              "~:y": 255,
+              "~:r1": 0,
+              "~:r2": 0,
+              "~:r3": 0,
+              "~:r4": 0,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:rotation": 0,
+              "~:grow-type": "~:fixed",
+              "~:hide-in-viewer": false,
+              "~:name": "Rectangle",
+              "~:width": 279.0000000000001,
+              "~:type": "~:rect",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 523,
+                    "~:y": 255
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 802.0000000000001,
+                    "~:y": 255
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 802.0000000000001,
+                    "~:y": 534
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 523,
+                    "~:y": 534
+                  }
+                }
+              ],
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:id": "~uc70224ec-c410-807b-8004-743400e00be8",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": 523,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 523,
+                  "~:y": 255,
+                  "~:width": 279.0000000000001,
+                  "~:height": 279,
+                  "~:x1": 523,
+                  "~:y1": 255,
+                  "~:x2": 802.0000000000001,
+                  "~:y2": 534
+                }
+              },
+              "~:fills": [
+                {
+                  "~:fill-color": "#B1B2B5",
+                  "~:fill-opacity": 1
+                }
+              ],
+              "~:flip-x": null,
+              "~:ry": 0,
+              "~:height": 279,
+              "~:flip-y": null
+            }
+          }
+        },
+        "~:id": "~uc1249a66-fce0-8175-8004-7433fe4be8bd",
+        "~:name": "Page 1"
+      }
+    },
+    "~:id": "~uc1249a66-fce0-8175-8004-7433fe4be8bc",
+    "~:options": {
+      "~:components-v2": true
+    },
+    "~:recent-colors": [
+      {
+        "~:color": "#187cd5",
+        "~:opacity": 1
+      }
+    ],
+    "~:colors": {
+      "~uc70224ec-c410-807b-8004-74340616cffb": {
+        "~:path": "",
+        "~:color": "#187cd5",
+        "~:name": "test-color-187cd5",
+        "~:modified-at": "~m1717512945259",
+        "~:opacity": 1,
+        "~:id": "~uc70224ec-c410-807b-8004-74340616cffb"
+      }
+    },
+    "~:typographies": {
+      "~ue117f7f6-433c-807e-8004-862ab6ae3000": {
+        "~:line-height": "1.2",
+        "~:font-style": "normal",
+        "~:text-transform": "none",
+        "~:font-id": "sourcesanspro",
+        "~:font-size": "12",
+        "~:font-weight": "400",
+        "~:name": "Type 01 Regular 12",
+        "~:modified-at": "~m1718718464655",
+        "~:font-variant-id": "regular",
+        "~:id": "~ue117f7f6-433c-807e-8004-862ab6ae3000",
+        "~:letter-spacing": "0",
+        "~:font-family": "sourcesanspro"
+      },
+      "~ue117f7f6-433c-807e-8004-862ab6ae3001": {
+        "~:line-height": "1.2",
+        "~:font-style": "normal",
+        "~:text-transform": "none",
+        "~:font-id": "sourcesanspro",
+        "~:font-size": "12",
+        "~:font-weight": "700",
+        "~:name": "Type 02 Bold 12",
+        "~:modified-at": "~m1718718464655",
+        "~:font-variant-id": "700",
+        "~:id": "~ue117f7f6-433c-807e-8004-862ab6ae3001",
+        "~:letter-spacing": "0",
+        "~:font-family": "sourcesanspro"
+      },
+      "~ue117f7f6-433c-807e-8004-862ab6ae3002": {
+        "~:line-height": "1.2",
+        "~:font-style": "normal",
+        "~:text-transform": "none",
+        "~:font-id": "sourcesanspro",
+        "~:font-size": "14",
+        "~:font-weight": "400",
+        "~:name": "Type 03 Regular 14",
+        "~:modified-at": "~m1718718464655",
+        "~:font-variant-id": "regular",
+        "~:id": "~ue117f7f6-433c-807e-8004-862ab6ae3002",
+        "~:letter-spacing": "0",
+        "~:font-family": "sourcesanspro"
+      },
+      "~ue117f7f6-433c-807e-8004-862ab6ae3003": {
+        "~:line-height": "1.2",
+        "~:font-style": "normal",
+        "~:text-transform": "none",
+        "~:font-id": "sourcesanspro",
+        "~:font-size": "14",
+        "~:font-weight": "700",
+        "~:name": "Type 04 Bold 14",
+        "~:modified-at": "~m1718718464655",
+        "~:font-variant-id": "700",
+        "~:id": "~ue117f7f6-433c-807e-8004-862ab6ae3003",
+        "~:letter-spacing": "0",
+        "~:font-family": "sourcesanspro"
+      },
+      "~ue117f7f6-433c-807e-8004-862ab6ae3004": {
+        "~:line-height": "1.2",
+        "~:font-style": "normal",
+        "~:text-transform": "none",
+        "~:font-id": "sourcesanspro",
+        "~:font-size": "16",
+        "~:font-weight": "400",
+        "~:name": "Type 05 Regular 16",
+        "~:modified-at": "~m1718718464655",
+        "~:font-variant-id": "regular",
+        "~:id": "~ue117f7f6-433c-807e-8004-862ab6ae3004",
+        "~:letter-spacing": "0",
+        "~:font-family": "sourcesanspro"
+      },
+      "~ue117f7f6-433c-807e-8004-862ab6ae3005": {
+        "~:line-height": "1.2",
+        "~:font-style": "normal",
+        "~:text-transform": "none",
+        "~:font-id": "sourcesanspro",
+        "~:font-size": "16",
+        "~:font-weight": "700",
+        "~:name": "Type 06 Bold 16",
+        "~:modified-at": "~m1718718464655",
+        "~:font-variant-id": "700",
+        "~:id": "~ue117f7f6-433c-807e-8004-862ab6ae3005",
+        "~:letter-spacing": "0",
+        "~:font-family": "sourcesanspro"
+      },
+      "~ue117f7f6-433c-807e-8004-862ab6ae3006": {
+        "~:line-height": "1.2",
+        "~:font-style": "normal",
+        "~:text-transform": "none",
+        "~:font-id": "sourcesanspro",
+        "~:font-size": "18",
+        "~:font-weight": "400",
+        "~:name": "Type 07 Regular 18",
+        "~:modified-at": "~m1718718464655",
+        "~:font-variant-id": "regular",
+        "~:id": "~ue117f7f6-433c-807e-8004-862ab6ae3006",
+        "~:letter-spacing": "0",
+        "~:font-family": "sourcesanspro"
+      },
+      "~ue117f7f6-433c-807e-8004-862ab6ae3007": {
+        "~:line-height": "1.2",
+        "~:font-style": "normal",
+        "~:text-transform": "none",
+        "~:font-id": "sourcesanspro",
+        "~:font-size": "18",
+        "~:font-weight": "700",
+        "~:name": "Type 08 Bold 18",
+        "~:modified-at": "~m1718718464655",
+        "~:font-variant-id": "700",
+        "~:id": "~ue117f7f6-433c-807e-8004-862ab6ae3007",
+        "~:letter-spacing": "0",
+        "~:font-family": "sourcesanspro"
+      },
+      "~ue117f7f6-433c-807e-8004-862ab6ae3008": {
+        "~:line-height": "1.2",
+        "~:font-style": "normal",
+        "~:text-transform": "none",
+        "~:font-id": "sourcesanspro",
+        "~:font-size": "20",
+        "~:font-weight": "400",
+        "~:name": "Type 09 Regular 20",
+        "~:modified-at": "~m1718718464655",
+        "~:font-variant-id": "regular",
+        "~:id": "~ue117f7f6-433c-807e-8004-862ab6ae3008",
+        "~:letter-spacing": "0",
+        "~:font-family": "sourcesanspro"
+      },
+      "~ue117f7f6-433c-807e-8004-862ab6ae3009": {
+        "~:line-height": "1.2",
+        "~:font-style": "normal",
+        "~:text-transform": "none",
+        "~:font-id": "sourcesanspro",
+        "~:font-size": "20",
+        "~:font-weight": "700",
+        "~:name": "Type 10 Bold 20",
+        "~:modified-at": "~m1718718464655",
+        "~:font-variant-id": "700",
+        "~:id": "~ue117f7f6-433c-807e-8004-862ab6ae3009",
+        "~:letter-spacing": "0",
+        "~:font-family": "sourcesanspro"
+      },
+      "~ue117f7f6-433c-807e-8004-862ab6ae300a": {
+        "~:line-height": "1.2",
+        "~:font-style": "normal",
+        "~:text-transform": "none",
+        "~:font-id": "sourcesanspro",
+        "~:font-size": "22",
+        "~:font-weight": "400",
+        "~:name": "Type 11 Regular 22",
+        "~:modified-at": "~m1718718464655",
+        "~:font-variant-id": "regular",
+        "~:id": "~ue117f7f6-433c-807e-8004-862ab6ae300a",
+        "~:letter-spacing": "0",
+        "~:font-family": "sourcesanspro"
+      },
+      "~ue117f7f6-433c-807e-8004-862ab6ae300b": {
+        "~:line-height": "1.2",
+        "~:font-style": "normal",
+        "~:text-transform": "none",
+        "~:font-id": "sourcesanspro",
+        "~:font-size": "22",
+        "~:font-weight": "700",
+        "~:name": "Type 12 Bold 22",
+        "~:modified-at": "~m1718718464655",
+        "~:font-variant-id": "700",
+        "~:id": "~ue117f7f6-433c-807e-8004-862ab6ae300b",
+        "~:letter-spacing": "0",
+        "~:font-family": "sourcesanspro"
+      },
+      "~ue117f7f6-433c-807e-8004-862ab6ae300c": {
+        "~:line-height": "1.2",
+        "~:font-style": "normal",
+        "~:text-transform": "none",
+        "~:font-id": "sourcesanspro",
+        "~:font-size": "24",
+        "~:font-weight": "400",
+        "~:name": "Type 13 Regular 24",
+        "~:modified-at": "~m1718718464655",
+        "~:font-variant-id": "regular",
+        "~:id": "~ue117f7f6-433c-807e-8004-862ab6ae300c",
+        "~:letter-spacing": "0",
+        "~:font-family": "sourcesanspro"
+      },
+      "~ue117f7f6-433c-807e-8004-862ab6ae300d": {
+        "~:line-height": "1.2",
+        "~:font-style": "normal",
+        "~:text-transform": "none",
+        "~:font-id": "sourcesanspro",
+        "~:font-size": "24",
+        "~:font-weight": "700",
+        "~:name": "Type 14 Bold 24",
+        "~:modified-at": "~m1718718464655",
+        "~:font-variant-id": "700",
+        "~:id": "~ue117f7f6-433c-807e-8004-862ab6ae300d",
+        "~:letter-spacing": "0",
+        "~:font-family": "sourcesanspro"
+      },
+      "~ue117f7f6-433c-807e-8004-862ab6ae300e": {
+        "~:line-height": "1.2",
+        "~:font-style": "normal",
+        "~:text-transform": "none",
+        "~:font-id": "sourcesanspro",
+        "~:font-size": "26",
+        "~:font-weight": "400",
+        "~:name": "Type 15 Regular 26",
+        "~:modified-at": "~m1718718464655",
+        "~:font-variant-id": "regular",
+        "~:id": "~ue117f7f6-433c-807e-8004-862ab6ae300e",
+        "~:letter-spacing": "0",
+        "~:font-family": "sourcesanspro"
+      },
+      "~ue117f7f6-433c-807e-8004-862ab6ae300f": {
+        "~:line-height": "1.2",
+        "~:font-style": "normal",
+        "~:text-transform": "none",
+        "~:font-id": "sourcesanspro",
+        "~:font-size": "26",
+        "~:font-weight": "700",
+        "~:name": "Type 16 Bold 26",
+        "~:modified-at": "~m1718718464655",
+        "~:font-variant-id": "700",
+        "~:id": "~ue117f7f6-433c-807e-8004-862ab6ae300f",
+        "~:letter-spacing": "0",
+        "~:font-family": "sourcesanspro"
+      }
+    }
+  }
+}
