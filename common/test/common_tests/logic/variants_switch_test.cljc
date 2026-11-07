@@ -1938,7 +1938,8 @@
   (doseq [group layout-item-override-groups]
     (t/is (contains? (:touched shape) group)
           (str label ": touched group " group)))
-  (t/is (= (count layout-item-override-groups) (count (:touched shape)))
+  ;; making a copy child absolute also authors its geometry, a group of its own
+  (t/is (= (count layout-item-override-groups) (count (disj (:touched shape) :geometry-group)))
         (str label ": number of touched groups")))
 
 (def ^:private layout-item-attrs-partial
@@ -1974,7 +1975,8 @@
   (doseq [group layout-item-partial-override-groups]
     (t/is (contains? (:touched shape) group)
           (str label ": touched group " group)))
-  (t/is (= (count layout-item-partial-override-groups) (count (:touched shape)))
+  ;; making a copy child absolute also authors its geometry, a group of its own
+  (t/is (= (count layout-item-partial-override-groups) (count (disj (:touched shape) :geometry-group)))
         (str label ": number of touched groups")))
 
 (t/deftest test-switch-preserves-touched-layout-item-attrs-on-root
