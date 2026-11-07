@@ -1947,7 +1947,9 @@
    order. In a copy without cell overrides, a reflow that moves items makes
    the cells an override, and one that moves none leaves the cells its
    main gives it, laid out as sync lays them out in the new direction, so a
-   copy that changes its direction back has its main's cells again."
+   copy that changes its direction back has its main's cells again. The main
+   of a swapped head is the root of its own component, which its content
+   follows."
   [file page libraries dir]
   (let [container (ctn/make-container page :page)
         objects   (:objects page)]
@@ -1958,7 +1960,7 @@
           (let [reflowed (ctsl/reflow-grid-auto-items-for-direction shape from-dir dir)
                 main     (when (and (:shape-ref shape)
                                     (not (ctk/touched-group? shape :layout-grid-cells)))
-                           (ctf/find-ref-shape file container libraries shape :include-deleted? true))]
+                           (ctf/find-content-ref-shape file container libraries shape :include-deleted? true))]
             (cond
               (not= :grid (:layout main))
               reflowed
