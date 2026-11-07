@@ -1279,3 +1279,14 @@
                              [:nest 12 0 0 0] [:delete 6 0 0 0] [:detach 8 0 0 0] [:restore 0 0 0 0]
                              [:duplicate 0 0 0 0] [:transform 3 3 0 8] [:delete 0] [:restore 0]
                              [:edit 4 0 1 1] [:update-main 4] [:delete 0 0 0 0] [:transform 2 2 0 0]]}))))
+
+(t/deftest generated-direction-change-in-a-swapped-copy-overrides-its-moved-cells
+  ;; a copy that keeps another component than its main's slot takes its
+  ;; cells from its own component's main; a direction change that moves its
+  ;; items makes them an override, though the slot's board has no grid
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :library-variants true :stale-libraries true
+                                    :layout :grid :layout-item-margins false :grid-square true :library-depth 1
+                                    :library true :rich-variants true :layout-children true :library-text true
+                                    :grid-empty false :layout-copies true :text true}]
+                       :ops [[:delete 9 0 0 0] [:delete 0] [:restore 0] [:delete 17] [:restore 17]
+                             [:swap 4 0 0 0] [:grid-direction 0 0 1 1] [:grid-cell 0 0 0 1]]}))))
