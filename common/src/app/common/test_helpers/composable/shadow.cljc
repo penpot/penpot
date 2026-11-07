@@ -663,9 +663,12 @@
                                                                    (not (contains? text-differences unit)))
                                                           unit)))
                                                 text-groups)
-                       mixed-typography? (some #(not= (contains? carried-text-units :typography)
-                                                      (contains? carried-text-units %))
-                                               [:family :weight :size :line-height :spacing :case])]
+                       ;; a typography the copy applied carries only with all its styles
+                       mixed-typography? (and (some #(or (:typography-ref-id %) (:typography-ref-file %))
+                                                    (tree-seq map? :children (:content old)))
+                                              (some #(not= (contains? carried-text-units :typography)
+                                                           (contains? carried-text-units %))
+                                                    [:family :weight :size :line-height :spacing :case]))]
                    (reduce-kv
                     (fn [result group _]
                       (if-let [unit (get text-groups group)]
