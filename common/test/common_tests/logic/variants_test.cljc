@@ -23,6 +23,7 @@
    [app.common.test-helpers.variants :as thv]
    [app.common.types.component :as ctk]
    [app.common.types.variant :as ctv]
+   [app.common.uuid :as uuid]
    [clojure.test :as t]
    [cuerdas.core :as str]))
 
@@ -490,6 +491,31 @@
     (t/is (= (count objects) 4))
     (t/is (= (count objects') 7))))
 
+
+(t/deftest test-add-new-variant-takes-a-value-no-member-has
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                    (thc/update-component :c02 {:variant-properties [{:name "Property 1" :value "Value 3"}]})
+                    (ths/update-shape :m02 :variant-name "Value 3"))
+        page    (thf/current-page file)
+        new-id  (uuid/next)
+
+        ;; ==== Action
+        changes (-> (pcb/empty-changes nil (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clv/generate-add-new-variant (ths/get-shape file :m01) (thi/id :v01) new-id (uuid/next) 0))
+        file'   (thf/apply-changes file changes)
+
+        ;; ==== Get
+        values  (map #(-> % :variant-properties first :value)
+                     (vals (get-in file' [:data :components])))]
+
+    ;; ==== Check
+    ;; two values make the next one "Value 3", which a member already has
+    (t/is (= "Value 4" (get-in file' [:data :components new-id :variant-properties 0 :value])))
+    (t/is (apply distinct? values))))
 
 (t/deftest test-delete-variant
   ;; When a variant container becomes empty, it id automatically deleted

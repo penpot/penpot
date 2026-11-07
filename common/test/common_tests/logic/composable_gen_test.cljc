@@ -1693,6 +1693,13 @@
                         :ops [[:add-variant 0] [:switch 0] [:add-variant 1] [:undo] [:redo] [:sync 0]]})]
     (t/is (= 2 (get-in result [:executed :add-variant])))))
 
+(t/deftest adding-a-variant-after-deleting-a-member-takes-a-value-no-member-has
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:add-variant 0] [:switch 0] [:add-variant 0 0 0 0] [:delete 2 0 0 0]
+                             [:add-variant 0 0 0 0]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]
