@@ -14,6 +14,7 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -247,8 +248,9 @@
                :origin :color-selection
                :on-close on-close}]))
          (when (and (false? @expand-lib-color) (< 3 (count library-colors)))
-           [:button  {:class (stl/css :more-colors-btn)
-                      :on-click #(reset! expand-lib-color true)}
+           [:> button* {:variant "secondary"
+                        :class (stl/css :more-colors-btn)
+                        :on-click #(reset! expand-lib-color true)}
             (tr "workspace.options.more-lib-colors")])]
 
         [:div {:class (stl/css :selected-color-group)}
@@ -265,8 +267,9 @@
              :on-close on-close}])
 
          (when (and (false? @expand-color) (< 3 (count colors)))
-           [:button  {:class (stl/css :more-colors-btn)
-                      :on-click #(reset! expand-color true)}
+           [:> button* {:variant "secondary"
+                        :class (stl/css :more-colors-btn)
+                        :on-click #(reset! expand-color true)}
             (tr "workspace.options.more-colors")])]
 
         [:div {:class (stl/css :selected-color-group)}
@@ -288,6 +291,7 @@
 
          (when (and (false? @expand-token-color)
                     (< 3 (count token-colors)))
-           [:button {:class (stl/css :more-colors-btn)
-                     :on-click #(reset! expand-token-color true)}
+           [:> button* {:variant "secondary"
+                        :class (stl/css :more-colors-btn)
+                        :on-click #(reset! expand-token-color true)}
             (tr "workspace.options.more-token-colors")])]])]))

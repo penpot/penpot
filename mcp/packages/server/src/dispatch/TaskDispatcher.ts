@@ -31,7 +31,7 @@ export abstract class TaskDispatcher {
                     sessions
                         .map(
                             (session) =>
-                                `${session.sessionId}: ${JSON.stringify(session.fileName)} (file ${session.fileId})`
+                                `${session.sessionId}: ${session.fileId ? `${JSON.stringify(session.fileName)} (file ${session.fileId})` : "no active workspace"}`
                         )
                         .join("\n")
             );

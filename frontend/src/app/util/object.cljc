@@ -176,6 +176,7 @@
                                 fn-expr       (c/get params :fn)
                                 schema-n      (c/get params :schema)
                                 wrap          (c/get params :wrap)
+                                on-set        (c/get params :on-set)
                                 schema-1      (c/get params :schema-1)
                                 this?         (c/get params :this false)
                                 on-error      (c/get params :on-error)
@@ -216,6 +217,10 @@
                                 (-> (gensym (str "wrap-fn-" (str/slug pname) "-"))
                                     (with-meta {:tag 'function}))
 
+                                on-set-sym
+                                (-> (gensym (str "on-set-fn-" (str/slug pname) "-"))
+                                    (with-meta {:tag 'function}))
+
                                 val-sym
                                 (gensym (str "val-" (str/slug pname) "-"))
 
@@ -231,6 +236,9 @@
                             (concat
                              (when wrap
                                [wrap-sym wrap])
+
+                             (when (and set-expr on-set)
+                               [on-set-sym on-set])
 
                              (when get-expr
                                [(make-sym pname "get-fn")
@@ -258,6 +266,10 @@
 
                                 (make-sym pname "set-fn")
                                 `(fn [~val-sym]
+                                   ;; Runs outside the error handling, so what it throws
+                                   ;; always reaches the caller
+                                   ~@(when on-set
+                                       [`(~on-set-sym (~'js* "this"))])
                                    ~(wrap-error-handling
                                      `(let [~this-sym (~'js* "this")
                                             ~fn-sym   ~set-expr
@@ -411,6 +423,7 @@
           (if (some? definition)
             (let [definition (if (map? definition)
                                (c/merge {:wrap (:wrap tmeta)
+                                         :on-set (:on-set tmeta)
                                          :on-error (:on-error tmeta)}
                                         definition)
                                (-> {:enumerable false}

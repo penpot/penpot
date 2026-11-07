@@ -5,7 +5,7 @@ Check commit messages against Penpot's commit guidelines.
 Validates commit messages using the rules defined in:
   - .github/workflows/commit-checker.yml (regex pattern)
   - CONTRIBUTING.md (formatting rules, subject length, DCO)
-  - .serena/memories/workflow/creating-commits.md (body wrapped at 76 chars)
+  - .serena/memories/workflow/creating-commits.md (body wrapped at 80 chars)
 
 By default, checks HEAD. Use --commit to specify a different commit.
 
@@ -39,17 +39,24 @@ COMMIT_PATTERN = re.compile(
 
 MERGE_PATTERN = re.compile(r"^(Merge|Revert|Reapply).+[^.]$")
 
+# ── Subject line length ──────────────────────────────────────────────────────
+# Subject lines must fit in 80 characters. Merge/Revert/Reapply commits are
+# exempt: git prepends "Merge ..."/"Revert ..." to an existing subject, so
+# enforcing the limit would fail on text the author did not write.
+MAX_SUBJECT_LINE = 80
+
 # ── Body line wrapping ───────────────────────────────────────────────────────
-# Commit bodies must wrap at 76 characters (see
-# .serena/memories/workflow/creating-commits.md). That leaves room for the
-# four-space indent git log adds, fitting an 80-column terminal. Trailers and
+# Commit bodies must wrap at 80 characters (see
+# .serena/memories/workflow/creating-commits.md). Trailers and
 # URLs are exempt: they cannot be wrapped without losing meaning.
-MAX_BODY_LINE = 76
+MAX_BODY_LINE = 80
 
 TRAILER_PATTERN = re.compile(
-    r"^(Signed-off-by|Co-authored-by|Co-developed-by|Reviewed-by|"
+    r"^(Signed-off-by|Co-developed-by|Reviewed-by|"
     r"Acked-by|Tested-by|Reported-by|Suggested-by|AI-assisted-by):"
 )
+
+FORBIDDEN_TRAILER_PATTERN = re.compile(r"^\s*Co-authored-by\s*:", re.IGNORECASE)
 
 URL_PATTERN = re.compile(r"https?://\S+")
 
@@ -108,11 +115,13 @@ def check_regex(message):
 
 
 def check_subject_length(message):
-    """Subject line must be ≤ 70 characters."""
+    """Subject line must be ≤ 80 characters (Merge/Revert/Reapply exempt)."""
     first_line = message.split("\n")[0]
-    if len(first_line) > 70:
+    if MERGE_PATTERN.match(first_line):
+        return True, None
+    if len(first_line) > MAX_SUBJECT_LINE:
         return False, (
-            f"Subject line exceeds 70 characters ({len(first_line)} chars):\n"
+            f"Subject line exceeds {MAX_SUBJECT_LINE} characters ({len(first_line)} chars):\n"
             f"  {first_line}"
         )
     return True, None
@@ -164,7 +173,7 @@ def check_body_blank_line(message):
 
 
 def check_body_line_length(message):
-    """Body lines must wrap at 76 characters or fewer.
+    """Body lines must wrap at 80 characters or fewer.
 
     The subject (first line) has its own length rule. Trailers (e.g.
     Signed-off-by) and lines carrying a URL are exempt, since wrapping them
@@ -209,6 +218,25 @@ def check_signed_off_by(message):
     return True, None
 
 
+def check_no_co_authored_by(message):
+    """Check that the forbidden Co-authored-by trailer is absent."""
+    offenders = [
+        (line_number, line)
+        for line_number, line in enumerate(message.split("\n"), start=1)
+        if FORBIDDEN_TRAILER_PATTERN.match(line)
+    ]
+    if not offenders:
+        return True, None
+    details = "\n".join(
+        f"    line {line_number}: {line!r}"
+        for line_number, line in offenders
+    )
+    return False, (
+        "The 'Co-authored-by:' trailer is forbidden and must not appear "
+        "in the commit message. Offending line(s):\n" + details
+    )
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def main():
@@ -229,11 +257,12 @@ def main():
 
     validators = [
         ("Regex pattern", check_regex),
-        ("Subject ≤ 70 chars", check_subject_length),
+        ("Subject ≤ 80 chars", check_subject_length),
         ("No trailing period in subject", check_subject_no_trailing_dot),
         ("Subject capitalized", check_subject_capitalized),
         ("Blank line after subject", check_body_blank_line),
-        ("Body wrapped at 76 chars", check_body_line_length),
+        ("Body wrapped at 80 chars", check_body_line_length),
+        ("No Co-authored-by trailer", check_no_co_authored_by),
     ]
 
     all_ok = True

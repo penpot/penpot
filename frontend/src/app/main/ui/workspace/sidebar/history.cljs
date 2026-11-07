@@ -13,9 +13,9 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
-   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr] :as i18n]
    [cuerdas.core :as str]
@@ -155,22 +155,23 @@
       :move (tr "workspace.undo.entry.move" value)
       (tr "workspace.undo.entry.unknown" value))))
 
-(defn entry->icon [{:keys [type]}]
+(defn- entry->icon-id
+  [{:keys [type]}]
   (case type
-    :page deprecated-icon/document
-    :shape deprecated-icon/svg
-    :rect deprecated-icon/rectangle
-    :circle deprecated-icon/ellipse
-    :text deprecated-icon/text
-    :path deprecated-icon/path
-    :frame deprecated-icon/board
-    :group deprecated-icon/group
-    :color deprecated-icon/drop-icon
-    :typography deprecated-icon/text-palette
-    :component deprecated-icon/component
-    :media deprecated-icon/img
-    :image deprecated-icon/img
-    deprecated-icon/svg))
+    :page i/document
+    :shape i/svg
+    :rect i/rectangle
+    :circle i/ellipse
+    :text i/text
+    :path i/path
+    :frame i/board
+    :group i/group
+    :color i/drop
+    :typography i/text-palette
+    :component i/component
+    :media i/img
+    :image i/img
+    i/svg))
 
 (defn is-shape? [type]
   (contains? #{:shape :rect :circle :text :path :frame :group} type))
@@ -339,7 +340,7 @@
 
      [:div {:class (stl/css :history-entry-summary)}
       [:div {:class (stl/css :history-entry-summary-icon)}
-       (entry->icon entry)]
+       [:> icon* {:icon-id (entry->icon-id entry) :size "s"}]]
       [:div {:class (stl/css :history-entry-summary-text)}
        [:div {:class (stl/css :history-entry-title)}
         (entry->message entry)]
@@ -363,11 +364,17 @@
             [:span {:class (stl/css :history-entry-author)}
              (tr "workspace.undo.entry.by" author)])])]
       (when (:detail entry)
-        [:div {:class (stl/css-case :history-entry-summary-button true
-                                    :button-opened @show-detail?)
-               :on-click toggle-show-detail
-               :data-has-entry (dm/str (not (nil? (:detail entry))))}
-         deprecated-icon/arrow])]
+        [:> icon-button* {:variant "action"
+                          :class (stl/css-case :history-entry-summary-button true
+                                               :button-opened @show-detail?)
+                          :tooltip-class (stl/css :history-entry-summary-button-wrapper)
+                          :aria-label (tr "workspace.undo.entry.show-details")
+                          :aria-expanded @show-detail?
+                          :icon i/arrow
+                          :icon-size "s"
+                          :icon-class (stl/css :history-entry-summary-arrow)
+                          :on-click toggle-show-detail
+                          :data-has-entry (dm/str (not (nil? (:detail entry))))}])]
 
      (when @show-detail?
        [:> history-entry-details* {:entry entry}])]))

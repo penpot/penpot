@@ -273,6 +273,28 @@ describe('Shapes', () => {
     });
   });
 
+  describe('Per-side stroke width', () => {
+    test('per-side widths are readable and writable on a rectangle', (ctx) => {
+      const r = rect(ctx);
+      r.strokes = [{ strokeColor: '#000000', strokeWidth: 1 }];
+      const stroke = r.strokes[0];
+      stroke.strokeWidthTop = 2;
+      stroke.strokeWidthRight = 3;
+      expect(stroke.strokeWidthTop).toBeCloseTo(2, 0);
+      expect(stroke.strokeWidthRight).toBeCloseTo(3, 0);
+    });
+
+    test('per-side widths are rejected on shapes that do not support them', (ctx) => {
+      const path = ctx.penpot.createPath();
+      ctx.board.appendChild(path);
+      path.d = 'M0 0 L40 0';
+      path.strokes = [{ strokeColor: '#000000', strokeWidth: 1 }];
+      expect(() => {
+        path.strokes[0].strokeWidthTop = 4;
+      }).toThrow();
+    });
+  });
+
   describe('Ordering', () => {
     test('setParentIndex moves the shape to the given index', (ctx) => {
       const a = rect(ctx);

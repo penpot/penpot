@@ -27,6 +27,11 @@
 
 (t/use-fixtures :each test-fixture)
 
+(defn- raised
+  "Run `f` and answer with the exception it raised, or nil when it did not."
+  [f]
+  (try (f) nil (catch Throwable cause cause)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JOB-DEF (plain handler + precompiled init-key)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -39,7 +44,8 @@
   [cfg params]
   (when (::jobs/job-id cfg)
     (jobs/heartbeat cfg)
-    (jobs/heartbeat cfg :progress {:current 1 :stage "half"}))
+    (jobs/heartbeat cfg :progress {:stage :half
+                                   :counters {:work {:current 1 :total 2}}}))
   params)
 
 (def schema:echo-params
@@ -59,10 +65,31 @@
    ::jobs/decoder   (sm/decoder schema:echo-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:echo-params)})
 
+(def schema:typed-result
+  "A result with a uuid keyed map, the shape that needs a declared schema
+  to survive the plain JSON round trip of the `job.result` column."
+  [:map
+   [:file-ids   [:vector ::sm/uuid]]
+   [:resolution [:map-of ::sm/uuid [:map [:id ::sm/uuid]]]]])
+
+(defmethod ig/init-key ::typed-job
+  [_ cfg]
+  {::jobs/name          :typed
+   ::jobs/schema        schema:echo-params
+   ::jobs/handler       (fn [_context params]
+                          (echo-handler cfg params))
+   ::jobs/decoder       (sm/decoder schema:echo-params sm/json-transformer)
+   ::jobs/validator     (sm/validator schema:echo-params)
+   ;; the substrate compiles the decoder from this schema and checks the
+   ;; result against it before storing it
+   ::jobs/result-schema schema:typed-result})
+
 (defn- get-job-defs
   []
-  (-> {::jobs/defs {:echo (ig/ref ::echo-job)}
-       ::echo-job  {::db/pool th/*pool*}}
+  (-> {::jobs/defs {:echo  (ig/ref ::echo-job)
+                    :typed (ig/ref ::typed-job)}
+       ::echo-job  {::db/pool th/*pool*}
+       ::typed-job {::db/pool th/*pool*}}
       (ig/expand)
       (ig/init)
       (get ::jobs/defs)))
@@ -101,7 +128,24 @@
                       WHERE job_id = ? AND kind = 'progress'
                       ORDER BY created_at ASC, id ASC"
                      job-id])
-       (mapv #(db/decode-json-pgobject (:payload %)))))
+       (mapv #(jobs/decode-progress (:payload %)))))
+
+(defn- get-events
+  "Every event of a job, in insertion order."
+  [job-id]
+  (->> (th/db-exec! ["SELECT kind, payload FROM job_event
+                      WHERE job_id = ? ORDER BY id ASC" job-id])
+       (mapv (fn [{:keys [kind payload]}]
+               {:kind kind :payload (db/decode-json-pgobject payload)}))))
+
+(defn- get-outcomes
+  "Outcomes of the end events of a job, oldest first."
+  [job-id]
+  (mapv (comp :outcome :payload) (filter #(= "end" (:kind %)) (get-events job-id))))
+
+(defn- get-kinds
+  [job-id]
+  (mapv :kind (get-events job-id)))
 
 (defn- fake-msgbus
   "A minimal msgbus that records every publication on the atom."
@@ -159,48 +203,101 @@
     (t/testing "no job row was created by the rejected submits"
       (t/is (= 0 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job"])))))))
 
+(t/deftest submit-persists-an-expiry-date
+  (let [cfg        (make-cfg (get-job-defs))
+        expires-at (ct/plus (ct/now) (ct/duration {:days 7}))]
+
+    (t/testing "an explicit expiry is persisted as the retention of the job"
+      (let [job-id (jobs/submit cfg {::jobs/name       :echo
+                                     ::jobs/params     (make-params)
+                                     ::jobs/expires-at expires-at})
+            row    (jobs/get-job cfg job-id)]
+        (t/is (= (inst-ms expires-at) (inst-ms (:expires-at row))))))
+
+    (t/testing "without the option the column stays nil, as before"
+      (let [job-id (jobs/submit cfg {::jobs/name   :echo
+                                     ::jobs/params (make-params)})
+            row    (jobs/get-job cfg job-id)]
+        (t/is (nil? (:expires-at row)))))))
+
+(t/deftest submit-rejects-an-invalid-expiry-date
+  (let [cfg (make-cfg (get-job-defs))]
+    (t/testing "a value that is not an instant is rejected before the insert"
+      (t/is (thrown? Exception
+                     (jobs/submit cfg {::jobs/name       :echo
+                                       ::jobs/params     (make-params)
+                                       ::jobs/expires-at "not-an-instant"}))))
+    (t/testing "no job row was created by the rejected submit"
+      (t/is (= 0 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job"])))))))
+
 (t/deftest progress-report-validates-its-payload
   (let [cfg    (make-cfg (get-job-defs))
         job-id (jobs/submit cfg {::jobs/name   :echo
                                  ::jobs/params (make-params)})]
 
-    (t/testing "current is mandatory"
-      (t/is (thrown? Exception
-                     (jobs/heartbeat cfg :job-id job-id :progress {:total 10}))))
-
-    (t/testing "unknown keys are rejected"
+    (t/testing "stage is mandatory"
       (t/is (thrown? Exception
                      (jobs/heartbeat cfg :job-id job-id
-                                     :progress {:current 1 :step 1}))))
+                                     :progress {:counters {:work {:current 1}}}))))
 
-    (t/testing "current must not be negative"
+    (t/testing "stage must be a keyword, not a label"
+      (t/is (thrown? Exception
+                     (jobs/heartbeat cfg :job-id job-id
+                                     :progress {:stage "work"}))))
+
+    (t/testing "unknown keys are rejected, at the top and inside a counter"
+      (t/is (thrown? Exception
+                     (jobs/heartbeat cfg :job-id job-id
+                                     :progress {:stage :work :step 1})))
+      (t/is (thrown? Exception
+                     (jobs/heartbeat cfg :job-id job-id
+                                     :progress {:stage :work
+                                                :counters {:work {:current 1
+                                                                  :step 1}}}))))
+
+    (t/testing "a counter current must not be negative"
       (t/is (thrown-with-msg? Exception #"negative"
                               (jobs/heartbeat cfg :job-id job-id
-                                              :progress {:current -1}))))
+                                              :progress {:stage :work
+                                                         :counters {:work {:current -1}}}))))
 
-    (t/testing "total must be positive"
+    (t/testing "a counter total must be positive"
       (t/is (thrown-with-msg? Exception #"positive"
                               (jobs/heartbeat cfg :job-id job-id
-                                              :progress {:current 0 :total 0}))))
+                                              :progress {:stage :work
+                                                         :counters {:work {:current 0
+                                                                           :total 0}}}))))
 
-    (t/testing "current must not be greater than total"
+    (t/testing "a counter current must not be greater than its total"
       (t/is (thrown-with-msg? Exception #"not lower than current"
                               (jobs/heartbeat cfg :job-id job-id
-                                              :progress {:current 5 :total 4}))))
+                                              :progress {:stage :work
+                                                         :counters {:work {:current 5
+                                                                           :total 4}}}))))
 
-    (t/testing "stage is limited to 250 characters"
-      (t/is (thrown-with-msg? Exception #"250"
+    (t/testing "keys are limited to a name and not a payload"
+      (t/is (thrown-with-msg? Exception #"64"
                               (jobs/heartbeat cfg :job-id job-id
-                                              :progress {:current 1
-                                                         :stage (apply str (repeat 251 "x"))})))
+                                              :progress {:stage (keyword (apply str (repeat 65 "x")))}))))
+
+    (t/testing "a milestone without counters is accepted"
+      (t/is (= 2 (jobs/heartbeat cfg :job-id job-id :progress {:stage :relations}))))
+
+    (t/testing "a milestone with counters is accepted and stored as it is"
+      (swap! jobs/progresses dissoc job-id)
+      (swap! jobs/heartbeats dissoc job-id)
       (t/is (= 2 (jobs/heartbeat cfg :job-id job-id
-                                 :progress {:current 1
-                                            :stage (apply str (repeat 250 "x"))})))
-      (t/is (= [{:current 1 :stage (apply str (repeat 250 "x"))}]
+                                 :progress {:stage :pages
+                                            :counters {:files {:current 2 :total 5}
+                                                       :pages {:current 3 :total 8}}})))
+      (t/is (= [{:stage :relations}
+                {:stage :pages
+                 :counters {:files {:current 2 :total 5}
+                            :pages {:current 3 :total 8}}}]
                (get-progresss job-id))))
 
     (t/testing "a rejected report never reaches the durable log"
-      (t/is (= 1 (count (get-progresss job-id)))))))
+      (t/is (= 2 (count (get-progresss job-id)))))))
 
 (t/deftest progress-event-publishes-msgbus-for-profile-jobs
   (let [cfg        (make-cfg (get-job-defs))
@@ -211,7 +308,8 @@
                                          ::jobs/params     (make-params)
                                          ::jobs/profile-id profile-id})]
     (t/is (pos? (jobs/heartbeat job-cfg :job-id job-id
-                                :progress {:current 3 :total 7})))
+                                :progress {:stage :pages
+                                           :counters {:files {:current 3 :total 7}}})))
     (t/testing "the event is published on the topic of the job profile"
       (t/is (= 1 (count @messages)))
       (let [{:keys [topic message]} (first @messages)]
@@ -220,7 +318,9 @@
         (t/is (= job-id (:job-id message)))
         (t/is (= profile-id (:profile-id message)))
         (t/is (= "progress" (:kind message)))
-        (t/is (= {:current 3 :total 7} (:payload message)))
+        (t/is (= {:stage :pages
+                  :counters {:files {:current 3 :total 7}}}
+                 (:payload message)))
         (t/is (some? (:event-id message)))
         (t/is (some? (:created-at message)))))))
 
@@ -230,7 +330,7 @@
         job-cfg  (assoc cfg ::mbus/msgbus (fake-msgbus messages))
         job-id   (jobs/submit job-cfg {::jobs/name   :echo
                                        ::jobs/params (make-params)})]
-    (t/is (pos? (jobs/heartbeat job-cfg :job-id job-id :progress {:current 1})))
+    (t/is (pos? (jobs/heartbeat job-cfg :job-id job-id :progress {:stage :work})))
     (t/testing "the event is stored but nothing is published"
       (t/is (= 1 (count (get-progresss job-id))))
       (t/is (= [] @messages)))))
@@ -245,7 +345,7 @@
       (t/is (thrown-with-msg? Exception #"require ::mbus/msgbus"
                               (jobs/heartbeat cfg
                                               :job-id job-id
-                                              :progress {:current 1}
+                                              :progress {:stage :work}
                                               ::jobs/force? true)))
       (t/is (= [] (get-progresss job-id))
             "the event must not be stored without its notification"))
@@ -254,7 +354,7 @@
       (th/db-update! :job {:modified-at (ct/in-past {:minutes 5})} {:id job-id})
       (swap! jobs/heartbeats dissoc job-id)
       (t/is (= 1 (jobs/heartbeat cfg :job-id job-id
-                                 :progress {:current 1})))
+                                 :progress {:stage :work})))
       (t/is (= [] (get-progresss job-id))))))
 
 (t/deftest submit-validates-params-with-job-schema
@@ -428,6 +528,69 @@
                                             AND tenant = ?"
                                          label (cf/get :tenant)])))))))
 
+(t/deftest submit-skip-if-active-skips-live-jobs
+  (doseq [status ["new" "scheduled" "running" "retry"]]
+    (t/testing (str "live status " status)
+      (let [cfg    (make-cfg (get-job-defs))
+            params (make-params)
+            label  (str "skip-active-" status)
+            id1    (jobs/submit cfg {::jobs/name   :echo
+                                     ::jobs/params params
+                                     ::jobs/label  label})
+            _      (th/db-update! :job {:status status} {:id id1})
+            id2    (jobs/submit cfg {::jobs/name   :echo
+                                     ::jobs/params params
+                                     ::jobs/label  label
+                                     ::jobs/skip-if-active true})]
+        (t/is (nil? id2))
+        (t/testing "no row deleted, none inserted"
+          (t/is (some? (jobs/get-job cfg id1)))
+          (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                              WHERE label = ?" label])))))))))
+
+(t/deftest submit-skip-if-active-inserts-past-terminal-jobs
+  (doseq [status ["completed" "failed" "cancelled" "aborted"]]
+    (t/testing (str "terminal status " status)
+      (let [cfg    (make-cfg (get-job-defs))
+            params (make-params)
+            label  (str "skip-terminal-" status)
+            id1    (jobs/submit cfg {::jobs/name   :echo
+                                     ::jobs/params params
+                                     ::jobs/label  label})
+            _      (th/db-update! :job {:status status} {:id id1})
+            id2    (jobs/submit cfg {::jobs/name   :echo
+                                     ::jobs/params params
+                                     ::jobs/label  label
+                                     ::jobs/skip-if-active true})]
+        (t/is (uuid? id2))
+        (t/is (= 2 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                            WHERE label = ?" label]))))))))
+
+(t/deftest submit-skip-if-active-requires-an-explicit-label
+  (let [cfg    (make-cfg (get-job-defs))
+        params (make-params)]
+    (t/is (thrown-with-msg? Exception #"skip-if-active requires"
+                            (jobs/submit cfg {::jobs/name   :echo
+                                              ::jobs/params params
+                                              ::jobs/skip-if-active true})))
+    (t/is (thrown-with-msg? Exception #"skip-if-active requires"
+                            (jobs/submit cfg {::jobs/name   :echo
+                                              ::jobs/params params
+                                              ::jobs/label  "   "
+                                              ::jobs/skip-if-active true})))))
+
+(t/deftest submit-skip-if-active-inserts-when-nothing-is-live
+  (let [cfg    (make-cfg (get-job-defs))
+        params (make-params)
+        label  "skip-idle-label"
+        id1    (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params params
+                                 ::jobs/label  label
+                                 ::jobs/skip-if-active true})]
+    (t/is (uuid? id1))
+    (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
+                                        WHERE label = ?" label]))))))
+
 (t/deftest submit-dedupe-rolls-back-on-insert-failure
   (let [cfg    (make-cfg (get-job-defs))
         params (make-params)
@@ -530,34 +693,67 @@
         (t/is (= (inst-ms (:modified-at row1))
                  (inst-ms (:modified-at row2))))))))
 
-(t/deftest heartbeat-skips-terminal-states
+(t/deftest heartbeat-interrupts-on-terminal-states
   (let [cfg    (make-cfg (get-job-defs))
         job-id (jobs/submit cfg {::jobs/name   :echo
                                  ::jobs/params (make-params)})]
-    (t/testing "terminal states are never touched by heartbeat"
+    (t/testing "a terminal state raises the interrupt instead of touching the row"
       (th/db-update! :job {:status "completed"
                            :modified-at (ct/in-past {:days 10})}
                      {:id job-id})
       (swap! @#'jobs/heartbeats dissoc job-id)
-      (let [before (jobs/get-job cfg job-id)]
-        (jobs/heartbeat cfg :job-id job-id)
+      (let [before (jobs/get-job cfg job-id)
+            cause  (raised #(jobs/heartbeat cfg :job-id job-id))]
+        (t/is (= :interrupt (th/ex-type cause)))
+        (t/is (= :job-interrupted (th/ex-code cause)))
+        (t/is (= job-id (:job-id (ex-data cause))))
+        (t/is (= "completed" (:status (ex-data cause))))
         (t/is (= (inst-ms (:modified-at before))
                  (inst-ms (:modified-at (jobs/get-job cfg job-id)))))))))
 
-(t/deftest progress-events-respect-throttle-and-skip-terminal-states
+(t/deftest heartbeat-interrupts-when-the-row-is-gone
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params (make-params)})]
+    (th/db-force-delete :job {:id job-id})
+    (let [cause (raised #(jobs/heartbeat cfg :job-id job-id))]
+      (t/is (= :interrupt (th/ex-type cause)))
+      (t/is (= :job-interrupted (th/ex-code cause)))
+      (t/is (= "gone" (:status (ex-data cause)))))))
+
+(t/deftest a-transient-progress-failure-is-not-an-interrupt
+  "The handler path logs and ignores a progress insert that fails, but an
+  interrupt must not be swallowed with it: only an interrupt means the job
+  is gone."
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params (make-params)})]
+    (swap! jobs/progresses dissoc job-id)
+    (swap! jobs/heartbeats dissoc job-id)
+    ;; the insert is the boundary that fails: the job itself is active, so
+    ;; the beat answers with the touch it did write instead of raising
+    (with-redefs-fn {#'jobs/report-progress (fn [& _] (throw (ex-info "boom" {})))}
+      #(t/is (= 1 (jobs/heartbeat cfg :job-id job-id :progress {:stage :work}))))
+    (t/is (= [] (get-progresss job-id)))))
+
+(t/deftest progress-events-respect-throttle-and-interrupt-on-terminal-states
   (let [cfg    (make-cfg (get-job-defs))
         job-id (jobs/submit cfg {::jobs/name   :echo
                                  ::jobs/params (make-params)})]
 
     (t/testing "first progress report appends a progress event"
       (t/is (= 2 (jobs/heartbeat cfg :job-id job-id
-                                 :progress {:current 1 :total 10})))
-      (t/is (= [{:current 1 :total 10}] (get-progresss job-id))))
+                                 :progress {:stage :pages
+                                            :counters {:pages {:current 1 :total 10}}})))
+      (t/is (= [{:stage :pages :counters {:pages {:current 1 :total 10}}}]
+               (get-progresss job-id))))
 
     (t/testing "immediate second progress report is throttled"
       (t/is (= 0 (jobs/heartbeat cfg :job-id job-id
-                                 :progress {:current 2 :total 10})))
-      (t/is (= [{:current 1 :total 10}] (get-progresss job-id)))
+                                 :progress {:stage :pages
+                                            :counters {:pages {:current 2 :total 10}}})))
+      (t/is (= [{:stage :pages :counters {:pages {:current 1 :total 10}}}]
+               (get-progresss job-id)))
 
       (t/testing "after the throttle window elapses it appends again"
         (swap! @#'jobs/progresses
@@ -565,9 +761,11 @@
                  (update-in m [job-id]
                             #(ct/minus %
                                        (ct/duration {:seconds 2})))))
-        (jobs/heartbeat cfg :job-id job-id :progress {:current 3 :total 10})
-        (t/is (= [{:current 1 :total 10}
-                  {:current 3 :total 10}]
+        (jobs/heartbeat cfg :job-id job-id
+                        :progress {:stage :pages
+                                   :counters {:pages {:current 3 :total 10}}})
+        (t/is (= [{:stage :pages :counters {:pages {:current 1 :total 10}}}
+                  {:stage :pages :counters {:pages {:current 3 :total 10}}}]
                  (get-progresss job-id))))))
 
   (let [cfg    (make-cfg (get-job-defs))
@@ -576,9 +774,11 @@
     (t/testing "terminal states never get a progress event"
       (th/db-update! :job {:status "completed"} {:id job-id})
       (swap! @#'jobs/progresses dissoc job-id)
-      (t/is (= 0 (jobs/heartbeat cfg :job-id job-id
-                                 :progress {:current 9})))
-      (t/is (= [] (get-progresss job-id))))))
+      (swap! @#'jobs/heartbeats dissoc job-id)
+      (let [cause (raised #(jobs/heartbeat cfg :job-id job-id
+                                           :progress {:stage :work}))]
+        (t/is (= :interrupt (th/ex-type cause)))
+        (t/is (= [] (get-progresss job-id)))))))
 
 (t/deftest throttle-prune-removes-stale-entries-keeps-fresh
   "When the throttle map exceeds prune-threshold, stale entries (older than
@@ -609,7 +809,7 @@
           (t/is (contains? state job-id-2) "fresh entry kept")
           (t/is (contains? state job-id-3) "new entry added"))))))
 
-(t/deftest cancel-skips-running-and-terminal-jobs
+(t/deftest cancel-skips-terminal-jobs
   (let [cfg    (make-cfg (get-job-defs))
         job-id (jobs/submit cfg {::jobs/name   :echo
                                  ::jobs/params (make-params)})]
@@ -617,27 +817,30 @@
     (t/testing "pending job can be cancelled"
       (t/is (= 1 (jobs/cancel cfg job-id)))
       (t/is (= "cancelled" (:status (jobs/get-job cfg job-id))))
-
+      (t/is (= ["cancelled"] (get-outcomes job-id)))
       (t/testing "already cancelled job is not affected again"
-        (t/is (zero? (jobs/cancel cfg job-id))))))
+        (t/is (zero? (jobs/cancel cfg job-id)))
+        (t/is (= ["cancelled"] (get-outcomes job-id))))))
+  (doseq [status ["completed" "failed"]]
+    (t/testing (str status " job cannot be cancelled")
+      (let [cfg    (make-cfg (get-job-defs))
+            job-id (jobs/submit cfg {::jobs/name   :echo
+                                     ::jobs/params (make-params)})]
+        (th/db-update! :job {:status status} {:id job-id})
+        (t/is (zero? (jobs/cancel cfg job-id)))
+        (t/is (= status (:status (jobs/get-job cfg job-id))))
+        (t/is (= [] (get-outcomes job-id)))))))
 
-  (let [cfg    (make-cfg (get-job-defs))
-        job-id (jobs/submit cfg {::jobs/name   :echo
-                                 ::jobs/params (make-params)})]
-    (t/testing "running job cannot be cancelled"
-      (th/db-update! :job {:status "running"} {:id job-id})
-      (t/is (zero? (jobs/cancel cfg job-id)))
-      (t/is (= "running" (:status (jobs/get-job cfg job-id)))))))
-
-(t/deftest cancel-affects-scheduled-and-retry-jobs
+(t/deftest cancel-affects-pending-and-running-jobs
   (let [cfg (make-cfg (get-job-defs))]
-    (doseq [status ["scheduled" "retry"]]
+    (doseq [status ["scheduled" "retry" "running"]]
       (t/testing (str status " job can be cancelled")
         (let [job-id (jobs/submit cfg {::jobs/name   :echo
                                        ::jobs/params (make-params)})]
           (th/db-update! :job {:status status} {:id job-id})
           (t/is (= 1 (jobs/cancel cfg job-id)))
-          (t/is (= "cancelled" (:status (jobs/get-job cfg job-id)))))))))
+          (t/is (= "cancelled" (:status (jobs/get-job cfg job-id))))
+          (t/is (= ["cancelled"] (get-outcomes job-id))))))))
 
 (t/deftest get-user-status-maps-internal-statuses
   (t/are [status expected] (= expected (jobs/get-user-status status))
@@ -672,6 +875,32 @@
                                            ::jobs/schema  schema:echo-params
                                            ::jobs/handler (fn [_context params]
                                                             params)}}})))))
+
+(t/deftest job-def-carries-optional-family-and-resource-role
+  (let [job-def {::jobs/name          :echo
+                 ::jobs/family        :export
+                 ::jobs/resource-role :output
+                 ::jobs/schema        schema:echo-params
+                 ::jobs/handler       (fn [_context params] params)
+                 ::jobs/decoder       (sm/decoder schema:echo-params sm/json-transformer)
+                 ::jobs/validator     (sm/validator schema:echo-params)}]
+
+    (t/testing "the metadata is accepted and readable from the registry"
+      (let [defs (-> (ig/init {::jobs/defs {:echo job-def}})
+                     (get ::jobs/defs))
+            echo (jobs/get-job-def defs :echo)]
+        (t/is (= :export (::jobs/family echo)))
+        (t/is (= :output (::jobs/resource-role echo)))))
+
+    (t/testing "a family is a keyword, not a free string"
+      (t/is (thrown? Exception
+                     (ig/init {::jobs/defs {:echo (assoc job-def
+                                                         ::jobs/family "export")}}))))
+
+    (t/testing "a resource role is a keyword too"
+      (t/is (thrown? Exception
+                     (ig/init {::jobs/defs {:echo (assoc job-def
+                                                         ::jobs/resource-role "output")}}))))))
 
 (t/deftest generic-schema-round-trip-preserves-type-sensitive-fields
   "For each registered job-def, verify that type-sensitive fields (uuids, insts)
@@ -742,25 +971,28 @@
 
     (t/testing "progress reporting is a no-op when *job-id* is nil"
       (binding [jobs/*job-id* nil]
-        (t/is (nil? (jobs/heartbeat cfg :progress {:current 1}))))
+        (t/is (nil? (jobs/heartbeat cfg :progress {:stage :work}))))
       (t/is (= [] (get-progresss job-id))
             "no progress event should be stored"))))
 
-(t/deftest progress-noop-on-terminal-states
+(t/deftest progress-interrupts-on-terminal-states
   "A progress report never stores an event when the job is already in a
   terminal state (completed, failed, cancelled, aborted): the row is locked and
   checked before the insert, so a report can never race a terminal
-  transition."
+  transition, and the beat raises the interrupt instead."
   (let [cfg (make-cfg (get-job-defs))]
     (doseq [status ["completed" "failed" "cancelled" "aborted"]]
-      (t/testing (str "progress is a no-op on " status " status")
+      (t/testing (str "progress interrupts on " status " status")
         (let [job-id (jobs/submit cfg {::jobs/name   :echo
                                        ::jobs/params (make-params)})]
           (th/db-update! :job {:status status} {:id job-id})
-          ;; reset the throttle so should-write? would allow the write
+          ;; reset the throttles so should-write? would allow the writes
           (swap! jobs/progresses dissoc job-id)
+          (swap! jobs/heartbeats dissoc job-id)
           (binding [jobs/*job-id* job-id]
-            (t/is (= 0 (jobs/heartbeat cfg :progress {:current 1}))))
+            (let [cause (raised #(jobs/heartbeat cfg :progress {:stage :work}))]
+              (t/is (= :interrupt (th/ex-type cause)))
+              (t/is (= status (:status (ex-data cause))))))
           (t/is (= [] (get-progresss job-id))))))))
 
 (t/deftest defs-halt-clears-module-registry
@@ -797,8 +1029,8 @@
                 (fn [{:keys [::db/conn]}]
                   (jobs/heartbeat (assoc cfg ::db/conn conn)
                                   :job-id job-id
-                                  :progress {:current 1})))
-    (t/is (= [{:current 1}] (get-progresss job-id)))))
+                                  :progress {:stage :work})))
+    (t/is (= [{:stage :work}] (get-progresss job-id)))))
 
 (t/deftest progress-notification-survives-a-rolled-back-caller
   (let [cfg        (make-cfg (get-job-defs))
@@ -814,9 +1046,9 @@
                 (fn [{:keys [::db/conn]}]
                   (jobs/heartbeat (assoc job-cfg ::db/conn conn)
                                   :job-id job-id
-                                  :progress {:current 1})))
+                                  :progress {:stage :work})))
     (t/testing "the event is stored"
-      (t/is (= [{:current 1}] (get-progresss job-id))))
+      (t/is (= [{:stage :work}] (get-progresss job-id))))
     (t/testing "and the notification went out with its own commit"
       (t/is (= 1 (count @messages)))
       (t/is (= "progress" (:kind (:message (first @messages))))))))
@@ -829,7 +1061,7 @@
       (t/is (thrown? Exception
                      (jobs/heartbeat th/*pool*
                                      :job-id job-id
-                                     :progress {:current 1}))))))
+                                     :progress {:stage :work}))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -844,6 +1076,7 @@
           :tenant      (cf/get :tenant)
           :queue       "default"
           :label       nil
+          :profile-id  nil
           :resource-id nil
           :retry-num   0
           :max-retries 3}
@@ -851,7 +1084,7 @@
 
 (t/deftest make-context-selects-exactly-the-agreed-keys
   (let [context (jobs/make-context (mk-row {}))]
-    (t/is (= #{:id :name :label :resource-id} (set (keys context))))
+    (t/is (= #{:id :name :label :resource-id :profile-id} (set (keys context))))
     (t/testing "the queue is a routing detail of the dispatcher, not context"
       (t/is (not (contains? context :queue))))
     (t/testing "nor is the tenant that owns the queue"
@@ -880,11 +1113,23 @@
       (t/is (= resource-id
                (:resource-id (jobs/make-context (mk-row {:resource-id resource-id}))))))))
 
+(t/deftest make-context-carries-the-job-owner
+  (t/testing "the key exists even when the job has no owner"
+    (let [context (jobs/make-context (mk-row {}))]
+      (t/is (contains? context :profile-id))
+      (t/is (nil? (:profile-id context)))))
+  (t/testing "the owner of a user job is carried as is"
+    (let [profile-id (uuid/next)]
+      (t/is (= profile-id
+               (:profile-id (jobs/make-context (mk-row {:profile-id profile-id}))))))))
+
 (t/deftest make-context-rejects-invalid-rows
   (t/testing "a missing id is rejected"
     (t/is (thrown? Exception (jobs/make-context (mk-row {:id nil})))))
   (t/testing "a missing name is rejected"
     (t/is (thrown? Exception (jobs/make-context (mk-row {:name nil})))))
+  (t/testing "a non uuid owner is rejected"
+    (t/is (thrown? Exception (jobs/make-context (mk-row {:profile-id "nope"})))))
   (t/testing "a non uuid resource reference is rejected"
     (t/is (thrown? Exception (jobs/make-context (mk-row {:resource-id "nope"}))))))
 
@@ -955,36 +1200,21 @@
           "a job-id without a context still delivers a nil context")
     (t/testing "the job-id is what makes the durable writes reach the row"
       (t/is (pos? (jobs/heartbeat cfg :job-id job-id
-                                  :progress {:current 1})))
-      (t/is (= [{:current 1}] (get-progresss job-id))))))
+                                  :progress {:stage :work})))
+      (t/is (= [{:stage :work}] (get-progresss job-id))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; LIFECYCLE EVENTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- get-events
-  "Every event of a job, in insertion order."
-  [job-id]
-  (->> (th/db-exec! ["SELECT kind, payload FROM job_event
-                      WHERE job_id = ? ORDER BY id ASC" job-id])
-       (mapv (fn [{:keys [kind payload]}]
-               {:kind kind :payload (db/decode-json-pgobject payload)}))))
-
-(defn- get-kinds
-  [job-id]
-  (mapv :kind (get-events job-id)))
-
-(defn- get-outcomes
-  [job-id]
-  (mapv (comp :outcome :payload) (filter #(= "end" (:kind %)) (get-events job-id))))
-
 (defn- mk-running
   "A job already claimed by a worker, ready for a terminal transition."
-  [cfg]
-  (let [job-id (jobs/submit cfg {::jobs/name   :echo
-                                 ::jobs/params (make-params)})]
-    (jobs/claim cfg job-id (:scheduled-at (jobs/get-job cfg job-id)))
-    job-id))
+  ([cfg] (mk-running cfg :echo))
+  ([cfg name]
+   (let [job-id (jobs/submit cfg {::jobs/name   name
+                                  ::jobs/params (make-params)})]
+     (jobs/claim cfg job-id (:scheduled-at (jobs/get-job cfg job-id)))
+     job-id)))
 
 (t/deftest lifecycle-writers-require-metrics
   ;; Every one of the six writers must check the metrics instance before
@@ -1167,6 +1397,99 @@
       (t/is (= 0 (jobs/cancel cfg job-id)))
       (t/is (= ["cancelled"] (get-outcomes job-id))))))
 
+(t/deftest get-job-decodes-the-result-with-the-schema-of-the-def
+  "A result with a declared schema comes back typed. Without it, the plain
+  JSON of the column keywordizes every key and leaves every uuid as text;
+  without the substrate compiling the decoder from that schema, the key of
+  the uuid map comes back as a keyword and this test fails."
+  (let [cfg     (make-cfg (get-job-defs))
+        job-id  (mk-running cfg :typed)
+        file-id (uuid/next)
+        lib-id  (uuid/next)]
+
+    (t/is (= 1 (jobs/complete cfg :job-id job-id
+                              :result {:file-ids   [lib-id]
+                                       :resolution {file-id {:id file-id}}})))
+
+    (let [result (:result (jobs/get-job cfg job-id))]
+      (t/testing "the uuid keyed map keeps the type of its key and values"
+        (t/is (= [file-id] (keys (:resolution result))))
+        (t/is (uuid? (:id (get (:resolution result) file-id)))))
+
+      (t/testing "the vector of uuids keeps the type of its elements"
+        (t/is (= [lib-id] (:file-ids result)))))))
+
+(t/deftest get-job-leaves-a-result-without-a-schema-untouched
+  (let [cfg     (make-cfg (get-job-defs))
+        job-id  (mk-running cfg)
+        file-id (uuid/next)]
+
+    (t/is (= 1 (jobs/complete cfg :job-id job-id
+                              :result {:resolution {file-id {:id file-id}}})))
+
+    (t/testing "the raw JSON shape survives: keywordized keys, uuid as text"
+      (let [result (:result (jobs/get-job cfg job-id))
+            key    (keyword (str file-id))]
+        (t/is (= [key] (keys (:resolution result))))
+        (t/is (= (str file-id) (get-in result [:resolution key :id])))))))
+
+(t/deftest get-job-reads-a-row-whose-job-def-is-gone
+  (let [job-id (mk-running (make-cfg (get-job-defs)))
+        ;; a registry that no longer knows the kind of the row (a retired
+        ;; job-def): reading its result must not raise
+        row    (jobs/get-job (make-cfg {}) job-id)]
+    (t/is (some? row))
+    (t/is (= "echo" (:name row)))))
+
+(t/deftest complete-refuses-a-result-that-does-not-conform
+  "The schema a job-def declares is checked before the result is stored: the
+  row keeps no result and the job is not completed."
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (mk-running cfg :typed)]
+
+    (t/is (thrown-with-msg? Exception #"invalid result of a job"
+                            (jobs/complete cfg :job-id job-id
+                                           :result {:resolution "not-a-map"})))
+
+    (t/testing "the row was not completed and holds no result"
+      (let [row (jobs/get-job cfg job-id)]
+        (t/is (= "running" (:status row)))
+        (t/is (nil? (:result row)))))
+
+    (t/testing "a job that is no longer completable is skipped without checking"
+      (th/db-update! :job {:status "aborted"} {:id job-id})
+      (t/is (zero? (jobs/complete cfg :job-id job-id
+                                  :result {:resolution "not-a-map"}))))))
+
+(t/deftest a-stored-result-that-does-not-conform-is-read-decode-only
+  "A row written by another version may hold a result the schema of today no
+  longer accepts: reading it decodes and never raises."
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (mk-running cfg :typed)]
+
+    (th/db-update! :job
+                   {:status "completed"
+                    :result (db/json {:resolution "not-a-map"})}
+                   {:id job-id})
+
+    (let [row (jobs/get-job cfg job-id)]
+      (t/is (= "completed" (:status row)))
+      (t/is (= {:resolution "not-a-map"} (:result row))))))
+
+(t/deftest decode-result-accepts-a-pgobject
+  (let [job-def (jobs/get-job-def (get (make-cfg (get-job-defs)) ::jobs/defs) :typed)
+        file-id (uuid/next)]
+
+    (t/testing "a raw column value is decoded with the schema of the def"
+      (let [decoded (jobs/decode-result job-def
+                                        (db/json {:file-ids   [file-id]
+                                                  :resolution {file-id {:id file-id}}}))]
+        (t/is (= [file-id] (:file-ids decoded)))
+        (t/is (= [file-id] (keys (:resolution decoded))))))
+
+    (t/testing "no result answers nil"
+      (t/is (nil? (jobs/decode-result job-def nil))))))
+
 (t/deftest aborted-job-is-terminal-for-all-writers
   "An aborted job (system-side terminal set by the orphan sweep) cannot be
   moved by any lifecycle writer: first-terminal-wins, with no event and no
@@ -1268,6 +1591,23 @@
         (let [row (jobs/get-job cfg job-id)]
           (t/is (nil? (:resource-id row)))
           (t/is (= "running" (:status row))))))))
+
+(t/deftest insert-event-requires-a-transaction
+  ;; The event insert is only valid inside the transaction that owns the
+  ;; job row: outside one the assert fires instead of writing. Like every
+  ;; assert-based guard, this only holds with the backend asserts flag.
+  (t/is (true? *assert*)
+        "run the suite with PENPOT_FLAGS=\"enable-backend-asserts\"")
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (mk-running cfg)]
+    (t/testing "a pool cfg with no transaction raises"
+      (t/is (thrown? AssertionError
+                     (@#'jobs/insert-event cfg job-id "progress" {:stage :half}))))
+    (t/testing "a bare connection with no transaction raises too"
+      (db/run! cfg (fn [conn-cfg]
+                     (t/is (thrown? AssertionError
+                                    (@#'jobs/insert-event conn-cfg job-id "progress"
+                                                          {:stage :half}))))))))
 
 (t/deftest complete-associates-a-resource-id-once
   (let [cfg         (make-cfg (get-job-defs))
@@ -1393,10 +1733,17 @@
   (let [cfg    (make-cfg (get-job-defs))
         job-id (mk-running cfg)]
     (t/testing "a progress report and a completion of the same job, at once"
-      (let [[_writes completed] (race #(jobs/heartbeat cfg :job-id job-id
-                                                       :progress {:current 1}
-                                                       ::jobs/force? true)
-                                      #(jobs/complete cfg :job-id job-id :result {:v 1}))]
+      ;; the report either lands before the end or loses the race and gets
+      ;; the interrupt: a beat on a job that is no longer active raises
+      (let [report (fn []
+                     (if (some? (raised #(jobs/heartbeat cfg :job-id job-id
+                                                         :progress {:stage :work}
+                                                         ::jobs/force? true)))
+                       :interrupted
+                       :reported))
+            [outcome completed] (race report #(jobs/complete cfg :job-id job-id :result {:v 1}))]
+        (t/is (contains? #{:interrupted :reported} outcome)
+              "the report lands or gets the interrupt, never anything else")
         (t/is (= 1 completed) "the completion always wins, it owns the row")
         (t/testing "the report either lost the race or was stored before the end"
           (let [kinds (get-kinds job-id)]
@@ -1406,10 +1753,11 @@
             (t/is (<= 2 (count kinds) 3)
                   "at most the one report that made it in before the end"))))
       (t/testing "a job that ended is not resurrected by a late report"
-        (let [before (get-kinds job-id)]
-          (t/is (zero? (jobs/heartbeat cfg :job-id job-id
-                                       :progress {:current 2}
-                                       ::jobs/force? true)))
+        (let [before (get-kinds job-id)
+              cause  (raised #(jobs/heartbeat cfg :job-id job-id
+                                              :progress {:stage :work}
+                                              ::jobs/force? true))]
+          (t/is (= :interrupt (th/ex-type cause)))
           (t/is (= before (get-kinds job-id)) "the late report stored nothing"))))))
 
 (t/deftest progress-event-reaches-the-cfg-of-its-own-callback
@@ -1426,9 +1774,9 @@
                                          ::jobs/params     (make-params)
                                          ::jobs/profile-id profile-id})]
     (t/is (pos? (jobs/heartbeat job-cfg :job-id job-id
-                                :progress {:current 1})))
+                                :progress {:stage :work})))
     (t/testing "the event was stored"
-      (t/is (= [{:current 1}] (get-progresss job-id))))
+      (t/is (= [{:stage :work}] (get-progresss job-id))))
     (t/testing "and the msgbus on that cfg was reachable from the callback"
       (t/is (= 1 (count @messages)))
       (t/is (= "progress" (:kind (:message (first @messages))))))))

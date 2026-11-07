@@ -10,3 +10,8 @@ popd
 
 pnpm run lint:scss;
 pnpm run test;
+
+# Mousetrap JS unit tests (node:test, zero deps)
+pushd packages/mousetrap;
+pnpm test;
+popd

@@ -140,12 +140,12 @@
         (t/is (= "dark" (get-in out [:result :theme])))))
 
     (t/testing "update photo"
-      (let [data {::th/type :update-profile-photo
-                  ::rpc/profile-id (:id profile)
-                  :file {:filename "sample.jpg"
-                         :size 123123
-                         :path (th/tempfile "backend_tests/test_files/sample.jpg")
-                         :mtype "image/jpeg"}}
+      (let [data (th/with-multipart {::th/type :update-profile-photo
+                                     ::rpc/profile-id (:id profile)
+                                     :file {:filename "sample.jpg"
+                                            :size 123123
+                                            :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                                            :mtype "image/jpeg"}})
             out  (th/command! data)]
 
         ;; (th/print-result! out)
@@ -508,8 +508,41 @@
         (t/is (= "utma" (:penpot/utm-campaign props)))
         (t/is (= "mtma" (:penpot/mtm-campaign props)))))))
 
+(defn- prepare-register-token
+  [email]
+  (-> (th/command! {::th/type :prepare-register-profile
+                    :email email
+                    :fullname "foobar"
+                    :password "Foobar12!"})
+      (get-in [:result :token])))
+
+(t/deftest register-profile-defaults-to-wasm-renderer
+  (let [token  (prepare-register-token "user@example.com")
+        result (th/command-raw! {::th/type :register-profile
+                                 :token token})
+        props  (:app.loggers.audit/replace-props (meta result))]
+    (t/is (= :wasm (:renderer-default props)))
+
+    (let [profile (-> (th/db-get :profile {:email "user@example.com"})
+                      (profile/decode-row))]
+      (t/is (= :wasm (get-in profile [:props :renderer]))))))
+
+(t/deftest register-profile-retry-has-no-renderer-default
+  (with-redefs [cf/flags (conj cf/flags :email-verification)]
+    (th/create-profile* 1 {:is-active false})
+    (let [token  (prepare-register-token "profile1.test@nodomain.com")
+          result (th/command-raw! {::th/type :register-profile
+                                   :token token})
+          props  (:app.loggers.audit/replace-props (meta result))]
+      (t/is (map? props))
+      (t/is (not (contains? props :renderer-default))))))
+
+(t/deftest create-profile-keeps-given-renderer
+  (let [profile (th/create-profile* 1 {:props {:renderer :svg}})]
+    (t/is (= :svg (get-in profile [:props :renderer])))))
+
 (t/deftest prepare-register-and-register-profile-2
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [current-token (atom nil)]
       ;; PREPARE REGISTER
       (let [data  {::th/type :prepare-register-profile
@@ -563,7 +596,7 @@
           (t/is (= 1 (:call-count @mock))))))))
 
 (t/deftest prepare-register-and-register-profile-3
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [current-token (atom nil)]
       ;; PREPARE REGISTER
       (let [data  {::th/type :prepare-register-profile
@@ -611,7 +644,7 @@
   ;; When disable-email-verification is set and the profile is inactive
   ;; (e.g. created before the flag was set), re-registering should be
   ;; rejected with :email-already-exists.
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (with-redefs [app.config/flags #{:registration :login-with-password}]
       (let [current-token (atom nil)]
         ;; PREPARE REGISTER: first attempt (no profile exists yet)
@@ -699,7 +732,7 @@
 
 (t/deftest prepare-register-with-invitation-and-disabled-registration
   (with-redefs [app.config/flags #{:login-with-password :email-verification}]
-    (with-mocks [mock {:target 'app.email/send :return nil}]
+    (with-mocks [mock {:target 'app.email/send-template :return nil}]
       (let [email   "invited@example.com"
             fixture (create-invitation-fixture email (ct/in-future "48h"))
             itoken  (create-test-invitation-token fixture email)
@@ -840,7 +873,7 @@
   ;; verify-email mail with the invitation token EMBEDDED into the
   ;; verify-email JWE (so the team-invitation flow can resume after
   ;; the user clicks the email link).
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [itoken (tokens/generate th/*system*
                                   {:iss :team-invitation
                                    :exp (ct/in-future "48h")
@@ -1181,7 +1214,7 @@
             "prepare-register must not embed existing profile id of an anonymous caller"))))
 
 (t/deftest register-profile-with-invitation-must-not-take-over-existing-account
-  (with-mocks [_mock {:target 'app.email/send :return nil}]
+  (with-mocks [_mock {:target 'app.email/send-template :return nil}]
     (let [;; Victim profile exists but is not yet active (e.g. registered
           ;; but has not clicked the verification link). This is the
           ;; remaining attack surface after fix 1b: `prepare-register`
@@ -1287,7 +1320,7 @@
       (t/is (true? (:is-active reloaded))))))
 
 (t/deftest email-change-request
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [profile (th/create-profile* 1)
           pool    (:app.db/pool th/*system*)
           data    {::th/type :request-email-change
@@ -1327,7 +1360,7 @@
 
 
 (t/deftest email-change-request-without-smtp
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (with-redefs [app.config/flags #{}]
       (let [profile (th/create-profile* 1)
             pool    (:app.db/pool th/*system*)
@@ -1343,7 +1376,7 @@
 
 
 (t/deftest request-profile-recovery
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active false})
           profile2 (th/create-profile* 2 {:is-active true})
           pool  (:app.db/pool th/*system*)
@@ -1401,7 +1434,7 @@
 
 
 (t/deftest update-profile-password
-  (with-mocks [_ {:target 'app.email/send :return nil}]
+  (with-mocks [_ {:target 'app.email/send-template :return nil}]
     (let [profile (th/create-profile* 1)
           data  {::th/type :update-profile-password
                  ::rpc/profile-id (:id profile)
@@ -1413,7 +1446,7 @@
 
 
 (t/deftest update-profile-password-bad-old-password
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [profile (th/create-profile* 1)
           data  {::th/type :update-profile-password
                  ::rpc/profile-id (:id profile)
@@ -1700,7 +1733,7 @@
     (t/is (th/ex-of-code? (:error out) :weak-password))))
 
 (t/deftest update-profile-password-sends-notification
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [profile (th/create-profile* 1)
           data    {::th/type :update-profile-password
                    ::rpc/profile-id (:id profile)
@@ -1710,14 +1743,14 @@
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out)))
       (t/is (= 1 (:call-count @mock)))
-      (let [[_cfg {:keys [::eml/factory :to :name]}] (first (:call-args-list @mock))]
-        (t/is (= eml/password-changed factory))
+      (let [[_cfg {:keys [::eml/template :to :name]}] (first (:call-args-list @mock))]
+        (t/is (= "password-changed" template))
         (t/is (= (:email profile) to))
         (t/is (= (:fullname profile) name))))))
 
 
 (t/deftest update-profile-password-sends-notification-for-first-password
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [profile (th/create-profile* 1 {:password "!"})
           data    {::th/type :update-profile-password
                    ::rpc/profile-id (:id profile)
@@ -1726,14 +1759,14 @@
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out)))
       (t/is (= 1 (:call-count @mock)))
-      (let [[_cfg {:keys [::eml/factory :to :name]}] (first (:call-args-list @mock))]
-        (t/is (= eml/password-changed factory))
+      (let [[_cfg {:keys [::eml/template :to :name]}] (first (:call-args-list @mock))]
+        (t/is (= "password-changed" template))
         (t/is (= (:email profile) to))
         (t/is (= (:fullname profile) name))))))
 
 
 (t/deftest recover-profile-sends-notification
-  (with-mocks [mock {:target 'app.email/send :return nil}]
+  (with-mocks [mock {:target 'app.email/send-template :return nil}]
     (let [profile (th/create-profile* 1)
           token   (tokens/generate th/*system*
                                    {:iss :password-recovery
@@ -1745,8 +1778,8 @@
           out     (th/command! data)]
       (t/is (nil? (:error out)))
       (t/is (= 1 (:call-count @mock)))
-      (let [[_cfg {:keys [::eml/factory :to :name]}] (first (:call-args-list @mock))]
-        (t/is (= eml/password-changed factory))
+      (let [[_cfg {:keys [::eml/template :to :name]}] (first (:call-args-list @mock))]
+        (t/is (= "password-changed" template))
         (t/is (= (:email profile) to))
         (t/is (= (:fullname profile) name))))))
 
@@ -1802,3 +1835,43 @@
         (t/is (th/success? out))
         (t/is (= (:id member) event-pid))
         (t/is (not= (:id owner) event-pid))))))
+
+(t/deftest delete-profile-audit-event-carries-profile-data
+  ;; The event used to carry empty props because every param is namespaced and
+  ;; clean-props drops them; the projection needs the deleted identity.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        out     (th/command-raw! {::th/type :delete-profile
+                                  ::rpc/profile-id (:id profile)})
+        props   (:app.loggers.audit/props (meta out))]
+    (t/is (= (:id profile) (:id props)))
+    (t/is (= "profile1.test@nodomain.com" (:email props)))
+    (t/is (= "Profile 1" (:fullname props)))
+    (t/is (ct/inst? (:created-at props)))
+    (t/is (ct/inst? (:modified-at props)))
+    (t/is (ct/inst? (:deleted-at props)))))
+
+(t/deftest delete-profile-is-idempotent
+  ;; Deleting an already-deleted profile (client retry after a lost response)
+  ;; succeeds: the row is still there, only marked.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        params  {::th/type :delete-profile
+                 ::rpc/profile-id (:id profile)}
+        first-out (th/command-raw! params)]
+    (t/is (th/success? first-out))
+    (let [second-out (th/command-raw! params)]
+      (t/is (th/success? second-out))
+      (t/is (= (:id profile)
+               (get-in (meta second-out) [:app.loggers.audit/props :id]))))))
+
+(t/deftest update-profile-photo-rejects-forged-file
+  ;; A transit body like {"~:file": {"~:path": ["~#path", "/etc/passwd"]}}
+  ;; decodes to this exact map. Without a multipart request it must fail at
+  ;; params validation, before any file is read.
+  (let [prof (th/create-profile* 1)
+        out  (th/command! {::th/type :update-profile-photo
+                           ::rpc/profile-id (:id prof)
+                           :file {:filename "evil.jpg"
+                                  :size 123
+                                  :path (fs/path "/etc/passwd")
+                                  :mtype "image/jpeg"}})]
+    (t/is (th/ex-of-code? (:error out) :params-validation))))

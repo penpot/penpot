@@ -6,6 +6,7 @@
 
 (ns app.main.ui
   (:require
+   [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.nitrate :as dnt]
@@ -19,6 +20,7 @@
    [app.main.ui.error-boundary :refer [error-boundary*]]
    [app.main.ui.exports.files]
    [app.main.ui.frame-preview :as frame-preview]
+   [app.main.ui.mcp-authorize :refer [mcp-authorize*]]
    [app.main.ui.nitrate.entry :as nitrate-entry]
    [app.main.ui.notifications :as notifications]
    [app.main.ui.onboarding.questions :refer [questions-modal]]
@@ -53,10 +55,14 @@
    ::mf/private true}
   [{:keys [team-id children]}]
   (mf/with-effect [team-id]
-    (when (uuid? team-id)
-      (st/emit! (dtm/initialize-team team-id))
-      (fn []
-        (st/emit! (dtm/finalize-team team-id)))))
+    (if (uuid? team-id)
+      (do
+        (st/emit! (dtm/initialize-team team-id))
+        (fn []
+          (st/emit! (dtm/finalize-team team-id))))
+      (ex/raise :type :not-found
+                :code :invalid-team-id
+                :hint "provided team-id is invalid or nil")))
 
   (if-not (uuid? team-id)
     nil
@@ -112,6 +118,9 @@
 
        :auth-verify-token
        [:? [:> verify-token-page* {:route route}]]
+
+       :mcp-authorize
+       [:> mcp-authorize* {:route route :profile profile}]
 
        :nitrate-entry
        [:> nitrate-entry/nitrate-entry-page* {:profile profile}]

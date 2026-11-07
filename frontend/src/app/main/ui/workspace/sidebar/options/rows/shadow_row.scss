@@ -8,6 +8,7 @@
 @use "ds/typography.scss" as t;
 @use "ds/_borders.scss" as *;
 @use "ds/_utils.scss" as *;
+@use "ds/mixins.scss" as *;
 @use "refactor/common-refactor.scss" as deprecated;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
 
@@ -84,8 +85,13 @@
   @include t.use-typography("body-small");
 
   .shadow-advanced-label {
+    @include text-ellipsis;
+
     padding-inline-start: var(--sp-s);
-    inline-size: px2rem(60);
+    flex-shrink: 0;
+    inline-size: auto;
+    max-inline-size: calc(100% - #{px2rem(36)});
+    line-height: $sz-32;
   }
 }
 

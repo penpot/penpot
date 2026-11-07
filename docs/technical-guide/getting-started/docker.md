@@ -98,6 +98,10 @@ or
 docker exec -ti penpot-penpot-backend-1 python3 manage.py create-profile --skip-tutorial --skip-walkthrough
 ```
 
+**NOTE:** profiles created with this command have no verified email. If the
+`disable-email-verification` flag is set, inviting these users to a team adds them to it
+directly, without sending any invitation email, so SMTP is not required for this flow.
+Check the [Configuration][1] section for more detail.
 
 **NOTE:** the exact container name depends on your docker version and platform.
 For example it could be <code class="language-bash">penpot-penpot-backend-1</code> or <code class="language-bash">penpot_penpot-backend-1</code>.
@@ -118,6 +122,13 @@ This will fetch the latest images. When you do <code class="language-bash">docke
     It is strongly recommended to update the Penpot version in small increments, rather than updating between two distant versions.
 </p>
 
+#### Upgrade to 2.19
+
+The Admin Console is now enabled by default, so the `enable-admin-console` flag is no longer
+needed and can be removed from `PENPOT_FLAGS`. The `penpot-admin-console` service and the
+`PENPOT_ADMIN_CONSOLE_URI` variable are now required: if you haven't set them up yet, follow
+steps 2–4 of the [2.18 upgrade](#upgrade-to-2.18).
+
 #### Upgrade to 2.18
 
 This version deploys a new service, **`penpot-admin-console`**, in the official `docker-compose.yaml`
@@ -128,10 +139,9 @@ example. If you maintain your own compose file, you need to replicate the follow
 **NOTE:** Enabling the Admin Console is not required in this version, but it will be in a future release.
 We recommend setting it up now to avoid a more complex upgrade later.
 
-This step (the `enable-admin-console` flag) only applies to this version 2.18. In a future release, the
-Admin Console will be enabled by default and this flag will be removed. If you're upgrading directly to a
-version where the flag has already been removed, skip step 1 and go straight to steps 2–4, which remain
-required.
+This step (the `enable-admin-console` flag) only applies to this version 2.18. Since 2.19 the Admin
+Console is enabled by default: if you're upgrading directly to 2.19 or later, skip step 1 and go straight
+to steps 2–4, which remain required.
 
 Wherever you set `PENPOT_FLAGS` (frontend and backend):
 
@@ -312,6 +322,50 @@ server {
 ```
 
 For full documentation, go to the [official website][2]
+
+#### Serve Penpot from a subpath with NGINX
+
+First, set the complete public URL in `docker-compose.yaml`:
+
+```yaml
+PENPOT_PUBLIC_URI: https://mycompany.com/penpot/
+```
+
+Then route the subpath to the Penpot frontend, forwarding the path unchanged:
+
+```nginx
+server {
+  listen 443 ssl;
+  server_name mycompany.com;
+
+  client_max_body_size 367001600;
+
+  # Configure TLS and logs following your organization's practices.
+  ssl_certificate /path/to/fullchain;
+  ssl_certificate_key /path/to/privkey;
+
+  location = /penpot {
+    return 301 /penpot/;
+  }
+
+  location /penpot/ {
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Scheme $scheme;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_redirect off;
+    proxy_pass http://localhost:9001;
+  }
+}
+```
+
+This single location covers every Penpot endpoint, WebSockets included. Keep
+the trailing slash in `PENPOT_PUBLIC_URI`, and do not add a path to `proxy_pass`
+(such as `http://localhost:9001/`): NGINX would then replace the `/penpot/`
+prefix instead of forwarding it.
 
 ### Example with CADDY SERVER
 

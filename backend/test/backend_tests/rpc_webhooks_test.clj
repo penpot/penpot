@@ -374,3 +374,29 @@
               (t/is (nil? (:result out)))
               (let [rows (th/db-exec! ["select * from webhook"])]
                 (t/is (= 0 (count rows)))))))))))
+
+(t/deftest webhook-audit-events-carry-team-id
+  ;; `update-webhook` and `delete-webhook` have no team id in their params, so
+  ;; the command copies it from the stored webhook into the audit props.
+  (with-mocks [http-mock {:target 'app.http.client/req :return {:status 200}}]
+    (let [prof  (th/create-profile* 1 {:is-active true})
+          team  (th/create-team* 1 {:profile-id (:id prof)})
+          whook (-> (th/command! {::th/type :create-webhook
+                                  ::rpc/profile-id (:id prof)
+                                  :team-id (:id team)
+                                  :uri (u/uri "http://example.com")
+                                  :mtype "application/json"})
+                    :result)
+          upd   (th/command! {::th/type :update-webhook
+                              ::rpc/profile-id (:id prof)
+                              :id (:id whook)
+                              :uri (u/uri "http://example.com/updated")
+                              :mtype "application/json"
+                              :is-active true})
+          del   (th/command-raw! {::th/type :delete-webhook
+                                  ::rpc/profile-id (:id prof)
+                                  :id (:id whook)})]
+      (t/is (= (:id team)
+               (get-in (meta (:result upd)) [:app.loggers.audit/props :team-id])))
+      (t/is (= (:id team)
+               (get-in (meta del) [:app.loggers.audit/props :team-id]))))))

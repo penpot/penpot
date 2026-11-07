@@ -29,6 +29,22 @@
 (def ^:dynamic *data-length* 8)
 (def ^:dynamic *data-level* 8)
 
+(def max-message-length
+  "Upper bound, in characters, for an exception message surfaced as a hint or
+  embedded in a formatted stack trace. A message can carry a whole payload (a
+  serialized file, for instance) and grow to megabytes; only the head helps to
+  identify the failure, and the rest is noise that bloats reports and the audit
+  events built from them."
+  1000)
+
+(defn- truncate
+  "Truncates a string to at most `n` characters, appending an ellipsis when it
+  had to cut. Values that are not strings pass through unchanged."
+  [s n]
+  (if (and (string? s) (> (count s) n))
+    (str (subs s 0 n) "...")
+    s))
+
 (defmacro error
   [& {:keys [type hint] :as params}]
   `(ex-info ~(or hint (name type))
@@ -243,7 +259,7 @@
 
    :cljs
    (defn format-throwable
-     [cause & {:as opts}]
+     [cause & {:keys [trace-length]}]
      (with-out-str
        (when-let [exdata (ex-data cause)]
          (when-let [hint (or (get exdata :hint)
@@ -251,7 +267,7 @@
            (when (str/index-of hint "\n")
              (println "Hint:")
              (println "--------------------")
-             (println hint)
+             (println (truncate hint max-message-length))
              (println)))
 
          (when-let [explain (get exdata ::sm/explain)]
@@ -272,14 +288,20 @@
          (println))
 
        (when-let [trace (.-stack cause)]
-         (println "Trace:")
-         (println "--------------------")
-         (println (.-stack cause))))))
+         (let [lines (str/lines trace)
+               head  (truncate (first lines) max-message-length)
+               tail  (rest lines)]
+           (println "Trace:")
+           (println "--------------------")
+           (when head
+             (println head))
+           (doseq [line (if trace-length (take trace-length tail) tail)]
+             (println line)))))))
 
 (defn first-line
   [s]
   (let [break-index (str/index-of s "\n")]
-    (if (pos? break-index)
+    (if (and (some? break-index) (pos? break-index))
       (subs s 0 break-index)
       s)))
 
@@ -308,5 +330,6 @@
 
 (defn get-hint
   [cause]
-  (or (some-> (ex-data cause) (get :hint) first-line)
-      (some-> (ex-message cause) first-line)))
+  (truncate (or (some-> (ex-data cause) (get :hint) first-line)
+                (some-> (ex-message cause) first-line))
+            max-message-length))

@@ -31,7 +31,9 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
+   [app.common.types.stroke :as types.stroke]
    [app.common.types.text :as txt]
+   [app.common.types.token :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.exports.assets :as de]
    [app.main.data.exports.wasm :as wasm.exports]
@@ -64,12 +66,11 @@
    [app.plugins.strokes :as strokes]
    [app.plugins.system-events :as se]
    [app.plugins.text :as text]
-   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens token-attr-plugin->token-attr token-attr? valid-token-resolution?]]
+   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens expand-token-attrs per-side-stroke-attrs-restricted? per-side-stroke-widths-message token-attr? valid-token-resolution?]]
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
-   [beicon.v2.core :as rx]
-   [cuerdas.core :as str]))
+   [beicon.v2.core :as rx]))
 
 (declare shape-proxy)
 (declare shape-proxy?)
@@ -273,21 +274,27 @@
       (st/emit! (dwsh/update-shapes [id] #(assoc % :fills value))))))
 
 (defn commit-strokes!
-  [plugin-id ^js self value]
-  (let [id    (obj/get self "$id")
-        value (parser/parse-strokes value)]
-    (cond
-      (not (sm/validate [:vector cts/schema:stroke] value))
-      (u/not-valid plugin-id :strokes value)
+  ([plugin-id self value]
+   (commit-strokes! plugin-id self value nil))
+  ([plugin-id ^js self value options]
+   (let [id    (obj/get self "$id")
+         value (parser/parse-strokes value)]
+     (cond
+       (not (sm/validate [:vector cts/schema:stroke] value))
+       (u/not-valid plugin-id :strokes value)
 
-      (not (r/check-permission plugin-id "content:write"))
-      (u/not-valid plugin-id :strokes "Plugin doesn't have 'content:write' permission")
+       (not (r/check-permission plugin-id "content:write"))
+       (u/not-valid plugin-id :strokes "Plugin doesn't have 'content:write' permission")
 
-      (not (u/page-active? (obj/get self "$page")))
-      (u/not-valid plugin-id :strokes "Cannot modify a page that is not currently active")
+       (not (u/page-active? (obj/get self "$page")))
+       (u/not-valid plugin-id :strokes "Cannot modify a page that is not currently active")
 
-      :else
-      (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value))))))
+       (and (not (ctt/per-side-stroke-shape? (:type (u/proxy->shape self))))
+            (some #(= :multiple (types.stroke/width-type %)) value))
+       (u/not-valid plugin-id :strokes per-side-stroke-widths-message)
+
+       :else
+       (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value) options))))))
 
 (defn commit-shadows!
   [plugin-id ^js self value]
@@ -358,6 +365,7 @@
 
    (let [data (u/locate-shape file-id page-id id)]
      (-> (obj/reify {:name "ShapeProxy"
+                     :on-set u/check-shape-writable
                      :on-error (u/handle-error plugin-id)}
            :$plugin {:enumerable false :get (fn [] plugin-id)}
            :$id {:enumerable false :get (fn [] id)}
@@ -377,11 +385,8 @@
             :get #(-> % u/proxy->shape :name)
             :set
             (fn [self value]
-              (let [id (obj/get self "$id")
-                    value  (when (string? value) (-> value str/trim cpn/clean-path))
-                    valid? (and (some? value)
-                                (not (str/ends-with? value "/"))
-                                (not (str/blank? value)))]
+              (let [id    (obj/get self "$id")
+                    value (cpn/normalize-path-name value)]
                 (cond
                   (not (r/check-permission plugin-id "content:write"))
                   (u/not-valid plugin-id :name "Plugin doesn't have 'content:write' permission")
@@ -389,7 +394,7 @@
                   (not (u/page-active? page-id))
                   (u/not-valid plugin-id :name "Cannot modify a page that is not currently active")
 
-                  (not valid?)
+                  (nil? value)
                   (u/not-valid plugin-id :name value)
 
                   :else
@@ -992,8 +997,12 @@
            :strokes
            {:this true
             :get (fn [^js self]
-                   (strokes/format-strokes (-> self u/proxy->shape :strokes)
-                                           #(commit-strokes! plugin-id self %)))
+                   (let [shape (u/proxy->shape self)]
+                     (strokes/format-strokes
+                      (:strokes shape)
+                      #(commit-strokes! plugin-id self %1 %2)
+                      {:per-side-allowed? (ctt/per-side-stroke-shape? (:type shape))
+                       :not-valid (fn [code value] (u/not-valid plugin-id code value))})))
             :set (fn [self value] (commit-strokes! plugin-id self value))}
 
            :layoutChild
@@ -1033,6 +1042,7 @@
            ;; Methods
            :resize
            (fn [width height]
+             (u/check-shape-located file-id page-id id)
              (cond
                (or (not (sm/valid-safe-number? width)) (<= width 0))
                (u/not-valid plugin-id :resize width)
@@ -1073,6 +1083,7 @@
 
            :rotate
            (fn [angle center]
+             (u/check-shape-located file-id page-id id)
              (let [center (when center {:x (obj/get center "x") :y (obj/get center "y")})]
                (cond
                  (not (sm/valid-safe-number? angle))
@@ -1255,6 +1266,9 @@
                  (u/changes-component-copy-structure? objects shape child-shape)
                  (u/not-valid plugin-id :appendChild "Cannot change the structure of a component copy")
 
+                 (u/non-main-into-variant-container? shape child)
+                 (u/not-valid plugin-id :appendChild "Only main instances can be added to a variant container")
+
                  :else
                  (st/emit!
                   (dwsh/relocate-shapes #{child-id} id index)
@@ -1293,6 +1307,9 @@
 
                  (u/changes-component-copy-structure? objects shape child-shape)
                  (u/not-valid plugin-id :insertChild "Cannot change the structure of a component copy")
+
+                 (u/non-main-into-variant-container? shape child)
+                 (u/not-valid plugin-id :insertChild "Only main instances can be added to a variant container")
 
                  :else
                  (st/emit!
@@ -1455,18 +1472,22 @@
 
            :bringForward
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :up) [id])))
 
            :sendBackward
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :down) [id])))
 
            :bringToFront
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :top) [id])))
 
            :sendToBack
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :bottom) [id])))
 
            ;; COMPONENTS
@@ -1574,6 +1595,38 @@
                                                target-file
                                                target-id
                                                true)))))
+
+           :updateMain
+           (fn []
+             (let [shape     (u/locate-shape file-id page-id id)
+                   objects   (u/locate-objects file-id page-id)
+                   component (when (:component-id shape)
+                               (u/locate-library-component (:component-file shape) (:component-id shape)))]
+               (cond
+                 (not (r/check-permission plugin-id "content:write"))
+                 (u/not-valid plugin-id :updateMain "Plugin doesn't have 'content:write' permission")
+
+                 (not (r/check-permission plugin-id "library:write"))
+                 (u/not-valid plugin-id :updateMain "Plugin doesn't have 'library:write' permission")
+
+                 (not= file-id (:current-file-id @st/state))
+                 (u/not-valid plugin-id :updateMain "Can only update a component from a copy in the current file")
+
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :updateMain "Cannot modify a page that is not currently active")
+
+                 (not (and (ctk/instance-head? shape) (ctk/in-component-copy? shape)))
+                 (u/not-valid plugin-id :updateMain "The shape is not a component copy head")
+
+                 (u/inside-component-copy? objects shape)
+                 (u/not-valid plugin-id :updateMain "Cannot update the main from a shape inside another component copy")
+
+                 (or (nil? component) (:deleted component))
+                 (u/not-valid plugin-id :updateMain "The main component does not exist or is deleted")
+
+                 :else
+                 (st/emit! (-> (dwl/update-component-sync id (:component-file shape))
+                               (se/add-event plugin-id))))))
 
            :resetOverrides
            (fn []
@@ -1782,7 +1835,7 @@
                   (let [set-id   (obj/get token "$set-id")
                         token-id (obj/get token "$id")
                         token    (u/locate-token file-id set-id token-id)
-                        kw-attrs (into #{} (map token-attr-plugin->token-attr attrs))]
+                        kw-attrs (expand-token-attrs attrs)]
                     (cond
                       (not (r/check-permission plugin-id "content:write"))
                       (u/not-valid plugin-id :applyToken "Plugin doesn't have 'content:write' permission")
@@ -1795,6 +1848,11 @@
 
                       (some #(not (token-attr? %)) kw-attrs)
                       (u/not-valid plugin-id :applyToken attrs)
+
+                      ;; The uniform `strokeWidth` alias is exempt: it expands
+                      ;; to a uniform width on every side.
+                      (per-side-stroke-attrs-restricted? file-id page-id [id] attrs)
+                      (u/not-valid plugin-id :applyToken per-side-stroke-widths-message)
 
                       :else
                       (st/emit!

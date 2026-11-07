@@ -11,6 +11,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.loggers.audit :as audit]
+   [app.loggers.audit.consumer-task :as at]
    [app.tasks.telemetry :as telemetry]
    [app.util.json :as json]
    [backend-tests.helpers :as th]
@@ -827,6 +828,79 @@
     (t/is (not (contains? (:props result) :active)))
     (t/is (not (contains? (:props result) :label)))))
 
+(t/deftest test-filter-telemetry-props-subscription-creation-keeps-safe-fields
+  (let [ftp (ns-resolve 'app.loggers.audit 'filter-telemetry-props)
+        organization-id (uuid/next)
+        props {:type "nitrate:enterprise"
+               :deployment "saas"
+               :quantity 5
+               :subscription-mode "paid"
+               :organization-id organization-id
+               :email "owner@example.com"
+               :unsafe-label "should-be-stripped"}
+        expected {:type "nitrate:enterprise"
+                  :deployment "saas"
+                  :quantity 5
+                  :subscription-mode "paid"
+                  :organization-id organization-id}]
+    (doseq [source ["backend" "frontend"]
+            name ["create-subscription" "create-trial-subscription"]]
+      (t/testing (str source " " name)
+        (let [result (ftp {:source source
+                           :name name
+                           :type "action"
+                           :props props})]
+          (t/is (= expected (:props result))))))))
+
+(t/deftest test-filter-telemetry-props-subscription-update-keeps-safe-fields
+  (let [ftp (ns-resolve 'app.loggers.audit 'filter-telemetry-props)
+        props {:type "nitrate:enterprise"
+               :deployment "selfhost"
+               :previous-status "trialing"
+               :status "active"
+               :previous-cancel-at-period-end false
+               :cancel-at-period-end true
+               :previous-cancel-at nil
+               :cancel-at "2026-12-01T00:00:00.000Z"
+               :changed-fields ["status" "cancel-at-period-end" "cancel-at"]
+               :email "owner@example.com"
+               :unsafe-label "should-be-stripped"}
+        result (ftp {:source "backend"
+                     :name "update-subscription"
+                     :type "action"
+                     :props props})]
+    (t/is (= (dissoc props :email :unsafe-label)
+             (:props result)))))
+
+(t/deftest test-filter-telemetry-props-subscription-summary-keeps-safe-fields
+  (let [ftp (ns-resolve 'app.loggers.audit 'filter-telemetry-props)
+        props {:type "nitrate:enterprise"
+               :deployment "saas"
+               :instance-id "00000000-0000-4000-8000-000000000099"
+               :snapshot-date "2026-11-05"
+               :trialing-count 1
+               :active-count 2
+               :active-cancel-scheduled-count 3
+               :past-due-count 4
+               :canceled-count 5
+               :unpaid-count 6
+               :incomplete-count 7
+               :incomplete-expired-count 8
+               :paused-count 9
+               :other-count 10
+               :total-count 55
+               :sync-succeeded 54
+               :sync-failed 1
+               :snapshot-complete false
+               :email "owner@example.com"
+               :unsafe-label "should-be-stripped"}
+        result (ftp {:source "backend"
+                     :name "subscription-summary"
+                     :type "action"
+                     :props props})]
+    (t/is (= (dissoc props :email :unsafe-label)
+             (:props result)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SEND-EVENT-BATCH PAYLOAD STRUCTURE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -999,3 +1073,45 @@
         (th/run-task! :telemetry {:send? true :enabled? true})
         (t/is (= 1 @send-count))  ;; still 1, not 2
         (t/is (= 0 (count-telemetry-rows)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PENDING-QUEUE REGRESSION (telemetry deletes)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- insert-pending-pair!
+  "Queue the row for both consumers (from the consumer constants, not
+  literals): the delete paths must face pending-ful rows."
+  [row-id]
+  (doseq [consumer [at/consumer-nexus at/consumer-admin-console]]
+    (th/db-exec! ["INSERT INTO audit_log_pending (audit_log_id, consumer)
+                   VALUES (?::uuid, ?::smallint)
+                        ON CONFLICT DO NOTHING"
+                  row-id consumer])))
+
+(defn- count-pendings []
+  (-> (th/db-exec-one! ["SELECT count(*) AS cnt FROM audit_log_pending"])
+      :cnt
+      long))
+
+(t/deftest test-delete-sent-events-removes-pendings-first
+  ;; Regression: telemetry rows carry pendings for both consumers, so
+  ;; deleting the row must delete its pendings first, or the FK
+  ;; rejects the delete and the batch is sent again next tick.
+  (let [row (insert-telemetry-row! "navigate")]
+    (insert-pending-pair! (:id row))
+    (t/is (= 2 (count-pendings)))
+    (db/tx-run! th/*pool*
+                (fn [{:keys [::db/conn]}]
+                  (@#'telemetry/delete-sent-events conn [(:id row)])))
+    (t/is (= 0 (count-telemetry-rows)))
+    (t/is (= 0 (count-pendings)))))
+
+(t/deftest test-gc-events-removes-pendings-first
+  ;; Same guarantee for the >7-days purge.
+  (let [past (ct/in-past {:days 8})
+        row  (insert-telemetry-row! "navigate" {:created-at past :tracked-at past})]
+    (insert-pending-pair! (:id row))
+    (t/is (= 2 (count-pendings)))
+    (@#'telemetry/gc-events {::db/conn th/*pool*})
+    (t/is (= 0 (count-telemetry-rows)))
+    (t/is (= 0 (count-pendings)))))

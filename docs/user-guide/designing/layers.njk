@@ -22,7 +22,7 @@ are shown by default at the <a href="/user-guide/prototyping-testing/testing-vie
 
 <p>Then, with the board tool selected, you have two options:</p>
 <ul>
-  <li><strong>Select a board size upfront</strong>. You can choose one of the provided presets with the most common resolution for devices and standard print sizes. Use the search field to filter presets by name.</li>
+  <li><strong>Select a board size upfront</strong>. You can choose one of the provided presets with the most common resolution for devices and standard print sizes. Use the search field to filter presets by name. The <strong>Penpot</strong> section has the sizes for a file thumbnail (300 × 200), a template cover (1390 × 781), a plugin icon (400 × 400) and a plugin cover (1390 × 724).</li>
   <li><strong>Click-and-drag</strong> to draw a frame of approximate size, then immediately edit its width/height values to be precise.</li>
 </ul>
 <figure>
@@ -165,7 +165,7 @@ a design.</p>
 <h3 id="curves">Curves (freehand)</h3>
 <p>The curve tool allows a path to be created directly in a freehand mode.
 Select the curve tool from the free-draw flyout in the toolbar or press <kbd>Shift/⇧</kbd> + <kbd>C</kbd>.</p>
-<p>The path created will contain a lot of points, but it is edited the same way as any other curve.</p>
+<p>When you release the mouse, Penpot turns your stroke into a few smooth curves. Sharp turns stay as corners, so a zigzag keeps its points. The result is a regular path that you can <a href="#edit-nodes">edit</a> like any other.</p>
 
 <h3 id="paths">Paths (bezier)</h3>
 <p>A path is composed of two or more nodes and the line segments between them, which may also be curved. To draw a new path, select the path tool from the free-draw flyout in the toolbar or press <kbd>P</kbd>. Then you have two ways to create the path:</p>
@@ -178,16 +178,37 @@ Select the curve tool from the free-draw flyout in the toolbar or press <kbd>Shi
   <li><strong>Close it</strong> clicking over the starting node.</li>
   <li><strong>Leave it open</strong> pressing <kbd>Esc</kbd> or <kbd>Enter</kbd> to stop editing. Then press <kbd>Esc</kbd> to exit the edit mode.</li>
 </ol>
-<p><strong>Tip:</strong> If you hold <kbd>Shift/⇧</kbd> while adding nodes the angle between the current and the next will change in 45 degree increments.</p>
+<p><strong>Tip:</strong> If you hold <kbd>Shift/⇧</kbd> while adding nodes, the angle between the current node and the next one changes in 15 degree increments.</p>
 <figure>
   <video title="Paths" muted="" playsinline="" controls="" width="100%" poster="/img/objects/path-create.webp" height="auto">
     <source src="/img/objects/path-create.mp4" type="video/mp4">
   </video>
 </figure>
 
-<h4>Edit nodes</h4>
+<h4 id="edit-nodes">Edit nodes</h4>
 <p>To edit a node double click on a path or select and press <kbd>Enter</kbd>.
 You can choose to edit individual nodes or create new ones. Press <kbd>Esc</kbd> to exit node edition. </p>
+<p>The path toolbar has two modes:</p>
+<ul>
+  <li><strong>Move nodes</strong> (<kbd>M</kbd>): select and move nodes, segments and handles. Editing an existing path starts in this mode.</li>
+  <li><strong>Draw nodes</strong> (<kbd>P</kbd>): add new nodes and segments to the path.</li>
+</ul>
+<p><strong>Snap nodes</strong> (<kbd>Ctrl/⌘</kbd> + <kbd>'</kbd>) is on by default, so new and moved nodes snap to the existing ones.</p>
+
+<h4 id="continue-path">Continue or close a path</h4>
+<p>To keep drawing from an existing node, select it in Move mode and switch to Draw mode, or click it in Draw mode. If the node is the end of an open path, the new segments extend it. Click the start node to close the shape. Hold <kbd>Shift/⇧</kbd> to draw in 15 degree steps.</p>
+
+<h4 id="path-gestures">Reshape with the mouse</h4>
+<p>These gestures work on nodes and segments while you edit a path:</p>
+<ul>
+  <li><kbd>Ctrl/⌘</kbd> + drag a segment: bends it while both end nodes stay in place. <kbd>Ctrl/⌘</kbd> + click turns a segment from straight to curved and back.</li>
+  <li><kbd>Ctrl/⌘</kbd> + drag a node: pulls out a pair of handles. <kbd>Ctrl/⌘</kbd> + click turns a node from corner to curve and back.</li>
+  <li><kbd>Alt/⌥</kbd> + click a segment (Move mode): adds a node at that point. You can also click near the middle of a segment to add a node there.</li>
+  <li><kbd>Alt/⌥</kbd> + click a node: removes the node and keeps the path smooth around it.</li>
+  <li><kbd>Ctrl/⌘</kbd> + <kbd>Alt/⌥</kbd> + click a node: removes the node and its segments, which leaves a gap.</li>
+</ul>
+<p><kbd>Delete</kbd> or <kbd>Backspace</kbd> removes the selected nodes and keeps the path joined. With selected handles, it removes them and the curve at that node becomes straight. <kbd>Shift/⇧</kbd> + <kbd>Delete</kbd> removes the selected nodes together with their segments.</p>
+<p>See all the <a href="/user-guide/first-steps/shortcuts/#path-editor">path editor shortcuts</a>.</p>
 <figure>
   <video title="Edit nodes" muted="" playsinline="" controls="" width="100%" poster="/img/objects/nodes-edit.webp" height="auto">
     <source src="/img/objects/nodes-edit.mp4" type="video/mp4">
@@ -218,6 +239,10 @@ You can choose to edit individual nodes or create new ones. Press <kbd>Esc</kbd>
     <source src="/img/objects/image-ratio.mp4" type="video/mp4">
   </video>
 </figure>
+
+<h4 id="image-frame">Change the image frame</h4>
+<p>Hold <kbd>Ctrl/⌘</kbd> while you drag a resize handle to change the layer bounds without scaling the image. Shrink the layer to crop the image, or make it bigger to add empty space around it. The image is not distorted.</p>
+<p>This works with image layers and with any layer that has an image fill. A normal resize afterwards scales the frame and the image together.</p>
 
 <h2 id="layer-actions">Layer actions</h2>
 
@@ -477,7 +502,7 @@ You can choose to edit individual nodes or create new ones. Press <kbd>Esc</kbd>
   <li><strong>Layer blur</strong> blurs the layer content itself.</li>
   <li><strong>Background blur</strong> blurs whatever sits behind the layer. Use it for frosted-glass or depth effects. Background blur requires the <a href="/user-guide/first-steps/troubleshooting-webgl/">WebGL renderer</a> to be enabled.</li>
 </ul>
-<p class="advice">Background blur is not included in exported files yet (PNG, SVG, PDF, and others). The exporter still uses the legacy SVG renderer, so the effect only shows in the workspace and View mode. Export support is a current priority and will land in an upcoming release.</p>
+<p class="advice">Background blur is included in exports made with WebGL rendering enabled. In PDF files it is embedded as an image.</p>
 <figure>
   <img src="/img/styling/background-blur.webp" alt="Colorful shapes behind a frosted panel with background blur applied" />
   <figcaption>Background blur affects the layers behind the shape, not the shape itself.</figcaption>

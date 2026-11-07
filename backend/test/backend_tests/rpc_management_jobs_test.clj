@@ -13,6 +13,7 @@
    [app.db :as db]
    [app.jobs :as jobs]
    [app.metrics :as-alias mtx]
+   [app.rpc :as-alias rpc]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
@@ -74,7 +75,13 @@
                       WHERE job_id = ? AND kind = 'progress'
                       ORDER BY created_at ASC, id ASC"
                      id])
-       (mapv #(db/decode-json-pgobject (:payload %)))))
+       (mapv #(jobs/decode-progress (:payload %)))))
+
+(defn- count-job-events
+  [id]
+  (-> (th/db-exec! ["SELECT count(*) AS count FROM job_event WHERE job_id = ?" id])
+      first
+      :count))
 
 (defn- mgmt
   [type params]
@@ -134,21 +141,44 @@
   (let [out (mgmt :claim-job {:job-id (uuid/next)})]
     (t/is (= :validation (th/ex-type (:error out))))))
 
+(t/deftest jobs-methods-reject-a-key-they-do-not-declare
+  (doseq [type [:claim-job :report-job-progress :complete-job :fail-job]]
+    (let [out (mgmt type {::rpc/auth-key-id :nexus})]
+      (t/is (= :authorization (th/ex-type (:error out))) (name type))
+      (t/is (= :shared-key-not-allowed (th/ex-code (:error out))) (name type)))))
+
+(t/deftest complete-job-rejects-a-key-it-does-not-declare-without-side-effects
+  (let [job-id         (mk-job {})
+        before         (get-row job-id)
+        events-before  (count-job-events job-id)
+        out            (mgmt :complete-job {::rpc/auth-key-id :nexus
+                                            :job-id job-id
+                                            :result {:x 1}})
+        after          (get-row job-id)]
+    (t/is (= :authorization (th/ex-type (:error out))))
+    (t/is (= :shared-key-not-allowed (th/ex-code (:error out))))
+    (t/is (= (:status before) (:status after)))
+    (t/is (nil? (:completed-at after)))
+    (t/is (= events-before (count-job-events job-id)))))
+
 (t/deftest report-job-progress-appends-a-progress-event
   (let [job-id (mk-job {})
         _      (jobs/claim (make-cfg) job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
         out    (mgmt :report-job-progress {:job-id  job-id
-                                           :progress {:total 100 :current 50}})]
+                                           :progress {:stage :pages
+                                                      :counters {:pages {:current 50 :total 100}}}})]
     (t/is (nil? (:error out)))
     (t/is (= {:action :run} (:result out)))
-    (t/is (= [{:total 100 :current 50}] (get-progresss job-id)))
+    (t/is (= [{:stage :pages :counters {:pages {:current 50 :total 100}}}]
+             (get-progresss job-id)))
     (t/testing "the job row has no progress column anymore"
       (t/is (not (contains? (get-row job-id) :progress))))))
 
 (t/deftest report-job-progress-noop-on-terminal-row
   (let [job-id (mk-job {:status "completed"})
         out    (mgmt :report-job-progress {:job-id  job-id
-                                           :progress {:total 100 :current 100}})]
+                                           :progress {:stage :pages
+                                                      :counters {:pages {:current 100 :total 100}}}})]
     (t/is (nil? (:error out)))
     (t/is (= {:action :skip} (:result out)))
     (t/is (= [] (get-progresss job-id)))))
@@ -157,25 +187,27 @@
   (let [job-id (mk-job {})
         _      (jobs/claim (make-cfg) job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
         _      (mgmt :report-job-progress {:job-id  job-id
-                                           :progress {:total 10 :current 3}})
+                                           :progress {:stage :pages
+                                                      :counters {:pages {:current 3 :total 10}}}})
         _      (mgmt :report-job-progress {:job-id  job-id
-                                           :progress {:total 10 :current 4}})]
+                                           :progress {:stage :pages
+                                                      :counters {:pages {:current 4 :total 10}}}})]
     (t/testing "the second immediate report is not throttled away"
-      (t/is (= [{:total 10 :current 3}
-                {:total 10 :current 4}]
+      (t/is (= [{:stage :pages :counters {:pages {:current 3 :total 10}}}
+                {:stage :pages :counters {:pages {:current 4 :total 10}}}]
                (get-progresss job-id))))))
 
 (t/deftest report-job-progress-validates-the-payload
   (let [job-id (mk-job {})
         _      (jobs/claim (make-cfg) job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))]
-    (t/testing "current is mandatory"
+    (t/testing "stage is mandatory"
       (t/is (= :validation (th/ex-type (:error (mgmt :report-job-progress
                                                      {:job-id job-id
-                                                      :progress {:total 10}}))))))
+                                                      :progress {:counters {:work {:current 1}}}}))))))
     (t/testing "no extra key is accepted"
       (t/is (= :validation (th/ex-type (:error (mgmt :report-job-progress
                                                      {:job-id job-id
-                                                      :progress {:current 1
+                                                      :progress {:stage :work
                                                                  :message "boom"}}))))))
     (t/is (= [] (get-progresss job-id)))))
 
@@ -243,7 +275,7 @@
     (jobs/claim cfg job-id1 (:scheduled-at (th/db-get :job {:id job-id1} :id :scheduled-at)))
     (jobs/claim cfg job-id2 (:scheduled-at (th/db-get :job {:id job-id2} :id :scheduled-at)))
     (jobs/heartbeat cfg :job-id job-id1)
-    (jobs/heartbeat cfg :job-id job-id2 :progress {:current 1})
+    (jobs/heartbeat cfg :job-id job-id2 :progress {:stage :work})
     (jobs/complete cfg :job-id job-id1)
     (jobs/fail cfg job-id2 test-error)
     (t/is (not (contains? @@#'jobs/heartbeats job-id1)))
@@ -300,7 +332,7 @@
         (t/is (= {:action :skip} (:result out)))))
     (t/testing "progress on a terminal row reports skip"
       (let [out (mgmt :report-job-progress {:job-id  done-id
-                                            :progress {:total 10 :current 4}})]
+                                            :progress {:stage :pages :counters {:pages {:current 4 :total 10}}}})]
         (t/is (nil? (:error out)))
         (t/is (= {:action :skip} (:result out))))))
   (let [cfg    (make-cfg)
@@ -309,7 +341,7 @@
     (t/testing "live paths report run"
       (t/is (= {:action :run}
                (:result (mgmt :report-job-progress {:job-id  job-id
-                                                    :progress {:total 10 :current 4}}))))
+                                                    :progress {:stage :pages :counters {:pages {:current 4 :total 10}}}}))))
       (t/is (= {:action :run}
                (:result (mgmt :complete-job {:job-id job-id
                                              :result {:x 1}})))))))

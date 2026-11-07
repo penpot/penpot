@@ -265,7 +265,7 @@
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
                        "api/organizations/"
-                       organization-id
+                       (str organization-id "/")
                        "members/"
                        profile-id)
                       schema:profile-organization params))
@@ -275,7 +275,7 @@
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
                        "api/teams/"
-                       team-id
+                       (str team-id "/")
                        "users/"
                        profile-id)
                       schema:profile-organization params))
@@ -285,7 +285,7 @@
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
                        "api/organizations/"
-                       organization-id
+                       (str organization-id "/")
                        "summary")
                       schema:organization-summary params))
 
@@ -294,7 +294,7 @@
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
                        "api/users/"
-                       profile-id
+                       (str profile-id "/")
                        "owned-organizations")
                       [:vector schema:organization-summary]
                       params))
@@ -314,7 +314,7 @@
   (let [organizations (request-to-nitrate cfg :get
                                           (generate-nitrate-uri
                                            "api/users/"
-                                           profile-id
+                                           (str profile-id "/")
                                            "owned-organizations-summary")
                                           [:vector schema:organization-summary-counts]
                                           params)]
@@ -329,7 +329,7 @@
   (request-to-nitrate cfg :post
                       (generate-nitrate-uri
                        "api/users/"
-                       profile-id
+                       (str profile-id "/")
                        "cleanup-after-deletion")
                       nil params))
 
@@ -340,7 +340,7 @@
         team (request-to-nitrate cfg :post
                                  (generate-nitrate-uri
                                   "api/organizations/"
-                                  organization-id
+                                  (str organization-id "/")
                                   "add-team")
                                  cto/schema:team-with-organization params)
         custom-photo (when-let [logo-id (dm/get-in team [:organization :logo-id])]
@@ -357,7 +357,7 @@
     (request-to-nitrate cfg :post
                         (generate-nitrate-uri
                          "api/organizations/"
-                         organization-id
+                         (str organization-id "/")
                          "add-user")
                         schema:profile-organization params)))
 
@@ -372,7 +372,7 @@
     (request-to-nitrate cfg :post
                         (generate-nitrate-uri
                          "api/organizations/"
-                         organization-id
+                         (str organization-id "/")
                          "remove-user")
                         nil params)))
 
@@ -382,7 +382,7 @@
     (request-to-nitrate cfg :post
                         (generate-nitrate-uri
                          "api/organizations/"
-                         organization-id
+                         (str organization-id "/")
                          "remove-team")
                         nil params)))
 
@@ -439,12 +439,13 @@
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
                        "api/organizations/"
-                       organization-id
+                       (str organization-id "/")
                        "permissions")
                       [:map
                        [:organization-id ::sm/uuid]
                        [:owner-id ::sm/uuid]
-                       [:permissions [:map-of :keyword :string]]]
+                       [:permissions [:map-of :keyword :string]]
+                       [:restrictions-met {:optional true} [:maybe [:map-of :keyword :boolean]]]]
                       params))
 
 (defn- get-organization-sso-api
@@ -453,7 +454,7 @@
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
                        "api/organizations/"
-                       organization-id
+                       (str organization-id "/")
                        "sso")
                       schema:nitrate-sso
                       params))
@@ -461,7 +462,7 @@
 (defn- get-organization-sso-by-team-api
   [cfg {:keys [team-id] :as params}]
   (request-to-nitrate cfg :get
-                      (generate-nitrate-uri "api/teams/" team-id "sso")
+                      (generate-nitrate-uri "api/teams/" (str team-id "/") "sso")
                       schema:nitrate-sso
                       params))
 
@@ -470,7 +471,7 @@
   (request-to-nitrate cfg :get
                       (generate-nitrate-uri
                        "api/organizations/"
-                       organization-id
+                       (str organization-id "/")
                        "members-list")
                       [:vector ::sm/uuid]
                       params))
@@ -483,8 +484,8 @@
                       (assoc params :throw-on-error? true)))
 
 (def ^:private audit-event-keys
-  [:id :name :type :profile-id :props :context
-   :created-at :tracked-at :source :ip-addr])
+  [:id :name :type :profile-id :profile-email :profile-name
+   :props :context :created-at :tracked-at :source :ip-addr])
 
 (defn- ->audit-event
   [event]
@@ -651,6 +652,35 @@
                    :team-id (:id team)
                    :cause cause)
           team)))))
+
+(defn add-organization-info-to-team-strict
+  "Like `add-organization-info-to-team`, but fails closed for authorization
+  checks: the team is returned unchanged only when Nitrate answers 404 (the
+  team belongs to no organization). Any other failure, including a 4xx or an
+  invalid response body, raises instead of looking like a team without an
+  organization."
+  [cfg team params]
+  (let [params (assoc (or params {})
+                      :team-id (:id team)
+                      :throw-on-error? true)
+        team-with-organization
+        (try
+          (call cfg :get-team-organization params)
+          (catch Throwable cause
+            (let [{:keys [type status]} (ex-data cause)]
+              (if (and (= :nitrate-http-error type) (= 404 status))
+                ::no-organization
+                (throw cause)))))]
+    (cond
+      (= ::no-organization team-with-organization)
+      team
+
+      (nil? team-with-organization)
+      (ex/raise :type :nitrate-unavailable
+                :hint "nitrate did not return a valid team organization response")
+
+      :else
+      (apply-organization-info-to-team team team-with-organization))))
 
 (defn add-organization-info-to-teams
   "Enriches teams with organization information using one batched Nitrate request.

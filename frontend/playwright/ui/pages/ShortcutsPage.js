@@ -143,11 +143,11 @@ export class ShortcutsPage extends BaseWebSocketPage {
     this.searchInput = page.getByRole("textbox", { name: /shortcuts/i });
 
     this.allTab = page.getByRole("tab", { name: "All" });
-    this.personalizedTab = page.getByRole("tab", { name: "Personalized" });
+    this.personalizedTab = page.getByRole("tab", { name: "Custom" });
     this.disabledTab = page.getByRole("tab", { name: "Disabled" });
 
     this.restoreAllButton = page.getByRole("button", {
-      name: /restore all/i,
+      name: /reset all/i,
     });
 
     this.importExportButton = page.getByRole("button", {
@@ -194,7 +194,7 @@ export class ShortcutsPage extends BaseWebSocketPage {
       name: new RegExp(`Edit ${shortcutName}`, "i"),
     });
     await button.click();
-    const recordingArea = this.page.getByText("Press the key combination");
+    const recordingArea = this.page.getByText("Press the new keys");
     await expect(recordingArea).toBeVisible();
     await recordingArea.focus();
   }
@@ -265,7 +265,7 @@ export class ShortcutsPage extends BaseWebSocketPage {
   async restoreAllShortcuts() {
     await this.restoreAllButton.click();
     const confirmButton = this.page.getByRole("button", {
-      name: "Restore",
+      name: "Reset",
       exact: true,
     });
     await confirmButton.click();
@@ -307,7 +307,8 @@ export class ShortcutsPage extends BaseWebSocketPage {
 
   async confirmImportApply() {
     const applyButton = this.page.getByRole("button", {
-      name: /apply/i,
+      name: "Import",
+      exact: true,
     });
     await applyButton.click();
   }

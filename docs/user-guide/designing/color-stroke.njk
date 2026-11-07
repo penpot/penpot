@@ -122,6 +122,21 @@ desc: Style your designs with Penpot's options! Learn about color fills, gradien
   <img alt="Multiple strokes" src="/img/styling/stroke-multiple.webp"/>
 </figure>
 
+<h3 id="stroke-per-side">Stroke per side</h3>
+<p>Rectangles and boards can have a different stroke width on each side. Use it for dividers, tab underlines or accent borders without adding extra layers.</p>
+<ol>
+  <li>Select a rectangle or a board with a stroke.</li>
+  <li>Click the <strong>Stroke per side</strong> button at the end of the stroke row.</li>
+  <li>Set the width of each side: <strong>Top</strong>, <strong>Right</strong>, <strong>Bottom</strong> and <strong>Left</strong>. Use 0 to hide a side.</li>
+</ol>
+<figure>
+  <img alt="Stroke section with Stroke per side enabled and a different width on each side" src="/img/styling/stroke-per-side.webp"/>
+</figure>
+<p>When the sides have different widths, the main width field shows <strong>Mixed</strong>. Typing a value in it sets all four sides to that value. Color, position and style are shared by all sides.</p>
+<p>Each stroke of a layer has its own per-side widths. You can also edit them on a multiple selection of rectangles and boards.</p>
+<p>You can apply <a href="/user-guide/design-systems/design-tokens/#design-tokens-stroke-width">stroke width tokens</a> to one side or to all of them. In the <a href="/user-guide/dev-tools/">Inspect tab</a>, per-side widths appear as CSS logical properties (<code>border-block-start-width</code>, <code>border-inline-end-width</code>, <code>border-block-end-width</code> and <code>border-inline-start-width</code>).</p>
+<p class="advice">Stroke per side requires <a href="/user-guide/first-steps/troubleshooting-webgl/">WebGL rendering</a>. With the classic renderer the button is disabled and only the top width is drawn.</p>
+
 <h2 id="stroke-to-path">Stroke to path</h2>
 <p>A path is the underlying geometry: a sequence of points and segments (straight lines or Bezier curves). A stroke is the visible line drawn along that path, with properties such as width, color, opacity, dashes, caps, and joins.</p>
 <p><strong>Stroke to path</strong> turns the visible outline of a stroke into a separate, editable path. You can then reshape or style that outline independently of the original path. The new shape is usually closed. That matters for SVG, boolean operations, and editing the outline as geometry.</p>

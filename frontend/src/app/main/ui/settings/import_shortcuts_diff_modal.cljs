@@ -65,7 +65,7 @@
 (mf/defc import-shortcuts-diff-modal
   {::mf/register modal/components
    ::mf/register-as :import-shortcuts-diff-modal}
-  [{:keys [imported-shortcuts custom-shortcuts all-shortcuts-raw]}]
+  [{:keys [imported-shortcuts skipped-entries custom-shortcuts all-shortcuts-raw]}]
   (let [diff-entries
         (mf/with-memo [imported-shortcuts custom-shortcuts]
           (->> (compute-diff imported-shortcuts custom-shortcuts)
@@ -106,11 +106,11 @@
           [:thead
            [:tr {:class (stl/css :shortcuts-list-header)}
             [:th {:class (stl/css :shortcut-header-name)}
-             (tr "restore-shortcuts.acction")]
+             (tr "restore-shortcuts.action")]
             [:th {:class (stl/css :shortcut-header-command)}
              (tr "labels.current")]
             [:th {:class (stl/css :shortcut-header-command)}
-             (tr "labels.import")]]]
+             (tr "import-shortcuts.imported")]]]
           [:tbody {:class (stl/css :shortcuts-list-body)}
            (let [last-ctx* (volatile! nil)]
              (for [entry diff-entries]
@@ -145,7 +145,17 @@
                                               :is-customized true
                                               :has-conflict? false}])]]])))]]
          [:div {:class (stl/css :no-changes)}
-          (tr "import-shortcuts.no-changes")])]
+          (tr "import-shortcuts.no-changes")])
+
+       (when (seq skipped-entries)
+         [:div {:class (stl/css :skipped-entries)}
+          [:div {:class (stl/css :modal-content-text)}
+           (tr "import-shortcuts.skipped-entries")]
+          [:ul {:class (stl/css :skipped-entries-list)}
+           (for [entry skipped-entries]
+             [:li {:key entry
+                   :class (stl/css :skipped-entry)}
+              entry])]])]
 
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}

@@ -19,166 +19,166 @@
    [app.common.time :as ct]
    [app.db :as db]
    [app.jobs :as jobs]
+   [app.metrics :as mtx]
    [app.storage :as sto]
    [app.storage.impl :as impl]
-   [clojure.set :as set]
    [integrant.core :as ig]))
-
-(def ^:private max-attempts
-  "Maximum number of deletion attempts before giving up and accepting
-  the orphan blob."
-  7)
-
-(def ^:private chunk-size
-  "Number of rows to process per transaction."
-  25)
-
-(def ^:private sql:lock-sobjects
-  "SELECT id FROM storage_object
-    WHERE id = ANY(?::uuid[])
-      FOR UPDATE
-     SKIP LOCKED")
-
-(defn- lock-ids
-  "Perform a select before delete for proper object locking and
-  prevent concurrent operations and we proceed only with successfully
-  locked objects."
-  [conn ids]
-  (let [ids (db/create-array conn "uuid" ids)]
-    (->> (db/exec! conn [sql:lock-sobjects ids])
-         (into #{} (map :id))
-         (not-empty))))
 
 (def ^:private sql:delete-sobjects
   "DELETE FROM storage_object
     WHERE id = ANY(?::uuid[])")
 
-(defn- delete-sobjects
-  [conn ids]
-  (let [ids (db/create-array conn "uuid" ids)]
-    (-> (db/exec-one! conn [sql:delete-sobjects ids])
-        (db/get-update-count))))
+(defn- delete-by-backend
+  "Deletes the locked objects of one backend group: the database rows and
+  their backend content. Runs inside the caller's transaction. Returns the
+  number of deleted rows; reporting it (metrics) is the caller's job, once
+  the transaction has committed."
+  [{:keys [::db/conn ::sto/storage]} backend-id ids]
+  (let [ids-array (db/create-array conn "uuid" ids)
+        total     (-> (db/exec-one! conn [sql:delete-sobjects ids-array])
+                      (db/get-update-count))]
+    (-> (impl/resolve-backend storage backend-id)
+        (impl/del-objects-in-bulk ids))
 
-(def ^:private sql:delete-upload-session-chunks
-  "DELETE FROM upload_session_chunk
-    WHERE object_id = ANY(?::uuid[])")
-
-(defn- delete-upload-session-chunks
-  "Remove the chunk mappings for the given storage object ids. This must run
-  before the storage_object rows are deleted: the upload_session_chunk
-  foreign keys are ON DELETE NO ACTION."
-  [conn ids]
-  (let [ids (db/create-array conn "uuid" ids)]
-    (db/exec-one! conn [sql:delete-upload-session-chunks ids])))
-
-(def ^:private sql:increment-attempts-and-defer
-  "UPDATE storage_object
-      SET deletion_attempts = deletion_attempts + 1,
-          deleted_at = NOW() + INTERVAL '1 day'
-    WHERE id = ANY(?::uuid[])")
-
-(defn- increment-attempts-and-defer
-  [conn ids]
-  (let [ids (db/create-array conn "uuid" ids)]
-    (db/exec-one! conn [sql:increment-attempts-and-defer ids])))
-
-(def ^:private sql:delete-give-up
-  "DELETE FROM storage_object
-    WHERE id = ANY(?::uuid[])
-      AND deletion_attempts >= ?")
-
-(defn- delete-give-up
-  [conn ids]
-  (let [ids (db/create-array conn "uuid" ids)]
-    (db/exec-one! conn [sql:delete-give-up ids max-attempts])))
-
-(defn- process-chunk
-  "Attempt to delete a chunk of storage objects from a specific backend.
-
-  This function runs inside the caller's transaction (clean-deleted) —
-  it does NOT open its own transaction. The caller is responsible for
-  ensuring the rows are locked via FOR UPDATE SKIP LOCKED before calling.
-
-  Returns the number of successfully deleted objects, or 0 if no rows
-  could be locked."
-  [conn storage backend-id ids]
-  (if-let [locked-ids (lock-ids conn ids)]
-    (let [fail-ids (try
-                     (-> (impl/resolve-backend storage backend-id)
-                         (impl/del-objects-in-bulk locked-ids))
-                     (catch Throwable cause
-                       (l/err :hint "error on physical deletion, will retry"
-                              :ids locked-ids
-                              :cause cause)
-                       locked-ids))
-          ok-ids   (set/difference locked-ids fail-ids)]
-
-      (doseq [id ok-ids]
-        (l/dbg :hint "permanently delete storage object"
-               :id (str id)
-               :backend (name backend-id)))
-
-      (when (seq ok-ids)
-        ;; NOTE: the chunk mappings must be removed before the
-        ;; storage_object rows (NO ACTION foreign keys). It only affects
-        ;; objects of the upload-session bucket; for any other bucket the
-        ;; delete matches no rows.
-        (delete-upload-session-chunks conn ok-ids)
-        (delete-sobjects conn ok-ids))
-
-      (when (seq fail-ids)
-        (increment-attempts-and-defer conn fail-ids)
-        ;; NOTE: same NO ACTION ordering as above: the give-up DELETE below
-        ;; removes storage_object rows, so chunk mappings must go first.
-        ;; Deferred objects keep their rows; only the mapping of a
-        ;; permanently given-up object disappears early, and that object is
-        ;; already deleted-marked.
-        (delete-upload-session-chunks conn fail-ids)
-        (let [given-up (delete-give-up conn fail-ids)]
-          (when (pos? (db/get-update-count given-up))
-            (l/wrn :hint "giving up on orphan blob after max attempts"
-                   :ids fail-ids
-                   :max-attempts max-attempts))))
-
-      (count ok-ids))
-    0))
+    (doseq [id ids]
+      (l/dbg :hint "permanently delete storage object"
+             :id (str id)
+             :backend (name backend-id)))
+    total))
 
 (defn- group-by-backend
-  [items]
-  (d/group-by (comp keyword :backend) :id #{} items))
+  [rows]
+  (d/group-by (comp keyword :backend) :id #{} rows))
 
-(def ^:private sql:get-deleted-chunk
-  "SELECT id, backend
-     FROM storage_object
-    WHERE deleted_at IS NOT NULL
-      AND deleted_at <= ?
-      AND status = 'valid'
-    ORDER BY deleted_at ASC
+(defn- process-chunk-deletion
+  "Deletes the locked rows of one chunk, grouped by backend. Runs inside the
+  caller's transaction: any failure here aborts it, so the whole chunk is
+  rolled back (nothing is deleted and the locks are released) and skipped by
+  the caller. Returns a map of backend id to deleted row count."
+  [tx rows]
+  (->> (group-by-backend rows)
+       (map (fn [[backend-id ids]]
+              [backend-id (delete-by-backend tx backend-id ids)]))
+       (into {})))
+
+(def ^:private sql:get-deleted-sobjects
+  "SELECT s.id, s.backend, s.deleted_at
+     FROM storage_object AS s
+    WHERE s.deleted_at IS NOT NULL
+      AND s.deleted_at <= ?
+      AND s.status = 'valid'
+      AND (s.deleted_at, s.id) > (?, ?)
+    ORDER BY s.deleted_at ASC, s.id ASC
     LIMIT ?
-      FOR UPDATE
-     SKIP LOCKED")
+      FOR UPDATE SKIP LOCKED")
 
-(defn- get-deleted-chunk
-  [conn size]
-  (db/exec! conn [sql:get-deleted-chunk (ct/now) size]))
+(def ^:private sql:get-first-deleted-sobjects
+  "SELECT s.id, s.backend, s.deleted_at
+     FROM storage_object AS s
+    WHERE s.deleted_at IS NOT NULL
+      AND s.deleted_at <= ?
+      AND s.status = 'valid'
+    ORDER BY s.deleted_at ASC, s.id ASC
+    LIMIT ?
+      FOR UPDATE SKIP LOCKED")
+
+(def ^:private chunk-size
+  "Pending objects read, locked and deleted in each transaction."
+  25)
+
+(def ^:private throttle-every
+  "Deleted objects between throttle pauses."
+  5000)
+
+(def ^:private throttle-ms
+  "Pause applied every `throttle-every` deleted objects, letting the
+  database (and its replicas) breathe on huge backlogs."
+  5000)
+
+(defn- throttle
+  "Sleeps `throttle-ms` when the deleted count crosses a `throttle-every`
+  boundary. Runs between chunk transactions, never holding one open."
+  [prev-total new-total]
+  (when (> (quot new-total throttle-every)
+           (quot prev-total throttle-every))
+    (l/inf :hint "throttling storage gc"
+           :deleted new-total
+           :pause-ms throttle-ms)
+    (Thread/sleep (long throttle-ms))))
+
+(defn- fetch-and-lock-chunk
+  "Reads and locks one chunk of pending objects in `(deleted_at, id)` order.
+  Objects already locked by another process are skipped, so two concurrent
+  runs never take the same chunk. Runs inside the caller's transaction."
+  [conn last-deleted-at last-id]
+  (let [[sql params] (if (some? last-deleted-at)
+                       [sql:get-deleted-sobjects
+                        [(ct/now) last-deleted-at last-id chunk-size]]
+                       [sql:get-first-deleted-sobjects
+                        [(ct/now) chunk-size]])]
+    (db/exec! conn (into [sql] params))))
 
 (defn- clean-deleted
-  [cfg]
-  (loop [total 0]
-    (let [deleted (db/tx-run! cfg
-                              (fn [{:keys [::db/conn ::sto/storage]}]
-                                (let [chunk (get-deleted-chunk conn chunk-size)]
-                                  (when (seq chunk)
-                                    (let [by-backend (group-by-backend chunk)]
-                                      (reduce-kv (fn [acc backend-id ids]
-                                                   (+ acc (process-chunk conn storage backend-id ids)))
-                                                 0
-                                                 by-backend))))))]
-      ;; Heartbeat per chunk: each chunk commits on its own, so a long
-      ;; sweep neither loses work on late failure nor outruns the lease.
+  "Processes the pending objects chunk by chunk with keyset pagination: each
+  chunk is one short transaction that reads and locks the next `chunk-size`
+  objects after the `(deleted_at, id)` cursor and deletes them (database rows
+  and backend content). Only `valid` objects are read: pending ones (still
+  being written, see the status lifecycle) stay untouched even when already
+  marked as deleted.
+
+  A chunk that fails aborts its transaction: nothing of the chunk is deleted,
+  its locks are released, and it is logged and skipped. The cursor advances
+  to the `(deleted_at, id)` of the last row of each read chunk regardless of
+  the deletion result, so a failed chunk is not visited again in the same
+  run. There is no long-lived read transaction: each transaction lives only
+  as long as one chunk, letting the vacuum proceed between chunks. Rows
+  locked by a concurrent run are skipped and deferred to the next run; a
+  chunk that fails after a partial backend delete self-heals on the next
+  run (physical deletes are idempotent). Every `throttle-every` deleted
+  objects the run pauses `throttle-ms` (see `throttle`)."
+  [{:keys [::mtx/metrics] :as cfg}]
+  (loop [total           0
+         last-deleted-at nil
+         last-id         nil]
+
+    (let [[rows counts]
+          (db/tx-run! cfg
+                      (fn [{:keys [::db/conn] :as tx}]
+                        (let [rows (fetch-and-lock-chunk conn last-deleted-at last-id)]
+                          (try
+                            [rows (process-chunk-deletion tx rows)]
+                            (catch Throwable cause
+                              ;; Explicit rollback, then return normally (do
+                              ;; not rethrow): the caller needs `rows` to
+                              ;; advance the keyset cursor past the failed
+                              ;; chunk. The commit that `tx-run!` performs
+                              ;; afterwards is a JDBC no-op on the already
+                              ;; rolled-back connection.
+                              (db/rollback! conn)
+                              (l/err :hint "unexpected error on chunk deletion"
+                                     :ids (map :id rows)
+                                     :cause cause)
+                              [rows {}])))))]
+
+      ;; Reported only after the chunk commits: a rolled-back chunk leaves
+      ;; an empty count map, so retried rows are never counted twice.
+      (doseq [[backend-id n] counts]
+        (mtx/run! metrics
+                  :id :storage-gc-deleted-objects
+                  :inc n
+                  :labels [(name backend-id)]))
+
+      ;; Beat the job after every chunk: each chunk commits on its own, so a
+      ;; long sweep neither loses work on a late failure nor outruns the
+      ;; orphan lease.
       (jobs/heartbeat cfg)
-      (if deleted
-        (recur (+ total deleted))
+
+      (if-let [cursor (peek rows)]
+        (let [new-total (+ total (reduce + 0 (vals counts)))]
+          (throttle total new-total)
+          (recur new-total
+                 (:deleted-at cursor)
+                 (:id cursor)))
         total))))
 
 (declare execute-storage-gc-deleted)
@@ -186,7 +186,8 @@
 (defmethod ig/assert-key ::job-def
   [_ params]
   (assert (sto/valid-storage? (::sto/storage params)) "expect valid storage")
-  (assert (db/pool? (::db/pool params)) "expect valid db pool"))
+  (assert (db/pool? (::db/pool params)) "expect valid db pool")
+  (assert (mtx/metrics? (::mtx/metrics params)) "expect valid metrics instance"))
 
 (def schema:storage-gc-deleted-params
   "Params map (no params needed; cfg-provided config only)."

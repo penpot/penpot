@@ -245,7 +245,7 @@
                    :section [:workspace]
                    :fn #(update-attrs-when-no-readonly {:text-decoration "toggle-underline"})}
 
-   :line-through  {:tooltip (ds/alt (ds/meta-shift "5"))
+   :line-through  {:tooltip (ds/alt (ds/shift "5"))
                    :label (fn [] (tr "shortcuts.line-through"))
                    :command "alt+shift+5"
                    :subsections [:text-editor]

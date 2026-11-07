@@ -5,9 +5,15 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.util.events
-  "A generic asynchronous events notifications subsystem; used mainly
-  for mark event points in functions and be able to attach listeners
-  to them. Mainly used in http.sse for progress reporting."
+  "Event points of a run: the core marks what it does with `tap`, and
+  whoever runs it decides where those marks go.
+
+  The sink bound for the run decides how each event travels: a function
+  is called inline, on the same thread, while a channel receives the
+  event for a listener of its own. The jobs adapter binds a function
+  that turns taps into heartbeats, so an `:interrupt` it raises aborts
+  the run right there; the SSE stream binds a channel instead, and its
+  listener writes what arrives to the response."
   (:refer-clojure :exclude [run!])
   (:require
    [app.common.exceptions :as ex]
@@ -15,19 +21,29 @@
    [promesa.exec :as px]
    [promesa.exec.csp :as sp]))
 
-(def ^:dynamic *channel* nil)
+(def ^:dynamic *sink* nil)
 
 (defn tap
-  ([type data]
-   (when-let [channel *channel*]
-     (sp/put! channel [type data])
-     nil))
-  ([channel type data]
-   (when channel
-     (sp/put! channel [type data])
-     nil)))
+  "Mark an event point of the run in course with `[type data]`.
+
+  With no sink bound nothing happens, so untracked runs pay a single
+  nil check per event point. A function sink is called inline and any
+  exception it raises propagates to the producer: that is how an
+  `:interrupt` from a heartbeat stops the run at its next event point.
+  A channel sink receives the event for its listener instead."
+  [type data]
+  (when-let [sink *sink*]
+    (if (fn? sink)
+      (sink [type data])
+      (sp/put! sink [type data]))
+    nil))
 
 (defn spawn-listener
+  "Consume the events of `channel` on a thread of its own, until it
+  closes.
+
+  `on-close` runs once the listener stops. A failure of `on-event` is
+  logged and stops the listener."
   [channel on-event on-close]
   (assert (sp/chan? channel) "expected active events channel")
 
@@ -39,22 +55,14 @@
           (let [result (ex/try! (on-event event))]
             (if (ex/exception? result)
               (do
-                (l/wrn :hint "unexpected exception" :cause result)
+                (l/err :hint "unexpected exception on calling-on-event of spawn-listener"
+                       :cause result)
                 (sp/close! channel))
               (recur)))))
       (finally
-        (on-close)))))
-
-(defn run-with!
-  "A high-level facility for to run a function in context of event
-  emiter."
-  [f on-event]
-
-  (binding [*channel* (sp/chan :buf 32)]
-    (let [listener (spawn-listener *channel* on-event (constantly nil))]
-      (try
-        (f)
-        (finally
-          (sp/close! *channel*)
-          (px/await! listener))))))
+        (try
+          (on-close)
+          (catch Exception cause
+            (l/err :hint "unexpected exception on calling on-close of spawn-listener"
+                   :cause cause)))))))
 

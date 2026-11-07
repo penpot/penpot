@@ -15,18 +15,59 @@
 
 ;; Tokens source
 
+(defn- own-tokens-status
+  "`tokens-status` keeping only the themes and sets that exist in the own
+   tokens lib of `file-data`."
+  [file-data tokens-status]
+  (let [tokens-lib (cfo/get-tokens-lib file-data)]
+    (if (and tokens-status tokens-lib)
+      (cfo/sync-tokens-status-with-lib tokens-status tokens-lib)
+      (ctos/make-tokens-status))))
+
 (defn generate-set-tokens-source
   "Create changes for setting the tokens source of a file to `library`,
-   copying the library's tokens status. If the library is nil, the tokens source
-   is removed and the tokens status is cleared."
+   copying the library's tokens status.
+
+   While an external library is the source, the tokens status of the file's
+   own tokens lib is kept aside, and it is restored when the file goes back
+   to being its own source (the library is the file itself, or nil). With
+   nothing kept aside, going back to the file itself deactivates the themes
+   and sets that don't exist in its own tokens lib, and a nil library clears
+   the tokens status."
   [changes library]
-  (let [library-id (:id library)
-        library-tokens-status (if library
-                                (-> library ctf/file-data cfo/get-tokens-status)
-                                (ctos/make-tokens-status))]
-    (-> changes
-        (pcb/set-tokens-source library-id)
-        (pcb/set-tokens-status library-tokens-status))))
+  (let [file-data      (pcb/get-library-data changes)
+        file-id        (:id file-data)
+        library-id     (:id library)
+        to-own?        (or (nil? library) (= library-id file-id))
+        from-own?      (cfo/effective-tokens-source? file-data file-id)
+        current-status (cfo/get-tokens-status file-data)
+        kept-status    (cfo/get-own-tokens-status file-data)
+
+        tokens-status
+        (cond
+          (and to-own? (some? kept-status))
+          (own-tokens-status file-data kept-status)
+
+          (nil? library)
+          (ctos/make-tokens-status)
+
+          to-own?
+          (own-tokens-status file-data current-status)
+
+          :else
+          (-> library ctf/file-data cfo/get-tokens-status))
+
+        kept-status'
+        (cond
+          to-own?   nil
+          from-own? (own-tokens-status file-data current-status)
+          :else     kept-status)]
+
+    (cond-> (-> changes
+                (pcb/set-tokens-source library-id)
+                (pcb/set-tokens-status tokens-status))
+      (not (identical? kept-status kept-status'))
+      (pcb/set-own-tokens-status kept-status'))))
 
 ;; Tokens lib
 

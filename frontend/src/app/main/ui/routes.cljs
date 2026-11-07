@@ -33,7 +33,8 @@
   "Enabled route names. Query-string routing: the `screen` query param
   carries the route name (`?screen=<name>&params`); it is router-owned
   and reserved, every other param travels as a plain query param."
-  (into #{:auth-login
+  (into #{:mcp-authorize
+          :auth-login
           :auth-register
           :auth-register-validate
           :auth-register-success
@@ -140,6 +141,13 @@
                       (u/query-string->map (:query uri)))})))
 
 
+(defn- legacy-query-token
+  "Legacy root links (e.g. `#?template=<url>`) keep their params in a
+  bare `#?…` fragment. Return them as a query token, or nil."
+  [hash]
+  (when (str/starts-with? hash "#?")
+    (subs hash 1)))
+
 (defn- store-session-params
   [{:keys [template plugin]}]
   (binding [storage/*sync* true]
@@ -226,7 +234,8 @@
   (let [location        (.-location js/document)
         location-path   (dm/str (.-origin location) (.-pathname location))
         valid-location? (= location-path (dm/str cf/public-uri))
-        legacy-hash     (.-hash location)]
+        legacy-hash     (.-hash location)
+        legacy-token    (legacy-query-token legacy-hash)]
 
     (cond
       (not valid-location?)
@@ -242,6 +251,10 @@
         (st/emit! (rt/nav name params {::rt/replace true}))
         (on-query-navigate router token send-event-info?))
 
+      ;; TODO(next-version): delete with `legacy-routes`.
+      (some? legacy-token)
+      (on-query-navigate router legacy-token send-event-info?)
+
       :else
       (on-query-navigate router token send-event-info?))))
 
@@ -251,7 +264,10 @@
                        (subs token 1)
                        (or token ""))
         query-params (u/query-string->map token-query)
-        empty-token? (str/blank? token-query)
+        ;; Without a `screen` the token targets the app root; its params
+        ;; (e.g. `template`) are forwarded to the dashboard or kept for
+        ;; after login.
+        root?        (nil? (rt/get-query-param query-params :screen))
         match        (rt/match router token)]
     (if (some? match)
       (handle-sso-error-and-navigate match send-event-info? (rt/get-current-href))
@@ -261,9 +277,13 @@
       ;; on invitations workflows (and probably other cases).
       (->> (rp/cmd! :get-profile)
            (rx/mapcat (fn [profile]
-                        (->> (rp/cmd! :get-teams {})
-                             (rx/map (fn [teams]
-                                       (assoc profile ::teams (into #{} (map :id) teams)))))))
+                        ;; get-teams requires a session; anonymous users
+                        ;; only need their params kept for after login.
+                        (if (= (:id profile) uuid/zero)
+                          (rx/of profile)
+                          (->> (rp/cmd! :get-teams {})
+                               (rx/map (fn [teams]
+                                         (assoc profile ::teams (into #{} (map :id) teams))))))))
            (rx/subs! (fn [{:keys [id ::teams] :as profile}]
                        (cond
                          (= id uuid/zero)
@@ -271,7 +291,7 @@
                            (store-session-params query-params)
                            (st/emit! (rt/nav :auth-login)))
 
-                         empty-token?
+                         root?
                          (let [default-team-id (:default-team-id profile)
                                last-team-id    (dtm/get-last-team-id)
                                team-id         (if (contains? teams last-team-id)

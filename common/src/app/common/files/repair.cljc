@@ -7,6 +7,8 @@
 (ns app.common.files.repair
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.common.files.changes :as cfc]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.tokens :as cfo]
@@ -20,8 +22,6 @@
    [app.common.types.shape :as cts]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]))
-
-(log/set-level! :debug)
 
 (defmulti repair-error
   (fn [code _error _file-data _libraries] code))
@@ -45,29 +45,25 @@
 
 (defmethod repair-error :parent-not-found
   [_ {:keys [shape page-id] :as error} file-data _]
-  (let [repair-shape
-        (fn [shape]
-          ;; Set parent to root frame.
-          (log/debug :hint "  -> set to " :parent-id uuid/zero)
-          (assoc shape :parent-id uuid/zero))]
-
-    (log/debug :hint "repairing shape :parent-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
-    (-> (pcb/empty-changes nil page-id)
-        (pcb/with-file-data file-data)
-        (pcb/update-shapes [(:id shape)] repair-shape))))
+  ;; Move the shape to the root frame. `:mov-objects` adds it to the
+  ;; root's children list when applied, so several repairs on the same
+  ;; root do not overwrite each other
+  (log/debug :hint "repairing shape :parent-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
+  (log/debug :hint "  -> set to " :parent-id uuid/zero)
+  (-> (pcb/empty-changes nil page-id)
+      (pcb/with-file-data file-data)
+      (pcb/change-parent uuid/zero [shape] nil {:allow-altering-copies true})))
 
 (defmethod repair-error :child-not-in-parent
   [_ {:keys [shape page-id] :as error} file-data _]
-  (let [repair-shape
-        (fn [parent-shape]
-          ;; Add shape to parent's children list
-          (log/debug :hint "  -> add children to" :parent-id (:id parent-shape))
-          (update parent-shape :shapes conj (:id shape)))]
-
-    (log/debug :hint "repairing shape :child-not-in-parent" :id (:id shape) :name (:name shape) :page-id page-id)
-    (-> (pcb/empty-changes nil page-id)
-        (pcb/with-file-data file-data)
-        (pcb/update-shapes [(:parent-id shape)] repair-shape))))
+  ;; Add the shape to its parent's children list. `:mov-objects` adds it
+  ;; when applied, so several repairs on the same parent do not
+  ;; overwrite each other
+  (log/debug :hint "repairing shape :child-not-in-parent" :id (:id shape) :name (:name shape) :page-id page-id)
+  (log/debug :hint "  -> add children to" :parent-id (:parent-id shape))
+  (-> (pcb/empty-changes nil page-id)
+      (pcb/with-file-data file-data)
+      (pcb/change-parent (:parent-id shape) [shape] nil {:allow-altering-copies true})))
 
 (defmethod repair-error :duplicated-children
   [_ {:keys [shape page-id] :as error} file-data _]
@@ -219,6 +215,20 @@
         (pcb/with-library-data file-data)
         (pcb/update-component (:component-id shape) repair-component))))
 
+(defmethod repair-error :invalid-main-instance-name
+  [_ {:keys [shape page-id args] :as error} file-data _]
+  (let [repair-shape
+        (fn [shape]
+          ;; Change the name to match the component
+          (let [component-name (:component-name args)]
+            (log/debug :hint (str "  -> rename shape " (:id shape) " to " component-name))
+            (assoc shape :name component-name)))]
+
+    (log/debug :hint "repairing shape :invalid-main-instance-name" :id (:id shape) :name (:name shape) :page-id page-id)
+    (-> (pcb/empty-changes nil page-id)
+        (pcb/with-file-data file-data)
+        (pcb/update-shapes [(:id shape)] repair-shape))))
+
 (defmethod repair-error :invalid-main-instance
   [_ {:keys [shape page-id] :as error} file-data _]
   (let [repair-shape
@@ -271,9 +281,26 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
+(defn- find-lost-main
+  "Return the main of the local copy root `root-shape` when its component's
+  `:main-instance-id` points to a missing shape and the main is still on
+  the component's page; nil otherwise."
+  [file-data root-shape]
+  (when (= (:component-file root-shape) (:id file-data))
+    (let [component (ctkl/get-component file-data (:component-id root-shape))]
+      (when (and (some? component)
+                 (nil? (ctf/get-component-root file-data component)))
+        (d/seek #(and (ctk/main-instance? %)
+                      (= (:component-id %) (:id component))
+                      (= (:component-file %) (:id file-data)))
+                (ctn/shapes-seq (ctf/get-component-page file-data component)))))))
+
 (defmethod repair-error :ref-shape-not-found
   [_ {:keys [shape page-id] :as error} file-data libraries]
-  (let [matching-shape (let [page              (ctpl/get-page file-data page-id)
+  (let [lost-main      (let [page (ctpl/get-page file-data page-id)]
+                         (find-lost-main file-data (ctn/get-component-shape (:objects page) shape)))
+
+        matching-shape (let [page              (ctpl/get-page file-data page-id)
                              root-shape        (ctn/get-component-shape (:objects page) shape)
                              component-file    (if (= (:component-file root-shape) (:id file-data))
                                                  file-data
@@ -311,13 +338,24 @@
           (log/debug :hint "  -> detach shape" :shape-id (:id shape))
           (ctk/detach-shape shape))]
 
-    ;; If the shape still refers to the remote component, try to find the corresponding near one
+    ;; If the copy's component has lost track of its main, point it back to the main. Else, if
+    ;; the shape still refers to the remote component, try to find the corresponding near one
     ;; and link to it. If not, detach the shape.
     (log/debug :hint "repairing shape :ref-shape-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
-    (if (some? matching-shape)
+    (cond
+      (some? lost-main)
+      (do
+        (log/debug :hint "  -> assign main-instance-id" :main-instance-id (:id lost-main))
+        (-> (pcb/empty-changes nil page-id)
+            (pcb/with-library-data file-data)
+            (pcb/update-component (:component-id lost-main) #(assoc % :main-instance-id (:id lost-main)))))
+
+      (some? matching-shape)
       (-> (pcb/empty-changes nil page-id)
           (pcb/with-file-data file-data)
           (pcb/update-shapes [(:id shape)] reassign-shape))
+
+      :else
       (let [page      (ctpl/get-page file-data page-id)
             shape-ids (cfh/get-children-ids-with-self (:objects page) (:id shape))]
         (-> (pcb/empty-changes nil page-id)
@@ -733,6 +771,42 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes [parent-id] repair-fn))))
 
+(defmethod repair-error :variant-container-bad-name
+  [_ {:keys [shape page-id args]} file-data _]
+  (let [clean-name (:clean-name args)
+
+        repair-shape
+        (fn [shape]
+          (log/debug :hint "  -> set :name of shape" :id (:id shape) :name clean-name)
+          (assoc shape :name clean-name))
+
+        repair-component
+        (fn [component]
+          (let [[path name] (cpn/split-group-name clean-name)]
+            (log/debug :hint "  -> set :path and :name of component" :id (:id component) :path path :name name)
+            (assoc component :path path :name name)))
+
+        all-shape-ids
+        (cons (:id shape) (:shapes shape))
+
+        objects
+        (dm/get-in file-data [:pages-index page-id :objects])
+
+        all-main-instances
+        (map (d/getf objects) (:shapes shape))
+
+        all-component-ids
+        (map :component-id all-main-instances)]
+
+    (log/debug :hint "repairing shape :variant-container-bad-name" :id (:id shape) :name (:name shape) :page-id page-id)
+    (as-> (pcb/empty-changes nil page-id) $
+      (pcb/with-file-data $ file-data)
+      (pcb/with-library-data $ file-data)
+      (pcb/update-shapes $ all-shape-ids repair-shape)
+      (reduce #(pcb/update-component %1 %2 repair-component)
+              $
+              all-component-ids))))
+
 (defmethod repair-error :variant-main-bad-name
   [_ {:keys [shape page-id args]} file-data _]
   (let [repair-fn
@@ -775,14 +849,22 @@
         (fn [shape]
           (let [variant-id (:variant-id args)]
             ;; Set the desired variant-id
-            (log/debug :hint (str "  -> set variant-id to " variant-id))
-            (assoc shape
-                   :variant-id variant-id)))]
+            (log/debug :hint (str "  -> set variant-id in shape to " variant-id))
+            (assoc shape :variant-id variant-id)))
+
+        repair-component
+        (fn [component]
+          (let [variant-id (:variant-id args)]
+            ;; Set the desired variant-id
+            (log/debug :hint (str "  -> set variant-id in component to " variant-id))
+            (assoc component :variant-id variant-id)))]
 
     (log/debug :hint "repairing shape :variant-component-bad-id" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
-        (pcb/update-shapes [(:id shape)] repair-shape))))
+        (pcb/with-library-data file-data)
+        (pcb/update-shapes [(:id shape)] repair-shape)
+        (pcb/update-component (:component-id shape) repair-component))))
 
 (defmethod repair-error :missing-tokens-status
   [_ _ file-data _]
@@ -812,3 +894,58 @@
                 (pcb/empty-changes nil)
                 errors)]
     redo-changes))
+
+(defn- error-fingerprint
+  [errors]
+  (frequencies (map #(dissoc % :shape) errors)))
+
+(defn repair-file-until-valid
+  "Repeatedly validate and repair `file` until `errors-fn` returns nil,
+  a repair pass leaves `:data` unchanged, or the error fingerprint
+  (errors without `:shape`) is unchanged from the previous pass.
+
+  `errors-fn` is `(fn [file applied-changes] errors-or-nil)`. Never
+  changes `:revn`.
+
+  Returns `{:file file' :changes [...] :iterations n :errors remaining}`."
+  [file libraries errors-fn & {:keys [max-iterations initial-errors]
+                               :or {max-iterations 10}}]
+  (loop [file        file
+         applied     []
+         iteration   0
+         prev-fp     nil
+         seed-errors initial-errors]
+    (if (>= iteration max-iterations)
+      {:file       file
+       :changes    applied
+       :iterations iteration
+       :errors     (not-empty (errors-fn file applied))}
+      (let [errors (if (and (zero? iteration) (some? seed-errors))
+                     seed-errors
+                     (errors-fn file applied))]
+        (if (empty? errors)
+          {:file       file
+           :changes    applied
+           :iterations iteration
+           :errors     nil}
+          (let [fp (error-fingerprint errors)]
+            (cond
+              (= fp prev-fp)
+              {:file       file
+               :changes    applied
+               :iterations (inc iteration)
+               :errors     (not-empty errors)}
+
+              :else
+              (let [batch (repair-file file libraries errors)
+                    data' (cfc/process-changes (:data file) batch)]
+                (if (= data' (:data file))
+                  {:file       file
+                   :changes    applied
+                   :iterations (inc iteration)
+                   :errors     (not-empty errors)}
+                  (recur (assoc file :data data')
+                         (into applied batch)
+                         (inc iteration)
+                         fp
+                         nil))))))))))

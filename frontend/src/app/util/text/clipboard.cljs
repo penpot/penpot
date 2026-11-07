@@ -6,8 +6,16 @@
 
 (ns app.util.text.clipboard
   "Reads clipboard data into paste fragments: `[{:attrs {} :children [{:text :attrs}]}]`,
-  where run attrs are emphasis overrides laid over the style at the caret."
+  whose run attrs override the caret style; Penpot text also carries a hidden payload."
   (:require
+   [app.common.data :as d]
+   [app.common.exceptions :as ex]
+   [app.common.fonts :as cfnt]
+   [app.common.schema :as sm]
+   [app.common.transit :as t]
+   [app.common.types.shape.text :as cts]
+   [app.common.types.text :as txt]
+   [app.common.types.typography :as ctt]
    [cuerdas.core :as str]))
 
 (def ^:private block-tags
@@ -263,3 +271,127 @@
             {:attrs {}
              :children (if (empty? line) [] [{:text line :attrs {}}])})
           (.split (str/replace text "\r" "") "\n"))))
+
+;; --- Penpot payload
+;;
+;; Text copied in Penpot keeps its content in the `data-penpot-text` attr of an
+;; empty span in the HTML: the one hidden marker every browser keeps.
+
+(def ^:private payload-re #"data-penpot-text=\"([A-Za-z0-9+/=]*)\"")
+
+;; Bigger HTML is pasted as plain text rather than read.
+(def max-paste-html-length 1000000)
+
+(def ^:private schema:origin
+  [:map {:closed true}
+   [:x ::sm/safe-number]
+   [:y ::sm/safe-number]
+   [:box [:map {:closed true}
+          [:width ::sm/safe-number]
+          [:height ::sm/safe-number]]]])
+
+(def ^:private valid-geometry?
+  (sm/lazy-validator
+   [:map {:closed true}
+    [:origins [:vector [:vector [:maybe schema:origin]]]]]))
+
+(defn valid-payload?
+  "True when the `content` and `geometry` of a payload, which other apps or plugins
+  may have written, are safe to paste into a text shape."
+  [{:keys [content geometry]}]
+  (and (cts/valid-content? content)
+       (or (nil? geometry) (valid-geometry? geometry))))
+
+(defn- encode-base64
+  [s]
+  (->> (.encode (js/TextEncoder.) s)
+       (.from js/Array)
+       (map #(.fromCharCode js/String %))
+       (str/join)
+       (js/btoa)))
+
+(defn- decode-base64
+  [s]
+  (->> (.from js/Uint8Array (js/atob s) #(.charCodeAt % 0))
+       (.decode (js/TextDecoder.))))
+
+(defn payload->html
+  "Hidden markup carrying `content`, copied from `file-id` in `team-id`, and the
+  `geometry` of its spans in their text box (see `text-editor/content-geometry`)."
+  ([content file-id team-id]
+   (payload->html content file-id team-id nil))
+  ([content file-id team-id geometry]
+   (let [payload (cond-> {:type :copied-text
+                          :version 1
+                          :file-id file-id
+                          :team-id team-id
+                          :content content}
+                   (some? geometry) (assoc :geometry geometry))]
+     (str "<span data-penpot-text=\"" (encode-base64 (t/encode-str payload)) "\"></span>"))))
+
+(defn html->payload
+  "The Penpot payload in `html`, or nil when it has none."
+  [html]
+  (when-let [[_ encoded] (when (< (count html) max-paste-html-length)
+                           (some->> html (re-find payload-re)))]
+    (let [{:keys [type file-id team-id] :as payload}
+          (ex/ignoring (t/decode-str (decode-base64 encoded)))]
+      (when (and (map? payload)
+                 (= :copied-text type)
+                 (uuid? file-id)
+                 (or (nil? team-id) (uuid? team-id))
+                 (valid-payload? payload))
+        payload))))
+
+;; --- Pasting into another file or team
+
+(def ^:private default-font
+  (d/seek #(= (:id %) (:font-id txt/default-text-attrs)) cfnt/local-fonts))
+
+(defn- replace-custom-font
+  "`node` in the default font, at the closest weight and style it has."
+  [{:keys [font-weight font-style] :as node}]
+  (let [variant (or (cfnt/closest-variant (:variants default-font) (str font-weight) font-style)
+                    (d/seek #(= (:id %) (:font-variant-id txt/default-text-attrs)) (:variants default-font)))]
+    (-> node
+        (assoc :font-id (:id default-font)
+               :font-family (:family default-font)
+               :font-variant-id (:id variant)
+               :font-weight (:weight variant)
+               :font-style (:style variant))
+        (ctt/remove-typography-from-node))))
+
+(defn replace-custom-fonts
+  "`content` with every custom font replaced by the default one, for pasting it
+  into another team, where custom fonts have other ids."
+  [content]
+  (txt/transform-nodes #(= :custom (cfnt/font-id->backend (:font-id %)))
+                       replace-custom-font
+                       content))
+
+(defn- drop-image-fills
+  "`node` without image fills, or with the default fill when it had only those."
+  [{:keys [fills] :as node}]
+  (if (some :fill-image fills)
+    (let [fills (into [] (remove :fill-image) fills)]
+      (assoc node :fills (if (seq fills) fills (txt/get-default-text-fills))))
+    node))
+
+(defn clean-content
+  "`content` without what the paste target cannot reach: typographies outside
+  `valid-file-ids`, custom fonts from another team, images from another file."
+  [content {:keys [valid-file-ids same-team? same-file?]}]
+  (txt/transform-nodes
+   (fn [node]
+     (cond-> node
+       (and (some? (:typography-ref-file node))
+            (not (contains? valid-file-ids (:typography-ref-file node))))
+       (ctt/remove-typography-from-node)
+
+       (and (not same-team?)
+            (= :custom (cfnt/font-id->backend (:font-id node))))
+       (replace-custom-font)
+
+       (not same-file?)
+       (drop-image-fills)))
+   content))

@@ -21,15 +21,7 @@ pub fn get_dest_rect(container: &MathRect, delta: f32) -> MathRect {
 }
 
 pub fn get_image_dest_rect(container: &MathRect, image_fill: &ImageFill) -> MathRect {
-    match image_fill.transform() {
-        Some(tf) => MathRect::from_xywh(
-            container.left + tf.x * container.width(),
-            container.top + tf.y * container.height(),
-            tf.width * container.width(),
-            tf.height * container.height(),
-        ),
-        None => *container,
-    }
+    image_fill.dest_rect(container)
 }
 
 pub fn get_source_rect(size: ISize, container: &MathRect, image_fill: &ImageFill) -> MathRect {
@@ -186,8 +178,9 @@ const DEFAULT_SVG_SIZE: f32 = 512.0;
 fn parse_svg(raw_data: &[u8]) -> Option<(skia::svg::Dom, Size)> {
     // An empty font manager: <text> elements inside SVG image fills won't
     // resolve typefaces. Wire the render state's font provider here if that
-    // ever becomes a need.
-    let font_mgr = skia::FontMgr::new();
+    // ever becomes a need. Must be custom_empty (not FontMgr::new): NewSystem
+    // scans font dirs and aborts under -sFILESYSTEM=0.
+    let font_mgr = skia::FontMgr::custom_empty()?;
     let mut dom = skia::svg::Dom::from_bytes(raw_data, font_mgr).ok()?;
 
     let mut size = dom.root().intrinsic_size();

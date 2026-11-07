@@ -11,7 +11,6 @@
    [app.common.files.tokens :as cfo]
    [app.common.json :as json]
    [app.common.schema :as sm]
-   [app.common.types.file :as ctf]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
@@ -79,15 +78,52 @@
   (let [k (cond-> k (string? k) keyword)]
     (get map:token-attr-plugin->token-attr k k)))
 
+(def ^:private stroke-width-alias
+  "Uniform stroke width alias that expands to all four side token attributes."
+  :stroke-width)
+
+(defn expand-token-attrs
+  "Resolves token attributes to internal keywords and expands `:stroke-width`
+  to all four side attributes."
+  [attrs]
+  (let [attrs (into #{} (map token-attr-plugin->token-attr) attrs)]
+    (if (contains? attrs stroke-width-alias)
+      (into (disj attrs stroke-width-alias) cto/per-side-stroke-width-keys)
+      attrs)))
+
 (defn applied-tokens-plugin->applied-tokens
   [value]
-  (into {}
-        (map (fn [[k v]] [(token-attr->token-attr-plugin k) v]))
-        value))
+  (let [value    (into {}
+                       (map (fn [[k v]] [(token-attr->token-attr-plugin k) v]))
+                       value)
+        per-side (map #(get value %)
+                      [:stroke-width-top :stroke-width-right
+                       :stroke-width-bottom :stroke-width-left])]
+    (cond-> value
+      ;; Exposes `strokeWidth` when all four sides share the same token.
+      (and (every? some? per-side)
+           (apply = per-side))
+      (assoc :stroke-width (first per-side)))))
 
 (defn token-attr?
   [attr]
-  (cto/token-attr? (token-attr-plugin->token-attr attr)))
+  (let [attr (token-attr-plugin->token-attr attr)]
+    (or (= attr stroke-width-alias)
+        (cto/token-attr? attr))))
+
+(def per-side-stroke-widths-message
+  "Per-side stroke widths require a board or rectangle")
+
+(defn per-side-stroke-attrs?
+  "Returns true when the plugin attrs name at least one explicit per-side stroke
+  width attribute (`strokeWidthTop/Right/Bottom/Left`). The uniform
+  `strokeWidth` alias is not considered per-side: it expands to all four sides
+  with the same token and always resolves to a uniform width."
+  [attrs]
+  (boolean
+   (some #(contains? cto/per-side-stroke-width-keys
+                     (token-attr-plugin->token-attr %))
+         attrs)))
 
 (defn- token-name-schema
   [file-id set-id token]
@@ -159,28 +195,46 @@
         (get (:name token))
         (resolved-without-errors?))))
 
+(defn per-side-stroke-attrs-restricted?
+  "Returns true when `attrs` name an explicit per-side stroke width while some
+  target shape on `page-id` does not support independent sides. Only boards and
+  rectangles accept them. Shapes absent from the page are ignored, because
+  token application only touches the active page."
+  [file-id page-id shape-ids attrs]
+  (when (per-side-stroke-attrs? attrs)
+    (boolean
+     (some (fn [id]
+             (let [shape (u/locate-shape file-id page-id id)]
+               (and (some? shape)
+                    (not (cto/per-side-stroke-shape? (:type shape))))))
+           shape-ids))))
+
 (defn- apply-token-to-shapes
-  [plugin-id file-id set-id id shape-ids attrs]
+  [plugin-id code file-id set-id id shape-ids attrs]
   (cond
     (not (r/check-permission plugin-id "content:write"))
-    (u/not-valid plugin-id :applyToken "Plugin doesn't have 'content:write' permission")
+    (u/not-valid plugin-id code "Plugin doesn't have 'content:write' permission")
 
     :else
     (let [token (u/locate-token file-id set-id id)]
       (cond
         (nil? token)
-        (u/not-valid plugin-id :applyToSelected id)
+        (u/not-valid plugin-id code id)
 
         (not (valid-token-resolution? file-id set-id id))
-        (u/not-valid plugin-id :applyToSelected (:value token))
+        (u/not-valid plugin-id code (:value token))
 
         (some #(not (token-attr? %)) attrs)
-        (u/not-valid plugin-id :applyToSelected attrs)
+        (u/not-valid plugin-id code attrs)
+
+        (per-side-stroke-attrs-restricted? file-id (:current-page-id @st/state)
+                                           shape-ids attrs)
+        (u/not-valid plugin-id code per-side-stroke-widths-message)
 
         :else
         (st/emit!
          (-> (dwta/toggle-token {:token token
-                                 :attrs (into #{} (map token-attr-plugin->token-attr) attrs)
+                                 :attrs (expand-token-attrs attrs)
                                  :shape-ids shape-ids
                                  :expand-with-children false})
              (se/add-event plugin-id)))))))
@@ -210,14 +264,12 @@
     k))
 
 (defn- shadow-entry->js
-  "Converts one resolved shadow entry (a JS Map of field name -> tokenscript
-   symbol) into a plain JS object using the public member names and the
-   unit-converted values."
-  [^js m]
+  "Converts one resolved shadow entry (a map of field name -> value) into
+   a plain JS object using the public member names."
+  [m]
   (let [out #js {}]
-    (.forEach m (fn [sym k]
-                  (obj/set! out (shadow-key->camel k)
-                            (ts/tokenscript-symbols->penpot-unit sym))))
+    (doseq [[k v] m]
+      (obj/set! out (shadow-key->camel (name k)) (clj->js v)))
     out))
 
 (defn- shadow-resolved-value->js
@@ -227,41 +279,29 @@
   (when (some? entries)
     (into-array (map shadow-entry->js entries))))
 
-(defn- font-families-resolved-value->js
-  "Converts a resolved fontFamilies value (a tokenscript list symbol) into the
-   documented `string[]` shape rather than leaking the raw tokenscript structure."
-  [resolved-value]
-  (let [v (ts/tokenscript-symbols->penpot-unit resolved-value)]
-    (cond
-      (nil? v) nil
-      (sequential? v) (clj->js v)
-      :else #js [v])))
-
 (defn- get-resolved-value
   [token tokens-tree]
   (let [resolved-tokens (ts/resolve-tokens tokens-tree)
-        resolved-value  (dm/get-in resolved-tokens [(:name token) :resolved-value])]
+        resolved-token  (get resolved-tokens (:name token))
+        resolved-value  (:resolved-value resolved-token)]
     (cond
       (= :font-family (:type token))
-      ;; A fontFamilies token resolves to a list of families; expose it as the
-      ;; documented `string[]` rather than the raw tokenscript list symbol.
-      (font-families-resolved-value->js resolved-value)
+      ;; A fontFamilies token resolves to a vector of families; expose it as
+      ;; the documented `string[]`.
+      (some-> resolved-value clj->js)
 
       (= :typography (:type token))
       ;; A typography token resolves to a composite; expose it as the documented
-      ;; `TokenTypographyValue[]` rather than the raw tokenscript structure.
-      (typography-resolved-value->js
-       (ts/tokenscript-symbols->penpot-unit resolved-value))
+      ;; `TokenTypographyValue[]` with the line height as resolved.
+      (typography-resolved-value->js (ts/plugin-value resolved-token))
 
       (= :shadow (:type token))
-      ;; A shadow token resolves to a list of composites whose entries the
-      ;; tokenscript unit conversion leaves as raw symbols; expose them as the
+      ;; A shadow token resolves to a list of composites; expose them as the
       ;; documented `TokenShadowValue[]`.
-      (shadow-resolved-value->js
-       (ts/tokenscript-symbols->penpot-unit resolved-value))
+      (shadow-resolved-value->js resolved-value)
 
       :else
-      (ts/tokenscript-symbols->penpot-unit resolved-value))))
+      resolved-value)))
 
 (defn token-proxy? [p]
   (obj/type-of? p "TokenProxy"))
@@ -421,14 +461,15 @@
               [:vector [:fn shape-proxy?]]
               [:maybe [::sm/set [:and ::sm/keyword [:fn token-attr?]]]]]
      :fn (fn [shapes attrs]
-           (apply-token-to-shapes plugin-id file-id set-id id (map #(obj/get % "$id") shapes) attrs))}
+           (apply-token-to-shapes plugin-id :applyToShapes file-id set-id id
+                                  (map #(obj/get % "$id") shapes) attrs))}
 
     :applyToSelected
     {:enumerable false
      :schema [:tuple [:maybe [::sm/set [:and ::sm/keyword [:fn token-attr?]]]]]
      :fn (fn [attrs]
            (let [selected (get-in @st/state [:workspace-local :selected])]
-             (apply-token-to-shapes plugin-id file-id set-id id selected attrs)))}))
+             (apply-token-to-shapes plugin-id :applyToSelected file-id set-id id selected attrs)))}))
 
 ;; === Token Set
 
@@ -489,14 +530,20 @@
           (not (r/check-permission plugin-id "content:write"))
           (u/not-valid plugin-id :active "Plugin doesn't have 'content:write' permission")
 
+          (not (dwtl/editable-tokens-status? @st/state file-id))
+          (u/not-valid plugin-id :active "Cannot change activation through a connected library; use penpot.library.local.tokens")
+
           :else
-          (st/emit! (dwtl/set-enabled-token-set id value))))}  ;; This can be done even with tokens in an external library
+          (st/emit! (dwtl/set-enabled-token-set id value))))}
 
      :toggleActive
      (fn []
        (cond
          (not (r/check-permission plugin-id "content:write"))
          (u/not-valid plugin-id :toggleActive "Plugin doesn't have 'content:write' permission")
+
+         (not (dwtl/editable-tokens-status? @st/state file-id))
+         (u/not-valid plugin-id :toggleActive "Cannot change activation through a connected library; use penpot.library.local.tokens")
 
          :else
          (st/emit! (dwtl/toggle-token-set id))))
@@ -714,6 +761,9 @@
          (not (r/check-permission plugin-id "content:write"))
          (u/not-valid plugin-id :active "Plugin doesn't have 'content:write' permission")
 
+         (not (dwtl/editable-tokens-status? @st/state file-id))
+         (u/not-valid plugin-id :active "Cannot change activation through a connected library; use penpot.library.local.tokens")
+
          :else
          (st/emit! (dwtl/set-token-theme-active id value))))}
 
@@ -722,6 +772,9 @@
       (cond
         (not (r/check-permission plugin-id "content:write"))
         (u/not-valid plugin-id :toggleActive "Plugin doesn't have 'content:write' permission")
+
+        (not (dwtl/editable-tokens-status? @st/state file-id))
+        (u/not-valid plugin-id :toggleActive "Cannot change activation through a connected library; use penpot.library.local.tokens")
 
         :else
         (st/emit! (dwtl/toggle-token-theme-active id))))
@@ -816,8 +869,7 @@
      :enumerable false
      :get
      (fn []
-       (let [file (u/locate-file file-id)]
-         (cfo/editable-tokens? (ctf/file-data file))))}
+       (dwtl/editable-tokens? @st/state file-id))}
 
     :themes
     {:this true

@@ -15,9 +15,40 @@
    [goog.functions :as gfn]
    [rumext.v2 :as mf]))
 
+(defn reset-keys
+  "The `resetKeys` prop for the boundary: the current screen name, or nil
+  before the first route resolves. It never has more than one entry:
+  every screen change is a new entry.
+
+  A navigation is a fresh attempt at rendering, so a change of screen
+  clears a caught error on its own. Without that, the error page stays
+  on screen after the URL changes, because the boundary keeps its error
+  in internal React state that only `reset-error-boundary` clears, and
+  every exit from the error page (the logo, the dialogs, the feedback
+  link) only navigates.
+
+  It is a real JS array, never a ClojureScript vector:
+  `react-error-boundary` compares `resetKeys` with `.length` and
+  `.some`, which a `PersistentVector` does not have, so its
+  `componentDidUpdate` then throws `some is not a function`.
+
+  It holds the screen name as a *string*, not the whole route, not the
+  URL and not the keyword. The library compares entries with
+  `Object.is`, which compares strings by value but compares objects by
+  identity, and ClojureScript does not intern keywords: two equal
+  keywords are two objects, so `Object.is` on a keyword is always
+  false. A keyword here would therefore read as a new key on every
+  route rebuilt, and the boundary would reset on a param change inside
+  the same screen — replaying the screen that just crashed. A route map
+  has the same problem and would reset on every render."
+  [route]
+  #js [(some-> (get-in route [:data :name]) name)])
+
 (mf/defc error-boundary*
   [{:keys [fallback children]}]
-  (let [fallback-wrapper
+  (let [route (mf/deref refs/route)
+
+        fallback-wrapper
         (mf/with-memo [fallback]
           (mf/fnc fallback-wrapper*
             [{:keys [error reset-error-boundary]}]
@@ -63,5 +94,6 @@
 
     [:> reb/ErrorBoundary
      {:FallbackComponent fallback-wrapper
-      :onError on-error}
+      :onError on-error
+      :resetKeys (reset-keys route)}
      children]))

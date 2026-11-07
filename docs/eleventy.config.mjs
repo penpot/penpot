@@ -56,6 +56,9 @@ export default function (eleventyConfig) {
     return Math.min.apply(null, numbers);
   });
 
+  // Current year, resolved at build time.
+  eleventyConfig.addShortcode("year", () => `${new Date().getFullYear()}`);
+
   eleventyConfig.addPassthroughCopy("img");
   eleventyConfig.addPassthroughCopy("css");
   eleventyConfig.addPassthroughCopy("js");

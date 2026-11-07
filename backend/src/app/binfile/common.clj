@@ -13,6 +13,7 @@
    [app.common.features :as cfeat]
    [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as fmg]
+   [app.common.files.tokens :as cfo]
    [app.common.files.validate :as fval]
    [app.common.logging :as l]
    [app.common.media :as cm]
@@ -73,11 +74,11 @@
 ;; Maximum total decompressed size allowed for all JSON/text zip entries
 ;; combined within a single import job: 500MiB. Bounds the case where many
 ;; entries, each individually under default-max-text-entry-size, still sum
-;; to an unreasonable total. Set well above the 200MiB it replaces because
-;; legitimate giant exports exist: hundreds of thousands of KB-sized
-;; entries (pages, shapes) that never trip the per-entry cap but sum past
-;; 400MiB. The per-entry cap still bounds single-entry DEFLATE
-;; amplification, so this only moves the cumulative ceiling.
+;; to an unreasonable total. Set this high because legitimate giant
+;; exports exist: hundreds of thousands of KB-sized entries (pages,
+;; shapes) that never trip the per-entry cap but sum past 400MiB. The
+;; per-entry cap still bounds single-entry DEFLATE amplification, so this
+;; only moves the cumulative ceiling.
 (def ^:const default-max-text-total-size
   (* 1024 1024 500))
 
@@ -238,24 +239,30 @@
 
 (defn- migrate-file
   [{:keys [::db/conn] :as cfg} {:keys [read-only?]} {:keys [id] :as file}]
-  (binding [pmap/*load-fn* (partial fdata/load-pointer cfg id)
-            pmap/*tracked* (pmap/create-tracked)]
-    (let [libs (delay (get-resolved-file-libraries cfg file))
-          ;; For avoid unnecesary overhead of creating multiple
-          ;; pointers and handly internally with objects map in their
-          ;; worst case (when probably all shapes and all pointers
-          ;; will be readed in any case), we just realize/resolve them
-          ;; before applying the migration to the file.
-          file (-> (fdata/realize cfg file)
-                   (fmg/migrate-file libs))]
+  (fdata/with-tracked-pointers cfg id
+    (let [libs                (delay (get-resolved-file-libraries cfg file))
+          ;; Capture the pointer layout before realizing: the migration
+          ;; runs on plain data, and unchanged positions must keep their
+          ;; original fragment ids instead of being re-wrapped with new
+          ;; ones on persist.
+          original            (fdata/original-pointers (:data file))
+          objects-map-before? (contains? (:features file) "fdata/objects-map")
+          realized            (-> (fdata/realize cfg file)
+                                  (fmg/migrate-file libs))
+          objects-map-added?  (and (not objects-map-before?)
+                                   (contains? (:features realized) "fdata/objects-map"))]
 
       (if (or read-only? (db/read-only? conn))
-        file
-        (do ;; When file is migrated, we break the rule of no
-          ;; perform mutations on get operations and update the
-          ;; file with all migrations applied
+        realized
+        (let [file (if objects-map-added?
+                     realized
+                     (fdata/reattach-unchanged original realized))]
+          ;; When the file is migrated, we break the rule of not
+          ;; performing mutations on get operations and update the file
+          ;; with all migrations applied. The caller still receives the
+          ;; realized file: the read contract is plain data.
           (update-file! cfg file)
-          (fmigr/resolve-applied-migrations cfg file))))))
+          (fmigr/resolve-applied-migrations cfg realized))))))
 
 (defn- get-file*
   [{:keys [::db/conn] :as cfg} id
@@ -280,7 +287,7 @@
 
   (assert (db/connection? conn) "expected cfg with valid connection")
   (when (and (not load-data?)
-             (or lock-for-share? lock-for-share? skip-locked?))
+             (or lock-for-share? lock-for-update? skip-locked?))
     (throw (IllegalArgumentException. "locking is incompatible when `load-data?` is false")))
 
   (let [sql
@@ -471,6 +478,18 @@
             {:team-id team-id
              :deleted-at nil}))
 
+(def ^:private sql:get-files-rels
+  "SELECT flr.*,
+	      fls.synced_at
+    FROM file_library_rel AS flr
+    JOIN file AS l
+      ON flr.library_file_id = l.id
+    LEFT JOIN file_library_sync AS fls
+      ON fls.file_id = flr.file_id
+     AND fls.library_file_id = flr.library_file_id
+   WHERE flr.file_id = ANY(?)
+     AND l.deleted_at IS NULL;")
+
 (defn get-files-rels
   "Given a set of file-id's, return all matching relations with the libraries"
   [cfg ids]
@@ -479,18 +498,8 @@
   (assert (every? uuid? ids) "expected a set of uuids")
 
   (db/run! cfg (fn [{:keys [::db/conn]}]
-                 (let [ids (db/create-array conn "uuid" ids)
-                       sql (str "SELECT flr.*,"
-                                "	   fls.synced_at"
-                                "  FROM file_library_rel AS flr"
-                                "  JOIN file AS l"
-                                "    ON flr.library_file_id = l.id"
-                                "  LEFT JOIN file_library_sync AS fls"
-                                "    ON fls.file_id = flr.file_id"
-                                "   AND fls.library_file_id = flr.library_file_id"
-                                " WHERE flr.file_id = ANY(?)"
-                                "   AND l.deleted_at IS NULL;")]
-                   (db/exec! conn [sql ids])))))
+                 (let [ids (db/create-array conn "uuid" ids)]
+                   (db/exec! conn [sql:get-files-rels ids])))))
 
 (def ^:private sql:upsert-file-library-sync
   "INSERT INTO file_library_sync (file_id, library_file_id, synced_at)
@@ -678,26 +687,58 @@
              colors
              colors))
 
+(defn absorb-unlinked-tokens-source
+  "Make the file its own tokens source when its tokens source is not one
+  of the given library-ids, as happens when the library was deleted. The
+  tokens lib of the source is copied while the library still exists, even
+  if deleted; otherwise the tokens source is removed and the file gets back
+  the tokens status kept aside for its own tokens lib, if any."
+  [cfg data library-ids]
+  (let [source-id (cfo/get-tokens-source data)]
+    (if (and (some? source-id)
+             (not (contains? library-ids source-id)))
+      (if-let [library (get-file cfg source-id
+                                 :include-deleted? true
+                                 :throw-if-not-exists? false)]
+        (cfo/absorb-tokens-lib data (:data library))
+        (cfo/detach-tokens-source data))
+      data)))
+
 (defn embed-assets
   [cfg data file-id]
-  (let [library-ids (get-libraries cfg [file-id])]
-    (reduce (fn [data library-id]
-              (if-let [library (get-file cfg library-id :include-deleted? true)]
-                (ctf/absorb-assets data (:data library))
-                data))
-            data
-            library-ids)))
+  (let [library-ids (get-libraries cfg [file-id])
+        data        (reduce (fn [data library-id]
+                              (if-let [library (get-file cfg library-id :include-deleted? true)]
+                                (cond-> (ctf/absorb-assets data (:data library))
+                                  (= library-id (cfo/get-tokens-source data))
+                                  (cfo/absorb-tokens-lib (:data library)))
+                                data))
+                            data
+                            library-ids)]
+    (absorb-unlinked-tokens-source cfg data library-ids)))
 
-(def ^:const import-transaction-timeout-ms
-  "Ceiling for binfile import transactions (20 minutes). Interpolated
-  directly into SQL: compile-time constant, never user input."
-  (* 20 60 1000))
+(def transaction-idle-timeout-ms
+  "Idle-in-transaction guard for the long binfile transactions: 30
+  minutes. The import and the export of a file run inside one
+  transaction that can go quiet while the ZIP is decoded and the file
+  data is realized. The longest operation observed in production is
+  under 8 minutes, so this leaves room for bigger files and still
+  aborts a connection that is left idle for half an hour."
+  1800000)
 
-(defn configure-database-timeouts!
+(defn set-transaction-idle-timeout
+  "Set `idle_in_transaction_session_timeout` for the current
+  transaction. Must be called inside a transaction: `SET LOCAL` is
+  scoped to it."
   [cfg]
   (let [conn (db/get-connection cfg)]
     (db/exec-one! conn [(str "SET LOCAL idle_in_transaction_session_timeout = "
-                             import-transaction-timeout-ms)])
+                             transaction-idle-timeout-ms)])))
+
+(defn configure-import-transaction
+  [cfg]
+  (set-transaction-idle-timeout cfg)
+  (let [conn (db/get-connection cfg)]
     (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])))
 
 (defn process-file
@@ -911,7 +952,12 @@
   (let [library-ids (->> (get-file-libraries conn (:id file))
                          (map :id)
                          (cons (:id file)))
-        load-fn     #(get-file cfg % :migrate? false)]
+        ;; Fragment rows are file-local and callers bind the loader of
+        ;; the file they work on, so each library realizes its pointers
+        ;; here, with its own id, before anything walks its data.
+        load-fn     (fn [library-id]
+                      (->> (get-file cfg library-id :migrate? false)
+                           (fdata/realize-pointers cfg)))]
     (weak/loadable-weak-value-map library-ids load-fn {id file})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1029,3 +1075,46 @@
       {:bytes bytes
        :size  (alength ^bytes bytes)
        :hash  (sto/calculate-hash (java.io.ByteArrayInputStream. bytes))})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; REQUEST CFG
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn resolve-export-type
+  "The canonical export type of a request on the legacy RPC: an explicit
+  `type` wins, and the deprecated boolean flags are translated. The
+  creation command of a job does not need it, because it asks the caller
+  for the type instead of guessing it."
+  [{:keys [type include-libraries embed-assets]}]
+  (cond
+    (some? type)              type
+    (true? include-libraries) :include-libraries
+    (true? embed-assets)      :merge-libraries
+    :else                     :detach-libraries))
+
+(defn export-cfg
+  "The domain cfg of an export: the frozen set of files, how their
+  libraries are handled, and where the package is written."
+  [cfg {:keys [file-ids export-type output]}]
+  (-> cfg
+      (assoc ::file-ids file-ids)
+      (assoc ::export-type export-type)
+      (assoc ::output output)))
+
+(defn import-cfg
+  "The domain cfg of an import: the destination team/profile/project, the
+  name, the input and the anti-zip-bomb limits. The caller resolves the
+  team, because what allows it to import there differs between the RPC and
+  a job; what both must share is fixed here."
+  [cfg {:keys [profile-id project-id team name input]}]
+  (-> cfg
+      (assoc ::features (cfeat/get-team-enabled-features cf/flags team))
+      (assoc ::project-id project-id)
+      (assoc ::profile-id profile-id)
+      (assoc ::team-id (:id team))
+      (assoc ::name name)
+      (assoc ::input input)
+      (assoc ::import-max-binary-entry-size (cf/get :binfile-import-max-binary-entry-size))
+      (assoc ::import-max-text-entry-size (cf/get :binfile-import-max-text-entry-size))
+      (assoc ::import-max-text-total-size (cf/get :binfile-import-max-text-total-size))
+      (assoc ::import-max-zip-entries (cf/get :binfile-import-max-zip-entries))))

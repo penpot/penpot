@@ -13,7 +13,7 @@ function mockReq(contentLength?: string): Request {
 }
 
 function mockFile(content: string = "test content") {
-  const stream = Readable.from([content]);
+  const stream = Readable.from([Buffer.from(content)]);
   return {
     fieldname: "file",
     originalname: "test.txt",

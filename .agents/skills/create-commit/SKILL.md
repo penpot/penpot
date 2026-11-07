@@ -23,10 +23,11 @@ subject/body limits, and the `AI-assisted-by` trailer. Follow it exactly.
 
 ## Iron Rules (non-negotiable)
 
-1. **Wrap every body line at 76 characters or fewer.** Count characters, do
+1. **Wrap every body line at 80 characters or fewer.** Count characters, do
    not eyeball. Exceptions: `Signed-off-by:` / `AI-assisted-by:` trailers and
    lines carrying a URL. This is the rule agents skip most often.
-2. **Subject ≤70 chars**, imperative, capitalized, no trailing period.
+2. **Subject ≤80 chars**, imperative, capitalized, no trailing period.
+   `Merge`/`Revert`/`Reapply` commits skip the length check.
 3. **Blank line between subject and body.**
 4. **Run `./scripts/check-commit` and require exit code 0.** It mechanically
    checks rules 1–3. A non-zero exit is a hard blocker: fix the message and
@@ -41,7 +42,7 @@ subject/body limits, and the `AI-assisted-by` trailer. Follow it exactly.
    that does not match the stated intent, **STOP** and tell the user before
    committing.
 3. Draft the message following the format in the memory doc, wrapping the body
-   at 76 characters per line, and run:
+   at 80 characters per line, and run:
    ```bash
    git commit -m "<subject>" -m "<body>"
    ```
@@ -62,5 +63,6 @@ subject/body limits, and the `AI-assisted-by` trailer. Follow it exactly.
 - Do not pass `--author`. Author identity comes from the local git config.
 - Do not amend a commit you did not create in this session, unless explicitly asked.
 - Do not bypass pre-commit hooks (`--no-verify`) unless explicitly asked.
+- Never add a `Co-authored-by:` trailer. It is forbidden and fails `./scripts/check-commit`.
 - Do not add untracked files that were not created in this session.
 - Do not skip the `scripts/check-commit` verification step (Iron Rule 4).

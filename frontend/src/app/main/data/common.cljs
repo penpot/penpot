@@ -18,6 +18,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as-alias dps]
+   [app.main.data.team :as dtm]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -250,28 +251,38 @@
   Updates local team organization data and redirects to SSO when required.
   `team` and `notification` come from the server-published message (see backend
   app.rpc.notifications/notify-team-change); `notification` is a translation
-  key resolved here, dynamic by design."
+  key resolved here, dynamic by design.
+
+  The message is broadcast to every connected user, so it cannot carry the
+  per-profile `:restrictions-met`: the last known value is kept and the teams
+  are fetched again to get the current profile's one."
   [{:keys [team notification]}]
   (ptk/reify ::handle-change-team-organization
     ptk/WatchEvent
     (watch [_ state _]
       (let [current-team-id (:current-team-id state)
             organization    (:organization team)
-            current-team?   (= (:id team) current-team-id)]
+            team-name       (or (:name team)
+                                (dm/get-in state [:teams (:id team) :name]))
+            current-team?   (= (:id team) current-team-id)
+            known-team?     (contains? (:teams state) (:id team))]
         (when (and (contains? cf/flags :admin-console)
-                   current-team?)
+                   (or current-team? known-team?))
           (rx/concat
-           (when notification
+           (when known-team?
+             (rx/of (dtm/fetch-teams)))
+           (when (and current-team? notification)
              ;; Execution time translation strings (keys sent by the backend):
              ;;   (tr "dashboard.team-belong-organization")
              ;;   (tr "dashboard.team-no-longer-belong-organization")
              ;; notification is a server-provided key, dynamic by design
+             ;; args: team name, organization name
              #_{:clj-kondo/ignore [:penpot/tr-dynamic]}
-             (rx/of (ntf/show {:content (tr notification (:name organization))
+             (rx/of (ntf/show {:content (tr notification team-name (:name organization))
                                :type :toast
                                :level :info
                                :timeout nil})))
-           (when (:id organization)
+           (when (and current-team? (:id organization))
              (check-team-sso current-team-id))))))
     ptk/UpdateEvent
     (update [_ state]
@@ -281,8 +292,14 @@
               organization (:organization team)]
           (d/update-in-when state [:teams team-id]
                             (fn [team]
-                              (cond-> (cto/apply-organization team organization)
-                                team-name (assoc :name team-name)))))
+                              (let [same-organization? (= (:id organization)
+                                                          (dm/get-in team [:organization :id]))
+                                    organization       (cond-> organization
+                                                         same-organization?
+                                                         (assoc :restrictions-met
+                                                                (dm/get-in team [:organization :restrictions-met])))]
+                                (cond-> (cto/apply-organization team organization)
+                                  team-name (assoc :name team-name))))))
         state))))
 
 (defn handle-organization-change-sso

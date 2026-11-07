@@ -31,8 +31,19 @@
 
 (mf/defc options*
   [{:keys [shape libraries file-id page-id]}]
-  (let [id     (dm/get-prop shape :id)
-        type   (dm/get-prop shape :type)
+  (let [id      (dm/get-prop shape :id)
+        type    (dm/get-prop shape :type)
+        edition (mf/deref refs/selected-edition)
+        ;; While editing auto-grow text, committed selrect lags (finalize-only
+        ;; geometry). Patch display size from live WASM so Design W/H match the
+        ;; viewport outline without writing to the store.
+        shape
+        (cond-> shape
+          (and (= id edition)
+               (not= :fixed (:grow-type shape))
+               (features/active-feature? @st/state "render-wasm/v1"))
+          (dwt/shape-with-live-text-dimensions))
+
         ids    (mf/with-memo [id] [id])
         shapes (mf/with-memo [shape] [shape])
 

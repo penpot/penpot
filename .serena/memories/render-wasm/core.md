@@ -25,6 +25,7 @@
 - The lock covers setup, Cargo build, and artifact copy. The watch process releases it while waiting for changes. The operating system releases it on success, error, or signal; the file remains.
 - The lock only coordinates repository scripts. Manual Cargo commands do not take it.
 - Set `RENDER_WASM_LOCK_FILE` to the same path only when separate checkouts intentionally share a `CARGO_TARGET_DIR`.
+- Build output is gitignored and stays untracked everywhere it lands: `frontend/resources/public/js/render-wasm.{js,wasm}` and `frontend/src/app/render_wasm/api/shared.js` from `./build`, plus `exporter/resources/wasm/render-wasm.{js,wasm}` and `exporter/src/app/wasm/shared.js`. Never commit generated JS/WASM; rebuild instead.
 
 ## Commands
 

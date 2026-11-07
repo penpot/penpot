@@ -25,6 +25,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.features.file-migrations :as feat.fmig]
+   [app.health :as health]
    [app.http.session :as session]
    [app.redis :as rds]
    [app.rpc.commands.auth :as auth]
@@ -358,10 +359,11 @@
     (let [path (tmp/tempfile :prefix "penpot.export." :min-age "30m")]
       (with-open [output (io/output-stream path)]
         (-> cfg
-            (assoc ::bfc/ids file-ids)
+            (assoc ::bfc/file-ids file-ids)
             (assoc ::bfc/embed-assets embed?)
             (assoc ::bfc/include-libraries libs?)
-            (bf.v3/export-files! output)))
+            (assoc ::bfc/output output)
+            (bf.v3/export-files!)))
 
       (if clone?
         (let [profile    (profile/get-profile pool profile-id)
@@ -783,8 +785,12 @@
 
     (db/tx-run! (assoc cfg ::db/rollback true)
                 (fn [cfg]
-                  (let [file (bfc/get-file cfg file-id)
-                        libs (bfc/get-resolved-file-libraries cfg file-id)]
+                  ;; Validation walks every page and component, so the
+                  ;; file is read realized; the library map is built
+                  ;; from the file (not its id) and its own loader
+                  ;; resolves each library's pointers.
+                  (let [file (bfc/get-file cfg file-id :realize? true)
+                        libs (bfc/get-resolved-file-libraries cfg file)]
                     (if file
                       (let [errors (cfv/validate-file file libs)]
                         {::yres/status  200
@@ -857,17 +863,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn health-handler
-  "Mainly a task that performs a health check."
+  "Mainly a task that performs a health check. When the instance is marked
+  as offline (see `app.health`), it reports the instance as unavailable
+  without querying the database, so the load balancer drains it while the
+  requests in flight are still served."
   [{:keys [::db/pool]} _]
-  (try
-    (db/exec-one! pool ["select count(*) as count from server_prop;"])
-    {::yres/status 200
-     ::yres/body "OK"}
-    (catch Throwable cause
-      (l/warn :hint "unable to execute query on health handler"
-              :cause cause)
-      {::yres/status 503
-       ::yres/body "KO"})))
+  (if (health/online?)
+    (try
+      (db/exec-one! pool ["select count(*) as count from server_prop;"])
+      {::yres/status 200
+       ::yres/body "OK"}
+      (catch Throwable cause
+        (l/warn :hint "unable to execute query on health handler"
+                :cause cause)
+        {::yres/status 503
+         ::yres/body "KO"}))
+    {::yres/status 503
+     ::yres/body "OFFLINE"}))
 
 (defn changelog-handler
   [_ _]

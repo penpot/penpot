@@ -19,6 +19,7 @@
    [app.main.store :as st]
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
@@ -260,18 +261,30 @@
    [:span {:class (stl/css :radio-text)}
     text]])
 
+(def ^:private default-search-state
+  {:show-search false
+   :find-replace-mode? false
+   :search-scope :layers
+   :show-menu false
+   :search-text ""
+   :replace-text ""
+   :filters #{}
+   :num-items 100
+   :current-match-idx 0})
+
+;; Per-file, session-scoped (in-memory only) so an open search and its
+;; filters survive switching between the sidebar tabs, which unmounts the
+;; layers panel, without leaking across files or persisting across reloads.
+(defonce ^:private session-search*
+  (atom {}))
+
 (defn use-search
   [page objects]
-  (let [state*                (mf/use-state
-                               #(do {:show-search false
-                                     :find-replace-mode? false
-                                     :search-scope :layers
-                                     :show-menu false
-                                     :search-text ""
-                                     :replace-text ""
-                                     :filters #{}
-                                     :num-items 100
-                                     :current-match-idx 0}))
+  (let [file-id               (mf/use-ctx ctx/current-file-id)
+        state*                (mf/use-state
+                               #(-> default-search-state
+                                    (merge (get @session-search* file-id))
+                                    (assoc :show-menu false)))
         layers-search         (mf/deref ref:layers-search)
         state                 (deref state*)
         current-filters       (:filters state)
@@ -372,6 +385,21 @@
              (if show-search?
                (st/emit! dw/close-layers-search)
                (st/emit! (dw/open-layers-search :find {:force? true}))))))
+
+        close-search
+        (mf/use-fn
+         #(st/emit! dw/close-layers-search))
+
+        dismiss-filters-menu
+        (mf/use-fn
+         (mf/deps show-menu? hide-menu)
+         (fn []
+           (when ^boolean show-menu?
+             (hide-menu)
+             true)))
+
+        on-search-key-down
+        (hooks/use-escape-to-close close-search dismiss-filters-menu)
 
         remove-filter
         (mf/use-fn
@@ -522,6 +550,9 @@
           (events/unlistenByKey key1)
           (events/unlistenByKey key2))))
 
+    (mf/with-effect [file-id state]
+      (swap! session-search* assoc file-id state))
+
     (mf/with-effect [layers-search]
       (if-let [{:keys [open? find-replace-mode? scope]} layers-search]
         (when open?
@@ -571,7 +602,8 @@
      #(mf/html
        (if show-search?
          [:*
-          [:div {:class (stl/css :tool-window-bar)}
+          [:div {:class (stl/css :tool-window-bar)
+                 :on-key-down on-search-key-down}
            [:> search-bar* {:input-ref search-input-ref
                             :class (stl/css :search-item)
                             :on-change update-search-text
@@ -596,7 +628,8 @@
                              :on-click toggle-search
                              :icon i/close}]]
 
-          [:div {:class (stl/css :replace-wrapper)}
+          [:div {:class (stl/css :replace-wrapper)
+                 :on-key-down on-search-key-down}
            (when ^boolean find-replace-mode?
              [:div {:class (stl/css :replace-row)}
               [:> input* {:type "text"
@@ -821,6 +854,8 @@
         [filtered-objects show-more filter-component]
         (use-search page objects)
 
+        searching?     (some? filtered-objects)
+
         intersection-callback
         (fn [entries]
           (when (and (.-isIntersecting (first entries)) (some? show-more))
@@ -864,8 +899,12 @@
         (mf/use-fn
          #(st/emit! (dw/toggle-focus-mode)))]
 
-    (sc/use-restore-scroll scroll-store :layers page-id tree-ref)
-    (sc/use-restore-scroll scroll-store :layers-search page-id search-ref)
+    (sc/use-restore-scroll scroll-store :layers page-id tree-ref (not searching?))
+    (sc/use-restore-scroll scroll-store :layers-search page-id search-ref searching?)
+
+    (mf/with-effect [page-id searching?]
+      (when-not ^boolean searching?
+        (sc/forget-scroll! scroll-store [:layers-search page-id])))
 
     [:div {:id "layers"
            :class (stl/css :layers)

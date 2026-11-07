@@ -13,6 +13,8 @@
    [app.common.logging :as log]
    [app.main.data.dashboard :as dd]
    [app.main.data.event :as ev]
+   [app.main.data.imports :as imp]
+   [app.main.data.jobs :as dj]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.repo :as rp]
@@ -27,9 +29,7 @@
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
-   [app.main.ui.ds.product.loader :refer [loader*]]
-   [app.main.ui.icons :as deprecated-icon]
-   [app.main.worker :as mw]
+   [app.main.ui.jobs.progress :as jp]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -50,6 +50,7 @@
      (let [entries (->> entries
                         (mapv (fn [file]
                                 {:name (.-name file)
+                                 :size (.-size file)
                                  :uri  (wapi/create-uri file)}))
                         (not-empty))]
        (when entries
@@ -108,44 +109,20 @@
           (if (= (:file-id entry) (:file-id message))
             (let [status (case (:status message)
                            :progress :import-progress
-                           :finish :import-success
-                           :error :import-error)]
-              (-> entry
-                  (assoc :progress (:progress message))
-                  (assoc :status status)
-                  (assoc :error (:error message))
-                  (d/without-nils)))
+                           :started  :import-progress
+                           :queued   :import-queued
+                           :finish   :import-success
+                           :error    :import-error)]
+              ;; a message only carries what it knows: anything it does
+              ;; not bring (a stale milestone, an old error) is dropped
+              ;; instead of lingering on the row
+              (cond-> (assoc entry :status status)
+                (contains? message :progress) (assoc :progress (:progress message))
+                (not (contains? message :progress)) (dissoc :progress)
+                (contains? message :error) (assoc :error (:error message))
+                (not (contains? message :error)) (dissoc :error)))
             entry))
         entries))
-
-(defn- parse-progress-message
-  [message]
-  (case (:type message)
-    :upload-data
-    (tr "dashboard.import.progress.upload-data" (:current message) (:total message))
-
-    :upload-media
-    (tr "dashboard.import.progress.upload-media" (:file message))
-
-    :process-page
-    (tr "dashboard.import.progress.process-page" (:file message))
-
-    :process-colors
-    (tr "dashboard.import.progress.process-colors")
-
-    :process-typographies
-    (tr "dashboard.import.progress.process-typographies")
-
-    :process-media
-    (tr "dashboard.import.progress.process-media")
-
-    :process-components
-    (tr "dashboard.import.progress.process-components")
-
-    :process-deleted-components
-    (tr "dashboard.import.progress.process-components")
-
-    ""))
 
 (defn- has-status-analyze?
   [item]
@@ -178,69 +155,81 @@
              0
              resolution))
 
+(defn- pending-library-links
+  "The library links the wizard must create for the files of a resolution:
+  one per pending entry the user chose a candidate for. The file id comes
+  from the entry and never from the key of the map: what a key holds depends
+  on the result schema of the job-def that wrote it, while the wizard indexes
+  its selection by the id of the entry."
+  [resolution selection]
+  (->> (vals resolution)
+       (mapcat (fn [{:keys [id pending]}]
+                 (keep (fn [entry]
+                         (when-let [library-id (get-in selection [id (:id entry)])]
+                           {:file-id id :library-id library-id}))
+                       pending)))))
+
 (defn- analyze-entries
-  [state entries]
-  (let [features (get @st/state :features)]
-    (->> (mw/ask-many!
-          {:cmd :analyze-import
-           :files entries
-           :features features})
-         (rx/mapcat #(rx/delay emit-delay (rx/of %)))
-         (rx/filter some?)
-         (rx/subs!
-          (fn [message]
-            (when (some? (:error message))
-              (st/emit! (ev/event {::ev/name "import-files-error"
-                                   :error (:error message)})))
-            (swap! state update-with-analyze-result message))))))
+  [state entries on-analyze-end]
+  (->> (imp/analyze entries)
+       (rx/mapcat #(rx/delay emit-delay (rx/of %)))
+       (rx/filter some?)
+       (rx/subs!
+        (fn [message]
+          (when (some? (:error message))
+            (st/emit! (ev/event {::ev/name "import-files-error"
+                                 :error (:error message)})))
+          (swap! state update-with-analyze-result message))
+        (constantly nil)
+        ;; the wizard cannot offer its import step until it knows every
+        ;; file of every container
+        on-analyze-end)))
 
 (defn- import-files
-  [state library-resolution-data* project-id entries]
+  [state library-resolution-data* project-id entries on-job]
   (st/emit! (ev/event {::ev/name "import-files"
                        :num-files (count entries)}))
 
-  (let [features (get @st/state :features)]
-    (->> (mw/ask-many!
-          {:cmd :import-files
-           :project-id project-id
-           :files entries
-           :features features})
-         (rx/filter some?)
-         (rx/subs!
-          (fn [message]
-            ;; Capture library-resolution data if present (same for all
-            ;; entries from the same zip, so first one wins)
-            (if-let [resolution  (-> (:libraries-resolution message)
-                                     (not-empty))]
-              (reset! library-resolution-data* resolution)
-              (swap! state update-entry-status message)))))))
+  (->> (imp/import-files {:project-id project-id
+                          :entries    entries
+                          :on-job     on-job})
+       (rx/filter some?)
+       (rx/subs!
+        (fn [message]
+          ;; the resolution of the libraries of every package arrives once,
+          ;; when all of them are over
+          (if-let [resolution (-> (:libraries-resolution message) (not-empty))]
+            (reset! library-resolution-data* resolution)
+            (swap! state update-entry-status message))))))
 
 (mf/defc import-entry*
   {::mf/memo true
    ::mf/private true}
-  [{:keys [entries entry edition can-be-deleted is-progress on-edit on-change on-delete]}]
+  [{:keys [entries entry edition on-edit on-change on-delete]}]
   (let [status          (:status entry)
         ;; FIXME: rename to format
         format          (:type entry)
 
-        loading?        (or (= :analyze status)
-                            (= :import-progress status)
-                            (and is-progress (= :import-ready status)))
         analyze-error?  (= :analyze-error status)
-        import-success? (= :import-success status)
         import-error?   (= :import-error status)
         import-ready?   (= :import-ready status)
 
-        level (cond
-                import-success? :success
-                import-ready?   :success
-                import-error?   :error
-                analyze-error?  :error
-                loading?        nil
-                :else           :default)
+        progress        (:progress entry)
+        upload?         (= :upload (:stage progress))
+
+        ;; the container the file came in is fully sent, but its job does
+        ;; not exist yet: the wizard is still uploading the other files
+        ready?          (and (= :import-progress status)
+                             upload?
+                             (imp/upload-done? entry))
+
+        ;; a file can be dropped while the wizard has not started yet: once
+        ;; the import runs, its entries are committed
+        can-be-deleted? (and import-ready?
+                             (> (count entries) 1))
 
         is-shared?      (:shared entry)
-        progress        (:progress entry)
+        subtitle        (imp/format-file-size (:size entry))
 
         file-id         (:file-id entry)
         editing?        (and (some? file-id) (= edition file-id))
@@ -280,44 +269,42 @@
 
     [:div {:class (stl/css-case
                    :file-entry true
-                   :loading  loading?
-                   :success  import-success?
+                   :ready    ready?
+                   :success  (= :import-success status)
                    :error    (or import-error? analyze-error?)
                    :editable (and import-ready? (not editing?)))}
 
-     [:div {:class (stl/css :file-name)}
-      (when loading? [:> loader* {:width 26 :title (tr "labels.loading")}])
+     [:div {:class (stl/css :file-main)}
+      [:div {:class (stl/css :file-icon)
+             :aria-hidden "true"}
+       [:> icon* {:icon-id i/folder :size "m"}]]
 
-      (if editing?
-        [:div {:class (stl/css :file-name-edit)}
-         [:input {:type "text"
-                  :auto-focus true
-                  :class (stl/css :file-name-input)
-                  :aria-label (tr "dashboard.import.file-name-label")
-                  :default-value (:name entry)
-                  :on-key-press on-edit-key-press
-                  :on-blur on-edit-blur}]]
+      [:div {:class (stl/css :file-meta)}
+       (if editing?
+         [:div {:class (stl/css :file-name-edit)}
+          [:input {:type "text"
+                   :auto-focus true
+                   :class (stl/css :file-name-input)
+                   :aria-label (tr "dashboard.import.file-name-label")
+                   :default-value (:name entry)
+                   :on-key-press on-edit-key-press
+                   :on-blur on-edit-blur}]]
 
-        [:div {:class (stl/css :file-name-label)}
-         (if loading?
-           [:> text* {:class (stl/css :file-name-label)
-                      :as "span"
-                      :typography t/body-medium}
-            (:name entry)
-            (when ^boolean is-shared?
-              [:> icon* {:icon-id i/library :class (stl/css :file-label-icon)}])]
-           [:> context-notification*
-            {:level level
-             :appearance :ghost
-             :class (stl/css :file-name-notification)}
-            [:> text* {:class (stl/css :file-name-label)
+         [:*
+          [:> text* {:class (stl/css :file-name-label)
+                     :as "span"
+                     :typography t/body-medium}
+           [:span {:class (stl/css :file-name-text)}
+            (:name entry)]
+           (when ^boolean is-shared?
+             [:> icon* {:icon-id i/library :class (stl/css :file-label-icon)}])]
+          (when (some? subtitle)
+            [:> text* {:class (stl/css :file-subtitle)
                        :as "span"
-                       :typography t/body-medium}
-             (:name entry)
-             (when ^boolean is-shared?
-               [:> icon* {:icon-id i/library :class (stl/css :file-label-icon)}])]])])
+                       :typography t/body-small}
+             subtitle])])]
 
-      (when ^boolean (or editable? can-be-deleted)
+      (when ^boolean (or editable? can-be-deleted?)
         [:div {:class (stl/css :edit-entry-buttons)}
          (when ^boolean editable?
            [:> icon-button* {:on-click on-edit'
@@ -325,35 +312,36 @@
                              :icon-size "s"
                              :aria-label (tr "labels.edit")
                              :icon i/curve}])
-         (when ^boolean can-be-deleted
+         (when ^boolean can-be-deleted?
            [:> icon-button* {:on-click on-delete'
                              :variant "ghost"
                              :icon-size "s"
                              :aria-label (tr "labels.delete")
-                             :icon i/delete}])])]
-     (cond
-       analyze-error?
-       [:> text* {:class (stl/css :error-message)
-                  :as "span"
-                  :typography t/body-small}
-        ;; backend-provided error key, dynamic by design
-        #_{:clj-kondo/ignore [:penpot/tr-dynamic]}
-        (if (some? (:error entry))
-          (tr (:error entry))
-          (tr "dashboard.import.analyze-error"))]
+                             :icon i/delete}])])
 
-       import-error?
-       [:> text* {:class (stl/css :error-message)
-                  :as "span"
-                  :typography t/body-small}
-        ;; backend-provided error key, dynamic by design
-        #_{:clj-kondo/ignore [:penpot/tr-dynamic]}
-        (if (some? (:error entry))
-          (tr (:error entry))
-          (tr "labels.error"))]
+      ;; a row carries its name and its size, and only the state that is not
+      ;; progress: the milestone in course and the files already imported are
+      ;; the business of the header, which writes the milestone once for
+      ;; every file of a container
+      (when ^boolean ready?
+        [:div {:class (stl/css :file-status)}
+         [:> icon* {:icon-id i/status-tick :size "s"}]
+         [:> text* {:as "span"
+                    :typography t/body-medium}
+          (tr "dashboard.import.status.ready")]])]
 
-       (and (not import-success?) (some? progress))
-       [:div {:class (stl/css :progress-message)} (parse-progress-message progress)])
+     (when ^boolean (or analyze-error? import-error?)
+       [:div {:class (stl/css :file-error)}
+        [:> text* {:class (stl/css :error-message)
+                   :as "span"
+                   :typography t/body-small}
+         ;; the message is user-facing text already (a hint or a translated
+         ;; label), never a key
+         (if (some? (:error entry))
+           (:error entry)
+           (if analyze-error?
+             (tr "dashboard.import.analyze-error")
+             (tr "labels.error")))]])
 
      ;; This is legacy code, will be removed when legacy-zip format is removed
      [:div {:class (stl/css :linked-libraries)}
@@ -368,7 +356,7 @@
              [:span {:class (stl/css-case
                              :linked-library-tag true
                              :error error?)}
-              deprecated-icon/detach]])))]]))
+              [:> icon* {:icon-id i/detach}]]])))]]))
 
 (defn initialize-state
   [entries]
@@ -573,13 +561,126 @@
 
 ;; ── Stage components ────────────────────────────────────────────────
 
+(mf/defc import-steps*
+  {::mf/private true}
+  [{:keys [step]}]
+  (let [order   [:check :upload :import]
+        label   {:check  (tr "dashboard.import.steps.check")
+                 :upload (tr "dashboard.import.steps.upload")
+                 :import (tr "dashboard.import.steps.import")}
+        current (count (take-while #(not= % step) order))]
+    [:ol {:class (stl/css :import-steps)
+          :aria-label (tr "dashboard.import.steps.label")}
+     (for [[idx id] (d/enumerate order)]
+       (let [done?   (< idx current)
+             active? (= idx current)]
+         [:li {:key (name id)
+               :class (stl/css-case :import-step true
+                                    :done done?
+                                    :active active?)
+               :aria-current (when active? "step")}
+          [:span {:class (stl/css :step-marker)
+                  :aria-hidden "true"}
+           (if done?
+             [:> icon* {:icon-id i/status-tick :size "s"}]
+             (str (inc idx)))]
+          [:> text* {:as "span"
+                     :typography t/body-medium
+                     :class (stl/css :step-label)}
+           (get label id)]
+          (when (< idx 2)
+            [:span {:class (stl/css :step-line) :aria-hidden "true"}])]))]))
+
+(defn- importing-title
+  "The title of the phase that rebuilds the files, with the files the
+  wizard is working on and the ones already done."
+  [total done]
+  (dm/str (tr "dashboard.import.importing.title" (i18n/c total))
+          " · "
+          (tr "dashboard.import.importing.done" (i18n/c done))))
+
+(mf/defc import-phase-header*
+  {::mf/private true}
+  [{:keys [status step entries template]}]
+  (let [total   (+ (count entries) (if (some? template) 1 0))
+        ;; the file the job is working on is reported by the job itself, so
+        ;; the counter moves while a container rebuilds its files one by one
+        done    (imp/imported-count entries)
+
+        phase   (cond
+                  (= :analyze status)           :check
+                  (= :import-ready status)      :ready
+                  (not= :import-progress status) nil
+                  (= :upload step)              :upload
+                  (imp/waiting-slot? entries)   :queued
+                  :else                         :importing)
+
+        ;; the bar measures the whole import, never a single file: the
+        ;; upload of every container put together while they are sent, and
+        ;; the animated one from there on, because the stages of a job are
+        ;; not comparable one with another
+        [title desc pct]
+        (case phase
+          :check     [(tr "dashboard.import.check.title")
+                      (tr "dashboard.import.check.message")
+                      nil]
+          :ready     [(tr "dashboard.import.ready.title")
+                      (tr "dashboard.import.ready.message")
+                      nil]
+          :upload    [(tr "dashboard.import.upload.title")
+                      (tr "dashboard.import.upload.message")
+                      (imp/upload-pct entries)]
+          :queued    [(tr "dashboard.import.queued.title")
+                      (tr "dashboard.import.queued.message")
+                      nil]
+          :importing [(importing-title total done)
+                      (tr "dashboard.import.importing.message")
+                      nil]
+          [nil nil nil])
+
+        ;; the milestone in course takes the place of the message: the files
+        ;; of a container share it, so writing it here keeps it once
+        desc
+        (or (jp/current-milestone-text entries) desc)
+
+        ;; the bar paints what is running: indeterminate while the wizard
+        ;; works —checking, waiting for a slot, rebuilding— and determinate
+        ;; while it uploads, which is the only percentage it really knows
+        bar? (contains? #{:check :upload :queued :importing} phase)]
+
+    (when (some? phase)
+      [:div {:class (stl/css :phase-header)}
+       [:> heading* {:level 3
+                     :typography t/headline-medium
+                     :class (stl/css :phase-title)}
+        title]
+       [:> text* {:as "p"
+                  :typography t/body-medium
+                  :class (stl/css :phase-message)}
+        desc]
+       (when bar?
+         [:div {:class (stl/css-case :progress-bar true
+                                     :determinate (some? pct))
+                :role "progressbar"
+                :aria-valuemin 0
+                :aria-valuemax 100
+                :aria-valuenow pct}
+          [:div {:class (stl/css :progress-fill)
+                 :style (when (some? pct)
+                          #js {:width (str pct "%")})}]])])))
+
 (mf/defc import-files-stage*
   {::mf/private true}
-  [{:keys [entries template status errors? import-success-total auto-linked-count
+  [{:keys [entries template status step errors? import-success-total auto-linked-count
            edition on-edit on-change on-delete
-           on-cancel on-continue on-accept pending-analysis?]}]
+           on-cancel on-cancel-import on-continue on-accept pending-analysis?]}]
   [:*
+   [:> import-steps* {:step step}]
    [:div {:class (stl/css :modal-content)}
+    [:> import-phase-header* {:status status
+                              :step step
+                              :entries entries
+                              :template template}]
     (when (and (= :analyze status) errors?)
       [:> context-notification*
        {:level :warning
@@ -602,7 +703,8 @@
         :class (stl/css :context-notification-error)}
        (tr "dashboard.import.import-error.disclaimer")])
 
-    (if (or (= :import-error status) (and (= :analyze status) errors?))
+    (cond
+      (or (= :import-error status) (and (= :analyze status) errors?))
       [:div {:class (stl/css :import-error-disclaimer)}
        [:div (tr "dashboard.import.import-error.message1")]
        [:ul {:class (stl/css :import-error-list)}
@@ -626,26 +728,24 @@
                   (tr "dashboard.import.import-error.unknown-error"))])]))]
        [:div (tr "dashboard.import.import-error.message2")]]
 
+      (imp/awaiting-analysis? status errors?)
+      ;; while checking, the phase header carries the message: no rows,
+      ;; no spinners
+      nil
+
+      :else
       (for [entry entries]
         [:> import-entry* {:edition edition
                            :key (dm/str (:uri entry) "/" (:file-id entry))
                            :entry entry
                            :entries entries
-                           :is-progress (= :import-progress status)
                            :on-edit on-edit
                            :on-change on-change
-                           :on-delete on-delete
-                           :can-be-deleted (> (count entries) 1)}]))
+                           :on-delete on-delete}]))
 
-    (when (some? template)
-      [:> import-entry* {:entry (assoc template :status status)
-                         :can-be-deleted false}])
-
-    (when (= :import-progress status)
-      [:div {:class (stl/css :status-message)
-             :role "status"
-             :aria-live "polite"}
-       (tr "labels.uploading-file")])]
+    (when (and (some? template)
+               (not (imp/awaiting-analysis? status errors?)))
+      [:> import-entry* {:entry (assoc template :status status)}])]
 
    [:div {:class (stl/css :modal-footer)}
     [:div {:class (stl/css :action-buttons)}
@@ -664,11 +764,16 @@
         (tr "labels.continue")]
 
        :import-progress
-       [:> button* {:class (stl/css :accept-btn)
-                    :variant "primary"
-                    :disabled true
-                    :on-click on-accept}
-        (tr "labels.accept")]
+       [:*
+        [:> button* {:class (stl/css :cancel-button)
+                     :variant "secondary"
+                     :on-click on-cancel-import}
+         (tr "labels.cancel")]
+        [:> button* {:class (stl/css :accept-btn)
+                     :variant "primary"
+                     :disabled true
+                     :on-click on-accept}
+         (tr "labels.accept")]]
 
        (:import-success :import-error)
        [:> button* {:class (stl/css :accept-btn)
@@ -749,6 +854,20 @@
         status*     (mf/use-state :analyze)
         status      (deref status*)
 
+        ;; the analysis of the dropped files reached its end: only then the
+        ;; wizard knows every file it is going to import
+        analysis-ended*
+        (mf/use-state false)
+        analysis-ended?
+        (deref analysis-ended*)
+
+        ;; Jobs created while importing, to cancel them on demand, and
+        ;; the subscription to their messages, to stop listening.
+        jobs*       (mf/use-state #{})
+        jobs        (deref jobs*)
+        sub*        (mf/use-state nil)
+        sub         (deref sub*)
+
         edition*    (mf/use-state nil)
         edition     (deref edition*)
 
@@ -795,8 +914,10 @@
          (mf/deps entries)
          (fn []
            (let [entries (filterv has-status-ready? entries)]
+             (reset! jobs* #{})
              (reset! status* :import-progress)
-             (import-files state* resolution* project-id entries))))
+             (reset! sub* (import-files state* resolution* project-id entries
+                                        #(swap! jobs* conj %))))))
 
         continue-template
         (mf/use-fn
@@ -841,13 +962,33 @@
          (fn [file-id]
            (swap! state* remove-entry file-id)))
 
+        on-cancel-import
+        (mf/use-fn
+         (mf/deps jobs sub)
+         (fn [event]
+           (dom/prevent-default event)
+           ;; stop listening first, so no late message repaints the
+           ;; entries of a dialog that is going away
+           (when (some? sub)
+             (rx/dispose! sub))
+           ;; a job may have just finished on its own: failures are
+           ;; ignored and an empty run cancels nothing
+           (run! dj/cancel-job jobs)
+           (reset! jobs* #{})
+           (reset! sub* nil)
+           (st/emit! (modal/hide))))
+
         on-cancel
         (mf/use-fn
-         (mf/deps edition)
+         (mf/deps edition status on-cancel-import)
          (fn [event]
            (when (nil? edition)
-             (dom/prevent-default event)
-             (st/emit! (modal/hide)))))
+             (if (= :import-progress status)
+               ;; closing mid-import stops the jobs, like Cancel
+               (on-cancel-import event)
+               (do
+                 (dom/prevent-default event)
+                 (st/emit! (modal/hide)))))))
 
         on-continue
         (mf/use-fn
@@ -864,22 +1005,17 @@
          (mf/deps resolution selection on-finish-import)
          (fn [event]
            (dom/prevent-default event)
-           (let [slc selection]
-             ;; For each file with pending candidates, link it to the selected libraries
-             (->> (rx/from (seq resolution))
-                  (rx/merge-map
-                   (fn [[file-id resolution-file]]
-                     (->> (rx/from (:pending resolution-file))
-                          (rx/merge-map
-                           (fn [{:keys [id]}]
-                             (when-let [selected-lib (get-in slc [file-id id])]
-                               (link-files-to-library! [file-id] selected-lib)))))))
-                  (rx/subs! (constantly nil)
-                            (constantly nil)
-                            (fn []
-                              (st/emit! (modal/hide))
-                              (when (fn? on-finish-import)
-                                (on-finish-import))))))))
+           ;; For each file with pending candidates, link it to the selected libraries
+           (->> (rx/from (pending-library-links resolution selection))
+                (rx/merge-map
+                 (fn [{:keys [file-id library-id]}]
+                   (link-files-to-library! [file-id] library-id)))
+                (rx/subs! (constantly nil)
+                          (constantly nil)
+                          (fn []
+                            (st/emit! (modal/hide))
+                            (when (fn? on-finish-import)
+                              (on-finish-import)))))))
 
         on-wizard-next
         (mf/use-fn
@@ -960,13 +1096,12 @@
                  (every? #(contains? visited (:id %)) unresolved-files))
         (reset! status* :library-summary)))
 
-    (mf/with-effect [entries resolution]
+    (mf/with-effect [entries resolution analysis-ended?]
       (cond
         (some? template)
         (reset! status* :import-ready)
 
-        (and (seq entries)
-             (every? #(= :import-ready (:status %)) entries))
+        (imp/ready-to-import? entries analysis-ended?)
         (reset! status* :import-ready)
 
         (and (seq entries)
@@ -983,7 +1118,7 @@
 
     ;; Run analyze operation on component mount
     (mf/with-effect []
-      (let [sub (analyze-entries state* entries)]
+      (let [sub (analyze-entries state* entries #(reset! analysis-ended* true))]
         (partial rx/dispose! sub)))
 
     [:div {:class (stl/css :modal-overlay)}
@@ -992,7 +1127,7 @@
        [:> heading* {:level 2
                      :typography t/headline-large
                      :class (stl/css :modal-title)}
-        (tr "dashboard.import")]
+        (tr "dashboard.import.title")]
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "labels.close")
                          :on-click on-cancel
@@ -1005,6 +1140,7 @@
          {:entries entries
           :template template
           :status status
+          :step (imp/import-step status entries)
           :errors? errors?
           :import-success-total import-success-total
           :auto-linked-count auto-linked-count
@@ -1013,28 +1149,33 @@
           :on-change on-entry-change
           :on-delete on-entry-delete
           :on-cancel on-cancel
+          :on-cancel-import on-cancel-import
           :on-continue on-continue
           :on-accept on-accept
           :pending-analysis? pending-analysis?}]
 
         :library-resolution
-        [:> import-library-resolution-stage*
-         {:current-unresolved-file current-unresolved-file
-          :selection selection
-          :on-select manage-on-select
-          :on-disconnect manage-on-disconnect
-          :visited visited
-          :last-file? last-unresolved-file?
-          :on-wizard-prev on-wizard-prev
-          :on-wizard-next on-wizard-next
-          :on-wizard-skip on-wizard-skip}]
+        [:*
+         [:> import-steps* {:step :import}]
+         [:> import-library-resolution-stage*
+          {:current-unresolved-file current-unresolved-file
+           :selection selection
+           :on-select manage-on-select
+           :on-disconnect manage-on-disconnect
+           :visited visited
+           :last-file? last-unresolved-file?
+           :on-wizard-prev on-wizard-prev
+           :on-wizard-next on-wizard-next
+           :on-wizard-skip on-wizard-skip}]]
 
         :library-summary
-        [:> import-library-summary-stage*
-         {:resolution resolution
-          :selection selection
-          :visited visited
-          :on-summary-back on-summary-back
-          :on-confirm-library-links on-confirm-library-links}]
+        [:*
+         [:> import-steps* {:step :import}]
+         [:> import-library-summary-stage*
+          {:resolution resolution
+           :selection selection
+           :visited visited
+           :on-summary-back on-summary-back
+           :on-confirm-library-links on-confirm-library-links}]]
 
         nil)]]))

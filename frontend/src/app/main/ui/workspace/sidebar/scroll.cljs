@@ -27,6 +27,12 @@
   (when-let [target (dom/get-target event)]
     (swap! store* assoc k (.-scrollTop target))))
 
+(defn forget-scroll!
+  "Drops the position saved under k, so the next restore starts at the
+  top. Plain swap!, never triggers renders."
+  [store* k]
+  (swap! store* dissoc k))
+
 (defn needs-restore-retry?
   "Pure decision for the restore loop: keep retrying while the content
   height is still changing (lazily rendered lists) and attempts remain."
@@ -59,12 +65,19 @@
   panel or id change. Retries while the content height keeps changing so
   deep positions in lazily rendered lists are not clamped to the first
   chunk. With no saved position the node goes to the top. Missing node is
-  a silent no-op."
-  [store* panel id node-ref]
-  (mf/with-effect [panel id]
-    (let [raf* (volatile! nil)]
-      (when-let [node (mf/ref-val node-ref)]
-        (restore-position! node (get @store* [panel id]) raf*))
-      (fn []
-        (when-some [raf @raf*]
-          (tm/cancel-af! raf))))))
+  a silent no-op.
+
+  `active?` is for panels that swap lists in place: pass whether the list
+  behind node-ref is shown, so its position is restored again each time
+  it comes back. Nothing is restored while it is false."
+  ([store* panel id node-ref]
+   (use-restore-scroll store* panel id node-ref true))
+  ([store* panel id node-ref active?]
+   (mf/with-effect [panel id active?]
+     (let [raf* (volatile! nil)]
+       (when ^boolean active?
+         (when-let [node (mf/ref-val node-ref)]
+           (restore-position! node (get @store* [panel id]) raf*)))
+       (fn []
+         (when-some [raf @raf*]
+           (tm/cancel-af! raf)))))))

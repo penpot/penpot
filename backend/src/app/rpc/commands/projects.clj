@@ -222,8 +222,9 @@
                       ::quotes/profile-id profile-id
                       ::quotes/team-id team-id})
 
-  (let [params (assoc params :profile-id profile-id)]
-    (db/tx-run! cfg create-project params)))
+  (let [params  (assoc params :profile-id profile-id)
+        project (db/tx-run! cfg create-project params)]
+    (rph/with-meta project {::audit/props {:id (:id project)}})))
 
 ;; --- MUTATION: Toggle Project Pin
 

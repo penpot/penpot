@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.geom.image-crop :as gic]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
@@ -34,6 +35,7 @@
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.data.persistence.lock :as plk]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.selection :as dws]
@@ -47,7 +49,6 @@
    [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
-   [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -148,6 +149,16 @@
     (effect [_ _ _]
       (ms/clear-transform-preview!))))
 
+(defn cancel-transform
+  "Drops the preview of a cancelled drag, so its shapes stay where they
+  were and nothing is committed."
+  []
+  (ptk/reify ::cancel-transform
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (dwm/clear-local-transform)
+             (finish-transform)))))
+
 ;; -- Resize --------------------------------------------------------
 
 (defn- shape-has-image-fill?
@@ -213,10 +224,29 @@
                   ;; Resize origin point given the selected handler
                   selrect         (dm/get-prop shape :selrect)
                   handler-origin  (get-handler-resize-origin selrect handler)
+                  selrect-start   (gpt/point (dm/get-prop selrect :x) (dm/get-prop selrect :y))
+
+                  ;; Image crop (mod key): the shape is a window over a
+                  ;; picture that keeps its size and position. Dragging an
+                  ;; edge past the fixed one moves the window to the other
+                  ;; side instead of flipping it.
+                  crop-origin   (if ^boolean center?
+                                  (gpt/point (/ width 2) (/ height 2))
+                                  (gpt/subtract handler-origin selrect-start))
+                  [crop-dx crop-w] (gic/crop-axis width (dm/get-prop crop-origin :x) (dm/get-prop scalev :x))
+                  [crop-dy crop-h] (gic/crop-axis height (dm/get-prop crop-origin :y) (dm/get-prop scalev :y))
+
+                  scalev        (if ^boolean bounds-resize?
+                                  (gpt/point (/ crop-w width) (/ crop-h height))
+                                  scalev)
 
                   ;; If we want resize from center, displace the shape
                   ;; so it is still centered after resize.
-                  displacement  (when ^boolean center?
+                  displacement  (cond
+                                  ^boolean bounds-resize?
+                                  (gpt/transform (gpt/point crop-dx crop-dy) shape-transform)
+
+                                  ^boolean center?
                                   (-> shape-center
                                       (gpt/subtract handler-origin)
                                       (gpt/multiply scalev)
@@ -225,7 +255,10 @@
                                       (gpt/multiply (gpt/point -1 -1))
                                       (gpt/transform shape-transform)))
 
-                  resize-origin (gmt/transform-point-center handler-origin shape-center shape-transform)
+                  resize-origin (gmt/transform-point-center
+                                 (if ^boolean bounds-resize? selrect-start handler-origin)
+                                 shape-center
+                                 shape-transform)
                   resize-origin (if (some? displacement)
                                   (gpt/add resize-origin displacement)
                                   resize-origin)
@@ -243,57 +276,23 @@
                   change-height?
                   (not (mth/close? (dm/get-prop scalev :y) 1))
 
-                  ;; Calculate independent image bounds resize transform
-                  sx (dm/get-prop scalev :x)
-                  sy (dm/get-prop scalev :y)
-                  w-new (* width sx)
-                  h-new (* height sy)
-
-                  bounds-resize? (and ^boolean bounds-resize?
-                                      (pos? w-new)
-                                      (pos? h-new))
-
-                  [dx dy] (if ^boolean center?
-                            [(/ (* width (- 1.0 sx)) 2.0)
-                             (/ (* height (- 1.0 sy)) 2.0)]
-                            [(case handler
-                               (:left :bottom-left :top-left) (* width (- 1.0 sx))
-                               0.0)
-                             (case handler
-                               (:top :top-left :top-right) (* height (- 1.0 sy))
-                               0.0)])
+                  ;; Keep the picture in place inside the new crop window
+                  update-image
+                  (fn [img-fill]
+                    (update img-fill :transform gic/update-image-transform
+                            width height crop-dx crop-dy crop-w crop-h))
 
                   new-fills
-                  (when (and bounds-resize? (seq (:fills shape)))
+                  (when (and ^boolean bounds-resize? (seq (:fills shape)))
                     (mapv (fn [fill]
-                            (if-let [img-fill (:fill-image fill)]
-                              (let [tf (get img-fill :transform)
-                                    nx0 (get tf :x 0.0)
-                                    ny0 (get tf :y 0.0)
-                                    nw0 (get tf :width 1.0)
-                                    nh0 (get tf :height 1.0)
-                                    nx' (/ (- (* nx0 width) dx) w-new)
-                                    ny' (/ (- (* ny0 height) dy) h-new)
-                                    nw' (/ nw0 sx)
-                                    nh' (/ nh0 sy)]
-                                (assoc-in fill [:fill-image :transform]
-                                          {:x nx' :y ny' :width nw' :height nh'}))
-                              fill))
+                            (cond-> fill
+                              (some? (:fill-image fill))
+                              (update :fill-image update-image)))
                           (:fills shape)))
 
                   new-fill-image
-                  (when (and bounds-resize? (some? (:fill-image shape)))
-                    (let [img-fill (:fill-image shape)
-                          tf (get img-fill :transform)
-                          nx0 (get tf :x 0.0)
-                          ny0 (get tf :y 0.0)
-                          nw0 (get tf :width 1.0)
-                          nh0 (get tf :height 1.0)
-                          nx' (/ (- (* nx0 width) dx) w-new)
-                          ny' (/ (- (* ny0 height) dy) h-new)
-                          nw' (/ nw0 sx)
-                          nh' (/ nh0 sy)]
-                      (assoc img-fill :transform {:x nx' :y ny' :width nw' :height nh'})))]
+                  (when (and ^boolean bounds-resize? (some? (:fill-image shape)))
+                    (update-image (:fill-image shape)))]
 
               (cond-> (ctm/empty)
                 (some? displacement)
@@ -352,13 +351,14 @@
           (rx/empty)
           (let [initial-position @ms/mouse-position
 
-                stopper (mse/drag-stopper stream)
-                layout  (:workspace-layout state)
-                page-id (:current-page-id state)
-                focus   (:workspace-focus-selected state)
-                zoom    (dm/get-in state [:workspace-local :zoom] 1)
-                objects (dsh/lookup-page-objects state page-id)
-                shape-ids (filterv (comp not :blocked (d/getf objects)) ids)]
+                cancelled? (volatile! false)
+                stopper    (plk/gesture-stopper stream cancelled?)
+                layout     (:workspace-layout state)
+                page-id    (:current-page-id state)
+                focus      (:workspace-focus-selected state)
+                zoom       (dm/get-in state [:workspace-local :zoom] 1)
+                objects    (dsh/lookup-page-objects state page-id)
+                shape-ids  (filterv (comp not :blocked (d/getf objects)) ids)]
 
             (if (empty? shape-ids)
               (rx/empty)
@@ -395,6 +395,7 @@
                        (->> resize-events-stream
                             (rx/take-until stopper)
                             (rx/last)
+                            (rx/filter (fn [_] (not @cancelled?)))
                             (rx/map
                              #(dwm/apply-wasm-modifiers
                                (dwm/create-modif-tree shape-ids %)
@@ -427,13 +428,17 @@
                       (rx/take-until stopper)
                       (rx/mapcat (fn [] modifiers-stream)))
 
-                 (if (features/active-feature? state "render-wasm/v1")
-                   (rx/of
-                    (finish-transform))
+                 (rx/defer
+                  #(cond
+                     @cancelled?
+                     (rx/of (cancel-transform))
 
-                   (rx/of
-                    (dwm/apply-modifiers)
-                    (finish-transform))))))))))))
+                     (features/active-feature? state "render-wasm/v1")
+                     (rx/of (finish-transform))
+
+                     :else
+                     (rx/of (dwm/apply-modifiers)
+                            (finish-transform)))))))))))))
 
 (defn start-move-line-point
   "Drags one endpoint of a straight path while keeping the other fixed."
@@ -452,7 +457,8 @@
             start-point (path.helpers/segment->point (nth content index))
             other-point (path.helpers/segment->point (nth content (if (zero? index) 1 0)))
 
-            stopper     (mse/drag-stopper stream)
+            cancelled?  (volatile! false)
+            stopper     (plk/gesture-stopper stream cancelled?)
 
             ;; Shift constrains the endpoint around the fixed point.
             position-stream
@@ -496,8 +502,10 @@
                (rx/last)
                (rx/mapcat
                 (fn [pos]
-                  (rx/of (move-endpoint start-point false)
-                         (move-endpoint pos true))))))
+                  (if @cancelled?
+                    (rx/of (move-endpoint start-point false))
+                    (rx/of (move-endpoint start-point false)
+                           (move-endpoint pos true)))))))
          (rx/of #(assoc-in % [:workspace-local :transform] nil)))))))
 
 (defn trigger-bounding-box-cloaking
@@ -629,7 +637,8 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stopper         (mse/drag-stopper stream)
+      (let [cancelled?      (volatile! false)
+            stopper         (plk/gesture-stopper stream cancelled?)
             group           (gsh/shapes->rect shapes)
             group-center    (grc/rect->center group)
             initial-angle   (gpt/angle @ms/mouse-position group-center)
@@ -668,10 +677,13 @@
             (->> angle-stream
                  (rx/take-until stopper)
                  (rx/last)
+                 (rx/filter (fn [_] (not @cancelled?)))
                  (rx/map #(dwm/apply-wasm-modifiers (rotation-modifiers % shapes group-center)
                                                     :ignore-snap-pixel true))))
 
-           (rx/of (finish-transform)))
+           (rx/defer #(if @cancelled?
+                        (rx/of (cancel-transform))
+                        (rx/of (finish-transform)))))
 
           (let [emit-modifiers
                 (fn [angle] (dwm/set-rotation-modifiers angle shapes group-center))]
@@ -687,8 +699,10 @@
                    (rx/take-until stopper)
                    (rx/last)
                    (rx/map emit-modifiers)))
-             (rx/of (dwm/apply-modifiers)
-                    (finish-transform)))))))))
+             (rx/defer #(if @cancelled?
+                          (rx/of (cancel-transform))
+                          (rx/of (dwm/apply-modifiers)
+                                 (finish-transform)))))))))))
 
 (defn increase-rotation
   "Rotate shapes a fixed angle, from a keyboard action."
@@ -739,7 +753,7 @@
      (watch [_ state stream]
        (let [initial  (deref ms/mouse-position)
 
-             stopper (mse/drag-stopper stream {:interrupt? false})
+             stopper (plk/gesture-stopper stream (volatile! false) {:interrupt? false})
              zoom    (get-in state [:workspace-local :zoom] 1)
 
              ;; We toggle the selection so we don't have to wait for the event
@@ -832,10 +846,11 @@
 
              duplicate-move-started? (get-in state [:workspace-local :duplicate-move-started?] false)
 
-             stopper (mse/drag-stopper stream)
-             layout  (get state :workspace-layout)
-             zoom    (get-in state [:workspace-local :zoom] 1)
-             focus   (:workspace-focus-selected state)
+             cancelled? (volatile! false)
+             stopper    (plk/gesture-stopper stream cancelled?)
+             layout     (get state :workspace-layout)
+             zoom       (get-in state [:workspace-local :zoom] 1)
+             focus      (:workspace-focus-selected state)
 
              exclude-frames
              (into #{}
@@ -987,15 +1002,17 @@
                        (rx/mapcat
                         (fn [[[_ target-frame drop-index drop-cell] [modifiers snap-ignore-axis]]]
                           (let [undo-id (js/Symbol)]
-                            (rx/of
-                             (dwu/start-undo-transaction undo-id)
-                             (dwm/apply-wasm-modifiers modifiers
-                                                       :snap-ignore-axis snap-ignore-axis
-                                                       :undo-transation? false
-                                                       :subtree-ids-by-id subtree-ids-by-id)
-                             (move-shapes-to-frame ids target-frame drop-index drop-cell)
-                             (finish-transform)
-                             (dwu/commit-undo-transaction undo-id))))))))
+                            (if @cancelled?
+                              (rx/of (cancel-transform))
+                              (rx/of
+                               (dwu/start-undo-transaction undo-id)
+                               (dwm/apply-wasm-modifiers modifiers
+                                                         :snap-ignore-axis snap-ignore-axis
+                                                         :undo-transation? false
+                                                         :subtree-ids-by-id subtree-ids-by-id)
+                               (move-shapes-to-frame ids target-frame drop-index drop-cell)
+                               (finish-transform)
+                               (dwu/commit-undo-transaction undo-id)))))))))
 
                (rx/merge
                 (->> modifiers-stream
@@ -1026,13 +1043,15 @@
                      (rx/mapcat
                       (fn [[[_ target-frame drop-index drop-cell] [modifiers snap-ignore-axis]]]
                         (let [undo-id (js/Symbol)]
-                          (rx/of (dwu/start-undo-transaction undo-id)
-                                 ;; Apply the exact final modifiers; the preview may drop the last frame.
-                                 (dwm/set-modifiers modifiers false false {:snap-ignore-axis snap-ignore-axis})
-                                 (dwm/apply-modifiers {:undo-transation? false})
-                                 (move-shapes-to-frame ids target-frame drop-index drop-cell)
-                                 (finish-transform)
-                                 (dwu/commit-undo-transaction undo-id)))))))))))))))
+                          (if @cancelled?
+                            (rx/of (cancel-transform))
+                            (rx/of (dwu/start-undo-transaction undo-id)
+                                   ;; Apply the exact final modifiers; the preview may drop the last frame.
+                                   (dwm/set-modifiers modifiers false false {:snap-ignore-axis snap-ignore-axis})
+                                   (dwm/apply-modifiers {:undo-transation? false})
+                                   (move-shapes-to-frame ids target-frame drop-index drop-cell)
+                                   (finish-transform)
+                                   (dwu/commit-undo-transaction undo-id))))))))))))))))
 
 (def valid-directions
   #{:up :down :right :left})
@@ -1540,7 +1559,8 @@
                                :element-type (cfh/get-selected-type objects ids)
                                :moved moved-count}))))
 
-         (when (and (some? frame-id) (d/not-empty? changes))
+         ;; Shapes that already belong to the frame leave nothing to move
+         (when (and (some? frame-id) (seq ids))
            (rx/of (dch/commit-changes changes)
                   (dwc/expand-collapse frame-id)))
          (when add-component-to-variant?

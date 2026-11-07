@@ -76,11 +76,11 @@
     (when (uuid? session-id)
       (doseq [[idx chunk-data] (map-indexed vector chunks)]
         (let [mfile (make-chunk-mfile chunk-data mtype)
-              out   (th/command! {::th/type        :upload-chunk
-                                  ::rpc/profile-id (:id prof)
-                                  :session-id      session-id
-                                  :index           idx
-                                  :content         mfile})]
+              out   (th/multipart-command! {::th/type        :upload-chunk
+                                            ::rpc/profile-id (:id prof)
+                                            :session-id      session-id
+                                            :index           idx
+                                            :content         mfile})]
           (t/is (nil? (:error out))))))
     session-id))
 
@@ -140,7 +140,7 @@
 
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
-      (t/is (= 6 (:freeze res))))
+      (t/is (= 8 (:freeze res))))
 
     (let [params {::th/type :delete-font
                   ::rpc/profile-id (:id prof)
@@ -209,7 +209,7 @@
 
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
-      (t/is (= 6 (:freeze res))))
+      (t/is (= 8 (:freeze res))))
 
     (let [params {::th/type :delete-font
                   ::rpc/profile-id (:id prof)
@@ -260,7 +260,7 @@
     ;; freeze with hours 3 clock
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
-      (t/is (= 6 (:freeze res))))
+      (t/is (= 8 (:freeze res))))
 
     (let [params {::th/type :delete-font-variant ::rpc/profile-id (:id prof)
                   :team-id team-id :id (-> out1 :result :id)}
@@ -438,11 +438,11 @@
       ;; Upload all real chunks except the last one (omit it so the session is incomplete)
       (doseq [[idx chunk-data] (map-indexed vector (butlast chunks))]
         (let [mfile (make-chunk-mfile chunk-data "font/ttf")
-              out   (th/command! {::th/type        :upload-chunk
-                                  ::rpc/profile-id (:id prof)
-                                  :session-id      session-id
-                                  :index           idx
-                                  :content         mfile})]
+              out   (th/multipart-command! {::th/type        :upload-chunk
+                                            ::rpc/profile-id (:id prof)
+                                            :session-id      session-id
+                                            :index           idx
+                                            :content         mfile})]
           (t/is (nil? (:error out)))))
 
       (let [out (th/command! {::th/type    :create-font-variant

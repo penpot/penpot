@@ -4,15 +4,40 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
+import * as ErrorUtils from "./ErrorUtils.ts";
 import { shouldReconnectAfterClose } from "./ReconnectPolicy.ts";
 import { SessionId } from "./SessionId.ts";
 import { SessionIdDisplay } from "./SessionIdDisplay.ts";
+import * as VersionCompatibility from "./VersionCompatibility.ts";
 
 /** Compiles the actual plugin entry point for a simulated browser boundary. */
 function compile(name: string) {
     return ts.transpileModule(readFileSync(new URL(name, import.meta.url), "utf8"), {
         compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
     }).outputText;
+}
+
+/** Exports of a compiled module that Node's type stripping cannot load directly. */
+function compiledModule(name: string) {
+    const exports = {};
+    runInNewContext(compile(name), { exports });
+    return exports;
+}
+
+/** Resolves the imports of `plugin.ts`, stubbing the code execution handler and the rollback log. */
+function pluginRequire(name: string) {
+    if (name === "./task-handlers/ExecuteCodeTaskHandler") return { ExecuteCodeTaskHandler: class {} };
+    if (name === "./TaskHandler") return compiledModule("TaskHandler.ts");
+    if (name === "./ErrorUtils") return ErrorUtils;
+    if (name === "./VersionCompatibility") return VersionCompatibility;
+    if (name === "./RollbackLog")
+        return {
+            LocalStorageRollbackStore: class {},
+            RollbackLog: class {
+                listen() {}
+            },
+        };
+    throw new Error(`Unexpected import: ${name}`);
 }
 
 function pluginUi() {
@@ -92,7 +117,7 @@ test("sends file metadata before marking a plugin connection ready", async () =>
     };
     await ui.message(initialization);
     const registeredSession = ui.sockets[0].sent[0].session;
-    assert.equal(registeredSession.sessionId, "pq3gxqddgj");
+    assert.equal(registeredSession.sessionId, "ftdmhltgwk");
     assert.notEqual(registeredSession.sessionId, sessionId);
     assert.deepEqual(registeredSession, { ...initialization.session, sessionId: registeredSession.sessionId });
     assert.equal(
@@ -100,7 +125,10 @@ test("sends file metadata before marking a plugin connection ready", async () =>
         false
     );
     ui.sockets[0].receive({ type: "initialized" });
-    assert.equal(ui.messages.at(-1).status, "connected");
+    assert.equal(
+        ui.messages.filter((message) => message.type === "update-connection-status").at(-1).status,
+        "connected"
+    );
 });
 
 test("reconnects with the same session ID and ignores metadata for the old socket", async () => {
@@ -144,6 +172,17 @@ test("resume and freeze events cannot send liveness messages before initializati
     assert.deepEqual(ui.sockets[0].sent, [{ type: "heartbeat" }]);
 });
 
+test("answers heartbeat requests once initialized, without forwarding them to the plugin", () => {
+    const ui = pluginUi();
+    ui.connect();
+    ui.sockets[0].receive({ type: "heartbeat-request" });
+    assert.deepEqual(ui.sockets[0].sent, []);
+    ui.sockets[0].receive({ type: "initialized" });
+    ui.sockets[0].receive({ type: "heartbeat-request" });
+    assert.deepEqual(ui.sockets[0].sent, [{ type: "heartbeat" }]);
+    assert.equal(ui.messages.filter((message) => message.type === "heartbeat-request").length, 0);
+});
+
 test("plugin reads the current file for each connection metadata request", () => {
     let onMessage!: (message: any) => void;
     const messages: any[] = [];
@@ -163,8 +202,14 @@ test("plugin reads the current file for each connection metadata request", () =>
     runInNewContext(compile("plugin.ts"), {
         exports: {},
         penpot,
+        penpotMgmt: {
+            get workspace() {
+                return { status: "ready", fileId: penpot.currentFile.id, fileName: penpot.currentFile.name };
+            },
+            on() {},
+        },
         mcp: undefined,
-        require: () => ({ ExecuteCodeTaskHandler: class {} }),
+        require: pluginRequire,
     });
     onMessage({ type: "connection-metadata-request", sessionId: "first" });
     penpot.currentFile = { id: "file-2", name: "Second design" };
@@ -173,17 +218,55 @@ test("plugin reads the current file for each connection metadata request", () =>
         {
             type: "initialize",
             penpotUserSessionId: "tab-1",
-            session: { sessionId: "first", fileId: "file-1", fileName: "First design" },
+            session: { sessionId: "first", fileId: "file-1", fileName: "First design", workspaceState: "ready" },
         },
         {
             type: "initialize",
             penpotUserSessionId: "tab-1",
-            session: { sessionId: "second", fileId: "file-2", fileName: "Second design" },
+            session: { sessionId: "second", fileId: "file-2", fileName: "Second design", workspaceState: "ready" },
         },
     ]);
 });
 
-test("integrated connections reuse the short ID across reconnects", async () => {
+test("plugin without penpotMgmt derives metadata from the open file", () => {
+    let onMessage!: (message: any) => void;
+    const messages: any[] = [];
+    const penpot = {
+        currentFile: { id: "file-1", name: "Design" } as { id: string; name: string } | null,
+        currentUser: { sessionId: "tab-1" },
+        theme: "dark",
+        ui: {
+            open() {},
+            onMessage: (handler: (message: any) => void) => {
+                onMessage = handler;
+            },
+            sendMessage: (message: any) => messages.push(JSON.parse(JSON.stringify(message))),
+        },
+        on() {},
+    };
+    runInNewContext(compile("plugin.ts"), {
+        exports: {},
+        penpot,
+        mcp: undefined,
+        require: pluginRequire,
+    });
+    onMessage({ type: "connection-metadata-request", sessionId: "first" });
+    penpot.currentFile = null;
+    onMessage({ type: "context-request" });
+    assert.deepEqual(messages, [
+        {
+            type: "initialize",
+            penpotUserSessionId: "tab-1",
+            session: { sessionId: "first", fileId: "file-1", fileName: "Design", workspaceState: "ready" },
+        },
+        {
+            type: "context-update",
+            context: { fileId: null, fileName: null, workspaceState: "none" },
+        },
+    ]);
+});
+
+test("integrated connections reuse the short session ID across reconnects", async () => {
     const ui = pluginUi();
     ui.message({ type: "mcp-mode", integratedRemoteMcp: true });
     const initialize = async (requestId: string) => {
@@ -194,15 +277,18 @@ test("integrated connections reuse the short ID across reconnects", async () => 
         });
     };
     await initialize(ui.connect());
-    assert.equal(ui.sockets[0].sent[0].session.sessionId, "pq3gxqddgj");
+    assert.equal(ui.sockets[0].sent[0].session.sessionId, "ftdmhltgwk");
     ui.sockets[0].receive({ type: "initialized" });
-    assert.equal(ui.messages.at(-1).sessionId, "pq3gxqddgj");
+    assert.equal(
+        ui.messages.filter((message) => message.type === "update-connection-status").at(-1).sessionId,
+        "ftdmhltgwk"
+    );
     ui.sockets[0].close();
     [...ui.timers.values()][0]();
     ui.sockets[1].open();
     const requestId = ui.messages.filter((message) => message.type === "connection-metadata-request").at(-1).sessionId;
     await initialize(requestId);
-    assert.equal(ui.sockets[1].sent[0].session.sessionId, "pq3gxqddgj");
+    assert.equal(ui.sockets[1].sent[0].session.sessionId, "ftdmhltgwk");
 });
 
 test("disconnect cancels metadata initialization and ignores a late acknowledgement", async () => {
@@ -216,8 +302,9 @@ test("disconnect cancels metadata initialization and ignores a late acknowledgem
     });
     ui.message({ type: "stop-server" });
     await pending;
-    ui.sockets[0].receive({ type: "initialized" });
     assert.deepEqual(ui.sockets[0].sent, []);
+    ui.sockets[0].receive({ type: "initialized" });
+    assert.ok(!ui.messages.some((message) => message.status === "connected"));
     assert.equal(ui.messages.at(-1).status, "disconnected");
     assert.equal(ui.timers.size, 0);
 });
@@ -243,6 +330,7 @@ test("integrated plugin stays idle until explicitly connected, including while t
             },
             on() {},
         },
+        penpotMgmt: { on() {} },
         mcp: {
             getToken: () => "test-token",
             getServerUrl: () => "ws://localhost:4402",
@@ -250,7 +338,7 @@ test("integrated plugin stays idle until explicitly connected, including while t
             setMcpStatus: (status: string) => statuses.push(status),
             on: (event: string, callback: () => void) => events.set(event, callback),
         },
-        require: () => ({ ExecuteCodeTaskHandler: class {} }),
+        require: pluginRequire,
     });
     assert.ok(!statuses.includes("connecting"));
     events.get("connect")!();
@@ -280,7 +368,10 @@ test("standalone session ID survives reconnects and plugin restarts in the same 
     });
     assert.equal(ui.sockets[1].sent[0].session.sessionId, sessionId);
     ui.sockets[1].receive({ type: "initialized" });
-    assert.equal(ui.messages.at(-1).sessionId, sessionId);
+    assert.equal(
+        ui.messages.filter((message) => message.type === "update-connection-status").at(-1).sessionId,
+        sessionId
+    );
 
     const next = pluginUi();
     const nextRequestId = next.connect();
@@ -290,4 +381,38 @@ test("standalone session ID survives reconnects and plugin restarts in the same 
         session: { sessionId: nextRequestId, fileId: "file-1", fileName: "Design" },
     });
     assert.equal(next.sockets[0].sent[0].session.sessionId, sessionId);
+});
+
+test("file metadata does not affect the short session ID", async () => {
+    for (const fileId of [null, "file-1", "file-2"]) {
+        const ui = pluginUi();
+        const requestId = ui.connect();
+        await ui.message({
+            type: "initialize",
+            penpotUserSessionId: "tab-1",
+            session: { sessionId: requestId, fileId, fileName: fileId },
+        });
+        assert.equal(ui.sockets[0].sent[0].session.sessionId, "ftdmhltgwk");
+    }
+});
+
+test("dashboard sessions use the short session ID and publish context changes without reconnecting", async () => {
+    const ui = pluginUi();
+    const requestId = ui.connect();
+    await ui.message({
+        type: "initialize",
+        penpotUserSessionId: "tab-1",
+        session: { sessionId: requestId, fileId: null, fileName: null, workspaceState: "none" },
+    });
+    assert.equal(ui.sockets[0].sent[0].session.sessionId, "ftdmhltgwk");
+    ui.sockets[0].receive({ type: "initialized" });
+    assert.equal(ui.messages.at(-1).type, "context-request");
+    for (const context of [
+        { fileId: "file-1", fileName: "Design", workspaceState: "ready" },
+        { fileId: null, fileName: null, workspaceState: "none" },
+    ]) {
+        await ui.message({ type: "context-update", context });
+        assert.deepEqual(ui.sockets[0].sent.at(-1), { type: "context-update", context });
+    }
+    assert.equal(ui.sockets.length, 1);
 });

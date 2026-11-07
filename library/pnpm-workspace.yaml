@@ -4,3 +4,5 @@ minimumReleaseAgeExclude:
   - brace-expansion@5.0.8 || 5.0.9
 patchedDependencies:
   '@zip.js/zip.js@2.8.34': patches/@zip.js__zip.js@2.8.11.patch
+overrides:
+  shell-quote@>=1.8.4 <1.11.0: ^1.11.0

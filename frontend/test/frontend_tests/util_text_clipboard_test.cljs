@@ -9,6 +9,8 @@
    survives; the documents come from jsdom since the runner has no DOM."
   (:require
    ["jsdom" :refer [JSDOM]]
+   [app.common.types.text :as txt]
+   [app.common.uuid :as uuid]
    [app.util.text.clipboard :as clipboard]
    [cljs.test :as t :include-macros true]))
 
@@ -174,3 +176,147 @@
   (t/testing "empty paragraphs stay empty"
     (t/is (= [(paragraph)]
              (clipboard/without-overrides [(paragraph)])))))
+
+;; --- Penpot payload
+
+(def ^:private file-id (uuid/next))
+(def ^:private team-id (uuid/next))
+
+(defn- text-content [& spans]
+  {:type "root"
+   :children [{:type "paragraph-set"
+               :children [{:type "paragraph" :text-align "center" :children (vec spans)}]}]})
+
+(def ^:private gradient-span
+  {:text "Ñandú 😀 \"<b>\""
+   :font-id "custom-6e2c1a5e-1c1e-4b54-9c64-2a8c5f1a4c11"
+   :font-family "Brand Sans"
+   :font-variant-id "bold"
+   :font-weight "700"
+   :font-style "italic"
+   :fills [{:fill-color-gradient {:type :linear :start-x 0 :start-y 0 :end-x 1 :end-y 1 :width 1
+                                  :stops [{:color "#ff0000" :opacity 1 :offset 0}
+                                          {:color "#0000ff" :opacity 1 :offset 1}]}
+            :fill-opacity 1}]})
+
+(t/deftest payload-round-trip
+  (let [content (text-content gradient-span)
+        hidden  (clipboard/payload->html content file-id team-id)]
+    (t/testing "the payload decodes back to the same content, file and team"
+      (t/is (= {:type :copied-text :version 1 :file-id file-id :team-id team-id :content content}
+               (clipboard/html->payload (str "<meta charset=\"utf-8\">" hidden "Hello")))))
+
+    (t/testing "it survives the markup browsers add around it"
+      (let [safari (-> hidden
+                       (.replace "></span>" " style=\"color: rgb(0, 0, 0); font-size: medium;\"></span>"))]
+        (t/is (= content
+                 (:content (clipboard/html->payload
+                            (str "<head><meta charset=\"UTF-8\"></head>" safari "Hello")))))))))
+
+(t/deftest payload-geometry-round-trip
+  (let [content  (text-content gradient-span)
+        geometry {:origins [[{:x 12.5 :y 0.2 :box {:width 200 :height 40}}]]}
+        hidden   (clipboard/payload->html content file-id team-id geometry)]
+    (t/testing "the payload keeps where the copied spans sat in their text box"
+      (t/is (= geometry (:geometry (clipboard/html->payload hidden)))))
+    (t/testing "the content stays as copied"
+      (t/is (= content (:content (clipboard/html->payload hidden)))))))
+
+(t/deftest html-without-payload
+  (t/testing "HTML without a payload, or with a broken one, gives nil"
+    (t/is (nil? (clipboard/html->payload "<p>Hello</p>")))
+    (t/is (nil? (clipboard/html->payload "<span data-penpot-text=\"bm90IHRyYW5zaXQ=\"></span>")))
+    (t/is (nil? (clipboard/html->payload nil)))))
+
+(defn- tampered-html
+  "Payload markup carrying `payload` as is, as a plugin could write it."
+  [{:keys [content file-id team-id geometry]}]
+  (clipboard/payload->html content file-id team-id geometry))
+
+(def ^:private valid-payload
+  {:content (text-content gradient-span) :file-id file-id :team-id team-id})
+
+(t/deftest invalid-payload
+  (t/testing "a valid payload is read"
+    (t/is (some? (clipboard/html->payload (tampered-html valid-payload)))))
+
+  (t/testing "a payload with a broken envelope is dropped"
+    (t/is (nil? (clipboard/html->payload (tampered-html (assoc valid-payload :file-id "file")))))
+    (t/is (nil? (clipboard/html->payload (tampered-html (assoc valid-payload :team-id 42))))))
+
+  (t/testing "a payload whose content a text shape cannot hold is dropped"
+    (t/is (nil? (clipboard/html->payload
+                 (tampered-html (assoc-in valid-payload [:content :children 0 :children] [])))))
+    (t/is (nil? (clipboard/html->payload
+                 (tampered-html (assoc valid-payload :content (text-content (assoc gradient-span :text 42)))))))
+    (t/is (nil? (clipboard/html->payload
+                 (tampered-html (assoc valid-payload :content
+                                       (text-content (assoc gradient-span :fills [{:fill-color "red"}]))))))))
+
+  (t/testing "a payload with geometry that is not plain numbers is dropped"
+    (let [origin {:x 12.5 :y 0.2 :box {:width 200 :height 40}}]
+      (t/is (some? (clipboard/html->payload
+                    (tampered-html (assoc valid-payload :geometry {:origins [[origin]]})))))
+      (t/is (nil? (clipboard/html->payload
+                   (tampered-html (assoc valid-payload :geometry {:origins [[(assoc origin :x "12")]]})))))
+      (t/is (nil? (clipboard/html->payload
+                   (tampered-html (assoc valid-payload :geometry {:origins [[(assoc origin :y ##NaN)]]})))))
+      (t/is (nil? (clipboard/html->payload
+                   (tampered-html (assoc valid-payload :geometry {:origins [[(assoc-in origin [:box :width] nil)]]})))))
+      (t/is (nil? (clipboard/html->payload
+                   (tampered-html (assoc valid-payload :geometry {:origins [[origin]] :extra 1}))))))))
+
+(t/deftest oversized-payload
+  (t/testing "HTML over the paste size limit is not decoded"
+    (let [hidden (clipboard/payload->html (text-content gradient-span) file-id team-id)]
+      (t/is (nil? (clipboard/html->payload
+                   (str hidden (apply str (repeat clipboard/max-paste-html-length "x")))))))))
+
+;; --- Clean-up
+
+(def ^:private image-fill
+  {:fill-image {:id (uuid/next) :width 10 :height 10 :mtype "image/png"} :fill-opacity 1})
+
+(def ^:private red-fill
+  {:fill-color "#ff0000" :fill-opacity 1})
+
+(defn- spans-of [content]
+  (-> content :children first :children first :children))
+
+(t/deftest clean-content
+  (let [library-id (uuid/next)
+        typography {:typography-ref-file library-id :typography-ref-id (uuid/next)}
+        content    (text-content (merge gradient-span typography)
+                                 {:text "img" :fills [image-fill red-fill]}
+                                 {:text "only img" :fills [image-fill]})
+        same       {:valid-file-ids #{library-id} :same-team? true :same-file? true}]
+
+    (t/testing "in the same file nothing changes"
+      (t/is (= content (clipboard/clean-content content same))))
+
+    (t/testing "typographies from unreachable files are dropped"
+      (t/is (nil? (-> (clipboard/clean-content content (assoc same :valid-file-ids #{}))
+                      (spans-of)
+                      (first)
+                      :typography-ref-id))))
+
+    (t/testing "custom fonts from another team become the default font, at the closest variant"
+      (let [span (first (spans-of (clipboard/clean-content content (assoc same :same-team? false))))]
+        (t/is (= {:font-id "sourcesanspro" :font-family "sourcesanspro"
+                  :font-variant-id "bolditalic" :font-weight "700" :font-style "italic"}
+                 (select-keys span [:font-id :font-family :font-variant-id :font-weight :font-style])))
+        (t/is (nil? (:typography-ref-id span)))))
+
+    (t/testing "builtin and google fonts stay in another team"
+      (let [content (text-content (assoc gradient-span :font-id "gfont-roboto" :font-family "Roboto"))]
+        (t/is (= content (clipboard/clean-content content (assoc same :same-team? false))))))
+
+    (t/testing "images from another file are dropped, leaving the default fill when nothing is left"
+      (t/is (= [(:fills gradient-span) [red-fill] (txt/get-default-text-fills)]
+               (map :fills (spans-of (clipboard/clean-content content (assoc same :same-file? false)))))))))
+
+(t/deftest replace-custom-fonts
+  (t/testing "only custom fonts become the default font"
+    (let [content (text-content gradient-span (assoc gradient-span :font-id "gfont-roboto" :font-family "Roboto"))]
+      (t/is (= ["sourcesanspro" "gfont-roboto"]
+               (map :font-id (spans-of (clipboard/replace-custom-fonts content))))))))

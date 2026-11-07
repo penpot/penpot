@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { SessionId } from "./SessionId.ts";
 
-test("derives a stable 50-bit Base32 identifier from the Penpot user session and file", async () => {
-    assert.equal(await SessionId.forFile("tab-1", "file-1"), "pq3gxqddgj");
-    assert.equal(await SessionId.forFile("tab-1", "file-1"), "pq3gxqddgj");
-    assert.equal(await SessionId.forFile("tab-2", "file-1"), "jablgbun4p");
-    assert.equal(await SessionId.forFile("tab-1", "file-2"), "7s3kow4ucx");
+test("derives a stable 50-bit Base32 identifier from only the Penpot user session", async () => {
+    assert.equal(await SessionId.forSession("tab-1"), "ftdmhltgwk");
+    assert.equal(await SessionId.forSession("tab-1"), "ftdmhltgwk");
+    assert.equal(await SessionId.forSession("tab-2"), "cb3oexpdmd");
 });
 
-test("encodes the Penpot user session and file without ambiguous boundaries", async () => {
-    assert.notEqual(await SessionId.forFile("ab", "c"), await SessionId.forFile("a", "bc"));
+test("shortens a UUID session to ten copyable Base32 characters", async () => {
+    const sessionId = await SessionId.forSession("a7457b7c-cf45-80d4-8008-ba5b1d08e6c8");
+    assert.match(sessionId, /^[a-z2-7]{10}$/);
 });

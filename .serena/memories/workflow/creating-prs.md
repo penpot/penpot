@@ -27,7 +27,7 @@ Always add the PR to the Main project (`--project "Main"`) unless the user expli
 PR titles follow commit title conventions:
 
 ```
-:emoji: Subject line (imperative, capitalized, no period, <=70 chars)
+:emoji: Subject line (imperative, capitalized, no period, <=80 chars)
 ```
 
 See `mem:workflow/creating-commits` for emoji codes. Squash merge uses the PR title as the final commit subject, so title format matters.
@@ -66,7 +66,7 @@ The "Note:" line is required at the top. Adjust if this is a manual (non-AI) PR.
 - **Write for humans.** The diff shows what changed. The description explains why.
 - **Be concise.** Focus on reasoning: What was the problem? Why did it happen? How did you solve it?
 - **Prefer bullets over paragraphs.** Short bullet items, grouped by area with bold lead-ins where helpful, are far easier to digest than prose; keep any remaining paragraph to a few sentences.
-- **No manual line wraps.** Markdown renders adapting to the viewport; hard-wrapped lines degrade rendering. One line per paragraph or bullet, however long.
+- **No manual line wraps.** Markdown renders adapting to the viewport; hard-wrapped lines degrade rendering. One line per paragraph or bullet, however long. This applies to PR descriptions and to PR/issue comments and review replies alike.
 - **Skip the obvious.** Don't explain what `git diff` already shows.
 
 ### What NOT to Include

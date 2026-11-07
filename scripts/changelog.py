@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 """
-changelog.py — Helper commands for the ``update-changelog`` skill.
+changelog.py — Helper commands for the changelog flow.
 
 Uses ``scripts/gh.py`` (via subprocess) and the local ``CHANGES.md`` so the
-skill file itself stays free of inline programs.
+flow memory (`mem:workflow/updating-changelog`) stays free of inline programs.
 
 Subcommands:
   check-merged  Verify that every given PR is merged (warns otherwise)
+  boom          Generate the :boom: section from `breaking change` issues
   cross-ref     Compare merged milestone PRs against the changelog section
   report        Generate the anomaly report (CHANGES-ISSUES.md)
 
 Usage:
   python3 scripts/changelog.py check-merged 9179 9204 9311
   cat prs.txt | python3 scripts/changelog.py check-merged --stdin
+  python3 scripts/changelog.py boom "2.19.0"
+  python3 scripts/changelog.py boom "2.19.0" --write
   python3 scripts/changelog.py cross-ref "2.16.0"
   python3 scripts/changelog.py report "2.16.0"
   python3 scripts/changelog.py report "2.16.0" --changes CHANGES.md --output CHANGES-ISSUES.md
@@ -33,6 +36,21 @@ from pathlib import Path
 
 REPO = "penpot/penpot"
 GH_PY = Path(__file__).resolve().parent / "gh.py"
+
+BOOM_HEADING = "### :boom: Breaking changes & Deprecations"
+BREAKING_LABEL = "breaking change"
+EXCLUDED_LABELS = {"release blocker", "no changelog"}
+
+# Marker line of the issue comment that carries the changelog text of a
+# breaking change. Everything after the marker line is the entry content.
+BREAKING_NOTE_RE = re.compile(r"(?im)^#{1,3}[ \t]+Breaking change note[ \t]*$")
+
+# Level used for the headings found inside a breaking change note. Entries
+# themselves are level-4 headings, so note headings must live below them.
+NOTE_HEADING = "#####"
+
+# Emoji prefixes used at the start of issue titles (`:bug:`, `:sparkles:`).
+TITLE_PREFIX_RE = re.compile(r"^(?::[A-Za-z0-9_+-]+:\s*)+")
 
 
 # ─────────────────────────────────────────────
@@ -125,6 +143,84 @@ def collect_changelog_issues(section: str) -> set[int]:
     return numbers
 
 
+def issue_excluded(issue: dict | None) -> bool:
+    """Return True when an issue must stay out of the changelog.
+
+    Shared by the ``report`` and ``boom`` subcommands so the exclusions
+    cannot drift apart.
+    """
+    if not issue:
+        return True
+    if issue.get("state") != "CLOSED":
+        return True
+    if issue.get("issue_type") in {"Task"}:
+        return True
+    if issue.get("project_status") in {"Rejected"}:
+        return True
+    if EXCLUDED_LABELS & set(issue.get("labels", [])):
+        return True
+    return False
+
+
+def extract_breaking_note(comment_body: str | None) -> str | None:
+    """Return the content that follows a ``## Breaking change note`` marker.
+
+    The whole comment is used (paragraphs, lists, code blocks), not just its
+    first paragraph, so a breaking change can be as detailed as needed.
+    """
+    if not comment_body:
+        return None
+    match = BREAKING_NOTE_RE.search(comment_body)
+    if not match:
+        return None
+    content = demote_headings(comment_body[match.end():].strip("\n"))
+    return content.strip() or None
+
+
+def demote_headings(markdown: str) -> str:
+    """Push note headings below the entry heading, leaving code fences alone."""
+    lines: list[str] = []
+    in_fence = False
+    for line in markdown.splitlines():
+        if line.lstrip().startswith(("```", "~~~")):
+            in_fence = not in_fence
+            lines.append(line)
+            continue
+        if not in_fence:
+            match = re.match(r"^#{1,4}([ \t]+.*)$", line)
+            if match:
+                line = NOTE_HEADING + match.group(1)
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def strip_title_prefix(title: str) -> str:
+    """Remove leading emoji shortcodes from a title."""
+    return TITLE_PREFIX_RE.sub("", title).strip()
+
+
+def closing_pr_numbers(issue: dict) -> list[int]:
+    """Return the sorted closing PR numbers of an issue."""
+    return sorted(set(issue.get("closing_prs", [])))
+
+
+def render_boom_entry(
+    issue: dict,
+    note: str | None,
+    pr_numbers: list[int],
+    author: str | None = None,
+) -> str:
+    """Render one ``:boom:`` entry: title, note content and references."""
+    title = strip_title_prefix(issue["title"])
+    attribution = f"(by @{author}) " if author else ""
+    refs = attribution + issue_link(issue["number"])
+    if pr_numbers:
+        refs += " (PR: " + ", ".join(pr_link(n) for n in pr_numbers) + ")"
+    if note:
+        return f"#### {title}\n\n{note}\n\n{refs}"
+    return f"#### {title}\n\n{refs}"
+
+
 # ─────────────────────────────────────────────
 #  Subcommand: check-merged
 # ─────────────────────────────────────────────
@@ -153,6 +249,153 @@ def cmd_check_merged(args: argparse.Namespace) -> None:
         print(f"{bad} of {len(prs)} PRs are NOT merged", file=sys.stderr)
         sys.exit(1)
     print(f"OK: all {len(prs)} PRs are merged", file=sys.stderr)
+
+
+# ─────────────────────────────────────────────
+#  Subcommand: boom
+# ─────────────────────────────────────────────
+
+
+def version_section_bounds(content: str, milestone: str) -> tuple[int, int] | None:
+    """Return the ``[start, end)`` offsets of a ``## <VERSION>`` section."""
+    match = re.search(
+        rf"(?m)^## {re.escape(milestone)}(?:[ \t]*\([^)]*\))?[ \t]*$", content
+    )
+    if not match:
+        return None
+    start = match.start()
+    next_heading = re.search(r"(?m)^## ", content[match.end():])
+    end = match.end() + next_heading.start() if next_heading else len(content)
+    return start, end
+
+
+def boom_body(entries: list[str]) -> str:
+    """Return the body text that follows the ``:boom:`` heading line."""
+    if entries:
+        return "\n\n" + "\n\n".join(entries) + "\n\n"
+    return "\n\n"
+
+
+def replace_boom_section(content: str, milestone: str, entries: list[str]) -> str:
+    """Return ``content`` with its ``:boom:`` subsection replaced.
+
+    The subsection is inserted right after the version header when missing,
+    which keeps ``:boom:`` as the first section.
+    """
+    bounds = version_section_bounds(content, milestone)
+    if bounds is None:
+        raise ValueError(f'no "## {milestone}" section found')
+    start, end = bounds
+    section = content[start:end]
+    heading = re.search(rf"(?m)^{re.escape(BOOM_HEADING)}[ \t]*$", section)
+    if heading:
+        body_start = start + heading.end()
+        next_heading = re.search(r"(?m)^### ", content[body_start:end])
+        body_end = body_start + next_heading.start() if next_heading else end
+        return content[:body_start] + boom_body(entries) + content[body_end:]
+    header = re.match(r"(?m)^## [^\n]*\n", section)
+    if header is None:
+        raise ValueError(f'version "## {milestone}" header has no trailing newline')
+    insert_at = start + header.end()
+    block = "\n" + BOOM_HEADING + boom_body(entries)[:-1]
+    return content[:insert_at] + block + content[insert_at:]
+
+
+def fetch_prs_by_issue(issues: list[dict]) -> dict[int, dict]:
+    """Fetch every closing PR of ``issues``, keyed by PR number."""
+    numbers = sorted({n for issue in issues for n in issue.get("closing_prs", [])})
+    if not numbers:
+        return {}
+    return {pr["number"]: pr for pr in fetch_prs_by_numbers(numbers)}
+
+
+def fetch_breaking_notes(issues: list[dict]) -> dict[int, str]:
+    """Return the last ``## Breaking change note`` comment of each issue."""
+    if not issues:
+        return {}
+    comments = json.loads(
+        run_gh_py("comments", *[str(issue["number"]) for issue in issues])
+    )
+    notes: dict[int, str] = {}
+    for comment in comments:
+        note = extract_breaking_note(comment.get("body"))
+        if note is None:
+            continue
+        number = comment["issue"]
+        if number in notes:
+            print(
+                f'WARNING: issue #{number} has several "## Breaking change note" '
+                "comments; using the last one",
+                file=sys.stderr,
+            )
+        notes[number] = note
+    return notes
+
+
+def cmd_boom(args: argparse.Namespace) -> None:
+    """Generate the ``:boom:`` section from ``breaking change`` issues."""
+    all_issues = json.loads(run_gh_py("issues", args.milestone, "--state", "all"))
+    labelled = sorted(
+        (
+            issue
+            for issue in all_issues
+            if BREAKING_LABEL in issue.get("labels", [])
+            and not issue_excluded(issue)
+        ),
+        key=lambda issue: issue["number"],
+    )
+
+    notes: dict[int, str] = {}
+    prs: dict[int, dict] = {}
+    if labelled:
+        notes = fetch_breaking_notes(labelled)
+        prs = fetch_prs_by_issue(labelled)
+
+    entries: list[str] = []
+    for issue in labelled:
+        note = notes.get(issue["number"])
+        if not note:
+            print(
+                f'WARNING: issue #{issue["number"]} has no "## Breaking change note" '
+                "comment; the entry will have no description",
+                file=sys.stderr,
+            )
+        merged = [
+            prs[num]
+            for num in closing_pr_numbers(issue)
+            if num in prs and prs[num].get("state") == "MERGED"
+        ]
+        author = None
+        if "community contribution" in issue.get("labels", []):
+            authors = [pr["author"] for pr in merged if pr.get("author")]
+            author = authors[0] if authors else None
+        entries.append(
+            render_boom_entry(issue, note, [pr["number"] for pr in merged], author)
+        )
+
+    block = BOOM_HEADING + boom_body(entries)
+    print(block.rstrip("\n"))
+
+    if not labelled:
+        print(
+            f"No closed issues labelled `{BREAKING_LABEL}` in {args.milestone}",
+            file=sys.stderr,
+        )
+
+    if args.write:
+        with open(args.changes) as f:
+            content = f.read()
+        try:
+            updated = replace_boom_section(content, args.milestone, entries)
+        except ValueError as err:
+            print(f"ERROR: {err}", file=sys.stderr)
+            sys.exit(1)
+        if updated == content:
+            print(f"{args.changes}: :boom: section already up to date", file=sys.stderr)
+        else:
+            with open(args.changes, "w") as f:
+                f.write(updated)
+            print(f"{args.changes}: :boom: section updated", file=sys.stderr)
 
 
 # ─────────────────────────────────────────────
@@ -265,6 +508,7 @@ def cmd_report(args: argparse.Namespace) -> None:
     for pr in pr_by_num.values():
         unknown_issues.update(pr.get("closing_issues", []))
     unknown_issues |= collect_changelog_issues(extract_subsection(section, r"### :boom:"))
+    unknown_issues |= collect_changelog_issues(extract_subsection(section, r"### :rocket:"))
     unknown_issues -= set(issue_milestone_cache)
     external_issues: dict[int, dict] = {}
     if unknown_issues:
@@ -296,21 +540,6 @@ def cmd_report(args: argparse.Namespace) -> None:
     def get_issue_milestone(issue_num: int) -> str | None:
         """Return the milestone title for an issue, or None if unassigned."""
         return issue_milestone_cache.get(issue_num)
-
-    excluded_labels = {"release blocker", "no changelog"}
-
-    def issue_excluded(issue: dict | None) -> bool:
-        if not issue:
-            return True
-        if issue.get("state") != "CLOSED":
-            return True
-        if issue.get("issue_type") in {"Task"}:
-            return True
-        if issue.get("project_status") in {"Rejected"}:
-            return True
-        if excluded_labels & set(issue.get("labels", [])):
-            return True
-        return False
 
     # Type A: issue in milestone, referenced PR in different milestone or none
     anomalies_a = []
@@ -360,13 +589,14 @@ def cmd_report(args: argparse.Namespace) -> None:
     # These stay in the changelog (they are preserved, not removed) — the
     # human decides whether to label the issue or move the entry elsewhere.
     anomalies_e = []
-    boom_body = extract_subsection(section, r"### :boom:")
-    if boom_body:
-        for issue_num in sorted(collect_changelog_issues(boom_body)):
+    boom_section_body = extract_subsection(section, r"### :boom:")
+    boom_issues = collect_changelog_issues(boom_section_body)
+    if boom_section_body:
+        for issue_num in sorted(boom_issues):
             labels = get_issue_labels(issue_num)
             if labels is None:
                 continue
-            if "breaking change" not in labels:
+            if BREAKING_LABEL not in labels:
                 issue = issue_by_num.get(issue_num) or external_issues.get(issue_num) or {}
                 anomalies_e.append(
                     {
@@ -374,6 +604,50 @@ def cmd_report(args: argparse.Namespace) -> None:
                         "issue_title": issue.get("title", ""),
                     }
                 )
+
+    # Type F: :rocket: out of sync with the `release highlight` label. The
+    # label is the only source of highlights: every labelled milestone
+    # issue goes under :rocket:, and nothing else does.
+    anomalies_f = []
+    rocket_issues = collect_changelog_issues(extract_subsection(section, r"### :rocket:"))
+    for issue_num in sorted(rocket_issues):
+        labels = get_issue_labels(issue_num)
+        if labels is None:
+            continue
+        if "release highlight" not in labels:
+            issue = issue_by_num.get(issue_num) or external_issues.get(issue_num) or {}
+            anomalies_f.append(
+                {
+                    "issue": issue_num,
+                    "issue_title": issue.get("title", ""),
+                    "reason": "under :rocket: without the `release highlight` label",
+                }
+            )
+    for issue_num, issue in sorted(issue_by_num.items()):
+        if issue_excluded(issue) or issue_num in rocket_issues:
+            continue
+        if "release highlight" in issue.get("labels", []):
+            anomalies_f.append(
+                {
+                    "issue": issue_num,
+                    "issue_title": issue.get("title", ""),
+                    "reason": "labelled `release highlight` but missing from :rocket:",
+                }
+            )
+
+    # Type G: `breaking change` issue missing from :boom:. Same contract as
+    # type F for highlights: the label is the only source of the section.
+    anomalies_g = []
+    for issue_num, issue in sorted(issue_by_num.items()):
+        if issue_excluded(issue) or issue_num in boom_issues:
+            continue
+        if BREAKING_LABEL in issue.get("labels", []):
+            anomalies_g.append(
+                {
+                    "issue": issue_num,
+                    "issue_title": issue.get("title", ""),
+                }
+            )
 
     # Type C: released X.Y.0 sections without a :rocket: subsection.
     # Patches (X.Y.Z with Z != 0) never carry :rocket: — only minors/majors.
@@ -428,12 +702,14 @@ def cmd_report(args: argparse.Namespace) -> None:
         )
         f.write("---\n\n")
 
-        n_a, n_b, n_c, n_d, n_e = (
+        n_a, n_b, n_c, n_d, n_e, n_f, n_g = (
             len(anomalies_a),
             len(anomalies_b),
             len(anomalies_c),
             len(anomalies_d),
             len(anomalies_e),
+            len(anomalies_f),
+            len(anomalies_g),
         )
 
         f.write("## Summary\n\n")
@@ -444,13 +720,15 @@ def cmd_report(args: argparse.Namespace) -> None:
             f"- **PR in {milestone}, closing issue in a different milestone:** {n_b}\n"
         )
         f.write(f"- **:boom: entry without breaking change label:** {n_e}\n")
-        f.write(f"- **Total anomalies:** {n_a + n_b + n_e}\n")
+        f.write(f"- **:boom: out of sync with breaking change label:** {n_g}\n")
+        f.write(f"- **:rocket: out of sync with release highlight label:** {n_f}\n")
+        f.write(f"- **Total anomalies:** {n_a + n_b + n_e + n_f + n_g}\n")
         f.write(
             f"- **Released X.Y.0 version missing :rocket: section (gap):** {n_c}\n"
         )
         f.write(f"- **:rocket: entry without issue AND PR references (gap):** {n_d}\n\n")
 
-        if n_a or n_b or n_e:
+        if n_a or n_b or n_e or n_f or n_g:
             f.write("## Anomalies\n\n")
             f.write(
                 "Types A and B are milestone mismatches between an issue in the changelog "
@@ -461,6 +739,10 @@ def cmd_report(args: argparse.Namespace) -> None:
                 "removing the misleading entry from the changelog.\n\n"
                 "Type E entries stay in the changelog: either label the issue "
                 "as `breaking change` or move the entry out of `:boom:`.\n\n"
+                "Types F and G are rule violations: `:rocket:` must list exactly "
+                "the issues labelled `release highlight`, and `:boom:` exactly "
+                "the issues labelled `breaking change`. Fix the label on GitHub "
+                "or re-run the workflow.\n\n"
             )
 
             if n_a:
@@ -512,6 +794,26 @@ def cmd_report(args: argparse.Namespace) -> None:
                 for e in anomalies_e:
                     f.write(f"- ⚠️ {issue_link_title(e['issue'], e['issue_title'][:80])}\n")
                 f.write("\n")
+
+            if n_f:
+                f.write("\n### :rocket: out of sync with release highlight label\n\n")
+                for e in anomalies_f:
+                    f.write(
+                        f"- ⚠️ {issue_link_title(e['issue'], e['issue_title'][:80])}: {e['reason']}\n"
+                    )
+                f.write("\n")
+
+            if n_g:
+                f.write("\n### :boom: out of sync with breaking change label\n\n")
+                f.write(
+                    "These milestone issues carry the `breaking change` label but "
+                    "have no entry under `### :boom: Breaking changes & Deprecations`. "
+                    "Regenerate the section (`changelog.py boom --write`) or add "
+                    "the entry.\n\n"
+                )
+                for e in anomalies_g:
+                    f.write(f"- ⚠️ {issue_link_title(e['issue'], e['issue_title'][:80])}\n")
+                f.write("\n")
         else:
             f.write(
                 "✅ No anomalies found. All (issue, PR) pairs in the changelog have aligned milestone assignments.\n\n"
@@ -546,7 +848,7 @@ def cmd_report(args: argparse.Namespace) -> None:
                 for d in anomalies_d:
                     f.write(f"- **{d['version']}**: `{d['line']}`\n")
                 f.write("\n")
-        elif not (n_a or n_b or n_e):
+        elif not (n_a or n_b or n_e or n_f or n_g):
             f.write(
                 "✅ No highlight gaps found. All released X.Y.0 versions have properly referenced :rocket: entries.\n\n"
             )
@@ -574,7 +876,7 @@ def cmd_report(args: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Helper commands for the update-changelog skill"
+        description="Helper commands for the changelog flow"
     )
     sub = parser.add_subparsers(dest="command", required=True, title="subcommands")
 
@@ -588,6 +890,16 @@ def main() -> None:
     p_check.add_argument("--stdin", action="store_true",
                          help="Read PR numbers from stdin (one per line)")
     p_check.set_defaults(func=cmd_check_merged)
+
+    p_boom = sub.add_parser(
+        "boom", help="Generate the :boom: section from `breaking change` issues"
+    )
+    p_boom.add_argument("milestone", help="Milestone title (e.g. '2.16.0')")
+    p_boom.add_argument("--changes", default="CHANGES.md",
+                        help="Path to the changelog file (default: CHANGES.md)")
+    p_boom.add_argument("--write", action="store_true",
+                        help="Replace the :boom: section in CHANGES.md in place")
+    p_boom.set_defaults(func=cmd_boom)
 
     p_cross = sub.add_parser(
         "cross-ref",

@@ -74,14 +74,20 @@ impl Gradient {
             rect.left + self.end.0 * rect.width(),
             rect.top + self.end.1 * rect.height(),
         );
-        skia::gradient_shader::linear(
-            (start, end),
-            self.colors.as_slice(),
+        let colors4f: Vec<skia::Color4f> = self
+            .colors
+            .iter()
+            .map(|c| skia::Color4f::from(*c))
+            .collect();
+        let colors = skia::gradient::Colors::new(
+            &colors4f,
             Some(self.offsets.as_slice()),
             skia::TileMode::Clamp,
             None,
-            None,
-        )
+        );
+        let gradient =
+            skia::gradient::Gradient::new(colors, skia::gradient::Interpolation::default());
+        skia::shaders::linear_gradient((start, end), &gradient, None)
     }
 
     pub fn to_radial_shader(&self, rect: &Rect) -> Option<skia::Shader> {
@@ -106,15 +112,20 @@ impl Gradient {
         transform.pre_scale((self.width * rect.width() / rect.height(), 1.), None);
         transform.pre_translate((-center.x, -center.y));
 
-        skia::gradient_shader::radial(
-            center,
-            distance,
-            self.colors.as_slice(),
+        let colors4f: Vec<skia::Color4f> = self
+            .colors
+            .iter()
+            .map(|c| skia::Color4f::from(*c))
+            .collect();
+        let colors = skia::gradient::Colors::new(
+            &colors4f,
             Some(self.offsets.as_slice()),
             skia::TileMode::Clamp,
             None,
-            Some(&transform),
-        )
+        );
+        let gradient =
+            skia::gradient::Gradient::new(colors, skia::gradient::Interpolation::default());
+        skia::shaders::radial_gradient((center, distance), &gradient, Some(&transform))
     }
 }
 
@@ -134,6 +145,8 @@ pub struct ImageFill {
     height: i32,
     keep_aspect_ratio: bool,
     transform: Option<ImageFillTransform>,
+    // Opaque media type code, kept so the frontend can read it back.
+    mtype: u16,
 }
 
 impl ImageFill {
@@ -145,6 +158,7 @@ impl ImageFill {
             height,
             keep_aspect_ratio,
             transform: None,
+            mtype: 0,
         }
     }
 
@@ -163,7 +177,12 @@ impl ImageFill {
             height,
             keep_aspect_ratio,
             transform,
+            mtype: 0,
         }
+    }
+
+    pub fn with_mtype(self, mtype: u16) -> Self {
+        Self { mtype, ..self }
     }
 
     pub fn id(&self) -> Uuid {
@@ -186,8 +205,41 @@ impl ImageFill {
         self.height
     }
 
+    pub fn mtype(&self) -> u16 {
+        self.mtype
+    }
+
     pub fn transform(&self) -> Option<&ImageFillTransform> {
         self.transform.as_ref()
+    }
+
+    /// The part of `container` the image is laid over: its transform, else all of it.
+    pub fn dest_rect(&self, container: &Rect) -> Rect {
+        match &self.transform {
+            Some(tf) => Rect::from_xywh(
+                container.left + tf.x * container.width(),
+                container.top + tf.y * container.height(),
+                tf.width * container.width(),
+                tf.height * container.height(),
+            ),
+            None => *container,
+        }
+    }
+
+    /// Where the image is drawn to cover its dest rect in `container`, centered.
+    pub fn cover_rect(&self, container: &Rect) -> Rect {
+        let dest = self.dest_rect(container);
+        let image_width = self.width as f32;
+        let image_height = self.height as f32;
+        let scale = (dest.width() / image_width).max(dest.height() / image_height);
+        let scaled_width = image_width * scale;
+        let scaled_height = image_height * scale;
+        Rect::from_xywh(
+            dest.left - (scaled_width - dest.width()) / 2.0,
+            dest.top - (scaled_height - dest.height()) / 2.0,
+            scaled_width,
+            scaled_height,
+        )
     }
 }
 
@@ -287,20 +339,14 @@ pub fn get_fill_shader(fill: &Fill, bounding_box: &Rect) -> Option<skia::Shader>
                 let sampling_options =
                     skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest);
 
-                // FIXME no image ratio applied, centered to the current rect
+                // Covers the dest rect (transform, else the whole box), centered.
+                // keep_aspect_ratio is not applied: the image always covers.
                 let tile_modes = (skia::TileMode::Clamp, skia::TileMode::Clamp);
-                let image_width = image_fill.width as f32;
-                let image_height = image_fill.height as f32;
-                let scale_x = bounding_box.width() / image_width;
-                let scale_y = bounding_box.height() / image_height;
-                let scale = scale_x.max(scale_y);
-                let scaled_width = image_width * scale;
-                let scaled_height = image_height * scale;
-                let pos_x = bounding_box.left() - (scaled_width - bounding_box.width()) / 2.0;
-                let pos_y = bounding_box.top() - (scaled_height - bounding_box.height()) / 2.0;
+                let cover = image_fill.cover_rect(bounding_box);
+                let scale = cover.width() / image_fill.width as f32;
 
                 let mut matrix = skia::Matrix::new_identity();
-                matrix.pre_translate((pos_x, pos_y));
+                matrix.pre_translate((cover.left, cover.top));
                 matrix.pre_scale((scale, scale), None);
 
                 let opacity = image_fill.opacity();
@@ -369,5 +415,46 @@ pub fn set_paint_fill(paint: &mut Paint, fill: &Fill, bounding_box: &Rect, remov
     let shader = get_fill_shader(fill, bounding_box);
     if let Some(shader) = shader {
         paint.set_shader(shader);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn image_fill(transform: Option<ImageFillTransform>) -> ImageFill {
+        ImageFill::new_with_transform(Uuid::nil(), 255, 100, 50, true, transform)
+    }
+
+    #[test]
+    fn an_image_without_transform_covers_the_whole_container() {
+        let container = Rect::from_xywh(10.0, 20.0, 100.0, 100.0);
+
+        assert_eq!(image_fill(None).dest_rect(&container), container);
+        // 100x50 scaled by 2 to fill the height, centered horizontally.
+        assert_eq!(
+            image_fill(None).cover_rect(&container),
+            Rect::from_xywh(-40.0, 20.0, 200.0, 100.0)
+        );
+    }
+
+    #[test]
+    fn an_image_with_transform_covers_its_part_of_the_container() {
+        let container = Rect::from_xywh(10.0, 20.0, 200.0, 100.0);
+        let fill = image_fill(Some(ImageFillTransform {
+            x: 0.5,
+            y: -0.5,
+            width: 0.5,
+            height: 1.0,
+        }));
+
+        assert_eq!(
+            fill.dest_rect(&container),
+            Rect::from_xywh(110.0, -30.0, 100.0, 100.0)
+        );
+        assert_eq!(
+            fill.cover_rect(&container),
+            Rect::from_xywh(60.0, -30.0, 200.0, 100.0)
+        );
     }
 }

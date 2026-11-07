@@ -221,14 +221,15 @@
     (push-payload job-id scheduled-at)
     (run-one (mk-cfg {}))
 
-    (t/testing "the handler receives exactly the four context keys"
+    (t/testing "the handler receives exactly the five context keys"
       (t/is (= 1 (count @received-contexts)))
       (let [context (first @received-contexts)]
-        (t/is (= #{:id :name :label :resource-id} (set (keys context))))
+        (t/is (= #{:id :name :label :resource-id :profile-id} (set (keys context))))
         (t/is (= job-id (:id context)))
         (t/is (= "echo-runner" (:name context)))
         (t/is (= "runner-label" (:label context)))
         (t/is (nil? (:resource-id context)))
+        (t/is (nil? (:profile-id context)) "an internal job has no owner")
 
         (t/testing "and nothing of the row leaks into it"
           (t/is (not (contains? context :params)))

@@ -6,8 +6,9 @@
 
 (ns app.render-wasm.text-paste
   "Restyles the text WASM just inserted from a paste fragment (see
-  `app.util.text.clipboard`) with each run's overrides."
+  `app.util.text.clipboard`), with run overrides or full Penpot styles."
   (:require
+   [app.common.types.text :as txt]
    [app.main.fonts :as fonts]
    [app.render-wasm.text-editor :as text-editor]
    [cuerdas.core :as str]))
@@ -90,3 +91,100 @@
             (text-editor/apply-styles-over-range content range #(resolve-overrides % attrs)))
           content
           (styled-ranges fragment start)))
+
+;; --- Text copied in Penpot
+
+(def ^:private style-attrs
+  (into txt/paragraph-attrs txt/text-node-attrs))
+
+(defn content->fragment
+  "The paste fragment for Penpot `content`. Its attrs are whole paragraph and span
+  styles, not overrides."
+  [content]
+  (->> (-> content :children first :children)
+       (mapv (fn [paragraph]
+               {:attrs (dissoc paragraph :type :children)
+                :children (into []
+                                (comp (filter (comp seq :text))
+                                      (map (fn [span] {:text (:text span) :attrs (dissoc span :text)})))
+                                (:children paragraph))}))))
+
+(defn- restyle
+  "`node` with its style replaced by `attrs`."
+  [node attrs]
+  (merge (apply dissoc node style-attrs) attrs))
+
+(defn apply-content-styles
+  "Restyles the Penpot `fragment` text WASM inserted at `start` in `content`. The
+  first paragraph keeps the style of the one it went into; the others bring their own."
+  [content fragment start]
+  (let [content (reduce (fn [content {:keys [range attrs]}]
+                          (text-editor/apply-styles-over-range content range #(restyle % attrs)))
+                        content
+                        (styled-ranges fragment start))]
+    (reduce (fn [content [idx {:keys [attrs]}]]
+              (update-in content [:children 0 :children (+ (:para start) idx)] restyle attrs))
+            content
+            (rest (map-indexed vector fragment)))))
+
+;; --- Gradients and images of text copied in Penpot
+
+(defn- move-gradient
+  "`gradient`, in fractions of the `from` box, in fractions of the `to` box, with its
+  points at the same pixel offset from the span origin."
+  [gradient from to]
+  (let [{x0 :x y0 :y {w0 :width h0 :height} :box} from
+        {x1 :x y1 :y {w1 :width h1 :height} :box} to
+        move-x                                    #(/ (+ x1 (- (* % w0) x0)) w1)
+        move-y                                    #(/ (+ y1 (- (* % h0) y0)) h1)]
+    (cond-> (-> gradient
+                (update :start-x move-x)
+                (update :start-y move-y)
+                (update :end-x move-x)
+                (update :end-y move-y))
+      ;; A radial width is scaled by the box aspect ratio when drawn.
+      (= :radial (:type gradient))
+      (update :width #(/ (* % w0 h1) (* h0 w1))))))
+
+(defn- move-image
+  "`image`, laid over its transform in the `from` box (the whole box without one),
+  with a transform in the `to` box at the same pixel offset from the span origin."
+  [image from to]
+  (let [{x0 :x y0 :y {w0 :width h0 :height} :box} from
+        {x1 :x y1 :y {w1 :width h1 :height} :box} to
+        {:keys [x y width height]}                (get image :transform {:x 0 :y 0 :width 1 :height 1})]
+    (assoc image :transform {:x      (/ (+ x1 (- (* x w0) x0)) w1)
+                             :y      (/ (+ y1 (- (* y h0) y0)) h1)
+                             :width  (/ (* width w0) w1)
+                             :height (/ (* height h0) h1)})))
+
+(defn- move-fills
+  [span from to]
+  (update span :fills
+          (fn [fills]
+            (mapv #(cond-> %
+                     (some? (:fill-color-gradient %))
+                     (update :fill-color-gradient move-gradient from to)
+
+                     (some? (:fill-image %))
+                     (update :fill-image move-image from to))
+                  fills))))
+
+(defn- sized?
+  [{{:keys [width height]} :box}]
+  (and (pos? width) (pos? height)))
+
+(defn move-span-fills
+  "`content` with the gradients and images of `pasted`, inserted at `start`, moved from
+  the `source` geometry to the `target` one (see `text-editor/content-geometry`)."
+  [content pasted start source target]
+  (let [entries (map vector
+                     (flatten (text-editor/span-ranges pasted start))
+                     (flatten (:origins source))
+                     (flatten (:origins target)))]
+    (reduce (fn [content [range from to]]
+              (if (and (some? from) (some? to) (sized? from) (sized? to))
+                (text-editor/apply-styles-over-range content range #(move-fills % from to))
+                content))
+            content
+            entries)))

@@ -12,13 +12,15 @@
    [app.common.uri :as u]
    [app.config :as cf]
    [app.main.broadcast :as mbc]
+   [app.main.data.auth :as-alias auth]
    [app.main.data.plugins :as dp]
    [app.main.data.profile :as du]
-   [app.main.data.workspace :as-alias dw]
    [app.main.store :as st]
    [app.plugins.register :as preg]
+   [app.util.globals :as globals]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
+   [beicon.v2.operators :as rxo]
    [potok.v2.core :as ptk]))
 
 (def reconnect-fallback-interval 60000)
@@ -36,14 +38,38 @@
    :plugin-id preg/mcp-plugin-id
    :description "This plugin enables interaction with the Penpot MCP server"
    :allow-background true
+   :scope "global"
    :permissions
-   #{"user:read"
-     "library:read" "library:write"
-     "comment:read" "comment:write"
-     "content:write" "content:read"}})
+   preg/mcp-permissions})
 
 (defonce interval-sub
   (atom nil))
+
+;; Resolves the promise that keeps the session Web Lock held; nil when none is.
+(defonce ^:private session-lock-release
+  (atom nil))
+
+(defn- hold-session-lock
+  "Holds a shared Web Lock while the MCP connection is requested. Chrome
+  does not freeze a page that holds a Web Lock, and a frozen page cannot
+  run the plugin."
+  []
+  (when-let [locks (and (nil? @session-lock-release)
+                        (unchecked-get globals/navigator "locks"))]
+    (let [released (js/Promise. (fn [resolve] (reset! session-lock-release resolve)))
+          release  @session-lock-release]
+      (-> (.request locks "penpot-mcp-session" #js {:mode "shared"} (constantly released))
+          (.catch (fn [cause]
+                    ;; lets a later connection request try again, unless a
+                    ;; newer lock request has already replaced this one
+                    (compare-and-set! session-lock-release release nil)
+                    (log/warn :hint "unable to hold the MCP session lock" :cause cause)))))))
+
+(defn- release-session-lock
+  []
+  (when-let [release @session-lock-release]
+    (reset! session-lock-release nil)
+    (release)))
 
 (defn connect-mcp
   []
@@ -61,7 +87,12 @@
     (watch [_ state _]
       (if (get-in state [:mcp :connection-requested])
         (rx/of (ptk/data-event ::connect))
-        (rx/empty)))))
+        (rx/empty)))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (when (get-in state [:mcp :connection-requested])
+        (hold-session-lock)))))
 
 (defn- start-reconnect-watcher
   []
@@ -134,7 +165,37 @@
 
     ptk/EffectEvent
     (effect [_ _ _]
+      (release-session-lock)
       (stop-reconnect-watcher!))))
+
+(defn- extension-hello?
+  "Checks if a window message is a browser extension's request for the
+  MCP session, posted on this page by its content script."
+  [event]
+  (and (identical? (unchecked-get event "source") globals/window)
+       (= (unchecked-get event "origin") (.-origin globals/location))
+       (= "penpot-mcp-extension:hello"
+          (some-> (unchecked-get event "data") (unchecked-get "type")))))
+
+(defn extension-status
+  "Returns the connection status to announce to a browser extension. The
+  plugin also reports `disconnected` while it reconnects, so the
+  extension, which forgets a session on `disconnected`, only hears it
+  once the user has stopped the connection."
+  [status connection-requested?]
+  (if (and (= status "disconnected") connection-requested?)
+    "connecting"
+    status))
+
+(defn- announce-session
+  "Posts the MCP session of this page to a browser extension, which keeps
+  this tab from being discarded."
+  [status session-id]
+  (.postMessage globals/window
+                #js {:type "penpot-mcp:session"
+                     :sessionId session-id
+                     :status status}
+                (.-origin globals/location)))
 
 (defn- init-mcp-plugin
   "Waits the plugin runtime and initializes the bundled MCP plugin."
@@ -147,11 +208,24 @@
                           (assoc :host (str (u/join cf/public-uri "plugins/mcp/"))))
 
             stopper-s (rx/merge
-                       (rx/filter (ptk/type? ::dw/finalize-workspace) stream)
+                       (rx/filter (ptk/type? ::auth/logged-out) stream)
                        (rx/filter (ptk/type? ::stop-mcp-plugin) stream)
                        (rx/filter (ptk/type? ::init) stream))
 
             active?   (atom true)
+
+            ;; Whether a browser extension asked for the session; nothing is
+            ;; posted on the page before that.
+            announce? (atom false)
+
+            on-message
+            (fn [event]
+              (when (extension-hello? event)
+                (reset! announce? true)
+                (let [{:keys [connection-status connection-requested session-id]} (get @st/state :mcp)]
+                  (announce-session (extension-status connection-status connection-requested)
+                                    session-id))))
+
             extension #js {:getToken (constantly token)
                            :getServerUrl #(str cf/mcp-ws-uri)
                            :isConnectionRequested #(and @active?
@@ -163,6 +237,9 @@
                                           (get-in @st/state [:mcp :connection-requested]))
                                  (start-reconnect-watcher))
                                (st/emit! (update-mcp-connection-status status session-id))
+                               (when @announce?
+                                 (announce-session (extension-status status (get-in @st/state [:mcp :connection-requested]))
+                                                   session-id))
                                (log/info :hint "MCP STATUS" :status status)))
 
                            :on
@@ -183,8 +260,16 @@
              (rx/take 1)
              (rx/subs! (fn [_]
                          (reset! active? false)
+                         (.removeEventListener globals/window "message" on-message)
+                         (when @announce?
+                           (announce-session "disconnected" nil))
+                         (release-session-lock)
                          (stop-reconnect-watcher!)
                          (dp/close-plugin! default-manifest))))
+        (.addEventListener globals/window "message" on-message)
+        ;; A content script that said hello before this listener existed
+        ;; says it again
+        (.postMessage globals/window #js {:type "penpot-mcp:ready"} (.-origin globals/location))
         (dp/start-plugin! manifest #js {:mcp extension})))))
 
 (defn- stop-mcp-plugin
@@ -234,7 +319,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [stopper-s  (rx/merge
-                        (rx/filter (ptk/type? ::dw/finalize-workspace) stream)
+                        (rx/filter (ptk/type? ::auth/logged-out) stream)
                         (rx/filter (ptk/type? ::init) stream))
 
             mcp-state  (get state :mcp)]
@@ -274,3 +359,25 @@
                                        (stop-mcp-plugin))))))
 
              (rx/take-until stopper-s))))))
+
+(defn initialize
+  "Initialize the MCP controller for each authenticated app session."
+  []
+  (ptk/reify ::initialize
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (if (contains? cf/flags :mcp)
+        (->> stream
+             (rx/filter #(or (ptk/type? ::du/set-profile %)
+                             (ptk/type? ::auth/logged-out %)))
+             (rx/map #(when (ptk/type? ::du/set-profile %)
+                        (:id (deref %))))
+             (rx/pipe (rxo/distinct-contiguous))
+             (rx/switch-map
+              (fn [profile-id]
+                (if profile-id
+                  (->> (rx/from (preg/wait-for-runtime))
+                       (rx/map (fn [_] (init))))
+                  (rx/empty))))
+             (rx/take-until (rx/filter (ptk/type? ::initialize) stream)))
+        (rx/empty)))))

@@ -176,8 +176,10 @@
           [:div {:class (stl/css :change-section)}
            (tr "auth.register")
            " "
-           [:a {:data-section "register"
-                :on-click set-section}
+           [:button {:type "button"
+                     :class (stl/css :link)
+                     :data-section "register"
+                     :on-click set-section}
             (tr "auth.register-submit")]]]
 
          :register
@@ -190,8 +192,11 @@
           [:div {:class (stl/css :change-section)}
            (tr "auth.already-have-account")
            " "
-           [:a {:data-section "login"
-                :on-click set-section} (tr "auth.login-here")]]
+           [:button {:type "button"
+                     :class (stl/css :link)
+                     :data-section "login"
+                     :on-click set-section}
+            (tr "auth.login-here")]]
           [:div {:class (stl/css :links)}
            [:hr {:class (stl/css :separator)}]
            [:> register/terms-service-privacy-policy*]]]
@@ -424,7 +429,10 @@
       [:p {:class (stl/css :desc-text)} (tr "labels.internal-error.desc-message-second")]]
 
      (when (some? report)
-       [:a {:class (stl/css :download-link) :on-click on-download} (tr "labels.download" "report.txt")])
+       [:button {:type "button"
+                 :class (stl/css :download-link)
+                 :on-click on-download}
+        (tr "labels.download" "report.txt")])
 
      [:div {:class (stl/css :buttons-container)}
       [:> button* {:variant "secondary"
@@ -609,16 +617,37 @@
 
       [:> internal-error* props])))
 
+(defn screen-kind
+  "Classify the `screen` query param for the exception page.
+
+  The param carries the route name (`?screen=<name>&params`), so the
+  viewer is \"viewer\" and every team dashboard is \"dashboard-*\". Returns
+  `:workspace`, `:dashboard`, `:viewer`, or nil when the screen is not a
+  request-access candidate. Reads the param with `rt/get-query-param`
+  because a repeated param arrives as a vector."
+  [query-params]
+  (let [screen (rt/get-query-param query-params :screen)]
+    (cond
+      (= screen "workspace")
+      :workspace
+
+      (and (string? screen)
+           (str/starts-with? screen "dashboard"))
+      :dashboard
+
+      (= screen "viewer")
+      :viewer)))
+
 (mf/defc exception-page*
   [{:keys [data route] :as props}]
 
   (let [type        (:type data)
-        path        (:path route)
         params      (:query-params route)
 
-        workspace?  (str/includes? path "workspace")
-        dashboard?  (str/includes? path "dashboard")
-        view?       (str/includes? path "view")
+        kind        (screen-kind params)
+        workspace?  (= kind :workspace)
+        dashboard?  (= kind :dashboard)
+        view?       (= kind :viewer)
 
         ;; We store the request access info int this state
         info*       (mf/use-state nil)

@@ -225,11 +225,11 @@
 
     (update-profile-password! cfg (assoc profile :password password))
 
-    (eml/send cfg {::eml/reuse-conn true
-                   ::eml/factory eml/password-changed
-                   :public-uri (cf/get :public-uri)
-                   :to (:email profile)
-                   :name (:fullname profile)})
+    (eml/send-template cfg {::eml/reuse-conn true
+                            ::eml/template "password-changed"
+                            :public-uri (cf/get :public-uri)
+                            :to (:email profile)
+                            :name (:fullname profile)})
 
     (->> (rph/get-request params)
          (session/get-session)
@@ -306,12 +306,16 @@
 
 (sv/defmethod ::update-profile-photo
   {:doc/added "1.1"
+   ::climit/id [[:process-image/by-profile ::rpc/profile-id]
+                [:process-image/global]]
    ::sm/params schema:update-profile-photo
+   ::rpc/multipart-only-params [:file]
    ::sm/result :nil}
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
-  (media.v/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
-  (media.v/validate-media-size! file)
+  (media.v/check-media-type file #{"image/jpeg" "image/png" "image/webp"})
+  (media.v/check-media-size file)
+  (media.v/check-upload-path file)
   (update-profile-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-profile-photo
@@ -354,13 +358,12 @@
      :content-type (:mtype thumb)}))
 
 (defn upload-photo
-  [{:keys [::sto/storage] :as cfg} {:keys [file] :as params}]
-  (let [params (-> cfg
-                   (assoc ::climit/id [[:process-image/by-profile (:profile-id params)]
-                                       [:process-image/global]])
-                   (assoc ::climit/label "upload-photo")
-                   (climit/invoke! generate-thumbnail file))]
-    (sto/put-object! storage params)))
+  "Generate the thumbnail of a photo and store it.
+
+  The caller declares the `process-image` limits: this helper runs inside
+  them, so a command that calls it has to take them."
+  [{:keys [::sto/storage] :as cfg} {:keys [file]}]
+  (sto/put-object! storage (generate-thumbnail cfg file)))
 
 ;; --- MUTATION: Delete Photo
 
@@ -460,14 +463,14 @@
                 :email (:email profile)
                 :hint "looks like the email has spam complaint reports"))
 
-    (eml/send cfg {::eml/reuse-conn true
-                   ::eml/factory eml/change-email
-                   :public-uri (cf/get :public-uri)
-                   :to (:email profile)
-                   :name (:fullname profile)
-                   :pending-email email
-                   :token token
-                   :extra-data ptoken})
+    (eml/send-template cfg {::eml/reuse-conn true
+                            ::eml/template "change-email"
+                            :public-uri (cf/get :public-uri)
+                            :to (:email profile)
+                            :name (:fullname profile)
+                            :pending-email email
+                            :token token
+                            :extra-data ptoken})
     nil))
 
 ;; --- MUTATION: Update Profile Props
@@ -540,7 +543,8 @@
   {::doc/added "1.0"
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id] :as params}]
-  (let [teams      (get-owned-teams conn profile-id)
+  (let [profile    (db/get* conn :profile {:id profile-id} {::db/remove-deleted false})
+        teams      (get-owned-teams conn profile-id)
         deleted-at (ct/now)]
 
     ;; If we found owned teams with participants, we don't allow
@@ -581,6 +585,12 @@
     (session/invalidate-all cfg profile-id)
 
     (-> (rph/wrap nil)
+        (rph/with-meta {::audit/props {:id (:id profile)
+                                       :email (:email profile)
+                                       :fullname (:fullname profile)
+                                       :created-at (:created-at profile)
+                                       :modified-at (:modified-at profile)
+                                       :deleted-at deleted-at}})
         (rph/with-transform (session/delete-fn cfg)))))
 
 (def sql:get-subscription-editors

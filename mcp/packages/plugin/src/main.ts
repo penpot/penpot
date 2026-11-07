@@ -131,6 +131,7 @@ function sendTaskResponse(response: any): void {
                 id: response.id,
                 success: false,
                 error: errorMessage,
+                rollbacks: response.rollbacks,
             };
             responseString = JSON.stringify(response);
         }
@@ -145,7 +146,9 @@ function sendTaskResponse(response: any): void {
  * Emits a liveness signal from the plugin event loop.
  *
  * WebSocket ping/pong is not enough here: browsers can answer protocol pings while
- * page JavaScript is frozen and unable to run MCP tasks.
+ * page JavaScript is frozen and unable to run MCP tasks. The plugin sends one on a timer and
+ * in answer to each heartbeat request of the server, since a browser runs the timers of a
+ * hidden page as rarely as once a minute but handles socket messages at once.
  */
 function sendHeartbeat(): boolean {
     if (connectionReady && ws?.readyState === WebSocket.OPEN) {
@@ -249,6 +252,11 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
                     cancelReconnect();
                     startHeartbeat();
                     updateConnectionStatus("connected", "Connected");
+                    parent.postMessage({ type: "context-request" }, "*");
+                    return;
+                }
+                if (request.type === "heartbeat-request") {
+                    sendHeartbeat();
                     return;
                 }
                 // Track the current task received from the MCP server
@@ -349,10 +357,7 @@ window.addEventListener("message", async (event) => {
             if (!initialization.penpotUserSessionId) {
                 throw new Error("Missing Penpot user session ID");
             }
-            const sessionId = await SessionId.forFile(
-                initialization.penpotUserSessionId,
-                initialization.session.fileId
-            );
+            const sessionId = await SessionId.forSession(initialization.penpotUserSessionId);
             if (
                 !shouldReconnect ||
                 ws !== socket ||
@@ -374,6 +379,12 @@ window.addEventListener("message", async (event) => {
                 disconnectFromMcpServer();
                 updateConnectionStatus("error", "Failed to initialize MCP session");
             }
+        }
+        return;
+    }
+    if (event.data.type === "context-update") {
+        if (connectionReady && ws?.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify(event.data));
         }
         return;
     }

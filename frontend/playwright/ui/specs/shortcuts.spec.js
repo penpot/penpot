@@ -25,12 +25,12 @@ test.describe("Shortcuts Settings Page", () => {
     await expect(shortcutsPage.personalizedTab).toBeVisible();
     await expect(shortcutsPage.disabledTab).toBeVisible();
 
-    await shortcutsPage.clickTab("Personalized");
+    await shortcutsPage.clickTab("Custom");
     await expect(shortcutsPage.personalizedTab).toHaveAttribute(
       "aria-selected",
       "true",
     );
-    const personalizedPlacehonder = page.getByText(/Head to All to start/i);
+    const personalizedPlacehonder = page.getByText(/No custom shortcuts yet/i);
     await expect(personalizedPlacehonder).toBeVisible();
 
     await shortcutsPage.clickTab("Disabled");
@@ -38,7 +38,7 @@ test.describe("Shortcuts Settings Page", () => {
       "aria-selected",
       "true",
     );
-    const disabledPlaceholder = page.getByText(/There are not disabled/i);
+    const disabledPlaceholder = page.getByText(/No disabled shortcuts/i);
     await expect(disabledPlaceholder).toBeVisible();
 
     await shortcutsPage.clickTab("All");
@@ -81,7 +81,7 @@ test.describe("Shortcut Import", () => {
 
     await shortcutsPage.expectShortcutCustomized("Align bottom");
 
-    await shortcutsPage.clickTab("Personalized");
+    await shortcutsPage.clickTab("Custom");
     await shortcutsPage.searchForShortcut("Align bottom");
     await shortcutsPage.expectShortcutVisible("Align bottom");
   });
@@ -93,7 +93,9 @@ test.describe("Shortcut Import", () => {
     await shortcutsPage.importShortcutsRaw("{invalid");
 
     await expect(
-      page.getByRole("alert").filter({ hasText: /Invalid data/i }),
+      page
+        .getByRole("alert")
+        .filter({ hasText: /not a valid shortcuts export/i }),
     ).toBeVisible();
   });
 
@@ -106,7 +108,9 @@ test.describe("Shortcut Import", () => {
     });
 
     await expect(
-      page.getByRole("alert").filter({ hasText: /Invalid data/i }),
+      page
+        .getByRole("alert")
+        .filter({ hasText: /not a valid shortcuts export/i }),
     ).toBeVisible();
   });
 
@@ -121,7 +125,9 @@ test.describe("Shortcut Import", () => {
     await shortcutsPage.confirmImportApply();
 
     await expect(
-      page.getByRole("alert").filter({ hasText: /Invalid data/i }),
+      page
+        .getByRole("alert")
+        .filter({ hasText: /not a valid shortcuts export/i }),
     ).not.toBeVisible();
   });
 
@@ -134,7 +140,9 @@ test.describe("Shortcut Import", () => {
     });
 
     await expect(
-      page.getByRole("alert").filter({ hasText: /Invalid data/i }),
+      page
+        .getByRole("alert")
+        .filter({ hasText: /not a valid shortcuts export/i }),
     ).toBeVisible();
   });
 
@@ -213,7 +221,7 @@ test.describe("Shortcut Conflict Detection", () => {
     await shortcutsPage.pressKey("Alt+a");
 
     await expect(
-      page.getByRole("alert").filter({ hasText: /Combination assigned to/i }),
+      page.getByRole("alert").filter({ hasText: /Already assigned to/i }),
     ).toBeVisible();
 
     await shortcutsPage.saveShortcut();
@@ -259,7 +267,7 @@ test.describe("Shortcut Reset", () => {
     await shortcutsPage.resetShortcut("Align bottom");
 
     await expect(
-      page.getByText(/If you save, this shortcut will return/i),
+      page.getByText(/Saving will reset this shortcut/i),
     ).toBeVisible();
 
     await shortcutsPage.saveShortcut();
@@ -317,7 +325,7 @@ test.describe("Duplicate Shortcut Prevention", () => {
     await shortcutsPage.pressKey("Control+y");
 
     await expect(
-      page.getByRole("alert").filter({ hasText: /Combination assigned to/i }),
+      page.getByRole("alert").filter({ hasText: /Already assigned to/i }),
     ).toBeVisible();
 
     await shortcutsPage.saveShortcut();

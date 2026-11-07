@@ -23,6 +23,9 @@
   (let [ordered-themes
         (mf/deref refs/workspace-token-themes-no-hidden)
 
+        can-edit-file?
+        (mf/use-ctx ctx/can-edit?)
+
         can-edit-tokens?
         (mf/use-ctx ctx/can-edit-tokens?)
 
@@ -50,6 +53,6 @@
                        :class (stl/css :edit-theme-button)
                        :on-click open-modal}
            (tr "labels.edit")]]
-         [:div {:title (when-not can-edit-tokens?
+         [:div {:title (when-not can-edit-file?
                          (tr "workspace.tokens.no-permission-themes"))}
           [:> theme-selector* {:tokens-source tokens-source}]]))]))

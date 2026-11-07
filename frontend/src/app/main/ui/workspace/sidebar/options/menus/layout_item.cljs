@@ -19,6 +19,7 @@
    [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.common :as soc]
@@ -408,12 +409,13 @@
         (= type :multiple)
         [:> margin-multiple* props])]
 
-     [:button {:class (stl/css-case
-                       :margin-mode true
-                       :selected (= type :multiple))
-               :title "Margin - multiple"
-               :on-click on-type-change'}
-      deprecated-icon/margin]]))
+     [:> icon-button* {:variant "ghost"
+                       :tooltip-class (stl/css :margin-mode)
+                       :tooltip-placement "top-left"
+                       :aria-pressed (= type :multiple)
+                       :aria-label "Margin - multiple"
+                       :icon i/margin
+                       :on-click on-type-change'}]]))
 
 (mf/defc element-behaviour-horizontal
   {::mf/props :obj
@@ -506,30 +508,37 @@
                      :title "Align self end"
                      :id    "align-self-end"}]])
 
+;; A multiple selection gives nil for missing attrs and :multiple for mixed ones
+(def ^:private schema:number-value
+  [:maybe [:or :float :int [:= :multiple]]])
+
 (def ^:private schema:layout-item-props-schema
   [:map
    [:layout-item-margin
     {:optional true}
-    [:map
-     [:m1 {:optional true} [:or :float :int]]
-     [:m2 {:optional true} [:or :float :int]]
-     [:m3 {:optional true} [:or :float :int]]
-     [:m4 {:optional true} [:or :float :int]]]]
+    [:maybe
+     [:or
+      [:= :multiple]
+      [:map
+       [:m1 {:optional true} schema:number-value]
+       [:m2 {:optional true} schema:number-value]
+       [:m3 {:optional true} schema:number-value]
+       [:m4 {:optional true} schema:number-value]]]]]
 
-   [:layout-item-margin-type {:optional true} :keyword]
+   [:layout-item-margin-type {:optional true} [:maybe :keyword]]
 
-   [:layout-item-h-sizing {:optional true} :keyword]
-   [:layout-item-v-sizing {:optional true} :keyword]
+   [:layout-item-h-sizing {:optional true} [:maybe :keyword]]
+   [:layout-item-v-sizing {:optional true} [:maybe :keyword]]
 
-   [:layout-item-min-w {:optional true} [:or :float :int]]
-   [:layout-item-max-w {:optional true} [:or :float :int]]
-   [:layout-item-min-h {:optional true} [:or :float :int]]
-   [:layout-item-max-h {:optional true} [:or :float :int]]])
+   [:layout-item-min-w {:optional true} schema:number-value]
+   [:layout-item-max-w {:optional true} schema:number-value]
+   [:layout-item-min-h {:optional true} schema:number-value]
+   [:layout-item-max-h {:optional true} schema:number-value]])
 
 (def ^:private schema:layout-size-constraints
   [:map
    [:values schema:layout-item-props-schema]
-   [:applied-tokens [:maybe [:map-of :keyword :string]]]
+   [:applied-tokens [:maybe [:map-of :keyword [:maybe [:or :string [:= :multiple]]]]]]
    [:ids [::sm/vec ::sm/uuid]]])
 
 (mf/defc layout-size-constraints*
@@ -602,7 +611,6 @@
             :input-type :min-width
             :nillable true
             :applied-token applied-token-to-min-w
-            :tooltip-class (stl/css :tooltip-wrapper)
             :value min-w}]
 
           [:div {:class (stl/css :layout-item-min-w)
@@ -632,7 +640,6 @@
             :attr :layout-item-max-w
             :property (tr "workspace.options.layout-item.layout-item-max-w")
             :nillable true
-            :tooltip-class (stl/css :tooltip-wrapper)
             :applied-token applied-token-to-max-w
             :value max-w}]
 
@@ -663,7 +670,6 @@
             :attr :layout-item-min-h
             :property (tr "workspace.options.layout-item.layout-item-min-h")
             :nillable true
-            :tooltip-class (stl/css :tooltip-wrapper)
 
             :applied-token applied-token-to-min-h
             :value min-h}]
@@ -694,7 +700,6 @@
             :attr :layout-item-max-h
             :property (tr "workspace.options.layout-item.layout-item-max-h")
             :nillable true
-            :tooltip-class (stl/css :tooltip-wrapper)
             :applied-token applied-token-to-max-h
             :value max-h}]
 

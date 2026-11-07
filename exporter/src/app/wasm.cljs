@@ -287,11 +287,10 @@
 
 (defn render-shape-pdf
   "Renders the shape subtree to PDF bytes (Uint8Array)."
-  [shape-id scale]
+  [shape-id]
   (let [buf (uuid/get-u32 shape-id)]
     (-> (h/call wasm/internal-module "_render_shape_pdf"
-                (aget buf 0) (aget buf 1) (aget buf 2) (aget buf 3)
-                scale)
+                (aget buf 0) (aget buf 1) (aget buf 2) (aget buf 3))
         (read-render-result LEN-HEADER-BYTES))))
 
 (defn render-shape-svg

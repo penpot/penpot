@@ -84,6 +84,7 @@
   (let [buffer  (atom [])
         omitset #{:potok.v2.core/undefined
                   :app.main.data.workspace.persistence/update-persistence-status
+                  :app.main.data.persistence/sync-unload-guard
                   :app.main.data.websocket/send-message
                   :app.main.data.workspace.notifications/handle-pointer-send
                   :app.main.router/assign-exception}]
@@ -145,6 +146,8 @@
 
 (add-watch ongoing-tasks ::ongoing-tasks
            (fn [_ _ _ events]
-             (if (empty? events)
-               (obj/set! js/window "onbeforeunload" nil)
-               (obj/set! js/window "onbeforeunload" (constantly false)))))
+             ;; No `window` outside the browser.
+             (when (exists? js/window)
+               (if (empty? events)
+                 (obj/set! js/window "onbeforeunload" nil)
+                 (obj/set! js/window "onbeforeunload" (constantly false))))))

@@ -3,6 +3,7 @@
   "description": "Launcher for a battery of Penpot Plugin API tests",
   "code": "plugin.js",
   "version": 2,
+  "scope": "global",
   "icon": "assets/icon.png",
   "permissions": [
     "content:read",
@@ -13,6 +14,10 @@
     "comment:read",
     "comment:write",
     "allow:downloads",
-    "allow:localstorage"
+    "allow:localstorage",
+    "allow:global",
+    "manage:projects",
+    "manage:teams",
+    "manage:delete"
   ]
 }

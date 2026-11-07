@@ -24,6 +24,7 @@ use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
 use options::RenderOptions;
+pub(crate) use strokes::per_side_stroke_outline;
 pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::error::{Error, Result};
@@ -347,6 +348,13 @@ fn sort_z_index(tree: ShapesPoolRef, element: &Shape, children_ids: Vec<Uuid>) -
     } else {
         children_ids
     }
+}
+
+/// Children bottom to top, in the same order the GPU renderer paints them.
+pub(crate) fn children_paint_order(tree: ShapesPoolRef, element: &Shape) -> Vec<Uuid> {
+    let mut ids = sort_z_index(tree, element, element.children_ids(false));
+    ids.reverse();
+    ids
 }
 
 /// Whether this `render_shape_exit` pass closes the shape's focus scope. A
@@ -767,8 +775,9 @@ impl RenderState {
         paint.set_style(skia::PaintStyle::Stroke);
         paint.set_stroke_width(stroke_outset * 2.0);
 
-        let mut outline = skia::Path::default();
+        let mut outline = skia::PathBuilder::new();
         if skia::path_utils::fill_path_with_paint(&base, &paint, &mut outline, None, None) {
+            let outline = outline.detach();
             if let Some(united) = base.op(&outline, skia::PathOp::Union) {
                 return united;
             }

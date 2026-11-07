@@ -105,7 +105,7 @@ For detailed security guidance, see `security-and-hardening`.
 | **Low:** | Minor, optional | Author may ignore — formatting, style preferences |
 | **Suggestion:** | Worth considering | Not required, but improves the code |
 
-**Unique finding IDs.** Assign every finding a stable identifier: `F1`, `F2`, `F3`, … numbered in order of severity (Critical first, then High, Medium, Low, Suggestion). Use the ID everywhere the finding is mentioned — in section headers, in the verdict, in follow-up discussion. Never renumber within a review. Example: `**F3 (High)** — `app/validate.cljs:42` — duplicate branch logic…`.
+**Finding IDs.** Assign every finding a stable identifier by severity class: `R1`, `R2`, … for required findings (Critical, High), `M1`, `M2`, … for minor findings (Medium, Low), and `S1`, `S2`, … for suggestions. Number within each class in review order. Use the ID everywhere the finding is mentioned — in section headers, in the verdict, in follow-up discussion. Never renumber within a review. Example: `**R2** — `app/validate.cljs:42` — duplicate branch logic…`.
 
 For each finding, describe the circumstances under which it could fail: specific inputs, load conditions, timing, or user actions that trigger the problem. "This crashes when input is null" is actionable; "this might crash" is not.
 
@@ -123,11 +123,11 @@ Briefly explain what the code does and give an overall assessment.
 
 ### Critical and High-Priority Issues
 
-List problems that could cause security incidents, data loss, crashes, incorrect behavior, or major performance degradation. Each finding gets its unique ID (`F1`, `F2`, …). For each: state the severity, identify the file/function/code section, explain why it's a problem, describe failure circumstances, and provide a concrete improvement with corrected code when useful.
+List problems that could cause security incidents, data loss, crashes, incorrect behavior, or major performance degradation. Each finding gets its unique ID (`R1`, `R2`, …). For each: state the severity, identify the file/function/code section, explain why it's a problem, describe failure circumstances, and provide a concrete improvement with corrected code when useful.
 
 ### Other Findings
 
-List medium- and low-priority issues, including maintainability and design concerns. Continue the ID sequence started above (`F3`, `F4`, …).
+List medium- and low-priority issues, including maintainability and design concerns. Use `M1`, `M2`, … for Medium/Low and `S1`, `S2`, … for Suggestions.
 
 ### Suggested Refactoring
 
@@ -149,7 +149,7 @@ Choose one:
 - **Approve with minor changes** — Good to merge after addressing low/medium issues
 - **Request changes** — Critical or high issues must be resolved before merge
 
-List the finding IDs the verdict depends on (e.g. "Request changes: F1, F4").
+List the finding IDs the verdict depends on (e.g. "Request changes: R1, R2").
 
 ## Change Sizing
 

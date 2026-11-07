@@ -30,7 +30,7 @@ describe('loadPlugin host context boundary (regression for #11001)', () => {
         close: vi.fn(),
         sendMessage: vi.fn(),
       },
-    } as unknown as Awaited<ReturnType<typeof createPlugin>>);
+    } as unknown as NonNullable<Awaited<ReturnType<typeof createPlugin>>>);
   });
 
   it('does not freeze host-owned functions reachable through the context', async () => {
@@ -60,6 +60,7 @@ describe('loadPlugin host context boundary (regression for #11001)', () => {
       manifest,
       expect.any(Function),
       undefined,
+      expect.any(AbortSignal),
     );
 
     // Host-owned functions must remain extensible: page navigation and

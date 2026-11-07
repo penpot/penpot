@@ -16,6 +16,7 @@
    [app.common.files.helpers :as cph]
    [app.common.files.migrations :as fmig]
    [app.common.geom.shapes :as gsh]
+   [app.common.path-names :as cpn]
    [app.common.schema :as sm]
    [app.common.svg :as csvg]
    [app.common.time :as dt]
@@ -102,7 +103,8 @@
                      (str/capital (d/name type)))))
 
     :always
-    (update :name unique-name state)))
+    (-> (update :name cpn/clean-path)
+        (update :name unique-name state))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMAS
@@ -412,7 +414,14 @@
 (defn add-shape
   [state params]
   (let [obj (-> params
-                (d/update-when :svg-attrs csvg/attrs->props)
+                (d/update-when :svg-attrs csvg/attrs->kebab-props)
+                (d/update-when :svg-defs
+                               (fn [defs]
+                                 (if (map? defs)
+                                   (d/mapm (fn [_ node] (csvg/normalize-def-node node)) defs)
+                                   defs)))
+                (cond-> (= :svg-raw (:type params))
+                  (d/update-when :content csvg/kebabize-content-node))
                 (types.shape/setup-shape)
                 (assign-shape-name state))]
     (-> state
