@@ -1700,6 +1700,14 @@
                        :ops [[:add-variant 0] [:switch 0] [:add-variant 0 0 0 0] [:delete 2 0 0 0]
                              [:add-variant 0 0 0 0]]}))))
 
+(t/deftest switching-a-copy-text-without-the-mains-typography-keeps-that-override
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:add-variant 0] [:switch 5] [:delete 25 0 0 0] [:text-style 12 8 1]
+                             [:text 26 3 0 0] [:add-variant 2] [:switch 0] [:variant-property 0 0 0 0]
+                             [:switch 20]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]
