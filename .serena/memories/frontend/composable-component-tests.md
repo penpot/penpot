@@ -76,8 +76,8 @@ Layout:
   real frontend), `comp/sync_test.cljs` (one `t/async` deftest per shared case; registered in
   `frontend_tests/runner.cljs`).
 - JVM/JS: `common-tests.logic.composable-sync-test` runs the shared cases through the pure
-  runner; all except those that need frontend code: N, Z, AI and the rotation case (placement
-  step), X (pending sync), AJ (reflow), AT, AU, AV, AX (variant action events).
+  runner; all except those that need frontend code: Z and AI (layout reflow), X (pending sync), AJ (reflow), AT, AU, AV, AX
+  (variant action events). N and the rotation case also run on the JVM.
 
 Judging (both runners): each variant is judged before the next one runs (`r/run-each`, and the
 interpreter's `check`), while the label map still names its shapes; a variant whose inline
@@ -109,15 +109,17 @@ Two pure runners (no store, JVM + CLJS):
   between cascade passes, where an outer copy still points at the component its main dropped
   (`:component-id-mismatch`), nor with `{:sync? false}`. Assembly ops (create/instantiate/nest/variant
   container): no sync, no undo group. `n/reset` (`reset-copy-instance` resets a lineage's latest copy) is a user op (sync +
-  undo); the interpreter sends `dwl/reset-component`. `{:sync? false}` disables sync. `Rotate`/`ChangeHeight`/`MoveShape`
-  are `:frontend-only` and throw `::runner/frontend-only` (their modifiers come from frontend events; the placement step itself is common, `app.common.logic.placement`). Swap and switch nodes use the production
+  undo); the interpreter sends `dwl/reset-component`. `{:sync? false}` disables sync.
+  `Rotate` and `ChangeHeight` are shared user operations. Their pure modifiers
+  use CLJC constraints and `app.common.logic.placement`; the frontend interpreter
+  still drives the workspace events. `MoveShape` remains frontend-only. Swap and switch nodes use the production
   `clv/generate-component-swap-in-place` (+ `clv/find-switch-target` for switch), the same code the
   frontend events call. Not modelled: the `:modified-at` bump, and the swap/switch event follow-ups
   (token propagation, WASM text resize, layout update). Tests:
   `common-tests.logic.composable-runner-test`.
 - Undo/redo round trip (`comp/undo_check.cljc`, alias `uc`), on by default in the pure runner
   (`:undo-check?`): after each `:user` step that pushed a group, undo must give back the
-  normalized file before it and redo the file after it (the variant continues from the redone
+  normalized files before it and redo the files after it (the variant continues from the redone
   file); a user step that pushed nothing must change nothing (`:no-undo-entry`); at the end,
   undo back to the last assembly step (the baseline; a case's own undo below it moves it) and
   redo all. Files compare through `app.common.test-helpers.normalize` (`thn/normalize-file`:
@@ -137,6 +139,11 @@ Two pure runners (no store, JVM + CLJS):
   workspace undo index (`:undo-index`/`:redo-index` phases): a step must add exactly one undo
   entry or group. File installs (assembly ops) are its baselines; a skipped optional and an inline `Test` are not. The interpreter
   empties `:workspace-undo` per variant. Frontend snapshots drop `:position-data` under WASM.
+  Both runners use `uc/snapshot-files` for the current file and every
+  auxiliary/library file. File differences prefix signatures with
+  `[:file <label> ...]`. Normalization also drops library `:synced-at`,
+  a server status stamp rather than design data. `ftm/snapshot` exposes
+  the same snapshot to cross-file undo regressions.
   Undo groups get lost in derived work: `initialize-shape-layout` buffers `:layout/update`
   without its `:undo-group` (F43), so a swap's reflow lands in entries of its own. Match
   steps by node identity, never by record type or rendered name: `n/MoveChild` does not resolve
@@ -245,9 +252,7 @@ synchronously); an async hop without a pending task makes steps resolve early. T
 `frontend-tests.composable-tests.completion-contract-test` (slowed-down sync via a mocked
 `dwl/sync-file`), `frontend-tests.data.workspace-sync-barrier-test`. Re-reads `:file` each step
 so the shared accessors keep working.
-WASM-SHAPE IMMUNITY: a test that starts the WASM renderer leaves `cts/wasm-enabled?` on, which
-makes every later shape a proxy that leaves out nil and false attributes; `fixture` turns it off
-for the composable tests and restores it after, so they run on records in any order.
+WASM-SHAPE IMMUNITY: renderer tests can leave `cts/wasm-enabled?` on; `fixture` disables it and restores it afterward, so composable cases use records in any order. Proxy boundary tests opt in explicitly. Fresh proxies retain every Shape base field, including nil flips, matching record construction/dissoc and preserving exact undo (F203).
 STORE-SWAP IMMUNITY: other test namespaces `set!` `st/state`/`st/stream` and never restore, while
 the `app.main.refs` lenses stay bound to the ORIGINAL atoms — propagation then dies silently. The
 interpreter captures the atoms at namespace-load time and re-`set!`s them per variant.
@@ -275,8 +280,8 @@ reproduce what the real measurement commits (F37: `commit-position-data`).
 as an error of its case and the next variant runs. `(optional (in-sequence …))` is not flattened for the interpreter — use
 independent optionals (nested choices are fine). The Serena/clj-kondo cache for `nodes.cljc` goes stale (phantom symbols) —
 trust the build. Cross-namespace global-state leaks land in this suite first; suspect them before
-the framework on inexplicable full-run-only failures. Case H's `sync-file` schedules a delayed RPC
-that fails headless (benign; absorbed by per-op grace).
+the framework on inexplicable full-run-only failures. Case H's `sync-file` schedules a delayed library-status RPC. Fixed and generated
+cases mock RPC and the delay timer for the whole async replay.
 
 ---
 
@@ -308,7 +313,9 @@ Distinguishing abstractions (the OOP articulation of the shared principles):
   each other. `OpCreateNestableComponent(strategy, name)` prefixes its roles with `name`; give
   every extra lineage in a case a name.
 - `OpDetach`/`OpSwap`/`OpReset` wait for pending propagation before acting (a script could
-  otherwise act inside the sync window, which no user can). `swapComponent` keeps touched (F33).
+  otherwise act inside the sync window, which no user can). `swapComponent` follows the UI:
+  ordinary swaps clear content overrides and retain orientation; switches
+  within one variant set carry matching overrides.
   The suite pins published `@penpot/plugin-types` 1.4.2, which lacks `resetOverrides` (typed cast).
 - Known bugs: `Assert.knownFailure(bug, expected, pinned, actual, equals)` (same order as `tm/known-failure`), the counterpart of
   `tm/known-failure`.
@@ -330,3 +337,37 @@ Details: README, "Running in CI".
 ## Substrate
 `mem:common/testing`, `mem:common/component-data-model`, `mem:common/component-swap-pipeline`,
 `mem:frontend/testing`.
+
+
+## Seeded random replay
+
+`common-tests.logic.composable-gen-test` checks EDN programs through common.
+`frontend-tests.composable-tests.generated-test/replay` accepts the same EDN
+(including a shrunk failure), checks target/skip traces, and drives real events
+with per-step barriers and undo/redo. Its independent model maps shapes between
+backends by file/page/tree path, including auxiliary library files. UpdateMain
+passes the target shape's component-file to update-component-sync. Refresh both
+the working file and libraries after each step; strip installed library-of
+metadata only from the portable situation, never from undo snapshots.
+
+Plugin `RandomCompositions` uses the real Plugin API and its own visible fill
+and opacity model. It waits for waitForLayoutUpdate with a hard deadline;
+there is no fixed-delay fallback. Live WASM checks use ws1 and enable plugin
+flags naturalChildOrdering and throwValidationErrors. When browser automation
+runs in a background tab, foreground it (and use CDP focus emulation if needed)
+before diagnosing a timeout: background timers can wait a minute per step.
+Verify initialized WASM, no workspace exception and empty pending reflow.
+
+Rotate nodes take a delta angle. The interpreter must pass delta?true to
+increase-rotation; its default sets an absolute angle. A45deg turn followed
+by90deg must end135deg on both backends (F171).
+
+## Suite choice after Phase 4
+
+Keep CLJS replay as the composable regression suite, backed by shared common
+generation and test.check shrinking. Keep the plugin for public API, WASM,
+font loading and measured-text smoke checks. Retain its fixed cases until
+equivalent coverage replaces them; do not build a third full random model
+for parity. Pure common checks cannot expose async undo/measurement order
+errors such as F137/F152. Compare coverage and CI cost separately: timings
+collected during stress runs do not prove either suite is faster.

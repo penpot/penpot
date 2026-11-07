@@ -245,9 +245,10 @@
 
 ;; Scenario: the workspace opens and then reloads twice (a peer's restore,
 ;; the rollback fallback), each reload running `initialize-workspace` again
-;; without leaving the workspace; then one commit is made. Proves: each
-;; reload replaces the workspace streams, so the commit adds one undo entry,
-;; not one per reload.
+;; without leaving the workspace, and each loaded file starting the edit
+;; watchers that record undo entries (the file load is mocked, so the test
+;; starts them); then one commit is made. Proves: each reload replaces the
+;; workspace streams, so the commit adds one undo entry, not one per reload.
 (t/deftest ^:async a-workspace-reload-adds-one-undo-entry-per-commit
   (let [file    (cthf/sample-file :file1 :page-label :page1)
         team-id (uuid/next)
@@ -263,8 +264,11 @@
          (ptk/emit! store
                     #(assoc % :current-team-id team-id)
                     (dw/initialize-workspace team-id (:id file))
+                    (dw/initialize-edit-watchers)
                     (ptk/event ::dw/reload-current-file)
-                    (ptk/event ::dw/reload-current-file))
+                    (dw/initialize-edit-watchers)
+                    (ptk/event ::dw/reload-current-file)
+                    (dw/initialize-edit-watchers))
          (await (async/settle))
          (ptk/emit! store (rename-page (cthf/current-page-id file) "Renamed"))
          (await (async/wait-for #(seq (get-in @store [:workspace-undo :items]))

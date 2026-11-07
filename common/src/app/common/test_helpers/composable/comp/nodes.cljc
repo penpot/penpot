@@ -15,17 +15,21 @@
    [app.common.files.helpers :as cfh]
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.files.tokens :as cfo]
+   [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.duplicate :as cld]
    [app.common.logic.instances :as cli]
    [app.common.logic.libraries :as cll]
+   [app.common.logic.placement :as clp]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
    [app.common.logic.variants :as clv]
    [app.common.math :as mth]
    [app.common.path-names :as cpn]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.composable.comp.files :as cf]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
@@ -87,6 +91,17 @@
 ;; one clause in each.
 ;; ---------------------------------------------------------------------------
 
+(def scalar-properties
+  #{:strokes :shadow :blur :background-blur :hidden :blocked :r1 :r2 :r3 :r4
+    :blend-mode :hide-fill-on-export :show-content
+    :fixed-scroll :constraints-h :constraints-v :layout-item-margin
+    :layout-gap :layout-padding :layout-align-items :layout-flex-dir
+    :layout-wrap-type :layout-justify-content :layout-align-content
+    :layout-gap-type :layout-padding-type :layout-justify-items
+    :layout-item-margin-type :layout-item-align-self :layout-item-h-sizing
+    :layout-item-v-sizing :layout-item-min-w :layout-item-max-w
+    :layout-item-min-h :layout-item-max-h :layout-item-absolute :layout-item-z-index})
+
 (defn set-property
   "`shape` with `property` set to `value`. Public so the frontend interpreter
    makes the same edit."
@@ -98,9 +113,11 @@
     :margin  (assoc shape
                     :layout-item-margin-type :simple
                     :layout-item-margin {:m1 value :m2 value :m3 value :m4 value})
-    (throw (ex-info (str "set-property: unsupported property " (pr-str property)
-                         " (supported: :fills, :opacity, :name, :margin)")
-                    {:property property}))))
+    (if (contains? scalar-properties property)
+      (assoc shape property value)
+      (throw (ex-info (str "set-property: unsupported property " (pr-str property)
+                           " (supported: :fills, :opacity, :name, :margin)")
+                      {:property property})))))
 
 (defn- read-property
   "The comparable value of `property` in `shape`."
@@ -112,9 +129,11 @@
     :margin  (when (= :simple (:layout-item-margin-type shape))
                (let [{:keys [m1 m2 m3 m4]} (:layout-item-margin shape)]
                  (when (= m1 m2 m3 m4) m1)))
-    (throw (ex-info (str "read-property: unsupported property " (pr-str property)
-                         " (supported: :fills, :opacity, :name, :margin)")
-                    {:property property}))))
+    (if (contains? scalar-properties property)
+      (get shape property)
+      (throw (ex-info (str "read-property: unsupported property " (pr-str property)
+                           " (supported: :fills, :opacity, :name, :margin)")
+                      {:property property})))))
 
 (defn- applied-value*
   "The value a change of `property` to `value` leaves: a rename cleans the
@@ -122,27 +141,87 @@
   [property value]
   (if (= :name property) (cpn/clean-path value) value))
 
+(def ^:private layout-container-properties
+  #{:layout-gap :layout-padding :layout-align-items :layout-flex-dir
+    :layout-wrap-type :layout-justify-content :layout-align-content
+    :layout-gap-type :layout-padding-type :layout-justify-items})
+
+(defn- with-layout-reflow
+  [changes id]
+  (let [objects   (pcb/get-objects changes)
+        tree      (gm/set-objects-modifiers {id {:modifiers (ctm/reflow-modifiers)}} objects)
+        transform (clp/modifiers-transform tree)]
+    (cls/generate-update-shapes changes (keys tree) transform objects
+                                {:ignore-touched true :attrs clp/transform-attrs})))
+
+(defn- with-layouts-reflow
+  "Reflow the layouts among `ids`, as the frontend's :layout/update does
+   after a structural change, marking `changes` for a layout pass after sync."
+  [changes ids]
+  (let [objects    (pcb/get-objects changes)
+        layout-ids (filter #(:layout (get objects %)) ids)]
+    (if (empty? layout-ids)
+      changes
+      (-> (reduce with-layout-reflow changes layout-ids)
+          (assoc ::layout-reflow? true)))))
+
+(defn layout-reflow?
+  "Whether a property operation requires layout after its component sync."
+  [changes]
+  (::layout-reflow? changes))
+
+(defn get-layout-reflow-changes
+  "Derived layout changes on the current file's pages, after copy inputs sync."
+  [situation]
+  (reduce (fn [changes [_ page]]
+            (let [ids (into [] (keep #(when (:layout %) (:id %))) (vals (:objects page)))]
+              (if (empty? ids)
+                changes
+                (let [tree (gm/set-objects-modifiers
+                            (into {} (map #(vector % {:modifiers (ctm/reflow-modifiers)})) ids)
+                            (:objects page))
+                      next (cls/generate-update-shapes
+                            (pcb/empty-changes nil (:id page)) (keys tree)
+                            (clp/modifiers-transform tree) (:objects page)
+                            {:ignore-touched true :attrs clp/transform-attrs})]
+                  (pcb/concat-changes changes next)))))
+          (pcb/empty-changes)
+          (get-in (tm/file situation) [:data :pages-index])))
+
 (defrecord ChangeProperty [target property value]
   IComponentOperation
   (op-kind [_] :user)
 
   tm/IOperation
   (apply-to [this situation]
-    (let [the-file (tm/file situation)
-          shape-id (tm/target-shape-id situation target)
-          page     (thf/current-page the-file)
-          shape    (get-in page [:objects shape-id])
-          value'   (applied-value* property value)
-          changes  (cond-> (cls/generate-update-shapes
-                            (pcb/empty-changes nil (:id page))
-                            #{shape-id}
-                            (fn [shape] (set-property shape property value'))
-                            (:objects page)
-                            {})
-                     ;; renaming a main root renames its component too
-                     (and (= :name property) (ctk/main-instance? shape))
-                     (cll/generate-rename-component (:component-id shape) value' (:data the-file)))
-          file'    (thf/apply-changes the-file changes)]
+    (let [the-file  (tm/file situation)
+          shape-id  (tm/target-shape-id situation target)
+          page      (thf/current-page the-file)
+          shape     (get-in page [:objects shape-id])
+          value'    (applied-value* property value)
+          layout-id (cond
+                      (and (:layout shape) (contains? layout-container-properties property)) shape-id
+                      (and (contains? ctl/layout-child-attrs property)
+                           (:layout (get-in page [:objects (:parent-id shape)]))) (:parent-id shape))
+          changes   (cond-> (cls/generate-update-shapes
+                             (pcb/empty-changes nil (:id page))
+                             #{shape-id}
+                             (fn [shape] (set-property shape property value'))
+                             (:objects page)
+                             {})
+                      (and (= :layout-item-absolute property)
+                           (ctl/grid-layout? (get-in page [:objects layout-id])))
+                      (pcb/update-shapes [layout-id] ctl/assign-cells
+                                         {:with-objects? true :ignore-touched true})
+
+                      layout-id
+                      (-> (with-layout-reflow layout-id)
+                          (assoc ::layout-reflow? true))
+
+                      ;; renaming a main root renames its component too
+                      (and (= :name property) (ctk/main-instance? shape))
+                      (cll/generate-rename-component (:component-id shape) value' (:data the-file)))
+          file'     (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')
           (record-changes changes)
@@ -153,6 +232,49 @@
    `target` names (a role, a label or a `(situation -> id)` fn) to `value`."
   [target property value]
   (tm/assign-id (->ChangeProperty target property value)))
+
+(declare libraries)
+
+(defrecord EditGrid [target action value]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [file    (tm/file situation)
+          page    (thf/current-page file)
+          id      (tm/target-shape-id situation target)
+          edit    (fn [shape]
+                    (update shape :layout-grid-cells
+                            (fn [cells]
+                              (update-vals cells #(if (= [(:row value) (:column value)] [(:row %) (:column %)])
+                                                    (merge % (:props value)) %)))))
+          ;; as the frontend's change-grid-direction: the cells for the new
+          ;; direction, then the direction, the only override it makes
+          changes (if (= action :direction)
+                    (as-> (pcb/empty-changes nil (:id page)) changes
+                      (cls/generate-update-shapes changes [id]
+                                                  (cll/grid-direction-cells file page (libraries situation) value)
+                                                  (:objects page)
+                                                  {:attrs #{:layout-grid-cells :touched} :ignore-touched true
+                                                   :skip-grid-reassignment? true})
+                      (cls/generate-update-shapes changes [id]
+                                                  #(assoc % :layout-grid-dir value)
+                                                  (:objects page)
+                                                  {:attrs #{:layout-grid-dir} :skip-grid-reassignment? true}))
+                    (cls/generate-update-shapes (pcb/empty-changes nil (:id page)) [id]
+                                                edit (:objects page) {}))
+          changes (-> changes
+                      (with-layout-reflow id)
+                      (assoc ::layout-reflow? true))]
+      (-> situation
+          (tm/with-file (thf/apply-changes file changes))
+          (record-changes changes)
+          (tm/record-application this {:target target :action action :value value})))))
+
+(defn edit-grid
+  [target action value]
+  (tm/assign-id (->EditGrid target action value)))
 
 (defprotocol IPropertyCheck
   "The check dual of an operation that changes a property: whether a shape the
@@ -258,7 +380,9 @@
           ;; derived write
           changes  (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
                                                #{shape-id}
-                                               #(edit-text-content % edit value)
+                                               (fn [shape]
+                                                 (cond-> (edit-text-content shape edit value)
+                                                   (:typography this) cls/touch-text-typography))
                                                (:objects page)
                                                {:ignore-touched #{:name}})
           file'    (thf/apply-changes the-file changes)]
@@ -271,21 +395,37 @@
   "Constructor for the text edit operation: set the `edit` (see
    `text-edits`) of the text bound to `target` to `value`. On the frontend it
    dispatches the real `v2-update-text-shape-content`."
-  [target edit value]
-  (tm/assign-id (->EditText target edit value)))
+  ([target edit value]
+   (edit-text target edit value nil))
+  ([target edit value {:keys [typography]}]
+   (cond-> (tm/assign-id (->EditText target edit value))
+     typography (assoc :typography typography))))
 
 ;; ---------------------------------------------------------------------------
 ;; Geometry operations
 ;;
-;; The frontend interpreter dispatches the real sidebar events: they build
-;; the modifiers (frontend code: constraints, pixel snap) and the placement
-;; step (`clp/calculate-ignore-tree`) decides which copy shapes the change
-;; touches. Their `apply-to` makes the same transform without either, so the
-;; pure runner rejects them.
+;; The frontend interpreter dispatches the sidebar events. The pure runner
+;; uses the same constraints and placement logic for resize and rotation.
+;; MoveShape still needs the frontend position event.
+
+(defn transform-changes
+  "Apply a transform through constraints and the shared placement step."
+  ([page shape modifiers]
+   (transform-changes page shape modifiers nil))
+  ([page shape modifiers {:keys [file libraries]}]
+   (let [objects   (:objects page)
+         tree      (gm/set-objects-modifiers {(:id shape) {:modifiers modifiers}} objects)
+         transform (clp/modifiers-transform tree)
+         changes   (cls/generate-update-shapes
+                    (pcb/empty-changes nil (:id page)) (keys tree) transform objects
+                    {:ignore-tree (clp/calculate-ignore-tree objects (keys tree) transform #{(:id shape)})
+                     :attrs clp/transform-attrs})]
+     (cond-> changes
+       file (cll/generate-sync-transformed-placement file libraries page objects (keys tree))))))
 
 (defrecord Rotate [target angle]
   IComponentOperation
-  (op-kind [_] :frontend-only)
+  (op-kind [_] :user)
 
   tm/IOperation
   (apply-to [this situation]
@@ -294,15 +434,9 @@
           page     (thf/current-page the-file)
           objects  (:objects page)
           shape    (get objects shape-id)
-          ;; the whole subtree rotates, as with the real event
-          ids      (into #{shape-id} (cfh/get-children-ids objects shape-id))
           center   (gsh/shape->center shape)
-          rotate1  (fn [s] (gsh/transform-shape s (ctm/rotation-modifiers s center angle)))
-          changes  (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
-                                               ids
-                                               rotate1
-                                               objects
-                                               {})
+          changes  (transform-changes page shape (ctm/rotation-modifiers shape center angle)
+                                      {:file the-file :libraries (cf/libraries situation)})
           file'    (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')
@@ -318,7 +452,7 @@
 
 (defrecord ChangeHeight [target value]
   IComponentOperation
-  (op-kind [_] :frontend-only)
+  (op-kind [_] :user)
 
   tm/IOperation
   (apply-to [this situation]
@@ -327,20 +461,43 @@
           page     (thf/current-page the-file)
           objects  (:objects page)
           shape    (get objects shape-id)
-          resize1  (fn [s] (gsh/transform-shape
-                            s
-                            (ctm/resize-modifiers (gpt/point 1 (/ value (:height s)))
-                                                  (gpt/point (:x s) (:y s)))))
-          changes  (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
-                                               #{(:id shape)}
-                                               resize1
-                                               objects
-                                               {})
+          changes  (transform-changes page shape (ctm/change-size shape nil value)
+                                      {:file the-file :libraries (cf/libraries situation)})
           file'    (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')
           (record-changes changes)
           (tm/record-application this {:target target :value value})))))
+
+(defn geometry-modifiers
+  [shape action value]
+  (case action
+    :move (ctm/move-modifiers (apply gpt/point value))
+    :width (ctm/change-dimensions-modifiers shape :width value)
+    :height (ctm/change-dimensions-modifiers shape :height value)
+    :rotate (ctm/rotation-modifiers shape (gsh/shape->center shape) value)
+    :flip-x (ctm/resize-modifiers (gpt/point -1 1) (gsh/shape->center shape))
+    :flip-y (ctm/resize-modifiers (gpt/point 1 -1) (gsh/shape->center shape))))
+
+(defrecord TransformShape [target action value]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [file (tm/file situation)
+          page (thf/current-page file)
+          shape (get (:objects page) (tm/target-shape-id situation target))
+          modifiers (geometry-modifiers shape action value)
+          changes (transform-changes page shape modifiers {:file file :libraries (cf/libraries situation)})]
+      (-> situation
+          (tm/with-file (thf/apply-changes file changes))
+          (record-changes changes)
+          (tm/record-application this {:target target :action action :value value})))))
+
+(defn transform-shape
+  [target action value]
+  (tm/assign-id (->TransformShape target action value)))
 
 (defrecord MoveShape [target dx dy]
   IComponentOperation
@@ -749,10 +906,9 @@
   (tm/assign-id (->InstantiateCopy name)))
 
 (defn- libraries
-  "The situation's files by id: the current one and the auxiliary ones."
+  "The current file and its loaded library versions."
   [situation]
-  (let [the-file (tm/file situation)]
-    (assoc (tm/aux-files situation) (:id the-file) the-file)))
+  (cf/libraries situation))
 
 ;; ---------------------------------------------------------------------------
 ;; reset — reset the overrides of a copy head
@@ -779,6 +935,7 @@
           file'     (thf/apply-changes the-file changes :validate? false)]
       (-> situation
           (tm/with-file file')
+          (cf/remember-subtree (:id the-file) shape-id (cf/all-files situation))
           (record-changes changes)
           (tm/record-application this {:target target :reset shape-id})))))
 
@@ -815,9 +972,15 @@
                                                   (:data the-file)
                                                   (:id page)
                                                   (libraries situation))
-          file'    (thf/apply-changes the-file changes :validate? false)]
+          file'    (thf/apply-changes the-file changes :validate? false)
+          objects  (:objects (thf/current-page file'))
+          ;; copy children whose main the loaded library no longer has
+          unlinked (filter #(and (nil? (get-in objects [% :shape-ref]))
+                                 (some? (get-in objects [(get-in objects [% :parent-id]) :shape-ref])))
+                           (cfh/get-children-ids objects shape-id))]
       (-> situation
           (tm/with-file file')
+          (update ::unlinked-children (fnil into #{}) unlinked)
           (record-changes changes)
           (tm/record-application this {:target target :detached shape-id})))))
 
@@ -827,6 +990,13 @@
   [target]
   (tm/assign-id (->Detach target)))
 
+(defn unlinked-children
+  "The ids of the copy children a detach left as plain shapes, because the
+   loaded library had removed their mains. Accepting the library replaces
+   them with linked shapes."
+  [situation]
+  (get situation ::unlinked-children #{}))
+
 ;; ---------------------------------------------------------------------------
 ;; update-main — push a copy's overrides to its main
 ;;
@@ -835,13 +1005,6 @@
 ;; the main's changes apart (`split-local-changes`); here they go as one, in
 ;; the order the sync built them.
 ;; ---------------------------------------------------------------------------
-
-(defn- strip-local-change
-  [changes]
-  (let [strip (partial mapv #(dissoc % :local-change?))]
-    (-> changes
-        (update :redo-changes strip)
-        (update :undo-changes strip))))
 
 (defrecord UpdateMain [target]
   IComponentOperation
@@ -858,10 +1021,14 @@
                         (cll/generate-sync-shape-inverse (libraries situation)
                                                          container
                                                          shape-id)
-                        (strip-local-change))
-          file'     (thf/apply-changes the-file changes :validate? false)]
+                        (cf/route-update-main (:id the-file) (:component-file (get-in page [:objects shape-id]))))
+          shape (get-in page [:objects shape-id])
+          situation (cf/apply-changes situation changes)]
       (-> situation
-          (tm/with-file file')
+          (cond-> (and (:accepted-libraries situation)
+                       (not= (:id the-file) (:component-file shape)))
+            (update-in [:library-pulls (:id the-file) (:component-file shape)]
+                       (fnil conj #{}) (:component-id shape)))
           (record-changes (when (seq (:redo-changes changes)) changes))
           (tm/record-application this {:target target :updated shape-id})))))
 
@@ -969,13 +1136,15 @@
 
 (defn- new-subtree-head
   "The id of the shape in `page-after` that is not in `page-before` but whose
-   parent is: the head of the one subtree added between them. Throws when
-   there is not exactly one, as when the sync also added children to copies."
+   parent is, outside component copies. Sync can add matching subtrees in
+   copies too; only the user's new subtree identifies the duplicate."
   [page-before page-after]
   (let [before (:objects page-before)
         heads  (->> (vals (:objects page-after))
                     (filter #(and (not (contains? before (:id %)))
-                                  (contains? before (:parent-id %))))
+                                  (contains? before (:parent-id %))
+                                  (empty? (ctn/get-parent-copy-heads (:objects page-after)
+                                                                     (get-in page-after [:objects (:parent-id %)])))))
                     (map :id))]
     (when-not (= 1 (count heads))
       (throw (ex-info (str "Expected one new subtree, found " (count heads))
@@ -997,9 +1166,9 @@
           shape-id (tm/target-shape-id situation target)
           page     (thf/current-page the-file)
           objects  (:objects page)
-          _        (when-not (ctk/allow-duplicate? objects (get objects shape-id))
+          _        (when-not (cld/allow-duplicate? objects (get objects shape-id))
                      ;; the frontend's `duplicate-shapes` drops it and does nothing
-                     (throw (ex-info "The shape cannot be duplicated (inside a copy)"
+                     (throw (ex-info "The shape cannot be duplicated in its current parent"
                                      {:type ::duplicate-refused :target target})))
           changes  (-> (pcb/empty-changes nil)
                        (cld/generate-duplicate-changes objects
@@ -1010,12 +1179,13 @@
                                                        (:data the-file)
                                                        (:id the-file))
                        (cld/generate-duplicate-changes-update-indices objects #{shape-id}))
-          file'    (thf/apply-changes the-file changes :validate? false)]
+          file'    (thf/apply-changes the-file changes :validate? false)
+          result   (applied-result this the-file file')]
       (-> situation
           (tm/with-file file')
+          (cf/inherit-references (:id the-file) shape-id (:new-head result))
           (record-changes changes)
-          (tm/record-application this (merge {:target target}
-                                             (applied-result this the-file file')))))))
+          (tm/record-application this (merge {:target target} result))))))
 
 (defn duplicate
   "Constructor for the duplicate operation: duplicate the shape `target`
@@ -1119,6 +1289,7 @@
                                            (nest-target-index situation parent-id)
                                            #{copy-id}
                                            :cell cell)
+          changes   (with-layouts-reflow changes [parent-id (get-in page [:objects copy-id :parent-id])])
           file'     (thf/apply-changes the-file changes :validate? false)]
       (-> situation
           (tm/with-file file')
@@ -1141,12 +1312,19 @@
 ;; ---------------------------------------------------------------------------
 
 (defn swap-target-id
-  "The component id `swap-shape`'s `to` names: a lineage name (a string) or a
-   component label (a keyword)."
+  "Resolve a lineage name, component label, or situation-to-component fn."
   [situation to]
-  (if (keyword? to)
-    (thi/id to)
-    (lineage-component-id situation to)))
+  (cond
+    (fn? to) (to situation)
+    (keyword? to) (thi/id to)
+    :else (lineage-component-id situation to)))
+
+(defn swap-target-file-id
+  "The loaded file that owns the requested swap destination."
+  [situation to]
+  (let [component-id (swap-target-id situation to)]
+    (some (fn [[id file]] (when (get-in file [:data :components component-id]) id))
+          (libraries situation))))
 
 (defrecord SwapShape [target to keep-touched?]
   IComponentOperation
@@ -1160,13 +1338,14 @@
           [_ changes _] (clv/generate-component-swap-in-place (pcb/empty-changes nil (:id page))
                                                               page
                                                               (libraries situation)
-                                                              (:data the-file)
+                                                              (:data (get (libraries situation) (swap-target-file-id situation to)))
                                                               shape
                                                               (swap-target-id situation to)
                                                               (boolean keep-touched?))
           file'         (thf/apply-changes the-file changes :validate? false)]
       (-> situation
           (tm/with-file file')
+          (cf/remember-subtree (:id the-file) (:id shape) (cf/all-files situation))
           (record-changes changes)
           (tm/record-application this {:target target :to to :keep-touched? keep-touched?})))))
 
@@ -1264,9 +1443,12 @@
                       {:set set-name :value value :count (count matches)})))))
 
 (defn variant-member-component-id
-  "The component id of set `set-name`'s member with value `value`."
+  "The component id of set `set-name`'s member with value `value`. With no
+   `set-name`, `value` is the component id."
   [situation set-name value]
-  (:component-id (variant-member situation set-name value)))
+  (if (some? set-name)
+    (:component-id (variant-member situation set-name value))
+    value))
 
 ;; ---------------------------------------------------------------------------
 ;; make-variant-container — build a variant set
@@ -1429,6 +1611,7 @@
               file'         (thf/apply-changes the-file changes :validate? false)]
           (-> situation
               (tm/with-file file')
+              (cf/remember-subtree (:id the-file) (:id shape) (cf/all-files situation))
               (record-changes changes)
               (tm/record-application this {:target-component (:id component)})))))))
 
@@ -1478,15 +1661,19 @@
   (component-properties situation (variant-member-component-id situation set-name value)))
 
 (defn member-root
-  "The main root of set `set-name`'s member built with value `value`."
+  "The main root of set `set-name`'s member built with value `value`, or with
+   no `set-name`, of the component `value`."
   [situation set-name value]
-  (tm/shape-by-id situation (thi/id (:root-label (variant-member situation set-name value)))))
+  (tm/shape-by-id situation
+                  (if (some? set-name)
+                    (thi/id (:root-label (variant-member situation set-name value)))
+                    (:main-instance-id (member-component situation nil value)))))
 
 (defn variant-property-call
   "The edit of `op` as `[edit & args]`, the arguments the generator and the
    frontend event of `edit` take after the changes."
   [situation {:keys [set-name edit params]}]
-  (let [variant-id (variant-set-id situation set-name)]
+  (let [variant-id (or (:variant-id params) (variant-set-id situation set-name))]
     (case edit
       :add       [:add variant-id (select-keys params [:property-name :property-value])]
       :remove    [:remove variant-id (:pos params)]
@@ -1535,6 +1722,12 @@
           (tm/with-file file')
           (record-changes (when (seq (:redo-changes changes)) changes))
           (tm/record-application this {:set-name set-name :edit edit :params params})))))
+
+(defn edit-variant-set
+  "The edit `edit` of `variant-property-call` on the variant set `variant-id`,
+   whose `params` name members by component id."
+  [variant-id edit params]
+  (tm/assign-id (->EditVariantProperty nil edit (assoc params :variant-id variant-id))))
 
 (defn add-variant-property
   "Add a property `:name` to set `set-name`, with value `:value` on every
@@ -1609,6 +1802,28 @@
          (remove before)
          (first))))
 
+(defn- place-added-variant
+  "The file and changes after the placement `add-new-variant` gives a member
+   added to a container with no layout: the container grows by the member's
+   width and a gap, and the member moves to the container's right end."
+  [file libraries shape-id]
+  (let [page      (thf/current-page file)
+        shape     (get (:objects page) shape-id)
+        container (get (:objects page) (:parent-id shape))
+        width     (+ (:width container) (:width shape) 20)
+        x         (- width (+ (:width shape) 30))
+        resize    (transform-changes page container (geometry-modifiers container :width width)
+                                     {:file file :libraries libraries})
+        file      (thf/apply-changes file resize :validate? false)
+        page      (thf/current-page file)
+        shape     (get (:objects page) shape-id)
+        frame     (cfh/get-parent-frame (:objects page) shape)
+        bbox      (grc/points->rect (:points shape))
+        move      (transform-changes page shape
+                                     (geometry-modifiers shape :move [(- (+ (:x frame) x) (:x bbox)) 0])
+                                     {:file file :libraries libraries})]
+    [(thf/apply-changes file move :validate? false) (pcb/concat-changes resize move)]))
+
 (defrecord AddVariant [set-name member]
   IComponentOperation
   (op-kind [_] :user)
@@ -1623,15 +1838,20 @@
           page      (thf/current-page the-file)
           root      (member-root situation set-name member)
           component (member-component situation set-name member)
+          shape-id  (uuid/next)
           changes   (-> (pcb/empty-changes nil (:id page))
                         (pcb/with-library-data (:data the-file))
                         (pcb/with-objects (:objects page))
                         (clv/generate-add-new-variant root
                                                       (:variant-id component)
                                                       (uuid/next)
-                                                      (uuid/next)
+                                                      shape-id
                                                       (dec (count (:variant-properties component)))))
-          file'     (thf/apply-changes the-file changes :validate? false)]
+          file'     (thf/apply-changes the-file changes :validate? false)
+          [file' changes] (if (ctl/any-layout? (get (:objects page) (:parent-id root)))
+                            [file' changes]
+                            (let [[file' placement] (place-added-variant file' (libraries situation) shape-id)]
+                              [file' (pcb/concat-changes changes placement)]))]
       (-> situation
           (tm/with-file file')
           (record-changes changes)
@@ -1640,7 +1860,7 @@
 
 (defn add-variant
   "Add a member to set `set-name`, a duplicate of its member built with value
-   `member`."
+   `member`, or with no `set-name`, of the component `member`."
   [set-name member]
   (tm/assign-id (->AddVariant set-name member)))
 
@@ -1731,7 +1951,7 @@
   [situation]
   (-> situation tm/aux-files keys first))
 
-(defrecord SyncFromLibrary []
+(defrecord SyncFromLibrary [source]
   IComponentOperation
   (op-kind [_] :user)
 
@@ -1739,7 +1959,7 @@
   (apply-to [this situation]
     (let [the-file (tm/file situation)
           file-id  (:id the-file)
-          lib-id   (library-id situation)
+          lib-id   (or source (library-id situation))
           changes  (-> (pcb/empty-changes)
                        (cll/generate-sync-file-changes nil
                                                        :components
@@ -1748,17 +1968,24 @@
                                                        lib-id
                                                        (libraries situation)
                                                        file-id))
-          file'    (thf/apply-changes the-file changes :validate? false)]
-      (-> situation
+          file'    (thf/apply-changes the-file changes :validate? false)
+          accepted (cf/accept-library situation lib-id)]
+      (-> accepted
           (tm/with-file file')
+          ;; the copies take this library as loaded and keep the versions
+          ;; of the others they had accepted
+          (cf/remember-copies file-id lib-id
+                              (set (keys (get-in (libraries situation) [lib-id :data :components])))
+                              (merge (cf/all-files situation)
+                                     (get-in accepted [:accepted-libraries file-id])))
           (record-changes changes)
           (tm/record-application this {:library-id lib-id})))))
 
 (defn sync-from-library
   "Constructor for the library update of the current file from the
    situation's library."
-  []
-  (tm/assign-id (->SyncFromLibrary)))
+  ([] (sync-from-library nil))
+  ([source] (tm/assign-id (->SyncFromLibrary source))))
 
 
 ;; ---------------------------------------------------------------------------
@@ -1860,7 +2087,7 @@
   tm/IOperation
   (apply-to [this situation]
     (let [the-file    (tm/file situation)
-          parent-id   (tm/resolve-shape-id situation parent)
+          parent-id   (tm/target-shape-id situation parent)
           page        (thf/current-page the-file)
           objects     (:objects page)
           ;; registers `new-label`
@@ -1868,6 +2095,11 @@
           [_ changes] (cfsh/prepare-add-shape (pcb/empty-changes nil (:id page))
                                               shape
                                               objects)
+          ;; a layout places the new child, and its copies after sync
+          changes     (cond-> changes
+                        (:layout (get objects parent-id))
+                        (-> (with-layout-reflow parent-id)
+                            (assoc ::layout-reflow? true)))
           file'       (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')
@@ -1895,15 +2127,16 @@
   tm/IOperation
   (apply-to [this situation]
     (let [the-file  (tm/file situation)
-          shape-id  (tm/resolve-shape-id situation target)
+          shape-id  (tm/target-shape-id situation target)
           page      (thf/current-page the-file)
-          [_all-parents changes]
+          [all-parents changes]
           (cls/generate-delete-shapes (pcb/empty-changes)
                                       (:data the-file)
                                       page
                                       (:objects page)
                                       #{shape-id}
                                       {})
+          changes   (with-layouts-reflow changes all-parents)
           file'     (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')
@@ -1942,6 +2175,7 @@
                      parent-id
                      to-index
                      #{shape-id})
+          changes   (with-layouts-reflow changes [parent-id (get-in page [:objects shape-id :parent-id])])
           file'     (thf/apply-changes the-file changes)]
       (-> situation
           (tm/with-file file')

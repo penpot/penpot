@@ -12,6 +12,8 @@
    are the same for the user:
      - `:modified-at` of the file and of each component, bumped by every
        change, undo and redo included;
+     - a linked file's `:synced-at`, the server sync status rather than
+       authored design data;
      - with `{:position-data? false}`, the shapes' `:position-data`, the text
        layout that WASM measurement regenerates.
    Shapes and the maps that hold them become plain maps, so a shape record
@@ -54,7 +56,7 @@
   ([file opts]
    (let [opts (merge {:position-data? true} opts)]
      (-> file
-         (dissoc :modified-at)
+         (dissoc :modified-at :synced-at)
          (update :data
                  (fn [data]
                    (-> data

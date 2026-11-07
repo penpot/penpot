@@ -40,3 +40,21 @@ The generic fallback branch copies from `previous-shape`. It represents the inte
 `common/src/app/common/test_helpers/compositions.cljc` has `swap-component-in-shape`, which drives `generate-component-swap` plus `generate-keep-touched` with the production `keep-touched?` flag. Use it for focused common tests of variant-switch behavior.
 
 `common/test/common_tests/logic/variants_switch_test.cljc` is the canonical reference suite for swap+touched scenarios. Read nearby tests before adding another case.
+
+## Variant geometry comparison
+
+Switch carry compares the two mains' geometry with `gsh/close-attrs?`.
+The clean target already has the copy's rotation, which can turn 100 into
+99.99999999999994. Exact dimension equality drops valid resize overrides
+(F160). Fixed layout sizes and composite geometry use the same tolerance;
+nongeometry scalar attributes still compare exactly.
+
+After carrying geometry, the switch syncs its new subtree once from the
+updated builder objects. Untouched children must follow a retained root
+size through constraints; copying only root attrs leaves them in the old
+frame (F162). The direct sync keeps carried groups and child swaps.
+
+Variant carry must collect groups and match children through deleted near
+mains too (F180). Copies keep those values after deletion. Both the content
+ref-chain walk and find-shape-ref-child-of include deleted component data;
+otherwise a switch loses inherited size, rotation groups and child fills.

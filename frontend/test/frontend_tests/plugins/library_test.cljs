@@ -398,7 +398,7 @@
     (with-redefs [r/check-permission (constantly true)
                   u/not-valid        (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
                   library/get-variant-components (constantly [{:main-instance-page page-id
-                                                                   :variant-properties [{:name "color" :value "red"}]}])
+                                                               :variant-properties [{:name "color" :value "red"}]}])
                   dwv/update-property-name (fn [vid pos name opts]
                                              (reset! renamed {:id vid :pos pos :name name :opts opts})
                                              ::rename-event)
@@ -422,7 +422,7 @@
     (with-redefs [r/check-permission (constantly true)
                   u/not-valid        (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
                   u/locate-library-component (constantly {:id id :main-instance-page page-id
-                                                                :variant-properties [{:name "color"}]})
+                                                          :variant-properties [{:name "color"}]})
                   dwv/update-property-value (fn [cid pos value]
                                               (reset! updated {:id cid :pos pos :value value})
                                               ::value-event)

@@ -34,6 +34,9 @@
        a pinned phase that does not fail fails the case, so the mark goes
        only with the fix."
   (:require
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
+   [app.common.math :as mth]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.normalize :as thn]
@@ -55,6 +58,12 @@
   "The normalized value of `file` that the round trip compares."
   ([file] (snapshot file {}))
   ([file opts] (thn/normalize-file file opts)))
+
+(defn snapshot-files
+  "The normalized files affected by a step, including linked libraries."
+  ([files] (snapshot-files files {}))
+  ([files opts]
+   {:files (into {} (map (fn [[id file]] [id (snapshot file opts)])) files)}))
 
 (defn mark-baseline
   "Record the state the end-of-variant round trip undoes back to: the
@@ -141,17 +150,55 @@
    `[:data key]` / `[:file key]` for anything else. Shapes without a test
    label are `:unlabelled`."
   [expected actual]
-  (let [ed (:data expected)
-        ad (:data actual)]
-    (-> #{}
-        (into (map #(vector :file %)) (differing-keys expected actual #{:data}))
-        (into (map #(vector :data %)) (differing-keys ed ad #{:pages-index :components}))
-        (into (entities-signature :page (:pages-index ed) (:pages-index ad) #{:objects}
-                                  (fn [e a]
-                                    (entities-signature :object (:objects e) (:objects a)
-                                                        #{} (constantly nil)))))
-        (into (entities-signature :component (:components ed) (:components ad)
-                                  #{} (constantly nil))))))
+  (if (or (contains? expected :files) (contains? actual :files))
+    (into #{}
+          (mapcat (fn [id]
+                    (map #(into [:file (label-of id)] %)
+                         (signature (get-in expected [:files id])
+                                    (get-in actual [:files id])))))
+          (into (set (keys (:files expected))) (keys (:files actual))))
+    (let [ed (:data expected)
+          ad (:data actual)]
+      (-> #{}
+          (into (map #(vector :file %)) (differing-keys expected actual #{:data}))
+          (into (map #(vector :data %)) (differing-keys ed ad #{:pages-index :components}))
+          (into (entities-signature :page (:pages-index ed) (:pages-index ad) #{:objects}
+                                    (fn [e a]
+                                      (entities-signature :object (:objects e) (:objects a)
+                                                          #{} (constantly nil)))))
+          (into (entities-signature :component (:components ed) (:components ad)
+                                    #{} (constantly nil)))))))
+
+(defn same-state?
+  "Compare exact data with an absolute tolerance only in shape geometry.
+   Undo defaults to 1e-10; design equivalence can supply its own tolerance."
+  ([expected actual] (same-state? expected actual 1e-10 false))
+  ([expected actual tolerance] (same-state? expected actual tolerance false))
+  ([expected actual tolerance geometry?]
+   (or (= expected actual)
+       (cond
+         (and geometry? (number? expected) (number? actual))
+         (mth/close? expected actual tolerance)
+
+         (and geometry? (gmt/matrix? expected) (gmt/matrix? actual))
+         (every? #(same-state? (get expected %) (get actual %) tolerance true) [:a :b :c :d :e :f])
+
+         (and geometry? (gpt/point? expected) (gpt/point? actual))
+         (every? #(same-state? (get expected %) (get actual %) tolerance true) [:x :y])
+
+         (and (map? expected) (map? actual) (= (set (keys expected)) (set (keys actual))))
+         (every? (fn [key]
+                   (same-state? (get expected key) (get actual key) tolerance
+                                (or geometry?
+                                    (and (contains? expected :parent-id)
+                                         (contains? #{:x :y :width :height :rotation :points
+                                                      :selrect :transform :transform-inverse} key)))))
+                 (keys expected))
+
+         (and (sequential? expected) (sequential? actual) (= (count expected) (count actual)))
+         (every? true? (map #(same-state? %1 %2 tolerance geometry?) expected actual))
+
+         :else false))))
 
 (defn compare-states
   "Record a failure of `phase` at `step` unless the normalized files
@@ -159,7 +206,7 @@
    `:no-undo-entry` (a step that added no entry changed the file),
    `:variant-undo` and `:variant-redo`."
   [situation step phase expected actual]
-  (if (= expected actual)
+  (if (same-state? expected actual)
     situation
     (add-failure situation {:phase     phase
                             :step      step

@@ -15,6 +15,25 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
+(t/deftest absent-and-nil-typography-fields-do-not-author-a-reference
+  (let [base (thtx/content [[["Hello world"]]])
+        path [:children 0 :children 0 :children 0]
+        id   (thi/new-id! :typography)
+        file (thi/new-id! :file)
+        refs {:typography-ref-id id :typography-ref-file file}]
+    (doseq [[left right expected]
+            [[{} {:typography-ref-id nil :typography-ref-file nil} #{}]
+             [{:typography-ref-id nil :typography-ref-file nil} {} #{}]
+             [refs {} #{:typography}]
+             [refs (assoc refs :typography-ref-id (thi/new-id! :other-typography)) #{:typography}]
+             [refs (assoc refs :typography-ref-file (thi/new-id! :other-file)) #{:typography}]]]
+      (let [clear #(dissoc % :typography-ref-id :typography-ref-file)
+            main  (update-in base path #(merge (clear %) left))
+            copy  (update-in base path #(merge (clear %) right))]
+        (t/is (= expected (thtx/override-units main copy)))
+        (t/is (= (if (seq expected) #{:text-content-typography} #{})
+                 (txt/override-groups main copy)))))))
+
 (defn- overrides
   "The overrides of `copy` against `main` by the reference rule, checked
    against the production one (`txt/override-groups`)."
@@ -61,6 +80,12 @@
                          :line-height [[{:line-height 1.5} ["Hello world"]]]
                          :valign     [{:valign "bottom"} [["Hello world"]]]}]
       (t/is (= #{unit} (overrides [[["Hello world"]]] copy)) (str unit))))
+  (t/testing "a family change keeps the weight though the family names its variants otherwise"
+    (let [main [[["Hello world" {:weight 700}]]]
+          copy [[["Hello world" {:family "Roboto" :weight 700}]]]]
+      (t/is (not= (get-in (thtx/content main) [:children 0 :children 0 :children 0 :font-variant-id])
+                  (get-in (thtx/content copy) [:children 0 :children 0 :children 0 :font-variant-id])))
+      (t/is (= #{:family} (overrides main copy)))))
   (t/testing "a typography sets each unit it changes, and its reference"
     (thi/new-id! :file1)
     (thi/new-id! :heading)

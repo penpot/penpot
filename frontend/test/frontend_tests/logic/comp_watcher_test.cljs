@@ -18,6 +18,7 @@
    [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.thumbnails-wasm :as dwt.wasm]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -26,6 +27,7 @@
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]
+   [okulary.core :as l]
    [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each

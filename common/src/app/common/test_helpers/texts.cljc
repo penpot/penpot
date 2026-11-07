@@ -327,15 +327,23 @@
    the design panel does before changing it."
   [runs k]
   (if (contains? typography-styles k)
-    (map (fn [[letters style]] [letters (dissoc style :typography)]) runs)
+    (map (fn [[letters style]] [letters (dissoc style :typography :typography-ref-file)]) runs)
     runs))
 
 (defn restyle
-  "Set the run style `k` to `v` on every run of `text`."
+  "Set the run style `k` to `v` on every run of `text`.
+  Named colors and explicit fills replace each other. Font edits replace
+  stale raw identities while preserving the other font unit."
   [text k v]
   (update-paragraphs text
                      (fn [[style runs]]
-                       [style (map (fn [[letters run-style]] [letters (assoc run-style k v)])
+                       [style (map (fn [[letters run-style]]
+                                     [letters (cond-> (assoc run-style k v)
+                                                (= k :color) (dissoc :fills)
+                                                (= k :fills) (dissoc :color)
+                                                (= k :family) (dissoc :font-family :font-id)
+                                                (= k :weight) (dissoc :font-weight :font-variant-id)
+                                                (= k :italic) (dissoc :font-style :font-variant-id))])
                                    (detach-typography runs k))])))
 
 (defn restyle-paragraphs
@@ -399,9 +407,10 @@
 (def min-shared-stretch 3)
 
 (def run-units
-  "Style unit -> the run attributes it covers."
+  "Style unit -> the run attributes that tell its styles apart. The variant
+   id follows from the family, weight and style, so it tells none apart."
   {:family     [:font-family :font-id]
-   :weight     [:font-weight :font-style :font-variant-id]
+   :weight     [:font-weight :font-style]
    :size       [:font-size]
    :spacing    [:letter-spacing]
    :decoration [:text-decoration]
@@ -466,7 +475,12 @@
 
 (defn- unit-value
   [node attrs]
-  (let [v (select-keys node attrs)]
+  (let [v (reduce (fn [value attr]
+                    (if (and (#{:typography-ref-id :typography-ref-file} attr)
+                             (nil? (get value attr)))
+                      (dissoc value attr)
+                      value))
+                  (select-keys node attrs) attrs)]
     ;; a default the editors leave out is the same as the default written
     (cond-> v
       (and (contains? (set attrs) :fills) (nil? (:fills v))) (assoc :fills nil))))

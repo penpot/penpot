@@ -132,7 +132,8 @@
           objects   (:objects (thf/current-page (tm/file grown)))
           main-ids  (set (:shapes (first shapes)))
           component (:component-id (first shapes))
-          synced    (r/settle grown #{component})]
+          ;; a sync of the copies lays them out again, as in the editor
+          synced    (-> grown (r/settle #{component}) r/settle-layout)]
       (doseq [shape shapes]
         (t/is (= dims (mapv #(count (get shape %)) [:layout-grid-rows :layout-grid-columns])))
         (t/is (= coords (set (map (juxt :row :column) (vals (:layout-grid-cells shape))))))
@@ -927,10 +928,13 @@
     (t/is (= (geometry copy-group) (geometry copy-group'')))))
 
 (t/deftest test-sync-undo-group-after-add-and-update
+  ;; This group follows the main's bounds; its children keep their geometry.
+  ;; The next case checks a group that keeps its own frame instead.
   (let [;; ==== Setup
         file         (-> (thf/sample-file :file1)
                          (add-group-component-with-copy)
-                         (touch-copy-group-geometry)
+                         (ths/update-shape :copy-child1 :touched #{:geometry-group})
+                         (ths/update-shape :copy-child2 :touched #{:geometry-group})
                          (ths/add-sample-shape :free-shape :x 60 :y 60 :width 10 :height 10))
         page         (thf/current-page file)
         copy-group   (ths/get-shape file :copy-group)
@@ -1003,18 +1007,20 @@
         copy-group   (ths/get-shape file :copy-group)
 
         ;; ==== Action
-        ;; The removed shape is the first one in the group, so the sync
-        ;; handles it before the updated sibling. Remove it only from the
-        ;; main, as a library update does, so that the sync removes it from
-        ;; the copy.
+        ;; The removed shape precedes the updated sibling. Generate sync
+        ;; from the intermediate main-only deletion, but validate and undo
+        ;; the complete local edit and its propagation as one group.
         changes1     (-> (pcb/empty-changes nil (:id page))
                          (pcb/with-objects (:objects page))
-                         (pcb/remove-objects #{(thi/id :main-child1)}))
-        updated-file (-> (thf/apply-changes file changes1)
-                         (update-fill :main-child2 "#fabada"))
+                         (pcb/remove-objects #{(thi/id :main-child1)})
+                         (pcb/update-shapes #{(thi/id :main-child2)}
+                                            #(assoc % :fills (ths/sample-fills-color :fill-color "#fabada"))))
+        updated-file (thf/apply-changes file changes1 :validate? false)
         changes2     (sync-file-changes updated-file)
-        file'        (thf/apply-changes updated-file changes2)
-        file''       (thf/apply-undo-changes file' changes2)
+        changes      (pcb/concat-changes changes1 changes2)
+        file'        (thf/apply-changes file changes)
+        file''       (thf/apply-undo-changes file' changes)
+        redone       (thf/apply-changes file'' changes)
 
         ;; ==== Get
         copy-group'  (ths/get-shape file' :copy-group)
@@ -1024,7 +1030,11 @@
     (t/is (= 1 (count (:shapes copy-group'))))
     (t/is (not= (geometry copy-group) (geometry copy-group')))
     (t/is (= (:shapes copy-group) (:shapes copy-group'')))
-    (t/is (= (geometry copy-group) (geometry copy-group'')))))
+    (t/is (= (geometry copy-group) (geometry copy-group'')))
+    (t/is (= "#fabada" (get-in (ths/get-shape file' :main-child2) [:fills 0 :fill-color])))
+    (t/is (= "#fabada" (get-in (ths/get-shape file' :copy-child2) [:fills 0 :fill-color])))
+    (t/is (uc/same-state? (uc/snapshot file) (uc/snapshot file'')))
+    (t/is (uc/same-state? (uc/snapshot file') (uc/snapshot redone)))))
 
 (t/deftest test-sync-inverse-undo-group-after-add-and-update
   (let [;; ==== Setup
@@ -1047,8 +1057,7 @@
         container    (ctn/make-container page :page)
         changes      (-> (pcb/empty-changes)
                          (pcb/with-container container)
-                         (cll/generate-sync-shape-inverse (:data updated-file)
-                                                          {(:id updated-file) updated-file}
+                         (cll/generate-sync-shape-inverse {(:id updated-file) updated-file}
                                                           container
                                                           (thi/id :copy-root)))
         file'        (thf/apply-changes updated-file changes)

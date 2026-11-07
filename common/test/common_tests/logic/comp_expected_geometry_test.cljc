@@ -437,6 +437,61 @@
         (t/is (= (flips shape) (flips after)))
         (t/is (gsh/close-attrs? :points (:points shape) (:points after) 0.001))))))
 
+(t/deftest a-mirrored-copy-child-may-store-either-sign-of-its-turn
+  (let [situation (-> (setup/nested-component-with-copy)
+                      (r/step (n/rotate :main2-nested-head 90)) r/settle
+                      (r/step (n/transform-shape :copy-root :flip-x nil)) r/settle)
+        file      (tm/file situation)
+        page      (thf/current-page file)
+        child     (tm/role-shape situation :copy-instance)
+        expected  (oracle/expected-geometry file (ctn/make-container page :page)
+                                            (cf/libraries situation) child)
+        flagged   (fn [shape expected]
+                    (try (oracle/check-requested-geometry (:objects page) shape expected) nil
+                         (catch #?(:clj Throwable :cljs :default) cause (:attrs (ex-data cause)))))
+        unflipped #(assoc % :flip-x false)]
+    (t/is (empty? (:touched child)))
+    (t/is (:flip-x child))
+    ;; the flip stores the turn that decomposes the child's transform
+    (t/is (mth/close? 90 (:rotation child)))
+    (t/is (mth/close? 90 (:rotation expected)))
+    (t/is (nil? (flagged child expected)))
+    (t/is (nil? (flagged (assoc child :rotation 270) expected)))
+    ;; any rotation the child stores at its expected corners
+    (t/is (nil? (flagged (assoc child :rotation 45) expected)))
+    (t/is (nil? (flagged (unflipped (assoc child :rotation 270)) (unflipped expected))))))
+
+(t/deftest a-copy-child-turn-that-decomposes-its-own-transform-is-accepted
+  ;; Parents with equivalent decompositions can add up to another turn.
+  (let [shape   (cts/setup-shape {:type :rect :x 10 :y 10 :width 20 :height 20})
+        flagged (fn [shape expected]
+                  (try (oracle/check-requested-geometry {(:id shape) shape} shape expected) nil
+                       (catch #?(:clj Throwable :cljs :default) cause (:attrs (ex-data cause)))))]
+    (t/is (nil? (flagged shape (assoc shape :rotation 270))))
+    (t/is (nil? (flagged (assoc shape :rotation 90) (assoc shape :rotation 270))))
+    ;; the turn itself is checked through the corners
+    (t/is (contains? (flagged (gsh/transform-shape shape (ctm/rotation-modifiers shape (gsh/shape->center shape) 45))
+                              shape)
+                     :points))
+    (t/is (map? (cg/run {:world [2 2 {:variants true :rich-variants true :text true :text-styles true
+                                      :layout nil :layout-copies true}]
+                         :ops [[:rotate 0 0 0 0] [:switch 1 0 0 0] [:transform 0 4 0 4]
+                               [:update-main 0 0 0 0] [:swap 0 0 0 0] [:nest 2 0 0 0]]})))))
+
+(t/deftest both-flags-may-record-a-half-turn-the-rotation-counts
+  (let [shape   (cts/setup-shape {:type :rect :x 10 :y 10 :width 20 :height 20})
+        turned  (-> (gsh/transform-shape shape (ctm/rotation-modifiers shape (gsh/shape->center shape) 225))
+                    (assoc :flip-x true :flip-y true))
+        flagged (fn [shape expected]
+                  (try (oracle/check-requested-geometry {(:id shape) shape} shape expected) nil
+                       (catch #?(:clj Throwable :cljs :default) cause (:attrs (ex-data cause)))))]
+    (t/is (mth/close? 225 (:rotation turned)))
+    (t/is (nil? (flagged turned (assoc turned :rotation 135))))
+    (t/is (nil? (flagged (assoc turned :rotation 90) (assoc turned :rotation 135))))
+    (t/is (map? (cg/run {:world [2 2 {:variants true :rich-variants true :text true :text-styles true
+                                      :layout nil :layout-copies true}]
+                         :ops [[:transform 0 4 0 2] [:transform 3 4 0 3] [:rotate 0 0 2 0]]})))))
+
 (t/deftest a-copy-keeps-the-size-a-plain-boards-constraint-gave-it
   ;; A resize through constraints is derived, never an override, and the
   ;; next sync of the copy's own component keeps it.
@@ -484,6 +539,27 @@
   ;; scale; the child keeps the height the resize left it
   (t/is (map? (cg/run {:world [2 0 {:text true :text-styles true}]
                        :ops [[:add-child 0 0 0 0] [:resize 0 0 0 0] [:delete 0 0 0 0] [:style 1 9 1]]}))))
+
+(t/deftest a-constraint-resize-under-a-plain-parent-is-not-an-override
+  ;; Update main shrinks the main root, and a nested copy inside it follows
+  ;; through its scale constraint without being touched.
+  (t/is (map? (cg/run {:world [2 0 {:variants true :rich-variants true :text true :text-styles true
+                                    :library true :layout-copies true}]
+                       :ops [[:resize 2 0 0 0] [:edit 7 5 0 0] [:style 15 9 1] [:edit 8 0 1 1]
+                             [:update-main 8]]}))))
+
+(t/deftest both-flags-and-a-half-turn-equal-neither
+  (let [shape   (cts/setup-shape {:type :rect :x 10 :y 10 :width 20 :height 20})
+        flagged (fn [shape expected]
+                  (try (oracle/check-requested-geometry {(:id shape) shape} shape expected) nil
+                       (catch #?(:clj Throwable :cljs :default) cause (:attrs (ex-data cause)))))
+        both    #(assoc % :flip-x true :flip-y true)]
+    (t/is (nil? (flagged (assoc (both shape) :rotation 180) shape)))
+    (t/is (= #{:flip-x :flip-y} (flagged (assoc (both shape) :rotation 90) shape)))
+    (t/is (map? (cg/run {:world [2 0 {:library true :stale-libraries true
+                                      :library-dependency true :library-text true}]
+                         :ops [[:library-transform 0 5 4 0] [:library-transform 0 3 3 0]
+                               [:library-remove-child 3 0 0 0] [:library-transform 0 4 4 0]]})))))
 
 (t/deftest a-resized-turned-main-keeps-its-copies-at-their-first-corner
   ;; a width change keeps a shape's first corner; a copy oriented like its

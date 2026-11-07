@@ -188,17 +188,17 @@
   []
   (-> (cthf/sample-file :file1)
       (ctho/add-simple-component :c01 :m01 :r01
-                                :root-params {:name "Alpha" :x 0 :y 0 :width 100 :height 80})
+                                 :root-params {:name "Alpha" :x 0 :y 0 :width 100 :height 80})
       (ctho/add-simple-component :c02 :m02 :r02
-                                :root-params {:name "Beta" :x 150 :y 0 :width 100 :height 80})))
+                                 :root-params {:name "Beta" :x 150 :y 0 :width 100 :height 80})))
 
 (defn- two-mains-shared-prefix-file
   []
   (-> (cthf/sample-file :file1)
       (ctho/add-simple-component :c01 :m01 :r01
-                                :root-params {:name "UI / Alpha" :x 0 :y 0 :width 100 :height 80})
+                                 :root-params {:name "UI / Alpha" :x 0 :y 0 :width 100 :height 80})
       (ctho/add-simple-component :c02 :m02 :r02
-                                :root-params {:name "UI / Beta" :x 150 :y 0 :width 100 :height 80})))
+                                 :root-params {:name "UI / Beta" :x 150 :y 0 :width 100 :height 80})))
 
 (defn- three-same-name-mains-file
   []
@@ -214,16 +214,16 @@
   []
   (-> (cthf/sample-file :file1)
       (ctho/add-simple-component :c01 :m01 :r01
-                                :root-params {:name "Group / Button"})))
+                                 :root-params {:name "Group / Button"})))
 
 (defn- two-mains-on-page1-with-page2
   "Two mains on :page1; the open page is :page2 (Assets combine while elsewhere)."
   []
   (-> (cthf/sample-file :file1 :page-label :page1)
       (ctho/add-simple-component :c01 :m01 :r01
-                                :root-params {:name "Alpha" :x 0 :y 0 :width 100 :height 80})
+                                 :root-params {:name "Alpha" :x 0 :y 0 :width 100 :height 80})
       (ctho/add-simple-component :c02 :m02 :r02
-                                :root-params {:name "Beta" :x 150 :y 0 :width 100 :height 80})
+                                 :root-params {:name "Beta" :x 150 :y 0 :width 100 :height 80})
       (cthf/add-sample-page :page2)
       (cthf/switch-to-page :page2)))
 
@@ -234,7 +234,7 @@
   (-> (cthf/sample-file :file1)
       (ctho/add-frame :v01 {:name "Set"})
       (ctho/add-simple-component :c01 :m01 :r01
-                                :root-params {:parent-label :v01 :name "Set"})))
+                                 :root-params {:parent-label :v01 :name "Set"})))
 
 (defn- component-full-name
   [component]
@@ -324,7 +324,7 @@
       (ths/run-store
        store
        done
-       [(dwv/transform-in-variant main-id variant-id nil [] false true true)]
+       [(dwv/transform-in-variant main-id variant-id)]
        (fn [state]
          (let [snaps      @snapshots
                flagged    (first-flagged snaps variant-id)
@@ -348,7 +348,9 @@
                    fcont  (get fobjs variant-id)
                    fmain  (get fobjs main-id)
                    fcomp  (cthc/get-component ffile :c01)]
-               (t/is (= [main-id] (:shapes fcont)))
+               ;; the commit that defines the set adds its second member too
+               (t/is (= main-id (last (:shapes fcont))))
+               (t/is (= 2 (count (:shapes fcont))))
                (t/is (ctk/main-instance? fmain))
                (t/is (= variant-id (:variant-id fmain)))
                (t/is (= variant-id (:variant-id fcomp)))
@@ -371,7 +373,7 @@
       (ths/run-store
        store
        done
-       [(dwv/transform-in-variant main-id variant-id nil [] false true true)]
+       [(dwv/transform-in-variant main-id variant-id)]
        (fn [state]
          (let [snaps       @snapshots
                flagged     (first-flagged snaps variant-id)

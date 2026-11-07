@@ -286,24 +286,26 @@
 
 (defn transform-in-variant
   "Given the id of a main shape of a component, creates a variant structure for
-   that component, with a second member (`clv/generate-transform-in-variant`)."
-  [main-instance-id]
-  (ptk/reify ::transform-in-variant
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [variant-id   (uuid/next)
-            new-shape-id (uuid/next)
-            changes      (-> (variant-changes it state)
-                             (clv/generate-transform-in-variant main-instance-id variant-id
-                                                                {:layout?          true
-                                                                 :new-component-id (uuid/next)
-                                                                 :new-shape-id     new-shape-id}))]
-        (rx/concat
-         (rx/of (dch/commit-changes changes)
-                (ptk/data-event :layout/update {:ids [variant-id]})
-                (dws/select-shape new-shape-id))
-         (->> (rx/of (focus-property variant-id))
-              (rx/delay 250)))))))
+   that component, with a second member (`clv/generate-transform-in-variant`).
+   The variant set takes `variant-id`, or a new id."
+  ([main-instance-id]
+   (transform-in-variant main-instance-id (uuid/next)))
+  ([main-instance-id variant-id]
+   (ptk/reify ::transform-in-variant
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [new-shape-id (uuid/next)
+             changes      (-> (variant-changes it state)
+                              (clv/generate-transform-in-variant main-instance-id variant-id
+                                                                 {:layout?          true
+                                                                  :new-component-id (uuid/next)
+                                                                  :new-shape-id     new-shape-id}))]
+         (rx/concat
+          (rx/of (dch/commit-changes changes)
+                 (ptk/data-event :layout/update {:ids [variant-id]})
+                 (dws/select-shape new-shape-id))
+          (->> (rx/of (focus-property variant-id))
+               (rx/delay 250))))))))
 
 (defn add-component-or-variant
   "Manage the shared shortcut, and do the pertinent action"
