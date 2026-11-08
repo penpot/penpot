@@ -530,6 +530,11 @@
                     (not= (or (:content-scale source) 1) (or (:content-scale kept) 1)))
             (mismatch id group (shadow/values source group) (shadow/values kept group))))
 
+        (and (= group :name-group) (= id root-id) (:variant-id target))
+        ;; a variant main keeps its set's name, and the copy root its own
+        (when-not (= (:name source) (:name kept))
+          (mismatch id group (:name source) (:name kept)))
+
         (= group :swap-group)
         (when-not (= (select-keys source [:component-id :component-file])
                      (select-keys target [:component-id :component-file]))

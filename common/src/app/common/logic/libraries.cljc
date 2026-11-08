@@ -787,8 +787,11 @@
         component      (when-not (update-main-nesting-loop? libraries container shape-id)
                          (ctkl/get-component library (:component-id shape-inst)))
 
+        ;; a variant takes its name from its set, so the copy keeps its own
+        keep-name?     (ctk/is-variant? component)
+
         changes        (cond-> changes
-                         (and component (contains? (:touched shape-inst) :name-group))
+                         (and component (not keep-name?) (contains? (:touched shape-inst) :name-group))
                          (generate-rename-component (:component-id shape-inst) (:name shape-inst) library))]
 
     (if component
@@ -803,6 +806,7 @@
                                     :libraries      libraries
                                     :root-inst      shape-inst
                                     :root-main      root-main
+                                    :keep-name?     keep-name?
                                     ;; An orientation the copy root inherits places it
                                     ;; and is not pushed into the main. Sync composes a
                                     ;; root with its parent's turn; a top copy root that
@@ -857,29 +861,37 @@
   its touched groups move there (the copy keeps a swap). A geometry that
   sync kept for the copy (`:kept?`) is not the copy's, so the main keeps
   its own."
-  [changes {:keys [container main-container root-inst root-main remote-synced inherited-turn kept?]} shape-inst shape-main]
-  (cond-> (-> changes
-              (update-attrs shape-main
-                            (cond-> shape-inst
-                              (some? inherited-turn) inherited-turn
-                              kept? (with-main-geometry shape-main
-                                      (cond-> root-inst (some? inherited-turn) inherited-turn)
-                                      root-main))
-                            root-main
-                            (cond-> root-inst (some? inherited-turn) inherited-turn)
-                            main-container false)
-              ;; the copy keeps its swap, and the main takes the copy's overrides
-              (set-touched shape-inst container (when (ctk/swapped? shape-inst) #{:swap-group}))
-              ;; A previous update is not a reset of the main's authored
-              ;; overrides. Repeating it must retain the groups it pushed.
-              (set-touched shape-main main-container
-                           (set/union (:touched shape-main) (:touched shape-inst))))
-    (ctsl/any-layout? shape-main)
-    (update-layout-children main-container shape-main shape-inst
-                            #(ctf/get-shape-in-copy container % shape-inst) false)
+  [changes {:keys [container main-container root-inst root-main remote-synced inherited-turn kept? keep-name?]} shape-inst shape-main]
+  (let [;; the root of a variant keeps its name, and the copy its override of it
+        keep-name? (and keep-name? (= (:id shape-inst) (:id root-inst)))
+        inst-touched (cond-> (:touched shape-inst) keep-name? (disj :name-group))]
+    (cond-> (-> changes
+                (update-attrs shape-main
+                              (cond-> shape-inst
+                                keep-name? (assoc :name (:name shape-main))
+                                (some? inherited-turn) inherited-turn
+                                kept? (with-main-geometry shape-main
+                                        (cond-> root-inst (some? inherited-turn) inherited-turn)
+                                        root-main))
+                              root-main
+                              (cond-> root-inst (some? inherited-turn) inherited-turn)
+                              main-container false)
+                ;; the copy keeps its swap, and the main takes the copy's overrides
+                (set-touched shape-inst container
+                             (not-empty (cond-> #{}
+                                          (ctk/swapped? shape-inst) (conj :swap-group)
+                                          (and keep-name? (ctk/touched-group? shape-inst :name-group))
+                                          (conj :name-group))))
+                ;; A previous update is not a reset of the main's authored
+                ;; overrides. Repeating it must retain the groups it pushed.
+                (set-touched shape-main main-container
+                             (set/union (:touched shape-main) inst-touched)))
+      (ctsl/any-layout? shape-main)
+      (update-layout-children main-container shape-main shape-inst
+                              #(ctf/get-shape-in-copy container % shape-inst) false)
 
-    :always
-    (change-remote-synced shape-inst container remote-synced)))
+      :always
+      (change-remote-synced shape-inst container remote-synced))))
 
 (defn- update-main-recursive
   "Push the copy shape `shape-inst` into `shape-main`, the main shape it

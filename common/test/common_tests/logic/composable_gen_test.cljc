@@ -1800,6 +1800,13 @@
                              [:combine 13 0 0 0] [:variant-property 0 0 0 0] [:switch 13] [:make-variant 0]
                              [:switch 0] [:make-variant 2 0 0 0] [:make-variant 0] [:switch 16]]}))))
 
+(t/deftest updating-a-variant-main-from-a-renamed-copy-keeps-the-variant-name
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:duplicate 0 0 0 0] [:edit 2 2 0 1] [:combine 0] [:switch 0]
+                             [:update-main 0 0 0 0]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]

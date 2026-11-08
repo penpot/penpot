@@ -10,6 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.logic.duplicate :as cld]
    [app.common.logic.instances :as cli]
+   [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
    [app.common.logic.variants :as clv]
@@ -21,6 +22,7 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.variants :as thv]
    [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [clojure.test :as t]
@@ -823,3 +825,27 @@
              (cpn/merge-path-item (:path comp2') (:name comp2'))))
     (t/is (some? (:variant-id comp1')))
     (t/is (some? (:variant-id comp2')))))
+
+(t/deftest test-update-main-from-a-renamed-copy-keeps-the-variant-name
+  ;; a variant's name is its set's, so an update main from a renamed copy
+  ;; leaves it and the copy keeps its name as an override
+  (let [file      (-> (thf/sample-file :file1)
+                      (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                      (thc/instantiate-component :c01 :copy01))
+        page      (thf/current-page file)
+        file      (thf/apply-changes file (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                                      #{(thi/id :copy01)}
+                                                                      #(assoc % :name "Label 0")
+                                                                      (:objects page)
+                                                                      {}))
+        container (ctn/make-container (thf/current-page file) :page)
+        file'     (thf/apply-changes file (-> (pcb/empty-changes)
+                                              (pcb/with-container container)
+                                              (cll/generate-sync-shape-inverse {(:id file) file} container
+                                                                               (thi/id :copy01))))
+        copy01'   (ths/get-shape file' :copy01)]
+    (t/is (= (:name (ths/get-shape file :m01)) (:name (ths/get-shape file' :m01))))
+    (t/is (= (:name (thc/get-component file :c01)) (:name (thc/get-component file' :c01))))
+    (t/is (= "Label 0" (:name copy01')))
+    (t/is (ctk/touched-group? copy01' :name-group))
+    (t/is (some? (thf/validate-file! file')))))

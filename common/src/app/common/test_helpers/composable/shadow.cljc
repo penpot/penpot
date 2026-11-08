@@ -477,10 +477,15 @@
                                        (in-orientation geometry root main-root)
                                        (in-orientation geometry (get before (:parent-id shape))
                                                        (get before (:parent-id ref)))))))
+                  ;; a variant main keeps its set's name, and the copy root its own
+                  kept-name (when (and (= id root-id) (:variant-id ref)) (:name-group groups))
+                  groups (cond-> groups kept-name (dissoc :name-group))
                   result (cond-> (dissoc result id)
                            (and (contains? groups :swap-group)
                                 (not= (:component-id updated) (:component-id ref)))
                            (assoc id {:swap-group {}})
+                           kept-name
+                           (assoc-in [id :name-group] kept-name)
                            (and (:shape-ref ref) (seq groups))
                            (update (:id ref) merge
                                    (cond-> (grid/remap-groups groups (grid/get-child-map after shape ref))
