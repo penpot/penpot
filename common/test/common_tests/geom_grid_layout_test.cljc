@@ -443,3 +443,12 @@
 (t/deftest grid-calculate-params-clamps-overflowing-child-padding
   (let [params (grid-params-for-children {:x -10 :y -5 :width 150 :height 150})]
     (t/is (= {:p1 0 :p2 0 :p3 0 :p4 0} (:layout-padding params)))))
+
+(t/deftest grid-calculate-params-of-hidden-children-only-is-the-empty-grid
+  ;; hidden children take no part, as in a board with none
+  (let [empty  (glparams/calculate-params nil [] nil)
+        params (grid-params-for-children {:x 10 :y 20 :width 30 :height 30 :hidden true})
+        shape  (fn [params] (-> params
+                                (update :layout-grid-cells #(map (fn [cell] (dissoc cell :id)) (vals %)))
+                                (update :layout-grid-cells (partial sort-by (juxt :row :column)))))]
+    (t/is (= (shape empty) (shape params)))))
