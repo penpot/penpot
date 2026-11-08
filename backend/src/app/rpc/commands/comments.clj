@@ -799,17 +799,66 @@
                 {::db/return-keys false})
     nil))
 
+;; --- COMMAND: Mark all comment threads as read
+
+;; The dashboard sends the thread ids in batches of this same size
+;; (frontend/src/app/main/data/comments.cljs), so the batch has to fit in
+;; this limit.
+(def ^:private max-mark-all-threads 500)
+
 (def ^:private
   schema:mark-all-threads-as-read
   [:map {:title "mark-all-threads-as-read"}
-   [:threads [:vector ::sm/uuid]]])
+   [:threads [:vector {:max max-mark-all-threads} ::sm/uuid]]])
+
+(def ^:private sql:comment-threads-files
+  "SELECT ct.id, ct.file_id
+     FROM comment_thread ct
+    WHERE ct.id = ANY(?::uuid[])")
+
+(def ^:private sql:upsert-comment-thread-status-batch
+  "insert into comment_thread_status (thread_id, profile_id, modified_at)
+   select t.id, ?::uuid, ?::timestamptz
+     from unnest(?::uuid[]) as t(id)
+       on conflict (thread_id, profile_id)
+       do update set modified_at = excluded.modified_at;")
+
+(defn- get-comment-threads-files
+  [conn thread-ids]
+  (db/exec! conn [sql:comment-threads-files
+                  (db/create-array conn "uuid" thread-ids)]))
+
+(defn- check-threads-access
+  "Raises a :not-found error when any of the threads does not exist or the
+   caller has no access to the file that owns it."
+  [cfg profile-id thread-ids]
+  (let [rows  (get-comment-threads-files (::db/conn cfg) thread-ids)
+        found (into #{} (map :id) rows)]
+    (when-not (= (count thread-ids) (count found))
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "not found"))
+    (doseq [file-id (distinct (map :file-id rows))]
+      (files/check-comment-permissions! cfg profile-id file-id nil))))
+
+(defn- upsert-comment-thread-status-batch
+  [conn profile-id thread-ids]
+  (db/exec! conn [sql:upsert-comment-thread-status-batch
+                  profile-id
+                  (ct/in-future "1s")
+                  (db/create-array conn "uuid" thread-ids)]))
 
 (sv/defmethod ::mark-all-threads-as-read
+  "Marks the given comment threads as read for the current profile. The
+  caller needs to have access to the file that owns every thread."
   {::doc/added "1.15"
+   ::doc/changes [["2.19" "The caller needs access to the file that owns every thread and the number of threads is limited to 500"]]
    ::sm/params schema:mark-all-threads-as-read}
-  [cfg {:keys [::rpc/profile-id threads] :as params}]
-  (db/tx-run!
-   cfg
-   (fn [{:keys [::db/conn]}]
-     (doseq [thread-id threads]
-       (upsert-comment-thread-status! conn profile-id thread-id)))))
+  [cfg {:keys [::rpc/profile-id threads]}]
+  (let [thread-ids (distinct threads)]
+    (db/tx-run!
+     cfg
+     (fn [{:keys [::db/conn] :as cfg}]
+       (check-threads-access cfg profile-id thread-ids)
+       (upsert-comment-thread-status-batch conn profile-id thread-ids)
+       nil))))

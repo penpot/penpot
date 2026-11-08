@@ -10,6 +10,7 @@
    [frontend-tests.composable-tests.comp.sync-test]
    [frontend-tests.copy-as-svg-test]
    [frontend-tests.data.auth-test]
+   [frontend-tests.data.comments-batches-test]
    [frontend-tests.data.comments-filters-test]
    [frontend-tests.data.dashboard-test]
    [frontend-tests.data.event-test]
@@ -164,6 +165,7 @@
    'frontend-tests.composable-tests.comp.sync-test
    'frontend-tests.copy-as-svg-test
    'frontend-tests.data.auth-test
+   'frontend-tests.data.comments-batches-test
    'frontend-tests.data.comments-filters-test
    'frontend-tests.data.dashboard-test
    'frontend-tests.data.event-test

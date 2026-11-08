@@ -462,6 +462,18 @@
              (rx/map #(partial fetched-comments %))
              (rx/catch #(rx/throw {:type :comment-error})))))))
 
+;; Has to fit in the limit of the backend rpc
+;; (backend/src/app/rpc/commands/comments.clj).
+(def ^:private mark-all-threads-batch-size 500)
+
+(defn mark-all-threads-batches
+  "Splits the thread ids into the batches that the backend accepts on a
+  single call."
+  [thread-ids]
+  (->> thread-ids
+       (partition-all mark-all-threads-batch-size)
+       (mapv vec)))
+
 (defn mark-all-threads-as-read
   "Mark all threads as read"
   [team-id]
@@ -470,10 +482,14 @@
     (-data [_] {})
     ptk/WatchEvent
     (watch [_ state _]
-      (let [threads (-> state :comment-threads vals)]
+      (let [threads (-> state :comment-threads vals)
+            batches (mark-all-threads-batches (mapv :id threads))]
         (rx/concat
-         (->> (rp/cmd! :mark-all-threads-as-read {:threads (mapv :id threads)})
-              (rx/map #(retrieve-unread-comment-threads team-id))
+         (->> (rx/from batches)
+              (rx/mapcat (fn [batch]
+                           (rp/cmd! :mark-all-threads-as-read {:threads batch})))
+              (rx/reduce (fn [_ _] nil) nil)
+              (rx/map (fn [_] (retrieve-unread-comment-threads team-id)))
               (rx/catch #(rx/throw {:type :comment-error})))
          (rx/of (ntf/show {:level :info
                            :type :toast
