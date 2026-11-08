@@ -7,6 +7,7 @@
    [app.common.files.variant :as cfv]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
+   [app.common.geom.shapes :as gsh]
    [app.common.logic.duplicate :as cld]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
@@ -513,11 +514,21 @@
 
         ;; A swapped child is kept as it is, and the others carry their
         ;; touched attributes into their new child
+        new-head            (get objects (:id new-shape))
+        new-base-ref-shape  (ctf/find-remote-shape (assoc container :objects objects) libraries new-head)
+        ;; the old main's shapes turned as the copy turns its new main, so
+        ;; the switch compares them with the new copy's in one frame
+        orient-ref          (or (when new-base-ref-shape
+                                  (cll/orient-like new-base-ref-shape new-head
+                                                   (gsh/shape->center new-base-ref-shape)))
+                                identity)
+
         changes
         (reduce (fn [changes {:keys [old old-ref new swapped?]}]
                   (if swapped?
                     (keep-swapped-item changes new old ldata page libraries)
-                    (clsw/update-attrs-on-switch changes new old new-shape original-shape old-ref container)))
+                    (clsw/update-attrs-on-switch changes new old new-shape original-shape
+                                                 (orient-ref old-ref) container)))
                 changes
                 pairs)
 

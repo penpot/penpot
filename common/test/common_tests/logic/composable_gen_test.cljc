@@ -1834,6 +1834,13 @@
                                     :layout-children false :grid-empty false :layout-copies true :text true}]
                        :ops [[:text 4 1 1 0] [:text-style 0 8 1] [:switch 1 0 0 0] [:switch 0 0 0 0]]}))))
 
+(t/deftest switching-a-turned-copy-keeps-the-flip-its-child-inherits
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:nest 17 0 0 0] [:duplicate 9 0 0 0] [:make-variant 21 0 0 0]
+                             [:transform 6 16 0 18] [:rotate 15 0 0 0] [:switch 14 0 0 0]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]

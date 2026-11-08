@@ -2394,6 +2394,32 @@
     (t/is (= (:transform flipped) (:transform rect02')))
     (t/is (gsh/close-attrs? :points (:points flipped) (:points rect02')))))
 
+(t/deftest test-switch-of-a-turned-copy-carries-the-flip-of-its-child
+  ;; the variants agree on the child, whose flip carries though the copy's
+  ;; turn sets its child apart from the main's
+  (let [file     (-> (thf/sample-file :file1)
+                     (thv/add-variant-with-child
+                      :v01 :c01 :m01 :c02 :m02 :r01 :r02
+                      {:child1-params {:width 100 :height 50}
+                       :child2-params {:width 100 :height 50}})
+                     (thc/instantiate-component :c01 :copy01 :children-labels [:copy-r01]))
+        update   (fn [file ids f]
+                   (let [page (thf/current-page file)]
+                     (thf/apply-changes file (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                                         ids f (:objects page) {}))))
+        file     (update file #{(thi/id :copy-r01)}
+                         #(gsh/transform-shape % (ctm/resize-modifiers (gpt/point -1 1) (gsh/shape->center %))))
+        center   (gsh/shape->center (ths/get-shape file :copy01))
+        file     (update file #{(thi/id :copy01) (thi/id :copy-r01)}
+                         #(gsh/transform-shape % (ctm/rotation-modifiers % center 45)))
+        turned   (ths/get-shape file :copy-r01)
+        file'    (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        rect02'  (ths/get-shape-by-id file' (-> (ths/get-shape file' :copy02) :shapes first))]
+    (t/is (true? (:flip-x turned)))
+    (t/is (true? (:flip-x rect02')))
+    (t/is (gsh/close-attrs? :transform (:transform turned) (:transform rect02')))
+    (t/is (gsh/close-attrs? :points (:points turned) (:points rect02')))))
+
 (t/deftest test-switch-with-rotation-different-variants
   (let [;; ==== Setup
         file      (-> (thf/sample-file :file1)
