@@ -1058,12 +1058,13 @@
           root-id       (tm/target-shape-id situation target)
           page          (thf/current-page the-file)
           component-id  (:component-id (get (:objects page) root-id))
-          [_ changes]   (cls/generate-delete-shapes (pcb/empty-changes nil (:id page))
-                                                    (:data the-file)
-                                                    page
-                                                    (:objects page)
-                                                    #{root-id}
-                                                    {})
+          [all-parents changes] (cls/generate-delete-shapes (pcb/empty-changes nil (:id page))
+                                                            (:data the-file)
+                                                            page
+                                                            (:objects page)
+                                                            #{root-id}
+                                                            {})
+          changes       (with-layouts-reflow changes all-parents)
           file'         (thf/apply-changes the-file changes :validate? false)]
       (-> situation
           (tm/with-file file')
@@ -1114,6 +1115,8 @@
                                                        (:id the-file)
                                                        page
                                                        (:objects page))
+          ;; the frontend lays out the frames the restored shapes go into
+          changes      (with-layouts-reflow changes (keep :frame-id (:redo-changes changes)))
           file'        (thf/apply-changes the-file changes :validate? false)]
       (-> situation
           (tm/with-file file')

@@ -1749,6 +1749,14 @@
                                     :grid-empty false :layout-copies true :text true}]
                        :ops [[:swap 0 0 0 0] [:library-add-variant 0 0 0 0] [:library-sync] [:switch 0]]}))))
 
+(t/deftest moving-a-shape-in-a-restored-library-variant-moves-it-by-the-requested-offset
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :library-variants true :stale-libraries true
+                                    :layout nil :layout-item-margins false :grid-square false :library-depth 1
+                                    :library true :rich-variants true :layout-children false :library-text true
+                                    :grid-empty false :layout-copies true :text true}]
+                       :ops [[:library-make-variant 0] [:library-sync] [:switch 0] [:library-delete 1]
+                             [:library-sync] [:library-restore 1] [:library-sync] [:library-transform 0 0 4 1]]}))))
+
 (t/deftest switching-a-copy-keeps-the-layout-item-overrides-of-its-children
   (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout :grid :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true
