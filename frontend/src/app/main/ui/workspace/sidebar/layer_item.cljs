@@ -58,9 +58,16 @@
 
 (defn use-objects-ref
   [objects]
-  (let [objects-ref (mf/with-memo [] (atom objects))]
+  (let [objects-ref  (mf/with-memo [] (atom objects))
+        notified-ref (mf/use-ref objects)]
+    ;; Rows mounting in this render read the atom before they subscribe to
+    ;; it, so it must hold the new objects now; a change notified before
+    ;; they subscribe would be lost. Mounted rows are notified on commit.
+    (set! (.-state objects-ref) objects)
     (mf/with-layout-effect [objects]
-      (reset! objects-ref objects))
+      (let [prev (mf/ref-val notified-ref)]
+        (mf/set-ref-val! notified-ref objects)
+        (-notify-watches objects-ref prev objects)))
     objects-ref))
 
 (defn- schedule-sidebar-hover-flush []
