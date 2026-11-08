@@ -1849,6 +1849,14 @@
                              [:delete 7 0 0 0] [:make-variant 8 0 0 0] [:transform 13 3 7 0] [:combine 7]
                              [:switch 7] [:resize 10 0 0 0] [:combine 1] [:switch 10]]}))))
 
+(t/deftest switching-a-copy-drops-a-swap-where-the-new-variant-holds-a-plain-board
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:combine 0] [:switch 1] [:make-variant 1 0 0 0] [:add-variant 4] [:switch 8]
+                             [:make-variant 0 0 0 0] [:detach 0 0 0 0] [:variant-property 0 0 0 0]
+                             [:switch 12]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]

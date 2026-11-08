@@ -12,6 +12,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.common.logic.instances :as cli]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.math :as mth]
@@ -3571,6 +3572,27 @@
     ;; ==== Check
     (t/is (gpt/close? (offset-in-root file :m02 :m02-icon)
                       (offset-in-root file' :copy02 :copy-icon-b)))))
+
+(t/deftest test-switch-drops-a-swap-the-new-variant-holds-no-copy-for
+  (let [;; ==== Setup: the second variant's icon is detached into a plain board
+        file  (setup-variant-with-swapped-icon)
+        page  (thf/current-page file)
+        file  (thf/apply-changes file (cli/generate-detach-instance (-> (pcb/empty-changes nil)
+                                                                        (pcb/with-page page)
+                                                                        (pcb/with-objects (:objects page)))
+                                                                    page
+                                                                    {(:id file) file}
+                                                                    (thi/id :m02-icon)))
+
+        ;; ==== Action
+        file' (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02
+                                                              :keep-touched? true})
+        icon' (ths/get-shape-by-id file' (-> (ths/get-shape file' :copy02) :shapes first))]
+
+    ;; ==== Check
+    (t/is (= (:id (ths/get-shape file :m02-icon)) (:shape-ref icon')))
+    (t/is (not (ctk/instance-head? icon')))
+    (t/is (nil? (ths/get-shape file' :copy-icon-b)))))
 
 (defn- resize-width
   [shape width]
