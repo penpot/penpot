@@ -1857,6 +1857,13 @@
                              [:make-variant 0 0 0 0] [:detach 0 0 0 0] [:variant-property 0 0 0 0]
                              [:switch 12]]}))))
 
+(t/deftest switching-a-copy-carries-no-override-of-a-swap-its-main-makes
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:edit 3 0 0 1] [:variant-property 0 6 0 0] [:switch 0] [:make-variant 5]
+                             [:switch 13] [:make-variant 13 0 0 0] [:add-variant 0] [:switch 10]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]
