@@ -764,7 +764,8 @@
                             (assoc-in [(:id shape) group]
                                       (merge placed
                                              (when (and root? (= :geometry-group group)) position-orientation)
-                                             (select-keys old carried)))))))
+                                             ;; an attribute the copy leaves unset carries as unset
+                                             (into {} (map #(vector % (get old %))) carried)))))))
                     result (cond->> (dissoc groups :swap-group)
                              ;; the head carries only its own layout item overrides
                              (= root-id (:id shape))
