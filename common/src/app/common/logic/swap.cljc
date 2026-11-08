@@ -329,10 +329,14 @@
                                   updated-attrs)
         new-content (some #(when (= (:attr %) :content) (:val %)) roperations)
         text-groups (when (and (cfh/text-shape? current-shape) (some? new-content))
-                      (cond-> (txt/override-groups (:content current-shape) new-content)
-                        ;; the copy's own styles drop a typography it does not apply
-                        (txt/drops-typography? (txt/text-overrides touched))
-                        (disj :text-content-typography)))
+                      (let [;; the text overrides the switch carries: those both variants agree on
+                            carried (set/difference (txt/text-overrides touched)
+                                                    (txt/override-groups (:content origin-ref-shape)
+                                                                         (:content current-shape)))]
+                        (cond-> (txt/override-groups (:content current-shape) new-content)
+                          ;; the copy's own styles drop a typography it does not apply
+                          (txt/drops-typography? carried)
+                          (disj :text-content-typography))))
         new-touched (set/union (or (:touched current-shape) #{})
                                updated-sync-groups
                                text-groups

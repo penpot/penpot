@@ -149,3 +149,24 @@
         copy-t  (ths/get-shape-by-id file (first (:shapes (ths/get-shape file :copy-2))))]
     (t/is (not-any? :typography-ref-id (tree-seq map? :children (:content copy-t))))
     (t/is (= #{:content-group :text-content-size} (:touched copy-t)))))
+
+(t/deftest copy-owning-no-typography-holds-none-of-the-new-variant
+  ;; the copy is marked as owning its typography, though neither it nor its
+  ;; main applies one; the variants disagree on the typography, so only the
+  ;; size carries and drops the typography the new variant applies
+  (let [large   [[["Add to cart" {:size 24}]]]
+        heading (thtx/apply-typography small :heading {:size 24 :weight 700})
+        file    (-> (thf/sample-file :file1)
+                    (ths/add-sample-typography :heading)
+                    (thv/add-variant-with-text :v01 :c01 :m01 :c02 :m02 :t01 :t02 "" ""
+                                               :text1-params {:content (thtx/content large)}
+                                               :text2-params {:content (thtx/content heading)})
+                    (thc/instantiate-component :c01 :copy :children-labels [:copy-t])
+                    (thtx/set-text :copy-t (thtx/restyle large :size 18))
+                    (ths/update-shape :copy-t :touched #{:content-group :text-content-size
+                                                         :text-content-typography})
+                    (tho/swap-component-in-shape :copy :c02 {:new-shape-label :copy-2
+                                                             :keep-touched? true}))
+        copy-t  (ths/get-shape-by-id file (first (:shapes (ths/get-shape file :copy-2))))]
+    (t/is (not-any? :typography-ref-id (tree-seq map? :children (:content copy-t))))
+    (t/is (= #{:content-group :text-content-size} (:touched copy-t)))))

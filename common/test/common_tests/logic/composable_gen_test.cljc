@@ -1906,6 +1906,18 @@
                              [:library-text-style 0 8 1] [:delete 0 0 0 0] [:library-edit 0 0 0]
                              [:edit 0 1 1 2] [:library-sync] [:text-style 14 8 0 0]]}))))
 
+(t/deftest switching-a-copy-text-marked-with-an-unapplied-typography-holds-none
+  (t/is (map? (cg/run {:world [2 1 {:variants true :text-styles true :library-variants true
+                                    :stale-libraries true :layout nil :layout-item-margins false
+                                    :grid-square false :library-depth 1 :library true
+                                    :rich-variants true :layout-children false :library-text true
+                                    :grid-empty false :layout-copies true :text true}]
+                       :ops [[:library-add-variant 0] [:library-sync] [:switch 3] [:library-text-style 11 8 1]
+                             [:library-make-variant 20 0 0 0] [:nest 0 0 0 0] [:library-make-variant 0]
+                             [:library-sync] [:switch 0] [:nest 12 0 0 0] [:text 12 15 1] [:nest 4 0 0 0]
+                             [:library-text-style 19 0 1] [:library-delete 0 0 0 0]
+                             [:library-variant-property 0 0 0 0] [:library-sync] [:switch 19]]}))))
+
 (t/deftest random-library-compositions
   (let [coverage (atom {})
         failure (atom nil)]
