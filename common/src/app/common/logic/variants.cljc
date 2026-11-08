@@ -506,10 +506,11 @@
                       old-ref (if root?
                                 orig-base-ref-shape
                                 (find-shape-ref-child-of container libraries old (:id orig-base-ref-shape)))
-                      new     (get new-shapes-map (get o-ref-shapes-p-map (:id old-ref)))]
-                  (when new
-                    {:old old :old-ref old-ref :new new
-                     :swapped? (and (not root?) (ctk/swapped? old))})))
+                      new     (get new-shapes-map (get o-ref-shapes-p-map (:id old-ref)))
+                      swapped? (and (not root?) (ctk/swapped? old))]
+                  ;; a swap is kept only where the new variant holds a copy
+                  (when (and new (or (not swapped?) (ctk/instance-head? new)))
+                    {:old old :old-ref old-ref :new new :swapped? swapped?})))
               orig-touched)
 
         ;; A swapped child is kept as it is, and the others carry their
@@ -657,8 +658,8 @@
 (defn- kept-swapped-ids
   "The swapped shapes in the subtree of the copy head `shape` that a switch
    to the component `component-id` of `ldata` keeps: those whose place in
-   their main, by name and ancestor kinds, the new component has. The others
-   go with the old head."
+   their main, by name and ancestor kinds, the new component holds a copy
+   in. The others go with the old head."
   [page libraries ldata shape component-id]
   (let [objects      (:objects page)
         container    (ctn/make-container page :page)
@@ -671,7 +672,8 @@
         component    (ctkl/get-component ldata component-id)
         main         (ctf/get-component-root ldata component)
         main-objects (:objects (ctf/get-component-container ldata component))
-        new-paths    (into #{} (map :shape-path)
+        ;; the paths of the new main where it holds a copy
+        new-paths    (into #{} (comp (filter ctk/instance-head?) (map :shape-path))
                            (add-unique-path (reverse (cfh/get-children-with-self main-objects (:id main)))
                                             main-objects (:id main)))]
     (into #{}
