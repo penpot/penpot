@@ -1880,6 +1880,16 @@
     (t/is (= 1 (get-in result [:executed :library-sync])))
     (t/is (= 1 (count (tm/aux-files (:situation result)))))))
 
+(t/deftest clearing-a-library-typography-in-a-copy-drops-its-reference
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :library-variants true
+                                    :stale-libraries true :layout nil :layout-item-margins false
+                                    :grid-square false :library-depth 1 :library true
+                                    :rich-variants true :layout-children false :library-text true
+                                    :grid-empty false :layout-copies true :text true}]
+                       :ops [[:delete 0 0 0 0] [:delete 10 0 0 0] [:swap 3 0 0 0]
+                             [:library-text-style 0 8 1] [:delete 0 0 0 0] [:library-edit 0 0 0]
+                             [:edit 0 1 1 2] [:library-sync] [:text-style 14 8 0 0]]}))))
+
 (t/deftest random-library-compositions
   (let [coverage (atom {})
         failure (atom nil)]

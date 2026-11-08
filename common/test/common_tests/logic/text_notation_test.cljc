@@ -135,7 +135,13 @@
                (thtx/restyle-paragraphs typed :line-height 2))))
     (t/testing "changing another style keeps it"
       (t/is (= [[{:line-height 1.6} ["Read" {:family "Roboto" :size 16 :typography :body :color :red}]]]
-               (thtx/restyle typed :color :red)))))
+               (thtx/restyle typed :color :red))))
+    (t/testing "clearing the typography drops the file it comes from"
+      (let [cleared (-> typed
+                        (thtx/restyle :typography-ref-file (thi/new-id! :library))
+                        (thtx/restyle :typography nil))]
+        (t/is (not-any? :typography-ref-file
+                        (tree-seq map? :children (thtx/content cleared)))))))
   (t/is (= [[{:align "center"} ["Buy now" {:weight 700}]]
             [{:align "center"} ["Ends Sunday" {:weight 700}]]]
            (thtx/set-letters [[{:align "center"} ["Add " {:weight 700}] ["to cart"]]]
