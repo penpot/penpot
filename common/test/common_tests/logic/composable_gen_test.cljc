@@ -1841,6 +1841,14 @@
                        :ops [[:nest 17 0 0 0] [:duplicate 9 0 0 0] [:make-variant 21 0 0 0]
                              [:transform 6 16 0 18] [:rotate 15 0 0 0] [:switch 14 0 0 0]]}))))
 
+(t/deftest switching-a-turned-copy-back-keeps-its-child-in-place
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout :flex :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:delete 0 0 0 0] [:variant-property 0 1 0 0] [:switch 0] [:delete 4 0 0 0]
+                             [:delete 7 0 0 0] [:make-variant 8 0 0 0] [:transform 13 3 7 0] [:combine 7]
+                             [:switch 7] [:resize 10 0 0 0] [:combine 1] [:switch 10]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]

@@ -3715,6 +3715,25 @@
     (t/is (mth/close? width (:width points)))
     (t/is (mth/close? height (:height points)))))
 
+(t/deftest test-switch-places-a-moved-child-where-the-new-variant-does
+  ;; the copy lies where its main does, so the old main's child and the new
+  ;; copy's share their coordinates; a switch still carries no place
+  (let [file  (-> (thf/sample-file :file1)
+                  (thv/add-variant-with-child
+                   :v01 :c01 :m01 :c02 :m02 :r01 :r02
+                   {:child1-params {:width 100 :height 50 :type :rect}
+                    :child2-params {:width 100 :height 50 :type :rect}})
+                  (thc/instantiate-component :c01 :copy01 :children-labels [:copy-r01])
+                  (tho/move-shape-tree :copy01 (gpt/point -100 -100) :ignore-touched true)
+                  (tho/move-shape-tree :copy-r01 (gpt/point 0 20)))
+        rect  (copy-child file :copy01)
+        file' (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        rect' (copy-child file' :copy02)]
+    (t/is (contains? (:touched rect) :geometry-group))
+    (t/is (mth/close? (- (:y (ths/get-shape file' :r02)) (:y (ths/get-shape file' :m02)))
+                      (- (:y rect') (:y (ths/get-shape file' :copy02)))))
+    (t/is (mth/close? (-> rect' :selrect :y) (:y rect')))))
+
 (t/deftest test-switch-keeps-a-resized-child-of-same-size-variants
   (let [file  (-> (thf/sample-file :file1)
                   (thv/add-variant-with-child
