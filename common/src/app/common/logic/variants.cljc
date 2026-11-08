@@ -413,8 +413,9 @@
   "Carry the cell overrides of the switched grid `old` into `new`, its clean
    copy of the new variant, when the old main `old-ref` and `new` have
    identical grids: the same tracks and the same cells holding
-   corresponding children. Otherwise the new variant's cells win.
-   `counterpart` gives the child of `new` that relates to a child of `old`."
+   corresponding children, and they differ from the cells `new` shows.
+   Otherwise the new variant's cells win. `counterpart` gives the child of
+   `new` that relates to a child of `old`."
   [changes old old-ref new old-path new-path counterpart]
   (let [identical? (and (= (:layout-grid-rows old-ref) (:layout-grid-rows new))
                         (= (:layout-grid-columns old-ref) (:layout-grid-columns new))
@@ -431,8 +432,12 @@
                                    (reduced nil)
                                    (assoc cells id (assoc cell :id id :shapes shapes)))))
                              {}
-                             (vals (:layout-grid-cells old))))]
-    (if cells
+                             (vals (:layout-grid-cells old))))
+        ;; cells the new copy already shows are no override
+        shown?     (fn [cells]
+                     (= (set (map #(dissoc % :id) (vals cells)))
+                        (set (map #(dissoc % :id) (vals (:layout-grid-cells new))))))]
+    (if (and cells (not (shown? cells)))
       (pcb/update-shapes changes [(:id new)]
                          #(-> %
                               (assoc :layout-grid-cells cells)

@@ -3905,3 +3905,18 @@
     (t/is (= [1 3] (item-cell file' copy' "Item 3")))
     (t/is (= [1 1] (item-cell file' copy' "Item 1")))
     (t/is (not (ctk/touched-group? copy' :layout-grid-cells)))))
+
+(t/deftest a-switch-between-identical-grids-carries-no-cells-the-new-copy-shows
+  ;; the copy's cells are marked as an override but equal its main's, so a
+  ;; switch to an identical grid has nothing to carry
+  (let [file  (-> (thf/sample-file :file1)
+                  (ths/add-sample-shape :v01 :type :frame :is-variant-container true)
+                  (add-grid-member :v01 :blue :blue-root "Blue" 2 [[1 1] [1 2] [2 1]])
+                  (add-grid-member :v01 :green :green-root "Green" 2 [[1 1] [1 2] [2 1]])
+                  (thc/instantiate-component :blue :copy01)
+                  (ths/update-shape :copy01 :touched #{:layout-grid-cells}))
+        file' (tho/swap-component-in-shape file :copy01 :green {:new-shape-label :copy02 :keep-touched? true})
+        copy' (ths/get-shape file' :copy02)]
+    (t/is (= [1 1] (item-cell file' copy' "Item 1")))
+    (t/is (= [2 1] (item-cell file' copy' "Item 3")))
+    (t/is (not (ctk/touched-group? copy' :layout-grid-cells)))))
