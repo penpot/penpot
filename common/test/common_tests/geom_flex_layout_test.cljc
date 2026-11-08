@@ -200,3 +200,8 @@
   (t/is (= [[{:min-size 10 :max-size 10 :size 10}] 5]
            (fld/add-space-to-items :size :min-size :max-size 5
                                    [{:min-size 10 :max-size 10 :size 10}]))))
+
+(t/deftest calculate-params-of-hidden-children-only-is-nil
+  ;; hidden children take no part, so a board of only hidden ones has
+  ;; nothing to derive the layout from, as a board with none
+  (t/is (nil? (params-for-child {:x 10 :y 20 :width 50 :height 50 :hidden true}))))

@@ -106,62 +106,66 @@
               [params true]))]
     params))
 
+(defn- calculate-params*
+  "The grid parameters for the visible `shapes`."
+  [_objects shapes parent]
+  (if (empty? shapes)
+    (-> {:layout-grid-columns [ctl/default-track-value ctl/default-track-value]
+         :layout-grid-rows [ctl/default-track-value ctl/default-track-value]}
+        (ctl/create-cells [1 1 2 2]))
+
+    (let [all-shapes-rect (gco/shapes->rect shapes)
+          shapes+bounds
+          (->> shapes
+               (map #(vector % (grc/points->rect (get % :points)))))
+
+          shapes-by-x
+          (->> shapes+bounds
+               (sort-by (comp :x second)))
+
+          shapes-by-y
+          (->> shapes+bounds
+               (sort-by (comp :y second)))
+
+          cols (calculate-tracks :x shapes-by-x)
+          rows (calculate-tracks :y shapes-by-y)
+
+          num-cols (count cols)
+          num-rows (count rows)
+
+          total-cols-width (->> cols (reduce #(+ %1 (:size %2)) 0))
+          total-rows-height (->> rows (reduce #(+ %1 (:size %2)) 0))
+
+          column-gap
+          (if (= num-cols 1)
+            0
+            (/ (- (:width all-shapes-rect) total-cols-width) (dec num-cols)))
+
+          row-gap
+          (if (= num-rows 1)
+            0
+            (/ (- (:height all-shapes-rect) total-rows-height) (dec num-rows)))
+
+          layout-grid-rows (mapv (constantly ctl/default-track-value) rows)
+          layout-grid-columns (mapv (constantly ctl/default-track-value) cols)
+
+          parent-childs-vector (gpt/to-vec (gpo/origin (:points parent)) (gpt/point all-shapes-rect))
+          p-left (max 0 (:x parent-childs-vector))
+          p-top  (max 0 (:y parent-childs-vector))]
+
+      (-> {:layout-grid-columns layout-grid-columns
+           :layout-grid-rows layout-grid-rows
+           :layout-gap {:row-gap row-gap
+                        :column-gap column-gap}
+           :layout-padding {:p1 p-top :p2 p-left :p3 p-top :p4 p-left}
+           :layout-grid-dir (if (> num-cols num-rows) :row :column)}
+          (ctl/create-cells [1 1 num-cols num-rows])
+          (assign-shape-cells rows cols)))))
+
 (defn calculate-params
   "Given the shapes calculate its grid parameters (horizontal vs vertical, gaps, etc)"
   ([objects shapes]
    (calculate-params objects shapes nil))
 
-  ([_objects shapes parent]
-   (if (empty? shapes)
-     (-> {:layout-grid-columns [ctl/default-track-value ctl/default-track-value]
-          :layout-grid-rows [ctl/default-track-value ctl/default-track-value]}
-         (ctl/create-cells [1 1 2 2]))
-
-     (let [shapes (->> shapes (remove :hidden))
-           all-shapes-rect (gco/shapes->rect shapes)
-           shapes+bounds
-           (->> shapes
-                (map #(vector % (grc/points->rect (get % :points)))))
-
-           shapes-by-x
-           (->> shapes+bounds
-                (sort-by (comp :x second)))
-
-           shapes-by-y
-           (->> shapes+bounds
-                (sort-by (comp :y second)))
-
-           cols (calculate-tracks :x shapes-by-x)
-           rows (calculate-tracks :y shapes-by-y)
-
-           num-cols (count cols)
-           num-rows (count rows)
-
-           total-cols-width (->> cols (reduce #(+ %1 (:size %2)) 0))
-           total-rows-height (->> rows (reduce #(+ %1 (:size %2)) 0))
-
-           column-gap
-           (if (= num-cols 1)
-             0
-             (/ (- (:width all-shapes-rect) total-cols-width) (dec num-cols)))
-
-           row-gap
-           (if (= num-rows 1)
-             0
-             (/ (- (:height all-shapes-rect) total-rows-height) (dec num-rows)))
-
-           layout-grid-rows (mapv (constantly ctl/default-track-value) rows)
-           layout-grid-columns (mapv (constantly ctl/default-track-value) cols)
-
-           parent-childs-vector (gpt/to-vec (gpo/origin (:points parent)) (gpt/point all-shapes-rect))
-           p-left (max 0 (:x parent-childs-vector))
-           p-top  (max 0 (:y parent-childs-vector))]
-
-       (-> {:layout-grid-columns layout-grid-columns
-            :layout-grid-rows layout-grid-rows
-            :layout-gap {:row-gap row-gap
-                         :column-gap column-gap}
-            :layout-padding {:p1 p-top :p2 p-left :p3 p-top :p4 p-left}
-            :layout-grid-dir (if (> num-cols num-rows) :row :column)}
-           (ctl/create-cells [1 1 num-cols num-rows])
-           (assign-shape-cells rows cols))))))
+  ([objects shapes parent]
+   (calculate-params* objects (remove :hidden shapes) parent)))

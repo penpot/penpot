@@ -1764,6 +1764,12 @@
                        :ops [[:make-variant 2 0 0 0] [:make-variant 14 0 0 0] [:make-variant 14 0 0 0]
                              [:style 13 27 1] [:make-variant 0] [:switch 18]]}))))
 
+(t/deftest making-a-variant-of-a-hidden-main-lays-out-its-board
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:style 0 1 1] [:make-variant 0 0 0 0]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]

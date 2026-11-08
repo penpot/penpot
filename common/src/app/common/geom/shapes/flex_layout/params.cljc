@@ -18,10 +18,9 @@
    (calculate-params objects shapes nil))
 
   ([objects shapes parent]
-   (when (d/not-empty? shapes)
-     (let [shapes (->> shapes (remove :hidden))
-
-           points
+   ;; hidden shapes take no part in the layout
+   (when-let [shapes (seq (remove :hidden shapes))]
+     (let [points
            (->> shapes
                 (map :id)
                 (ctt/sort-z-index objects)
