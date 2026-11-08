@@ -562,6 +562,34 @@
     (t/is (= 3 (count values)))
     (t/is (apply distinct? values))))
 
+(t/deftest test-undo-add-new-variant-keeps-it-deleted
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        page      (thf/current-page file)
+        new-id    (uuid/next)
+        main-id   (uuid/next)
+
+        ;; ==== Action
+        changes   (-> (pcb/empty-changes nil (:id page))
+                      (pcb/with-library-data (:data file))
+                      (pcb/with-objects (:objects page))
+                      (clv/generate-add-new-variant (ths/get-shape file :m01) (thi/id :v01) new-id main-id 0))
+        file'     (thf/apply-changes file changes)
+        undone    (thf/apply-undo-changes file' changes)
+        redone    (thf/apply-changes undone changes)
+
+        ;; ==== Get
+        deleted   (get-in undone [:data :components new-id])]
+
+    ;; ==== Check
+    ;; a copy another file made of it can still find it, and restore it
+    (t/is (true? (:deleted deleted)))
+    (t/is (= main-id (get-in deleted [:objects main-id :id])))
+    (t/is (nil? (get-in (thf/current-page undone) [:objects main-id])))
+    (t/is (not (:deleted (get-in redone [:data :components new-id]))))
+    (t/is (some? (get-in (thf/current-page redone) [:objects main-id])))))
+
 (t/deftest test-delete-variant
   ;; When a variant container becomes empty, it id automatically deleted
   (let [;; ==== Setup

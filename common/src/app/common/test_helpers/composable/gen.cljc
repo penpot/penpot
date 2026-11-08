@@ -724,9 +724,9 @@
   [before after journal]
   (let [undone (r/step (restore-references after (:reference-before journal)) (n/undo))
         redone (r/step (restore-references undone (:reference-after journal)) (n/redo))]
-    (when-not (= before (oracle/snapshot undone))
-      (oracle/fail :I7 {:phase :undo :diff (thn/diff before (oracle/snapshot undone))}))
-    (when-not (= (oracle/snapshot after) (oracle/snapshot redone))
+    (when-not (= before (oracle/history-snapshot undone))
+      (oracle/fail :I7 {:phase :undo :diff (thn/diff before (oracle/history-snapshot undone))}))
+    (when-not (= (oracle/history-snapshot after) (oracle/history-snapshot redone))
       (oracle/fail :I7 {:phase :redo}))))
 
 (defn- synchronizable-components
@@ -804,7 +804,7 @@
   [situation owner op kind]
   (let [before (source-context situation owner)
         history (get-in situation [:library-histories owner]
-                        {:undo [] :redo [] :baseline (get (oracle/snapshot before) owner)})
+                        {:undo [] :redo [] :baseline (get (oracle/history-snapshot before) owner)})
         undo? (= kind :library-undo)
         redo? (= kind :library-redo)
         journal (cond undo? (peek (:undo history)) redo? (peek (:redo history)))
@@ -822,8 +822,8 @@
                   :else history)
         files (cf/all-files after)
         current-id (:id (tm/file situation))]
-    (when entry (assert-round-trip (oracle/snapshot before) after entry))
-    (when-not (= (dissoc (oracle/snapshot before) owner) (dissoc (oracle/snapshot after) owner))
+    (when entry (assert-round-trip (oracle/history-snapshot before) after entry))
+    (when-not (= (dissoc (oracle/history-snapshot before) owner) (dissoc (oracle/history-snapshot after) owner))
       (oracle/fail :I7 {:phase :source-editor-wrote-another-file}))
     (-> situation
         (tm/with-file (get files current-id))
@@ -974,8 +974,8 @@
             after (if library-id after
                       (reduce (fn [after owner]
                                 (cond-> after
-                                  (not= (get (oracle/snapshot situation) owner)
-                                        (get (oracle/snapshot after) owner))
+                                  (not= (get (oracle/history-snapshot situation) owner)
+                                        (get (oracle/history-snapshot after) owner))
                                   (assoc-in [:library-histories owner :foreign-write] true)))
                               after (keys (:library-histories situation))))
             _ (when (= kind :update-main)
@@ -1039,14 +1039,14 @@
           :undo (-> state (assoc :undo (pop history)) (update :redo conj (peek history)))
           :redo (-> state (assoc :redo (pop redo)) (update :undo conj (peek redo)))
           (cond-> state
-            changed (-> (assoc :checkpoint (oracle/snapshot situation) :redo [])
+            changed (-> (assoc :checkpoint (oracle/history-snapshot situation) :redo [])
                         (update :undo conj {:before model :after next-model
                                             :reference-start (reference-snapshot situation)}))))))))
 
 (defn initial-state
   [world-spec]
   (let [situation (world world-spec)]
-    {:situation situation :baseline (oracle/snapshot situation)
+    {:situation situation :baseline (oracle/history-snapshot situation)
      :model {} :trace [] :undo [] :redo [] :executed {} :coverage {}}))
 
 (defn- check-sequence
@@ -1062,10 +1062,10 @@
       (oracle/fail :I7 {:phase :history-depth :runner depth :model (count undo)}))
     (when-not (if (:accepted-libraries situation)
                 (= (get baseline (:id (tm/file situation)))
-                   (get (oracle/snapshot undone) (:id (tm/file situation))))
-                (= baseline (oracle/snapshot undone)))
+                   (get (oracle/history-snapshot undone) (:id (tm/file situation))))
+                (= baseline (oracle/history-snapshot undone)))
       (oracle/fail :I7 {:phase :sequence-undo}))
-    (when-not (= (oracle/snapshot situation) (oracle/snapshot redone))
+    (when-not (= (oracle/history-snapshot situation) (oracle/history-snapshot redone))
       (oracle/fail :I7 {:phase :sequence-redo}))))
 
 (defn- check-source-sequences
@@ -1080,9 +1080,9 @@
                          undone undo)]
       (when-not (= (count undo) (r/undo-depth editor))
         (oracle/fail :I7 {:phase :source-history-depth}))
-      (when (and (not foreign-write) (not= baseline (get (oracle/snapshot undone) owner)))
+      (when (and (not foreign-write) (not= baseline (get (oracle/history-snapshot undone) owner)))
         (oracle/fail :I7 {:phase :source-sequence-undo}))
-      (when-not (= (oracle/snapshot editor) (oracle/snapshot redone))
+      (when-not (= (oracle/history-snapshot editor) (oracle/history-snapshot redone))
         (oracle/fail :I7 {:phase :source-sequence-redo})))))
 
 (defn run

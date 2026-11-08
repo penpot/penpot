@@ -54,10 +54,17 @@
       (fail :I9 {:phase :requested-grid :expected expected :actual actual}))))
 
 (defn snapshot
+  ([situation] (snapshot situation {}))
+  ([situation opts]
+   (into {} (map (fn [[id file]]
+                   [id (thn/normalize-file file (merge {:position-data? false} opts))]))
+         (assoc (tm/aux-files situation) (:id (tm/file situation)) (tm/file situation)))))
+
+(defn history-snapshot
+  "The `snapshot` undo and redo must give back: without deleted components,
+   since undoing a component's creation leaves it deleted."
   [situation]
-  (into {} (map (fn [[id file]]
-                  [id (thn/normalize-file file {:position-data? false})]))
-        (assoc (tm/aux-files situation) (:id (tm/file situation)) (tm/file situation))))
+  (snapshot situation {:deleted-components? false}))
 
 (defn derived-attributes
   [objects shape]
