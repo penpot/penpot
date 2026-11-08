@@ -2079,6 +2079,46 @@
     ;; The later sync must not overwrite the protected overrides
     (check-layout-item-attrs-kept-partial copy01'' "after main sync")))
 
+(def ^:private child-layout-item-overrides
+  ;; Overrides on a copy child that leave its geometry alone.
+  {:layout-item-margin      {:m1 10 :m2 10 :m3 10 :m4 10}
+   :layout-item-margin-type :multiple
+   :layout-item-max-h       500
+   :layout-item-absolute    true
+   :layout-item-z-index     5
+   :layout-item-align-self  :start})
+
+(t/deftest test-switch-keeps-the-layout-item-overrides-of-a-copy-child
+  ;; The children of both variants agree on their layout item values, so
+  ;; the copy child's overrides carry with their touched groups.
+  (let [;; ==== Setup
+        child-params (select-keys layout-item-main-values (keys child-layout-item-overrides))
+        file     (-> (thf/sample-file :file1)
+                     (thv/add-variant-with-child :v01 :c01 :m01 :c02 :m02 :r01 :r02
+                                                 {:child1-params child-params
+                                                  :child2-params child-params})
+                     (tho/change-shape :m01 #(assoc % :layout :flex :layout-flex-dir :row))
+                     (tho/change-shape :m02 #(assoc % :layout :flex :layout-flex-dir :row))
+                     (thc/instantiate-component :c01 :copy01 :children-labels [:copy-r01]))
+        page     (thf/current-page file)
+        changes  (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                             #{(thi/id :copy-r01)}
+                                             #(merge % child-layout-item-overrides)
+                                             (:objects page)
+                                             {})
+        file     (thf/apply-changes file changes)
+
+        ;; ==== Action
+        file'    (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        copy02'  (ths/get-shape file' :copy02)
+        child'   (get-in (thf/current-page file') [:objects (first (:shapes copy02'))])]
+
+    (t/is (= (thi/id :r02) (:shape-ref child')))
+    (t/is (= child-layout-item-overrides (select-keys child' (keys child-layout-item-overrides))))
+    (t/is (= #{:layout-item-margin :layout-item-max-h :layout-item-absolute
+               :layout-item-z-index :layout-item-align-self}
+             (:touched child')))))
+
 ;; ============================================================
 ;; LAYOUT ITEM SIZING - VERTICAL (fix, auto, fill, none)
 ;; ============================================================

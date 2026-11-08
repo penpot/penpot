@@ -596,7 +596,10 @@
     :hidden :masked-group :fills :proportion :proportion-lock :constraints-h
     :constraints-v :fixed-scroll :r1 :r2 :r3 :r4 :rotation :opacity :grids :exports
     :strokes :blend-mode :interactions :shadow :blur :background-blur :grow-type :applied-tokens
-    :plugin-data :flip-x :flip-y})
+    :plugin-data :flip-x :flip-y
+    :layout-item-margin :layout-item-margin-type :layout-item-h-sizing :layout-item-v-sizing
+    :layout-item-max-h :layout-item-min-h :layout-item-max-w :layout-item-min-w
+    :layout-item-absolute :layout-item-z-index :layout-item-align-self})
 
 (def ^:private allowed-shape-geom-attrs #{:x :y :width :height})
 (def ^:private allowed-shape-base-attrs #{:id :name :type :selrect :points :transform

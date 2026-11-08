@@ -1749,6 +1749,13 @@
                                     :grid-empty false :layout-copies true :text true}]
                        :ops [[:swap 0 0 0 0] [:library-add-variant 0 0 0 0] [:library-sync] [:switch 0]]}))))
 
+(t/deftest switching-a-copy-keeps-the-layout-item-overrides-of-its-children
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children true :grid-empty true :layout-copies true :text true}]
+                       :ops [[:make-variant 2 0 0 0] [:make-variant 14 0 0 0] [:make-variant 14 0 0 0]
+                             [:style 13 27 1] [:make-variant 0] [:switch 18]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]

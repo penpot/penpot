@@ -1587,17 +1587,19 @@
 
 (defn attr-operations
   "The redo and undo `:set` operations, as `[roperations uoperations]`, that
-   copy attributes into `dest-shape`. For each of `updatable-attrs`,
-   `attr-ops` gives the `[attr value]` pairs to set, in order: none to
-   leave it alone, and possibly some derived attributes before it."
-  [dest-shape attr-ops]
-  (reduce (fn [operations attr]
-            (reduce (fn [[roperations uoperations] [attr value]]
-                      (add-update-attr-operations attr dest-shape roperations uoperations value))
-                    operations
-                    (attr-ops attr)))
-          [[] '()]
-          updatable-attrs))
+   copy attributes into `dest-shape`. For each of `attrs`, by default
+   `updatable-attrs`, `attr-ops` gives the `[attr value]` pairs to set, in
+   order: none to leave it alone, and possibly some derived attributes
+   before it."
+  ([dest-shape attr-ops] (attr-operations dest-shape attr-ops updatable-attrs))
+  ([dest-shape attr-ops attrs]
+   (reduce (fn [operations attr]
+             (reduce (fn [[roperations uoperations] [attr value]]
+                       (add-update-attr-operations attr dest-shape roperations uoperations value))
+                     operations
+                     (attr-ops attr)))
+           [[] '()]
+           attrs)))
 
 (defn- automatic-name
   "The name the editors give a text after its `content`, or nil when it has

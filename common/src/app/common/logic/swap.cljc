@@ -309,11 +309,16 @@
         touched        (get previous-shape :touched #{})
         text-auto?     (and (cfh/text-shape? current-shape)
                             (contains? #{:auto-height :auto-width} (:grow-type current-shape)))
+        ;; a child carries its layout item overrides too; the head keeps its own placement
+        attrs          (cond-> cll/updatable-attrs
+                         (not= (:id current-shape) (:id current-root))
+                         (concat (disj ctk/swap-keep-attrs :interactions)))
 
         [roperations uoperations]
         (cll/attr-operations current-shape
                              #(switch-attr-operations current-shape previous-shape origin-ref-shape
-                                                      touched text-auto? %))
+                                                      touched text-auto? %)
+                             attrs)
 
         updated-attrs (into #{} (map :attr) roperations)
         updated-sync-groups (into #{}
