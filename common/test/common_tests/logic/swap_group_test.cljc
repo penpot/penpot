@@ -431,6 +431,18 @@
     (t/is (not (ctk/swapped? head)))
     (t/is (= (:id (thc/get-component file :heart)) (:component-id head)))))
 
+(t/deftest switch-to-a-variant-with-the-same-component-takes-its-values
+  ;; the ended swap makes the head a plain copy of its new position, so it
+  ;; shows what the main authored there
+  (let [file (-> (setup-variants)
+                 (tho/swap-component-in-shape :child2 :heart)
+                 (set-opacity :child2 0.3)
+                 (tho/swap-component-in-shape :copy01 :c02 {:keep-touched? true}))
+        head (ths/get-shape file :copy-child)]
+    (t/is (= (thi/id :child2) (:shape-ref head)))
+    (t/is (= 0.3 (:opacity head)))
+    (t/is (not (ctk/touched-group? head :layer-effects-group)))))
+
 (t/deftest switch-to-a-variant-with-the-same-component-refers-to-its-children
   (let [file  (-> (setup-variants)
                   (tho/swap-component-in-shape :child2 :heart)

@@ -568,10 +568,14 @@
                                                   :include-deleted? true :with-context? true))
         changes             (keep-orientation-override changes original-shape new-shape page
                                                        new-ldata (:component-id new-shape) position)
-        ;; A carried size changes the frame its untouched children follow.
-        ;; Place them through the same constraints as an ordinary copy sync.
+        ;; A kept child whose swap ended is a plain copy of its new position
+        ended-swap?         (some (fn [{:keys [old swapped?]}]
+                                    (and swapped? (not (ctk/swapped? (get (pcb/get-objects changes) (:id old))))))
+                                  pairs)
+        ;; A carried size changes the frame its untouched children follow,
+        ;; and an ended swap shows its position: both sync as an ordinary copy.
         changes             (cond-> changes
-                              (some #(ctk/touched-group? % :geometry-group) orig-touched)
+                              (or ended-swap? (some #(ctk/touched-group? % :geometry-group) orig-touched))
                               (cll/generate-sync-shape-direct
                                nil libraries (assoc container :objects (pcb/get-objects changes))
                                (:id new-shape) false))
