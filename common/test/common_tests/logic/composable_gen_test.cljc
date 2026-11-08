@@ -1726,6 +1726,29 @@
                              [:add-variant 0] [:switch 0] [:variant-property 0 0 0 0] [:switch 14]
                              [:sync 0 0 0 0]]}))))
 
+(t/deftest generated-transforms-and-combines-make-sets-to-switch-in
+  (let [spec [2 2 {:variants true :rich-variants true :text true}]]
+    (doseq [kind [:make-variant :combine]]
+      (let [result (cg/run {:world spec :ops [[kind 0] [:switch 0] [:variant-property 0 0 0 0]
+                                              [:undo] [:redo] [:sync 0]]})]
+        (t/is (= 1 (get-in result [:executed kind])))))))
+
+(t/deftest generated-library-set-edits-reach-the-consumer
+  (let [spec [2 1 {:library true :stale-libraries true :library-variants true :library-text true
+                   :library-depth 1 :variants true :rich-variants true :text true :text-styles true}]]
+    (doseq [ops (concat (for [selector (range 5)] [[:library-variant-property 0 selector 1 1]])
+                        [[[:library-add-variant 0]] [[:library-make-variant 0]] [[:library-combine 0]]])]
+      (let [result (cg/run {:world spec :ops (into ops [[:library-sync] [:switch 0] [:library-undo]
+                                                        [:library-redo] [:library-sync] [:sync 0]])})]
+        (t/is (= 1 (get-in result [:executed (ffirst ops)])))))))
+
+(t/deftest undoing-a-library-variant-a-consumer-switched-to-keeps-it-deleted
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :library-variants true :stale-libraries true
+                                    :layout nil :layout-item-margins false :grid-square false :library-depth 1
+                                    :library true :rich-variants true :layout-children false :library-text true
+                                    :grid-empty false :layout-copies true :text true}]
+                       :ops [[:swap 0 0 0 0] [:library-add-variant 0 0 0 0] [:library-sync] [:switch 0]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]
@@ -1784,8 +1807,8 @@
        (cg/check-program program coverage failure))
      :max-size 30)
     (println "Stale library operation coverage:" (pr-str @coverage))
-    (t/is (empty? (cg/coverage-errors @coverage cg/stale-library-kinds #{:sync}))
-          (pr-str (cg/coverage-errors @coverage cg/stale-library-kinds #{:sync})))))
+    (t/is (empty? (cg/coverage-errors @coverage cg/stale-library-coverage-kinds #{:sync}))
+          (pr-str (cg/coverage-errors @coverage cg/stale-library-coverage-kinds #{:sync})))))
 
 (t/deftest random-library-dependency-compositions
   (let [coverage (atom {})

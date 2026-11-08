@@ -1870,24 +1870,103 @@
   (:component-id (tm/node-data situation node)))
 
 ;; ---------------------------------------------------------------------------
-;; Variant actions with no common generator (frontend only)
+;; Variant actions of the frontend events
 ;;
 ;; Transform a component into a variant, combine components as variants,
 ;; rename a variant, and the shortcuts that add a variant to selected
-;; members. Their logic is in the `dwv` events, so the frontend
-;; interpreter sends them and the pure runner rejects them. A set these
-;; actions build has no `variant-set` record: read it from the file
-;; (`component-of`, `variant-component-ids`).
+;; members. The frontend interpreter sends their `dwv` events. The pure
+;; runner runs the transform and the combine through their common
+;; generators, with what the events do after them: the reflow of the new
+;; board's layout, and the size of a combined board; it rejects the rest.
+;; A set these actions build has no `variant-set` record: read it from the
+;; file (`component-of`, `variant-component-ids`).
 ;; ---------------------------------------------------------------------------
+
+(defn- variant-action-changes
+  "The changes of `page` with its objects and the data of `file`."
+  [file page]
+  (-> (pcb/empty-changes nil (:id page))
+      (pcb/with-library-data (:data file))
+      (pcb/with-objects (:objects page))))
+
+(defn- transform-in-variant-changes
+  "The changes of `transform-in-variant` on the main `main-id` of `file`: a
+   set with a second member, its board laid out."
+  [file main-id]
+  (let [page       (thf/current-page file)
+        variant-id (uuid/next)]
+    (-> (variant-action-changes file page)
+        (clv/generate-transform-in-variant main-id variant-id
+                                           {:layout? true
+                                            :new-component-id (uuid/next)
+                                            :new-shape-id (uuid/next)})
+        (with-layouts-reflow [variant-id]))))
+
+(defn- combine-as-variants-file
+  "The file and changes of `combine-as-variants` on the mains `ids` of
+   `file`, as `[file changes]`: the set, the layouts its mains leave, and
+   its board sized 30 px larger than the mains on each side."
+  [file libraries ids]
+  (let [page       (thf/current-page file)
+        objects    (:objects page)
+        ids        (->> ids
+                        (cfh/clean-loops objects)
+                        (remove #(let [shape (get objects %)]
+                                   (or (not (ctk/main-instance? shape)) (ctk/is-variant? shape))))
+                        vec)
+        rect       (grc/join-rects (map #(:selrect (get objects %)) ids))
+        variant-id (uuid/next)
+        changes    (-> (variant-action-changes file page)
+                       (clv/generate-combine-as-variants ids variant-id)
+                       (with-layouts-reflow (into [variant-id] (map #(:parent-id (get objects %))) ids)))
+        file       (thf/apply-changes file changes :validate? false)
+        resize     (fn [[file changes] attr value]
+                     (let [page  (thf/current-page file)
+                           board (get (:objects page) variant-id)
+                           next  (transform-changes page board (geometry-modifiers board attr value)
+                                                    {:file file :libraries libraries})]
+                       [(thf/apply-changes file next :validate? false) (pcb/concat-changes changes next)]))]
+    (if (> (count ids) 1)
+      (-> [file changes]
+          (resize :width (+ (:width rect) 60))
+          (resize :height (+ (:height rect) 60)))
+      [file nil])))
+
+(defn- new-component-ids
+  "The ids of the components that `file-after` has and `file-before` has not."
+  [file-before file-after]
+  (let [before (set (map :id (ctkl/components-seq (:data file-before))))]
+    (into [] (comp (map :id) (remove before)) (ctkl/components-seq (:data file-after)))))
 
 (defrecord VariantAction [action params]
   IComponentOperation
-  (op-kind [_] :frontend-only)
+  (op-kind [_] (if (#{:transform :combine} action) :user :frontend-only))
+
+  IAppliedResult
+  (applied-result [_ file-before file-after]
+    {:component-ids (new-component-ids file-before file-after)})
 
   tm/IOperation
-  (apply-to [_ _]
-    (throw (ex-info (str "variant action " action " runs only in the frontend")
-                    {:action action}))))
+  (apply-to [this situation]
+    (let [the-file (tm/file situation)
+          id       #(tm/target-shape-id situation %)
+          [file' changes]
+          (case action
+            :transform (let [changes (transform-in-variant-changes the-file (id (:target params)))]
+                         [(thf/apply-changes the-file changes :validate? false) changes])
+            ;; a selection combines in the order of the layers
+            :combine   (let [ids (mapv id (:targets params))
+                             ids (if (:selected? params)
+                                   (vec (cfh/order-by-indexed-shapes (:objects (thf/current-page the-file)) ids))
+                                   ids)]
+                         (combine-as-variants-file the-file (libraries situation) ids))
+            (throw (ex-info (str "variant action " action " runs only in the frontend")
+                            {:action action})))]
+      (-> situation
+          (tm/with-file file')
+          (record-changes changes)
+          (tm/record-application this (merge {:action action}
+                                             (applied-result this the-file file')))))))
 
 (defn- variant-action
   [action params]

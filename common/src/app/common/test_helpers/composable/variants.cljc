@@ -89,10 +89,11 @@
 
 (defn set-components
   "The live components of the variant set `variant-id` of `file`, in the
-   order of its container's children."
+   order of the children of its container, on whatever page it is."
   [file variant-id]
   (let [data (:data file)
-        objects (:objects (thf/current-page file))]
+        objects (some #(when (contains? (:objects %) variant-id) (:objects %))
+                      (vals (:pages-index data)))]
     (->> (get-in objects [variant-id :shapes])
          (keep #(get-in data [:components (get-in objects [% :component-id])]))
          (remove :deleted)

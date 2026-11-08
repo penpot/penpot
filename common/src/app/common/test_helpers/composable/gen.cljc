@@ -371,6 +371,11 @@
                               :variant-property (ctk/is-variant-container? shape)
                               :add-variant (and (ctk/main-instance? shape) (:variant-id shape) (live-component shape)
                                                 (< (count objects) (get situation :shape-budget 120)))
+                              (:make-variant :combine)
+                              (and (ctk/main-instance? shape) (not (:variant-id shape)) (live-component shape)
+                                   (= (:component-file shape) (:id file))
+                                   (nil? (get-in file [:data :components (:component-id shape) :variant-id]))
+                                   (< (count objects) (get situation :shape-budget 120)))
                               false))
                           (tree situation))]
     (case kind
@@ -412,6 +417,9 @@
                                     :shape {:id (:main-instance-id component)
                                             :component-id (:id component)}}))
                     vec)
+      :combine (vec (for [[index entry] (map-indexed vector eligible)
+                          other (subvec eligible (inc index))]
+                      (assoc entry :with other)))
       :nest (vec (for [entry eligible
                        parent (tree situation)
                        :let [parent-shape (:shape parent)]
@@ -424,7 +432,13 @@
 
 (def library-source-kinds
   #{:library-edit :library-add-child :library-remove-child :library-delete :library-restore
-    :library-undo :library-redo :library-accept :library-transform :library-text :library-text-style})
+    :library-undo :library-redo :library-accept :library-transform :library-text :library-text-style
+    :library-variant-property :library-add-variant :library-make-variant :library-combine})
+
+(def ^:private local-variant-kind
+  "The local kind of each library variant kind."
+  {:library-variant-property :variant-property :library-add-variant :add-variant
+   :library-make-variant :make-variant :library-combine :combine})
 
 (defn- library-candidates
   [situation kind scope]
@@ -450,21 +464,37 @@
                                  :shape {:id (:main-instance-id component) :component-id (:id component)}})
                               (sort-by (comp str :id) (filter :deleted (vals (get-in library [:data :components])))))
                  :else
-                 (filter (fn [{:keys [shape]}]
-                           (case kind
-                             (:library-edit :library-remove-child)
-                             (and (= :rect (:type shape)) (nil? (:shape-ref shape)))
-                             :library-transform
-                             (and (not= :text (:type shape)) (nil? (:shape-ref shape))
-                                  (if (even? (or scope 0))
-                                    (ctk/main-instance? shape)
-                                    (and (not (ctk/main-instance? shape))
-                                         (some ctk/main-instance?
-                                               (cfh/get-parents (:objects (thf/current-page library)) (:id shape))))))
-                             (:library-text :library-text-style)
-                             (and (= :text (:type shape)) (nil? (:shape-ref shape)))
-                             (:library-add-child :library-delete) (ctk/main-instance? shape)))
-                         (tree (tm/with-file situation library))))]
+                 (cond->>
+                  (filter (fn [{:keys [shape]}]
+                            (case kind
+                              :library-variant-property (ctk/is-variant-container? shape)
+                              :library-add-variant
+                              (and (ctk/main-instance? shape) (:variant-id shape)
+                                   (not (get-in library [:data :components (:component-id shape) :deleted])))
+                              (:library-make-variant :library-combine)
+                              (and (ctk/main-instance? shape) (not (:variant-id shape))
+                                   (= (:component-file shape) library-id)
+                                   (let [component (get-in library [:data :components (:component-id shape)])]
+                                     (and component (not (:deleted component)) (nil? (:variant-id component)))))
+                              (:library-edit :library-remove-child)
+                              (and (= :rect (:type shape)) (nil? (:shape-ref shape)))
+                              :library-transform
+                              (and (not= :text (:type shape)) (nil? (:shape-ref shape))
+                                   (if (even? (or scope 0))
+                                     (ctk/main-instance? shape)
+                                     (and (not (ctk/main-instance? shape))
+                                          (some ctk/main-instance?
+                                                (cfh/get-parents (:objects (thf/current-page library)) (:id shape))))))
+                              (:library-text :library-text-style)
+                              (and (= :text (:type shape)) (nil? (:shape-ref shape)))
+                              (:library-add-child :library-delete) (ctk/main-instance? shape)))
+                          (tree (tm/with-file situation library)))
+                   (= kind :library-combine)
+                   ((fn [eligible]
+                      (let [eligible (vec eligible)]
+                        (for [[index entry] (map-indexed vector eligible)
+                              other (subvec eligible (inc index))]
+                          (assoc entry :with (update other :path #(into [:library library-index] %)))))))))]
      (-> entry
          (assoc :library-id library-id)
          (update :path #(into [:library library-index] %))))))
@@ -604,8 +634,11 @@
                                       [:data :components (:component-id shape) :variant-id])))))
         selected (when (seq items) (nth items (mod index (count items))))
         target (when selected (constantly (get-in selected [:shape :id])))
-        set-edit (when (and selected (= kind :variant-property))
-                   (variants/property-edit (variants/set-components (tm/file situation) (get-in selected [:shape :id]))
+        set-edit (when (and selected (#{:variant-property :library-variant-property} kind))
+                   (variants/property-edit (variants/set-components (if-let [library-id (:library-id selected)]
+                                                                      (get (cf/all-files situation) library-id)
+                                                                      (tm/file situation))
+                                                                    (get-in selected [:shape :id]))
                                            (or property 0) (or value 0) (or scope 0)))
         property (if (= kind :style) style-property
                      (nth [:fills :opacity :name] (mod (or property 0) 3)))
@@ -676,11 +709,14 @@
                  :swap (n/swap-shape target (constantly (get-in selected [:destination :shape :component-id])))
                  :switch (n/switch-variant target (:variant-value selected) :pos (:variant-pos selected))
                  :restore (n/restore-component (n/delete-component target))
-                 :variant-property (when set-edit
-                                     (n/edit-variant-set (get-in selected [:shape :id]) (:edit set-edit) (:params set-edit)))
-                 :add-variant (n/add-variant nil (get-in selected [:shape :component-id])))))]
+                 (:variant-property :library-variant-property) (when set-edit
+                                                                 (n/edit-variant-set (get-in selected [:shape :id]) (:edit set-edit) (:params set-edit)))
+                 (:add-variant :library-add-variant) (n/add-variant nil (get-in selected [:shape :component-id]))
+                 (:make-variant :library-make-variant) (n/transform-in-variant target)
+                 (:combine :library-combine) (n/combine-as-variants [target (constantly (get-in selected [:with :shape :id]))]))))]
     {:op op :library-id (:library-id selected) :shape (:shape selected)
      :destination (:shape (:destination selected)) :property property :value value :set-edit set-edit
+     :with (:shape (:with selected))
      :opportunities (if (seq items) (count items) (if (or op (= kind :sync)) 1 0))
      :trace (cond-> {:kind kind :tuple tuple
                      :status (if (or op (= kind :sync)) :executed :skip)}
@@ -689,6 +725,7 @@
               (:destination selected) (assoc :to (get-in selected [:destination :path]))
               (= kind :switch) (assoc :property-pos (:variant-pos selected))
               set-edit (assoc :edit (:edit set-edit))
+              (:with selected) (assoc :with (get-in selected [:with :path]))
               (and (nil? op) (not= kind :sync))
               (assoc :reason (str "No eligible " (name kind) " target")))}))
 
@@ -843,10 +880,16 @@
         tree (gm/set-objects-modifiers {(:id shape) {:modifiers modifiers}} objects)]
     (gsh/transform-shape shape (get-in tree [(:id shape) :modifiers]))))
 
+(defn- kind-file
+  "The file an operation edits: the library `library-id`, or the current one."
+  [situation library-id]
+  (if library-id (get (cf/all-files situation) library-id) (tm/file situation)))
+
 (defn- update-model
-  [model before after {:keys [shape property value op]} kind]
+  [model before after {:keys [shape property value op library-id]} kind]
   (let [objects (all-objects before)
-        id (:id shape)]
+        id (:id shape)
+        kind (get local-variant-kind kind kind)]
     (case kind
       (:edit :style)
       (cond-> (shadow/edit model shape property value)
@@ -876,10 +919,12 @@
             new-main (get-in (cf/libraries after) [(:component-file head) :data :components
                                                    (:component-id head) :main-instance-id])]
         (shadow/swap model objects after-objects id old-main new-main (= kind :switch)))
-      :add-variant
-      (let [file (tm/file after)
-            added (:component-id (n/applied-result op (tm/file before) file))]
-        (shadow/duplicate model objects id (:objects (thf/current-page file))
+      (:make-variant :add-variant)
+      (let [file-before (kind-file before library-id)
+            file (kind-file after library-id)
+            result (n/applied-result op file-before file)
+            added (or (:component-id result) (first (:component-ids result)))]
+        (shadow/duplicate model objects id (all-objects after)
                           (get-in file [:data :components added :main-instance-id])))
       (:resize :rotate :transform)
       (let [shape-after (requested-geometry before {:shape shape :op op} kind)
@@ -902,10 +947,10 @@
 (defn- check-requested-variant-properties
   "The properties of every member of the edited set are those the edit
    requested."
-  [after {:keys [shape set-edit]}]
+  [file {:keys [shape set-edit]}]
   (let [expected (:expected set-edit)
         actual (into {} (map (juxt :id #(vec (:variant-properties %))))
-                     (variants/set-components (tm/file after) (:id shape)))]
+                     (variants/set-components file (:id shape)))]
     (when-not (and (= (set (keys expected)) (set (keys actual)))
                    (every? (fn [[id props]] (variants/properties-match? props (get actual id))) expected))
       (oracle/fail :I9 {:phase :requested-variant-properties :edit (:edit set-edit)
@@ -914,20 +959,43 @@
 (defn- check-requested-variant
   "The added member is in the set of its source, with the source's
    properties but a new value of the last one."
-  [before after {:keys [shape op]}]
-  (let [source (get-in (tm/file before) [:data :components (:component-id shape)])
-        added-id (:component-id (n/applied-result op (tm/file before) (tm/file after)))
-        added (some #(when (= added-id (:id %)) %) (variants/set-components (tm/file after) (:variant-id source)))
+  [file-before file {:keys [shape op]}]
+  (let [source (get-in file-before [:data :components (:component-id shape)])
+        added-id (:component-id (n/applied-result op file-before file))
+        added (some #(when (= added-id (:id %)) %) (variants/set-components file (:variant-id source)))
         source-props (vec (:variant-properties source))
         props (vec (:variant-properties added))
         taken (set (map #(:value (peek (vec (:variant-properties %))))
-                        (variants/set-components (tm/file before) (:variant-id source))))]
+                        (variants/set-components file-before (:variant-id source))))]
     (when-not (and added
                    (= (mapv :name source-props) (mapv :name props))
                    (= (pop source-props) (pop props))
                    (not (str/blank? (:value (peek props))))
                    (not (contains? taken (:value (peek props)))))
       (oracle/fail :I9 {:phase :requested-variant :source source-props :added props :taken taken}))))
+
+(defn- check-requested-variant-set
+  "The components of the mains a transform or a combine names are the
+   members of one new set, whose board holds their mains, with the same
+   property names; a transform adds a member with a value of its own."
+  [file-before file {:keys [shape with op]} kind]
+  (let [added (:component-ids (n/applied-result op file-before file))
+        ids (cond-> [(:component-id shape)]
+              (= kind :combine) (conj (:component-id with))
+              (= kind :make-variant) (into added))
+        components (mapv #(get-in file [:data :components %]) ids)
+        variant-id (:variant-id (first components))
+        members (variants/set-components file variant-id)
+        values (map #(:value (peek (vec (:variant-properties %)))) members)]
+    (when-not (and (some? variant-id)
+                   (some #(get-in % [:objects variant-id :is-variant-container]) (vals (get-in file [:data :pages-index])))
+                   (every? #(= variant-id (:variant-id %)) components)
+                   (= (set ids) (set (map :id members)))
+                   (seq (:variant-properties (first members)))
+                   (apply = (map #(mapv :name (:variant-properties %)) members))
+                   (or (= kind :combine) (apply distinct? values)))
+      (oracle/fail :I9 {:phase :requested-variant-set :kind kind :ids ids
+                        :members (mapv (juxt :id :variant-id :variant-properties) members)}))))
 
 (defn step
   [state tuple]
@@ -1011,10 +1079,14 @@
         (when (#{:grid-cell :grid-direction} kind)
           (oracle/check-requested-grid (tm/shape-by-id after (get-in resolved [:shape :id]))
                                        (:shape resolved) (:action op) (:value op)))
-        (when (= kind :variant-property)
-          (check-requested-variant-properties after resolved))
-        (when (= kind :add-variant)
-          (check-requested-variant situation after resolved))
+        (let [variant-kind (get local-variant-kind kind kind)
+              file-before (kind-file situation library-id)
+              file (kind-file after library-id)]
+          (case variant-kind
+            :variant-property (check-requested-variant-properties file resolved)
+            :add-variant (check-requested-variant file-before file resolved)
+            (:make-variant :combine) (check-requested-variant-set file-before file resolved variant-kind)
+            nil))
         (when (#{:swap :switch} kind)
           (let [head (tm/shape-by-id after (get-in resolved [:shape :id]))]
             (when-not (= (get-in resolved [:destination :component-id]) (:component-id head))
@@ -1214,6 +1286,23 @@
                     (conj [3 (gen/fmap (fn [[index selector choice other target]]
                                          [[:variant-property index selector choice other] [:switch target]])
                                        (gen/tuple gen/nat gen/nat gen/nat gen/nat gen/nat))])
+                    (every? (set kinds) [:library-variant-property :library-sync :switch])
+                    (conj [3 (gen/fmap (fn [[index selector choice other target]]
+                                         [[:library-variant-property index selector choice other]
+                                          [:library-sync] [:switch target]])
+                                       (gen/tuple gen/nat gen/nat gen/nat gen/nat gen/nat))])
+                    (every? (set kinds) [:library-add-variant :library-make-variant :library-combine
+                                         :library-sync :switch])
+                    (conj [2 (gen/fmap (fn [[kind index target]] [[kind index] [:library-sync] [:switch target]])
+                                       (gen/tuple (gen/elements [:library-add-variant :library-make-variant
+                                                                 :library-combine])
+                                                  gen/nat gen/nat))])
+                    (every? (set kinds) [:make-variant :switch])
+                    (conj [1 (gen/fmap (fn [[index target]] [[:make-variant index] [:switch target]])
+                                       (gen/tuple gen/nat gen/nat))])
+                    (every? (set kinds) [:combine :switch])
+                    (conj [1 (gen/fmap (fn [[index target]] [[:combine index] [:switch target]])
+                                       (gen/tuple gen/nat gen/nat))])
                     (every? (set kinds) [:add-variant :switch])
                     (conj [1 (gen/fmap (fn [[index target]] [[:add-variant index] [:switch target]])
                                        (gen/tuple gen/nat gen/nat))])
@@ -1266,11 +1355,11 @@
                            :grid-square (= grid :square) :grid-empty (= grid :empty)}]
      :ops ops}))
 
-(def variant-kinds (into swap-kinds [:variant-property :add-variant]))
+(def variant-kinds (into swap-kinds [:variant-property :add-variant :make-variant :combine]))
 
 (def variant-coverage-kinds
   "The kinds the variant programs must cover; the swap programs cover the rest."
-  [:variant-property :add-variant :switch :undo :redo :sync])
+  [:variant-property :add-variant :make-variant :combine :switch :undo :redo :sync])
 
 (def variant-program-gen
   (gen/let [components (gen/choose 2 3)
@@ -1303,6 +1392,13 @@
 
 (def stale-library-kinds
   (into (vec (remove #{:update-main} library-kinds)) (sort (disj library-source-kinds :library-accept))))
+
+(def stale-library-coverage-kinds
+  "The kinds the stale library programs must cover: the library editor's and
+   the consumer's library steps; the structure and swap programs cover the
+   rest."
+  (into [:edit :reset :swap :switch :detach :sync :undo :redo :library-sync]
+        (sort (disj library-source-kinds :library-accept))))
 
 (def stale-library-program-gen
   (gen/let [depth (gen/choose 0 2)
