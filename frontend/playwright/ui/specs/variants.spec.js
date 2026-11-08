@@ -114,16 +114,12 @@ const validateVariant = async (variant) => {
   await expect(variant.variant1).toBeVisible();
   await expect(variant.variant2).toBeVisible();
 
-  // variant1 and variant2 are items inside the childs of variant_container
-  const parent_id = "children-" + (await variant.container.getAttribute("id"));
-  await expect(variant.variant1.locator("xpath=..")).toHaveAttribute(
-    "data-testid",
-    parent_id,
+  // variant1 and variant2 are the rows right under variant_container
+  const children = variant.container.locator(
+    "xpath=following::div[@data-testid='layer-row'][position() <= 2]",
   );
-  await expect(variant.variant2.locator("xpath=..")).toHaveAttribute(
-    "data-testid",
-    parent_id,
-  );
+  await expect(children.filter({ hasText: "Value 1" })).toHaveCount(1);
+  await expect(children.filter({ hasText: "Value 2" })).toHaveCount(1);
 };
 
 test("User creates a variant", async ({ page }) => {

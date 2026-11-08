@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.math :as mth]
    [app.common.types.shape :as cts]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
@@ -26,7 +27,9 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.notifications.badge :refer [badge-notification]]
-   [app.main.ui.workspace.sidebar.layer-item :refer [layer-item* layer-objects-ctx use-objects-ref]]
+   [app.main.ui.workspace.sidebar.layer-item :refer [layer-item* layer-objects-ctx use-objects-ref
+                                                     ref:shape-for-rename sidebar-selected-id]]
+   [app.main.ui.workspace.sidebar.layer-rows :as lr]
    [app.main.ui.workspace.sidebar.scroll :as sc]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
@@ -40,28 +43,140 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
+(def ^:private default-row-height 36)
+
+;; Rows rendered above and below the visible ones
+(def ^:private overscan 10)
+
+(def ^:private ref:expanded
+  (l/derived :expanded refs/workspace-local))
+
+(def ^:private ref:single-selected
+  (l/derived #(when (= 1 (count %)) (first %)) refs/selected-shapes))
+
+(defn- get-scroll-node
+  [list-ref]
+  (dom/get-parent-with-data (mf/ref-val list-ref) "scroll-container"))
+
+(defn- use-viewport
+  "First visible row and number of visible rows of the scroll container
+  around `list-ref`."
+  [list-ref row-height]
+  (let [viewport* (mf/use-state [0 0])]
+    (mf/with-layout-effect [row-height]
+      (let [node     (get-scroll-node list-ref)
+            sync     (fn []
+                       (let [viewport [(mth/floor (/ (.-scrollTop node) row-height))
+                                       (mth/ceil (/ (.-clientHeight node) row-height))]]
+                         (swap! viewport* #(if (= % viewport) % viewport))))
+            observer (js/ResizeObserver. sync)]
+        (sync)
+        (.addEventListener node "scroll" sync #js {:passive true})
+        (.observe observer node)
+        (fn []
+          (.removeEventListener node "scroll" sync)
+          (.disconnect observer))))
+    (deref viewport*)))
+
+(defn- scroll-to-row
+  [node index row-height]
+  (let [row-top  (* index row-height)
+        view-top (.-scrollTop node)
+        height   (.-clientHeight node)]
+    (when (or (< row-top view-top)
+              (> (+ row-top row-height) (+ view-top height)))
+      (set! (.-scrollTop node) (- row-top (/ (- height row-height) 2))))))
+
 (mf/defc layers-tree*
   {::mf/wrap [mf/memo]}
   [{:keys [objects is-filtered parent-size]}]
-  (let [objects-ref (use-objects-ref objects)
-        shapes      (dm/get-in objects [uuid/zero :shapes])
-        ;; Layers render in reverse order of `:shapes`
-        root-ids    (mf/with-memo [shapes]
-                      (-> shapes reverse vec))
-        last-index  (dec (count root-ids))]
+  (let [objects-ref   (use-objects-ref objects)
+        expanded      (mf/deref ref:expanded)
+        single-id     (mf/deref ref:single-selected)
+        rename-id     (mf/deref ref:shape-for-rename)
+
+        list-ref      (mf/use-ref nil)
+        cache-ref     (mf/use-ref (js/Map.))
+        scroll-to-ref (mf/use-ref nil)
+        row-height*   (mf/use-state default-row-height)
+        row-height    (deref row-height*)
+
+        root          (mf/with-memo [objects expanded]
+                        (let [[root cache] (lr/build-tree (mf/ref-val cache-ref) objects expanded)]
+                          (mf/set-ref-val! cache-ref cache)
+                          root))
+        total         (lr/get-size root)
+
+        [first-row visible] (use-viewport list-ref row-height)
+        start         (mth/max 0 (- first-row overscan))
+        end           (mth/min total (+ first-row visible overscan))
+        rows          (lr/get-rows root start end)
+
+        ;; The root board holding the first visible row stays on top
+        ;; while its children scroll under it
+        [top-row top-index] (lr/get-top-row root first-row)
+        sticky-id     (when (and (some? top-row)
+                                 (lr/open? top-row)
+                                 (cfh/frame-shape? (lr/get-shape top-row)))
+                        (lr/get-id top-row))
+
+        render-row
+        (fn [row]
+          (mf/html
+           [:> layer-item* {:id (lr/get-id row)
+                            :index (lr/get-position row)
+                            :depth (lr/get-depth row)
+                            :is-component-child (lr/component-child? row)
+                            :has-copy-parent (lr/copy-parent? row)
+                            :key (dm/str (lr/get-id row))
+                            :is-sortable true
+                            :is-filtered is-filtered
+                            :parent-size parent-size}]))]
+
+    (mf/with-layout-effect [total]
+      (when-let [node (dom/query (mf/ref-val list-ref) "[data-testid='layer-row']")]
+        (let [height (.-offsetHeight node)]
+          (when (pos? height)
+            (reset! row-height* height)))))
+
+    (mf/with-effect [single-id]
+      (let [clicked-id @sidebar-selected-id]
+        (vreset! sidebar-selected-id nil)
+        (mf/set-ref-val! scroll-to-ref (when (not= single-id clicked-id) single-id))))
+
+    (mf/with-effect [rename-id]
+      (when (some? rename-id)
+        (mf/set-ref-val! scroll-to-ref rename-id)))
+
+    (mf/with-effect [root single-id rename-id row-height]
+      (when-let [id (mf/ref-val scroll-to-ref)]
+        (when-let [index (lr/get-index root @objects-ref id)]
+          (mf/set-ref-val! scroll-to-ref nil)
+          (scroll-to-row (get-scroll-node list-ref) index row-height))))
 
     [:> (mf/provider layer-objects-ctx) {:value objects-ref}
      [:div {:class (stl/css :element-list)
+            :ref list-ref
             :data-testid "layer-item"}
       [:> hooks/sortable-container* {}
-       (for [[pos id] (d/enumerate root-ids)]
-         [:> layer-item* {:id id
-                          :index (- last-index pos)
-                          :key (dm/str id)
-                          :is-sortable true
-                          :is-filtered is-filtered
-                          :depth -1
-                          :parent-size parent-size}])]]]))
+       (if (and (some? sticky-id) (< top-index start))
+         [:*
+          [:div {:style {:block-size (* top-index row-height)}}]
+          [:div {:class (stl/css :sticky-row)}
+           (render-row top-row)]
+          [:div {:style {:block-size (* (- start top-index 1) row-height)}}]]
+         [:div {:style {:block-size (* start row-height)}}])
+
+       ;; Root rows keep one wrapper so turning sticky does not remount them
+       (for [row rows]
+         (let [id (lr/get-id row)]
+           (if (= -1 (lr/get-depth row))
+             [:div {:class (stl/css-case :sticky-row (= sticky-id id))
+                    :key (dm/str id)}
+              (render-row row)]
+             (render-row row))))
+
+       [:div {:style {:block-size (* (- total end) row-height)}}]]]]))
 
 (mf/defc layers-tree-wrapper*
   {::mf/private true}
@@ -705,45 +820,6 @@
                           :btn-icon     "search"
                           :btn-title    (tr "labels.search")}]]))]))
 
-(defn- on-scroll
-  [event]
-  (let [children (dom/get-elements-by-class "sticky-children")
-        length   (alength children)]
-    (when (pos? length)
-      (let [target     (dom/get-target event)
-            target-top (:top (dom/get-bounding-rect target))
-            frames     (dom/get-elements-by-class "root-board")
-
-            last-hidden-frame
-            (->> frames
-                 (filter #(<= (- (:top (dom/get-bounding-rect %)) target-top) 0))
-                 last)
-
-            frame-id (dom/get-attribute last-hidden-frame "id")
-
-            last-hidden-children
-            (->> children
-                 (filter #(< (- (:top (dom/get-bounding-rect %)) target-top) 0))
-                 last)
-
-            is-children-shown?
-            (and last-hidden-children
-                 (> (- (:bottom (dom/get-bounding-rect last-hidden-children)) target-top) 0))
-
-            children-frame-id (dom/get-attribute last-hidden-children "data-id")
-
-            ;; We want to check that root-board is out of view but its children are not.
-            ;; only in that case we make root board sticky.
-            sticky? (and last-hidden-frame
-                         is-children-shown?
-                         (= frame-id children-frame-id))]
-
-        (run! #(dom/remove-class! % "sticky") frames)
-
-        (when sticky?
-          (dom/add-class! last-hidden-frame "sticky"))))))
-
-
 (mf/defc layers-toolbox*
   {::mf/wrap [mf/memo]}
   [{:keys [size-parent scroll-store]}]
@@ -796,8 +872,7 @@
         (mf/use-fn
          (mf/deps page-id)
          (fn [event]
-           (sc/save-scroll! scroll-store [:layers page-id] event)
-           (on-scroll event)))
+           (sc/save-scroll! scroll-store [:layers page-id] event)))
 
         on-search-scroll
         (mf/use-fn
