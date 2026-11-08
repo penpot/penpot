@@ -57,7 +57,7 @@
 (defn snapshot
   "The normalized value of `file` that the round trip compares."
   ([file] (snapshot file {}))
-  ([file opts] (thn/normalize-file file opts)))
+  ([file opts] (thn/normalize-file file (merge {:deleted-components? false} opts))))
 
 (defn snapshot-files
   "The normalized files affected by a step, including linked libraries."

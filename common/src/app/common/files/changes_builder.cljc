@@ -943,9 +943,10 @@
          (update :undo-changes
                  (fn [undo-changes]
                    (-> undo-changes
+                       ;; marked deleted, keeping its main's shapes, so a
+                       ;; copy another file made of it still finds it
                        (conj {:type :del-component
-                              :id id
-                              :skip-undelete? true})
+                              :id id})
                        (into (comp (map :id)
                                    (map lookupf)
                                    (map mk-change))

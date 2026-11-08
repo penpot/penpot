@@ -15,7 +15,9 @@
      - a linked file's `:synced-at`, the server sync status rather than
        authored design data;
      - with `{:position-data? false}`, the shapes' `:position-data`, the text
-       layout that WASM measurement regenerates.
+       layout that WASM measurement regenerates;
+     - with `{:deleted-components? false}`, the deleted components, which an
+       undo of a component's creation leaves where there was none.
    Shapes and the maps that hold them become plain maps, so a shape record
    compares equal to a map with the same attributes, and an objects map (see
    `app.common.types.objects-map`) to a plain map with the same entries.
@@ -54,7 +56,7 @@
    `:position-data?` (default true) keeps the shapes' `:position-data`."
   ([file] (normalize-file file {}))
   ([file opts]
-   (let [opts (merge {:position-data? true} opts)]
+   (let [opts (merge {:position-data? true :deleted-components? true} opts)]
      (-> file
          (dissoc :modified-at :synced-at)
          (update :data
@@ -62,6 +64,11 @@
                    (-> data
                        (d/update-when :pages-index
                                       (partial map-vals #(normalize-page % opts)))
+                       (d/update-when :components
+                                      (fn [components]
+                                        (cond->> components
+                                          (not (:deleted-components? opts))
+                                          (into {} (remove (comp :deleted val))))))
                        (d/update-when :components
                                       (partial map-vals #(normalize-component % opts))))))))))
 
