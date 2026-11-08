@@ -3573,6 +3573,32 @@
     (t/is (gpt/close? (offset-in-root file :m02 :m02-icon)
                       (offset-in-root file' :copy02 :copy-icon-b)))))
 
+(t/deftest test-switch-carries-no-override-of-a-swap-its-main-makes
+  (let [;; ==== Setup: a main nests a copy of the first variant, swaps its icon
+        ;; for icon B and fills it; a copy of that main holds the nested copy
+        red   [{:fill-color "#ff0000" :fill-opacity 1}]
+        file  (-> (thf/sample-file :file1)
+                  (tho/add-simple-component :icon-a :icon-a-root :icon-a-child)
+                  (tho/add-simple-component :icon-b :icon-b-root :icon-b-child)
+                  (thv/add-variant-with-copy :v01 :c01 :m01 :c02 :m02 :m01-icon :m02-icon :icon-a)
+                  (tho/add-frame :outer-root)
+                  (thc/instantiate-component :c01 :nested :parent-label :outer-root
+                                             :children-labels [:nested-icon])
+                  (thc/component-swap :nested-icon :icon-b :nested-icon-b)
+                  (tho/change-shape :nested-icon-b #(assoc % :fills red))
+                  (thc/make-component :outer :outer-root)
+                  (thc/instantiate-component :outer :copy-outer :children-labels [:copy-nested]))
+
+        ;; ==== Action
+        file' (tho/swap-component-in-shape file :copy-nested :c02 {:new-shape-label :copy-nested-2
+                                                                   :keep-touched? true})
+        icon' (ths/get-shape-by-id file' (-> (ths/get-shape file' :copy-nested-2) :shapes first))]
+
+    ;; ==== Check: the fill is icon B's override, which icon A does not take
+    (t/is (contains? (:touched (ths/get-shape file :nested-icon-b)) :fill-group))
+    (t/is (not (contains? (:touched icon') :fill-group)))
+    (t/is (= (:fills (ths/get-shape file' :m02-icon)) (:fills icon')))))
+
 (t/deftest test-switch-drops-a-swap-the-new-variant-holds-no-copy-for
   (let [;; ==== Setup: the second variant's icon is detached into a plain board
         file  (setup-variant-with-swapped-icon)

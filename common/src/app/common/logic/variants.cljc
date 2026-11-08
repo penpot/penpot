@@ -507,9 +507,18 @@
                                 orig-base-ref-shape
                                 (find-shape-ref-child-of container libraries old (:id orig-base-ref-shape)))
                       new     (get new-shapes-map (get o-ref-shapes-p-map (:id old-ref)))
-                      swapped? (and (not root?) (ctk/swapped? old))]
+                      swapped? (and (not root?) (ctk/swapped? old))
+                      ;; a main between the shape and the variant swapped it, so its
+                      ;; content and overrides belong to another component
+                      swapped-in-chain?
+                      (and (not root?) (not swapped?)
+                           (some #(and (ctk/swapped? %) (not= (:id %) (:id old-ref)))
+                                 (rest (ctf/get-ref-chain-until-target-ref container libraries old
+                                                                           (:id old-ref)))))]
                   ;; a swap is kept only where the new variant holds a copy
-                  (when (and new (or (not swapped?) (ctk/instance-head? new)))
+                  (when (and new
+                             (not swapped-in-chain?)
+                             (or (not swapped?) (ctk/instance-head? new)))
                     {:old old :old-ref old-ref :new new :swapped? swapped?})))
               orig-touched)
 
