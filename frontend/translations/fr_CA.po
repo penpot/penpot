@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-11-08 09:51+0000\n"
+"PO-Revision-Date: 2026-11-09 10:07+0000\n"
 "Last-Translator: Alexis Morin <alexismo@users.noreply.hosted.weblate.org>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -9649,3 +9649,32 @@ msgstr "Connexion impossible %s"
 #: src/app/main/ui/dashboard/organization_team_switch.cljs:657
 msgid "labels.team-management"
 msgstr "Gestion des équipes"
+
+#: src/app/main/ui/mcp_authorize.cljs:155
+msgid "mcp.oauth.access"
+msgstr ""
+"Ce client peut lire et modifier les designs via les connexions MCP établies "
+"depuis Penpot."
+
+#: src/app/main/ui/mcp_authorize.cljs:153
+msgid "mcp.oauth.account"
+msgstr "Tu es connecté en tant que %s."
+
+#: src/app/main/ui/mcp_authorize.cljs:162
+msgid "mcp.oauth.approve"
+msgstr "Autoriser l'accès"
+
+#: src/app/main/ui/mcp_authorize.cljs:133
+msgid "mcp.oauth.cancelled"
+msgstr "Connexion annulée"
+
+#: src/app/main/ui/mcp_authorize.cljs:157
+msgid "mcp.oauth.enable"
+msgstr ""
+"Autoriser l'accès permet à l'intégration MCP et crée un token MCP au besoin."
+
+#: src/app/main/ui/mcp_authorize.cljs:137
+msgid "mcp.oauth.failed"
+msgstr ""
+"Cette requête a expiré, a déjà été utilisée ou n'a pu être complétée. "
+"Démarrer la connexion de nouveau à partir du client MCP."
