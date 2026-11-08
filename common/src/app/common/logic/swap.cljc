@@ -175,6 +175,9 @@
          ;; If the attribute is not valid for the destiny, don't copy it
          (not (cts/is-allowed-switch-keep-attr? attr (:type current-shape)))
 
+         ;; The position is the new variant's; geometry carries only a size
+         (contains? #{:x :y} attr)
+
          ;; If the values are already equal, don't copy them; geometry
          ;; within its precision
          (if (= sync-group :geometry-group)
