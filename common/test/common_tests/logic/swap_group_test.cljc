@@ -31,6 +31,7 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.normalize :as thn]
    [app.common.test-helpers.shapes :as ths]
+   [app.common.test-helpers.texts :as thtx]
    [app.common.test-helpers.variants :as thv]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
@@ -1072,6 +1073,18 @@
     (t/is (= (:fills main-child) (:fills (ths/get-shape-by-id full (:id main-child)))))
     (t/is (= (thn/normalize-file (tm/file edited))
              (thn/normalize-file (tm/file (r/step updated (n/undo))))))))
+
+(t/deftest pushing-a-text-authors-no-typography-its-own-styles-drop
+  (let [_         (thi/new-id! :title)
+        reference {:type :text :content (thtx/content [[["Hello" {:typography :title :size 22}]]])}
+        text      {:type :text :content (thtx/content [[["Hello" {:family "Inter" :size 22}]]])}
+        author    #'cll/author-pushed-content]
+    ;; a family of its own drops the reference; the copy holds no typography
+    (t/is (= #{:content-group :text-content-family}
+             (:touched (author (assoc text :touched #{:content-group :text-content-family}) reference))))
+    ;; without one, the missing reference is a difference the push authors
+    (t/is (= #{:content-group :text-content-family :text-content-typography}
+             (:touched (author (assoc text :touched #{}) reference))))))
 
 (t/deftest swapping-back-inherits-the-new-positions-content-overrides
   (let [initial (tm/make-situation (setup))

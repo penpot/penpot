@@ -1814,6 +1814,13 @@
                        :ops [[:variant-property 0 0 0 0] [:switch 3] [:style 25 7 1] [:combine 0] [:switch 1]
                              [:make-variant 19] [:switch 26]]}))))
 
+(t/deftest updating-a-main-from-a-switched-copy-keeps-the-text-overrides-it-pushes
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:combine 0] [:switch 10] [:text-style 6 0 1] [:text-style 12 8 1]
+                             [:edit 3 0 1 1] [:update-main 3]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]

@@ -1165,8 +1165,13 @@
                                             (not= (get shape attr) (get reference attr)))
                                    group))))
                        updatable-attrs)
+          overrides (when text? (txt/text-overrides (:touched shape)))
+          ;; the copy's own styles drop a typography they do not all come with
+          dropped? (and (not (contains? overrides :text-content-typography))
+                        (some #(contains? overrides %) txt/typography-units))
           text-groups (when text?
-                        (txt/override-groups (:content reference) (:content shape)))
+                        (cond-> (txt/override-groups (:content reference) (:content shape))
+                          dropped? (disj :text-content-typography)))
           groups (cond-> (into groups text-groups)
                    (seq text-groups) (conj :content-group))]
       (cond-> shape
