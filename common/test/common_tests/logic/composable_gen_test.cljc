@@ -1821,6 +1821,13 @@
                        :ops [[:combine 0] [:switch 10] [:text-style 6 0 1] [:text-style 12 8 1]
                              [:edit 3 0 1 1] [:update-main 3]]}))))
 
+(t/deftest updating-a-main-from-a-copy-in-a-variant-it-moves-keeps-the-copy-in-place
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:nest 0 0 0 0] [:rotate 0 0 0 0] [:make-variant 0 0 0 0] [:swap 0 0 0 0]
+                             [:duplicate 0 0 0 0] [:text-style 0 0 1] [:update-main 0 0 0 0]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]

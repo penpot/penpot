@@ -525,7 +525,17 @@
         (= group :geometry-group)
         ;; The source copy stays in its own frame. Existing geometry ownership
         ;; and tolerance apply; I4 then checks its placement against the main.
-        (let [attrs (geometry-differences source-objects kept source source)]
+        (let [source-parent (get source-objects (:parent-id source))
+              kept-parent   (get objects (:parent-id kept))
+              ;; a parent the push only moves, as a layout does a variant, carries the copy along
+              source        (cond-> source
+                              (and source-parent kept-parent
+                                   (= (:id source-parent) (:id kept-parent))
+                                   (mth/close? (:width source-parent) (:width kept-parent) 0.01)
+                                   (mth/close? (:height source-parent) (:height kept-parent) 0.01))
+                              (gsh/move (gpt/subtract (first (:points kept-parent))
+                                                      (first (:points source-parent)))))
+              attrs         (geometry-differences source-objects kept source source)]
           (when (or (seq attrs)
                     (not= (or (:content-scale source) 1) (or (:content-scale kept) 1)))
             (mismatch id group (shadow/values source group) (shadow/values kept group))))
