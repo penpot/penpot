@@ -1164,7 +1164,7 @@
 ;; === Operations
 
 (def decode-shape-attrs
-  (sm/decoder cts/schema:shape-attrs sm/json-transformer))
+  (sm/lazy-decoder cts/schema:shape-attrs sm/json-transformer))
 
 (defmethod process-operation :assign
   [{:keys [type] :as shape} {:keys [value] :as op}]

@@ -375,8 +375,7 @@
         (dom/set-html-title (tr "title.dashboard.projects" tname))))
 
     (mf/with-effect [team-id]
-      (st/emit! (dd/fetch-recent-files team-id)
-                (dd/clear-selected-files)))
+      (st/emit! (dd/clear-selected-files)))
 
     (hooks/use-shortcuts ::dashboard sc/shortcuts-projects :dashboard)
 

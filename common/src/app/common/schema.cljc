@@ -323,22 +323,25 @@
 (defn check-fn
   "Create a predefined check function"
   [s & {:keys [hint type code]}]
-  (let [s          #?(:clj
-                      (schema s)
+  ;; Parsing is deferred on CLJS: check-fns are mostly top-level defs and
+  ;; parsing them all at load blocks the first render.
+  (let [schema*    #?(:clj
+                      (doto (delay (schema s)) c/deref)
                       :cljs
-                      (try
-                        (schema s)
-                        (catch :default cause
-                          (let [data (ex-data cause)]
-                            (if (= :malli.core/invalid-schema (:type data))
-                              (throw (ex-info
-                                      (str "Invalid schema\n"
-                                           (pp/pprint-str (:data data)))
-                                      {}))
-                              (throw cause))))))
+                      (delay
+                        (try
+                          (schema s)
+                          (catch :default cause
+                            (let [data (ex-data cause)]
+                              (if (= :malli.core/invalid-schema (:type data))
+                                (throw (ex-info
+                                        (str "Invalid schema\n"
+                                             (pp/pprint-str (:data data)))
+                                        {}))
+                                (throw cause)))))))
 
-        validator* (delay (m/validator s))
-        explainer* (delay (m/explainer s))
+        validator* (delay (m/validator @schema*))
+        explainer* (delay (m/explainer @schema*))
         hint       (or ^boolean hint "check error")
         type       (or ^boolean type :assertion)
         code       (or ^boolean code :data-validation)]

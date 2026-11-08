@@ -42,6 +42,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (declare fetch-projects)
+(declare fetch-recent-files)
 (declare process-message)
 
 (defn initialize
@@ -58,6 +59,7 @@
 
         (->> (rx/merge
               (rx/of (fetch-projects team-id)
+                     (fetch-recent-files team-id)
                      (df/fetch-fonts team-id)
                      (dws/send initmsg))
               ;; On reconnect, send again the subscription message

@@ -18,6 +18,7 @@
    [app.main.data.plugins :as dp]
    [app.main.data.profile :as dprof]
    [app.main.data.project :as dpj]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -38,12 +39,14 @@
    [app.main.ui.modal :refer [modal-container*]]
    [app.main.ui.workspace.plugins]
    [app.plugins.register :as preg]
+   [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.session-state :as ss]
    [app.util.storage :as storage]
+   [app.util.timers :as tm]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [goog.events :as events]
@@ -319,6 +322,9 @@
                (filter :is-default)
                (first)))
 
+        render-wasm?    (features/use-feature "render-wasm/v1")
+        loaded?         (boolean (seq projects))
+
         layout*         (hooks/use-persisted-state lt/layout-key lt/default-layout)
         layout          (deref layout*)
 
@@ -333,6 +339,13 @@
       (st/emit! (dd/initialize team-id))
       (fn []
         (st/emit! (dd/finalize team-id))))
+
+    ;; Load the wasm engine once the dashboard has its data, so its
+    ;; download does not delay the first dashboard requests.
+    (mf/with-effect [render-wasm? loaded?]
+      (when (and render-wasm? loaded?)
+        (let [sem (tm/schedule-on-idle wasm.api/preload-module!)]
+          #(rx/dispose! sem))))
 
     (mf/with-effect []
       (let [key (events/listen goog/global "keydown"

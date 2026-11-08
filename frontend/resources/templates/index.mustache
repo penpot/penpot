@@ -33,6 +33,8 @@
     {{/isDebug}}
 
     <script type="importmap">{{& manifest.importmap }}</script>
+    <link rel="modulepreload" href="./js/shared.js?version={{& version_tag }}" />
+    <link rel="modulepreload" href="./js/main.js?version={{& version_tag }}" />
 
     <script type="module">
       globalThis.penpotVersion = "{{& version}}";
