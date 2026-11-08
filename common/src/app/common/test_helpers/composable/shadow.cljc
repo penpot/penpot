@@ -642,9 +642,14 @@
           (reduce
            (fn [result shape]
              (if (and (not= root-id (:id shape)) (contains? before (:id shape)))
-               ;; A switch keeps an authored swapped subtree with its ids.
-               (cond-> result (seq (get model (:id shape)))
-                       (assoc (:id shape) (get model (:id shape))))
+               ;; A switch keeps an authored swapped subtree with its ids; the
+               ;; swap ends where the new position holds the same component.
+               (let [position (get after (:shape-ref shape))
+                     same?    (and position
+                                   (= (:component-id position) (:component-id shape))
+                                   (= (:component-file position) (:component-file shape)))
+                     groups   (cond-> (get model (:id shape)) same? (dissoc :swap-group))]
+                 (cond-> result (seq groups) (assoc (:id shape) groups)))
                (if-let [[main _] (source after new-paths new-main-id shape)]
                  (let [path (get new-paths (:id main))
                        [old old-main groups] (get old-copies path)
@@ -678,14 +683,44 @@
                                                                 {:content (:content old)})))]
                    (reduce-kv
                     (fn [result group _]
-                      (if-let [unit (get text-groups group)]
-                        (cond-> result
-                          (and (not (and (= unit :typography) mixed-typography?))
-                               (not (contains? text-differences unit))
-                               (or (and owned-typography? (contains? typography-units unit))
-                                   (not (same-value? main group {:content (:content old)}))))
-                          (-> (assoc-in [(:id shape) group] {:content (:content old)})
-                              (assoc-in [(:id shape) :content-group] {})))
+                      (cond
+                        (= group :layout-grid-cells)
+                        ;; cell overrides carry whole, and only between identical grids
+                        (let [path-cells (fn [grid paths]
+                                           (into #{} (map #(update % :shapes (fn [ids] (mapv paths ids))))
+                                                 (grid/get-cells grid)))
+                              identical? (and old old-main
+                                              (= (:layout-grid-rows old-main) (:layout-grid-rows main))
+                                              (= (:layout-grid-columns old-main) (:layout-grid-columns main))
+                                              (= (path-cells old-main old-paths) (path-cells main new-paths)))
+                              ;; each old copy child, by its path, to the new copy child
+                              children (into {}
+                                             (keep (fn [child-id]
+                                                     (when-let [[child-main _] (source after new-paths new-main-id
+                                                                                       (get after child-id))]
+                                                       (when-let [[old-child] (get old-copies (get new-paths (:id child-main)))]
+                                                         [(:id old-child) child-id]))))
+                                             (:shapes shape))]
+                          (cond-> result
+                            (and identical?
+                                 ;; cells the new copy shows anyway are no override
+                                 (not= (path-cells old (into {} (map (fn [[path [old-shape]]] [(:id old-shape) path]))
+                                                             old-copies))
+                                       (path-cells main new-paths)))
+                            (assoc (:id shape) (merge (get result (:id shape))
+                                                      (grid/remap-groups {group (values old group)} children)))))
+
+                        (contains? text-groups group)
+                        (let [unit (get text-groups group)]
+                          (cond-> result
+                            (and (not (and (= unit :typography) mixed-typography?))
+                                 (not (contains? text-differences unit))
+                                 (or (and owned-typography? (contains? typography-units unit))
+                                     (not (same-value? main group {:content (:content old)}))))
+                            (-> (assoc-in [(:id shape) group] {:content (:content old)})
+                                (assoc-in [(:id shape) :content-group] {}))))
+
+                        :else
                         (let [attrs (get attributes group)
                               same? (fn [a b]
                                       (cond

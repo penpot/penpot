@@ -1770,6 +1770,21 @@
                                     :layout-children false :grid-empty false :layout-copies true :text true}]
                        :ops [[:style 0 1 1] [:make-variant 0 0 0 0]]}))))
 
+(t/deftest switching-a-copy-to-an-identical-grid-keeps-its-cell-override
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:grid-direction 0 0 0 1] [:grid-cell 0 0 0 1] [:swap 0 0 0 0] [:make-variant 4]
+                             [:switch 0]]}))))
+
+(t/deftest switching-a-copy-ends-a-swap-its-new-variant-also-holds
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:make-variant 2] [:switch 0] [:variant-property 0 0 0 0] [:switch 4]
+                             [:variant-property 0 0 0 0] [:switch 1] [:make-variant 13 0 0 0]
+                             [:variant-property 0 0 0 0] [:switch 6]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]
