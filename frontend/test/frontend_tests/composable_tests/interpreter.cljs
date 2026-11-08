@@ -432,6 +432,11 @@
                                 :undo-changes (:undo-changes changes)}
                                opts))))
 
+(def ^:private undo-transaction-ms
+  "How long a step waits for an undo transaction its events left open; some
+   steps keep one open on purpose, so the wait ends without failing."
+  200)
+
 (defn- await-ready
   "A promise that resolves with true once `ready?` holds, polling, or with
    false after `timeout-ms`."
@@ -462,6 +467,10 @@
        (.then (fn [ready]
                 (if ready
                   (-> (pwrf/wait-for-layout-update nil timeout-ms)
+                      ;; an event may close its undo transaction on a later
+                      ;; tick, as combining variants does
+                      (.then #(await-ready (fn [] (nil? (get-in @st/state [:workspace-undo :transaction])))
+                                           undo-transaction-ms))
                       (.then (constantly :settled))
                       (.catch (fn [_] {:timeout (wrf/pending)})))
                   {:timeout {:not-ready (wrf/pending)}}))))))
