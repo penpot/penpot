@@ -1807,6 +1807,13 @@
                        :ops [[:duplicate 0 0 0 0] [:edit 2 2 0 1] [:combine 0] [:switch 0]
                              [:update-main 0 0 0 0]]}))))
 
+(t/deftest switching-a-copy-carries-the-constraints-it-leaves-unset
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:variant-property 0 0 0 0] [:switch 3] [:style 25 7 1] [:combine 0] [:switch 1]
+                             [:make-variant 19] [:switch 26]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]
