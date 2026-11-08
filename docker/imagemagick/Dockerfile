@@ -74,7 +74,7 @@ RUN set -ex; \
     rm -rf /var/lib/apt/lists/*
 
 
-FROM dhi.io/debian-base:trixie-debian13@sha256:834d20c209fe4aac50dc95877d68d421f97ea38a905586bfdaf938bebb3924c0 AS image
+FROM dhi.io/debian-base:trixie-debian13@sha256:7b5c41aab3f1c45c8f17a145f48e27166264dd7fee40e8d43cd23dc9a154a024 AS image
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \
