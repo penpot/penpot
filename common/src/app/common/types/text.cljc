@@ -774,6 +774,14 @@
   #{:text-content-family :text-content-weight :text-content-size
     :text-content-line-height :text-content-spacing :text-content-case})
 
+(defn drops-typography?
+  "Whether a copy text whose text overrides are `overrides` drops the
+   typography of its main: it overrides a unit the typography sets, but not
+   the typography."
+  [overrides]
+  (and (not (contains? overrides :text-content-typography))
+       (boolean (some #(contains? overrides %) typography-units))))
+
 (defn typography-owner?
   "Whether `content` applies a typography, which owns every unit it sets."
   [content]

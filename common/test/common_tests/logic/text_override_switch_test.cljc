@@ -130,3 +130,22 @@
                :text-content-weight :text-content-size :text-content-line-height
                :text-content-spacing :text-content-case}
              (:touched copy-t)))))
+
+(t/deftest copy-that-resizes-its-text-holds-no-typography-of-the-new-variant
+  ;; both variants show the same size, so the copy's own size stays and
+  ;; drops the typography the new variant applies, which then is no override
+  (let [large   [[["Add to cart" {:size 24}]]]
+        heading (thtx/apply-typography small :heading {:size 24 :weight 700})
+        file    (-> (thf/sample-file :file1)
+                    (ths/add-sample-typography :heading)
+                    (thv/add-variant-with-text :v01 :c01 :m01 :c02 :m02 :t01 :t02 "" ""
+                                               :text1-params {:content (thtx/content large)}
+                                               :text2-params {:content (thtx/content heading)})
+                    (thc/instantiate-component :c01 :copy :children-labels [:copy-t])
+                    (thtx/set-text :copy-t (thtx/restyle large :size 18))
+                    (ths/update-shape :copy-t :touched #{:content-group :text-content-size})
+                    (tho/swap-component-in-shape :copy :c02 {:new-shape-label :copy-2
+                                                             :keep-touched? true}))
+        copy-t  (ths/get-shape-by-id file (first (:shapes (ths/get-shape file :copy-2))))]
+    (t/is (not-any? :typography-ref-id (tree-seq map? :children (:content copy-t))))
+    (t/is (= #{:content-group :text-content-size} (:touched copy-t)))))
