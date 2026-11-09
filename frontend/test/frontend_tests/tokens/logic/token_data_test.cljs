@@ -857,6 +857,45 @@
            (t/testing "No crash when file has no tokens-lib"
              (t/is (some? file-data)))))))))
 
+(defn- setup-file-with-token-group
+  []
+  (ctho/sample-file-with-tokens
+   :file-id :file-1
+   :page-label :page-1
+   :lib-fn #(-> %
+                (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :test-token-set)
+                                                   :name "Set A"))
+                (ctob/add-token (cthi/id :test-token-set)
+                                (ctob/make-token :id (cthi/new-id! :blue.blue-500)
+                                                 :name "blue.blue-500"
+                                                 :type :color
+                                                 :value "#0000ff"))
+                (ctob/add-token (cthi/id :test-token-set)
+                                (ctob/make-token :id (cthi/new-id! :blue.dark.blue)
+                                                 :name "blue.dark.blue"
+                                                 :type :color
+                                                 :value "#000080")))
+   :status-fn #(ctos/set-tokens-status % #{} #{(cthi/id :test-token-set)})))
+
+(t/deftest bulk-update-tokens
+  (t/async
+    done
+    (let [file   (setup-file-with-token-group)
+          store  (ths/setup-store file)
+          events [(dwtl/bulk-update-tokens (cthi/id :test-token-set)
+                                           [(cthi/id :blue.blue-500) (cthi/id :blue.dark.blue)]
+                                           :color "blue" "navy")]]
+
+      (tohs/run-store-async
+       store done events
+       (fn [new-state]
+         (let [tokens-lib' (toht/get-tokens-lib (ths/get-file-from-state new-state))
+               token-name  #(:name (ctob/get-token tokens-lib' (cthi/id :test-token-set) (cthi/id %)))]
+
+           (t/testing "Renaming a group only renames the group in the token names"
+             (t/is (= "navy.blue-500" (token-name :blue.blue-500)))
+             (t/is (= "navy.dark.blue" (token-name :blue.dark.blue))))))))))
+
 ;; ==========================================================================
 ;; Import Tokens Lib
 ;; ==========================================================================

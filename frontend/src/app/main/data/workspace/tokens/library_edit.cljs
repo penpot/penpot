@@ -726,7 +726,7 @@
             changes (reduce (fn [changes token-id]
                               (let [token     (-> (dsh/lookup-tokens-lib state)
                                                   (ctob/get-token (ctob/get-id token-set) token-id))
-                                    new-name (str/replace (:name token) old-path new-path)
+                                    new-name (str new-path (str/strip-prefix (:name token) old-path))
                                     token'    (->> (merge token {:name new-name})
                                                    (into {})
                                                    (ctob/make-token))]
