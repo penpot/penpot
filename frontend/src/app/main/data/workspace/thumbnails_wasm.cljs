@@ -5,200 +5,42 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.thumbnails-wasm
-  "WASM-based component thumbnail rendering.
-   Renders component previews using the existing workspace WASM context
-   via render-shape-pixels (SurfaceId::Export), avoiding a separate
-   WASM module in the worker.
-
-   Two-phase design:
-   - render-thumbnail: immediate WASM render → UI update (no server)
-   - persist-thumbnail: pushes current data-uri to the server (debounced)"
+  "Component thumbnails with render-wasm/v1. The worker renders them
+  from the shapes of their mains, which the main thread sends, and
+  uploads the ones asked for."
   (:require
-   [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
-   [app.common.logging :as l]
-   [app.common.math :as mth]
-   [app.common.thumbnails :as thc]
-   [app.common.time :as ct]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.thumbnails :as dwt]
-   [app.main.repo :as rp]
-   [app.main.store :as st]
-   [app.render-wasm.api :as wasm.api]
-   [app.util.timers :as timers]
+   [app.main.worker :as mw]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
-(l/set-level! :warn)
-
-(defn- png-bytes->data-uri
-  "Converts a Uint8Array of PNG bytes to a data:image/png;base64 URI."
-  [png-bytes]
-  (let [blob (wapi/create-blob png-bytes "image/png")
-        reader (js/FileReader.)]
-    (js/Promise.
-     (fn [resolve reject]
-       (set! (.-onload reader)
-             (fn [] (resolve (.-result reader))))
-       (set! (.-onerror reader)
-             (fn [e] (reject e)))
-       (.readAsDataURL reader blob)))))
-
-;; Bounds for a thumbnail's longest side, in pixels. Full-size renders of big
-;; components block the main thread for seconds.
-(def ^:private ^:const min-target-size 200)
-(def ^:private ^:const max-target-size 512)
-
-(defn- thumbnail-scale
-  [longest-side]
-  (if (pos? longest-side)
-    (-> 1
-        (mth/max (/ min-target-size longest-side))
-        (mth/min (/ max-target-size longest-side)))
-    1))
-
-(defn- render-component-pixels
-  "Returns an observable emitting the component frame as a PNG data uri.
-   Waits for a frame with no viewport render pending so it never delays it."
-  [file-id page-id frame-id]
-  (rx/create
-   (fn [subs]
-     (let [req-id (volatile! nil)
-           render
-           (fn render [_]
-             (if (wasm.api/render-pending?)
-               (vreset! req-id (timers/raf render))
-               (try
-                 (let [objects (dsh/lookup-page-objects @st/state file-id page-id)]
-                   (if-let [frame (get objects frame-id)]
-                     (let [{ext-w :width ext-h :height} (wasm.api/get-shape-extrect frame-id)
-                           {sel-w :width sel-h :height} (:selrect frame)
-                           longest-side (mth/max (or ext-w sel-w) (or ext-h sel-h))
-                           scale        (thumbnail-scale longest-side)
-                           ;; Thumbnails are always PNG: they need the alpha
-                           ;; channel and are consumed as a `image/png` data uri.
-                           png-bytes    (wasm.api/render-shape-pixels frame-id scale :png)]
-                       (if (or (nil? png-bytes) (zero? (.-length png-bytes)))
-                         (do
-                           (l/error :hint "render-shape-pixels returned empty" :frame-id (str frame-id))
-                           (rx/end! subs))
-                         (.then
-                          (png-bytes->data-uri png-bytes)
-                          (fn [data-uri]
-                            (rx/push! subs data-uri)
-                            (rx/end! subs))
-                          (fn [err]
-                            (rx/error! subs err)))))
-
-                     ;; A missing frame. Nothing to render, so end quietly.
-                     (rx/end! subs)))
-                 (catch :default err
-                   (rx/error! subs err)))))]
-       (vreset! req-id (timers/raf render))
-       #(timers/cancel-af! @req-id)))))
-
 (defn render-thumbnail
-  "Renders a component thumbnail via WASM and updates the UI immediately.
-   When `persist?` is true, also persists the rendered thumbnail to the
-   server in the same observable chain (guaranteeing correct ordering)."
-  [file-id page-id frame-id & {:keys [persist?] :or {persist? false}}]
+  "Sends the worker the shapes of the main whose root is `root-id`, to
+  render its component thumbnail, and to upload it when `persist?` is
+  true. Nothing comes back: `component-thumbnail-events` shows the
+  render."
+  [file-id page-id root-id & {:keys [persist?]}]
+  (ptk/reify ::render-thumbnail
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [objects (dsh/lookup-page-objects state file-id page-id)]
+        ;; A removed component can bring a nil or deleted root
+        (when (contains? objects root-id)
+          (let [shapes (cfh/get-children-with-self objects root-id)]
+            (mw/emit! {:cmd :thumbnails/render-component
+                       :file-id file-id
+                       :page-id page-id
+                       :root-id root-id
+                       :persist? persist?
+                       :objects (into {} (map (juxt :id identity)) shapes)})))))))
 
-  (let [object-id (thc/fmt-object-id file-id page-id frame-id "component")]
-    (ptk/reify ::render-thumbnail
-      cljs.core/IDeref
-      (-deref [_] object-id)
-
-      ptk/WatchEvent
-      (watch [_ state stream]
-        ;; When the component is removed it can arrived a render
-        ;; request with frame-id=null
-        (when (some? frame-id)
-          (letfn [(load-objects-stream
-                    []
-                    (rx/create
-                     (fn [subs]
-                       (let [objects (dsh/lookup-page-objects state file-id page-id)
-
-                             ;; retrieves a subtree with only the id and its children
-                             ;; to be loaded before rendering the thumbnail
-                             subtree
-                             (into {}
-                                   (map #(vector (:id %) %))
-                                   (cfh/get-children-with-self objects frame-id))]
-                         (try
-                           (wasm.api/set-objects subtree #(rx/push! subs %))
-                           (catch :default err
-                             (rx/error! subs err)))))))
-
-                  (get-subtree
-                    [state]
-                    (-> (dsh/lookup-page-objects state file-id page-id)
-                        (cfh/get-children-with-self frame-id)))
-
-                  (persist-to-server
-                    [data-uri]
-                    ;; A change during the render (a rollback, an edit) makes
-                    ;; it stale; that change brings its own render
-                    (if (= (get-subtree state) (get-subtree @st/state))
-                      (let [blob (wapi/data-uri->blob data-uri)]
-                        (->> (rp/cmd! :create-file-object-thumbnail
-                                      {:file-id file-id
-                                       :object-id object-id
-                                       :media blob
-                                       :tag "component"})
-                             (rx/catch rx/empty)
-                             (rx/ignore)))
-                      (rx/empty)))
-
-                  (do-render-thumbnail
-                    []
-                    (let [tp (ct/tpoint-ms)]
-                      (->> (render-component-pixels file-id page-id frame-id)
-                           (rx/mapcat
-                            (fn [data-uri]
-                              (l/dbg :hint "component thumbnail rendered (wasm)"
-                                     :elapsed (dm/str (tp) "ms"))
-                              (if persist?
-                                (rx/merge
-                                 (rx/of (dwt/assoc-thumbnail object-id data-uri))
-                                 (persist-to-server data-uri))
-                                (rx/of (dwt/assoc-thumbnail object-id data-uri)))))
-
-                           (rx/catch (fn [err]
-                                       (js/console.error err)
-                                       (l/error :hint "error rendering component thumbnail" :frame-id (str frame-id))
-                                       (rx/empty)))
-
-                           (rx/take-until
-                            (->> stream
-                                 (rx/filter (ptk/type? ::dwt/clear-thumbnail))
-                                 (rx/filter #(= (deref %) object-id)))))))]
-
-            (if (not= page-id (:current-page-id state))
-              (->> (load-objects-stream)
-                   (rx/mapcat do-render-thumbnail))
-              (do-render-thumbnail))))))))
-
-(defn persist-thumbnail
-  "Persists the current component thumbnail data-uri to the server.
-   Expects that `render-thumbnail` has already been called so the
-   data-uri is present in app state. If not, this is a no-op."
-  [file-id page-id frame-id]
-  (let [object-id (thc/fmt-object-id file-id page-id frame-id "component")]
-    (ptk/reify ::persist-thumbnail
-      ptk/WatchEvent
-      (watch [_ state _]
-        (let [data-uri (dm/get-in state [:thumbnails object-id :uri])]
-          (if (and (some? data-uri)
-                   (str/starts-with? data-uri "data:"))
-            (let [blob (wapi/data-uri->blob data-uri)]
-              (->> (rp/cmd! :create-file-object-thumbnail
-                            {:file-id file-id
-                             :object-id object-id
-                             :media blob
-                             :tag "component"})
-                   (rx/catch rx/empty)
-                   (rx/ignore)))
-            (rx/empty)))))))
+(defn component-thumbnail-events
+  "Shows each component thumbnail the worker renders for
+  `render-thumbnail`."
+  []
+  (->> (mw/ask-many! {:cmd :thumbnails/watch-components})
+       (rx/map (fn [{:keys [object-id blob]}]
+                 (dwt/assoc-thumbnail object-id (wapi/create-uri blob))))))
