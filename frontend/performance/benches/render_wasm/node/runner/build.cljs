@@ -194,15 +194,17 @@
             (artifacts/load-build root (:id ready))))
         (catch :default cause
           (let [build          @build-ref
-                failure        {:phase @phase :cause (errors/describe-cause cause)}
+                context        (errors/project-context (ex-data cause))
+                failure        (merge context {:phase @phase :cause (errors/describe-cause cause)})
                 saved          (when (= :building (get-in build [:manifest :status]))
                                  (attempt :catch-fatal
                                           (artifacts/write-manifest
                                            build (assoc (:manifest build) :status :failed :failure failure))))
                 manifest-error (when (failure? saved) (errors/message-of saved))
-                data           (cond-> {:type ::preparation-failed :build-id (:id build)
-                                        :phase @phase :log-path (or (:log-path (ex-data cause)) (:log-path build))
-                                        :reason (str/join " -> " (keep :message (:cause failure)))}
+                data           (cond-> (merge context
+                                              {:type ::preparation-failed :build-id (:id build)
+                                               :phase @phase :log-path (or (:log-path (ex-data cause)) (:log-path build))
+                                               :reason (str/join " -> " (keep :message (:cause failure)))})
                                  manifest-error (assoc :manifest-error manifest-error))]
             (throw (if manifest-error
                      (errors/fatal-error "renderer build preparation failed" data cause)

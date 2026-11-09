@@ -15,8 +15,8 @@
   "Reads and merges two saved run files from the caller's cwd, then writes a
   new run home. Inputs remain unchanged. Returns the merged record and home."
   [root base-path additional-path {:keys [output-dir]}]
-  (let [base       (runs/get-record base-path)
-        additional (runs/get-record additional-path)
+  (let [base       (runs/get-record base-path {:role :base})
+        additional (runs/get-record additional-path {:role :additional})
         run-id     (str (random-uuid))
         merged     (result/merge-runs base additional {:run-id run-id})
         home       (runs/create-home {:root root

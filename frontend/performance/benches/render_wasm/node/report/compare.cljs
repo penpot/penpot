@@ -31,8 +31,8 @@
   differences and formatted text."
   [baseline-path candidate-path {:keys [case-pair allow-build-differences
                                         allow-scene-differences allow-all-differences]}]
-  (let [baseline   (runs/get-record baseline-path)
-        candidate  (runs/get-record candidate-path)
+  (let [baseline   (runs/get-record baseline-path {:role :baseline})
+        candidate  (runs/get-record candidate-path {:role :candidate})
         comparison (result/check-record
                     (compare/compare-runs
                      baseline candidate

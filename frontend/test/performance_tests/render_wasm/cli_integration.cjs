@@ -369,13 +369,15 @@ function installCargoMetadata(fixture, definitions) {
   return cargo;
 }
 
-function installPreparedCompiler(fixture, breakLog) {
+function installPreparedCompiler(fixture, breakLog, identityId = null) {
   const k = transit.keyword;
   const m = (pairs) => transit.map(pairs);
   const marker = "RENDER_FIXTURE_BUILD_ID";
   const identity = transit
     .writer("json")
-    .write(m([k("build-id"), marker, k("cljs-profile-marks"), false]));
+    .write(
+      m([k("build-id"), identityId ?? marker, k("cljs-profile-marks"), false]),
+    );
   const descriptor = m([
     k("id"),
     k("fixture/load"),
@@ -396,7 +398,7 @@ function installPreparedCompiler(fixture, breakLog) {
   ]);
   const catalog = transit
     .writer("json")
-    .write(m([k("build-id"), marker, k("cases"), [descriptor]]));
+    .write(m([k("build-id"), identityId ?? marker, k("cases"), [descriptor]]));
   const frontend = path.resolve(fixture.managed, "../../..");
   const host = path.join(
     frontend,
@@ -656,6 +658,8 @@ test(
     assert.equal(manifest.get(k("status")).toString(), ":failed");
     const failure = manifest.get(k("failure"));
     assert.equal(failure.get(k("phase")).toString(), ":renderer");
+    assert.equal(failure.get(k("exit-code")), 23);
+    assert.equal(failure.get(k("command")), fixture.compiler);
     assert.equal(
       failure.get(k("cause"))[0].get(k("type")).toString(),
       ":process-exit",
@@ -678,9 +682,54 @@ test(
     assert.match(result.stderr, new RegExp(`build\\s+${id}`));
     assert.ok(result.stderr.includes(logPath));
     assert.match(result.stderr, /phase\s+:renderer/);
+    assert.match(result.stderr, /exit-code\s+23/);
+    assert.ok(result.stderr.includes(fixture.compiler), result.stderr);
     assert.equal(result.stderr.split("✖ ").length - 1, 1);
     assert.doesNotMatch(result.stderr, /^compiler (stdout|stderr)/m);
     assert.match(log, /✖ renderer build preparation failed/);
+  },
+);
+
+test(
+  "build retains selected and loaded identities in saved and terminal failures",
+  testOptions,
+  async (t) => {
+    const fixture = createFrontend(t);
+    const actualId = `other\n\u001b${"x".repeat(2048)}`;
+    installPreparedCompiler(fixture, false, actualId);
+
+    const result = await runCli(fixture, [
+      "build",
+      "--no-color",
+      "--build-timeout-ms",
+      "10000",
+    ]);
+
+    assert.equal(result.exitCode, 1, result.stderr);
+    const id = result.stdout.match(/^Build ([0-9a-f-]+)$/m)?.[1];
+    assert.ok(id, result.stdout);
+    const k = transit.keyword;
+    const manifest = readManifest(
+      path.join(fixture.builds, id, "build.transit"),
+    );
+    const failure = manifest.get(k("failure"));
+    assert.equal(manifest.get(k("status")).toString(), ":failed");
+    assert.equal(failure.get(k("phase")).toString(), ":identity");
+    assert.equal(
+      failure.get(k("cause"))[0].get(k("type")).toString(),
+      ":benches.render-wasm.identity/mismatch",
+    );
+    assert.equal(failure.get(k("expected-id")), id);
+    assert.equal(failure.get(k("actual-id")), actualId.slice(0, 1024));
+    assert.match(result.stderr, new RegExp(`expected-id\\s+"${id}"`));
+    const actualField = result.stderr.match(/^  actual-id\s+(.+)$/m)?.[1];
+    assert.ok(actualField, result.stderr);
+    assert.ok(actualField.includes("other"), actualField);
+    assert.ok(actualField.length <= 1024, actualField.length);
+    assert.ok(
+      [...actualField].every((character) => character.charCodeAt(0) >= 32),
+      actualField,
+    );
   },
 );
 
@@ -1452,6 +1501,141 @@ test(
     assert.match(result.stdout, /-v, --verbose/);
     assert.match(result.stdout, /--\[no-\]color/);
     assert.deepEqual(tree(fixture.managed), original);
+  },
+);
+
+test(
+  "compare and merge identify unreadable saved inputs",
+  testOptions,
+  async (t) => {
+    const cases = [
+      {
+        command: "compare",
+        role: "baseline",
+        kind: "missing",
+        message: /run record is missing/,
+        type: /storage\.runs\/missing-run/,
+      },
+      {
+        command: "compare",
+        role: "candidate",
+        kind: "missing",
+        message: /run record is missing/,
+        type: /storage\.runs\/missing-run/,
+      },
+      {
+        command: "compare",
+        role: "candidate",
+        kind: "corrupt",
+        message: /JSON/,
+        type: null,
+      },
+      {
+        command: "compare",
+        role: "baseline",
+        kind: "unsupported",
+        message: /unsupported benchmark format/,
+        type: /result\/unsupported-format/,
+      },
+      {
+        command: "compare",
+        role: "candidate",
+        kind: "invalid",
+        message: /invalid schema:run/,
+        type: /result\/invalid-record/,
+      },
+      {
+        command: "compare",
+        role: "candidate",
+        kind: "directory",
+        message: /EISDIR/,
+        type: null,
+      },
+      {
+        command: "merge",
+        role: "base",
+        kind: "missing",
+        message: /run record is missing/,
+        type: /storage\.runs\/missing-run/,
+      },
+      {
+        command: "merge",
+        role: "additional",
+        kind: "corrupt",
+        message: /JSON/,
+        type: null,
+      },
+    ];
+    for (const { command, role, kind, message, type } of cases) {
+      await t.test(`${command}: ${role} ${kind}`, async (t) => {
+        const fixture = createFrontend(t);
+        const valid = path.join(fixture.managed, "valid.transit");
+        const input = path.join(fixture.managed, `${kind}.transit`);
+        fs.writeFileSync(
+          valid,
+          runFixtureText({ runId: "valid", caseId: "case/load", value: 10 }),
+        );
+        if (kind === "directory") {
+          fs.mkdirSync(input);
+        } else if (kind !== "missing") {
+          const text =
+            kind === "corrupt"
+              ? "not JSON"
+              : kind === "unsupported"
+                ? "{}"
+                : transit
+                    .writer("json")
+                    .write(
+                      transit.map([
+                        transit.keyword("type"),
+                        transit.keyword("run-record"),
+                      ]),
+                    );
+          fs.writeFileSync(input, text);
+        }
+        const inputs =
+          role === "baseline" || role === "base"
+            ? [input, valid]
+            : [valid, input];
+        const result = await runCli(fixture, [
+          command,
+          ...inputs,
+          "--no-color",
+        ]);
+
+        assert.equal(result.exitCode, 1);
+        assert.match(result.stderr, message);
+        assert.ok(result.stderr.includes(input), result.stderr);
+        assert.match(result.stderr, new RegExp(`role\\s+:${role}\\b`));
+        assert.match(result.stderr, /operation\s+:read-record\b/);
+        if (type) assert.match(result.stderr, type);
+      });
+    }
+  },
+);
+
+test(
+  "compare bounds and escapes the reported input path",
+  testOptions,
+  async (t) => {
+    const fixture = createFrontend(t);
+    const prefix = 'missing\n"\\\u001b';
+    const prefixLength = JSON.stringify(prefix).length - 1;
+    const input = `${prefix}${"x".repeat(1023 - prefixLength)}😀.transit`;
+    const result = await runCli(fixture, [
+      "compare",
+      input,
+      "unused.transit",
+      "--no-color",
+    ]);
+
+    assert.equal(result.exitCode, 1);
+    assert.match(result.stderr, /role\s+:baseline\b/);
+    const reportedPath = result.stderr.match(/^  path\s+(.+)$/m)?.[1];
+    assert.ok(reportedPath, result.stderr);
+    assert.match(reportedPath, /^"missing\\n\\"\\\\\\u001b/);
+    assert.ok(reportedPath.length <= 1024, reportedPath.length);
+    assert.ok(reportedPath.endsWith("x"), reportedPath);
   },
 );
 

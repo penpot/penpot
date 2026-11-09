@@ -69,18 +69,13 @@
         [:cause {:optional true} [:vector schema:cause-detail]]
         [:partial {:optional true} map?]
         [:reason {:optional true} :any]
-        [:deadline-exceeded {:optional true} boolean?]])
-
-     (defn project-diagnostic
-       "Returns the diagnostic fields of an execution envelope.
-
-       Args:
-         evidence: Plain execution evidence.
-
-       Returns:
-         Failure status, location, message and available diagnostic details."
-       [evidence]
-       (select-keys evidence [:status :phase :message :cause :partial :reason :deadline-exceeded]))
+        [:deadline-exceeded {:optional true} boolean?]
+        [:expected-id {:optional true} [:string {:max 1024}]]
+        [:actual-id {:optional true} [:string {:max 1024}]]
+        [:command {:optional true} [:string {:max 1024}]]
+        [:exit-code {:optional true} :int]
+        [:signal {:optional true} [:string {:max 1024}]]
+        [:endpoint {:optional true} [:string {:max 1024}]]])
 
      (def ^:private fatal-cause-depth 8)
      (def ^:private evidence-cause-depth 3)
@@ -160,23 +155,65 @@
        [data]
        (assoc data :status "failed"))
 
-     (defn- truncate-cause-str
-       "Bounds text to 500 UTF-16 units, preserving surrogate pairs.
-       Returns a fallback string when conversion fails."
-       [s]
+     (defn bounded-text
+       "Returns text within a size limit, preserving UTF-16 boundaries.
+
+       Converts `value` to a string and limits it to max-chars UTF-16 code
+       units. If conversion fails, it returns 'unrenderable value'. When
+       truncating, we check whether the cut would leave a high surrogate
+       without its matching low surrogate. If so, we remove that last code unit
+       to keep the pair intact.
+
+       Args:
+         value: Value to convert to text.
+         max-chars: Positive limit in UTF-16 units.
+
+       Returns:
+         Bounded text, or a fallback string when conversion fails."
+       [value max-chars]
        (or (ex/ignoring
-            (let [text (str s)]
-              (if (<= (count text) max-cause-chars)
+            (let [text (str value)]
+              (if (<= (count text) max-chars)
                 text
-                (let [cut  (subs text 0 max-cause-chars)
-                      last (.charCodeAt cut (dec max-cause-chars))]
+                (let [cut  (subs text 0 max-chars)
+                      last (.charCodeAt cut (dec max-chars))]
                   (if (and (>= last 0xD800)
                            (<= last 0xDBFF)
-                           (let [nxt (.charCodeAt text max-cause-chars)]
+                           (let [nxt (.charCodeAt text max-chars)]
                              (and (>= nxt 0xDC00) (<= nxt 0xDFFF))))
-                    (subs cut 0 (dec max-cause-chars))
+                    (subs cut 0 (dec max-chars))
                     cut)))))
            unrenderable-value))
+
+     (defn project-context
+       "Returns bounded build identity and process details.
+
+       Args:
+         data: Diagnostic data with optional identity or process fields.
+
+       Returns:
+         Expected/actual build IDs, command, signal and endpoint limited to
+         1024 UTF-16 units, and an integer exit code when supplied."
+       [data]
+       (cond-> {}
+         (string? (:expected-id data)) (assoc :expected-id (bounded-text (:expected-id data) 1024))
+         (string? (:actual-id data)) (assoc :actual-id (bounded-text (:actual-id data) 1024))
+         (string? (:command data)) (assoc :command (bounded-text (:command data) 1024))
+         (integer? (:exit-code data)) (assoc :exit-code (:exit-code data))
+         (string? (:signal data)) (assoc :signal (bounded-text (:signal data) 1024))
+         (string? (:endpoint data)) (assoc :endpoint (bounded-text (:endpoint data) 1024))))
+
+     (defn project-diagnostic
+       "Returns the diagnostic fields of an execution envelope.
+
+       Args:
+         evidence: Plain execution evidence.
+
+       Returns:
+         Failure status, location, message and available diagnostic details."
+       [evidence]
+       (merge (select-keys evidence [:status :phase :message :cause :partial :reason :deadline-exceeded])
+              (project-context evidence)))
 
      (defn- sanitize-cause-value
        [value]
@@ -185,10 +222,10 @@
          value
 
          (string? value)
-         (truncate-cause-str value)
+         (bounded-text value max-cause-chars)
 
          :else
-         (truncate-cause-str (or (ex/ignoring (pr-str value)) unrenderable-value))))
+         (bounded-text (or (ex/ignoring (pr-str value)) unrenderable-value) max-cause-chars)))
 
      (defn- describe-cause-level
        [cause]
@@ -234,7 +271,8 @@
        measurements and a bounded description of the cause."
        [phase cause]
        (let [partial (ex/ignoring (:partial (ex-data cause)))]
-         (cond-> {:phase (if (keyword? phase) (name phase) (str phase))
-                  :message (message-of cause)
-                  :cause (describe-cause cause)}
+         (cond-> (merge (project-context (ex-data cause))
+                        {:phase (if (keyword? phase) (name phase) (str phase))
+                         :message (message-of cause)
+                         :cause (describe-cause cause)})
            partial (assoc :partial partial))))))

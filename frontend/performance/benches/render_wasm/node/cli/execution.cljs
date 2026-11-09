@@ -102,18 +102,30 @@
   [finished]
   (doseq [[index cause] (map-indexed vector (:errors finished))]
     (let [data       (ex-data cause)
+          context    (mapv (fn [[key value]]
+                             [key (if (string? value)
+                                    (errors/bounded-text (js/JSON.stringify value) 1024)
+                                    value)])
+                           (errors/project-context data))
+          path       (when-let [path (:path data)]
+                       (errors/bounded-text (if (string? path)
+                                              (js/JSON.stringify path)
+                                              (pr-str path))
+                                            1024))
           validation (some-> (::sm/explain data) sm/simplify)]
       (log/error {:message (errors/message-of cause)
                   :fields (into (filterv (comp some? second)
                                          [[:type (:type data)] [:cause-type (:cause-type data)]
-                                          [:command (:command data)]
+                                          [:path path]
+                                          [:role (:role data)] [:operation (:operation data)]
                                           [:phase (:phase data)] [:build (:build-id data)]
                                           [:reason (:reason data)] [:manifest-error (:manifest-error data)]
                                           [:baseline (:baseline data)] [:candidate (:candidate data)]
                                           [:features (:features data)]
                                           [:count (:count data)] [:max-features (:max-features data)]
                                           [:validation validation]])
-                                (map #(vector :difference (:field %)) (:mismatches data)))
+                                (concat context
+                                        (map #(vector :difference (:field %)) (:mismatches data))))
                   :tail-log (:log-path data)
                   :tail? (zero? index)}))))
 

@@ -11,12 +11,15 @@
    ["net" :as net]
    ["os" :as os]
    ["path" :as path]
+   ["playwright" :as playwright]
    [app.common.transit :as transit]
+   [benches.render-wasm.errors :as errors]
    [benches.render-wasm.identity :as identity]
    [benches.render-wasm.node.process :as process]
    [benches.render-wasm.node.runner.browser :as browser]
    [benches.render-wasm.node.runner.server :as server]
-   [cljs.test :as t :include-macros true]))
+   [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.mock :as mock]))
 
 (def ^:private temporary-root (atom nil))
 (def ^:private build-id "owned-browser-fixture")
@@ -103,6 +106,24 @@
         (catch :default _ nil)))
     (finally
       (await (server/close host)))))
+
+(t/deftest ^:async startup-process-details-survive-browser-failure-wrappers
+  (let [run-process process/run]
+    (doseq [exit-code [0 17]]
+      (await
+       (mock/with-mocks*
+         {process/run (fn [options]
+                        (run-process (assoc options :command "/bin/sh"
+                                            :args ["-c" (str "exit " exit-code)])))}
+         (let [cause   (await (rejected (browser/launch {:startup-timeout-ms 10000})))
+               saved   (-> (errors/evidence :browser-startup cause)
+                           transit/encode-str
+                           transit/decode-str)
+               command (if (zero? exit-code)
+                         (.executablePath (.-chromium playwright))
+                         "/bin/sh")]
+           (t/is (= {:command command :exit-code exit-code}
+                    (select-keys saved [:command :exit-code])))))))))
 
 (t/deftest ^:async successful-close-removes-the-profile-and-cdp-listener
   (let [host      (await (open-host build-id true))

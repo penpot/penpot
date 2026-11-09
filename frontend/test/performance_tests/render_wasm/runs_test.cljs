@@ -9,6 +9,7 @@
    ["fs" :as fs]
    ["os" :as os]
    ["path" :as path]
+   [app.common.transit :as transit]
    [benches.render-wasm.node.storage.artifacts :as artifacts]
    [benches.render-wasm.node.storage.runs :as runs]
    [benches.render-wasm.result :as result]
@@ -85,6 +86,19 @@
     (let [error (failure #(runs/write-record! home (assoc-in run [:metadata :scored?] "yes")))]
       (t/is (= ::result/invalid-record (:type (ex-data error))))
       (t/is (= run (result/decode (fs/readFileSync (:record-path home) "utf8")))))))
+
+(t/deftest record-read-failures-retain-file-context-and-cause
+  (let [file (path/join @temporary-root "invalid.transit")]
+    (fs/writeFileSync file (transit/encode-str (dissoc (sample-run "invalid") :plan)))
+    (let [error (failure #(runs/get-record file))]
+      (t/is (= {:path file :operation :read-record :type ::result/invalid-record}
+               (select-keys (ex-data error) [:path :operation :type])))
+      (t/is (= ::result/invalid-record (:type (ex-data (ex-cause error)))))
+      (t/is (= (ex-message error) (ex-message (ex-cause error))))))
+  (let [error (failure #(runs/get-record @temporary-root))]
+    (t/is (= {:path @temporary-root :operation :read-record}
+             (select-keys (ex-data error) [:path :operation])))
+    (t/is (= "EISDIR" (.-code (ex-cause error))))))
 
 (t/deftest screenshot-paths-stay-in-the-run-home
   (let [home (runs/create-home {:root @temporary-root :run-id "run-5"})

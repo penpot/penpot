@@ -132,7 +132,8 @@
                (when (compare-and-set! settled false true)
                  ((:reject @callbacks)
                   (ex-info "Chromium exited before its CDP endpoint became ready"
-                           {:type ::endpoint-exit :stderr @output}
+                           (merge (errors/project-context (ex-data cause))
+                                  {:type ::endpoint-exit :stderr @output})
                            cause))))}))
 
 (defn- ^:async stop-process
@@ -217,7 +218,7 @@
   owns the process group, user-data directory and CDP connection. It holds no
   page or context; use new-page for those.
 
-  Startup failures include information about endpoint and profile."
+  Startup failures include available process details, endpoint and profile."
   [{:keys [signal startup-timeout-ms deadline]
     :or {startup-timeout-ms settings/default-startup-timeout-ms}}]
   (let [deadline (or deadline (process/deadline startup-timeout-ms))
@@ -251,7 +252,8 @@
       (.then running
              (fn [result]
                ((:failed endpoint) (ex-info "Chromium exited during startup"
-                                            {:type ::process-exit :exit-code (:exit-code result)})))
+                                            {:type ::process-exit :command command
+                                             :exit-code (:exit-code result)})))
              (:failed endpoint))
       (reset! (:abort-listener owner) abort)
       (when signal
@@ -271,9 +273,11 @@
               (await (close owner))
               (catch :default cleanup-cause
                 (throw (ex-info "browser shutdown failed after startup error"
-                                {:type ::startup-cleanup
-                                 :endpoint @(:address endpoint) :user-data-dir user-data-dir
-                                 :startup-failure (errors/describe-cause cause)}
+                                (merge (errors/project-context (ex-data cause))
+                                       (errors/project-context (ex-data cleanup-cause))
+                                       {:type ::startup-cleanup
+                                        :endpoint @(:address endpoint) :user-data-dir user-data-dir
+                                        :startup-failure (errors/describe-cause cause)})
                                 cleanup-cause))))
             (throw (ex-info (errors/message-of cause)
                             (assoc (ex-data cause) :endpoint @(:address endpoint) :user-data-dir user-data-dir)

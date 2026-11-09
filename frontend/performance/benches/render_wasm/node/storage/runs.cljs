@@ -14,6 +14,7 @@
   (:require
    ["fs" :as fs]
    ["path" :as path]
+   [benches.render-wasm.errors :as errors]
    [benches.render-wasm.node.files :as files]
    [benches.render-wasm.node.storage.artifacts :as artifacts]
    [benches.render-wasm.result :as result]
@@ -32,14 +33,33 @@
     (assoc (artifacts/create-home dir "run" "cannot create run home") :run-id run-id)))
 
 (defn get-record
-  "Reads and validates a saved run record from a path relative to cwd."
-  [file]
-  (when-not (and (string? file) (fs/existsSync file))
-    (throw (ex-info "run record is missing" {:type ::missing-run :path file})))
-  (let [record (result/decode (fs/readFileSync file "utf8"))]
-    (when-not (= :run-record (:type record))
-      (throw (ex-info "expected a saved run record" {:type ::invalid-run :path file})))
-    record))
+  "Reads and validates a saved run record.
+
+  Args:
+    file: Input path, resolved relative to cwd.
+    options: Optional :role identifying the input within an operation.
+
+  Returns:
+    The validated run record.
+
+  Throws:
+    An error retaining its message, type and cause, with :path, :operation
+    and the supplied :role in ex-data."
+  ([file]
+   (get-record file {}))
+  ([file {:keys [role]}]
+   (try
+     (when-not (and (string? file) (fs/existsSync file))
+       (throw (ex-info "run record is missing" {:type ::missing-run})))
+     (let [record (result/decode (fs/readFileSync file "utf8"))]
+       (when-not (= :run-record (:type record))
+         (throw (ex-info "expected a saved run record" {:type ::invalid-run})))
+       record)
+     (catch :default cause
+       (throw (errors/with-data
+                (errors/as-failure cause)
+                (cond-> {:path file :operation :read-record}
+                  role (assoc :role role))))))))
 
 (defn write-record!
   "Validates schema:run and atomically replaces the saved file."

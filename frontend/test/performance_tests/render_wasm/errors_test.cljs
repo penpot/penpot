@@ -110,6 +110,19 @@
     (t/is (= (apply str (repeat 499 "x")) (:hint outer)))
     (t/is (some #(= "inner boom" (:message %)) (:cause decoded)))))
 
+(t/deftest diagnostics-retain-bounded-identity-and-process-details
+  (let [long-text (str (apply str (repeat 1023 "x")) "😀")
+        context   {:expected-id long-text :actual-id "other-build"
+                   :command "compiler" :exit-code 23 :signal "SIGTERM"
+                   :endpoint "ws://127.0.0.1/devtools/browser/owner"}
+        cause     (ex-info "failed" context)
+        decoded   (-> (errors/evidence :identity cause)
+                      errors/project-diagnostic
+                      transit/encode-str
+                      transit/decode-str)]
+    (t/is (= (assoc context :expected-id (apply str (repeat 1023 "x")))
+             (select-keys decoded (keys context))))))
+
 (t/deftest unprintable-values-produce-portable-diagnostics
   (let [evil (js-obj)]
     (js/Object.defineProperty evil "evil"

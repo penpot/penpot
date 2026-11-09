@@ -443,6 +443,23 @@
     (t/is (= :browser-launch (:stage (last (get-in run [:metadata :diagnostics :failures])))))
     (t/is (= 1 (:exit-code result)))))
 
+(t/deftest ^:async browser-process-details-survive-saved-run-report
+  (let [context {:command "chromium" :exit-code 17 :signal "SIGKILL"
+                 :endpoint "ws://127.0.0.1:1234/devtools/browser/owner"}
+        fake    (assoc-in (fake-browser {}) [:service :launch]
+                          (fn [_]
+                            (throw (ex-info "browser launch failed" context))))
+        result  (await (execute fake [(collected :case/a :fresh)]
+                                (options fake (output-dir))))
+        saved   (saved-record result)]
+    (t/is (= 1 (:exit-code result)))
+    (t/is (= context (select-keys (get-in saved [:termination :failure]) (keys context))))
+    (t/is (= context (select-keys (first (get-in saved [:metadata :diagnostics :failures]))
+                                  (keys context))))
+    (t/is (str/includes? (:report result) "chromium"))
+    (t/is (str/includes? (:report result) "SIGKILL"))
+    (t/is (str/includes? (:report result) (:endpoint context)))))
+
 (t/deftest ^:async hardware-preparations-complete-fresh-and-reuse-cases
   (let [fake   (fake-browser {:effective-graphics (constantly hardware-graphics)})
         opts   (assoc (options fake (output-dir)) :require-gpu true :warmups 1 :repetitions 2)

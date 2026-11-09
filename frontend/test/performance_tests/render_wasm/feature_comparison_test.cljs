@@ -14,6 +14,7 @@
    [benches.render-wasm.declarations :as decl]
    [benches.render-wasm.errors :as errors]
    [benches.render-wasm.features.plan :as feature-plan]
+   [benches.render-wasm.identity :as identity]
    [benches.render-wasm.node.cli.execution :as execution]
    [benches.render-wasm.node.cli.request :as request]
    [benches.render-wasm.node.files :as files]
@@ -946,6 +947,25 @@
     (t/is (= :failed (get-in record [:configurations 0 :status])))
     (t/is (= "catalog" (get-in record [:configurations 0 :failure :phase])))
     (t/is (= :unattempted (get-in record [:configurations 1 :status])))))
+
+(t/deftest ^:async catalog-identity-failure-retains-selected-and-loaded-build-ids
+  (create-frontend-root)
+  (let [prepared (comparison-prepared ["a"] {})
+        outcome  (await (feature-comparison/execute
+                         (frontend-root) prepared nil
+                         {:services (comparison-services
+                                     {:prepare-build (build-service {})
+                                      :collect-catalog (fn [selected _]
+                                                         (identity/check (:id selected)
+                                                                         {:build-id "other-build"}))
+                                      :execute-run (execute-service {})})}))
+        record   (saved-comparison outcome)
+        config   (first (:configurations record))]
+    (t/is (= 1 (:exit-code outcome)))
+    (t/is (= :failed (:status config)))
+    (t/is (= (get-in config [:build :id]) (get-in config [:failure :expected-id])))
+    (t/is (= "other-build" (get-in config [:failure :actual-id])))
+    (t/is (= ::identity/mismatch (get-in config [:failure :cause 0 :type])))))
 
 (t/deftest ^:async unacknowledged-differences-save-a-failed-edge-report
   (create-frontend-root)
