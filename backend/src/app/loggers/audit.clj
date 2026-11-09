@@ -353,6 +353,8 @@
           props' (-> props'
                      (assoc :lang (:lang props))
                      (assoc :auth-backend (:auth-backend props))
+                     (assoc :source (:source props))
+                     (assoc :activation (:activation props))
                      (assoc :email-domain (email/get-domain (:email props)))
                      (d/without-nils))]
       (assoc params :props props'))
