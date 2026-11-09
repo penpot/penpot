@@ -20,6 +20,8 @@
    [benches.render-wasm.node.runner.run :as run]
    [benches.render-wasm.node.storage.artifacts :as artifacts]
    [benches.render-wasm.node.storage.runs :as runs]
+   [benches.render-wasm.report.format :as format]
+   [benches.render-wasm.report.summarize :as summary]
    [benches.render-wasm.result :as result]
    [cljs.test :as t :include-macros true]
    [clojure.string :as str]
@@ -345,6 +347,9 @@
       (t/is (= 1 (:exit-code result)))
       (t/is (= :skipped (get-in shots ["case/reuse" :status])))
       (t/is (= :ok (get-in shots ["case/fresh" :status])))
+      (t/is (= 1 (count (re-seq (re-pattern (if (= kind :throw)
+                                              "scene preparation failed" "scene rejected"))
+                                (:report result)))))
       (let [failure (last (get-in run [:metadata :diagnostics :failures]))]
         (t/is (= :preparation (:stage failure)))
         (t/is (= :case/reuse (:case-id failure)))
@@ -368,6 +373,11 @@
       (t/is (= :skipped (get-in run [:metadata :diagnostics :screenshots "case/fresh" :status])))
       (t/is (= {:warmups 0 :repetitions 1} (get-in run [:remaining :case/fresh])))
       (t/is (= :incomplete (get-in run [:termination :reason])))
+      (t/is (= 1 (count (re-seq (re-pattern (if (= kind :throw)
+                                              "scene preparation failed" "scene rejected"))
+                                (:report result)))))
+      (t/is (str/includes? (:report result) "no-completed-measured-attempt"))
+      (t/is (= (:report result) (format/format-run (summary/summarize (saved-record result)))))
       (t/is (= 1 (:exit-code result))))))
 
 (t/deftest ^:async reuse-attempt-failure-leaves-pending-slots-and-continues-to-the-next-case
@@ -789,7 +799,8 @@
           (t/is (= {:warmups 0 :repetitions (if (= :page stage) 1 0)}
                    (get-in saved [:remaining :case/a])))
           (when (= :screenshot stage)
-            (t/is (= [:completed] (mapv :outcome (attempts-for saved :case/a))))))
+            (t/is (= [:completed] (mapv :outcome (attempts-for saved :case/a))))
+            (t/is (= 1 (count (re-seq #"browser work timed out" (:report response)))))))
         (finally
           (set! (.-now js/Date) system-now))))))
 
@@ -801,6 +812,21 @@
     (t/is (= [:case/a] (mapv :case-id (:attempts saved))))
     (t/is (= {:warmups 0 :repetitions 2} (get-in saved [:remaining :case/b])))
     (t/is (= :browser-close (get-in saved [:termination :failure :stage])))))
+
+(t/deftest ^:async distinct-harness-failures-with-equal-diagnostics-appear-separately
+  (let [fake     (fake-browser {:run-failure (fn [_ _] :response)
+                                :close-failure (constantly true)})
+        response (await (execute fake [(collected :case/a :reuse)]
+                                 (options fake (output-dir))))
+        saved    (saved-record response)
+        report   (:report response)]
+    (t/is (= [:browser-close :cleanup] (mapv :stage (get-in saved [:metadata :diagnostics :failures]))))
+    (t/is (str/includes? report "Harness 0"))
+    (t/is (str/includes? report "Harness 1"))
+    (t/is (str/includes? report ":browser-close"))
+    (t/is (str/includes? report ":cleanup"))
+    (t/is (= 2 (count (re-seq #"browser shutdown failed" report))))
+    (t/is (= 1 (count (re-seq #"attempt rejected" report))))))
 
 (t/deftest ^:async failed-startup-cleanup-aborts-even-after-the-case-deadline
   (let [system-now (.-now js/Date)
@@ -1126,6 +1152,8 @@
       (t/is (= "case-a.png" (:file shot)))
       (t/is (fs/existsSync (path/join (get-in result [:home :dir]) "case-a.png")))
       (t/is (= :completed (get-in run [:termination :reason])))
+      (t/is (str/includes? (:report result) "Screenshots"))
+      (t/is (str/includes? (:report result) "case-a.png"))
       (t/is (zero? (:exit-code result)))))
   (let [fake   (fake-browser {:screenshot-failure (constantly true)})
         opts   (assoc (options fake (output-dir)) :screenshots true)
@@ -1135,6 +1163,9 @@
     (t/is (= :failed (:status shot)))
     (t/is (= "case-a.png" (:file shot)))
     (t/is (= :completed (get-in run [:termination :reason])))
+    (t/is (str/includes? (:report result) "\"case/a\": warning"))
+    (t/is (= 1 (count (re-seq #"screenshot failed" (:report result)))))
+    (t/is (str/includes? (:report result) "case-a.png"))
     (t/is (zero? (:exit-code result)))))
 
 (t/deftest ^:async metadata-records-build-and-controller-provenance-and-budgets

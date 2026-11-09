@@ -300,6 +300,27 @@
     (t/is (str/includes? (format/format-run (summary/summarize (result/decode (result/encode failed))))
                          "setup failed"))))
 
+(t/deftest comparison-reports-preparation-failures-once-per-source
+  (let [failure {:phase "preparation" :message "setup failed"}
+        run     (-> (new-run 0 2 :fresh)
+                    (result/record-preparation (preparation :ready []))
+                    (add-attempt :ready false :completed [(block :main :ready [(event :test/work [2])])])
+                    (result/record-preparation {:preparation-id :failed :case-id :saved/pan :warmup? false
+                                                :diagnostics {} :phases [] :failure failure})
+                    (result/record-attempt (measurement/attempt :saved/pan :failed false
+                                                                {:status "failed" :phase "preparation"
+                                                                 :message "setup failed" :phases []}))
+                    (result/record-case-outcome :saved/pan {:outcome :failed :failure failure})
+                    (result/finish-run "end" {:reason :failed :failure failure})
+                    result/encode result/decode)
+        compared (-> (compare/compare-runs run (assoc run :run-id "candidate")
+                                           {:allow-all-differences true})
+                     result/encode result/decode)
+        text    (format/format-comparison compared)]
+    (t/is (= 2 (count (re-seq #"setup failed" text))))
+    (t/is (str/includes? text "median change"))
+    (t/is (= 2 (count (re-seq #"Preparation :failed" text))))))
+
 (t/deftest offline-comparison-uses-one-analysis-and-saved-quantity-units
   (let [base (-> (sample-run [1 2 3]) result/encode result/decode)
         candidate (-> (sample-run [3 4 5])

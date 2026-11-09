@@ -22,8 +22,7 @@
    [benches.render-wasm.report.summarize :as summary]
    [benches.render-wasm.result :as result]
    [benches.render-wasm.runtime.camera :as camera]
-   [cljs.test :as t :include-macros true]
-   [clojure.string :as str]))
+   [cljs.test :as t :include-macros true]))
 
 ;; Forward declaration: entry-test helpers below build args against the
 ;; fake Emscripten factory URL defined alongside the fake-DOM harness.
@@ -790,7 +789,8 @@
                (t/is (= (:cause evidence) (get-in stored [:failure :cause])))
                (t/is (= blocks (:phases stored)))
                (t/is (= "phase-failure" (:preparation-id stored)))
-               (t/is (str/includes? (format/format-run (summary/summarize saved)) "phase fixture failed"))
+               (t/is (= 1 (count (re-seq #"phase fixture failed"
+                                         (format/format-run (summary/summarize saved))))))
                (t/is (= (case failed-phase
                           :preparation [:preparation]
                           :main [:preparation :main]
