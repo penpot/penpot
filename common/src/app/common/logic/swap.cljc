@@ -154,6 +154,22 @@
                          (mth/close? (:width selrect-a) (:width selrect-b))
                          (mth/close? (:height selrect-a) (:height selrect-b)))))))))
 
+(defn- carried-text-overrides
+  "The text overrides of `touched` a switch carries from the copy text
+   `previous-shape` into `current-shape`, its copy of the new variant:
+   those both variants, `origin-ref-shape` and the new one, agree on and
+   where the copy differs from the new variant. A carried typography takes
+   every unit it sets along."
+  [touched previous-shape current-shape origin-ref-shape]
+  (let [;; the overrides both variants agree on
+        agreed  (set/difference (txt/text-overrides touched)
+                                (txt/override-groups (:content origin-ref-shape) (:content current-shape)))
+        carried (set/intersection agreed
+                                  (txt/override-groups (:content previous-shape) (:content current-shape)))]
+    (cond-> carried
+      (contains? carried :text-content-typography)
+      (into (filter agreed) txt/typography-units))))
+
 (defn- switch-attr-operations
   "The `[attr value]` pairs that carry `attr` over a variant switch, from
    `previous-shape`, the copy shape before the switch placed like
@@ -248,14 +264,13 @@
             reset-pos-data?
             nil
 
-            ;; Each text override that the old and the new main agree on is
-            ;; carried over the new main's content
+            ;; Each text override the switch carries goes over the new
+            ;; main's content
             text-change?
             (txt/merge-overrides (:content previous-shape)
                                  (:content current-shape)
-                                 (set/difference (txt/text-overrides touched)
-                                                 (txt/override-groups (:content origin-ref-shape)
-                                                                      (:content current-shape))))
+                                 (carried-text-overrides touched previous-shape current-shape
+                                                         origin-ref-shape))
 
             path-change?
             (switch-path-change-value previous-shape
@@ -329,10 +344,8 @@
                                   updated-attrs)
         new-content (some #(when (= (:attr %) :content) (:val %)) roperations)
         text-groups (when (and (cfh/text-shape? current-shape) (some? new-content))
-                      (let [;; the text overrides the switch carries: those both variants agree on
-                            carried (set/difference (txt/text-overrides touched)
-                                                    (txt/override-groups (:content origin-ref-shape)
-                                                                         (:content current-shape)))]
+                      (let [carried (carried-text-overrides touched previous-shape current-shape
+                                                            origin-ref-shape)]
                         (cond-> (txt/override-groups (:content current-shape) new-content)
                           ;; the copy's own styles drop a typography it does not apply
                           (txt/drops-typography? carried)
