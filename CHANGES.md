@@ -121,6 +121,7 @@ The Admin Console is now enabled by default and the `enable-admin-console` flag 
 - Fix `:referential-integrity` errors when creating, combining or renaming variant sets [#12734](https://github.com/penpot/penpot/issues/12734) (PR: [#12779](https://github.com/penpot/penpot/pull/12779))
 - Fix save errors after masking a variant with Ctrl+M [#12748](https://github.com/penpot/penpot/issues/12748) (PR: [#12749](https://github.com/penpot/penpot/pull/12749))
 - Fix icons in component instances not being shown on the canvas [#12752](https://github.com/penpot/penpot/issues/12752)
+- Fix upload endpoints accepting non-multipart upload paths and validation error bodies being truncated [#12896](https://github.com/penpot/penpot/issues/12896) (PR: [#12067](https://github.com/penpot/penpot/pull/12067))
 
 ### :sparkles: New features & Enhancements
 
