@@ -1982,6 +1982,14 @@
                              [:duplicate 1 0 0 0] [:transform 1 4 0 4] [:variant-property 0 0 0 0]
                              [:switch 6] [:rotate 10 0 0 0] [:rotate 1 0 0 0]]}))))
 
+(t/deftest switching-a-copy-places-the-child-of-its-turned-nested-copy
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:nest 15 0 0 0] [:resize 9 0 0 0] [:nest 7 0 0 0] [:combine 4 0 0 0]
+                             [:make-variant 2 0 0 0] [:make-variant 6 0 0 0] [:swap 3 0 0 0]
+                             [:transform 14 3 0 13] [:make-variant 4] [:switch 9]]}))))
+
 (t/deftest updating-a-main-keeps-a-pushed-swap-its-main-converged-to
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true

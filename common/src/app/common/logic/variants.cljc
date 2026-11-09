@@ -544,13 +544,30 @@
                                   (cll/orient-like new-base-ref-shape new-head
                                                    (gsh/shape->center new-base-ref-shape)))
                                 identity)
+        ;; `ref-shape` turned too as the copy turns the parent of `old` below
+        ;; its root, so a turn a nested copy authors is not the child's own
+        nested-turn         (fn [ref-shape old old-ref]
+                              (let [ref-objects (:objects (:container (meta old-ref)))
+                                    ref-root    (get ref-objects (:id orig-base-ref-shape))
+                                    ref-parent  (get ref-objects (:parent-id old-ref))
+                                    old-parent  (get page-objects (:parent-id old))
+                                    root-turn   (when (and ref-root ref-parent)
+                                                  (cll/orient-like ref-root original-shape
+                                                                   (gsh/shape->center ref-root)))
+                                    turned      (when ref-parent
+                                                  (cond-> ref-parent (some? root-turn) root-turn))
+                                    turn        (when (and turned old-parent
+                                                           (not= (:id old-parent) (:id original-shape)))
+                                                  (cll/orient-like turned old-parent (gsh/shape->center turned)))]
+                                (cond-> ref-shape (some? turn) turn)))
 
         changes
         (reduce (fn [changes {:keys [old old-ref new swapped?]}]
                   (if swapped?
                     (keep-swapped-item changes new old ldata page libraries)
                     (clsw/update-attrs-on-switch changes new old new-shape original-shape
-                                                 (orient-ref old-ref) container)))
+                                                 (nested-turn (orient-ref old-ref) old old-ref)
+                                                 container)))
                 changes
                 pairs)
 

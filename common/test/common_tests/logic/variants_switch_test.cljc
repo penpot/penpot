@@ -71,6 +71,36 @@
       (t/is (= (:data (tm/file before))
                (:data (tm/file (r/step switched (n/undo)))))))))
 
+(t/deftest switch-places-the-child-of-a-turned-nested-copy-by-its-parent
+  ;; the variants hold a copy whose child a main of its chain resized, and the
+  ;; switched copy turns that copy: the child follows its turned parent
+  (let [file     (-> (thf/sample-file :file)
+                     (tho/add-frame :leaf-main {:width 50 :height 50})
+                     (thc/make-component :leaf :leaf-main)
+                     (tho/add-frame :holder-main {:width 100 :height 100})
+                     (thc/instantiate-component :leaf :holder-leaf :parent-label :holder-main)
+                     (thc/make-component :holder :holder-main)
+                     (thv/add-variant :variants :a :main-a :b :main-b
+                                      :variant1-params {:width 100 :height 100}
+                                      :variant2-params {:width 100 :height 100})
+                     (thc/instantiate-component :holder :a-holder :parent-label :main-a)
+                     (thc/instantiate-component :holder :b-holder :parent-label :main-b)
+                     (thc/instantiate-component :a :copy))
+        nested   (fn [situation] (first (:shapes (tm/resolve-shape situation :copy))))
+        before   (-> (tm/make-situation file)
+                     (r/step (n/change-height :holder-leaf 40)) r/settle
+                     (r/step (n/rotate nested 45)) r/settle)
+        switched (-> before (r/step (n/switch-variant :copy "Value2")) r/settle)
+        holder   (tm/shape-by-id switched (nested switched))
+        leaf     (tm/shape-by-id switched (first (:shapes holder)))
+        file     (tm/file switched)
+        full     (:file (r/sync-cascade file {} (keys (get-in file [:data :components]))))]
+    (t/is (mth/close? 45 (:rotation holder) 0.001))
+    (t/is (not (ctk/touched-group? leaf :geometry-group)))
+    (t/is (mth/close? 45 (:rotation leaf) 0.001))
+    (t/is (gsh/close-attrs? :points (:points leaf)
+                            (:points (ths/get-shape-by-id full (:id leaf))) 0.001))))
+
 (t/deftest switching-an-untouched-rotated-copy-authors-its-retained-orientation
   (let [file (-> (thf/sample-file :file)
                  (thv/add-variant :variant :c01 :m01 :c02 :m02
