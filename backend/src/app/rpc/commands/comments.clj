@@ -856,9 +856,12 @@
    ::sm/params schema:mark-all-threads-as-read}
   [cfg {:keys [::rpc/profile-id threads]}]
   (let [thread-ids (distinct threads)]
-    (db/tx-run!
-     cfg
-     (fn [{:keys [::db/conn] :as cfg}]
-       (check-threads-access cfg profile-id thread-ids)
-       (upsert-comment-thread-status-batch conn profile-id thread-ids)
-       nil))))
+    ;; Nothing to check and nothing to write: an empty list must not open a
+    ;; transaction nor run the queries with an empty array.
+    (when (seq thread-ids)
+      (db/tx-run!
+       cfg
+       (fn [{:keys [::db/conn] :as cfg}]
+         (check-threads-access cfg profile-id thread-ids)
+         (upsert-comment-thread-status-batch conn profile-id thread-ids)
+         nil)))))

@@ -6,6 +6,7 @@
   (:require
    [app.common.uuid :as uuid]
    [app.main.data.comments :as dcmt]
+   [app.main.data.notifications :as ntf]
    [app.main.repo :as rp]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -54,3 +55,41 @@
 
     (t/is (= 1 (count @calls)))
     (t/is (= 10 (count (:threads (second (first @calls))))))))
+
+(t/deftest ^:async mark-all-threads-as-read-refreshes-the-unread-list-after-a-batch-fails
+  (let [calls  (atom [])
+        state  (comment-threads-state 1200)
+        event  (dcmt/mark-all-threads-as-read (uuid/next))
+        seen   (atom [])
+        errors (atom [])]
+
+    (await
+     (mock/with-mocks*
+       {rp/cmd! (mock/stub
+                 (fn [cmd params]
+                   (swap! calls conj [cmd params])
+                   (if (= 2 (count @calls))
+                     (rx/throw (ex-info "boom" {}))
+                     (rx/of nil))))}
+       (await (async/observe (ptk/watch event state nil)
+                             :on-next #(swap! seen conj (ptk/type %))
+                             :on-error #(swap! errors conj %)))))
+
+    (t/is (= 2 (count @calls))
+          "the pipeline stops at the batch that fails")
+    (t/is (= [::dcmt/retrieve-unread-comment-threads] @seen)
+          "the unread list is re-read and no success toast is emitted")
+    (t/is (= [{:type :comment-error}] @errors))))
+
+(t/deftest ^:async mark-all-threads-as-read-refreshes-and-shows-the-success-toast
+  (let [state (comment-threads-state 600)
+        event (dcmt/mark-all-threads-as-read (uuid/next))
+        seen  (atom [])]
+
+    (await
+     (mock/with-mocks*
+       {rp/cmd! (mock/stub (fn [_ _] (rx/of nil)))}
+       (await (async/observe (ptk/watch event state nil)
+                             :on-next #(swap! seen conj (ptk/type %))))))
+
+    (t/is (= [::dcmt/retrieve-unread-comment-threads ::ntf/show] @seen))))
