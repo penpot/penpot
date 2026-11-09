@@ -1945,6 +1945,17 @@
                              [:swap 12 0 0 0] [:make-variant 4] [:switch 9] [:switch 16 0 0 0]
                              [:combine 7] [:switch 11]]}))))
 
+(t/deftest switching-a-turned-copy-keeps-the-turn-its-child-authors
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :library-variants true :stale-libraries true
+                                    :layout :flex :layout-item-margins false :grid-square false :library-depth 1
+                                    :library true :rich-variants true :layout-children true :library-text true
+                                    :grid-empty false :layout-copies true :text true}]
+                       :ops [[:nest 3 0 0 0] [:library-add-child 0] [:library-sync] [:remove-child 5 0 0 0]
+                             [:library-delete 2 0 0 0] [:library-combine 10] [:library-sync] [:switch 10]
+                             [:library-add-variant 1 0 0 0] [:transform 12 3 0 7] [:library-add-variant 1 0 0 0]
+                             [:library-add-variant 0 0 0 0] [:library-transform 0 3 4 0] [:library-add-child 5]
+                             [:library-sync] [:library-variant-property 0 0 0 0] [:library-sync] [:switch 10]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]
