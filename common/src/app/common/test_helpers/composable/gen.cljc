@@ -181,6 +181,8 @@
                                                                      [["a" setup/labeled-fill] ["b" "#ff0000"]]
                                                                      :size 100) s)
                               s))
+                    (as-> s (if (:library-variants opts)
+                              (variants/size-container s "library-variants" 200 200) s))
                     (as-> s (if (and (:library-variants opts) (:rich-variants opts))
                               (variants/diversify s "library-variants") s))
                     tm/file
@@ -247,6 +249,19 @@
           (into {} (map (juxt (comp :id :shape) :shape)) (forest situation))
           (mapcat #(vals (get-in % [:data :components])) (vals (cf/all-files situation)))))
 
+(defn- keep-stored-entries
+  "The model `before` an undo, with the entries of `model` for the shapes the
+   undo takes off the pages of `situation` into a deleted component, which
+   keeps them for a restore to bring back."
+  [before model situation]
+  (let [live   (into #{} (map (comp :id :shape)) (forest situation))
+        stored (all-objects situation)]
+    (reduce-kv (fn [result id groups]
+                 (cond-> result
+                   (and (contains? stored id) (not (contains? live id)) (not (contains? before id)))
+                   (assoc id groups)))
+               before model)))
+
 (defn- settle-model
   [model situation synced?]
   (let [references (when (some :layout-grid-cells (vals model))
@@ -290,6 +305,7 @@
                                                                        (variants/members setup/labeled-fill (:rich-variants opts)
                                                                                          (:variant-diff opts))
                                                                        :size 100)])
+                                  s (variants/size-container s "random-variants" 200 200)
                                   s (cond-> s (:rich-variants opts) (variants/diversify "random-variants"))]
                               (reduce #(tm/apply-to %2 %1) s
                                       [(n/make-nested-component-with-variant "variant" "random-variants" "a")
@@ -1052,7 +1068,7 @@
             history (:undo state)
             redo (:redo state)
             next-model (case kind
-                         :undo (:before (peek history))
+                         :undo (keep-stored-entries (:before (peek history)) model after)
                          :redo (:after (peek redo))
                          (update-model model situation after resolved kind))
             next-model (cond-> (or next-model model)

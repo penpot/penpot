@@ -1864,6 +1864,21 @@
                        :ops [[:edit 3 0 0 1] [:variant-property 0 6 0 0] [:switch 0] [:make-variant 5]
                              [:switch 13] [:make-variant 13 0 0 0] [:add-variant 0] [:switch 10]]}))))
 
+(t/deftest adding-variants-beside-a-scaled-member-keeps-the-file-valid
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:delete 0] [:restore 0] [:style 1 8 1] [:add-variant 0] [:switch 0]
+                             [:add-variant 0 0 0 0]]}))))
+
+(t/deftest restoring-a-variant-an-undo-removed-keeps-its-swap
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:make-variant 10 0 0 0] [:make-variant 0] [:switch 0] [:combine 4] [:switch 12]
+                             [:combine 15] [:switch 19] [:combine 0 0 0 0] [:make-variant 14 0 0 0]
+                             [:undo 0 0 0 0] [:restore 0 0 0 0]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]

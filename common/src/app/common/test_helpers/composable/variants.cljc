@@ -68,6 +68,19 @@
                                     :type :rect :name "Badge" :width 12 :height 12 :parent-label root-label))))
         (tm/file situation) (map-indexed vector members))))))
 
+(defn size-container
+  "Size the container of set `set-name` to `width` by `height`, as the
+   boards the app builds around its members."
+  [situation set-name width height]
+  (let [container-id (thi/id (:container-label (n/variant-set situation set-name)))
+        file (tm/file situation)
+        page (thf/current-page file)
+        changes (cls/generate-update-shapes
+                 (pcb/empty-changes nil (:id page)) [container-id]
+                 #(gsh/transform-shape % (ctm/change-size % width height))
+                 (:objects page) {})]
+    (tm/with-file situation (thf/apply-changes file changes))))
+
 (defn nearest
   "Prefer matches in earlier unchanged properties, then container order.
    This predicts the contract without calling the production distance or
