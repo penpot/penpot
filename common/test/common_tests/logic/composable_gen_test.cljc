@@ -1991,6 +1991,13 @@
                              [:duplicate 1 0 0 0] [:rotate 7 0 0 0] [:variant-property 0 19 4 0]
                              [:switch 20]]}))))
 
+(t/deftest switching-a-grid-copy-orders-its-children-as-its-kept-cells-flow
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children true :grid-empty false :layout-copies true :text true}]
+                       :ops [[:grid-direction 11 0 0 1] [:grid-cell 11 0 0 1] [:swap 16 0 0 0] [:make-variant 4]
+                             [:switch 10] [:add-variant 4] [:switch 9]]}))))
+
 (t/deftest turning-a-flipped-copy-turns-a-child-stored-as-the-other-mirror-turn
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true

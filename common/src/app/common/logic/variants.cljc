@@ -435,7 +435,8 @@
    identical grids: the same tracks and the same cells holding
    corresponding children, and they differ from the cells `new` shows.
    Otherwise the new variant's cells win. `counterpart` gives the child of
-   `new` that relates to a child of `old`."
+   `new` that relates to a child of `old`. The children of `new` then follow
+   the flow of the carried cells."
   [changes old old-ref new old-path new-path counterpart]
   (let [identical? (and (= (:layout-grid-rows old-ref) (:layout-grid-rows new))
                         (= (:layout-grid-columns old-ref) (:layout-grid-columns new))
@@ -458,11 +459,15 @@
                      (= (set (map #(dissoc % :id) (vals cells)))
                         (set (map #(dissoc % :id) (vals (:layout-grid-cells new))))))]
     (if (and cells (not (shown? cells)))
-      (pcb/update-shapes changes [(:id new)]
-                         #(-> %
-                              (assoc :layout-grid-cells cells)
-                              (update :touched (fnil conj #{}) :layout-grid-cells))
-                         {:ignore-touched true})
+      (-> changes
+          (pcb/update-shapes [(:id new)]
+                             #(-> %
+                                  (assoc :layout-grid-cells cells)
+                                  (update :touched (fnil conj #{}) :layout-grid-cells))
+                             {:ignore-touched true})
+          (pcb/apply-changes-local)
+          ;; the children follow the flow of the carried cells
+          (pcb/reorder-grid-children [(:id new)]))
       changes)))
 
 (defn generate-keep-touched
