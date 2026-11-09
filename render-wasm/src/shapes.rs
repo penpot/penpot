@@ -1497,6 +1497,12 @@ impl Shape {
             .filter(|shadow| shadow.style() == ShadowStyle::Drop && !shadow.hidden())
     }
 
+    pub fn clears_drop_shadow_underneath(&self) -> bool {
+        !matches!(self.shape_type, Type::Text(_))
+            && self.has_fills()
+            && !self.fills.iter().any(Fill::is_opaque)
+    }
+
     #[allow(dead_code)]
     pub fn inner_shadows(&self) -> impl DoubleEndedIterator<Item = &Shadow> {
         self.shadows

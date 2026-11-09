@@ -60,6 +60,18 @@ impl Shadow {
         self.hidden
     }
 
+    /// The bare shape silhouette: no offset, blur or spread.
+    pub fn silhouette() -> Self {
+        Self::new(
+            skia::Color::BLACK,
+            0.0,
+            0.0,
+            (0.0, 0.0),
+            ShadowStyle::Drop,
+            false,
+        )
+    }
+
     /// Approximate on-screen footprint (blur/spread + offset) at `scale` (zoom×dpr).
     #[inline]
     pub fn device_extent(&self, scale: f32) -> f32 {
