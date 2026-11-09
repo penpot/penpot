@@ -187,7 +187,7 @@ ENV PATH=/opt/cargo/bin:$PATH \
     RUSTUP_HOME=/opt/rustup \
     CARGO_HOME=/opt/cargo \
     RUSTUP_VERSION=1.28.2 \
-    RUST_VERSION=1.91.0 \
+    RUST_VERSION=1.99.0 \
     EMSCRIPTEN_VERSION=4.0.6
 
 WORKDIR /opt
