@@ -4121,6 +4121,35 @@
     (t/is (= [2 2] [(:row cell) (:column cell)]))
     (t/is (every? (set (:shapes copy')) (mapcat :shapes (vals (:layout-grid-cells copy')))))))
 
+(t/deftest a-switch-places-a-kept-swap-in-the-cell-of-the-child-it-replaces
+  (let [;; ==== Setup: the copy swaps its Item 3, a copy of :icon-a, for :icon-b;
+        ;; its cells are its main's
+        file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component :icon-a :icon-a-root :icon-a-child)
+                    (tho/add-simple-component :icon-b :icon-b-root :icon-b-child)
+                    (ths/add-sample-shape :v01 :type :frame :is-variant-container true)
+                    (add-grid-member :v01 :blue :blue-root "Blue" 2 [[1 1] [1 2] [2 1]] :item3 :icon-a)
+                    (add-grid-member :v01 :green :green-root "Green" 2 [[1 1] [1 2] [2 2]] :item3 :icon-a)
+                    (thc/instantiate-component :blue :copy01))
+        page    (thf/current-page file)
+        copy    (ths/get-shape file :copy01)
+        item3   (d/seek #(:component-id (get (:objects page) %)) (:shapes copy))
+        _       (thi/set-id! :copy-item3 item3)
+        file    (thc/component-swap file :copy-item3 :icon-b :copy-icon-b)
+        swap-id (thi/id :copy-icon-b)
+
+        ;; ==== Action
+        file'   (tho/swap-component-in-shape file :copy01 :green {:new-shape-label :copy02 :keep-touched? true})
+        copy'   (ths/get-shape file' :copy02)
+        cell    (ctl/get-cell-by-shape-id copy' swap-id)]
+
+    ;; ==== Check: the kept swap takes Green's cell for Item 3, and every
+    ;; child of the copy has a cell
+    (t/is (not (ctk/touched-group? (ths/get-shape file :copy01) :layout-grid-cells)))
+    (t/is (some #{swap-id} (:shapes copy')))
+    (t/is (= [2 2] [(:row cell) (:column cell)]))
+    (t/is (= (set (:shapes copy')) (set (mapcat :shapes (vals (:layout-grid-cells copy'))))))))
+
 (t/deftest a-switch-between-identical-grids-carries-no-cells-the-new-copy-shows
   ;; the copy's cells are marked as an override but equal its main's, so a
   ;; switch to an identical grid has nothing to carry
