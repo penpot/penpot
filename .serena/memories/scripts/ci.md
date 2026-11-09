@@ -106,7 +106,7 @@ produce deployable artifacts.
 ## Notes
 
 - `mcp` has no lint task and `media-processor` has no lint task; both show
-  as skipped. `render-wasm` uses `./lint`, `./test`, and `cargo fmt`.
+  as skipped. `render-wasm` uses `./lint`, `./test`, and `./fmt`.
 - `scripts/test_ci.py` (unittest, `python3 scripts/test_ci.py`) covers the
   flag wiring, one build command per module and the help text through
   `--dry-run`; it executes no real build.

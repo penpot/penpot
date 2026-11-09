@@ -1420,6 +1420,97 @@
             (t/is (= allowed?
                      (contains? (set @calls) :set-team-organization)))))))))
 
+(t/deftest remove-team-from-organization-follows-move-team-restriction
+  (doseq [[i restrictions-met allowed?] [[431 {:move-teams false} false]
+                                         [432 {:move-teams true} true]]]
+    (t/testing (str "move-teams restriction met=" (:move-teams restrictions-met))
+      (let [owner           (th/create-profile* i {:is-active true})
+            team            (th/create-team* i {:profile-id (:id owner)})
+            organization-id (uuid/random)
+            perms-params    (atom nil)
+            calls           (atom [])]
+        (with-redefs [cf/flags (conj cf/flags :admin-console)
+                      nitrate/call
+                      (fn [_cfg method params]
+                        (swap! calls conj method)
+                        (case method
+                          :get-organization-membership {:is-member true :organization-id (:organization-id params)}
+                          :get-organization-members [(:id owner)]
+                          :get-team-organization {:organization nil}
+                          :get-organization-permissions
+                          (do
+                            (reset! perms-params params)
+                            {:owner-id (uuid/random)
+                             :permissions {:move-teams "always"}
+                             :restrictions-met restrictions-met})
+                          :remove-team-from-organization nil
+                          nil))]
+          (let [out (th/command! {::th/type :remove-team-from-organization
+                                  ::rpc/profile-id (:id owner)
+                                  :team-id (:id team)
+                                  :organization-id organization-id
+                                  :organization-name "Org"})]
+            (if allowed?
+              (t/is (th/success? out))
+              (t/is (= :not-allowed (th/ex-code (:error out)))))
+            ;; the caller's profile-id travels to the permissions lookup
+            (t/is (= (:id owner) (::rpc/profile-id @perms-params)))
+            (t/is (= allowed?
+                     (contains? (set @calls) :remove-team-from-organization)))))))))
+
+(t/deftest add-team-to-organization-follows-move-and-create-restrictions
+  (doseq [[i desc source-met target-met allowed?]
+          [[441 "source move restriction not met" {:move-teams false} {:create-teams true} false]
+           [442 "target create restriction not met" {:move-teams true} {:create-teams false} false]
+           [443 "both met" {:move-teams true} {:create-teams true} true]]]
+    (t/testing desc
+      (let [owner           (th/create-profile* i {:is-active true})
+            team            (th/create-team* i {:profile-id (:id owner)})
+            source-id       (uuid/random)
+            target-id       (uuid/random)
+            org-owner-id    (uuid/random)
+            perms-params    (atom [])
+            calls           (atom [])]
+        (with-redefs [cf/flags (conj cf/flags :admin-console)
+                      nitrate/call
+                      (fn [_cfg method params]
+                        (swap! calls conj method)
+                        (case method
+                          :get-organization-membership {:is-member true :organization-id (:organization-id params)}
+                          :get-organization-members [(:id owner)]
+                          :get-team-organization
+                          (do
+                            (swap! perms-params conj params)
+                            {:organization {:id source-id}})
+                          :get-organization-permissions
+                          (do
+                            (swap! perms-params conj params)
+                            (cond
+                              (= (:organization-id params) source-id)
+                              {:owner-id org-owner-id
+                               :permissions {:create-teams "any" :move-teams "always"}
+                               :restrictions-met source-met}
+                              (= (:organization-id params) target-id)
+                              {:owner-id org-owner-id
+                               :permissions {:create-teams "any" :move-teams "always"}
+                               :restrictions-met target-met}))
+                          :set-team-organization {:id (:id team)}
+                          :get-organization-sso {:active false}
+                          :get-organization-summary {:id (:organization-id params) :teams [{:id (:id team)}]}
+                          nil))
+                      teams/initialize-user-in-organization (fn [& _] nil)]
+          (let [out (th/command! {::th/type :add-team-to-organization
+                                  ::rpc/profile-id (:id owner)
+                                  :team-id (:id team)
+                                  :organization-id target-id})]
+            (if allowed?
+              (t/is (th/success? out))
+              (t/is (= :not-allowed (th/ex-code (:error out)))))
+            ;; every gating lookup carries the caller's profile-id
+            (t/is (every? #(= (:id owner) (::rpc/profile-id %)) @perms-params))
+            (t/is (= allowed?
+                     (contains? (set @calls) :set-team-organization)))))))))
+
 (t/deftest get-nitrate-activation-code-request
   (let [profile    (th/create-profile* 1 {:is-active true})
         nitrate-id "nitrate-instance-1"

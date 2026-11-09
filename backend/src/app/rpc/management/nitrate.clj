@@ -610,6 +610,47 @@ RETURNING id, deleted_at;")
                        (db/exec! conn [sql:get-organization-member-team-counts ids-array])))))))
 
 
+;; ---- API: get-organization-team-roles
+
+(def ^:private sql:get-organization-team-roles
+  "SELECT t.id AS team_id, t.name AS team_name, tpr.profile_id,
+          CASE WHEN tpr.is_owner THEN 'owner' ELSE 'admin' END AS role
+     FROM team_profile_rel AS tpr
+     JOIN team AS t ON t.id = tpr.team_id
+     JOIN profile AS p ON p.id = tpr.profile_id
+    WHERE t.id = ANY(?)
+      AND t.deleted_at IS NULL
+      AND t.is_default IS FALSE
+      AND p.deleted_at IS NULL
+      AND (tpr.is_owner OR tpr.is_admin);")
+
+(def ^:private schema:get-organization-team-roles-params
+  [:map [:team-ids [:vector ::sm/uuid]]])
+
+(def ^:private schema:get-organization-team-roles-result
+  [:vector [:map
+            [:team-id ::sm/uuid]
+            [:team-name ::sm/text]
+            [:profile-id ::sm/uuid]
+            [:role [:enum :owner :admin]]]])
+
+(sv/defmethod ::get-organization-team-roles
+  "Get the owner and admin profiles of each non-default team within a set of teams."
+  {::doc/added "2.20"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
+   ::sm/params schema:get-organization-team-roles-params
+   ::sm/result schema:get-organization-team-roles-result
+   ::rpc/auth false}
+  [cfg {:keys [team-ids]}]
+  (if (empty? team-ids)
+    []
+    (db/run! cfg (fn [{:keys [::db/conn]}]
+                   (let [ids-array (db/create-array conn "uuid" team-ids)]
+                     (->> (db/exec! conn [sql:get-organization-team-roles ids-array])
+                          (mapv (fn [{:keys [role] :as row}]
+                                  (assoc row :role (keyword role))))))))))
+
+
 ;; ---- API: get-organization-member-teams
 
 (def ^:private sql:get-organization-member-teams

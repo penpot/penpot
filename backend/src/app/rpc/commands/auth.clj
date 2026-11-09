@@ -389,12 +389,17 @@
              :cause cause)
       nil)))
 
+(def ^:private default-renderer-new-profiles
+  "Renderer stored on new profiles. Profiles without one fall back to SVG."
+  :wasm)
+
 (defn create-profile
   "Create the profile entry on the database with limited set of input
   attrs (all the other attrs are filled with default values)."
   [{:keys [::db/conn] :as cfg} {:keys [email] :as params}]
   (let [id        (or (:id params) (uuid/next))
         props     (-> (:props params)
+                      (update :renderer d/nilv default-renderer-new-profiles)
                       (merge {:viewed-tutorial? false
                               :viewed-walkthrough? false
                               :nudge {:big 10 :small 1}
@@ -516,8 +521,9 @@
 
         created?   (-> profile meta :created true?)
 
-        props      (-> (audit/profile->props profile)
-                       (assoc :from-invitation (some? invitation)))]
+        props      (cond-> (audit/profile->props profile)
+                     :always  (assoc :from-invitation (some? invitation))
+                     created? (assoc :renderer-default (-> profile :props :renderer)))]
 
     (cond
       ;; When profile is blocked, we just ignore it and return plain data
@@ -543,8 +549,8 @@
       ;;     return :invitation-token. The frontend redirects to
       ;;     :auth-verify-token, which immediately accepts the
       ;;     invitation.
-      ;;   - active     + no/mismatched invitation → mint session
-      ;;     ("login" action). New profile, no further action.
+      ;;   - active     + no/mismatched invitation → mint session.
+      ;;     New profile, no further action.
       ;;   - not-active + matching invitation → send the
       ;;     verify-email mail with the invitation token EMBEDDED
       ;;     into the verify-email JWE. No session yet. When the
@@ -557,7 +563,11 @@
       created?
       (let [accept-invitation? (and (some? invitation)
                                     (= (:email profile)
-                                       (:member-email invitation)))]
+                                       (:member-email invitation)))
+            props             (assoc props :activation
+                                     (if (:is-active profile)
+                                       "immediate"
+                                       "email-verification"))]
         (cond
           (and (:is-active profile) accept-invitation?)
           (let [invitation (assoc invitation :member-id (:id profile))
@@ -567,7 +577,6 @@
                  :invitation-token token}
                 (rph/with-transform (session/create-fn cfg profile claims))
                 (rph/with-meta {::audit/replace-props props
-                                ::audit/context {:action "accept-invitation"}
                                 ::audit/profile-id (:id profile)})))
 
           (:is-active profile)
@@ -575,7 +584,6 @@
               (rph/with-transform (session/create-fn cfg profile claims))
               (rph/with-meta
                 {::audit/replace-props props
-                 ::audit/context {:action "login"}
                  ::audit/profile-id (:id profile)}))
 
           :else
@@ -589,7 +597,6 @@
                  :email (:email profile)}
                 (rph/with-meta
                   {::audit/replace-props props
-                   ::audit/context {:action "email-verification"}
                    ::audit/profile-id (:id profile)})))))
 
       ;; When email verification is disabled and an inactive profile already

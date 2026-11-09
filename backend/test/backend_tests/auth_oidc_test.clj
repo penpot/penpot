@@ -418,6 +418,11 @@
   [result]
   (get-in result [::yres/headers "location"]))
 
+(defn- location-token
+  "Extract the `token` query param from a redirect location."
+  [location]
+  (second (re-find #"[?&]token=([^&]+)" location)))
+
 (t/deftest callback-param-error-redirects-to-login
   (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
         request {:params {:error "access_denied"}}]
@@ -506,6 +511,52 @@
               loc    (redirect-location result)]
           (t/is (.contains loc "http://localhost:3449?screen=auth-verify-token&"))
           (t/is (.contains loc "token=")))))))
+
+(t/deftest callback-with-invitation-mints-auth-token-with-invitation-claim
+  (let [cfg        (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        invitation (tokens/generate cfg {:iss :team-invitation
+                                         :exp (ct/in-future {:hours 1})
+                                         :member-id test-profile-id
+                                         :member-email "u@e.com"})
+        state      (make-state-token cfg {:invitation-token invitation})
+        request    (default-request cfg :state state)]
+    (binding [cf/config {:public-uri "http://localhost:3449"}
+              cf/flags #{:registration}]
+      (with-redefs [app.auth.oidc/resolve-provider        (constantly {:type "oidc" :id "oidc"})
+                    app.auth.oidc/get-info                (constantly {:email "u@e.com" :fullname "U"
+                                                                       :backend "oidc" :email-verified false
+                                                                       :invitation-token invitation
+                                                                       :props {}})
+                    app.auth.oidc/get-profile             (constantly test-profile)
+                    app.auth.oidc/update-profile-with-info (fn [cfg profile info] profile)
+                    app.loggers.audit/submit              (constantly nil)]
+        (let [result (#'oidc/callback-handler cfg request)
+              loc    (redirect-location result)
+              claims (tokens/decode cfg (location-token loc))]
+          (t/is (= :auth (:iss claims))
+                "the session token must be an :auth token, not the invitation one")
+          (t/is (= invitation (:invitation-token claims))
+                "the invitation token must travel inside the :auth claims")
+          (t/is (= test-profile-id (:profile-id claims))))))))
+
+(t/deftest callback-without-invitation-mints-plain-auth-token
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        state   (make-state-token cfg {})
+        request (default-request cfg :state state)]
+    (binding [cf/config {:public-uri "http://localhost:3449"}
+              cf/flags #{:registration}]
+      (with-redefs [app.auth.oidc/resolve-provider        (constantly {:type "oidc" :id "oidc"})
+                    app.auth.oidc/get-info                (constantly {:email "u@e.com" :fullname "U"
+                                                                       :backend "oidc" :email-verified false
+                                                                       :props {}})
+                    app.auth.oidc/get-profile             (constantly test-profile)
+                    app.auth.oidc/update-profile-with-info (fn [cfg profile info] profile)
+                    app.loggers.audit/submit              (constantly nil)]
+        (let [result (#'oidc/callback-handler cfg request)
+              loc    (redirect-location result)
+              claims (tokens/decode cfg (location-token loc))]
+          (t/is (= :auth (:iss claims)))
+          (t/is (not (contains? claims :invitation-token))))))))
 
 (t/deftest callback-gracefully-handles-unable-to-retrieve-user-info
   (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)

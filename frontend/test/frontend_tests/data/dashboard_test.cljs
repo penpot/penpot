@@ -12,6 +12,7 @@
    [app.main.data.dashboard :as dd]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
+   [app.main.data.team :as dtm]
    [app.main.data.websocket :as dws]
    [app.main.repo :as rp]
    [app.main.router :as rt]
@@ -48,7 +49,8 @@
            rt/get-current-href (mock/stub (constantly current-url))}
           (await (async/observe (ptk/watch event state nil)
                                 :on-next (fn [ev]
-                                           (t/is (= ::ntf/show (ptk/type ev)))))))
+                                           (t/is (contains? #{::ntf/show ::dtm/fetch-teams}
+                                                            (ptk/type ev)))))))
         (.then (fn [_] @tr-calls))))) (t/deftest ^:async team-org-change-toast-names-team-when-joining-org
                                         (let [tr-calls (await (tr-args-for-team-org-toast
                                                                "dashboard.team-belong-organization"
@@ -62,6 +64,38 @@
                          {:name "OrgA"}))]
     (t/is (= [["dashboard.team-no-longer-belong-organization" ["Team-Apple" "OrgA"]]]
              tr-calls))))
+
+(t/deftest ^:async team-org-change-keeps-restrictions-met-of-the-same-organization
+  (let [team-id         (uuid/next)
+        organization-id (uuid/next)
+        state           {:teams {team-id {:id team-id
+                                          :organization {:id organization-id
+                                                         :name "Acme"
+                                                         :restrictions-met {:send-invitations false}}}}}
+        event           (dcm/handle-change-team-organization
+                         {:team {:id team-id
+                                 :organization {:id organization-id
+                                                :name "Acme 2"
+                                                :permissions {:send-invitations "owners"}}}
+                          :notification nil})]
+    (await (mock/with-mocks*
+             {cf/flags (conj cf/flags :admin-console)}
+             (let [organization (get-in (ptk/update event state) [:teams team-id :organization])]
+               (t/is (= "Acme 2" (:name organization)))
+               (t/is (= {:send-invitations false} (:restrictions-met organization))))))))
+
+(t/deftest ^:async team-org-change-refetches-teams-for-the-current-profile
+  (let [team-id (uuid/next)
+        state   {:teams {team-id {:id team-id}}}
+        event   (dcm/handle-change-team-organization
+                 {:team {:id team-id :organization {:id (uuid/next) :name "Acme"}}
+                  :notification nil})
+        types   (atom [])]
+    (await (mock/with-mocks*
+             {cf/flags (conj cf/flags :admin-console)}
+             (await (async/observe (ptk/watch event state nil)
+                                   :on-next #(swap! types conj (ptk/type %))))))
+    (t/is (= [::dtm/fetch-teams] @types))))
 
 (t/deftest ^:async duplicated-project-has-a-file-count-and-is-unpinned
   (let [id       (uuid/next)

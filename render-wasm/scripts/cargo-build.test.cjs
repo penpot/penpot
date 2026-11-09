@@ -347,3 +347,58 @@ test("rejects malformed Cargo JSON and removes stale build facts", (t) => {
   assert.match(result.stderr, /ERROR:/);
   assert.equal(fs.existsSync(f.info), false);
 });
+
+function runSetup(t, prepared) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "render-wasm-setup-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const bin = path.join(root, "bin");
+  const marker = path.join(root, "calls");
+  fs.mkdirSync(bin);
+  for (const name of ["rustup", "pnpm"]) {
+    fs.writeFileSync(
+      path.join(bin, name),
+      `#!/bin/sh\nprintf '%s\\n' "${name} $*" >> "$MARKER"\n`,
+      { mode: 0o755 },
+    );
+  }
+  const env = {
+    ...process.env,
+    MARKER: marker,
+    PATH: `${bin}:${process.env.PATH}`,
+  };
+  if (prepared === undefined) {
+    delete env.PENPOT_WASM_PREPARED;
+  } else {
+    env.PENPOT_WASM_PREPARED = prepared;
+  }
+  const result = spawnSync(
+    "bash",
+    [
+      "--noprofile",
+      "--norc",
+      "-c",
+      'source "$1" frontend; setup',
+      "setup-test",
+      path.resolve(__dirname, "..", "_build_env"),
+    ],
+    {
+      cwd: path.resolve(__dirname, ".."),
+      env,
+      encoding: "utf8",
+    },
+  );
+  assert.equal(result.status, 0, result.stderr);
+  return fs.existsSync(marker) ? fs.readFileSync(marker, "utf8") : "";
+}
+
+test("prepared setup skips rustup and pnpm", (t) => {
+  const normal = runSetup(t);
+  assert.match(normal, /^rustup default /m);
+  assert.match(normal, /^pnpm install$/m);
+
+  const disabled = runSetup(t, "0");
+  assert.match(disabled, /^rustup default /m);
+  assert.match(disabled, /^pnpm install$/m);
+
+  assert.equal(runSetup(t, "1"), "");
+});

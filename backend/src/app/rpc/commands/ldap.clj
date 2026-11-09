@@ -89,7 +89,8 @@
                               :member-id  (:id profile)
                               :member-email (:email profile))
                 token  (tokens/generate cfg claims)]
-            (-> {:invitation-token token}
+            (-> (profile/strip-private-attrs profile)
+                (assoc :invitation-token token)
                 (rph/with-transform (session/create-fn cfg profile))
                 (rph/with-meta {::audit/props (:props profile)
                                 ::audit/profile-id (:id profile)})))

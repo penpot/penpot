@@ -27,8 +27,8 @@ const TILE_DRAWABLE_RECT: IRect = IRect {
 };
 const DOC_ATLAS_MAX_DIM: i32 = 4096;
 
-/// GPU→GPU copy of `src` from `from` into `dst` on `to_canvas`, without
-/// `image_snapshot` (avoids per-tile sync stalls on WebGL).
+/// GPU→GPU copy of `src` from `from` into `dst`, replacing destination pixels,
+/// including transparent pixels, within the current canvas clip.
 fn draw_surface_src_rect_to_dst(
     from: &mut skia::Surface,
     to_canvas: &skia::Canvas,
@@ -48,7 +48,9 @@ fn draw_surface_src_rect_to_dst(
     to_canvas.translate((dst.left, dst.top));
     to_canvas.scale((sx, sy));
     to_canvas.translate((-src.left, -src.top));
-    from.draw(to_canvas, (0.0, 0.0), sampling, None);
+    let mut paint = skia::Paint::default();
+    paint.set_blend_mode(skia::BlendMode::Src);
+    from.draw(to_canvas, (0.0, 0.0), sampling, Some(&paint));
     to_canvas.restore();
 }
 

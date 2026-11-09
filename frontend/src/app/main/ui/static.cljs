@@ -11,7 +11,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
-   [app.main.data.auth :refer [is-authenticated?]]
+   [app.main.data.auth :as da :refer [is-authenticated?]]
    [app.main.data.common :as dcm]
    [app.main.data.nitrate :as dnt]
    [app.main.errors :as errors]
@@ -127,7 +127,8 @@
          (fn [data]
            (cond
              (:invitation-token data)
-             (st/emit! (rt/nav :auth-verify-token {:token (:invitation-token data)}))
+             (st/emit! (da/login-from-register
+                        {:invitation-token (:invitation-token data)}))
 
              (:is-active data)
              (st/emit! (rt/reload true))
