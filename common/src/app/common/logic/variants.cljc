@@ -338,6 +338,16 @@
        (remove #(= (:id shape) (:id %)))
        (some ctk/swapped?)))
 
+(defn- nests-in-switch?
+  "Whether the swapped shape `swapped` of `objects` holds a copy of the
+   component `component-id` a switch of the copy head `head` goes to, or of
+   a component the head is inside, so keeping it would nest a component in
+   itself."
+  [objects swapped head component-id]
+  (cfh/components-nesting-loop? (cfh/get-children-with-self objects (:id swapped))
+                                (cons {:component-id component-id}
+                                      (cfh/get-parents objects (:id head)))))
+
 (defn- find-shape-ref-child-of
   "Get the shape referenced by the shape-ref of the near main of the shape,
    recursively repeated until find a shape-ref with parent-id as ancestor.
@@ -515,10 +525,14 @@
                            (some #(and (ctk/swapped? %) (not= (:id %) (:id old-ref)))
                                  (rest (ctf/get-ref-chain-until-target-ref container libraries old
                                                                            (:id old-ref)))))]
-                  ;; a swap is kept only where the new variant holds a copy
+                  ;; a swap is kept only where the new variant holds a copy,
+                  ;; and when it does not nest the new variant in itself
                   (when (and new
                              (not swapped-in-chain?)
-                             (or (not swapped?) (ctk/instance-head? new)))
+                             (or (not swapped?)
+                                 (and (ctk/instance-head? new)
+                                      (not (nests-in-switch? page-objects old original-shape
+                                                             (:component-id new-shape))))))
                     {:old old :old-ref old-ref :new new :swapped? swapped?})))
               orig-touched)
 
@@ -668,7 +682,8 @@
   "The swapped shapes in the subtree of the copy head `shape` that a switch
    to the component `component-id` of `ldata` keeps: those whose place in
    their main, by name and ancestor kinds, the new component holds a copy
-   in. The others go with the old head."
+   in, and that would not nest a component in itself. The others go with
+   the old head."
   [page libraries ldata shape component-id]
   (let [objects      (:objects page)
         container    (ctn/make-container page :page)
@@ -688,6 +703,7 @@
     (into #{}
           (comp (filter ctk/swapped?)
                 (remove #(child-of-swapped? % objects (:id shape)))
+                (remove #(nests-in-switch? objects % shape component-id))
                 (filter (fn [old]
                           (let [old-ref (find-shape-ref-child-of container libraries old (:id base-ref))]
                             (and (some? old-ref)
