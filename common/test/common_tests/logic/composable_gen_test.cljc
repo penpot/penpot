@@ -1928,6 +1928,14 @@
                              [:reset 0 0 0 0] [:nest 14 0 0 0] [:switch 6 0 0 0] [:style 11 29 1]
                              [:reset 2]]}))))
 
+(t/deftest constraining-a-shape-after-its-parent-resized-keeps-it-in-place
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:detach 7 0 0 0] [:combine 21 0 0 0] [:detach 9 0 0 0] [:add-variant 9 0 0 0]
+                             [:transform 12 0 0 18] [:add-variant 8] [:switch 0] [:add-variant 11 0 0 0]
+                             [:resize 25 0 0 0] [:style 22 9 1]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]

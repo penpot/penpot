@@ -124,6 +124,15 @@
    (cond-> (values shape :geometry-group)
      parent (with-meta {::position {:shape shape :parent parent :sized? sized?}}))))
 
+(defn anchor-position
+  "The authored geometry `value` placed from where `shape` sits now in
+   `parent`: a constraint change moves nothing and applies only to the
+   resizes after it."
+  [value shape parent]
+  (cond-> value
+    (::position (meta value))
+    (vary-meta update ::position assoc :shape shape :parent parent)))
+
 (defn- authored-placement
   "Where the shape `expected` records it authored sits in `parent`, resized
    through the constraints of `current` when given (they apply to the
