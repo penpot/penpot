@@ -1821,12 +1821,16 @@
   "Stores `file`, a library of `file-id`, with its `:is-indirect` flag. A
   library can be requested twice when links overlap, once because the
   user linked it and once because another library brings it in. The
-  direct link wins whichever answer lands last."
+  direct link wins whichever answer lands last. Only a flag recorded for
+  `file-id` counts: `:files` outlives the workspace, and a library can be
+  direct in the file visited before and indirect in this one."
   [file-id file indirect?]
   (ptk/reify ::library-loaded
     ptk/UpdateEvent
     (update [_ state]
-      (let [known-direct? (false? (get-in state [:files (:id file) :is-indirect]))]
+      (let [known        (get-in state [:files (:id file)])
+            known-direct? (and (= file-id (:library-of known))
+                               (false? (:is-indirect known)))]
         (update state :files assoc (:id file)
                 (assoc file
                        :library-of file-id

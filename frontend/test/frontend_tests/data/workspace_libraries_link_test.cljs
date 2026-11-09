@@ -86,3 +86,24 @@
        (answer (second (calls a)))
        (await (async/settle))
        (t/is (false? (get-in @store [:files a :is-indirect])))))))
+
+(t/deftest ^:async a-direct-flag-from-another-file-does-not-carry-over
+  ;; :files outlives a workspace, so a library can still be there as a
+  ;; direct link of the file visited before. In this file it is only
+  ;; brought in by b.
+  (let [file    (cthf/sample-file :file1)
+        other   (uuid/next)
+        a       (uuid/next)
+        b       (uuid/next)
+        store   (ths/setup-store file {:libraries [{:id a
+                                                    :library-of other
+                                                    :is-indirect false}]})]
+    (await
+     (mock/with-mocks*
+       {rp/cmd! (library-cmd [a])}
+       (ptk/emit! store (dwl/link-file-to-library (:id file) b))
+       (await (async/wait-for
+               #(= (:id file) (get-in @store [:files a :library-of]))
+               "a loaded for this file"))
+       (t/is (true? (get-in @store [:files a :is-indirect])))
+       (t/is (false? (get-in @store [:files b :is-indirect])))))))
