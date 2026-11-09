@@ -171,6 +171,18 @@
                               (lib :b false [:file :a])
                               (lib :c true [:b])]))))
 
+(t/deftest library-disconnect-hint-counts-a-library-linked-in-this-session-as-direct
+  ;; Only the libraries fetched when the workspace opened carry
+  ;; :is-indirect. One linked since then has none (nil), and the user linked
+  ;; it explicitly, so it stays until disconnected: connect b (which uses
+  ;; c), then a (which uses b), without reloading.
+  (t/is (= {:a nil
+            :b {:reason :inherited :library-name "a" :removable ["a"]}
+            :c {:reason :inherited :library-name "b" :removable ["a" "b"]}}
+           (disconnect-hints [(lib :a nil [:file])
+                              (lib :b nil [:file :a])
+                              (lib :c true [:b])]))))
+
 (t/deftest library-disconnect-hint-cycle-falls-back-to-the-parent
   ;; a <-> b, nothing removable: name the parent rather than nothing
   (t/is (= {:a {:reason :used-by :library-name "b" :removable ["b"]}
