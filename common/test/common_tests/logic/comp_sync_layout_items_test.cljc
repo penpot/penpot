@@ -7,12 +7,14 @@
 (ns common-tests.logic.comp-sync-layout-items-test
   (:require
    [app.common.files.changes-builder :as pcb]
+   [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
+   [app.common.types.modifiers :as ctm]
    [clojure.set :as set]
    [clojure.test :as t]))
 
@@ -226,3 +228,29 @@
                     ", board1=" board-value
                     ", rect1=" rect-value)
       (run-case comp-value board-value rect-value))))
+
+(t/deftest swapped-child-that-stops-filling-takes-its-component-size
+  (let [file (-> (thf/sample-file :file1)
+                 (tho/add-frame :frame-small :width 100 :height 100)
+                 (thc/make-component :small :frame-small)
+                 (tho/add-frame :frame-big :width 140 :height 100)
+                 (thc/make-component :big :frame-big)
+                 (add-flex-frame :frame-main)
+                 (thc/instantiate-component :small :nested :parent-label :frame-main)
+                 (tho/change-shape :nested #(assoc % :layout-item-h-sizing :fill))
+                 (thc/make-component :main :frame-main)
+                 (thc/instantiate-component :main :copy :children-labels [:copy-nested])
+                 (tho/swap-component-in-shape :copy-nested :big :new-shape-label :copy-big)
+                 ;; the width the layout gives the swapped child that fills
+                 (tho/change-shape :copy-big #(gsh/transform-shape % (ctm/change-size % 50 100))
+                                   :ignore-touched true))
+        file' (-> file
+                  (tho/change-shape :nested #(assoc % :layout-item-h-sizing :fix))
+                  (tho/propagate-component-changes :main))
+        copy-big (ths/get-shape file :copy-big)
+        copy-big' (ths/get-shape file' :copy-big)]
+    (t/is (= :fill (:layout-item-h-sizing copy-big)))
+    (t/is (== 50 (-> copy-big :selrect :width)))
+    (t/is (= :fix (:layout-item-h-sizing copy-big')))
+    (t/is (== 140 (:width copy-big')))
+    (t/is (== 140 (-> copy-big' :selrect :width)))))
