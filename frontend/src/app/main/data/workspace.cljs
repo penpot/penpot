@@ -598,7 +598,7 @@
                                       :undo-group undo-group
                                       :tags tags
                                       :selected-before selected-before
-                                      :translation? (boolean translation?)}]
+                                      :translation (boolean translation?)}]
                            (rx/of (dwu/append-undo entry stack-undo?)))
                          (rx/empty))))))
 

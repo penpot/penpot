@@ -78,7 +78,7 @@
                            :undo-group undo-group
                            :tags tags
                            :selected-before selected-before
-                           :translation? (boolean translation?)}
+                           :translation (boolean translation?)}
                           stack-undo?))
                   (rx/empty))))
              (rx/take-until stopper-s))))))

@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.data.workspace-undo-translation-test
-  "The `:translation?` flag of undo entries. Undo, redo and undo-to-index
+  "The `:translation` flag of undo entries. Undo, redo and undo-to-index
   replay changes through `commit-changes`, and a replay of a commit that only
   moved shapes must say so, so that nothing downstream reacts to it as it
   would to an edit."
@@ -50,7 +50,7 @@
    :redo-changes [(set-attr ctx :x 10)]
    :undo-group (or undo-group (uuid/next))
    :tags #{}
-   :translation? translation?})
+   :translation translation?})
 
 (defn- edit-entry
   "An undo entry for an edit that is not a move."
@@ -96,7 +96,7 @@
 
 (t/deftest entry-without-the-translation-flag-is-rejected
   (let [ctx   (setup)
-        entry (dissoc (move-entry ctx true) :translation?)]
+        entry (dissoc (move-entry ctx true) :translation)]
     (t/is (thrown? js/Error (dwu/append-undo entry false)))))
 
 (t/deftest ^:async undo-to-index-replays-a-translation-only-if-all-entries-are
@@ -159,7 +159,7 @@
                         events)
         items   (get-in state [:workspace-undo :items])]
     (t/is (= 1 (count items)) (str mode " " (pr-str flags)))
-    (:translation? (first items))))
+    (:translation (first items))))
 
 (t/deftest merged-entries-are-a-translation-only-if-all-parts-are
   (doseq [mode [:stacked :transaction]]
