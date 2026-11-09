@@ -47,3 +47,42 @@
                "both libraries loaded"))
        (t/is (false? (get-in @store [:files library :is-indirect])))
        (t/is (true? (get-in @store [:files dependency :is-indirect])))))))
+
+(defn- deferred-cmd
+  "An RPC mock whose :get-file answers only when the test pushes the file
+  to the subject it records in `gets`, so the test decides the order."
+  [dependencies gets]
+  (mock/stub
+   (fn [command params]
+     (case command
+       :link-file-to-library (rx/of (get dependencies (:library-id params)))
+       :get-file (let [subject (rx/subject)]
+                   (swap! gets conj {:id (:id params) :subject subject})
+                   subject)
+       :get-file-object-thumbnails (rx/of {})))))
+
+(t/deftest ^:async a-library-loaded-twice-stays-direct
+  ;; Link a (which uses c), then b (which uses a) before a has loaded: a is
+  ;; requested twice, once because the user linked it and once because b
+  ;; brings it in. The user's link has to win whichever answer lands last.
+  (let [file    (cthf/sample-file :file1)
+        a       (uuid/next)
+        b       (uuid/next)
+        c       (uuid/next)
+        gets    (atom [])
+        store   (ths/setup-store file)
+        calls   (fn [id] (filterv #(= id (:id %)) @gets))
+        answer  (fn [call]
+                  (rx/push! (:subject call) {:id (:id call) :name "Library" :data {}}))]
+    (await
+     (mock/with-mocks*
+       {rp/cmd! (deferred-cmd {a [c] b [a c]} gets)}
+       (ptk/emit! store (dwl/link-file-to-library (:id file) a))
+       (await (async/wait-for #(seq (calls a)) "a requested because it was linked"))
+       (ptk/emit! store (dwl/link-file-to-library (:id file) b))
+       (await (async/wait-for #(= 2 (count (calls a))) "a requested again through b"))
+       (answer (first (calls a)))
+       (await (async/wait-for #(some? (get-in @store [:files a :library-of])) "a loaded"))
+       (answer (second (calls a)))
+       (await (async/settle))
+       (t/is (false? (get-in @store [:files a :is-indirect])))))))

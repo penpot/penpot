@@ -1817,6 +1817,21 @@
                    (d/index-by :id))))))
 
 
+(defn- library-loaded
+  "Stores `file`, a library of `file-id`, with its `:is-indirect` flag. A
+  library can be requested twice when links overlap, once because the
+  user linked it and once because another library brings it in. The
+  direct link wins whichever answer lands last."
+  [file-id file indirect?]
+  (ptk/reify ::library-loaded
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [known-direct? (false? (get-in state [:files (:id file) :is-indirect]))]
+        (update state :files assoc (:id file)
+                (assoc file
+                       :library-of file-id
+                       :is-indirect (and indirect? (not known-direct?))))))))
+
 (defn- load-library-file
   "Loads a library of `file-id`. `indirect?` tells whether it is there
   only because another library uses it, like the flag the libraries
@@ -1831,7 +1846,7 @@
               (rx/merge-map fpmap/resolve-file)
               (rx/mapcat (fn [file]
                            (rx/of
-                            (libraries-fetched file-id [(assoc file :is-indirect indirect?)])))))
+                            (library-loaded file-id file indirect?)))))
          (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
               (rx/map (fn [thumbnails]
                         (fn [state]
