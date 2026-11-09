@@ -512,6 +512,36 @@
     (t/is (= (:id (thc/get-component file :heart)) (:component-id other)))
     (t/is (= "#222222" (tho/bottom-fill-color file :copy2)))))
 
+(t/deftest undoing-an-update-main-that-replaces-two-children-keeps-their-order
+  ;; {:row-main} [:name Frame1]            # [Component :row]
+  ;;     :row-s1..:row-s4 [:name Frame1]   @--> [Component :star] :star-main
+  ;; :copy [:name Frame1]                  #--> [Component :row] :row-main
+  ;;     :copy-s1, :copy-s2                @--> [Component :heart] (swapped)
+  ;;     :copy-s3, :copy-s4                @--> [Component :star]
+  (let [file      (-> (thf/sample-file :file1)
+                      (tho/add-simple-component :star :star-main :star-rect)
+                      (tho/add-simple-component :heart :heart-main :heart-rect)
+                      (tho/add-frame :row-main)
+                      (thc/instantiate-component :star :row-s1 :parent-label :row-main)
+                      (thc/instantiate-component :star :row-s2 :parent-label :row-main)
+                      (thc/instantiate-component :star :row-s3 :parent-label :row-main)
+                      (thc/instantiate-component :star :row-s4 :parent-label :row-main)
+                      (thc/make-component :row :row-main)
+                      (thc/instantiate-component :row :copy
+                                                 :children-labels [:copy-s1 :copy-s2 :copy-s3 :copy-s4])
+                      (tho/swap-component-in-shape :copy-s1 :heart)
+                      (tho/swap-component-in-shape :copy-s2 :heart))
+        page      (thf/current-page file)
+        container (ctn/make-container page :page)
+        changes   (-> (pcb/empty-changes)
+                      (pcb/with-container container)
+                      (cll/generate-sync-shape-inverse {(:id file) file} container (thi/id :copy)))
+        updated   (thf/apply-changes file changes :validate? false)
+        undone    (thf/apply-undo-changes updated changes)]
+    (t/is (= 4 (count (:shapes (ths/get-shape updated :row-main)))))
+    (t/is (= (:shapes (ths/get-shape file :row-main))
+             (:shapes (ths/get-shape undone :row-main))))))
+
 (t/deftest update-main-keeps-a-deeper-swap-as-a-swap
   (let [file  (-> (setup-two-levels)
                   (update-main :outer-copy :page))
