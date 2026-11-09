@@ -3958,13 +3958,16 @@
 (defn- add-grid-member
   "Add to the variant `variant-label` the member `component-label`: a grid
    board `root-label` with two rows and `columns` columns, holding Item 1,
-   Item 2 and Item 3 at the `[row column]` of `cells`."
-  [file variant-label component-label root-label value columns cells]
+   Item 2 and Item 3 at the `[row column]` of `cells`. With `item3`, Item 3
+   is a copy of that component."
+  [file variant-label component-label root-label value columns cells & {:keys [item3]}]
   (let [variant-id (thi/id variant-label)
         labels     (mapv #(keyword (str (name root-label) "-item" %)) [1 2 3])
         file       (reduce (fn [file [index label]]
-                             (ths/add-sample-shape file label :type :rect :name (str "Item " index)
-                                                   :parent-label root-label))
+                             (if (and item3 (= index 3))
+                               (thc/instantiate-component file item3 label :parent-label root-label)
+                               (ths/add-sample-shape file label :type :rect :name (str "Item " index)
+                                                     :parent-label root-label)))
                            (ths/add-sample-shape file root-label :type :frame :parent-label variant-label
                                                  :variant-id variant-id :variant-name value
                                                  :layout :grid :layout-grid-dir :row
@@ -4041,6 +4044,52 @@
     (t/is (= [1 3] (item-cell file' copy' "Item 3")))
     (t/is (= [1 1] (item-cell file' copy' "Item 1")))
     (t/is (not (ctk/touched-group? copy' :layout-grid-cells)))))
+
+(t/deftest a-switch-between-identical-grids-places-a-kept-swap-in-its-cell
+  (let [;; ==== Setup: the copy moves its Item 3, a copy of :icon-a, to row 2,
+        ;; column 2, and swaps it for :icon-b
+        file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component :icon-a :icon-a-root :icon-a-child)
+                    (tho/add-simple-component :icon-b :icon-b-root :icon-b-child)
+                    (ths/add-sample-shape :v01 :type :frame :is-variant-container true)
+                    (add-grid-member :v01 :blue :blue-root "Blue" 2 [[1 1] [1 2] [2 1]] :item3 :icon-a)
+                    (add-grid-member :v01 :green :green-root "Green" 2 [[1 1] [1 2] [2 1]] :item3 :icon-a)
+                    (thc/instantiate-component :blue :copy01))
+        page    (thf/current-page file)
+        copy    (ths/get-shape file :copy01)
+        item3   (d/seek #(:component-id (get (:objects page) %)) (:shapes copy))
+        _       (thi/set-id! :copy-item3 item3)
+        moved   (fn [cells]
+                  (-> cells
+                      (update-vals #(update % :shapes (fn [shapes] (filterv (partial not= item3) shapes))))
+                      (as-> cells
+                            (let [[id _] (d/seek #(and (= 2 (:row (val %))) (= 2 (:column (val %)))) cells)]
+                              (update cells id assoc :shapes [item3] :position :manual)))))
+        file    (thf/apply-changes file (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                                    #{(:id copy)}
+                                                                    #(update % :layout-grid-cells moved)
+                                                                    (:objects page) {}))
+        cells   (:layout-grid-cells (ths/get-shape file :copy01))
+        file    (thc/component-swap file :copy-item3 :icon-b :copy-icon-b)
+        ;; the swap takes the cell of the shape it replaces
+        file    (ths/update-shape file :copy01 :layout-grid-cells
+                                  (update-vals cells #(update % :shapes (partial replace {item3 (thi/id :copy-icon-b)}))))
+
+        swap-id (thi/id :copy-icon-b)
+        ;; the switch moves the labels, so read the copy before it
+        before  (ctl/get-cell-by-shape-id (ths/get-shape file :copy01) swap-id)
+
+        ;; ==== Action
+        file'   (tho/swap-component-in-shape file :copy01 :green {:new-shape-label :copy02 :keep-touched? true})
+        copy'   (ths/get-shape file' :copy02)
+        cell    (ctl/get-cell-by-shape-id copy' swap-id)]
+
+    ;; ==== Check: the kept swap is in the cell the copy moved Item 3 to, and
+    ;; every cell holds children of the copy
+    (t/is (= [2 2] [(:row before) (:column before)]))
+    (t/is (some #{swap-id} (:shapes copy')))
+    (t/is (= [2 2] [(:row cell) (:column cell)]))
+    (t/is (every? (set (:shapes copy')) (mapcat :shapes (vals (:layout-grid-cells copy')))))))
 
 (t/deftest a-switch-between-identical-grids-carries-no-cells-the-new-copy-shows
   ;; the copy's cells are marked as an override but equal its main's, so a
