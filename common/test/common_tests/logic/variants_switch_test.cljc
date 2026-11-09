@@ -3620,6 +3620,24 @@
     (t/is (not (ctk/instance-head? icon')))
     (t/is (nil? (ths/get-shape file' :copy-icon-b)))))
 
+(t/deftest test-switch-drops-a-swap-to-the-variant-it-switches-to
+  (let [;; ==== Setup: the copy's icon is swapped for a copy of the second variant
+        file  (-> (thf/sample-file :file1)
+                  (tho/add-simple-component :icon-a :icon-a-root :icon-a-child)
+                  (thv/add-variant-with-copy :v01 :c01 :m01 :c02 :m02 :m01-icon :m02-icon :icon-a)
+                  (thc/instantiate-component :c01 :copy01 :children-labels [:copy-icon])
+                  (thc/component-swap :copy-icon :c02 :copy-icon-c02))
+
+        ;; ==== Action
+        file' (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02
+                                                              :keep-touched? true})
+        icon' (ths/get-shape-by-id file' (-> (ths/get-shape file' :copy02) :shapes first))]
+
+    ;; ==== Check: a copy of the second variant cannot hold another one
+    (t/is (= 1 (count (:shapes (ths/get-shape file' :copy02)))))
+    (t/is (= (:id (ths/get-shape file :m02-icon)) (:shape-ref icon')))
+    (t/is (nil? (ths/get-shape file' :copy-icon-c02)))))
+
 (defn- resize-width
   [shape width]
   (gsh/transform-shape shape (ctm/change-size shape width nil)))

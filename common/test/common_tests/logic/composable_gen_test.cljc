@@ -1891,6 +1891,16 @@
                              [:library-add-variant 0] [:library-sync] [:switch 0] [:library-text-style 6 8 1]
                              [:library-variant-property 0 0 0 0] [:library-sync] [:switch 19]]}))))
 
+(t/deftest switching-a-copy-to-the-variant-its-child-swaps-to-drops-the-swap
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :library-variants true :stale-libraries true
+                                    :layout nil :layout-item-margins false :grid-square false :library-depth 1
+                                    :library true :rich-variants true :layout-children false :library-text true
+                                    :grid-empty false :layout-copies true :text true}]
+                       :ops [[:library-make-variant 8 0 0 0] [:library-combine 0 0 0 0] [:detach 0 0 0 0]
+                             [:library-add-variant 16] [:library-sync] [:switch 4]
+                             [:library-variant-property 0 0 0 0] [:library-sync] [:switch 6]
+                             [:library-variant-property 0 0 0 0] [:library-sync] [:switch 4]]}))))
+
 (t/deftest restoring-a-variant-an-undo-removed-keeps-its-swap
   (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout nil :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true
@@ -1898,6 +1908,15 @@
                        :ops [[:make-variant 10 0 0 0] [:make-variant 0] [:switch 0] [:combine 4] [:switch 12]
                              [:combine 15] [:switch 19] [:combine 0 0 0 0] [:make-variant 14 0 0 0]
                              [:undo 0 0 0 0] [:restore 0 0 0 0]]}))))
+
+(t/deftest switching-a-copy-to-the-variant-its-swap-holds-carries-no-override
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:nest 18 0 0 0] [:swap 0 0 0 0] [:switch 0 0 0 0] [:add-variant 0 0 0 0]
+                             [:combine 17 0 0 0] [:make-variant 2 0 0 0] [:make-variant 6 0 0 0]
+                             [:swap 11 0 0 0] [:make-variant 4] [:switch 9] [:switch 16 0 0 0]
+                             [:combine 7] [:switch 11]]}))))
 
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
