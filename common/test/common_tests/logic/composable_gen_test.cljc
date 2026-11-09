@@ -1936,6 +1936,15 @@
                              [:transform 12 0 0 18] [:add-variant 8] [:switch 0] [:add-variant 11 0 0 0]
                              [:resize 25 0 0 0] [:style 22 9 1]]}))))
 
+(t/deftest switching-a-copy-drops-a-swap-holding-a-copy-it-would-be-inside
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:nest 18 0 0 0] [:swap 0 0 0 0] [:switch 0 0 0 0] [:add-variant 0 0 0 0]
+                             [:combine 17 0 0 0] [:make-variant 2 0 0 0] [:make-variant 6 0 0 0]
+                             [:swap 12 0 0 0] [:make-variant 4] [:switch 9] [:switch 16 0 0 0]
+                             [:combine 7] [:switch 11]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]
