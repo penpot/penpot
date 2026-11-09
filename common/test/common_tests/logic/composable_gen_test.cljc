@@ -1971,6 +1971,15 @@
                                     :grid-empty false :layout-copies true :text true}]
                        :ops [[:nest 7 0 0 0] [:transform 3 3 0 0] [:switch 1 0 0 0] [:style 3 29 1]]}))))
 
+(t/deftest a-swapped-copy-turned-to-fill-a-row-settles-like-its-main
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :flex :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:delete 0] [:restore 0] [:add-variant 0 0 0 0] [:swap 6 0 0 0] [:combine 5 0 0 0]
+                             [:delete 12 0 0 0] [:combine 9 0 0 0] [:nest 0 0 0 0] [:restore 0 0 0 0]
+                             [:combine 8] [:switch 3] [:style 0 30 1] [:detach 1 0 0 0] [:combine 0]
+                             [:switch 7] [:nest 4 0 0 0] [:rotate 2 0 0 0] [:combine 0] [:switch 0]]}))))
+
 (t/deftest switching-a-grid-copy-places-its-kept-swap-in-a-cell
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :grid :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true

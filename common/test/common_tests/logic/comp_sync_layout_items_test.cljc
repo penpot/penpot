@@ -7,9 +7,13 @@
 (ns common-tests.logic.comp-sync-layout-items-test
   (:require
    [app.common.files.changes-builder :as pcb]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.composable.comp.nodes :as n]
+   [app.common.test-helpers.composable.comp.runner :as r]
+   [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -254,3 +258,34 @@
     (t/is (= :fix (:layout-item-h-sizing copy-big')))
     (t/is (== 140 (:width copy-big')))
     (t/is (== 140 (-> copy-big' :selrect :width)))))
+
+(t/deftest swapped-child-turned-to-fill-takes-the-skew-of-its-main
+  ;; the main turns a child that fills the height of its row, and the layout
+  ;; skews it: a swapped copy of it in an identical row shows the same shape
+  (let [file      (-> (thf/sample-file :file1)
+                      (tho/add-frame :frame-a :width 100 :height 100)
+                      (thc/make-component :a :frame-a)
+                      (tho/add-frame :frame-b :width 100 :height 100)
+                      (thc/make-component :b :frame-b)
+                      (tho/add-frame :row-main {:layout :flex :layout-flex-dir :row :width 100 :height 100})
+                      (thc/instantiate-component :a :nested :parent-label :row-main)
+                      (tho/change-shape :nested #(assoc % :layout-item-v-sizing :fill))
+                      (thc/make-component :row :row-main)
+                      (thc/instantiate-component :row :plain :children-labels [:plain-nested])
+                      (thc/instantiate-component :row :swapped :children-labels [:swapped-nested])
+                      (tho/swap-component-in-shape :swapped-nested :b :new-shape-label :swapped-b))
+        settled   (-> (tm/make-situation file)
+                      (r/step (n/rotate :nested 45))
+                      r/settle)
+        resynced  (-> (tm/file settled)
+                      (as-> file (:file (r/sync-cascade file {} (keys (get-in file [:data :components])))))
+                      (tm/make-situation)
+                      r/settle-layout)
+        ;; the corners of the child of the row `row`, from the row's corner
+        corners   (fn [situation row child]
+                    (let [origin (-> (tm/resolve-shape situation row) :points first)]
+                      (mapv #(gpt/subtract % origin) (:points (tm/resolve-shape situation child)))))]
+    (t/is (gsh/close-attrs? :points (corners settled :plain :plain-nested)
+                            (corners settled :swapped :swapped-b) 0.01))
+    (t/is (gsh/close-attrs? :points (corners settled :swapped :swapped-b)
+                            (corners resynced :swapped :swapped-b) 0.01))))

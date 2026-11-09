@@ -144,6 +144,8 @@
 (declare add-shape-to-instance)
 (declare add-shape-to-main)
 (declare axes-matrix)
+(declare layout-skewed?)
+(declare unskewed)
 (declare remove-shape)
 (declare move-shape)
 (declare reorder-main-children)
@@ -384,7 +386,10 @@
         main-parent (get-in main-container [:objects (:parent-id shape-main)])
         swapped? (and (not reset?) (ctk/swapped? shape-inst))
         origin (if swapped? shape-main main-parent)
-        target (if swapped? shape-inst parent)
+        ;; a head that the layout skews takes the turn it skews
+        target (if swapped?
+                 (cond-> shape-inst (layout-skewed? (:objects container) shape-inst) (unskewed))
+                 parent)
         ;; the axes only: a tiny shape's transform carries its rounding
         relative (gmt/multiply (axes-matrix target) (gmt/inverse (axes-matrix origin)))]
     (if (or (nil? target) (and (:shape-ref parent) (not reset?) (not swapped?))
@@ -637,6 +642,37 @@
         horizontal (gpt/unit (gpt/point a b))
         vertical   (gpt/unit (gpt/point c d))]
     (gmt/matrix (:x horizontal) (:y horizontal) (:x vertical) (:y vertical) 0 0)))
+
+(defn- skewed?
+  "Whether the axes of the transform of `shape` are not perpendicular."
+  [shape]
+  (let [{:keys [a b c d]} (axes-matrix shape)]
+    (not (mth/close? (+ (* a c) (* b d)) 0 0.0001))))
+
+(defn- unskewed
+  "`shape` with the transform that its rotation and flips give it, without
+  the skew a layout gives a turned child that it resizes along its parent's
+  axes. Of a turn before or after the flips, the one nearer its axes."
+  [shape]
+  (let [turn      (gmt/rotate-matrix (d/nilv (:rotation shape) 0))
+        flips     (gmt/scale-matrix (gpt/point (if (:flip-x shape) -1 1) (if (:flip-y shape) -1 1)))
+        axes      (axes-matrix shape)
+        ;; how close the axes of `m` are to those of the shape
+        closeness (fn [m] (+ (* (:a m) (:a axes)) (* (:b m) (:b axes))
+                             (* (:c m) (:c axes)) (* (:d m) (:d axes))))
+        transform (max-key closeness (gmt/multiply turn flips) (gmt/multiply flips turn))]
+    (assoc shape :transform transform :transform-inverse (gmt/inverse transform))))
+
+(defn- layout-skewed?
+  "Whether the layout of its parent skews the copy shape `shape` of
+  `objects`: it fills in a direction, it does not author its geometry, and
+  the layout resizes it along the parent's axes."
+  [objects shape]
+  (and (not (ctk/touched-group? shape :geometry-group))
+       (some #(= :fill (get shape %)) [:layout-item-h-sizing :layout-item-v-sizing])
+       (ctsl/any-layout-immediate-child? objects shape)
+       (not (ctsl/position-absolute? shape))
+       (skewed? shape)))
 
 (defn- sync-descendant-orientation
   "A parent turned or moved by sync carries its whole subtree, including
@@ -1935,19 +1971,32 @@
   "Synchronizes a swapped copy head with the main shape it replaces, in the
   attributes that place it in its parent. A head with untouched geometry
   that stops filling its parent in a direction is synced with its own
-  component, as the layout no longer sizes it."
+  component, as the layout no longer sizes it. One that fills where the
+  layout skews that shape takes the lengths of its own component and the
+  turn of that shape, which the layout then skews as it skewed the shape."
   [changes {:keys [root-inst root-main container file libraries]} shape-inst shape-main]
   (let [objects  (:objects container)
-        changes  (generate-take-placement changes
-                                          shape-inst
-                                          (reposition-shape shape-main root-main root-inst)
-                                          objects
-                                          (and (ctsl/any-layout-immediate-child? objects shape-inst)
-                                               (not (ctsl/position-absolute? shape-inst))))
+        placed   (reposition-shape shape-main root-main root-inst)
         sizings  [:layout-item-h-sizing :layout-item-v-sizing]
         ;; whether the layout may have sized the head
         filling? (and (not (ctk/touched-group? shape-inst :geometry-group))
-                      (some #(= :fill (get shape-inst %)) sizings))]
+                      (some #(= :fill (get shape-inst %)) sizings))
+        layout-placed? (and (ctsl/any-layout-immediate-child? objects shape-inst)
+                            (not (ctsl/position-absolute? shape-inst)))
+        skew?    (and filling? layout-placed? (skewed? placed))
+        changes  (if skew?
+                   (let [changes (pcb/apply-changes-local changes)]
+                     (-> (generate-sync-shape-direct changes file libraries
+                                                     (assoc container :objects (pcb/get-objects changes))
+                                                     (:id shape-inst) false)
+                         (pcb/apply-changes-local)))
+                   changes)
+        objects  (if skew? (pcb/get-objects changes) objects)
+        changes  (generate-take-placement changes
+                                          (get objects (:id shape-inst))
+                                          (cond-> placed skew? (unskewed))
+                                          objects
+                                          layout-placed?)]
     (if filling?
       (let [changes (pcb/apply-changes-local changes)
             objects (pcb/get-objects changes)
