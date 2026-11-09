@@ -141,8 +141,10 @@
         (let [res (-> data omap/->js-map js/structuredClone omap/from-js-map)]
           (and (omap/objects-map? res)
                (= data res))))
-      {:num 100})
+      {:num 100})))
 
+#?(:cljs
+   (t/deftest js-map-conversion
      (t/testing "entries stay encoded strings"
        (let [id           (uuid/custom 0 1)
              ^js entries (omap/->js-map (omap/wrap {id {:foo 1}}))]
