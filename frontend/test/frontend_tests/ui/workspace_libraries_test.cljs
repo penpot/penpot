@@ -161,6 +161,16 @@
                               (lib :b true [:a])
                               (lib :a false [:file])]))))
 
+(t/deftest library-disconnect-hint-lists-a-directly-linked-intermediate-library
+  ;; file -> a, b; a -> b -> c: disconnecting a leaves the direct link to b,
+  ;; which keeps c, so b has to go as well. b only becomes removable once a is gone.
+  (t/is (= {:a nil
+            :b {:reason :used-by :library-name "a" :removable ["a"]}
+            :c {:reason :inherited :library-name "b" :removable ["a" "b"]}}
+           (disconnect-hints [(lib :a false [:file])
+                              (lib :b false [:file :a])
+                              (lib :c true [:b])]))))
+
 (t/deftest library-disconnect-hint-cycle-falls-back-to-the-parent
   ;; a <-> b, nothing removable: name the parent rather than nothing
   (t/is (= {:a {:reason :used-by :library-name "b" :removable ["b"]}

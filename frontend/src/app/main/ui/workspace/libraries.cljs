@@ -165,10 +165,11 @@
   (into [] (keep libraries-by-id) connected-to))
 
 (defn- removable-users
-  "The linked libraries that use `library`, directly or through other
-  libraries, and that no linked library uses: the ones the user can
-  disconnect to release it. Empty when the libraries only use each other
-  in a cycle."
+  "The linked libraries to disconnect to release `library`: those that use
+  it, directly or through other libraries, and that either are linked to
+  the file directly or are used by no linked library. A directly linked
+  library stays until it is disconnected, even when another one uses it.
+  Empty when the libraries only use each other in a cycle."
   [library libraries-by-id]
   (loop [pending   (linked-users library libraries-by-id)
          seen      #{(:id library)}
@@ -179,7 +180,9 @@
         (let [users (linked-users user libraries-by-id)]
           (recur (into (rest pending) users)
                  (conj seen (:id user))
-                 (cond-> removable (empty? users) (conj user)))))
+                 (cond-> removable
+                   (or (empty? users) (false? (:is-indirect user)))
+                   (conj user)))))
       removable)))
 
 (defn library-disconnect-hint
@@ -190,11 +193,11 @@
   direct one, with the name of the first library by name that uses it.
 
   Both carry `:removable`, the names of the libraries to disconnect to
-  release this one, by name: all of those that use it, however far up.
-  The parent can be nested itself, and a library can have several
-  parents. In a cycle nothing is removable, and it holds the name given
-  in `:library-name`. `libraries-by-id` indexes the linked libraries by
-  id."
+  release this one, sorted by name. The parent can be nested itself, a
+  library can have several parents, and a parent can be linked directly
+  as well. In a cycle nothing is removable, and `:removable` holds the
+  name given in `:library-name`. `libraries-by-id` indexes the linked
+  libraries by id."
   [{:keys [nested? parent-name] :as library} libraries-by-id]
   (let [users (linked-users library libraries-by-id)]
     (when (seq users)
