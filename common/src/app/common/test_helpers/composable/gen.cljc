@@ -913,7 +913,12 @@
         ;; layout gave it, which no parent placement authored
         (and (= property :layout-item-absolute) (true? value)
              (:shape-ref shape) (not (:layout-item-absolute shape)))
-        (assoc-in [id :geometry-group] (shadow/author-geometry (get (all-objects after) id shape) nil)))
+        (assoc-in [id :geometry-group] (shadow/author-geometry (get (all-objects after) id shape) nil))
+
+        ;; a constraint resizes the shape only with its parent's later resizes
+        (and (#{:constraints-h :constraints-v} property) (get-in model [id :geometry-group]))
+        (update-in [id :geometry-group] shadow/anchor-position (get (all-objects after) id shape)
+                   (get (all-objects after) (:parent-id shape))))
       (:grid-cell :grid-direction) (grid/edit model shape (:action op) (:value op))
       :reset (shadow/clear-subtree model objects id)
       :update-main (shadow/update-main model objects (all-objects after) id)
