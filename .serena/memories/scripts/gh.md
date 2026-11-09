@@ -102,7 +102,7 @@ python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>
 # Short alias: python3 scripts/gh.py link <ISSUE_NUMBER> <PR_NUMBER>
 ```
 
-The command resolves both node IDs and calls `addCloseIssueReferences`. It trusts the successful mutation instead of re-querying, because GitHub does not reliably report mutation-created links through `closedByPullRequestsReferences(userLinkedOnly: true)`. It is safe to rerun, works for merged PRs, and does not close an issue retroactively. JSON goes to stdout; progress and errors go to stderr; a missing issue/PR or a failed mutation exits non-zero.
+The command resolves both node IDs and calls `addCloseIssueReferences`. It trusts the successful mutation instead of re-querying, because GitHub does not reliably report mutation-created links through `closedByPullRequestsReferences(userLinkedOnly: true)`. It is safe to rerun and works for merged PRs. It does not guarantee the issue stays open: adding `Closes #N` to the body of an already-merged PR closed the issue immediately when tried (#12896 / PR #12067, 2026-11-09). JSON goes to stdout; progress and errors go to stderr; a missing issue/PR or a failed mutation exits non-zero.
 
 ### `advisories`
 

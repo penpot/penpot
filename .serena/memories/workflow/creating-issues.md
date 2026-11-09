@@ -314,7 +314,7 @@ Add `Closes #<ISSUE_NUMBER>` to the PR body for readable context, then run the e
 python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>
 ```
 
-The command creates the GitHub Development link by calling `addCloseIssueReferences` and trusts the successful mutation (GitHub does not reliably report mutation-created links back through the API). It is safe to rerun and does not close an issue retroactively when the PR is already merged. Do not rely on the body keyword as the assignment operation.
+The command creates the GitHub Development link by calling `addCloseIssueReferences` and trusts the successful mutation (GitHub does not reliably report mutation-created links back through the API). It is safe to rerun. Do not rely on it to keep the issue open: adding `Closes #N` to the body of an already-merged PR closed the issue immediately when tried (#12896 / PR #12067, 2026-11-09; the timeline shows a cross-reference plus a ClosedEvent with no closer). For changelog units that outcome is fine — a merged fix means a closed issue — but be aware when linking old merged PRs. Do not rely on the body keyword as the assignment operation.
 
 ### Clean up
 
