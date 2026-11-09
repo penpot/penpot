@@ -2403,6 +2403,24 @@
     (t/is (= 45 (:rotation expected)))
     (t/is (false? (shadow/same-value? (:pushed after) :geometry-group expected)))))
 
+(t/deftest pushed-swap-shadow-leaves-out-the-turn-of-a-turned-copy-root
+  (let [geometry {:width 100 :height 120 :rotation 45 :flip-x nil :flip-y nil :content-scale nil}
+        before {:copy {:id :copy :shape-ref :main :component-root true :rotation 45 :shapes [:child]}
+                :main {:id :main :component-root true :rotation 0}
+                :child (merge {:id :child :parent-id :copy :component-id :target :shape-ref :position}
+                              geometry)
+                :target-main {:id :target-main :component-id :target :parent-id :page
+                              :rotation 0 :width 100 :height 100}
+                :page {:id :page :rotation 0}}
+        after (-> before
+                  (assoc-in [:child :shape-ref] :pushed)
+                  (assoc :pushed (assoc (:target-main before) :id :pushed
+                                        :shape-ref :target-main :parent-id :main)))
+        model (shadow/update-main {:child {:swap-group {} :geometry-group geometry}} before after :copy)
+        expected (get-in model [:pushed :geometry-group])]
+    (t/is (= 0 (:rotation expected)))
+    (t/is (= 120 (:height expected)))))
+
 (t/deftest pushed-swap-shadow-predicts-content-without-reading-the-new-child
   (let [before {:copy {:id :copy :shape-ref :main :shapes [:child]}
                 :main {:id :main}
