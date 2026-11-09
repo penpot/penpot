@@ -1318,22 +1318,63 @@
                          (map set-link updated-shapes)
                          (map #(set-link (ctn/get-shape container (:id %))) updated-shapes)))))
 
+(defn- position-in-batch
+  "The position of the shape `id` of `container` among the children of its
+  parent, as the changes in `changes` so far leave them."
+  [changes container id]
+  (let [objects    (:objects container)
+        parent-id  (:parent-id (get objects id))
+        page?      (cfh/page? container)
+        ;; a change on the objects of `container`
+        in-container? (fn [change]
+                        (= (:id container) (if page? (:page-id change) (:component-id change))))
+        insert     (fn [shapes index ids]
+                     (if (some? index)
+                       (d/insert-at-index shapes index ids)
+                       (into (filterv (complement (set ids)) shapes) ids)))
+        children   (reduce (fn [shapes change]
+                             (if-not (in-container? change)
+                               shapes
+                               (case (:type change)
+                                 :del-obj          (filterv #(not= % (:id change)) shapes)
+                                 :add-obj          (cond-> shapes
+                                                     (= parent-id (:parent-id change))
+                                                     (insert (:index change) [(:id change)]))
+                                 :mov-objects      (let [moved (:shapes change)]
+                                                     (if (= parent-id (:parent-id change))
+                                                       (insert shapes (:index change) moved)
+                                                       (filterv (complement (set moved)) shapes)))
+                                 :reorder-children (cond-> shapes
+                                                     (= parent-id (:parent-id change))
+                                                     (-> (:shapes change) (vec)))
+                                 shapes)))
+                           (vec (get-in objects [parent-id :shapes]))
+                           (:redo-changes changes))]
+    (d/index-of children id)))
+
 (defn- remove-shape
+  "Delete `shape` of `container` with its children. Each undo restores a
+  shape at the position it had when the changes so far deleted it, so
+  siblings that one batch deletes come back in their order."
   [changes shape container]
   (shape-log :info (:id shape) container
              :msg (str "REMOVE-SHAPE " (shape-label shape container)))
   (let [objects (get container :objects)
         parents (cfh/get-parent-ids objects (:id shape))
         ;; from the bottom up
-        ids     (reverse (into [(:id shape)] (cfh/get-children-ids objects (:id shape))))]
+        ids     (reverse (into [(:id shape)] (cfh/get-children-ids objects (:id shape))))
+        ;; the builder's objects, when it applies its changes as it goes
+        local   (pcb/get-objects changes)]
     (pcb/add-changes changes container
                      (conj (mapv del-obj-change ids)
                            {:type :reg-objects :shapes (vec parents)})
                      ;; the parents are recalculated after the shapes are restored
                      (cons {:type :reg-objects :shapes (vec parents)}
                            (map #(add-obj-change (get objects %)
-                                                 (or (cfh/get-position-on-parent (pcb/get-objects changes) %)
-                                                     (cfh/get-position-on-parent objects %)))
+                                                 (or (cfh/get-position-on-parent local %)
+                                                     (if (= % (:id shape))
+                                                       (position-in-batch changes container %)
+                                                       (cfh/get-position-on-parent objects %))))
                                 ids)))))
 
 (defn- longest-increasing

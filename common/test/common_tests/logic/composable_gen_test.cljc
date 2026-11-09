@@ -1998,6 +1998,13 @@
                        :ops [[:grid-direction 11 0 0 1] [:grid-cell 11 0 0 1] [:swap 16 0 0 0] [:make-variant 4]
                              [:switch 10] [:add-variant 4] [:switch 9]]}))))
 
+(t/deftest undoing-an-update-main-restores-the-main-children-it-replaced-in-order
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:duplicate 0 0 0 0] [:duplicate 0 0 0 0] [:variant-property 0 0 0 0] [:switch 12]
+                             [:duplicate 16 0 0 0] [:make-variant 0] [:switch 12] [:update-main 0 0 0 0]]}))))
+
 (t/deftest turning-a-flipped-copy-turns-a-child-stored-as-the-other-mirror-turn
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true
