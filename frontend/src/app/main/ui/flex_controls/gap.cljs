@@ -38,15 +38,17 @@
         last-pos             (mf/use-var nil)
         negate?              (:resize-negate? rect-data)
         axis                 (:resize-axis rect-data)
+        read-only?           (fcc/use-read-only-cancel resizing)
 
         on-pointer-down
         (mf/use-fn
-         (mf/deps frame-id gap-type gap)
+         (mf/deps frame-id gap-type gap read-only?)
          (fn [event]
-           (dom/capture-pointer event)
-           (reset! resizing gap-type)
-           (reset! start (dom/get-client-position event))
-           (reset! original-value (:initial-value rect-data))))
+           (when-not read-only?
+             (dom/capture-pointer event)
+             (reset! resizing gap-type)
+             (reset! start (dom/get-client-position event))
+             (reset! original-value (:initial-value rect-data)))))
 
         calc-modifiers
         (mf/use-fn
@@ -76,11 +78,14 @@
                (st/emit! (dwm/apply-wasm-modifiers modifiers)
                          (dwt/finish-transform))))
 
+           ;; Nothing to apply for a resize the lock cancelled
+           (when (and (not (features/active-feature? @st/state "render-wasm/v1"))
+                      (= @resizing gap-type))
+             (st/emit! (dwm/apply-modifiers)))
+
            (reset! resizing nil)
            (reset! start nil)
-           (reset! original-value 0)
-           (when (not (features/active-feature? @st/state "render-wasm/v1"))
-             (st/emit! (dwm/apply-modifiers)))))
+           (reset! original-value 0)))
 
         on-pointer-move
         (mf/use-fn

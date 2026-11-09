@@ -17,6 +17,7 @@
    [app.common.logic.libraries :as cll]
    [app.common.types.color :as clr]
    [app.common.types.component :as ctc]
+   [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
@@ -150,7 +151,10 @@
   (ptk/reify ::initialize-shape-layout
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stopper (rx/filter (ptk/type? ::finalize-shape-layout) stream)]
+      (let [;; A workspace reload starts a new one, which replaces this one
+            stopper (rx/filter #(or (ptk/type? ::finalize-shape-layout %)
+                                    (ptk/type? ::initialize-shape-layout %))
+                               stream)]
         (->> stream
              (rx/filter (ptk/type? :layout/update))
              ;; Keeps each update's page and the shapes that can be laid out;
@@ -216,13 +220,15 @@
             has-component?  (some true? (map ctc/instance-root? selected-shapes))
             is-component?   (and single? has-component?)
             has-variant?    (some ctc/is-variant? selected-shapes)
+            has-container?  (some ctc/is-variant-container? selected-shapes)
+            crosses-set?    (ctn/crosses-variant-set-boundary? objects selected-shapes)
 
             has-layout?     (and single? (ctl/any-layout? (first selected-shapes)))
 
             new-shape-id (uuid/next)
             undo-id      (js/Symbol)]
 
-        (if has-variant?
+        (if (or has-variant? has-container? crosses-set?)
           (rx/empty)
           (rx/concat
            (rx/of (dwu/start-undo-transaction undo-id))
@@ -294,12 +300,16 @@
 
             undo-id          (js/Symbol)]
 
-        (rx/of
-         (dwu/start-undo-transaction undo-id)
-         (if (and single? is-frame? (not has-layout?))
-           (create-layout-from-id (first selected) type :from-frame? true)
-           (create-layout-from-selection type))
-         (dwu/commit-undo-transaction undo-id))))))
+        ;; Refuse before undo: container or cross-boundary. Leave single
+        ;; mains on the from-id branch (selection refuses has-variant?).
+        (if (ctn/crosses-variant-set-boundary? objects selected-shapes)
+          (rx/empty)
+          (rx/of
+           (dwu/start-undo-transaction undo-id)
+           (if (and single? is-frame? (not has-layout?))
+             (create-layout-from-id (first selected) type :from-frame? true)
+             (create-layout-from-selection type))
+           (dwu/commit-undo-transaction undo-id)))))))
 
 (defn toggle-layout
   [type]

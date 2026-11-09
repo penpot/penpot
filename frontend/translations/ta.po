@@ -11,7 +11,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 2026.6.dev0\n"
 
-#: src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:191, src/app/main/ui/viewer/login.cljs:119
+#: src/app/main/ui/auth/login_modal.cljs:125, src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:193
 msgid "auth.already-have-account"
 msgstr "ஏற்கனவே ஒரு கணக்கு உள்ளதா?"
 
@@ -29,7 +29,7 @@ msgstr ""
 "இது ஒரு டெமோ சேவை, உண்மையான வேலைக்கு பயன்படுத்த வேண்டாம், திட்டங்கள் "
 "அவ்வப்போது அழிக்கப்படும்."
 
-#: src/app/main/ui/auth/login.cljs:203, src/app/main/ui/viewer/login.cljs:105
+#: src/app/main/ui/auth/login.cljs:204, src/app/main/ui/auth/login_modal.cljs:109
 msgid "auth.forgot-password"
 msgstr "கடவுச்சொல்லை மறந்துவிட்டீர்களா?"
 
@@ -37,27 +37,27 @@ msgstr "கடவுச்சொல்லை மறந்துவிட்�
 msgid "auth.fullname"
 msgstr "முழு பெயர்"
 
-#: src/app/main/ui/auth/register.cljs:231, src/app/main/ui/static.cljs:194, src/app/main/ui/viewer/login.cljs:122
+#: src/app/main/ui/auth/login_modal.cljs:130, src/app/main/ui/auth/register.cljs:231, src/app/main/ui/static.cljs:199
 msgid "auth.login-here"
 msgstr "இங்கே உள்நுழைக"
 
-#: src/app/main/ui/auth/login.cljs:254
+#: src/app/main/ui/auth/login.cljs:255
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
-#: src/app/main/ui/auth/login.cljs:260
+#: src/app/main/ui/auth/login.cljs:261
 msgid "auth.login-with-gitlab-submit"
 msgstr "கிட்லேப்"
 
-#: src/app/main/ui/auth/login.cljs:248
+#: src/app/main/ui/auth/login.cljs:249
 msgid "auth.login-with-google-submit"
 msgstr "கூகுள்"
 
-#: src/app/main/ui/auth/login.cljs:213
+#: src/app/main/ui/auth/login.cljs:214
 msgid "auth.login-with-ldap-submit"
 msgstr "LDAP"
 
-#: src/app/main/ui/auth/login.cljs:266
+#: src/app/main/ui/auth/login.cljs:267
 msgid "auth.login-with-oidc-submit"
 msgstr "ஓப்பன் ஐடி"
 
@@ -79,7 +79,7 @@ msgstr ""
 msgid "auth.notifications.recovery-token-sent"
 msgstr "கடவுச்சொல் மீட்பு இணைப்பு உங்கள் இன்பாக்ஸிற்கு அனுப்பப்பட்டது."
 
-#: src/app/main/ui/auth/verify_token.cljs:85
+#: src/app/main/ui/auth/verify_token.cljs:58
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "அணியில் வெற்றிகரமாக இணைந்தார்"
 
@@ -111,11 +111,11 @@ msgstr "கடவுச்சொல்லை மறந்துவிட்�
 msgid "auth.recovery-submit"
 msgstr "உங்கள் கடவுச்சொல்லை மாற்றுக"
 
-#: src/app/main/ui/auth/login.cljs:310, src/app/main/ui/static.cljs:177, src/app/main/ui/viewer/login.cljs:109
+#: src/app/main/ui/auth/login.cljs:311, src/app/main/ui/auth/login_modal.cljs:113, src/app/main/ui/static.cljs:177
 msgid "auth.register"
 msgstr "இன்னும் கணக்கு இல்லையா?"
 
-#: src/app/main/ui/auth/login.cljs:314, src/app/main/ui/auth/register.cljs:199, src/app/main/ui/auth/register.cljs:345, src/app/main/ui/static.cljs:181, src/app/main/ui/viewer/login.cljs:112
+#: src/app/main/ui/auth/login.cljs:315, src/app/main/ui/auth/login_modal.cljs:118, src/app/main/ui/auth/register.cljs:199, src/app/main/ui/auth/register.cljs:345, src/app/main/ui/static.cljs:183
 msgid "auth.register-submit"
 msgstr "ஒரு கணக்கை உருவாக்கவும்"
 
@@ -123,63 +123,63 @@ msgstr "ஒரு கணக்கை உருவாக்கவும்"
 msgid "auth.register-title"
 msgstr "ஒரு கணக்கை உருவாக்கவும்"
 
-#: src/app/main/ui/auth/register.cljs:264, src/app/main/ui/dashboard/sidebar.cljs:542, src/app/main/ui/workspace/main_menu.cljs:210
+#: src/app/main/ui/auth/register.cljs:264, src/app/main/ui/dashboard/sidebar.cljs:535, src/app/main/ui/workspace/main_menu.cljs:211
 msgid "auth.terms-of-service"
 msgstr "சேவை விதிமுறைகள்"
 
-#: src/app/main/ui/workspace/libraries.cljs:437, src/app/main/ui/workspace/libraries.cljs:838
+#: src/app/main/ui/workspace/libraries.cljs:489, src/app/main/ui/workspace/libraries.cljs:860
 msgid "common.publish"
 msgstr "வெளியிடுங்கள்"
 
-#: src/app/main/ui/viewer/share_link.cljs:304, src/app/main/ui/viewer/share_link.cljs:314
+#: src/app/main/ui/viewer/share_link.cljs:309, src/app/main/ui/viewer/share_link.cljs:319
 msgid "common.share-link.all-users"
 msgstr "அனைத்து Penpot பயனர்களும்"
 
-#: src/app/main/ui/viewer/share_link.cljs:198
+#: src/app/main/ui/viewer/share_link.cljs:202
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "இந்த இணைப்பை நிச்சயமாக அகற்ற விரும்புகிறீர்களா? நீங்கள் அதைச் செய்தால், அது "
 "இனி யாருக்கும் கிடைக்காது"
 
-#: src/app/main/ui/viewer/share_link.cljs:259, src/app/main/ui/viewer/share_link.cljs:289
+#: src/app/main/ui/viewer/share_link.cljs:264, src/app/main/ui/viewer/share_link.cljs:294
 msgid "common.share-link.current-tag"
 msgstr "(தற்போதைய)"
 
-#: src/app/main/ui/viewer/share_link.cljs:207, src/app/main/ui/viewer/share_link.cljs:214
+#: src/app/main/ui/viewer/share_link.cljs:211, src/app/main/ui/viewer/share_link.cljs:217
 msgid "common.share-link.destroy-link"
 msgstr "இணைப்பை அழிக்கவும்"
 
-#: src/app/main/ui/viewer/share_link.cljs:221
+#: src/app/main/ui/viewer/share_link.cljs:223
 msgid "common.share-link.get-link"
 msgstr "இணைப்பைப் பெறுங்கள்"
 
-#: src/app/main/ui/viewer/share_link.cljs:137
+#: src/app/main/ui/viewer/share_link.cljs:140
 msgid "common.share-link.link-copied-success"
 msgstr "இணைப்பு வெற்றிகரமாக நகலெடுக்கப்பட்டது"
 
-#: src/app/main/ui/viewer/share_link.cljs:231
+#: src/app/main/ui/viewer/share_link.cljs:236
 msgid "common.share-link.manage-ops"
 msgstr "அனுமதிகளை நிர்வகிக்கவும்"
 
-#: src/app/main/ui/viewer/share_link.cljs:277
+#: src/app/main/ui/viewer/share_link.cljs:282
 msgid "common.share-link.page-shared"
 msgid_plural "common.share-link.page-shared"
 msgstr[0] "1 பக்கம் பகிரப்பட்டது"
 msgstr[1] "%s பக்கங்கள் பகிரப்பட்டன"
 
-#: src/app/main/ui/viewer/share_link.cljs:298
+#: src/app/main/ui/viewer/share_link.cljs:303
 msgid "common.share-link.permissions-can-comment"
 msgstr "கருத்து தெரிவிக்கலாம்"
 
-#: src/app/main/ui/viewer/share_link.cljs:308
+#: src/app/main/ui/viewer/share_link.cljs:313
 msgid "common.share-link.permissions-can-inspect"
 msgstr "குறியீட்டை ஆய்வு செய்யலாம்"
 
-#: src/app/main/ui/viewer/share_link.cljs:193
+#: src/app/main/ui/viewer/share_link.cljs:197
 msgid "common.share-link.permissions-hint"
 msgstr "இணைப்பு உள்ள எவருக்கும் அணுகல் இருக்கும்"
 
-#: src/app/main/ui/viewer/share_link.cljs:241
+#: src/app/main/ui/viewer/share_link.cljs:246
 msgid "common.share-link.permissions-pages"
 msgstr "பக்கங்கள் பகிரப்பட்டன"
 

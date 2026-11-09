@@ -24,12 +24,19 @@ function compiledModule(name: string) {
     return exports;
 }
 
-/** Resolves the imports of `plugin.ts`, stubbing only the code execution handler. */
+/** Resolves the imports of `plugin.ts`, stubbing the code execution handler and the rollback log. */
 function pluginRequire(name: string) {
     if (name === "./task-handlers/ExecuteCodeTaskHandler") return { ExecuteCodeTaskHandler: class {} };
     if (name === "./TaskHandler") return compiledModule("TaskHandler.ts");
     if (name === "./ErrorUtils") return ErrorUtils;
     if (name === "./VersionCompatibility") return VersionCompatibility;
+    if (name === "./RollbackLog")
+        return {
+            LocalStorageRollbackStore: class {},
+            RollbackLog: class {
+                listen() {}
+            },
+        };
     throw new Error(`Unexpected import: ${name}`);
 }
 

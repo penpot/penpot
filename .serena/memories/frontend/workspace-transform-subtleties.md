@@ -6,6 +6,7 @@
 - `apply-modifiers*` is the lower-level commit path once object/text modifiers are ready. It updates frame guides, frame comment threads, and then emits `update-shapes` with `:reg-objects? true`.
 - Transform commits restrict diff attrs to `transform-attrs` to avoid scanning unrelated shape attrs.
 - Text transforms may carry derived `:position-data`; `assoc-position-data` attaches it while preserving the original text shape context.
+- A drag commits when its `mse/drag-stopper` fires, `:interrupt` (Escape) included. The save-failure lock emits `::plk/cancel-gestures` first: drags built on `plk/gesture-stopper` (start-move, start-resize, start-rotate, start-move-line-point, box/curve/line drawing) see a `cancelled?` flag set before the stop and emit `dwt/cancel-transform` (`clear-local-transform` + `finish-transform`) or `cancel-drawing` instead. A new drag gesture must use it (or, in a component, drop the drag when read-only turns on): `commit-changes` refuses the commit anyway, but the preview (WASM modifiers/props) would stay.
 
 ## Component-copy touched suppression
 

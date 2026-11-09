@@ -20,10 +20,12 @@
   (obj/reify {:name "HistorySubcontext"}
     :$plugin {:enumerable false :get (fn [] plugin-id)}
 
+    ;; Undo blocks write nothing, so they work in a read-only workspace:
+    ;; a block opened before a lock can still be closed
     :undoBlockBegin
     (fn []
       (cond
-        (not (r/check-permission plugin-id "content:write"))
+        (not (r/has-permission? plugin-id "content:write"))
         (u/not-valid plugin-id :resize "Plugin doesn't have 'content:write' permission")
 
         :else
@@ -34,7 +36,7 @@
     :undoBlockFinish
     (fn [block-id]
       (cond
-        (not (r/check-permission plugin-id "content:write"))
+        (not (r/has-permission? plugin-id "content:write"))
         (u/not-valid plugin-id :resize "Plugin doesn't have 'content:write' permission")
 
         (not block-id)

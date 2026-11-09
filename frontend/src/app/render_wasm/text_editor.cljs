@@ -383,10 +383,9 @@
              (wasm/ready?))
     (let [encoder (js/TextEncoder.)
           buf (.encode encoder text)
-          heapu8 (mem/get-heap-u8)
           size (mem/size buf)
           offset (mem/alloc size)]
-      (mem/write-buffer offset heapu8 buf))))
+      (mem/write-buffer offset (mem/get-heap-u8) buf))))
 
 (defn text-editor-encode-text-post
   [text]
@@ -506,10 +505,10 @@
   (when (wasm/ready?)
     (try
       (let [byte-offset (mem/alloc 16)
-            u32-offset (mem/->offset-32 byte-offset)
-            heap (mem/get-heap-u32)]
+            u32-offset (mem/->offset-32 byte-offset)]
         (h/call wasm/internal-module "_text_editor_get_active_shape_id" byte-offset)
-        (let [a (aget heap u32-offset)
+        (let [heap (mem/get-heap-u32)
+              a (aget heap u32-offset)
               b (aget heap (+ u32-offset 1))
               c (aget heap (+ u32-offset 2))
               d (aget heap (+ u32-offset 3))
@@ -526,10 +525,10 @@
   (when (wasm/ready?)
     (let [byte-offset     (mem/alloc 16)
           u32-offset      (mem/->offset-32 byte-offset)
-          heap            (mem/get-heap-u32)
           has-selection?  (h/call wasm/internal-module "_text_editor_get_selection" byte-offset)]
       (if has-selection?
-        (let [result {:anchor-para   (aget heap u32-offset)
+        (let [heap   (mem/get-heap-u32)
+              result {:anchor-para   (aget heap u32-offset)
                       :anchor-offset (aget heap (+ u32-offset 1))
                       :focus-para    (aget heap (+ u32-offset 2))
                       :focus-offset  (aget heap (+ u32-offset 3))}]
@@ -870,10 +869,10 @@
     (let [id          (uuid/get-u32 shape-id)
           byte-offset (mem/alloc 16)
           f32-offset  (mem/->offset-32 byte-offset)
-          heap        (mem/get-heap-f32)
           has-text?   (h/call wasm/internal-module "_text_get_range_origin"
                               (aget id 0) (aget id 1) (aget id 2) (aget id 3)
                               start-para start-offset end-para end-offset byte-offset)
+          heap        (mem/get-heap-f32)
           result      (when has-text?
                         {:x   (aget heap f32-offset)
                          :y   (aget heap (+ f32-offset 1))

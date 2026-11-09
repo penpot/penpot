@@ -24,6 +24,22 @@ So if you need to read the result of your executions/observe properties affected
 before trying to observe changes.
 Every `execude_code` call waits for updates before applying your code, so you never need to call `waitForLayoutUpdate` at the beginning of your code.
 
+## Rejected Changes and Read-Only Mode
+
+Penpot saves your changes to the backend after your `execute_code` call returns.
+When the backend rejects a save, Penpot undoes the rejected changes, together with the rest of their undo steps
+and any later change to the same file. This can happen a few seconds after the call that made the changes succeeded.
+The next tool response then starts with a warning that names the files, pages and shapes involved.
+When you get this warning:
+  * Do not trust what you know about the design from before: shapes you created may be gone, and removed ones may be back.
+  * Read the affected pages and shapes again (e.g. `penpotUtils.shapeStructure(page.root, 3)`) and check that they hold what you expect.
+  * Redo the missing changes, then check again; if the same changes are rejected again, stop and tell the user.
+
+While saves are failing, the workspace becomes read-only: every write through the API throws an error saying that the
+workspace is read-only because changes cannot be saved. Do not retry in a loop; wait and try again later, or tell the user.
+Writes also throw when the user cannot edit the file, a version is being previewed or the canvas stopped rendering;
+the error says which. These do not pass by waiting: tell the user.
+
 # The Structure of Penpot Designs
 
 A Penpot design ultimately consists of shapes.

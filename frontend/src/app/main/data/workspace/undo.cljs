@@ -42,9 +42,11 @@
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.types.shape.layout :as ctl]
+   [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.common :as dcm]
    [app.main.data.helpers :as dsh]
+   [app.main.data.persistence.lock :as plk]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -60,6 +62,8 @@
    [:undo-changes [:vector cpc/schema:change]]
    [:redo-changes [:vector cpc/schema:change]]
    [:undo-group ::sm/uuid]
+   ;; Undo groups of every commit the entry holds
+   [:undo-groups {:optional true} [:set ::sm/uuid]]
    [:tags [:set :keyword]]
    [:selected-before {:optional true} [:maybe [:set ::sm/uuid]]]
    [:selected-after {:optional true} [:maybe [:set ::sm/uuid]]]
@@ -136,7 +140,7 @@
    exists, or creates a new entry if it doesn't. When stacking onto an
    existing entry, the entry's original timestamp is preserved so the
    history panel keeps showing when the action originated. Issue #7660."
-  [state {:keys [undo-changes redo-changes selected-after] :as entry}]
+  [state {:keys [undo-changes redo-changes undo-group selected-after] :as entry}]
   (let [index (get-in state [:workspace-undo :index] -1)]
     (if (>= index 0)
       (update-in state [:workspace-undo :items index]
@@ -144,6 +148,7 @@
                    (-> item
                        (update :undo-changes #(into undo-changes %))
                        (update :redo-changes #(into % redo-changes))
+                       (update :undo-groups (fnil conj #{}) undo-group)
                        (assoc :selected-after selected-after))))
       (add-undo-entry state entry))))
 
@@ -155,6 +160,7 @@
       (update-in [:workspace-undo :transaction :redo-changes] #(into % redo-changes))
       (cond-> (nil? (get-in state [:workspace-undo :transaction :undo-group]))
         (assoc-in [:workspace-undo :transaction :undo-group] undo-group))
+      (update-in [:workspace-undo :transaction :undo-groups] (fnil conj #{}) undo-group)
       (cond-> (nil? (get-in state [:workspace-undo :transaction :selected-before]))
         (assoc-in [:workspace-undo :transaction :selected-before] selected-before))
       (assoc-in [:workspace-undo :transaction :selected-after] selected-after)
@@ -175,7 +181,9 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [selected-after (dm/get-in state [:workspace-local :selected])
-            entry          (assoc entry :selected-after selected-after)]
+            entry          (assoc entry
+                                  :selected-after selected-after
+                                  :undo-groups #{(:undo-group entry)})]
         (cond
           (and (get-in state [:workspace-undo :transaction])
                (or (not stack?)
@@ -205,7 +213,9 @@
       (update state :workspace-undo
               (fn [undo-state]
                 (-> undo-state
-                    (update :transaction #(d/nilv % empty-tx))
+                    ;; Commits made while it is open without an undo group of
+                    ;; their own get this one
+                    (update :transaction #(d/nilv % (assoc empty-tx :commit-group (uuid/next))))
                     (update :transactions-pending assoc id (ct/now))))))
 
     ptk/WatchEvent
@@ -237,7 +247,7 @@
     (if (and (some? current-tx)
              (empty? pending-tx))
       (-> state
-          (add-undo-entry current-tx)
+          (add-undo-entry (dissoc current-tx :commit-group))
           (update :workspace-undo dissoc :transaction))
       state)))
 
@@ -250,6 +260,36 @@
       (-> state
           (update-in [:workspace-undo :transactions-pending] dissoc id)
           (add-transaction-undo-entry)))))
+
+(defn forget-undo-groups
+  "Drops the undo history from the first entry holding a commit of
+  `undo-groups` on, and empties the open transaction when the history is
+  cut or it holds one of them; its later commits keep the undo group of
+  its earlier ones. `undo-index`, when not nil, is the index the oldest
+  reverted undo or redo commit moved away from: the history points there
+  again."
+  [undo-groups undo-index]
+  (ptk/reify ::forget-undo-groups
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-undo
+              (fn [{:keys [items index transaction] :as undo}]
+                (let [reverted?   #(some undo-groups (:undo-groups %))
+                      first-index (d/index-of-pred items reverted?)
+                      last-index  (dec (count items))
+                      index       (if (some? undo-index)
+                                    (min undo-index last-index)
+                                    (d/nilv index last-index))]
+                  (cond-> (assoc undo :index index)
+                    (some? first-index)
+                    (assoc :items (subvec items 0 first-index)
+                           :index (min index (dec first-index)))
+
+                    (and (some? transaction)
+                         (or (some? first-index) (reverted? transaction)))
+                    (assoc :transaction
+                           (assoc empty-tx :commit-group (or (:undo-group transaction)
+                                                             (:commit-group transaction)))))))))))
 
 (def reinitialize-undo
   "Clears the undo stack, removing all entries and transactions."
@@ -292,27 +332,36 @@
       (let [objects (dsh/lookup-page-objects state)
             edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
-        (when-not (and (or (some? edition) (some? (:object drawing)))
-                       (not (ctl/grid-layout? objects edition)))
+        ;; While saves fail the history stays still: its commit would be
+        ;; refused after the index moved
+        (when-not (or (plk/locked? state)
+                      (and (or (some? edition) (some? (:object drawing)))
+                           (not (ctl/grid-layout? objects edition))))
           (let [undo  (:workspace-undo state)
                 items (:items undo)
                 index (or (:index undo) (dec (count items)))]
             (when (and (some? items)
                        (<= -1 dest-index (dec (count items))))
-              (let [changes (vec (apply concat
-                                        (cond
-                                          (< dest-index index)
-                                          (->> (subvec items (inc dest-index) (inc index))
-                                               (reverse)
-                                               (map :undo-changes))
-                                          (> dest-index index)
-                                          (->> (subvec items (inc index) (inc dest-index))
-                                               (map :redo-changes))
-                                          :else [])))]
-                (when (seq changes)
-                  (rx/of (materialize-undo changes dest-index)
-                         (dch/commit-changes {:redo-changes changes
-                                              :undo-changes []
+              (let [[redo-changes undo-changes]
+                    (cond
+                      (< dest-index index)
+                      (let [entries (subvec items (inc dest-index) (inc index))]
+                        [(into [] (mapcat :undo-changes) (reverse entries))
+                         (into [] (mapcat :redo-changes) entries)])
+
+                      (> dest-index index)
+                      (let [entries (subvec items (inc index) (inc dest-index))]
+                        [(into [] (mapcat :redo-changes) entries)
+                         (into [] (mapcat :undo-changes) (reverse entries))])
+
+                      :else
+                      [[] []])]
+                (when (seq redo-changes)
+                  (rx/of (materialize-undo redo-changes dest-index)
+                         ;; Undoable by a rollback, which also puts the index back
+                         (dch/commit-changes {:redo-changes redo-changes
+                                              :undo-changes undo-changes
+                                              :undo-index index
                                               :origin it
                                               :save-undo? false})))))))))))
 
@@ -329,9 +378,10 @@
             edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
 
-        ;; Editors handle their own undo's
-        (when (or (and (nil? edition) (nil? (:object drawing)))
-                  (ctl/grid-layout? objects edition))
+        ;; Editors handle their own undo's; nothing is undone while saves fail
+        (when (and (not (plk/locked? state))
+                   (or (and (nil? edition) (nil? (:object drawing)))
+                       (ctl/grid-layout? objects edition)))
           (let [undo  (:workspace-undo state)
                 items (:items undo)
                 index (or (:index undo) (dec (count items)))]
@@ -356,7 +406,8 @@
                            (restore-selection (:selected-before first-item))))
                   (rx/of (materialize-undo changes (dec index))
                          (dch/commit-changes {:redo-changes changes
-                                              :undo-changes []
+                                              :undo-changes (:redo-changes item)
+                                              :undo-index index
                                               :save-undo? false
                                               :origin it})
                          (restore-selection (:selected-before item))
@@ -370,9 +421,10 @@
             edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
 
-        ;; Editors handle their own undo's
-        (when (or (and (nil? edition) (nil? (:object drawing)))
-                  (ctl/grid-layout? objects edition))
+        ;; Editors handle their own undo's; nothing is undone while saves fail
+        (when (and (not (plk/locked? state))
+                   (or (and (nil? edition) (nil? (:object drawing)))
+                       (ctl/grid-layout? objects edition)))
           (let [undo  (:workspace-undo state)
                 items (:items undo)
                 index (or (:index undo) (dec (count items)))]
@@ -394,7 +446,8 @@
                            (restore-selection (:selected-after last-item))))
                   (rx/of (materialize-undo changes (inc index))
                          (dch/commit-changes {:redo-changes changes
-                                              :undo-changes []
+                                              :undo-changes (:undo-changes item)
+                                              :undo-index index
                                               :origin it
                                               :save-undo? false})
                          (restore-selection (:selected-after item))))))))))))

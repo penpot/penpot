@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+# Usage: ./fmt [--check] [extra cargo fmt params...]
+#
+# Formats the crate with the Rust toolchain pinned in `_build_env`. Set
+# PENPOT_WASM_PREPARED=1 to skip the toolchain setup.
+
+set -e
+
+_SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+pushd "$_SCRIPT_DIR" > /dev/null
+
+. ./_build_env frontend
+
+setup
+cargo fmt "$@"
+
+popd > /dev/null
