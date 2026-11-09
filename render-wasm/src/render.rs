@@ -764,6 +764,13 @@ impl RenderState {
         Self::union_stroke_outset(base, stroke_outset)
     }
 
+    /// Fill ∪ outer stroke outline in shape-local space: the area a drop
+    /// shadow must not show under (vector, SVG).
+    pub(crate) fn drop_shadow_clear_path(shape: &Shape) -> skia::Path {
+        let stroke_outset = Stroke::max_bounds_width(shape.visible_strokes(), shape.is_open());
+        Self::background_blur_clip_path(shape, stroke_outset)
+    }
+
     /// Unions a centered stroke of width `2 * stroke_outset` into `base`.
     /// The inward half disappears in the union, leaving `stroke_outset` beyond
     /// the fill outline.

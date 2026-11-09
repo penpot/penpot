@@ -577,6 +577,43 @@ fn exports_leaf_drop_shadow_as_svg_filter() {
     insta::assert_snapshot!(svg);
 }
 
+fn render_rect_with_drop_shadow(fill: skia::Color) -> String {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_solid_rect(&mut pool, id, Uuid::nil(), (0.0, 0.0, 100.0, 80.0), fill);
+    pool.get_mut(&id).unwrap().add_shadow(Shadow::new(
+        skia::Color::BLACK,
+        8.0,
+        0.0,
+        (4.0, 6.0),
+        ShadowStyle::Drop,
+        false,
+    ));
+    render(&pool, id)
+}
+
+#[test]
+fn translucent_leaf_hides_drop_shadow_underneath() {
+    let svg = render_rect_with_drop_shadow(skia::Color::from_argb(100, 255, 0, 0));
+    let mask_at = svg
+        .find("mask=\"url(#dsmask")
+        .unwrap_or_else(|| panic!("drop shadow must be masked under a translucent fill: {svg}"));
+    let filter_at = svg.find("filter=\"url(#fx").expect("drop filter");
+    assert!(
+        mask_at < filter_at,
+        "the mask must wrap the drop shadow group: {svg}"
+    );
+}
+
+#[test]
+fn opaque_leaf_keeps_drop_shadow_unmasked() {
+    let svg = render_rect_with_drop_shadow(skia::Color::from_rgb(255, 0, 0));
+    assert!(
+        !svg.contains("dsmask"),
+        "an opaque fill hides the shadow already: {svg}"
+    );
+}
+
 #[test]
 fn leaf_drop_offset_follows_rotation_in_user_space() {
     let mut pool = ShapesPool::new();
