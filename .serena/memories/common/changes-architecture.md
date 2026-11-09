@@ -13,6 +13,11 @@ Each change is a map such as `{:type ... :id ... :page-id ...}`. Common families
 
 Each transaction carries `:redo-changes` and inverse `:undo-changes`. The undo stack stores transactions and can move its index backward/forward.
 
+## Batches that were already built
+
+`common/src/app/common/files/changes_merge.cljc` (alias `mch`) rewrites a finished batch into an equivalent smaller one, without touching file data.
+- `mch/merge-reg-objects`: the component sync emits one `:reg-objects` per touched shape, so a component swap carries hundreds of them for a handful of groups. It collapses them into one per container, union of `:shapes`, moved to the end of the batch so a group is always recomputed after the shapes that resized it. Applied to both redo and undo, on every commit (`frontend/src/app/main/data/changes.cljs`) and again when the buffer is batched for saving (`frontend/src/app/main/data/persistence.cljs`). Measured on a real swap: 291 `:reg-objects` become 36, the whole batch goes 806 changes / 6.4 MB to 551 / 324 KB.
+
 ## changes-builder API
 
 `common/src/app/common/files/changes_builder.cljc` (usually alias `pcb`) is the fluent builder. Start from `(pcb/empty-changes <it> <page-id>)` or `(pcb/empty-changes nil <page-id>)` for tests.

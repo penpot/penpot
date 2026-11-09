@@ -9,13 +9,17 @@
    [app.common.features :as ffeat]
    [app.common.files.changes :as ch]
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.changes-merge :as mch]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.schema.test :as smt]
    [app.common.time :as ct]
    [app.common.types.file :as ctf]
+   [app.common.types.page :as ctp]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
@@ -250,6 +254,185 @@
                                 [:x :y :width :height]))
                 "The parent must use the updated bounds of both children")
           (assert-idempotent data changes))))))
+
+(defn- make-nested-groups
+  "Two pages, each with a group holding a group that holds a rect."
+  []
+  (let [page-a   (uuid/custom 41 1)
+        page-b   (uuid/custom 41 2)
+        outer-a  (uuid/custom 41 3)
+        inner-a  (uuid/custom 41 4)
+        rect-a   (uuid/custom 41 5)
+        outer-b  (uuid/custom 41 6)
+        inner-b  (uuid/custom 41 7)
+        rect-b   (uuid/custom 41 8)]
+
+    {:page-a page-a :page-b page-b
+     :outer-a outer-a :inner-a inner-a :rect-a rect-a
+     :outer-b outer-b :inner-b inner-b :rect-b rect-b
+     :data (ch/process-changes
+            (make-file-data (uuid/custom 41 9) page-a)
+            (into [{:type :add-page :id page-b
+                    :page (ctp/make-empty-page {:id page-b :name "page-b"})}]
+                  (map (fn [[id page-id parent-id type]]
+                         {:type :add-obj :id id :page-id page-id
+                          :frame-id uuid/zero :parent-id parent-id
+                          :obj (cts/setup-shape
+                                {:id id :type type :name (name type)
+                                 :frame-id uuid/zero :parent-id parent-id
+                                 :x 0 :y 0 :width 10 :height 10})})
+                       [[outer-a page-a uuid/zero :group]
+                        [inner-a page-a outer-a :group]
+                        [rect-a page-a inner-a :rect]
+                        [outer-b page-b uuid/zero :group]
+                        [inner-b page-b outer-b :group]
+                        [rect-b page-b inner-b :rect]])))}))
+
+(defn- resize-rect
+  "The changes the component sync emits after resizing a rect: the new geometry
+  followed by a `:reg-objects` for the rect's parents, plus the inverse pair.
+  `parents` is `[inner-id outer-id]`, the groups above the rect."
+  [data page-id rect-id parents dx]
+  (let [shape (get-in data [:pages-index page-id :objects rect-id])
+        moved (gsh/move shape (gpt/point dx 0))
+        redo  [{:type :mod-obj :id rect-id :page-id page-id
+                :operations (mapv (fn [[attr val]] {:type :set :attr attr :val val})
+                                  (select-keys moved [:x :y :selrect :points]))}
+               {:type :reg-objects :page-id page-id :shapes parents}]]
+    {:redo redo
+     ;; The inverse: the shape back to its previous geometry, then the same
+     ;; `reg-objects` so the groups shrink with it.
+     :undo (list* {:type :mod-obj :id rect-id :page-id page-id
+                   :operations (mapv (fn [op]
+                                       {:type :set :attr (:attr op)
+                                        :val (get shape (:attr op))})
+                                     (:operations (first redo)))}
+                  [(second redo)])}))
+
+(defn- move-rect-changes [data page-id rect-id parents dx]
+  (:redo (resize-rect data page-id rect-id parents dx)))
+
+(t/deftest merge-reg-objects-collapses-per-container
+  (t/testing "one change per container, with the union of the shapes"
+    (let [{:keys [data page-a rect-a inner-a outer-a]} (make-nested-groups)
+          parents [inner-a outer-a]
+          batch  (concat (move-rect-changes data page-a rect-a parents 100)
+                         (move-rect-changes data page-a rect-a parents 50))
+          merged (mch/merge-reg-objects batch)
+          regs   (filterv #(= :reg-objects (:type %)) merged)]
+
+      (t/is (= 1 (count regs))
+            "both reg-objects of the same container collapse into one")
+      (t/is (= page-a (:page-id (first regs))))
+      (t/is (= #{inner-a outer-a} (set (:shapes (first regs))))
+            "the merged change carries every shape, no duplicates")
+      (t/is (= (- (count batch) 1) (count merged))
+            "only the redundant reg-objects disappear, everything else is kept")
+      (t/is (= (count (remove #(= :reg-objects (:type %)) batch))
+               (count (remove #(= :reg-objects (:type %)) merged)))
+            "non reg-objects changes keep their order and count")))
+
+  (t/testing "the merged change goes last, so groups see the final children"
+    (let [{:keys [data page-a rect-a inner-a outer-a]} (make-nested-groups)
+          batch  (vec (move-rect-changes data page-a rect-a [inner-a outer-a] 100))
+          merged (mch/merge-reg-objects batch)]
+      (t/is (= :reg-objects (:type (last merged)))
+            "a group recomputed before its child resized keeps a stale selrect")))
+
+  (t/testing "batches without reg-objects are returned untouched"
+    (let [batch [{:type :mod-obj :id (uuid/custom 41 5) :page-id (uuid/custom 41 1)
+                  :operations [{:type :set :attr :name :val "x"}]}]]
+      (t/is (= batch (mch/merge-reg-objects batch)))))
+
+  (t/testing "a batch with a single reg-objects keeps one change"
+    (let [{:keys [data page-a rect-a inner-a outer-a]} (make-nested-groups)
+          batch (vec (move-rect-changes data page-a rect-a [inner-a outer-a] 100))
+          merged (mch/merge-reg-objects batch)]
+      (t/is (= 1 (count (filter #(= :reg-objects (:type %)) merged))))
+      (t/is (= (count batch) (count merged))))))
+
+(t/deftest merge-reg-objects-is-equivalent-to-the-separate-changes
+  (let [{:keys [data page-a page-b inner-a outer-a inner-b outer-b
+                rect-a rect-b]} (make-nested-groups)
+        ;; Two pages, and on one of them a second resize that lands after the
+        ;; first reg-objects: the case where position matters.
+        batch (vec (concat (move-rect-changes data page-a rect-a [inner-a outer-a] 100)
+                           (move-rect-changes data page-b rect-b [inner-b outer-b] 100)
+                           (move-rect-changes data page-a rect-a [inner-a outer-a] 50)))
+        merged (mch/merge-reg-objects batch)
+        result-separate (with-redefs [ct/now (constantly (ct/inst 1000))]
+                          (ch/process-changes data batch))
+        result-merged   (with-redefs [ct/now (constantly (ct/inst 1000))]
+                          (ch/process-changes data merged))]
+
+    (t/testing "two of the three reg-objects collapse, one per container"
+      (t/is (= 2 (count (filter #(= :reg-objects (:type %)) merged))))
+      (t/is (= (- (count batch) 1) (count merged))))
+
+    (t/testing "applying the merged batch matches applying them one by one"
+      (t/is (= (without-modified-at result-separate)
+               (without-modified-at result-merged))
+            "fusing reg-objects must not move any group to a stale geometry"))
+
+    (t/testing "the group ends up wrapping the last resize"
+      ;; Both resizes are computed from the same base data, so the second one
+      ;; wins: the rect lands at x=50 and the group must wrap it there.
+      (t/is (= {:x 50 :y 0 :width 10 :height 10}
+               (update-vals (select-keys (get-in result-merged
+                                                 [:pages-index page-a :objects outer-a])
+                                         [:x :y :width :height])
+                            #(long (mth/round %))))
+            "a group left at the first reg-objects would still wrap x=0"))
+
+    (t/testing "the merged batch is still a valid change batch"
+      (t/is (ch/check-changes merged))
+      (t/is (ch/check-changes batch)
+            "sanity: the original batch validates too"))))
+
+(t/deftest merge-reg-objects-works-on-undo-changes
+  (t/testing "undo-changes are a list and merge like redo-changes"
+    (let [{:keys [data page-a page-b rect-a rect-b inner-a outer-a inner-b outer-b]}
+          (make-nested-groups)
+          resize-a1 (resize-rect data page-a rect-a [inner-a outer-a] 100)
+          resize-a2 (resize-rect data page-a rect-a [inner-a outer-a] 50)
+          resize-b  (resize-rect data page-b rect-b [inner-b outer-b] 100)
+
+          ;; Undo entry for three resizes: every `reg-objects` behind its shape
+          ;; change, two of them on the same page, which is what merging is for.
+          undo (apply list (concat (:undo resize-a1)
+                                   (:undo resize-a2)
+                                   (:undo resize-b)))
+
+          after (ch/process-changes data (vec (concat (:redo resize-a1)
+                                                      (:redo resize-a2)
+                                                      (:redo resize-b))))
+          merged (mch/merge-reg-objects undo)
+          undone-separate (with-redefs [ct/now (constantly (ct/inst 1000))]
+                            (ch/process-changes after undo))
+          undone-merged   (with-redefs [ct/now (constantly (ct/inst 1000))]
+                            (ch/process-changes after merged))]
+
+      (t/is (list? undo)
+            "the builder hands undo-changes over as a list")
+      (t/is (= 6 (count undo)))
+      (t/is (= 3 (count (filter #(= :reg-objects (:type %)) undo))))
+
+      (t/testing "the three reg-objects collapse to one per container"
+        (t/is (= 5 (count merged)))
+        (t/is (= 2 (count (filter #(= :reg-objects (:type %)) merged))))
+        (t/is (= :reg-objects (:type (last merged)))
+              "the group must be recomputed after the child is back in place"))
+
+      (t/testing "undoing gives the same result merged or not"
+        (t/is (= (without-modified-at undone-separate)
+                 (without-modified-at undone-merged))))
+
+      (t/testing "and the groups shrink back with their children"
+        (doseq [[page-id outer-id] [[page-a outer-a] [page-b outer-b]]]
+          (t/is (= {:x 0.0 :y 0.0 :width 10.0 :height 10.0}
+                   (select-keys (get-in undone-merged [:pages-index page-id :objects outer-id])
+                                [:x :y :width :height]))
+                "a group recomputed before the child was restored keeps a stale selrect"))))))
 
 (t/deftest add-obj
   (let [file-id (uuid/custom 2 2)
