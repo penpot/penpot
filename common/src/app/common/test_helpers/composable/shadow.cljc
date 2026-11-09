@@ -462,9 +462,11 @@
                                              (get before (:parent-id content-main))
                                              (get after (:parent-id ref))))
                   groups (cond-> groups
+                           ;; a pushed swap authors geometry in the frame of its main
                            (and pushed-swap?
-                                (not (same-value? geometry :geometry-group
-                                                  (select-keys expected [:rotation :flip-x :flip-y]))))
+                                (or (contains? groups :geometry-group)
+                                    (not (same-value? geometry :geometry-group
+                                                      (select-keys expected [:rotation :flip-x :flip-y])))))
                            (assoc :geometry-group geometry)
 
                            (and pushed-swap?
