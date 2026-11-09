@@ -308,6 +308,15 @@
   gap: var(--sp-xs);
 }
 
+.library-locked {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: $sz-32;
+  block-size: $sz-32;
+  color: var(--color-foreground-secondary);
+}
+
 .element-count-legacy {
   white-space: nowrap;
 

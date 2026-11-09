@@ -40,6 +40,7 @@
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
+   [app.main.ui.ds.tooltip.tooltip :refer [tooltip*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.tokens.import-from-library]
@@ -158,6 +159,26 @@
       (reduce #(visit %1 %2 nil) $ (sort-by-name (filter root? libraries)))
       (reduce #(visit %1 %2 nil) $ (sort-by-name libraries))
       (first $))))
+
+(defn library-disconnect-hint
+  "Why a linked library cannot be disconnected from this file, or nil when
+  it can. A library that another linked library uses stays connected as
+  long as that one does. Returns `{:reason :inherited}` for a nested
+  library, with the name of its parent, and `{:reason :used-by}` for a
+  direct one, with the name of the first library by name that uses it.
+  `libraries-by-id` indexes the linked libraries by id."
+  [{:keys [nested? parent-name connected-to]} libraries-by-id]
+  (let [users (into [] (keep libraries-by-id) connected-to)]
+    (cond
+      (empty? users)
+      nil
+
+      nested?
+      {:reason :inherited :library-name parent-name}
+
+      :else
+      {:reason :used-by
+       :library-name (->> users (sort-by (comp str/lower :name)) first :name)})))
 
 (defn- describe-library
   [components-count graphics-count colors-count typography-count]
@@ -732,9 +753,9 @@
                (map #(assoc % :connected-to (find-connected-to (:id %))))
                (sort-linked-libraries)))
 
-        linked-libraries-ids
+        libraries-by-id
         (mf/with-memo [linked-libraries]
-          (into #{} d/xf:map-id linked-libraries))
+          (d/index-by :id linked-libraries))
 
         unlink-library
         (mf/use-fn
@@ -865,8 +886,9 @@
                        :class       (stl/css :title-spacing-lib)
                        :title-class (stl/css :connected-libraries-title)}]
        (if (seq linked-libraries)
-         (for [{:keys [id name data connected-to nested? parent-name] :as library} linked-libraries]
-           (let [disabled?          (some #(contains? linked-libraries-ids %) connected-to)
+         (for [{:keys [id name data nested? parent-name] :as library} linked-libraries]
+           (let [hint               (library-disconnect-hint library libraries-by-id)
+                 hint-library       (:library-name hint)
                  can-import-tokens? (and (has-tokens? library)
                                          (cfo/editable-tokens? local-library)
                                          (contains? cf/flags :token-import-from-library))]
@@ -904,13 +926,24 @@
                      :variant "secondary"
                      :on-click import-tokens}]))
 
-               [:> icon-button* {:type "button"
-                                 :aria-label (tr "workspace.libraries.unlink-library-btn")
-                                 :icon i/detach
-                                 :data-library-id (dm/str id)
-                                 :variant "secondary"
-                                 :disabled disabled?
-                                 :on-click unlink-library}]]]))
+               (if (some? hint)
+                 [:> tooltip* {:class (stl/css :library-locked)
+                               :tab-index 0
+                               :data-testid "library-locked"
+                               :content (case (:reason hint)
+                                          :inherited (tr "workspace.libraries.inherited-from"
+                                                         hint-library hint-library)
+                                          :used-by (tr "workspace.libraries.used-by"
+                                                       hint-library hint-library))}
+                  [:> icon* {:icon-id (case (:reason hint)
+                                        :inherited i/arrow-up
+                                        :used-by i/info)}]]
+                 [:> icon-button* {:type "button"
+                                   :aria-label (tr "workspace.libraries.unlink-library-btn")
+                                   :icon i/detach
+                                   :data-library-id (dm/str id)
+                                   :variant "secondary"
+                                   :on-click unlink-library}])]]))
          [:div {:class (stl/css :shared-libraries-empty)}
           [:> text* {:class (stl/css :empty-libraries-text)
                      :as "span"
