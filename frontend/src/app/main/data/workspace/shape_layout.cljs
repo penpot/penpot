@@ -302,8 +302,7 @@
 
         ;; Refuse before undo: container or cross-boundary. Leave single
         ;; mains on the from-id branch (selection refuses has-variant?).
-        (if (or (some ctc/is-variant-container? selected-shapes)
-                (ctn/crosses-variant-set-boundary? objects selected-shapes))
+        (if (ctn/crosses-variant-set-boundary? objects selected-shapes)
           (rx/empty)
           (rx/of
            (dwu/start-undo-transaction undo-id)

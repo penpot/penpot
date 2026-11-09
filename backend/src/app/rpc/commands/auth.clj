@@ -549,8 +549,8 @@
       ;;     return :invitation-token. The frontend redirects to
       ;;     :auth-verify-token, which immediately accepts the
       ;;     invitation.
-      ;;   - active     + no/mismatched invitation → mint session
-      ;;     ("login" action). New profile, no further action.
+      ;;   - active     + no/mismatched invitation → mint session.
+      ;;     New profile, no further action.
       ;;   - not-active + matching invitation → send the
       ;;     verify-email mail with the invitation token EMBEDDED
       ;;     into the verify-email JWE. No session yet. When the
@@ -563,7 +563,11 @@
       created?
       (let [accept-invitation? (and (some? invitation)
                                     (= (:email profile)
-                                       (:member-email invitation)))]
+                                       (:member-email invitation)))
+            props             (assoc props :activation
+                                     (if (:is-active profile)
+                                       "immediate"
+                                       "email-verification"))]
         (cond
           (and (:is-active profile) accept-invitation?)
           (let [invitation (assoc invitation :member-id (:id profile))
@@ -573,7 +577,6 @@
                  :invitation-token token}
                 (rph/with-transform (session/create-fn cfg profile claims))
                 (rph/with-meta {::audit/replace-props props
-                                ::audit/context {:action "accept-invitation"}
                                 ::audit/profile-id (:id profile)})))
 
           (:is-active profile)
@@ -581,7 +584,6 @@
               (rph/with-transform (session/create-fn cfg profile claims))
               (rph/with-meta
                 {::audit/replace-props props
-                 ::audit/context {:action "login"}
                  ::audit/profile-id (:id profile)}))
 
           :else
@@ -595,7 +597,6 @@
                  :email (:email profile)}
                 (rph/with-meta
                   {::audit/replace-props props
-                   ::audit/context {:action "email-verification"}
                    ::audit/profile-id (:id profile)})))))
 
       ;; When email verification is disabled and an inactive profile already
