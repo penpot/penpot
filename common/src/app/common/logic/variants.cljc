@@ -556,11 +556,15 @@
 
         ;; Cell overrides carry only between identical grids.
         new-paths           (into {} (map (juxt :id :shape-path)) new-shapes-w-path)
+        ;; a kept swap takes the place of its new child with its own id
+        kept-swaps          (into #{} (comp (filter :swapped?) (map (comp :id :old))) pairs)
         counterpart         (fn [id]
-                              (when-let [old-child (get page-objects id)]
-                                (let [old-ref (find-shape-ref-child-of container libraries old-child
-                                                                       (:id orig-base-ref-shape))]
-                                  (:id (get new-shapes-map (get o-ref-shapes-p-map (:id old-ref)))))))
+                              (if (contains? kept-swaps id)
+                                id
+                                (when-let [old-child (get page-objects id)]
+                                  (let [old-ref (find-shape-ref-child-of container libraries old-child
+                                                                         (:id orig-base-ref-shape))]
+                                    (:id (get new-shapes-map (get o-ref-shapes-p-map (:id old-ref))))))))
         grid-pairs          (filter (fn [{:keys [old new swapped?]}]
                                       (and (not swapped?)
                                            (ctsl/grid-layout? old)

@@ -1956,6 +1956,14 @@
                              [:library-add-variant 0 0 0 0] [:library-transform 0 3 4 0] [:library-add-child 5]
                              [:library-sync] [:library-variant-property 0 0 0 0] [:library-sync] [:switch 10]]}))))
 
+(t/deftest switching-a-grid-copy-places-its-kept-swap-in-its-cell
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square true :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:combine 14] [:switch 5] [:make-variant 6 0 0 0] [:make-variant 16] [:switch 1]
+                             [:nest 19 0 0 0] [:grid-direction 9 0 3 0] [:nest 8 0 0 0] [:add-variant 0]
+                             [:switch 12] [:make-variant 2] [:switch 14]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]
