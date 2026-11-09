@@ -54,8 +54,9 @@ between them does not invalidate the other's cache. Set `BUILD_MODE=release`
 
 Set `PENPOT_WASM_PREPARED=1` when the pinned Rust toolchain is selected, its
 Emscripten target is installed, and this package's Node dependencies are
-installed. `./build` and `./test` then skip `rustup` setup and `pnpm install`.
-Benchmark preparation sets this flag for each retained build.
+installed. `./build`, `./test`, `./lint` and `./fmt` then skip `rustup` setup
+and `pnpm install`. Benchmark preparation sets this flag for each retained
+build.
 
 ### Serialize builds in one checkout
 
