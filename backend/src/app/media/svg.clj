@@ -125,7 +125,8 @@
 
 (def ^:private dangerous-tags
   #{"script" "foreignObject" "set"
-    "animate" "animateTransform" "animateColor" "animateMotion"})
+    "animate" "animateTransform" "animateColor" "animateMotion"
+    "iframe" "meta" "embed" "link" "base"})
 
 (defn- local-name
   "Return the local name of a parsed tag or attribute keyword.
@@ -143,49 +144,80 @@
 
 (def ^:private svg-namespace "http://www.w3.org/2000/svg")
 
-(defn- declared-namespace
-  "Return the namespace declared for the element `tag`: the default
-   namespace when the tag has no prefix, the prefixed declaration when
-   it has one.
+(defn- namespace-bindings
+  "Return the namespace bindings in scope for an element: `::default`
+   plus the keyword prefixes declared in `attrs`, merged over the
+   inherited ones. The default binding is stored under a namespaced
+   keyword because a prefix cannot contain `/`, so no prefixed binding
+   can produce the same key.
 
    The XML parser does not process namespaces, so the declarations are
    plain attributes (`:xmlns`, `:xmlns:svg`) and the prefix is part of
    the tag name (`:svg:svg`)."
-  [tag attrs]
+  [attrs inherited]
+  (let [own (reduce-kv (fn [acc k v]
+                         (let [n (name k)]
+                           (cond
+                             (= n "xmlns") (assoc acc ::default v)
+                             (str/starts-with? n "xmlns:") (assoc acc (keyword (subs n 6)) v)
+                             :else acc)))
+                       {}
+                       attrs)]
+    (merge inherited own)))
+
+(defn- element-namespace
+  "Return the namespace URI of `tag` under `bindings`: the default
+   namespace when the tag has no prefix, the prefixed binding otherwise.
+
+   The prefix is part of the tag name (`:svg:svg`), so the binding key
+   is the prefix."
+  [tag bindings]
   (let [n   (name tag)
         idx (str/last-index-of n ":")]
     (if (nil? idx)
-      (get attrs :xmlns)
-      (get attrs (keyword (str "xmlns:" (subs n 0 idx)))))))
+      (::default bindings)
+      (get bindings (keyword (subs n 0 idx))))))
 
 (defn- svg-root?
   "True when the element is an `svg` element in the SVG namespace.
 
-   The namespace matters: a root that is `svg` in the XHTML namespace
-   is rendered as HTML by the browser, so it can carry live markup that
-   the SVG blocklist does not know about."
+   The namespace is resolved with the same model as the recursion
+   (`namespace-bindings` + `element-namespace`), so the check does not
+   introduce a second rule."
   [{:keys [tag attrs]}]
-  (and (= "svg" (local-name tag))
-       (= svg-namespace (declared-namespace tag attrs))))
+  (let [bindings (namespace-bindings attrs {})]
+    (and (= "svg" (local-name tag))
+         (= svg-namespace (element-namespace tag bindings)))))
 
 (defn- sanitize-svg-element
-  "Recursively sanitize an SVG element by removing dangerous tags and attributes."
-  [{:keys [tag attrs content] :as element}]
-  (when (and (map? element) tag)
-    (when-not (contains? dangerous-tags (local-name tag))
-      (let [clean-attrs (->> attrs
-                             (remove (fn [[k v]]
-                                       (or (re-matches dangerous-attrs-pattern (local-name k))
-                                           (and (= "href" (local-name k))
-                                                (string? v)
-                                                (javascript-url? v)))))
-                             (into {}))
+  "Recursively sanitize an SVG element by removing dangerous tags and
+   attributes.
+
+   The namespace bindings are tracked through the recursion: an element
+   that is not in the SVG namespace is dropped with its whole subtree,
+   because the filter only knows about SVG elements and a child that
+   rebinds the namespace to XHTML can carry live HTML."
+  [element bindings]
+  (let [{:keys [tag attrs content]} element
+        bindings (namespace-bindings attrs bindings)]
+    (when (and (map? element) tag
+               (not (contains? dangerous-tags (local-name tag)))
+               (= svg-namespace (element-namespace tag bindings)))
+      (let [clean-attrs  (->> attrs
+                              (remove (fn [[k v]]
+                                        (let [n (name k)]
+                                          (or (and (not (str/starts-with? n "xmlns"))
+                                                   (re-matches dangerous-attrs-pattern (local-name k)))
+                                              (and (= "href" (local-name k))
+                                                   (string? v)
+                                                   (javascript-url? v))))))
+                              (into {}))
             clean-content (when content
                             (->> content
                                  (filter #(or (string? %) (map? %)))
                                  (map (fn [child]
                                         (if (map? child)
-                                          (sanitize-svg-element child)
+                                          (sanitize-svg-element child bindings)
                                           child)))
                                  (filter some?)
                                  vec))]
@@ -197,7 +229,8 @@
    Removes <script> tags, <foreignObject> elements, event handlers (on*),
    and javascript: URLs from href attributes.
 
-   The document must be an SVG document: a root element that is not an
+   The document must be an SVG document: any element that is not in the
+   SVG namespace is dropped with its subtree, so a root that is not an
    `svg` element in the SVG namespace is rejected, because the filter
    only knows about SVG elements and attributes.
 
@@ -213,18 +246,18 @@
                              :code :invalid-svg-file
                              :hint "SVG parsing failed during sanitization"
                              :cause e)))
-        sanitized (sanitize-svg-element parsed)]
+        _      (when-not (svg-root? parsed)
+                 (l/warn :hint "SVG sanitization rejected a document that is not an svg document")
+                 (ex/raise :type :validation
+                           :code :invalid-svg-file
+                           :hint "the uploaded document is not an svg document"))
+        sanitized (sanitize-svg-element parsed {})]
 
     (when-not sanitized
       (l/warn :hint "SVG sanitization produced no output, rejecting upload")
       (ex/raise :type :validation
                 :code :invalid-svg-file
                 :hint "SVG sanitization produced no output"))
-
-    (when-not (svg-root? sanitized)
-      (ex/raise :type :validation
-                :code :invalid-svg-file
-                :hint "the uploaded document is not an svg document"))
 
     (str xml-declaration (emit-element sanitized))))
 

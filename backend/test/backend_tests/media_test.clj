@@ -96,10 +96,8 @@
           result (svg/sanitize-svg svg)]
       (t/is (str/includes? result "<rect"))
       (t/is (str/includes? result "<circle"))
-      (t/is (or (str/includes? result "fill=\"red\"")
-                (str/includes? result "fill='red'")))
-      (t/is (or (str/includes? result "fill=\"blue\"")
-                (str/includes? result "fill='blue'"))))))
+      (t/is (str/includes? result "fill=\"red\""))
+      (t/is (str/includes? result "fill=\"blue\"")))))
 
 (t/deftest sanitize-svg-invalid-svg-rejected
   (t/testing "sanitize-svg rejects malformed SVG input"
@@ -279,6 +277,23 @@
         (t/is (th/ex-of-type? error :validation))
         (t/is (th/ex-of-code? error :invalid-svg-file))))))
 
+(t/deftest sanitize-svg-rejects-non-svg-root-local-name
+  (t/testing "a root in the svg namespace whose local name is not svg is rejected"
+    (doseq [payload ["<rect xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\"/>"
+                     "<html xmlns=\"http://www.w3.org/2000/svg\"></html>"]]
+      (let [error (try (svg/sanitize-svg payload) nil
+                       (catch clojure.lang.ExceptionInfo e e))]
+        (t/is (some? error))
+        (t/is (th/ex-of-code? error :invalid-svg-file))))))
+
+(t/deftest sanitize-svg-reports-non-svg-root
+  (t/testing "a root without the svg namespace reports it, not a serializer failure"
+    (let [error (try (svg/sanitize-svg "<svg><rect/></svg>") nil
+                     (catch clojure.lang.ExceptionInfo e e))]
+      (t/is (some? error))
+      (t/is (th/ex-of-code? error :invalid-svg-file))
+      (t/is (str/includes? (ex-message error) "not an svg document")))))
+
 (t/deftest sanitize-svg-accepts-svg-roots
   (t/testing "an svg root in the svg namespace is accepted"
     (t/is (some? (svg/sanitize-svg "<svg xmlns=\"http://www.w3.org/2000/svg\"><rect/></svg>"))))
@@ -334,6 +349,68 @@
         (t/is (some? error))
         (t/is (th/ex-of-code? error :invalid-svg-file))))))
 
+;; --- SVG sanitization: namespace in scope
+;;
+;; The XML parser does not process namespaces, so a child can rebind the
+;; default namespace to XHTML and smuggle live HTML (iframe/srcdoc/meta).
+;; The sanitizer drops any element that is not in the SVG namespace.
+
+(def ^:private xhtml-child-svg
+  "An SVG whose root is in the SVG namespace but whose child rebinds the
+   default namespace to XHTML and embeds live HTML."
+  "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><g xmlns=\"http://www.w3.org/1999/xhtml\"><iframe srcdoc=\"&lt;script&gt;alert(1)&lt;/script&gt;\"/><meta http-equiv=\"refresh\" content=\"0;url=javascript:alert(1)\"/></g><rect width=\"10\" height=\"10\"/></svg>")
+
+(t/deftest sanitize-svg-drops-non-svg-namespace-subtrees
+  (t/testing "a child that rebinds the default namespace to XHTML is dropped"
+    (let [result (svg/sanitize-svg xhtml-child-svg)]
+      (t/is (not (str/includes? result "iframe")))
+      (t/is (not (str/includes? result "meta")))
+      (t/is (not (str/includes? result "srcdoc")))
+      (t/is (not (str/includes? result "http-equiv")))
+      (t/is (str/includes? result "<rect")))))
+
+(t/deftest sanitize-svg-drops-prefixed-non-svg-namespace-subtrees
+  (t/testing "a child whose prefix is bound to XHTML is dropped"
+    (let [result (svg/sanitize-svg
+                  "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:h=\"http://www.w3.org/1999/xhtml\"><h:iframe srcdoc=\"&lt;script&gt;alert(1)&lt;/script&gt;\"/></svg>")]
+      (t/is (not (str/includes? result "iframe")))
+      (t/is (not (str/includes? result "srcdoc"))))))
+
+(t/deftest sanitize-svg-keeps-prefixed-svg-namespace-subtrees
+  (t/testing "a child whose prefix is bound to the SVG namespace is kept"
+    (let [result (svg/sanitize-svg
+                  "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:s=\"http://www.w3.org/2000/svg\"><s:rect width=\"10\" height=\"10\"/></svg>")]
+      (t/is (str/includes? result "<s:rect")))))
+
+(def ^:private default-prefix-xhtml-svg
+  "An SVG whose root declares a prefix named `default` bound to XHTML."
+  "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:default=\"http://www.w3.org/1999/xhtml\"><default:iframe srcdoc=\"&lt;script&gt;alert(1)&lt;/script&gt;\"/><default:meta http-equiv=\"refresh\" content=\"0;url=javascript:alert(1)\"/></svg>")
+
+(t/deftest sanitize-svg-drops-default-prefix-xhtml-subtrees
+  (t/testing "a prefix named default bound to XHTML is not the default namespace"
+    (let [result (svg/sanitize-svg default-prefix-xhtml-svg)]
+      (t/is (not (str/includes? result "default:iframe")))
+      (t/is (not (str/includes? result "default:meta")))
+      (t/is (not (str/includes? result "srcdoc")))
+      (t/is (not (str/includes? result "http-equiv"))))))
+
+(def ^:private xmlns-onload-svg
+  "An SVG that declares a prefix named like an event handler."
+  "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:onload=\"http://www.w3.org/2000/svg\"><onload:rect width=\"10\" height=\"10\"/></svg>")
+
+(t/deftest sanitize-svg-keeps-xmlns-declarations
+  (t/testing "a namespace declaration whose local name looks like an event handler is kept"
+    (let [result (svg/sanitize-svg xmlns-onload-svg)]
+      (t/is (str/includes? result "xmlns:onload"))
+      (t/is (str/includes? result "<onload:rect")))))
+
+(t/deftest sanitize-svg-drops-html-only-tags
+  (t/testing "HTML-only elements written in the svg namespace are dropped"
+    (doseq [tag ["iframe" "meta" "embed" "link" "base"]]
+      (let [result (svg/sanitize-svg
+                    (str "<svg xmlns=\"http://www.w3.org/2000/svg\"><" tag " src=\"https://evil\"/></svg>"))]
+        (t/is (not (str/includes? result (str "<" tag))))))))
+
 (t/deftest sanitize-svg-javascript-href-control-char
   (t/testing "a javascript: URL with a control char inside the scheme is removed"
     (let [result (svg/sanitize-svg evil-javascript-svg)
@@ -350,13 +427,13 @@
       (t/is (= "https://example.com/"
                (get-in parsed [:content 0 :attrs :href]))))))
 
-(t/deftest sanitize-svg-rejects-document-without-content
-  (t/testing "a document whose root is removed by the filter is rejected"
+(t/deftest sanitize-svg-rejects-script-root
+  (t/testing "a document whose root is a script is rejected as not an svg document"
     (let [error (try (svg/sanitize-svg "<script>alert(1)</script>") nil
                      (catch clojure.lang.ExceptionInfo e e))]
       (t/is (th/ex-of-type? error :validation))
       (t/is (th/ex-of-code? error :invalid-svg-file))
-      (t/is (str/includes? (ex-message error) "produced no output")))))
+      (t/is (str/includes? (ex-message error) "not an svg document")))))
 
 (t/deftest sanitize-svg-is-idempotent
   (t/testing "sanitizing an already sanitized document does not change it"
