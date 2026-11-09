@@ -1155,7 +1155,7 @@ case descriptors in the same order.
 ```bash
 pnpm run build:renderer-benchmarks:runner
 
-pnpm run render-bench -- ab \
+pnpm run render-bench ab \
   --features <feature-a>,<feature-b> \
   --filter rects/load \
   --warmups 3 --repetitions 10
@@ -1233,14 +1233,11 @@ Run these commands from `frontend/` inside the development container with
 dependencies and Playwright Chromium installed. Keep renderer watchers stopped
 until preparation finishes.
 
-The literal `--` after `render-bench` is required to forward the command and its
-arguments through the shell wrapper.
-
 List the commands, or show one command's options and defaults:
 
 ```bash
-pnpm run render-bench -- --help
-pnpm run render-bench -- run --help
+pnpm run render-benchhelp
+pnpm run render-bench run --help
 ```
 
 Command options select declared cases and control the build source, sampling,
@@ -1259,18 +1256,18 @@ pnpm run build:renderer-benchmarks:runner
 Run one case with one measured attempt:
 
 ```bash
-pnpm run render-bench -- run \
+pnpm run render-bench run \
   --filter paths/pan --seed 42 --warmups 0 --repetitions 1 --screenshots
 ```
 
 Run the blocking renderer and mixed gesture proof cases:
 
 ```bash
-pnpm run render-bench -- run \
+pnpm run render-bench run \
   --filter rects/blocking-full --seed 42 \
   --warmups 0 --repetitions 1 --screenshots
 
-pnpm run render-bench -- run \
+pnpm run render-bench run \
   --filter rects/mixed-pans --seed 42 \
   --warmups 0 --repetitions 1 --screenshots
 ```
@@ -1278,20 +1275,20 @@ pnpm run render-bench -- run \
 Prepare a build once and reuse it:
 
 ```bash
-pnpm run render-bench -- build
-pnpm run render-bench -- run --build <build-id>
+pnpm run render-bench build
+pnpm run render-bench run --build <build-id>
 ```
 
 Run a selection with the default sampling:
 
 ```bash
-pnpm run render-bench -- run --filter rects
+pnpm run render-bench run --filter rects
 ```
 
 Require hardware rendering for rectangle load, pan, and zoom in a GPU container:
 
 ```bash
-pnpm run render-bench -- run --filter rects --require-gpu
+pnpm run render-bench run --filter rects --require-gpu
 ```
 
 For a functional check, add `--warmups 0 --repetitions 1`. A successful
@@ -1304,7 +1301,7 @@ directory. A/B feature comparisons apply the same rule.
 Compare two saved runs offline:
 
 ```bash
-pnpm run render-bench -- compare \
+pnpm run render-bench compare \
   target/performance/render-wasm/runs/<baseline>/run.transit \
   target/performance/render-wasm/runs/<candidate>/run.transit
 ```
@@ -1313,12 +1310,12 @@ Allow a difference in build configuration, or compare two given scenes,
 irrespective of their differences:
 
 ```bash
-pnpm run render-bench -- compare \
+pnpm run render-bench compare \
   target/performance/render-wasm/runs/<baseline>/run.transit \
   target/performance/render-wasm/runs/<candidate>/run.transit \
   --allow-build-differences
 
-pnpm run render-bench -- compare \
+pnpm run render-bench compare \
   target/performance/render-wasm/runs/<baseline>/run.transit \
   target/performance/render-wasm/runs/<candidate>/run.transit \
   --cases rects/load,paths/load --allow-scene-differences
@@ -1327,7 +1324,7 @@ pnpm run render-bench -- compare \
 Merge an additional saved run into a base run:
 
 ```bash
-pnpm run render-bench -- merge \
+pnpm run render-bench merge \
   target/performance/render-wasm/runs/<base>/run.transit \
   target/performance/render-wasm/runs/<additional>/run.transit \
   --output-dir target/performance/render-wasm/runs/<merged>
@@ -1344,10 +1341,10 @@ server, or browser.
 Inspect and clean managed outputs:
 
 ```bash
-pnpm run render-bench -- purge builds
-pnpm run render-bench -- purge runs
-pnpm run render-bench -- purge comparisons
-pnpm run render-bench -- purge all
+pnpm run render-bench purge builds
+pnpm run render-bench purge runs
+pnpm run render-bench purge comparisons
+pnpm run render-bench purge all
 ```
 
 `purge` requires exactly one target: `builds`, `runs`, `comparisons`, or `all`.
