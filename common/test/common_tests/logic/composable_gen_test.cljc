@@ -1964,6 +1964,24 @@
                              [:nest 19 0 0 0] [:grid-direction 9 0 3 0] [:nest 8 0 0 0] [:add-variant 0]
                              [:switch 12] [:make-variant 2] [:switch 14]]}))))
 
+(t/deftest turning-a-flipped-copy-turns-a-child-stored-as-the-other-mirror-turn
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:swap 5 0 0 0] [:delete 8 0 0 0] [:delete 5 0 0 0] [:combine 7 0 0 0]
+                             [:restore 0 0 0 0] [:add-variant 5] [:switch 0] [:combine 0] [:switch 3]
+                             [:make-variant 14] [:switch 2] [:duplicate 0 0 0 0] [:delete 4 0 0 0]
+                             [:add-variant 7 0 0 0] [:transform 15 1 0 2] [:combine 0] [:switch 1]
+                             [:duplicate 1 0 0 0] [:transform 1 4 0 4] [:variant-property 0 0 0 0]
+                             [:switch 6] [:rotate 10 0 0 0] [:rotate 1 0 0 0]]}))))
+
+(t/deftest updating-a-main-keeps-a-pushed-swap-its-main-converged-to
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:make-variant 1] [:switch 11] [:make-variant 2] [:switch 10] [:swap 1 0 0 0]
+                             [:update-main 0 0 0 0]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]

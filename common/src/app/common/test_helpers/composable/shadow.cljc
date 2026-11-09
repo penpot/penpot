@@ -498,8 +498,10 @@
                            (and (:shape-ref ref) (seq groups))
                            (update (:id ref) merge
                                    (cond-> (grid/remap-groups groups (grid/get-child-map after shape ref))
-                                     (= (:component-id ref)
-                                        (:component-id (get after (:shape-ref ref))))
+                                     ;; a clone of the copy shape keeps the swap it authored against the same main
+                                     (and (= (:component-id ref)
+                                             (:component-id (get after (:shape-ref ref))))
+                                          (not= (:shape-ref ref) (:shape-ref shape)))
                                      (dissoc :swap-group))))]
               (reduce #(push %1 %2 content?) result (:shapes shape))))]
     (push model root-id false)))
@@ -534,7 +536,10 @@
          (if-let [expected (authored-placement (:geometry-group groups) new-parent)]
            (assoc-in result [id :geometry-group]
                      (with-meta (values expected :geometry-group) (meta (:geometry-group groups))))
-           (update-in result [id :geometry-group] in-orientation parent new-parent (geom/turn-sign old)))
+           (let [geometry (:geometry-group groups)
+                 ;; the way the authored rotation, not the one `old` stores, decomposes its transform
+                 sign (geom/turn-sign (merge old (select-keys geometry [:rotation :flip-x :flip-y])))]
+             (update-in result [id :geometry-group] in-orientation parent new-parent sign)))
          result)))
    model model))
 
