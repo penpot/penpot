@@ -751,10 +751,14 @@
                                               (placed-flips main (get after (:parent-id main)) new-parent))
                                        (and (not root?) (= :geometry-group group) new-parent)
                                        (in-orientation (get after (:parent-id main)) new-parent))
+                              ;; the old main as the old copy showed it, in the
+                              ;; same frame as `placed`
                               old-placed (cond-> old-main
                                            (and root? (= :geometry-group group))
                                            (merge {:rotation old-placed-rotation}
-                                                  (placed-flips old-main (get before (:parent-id old-main)) old-parent)))
+                                                  (placed-flips old-main (get before (:parent-id old-main)) old-parent))
+                                           (and (not root?) (= :geometry-group group) old-main old-parent)
+                                           (in-orientation (get before (:parent-id old-main)) old-parent))
                               old (if (= :geometry-group group) old-resized old)
                               orientation #{:rotation :flip-x :flip-y}
                               ;; the head's turn and flips carry as one: only where the
