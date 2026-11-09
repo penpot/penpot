@@ -921,6 +921,7 @@ test(
     ]);
     assert.equal(result.exitCode, 1);
     assert.equal(result.stdout.split("Status failed\n").length - 1, 1);
+    assert.equal(result.stdout.trim().split("\n").length, 3);
     assert.match(result.stderr, /✖ renderer build preparation failed/);
   },
 );
@@ -961,8 +962,12 @@ test(
           if (child.exitCode === null) child.kill("SIGKILL");
         });
         const exited = once(child, "exit");
+        const closed = once(child, "close");
+        let stdout = "";
         let stderr = "";
-        child.stdout.resume();
+        child.stdout.on("data", (chunk) => {
+          stdout += chunk;
+        });
         child.stderr.on("data", (chunk) => {
           stderr += chunk;
         });
@@ -976,6 +981,11 @@ test(
         assert.ok(fs.existsSync(marker), stderr);
         child.kill(signal);
         assert.deepEqual(await exited, [code, null], stderr);
+        await closed;
+        if (command === "ab") {
+          assert.match(stdout, /^Status interrupted$/m);
+          assert.equal(stdout.trim().split("\n").length, 3);
+        }
         if (failPublication) assert.match(stderr, /publication unavailable/);
       }
     }

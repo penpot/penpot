@@ -1191,8 +1191,11 @@ warnings. The runner validates the record with a schema and writes it
 atomically. It writes the initial plan before the first build and updates the
 record after each configuration, after each edge, and at termination. The
 command prints `Comparison <id>`, `Output <absolute path>`, and `Status <status>`
-on stdout at termination. Progress and failures go to stderr. Each configuration
-has its own build and run log.
+on stdout at termination. When a failed outcome has an empty error list, the
+command appends a `Failures` section with saved reasons and artefact references.
+The section shows up to eight failed configurations and comparisons, then names
+the saved record and log with the complete evidence. Progress and runtime
+failures go to stderr. Each configuration has its own build and run log.
 
 ### Edge comparisons
 
@@ -1361,7 +1364,8 @@ The commands write results to stdout:
 - `run`: `Run <id>` and `Output <absolute path>` after the run ends. When a
   report is available, a `Report` heading and the formatted summary follow.
 - `ab`: `Comparison <id>`, `Output <absolute path>`, and final
-  `Status <status>`.
+  `Status <status>`. A failed outcome with an empty error list also prints a
+  bounded `Failures` section from the saved comparison record.
 - `compare`: the comparison report.
 - `merge`: `Run <id>` and `Output <absolute path>`.
 - `--help` and `COMMAND --help`: usage text with that command's options and

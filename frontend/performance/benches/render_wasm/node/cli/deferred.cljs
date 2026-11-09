@@ -14,7 +14,8 @@
    [benches.render-wasm.node.runner.build :as build]
    [benches.render-wasm.node.runner.feature-comparison :as feature-comparison]
    [benches.render-wasm.node.runner.run :as run]
-   [benches.render-wasm.node.storage.artifacts :as artifacts]))
+   [benches.render-wasm.node.storage.artifacts :as artifacts]
+   [benches.render-wasm.report.format :as format]))
 
 (defn- ^:async build-command
   [{:keys [get-root signal]} options]
@@ -45,14 +46,20 @@
     (if (:dry-run options)
       (outcome/succeeded {:report (feature-comparison/format-plan prepared)})
       (let [{:keys [home exit-code] :as result}
-            (await (feature-comparison/execute root prepared signal {:services services}))]
+            (await (feature-comparison/execute root prepared signal {:services services}))
+            interrupted (.-aborted signal)
+            failures    (when (and home (= 1 exit-code) (not interrupted)
+                                   (= :failed (get-in result [:comparison :status]))
+                                   (empty? (:errors result)))
+                          (format/format-feature-comparison-failures (:comparison result) home))]
         (cond-> result
           home (assoc :report (str "Comparison " (:comparison-id home)
                                    "\nOutput " (:dir home)
                                    "\nStatus " (cond
-                                                 (.-aborted signal) "interrupted"
+                                                 interrupted "interrupted"
                                                  (zero? exit-code) "completed"
-                                                 :else "failed"))))))))
+                                                 :else "failed")
+                                   (when failures (str "\n" failures)))))))))
 
 (def ^:private handlers
   {"build" build-command "run" run-command "ab" ab-command})

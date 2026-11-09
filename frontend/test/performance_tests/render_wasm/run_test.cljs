@@ -12,6 +12,7 @@
    [app.common.transit :as transit]
    [benches.render-wasm.errors :as errors]
    [benches.render-wasm.features.plan :as feature-plan]
+   [benches.render-wasm.node.cli.deferred :as deferred]
    [benches.render-wasm.node.cli.request :as request]
    [benches.render-wasm.node.log :as log]
    [benches.render-wasm.node.runner.browser :as browser]
@@ -21,7 +22,8 @@
    [benches.render-wasm.node.storage.runs :as runs]
    [benches.render-wasm.result :as result]
    [cljs.test :as t :include-macros true]
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [frontend-tests.helpers.mock :as mock]))
 
 (def ^:private temporary-root (atom nil))
 
@@ -1268,6 +1270,49 @@
       (let [run (result/decode (fs/readFileSync (get-in configuration [:run :record-path]) "utf8"))]
         (t/is (= :completed (get-in run [:termination :reason])))
         (t/is (= 1 (count (:attempts run))))))))
+
+(t/deftest ^:async failed-feature-configuration-prints-its-saved-cause-and-log
+  (let [root     @temporary-root
+        cases    [(collected :case/a :fresh)]
+        fake     (fake-browser {:close-page-failure #(= % 1)})
+        prepared {:plan (feature-plan/plan ["a"] {:dry-run true})
+                  :cases cases
+                  :output-dir nil
+                  :options (assoc (dissoc (options nil nil) :browser) :filter "case/")}
+        response (await
+                  (feature-comparison/execute
+                   root prepared nil
+                   {:services
+                    {:prepare-build prepare-comparison-build
+                     :collect-catalog (fn [_ _] cases)
+                     :execute-run
+                     (fn [root home selected cases opts signal]
+                       (run/execute root home selected cases
+                                    (assoc opts :browser (:service fake)) signal))}}))
+        home     (:home response)
+        saved    (result/decode (fs/readFileSync (:record-path home) "utf8"))
+        config   (first (:configurations saved))
+        request  (request/apply-defaults {:command "ab" :console {:color :never}
+                                          :options {:features ["a"] :filter "case/"}})]
+    (t/is (= 1 (:exit-code response)))
+    (t/is (empty? (:errors response)))
+    (t/is (= [:failed :completed] (mapv :status (:configurations saved))))
+    (t/is (= :browser-close (get-in config [:failure :stage])))
+    (t/is (every? #(= :completed (:status %)) (:edges saved)))
+    (await
+     (mock/with-mocks*
+       {feature-comparison/prepare (fn [_ _ _] (js/Promise.resolve prepared))
+        feature-comparison/execute (fn [_ _ _ _] (js/Promise.resolve response))}
+       (t/is (= 1 (await (deferred/execute (transit/encode-str request)))))
+       (let [log      (fs/readFileSync (:log-path home) "utf8")
+             position (str/last-index-of log (str "Comparison " (:comparison-id home) "\n"))
+             report   (subs log (or position 0))]
+         (t/is (some? position))
+         (t/is (str/includes? report "Failures\n  Configuration \"0\":"))
+         (t/is (= 1 (count (re-seq #"page close failed" report))))
+         (t/is (str/includes? report (get-in config [:run :record-path])))
+         (t/is (str/includes? report (get-in config [:run :log-path])))
+         (t/is (str/includes? report (:record-path home))))))))
 
 (t/deftest ^:async gpu-rejection-stops-later-matrix-configurations
   (doseq [[hardware-first close-fails] [[false false] [true false] [true true]]]

@@ -10,6 +10,7 @@
   Text leads with observed median, bootstrap interval and distinct counts.
   Full statistics and acknowledged differences include units and phase identity."
   (:require
+   [benches.render-wasm.errors :as errors]
    [benches.render-wasm.result :as result]
    [clojure.string :as str]))
 
@@ -94,6 +95,58 @@
        "\n  case " (pr-str definition)
        "\n  preparations " (pr-str preparations)
        (apply str (map (fn [[id metric]] (str "\n" (metric->text id metric))) metrics))))
+
+(defn- quoted-detail
+  [value]
+  (errors/bounded-text (js/JSON.stringify value) 1024))
+
+(defn- failure->text
+  [{:keys [failure reason]}]
+  (if failure
+    (if-let [n (:unacknowledged-differences failure)]
+      (str n " unacknowledged " (if (= n 1) "difference" "differences"))
+      (str (quoted-detail (:phase failure)) ": " (quoted-detail (:message failure))))
+    (quoted-detail reason)))
+
+(defn- configuration-failure->text
+  [{:keys [slug run build] :as configuration}]
+  (str "  Configuration " (quoted-detail slug) ": " (failure->text configuration)
+       (cond
+         run (str "\n    Run record " (quoted-detail (:record-path run))
+                  "\n    Log " (quoted-detail (:log-path run)))
+         build (str "\n    Build manifest " (quoted-detail (:manifest-path build))
+                    "\n    Log " (quoted-detail (:log-path build))))))
+
+(defn- edge-failure->text
+  [{:keys [from to feature path] :as edge}]
+  (str "  Comparison " (quoted-detail from) " -> " (quoted-detail to)
+       " (feature " (quoted-detail feature) "): " (failure->text edge)
+       (when path (str "\n    Report " (quoted-detail path)))))
+
+(defn format-feature-comparison-failures
+  "Formats failed configurations and comparisons with artifact references.
+
+  Args:
+    record: Validated feature-comparison record.
+    home: Comparison :record-path and :log-path.
+
+  Returns:
+    Text for up to eight failures in configuration and comparison order,
+    with an omitted count and references to the complete evidence. String
+    fields escape C0 controls (U+0000 through U+001F) and use at most
+    1024 UTF-16 units.
+    Returns nil when the record contains no failed entries."
+  [record home]
+  (let [configurations (filter #(= :failed (:status %)) (:configurations record))
+        edges          (filter #(= :failed (:status %)) (:edges record))
+        total          (+ (count configurations) (count edges))
+        entries        (concat (map configuration-failure->text configurations)
+                               (map edge-failure->text edges))]
+    (when (pos? total)
+      (str "Failures\n" (str/join "\n" (take 8 entries))
+           (when (> total 8) (str "\n  " (- total 8) " more failures in the saved record"))
+           "\n  Record " (quoted-detail (:record-path home))
+           "\n  Log " (quoted-detail (:log-path home))))))
 
 (defn format-comparison
   "Formats selected permissions, acknowledged/unacknowledged differences and changes.

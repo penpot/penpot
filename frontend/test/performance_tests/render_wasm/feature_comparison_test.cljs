@@ -22,6 +22,7 @@
    [benches.render-wasm.node.process :as process]
    [benches.render-wasm.node.runner.build :as build]
    [benches.render-wasm.node.runner.feature-comparison :as feature-comparison]
+   [benches.render-wasm.report.format :as format]
    [benches.render-wasm.result :as result]
    [cljs.test :as t :include-macros true]
    [clojure.string :as str]
@@ -982,16 +983,70 @@
                                            {:digest "a"})))})}))
         record   (:comparison result)
         edge     (first (:edges record))
-        saved    (result/decode (fs/readFileSync (:path edge) "utf8"))]
+        saved    (result/decode (fs/readFileSync (:path edge) "utf8"))
+        text     (format/format-feature-comparison-failures record (:home result))]
     (t/is (= 1 (:exit-code result)))
+    (t/is (empty? (:errors result)))
     (t/is (= :failed (:status record)))
     (t/is (= :failed (:status edge)))
     (t/is (fs/existsSync (:path edge)))
     (t/is (= {:unacknowledged-differences 1} (:failure edge)))
     (t/is (= :comparison (:type saved)))
     (t/is (= ["a"] (get-in saved [:edge :added])))
+    (t/is (str/includes? text "Comparison \"0\" -> \"1\" (feature \"a\"): 1 unacknowledged difference"))
+    (t/is (str/includes? text (:path edge)))
+    (t/is (str/includes? text (get-in result [:home :record-path])))
     (t/is (some #(and (= :fingerprint (:field %)) (not (:waived? %)))
                 (get-in saved [:pairs 0 :mismatches])))))
+
+(t/deftest failure-summary-reports-build-reasons-and-comparison-evidence
+  (let [record (-> (terminal-record :failed)
+                   (update-in [:configurations 0] dissoc :run :reason)
+                   (assoc-in [:configurations 0 :failure] {:phase "catalog" :message "catalog rejected"})
+                   (assoc-in [:configurations 1 :status] :failed)
+                   (assoc-in [:configurations 1 :reason] "run did not complete")
+                   result/check-record)
+        home   {:record-path "/feature-comparison.transit" :log-path "/feature-comparison.log"}
+        text   (format/format-feature-comparison-failures record home)
+        edge   (first (:edges record))]
+    (t/is (str/includes? text "Configuration \"00\": \"catalog\": \"catalog rejected\""))
+    (t/is (str/includes? text "Configuration \"01\": \"run did not complete\""))
+    (t/is (str/includes? text (str "Comparison " (pr-str (:from edge)) " -> " (pr-str (:to edge)))))
+    (t/is (str/includes? text "\"comparison\": \"partial\""))
+    (t/is (str/includes? text "/build.transit"))
+    (t/is (str/includes? text "/build.log"))
+    (t/is (str/includes? text "/comparison.transit"))
+    (t/is (str/includes? text (:record-path home)))
+    (t/is (str/includes? text (:log-path home)))))
+
+(t/deftest failure-summary-bounds-and-escapes-details-and-names-omitted-evidence
+  (let [plan    (feature-plan/plan ["a" "b" "c"] {:dry-run true})
+        message (str "detail\n\u001b" (apply str (repeat 10000 "x")) "😀")
+        record  (-> (planned-record)
+                    (assoc :status :failed :ended-at "end"
+                           :features (:features plan)
+                           :configurations (mapv (fn [[index configuration]]
+                                                   (if (< index 4)
+                                                     (assoc configuration :status :failed
+                                                            :failure {:phase "run" :message message})
+                                                     (completed-configuration configuration)))
+                                                 (map-indexed vector (:configurations plan)))
+                           :edges (mapv #(assoc % :status :failed :reason message) (:edges plan)))
+                    (assoc-in [:options :features] (:features plan))
+                    result/check-record)
+        home    {:record-path "/saved\n\u001b.transit" :log-path "/saved.log"}
+        text    (format/format-feature-comparison-failures record home)
+        lines   (str/split-lines text)
+        detail  (second (re-find #"(?m)^  Configuration \"000\": \"run\": (.+)$" text))]
+    (t/is (= 8 (count (re-seq #"(?m)^  (?:Configuration|Comparison) " text))))
+    (t/is (= 4 (count (re-seq #"(?m)^  Comparison " text))))
+    (t/is (str/includes? text "8 more failures in the saved record"))
+    (t/is (str/includes? text "Record \"/saved"))
+    (t/is (string? detail))
+    (t/is (<= (count detail) 1024))
+    (t/is (every? #(<= (count %) 1100) lines))
+    (t/is (every? #(>= (.charCodeAt % 0) 32) (mapcat seq lines)))
+    (t/is (< (count text) 12000))))
 
 (t/deftest ^:async interruption-skips-comparisons-and-returns-the-signal-exit
   (create-frontend-root)
