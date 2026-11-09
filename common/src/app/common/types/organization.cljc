@@ -19,11 +19,13 @@
    [:logo-id {:optional true} [:maybe ::sm/uuid]]
    [:expired-license {:optional true} [:maybe :boolean]]
    [:sso-active {:optional true} [:maybe :boolean]]
+   [:restrictions-met {:optional true} [:maybe [:map-of :keyword :boolean]]]
    [:permissions {:optional true}
     [:maybe [:map
              [:create-teams {:optional true} [:maybe [:enum "any" "onlyMe"]]]
              [:delete-teams {:optional true} [:maybe [:enum "onlyMe" "onlyOwners"]]]
              [:move-teams {:optional true} [:maybe [:enum "always" "myOrganizations" "never"]]]
+             [:send-invitations {:optional true} [:maybe [:enum "ownersAndAdmins" "owners"]]]
              [:new-team-members {:optional true} [:maybe [:enum "anyone" "members"]]]]]]])
 
 
@@ -35,7 +37,7 @@
 
 (def organization->team-keys
   "Organization field keys to include in the nested :organization map."
-  [:id :name :custom-photo :slug :avatar-bg-url :owner-id :expired-license :permissions :sso-active])
+  [:id :name :custom-photo :slug :avatar-bg-url :owner-id :expired-license :permissions :sso-active :restrictions-met])
 
 (defn apply-organization
   "Updates a team map with organization fields in a nested :organization map.
@@ -85,9 +87,9 @@
    :new-team-members "anyone"})
 
 (defn- can-create-team?
-  [{:keys [is-organization-owner? permission-value]}]
+  [{:keys [is-organization-owner? permission-value restrictions-met?]}]
   (or is-organization-owner?
-      (= permission-value "any")))
+      (and (= permission-value "any") (boolean restrictions-met?))))
 
 (defn- can-delete-team?
   [{:keys [is-organization-owner? permission-value team-perms]}]
@@ -109,28 +111,33 @@
     the same owner, and cannot be taken out. A person has one Enterprise
     subscription, so the same owner means the same subscription.
   - \"never\": only the Admin Console can move teams. Nobody moves them
-    from Penpot, not even the organization owner."
-  [{:keys [permission-value target-organization-same-owner?]}]
+    from Penpot, not even the organization owner.
+
+  An attribute restriction (when present) narrows \"always\" and
+  \"myOrganizations\"; it never widens them and never affects \"never\"."
+  [{:keys [permission-value target-organization-same-owner? restrictions-met?]}]
   (cond
     (= permission-value "never")
     false
     (= permission-value "always")
-    true
+    (boolean restrictions-met?)
     (= permission-value "myOrganizations")
-    (true? target-organization-same-owner?)
+    (and (true? target-organization-same-owner?) (boolean restrictions-met?))
     :else false))
 
 (defn- can-invite-to-team?
-  [{:keys [permission-value team-perms]}]
-  (cond
-    (= permission-value "ownersAndAdmins")
-    (or (boolean (:is-owner team-perms))
-        (boolean (:is-admin team-perms)))
+  [{:keys [permission-value team-perms restrictions-met?]}]
+  (and
+   (cond
+     (= permission-value "ownersAndAdmins")
+     (or (boolean (:is-owner team-perms))
+         (boolean (:is-admin team-perms)))
 
-    (= permission-value "owners")
-    (boolean (:is-owner team-perms))
+     (= permission-value "owners")
+     (boolean (:is-owner team-perms))
 
-    :else false))
+     :else false)
+   (boolean restrictions-met?)))
 
 (defn- can-add-anybody-to-team?
   [{:keys [permission-value]}]
@@ -163,13 +170,18 @@
         (get action-rules action)
         permissions (normalize-organization-permissions organization-perms)
         is-organization-owner? (owner? organization-perms profile-id)
-        permission-value (get permissions permission-key)]
+        permission-value (get permissions permission-key)
+        ;; Missing key means "met": an old Nitrate that does not send
+        ;; :restrictions-met keeps today's behaviour (fail-open on the key,
+        ;; the option rules above still fail-closed on the action).
+        restrictions-met? (get-in organization-perms [:restrictions-met permission-key] true)]
     (cond
       (nil? rule) false
       :else (boolean (check-fn {:is-organization-owner? is-organization-owner?
                                 :permission-value permission-value
                                 :team-perms team-perms
-                                :target-organization-same-owner? target-organization-same-owner?})))))
+                                :target-organization-same-owner? target-organization-same-owner?
+                                :restrictions-met? restrictions-met?})))))
 
 (defn can-send-invitations?
   "Returns true when the user can send invitations to a team.
@@ -178,8 +190,7 @@
   [{:keys [organization profile-id team-permissions]}]
   (if (and (contains? flags/*current* :admin-console) organization)
     (allowed? :send-invitations
-              {:organization-perms {:owner-id    (:owner-id organization)
-                                    :permissions (:permissions organization)}
+              {:organization-perms organization
                :profile-id profile-id
                :team-perms team-permissions})
     (or (boolean (:is-owner team-permissions))

@@ -28,9 +28,7 @@
         obj #js {:cmd (d/name (:cmd payload))
                  :senderId (when sender-id (str sender-id))
                  :replyTo (when reply-to (str reply-to))
-                 :payload (if (= :initialize-indices (:cmd payload))
-                            (:file-raw payload)
-                            (when (some? payload) (t/encode-str payload)))
+                 :payload (when (some? payload) (t/encode-str payload))
                  :buffer (when (some? buffer?) buffer?)
                  :completed (when completed true)}]
     (when (some? blob)
@@ -48,8 +46,7 @@
         (assoc :data nil)))))
 
 (defn decode [^js data]
-  (let [cmd (obj/get data "cmd")
-        sender-id (obj/get data "senderId")
+  (let [sender-id (obj/get data "senderId")
         reply-to (obj/get data "replyTo")
         payload (obj/get data "payload")
         buffer (obj/get data "buffer")
@@ -60,10 +57,7 @@
         (d/without-nils
          {:sender-id (when sender-id (uuid sender-id))
           :reply-to (when reply-to (uuid reply-to))
-          :payload (if (= cmd "initialize-indices")
-                     {:cmd :initialize-indices
-                      :file-raw payload}
-                     (when (some? payload) (t/decode-str payload)))
+          :payload (when (some? payload) (t/decode-str payload))
           :buffer? buffer
           :completed completed
           :error (js->error-map error)})]

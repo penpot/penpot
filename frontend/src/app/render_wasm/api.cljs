@@ -742,9 +742,14 @@
       (let [text (apply str (map :text spans))]
         (t/write-shape-text spans paragraph text)))))
 
-(defn set-shape-text-content
-  "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
-  [shape-id content]
+(defn- text-content-fonts
+  "Content fonts and fallback faces (emoji, Noto, ...) of a text content."
+  [content]
+  {:fonts          (f/get-content-fonts content)
+   :fallback-fonts (fonts-from-text-content content false)})
+
+(defn- upload-text-content
+  [shape-id content {:keys [fonts fallback-fonts]}]
 
   ;; Cache content for text editor sync
   (text-editor/cache-shape-text-content! shape-id content)
@@ -758,14 +763,16 @@
 
     (set-shape-vertical-align (get content :vertical-align))
 
-    (let [fonts          (f/get-content-fonts content)
-          fallback-fonts (fonts-from-text-content content false)
-          all-fonts      (concat fonts fallback-fonts)
-          result         (f/store-fonts all-fonts)]
+    (let [result (f/store-fonts (concat fonts fallback-fonts))]
       (write-text-content! content)
       (f/load-fallback-fonts-for-editor! fallback-fonts)
       (h/call wasm/internal-module "_update_shape_text_layout")
       result)))
+
+(defn set-shape-text-content
+  "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
+  [shape-id content]
+  (upload-text-content shape-id content (text-content-fonts content)))
 
 (defn apply-styles-to-selection
   "Apply style attrs to the currently selected text spans.
@@ -858,9 +865,9 @@
   (let [children (into [] (filter uuid?) children)]
     (if (empty? children)
       (h/call wasm/internal-module "_set_children_0")
-      (let [heap   (mem/get-heap-u32)
-            size   (mem/get-alloc-size children UUID-U8-SIZE)
-            offset (mem/alloc->offset-32 size)]
+      (let [size   (mem/get-alloc-size children UUID-U8-SIZE)
+            offset (mem/alloc->offset-32 size)
+            heap   (mem/get-heap-u32)]
         (reduce
          (fn [offset id]
            (mem.h32/write-uuid offset heap id))
@@ -1523,16 +1530,10 @@
 (def ^:private empty-text-font-state
   {:font-index {} :pending-faces #{}})
 
-(defn- text-layout-fonts
-  "Content and fallback faces (emoji, Noto, ...) that `set-shape-text-content`
-  uploads, must match that path for pending-face tracking."
-  [content]
-  (into #{} (concat (f/get-content-fonts content)
-                    (fonts-from-text-content content false))))
-
 (defn- text-font-face-keys-state
-  "All font-face keys for a text content, and the subset not WASM-ready yet."
-  [content]
+  "All font-face keys for the `text-content-fonts` of a text, and the subset
+  not WASM-ready yet."
+  [{:keys [fonts fallback-fonts]}]
   (reduce
    (fn [acc font]
      (let [font-data (f/make-font-data font)
@@ -1543,7 +1544,7 @@
            (cond-> pending?
              (update :pending-font-face-keys conj key)))))
    {:font-face-keys #{} :pending-font-face-keys #{}}
-   (text-layout-fonts content)))
+   (into #{} (concat fonts fallback-fonts))))
 
 (defn- acc-text-font-state
   [{:keys [font-index pending-faces]} id font-face-keys pending-font-face-keys]
@@ -1560,7 +1561,7 @@
   (if (cfh/text-shape? shape)
     (let [content (ensure-text-content (:content shape))
           {:keys [font-face-keys pending-font-face-keys]}
-          (text-font-face-keys-state content)]
+          (text-font-face-keys-state (text-content-fonts content))]
       (acc-text-font-state empty-text-font-state
                            (:id shape)
                            font-face-keys
@@ -1613,9 +1614,10 @@
           (set-layout-data shape)))
 
     (let [is-text? (= type :text)
+          text-fonts (when is-text? (text-content-fonts content))
           {:keys [font-face-keys pending-font-face-keys]}
-          (when is-text? (text-font-face-keys-state content))
-          text-content-pending (when is-text? (set-shape-text-content id content))
+          (when is-text? (text-font-face-keys-state text-fonts))
+          text-content-pending (when is-text? (upload-text-content id content text-fonts))
           pending-thumbnails (into [] (concat
                                        text-content-pending
                                        (when is-text? (set-shape-text-images id content true))
@@ -2060,8 +2062,8 @@
   [entries]
   (when (and (initialized?) (not ^boolean (empty? entries)))
     (let [size   (mem/get-alloc-size entries UUID-U8-SIZE)
-          heap   (mem/get-heap-u32)
-          offset (mem/alloc->offset-32 size)]
+          offset (mem/alloc->offset-32 size)
+          heap   (mem/get-heap-u32)]
 
       (reduce (fn [offset id]
                 (mem.h32/write-uuid offset heap id))
@@ -2084,8 +2086,8 @@
   (when (and (initialized?) (seq shape-ids))
     (let [ids    (vec shape-ids)
           size   (mem/get-alloc-size ids UUID-U8-SIZE)
-          heap   (mem/get-heap-u32)
-          offset (mem/alloc->offset-32 size)]
+          offset (mem/alloc->offset-32 size)
+          heap   (mem/get-heap-u32)]
       (reduce (fn [offset id]
                 (mem.h32/write-uuid offset heap id))
               offset
@@ -2143,10 +2145,10 @@
   [entries snap-pixel? snap-ignore-axis]
   (if-not (and (initialized?) (not ^boolean (empty? entries)))
     []
-    (let [heapf32 (mem/get-heap-f32)
-          heapu32 (mem/get-heap-u32)
-          size    (mem/get-alloc-size entries INPUT-MODIFIER-U8-SIZE)
-          offset  (mem/alloc->offset-32 size)]
+    (let [size    (mem/get-alloc-size entries INPUT-MODIFIER-U8-SIZE)
+          offset  (mem/alloc->offset-32 size)
+          heapf32 (mem/get-heap-f32)
+          heapu32 (mem/get-heap-u32)]
 
       (reduce (fn [offset [id data]]
                 (let [transform (:transform data)
@@ -2161,6 +2163,8 @@
       (let [precision  (pixel-precision-mode snap-pixel? snap-ignore-axis)
             offset     (-> (h/call wasm/internal-module "_propagate_modifiers" precision)
                            (mem/->offset-32))
+            heapf32    (mem/get-heap-f32)
+            heapu32    (mem/get-heap-u32)
             length     (aget heapu32 offset)
             max-offset (+ offset 1 (* length MODIFIER-U32-SIZE))
             result     (loop [result (transient [])
@@ -2180,8 +2184,7 @@
   (when (and (initialized?) (not ^boolean (empty? entries)))
     (let [size    (mem/get-alloc-size entries UUID-U8-SIZE)
           offset  (mem/alloc->offset-32 size)
-          heapu32 (mem/get-heap-u32)
-          heapf32 (mem/get-heap-f32)]
+          heapu32 (mem/get-heap-u32)]
 
       (reduce (fn [offset id]
                 (mem.h32/write-uuid offset heapu32 id))
@@ -2190,7 +2193,7 @@
 
       (let [offset (-> (h/call wasm/internal-module "_get_selection_rect")
                        (mem/->offset-32))
-            result (dr/read-selection-rect heapf32 offset)]
+            result (dr/read-selection-rect (mem/get-heap-f32) offset)]
         (mem/free)
         result))))
 
@@ -2759,8 +2762,8 @@
 (defn calculate-bool*
   [bool-type ids]
   (let [size   (mem/get-alloc-size ids UUID-U8-SIZE)
-        heap   (mem/get-heap-u32)
-        offset (mem/alloc->offset-32 size)]
+        offset (mem/alloc->offset-32 size)
+        heap   (mem/get-heap-u32)]
 
     (reduce (fn [offset id]
               (mem.h32/write-uuid offset heap id))
@@ -2772,6 +2775,7 @@
             (-> (h/call wasm/internal-module "_calculate_bool" (sr/translate-bool-type bool-type))
                 (mem/->offset-32))
 
+            heap    (mem/get-heap-u32)
             length  (aget heap offset)
             data    (mem/slice heap
                                (+ offset 1)
@@ -2827,10 +2831,10 @@
   [shape]
   (when (initialized?)
     (wselect/use-shape (:id shape))
-    (let [heapf32 (mem/get-heap-f32)
-          heapu32 (mem/get-heap-u32)
-          offset (-> (h/call wasm/internal-module "_calculate_position_data")
+    (let [offset (-> (h/call wasm/internal-module "_calculate_position_data")
                      (mem/->offset-32))
+          heapf32 (mem/get-heap-f32)
+          heapu32 (mem/get-heap-u32)
           length (aget heapu32 offset)
 
           max-offset (+ offset 1 (* length POSITION-DATA-U32-SIZE))
@@ -3001,8 +3005,8 @@
   (when (and (initialized?) (seq shape-ids))
     (let [ids    (vec shape-ids)
           size   (mem/get-alloc-size ids UUID-U8-SIZE)
-          heap   (mem/get-heap-u32)
           offset (mem/alloc->offset-32 size)
+          heap   (mem/get-heap-u32)
 
           _ (reduce (fn [offset id]
                       (mem.h32/write-uuid offset heap id))
@@ -3080,8 +3084,8 @@
   (when (and (initialized?) (seq shape-ids))
     (let [ids    (vec shape-ids)
           size   (mem/get-alloc-size ids UUID-U8-SIZE)
-          heap   (mem/get-heap-u32)
           offset (mem/alloc->offset-32 size)
+          heap   (mem/get-heap-u32)
 
           _ (reduce (fn [offset id]
                       (mem.h32/write-uuid offset heap id))

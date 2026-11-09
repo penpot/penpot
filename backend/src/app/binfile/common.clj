@@ -478,6 +478,18 @@
             {:team-id team-id
              :deleted-at nil}))
 
+(def ^:private sql:get-files-rels
+  "SELECT flr.*,
+	      fls.synced_at
+    FROM file_library_rel AS flr
+    JOIN file AS l
+      ON flr.library_file_id = l.id
+    LEFT JOIN file_library_sync AS fls
+      ON fls.file_id = flr.file_id
+     AND fls.library_file_id = flr.library_file_id
+   WHERE flr.file_id = ANY(?)
+     AND l.deleted_at IS NULL;")
+
 (defn get-files-rels
   "Given a set of file-id's, return all matching relations with the libraries"
   [cfg ids]
@@ -486,18 +498,8 @@
   (assert (every? uuid? ids) "expected a set of uuids")
 
   (db/run! cfg (fn [{:keys [::db/conn]}]
-                 (let [ids (db/create-array conn "uuid" ids)
-                       sql (str "SELECT flr.*,"
-                                "	   fls.synced_at"
-                                "  FROM file_library_rel AS flr"
-                                "  JOIN file AS l"
-                                "    ON flr.library_file_id = l.id"
-                                "  LEFT JOIN file_library_sync AS fls"
-                                "    ON fls.file_id = flr.file_id"
-                                "   AND fls.library_file_id = flr.library_file_id"
-                                " WHERE flr.file_id = ANY(?)"
-                                "   AND l.deleted_at IS NULL;")]
-                   (db/exec! conn [sql ids])))))
+                 (let [ids (db/create-array conn "uuid" ids)]
+                   (db/exec! conn [sql:get-files-rels ids])))))
 
 (def ^:private sql:upsert-file-library-sync
   "INSERT INTO file_library_sync (file_id, library_file_id, synced_at)

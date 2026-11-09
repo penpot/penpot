@@ -5,10 +5,9 @@
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
 // refactor/ stays for the component-family placeholders: %input-checkbox
-// and %checkbox-icon (checkboxes, #12380) and %modal-* (modals). The shared
-// dashboard header (common-dashboard) moves in its own change.
+// and %checkbox-icon (checkboxes, #12380) and %modal-* (modals).
 @use "refactor/common-refactor.scss" as deprecated;
-@use "common/refactor/common-dashboard";
+@use "dashboard/common/header";
 @use "ds/_utils.scss" as *;
 @use "ds/typography.scss" as *;
 @use "ds/_sizes.scss" as *;

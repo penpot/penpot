@@ -11,6 +11,7 @@ repository via GraphQL and REST APIs through the authenticated `gh` CLI.
 - Comparing milestone issues against CHANGES.md to find missing entries.
 - Explicitly linking a GitHub issue to a pull request.
 - Listing or inspecting GitHub Security Advisories (GHSA).
+- Fetching issue comments (the `## Breaking change note` markdown for the changelog).
 
 ## Prerequisites
 
@@ -81,6 +82,16 @@ python3 scripts/gh.py prs --milestone "2.16.0" --state all
 Fetch issue details by number in batches of 50 (same input styles as `prs`: numbers, `--file`, `--stdin`). No filters. A dead number fails its whole batch (unlike PRs, issues error instead of resolving to null), so the batch falls back to one-by-one lookups and reports misses as `{"number", "error": "not_found"}`. Any other failure aborts.
 
 **Output**: JSON array to stdout; progress to stderr.
+
+### `comments`
+
+Fetch every comment of one or more issues via REST (paginated, 100 per page), oldest first. Same input styles as `issue`: numbers, `--file`, `--stdin`.
+
+```bash
+python3 scripts/gh.py comments 11235 11236
+```
+
+**Output fields per comment**: `issue`, `id`, `author`, `created_at`, `body`. JSON array to stdout; progress to stderr. `changelog.py boom` reads the `## Breaking change note` comment from this output.
 
 ### `link-issue`
 

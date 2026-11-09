@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.config :as cf]
-   [app.main.router :as rt]
+   [app.main.data.auth :as da]
    [app.main.store :as st]
    [app.main.ui.auth.login :refer [login-dialog*]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page*]]
@@ -68,7 +68,8 @@
         (fn [data]
           (cond
             (:invitation-token data)
-            (st/emit! (rt/nav :auth-verify-token {:token (:invitation-token data)}))
+            (st/emit! (da/login-from-register
+                       {:invitation-token (:invitation-token data)}))
 
             (:is-active data)
             (if on-register (on-register) (on-close))
@@ -102,15 +103,19 @@
                              :hide-recovery-link true}]
           [:div {:class (stl/css :login-links)}
            [:div
-            [:a {:on-click set-section
-                 :data-value "recovery-request"}
+            [:button {:type "button"
+                      :class (stl/css :link)
+                      :on-click set-section
+                      :data-value "recovery-request"}
              (tr "auth.forgot-password")]]
            (when (contains? cf/flags :registration)
              [:div
               [:span
                (tr "auth.register") " "]
-              [:a {:on-click set-section
-                   :data-value "register"}
+              [:button {:type "button"
+                        :class (stl/css :link)
+                        :on-click set-section
+                        :data-value "register"}
                (tr "auth.register-submit")]])]]
 
          :register
@@ -119,8 +124,10 @@
           [:div {:class (stl/css :login-links)}
            [:div
             [:span (tr "auth.already-have-account") " "]
-            [:a {:on-click set-section
-                 :data-value "login"}
+            [:button {:type "button"
+                      :class (stl/css :link)
+                      :on-click set-section
+                      :data-value "login"}
              (tr "auth.login-here")]]]]
 
          :register-validate

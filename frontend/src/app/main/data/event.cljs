@@ -8,7 +8,6 @@
   (:require
    ["@penpot/ua-parser" :as ua]
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.math :as math]
@@ -316,14 +315,14 @@
                   0)))
 
           (add-libraries-counters [state files]
-            (reduce (fn [state library-id]
-                      (let [data (dm/get-in files [library-id :data])]
-                        (-> state
-                            (update :total-components + (count (:components data)))
-                            (update :total-colors + (count (:colors data)))
-                            (update :total-typographies + (count (:typographies data))))))
-                    state
-                    (refs/select-libraries files file-id)))]
+            (reduce-kv (fn [state _ library]
+                         (let [data (:data library)]
+                           (-> state
+                               (update :total-components + (count (:components data)))
+                               (update :total-colors + (count (:colors data)))
+                               (update :total-typographies + (count (:typographies data))))))
+                       state
+                       (refs/select-libraries files file-id)))]
 
     (ptk/reify ::snapshot-performance-info
       ptk/UpdateEvent

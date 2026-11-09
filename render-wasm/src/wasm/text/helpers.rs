@@ -297,12 +297,9 @@ pub fn replace_text_with_newlines(
 
     let mut current_cursor = *cursor;
 
-    if let Some(new_offset) = replace_text_at_cursor(text_content, &current_cursor, lines[0]) {
-        current_cursor =
-            TextPositionWithAffinity::new_downstream_affinity(current_cursor.paragraph, new_offset);
-    } else {
-        return None;
-    }
+    let new_offset = replace_text_at_cursor(text_content, &current_cursor, lines[0])?;
+    current_cursor =
+        TextPositionWithAffinity::new_downstream_affinity(current_cursor.paragraph, new_offset);
 
     for line in lines.iter().skip(1) {
         if !split_paragraph_at_cursor(text_content, &current_cursor) {
@@ -336,12 +333,9 @@ pub fn insert_text_with_newlines(
 
     let mut current_cursor = *cursor;
 
-    if let Some(new_offset) = insert_text_at_cursor(text_content, &current_cursor, lines[0]) {
-        current_cursor =
-            TextPositionWithAffinity::new_downstream_affinity(current_cursor.paragraph, new_offset);
-    } else {
-        return None;
-    }
+    let new_offset = insert_text_at_cursor(text_content, &current_cursor, lines[0])?;
+    current_cursor =
+        TextPositionWithAffinity::new_downstream_affinity(current_cursor.paragraph, new_offset);
 
     for line in lines.iter().skip(1) {
         if !split_paragraph_at_cursor(text_content, &current_cursor) {
@@ -477,8 +471,7 @@ pub fn delete_selection_range(text_content: &mut TextContent, selection: &TextSe
 
         delete_range_in_paragraph(&mut paragraphs[end_paragraph], 0, end.offset);
 
-        let end_para_children: Vec<_> =
-            paragraphs[end_paragraph].children_mut().drain(..).collect();
+        let end_para_children: Vec<_> = std::mem::take(paragraphs[end_paragraph].children_mut());
         paragraphs[start.paragraph]
             .children_mut()
             .extend(end_para_children);
@@ -593,10 +586,7 @@ pub fn delete_char_before(
         let paragraphs = text_content.paragraphs_mut();
         let prev_para_len = paragraph_char_count(&paragraphs[prev_para_idx]);
 
-        let current_children: Vec<_> = paragraphs[cursor.paragraph]
-            .children_mut()
-            .drain(..)
-            .collect();
+        let current_children: Vec<_> = std::mem::take(paragraphs[cursor.paragraph].children_mut());
         paragraphs[prev_para_idx]
             .children_mut()
             .extend(current_children);
@@ -770,7 +760,7 @@ pub fn delete_char_after(text_content: &mut TextContent, cursor: &TextPositionWi
         delete_range_in_paragraph(para, cursor.offset, end);
     } else if cursor.paragraph < paragraphs.len() - 1 {
         let next_para_idx = cursor.paragraph + 1;
-        let next_children: Vec<_> = paragraphs[next_para_idx].children_mut().drain(..).collect();
+        let next_children: Vec<_> = std::mem::take(paragraphs[next_para_idx].children_mut());
         paragraphs[cursor.paragraph]
             .children_mut()
             .extend(next_children);

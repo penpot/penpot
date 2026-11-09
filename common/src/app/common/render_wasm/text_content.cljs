@@ -190,9 +190,9 @@
         text-buffer   (encode-text text)
         text-size     (mem/size text-buffer)
         total-size    (+ 4 metadata-size text-size)
+        offset        (mem/alloc total-size)
         heapu8        (mem/get-heap-u8)
-        dview         (mem/get-data-view)
-        offset        (mem/alloc total-size)]
+        dview         (mem/get-data-view)]
     (-> offset
         (mem/write-u32 dview num-spans)
         (write-paragraph dview paragraph)

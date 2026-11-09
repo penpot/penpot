@@ -77,7 +77,7 @@
 
   c/ICounted
   (-count [_]
-    (+ 1 (count delegate)))
+    (+ 2 (count delegate)))
 
   c/IKVReduce
   (-kv-reduce [_ f init]

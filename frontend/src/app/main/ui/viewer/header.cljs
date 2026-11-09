@@ -12,18 +12,21 @@
    [app.main.data.shortcuts :as scd]
    [app.main.data.viewer :as dv]
    [app.main.data.viewer.shortcuts :as sc]
+   [app.main.refs :as refs]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.raw-svg :as raw-svg :refer [raw-svg*]]
    [app.main.ui.exports.assets :refer [progress-widget]]
    [app.main.ui.formats :as fmt]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.viewer.comments :refer [comments-menu]]
    [app.main.ui.viewer.interactions :refer [flows-menu* interactions-menu*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -276,15 +279,20 @@
        [:span {:class (stl/css :frame-name)} frame-name]
        [:> icon* {:icon-id i/arrow-down :size "s" :class (stl/css :icon)}]]]]))
 
-(def ^:private penpot-logo-icon
-  (deprecated-icon/icon-xref :penpot-logo-icon (stl/css :logo-icon)))
-
-
 (mf/defc header
   [{:keys [project file page frame zoom section permissions index interactions-mode shown-thumbnails share]}]
-  (let [go-to-dashboard
+  (let [in-team?       (:in-team permissions)
+        router         (mf/deref refs/router)
+        dashboard-href (when in-team?
+                         (rt/resolve-uri router :dashboard-recent {:team-id (:team-id project)}))
+
+        go-to-dashboard
         (mf/use-fn
-         #(st/emit! (dv/go-to-dashboard)))
+         (fn [event]
+           ;; Ctrl/Cmd-click opens the href in a new tab, as any link.
+           (when-not (kbd/mod? event)
+             (dom/prevent-default event)
+             (st/emit! (dv/go-to-dashboard)))))
 
         go-to-inspect
         (mf/use-fn
@@ -324,13 +332,15 @@
                                    :fullscreen (mf/deref fullscreen-ref))
               :on-click close-thumbnails}
      [:div {:class (stl/css :nav-zone)}
-      ;; If the user doesn't have permission we disable the link
+      ;; Without team permission the logo is not a link: no href, no click.
       [:a {:class (stl/css :home-link)
-           :on-click go-to-dashboard
+           :href dashboard-href
+           :on-click (when in-team? go-to-dashboard)
            :data-testid "penpot-logo-link"
-           :style {:cursor (when-not (:in-team permissions) "auto")
-                   :pointer-events (when-not (:in-team permissions) "none")}}
-       penpot-logo-icon]
+           :style {:cursor (when-not in-team? "auto")
+                   :pointer-events (when-not in-team? "none")}}
+       [:> raw-svg* {:id raw-svg/penpot-logo-icon
+                     :class (stl/css :logo-icon)}]]
 
       [:& header-sitemap {:project project
                           :file file
