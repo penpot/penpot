@@ -264,3 +264,22 @@
         e2      (gpt/to-vec p1 p4)
         area    (abs (- (* (:x e1) (:y e2)) (* (:y e1) (:x e2))))]
     (t/is (>= (/ area (max (gpt/length e1) (gpt/length e2))) 0.999))))
+
+(t/deftest a-turned-board-narrowed-to-its-minimum-keeps-a-left-child-width
+  (let [file    (-> (thf/sample-file :file1)
+                    (tho/add-frame :board :width 120 :height 140)
+                    (add-rect-child :child :board :width 70 :height 25 :constraints-h :left :constraints-v :top))
+        objects (:objects (thf/current-page file))
+        board   (get objects (thi/id :board))
+        objects (->> objects
+                     (gm/set-objects-modifiers
+                      {(:id board) {:modifiers (ctm/rotation-modifiers board (gsh/shape->center board) 45)}})
+                     (gtr/apply-objects-modifiers objects))
+        board   (get objects (thi/id :board))
+        objects (->> objects
+                     (gm/set-objects-modifiers
+                      {(:id board) {:modifiers (ctm/change-size board 0.01 140)}})
+                     (gtr/apply-objects-modifiers objects))
+        child   (get objects (thi/id :child))]
+    (t/is (< (abs (- 70 (:width child))) 0.001))
+    (t/is (< (abs (- 25 (:height child))) 0.001))))

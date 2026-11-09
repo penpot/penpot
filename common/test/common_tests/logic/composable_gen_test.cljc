@@ -1964,6 +1964,13 @@
                              [:nest 19 0 0 0] [:grid-direction 9 0 3 0] [:nest 8 0 0 0] [:add-variant 0]
                              [:switch 12] [:make-variant 2] [:switch 14]]}))))
 
+(t/deftest filling-an-unturned-copy-of-a-turned-main-keeps-its-left-text-width
+  (t/is (map? (cg/run {:world [2 1 {:variants true :text-styles true :library-variants true :stale-libraries true
+                                    :layout :flex :layout-item-margins false :grid-square false :library-depth 1
+                                    :library true :rich-variants true :layout-children false :library-text true
+                                    :grid-empty false :layout-copies true :text true}]
+                       :ops [[:nest 7 0 0 0] [:transform 3 3 0 0] [:switch 1 0 0 0] [:style 3 29 1]]}))))
+
 (t/deftest turning-a-flipped-copy-turns-a-child-stored-as-the-other-mirror-turn
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true
