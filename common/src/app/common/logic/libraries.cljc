@@ -457,6 +457,8 @@
                                     :main-container main-container
                                     :component      component
                                     :library        library
+                                    :file           file
+                                    :libraries      libraries
                                     ;; Reset also places new children in the main's frame.
                                     :root-inst      (cond-> shape-inst reset? (dissoc :touched))
                                     :root-main      shape-main
@@ -708,11 +710,12 @@
   are and only places a swapped child; a reset (`:reset?`) overwrites the
   overrides and clears them. `ctx` holds what stays the same along the
   walk: the copy's `:container`, the `:main-container` of the main shapes,
-  the `:component` and its `:library`, the roots `:root-inst` and
-  `:root-main`, and `:reset?`. The main shapes of the children of a copy
-  shape that keeps its own geometry are placed like it first, so they get
-  their expected geometry. The children of a grid copy with its own cells
-  follow the flow of those cells instead of the main's order."
+  the `:component` and its `:library`, the sync's `:file` and
+  `:libraries`, the roots `:root-inst` and `:root-main`, and `:reset?`.
+  The main shapes of the children of a copy shape that keeps its own
+  geometry are placed like it first, so they get their expected geometry.
+  The children of a grid copy with its own cells follow the flow of those
+  cells instead of the main's order."
   [changes {:keys [container main-container component reset?] :as ctx} shape-inst shape-main]
   (shape-log :debug (:id shape-inst) container
              :msg "Sync shape direct recursive"
@@ -1930,15 +1933,30 @@
 
 (defn- update-swapped-placement
   "Synchronizes a swapped copy head with the main shape it replaces, in the
-  attributes that place it in its parent."
-  [changes {:keys [root-inst root-main container]} shape-inst shape-main]
-  (let [objects (:objects container)]
-    (generate-take-placement changes
-                             shape-inst
-                             (reposition-shape shape-main root-main root-inst)
-                             objects
-                             (and (ctsl/any-layout-immediate-child? objects shape-inst)
-                                  (not (ctsl/position-absolute? shape-inst))))))
+  attributes that place it in its parent. A head with untouched geometry
+  that stops filling its parent in a direction is synced with its own
+  component, as the layout no longer sizes it."
+  [changes {:keys [root-inst root-main container file libraries]} shape-inst shape-main]
+  (let [objects  (:objects container)
+        changes  (generate-take-placement changes
+                                          shape-inst
+                                          (reposition-shape shape-main root-main root-inst)
+                                          objects
+                                          (and (ctsl/any-layout-immediate-child? objects shape-inst)
+                                               (not (ctsl/position-absolute? shape-inst))))
+        sizings  [:layout-item-h-sizing :layout-item-v-sizing]
+        ;; whether the layout may have sized the head
+        filling? (and (not (ctk/touched-group? shape-inst :geometry-group))
+                      (some #(= :fill (get shape-inst %)) sizings))]
+    (if filling?
+      (let [changes (pcb/apply-changes-local changes)
+            objects (pcb/get-objects changes)
+            placed  (get objects (:id shape-inst))]
+        (if (some #(and (= :fill (get shape-inst %)) (not= :fill (get placed %))) sizings)
+          (generate-sync-shape-direct changes file libraries (assoc container :objects objects)
+                                      (:id shape-inst) false)
+          changes))
+      changes)))
 
 (defn- update-layout-children
   "Copy into `dest`, a shape of `container`, the layout attributes of the

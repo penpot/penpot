@@ -1918,6 +1918,16 @@
                              [:swap 11 0 0 0] [:make-variant 4] [:switch 9] [:switch 16 0 0 0]
                              [:combine 7] [:switch 11]]}))))
 
+(t/deftest resetting-a-fill-off-a-swapped-child-gives-it-its-own-size
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :library-variants true :stale-libraries true
+                                    :layout :flex :layout-item-margins false :grid-square false :library-depth 1
+                                    :library true :rich-variants true :layout-children false :library-text true
+                                    :grid-empty false :layout-copies true :text true}]
+                       :ops [[:delete 26 0 0 0] [:delete 16] [:restore 16] [:delete 23] [:restore 23]
+                             [:swap 26 0 0 0] [:switch 0] [:nest 29 0 0 0] [:duplicate 3 0 0 0]
+                             [:reset 0 0 0 0] [:nest 14 0 0 0] [:switch 6 0 0 0] [:style 11 29 1]
+                             [:reset 2]]}))))
+
 (t/deftest random-variant-compositions
   (let [coverage (atom {})
         failure (atom nil)]
