@@ -49,7 +49,7 @@ jobs:
       - name: Format
         working-directory: ./render-wasm
         run: |
-          cargo fmt --check
+          ./fmt --check
 
       - name: Lint
         working-directory: ./render-wasm
