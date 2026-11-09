@@ -3638,6 +3638,31 @@
     (t/is (= (:id (ths/get-shape file :m02-icon)) (:shape-ref icon')))
     (t/is (nil? (ths/get-shape file' :copy-icon-c02)))))
 
+(t/deftest test-switch-drops-a-swap-that-holds-a-copy-it-would-be-inside
+  (let [;; ==== Setup: inside the copy's :mid, its :inner is swapped for a
+        ;; :holder, which holds a copy of :mid
+        file  (-> (thf/sample-file :file1)
+                  (tho/add-nested-component :inner :inner-root :inner-child :mid :mid-root :mid-inner)
+                  (tho/add-frame :holder-root)
+                  (thc/instantiate-component :mid :holder-mid :parent-label :holder-root)
+                  (thc/make-component :holder :holder-root)
+                  (thv/add-variant-with-copy :v01 :c01 :m01 :c02 :m02 :m01-mid :m02-mid :mid)
+                  (thc/instantiate-component :c01 :copy01 :children-labels [:copy-mid]))
+        _     (thi/set-id! :copy-mid-inner (first (:shapes (ths/get-shape file :copy-mid))))
+        file  (thc/component-swap file :copy-mid-inner :holder :copy-holder)
+
+        ;; ==== Action
+        file' (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02
+                                                              :keep-touched? true})
+        mid'  (ths/get-shape-by-id file' (-> (ths/get-shape file' :copy02) :shapes first))
+        inner' (ths/get-shape-by-id file' (-> mid' :shapes first))
+        m02-mid (ths/get-shape file :m02-mid)]
+
+    ;; ==== Check: a copy of :mid cannot hold the :holder, which holds another
+    (t/is (= 1 (count (:shapes mid'))))
+    (t/is (= (first (:shapes m02-mid)) (:shape-ref inner')))
+    (t/is (nil? (ths/get-shape file' :copy-holder)))))
+
 (defn- resize-width
   [shape width]
   (gsh/transform-shape shape (ctm/change-size shape width nil)))

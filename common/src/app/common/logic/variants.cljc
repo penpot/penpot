@@ -339,14 +339,12 @@
        (some ctk/swapped?)))
 
 (defn- nests-in-switch?
-  "Whether the swapped shape `swapped` of `objects` holds a copy of the
-   component `component-id` a switch of the copy head `head` goes to, or of
-   a component the head is inside, so keeping it would nest a component in
-   itself."
-  [objects swapped head component-id]
+  "Whether the swapped shape `swapped` of `objects` holds a copy of a
+   component of `holders`, the shapes a switch would place it inside, so
+   keeping it would nest a component in itself."
+  [objects swapped holders]
   (cfh/components-nesting-loop? (cfh/get-children-with-self objects (:id swapped))
-                                (cons {:component-id component-id}
-                                      (cfh/get-parents objects (:id head)))))
+                                holders))
 
 (defn- find-shape-ref-child-of
   "Get the shape referenced by the shape-ref of the near main of the shape,
@@ -531,8 +529,8 @@
                              (not swapped-in-chain?)
                              (or (not swapped?)
                                  (and (ctk/instance-head? new)
-                                      (not (nests-in-switch? page-objects old original-shape
-                                                             (:component-id new-shape))))))
+                                      (not (nests-in-switch? page-objects old
+                                                             (cfh/get-parents objects (:id new)))))))
                     {:old old :old-ref old-ref :new new :swapped? swapped?})))
               orig-touched)
 
@@ -696,18 +694,24 @@
         component    (ctkl/get-component ldata component-id)
         main         (ctf/get-component-root ldata component)
         main-objects (:objects (ctf/get-component-container ldata component))
-        ;; the paths of the new main where it holds a copy
-        new-paths    (into #{} (comp (filter ctk/instance-head?) (map :shape-path))
+        main-ids     (into #{} (map :id) (cfh/get-children-with-self main-objects (:id main)))
+        ;; the copies the new main holds, by path
+        new-copies   (into {} (comp (filter ctk/instance-head?) (map (juxt :shape-path identity)))
                            (add-unique-path (reverse (cfh/get-children-with-self main-objects (:id main)))
-                                            main-objects (:id main)))]
+                                            main-objects (:id main)))
+        ;; the shapes a swap that takes the place of `place` is inside: the
+        ;; ancestors of `place` in the new main, and those of the head
+        holders      (fn [place]
+                       (concat (filter #(contains? main-ids (:id %)) (cfh/get-parents main-objects (:id place)))
+                               (cfh/get-parents objects (:id shape))))]
     (into #{}
           (comp (filter ctk/swapped?)
                 (remove #(child-of-swapped? % objects (:id shape)))
-                (remove #(nests-in-switch? objects % shape component-id))
                 (filter (fn [old]
-                          (let [old-ref (find-shape-ref-child-of container libraries old (:id base-ref))]
-                            (and (some? old-ref)
-                                 (contains? new-paths (get ref-paths (:id old-ref)))))))
+                          (let [old-ref (find-shape-ref-child-of container libraries old (:id base-ref))
+                                place   (when old-ref (get new-copies (get ref-paths (:id old-ref))))]
+                            (and (some? place)
+                                 (not (nests-in-switch? objects old (holders place)))))))
                 (map :id))
           (rest (cfh/get-children-with-self objects (:id shape))))))
 
