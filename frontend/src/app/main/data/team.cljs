@@ -266,10 +266,14 @@
                          (let [{:keys [type code]} (ex-data cause)]
                            (if (and (= :validation type)
                                     (= :insufficient-permissions code))
+                             ;; The pending invitations are an admin only
+                             ;; list, so a denied refetch means the cached
+                             ;; copy is no longer valid: drop it instead of
+                             ;; leaving stale emails around.
                              (do
-                               (log/warn :hint "fetch-invitations: no permission, skipping"
+                               (log/warn :hint "fetch-invitations: no permission, clearing"
                                          :team-id (str team-id))
-                               (rx/empty))
+                               (rx/of (invitations-fetched team-id [])))
                              (rx/throw cause))))))))))
 
 (defn- team-initialized

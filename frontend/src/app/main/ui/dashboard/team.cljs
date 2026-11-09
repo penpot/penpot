@@ -96,6 +96,7 @@
         invitations-section? (= section :dashboard-team-invitations)
         webhooks-section?    (= section :dashboard-team-webhooks)
         permissions          (:permissions team)
+        is-admin?            (boolean (:is-admin permissions))
         can-invite?          (dnt/can-send-invitations?
                               {:organization (:organization team)
                                :profile-id (:id profile)
@@ -131,15 +132,18 @@
       [:ul {:class (stl/css :dashboard-header-options)}
        [:li {:class (when members-section? (stl/css :active))}
         [:a {:on-click on-nav-members} (tr "labels.members")]]
-       [:li {:class (when invitations-section? (stl/css :active))}
-        [:a {:on-click on-nav-invitations} (tr "labels.invitations")]]
+       (when is-admin?
+         [:li {:class (when invitations-section? (stl/css :active))}
+          [:a {:on-click on-nav-invitations} (tr "labels.invitations")]])
        (when (contains? cfg/flags :webhooks)
          [:li {:class (when webhooks-section? (stl/css :active))}
           [:a {:on-click on-nav-webhooks} (tr "labels.webhooks")]])
        [:li {:class (when settings-section? (stl/css :active))}
         [:a {:on-click on-nav-settings} (tr "labels.settings")]]]]
      [:div {:class (stl/css :dashboard-buttons)}
-      (when (and (or invitations-section? members-section?) (not-empty invitations))
+      (when (and is-admin?
+                 (or invitations-section? members-section?)
+                 (not-empty invitations))
         (let [invite-button (mf/html
                              [:> button* {:class (stl/css :invite-button)
                                           :variant "secondary"
@@ -1060,11 +1064,12 @@
 
 (defn invitations-section-content
   "What the invitations section shows: the list of the pending invitations
-   for the ones that can invite, or just the permission notice. The pending
-   invitations are an admin only list, so a member that cannot invite does
-   not get them."
-  [can-invite?]
-  (if can-invite?
+   for the team admins, or just the permission notice. The pending invitations
+   are an admin only list, and `:is-admin` already includes the team owner.
+   The organization invite policy does not gate the list, only the invite
+   actions."
+  [permissions]
+  (if (:is-admin permissions)
     :list
     :no-permission))
 
@@ -1093,12 +1098,11 @@
 
         on-select-change
         (mf/use-fn
-         (mf/deps can-invite? selected)
+         (mf/deps selected)
          (fn [email]
-           (when can-invite?
-             (if (contains? @selected email)
-               (swap! selected disj email)
-               (swap! selected conj email)))))
+           (if (contains? @selected email)
+             (swap! selected disj email)
+             (swap! selected conj email))))
 
         on-confirm-delete
         (mf/use-fn
@@ -1208,10 +1212,10 @@
       (reset! sort-state {:field nil :direction :asc}))
 
     [:div {:class (stl/css :invitations)}
-     ;; The pending invitations are an admin only list: a member that cannot
-     ;; invite does not get them, so there is nothing to show but the
+     ;; The pending invitations are an admin only list: a member that is not
+     ;; a team admin does not get them, so there is nothing to show but the
      ;; permission notice.
-     (case (invitations-section-content can-invite?)
+     (case (invitations-section-content permissions)
        :no-permission
        [:div {:class (stl/css :empty-invitations)}
         [:div {:class (stl/css :no-permission-text)}
@@ -1222,11 +1226,14 @@
           [:div {:class (stl/css :invitations-actions)}
            [:div
             (tr "team.invitations-selected" (i18n/c (count @selected)))]
-           [:div
-            [:> button* {:variant "secondary"
-                         :type "button"
-                         :on-click on-resend}
-             (tr "labels.resend-invitation")]]
+           ;; Resending goes through the invite command, so it needs the
+           ;; organization invite policy; deleting only needs team admin.
+           (when can-invite?
+             [:div
+              [:> button* {:variant "secondary"
+                           :type "button"
+                           :on-click on-resend}
+               (tr "labels.resend-invitation")]])
            [:> icon-button* {:on-click on-delete
                              :variant "destructive"
                              :aria-label (tr "labels.delete-invitation")
