@@ -1818,7 +1818,10 @@
 
 
 (defn- load-library-file
-  [file-id library-id]
+  "Loads a library of `file-id`. `indirect?` tells whether it is there
+  only because another library uses it, like the flag the libraries
+  fetched when the workspace opens carry."
+  [file-id library-id indirect?]
   (ptk/reify ::load-library-file
     ptk/WatchEvent
     (watch [_ state _]
@@ -1828,7 +1831,7 @@
               (rx/merge-map fpmap/resolve-file)
               (rx/mapcat (fn [file]
                            (rx/of
-                            (libraries-fetched file-id [file])))))
+                            (libraries-fetched file-id [(assoc file :is-indirect indirect?)])))))
          (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
               (rx/map (fn [thumbnails]
                         (fn [state]
@@ -1862,7 +1865,7 @@
                               (as-> libraries-to-load $
                                 (remove loaded-libraries $)
                                 (conj $ library-id)
-                                (map #(load-library-file file-id %) $))))
+                                (map #(load-library-file file-id % (not= % library-id)) $))))
               (rx/catch (fn [cause]
                           (let [error (ex-data cause)]
                             (if (= (:code error) :circular-library-reference)

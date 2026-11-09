@@ -169,10 +169,7 @@
   it, directly or through other libraries, and that either are linked to
   the file directly or are used by no linked library. A directly linked
   library stays until it is disconnected, even when another one uses it.
-  Only the libraries fetched when the workspace opened say whether they
-  are indirect; one linked since then has no flag and counts as direct,
-  because the user linked it. Empty when the libraries only use each other
-  in a cycle."
+  Empty when the libraries only use each other in a cycle."
   [library libraries-by-id]
   (loop [pending   (linked-users library libraries-by-id)
          seen      #{(:id library)}
@@ -184,7 +181,7 @@
           (recur (into (rest pending) users)
                  (conj seen (:id user))
                  (cond-> removable
-                   (or (empty? users) (not (true? (:is-indirect user))))
+                   (or (empty? users) (false? (:is-indirect user)))
                    (conj user)))))
       removable)))
 
