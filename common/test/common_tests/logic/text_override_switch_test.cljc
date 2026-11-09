@@ -18,7 +18,8 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.texts :as thtx]
    [app.common.test-helpers.variants :as thv]
-   [clojure.test :as t]))
+   [clojure.test :as t]
+   [clojure.walk :as walk]))
 
 (t/use-fixtures :each thi/test-fixture)
 
@@ -170,3 +171,44 @@
         copy-t  (ths/get-shape-by-id file (first (:shapes (ths/get-shape file :copy-2))))]
     (t/is (not-any? :typography-ref-id (tree-seq map? :children (:content copy-t))))
     (t/is (= #{:content-group :text-content-size} (:touched copy-t)))))
+
+(t/deftest copy-whose-letters-equal-the-new-variant-holds-no-override
+  ;; the new variant's paragraph names a typography the copy's does not;
+  ;; no override group differs, so the copy keeps the new variant's text
+  (let [file    (-> (thf/sample-file :file1)
+                    (ths/add-sample-typography :heading))
+        styled  (walk/postwalk #(cond-> %
+                                  (and (map? %) (= "paragraph" (:type %)))
+                                  (assoc :typography-ref-id (thi/id :heading)
+                                         :typography-ref-file (:id file)))
+                               (thtx/content small))
+        file    (-> file
+                    (thv/add-variant-with-text :v01 :c01 :m01 :c02 :m02 :t01 :t02 "" ""
+                                               :text1-params {:content (thtx/content small)}
+                                               :text2-params {:content styled})
+                    (thc/instantiate-component :c01 :copy :children-labels [:copy-t])
+                    (ths/update-shape :copy-t :touched #{:content-group :text-content-text})
+                    (tho/swap-component-in-shape :copy :c02 {:new-shape-label :copy-2
+                                                             :keep-touched? true}))
+        copy-t  (ths/get-shape-by-id file (first (:shapes (ths/get-shape file :copy-2))))]
+    (t/is (= styled (:content copy-t)))
+    (t/is (empty? (:touched copy-t)))))
+
+(t/deftest copy-sized-like-the-new-variant-keeps-its-typography
+  ;; the copy's size override is the size the new variant's typography
+  ;; sets, so there is nothing to carry and the typography stays
+  (let [large   [[["Add to cart" {:size 24}]]]
+        heading (thtx/apply-typography small :heading {:size 24 :weight 700})
+        file    (-> (thf/sample-file :file1)
+                    (ths/add-sample-typography :heading)
+                    (thv/add-variant-with-text :v01 :c01 :m01 :c02 :m02 :t01 :t02 "" ""
+                                               :text1-params {:content (thtx/content large)}
+                                               :text2-params {:content (thtx/content heading)})
+                    (thc/instantiate-component :c01 :copy :children-labels [:copy-t])
+                    (ths/update-shape :copy-t :touched #{:content-group :text-content-size}))
+        main-t  (:content (ths/get-shape file :t02))
+        file    (tho/swap-component-in-shape file :copy :c02 {:new-shape-label :copy-2
+                                                              :keep-touched? true})
+        copy-t  (ths/get-shape-by-id file (first (:shapes (ths/get-shape file :copy-2))))]
+    (t/is (= main-t (:content copy-t)))
+    (t/is (empty? (:touched copy-t)))))

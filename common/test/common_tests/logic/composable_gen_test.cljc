@@ -1871,6 +1871,26 @@
                        :ops [[:delete 0] [:restore 0] [:style 1 8 1] [:add-variant 0] [:switch 0]
                              [:add-variant 0 0 0 0]]}))))
 
+(t/deftest switching-a-copy-whose-text-equals-the-new-variant-holds-no-override
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :library-variants true :stale-libraries true
+                                    :layout nil :layout-item-margins false :grid-square false :library-depth 1
+                                    :library true :rich-variants true :layout-children false :library-text true
+                                    :grid-empty false :layout-copies true :text true}]
+                       :ops [[:library-text-style 0 8 1] [:text 10 0 1] [:library-add-variant 0 0 0 0]
+                             [:library-make-variant 0] [:library-sync] [:switch 0] [:library-text 0 0 1]
+                             [:library-text 5 0 1] [:library-variant-property 0 0 0 0] [:library-sync]
+                             [:switch 6] [:swap 7 0 0 0] [:library-make-variant 0] [:library-sync]
+                             [:switch 12]]}))))
+
+(t/deftest switching-a-copy-sized-like-the-new-variant-keeps-its-typography
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles true :library-variants true :stale-libraries true
+                                    :layout nil :layout-item-margins false :grid-square false :library-depth 1
+                                    :library true :rich-variants true :layout-children false :library-text true
+                                    :grid-empty false :layout-copies true :text true}]
+                       :ops [[:nest 0 0 0 0] [:text-style 20 4 1] [:library-text-style 0 4 15 0]
+                             [:library-add-variant 0] [:library-sync] [:switch 0] [:library-text-style 6 8 1]
+                             [:library-variant-property 0 0 0 0] [:library-sync] [:switch 19]]}))))
+
 (t/deftest restoring-a-variant-an-undo-removed-keeps-its-swap
   (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout nil :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true
