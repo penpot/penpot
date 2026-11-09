@@ -588,8 +588,9 @@
    ::sm/params schema:update-comment-thread-status
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id share-id]}]
-  (let [{:keys [file-id]} (get-comment-thread conn id ::sql/for-update true)]
-    (files/check-comment-permissions! cfg profile-id file-id share-id)
+  (let [thread (get-comment-thread conn id ::sql/for-update true)
+        perms  (files/check-comment-permissions! cfg profile-id (:file-id thread) share-id)]
+    (check-page-scope perms (:page-id thread))
     (upsert-comment-thread-status! conn profile-id id)))
 
 ;; --- COMMAND: Update Comment Thread
@@ -633,58 +634,58 @@
   (let [{:keys [file-id page-id] :as thread}
         (get-comment-thread conn thread-id ::sql/for-update true)
 
-        {:keys [team-id project-id] :as file}
-        (get-file cfg file-id page-id)
-
         perms (files/check-comment-permissions! cfg profile-id file-id share-id)]
 
     (check-page-scope perms page-id)
 
-    (quotes/check! cfg {::quotes/id ::quotes/comments-per-file
-                        ::quotes/profile-id profile-id
-                        ::quotes/team-id team-id
-                        ::quotes/project-id project-id
-                        ::quotes/file-id file-id})
+    (let [{:keys [team-id project-id] :as file}
+          (get-file cfg file-id page-id)]
 
-    (let [profile  (profile/get-profile conn profile-id)
-          mentions (into #{} mentions)
-          params   {:id (uuid/next)
-                    :created-at request-at
-                    :modified-at request-at
-                    :thread-id thread-id
-                    :owner-id profile-id
-                    :content content
-                    :mentions (db/encode-pgarray mentions conn "uuid")}
+      (quotes/check! cfg {::quotes/id ::quotes/comments-per-file
+                          ::quotes/profile-id profile-id
+                          ::quotes/team-id team-id
+                          ::quotes/project-id project-id
+                          ::quotes/file-id file-id})
 
-          comment (-> (db/insert! conn :comment params)
-                      (decode-row)
-                      (assoc :file-id file-id)
-                      (add-owner profile))]
+      (let [profile  (profile/get-profile conn profile-id)
+            mentions (into #{} mentions)
+            params   {:id (uuid/next)
+                      :created-at request-at
+                      :modified-at request-at
+                      :thread-id thread-id
+                      :owner-id profile-id
+                      :content content
+                      :mentions (db/encode-pgarray mentions conn "uuid")}
 
-      ;; Update thread modified-at attribute and assoc the current
-      ;; profile to the participant set.
-      (let [mentions     (into (:mentions thread) mentions)
-            participants (-> (:participants thread #{})
-                             (conj profile-id))
-            params       {:modified-at request-at
-                          :participants (db/tjson participants)
-                          :mentions (db/encode-pgarray mentions conn "uuid")}
+            comment (-> (db/insert! conn :comment params)
+                        (decode-row)
+                        (assoc :file-id file-id)
+                        (add-owner profile))]
 
-            ;; Update the page-name cached attribute on comment thread table.
-            params       (cond-> params
-                           (not= (:page-name file) (:page-name thread))
-                           (assoc :page-name (:page-name file)))]
+        ;; Update thread modified-at attribute and assoc the current
+        ;; profile to the participant set.
+        (let [mentions     (into (:mentions thread) mentions)
+              participants (-> (:participants thread #{})
+                               (conj profile-id))
+              params       {:modified-at request-at
+                            :participants (db/tjson participants)
+                            :mentions (db/encode-pgarray mentions conn "uuid")}
 
-        (db/update! conn :comment-thread params
-                    {:id thread-id}
-                    {::db/return-keys false}))
+              ;; Update the page-name cached attribute on comment thread table.
+              params       (cond-> params
+                             (not= (:page-name file) (:page-name thread))
+                             (assoc :page-name (:page-name file)))]
 
-      ;; Update the current profile status in relation to the current thread
-      (upsert-comment-thread-status! conn profile-id thread-id)
+          (db/update! conn :comment-thread params
+                      {:id thread-id}
+                      {::db/return-keys false}))
 
-      (send-comment-emails! conn profile comment thread file)
+        ;; Update the current profile status in relation to the current thread
+        (upsert-comment-thread-status! conn profile-id thread-id)
 
-      (vary-meta comment assoc ::audit/props (assoc comment :team-id team-id)))))
+        (send-comment-emails! conn profile comment thread file)
+
+        (vary-meta comment assoc ::audit/props (assoc comment :team-id team-id))))))
 
 ;; --- COMMAND: Update Comment
 
@@ -707,9 +708,11 @@
         (get-comment conn id ::sql/for-update true)
 
         {:keys [file-id page-id] :as thread}
-        (get-comment-thread conn thread-id ::sql/for-update true)]
+        (get-comment-thread conn thread-id ::sql/for-update true)
 
-    (files/check-comment-permissions! cfg profile-id file-id share-id)
+        perms (files/check-comment-permissions! cfg profile-id file-id share-id)]
+
+    (check-page-scope perms page-id)
 
     ;; Don't allow edit comments to not owners
     (when-not (= owner-id profile-id)
@@ -747,8 +750,13 @@
    ::sm/params schema:delete-comment-thread
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id share-id]}]
-  (let [{:keys [owner-id file-id] :as thread} (get-comment-thread conn id ::sql/for-update true)]
-    (files/check-comment-permissions! cfg profile-id file-id share-id)
+  (let [{:keys [owner-id file-id page-id] :as thread}
+        (get-comment-thread conn id ::sql/for-update true)
+
+        perms (files/check-comment-permissions! cfg profile-id file-id share-id)]
+
+    (check-page-scope perms page-id)
+
     (when-not (= owner-id profile-id)
       (ex/raise :type :validation
                 :code :not-allowed))
@@ -773,10 +781,12 @@
   (let [{:keys [owner-id thread-id] :as comment}
         (get-comment conn id ::sql/for-update true)
 
-        {:keys [file-id]}
-        (get-comment-thread conn thread-id)]
+        {:keys [file-id page-id]}
+        (get-comment-thread conn thread-id)
 
-    (files/check-comment-permissions! cfg profile-id file-id share-id)
+        perms (files/check-comment-permissions! cfg profile-id file-id share-id)]
+
+    (check-page-scope perms page-id)
     (when-not (= owner-id profile-id)
       (ex/raise :type :validation
                 :code :not-allowed))
