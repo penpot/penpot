@@ -271,13 +271,15 @@
   (let [child-bb-before (gpo/parent-coords-bounds child-bounds parent-bounds)
         child-bb-after  (gpo/parent-coords-bounds transformed-child-bounds transformed-parent-bounds)
 
-        scale-x (if (= :scale constraints-h)
-                  1
-                  (/ (gpo/width-points child-bb-before) (max 0.01 (gpo/width-points child-bb-after))))
+        ;; the length of the edge from the first point to the point at `index`
+        edge    (fn [points index] (gpt/length (gpt/to-vec (nth points 0) (nth points index))))
+        ;; the length `before` over the length `after`, or no scale for a collapsed child
+        restore (fn [index]
+                  (let [after (edge child-bb-after index)]
+                    (if (pos? after) (/ (edge child-bb-before index) after) 1)))
 
-        scale-y (if (= :scale constraints-v)
-                  1
-                  (/ (gpo/height-points child-bb-before) (max 0.01 (gpo/height-points child-bb-after))))
+        scale-x (if (= :scale constraints-h) 1 (restore 1))
+        scale-y (if (= :scale constraints-v) 1 (restore 3))
 
         resize-vector (gpt/point scale-x scale-y)
         resize-origin (gpo/origin child-bb-after)
