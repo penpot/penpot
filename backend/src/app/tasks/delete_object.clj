@@ -8,9 +8,11 @@
   "A generic task for object deletion cascade handling"
   (:require
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.db :as db]
    [app.db.sql :as-alias sql]
+   [app.jobs :as jobs]
    [app.loggers.audit :as audit]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
@@ -174,6 +176,7 @@
               {::db/return-keys false})
 
   (doseq [team (profile/get-owned-teams conn id)]
+    (jobs/heartbeat cfg)
     (delete-object cfg (assoc team
                               :object :team
                               :deleted-at deleted-at))))
@@ -182,27 +185,47 @@
   [_cfg props]
   (l/wrn :obj (:object props) :hint "not implementation found"))
 
-(defmethod ig/assert-key ::handler
+(def schema:delete-object-params
+  [:map
+   [:object [:enum :snapshot :team :project :profile :file]]
+   [:deleted-at ::ct/inst]
+   [:id ::sm/uuid]
+   [:file-id {:optional true} ::sm/uuid]
+   [:file-ids {:optional true} [:vector ::sm/uuid]]])
+
+(defn execute-delete-object
+  "Plain job handler: run the delete-object multimethod on the provided
+  params inside a single transaction, tracking the cascade and reporting
+  it as an audit event when anything was marked."
+  [cfg params]
+  (db/tx-run! cfg
+              (fn [cfg]
+                (when (top-exists? cfg params)
+                  (binding [*cascade* (atom {:teams [] :projects [] :files []})]
+                    (delete-object cfg params)
+                    (let [{:keys [teams projects files]} @*cascade*]
+                      (when (or (seq teams) (seq projects) (seq files))
+                        (audit/submit cfg {:name "delete-object-with-cascade"
+                                           :type "action"
+                                           :props {:object (:object params)
+                                                   :id (:id params)
+                                                   :deleted-at (:deleted-at params)
+                                                   :cascade {:team-ids teams
+                                                             :project-ids projects
+                                                             :file-ids files}}
+                                           :context {:triggered-by "delete-object"}}))))))))
+
+(defmethod ig/assert-key ::job-def
   [_ params]
   (assert (db/pool? (::db/pool params)) "expected a valid database pool")
   (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage to be provided"))
 
-(defmethod ig/init-key ::handler
+(defmethod ig/init-key ::job-def
   [_ cfg]
-  (fn [{:keys [props] :as task}]
-    (db/tx-run! cfg
-                (fn [cfg]
-                  (when (top-exists? cfg props)
-                    (binding [*cascade* (atom {:teams [] :projects [] :files []})]
-                      (delete-object cfg props)
-                      (let [{:keys [teams projects files]} @*cascade*]
-                        (when (or (seq teams) (seq projects) (seq files))
-                          (audit/submit cfg {:name "delete-object-with-cascade"
-                                             :type "action"
-                                             :props {:object (:object props)
-                                                     :id (:id props)
-                                                     :deleted-at (:deleted-at props)
-                                                     :cascade {:team-ids teams
-                                                               :project-ids projects
-                                                               :file-ids files}}
-                                             :context {:triggered-by "delete-object"}})))))))))
+  {::jobs/name      :delete-object
+   ::jobs/schema    schema:delete-object-params
+   ::jobs/handler
+   (fn [_context params]
+     (execute-delete-object cfg params))
+   ::jobs/decoder   (sm/decoder schema:delete-object-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:delete-object-params)})

@@ -48,6 +48,13 @@
   "Bucket name for chunked-upload chunks."
   stsch/upload-session-bucket)
 
+(def job-resource-bucket
+  "Bucket for storage objects referenced by job.resource_id (the
+  unified jobs substrate): transient artifacts owned by their job row,
+  reclaimed by storage-gc-touched (via the jobs GC touch) once no job
+  row references them anymore."
+  stsch/job-resource-bucket)
+
 (def valid-buckets
   stsch/metadata-buckets)
 
@@ -241,11 +248,15 @@
         backend'   (impl/resolve-backend storage backend)
 
         bucket     (:bucket mdata)
+        ;; `job-resource` objects belong to one profile, so they are
+        ;; never shared: a dedup hit would hand the artifact of one
+        ;; profile to the job of another.
         dedupable? (and (::deduplicate? params)
                         (:hash mdata)
                         (some? bucket)
                         (not= tempfile-bucket bucket)
-                        (not= upload-session-bucket bucket))
+                        (not= upload-session-bucket bucket)
+                        (not= job-resource-bucket bucket))
 
         hit        (when dedupable?
                      (get-database-object-by-hash pool backend bucket (:hash mdata)))]

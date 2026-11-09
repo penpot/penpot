@@ -96,12 +96,11 @@
   "Convert the log record into a report object and persist it on the database"
   [{:keys [::db/pool]} {:keys [::l/id] :as record}]
   (try
-    (let [uri    (cf/get :public-uri)
-          report (-> record log-record->report d/without-nils)]
+    (let [report (-> record log-record->report d/without-nils)]
       (l/dbg :hint "registering error on database"
              :id (str id)
              :src "logging"
-             :uri (str uri "/dbg/error/" id))
+             :uri (cf/get-public-uri "dbg/error/" (str id)))
       (persist-on-database! pool id 3 report))
     (catch Throwable cause
       (l/warn :hint "unexpected exception on database error logger" :cause cause))))
@@ -139,12 +138,11 @@
   "Convert the log record into a report object and persist it on the database"
   [{:keys [::db/pool]} {:keys [id] :as event}]
   (try
-    (let [uri    (cf/get :public-uri)
-          report (-> event audit-event->report d/without-nils)]
+    (let [report (-> event audit-event->report d/without-nils)]
       (l/dbg :hint "registering error on database"
              :id (str id)
              :src "audit-log"
-             :uri (str uri "/dbg/error/" id))
+             :uri (cf/get-public-uri "dbg/error/" (str id)))
       (persist-on-database! pool id 4 report))
     (catch Throwable cause
       (l/warn :hint "unexpected exception on database error logger" :cause cause))))
@@ -172,18 +170,17 @@
      :value            (pp/pprint-str result :length 50)
      :tenant           (cf/get :tenant)
      :version          (:full cf/version)
-     :href             (str (cf/get :public-uri))}))
+     :href             (cf/get-public-uri)}))
 
 (defn- handle-rlimit-event
   "Convert the log record into a report object and persist it on the database"
   [{:keys [::db/pool]} {:keys [::rlimit/id] :as event}]
   (try
-    (let [uri    (cf/get :public-uri)
-          report (-> event rlimit-event->report d/without-nils)]
+    (let [report (-> event rlimit-event->report d/without-nils)]
       (l/dbg :hint "registering rate limit rejection"
              :id (str id)
              :src "rlimit"
-             :uri (str uri "/dbg/error/" id))
+             :uri (cf/get-public-uri "dbg/error/" (str id)))
       (persist-on-database! pool id 5 report))
     (catch Throwable cause
       (l/warn :hint "unexpected exception on database error logger" :cause cause))))

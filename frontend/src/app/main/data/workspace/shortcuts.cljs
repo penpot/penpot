@@ -19,6 +19,7 @@
    [app.main.data.workspace.comments :as dwcm]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.drawing.common :as dwdc]
+   [app.main.data.workspace.history :as dwh]
    [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shape-layout :as dwsl]
@@ -655,7 +656,8 @@
                           :subsections [:panels]
                           :section [:workspace]
                           :fn #(emit-when-no-readonly
-                                (dw/toggle-layout-flag :document-history))}
+                                (-> (dwh/initialize-history)
+                                    (vary-meta assoc ::ev/origin "workspace:shortcuts")))}
 
    :toggle-colorpalette  {:tooltip (ds/alt "P")
                           :label (fn [] (tr "shortcuts.toggle-colorpalette"))

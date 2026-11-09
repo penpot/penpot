@@ -4,32 +4,36 @@ Backend (`app.config`, `PENPOT_*` env vars) is parameterized; deployments choose
 
 ## Services
 
-- **PostgreSQL**: durable store. Profiles, teams, files, sessions, audit, `storage_object` metadata, the `task` queue, `scheduled_task` cron registry, migrations. File-data also lives here when the file-data backend is `legacy-db`/`db`. One shared DB across all backends.
+- **PostgreSQL**: durable store. Profiles, teams, files, sessions, audit, `storage_object` metadata, the `job` work queue (plus the dormant legacy `task` table), `scheduled_task` cron registry, migrations. File-data also lives here when the file-data backend is `legacy-db`/`db`. One shared DB across all backends.
 - **Redis (Valkey-compatible)**: per-backend message bus and cache. Concrete uses: msgbus Pub/Sub for collaborative-editing broadcasts and team/profile-org notifications fired by RPC handlers (`app.rpc.notifications`, `files_update`, `teams`, `websocket`); file-summary cache gated by `enable-redis-cache`; rate-limit counters; and the dispatcher→runner work hand-off list `penpot.worker.queue:<tenant>:<queue>`. `PENPOT_REDIS_URI`. A burst of client-side `RedisCommandTimeoutException` (2s on `DEL`/`SET`, 10s on `BLPOP`) with the exporter healthy is the JVM paused or starved, not Redis: the timeout fires because nothing reads the reply.
 - **Object storage**: backends `:s3` and `:fs`. S3 in prod; devenv uses RustFS. Holds uploaded media, file-data when the file-data backend is `storage`, exports. Backend-side details (resolve, dedup, bucket set, object lifecycle, and file-data backends): `mem:backend/storage`.
-- **SMTP mailer**: invitations, password resets, email verification (sent via the `:sendmail` worker task).
+- **SMTP mailer**: invitations, password resets, email verification (sent via the `:sendmail` worker job).
 - **LDAP** (optional auth provider): helpers in `app.auth.*`, gated by `enable-login-with-ldap`.
 
 ## Task queue and worker model
 
-Async tasks are enqueued via `wrk/submit!` (`app.worker`), which inserts a row into the shared Postgres `task` table tagged with `queue = "<tenant>:<queue-name>"`. Submission is **fire-and-forget** — RPC handlers never poll, never wait, and workers never publish to msgbus. The only completion signal is the `task` row's `status` / `completed_at` columns, which nothing in `rpc/` reads. Soft-delete RPCs return immediately after marking the top-level row, leaving the cascade and reaping to workers.
+Async jobs are enqueued via `jobs/submit` (`app.jobs`), which inserts a row into the shared Postgres `job` table tagged with `queue = "<tenant>:<queue-name>"`. Submission is **fire-and-forget** — RPC handlers never poll and never wait. The completion signal is the `job` row's `status` / `completed_at` columns, which the creation commands read back to answer with the state of the job they just created. A job submitted with `::jobs/profile-id` also publishes a `:job-event` message on that profile's msgbus topic after each transaction commits, and the binfile commands (`create-export-binfile-job`, `create-import-binfile-job`) are the callers that pass that owner, so the progress of their jobs does reach the msgbus. Soft-delete RPCs return immediately after marking the top-level row, leaving the cascade and reaping to workers.
 
-Workers run on backends with `enable-backend-worker` in `PENPOT_FLAGS`. Each worker-enabled backend has a `dispatcher` (polls `task` with `FOR UPDATE SKIP LOCKED`, marks status='scheduled', RPUSHes claimed task IDs into **its own** Redis list) and one or more `runner`s per queue (BLPOP from that same local list, execute, update the Postgres row). The Redis hand-off list is purely intra-backend — cross-backend coordination happens at the Postgres row level.
+Workers run on backends with `enable-backend-worker` in `PENPOT_FLAGS`. Each worker-enabled backend has a `dispatcher` (polls `job` with `FOR UPDATE SKIP LOCKED`, marks status='scheduled', RPUSHes the JSON `[id scheduled-at]` payloads into **its own** Redis list) and one or more `runner`s per queue (BLPOP from that same local list, execute, update the Postgres row). The Redis hand-off list is purely intra-backend — cross-backend coordination happens at the Postgres row level. The queues are `default`, `webhooks`, `cron` and `binfile`: the last one carries the heavy work of a user job (`:worker-binfile-parallelism`, default 1), so a long export or import does not block the default runner.
 
 ## Cross-backend safety
 
-Postgres row locking is the only correctness primitive: `task` claims via `FOR UPDATE SKIP LOCKED`, cron firing via `FOR UPDATE SKIP LOCKED` on the `scheduled_task` row, plus task-handler-internal locks (e.g. `file_gc_scheduler` locks candidate file rows). This makes the work-claim path safe across any number of worker-enabled backends.
+Postgres row locking is the only correctness primitive: `job` claims via `FOR UPDATE SKIP LOCKED`, cron firing via `FOR UPDATE SKIP LOCKED` on the `scheduled_task` row, plus job-handler-internal locks (e.g. `file_gc_scheduler` locks candidate file rows). This makes the work-claim path safe across any number of worker-enabled backends.
 
 Two known race patterns survive multi-backend operation:
 
-- **Cron dedup is best-effort.** The lock on `scheduled_task` is released when the task body finishes. If two backends' cron timers fire for the same scheduled instant with a gap larger than the task body's runtime, both execute it. Penpot's cron entries are idempotent (`session-gc`, `objects-gc`, `storage-gc-*`, `tasks-gc`, `upload-session-gc`, `file-gc-scheduler`); the exceptions are `:telemetry` (would double-report) and `:audit-log-archive` (depends on archive target idempotency).
-- **`wrk/submit! ::dedupe true`** does a non-atomic `DELETE` then `INSERT`. Concurrent cross-backend submits can both bypass the `DELETE` (each sees the other's uncommitted insert as absent) and end up with duplicate `'new'` rows. Each row claims and runs once independently, so the underlying work is fine; the "at most one pending" guarantee weakens.
+- **Cron dedup is best-effort.** The lock on `scheduled_task` is released when the task body finishes. If two backends' cron timers fire for the same scheduled instant with a gap larger than the task body's runtime, both execute it. Penpot's cron entries are idempotent (`session-gc`, `objects-gc`, `storage-gc-*`, `storage-pending-gc`, `jobs-gc`, `file-gc-scheduler`); the exceptions are `:telemetry` (would double-report) and `:audit-log-consumer-nexus` / `:audit-log-consumer-admin-console` (depend on archive target idempotency).
+- **`jobs/submit ::dedupe true`** does a non-atomic `DELETE` then `INSERT`. Concurrent cross-backend submits can both bypass the `DELETE` (each sees the other's uncommitted insert as absent) and end up with duplicate `'new'` rows. Each row claims and runs once independently, so the underlying work is fine; the "at most one pending" guarantee weakens.
 
 Penpot in production lives with both: horizontal-scale deployments accept "exactly-once" as "essentially-once for idempotent operations." Devenv parallel instances handle it by running workers only on ws0 (see `mem:devenv/core`).
 
+## Jobs observability
+
+Worker-enabled, writable backends publish unified jobs metrics through the normal Prometheus registry. Counters describe submit, dispatch, terminal outcomes, retries, orphan recovery, rescheduling and total stored job events (unlabelled); histograms separate queue wait, handler execution and total job age. SQL-backed events are recorded after the outer PostgreSQL transaction commits. The `::jobs-metrics/sampler` component publishes backlog by status and the oldest pending-job age every 30 seconds. All labels are bounded operational values; job IDs, profile IDs, params and error text are excluded. Read-only backends do not start the sampler or the workers.
+
 ## Draining one instance
 
-Each backend has a per-process availability flag (`app.health`, a global atom). While offline, `/readyz` answers `503 OFFLINE` without querying the database, so the load balancer removes that instance from rotation while requests in flight still finish. Operator surface: `app.srepl.main/set-offline` / `set-online`; a restart comes back online. In-flight worker tasks are safe: tasks claimed as `scheduled` return to `new` after 5 minutes via `sql:reschedule-lost` and another instance picks them up.
+Each backend has a per-process availability flag (`app.health`, a global atom). While offline, `/readyz` answers `503 OFFLINE` without querying the database, so the load balancer removes that instance from rotation while requests in flight still finish. Operator surface: `app.srepl.main/set-offline` / `set-online`; a restart comes back online. In-flight worker jobs are safe: jobs claimed as `scheduled` return to `new` after 5 minutes via `sql:reschedule-lost` and another instance picks them up.
 
 ## Touching production data
 
@@ -45,6 +49,5 @@ Production runs the deployed toolbox, not the devenv one:
 
 - Devenv composition and the ws0-only worker placement: `mem:devenv/core`.
 - Storage backend resolution, dedup, bucket behavior, object lifecycle, and file-data lifecycle: `mem:backend/storage`.
-- Storage operation metrics (S3 API calls, logical ops, dedup, asset requests) and the logical-bucket vs physical-target distinction: `mem:backend/storage` (Metrics section).
 - Storage operation metrics (S3 API calls, logical ops, dedup, asset requests) and the logical-bucket vs physical-target distinction: `mem:backend/storage` (Metrics section).
 - Grafana (datasource ids and how to use them, main dashboard, panel conventions and gotchas): `mem:prod-infra/grafana`.

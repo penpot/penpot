@@ -22,6 +22,7 @@
    [app.db.sql :as sql]
    [app.features.fdata :as fdata]
    [app.http :as http]
+   [app.loggers.audit :as-alias audit]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.storage :as sto]
@@ -157,8 +158,9 @@
     (t/is (true? (th/run-task! :file-gc {:file-id (:id file) :revn (:revn file)})))
 
     ;; Check the number of fragments before adding the page
+    ;; (no churn: the preventive GC above reuses the single id).
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
-      (t/is (= 2 (count rows))))
+      (t/is (= 1 (count rows))))
 
     ;; Add page
     (update-file!
@@ -172,20 +174,29 @@
        :id page-id}])
 
     ;; Check the number of fragments before adding the page
+    ;; (add-page adds exactly one fragment; the existing page keeps
+    ;; its id).
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
-      (t/is (= 3 (count rows))))
+      (t/is (= 2 (count rows))))
+
+    ;; Snapshots share fragment rows with the live file; drop them so
+    ;; this GC-mechanics test asserts only on unreferenced fragments
+    ;; (snapshot retention itself is covered in file-pointer-snapshot-test).
+    (th/db-delete! :file-change {:file-id (:id file)})
+    (th/db-delete! :file-data {:file-id (:id file) :type "snapshot"})
 
     ;; The file-gc should mark for remove unused fragments
     (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
-    ;; Check the number of fragments
+    ;; Check the number of fragments (no churn: unchanged pages keep
+    ;; their ids, so nothing is marked and nothing new is persisted).
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
-      (t/is (= 5 (count rows)))
-      (t/is (= 3 (count (filterv :deleted-at rows)))))
+      (t/is (= 2 (count rows)))
+      (t/is (= 0 (count (filterv :deleted-at rows)))))
 
-    ;; The objects-gc should remove unused fragments
+    ;; The objects-gc has nothing to remove.
     (let [res (th/run-task! :objects-gc {})]
-      (t/is (= 3 (:processed res))))
+      (t/is (= 0 (:processed res))))
 
     ;; Check the number of fragments
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
@@ -215,12 +226,18 @@
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
       (t/is (= 3 (count rows))))
 
+    ;; Same snapshot cleanup as above: isolate GC mechanics from
+    ;; snapshot retention.
+    (th/db-delete! :file-change {:file-id (:id file)})
+    (th/db-delete! :file-data {:file-id (:id file) :type "snapshot"})
+
     ;; The file-gc should mark for remove unused fragments
     (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
-    ;; The objects-gc should remove unused fragments
+    ;; Only the replaced page fragment is marked; the live pages keep
+    ;; their ids instead of being re-persisted.
     (let [res (th/run-task! :objects-gc {})]
-      (t/is (= 3 (:processed res))))
+      (t/is (= 1 (:processed res))))
 
     ;; Check the number of fragments;
     (let [rows (th/db-query :file-data {:file-id (:id file)
@@ -240,14 +257,15 @@
     ;; snapshots previously deleted.
     (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
-    ;; Check the number of fragments;
+    ;; Check the number of fragments; without churn the two live
+    ;; pages simply stay where they are (was 4 with 2 re-persisted).
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
       ;; (pp/pprint rows)
-      (t/is (= 4 (count rows)))
+      (t/is (= 2 (count rows)))
       (t/is (= 2 (count (remove :deleted-at rows)))))
 
     (let [res (th/run-task! :objects-gc {})]
-      (t/is (= 2 (:processed res))))
+      (t/is (= 0 (:processed res))))
 
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
       (t/is (= 2 (count rows))))))
@@ -338,8 +356,10 @@
         (t/is (ct/inst? (:deleted-at row2))))
 
       (let [res (th/run-task! :objects-gc {})]
-        ;; delete 2 fragments and 1 media object
-        (t/is (= 3 (:processed res))))
+        ;; 1 (was 2): no churn orphans anymore, only the unused media
+        ;; row is purged. The replaced page fragment stays pinned by
+        ;; the automatic snapshot.
+        (t/is (= 1 (:processed res))))
 
       ;; check file media objects
       (let [rows (th/db-query :file-media-object {:file-id (:id file)})]
@@ -365,10 +385,11 @@
       ;; as deleted.
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
-      ;; This only clears fragments, the file media objects still referenced because
-      ;; snapshots are preserved
+      ;; The deleted shape's fragment is pinned by the automatic
+      ;; snapshot taken before the deletion, and its media is still
+      ;; referenced there too: nothing is marked, nothing to purge.
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 2 (:processed res))))
+        (t/is (= 0 (:processed res))))
 
       ;; Delete all snapshots
       (th/db-exec! ["update file_data set deleted_at = now() where file_id = ? and type = 'snapshot'" (:id file)])
@@ -383,9 +404,11 @@
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
       (let [res (th/run-task! :objects-gc {})]
+        ;; 3 (was 4): the two orphaned page fragments plus the media
+        ;; row, all unreferenced now that the snapshots are purged.
         ;; this will remove the file media objects marked as deleted
         ;; on prev file-gc
-        (t/is (= 2 (:processed res))))
+        (t/is (= 3 (:processed res))))
 
       ;; Now that file-gc have deleted the file-media-object usage,
       ;; lets execute the touched-gc task, we should see that two of
@@ -509,12 +532,15 @@
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 2 (:processed res))))
+        ;; 0 (was 2, then 1): no churn orphans and every replaced page
+        ;; fragment stays pinned by an automatic snapshot.
+        (t/is (= 0 (:processed res))))
 
       (let [rows (th/db-query :file-data {:file-id (:id file)
                                           :type "fragment"
                                           :deleted-at nil})]
-        (t/is (= (count rows) 1)))
+        ;; 2 live (was 1): the snapshot-pinned fragment survives.
+        (t/is (= (count rows) 2)))
 
       ;; retrieve file and check trimmed attribute
       (let [row (th/db-get :file {:id (:id file)})]
@@ -552,10 +578,11 @@
       ;; as deleted.
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
-      ;; This only removes unused fragments, file media are still
-      ;; referenced on snapshots.
+      ;; The deleted shapes' fragments stay pinned by the automatic
+      ;; snapshots taken before the deletion, and the media is still
+      ;; referenced there too: nothing is marked, nothing to purge.
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 2 (:processed res))))
+        (t/is (= 0 (:processed res))))
 
       ;; Mark all snapshots to be a non-snapshot file change
       (th/db-exec! ["update file set has_media_trimmed = false where id = ?" (:id file)])
@@ -566,7 +593,10 @@
       ;; "expired/deleted"
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 6 (:processed res))))
+        ;; 7 (was 6, then 8): the two orphaned page fragments plus the
+        ;; five media rows, all unreferenced once the snapshot file_data
+        ;; rows are gone. No churn duplicates are created anymore.
+        (t/is (= 7 (:processed res))))
 
       (let [rows (th/db-query :file-data {:file-id (:id file)
                                           :type "fragment"
@@ -715,14 +745,16 @@
 
       ;; Now that file-gc have marked for deletion the object
       ;; thumbnail lets execute the objects-gc task which remove
-      ;; the rows and mark as touched the storage object rows
+      ;; the rows and mark as touched the storage object rows.
+      ;; 1 (was 5, then 3): without churn there are no orphaned
+      ;; fragment rows to purge, only the deleted thumbnail row.
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 5 (:processed res))))
+        (t/is (= 1 (:processed res))))
 
       ;; Now that objects-gc have deleted the object thumbnail lets
       ;; execute the touched-gc task
       (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
-                  (th/run-task! "storage-gc-touched" {}))]
+                  (th/run-task! :storage-gc-touched {}))]
         (t/is (= 1 (:freeze res))))
 
       ;; check file media objects
@@ -748,7 +780,9 @@
 
       (let [res (th/run-task! :objects-gc {})]
         ;; (pp/pprint res)
-        (t/is (= 3 (:processed res))))
+        ;; 1 (was 3, then 2): without churn there are no fragment
+        ;; orphans; only the deleted thumbnail row is purged.
+        (t/is (= 1 (:processed res))))
 
       ;; We still have th storage objects in the table
       (let [rows (th/db-query :storage-object {:deleted-at nil})]
@@ -815,6 +849,20 @@
     ;; (th/print-result! out)
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :not-found))))
+
+(t/deftest delete-file-audit-includes-team-id
+  ;; Assert result metadata directly: wrap-audit is inactive in the
+  ;; default test flags, so mocking audit/submit would never see this.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:project-id (:default-project-id profile)
+                                    :profile-id (:id profile)})
+        result  (db/tx-run! th/*system*
+                            (fn [cfg]
+                              (#'files/delete-file cfg {:id (:id file)
+                                                        :profile-id (:id profile)})))
+        props   (::audit/props (meta result))]
+    (t/is (= (:default-team-id profile) (:team-id props)))
+    (t/is (= (:project-id file) (:project-id props)))))
 
 (t/deftest permissions-checks-set-file-shared
   (let [profile1 (th/create-profile* 1)
@@ -1088,7 +1136,7 @@
           out    (th/command! params)]
       (t/is (nil? (:error out))))
 
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs)
 
     ;; query the list of files after soft deletion
     (let [data {::th/type :get-project-files
@@ -1372,11 +1420,81 @@
         (t/is (= 1 (count (remove :deleted-at rows)))))
 
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 4 (:processed res))))
+        ;; 1 (was 4, then 3): no fragment churn anymore — unchanged
+        ;; pages keep their ids, so only the deleted object-thumbnail
+        ;; row itself is purged.
+        (t/is (= 1 (:processed res))))
 
       (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
         ;; (app.common.pprint/pprint rows)
         (t/is (= 1 (count rows)))))))
+
+(t/deftest file-data-for-thumbnail-frame-on-other-page
+  (let [prof     (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id prof)
+                                     :project-id (:default-project-id prof)
+                                     :is-shared false})
+        page1-id (get-in file [:data :pages 0])
+        page2-id (uuid/next)
+        rect-id  (uuid/next)
+        frame-id (uuid/next)
+
+        get-data (fn []
+                   (th/command! {::th/type :get-file-data-for-thumbnail
+                                 ::rpc/profile-id (:id prof)
+                                 :file-id (:id file)
+                                 :features cfeat/supported-features}))]
+
+    (th/update-file* {:file-id (:id file)
+                      :profile-id (:id prof)
+                      :revn 0
+                      :vern 0
+                      :changes [{:type :add-obj
+                                 :page-id page1-id
+                                 :id rect-id
+                                 :parent-id uuid/zero
+                                 :frame-id uuid/zero
+                                 :obj (cts/setup-shape
+                                       {:id rect-id
+                                        :name "rect"
+                                        :type :rect})}
+                                {:type :add-page
+                                 :id page2-id
+                                 :name "page 2"}
+                                {:type :add-obj
+                                 :page-id page2-id
+                                 :id frame-id
+                                 :parent-id uuid/zero
+                                 :frame-id uuid/zero
+                                 :obj (cts/setup-shape
+                                       {:id frame-id
+                                        :name "frame"
+                                        :type :frame})}]})
+
+    (t/testing "no marked frame falls back to the first page"
+      (let [{:keys [error result]} (get-data)]
+        (t/is (nil? error))
+        (t/is (= page1-id (get-in result [:page :id])))
+        (t/is (nil? (get-in result [:page :thumbnail-frame-id])))
+        (t/is (contains? (get-in result [:page :objects]) rect-id))))
+
+    (th/update-file* {:file-id (:id file)
+                      :profile-id (:id prof)
+                      :revn 1
+                      :vern 0
+                      :changes [{:type :mod-obj
+                                 :page-id page2-id
+                                 :id frame-id
+                                 :operations [{:type :set
+                                               :attr :use-for-thumbnail
+                                               :val true}]}]})
+
+    (t/testing "marked frame on another page is used"
+      (let [{:keys [error result]} (get-data)]
+        (t/is (nil? error))
+        (t/is (= page2-id (get-in result [:page :id])))
+        (t/is (= frame-id (get-in result [:page :thumbnail-frame-id])))
+        (t/is (contains? (get-in result [:page :objects]) frame-id))))))
 
 (t/deftest file-thumbnail-ops
   (let [prof (th/create-profile* 1 {:is-active true})
@@ -1428,7 +1546,9 @@
         (t/is (= 1 (count (remove (comp some? :deleted-at) rows)))))
 
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 2 (:processed res))))
+        ;; 1 (was 2): without churn there is no re-persisted fragment
+        ;; orphan; only the superseded thumbnail row is purged.
+        (t/is (= 1 (:processed res))))
 
       (let [rows (th/db-query :file-thumbnail {:file-id (:id file)})]
         (t/is (= 1 (count rows)))))))
@@ -1448,8 +1568,9 @@
 
     ;; Preventive objects-gc
     (let [result (th/run-task! :objects-gc {})]
-      ;; deletes the fragment created by file-gc
-      (t/is (= 1 (:processed result))))
+      ;; nothing to delete: without churn the preventive file-gc above
+      ;; marked and created nothing.
+      (t/is (= 0 (:processed result))))
 
     ;; Check the number of fragments before adding the page
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
@@ -1466,16 +1587,17 @@
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)}))))
 
     ;; The FileGC task will schedule an inner taskq
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs)
 
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
       (t/is (= 2 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
-    ;; Clean objects after file-gc
+    ;; Clean objects after file-gc: nothing to purge, the single
+    ;; fragment was kept (no churn re-persist) and offloaded as is.
     (let [result (th/run-task! :objects-gc {})]
-      (t/is (= 1 (:processed result))))
+      (t/is (= 0 (:processed result))))
 
     ;; Check the number of fragments before adding the page
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
@@ -1525,48 +1647,49 @@
     ;; The file-gc should mark for remove unused fragments
     (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
-    ;; The file-gc task, recreates all fragments, so after it we have
-    ;; now the double of fragments, and the old ones are marked as
-    ;; deleted, and the new ones are on DB
-    (let [[row1 row2 row3 row4 :as rows]
+    ;; The file-gc only marks fragments nothing references: the live
+    ;; pages keep their ids (no churn re-persist), row1 stays alive on
+    ;; cold storage pinned by the automatic snapshot, row2 is the new
+    ;; hot page.
+    (let [[row1 row2 :as rows]
           (th/db-query :file-data
                        {:file-id (:id file)
                         :type "fragment"}
                        {:order-by [:created-at]})]
       ;; (pp/pprint rows)
-      (t/is (= 4 (count rows)))
+      ;; No churn: live pages keep their ids, so there are no
+      ;; re-persisted duplicates and nothing is marked. row1 stays on
+      ;; cold storage pinned by the automatic snapshot.
+      (t/is (= 2 (count rows)))
 
       (t/is (nil? (:data row1)))
-      (t/is (ct/inst? (:deleted-at row1)))
+      (t/is (nil? (:deleted-at row1)))
       (t/is (= "storage" (:backend row1)))
 
       (t/is (bytes? (:data row2)))
       (t/is (= "db" (:backend row2)))
-      (t/is (ct/inst? (:deleted-at row2)))
+      (t/is (nil? (:deleted-at row2))))
 
-      (t/is (bytes? (:data row3)))
-      (t/is (= "db" (:backend row3)))
-      (t/is (nil? (:deleted-at row3)))
-
-      (t/is (bytes? (:data row4)))
-      (t/is (= "db" (:backend row4)))
-      (t/is (nil? (:deleted-at row4))))
-
-    ;; The objects-gc should remove the marked to delete fragments
+    ;; The objects-gc has nothing to remove: no fragment was marked.
     (let [res (th/run-task! :objects-gc {})]
-      (t/is (= 2 (:processed res))))
+      (t/is (= 0 (:processed res))))
 
     (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
+      ;; 2 rows (was 3): the snapshot-pinned offloaded fragment plus
+      ;; the single live hot row. No churn duplicates.
       (t/is (= 2 (count rows)))
-      (t/is (every? #(bytes? (:data %)) rows))
-      (t/is (every? #(= "db" (:backend %)) rows)))
+      (t/is (= 1 (count (filter #(bytes? (:data %)) rows))))
+      (t/is (= 1 (count (filter #(= "storage" (:backend %)) rows))))
+      (t/is (= 1 (count (filter #(= "db" (:backend %)) rows)))))
 
     ;; we ensure that once object-gc is passed and marked two storage
     ;; objects to delete
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
       (t/is (= 0 (:freeze res)))
-      (t/is (= 2 (:delete res))))
+      ;; 1 (was 2): only one storage object was touched by the purge
+      ;; above, the pinned fragment's object is still referenced.
+      (t/is (= 1 (:delete res))))
 
     (let [storage (sto/resolve th/*system*)]
       (t/is (uuid? (:id @sobject)))
@@ -2156,6 +2279,9 @@
                          :id (:id library)})
 
           ;; The task swallows absorption errors, so verify the persisted result.
+          ;; Absorption runs inside the job, and the job only gets the
+          ;; components of its own cfg, so this also needs
+          ;; `:app.tasks.delete-object/job-def` to carry `::sto/storage`.
           (let [deleted (db/get* th/*pool* :file {:id (:id library)}
                                  {::db/remove-deleted false})
                 out     (th/command! {::th/type :get-file
@@ -2248,7 +2374,7 @@
     (t/is (= (:id library)
              (cfo/get-tokens-source (:data (bfc/get-file th/*system* (:id file))))))
 
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs)
     (check-tokens-absorbed prepared)))
 
 (t/deftest unpublish-shared-library-absorbs-its-tokens-lib
@@ -2457,7 +2583,7 @@
         (t/is (nil? (:error out)))
         (t/is (nil? (:result out)))
 
-        (th/run-pending-tasks!)
+        (th/run-pending-jobs)
 
         ;; get deleted files
         (let [data {::th/type :get-team-deleted-files
@@ -2929,6 +3055,133 @@
     (t/is (th/ex-info? (:error out)))
     (t/is (th/ex-of-type? (:error out) :validation))
     (t/is (th/ex-of-code? (:error out) :params-validation))))
+(t/deftest get-file-plugin-data
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared  false})]
+
+    ;; A file without plugin data returns an empty map
+    (let [out (th/command! {::th/type :get-file-plugin-data
+                            ::rpc/profile-id (:id profile)
+                            :id (:id file)})]
+      (t/is (nil? (:error out)))
+      (t/is (= {} (:result out))))
+
+    ;; Set file-level plugin data through a change
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :set-plugin-data
+       :object-type :file
+       :namespace :shared/traceability
+       :key "req-id"
+       :value "REQ-123"}])
+
+    ;; The full plugin-data map is returned
+    (let [out (th/command! {::th/type :get-file-plugin-data
+                            ::rpc/profile-id (:id profile)
+                            :id (:id file)})]
+      (t/is (nil? (:error out)))
+      (t/is (= {:shared/traceability {"req-id" "REQ-123"}} (:result out))))
+
+    ;; A namespace filter narrows the result
+    (let [out (th/command! {::th/type :get-file-plugin-data
+                            ::rpc/profile-id (:id profile)
+                            :id (:id file)
+                            :namespace :shared/traceability})]
+      (t/is (nil? (:error out)))
+      (t/is (= {:shared/traceability {"req-id" "REQ-123"}} (:result out))))
+
+    ;; A filter on an absent namespace returns an empty map
+    (let [out (th/command! {::th/type :get-file-plugin-data
+                            ::rpc/profile-id (:id profile)
+                            :id (:id file)
+                            :namespace :plugin/absent})]
+      (t/is (nil? (:error out)))
+      (t/is (= {} (:result out))))))
+
+(t/deftest get-file-plugin-data-forbidden
+  (let [owner (th/create-profile* 1 {:is-active true})
+        other (th/create-profile* 2 {:is-active true})
+        file  (th/create-file* 1 {:profile-id (:id owner)
+                                  :project-id (:default-project-id owner)
+                                  :is-shared  false})
+        out   (th/command! {::th/type :get-file-plugin-data
+                            ::rpc/profile-id (:id other)
+                            :id (:id file)})]
+
+    (t/is (not (nil? (:error out))))
+    (let [edata (-> out :error ex-data)]
+      (t/is (= :not-found (:type edata))))))
+
+(t/deftest get-file-tokens-without-tokens
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared  false})
+        out     (th/command! {::th/type :get-file-tokens
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id file)})]
+    (t/is (nil? (:error out)))
+    (t/is (nil? (:result out)))))
+
+(t/deftest get-file-tokens-with-tokens
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared  false})
+        set-id   (uuid/next)
+        token-id (uuid/next)]
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :changes
+     [{:type :set-token-set
+       :id set-id
+       :attrs {:id set-id :name "brand-core"}}
+      {:type :set-token
+       :set-id set-id
+       :token-id token-id
+       :attrs {:id token-id
+               :name "color.primary-base"
+               :type :color
+               :value "#ff0000"}}])
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 1
+     :changes
+     [{:type :set-tokens-status
+       :theme-ids #{}
+       :set-ids #{set-id}}])
+
+    (let [out (th/command! {::th/type :get-file-tokens
+                            ::rpc/profile-id (:id profile)
+                            :file-id (:id file)})
+          dtcg (:result out)]
+      (t/is (nil? (:error out)))
+      (t/is (= "#ff0000" (get-in dtcg ["brand-core" "color" "primary-base" "$value"])))
+      (t/is (= "color" (get-in dtcg ["brand-core" "color" "primary-base" "$type"])))
+      (t/is (= ["brand-core"] (get-in dtcg ["$metadata" "tokenSetOrder"])))
+      (t/is (= #{"brand-core"} (set (get-in dtcg ["$metadata" "activeSets"])))))))
+
+(t/deftest get-file-tokens-forbidden
+  (let [owner (th/create-profile* 1 {:is-active true})
+        other (th/create-profile* 2 {:is-active true})
+        file  (th/create-file* 1 {:profile-id (:id owner)
+                                  :project-id (:default-project-id owner)
+                                  :is-shared  false})
+        out   (th/command! {::th/type :get-file-tokens
+                            ::rpc/profile-id (:id other)
+                            :file-id (:id file)})]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :not-found))))
 
 (t/deftest delete-file-audit-event-carries-team-id
   ;; The event already carries the project id, so the resolver could find the

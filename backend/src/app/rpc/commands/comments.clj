@@ -29,7 +29,6 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.quotes :as quotes]
    [app.rpc.retry :as rtry]
-   [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -83,7 +82,7 @@
   (not= :none (-> props :notifications :email-comments)))
 
 (defn send-comment-emails!
-  [conn profile comment thread file]
+  [{:keys [::db/conn] :as cfg} profile comment thread file]
   (let [team-users        (get-team-users conn (:team-id file))
         comment-reference (format-comment-ref thread file)
         comment-content   (format-comment comment)
@@ -113,9 +112,10 @@
     (doseq [mention comment-mentions]
       (let [{:keys [fullname email props]} (get team-users mention)]
         (when (mention-email? props)
-          (eml/send!
-           {::eml/conn conn
-            ::eml/factory eml/comment-mention
+          (eml/send-template
+           cfg
+           {::eml/reuse-conn true
+            ::eml/template "comment-mention"
             :public-uri (cf/get :public-uri)
             :to email
             :name fullname
@@ -128,9 +128,10 @@
     (doseq [mention thread-mentions]
       (let [{:keys [fullname email props]} (get team-users mention)]
         (when (mention-email? props)
-          (eml/send!
-           {::eml/conn conn
-            ::eml/factory eml/comment-thread
+          (eml/send-template
+           cfg
+           {::eml/reuse-conn true
+            ::eml/template "comment-thread"
             :public-uri (cf/get :public-uri)
             :to email
             :name fullname
@@ -143,9 +144,10 @@
     (doseq [user-id notificate-users-ids]
       (let [{:keys [id fullname email props]} (get team-users user-id)]
         (when (notification-email? id (:owner-id thread) props)
-          (eml/send!
-           {::eml/conn conn
-            ::eml/factory eml/comment-notification
+          (eml/send-template
+           cfg
+           {::eml/reuse-conn true
+            ::eml/template "comment-notification"
             :public-uri (cf/get :public-uri)
             :to email
             :name fullname
@@ -167,7 +169,7 @@
 (defn- get-file
   "A specialized version of get-file for comments module."
   [cfg file-id page-id]
-  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+  (feat.fdata/with-pointers cfg file-id
     (let [file (bfc/get-file cfg file-id)
           data (get file :data)]
       (-> file
@@ -538,7 +540,7 @@
     (update-thread-seqn conn file-id seqn)
 
     ;; Send mentions emails
-    (send-comment-emails! conn profile comment thread file)
+    (send-comment-emails! cfg profile comment thread file)
 
     (-> thread
         (add-owner profile)
@@ -648,7 +650,7 @@
       ;; Update the current profile status in relation to the current thread
       (upsert-comment-thread-status! conn profile-id thread-id)
 
-      (send-comment-emails! conn profile comment thread file)
+      (send-comment-emails! cfg profile comment thread file)
 
       (vary-meta comment assoc ::audit/props (assoc comment :team-id team-id)))))
 

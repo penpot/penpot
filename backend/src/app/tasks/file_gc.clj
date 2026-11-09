@@ -15,6 +15,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.files.validate :as cfv]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
    [app.common.types.components-list :as ctkl]
@@ -24,8 +25,8 @@
    [app.db :as db]
    [app.features.fdata :as feat.fdata]
    [app.features.file-snapshots :as fsnap]
+   [app.jobs :as jobs]
    [app.storage :as sto]
-   [app.worker :as wrk]
    [integrant.core :as ig]))
 
 (declare get-file)
@@ -41,14 +42,27 @@
    (map :data)
    (mapcat cfh/collect-used-media)))
 
+(defn- collect-snapshot-liveness
+  "Single snapshot scan collecting both fragment pointer ids and media
+  ids referenced by unpurged snapshots. Runs once per file-gc pass and
+  feeds clean-file-media! and clean-fragments!, so snapshot blobs are
+  read and decoded only once instead of once per cleaner."
+  [cfg file-id]
+  (let [xf (comp (filter :data)
+                 (map (fn [{:keys [data]}]
+                        {:pointers (feat.fdata/get-used-pointer-ids data)
+                         :media    (cfh/collect-used-media data)})))
+        rf (completing (fn [acc {:keys [pointers media]}]
+                         (-> acc
+                             (update :pointers into pointers)
+                             (update :media into media))))]
+    (fsnap/reduce-snapshots cfg file-id xf rf {:pointers #{} :media #{}})))
+
 (defn- clean-file-media!
   "Performs the garbage collection of file media objects."
-  [{:keys [::db/conn ::timestamp] :as cfg} {:keys [id] :as file}]
+  [{:keys [::db/conn ::timestamp] :as cfg} snap-media {:keys [id] :as file}]
   (let [used-media
-        (fsnap/reduce-snapshots cfg id xf:collect-used-media conj #{})
-
-        used-media
-        (into used-media xf:collect-used-media [file])
+        (into snap-media xf:collect-used-media [file])
 
         used-media
         (db/create-array conn "uuid" used-media)
@@ -57,6 +71,7 @@
         (->> (db/exec! conn [sql:mark-file-media-object-deleted timestamp id used-media])
              (into #{} (map :id)))]
 
+    (jobs/heartbeat cfg)
     (doseq [id unused-media]
       (l/trc :obj "media-object"
              :file-id (str id)
@@ -71,7 +86,7 @@
    RETURNING object_id")
 
 (defn- clean-file-object-thumbnails!
-  [{:keys [::db/conn ::timestamp]} {:keys [data] :as file}]
+  [{:keys [::db/conn ::timestamp] :as cfg} {:keys [data] :as file}]
   (let [file-id (:id file)
         using   (->> (vals (:pages-index data))
                      (into #{} (comp
@@ -87,6 +102,7 @@
         unused (->> (db/exec! conn [sql:mark-file-object-thumbnails-deleted timestamp file-id ids])
                     (into #{} (map :object-id)))]
 
+    (jobs/heartbeat cfg)
     (doseq [object-id unused]
       (l/trc :obj "object-thumbnail"
              :file-id (str file-id)
@@ -101,10 +117,11 @@
    RETURNING revn")
 
 (defn- clean-file-thumbnails!
-  [{:keys [::db/conn ::timestamp]} {:keys [id revn] :as file}]
+  [{:keys [::db/conn ::timestamp] :as cfg} {:keys [id revn] :as file}]
   (let [unused (->> (db/exec! conn [sql:mark-file-thumbnails-deleted timestamp id revn])
                     (into #{} (map :revn)))]
 
+    (jobs/heartbeat cfg)
     (doseq [revn unused]
       (l/trc :obj "thumbnail"
              :file-id (str id)
@@ -182,12 +199,20 @@
         (mapcat feat.fdata/get-used-pointer-ids)))
 
 (defn- clean-fragments!
-  [{:keys [::db/conn ::timestamp]} {:keys [id] :as file}]
-  (let [used   (into #{} xf:collect-pointers [file])
+  "Mark fragment rows referenced neither by the current main file data
+  nor by any unpurged snapshot. The file arrives unrealized (see
+  `get-file`), so `main-used` holds its stored fragment ids; combined
+  with `reattach-unchanged`, unchanged pages keep their ids and are
+  never marked. Runs inside the caller transaction, which already
+  holds FOR UPDATE on the file row."
+  [{:keys [::db/conn ::timestamp] :as cfg} snap-pointers {:keys [id] :as file}]
+  (let [main-used (into #{} xf:collect-pointers [file])
+        used      (into main-used snap-pointers)
         unused (->> (db/exec! conn [sql:mark-deleted-data-fragments timestamp id
                                     (db/create-array conn "uuid" used)])
                     (into #{} bfc/xf-map-id))]
 
+    (jobs/heartbeat cfg)
     (doseq [id unused]
       (l/trc :obj "fragment"
              :file-id (str id)
@@ -196,10 +221,10 @@
     file))
 
 (defn- clean-media!
-  [cfg file]
+  [cfg {:keys [media]} file]
   (let [file (->> file
                   (clean-deleted-components! cfg)
-                  (clean-file-media! cfg)
+                  (clean-file-media! cfg media)
                   (clean-file-thumbnails! cfg)
                   (clean-file-object-thumbnails! cfg))]
     (cfv/validate-file-schema! file)
@@ -207,8 +232,12 @@
 
 (defn get-file
   [cfg {:keys [file-id revn]}]
+  ;; NOTE: deliberately NOT realized: `process-file!` binds the fragment
+  ;; loader and works on PointerMaps directly, so unchanged pages keep
+  ;; their fragment ids (see `reattach-unchanged`). Realizing here would
+  ;; force every page to be re-persisted under a new id on every pass.
   (let [file (bfc/get-file cfg file-id
-                           :realize? true
+                           :realize? false
                            :skip-locked? true
                            :lock-for-update? true)]
 
@@ -224,13 +253,21 @@
 (defn- process-file!
   [cfg {:keys [file-id] :as props}]
   (if-let [file (get-file cfg props)]
-    (let [file (->> file
-                    (bfl/clean-file)
-                    (clean-media! cfg)
-                    (clean-fragments! cfg))
-          file (assoc file :has-media-trimmed true)]
-      (bfc/update-file! cfg file)
-      true)
+    ;; Every fragment load goes through `with-pointers`. Each pointer
+    ;; instance loads its content once (`loaded?`), and the replacement
+    ;; instances `clean-file` creates already carry their content, so
+    ;; the pass reads each fragment once without a separate cache.
+    (feat.fdata/with-pointers cfg file-id
+      (let [liveness (collect-snapshot-liveness cfg file-id)
+            original (feat.fdata/original-pointers (:data file))
+            file (->> file
+                      (bfl/clean-file)
+                      (clean-media! cfg liveness)
+                      (feat.fdata/reattach-unchanged original)
+                      (clean-fragments! cfg (:pointers liveness)))
+            file (assoc file :has-media-trimmed true)]
+        (bfc/update-file! cfg file)
+        true))
 
     (do
       (l/dbg :hint "skip cleaning, criteria does not match" :file-id (str file-id))
@@ -240,28 +277,44 @@
 ;; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod ig/assert-key ::handler
-  [_ params]
-  (assert (db/pool? (::db/pool params)) "expected a valid database pool")
-  (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage to be provided"))
+(defn execute-file-gc
+  "Plain job handler: clean the media/thumbnails/fdata of one file."
+  [cfg params]
+  (try
+    (-> cfg
+        (assoc ::db/rollback (:rollback? params))
+        (db/tx-run! (fn [{:keys [::db/conn] :as cfg}]
+                      (let [cfg        (-> cfg
+                                           (update ::sto/storage sto/configure conn)
+                                           (assoc ::timestamp (ct/now)))
+                            processed? (process-file! cfg params)]
 
-(defmethod ig/init-key ::handler
+                        (when (and processed? (contains? cf/flags :tiered-file-data-storage))
+                          ;; Pass only the file id: the offload job ignores
+                          ;; any other file-gc param, and forwarding the whole
+                          ;; map would silently couple the two jobs.
+                          (jobs/submit cfg
+                                       {::jobs/name :offload-file-data
+                                        ::jobs/params {:file-id (:file-id params)}
+                                        ::jobs/priority 10
+                                        ::jobs/delay 1000}))
+                        processed?))))
+    (catch Throwable cause
+      (l/err :hint "error on cleaning file"
+             :file-id (str (:file-id params))
+             :cause cause))))
+
+(def schema:file-gc-params
+  [:map
+   [:file-id ::sm/uuid]
+   [:revn ::sm/int]])
+
+(defmethod ig/init-key ::job-def
   [_ cfg]
-  (fn [{:keys [props] :as task}]
-    (try
-      (-> cfg
-          (assoc ::db/rollback (:rollback? props))
-          (assoc ::timestamp (ct/now))
-          (db/tx-run! (fn [cfg]
-                        (let [processed? (process-file! cfg props)]
-                          (when (and processed? (contains? cf/flags :tiered-file-data-storage))
-                            (wrk/submit! (-> cfg
-                                             (assoc ::wrk/task :offload-file-data)
-                                             (assoc ::wrk/params props)
-                                             (assoc ::wrk/priority 10)
-                                             (assoc ::wrk/delay 1000))))
-                          processed?))))
-      (catch Throwable cause
-        (l/err :hint "error on cleaning file"
-               :file-id (str (:file-id props))
-               :cause cause)))))
+  {::jobs/name      :file-gc
+   ::jobs/schema    schema:file-gc-params
+   ::jobs/handler
+   (fn [_context params]
+     (execute-file-gc cfg params))
+   ::jobs/decoder   (sm/decoder schema:file-gc-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:file-gc-params)})

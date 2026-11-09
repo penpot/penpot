@@ -60,8 +60,8 @@
 (def varia
   "Rest of the flags"
   #{:audit-log
-    :audit-log-archive
-    :audit-log-gc
+    ;; Enables shipping audit_log chunks to Nexus.
+    :nexus
     :audit-log-logger
     :auto-file-snapshot
     ;; enables the `/api/doc` endpoint that lists all the rpc methods available.
@@ -96,6 +96,10 @@
     :file-validation
     ;; Reports the referential integrity validation errors internally.
     :soft-file-validation
+    ;; Disabled by default; never enable it in production. Lets a save
+    ;; carry a marker that makes the backend fail it with a chosen error
+    ;; (frontend `debug.failNextSave`).
+    :debug-save-faults
     ;; TODO: deprecate this flag and consolidate the code
     :frontend-svgo
     ;; TODO: deprecate this flag and consolidate the code

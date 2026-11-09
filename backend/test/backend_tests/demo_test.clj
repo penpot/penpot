@@ -8,9 +8,9 @@
   (:require
    [app.common.time :as ct]
    [app.db :as db]
+   [app.jobs :as jobs]
    [app.rpc.commands.profile :as profile]
    [app.tasks.demo-purge :as demo-purge]
-   [app.worker :as wrk]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [integrant.core :as ig]))
@@ -34,14 +34,44 @@
 
 (t/deftest demo-purge-handler-submits-delete-object
   (let [profile   (th/create-profile* 996 {:is-demo true})
-        handler   (ig/init-key :app.tasks.demo-purge/handler
-                               {::db/pool th/*pool*})
+        handler   (ig/init-key :app.tasks.demo-purge/job-def
+                               {::db/pool th/*pool*
+                                ::jobs/defs {:delete-object {::jobs/name    :delete-object
+                                                             ::jobs/schema  [:map]
+                                                             ::jobs/handler (fn [_context params] params)
+                                                             ::jobs/decoder identity
+                                                             ::jobs/validator (fn [_] true)}}})
         submitted (atom nil)]
-    (with-redefs [wrk/submit! (fn [& {:keys [::wrk/task ::wrk/params]}]
-                                (reset! submitted {:task task :params params}))]
-      (handler {:props {:profile-id (:id profile)
-                        :deleted-at (ct/now)}}))
-    (t/is (= :delete-object (:task @submitted)))
+    (with-redefs [jobs/submit (fn [cfg options]
+                                (reset! submitted
+                                        {:name (get options ::jobs/name)
+                                         :params (get options ::jobs/params)}))]
+      ((::jobs/handler handler) nil {:profile-id (:id profile)}))
+    (t/is (= :delete-object (:name @submitted)))
     (t/is (= :profile (:object (:params @submitted))))
     (t/is (= (:id profile) (:id (:params @submitted))))
     (t/is (some? (:deleted-at (:params @submitted))))))
+
+(t/deftest job-handler-uses-its-closed-cfg
+  "The handler is [context params]: the job-def keeps the dependencies it
+  closed over at init time, so it still reaches the database through its
+  own pool and needs nothing from the caller."
+  (let [profile   (th/create-profile* 997 {:is-demo true})
+        handler   (ig/init-key :app.tasks.demo-purge/job-def
+                               {::db/pool th/*pool*
+                                ::jobs/defs {:delete-object {::jobs/name    :delete-object
+                                                             ::jobs/schema  [:map]
+                                                             ::jobs/handler (fn [_context params] params)
+                                                             ::jobs/decoder identity
+                                                             ::jobs/validator (fn [_] true)}}})
+        submitted (atom nil)]
+    (with-redefs [jobs/submit (fn [cfg options]
+                                (reset! submitted
+                                        {:pool (::db/pool cfg)
+                                         :params (get options ::jobs/params)}))]
+      ((::jobs/handler handler) nil {:profile-id (:id profile)})
+
+      (t/testing "the closed pool is the one the handler submitted with"
+        (t/is (db/pool? (:pool @submitted)))
+        (t/is (identical? th/*pool* (:pool @submitted)))
+        (t/is (= (:id profile) (:id (:params @submitted))))))))

@@ -53,12 +53,15 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.render-wasm.text-paste :as text-paste]
    [app.util.clipboard :as clipboard]
    [app.util.code-gen.markup-svg :as svg]
+   [app.util.code-gen.markup-svg-wasm :as svg.wasm]
    [app.util.code-gen.style-css :as css]
    [app.util.globals :as ug]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.text.clipboard :as text-clipboard]
    [app.util.text.content :as tc]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
@@ -218,13 +221,18 @@
                   file     (dsh/lookup-file state file-id)
                   version  (get file :version)
 
-                  initial  {:type :copied-shapes
-                            :features features
-                            :version version
-                            :file-id file-id
-                            :selected selected
-                            :objects {}
-                            :images #{}}
+                  geometry (dwtxt/copied-text-geometry state objects selected)
+
+                  initial  (cond-> {:type :copied-shapes
+                                    :features features
+                                    :version version
+                                    :file-id file-id
+                                    :team-id (:current-team-id state)
+                                    :selected selected
+                                    :objects {}
+                                    :images #{}}
+                             (some? geometry)
+                             (assoc :text-geometry geometry))
 
                   shapes   (->> (cfh/selected-with-children objects selected)
                                 (keep (d/getf objects)))]
@@ -272,9 +280,15 @@
 (declare ^:private paste-svg-text)
 (declare ^:private paste-shapes)
 
-(def ^:private default-options
+(defn- v3-html-paste?
+  [state]
+  (and (features/active-feature? state "text-editor-wasm/v1")
+       (features/active-feature? state "text-editor-wasm/v1-html-paste")))
+
+(defn- clipboard-options
+  [state]
   #js {:decodeTransit t/decode-str
-       :allowHTMLPaste (features/active-feature? @st/state "text-editor/v2-html-paste")})
+       :allowHTMLPaste (v3-html-paste? state)})
 
 (defn- create-paste-from-blob
   [in-viewport? replace?]
@@ -339,7 +353,7 @@
      ptk/WatchEvent
      (watch [_ state _]
        (if (page-ready? (dsh/lookup-page-objects state))
-         (->> (clipboard/from-navigator default-options)
+         (->> (clipboard/from-navigator (clipboard-options state))
               (rx/mapcat (create-paste-from-blob false (boolean replace?)))
               (rx/take 1)
               (rx/catch on-clipboard-permission-error))
@@ -360,7 +374,7 @@
         ;; Pastes arriving before the page is loaded are ignored as well.
         (if (or is-editing? (not (page-ready? objects)))
           (rx/empty)
-          (->> (clipboard/from-synthetic-clipboard-event event default-options)
+          (->> (clipboard/from-synthetic-clipboard-event event (clipboard-options state))
                (rx/mapcat (create-paste-from-blob in-viewport? false))))))))
 
 (defn copy-selected-svg
@@ -379,7 +393,10 @@
                  (gsh/translate-to-frame % (get objects parent-frame-id)))
 
             shapes          (mapv maybe-translate selected)
-            svg-formatted   (svg/generate-formatted-markup objects shapes)]
+            ;; With render-wasm active, never call classic SVG codegen.
+            svg-formatted   (if (features/active-feature? state "render-wasm/v1")
+                              (svg.wasm/get-formatted-svg-markup (mapv :id shapes))
+                              (svg/generate-formatted-markup objects shapes))]
         (-> (clipboard/to-clipboard-multi
              {"image/svg+xml" svg-formatted
               "text/plain"    svg-formatted})
@@ -540,7 +557,7 @@
                         (rx/empty)))))]
 
           (if (page-ready? (dsh/lookup-page-objects state))
-            (->> (clipboard/from-navigator default-options)
+            (->> (clipboard/from-navigator (clipboard-options state))
                  (rx/mapcat #(.text %))
                  (rx/map decode-entry)
                  (rx/take 1)
@@ -581,10 +598,12 @@
    [:features ::sm/set-of-strings]
    [:version :int]
    [:file-id ::sm/uuid]
+   [:team-id {:optional true} ::sm/uuid]
    [:selected ::sm/set-of-uuid]
    [:objects
     [:map-of ::sm/uuid :map]]
    [:images [:set :map]]
+   [:text-geometry {:optional true} [:map-of ::sm/uuid :map]]
    [:position {:optional true} ::gpt/point]])
 
 (def ^:private
@@ -886,7 +905,7 @@
                 (assoc change :index (get map-ids (:old-id change)))
                 change)))
 
-          (process-shape [valid-file-ids frame-id parent-id shape]
+          (process-shape [valid-file-ids other-team? frame-id parent-id shape]
             (cond-> shape
               :always
               (assoc :frame-id frame-id :parent-id parent-id)
@@ -897,7 +916,11 @@
               (assoc :shapes [])
 
               (cfh/text-shape? shape)
-              (ctt/remove-external-typographies valid-file-ids)))]
+              (ctt/remove-external-typographies valid-file-ids)
+
+              ;; Custom font ids differ between teams.
+              (and other-team? (cfh/text-shape? shape))
+              (update :content text-clipboard/replace-custom-fonts)))]
 
     (ptk/reify ::paste-shapes
       ptk/WatchEvent
@@ -950,7 +973,11 @@
 
                   valid-file-ids (conj (set (keys libraries)) file-id)
 
-                  objects      (update-vals objects (partial process-shape valid-file-ids frame-id parent-id))
+                  ;; Shapes copied before the team was recorded count as same team.
+                  other-team?  (and (some? (:team-id pdata))
+                                    (not= (:team-id pdata) (:current-team-id state)))
+
+                  objects      (update-vals objects (partial process-shape valid-file-ids other-team? frame-id parent-id))
 
                   all-objects  (merge page-objects objects)
 
@@ -1068,11 +1095,21 @@
   (ptk/reify ::paste-html-text
     ptk/WatchEvent
     (watch [_ state  _]
-      (let [style   (deref refs/workspace-clipboard-style)
-            root    (dwtxt/create-root-from-html html style (features/active-feature? @st/state "text-editor/v2-html-paste"))
-            text    (.-textContent root)
-            content (tc/dom->cljs root)]
-        (when (types.text/valid-content? content)
+      (let [payload (when (v3-html-paste? state)
+                      (text-clipboard/html->payload html))
+            [text content]
+            (if (v3-html-paste? state)
+              (if (some? payload)
+                (let [content (dwtxt/payload-content state payload)]
+                  [(txt/content->text content) content])
+                (when-let [fragment (some-> (text-clipboard/html->fragment html)
+                                            (text-clipboard/without-overrides))]
+                  [(text-paste/fragment->text fragment)
+                   (text-paste/fragment->content fragment (txt/get-default-text-attrs))]))
+              (let [style (deref refs/workspace-clipboard-style)
+                    root  (dwtxt/create-root-from-html html style (features/active-feature? @st/state "text-editor/v2-html-paste"))]
+                [(.-textContent root) (tc/dom->cljs root)]))]
+        (when (and (some? content) (types.text/valid-content? content))
           (let [id            (uuid/next)
                 width         (max 8 (min (* 7 (count text)) 700))
                 height        16
@@ -1094,7 +1131,8 @@
                     (dwsh/create-and-add-shape :text x y shape
                                                (when skip-edition? {:skip-edition? true})))
              (if skip-edition?
-               (rx/of (dwwt/resize-wasm-text-debounce id {:undo-group id
+               (rx/of (dwtxt/move-new-text-fills id payload)
+                      (dwwt/resize-wasm-text-debounce id {:undo-group id
                                                           :undo-id undo-id}))
                (rx/of (dwu/commit-undo-transaction undo-id))))))))))
 

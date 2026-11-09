@@ -445,7 +445,8 @@
   ;; Check moveTeams permission on the source organization
   (when (contains? cf/flags :admin-console)
     (let [organization-perms (nitrate/call cfg :get-organization-permissions
-                                           {:organization-id organization-id})]
+                                           {:organization-id organization-id
+                                            ::rpc/profile-id profile-id})]
       (if (nil? organization-perms)
         (ex/raise :type :validation
                   :code :not-allowed
@@ -480,8 +481,10 @@
   "Returns info about external (non-organization-member) invitations pending for a team.
    External invitations are those sent to users who are not members of the given organization.
    Returns {:allows-anybody bool :external-emails [...]}"
-  [{:keys [::db/conn] :as cfg} team-id organization-id]
-  (let [organization-perms      (nitrate/call cfg :get-organization-permissions {:organization-id organization-id})
+  [{:keys [::db/conn] :as cfg} team-id organization-id profile-id]
+  (let [organization-perms      (nitrate/call cfg :get-organization-permissions
+                                              {:organization-id organization-id
+                                               ::rpc/profile-id profile-id})
         allows-anybody (cto/allowed? :add-anybody-to-team {:organization-perms organization-perms})]
     (if allows-anybody
       {:allows-anybody true :external-emails []}
@@ -516,13 +519,16 @@
 
   (when (contains? cf/flags :admin-console)
     (let [organization-member-ids-before (into #{} (nitrate/call cfg :get-organization-members {:organization-id organization-id}))
-          team-with-organization         (nitrate/call cfg :get-team-organization {:team-id team-id})
+          team-with-organization         (nitrate/call cfg :get-team-organization {:team-id team-id
+                                                                                   ::rpc/profile-id profile-id})
           source-organization-id         (get-in team-with-organization [:organization :id])
           source-organization-perms      (when source-organization-id
                                            (nitrate/call cfg :get-organization-permissions
-                                                         {:organization-id source-organization-id}))
+                                                         {:organization-id source-organization-id
+                                                          ::rpc/profile-id profile-id}))
           target-organization-perms      (nitrate/call cfg :get-organization-permissions
-                                                       {:organization-id organization-id})
+                                                       {:organization-id organization-id
+                                                        ::rpc/profile-id profile-id})
           target-organization-same-owner? (and (some? source-organization-perms)
                                                (some? target-organization-perms)
                                                (= (:owner-id source-organization-perms)
@@ -571,7 +577,7 @@
         (notifications/notify-team-change cfg team "dashboard.team-belong-organization"))
 
       ;; Delete pending invitations for users who are not members of the target organization
-      (let [{:keys [allows-anybody external-emails]} (get-external-invitation-info cfg team-id organization-id)]
+      (let [{:keys [allows-anybody external-emails]} (get-external-invitation-info cfg team-id organization-id profile-id)]
         (when (and (not allows-anybody) (seq external-emails))
           (let [conn         (::db/conn cfg)
                 emails-array (db/create-array conn "text" external-emails)]
@@ -686,7 +692,7 @@
         (ex/raise :type :validation
                   :code :insufficient-permissions))
       (nitrate/assert-membership cfg profile-id organization-id)
-      (let [{:keys [allows-anybody external-emails]} (get-external-invitation-info cfg team-id organization-id)]
+      (let [{:keys [allows-anybody external-emails]} (get-external-invitation-info cfg team-id organization-id profile-id)]
         {:has-external-invitations (boolean (seq external-emails))
          :allows-anybody allows-anybody}))
     {:has-external-invitations false

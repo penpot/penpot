@@ -259,7 +259,8 @@
 (t/deftest metadata-buckets-is-the-canonical-set
   (t/is (= #{"file-media-object" "team-font-variant" "file-object-thumbnail"
              "file-thumbnail" "profile" "organization" "tempfile"
-             "upload-session" "file-data" "file-data-fragment" "file-change"}
+             "upload-session" "job-resource" "file-data" "file-data-fragment"
+             "file-change"}
            stsch/metadata-buckets)))
 
 (t/deftest decode-metadata-returns-nil-for-nil

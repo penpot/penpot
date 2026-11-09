@@ -24,6 +24,22 @@ So if you need to read the result of your executions/observe properties affected
 before trying to observe changes.
 Every `execude_code` call waits for updates before applying your code, so you never need to call `waitForLayoutUpdate` at the beginning of your code.
 
+## Rejected Changes and Read-Only Mode
+
+Penpot saves your changes to the backend after your `execute_code` call returns.
+When the backend rejects a save, Penpot undoes the rejected changes, together with the rest of their undo steps
+and any later change to the same file. This can happen a few seconds after the call that made the changes succeeded.
+The next tool response then starts with a warning that names the files, pages and shapes involved.
+When you get this warning:
+  * Do not trust what you know about the design from before: shapes you created may be gone, and removed ones may be back.
+  * Read the affected pages and shapes again (e.g. `penpotUtils.shapeStructure(page.root, 3)`) and check that they hold what you expect.
+  * Redo the missing changes, then check again; if the same changes are rejected again, stop and tell the user.
+
+While saves are failing, the workspace becomes read-only: every write through the API throws an error saying that the
+workspace is read-only because changes cannot be saved. Do not retry in a loop; wait and try again later, or tell the user.
+Writes also throw when the user cannot edit the file, a version is being previewed or the canvas stopped rendering;
+the error says which. These do not pass by waiting: tell the user.
+
 # The Structure of Penpot Designs
 
 A Penpot design ultimately consists of shapes.
@@ -166,13 +182,15 @@ Boards can have layout systems that automatically control the positioning and sp
 
 # The `penpot` and `penpotUtils` Objects, Exploring Designs
 
-A key object to use in your code is the `penpot` object (which is of type `Penpot`):
+A key object for navigating the currently active Penpot file is the `penpot` object (which is of type `Penpot`):
   * `penpot.selection` provides the list of shapes the user has selected in the Penpot UI.
      If it is unclear which elements to work on, you can ask the user to select them for you.
      ALWAYS immediately copy the selected shape(s) into `storage`! Do not assume that the selection remains unchanged.
   * `penpot.root` provides the root shape of the currently active page.
   * Generation of CSS content for elements via `penpot.generateStyle`
   * Generation of HTML/SVG content for elements via `penpot.generateMarkup`
+Members of `penpot` (e.g. `penpot.currentFile` and `penpot.root`) will be null no Penpot file is currently opened.
+You can use `penpotMgmt` to navigate to a file if needed (see below).
 
 For example, to generate CSS for the currently selected elements, you can execute this:
     return penpot.generateStyle(penpot.selection, { type: "css", withChildren: true });
@@ -429,6 +447,24 @@ For many tasks, it can be critical to visually inspect the design. Remember to u
 * Check for reasonable font sizes and typefaces
 * The use of flex layouts is encouraged for cases where elements are arranged in rows or columns with consistent spacing/positioning.
   Consider converting boards to flex layout when appropriate.
+
+# The `penpotMgmt` Object
+
+This object (of type `PenpotMgmt`) serves to manage Penpot design projects and files.
+Teams (`Team`), projects (`Project`) and files (`ProjectFile`) are objects with their own properties and methods:
+  * `await penpotMgmt.listProjects()` lists the projects of the current team; `await penpotMgmt.listTeams()` lists all teams.
+  * `await project.listFiles()` lists a project's files; `await penpotMgmt.getFile(id)` loads any file by id, e.g. `penpotMgmt.workspace.fileId`.
+  * Create with `await team.createProject({ name: "Design system" })` and `await project.createFile({ name: "Login" })`.
+  * Rename by assigning `name`; pin a project with `project.pinned = true`; share a file as a team library with `file.shared = true`.
+  * `moveTo`, `duplicate` and `remove` move, copy and delete projects and files; `penpotMgmt.createTeam({ name })` creates teams. Team deletion is not exposed.
+  * Project and file `remove()` moves them to Trash. There is no API for their permanent deletion. Discover recoverable objects with `await penpotMgmt.listDeletedProjects()` and `await penpotMgmt.listDeletedFiles()` (optionally pass `{ teamId }`), or `team.listDeletedProjects()`, `team.listDeletedFiles()` and `project.listDeletedFiles()`.
+  * Restore with `await project.restore()` or `await file.restore()` before the retention period expires. Restoration uses the dashboard's Trash operation and requires team edit access. Project restoration restores its recoverable files and rejects if none remain, including empty projects. File restoration also restores its deleted parent project.
+  * None of these change the current view. To edit a file, call `await file.open()` (or `await penpotMgmt.openFile(fileId)`) and reacquire file, page and shape objects.
+  * Connect a shared library to the open file with `penpot.library.connectLibrary(file.id)`.
+You navigate to different design files only when your task explicitly requires it/you are instructed to do so.
+Only rename teams or rename, move, delete or restore projects and files when the user asks for it.
+If `penpotMgmt` is `null`, file management is unavailable and only the file that is open in Penpot can be used;
+ask the user to open another file if needed.
 
 --
 You have hereby read the 'Penpot High-Level Overview' and need not use a tool to read it again.

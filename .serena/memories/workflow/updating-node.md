@@ -1,15 +1,16 @@
 # Updating Node Across the Toolchain
 
-No single source of truth: nothing reads `.nvmrc` at build time, and the version is repeated in a different shape per file. Six sites move together.
+No single source of truth: nothing reads `.nvmrc` at build time, and the version is repeated in a different shape per file. Six sites move together, and the image ones carry a digest beside the tag.
 
 ## Pin sites
 
 - `.nvmrc` → `v<X.Y.Z>`, with the leading `v`.
-- `docker/devenv/Dockerfile`, `setup-node` stage → `ENV NODE_VERSION=v<X.Y.Z>`; downloads `https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-{arm64,x64}.tar.gz` and verifies each with `NODE_SHA256` in the same arch case. Bumping Node means recomputing both hashes from the published tarballs; only the arch SHAs change, the structure stays.
+- `docker/devenv/Dockerfile`, `setup-node` stage → `ENV NODE_VERSION=v<X.Y.Z>`; downloads `https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-{arm64,x64}.tar.gz`, one tarball per arch, and verifies each against a `NODE_SHA256` right below its `BINARY_URL`. Both hashes come from `SHASUMS256.txt` in that same dist directory, so a bump must recompute the two; only the arch SHAs change, the structure stays.
 - `docker/images/Dockerfile.mcp` → two stages: `FROM dhi.io/node:<X.Y.Z>-debian13-dev AS build` and `FROM dhi.io/node:<X.Y.Z>-debian13 AS image`. The release stage carries no `-dev`.
 - `docker/images/Dockerfile.media-processor` and `docker/images/Dockerfile.exporter` → single `FROM dhi.io/node:<X.Y.Z>-debian13-dev`.
 - `.github/workflows/plugins-deploy-api-doc.yml` and `.github/workflows/plugins-deploy-styles-doc.yml` → `runtime: node@<X.Y.Z>` in the `pnpm/setup` step. Its `working-directory: plugins` makes pnpm's own version come from the manifest, so this pin is the Node one; keep it equal to `.nvmrc` minus the `v`.
 - DHI tags take the bare version; only the devenv `NODE_VERSION` carries the `v`.
+- Every `dhi.io` base image in the repo (the node ones above, plus `debian-base` and `nginx`) is pinned by digest: `FROM dhi.io/<image>:<tag>@sha256:<digest>`. Tag and digest are a pair; Renovate's `Update DHI base images` commits rewrite both in one go, so a hand-made tag bump that leaves the digest behind keeps the old image.
 
 ## Gotchas
 
@@ -22,5 +23,5 @@ No single source of truth: nothing reads `.nvmrc` at build time, and the version
 
 ## Verification
 
-- `rg '<old version>'` finds nothing outside `CHANGES.md` and untracked scratch files (a repo-wide grep without path filters hits multi-megabyte ClojureScript analyzer caches: always scope it).
+- `rg '<old version>'` finds nothing outside `CHANGES.md` and untracked scratch files (a repo-wide grep without path filters hits multi-megabyte ClojureScript analyzer caches: always scope it). Grep `dhi\.io/node` as well: a line whose tag moved but whose digest did not still pulls the old image.
 - After a devenv rebuild, `node --version` matches `.nvmrc` and `pnpm --version` matches `PNPM_VERSION` in `docker/devenv/Dockerfile`.

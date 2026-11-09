@@ -69,5 +69,11 @@
  :import-binfile/by-profile
  {:permits 1 :queue 2 :timeout 60000}
 
+ :create-import-binfile-job/global
+ {:permits 4 :queue 10 :timeout 60000}
+
+ :create-import-binfile-job/by-profile
+ {:permits 1 :queue 2 :timeout 60000}
+
  :profile-plugin-ops/by-profile
  {:permits 1 :queue 2 :timeout 30000}}

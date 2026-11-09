@@ -20,6 +20,7 @@
    [app.db.sql :as sql]
    [app.email :as eml]
    [app.features.logical-deletion :as ldel]
+   [app.jobs :as jobs]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.media.validation :as media.v]
@@ -35,7 +36,6 @@
    [app.setup :as-alias setup]
    [app.storage :as sto]
    [app.util.services :as sv]
-   [app.worker :as wrk]
    [clojure.set :as set]))
 
 ;; --- Helpers & Specs
@@ -544,7 +544,8 @@
     (nitrate/assert-membership cfg profile-id organization-id)
 
     (let [organization-perms (nitrate/call cfg :get-organization-permissions
-                                           {:organization-id organization-id})]
+                                           {:organization-id organization-id
+                                            ::rpc/profile-id profile-id})]
       (if (nil? organization-perms)
         (ex/raise :type :validation
                   :code :not-allowed
@@ -892,8 +893,7 @@
         can-delete?
         (if in-organization?
           (cto/allowed? :delete-team
-                        {:organization-perms {:owner-id    (dm/get-in team [:organization :owner-id])
-                                              :permissions (dm/get-in team [:organization :permissions])}
+                        {:organization-perms organization
                          :profile-id profile-id
                          :team-perms perms})
           (boolean (:is-owner perms)))]
@@ -909,22 +909,27 @@
                 :code :non-deletable-team
                 :hint "impossible to delete default team"))
 
-    (let [delay (ldel/get-deletion-delay team)
-          team  (db/update! conn :team
-                            {:deleted-at (ct/in-future delay)}
-                            {:id team-id}
-                            {::db/return-keys true})]
+    (let [delay           (ldel/get-deletion-delay team)
+          organization-id (dm/get-in team [:organization :id])
+          team-name       (:name team)
+          team            (db/update! conn :team
+                                      {:deleted-at (ct/in-future delay)}
+                                      {:id team-id}
+                                      {::db/return-keys true})]
 
       ;; Api call to nitrate
       (when (contains? cf/flags :admin-console)
         (nitrate/call cfg :delete-team {:profile-id profile-id :team-id team-id}))
 
-      (wrk/submit! {::db/conn conn
-                    ::wrk/task :delete-object
-                    ::wrk/params {:object :team
-                                  :deleted-at (:deleted-at team)
-                                  :id team-id}})
-      team)))
+      (jobs/submit cfg
+                   {::jobs/name :delete-object
+                    ::jobs/params {:object :team
+                                   :deleted-at (:deleted-at team)
+                                   :id team-id}})
+      (rph/with-meta (rph/wrap team)
+        {::audit/props {:organization-id organization-id
+                        :team-id team-id
+                        :team-name team-name}}))))
 
 (def ^:private schema:delete-team
   [:map {:title "delete-team"}
@@ -936,14 +941,19 @@
    ::sm/params schema:delete-team
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id id] :as params}]
-  (let [team (delete-team cfg {:team-id id :profile-id profile-id})]
+  (let [result (delete-team cfg {:team-id id :profile-id profile-id})
+        team   (rph/unwrap result)]
     ;; The client keeps receiving nil; the audit event carries the deleted row.
+    ;; Both prop sets are kept: the organization ones (develop) and the entity
+    ;; identity and timestamps (staging); `with-meta` merges shallowly, so the
+    ;; maps are merged explicitly.
     (rph/with-meta (rph/wrap)
-      {::audit/props {:id (:id team)
-                      :name (:name team)
-                      :created-at (:created-at team)
-                      :modified-at (:modified-at team)
-                      :deleted-at (:deleted-at team)}})))
+      {::audit/props (merge (::audit/props (meta result))
+                            {:id (:id team)
+                             :name (:name team)
+                             :created-at (:created-at team)
+                             :modified-at (:modified-at team)
+                             :deleted-at (:deleted-at team)})})))
 
 ;; --- Mutation: Team Update Role
 
@@ -1098,7 +1108,7 @@
   (update-team-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-team-photo
-  [{:keys [::db/pool ::sto/storage] :as cfg} {:keys [profile-id team-id] :as params}]
+  [{:keys [::db/pool ::sto/storage] :as cfg} {:keys [profile-id team-id file] :as params}]
   (let [team  (get-team pool :profile-id profile-id :team-id team-id)
         photo (profile/upload-photo cfg params)]
 
@@ -1114,4 +1124,10 @@
                 {:photo-id (:id photo)}
                 {:id team-id})
 
-    (assoc team :photo-id (:id photo))))
+    (rph/with-meta (assoc team :photo-id (:id photo))
+      {::audit/replace-props
+       {:team-id team-id
+        :file-name (:filename file)
+        :file-size (:size file)
+        :file-path (str (:path file))
+        :file-mtype (:mtype file)}})))

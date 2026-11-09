@@ -34,7 +34,9 @@
    io.prometheus.client.CollectorRegistry
    io.undertow.server.RequestTooBigException))
 
-(t/use-fixtures :once th/state-init)
+(t/use-fixtures :once (t/compose-fixtures
+                       (partial th/init-config [:enable-access-tokens])
+                       th/init-system))
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest auth-middleware-1
@@ -106,7 +108,8 @@
     (let [response (handler nil)]
       (t/is (nil? response)))
 
-    (let [response (handler {::http/auth-data {:type :token :token "foobar" :claims {:tid (:id token)}}})]
+    (let [response (handler {::http/auth-data {:type :token :token (:token token)
+                                               :claims (tokens/verify th/*system* {:token (:token token)})}})]
       (t/is (= #{} (:app.http.access-token/perms response)))
       (t/is (= (:id profile) (:app.http.access-token/profile-id response))))))
 
@@ -114,9 +117,14 @@
   (let [profile (th/create-profile* 1)
         token   (db/tx-run! th/*system* app.rpc.commands.access-token/create-access-token
                             (:id profile) "test" nil "mcp")
-        handler (#'app.http.access-token/wrap-authz identity th/*system*)
-        request {::http/auth-data {:type :token :token "foobar" :claims {:tid (:id token)}}}
+        handler (#'app.http.access-token/wrap-authz
+                 identity (assoc th/*system* :app.http.access-token/allow-mcp true))
+        request {::http/auth-data {:type :token :token (:token token)
+                                   :claims (tokens/verify th/*system* {:token (:token token)})}}
         response (handler request)]
+    (t/is (nil? (:app.http.access-token/profile-id
+                 ((#'app.http.access-token/wrap-authz identity th/*system*) request)))
+          "MCP tokens do not authenticate routes that have not opted in")
     ;; Must set ::actoken/id from claims :tid
     (t/is (= (:id token) (:app.http.access-token/id response)))
     ;; Must set ::actoken/type from database
@@ -124,6 +132,30 @@
     ;; Existing assertions still pass
     (t/is (= #{} (:app.http.access-token/perms response)))
     (t/is (= (:id profile) (:app.http.access-token/profile-id response)))))
+
+(t/deftest access-token-authz-follows-flags
+  (let [profile  (th/create-profile* 1)
+        create   #(db/tx-run! th/*system* app.rpc.commands.access-token/create-access-token
+                              (:id profile) "test" nil %)
+        request  (fn [{:keys [token]}]
+                   {::http/auth-data {:type :token :token token
+                                      :claims (tokens/verify th/*system* {:token token})}})
+        auth     (fn [flags token]
+                   (with-redefs [cf/flags flags]
+                     (let [handler (#'app.http.access-token/wrap-authz
+                                    identity (assoc th/*system* :app.http.access-token/allow-mcp true))]
+                       (:app.http.access-token/profile-id (handler (request token))))))
+        personal (create nil)
+        mcp      (create "mcp")]
+    (t/testing "only mcp: MCP tokens authenticate, personal tokens do not"
+      (t/is (= (:id profile) (auth #{:mcp} mcp)))
+      (t/is (nil? (auth #{:mcp} personal))))
+    (t/testing "only access-tokens: both authenticate"
+      (t/is (= (:id profile) (auth #{:access-tokens} mcp)))
+      (t/is (= (:id profile) (auth #{:access-tokens} personal))))
+    (t/testing "neither flag: the middleware is not installed"
+      (with-redefs [cf/flags #{}]
+        (t/is (nil? ((:compile app.http.access-token/authz))))))))
 
 (defrecord MethodAwareDummyRequest [req-method headers]
   yreq/IRequest
@@ -416,25 +448,25 @@
                                           :auth-token-cookie-max-age idle
                                           :auth-token-cookie-max-age-absolute absolute
                                           default)))]
-      (let [expanded (ig/expand-key :app.http.session.tasks/gc {})]
+      (let [expanded (ig/expand-key :app.http.session/job-def {})]
         (t/is (= idle
-                 (get-in expanded [:app.http.session.tasks/gc
+                 (get-in expanded [:app.http.session/job-def
                                    :app.http.session.tasks/max-age]))
               "task max-age should carry the configured idle window")
         (t/is (= absolute
-                 (get-in expanded [:app.http.session.tasks/gc
+                 (get-in expanded [:app.http.session/job-def
                                    :app.http.session.tasks/max-age-absolute]))
               "task max-age-absolute should carry the configured absolute cap")))
     (with-redefs [cf/get (fn
                            ([_k] nil)
                            ([_k default] default))]
-      (let [expanded (ig/expand-key :app.http.session.tasks/gc {})]
+      (let [expanded (ig/expand-key :app.http.session/job-def {})]
         (t/is (= session/default-cookie-max-age
-                 (get-in expanded [:app.http.session.tasks/gc
+                 (get-in expanded [:app.http.session/job-def
                                    :app.http.session.tasks/max-age]))
               "task max-age should fall back to the default idle window")
         (t/is (= session/default-cookie-max-age-absolute
-                 (get-in expanded [:app.http.session.tasks/gc
+                 (get-in expanded [:app.http.session/job-def
                                    :app.http.session.tasks/max-age-absolute]))
               "task max-age-absolute should fall back to the default absolute cap")))))
 
@@ -443,15 +475,15 @@
         params {:app.db/pool pool
                 :app.http.session.tasks/max-age (ct/duration {:days 7})
                 :app.http.session.tasks/max-age-absolute (ct/duration {:days 30})}]
-    (t/is (nil? (ig/assert-key :app.http.session.tasks/gc params))
+    (t/is (nil? (ig/assert-key :app.http.session/job-def params))
           "absolute cap above the idle window should pass")
-    (t/is (nil? (ig/assert-key :app.http.session.tasks/gc
+    (t/is (nil? (ig/assert-key :app.http.session/job-def
                                (assoc params
                                       :app.http.session.tasks/max-age-absolute
                                       (ct/duration {:days 7}))))
           "absolute cap equal to the idle window should pass")
     (t/is (thrown? IllegalArgumentException
-                   (ig/assert-key :app.http.session.tasks/gc
+                   (ig/assert-key :app.http.session/job-def
                                   (assoc params
                                          :app.http.session.tasks/max-age-absolute
                                          (ct/duration {:days 3}))))

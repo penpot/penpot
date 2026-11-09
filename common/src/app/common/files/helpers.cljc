@@ -162,14 +162,15 @@
   ([objects id {:keys [ignore-children-fn]
                 ;;ignore-children-fn should receive a shape and return a boolean
                 :or {ignore-children-fn (constantly false)}}]
-   (letfn [(get-children-ids-rec [id processed]
-             (when-not (contains? processed id)
-               (when-let [shapes (as-> (get objects id) $
-                                   (:shapes $)
-                                   (remove ignore-children-fn $)
-                                   (some-> $ vec))]
-                 (into shapes (mapcat #(get-children-ids-rec % (conj processed id))) shapes))))]
-     (get-children-ids-rec id #{}))))
+   (letfn [(collect [result id processed]
+             (if (contains? processed id)
+               result
+               (let [shapes    (into [] (remove ignore-children-fn) (dm/get-in objects [id :shapes]))
+                     processed (conj processed id)]
+                 (reduce #(collect %1 %2 processed)
+                         (reduce conj! result shapes)
+                         shapes))))]
+     (persistent! (collect (transient []) id #{})))))
 
 (defn get-children-ids-with-self
   [objects id]

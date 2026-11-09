@@ -362,8 +362,7 @@
             (let [source-organization (:organization team)
                   can-move?  (cto/allowed?
                               :move-team
-                              {:organization-perms {:owner-id    (:owner-id source-organization)
-                                                    :permissions (:permissions source-organization)}
+                              {:organization-perms source-organization
                                :profile-id profile-id
                                :team-perms (:permissions team)
                                :target-organization-same-owner? false})]
@@ -414,7 +413,18 @@
               :subscription-status subscription-status})
             pending-id   (str (uuid/next))
             callback-url (dom/append-query-param (rt/get-current-href)
-                                                 :pending-action-id pending-id)]
+                                                 :pending-action-id pending-id)
+            ;; The permissions may have changed in Nitrate since the modal
+            ;; was opened: refresh them and explain why the action failed.
+            on-error
+            (fn [cause]
+              (if (= :not-allowed (-> cause ex-data :code))
+                (rx/of (dt/fetch-teams)
+                       (modal/show :no-permission-modal
+                                   {:type (if (= team-previous-organization-status "other-organization")
+                                            :no-organizations-change
+                                            :no-organizations-create)}))
+                (rx/throw cause)))]
         (rx/concat
          (when-not skip-audit?
            (rx/of audit-event))
@@ -423,7 +433,8 @@
                (fn [{:keys [authorized redirect-uri]}]
                  (if authorized
                    (->> (rp/cmd! ::add-team-to-organization {:team-id team-id :organization-id organization-id})
-                        (rx/map (fn [_] (modal/hide))))
+                        (rx/map (fn [_] (modal/hide)))
+                        (rx/catch on-error))
                    (if redirect-uri
                      (do
                        (ss/save-pending-action! pending-id {:type            :add-team-to-organization
@@ -491,10 +502,9 @@
               (fn [teams]
                 (let [all-organizations (map dt/team->organization
                                              (filter #(and (:is-default %) (:organization %)) teams))
-                      organizations     (filter (fn [organization]
-                                                  (let [perm    (dm/get-in organization [:permissions :create-teams])
-                                                        is-own? (= profile-id (:owner-id organization))]
-                                                    (or (= perm "any") is-own?))) all-organizations)
+                      organizations     (filter #(cto/allowed? :create-team
+                                                               {:organization-perms %
+                                                                :profile-id profile-id}) all-organizations)
                       team     (first (filter #(= (:id %) team-id) teams))
                       current-organization (:organization team)
                       on-confirm (fn [organization-id]
@@ -551,22 +561,17 @@
                       team         (first (filter #(= (:id %) team-id) teams))
                       source-organization   (:organization team)
                       current-organization-id (:id source-organization)
-                      move-perm    (dm/get-in source-organization [:permissions :move-teams])
                       source-owner-id (:owner-id source-organization)
+                      can-move?    (fn [organization]
+                                     (cto/allowed? :move-team
+                                                   {:organization-perms source-organization
+                                                    :profile-id profile-id
+                                                    :target-organization-same-owner? (= source-owner-id (:owner-id organization))}))
                       can-create?  (fn [organization]
-                                     (let [perm    (dm/get-in organization [:permissions :create-teams])
-                                           is-own? (= profile-id (:owner-id organization))]
-                                       (or (= perm "any") is-own?)))
-                      organizations-by-move (case move-perm
-                                              "never"
-                                              []
-
-                                              "myOrganizations"
-                                              (filter #(= source-owner-id (:owner-id %)) all-organizations)
-
-                                              ;; Default to always-allowed behavior.
-                                              all-organizations)
-                      organizations         (filter can-create? organizations-by-move)
+                                     (cto/allowed? :create-team
+                                                   {:organization-perms organization
+                                                    :profile-id profile-id}))
+                      organizations         (filter #(and (can-move? %) (can-create? %)) all-organizations)
                       selectable-organizations (remove #(= current-organization-id (:id %)) organizations)
                       on-confirm (fn [organization-id]
                                    (st/emit! (add-team-to-organization {:team-id team-id

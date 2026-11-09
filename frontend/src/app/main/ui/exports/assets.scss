@@ -4,66 +4,75 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+// Only for the shared modal and checkbox placeholders, which move to the DS
+// with the modals and the checkboxes.
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/mixins.scss" as *;
+@use "ds/typography.scss" as *;
 
 // PROGRESS WIDGET
 .export-progress-widget {
-  @include deprecated.flex-center;
-
-  width: deprecated.$s-28;
-  height: deprecated.$s-28;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  inline-size: $sz-28;
+  block-size: $sz-28;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
 }
 
 // PROGRESS MODAL
 .export-progress-modal {
-  --export-modal-bg-color: var(--alert-background-color-default);
-  --export-modal-fg-color: var(--alert-text-foreground-color-default);
-  --export-modal-icon-color: var(--alert-icon-foreground-color-default);
-  --export-modal-border-color: var(--alert-border-color-default);
+  --export-modal-bg-color: var(--color-background-primary);
+  --export-modal-fg-color: var(--color-foreground-primary);
+  --export-modal-icon-color: var(--color-foreground-primary);
+  --export-modal-border-color: var(--color-background-quaternary);
 
   position: absolute;
-  right: deprecated.$s-16;
-  top: deprecated.$s-48;
+  inset-inline-end: var(--sp-l);
+  inset-block-start: $sz-48;
   display: grid;
-  grid-template-columns: deprecated.$s-24 1fr deprecated.$s-24;
+  grid-template-columns: $sz-24 1fr $sz-24;
   grid-template-areas:
     "icon text close"
     "bar bar bar";
-  gap: deprecated.$s-4 deprecated.$s-8;
-  padding-block-start: deprecated.$s-8;
+  gap: var(--sp-xs) var(--sp-s);
+  padding-block-start: var(--sp-s);
   background-color: var(--export-modal-bg-color);
-  border: deprecated.$s-1 solid var(--export-modal-border-color);
-  border-radius: deprecated.$br-8;
-  z-index: deprecated.$z-index-modal;
+  border: $b-1 solid var(--export-modal-border-color);
+  border-radius: $br-8;
+  z-index: var(--z-index-set);
   overflow: hidden;
 }
 
 .has-error {
-  --export-modal-bg-color: var(--alert-background-color-error);
-  --export-modal-fg-color: var(--alert-text-foreground-color-error);
-  --export-modal-icon-color: var(--alert-icon-foreground-color-error);
-  --export-modal-border-color: var(--alert-border-color-error);
+  --export-modal-bg-color: var(--color-background-error);
+  --export-modal-icon-color: var(--color-accent-error);
+  --export-modal-border-color: var(--color-accent-error);
 
   grid-template-areas: "icon text close";
-  gap: deprecated.$s-8;
-  padding-block: deprecated.$s-8;
+  gap: var(--sp-s);
+  padding-block: var(--sp-s);
 }
 
 .icon {
-  @extend %button-icon;
-
   grid-area: icon;
   align-self: center;
-  margin-inline-start: deprecated.$s-8;
-  stroke: var(--export-modal-icon-color);
+  margin-inline-start: var(--sp-s);
+  color: var(--export-modal-icon-color);
 }
 
 .export-progress-title {
-  @include deprecated.body-medium-typography;
+  @include use-typography("body-medium");
 
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: deprecated.$s-8;
+  gap: var(--sp-s);
   grid-area: text;
   align-self: center;
   padding: 0;
@@ -72,130 +81,137 @@
 }
 
 .progress {
-  @include deprecated.body-medium-typography;
+  @include use-typography("body-medium");
 
-  padding-left: deprecated.$s-8;
+  padding-inline-start: var(--sp-s);
   margin: 0;
   align-self: center;
-  color: var(--modal-text-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
+// Link-styled text button: stays a raw button.
 .retry-btn {
-  @include deprecated.button-style;
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
   display: inline;
-  text-align: left;
-  color: var(--modal-link-foreground-color);
+  text-align: start;
+  color: var(--color-accent-primary);
   margin: 0;
   padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
 }
 
 .progress-close-button {
-  @include deprecated.button-style;
-
-  padding: 0;
-  margin-inline-end: deprecated.$s-8;
-}
-
-.close-icon {
-  @extend %button-icon;
-
-  stroke: var(--export-modal-icon-color);
+  margin-inline-end: var(--sp-s);
 }
 
 .progress-bar {
-  margin-top: 0;
+  margin-block-start: 0;
   grid-area: bar;
 }
 
 // EXPORT MODAL
 .modal-overlay {
   @extend %modal-overlay-base;
-
-  &.transparent {
-    background-color: transparent;
-  }
 }
 
 .modal-container {
   @extend %modal-container-base;
 
-  max-height: calc(10 * deprecated.$s-80);
+  max-block-size: px2rem(800);
 }
 
 .modal-header {
-  margin-bottom: deprecated.$s-24;
+  margin-block-end: var(--sp-xxl);
 }
 
 .modal-title {
-  @include deprecated.headline-medium-typography;
+  @include use-typography("headline-medium");
 
-  color: var(--modal-title-foreground-color);
+  color: var(--color-foreground-primary);
 }
 
 .modal-close-btn {
-  @extend %modal-close-btn-base;
+  position: absolute;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: var(--sp-xs);
 }
 
 .modal-content,
 .no-selection {
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
-  margin-bottom: deprecated.$s-24;
+  margin-block-end: var(--sp-xxl);
 
   .modal-link {
-    @include deprecated.body-large-typography;
+    @include use-typography("body-large");
 
     text-decoration: none;
     cursor: pointer;
-    color: var(--modal-link-foreground-color);
+    color: var(--color-accent-primary);
   }
 
   .selection-header {
-    @include deprecated.flex-row;
-
-    height: deprecated.$s-32;
-    margin-bottom: deprecated.$s-4;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-xs);
+    block-size: $sz-32;
+    margin-block-end: var(--sp-xs);
 
     .selection-btn {
-      @include deprecated.button-style;
       @extend %input-checkbox;
-      @include deprecated.flex-center;
 
-      height: deprecated.$s-24;
-      width: deprecated.$s-24;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      block-size: $sz-24;
+      inline-size: $sz-24;
       padding: 0;
-      margin-left: deprecated.$s-16;
+      margin-inline-start: var(--sp-l);
+      border: none;
+      background: none;
+      cursor: pointer;
 
       span {
         @extend %checkbox-icon;
+
+        // The DS icon draws its 12px glyph centered in a 16px box: keep that
+        // box, unshrunk, instead of the 12px the placeholder gives a legacy
+        // icon.
+        &:global(.checked) svg,
+        &:global(.intermediate) svg {
+          flex-shrink: 0;
+          inline-size: $sz-16;
+          block-size: $sz-16;
+        }
       }
     }
 
     .selection-title {
-      @include deprecated.body-large-typography;
+      @include use-typography("body-large");
 
-      color: var(--modal-text-foreground-color);
+      color: var(--color-foreground-secondary);
     }
   }
 
   .selection-wrapper {
     position: relative;
-    width: 100%;
-    height: fit-content;
+    inline-size: 100%;
+    block-size: fit-content;
   }
 
   .selection-shadow {
-    width: 100%;
-    height: 100%;
+    inline-size: 100%;
+    block-size: 100%;
 
     &::after {
       position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 50px;
+      inset-block-end: 0;
+      inset-inline-start: 0;
+      inline-size: 100%;
+      block-size: px2rem(50);
       background: linear-gradient(to top, rgb(24 24 26 / 1) 0%, rgb(24 24 26 / 0) 100%);
       content: "";
       pointer-events: none;
@@ -203,84 +219,99 @@
   }
 
   .selection-list {
-    @include deprecated.flex-column;
-
-    max-height: deprecated.$s-400;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-xs);
+    max-block-size: $sz-400;
     overflow-y: auto;
-    padding-bottom: deprecated.$s-12;
+    padding-block-end: var(--sp-m);
 
     .selection-row {
-      @include deprecated.flex-row;
+      display: flex;
+      align-items: center;
+      gap: var(--sp-xs);
+      background-color: var(--color-background-tertiary);
+      min-block-size: $sz-40;
+      border-radius: $br-8;
 
-      background-color: var(--entry-background-color);
-      min-height: deprecated.$s-40;
-      border-radius: deprecated.$br-8;
-
+      // A list row, not a DS button: the whole row toggles its export.
       .selection-btn {
-        @include deprecated.button-style;
-
         display: grid;
         grid-template-columns: min-content auto 1fr auto auto;
         align-items: center;
-        width: 100%;
-        height: 10%;
-        gap: deprecated.$s-8;
-        padding: 0 deprecated.$s-16;
+        inline-size: 100%;
+        block-size: 10%;
+        gap: var(--sp-s);
+        padding: 0 var(--sp-l);
+        border: none;
+        background: none;
+        cursor: pointer;
 
         .checkbox-wrapper {
           @extend %input-checkbox;
-          @include deprecated.flex-center;
 
-          height: deprecated.$s-24;
-          width: deprecated.$s-24;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          block-size: $sz-24;
+          inline-size: $sz-24;
           padding: 0;
 
           .checkobox-tick {
             @extend %checkbox-icon;
+
+            // The DS icon draws its 12px glyph centered in a 16px box: keep that
+            // box, unshrunk, instead of the 12px the placeholder gives a
+            // legacy icon.
+            &:global(.checked) svg,
+            &:global(.intermediate) svg {
+              flex-shrink: 0;
+              inline-size: $sz-16;
+              block-size: $sz-16;
+            }
           }
         }
 
-        .selection-name {
-          @include deprecated.body-large-typography;
-          @include deprecated.text-ellipsis;
+        .selection-name,
+        .selection-scale,
+        .selection-extension {
+          @include use-typography("body-large");
+          @include text-ellipsis;
 
+          color: var(--color-foreground-secondary);
+        }
+
+        .selection-name {
           flex-grow: 1;
-          color: var(--modal-text-foreground-color);
           text-align: start;
         }
 
         .selection-scale {
-          @include deprecated.body-large-typography;
-          @include deprecated.text-ellipsis;
-
-          min-width: deprecated.$s-108;
-          padding: deprecated.$s-12;
-          color: var(--modal-text-foreground-color);
+          min-inline-size: px2rem(108);
+          padding: var(--sp-m);
         }
 
         .selection-extension {
-          @include deprecated.body-large-typography;
-          @include deprecated.text-ellipsis;
-
-          min-width: deprecated.$s-72;
-          padding: deprecated.$s-12;
-          color: var(--modal-text-foreground-color);
+          min-inline-size: px2rem(72);
+          padding: var(--sp-m);
         }
       }
 
       .image-wrapper {
-        @include deprecated.flex-center;
-
-        min-height: deprecated.$s-32;
-        min-width: deprecated.$s-32;
-        background-color: var(--app-white);
-        border-radius: deprecated.$br-6;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-block-size: $sz-32;
+        min-inline-size: $sz-32;
+        background-color: var(--color-static-white);
+        border-radius: $br-6;
         margin: auto 0;
 
+        // The thumbnail markup has no class of its own.
         img,
         svg {
           object-fit: contain;
-          max-height: deprecated.$s-40;
+          max-block-size: $sz-40;
         }
       }
     }
@@ -288,101 +319,14 @@
 }
 
 .action-buttons {
-  @extend %modal-action-btns;
-}
-
-.cancel-button {
-  @extend %modal-cancel-btn;
-}
-
-.accept-btn {
-  @extend %modal-accept-btn;
-
-  &.danger {
-    @extend %modal-danger-btn;
-  }
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-l);
 }
 
 .modal-scd-msg,
-.modal-subtitle,
 .modal-msg {
-  @include deprecated.body-large-typography;
+  @include use-typography("body-large");
 
-  color: var(--modal-text-foreground-color);
-}
-
-.export-option {
-  @extend %input-checkbox;
-
-  width: 100%;
-  align-items: flex-start;
-
-  label {
-    align-items: flex-start;
-
-    .modal-subtitle {
-      @include deprecated.body-large-typography;
-
-      color: var(--modal-title-foreground-color);
-    }
-  }
-
-  span {
-    margin-top: deprecated.$s-8;
-  }
-}
-
-.option-content {
-  @include deprecated.flex-column;
-  @include deprecated.body-large-typography;
-}
-
-.file-entry {
-  .file-name {
-    @include deprecated.flex-row;
-
-    .file-icon {
-      @include deprecated.flex-center;
-
-      height: deprecated.$s-16;
-      width: deprecated.$s-16;
-
-      svg {
-        @extend %button-icon-small;
-
-        stroke: var(--input-foreground);
-      }
-    }
-
-    .file-name-label {
-      @include deprecated.body-large-typography;
-      @include deprecated.text-ellipsis;
-    }
-  }
-
-  &.loading {
-    .file-name {
-      color: var(--modal-text-foreground-color);
-    }
-  }
-
-  &.error {
-    .file-name {
-      color: var(--modal-text-foreground-color);
-
-      .file-icon svg {
-        stroke: var(--modal-text-foreground-color);
-      }
-    }
-  }
-
-  &.success {
-    .file-name {
-      color: var(--modal-text-foreground-color);
-
-      .file-icon svg {
-        stroke: var(--modal-text-foreground-color);
-      }
-    }
-  }
+  color: var(--color-foreground-secondary);
 }

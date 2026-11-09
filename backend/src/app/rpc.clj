@@ -13,7 +13,6 @@
    [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.common.time :as ct]
-   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -125,7 +124,8 @@
                              (cond-> (and (not (uuid? session-pid))
                                           (uuid? token-pid))
                                (-> (assoc ::auth-type :token)
-                                   (assoc ::token-perms (set (::actoken/perms request #{})))))
+                                   (assoc ::token-perms (set (::actoken/perms request #{})))
+                                   (assoc ::token-type (::actoken/type request))))
                              (cond-> key-id
                                (assoc ::auth-key-id key-id))
                              ;; Server-side only: request bodies cannot forge
@@ -172,10 +172,12 @@
   [_ f mdata]
   (let [required-auth?      (::auth mdata true)
         required-auth-type  (::auth-type mdata)
+        required-token-type (::token-type mdata)
         required-perms      (into #{} (::perms mdata))]
     (fn [cfg params]
       (let [profile-id  (::profile-id params)
             auth-type   (::auth-type params)
+            token-type  (::token-type params)
             token-perms (set (::token-perms params #{}))]
         (cond
           (and required-auth? (not (uuid? profile-id)))
@@ -183,8 +185,13 @@
                     :code :authentication-required
                     :hint "authentication required for this endpoint")
 
-          (and (= required-auth-type :token)
-               (not= auth-type :token))
+          (or (and (= required-auth-type :token)
+                   (not= auth-type :token))
+              (and required-token-type
+                   (or (not= auth-type :token)
+                       (not= required-token-type token-type)))
+              (and (= token-type "mcp")
+                   (not= required-token-type "mcp")))
           (ex/raise :type :authorization
                     :code :token-auth-required
                     :hint "access token authentication required for this endpoint")
@@ -359,6 +366,28 @@
     (wrap-params-validation cfg $ mdata)
     (wrap-authentication cfg $ mdata)))
 
+(defn- wrap-shared-key-authorization
+  "Authorizes a shared-key caller against the method's `::allowed-shared-keys`.
+
+  A management method declares the shared-key ids allowed to call it with
+  `::allowed-shared-keys`. When the metadata is absent any configured shared key is
+  accepted, preserving the previous behavior. When it is present and empty no
+  key is accepted."
+  [_ f mdata]
+  (if (contains? mdata ::allowed-shared-keys)
+    (let [allowed-keys (::allowed-shared-keys mdata)]
+      (fn [cfg params]
+        (if (contains? allowed-keys (::auth-key-id params))
+          (f cfg params)
+          (do
+            (l/wrn :hint "shared key is not allowed for this method"
+                   :handler-name (::handler-name params)
+                   :key-id (::auth-key-id params))
+            (ex/raise :type :authorization
+                      :code :shared-key-not-allowed
+                      :hint "shared key is not allowed for this method")))))
+    f))
+
 (defn- wrap-management
   [cfg f mdata]
   (as-> f $
@@ -369,7 +398,10 @@
     (wrap-audit cfg $ mdata)
     (wrap-nitrate-sso cfg $ mdata)
     (wrap-params-validation cfg $ mdata)
-    (wrap-authentication cfg $ mdata)))
+    (wrap-authentication cfg $ mdata)
+    ;; Outermost on purpose: a denied key never opens a transaction,
+    ;; validates params or runs the method body.
+    (wrap-shared-key-authorization cfg $ mdata)))
 
 (defn- process-method
   [cfg wrap-fn [f mdata]]
@@ -401,6 +433,7 @@
           'app.rpc.commands.files-update
           'app.rpc.commands.files-snapshot
           'app.rpc.commands.files-thumbnails
+          'app.rpc.commands.jobs
           'app.rpc.commands.ldap
           'app.rpc.commands.management
           'app.rpc.commands.media
@@ -448,6 +481,7 @@
   [cfg]
   (let [cfg  (assoc cfg ::module "management" ::type "command" ::metrics-id :rpc-management-timing)
         mods (cond->> (list 'app.rpc.management.exporter
+                            'app.rpc.management.jobs
                             'app.rpc.management.files)
                (contains? cf/flags :admin-console)
                (cons 'app.rpc.management.nitrate))]
@@ -504,42 +538,40 @@
 
 (defmethod ig/init-key ::routes
   [_ {:keys [::methods ::management-methods ::setup/shared-keys] :as cfg}]
+  ["/api"
+   ["/management"
+    ["/methods/:method-name"
+     {:middleware [[mw/shared-key-auth shared-keys]
+                   [session/authz cfg]]
+      :handler (make-rpc-handler management-methods)}]
 
-  (let [public-uri (cf/get :public-uri)]
-    ["/api"
-     ["/management"
-      ["/methods/:method-name"
-       {:middleware [[mw/shared-key-auth shared-keys]
-                     [session/authz cfg]]
-        :handler (make-rpc-handler management-methods)}]
+    (doc/routes :methods management-methods
+                :label "management"
+                :base-uri (cf/get-public-uri "api/management")
+                :description "MANAGEMENT API")]
 
-      (doc/routes :methods management-methods
-                  :label "management"
-                  :base-uri (u/join public-uri "/api/management")
-                  :description "MANAGEMENT API")]
+   ["/main"
+    ["/methods/:method-name"
+     {:middleware [[mw/cors]
+                   [sec/client-header-check]
+                   [session/authz cfg]
+                   [actoken/authz (assoc cfg ::actoken/allow-mcp true)]]
+      :handler (make-rpc-handler methods)}]
 
-     ["/main"
-      ["/methods/:method-name"
-       {:middleware [[mw/cors]
-                     [sec/client-header-check]
-                     [session/authz cfg]
-                     [actoken/authz cfg]]
-        :handler (make-rpc-handler methods)}]
+    (doc/routes :methods methods
+                :label "main"
+                :base-uri (cf/get-public-uri "api/main")
+                :description "MAIN API")]
 
-      (doc/routes :methods methods
-                  :label "main"
-                  :base-uri (u/join public-uri "/api/main")
-                  :description "MAIN API")]
+   ;; BACKWARD COMPATIBILITY
+   ["/_doc" {:handler (redirect (cf/get-public-uri "api/main/doc"))}]
+   ["/doc" {:handler (redirect (cf/get-public-uri "api/main/doc"))}]
+   ["/openapi" {:handler (redirect (cf/get-public-uri "api/main/doc/openapi"))}]
+   ["/openapi.join" {:handler (redirect (cf/get-public-uri "api/main/doc/openapi.json"))}]
 
-     ;; BACKWARD COMPATIBILITY
-     ["/_doc" {:handler (redirect (u/join public-uri "/api/main/doc"))}]
-     ["/doc" {:handler (redirect (u/join public-uri "/api/main/doc"))}]
-     ["/openapi" {:handler (redirect (u/join public-uri "/api/main/doc/openapi"))}]
-     ["/openapi.join" {:handler (redirect (u/join public-uri "/api/main/doc/openapi.json"))}]
-
-     ["/rpc/command/:method-name"
-      {:middleware [[mw/cors]
-                    [sec/client-header-check]
-                    [session/authz cfg]
-                    [actoken/authz cfg]]
-       :handler (make-rpc-handler methods)}]]))
+   ["/rpc/command/:method-name"
+    {:middleware [[mw/cors]
+                  [sec/client-header-check]
+                  [session/authz cfg]
+                  [actoken/authz (assoc cfg ::actoken/allow-mcp true)]]
+     :handler (make-rpc-handler methods)}]])

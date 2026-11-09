@@ -16,8 +16,10 @@
    [app.db :as db]
    [app.http :as-alias http]
    [app.loggers.audit :as audit]
+   [app.loggers.audit.consumer-task :as consumer]
    [app.loggers.database :as loggers.db]
    [app.loggers.mattermost :as loggers.mm]
+   [app.metrics :as mtx]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
    [app.rpc.doc :as-alias doc]
@@ -71,6 +73,9 @@
 (def ^:private xf:map-event-row
   (comp
    (map adjust-timestamp)
+   ;; Each row mints its own id: the full row and its telemetry
+   ;; shadow are distinct records that must not share it.
+   (map #(assoc % :id (uuid/next)))
    (map event->row)))
 
 (defn- prepare-events
@@ -80,8 +85,7 @@
         initiator (audit/get-client-initiator request)
         xform     (comp
                    (map (fn [event]
-                          {:id (uuid/next)
-                           :type (:type event)
+                          {:type (:type event)
                            :name (:name event)
                            :props (:props event)
                            ;; The initiator always comes from the
@@ -113,6 +117,19 @@
               (assoc :source "telemetry:frontend"))))
    (map event->row)))
 
+(defn- record-ingested
+  [metrics kind outcome amount]
+  (when (pos? amount)
+    (mtx/run! metrics :id :audit-ingest-events :labels [kind outcome] :inc amount)))
+
+(defn- insert-rows!
+  [tx rows]
+  (when (seq rows)
+    (db/insert-many! tx :audit-log event-columns rows)
+    ;; Same transaction as the rows: every ingested record is born
+    ;; pending for every enabled consumer (see consumer-task).
+    (consumer/queue-pendings tx (map first rows))))
+
 (defn- handle-events
   [{:keys [::db/pool] :as cfg} params]
   (let [events (prepare-events params)]
@@ -124,19 +141,30 @@
       (run! (partial loggers.db/emit cfg) events)
       (run! (partial loggers.mm/emit cfg) events))
 
-    (when (contains? cf/flags :audit-log)
-      ;; Process and save full audit events when audit-log flag is active
-      (when-let [rows (-> (sequence xf:map-event-row events)
-                          (not-empty))]
-        (db/insert-many! pool :audit-log event-columns rows)))
-
-    (when (contains? cf/flags :telemetry)
-      ;; Store anonymized frontend events so the telemetry task can ship them
-      ;; in batches. Runs independently from the audit-log insert above so
-      ;; both modes can be active simultaneously.
-      (when-let [rows (-> (sequence xf:map-telemetry-event-row events)
-                          (not-empty))]
-        (db/insert-many! pool :audit-log event-columns rows)))))
+    ;; Rows and their pendings commit together in one transaction: a
+    ;; row never outlives its queue. Both faces are best-effort, so a
+    ;; failure drops the whole batch (counted below as failed); the
+    ;; endpoint still answers without breaking the request.
+    (let [metrics     (mtx/instance cfg)
+          full-rows   (if (contains? cf/flags :audit-log)
+                        (into [] xf:map-event-row events)
+                        [])
+          shadow-rows (if (contains? cf/flags :telemetry)
+                        (into [] xf:map-telemetry-event-row events)
+                        [])]
+      (try
+        (db/tx-run! pool
+                    (fn [tx]
+                      (insert-rows! tx full-rows)
+                      (insert-rows! tx shadow-rows)))
+        (record-ingested metrics "full" "inserted" (count full-rows))
+        (record-ingested metrics "shadow" "inserted" (count shadow-rows))
+        (catch Throwable cause
+          ;; Whatever never landed counts as failed per attempted
+          ;; kind; the endpoint logs the cause as before.
+          (record-ingested metrics "full" "failed" (count full-rows))
+          (record-ingested metrics "shadow" "failed" (count shadow-rows))
+          (throw cause))))))
 
 (def ^:private valid-event-types
   #{"action" "identify" "trigger"})

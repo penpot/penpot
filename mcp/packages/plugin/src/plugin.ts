@@ -2,6 +2,9 @@ import { ExecuteCodeTaskHandler } from "./task-handlers/ExecuteCodeTaskHandler";
 import { Task, TaskHandler } from "./TaskHandler";
 import { formatTaskError } from "./ErrorUtils";
 import { extractMinorVersion, isCompatibleVersion } from "./VersionCompatibility";
+import type { ContentRollbackEvent, PluginConnectionInit } from "../../common/src";
+import type { WorkspaceContext } from "@penpot/plugin-types";
+import { LocalStorageRollbackStore, RollbackLog, type RollbackStore } from "./RollbackLog";
 
 /**
  * indicates whether the plugin is running in an environment with the Penpot-integrated remote MCP server
@@ -9,12 +12,41 @@ import { extractMinorVersion, isCompatibleVersion } from "./VersionCompatibility
  */
 const isIntegratedRemoteMcp = !!mcp;
 
-mcp?.setMcpStatus("connecting");
+/**
+ * the management API, which Penpot only exposes to plugins running with global scope;
+ * null otherwise (e.g. in Penpot versions without global plugins)
+ */
+const management = typeof penpotMgmt === "undefined" ? null : penpotMgmt;
+
+let uiInitialized = false;
 
 /**
  * Registry of all available task handlers.
  */
 const taskHandlers: TaskHandler[] = [new ExecuteCodeTaskHandler()];
+
+/**
+ * Rollbacks of rejected changes, reported to the MCP server with the next task response.
+ * The ones not reported yet are kept in the plugin local storage of the open file, so a reload
+ * of the tab or of the plugin does not lose them.
+ */
+const rollbackLog = new RollbackLog(createRollbackStore());
+rollbackLog.listen();
+
+/**
+ * Creates the store of the rollbacks not reported yet, for the open file.
+ *
+ * @returns the store, or undefined when no file is open or the local storage is unavailable
+ */
+function createRollbackStore(): RollbackStore | undefined {
+    try {
+        const fileId = penpot.currentFile?.id;
+        return fileId ? new LocalStorageRollbackStore(penpot.localStorage, fileId) : undefined;
+    } catch (error) {
+        console.warn("Rollbacks are kept in memory only:", error);
+        return undefined;
+    }
+}
 
 // Open the plugin UI (main.ts)
 penpot.ui.open("Penpot MCP Plugin", `?theme=${penpot.theme}`, {
@@ -24,8 +56,20 @@ penpot.ui.open("Penpot MCP Plugin", `?theme=${penpot.theme}`, {
 } as any);
 
 // Register message handlers
-penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task: string; params: any }>((message) => {
+penpot.ui.onMessage<
+    | string
+    | {
+          id: string;
+          type?: string;
+          status?: string;
+          sessionId?: string;
+          task: string;
+          params: any;
+          rollbacks?: ContentRollbackEvent[];
+      }
+>((message) => {
     if (typeof message === "object" && message.type === "ui-initialized") {
+        uiInitialized = true;
         // Inform the UI about the operating mode
         penpot.ui.sendMessage({
             type: "mcp-mode",
@@ -42,16 +86,36 @@ penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task:
                 penpotVersion: penpotVersionPrefix,
             });
         }
-        // Initiate connection to remote MCP server (if enabled)
-        if (isIntegratedRemoteMcp) {
+        // connect only when requested in this tab
+        if (isIntegratedRemoteMcp && mcp?.isConnectionRequested()) {
             penpot.ui.sendMessage({
                 type: "start-server",
                 url: mcp?.getServerUrl(),
                 token: mcp?.getToken(),
             });
         }
+    } else if (typeof message === "object" && message.type === "connection-metadata-request") {
+        const workspace = currentWorkspace();
+        if (message.sessionId) {
+            const initialization: PluginConnectionInit & { penpotUserSessionId?: string } = {
+                type: "initialize",
+                session: {
+                    sessionId: message.sessionId,
+                    fileId: workspace.fileId,
+                    fileName: workspace.fileName,
+                    workspaceState: workspace.status,
+                },
+                penpotUserSessionId: penpot.currentUser.sessionId,
+            };
+            penpot.ui.sendMessage(initialization);
+        }
+    } else if (typeof message === "object" && message.type === "context-request") {
+        sendWorkspaceContext();
+    } else if (typeof message === "object" && message.type === "unclaimed-rollbacks") {
+        // the server got these with a response that came too late: report them again
+        rollbackLog.restore(message.rollbacks ?? []);
     } else if (typeof message === "object" && message.type === "update-connection-status") {
-        mcp?.setMcpStatus(message.status || "unknown");
+        mcp?.setMcpStatus(message.status || "unknown", message.sessionId);
     } else if (typeof message === "object" && message.task && message.id) {
         // Handle plugin tasks submitted by the MCP server
         handlePluginTaskRequest(message).catch((error) => {
@@ -61,13 +125,45 @@ penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task:
 });
 
 /**
+ * Provides the workspace metadata of this tab.
+ * Without the management API, the metadata is derived from the open file.
+ */
+function currentWorkspace(): WorkspaceContext {
+    if (management) {
+        return management.workspace;
+    }
+    const file = penpot.currentFile;
+    return {
+        status: file ? "ready" : "none",
+        fileId: file?.id ?? null,
+        fileName: file?.name ?? null,
+        teamId: null,
+    };
+}
+
+/** Sends the current workspace metadata without replacing the connection. */
+function sendWorkspaceContext(): void {
+    const workspace = currentWorkspace();
+    penpot.ui.sendMessage({
+        type: "context-update",
+        context: {
+            fileId: workspace.fileId,
+            fileName: workspace.fileName,
+            workspaceState: workspace.status,
+        },
+    });
+}
+
+management?.on("workspacechange", sendWorkspaceContext);
+
+/**
  * Handles plugin task requests received from the MCP server via WebSocket.
  *
  * @param request - The task request containing ID, task type and parameters
  */
 async function handlePluginTaskRequest(request: { id: string; task: string; params: any }): Promise<void> {
     console.log("Executing plugin task:", request.task, request.params);
-    const task = new Task(request.id, request.task, request.params);
+    const task = new Task(request.id, request.task, request.params, rollbackLog);
 
     // Find the appropriate handler
     const handler = taskHandlers.find((h) => h.isApplicableTo(task));
@@ -102,6 +198,7 @@ if (mcp) {
         });
     });
     mcp.on("connect", async () => {
+        if (!uiInitialized) return;
         penpot.ui.sendMessage({
             type: "start-server",
             url: mcp?.getServerUrl(),

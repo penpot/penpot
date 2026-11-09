@@ -1,5 +1,3 @@
-@import url('https://fonts.bunny.net/css?family=work-sans:400,500&display=swap');
-
 :root {
   /* Font weight */
   --font-weight-regular: 400;
@@ -14,7 +12,7 @@
 }
 
 code {
-  font-family: 'Work Sans', sans-serif;
+  font-family: system-ui, sans-serif;
 }
 
 .display {

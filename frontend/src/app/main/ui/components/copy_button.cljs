@@ -9,7 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.event :as-alias ev]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -43,6 +43,6 @@
               :on-click on-click}
      children
      [:span {:class (stl/css :icon-btn)}
-      (if active?
-        deprecated-icon/tick
-        deprecated-icon/clipboard)]]))
+      [:> icon* {:icon-id (if active? i/tick i/clipboard)
+                 :size "s"
+                 :class (stl/css :icon)}]]]))

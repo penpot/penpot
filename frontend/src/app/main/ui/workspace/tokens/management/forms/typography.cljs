@@ -13,10 +13,14 @@
    [app.common.types.token :as cto]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.forms :as forms]
    [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
+   [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.main.ui.workspace.tokens.management.forms.generic-form :as generic]
    [app.main.ui.workspace.tokens.management.forms.validators :refer [check-coll-self-reference check-self-reference default-validate-token]]
+   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -59,6 +63,25 @@
         (assoc :validators [check-empty-typography-token
                             check-typography-token-self-reference])
         (default-validate-token))))
+
+;; HELPERS
+
+(def ^:private composite-keys
+  [:font-family
+   :font-size
+   :font-weight
+   :line-height
+   :letter-spacing
+   :text-case
+   :text-decoration])
+
+(defn- composite-value->form-value
+  "Form data for the composite tab from a typography token map `value`."
+  [value]
+  (-> (cond-> value
+        (:font-family value)
+        (update :font-family cto/join-font-family))
+      (select-keys composite-keys)))
 
 ;; COMPONENTS
 
@@ -172,40 +195,88 @@
         :tokens tokens}]]]))
 
 (mf/defc reference-form*
-  [{:keys [token tokens] :as props}]
-  [:div {:class (stl/css :input-row)}
-   [:> token.controls/input-composite*
-    {:placeholder (tr "workspace.tokens.reference-composite")
-     :aria-label (tr "labels.reference")
-     :icon i/text-typography
-     :name :reference
-     :token token
-     :tokens tokens}]])
+  [{:keys [token tokens on-detach] :as props}]
+  (let [form      (mf/use-ctx forms/context)
+        reference (get-in @form [:data :value :reference])
+
+        detached-value
+        (mf/with-memo [tokens reference]
+          (csu/referenced-token-value tokens reference :typography))
+
+        on-detach-click
+        (mf/use-fn
+         (mf/deps detached-value on-detach)
+         (fn [event]
+           (dom/prevent-default event)
+           (on-detach detached-value)))]
+
+    [:div {:class (stl/css :input-row :reference-row)}
+     [:> token.controls/input-composite*
+      {:placeholder (tr "workspace.tokens.reference-composite")
+       :aria-label (tr "labels.reference")
+       :icon i/text-typography
+       :name :reference
+       :token token
+       :tokens tokens
+       :slot-end (when (some? detached-value)
+                   (mf/html
+                    [:> icon-button* {:variant "action"
+                                      :type "button"
+                                      :class (stl/css :detach-button)
+                                      :aria-label (tr "workspace.tokens.detach-reference")
+                                      :on-click on-detach-click
+                                      :icon i/detach}]))}]]))
 
 (mf/defc tabs-wrapper*
   [{:keys [token tokens tab handle-toggle] :rest props}]
-  [:*
-   [:div {:class (stl/css :title-bar)}
-    [:div {:class (stl/css :title)} (tr "labels.typography")]
-    [:& radio-buttons {:class (stl/css :listing-options)
-                       :selected (d/name tab)
-                       :on-change handle-toggle
-                       :name "reference-composite-tab"}
-     [:& radio-button {:icon i/layers
-                       :value "composite"
-                       :title (tr "workspace.tokens.individual-tokens")
-                       :id "composite-opt"}]
-     [:& radio-button {:icon i/tokens
-                       :value "reference"
-                       :title (tr "workspace.tokens.use-reference")
-                       :id "reference-opt"}]]]
-   [:div {:class (stl/css :inputs-wrapper)}
-    (if (= tab :composite)
-      [:> composite-form* {:token token
-                           :tokens tokens}]
+  (let [form      (mf/use-ctx forms/context)
 
-      [:> reference-form* {:token token
-                           :tokens tokens}])]])
+        ;; Raw value of the detached reference, used so the composite
+        ;; inputs show the resolved value of the copied fields.
+        detached* (mf/use-state nil)
+        detached  (deref detached*)
+
+        composite-token
+        (mf/with-memo [token detached]
+          (if (some? detached)
+            (assoc token :value detached)
+            token))
+
+        on-detach
+        (mf/use-fn
+         (mf/deps form handle-toggle)
+         (fn [value]
+           (swap! form (fn [state]
+                         (-> state
+                             (assoc-in [:data :value] (composite-value->form-value value))
+                             (update :errors dissoc :value)
+                             (update :extra-errors dissoc :value))))
+           (reset! detached* value)
+           (handle-toggle "composite")))]
+
+    [:*
+     [:div {:class (stl/css :title-bar)}
+      [:div {:class (stl/css :title)} (tr "labels.typography")]
+      [:& radio-buttons {:class (stl/css :listing-options)
+                         :selected (d/name tab)
+                         :on-change handle-toggle
+                         :name "reference-composite-tab"}
+       [:& radio-button {:icon i/layers
+                         :value "composite"
+                         :title (tr "workspace.tokens.individual-tokens")
+                         :id "composite-opt"}]
+       [:& radio-button {:icon i/tokens
+                         :value "reference"
+                         :title (tr "workspace.tokens.use-reference")
+                         :id "reference-opt"}]]]
+     [:div {:class (stl/css :inputs-wrapper)}
+      (if (= tab :composite)
+        [:> composite-form* {:token composite-token
+                             :tokens tokens}]
+
+        [:> reference-form* {:token token
+                             :tokens tokens
+                             :on-detach on-detach}])]]))
 
 ;; SCHEMA
 
@@ -274,17 +345,8 @@
                   {:reference value}
 
                   (map? value)
-                  (let [value (cond-> value
-                                (:font-family value)
-                                (update :font-family cto/join-font-family))]
-                    (select-keys value
-                                 [:font-family
-                                  :font-size
-                                  :font-weight
-                                  :line-height
-                                  :letter-spacing
-                                  :text-case
-                                  :text-decoration]))
+                  (composite-value->form-value value)
+
                   :else
                   {})]
 

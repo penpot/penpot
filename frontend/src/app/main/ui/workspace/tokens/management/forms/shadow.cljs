@@ -18,6 +18,7 @@
    [app.main.ui.forms :as forms]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
+   [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.main.ui.workspace.tokens.management.forms.generic-form :as generic]
    [app.main.ui.workspace.tokens.management.forms.validators :refer [check-self-reference default-validate-token]]
    [app.util.dom :as dom]
@@ -74,6 +75,25 @@
    :offset-y "4"
    :blur "4"
    :spread "0"})
+
+(defn- make-default-value
+  [value]
+  (cond
+    (string? value)
+    {:reference value
+     :shadow   []}
+
+    (vector? value)
+    {:reference nil
+     :shadow   (mapv (fn [shadow]
+                       (-> shadow
+                           (update :blur   #(if (str/blank? %) "0" %))
+                           (update :spread #(if (str/blank? %) "0" %))))
+                     value)}
+
+    :else
+    {:reference nil
+     :shadow   [default-token-shadow]}))
 
 (defn get-subtoken
   [token index prop value-subfield]
@@ -202,19 +222,66 @@
                            :show-button (> length 1)}])))
 
 (mf/defc reference-form*
-  [{:keys [token tokens] :as props}]
-  [:div {:class (stl/css :input-row-reference)}
-   [:> token.controls/input-composite*
-    {:placeholder (tr "workspace.tokens.reference-composite-shadow")
-     :aria-label (tr "labels.reference")
-     :icon i/drop-shadow
-     :name :reference
-     :token token
-     :tokens tokens}]])
+  [{:keys [token tokens on-detach] :as props}]
+  (let [form      (mf/use-ctx forms/context)
+        reference (get-in @form [:data :value :reference])
+
+        detached-value
+        (mf/with-memo [tokens reference]
+          (csu/referenced-token-value tokens reference :shadow))
+
+        on-detach-click
+        (mf/use-fn
+         (mf/deps detached-value on-detach)
+         (fn [event]
+           (dom/prevent-default event)
+           (on-detach detached-value)))]
+
+    [:div {:class (stl/css :input-row-reference :reference-row)}
+     [:> token.controls/input-composite*
+      {:placeholder (tr "workspace.tokens.reference-composite-shadow")
+       :aria-label (tr "labels.reference")
+       :icon i/drop-shadow
+       :name :reference
+       :token token
+       :tokens tokens
+       :slot-end (when (some? detached-value)
+                   (mf/html
+                    [:> icon-button* {:variant "action"
+                                      :type "button"
+                                      :class (stl/css :detach-button)
+                                      :aria-label (tr "workspace.tokens.detach-reference")
+                                      :on-click on-detach-click
+                                      :icon i/detach}]))}]]))
 
 (mf/defc tabs-wrapper*
   [{:keys [token tokens tab handle-toggle value-subfield] :rest props}]
   (let [form (mf/use-ctx forms/context)
+
+        ;; Form value of the detached reference, used so the shadow
+        ;; inputs show the resolved value of the copied fields.
+        detached* (mf/use-state nil)
+        detached  (deref detached*)
+
+        composite-token
+        (mf/with-memo [token detached]
+          (if (some? detached)
+            (assoc token :value detached)
+            token))
+
+        on-detach
+        (mf/use-fn
+         (mf/deps form handle-toggle)
+         (fn [value]
+           (let [value (make-default-value value)]
+             (swap! form (fn [state]
+                           (-> state
+                               (assoc-in [:data :value] value)
+                               (update :errors dissoc :value)
+                               (update :extra-errors dissoc :value))))
+             (reset! detached* value)
+             (handle-toggle "composite"))))
+
         on-add-shadow-block
         (mf/use-fn
          (mf/deps value-subfield)
@@ -250,13 +317,14 @@
                          :id "reference-opt"}]]]
 
      (if (= tab :composite)
-       [:> composite-form* {:token token
+       [:> composite-form* {:token composite-token
                             :tokens tokens
                             :remove-shadow-block remove-shadow-block
                             :value-subfield value-subfield}]
 
        [:> reference-form* {:token token
-                            :tokens tokens}])]))
+                            :tokens tokens
+                            :on-detach on-detach}])]))
 
 ;; TODO: use cfo/make-schema:token-value and extend it with shadow and reference fields
 (defn- make-schema
@@ -328,25 +396,6 @@
                    shadows))]
 
          (or ref-valid? valid-composite-shadow?)))]]))
-
-(defn- make-default-value
-  [value]
-  (cond
-    (string? value)
-    {:reference value
-     :shadow   []}
-
-    (vector? value)
-    {:reference nil
-     :shadow   (mapv (fn [shadow]
-                       (-> shadow
-                           (update :blur   #(if (str/blank? %) "0" %))
-                           (update :spread #(if (str/blank? %) "0" %))))
-                     value)}
-
-    :else
-    {:reference nil
-     :shadow   [default-token-shadow]}))
 
 (mf/defc form*
   [{:keys [token

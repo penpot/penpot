@@ -507,6 +507,9 @@
    {:name "0154-add-upload-session-chunk-table"
     :fn (mg/resource "app/migrations/sql/0154-add-upload-session-chunk-table.sql")}
 
+   {:name "0154-add-job-table"
+    :fn (mg/resource "app/migrations/sql/0154-add-job-table.sql")}
+
    {:name "0155-normalize-storage-object-metadata"
     :fn (mg/resource "app/migrations/sql/0155-normalize-storage-object-metadata.sql")}
 
@@ -527,6 +530,9 @@
 
    {:name "0156-reset-pg-storage-defaults"
     :fn (mg/resource "app/migrations/sql/0156-reset-pg-storage-defaults.sql")}
+
+   {:name "0157-add-audit-log-pending-table"
+    :fn (mg/resource "app/migrations/sql/0157-add-audit-log-pending-table.sql")}
 
    {:name "0157-migrate-legacy-file-data"
     :fn (mg/resource "app/migrations/sql/0157-migrate-legacy-file-data.sql")}

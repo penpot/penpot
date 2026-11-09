@@ -22,6 +22,7 @@
    [app.common.transit :as t]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
+   [app.common.types.plugins :as ctpg]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uri :as uri]
    [app.config :as cf]
@@ -30,6 +31,7 @@
    [app.features.fdata :as feat.fdata]
    [app.features.logical-deletion :as ldel]
    [app.http.sse :as sse]
+   [app.jobs :as jobs]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.msgbus :as mbus]
@@ -45,7 +47,6 @@
    [app.util.events :as events]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
-   [app.worker :as wrk]
    [cuerdas.core :as str]))
 
 ;; --- FEATURES
@@ -430,7 +431,7 @@
                   (cfeat/check-client-features! (:features params))
                   (cfeat/check-file-features! (:features file)))
 
-        page  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+        page  (feat.fdata/with-pointers cfg file-id
                 (let [page (dm/get-in file [:data :pages-index resolved-page-id])]
                   (if (pmap/pointer-map? page)
                     (deref page)
@@ -560,7 +561,7 @@
         calculate-from-db
         (fn []
           (let [file   (bfc/get-file cfg id)
-                result (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
+                result (feat.fdata/with-pointers cfg id
                          (calculate-library-summary file))]
             (-> file
                 (assoc :library-summary result)
@@ -684,7 +685,7 @@
 (defn- get-file-stats
   [{:keys [::db/conn] :as cfg} file-id]
   (let [file    (bfc/get-file cfg file-id)
-        base    (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+        base    (feat.fdata/with-pointers cfg file-id
                   (cfs/calc-file-stats (:data file)))
         lib-cnt (get-file-stats-library-counts conn file-id)]
     (-> base
@@ -729,6 +730,53 @@
   [cfg {:keys [::rpc/profile-id id]}]
   (check-read-permissions! cfg profile-id id)
   (get-file-stats cfg id))
+
+
+;; --- COMMAND QUERY: get-file-plugin-data
+
+(def ^:private schema:get-file-plugin-data
+  [:map {:title "get-file-plugin-data"}
+   [:id ::sm/uuid]
+   [:namespace {:optional true} :keyword]])
+
+(sv/defmethod ::get-file-plugin-data
+  "Return the file-level plugin data: the arbitrary key/value metadata
+   stored on the file root through the Plugin API. Optionally narrowed
+   to a single `namespace`. Lets external tooling read metadata such as
+   issue or commit references without downloading the whole file."
+  {::doc/added "2.20"
+   ::sm/params schema:get-file-plugin-data
+   ::sm/result ctpg/schema:plugin-data
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id namespace]}]
+  (check-read-permissions! conn profile-id id)
+  (let [plugin-data (-> (bfc/get-file cfg id)
+                        (get-in [:data :plugin-data]))]
+    (if namespace
+      (select-keys plugin-data [namespace])
+      (or plugin-data {}))))
+
+;; --- COMMAND QUERY: get-file-tokens
+
+(def ^:private schema:get-file-tokens
+  [:map {:title "get-file-tokens"}
+   [:file-id ::sm/uuid]])
+
+(sv/defmethod ::get-file-tokens
+  "Return the design tokens of a file as a DTCG document, or nil when
+   the file has none. Active themes and sets come from the file's
+   tokens status. Cheap alternative to `get-file` when only the tokens
+   are needed."
+  {::doc/added "2.20"
+   ::sm/params schema:get-file-tokens
+   ::sm/result [:maybe [:map-of :string :any]]}
+  [cfg {:keys [::rpc/profile-id file-id]}]
+  (bfc/check-file-exists cfg file-id)
+  (check-read-permissions! cfg profile-id file-id)
+  (let [{:keys [data]} (bfc/get-file cfg file-id)]
+    (feat.fdata/with-pointers cfg file-id
+      (when-let [tokens-lib (cfo/get-tokens-lib data)]
+        (ctob/export-dtcg-json tokens-lib (cfo/get-tokens-status data))))))
 
 
 ;; --- COMMAND QUERY: get-file-libraries
@@ -945,8 +993,7 @@
   (assert (db/connection-map? cfg)
           "expected cfg with valid connection")
 
-  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)
-            pmap/*tracked* (pmap/create-tracked)]
+  (feat.fdata/with-tracked-pointers cfg file-id
     (let [file (-> (bfc/get-file cfg file-id
                                  :include-deleted? true
                                  :lock-for-update? true)
@@ -1077,13 +1124,13 @@
 ;; --- MUTATION COMMAND: delete-file
 
 (defn- mark-file-deleted
-  [conn team file-id]
-  (let [delay    (ldel/get-deletion-delay team)
-        file     (db/update! conn :file
-                             {:deleted-at (ct/in-future delay)}
-                             {:id file-id}
-                             {::db/return-keys [:id :name :is-shared :deleted-at
-                                                :project-id :created-at :modified-at]})
+  [{:keys [::db/conn] :as cfg} team file-id]
+  (let [delay (ldel/get-deletion-delay team)
+        file  (db/update! conn :file
+                          {:deleted-at (ct/in-future delay)}
+                          {:id file-id}
+                          {::db/return-keys [:id :name :is-shared :deleted-at
+                                             :project-id :created-at :modified-at]})
         ;; Files using the library, captured before their relations are removed
         file-ids (when (:is-shared file)
                    (get-referenced-files conn file-id))]
@@ -1092,13 +1139,13 @@
     (db/delete! conn :file-library-rel
                 {:library-file-id file-id})
 
-    (wrk/submit! {::db/conn conn
-                  ::wrk/task :delete-object
-                  ::wrk/params (cond-> {:object :file
-                                        :deleted-at (:deleted-at file)
-                                        :id file-id}
-                                 (some? file-ids)
-                                 (assoc :file-ids file-ids))})
+    (jobs/submit cfg
+                 {::jobs/name :delete-object
+                  ::jobs/params (cond-> {:object :file
+                                         :deleted-at (:deleted-at file)
+                                         :id file-id}
+                                  (some? file-ids)
+                                  (assoc :file-ids file-ids))})
     file))
 
 (def ^:private
@@ -1112,7 +1159,7 @@
   (let [team (teams/get-team conn
                              :profile-id profile-id
                              :file-id id)
-        file (mark-file-deleted conn team id)
+        file (mark-file-deleted cfg team id)
         msgbus (::mbus/msgbus cfg)]
 
     (mbus/pub! msgbus
@@ -1122,12 +1169,12 @@
                          :profile-id profile-id})
 
     (rph/with-meta (rph/wrap)
-      {::audit/props {:project-id (:project-id file)
+      {::audit/props {:team-id (:id team)
+                      :project-id (:project-id file)
                       :name (:name file)
                       :created-at (:created-at file)
                       :modified-at (:modified-at file)
-                      :deleted-at (:deleted-at file)
-                      :team-id (:id team)}})))
+                      :deleted-at (:deleted-at file)}})))
 
 (sv/defmethod ::delete-file
   {::doc/added "1.17"
@@ -1294,7 +1341,7 @@
    [:ids [::sm/set ::sm/uuid]]])
 
 (defn- permanently-delete-team-files
-  [{:keys [::db/conn]} {:keys [::rpc/request-at team-id ids]}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/request-at team-id ids]}]
   (let [ids (into #{}
                   d/xf:map-id
                   (db/exec! conn [sql:get-delete-team-files-candidates team-id
@@ -1306,11 +1353,11 @@
                           {:deleted-at request-at}
                           {:id id}
                           {::db/return-keys false})
-              (wrk/submit! {::db/conn conn
-                            ::wrk/task :delete-object
-                            ::wrk/params {:object :file
-                                          :deleted-at request-at
-                                          :id id}})
+              (jobs/submit cfg
+                           {::jobs/name :delete-object
+                            ::jobs/params {:object :file
+                                           :deleted-at request-at
+                                           :id id}})
               (conj acc id))
             #{}
             ids)))

@@ -74,11 +74,11 @@
 ;; Maximum total decompressed size allowed for all JSON/text zip entries
 ;; combined within a single import job: 500MiB. Bounds the case where many
 ;; entries, each individually under default-max-text-entry-size, still sum
-;; to an unreasonable total. Set well above the 200MiB it replaces because
-;; legitimate giant exports exist: hundreds of thousands of KB-sized
-;; entries (pages, shapes) that never trip the per-entry cap but sum past
-;; 400MiB. The per-entry cap still bounds single-entry DEFLATE
-;; amplification, so this only moves the cumulative ceiling.
+;; to an unreasonable total. Set this high because legitimate giant
+;; exports exist: hundreds of thousands of KB-sized entries (pages,
+;; shapes) that never trip the per-entry cap but sum past 400MiB. The
+;; per-entry cap still bounds single-entry DEFLATE amplification, so this
+;; only moves the cumulative ceiling.
 (def ^:const default-max-text-total-size
   (* 1024 1024 500))
 
@@ -239,24 +239,30 @@
 
 (defn- migrate-file
   [{:keys [::db/conn] :as cfg} {:keys [read-only?]} {:keys [id] :as file}]
-  (binding [pmap/*load-fn* (partial fdata/load-pointer cfg id)
-            pmap/*tracked* (pmap/create-tracked)]
-    (let [libs (delay (get-resolved-file-libraries cfg file))
-          ;; For avoid unnecesary overhead of creating multiple
-          ;; pointers and handly internally with objects map in their
-          ;; worst case (when probably all shapes and all pointers
-          ;; will be readed in any case), we just realize/resolve them
-          ;; before applying the migration to the file.
-          file (-> (fdata/realize cfg file)
-                   (fmg/migrate-file libs))]
+  (fdata/with-tracked-pointers cfg id
+    (let [libs                (delay (get-resolved-file-libraries cfg file))
+          ;; Capture the pointer layout before realizing: the migration
+          ;; runs on plain data, and unchanged positions must keep their
+          ;; original fragment ids instead of being re-wrapped with new
+          ;; ones on persist.
+          original            (fdata/original-pointers (:data file))
+          objects-map-before? (contains? (:features file) "fdata/objects-map")
+          realized            (-> (fdata/realize cfg file)
+                                  (fmg/migrate-file libs))
+          objects-map-added?  (and (not objects-map-before?)
+                                   (contains? (:features realized) "fdata/objects-map"))]
 
       (if (or read-only? (db/read-only? conn))
-        file
-        (do ;; When file is migrated, we break the rule of no
-          ;; perform mutations on get operations and update the
-          ;; file with all migrations applied
+        realized
+        (let [file (if objects-map-added?
+                     realized
+                     (fdata/reattach-unchanged original realized))]
+          ;; When the file is migrated, we break the rule of not
+          ;; performing mutations on get operations and update the file
+          ;; with all migrations applied. The caller still receives the
+          ;; realized file: the read contract is plain data.
           (update-file! cfg file)
-          (fmigr/resolve-applied-migrations cfg file))))))
+          (fmigr/resolve-applied-migrations cfg realized))))))
 
 (defn- get-file*
   [{:keys [::db/conn] :as cfg} id
@@ -281,7 +287,7 @@
 
   (assert (db/connection? conn) "expected cfg with valid connection")
   (when (and (not load-data?)
-             (or lock-for-share? lock-for-share? skip-locked?))
+             (or lock-for-share? lock-for-update? skip-locked?))
     (throw (IllegalArgumentException. "locking is incompatible when `load-data?` is false")))
 
   (let [sql
@@ -946,7 +952,12 @@
   (let [library-ids (->> (get-file-libraries conn (:id file))
                          (map :id)
                          (cons (:id file)))
-        load-fn     #(get-file cfg % :migrate? false)]
+        ;; Fragment rows are file-local and callers bind the loader of
+        ;; the file they work on, so each library realizes its pointers
+        ;; here, with its own id, before anything walks its data.
+        load-fn     (fn [library-id]
+                      (->> (get-file cfg library-id :migrate? false)
+                           (fdata/realize-pointers cfg)))]
     (weak/loadable-weak-value-map library-ids load-fn {id file})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1064,3 +1075,46 @@
       {:bytes bytes
        :size  (alength ^bytes bytes)
        :hash  (sto/calculate-hash (java.io.ByteArrayInputStream. bytes))})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; REQUEST CFG
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn resolve-export-type
+  "The canonical export type of a request on the legacy RPC: an explicit
+  `type` wins, and the deprecated boolean flags are translated. The
+  creation command of a job does not need it, because it asks the caller
+  for the type instead of guessing it."
+  [{:keys [type include-libraries embed-assets]}]
+  (cond
+    (some? type)              type
+    (true? include-libraries) :include-libraries
+    (true? embed-assets)      :merge-libraries
+    :else                     :detach-libraries))
+
+(defn export-cfg
+  "The domain cfg of an export: the frozen set of files, how their
+  libraries are handled, and where the package is written."
+  [cfg {:keys [file-ids export-type output]}]
+  (-> cfg
+      (assoc ::file-ids file-ids)
+      (assoc ::export-type export-type)
+      (assoc ::output output)))
+
+(defn import-cfg
+  "The domain cfg of an import: the destination team/profile/project, the
+  name, the input and the anti-zip-bomb limits. The caller resolves the
+  team, because what allows it to import there differs between the RPC and
+  a job; what both must share is fixed here."
+  [cfg {:keys [profile-id project-id team name input]}]
+  (-> cfg
+      (assoc ::features (cfeat/get-team-enabled-features cf/flags team))
+      (assoc ::project-id project-id)
+      (assoc ::profile-id profile-id)
+      (assoc ::team-id (:id team))
+      (assoc ::name name)
+      (assoc ::input input)
+      (assoc ::import-max-binary-entry-size (cf/get :binfile-import-max-binary-entry-size))
+      (assoc ::import-max-text-entry-size (cf/get :binfile-import-max-text-entry-size))
+      (assoc ::import-max-text-total-size (cf/get :binfile-import-max-text-total-size))
+      (assoc ::import-max-zip-entries (cf/get :binfile-import-max-zip-entries))))

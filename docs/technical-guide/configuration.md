@@ -372,6 +372,44 @@ PENPOT_PUBLIC_URI: https://penpot.mycompany.com
 If you're using the official <code class="language-bash">docker-compose.yml</code> you only need to configure the
 <code class="language-bash">PENPOT_PUBLIC_URI</code> envvar in the top of the file.
 
+### Serve Penpot from a subpath
+
+Penpot can be served from a subpath such as `https://mycompany.com/penpot/`.
+Set `PENPOT_PUBLIC_URI` to the complete public URL, including the subpath and its
+trailing slash:
+
+```bash
+PENPOT_PUBLIC_URI: https://mycompany.com/penpot/
+```
+
+Your reverse proxy or Ingress must also:
+
+- Route requests under `/penpot/` to the Penpot frontend without rewriting the
+  path. The frontend expects to receive the subpath.
+- Preserve WebSocket upgrade headers for notifications and other services that
+  use WebSockets.
+
+#### Migrate an existing installation to a subpath
+
+Moving an installation from `/` to a subpath does not require a database or
+asset migration. Users, teams, projects, files, and uploaded assets remain in
+the existing storage.
+
+Before changing the public URL:
+
+1. Back up the database, assets, and current deployment configuration.
+2. Configure the proxy or Ingress route for the subpath.
+3. Update `PENPOT_PUBLIC_URI` for every Penpot component that uses it.
+4. Keep the existing `PENPOT_SECRET_KEY`, database, and asset storage
+   configuration.
+5. Restart or redeploy Penpot and verify login, static assets, API requests,
+   WebSockets, file editing, and image uploads through the new URL.
+
+Existing bookmarks and integrations that use the previous root URL must be
+updated. You may also configure a redirect from the previous URL. If the scheme
+or hostname changes in addition to the path, review your authentication provider
+callback URLs and cookie settings. Active users may need to sign in again.
+
 <p class="advice">
     If you plan to serve Penpot under different domain than `localhost` without HTTPS,
     you need to disable the `secure` flag on cookies, with the `disable-secure-session-cookies` flag.
@@ -790,6 +828,8 @@ PENPOT_FLAGS: [...] enable-tiered-file-data-storage
 PENPOT_FILE_DATA_BACKEND: db
 ```
 
+Once enabled, the offload job moves one file per run inside a single transaction: it locks the file row (skipping the run while the file is being edited) and migrates every live data row to the objects storage. You can follow it with `penpot_file_data_offload_rows_total` and `penpot_file_data_offload_bytes_total` (label `type="main|snapshot|fragment"`) and `penpot_file_data_offload_timing_ms` (label `result="ok|skip|error"`).
+
 ### Autosave
 
 By default, Penpot stores manually saved versions indefinitely; these can be found in the History tab and can be renamed, restored, deleted, etc. Additionally, the default behavior of on-premise instances is to not keep automatic version history. This automatic behavior can be modified and adapted to each on-premise installation with the corresponding configuration.
@@ -918,6 +958,30 @@ PENPOT_MCP_URI_WS: http://penpot-mcp:4402
 The defaults match the service name used in the official `docker-compose.yaml`. Change
 them only if your MCP service has a different name or listens on other ports. Both
 variables are ignored when the `enable-mcp` flag is not set.
+
+#### MCP feedback
+
+Agents can email feedback about Penpot MCP to an inbox you choose, through the
+`submit_feedback` tool. Set the backend URI on the MCP container to offer the tool,
+and the inbox on the backend to accept the emails:
+
+```bash
+# MCP
+PENPOT_MCP_BACKEND_URI: http://penpot-backend:6060/
+
+# Backend
+PENPOT_MCP_FEEDBACK_EMAIL: mcp-feedback@example.com
+```
+
+- `PENPOT_MCP_BACKEND_URI`: The URI the MCP server uses to reach the backend. When
+  unset, the MCP server does not offer the tool.
+- `PENPOT_MCP_FEEDBACK_EMAIL`: The address that receives the feedback. When unset,
+  the backend rejects submissions.
+
+The backend accepts feedback when the `enable-mcp` or `enable-access-tokens` flag is
+set, and sends it through the [email configuration](#email-configuration). Each
+email carries the name and email address of the user who sent it, and uses that
+address as reply-to.
 
 ### Internal resolver
 

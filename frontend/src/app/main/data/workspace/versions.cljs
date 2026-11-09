@@ -22,7 +22,15 @@
    [app.main.repo :as rp]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
+
+(defn repair-snapshot?
+  "True when `snapshot` is the copy the backend keeps of a file before it
+  repairs it."
+  [{:keys [label]}]
+  (and (string? label)
+       (str/starts-with? label "internal/repair/")))
 
 (defonce default-state
   {:status :loading
@@ -77,7 +85,13 @@
               (rx/mapcat
                (fn [{:keys [id]}]
                  (rx/of (update-versions-state {:editing id})
-                        (fetch-versions))))))))))
+                        (fetch-versions))))
+              ;; A version of the file without the unsaved changes would
+              ;; lose them, so none is made and the user is told why
+              (rx/catch (fn [cause]
+                          (if (= :persistence (:type (ex-data cause)))
+                            (rx/of (ntf/warn (tr "workspace.versions.create-failed-unsaved")))
+                            (rx/throw cause))))))))))
 
 (defn rename-version
   [id label]
@@ -297,6 +311,10 @@
             ;;   localized date, instead of the internal snapshot
             ;;   label (e.g. `internal/snapshot/20`).
             label    (cond
+                       (repair-snapshot? snapshot)
+                       (tr "workspace.versions.repair.version"
+                           (ct/format-inst (:created-at snapshot) :localized-date))
+
                        (= "system" (:created-by snapshot))
                        (tr "workspace.versions.autosaved.version"
                            (ct/format-inst (:created-at snapshot) :localized-date))

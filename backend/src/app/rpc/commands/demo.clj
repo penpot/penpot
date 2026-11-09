@@ -14,12 +14,12 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.jobs :as jobs]
    [app.loggers.audit :as audit]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.auth :as auth]
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]
-   [app.worker :as wrk]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]))
 
@@ -66,7 +66,8 @@
    ::doc/changes [["1.15" "This method is migrated from mutations to commands."]
                   ["2.18" "Add optional `skip-onboarding` param. When true, the profile is created with `onboarding-viewed` and `release-notes-viewed` (current version) set, skipping the onboarding flow."]
                   ["2.18" "Add optional `expires-in` param. When set, the demo purge is scheduled that long after creation instead of the global deletion delay. Only values between 5 minutes and the global delay are accepted."]
-                  ["2.18.1" "Add optional `renderer` param. When set to `wasm` or `svg`, the profile is created with that `renderer` in props. When omitted, no renderer is stored and the Penpot default applies."]]
+                  ["2.18.1" "Add optional `renderer` param. When set to `wasm` or `svg`, the profile is created with that `renderer` in props. When omitted, no renderer is stored and the Penpot default applies."]
+                  ["2.20" "When `renderer` is omitted, the profile is created with the default renderer for new accounts (`wasm`)."]]
    ::sm/params schema:create-demo-profile}
   [cfg {:keys [skip-onboarding expires-in renderer]}]
 
@@ -101,10 +102,10 @@
                                          (->> (auth/create-profile cfg params)
                                               (auth/create-profile-rels cfg))))]
 
-    (wrk/submit! (-> cfg
-                     (assoc ::wrk/task :demo-purge)
-                     (assoc ::wrk/delay deletion-delay)
-                     (assoc ::wrk/params {:profile-id (:id profile)})))
+    (jobs/submit cfg
+                 {::jobs/name :demo-purge
+                  ::jobs/delay deletion-delay
+                  ::jobs/params {:profile-id (:id profile)}})
 
     (with-meta {:email email
                 :password password}

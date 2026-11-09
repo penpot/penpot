@@ -4,8 +4,15 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 @use "ds/mixins.scss" as *;
+@use "ds/typography.scss" as *;
+
+// Only for the modal placeholders (%modal-overlay-base,
+// %modal-container-base), until the modals move to the DS modal.
+@use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
   @extend %modal-overlay-base;
@@ -17,49 +24,47 @@
   display: grid;
   grid-template-rows: auto 1fr auto;
   grid-template-columns: minmax(0, 1fr);
-  max-height: initial;
+  max-block-size: initial;
 
   &.plugin-permissions {
-    width: deprecated.$s-412;
-    max-width: deprecated.$s-412;
+    inline-size: px2rem(412);
+    max-inline-size: px2rem(412);
   }
 
   &.plugin-management {
-    width: deprecated.$s-472;
-    max-width: deprecated.$s-472;
+    inline-size: px2rem(472);
+    max-inline-size: px2rem(472);
   }
 
   &.plugin-try-out {
-    width: deprecated.$s-452;
-    max-width: deprecated.$s-452;
+    inline-size: px2rem(452);
+    max-inline-size: px2rem(452);
   }
 
+  // The separator of the plugins manager has no class.
   hr {
     border-color: var(--color-background-tertiary);
   }
 }
 
 .modal-footer {
-  margin-top: 2rem;
+  margin-block-start: var(--sp-xxxl);
 }
 
+// Goes on the tooltip wrapper of the close icon button.
 .close-btn {
-  @extend %modal-close-btn-base;
-}
-
-.close-icon {
-  @extend %button-icon;
-
-  stroke: var(--icon-foreground);
+  position: absolute;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: var(--sp-xs);
 }
 
 .modal-title {
-  @include deprecated.headline-medium-typography;
+  @include use-typography("headline-medium");
 
-  margin-block-end: deprecated.$s-32;
-  color: var(--modal-title-foreground-color);
+  margin-block-end: var(--sp-xxxl);
+  color: var(--color-foreground-primary);
   display: flex;
-  gap: deprecated.$s-12;
+  gap: var(--sp-m);
 }
 
 .modal-content {
@@ -67,113 +72,92 @@
   flex-direction: column;
 
   .plugin-permissions & {
-    gap: deprecated.$s-20;
+    gap: var(--sp-xl);
   }
 
   .plugin-management & {
-    height: deprecated.$s-380;
-    max-height: deprecated.$s-380;
+    block-size: px2rem(380);
+    max-block-size: px2rem(380);
   }
 }
 
 .modal-message {
-  font-size: deprecated.$fs-14;
+  // TODO: No exact DS typography match found.
+  // Closest match: body-medium.
+  font-size: px2rem(14);
   color: var(--color-foreground-secondary);
 }
 
 .modal-paragraph {
-  font-size: deprecated.$fs-14;
+  // TODO: No exact DS typography match found.
+  // Closest match: body-medium.
+  font-size: px2rem(14);
   color: var(--color-foreground-primary);
 }
 
-.primary-button {
-  @extend %button-primary;
-  @include deprecated.headline-small-typography;
-
-  padding: deprecated.$s-0 deprecated.$s-16;
-}
-
+// The DS button does not center its label when it grows.
 .button-expand {
-  width: 100%;
+  inline-size: 100%;
   margin: 0;
-}
-
-.cancel-button {
-  @extend %button-secondary;
-  @include deprecated.headline-small-typography;
-
-  padding: deprecated.$s-0 deprecated.$s-16;
-}
-
-.search-icon {
-  @include deprecated.flex-center;
-
-  width: deprecated.$s-20;
-  padding: 0 0 0 deprecated.$s-8;
-
-  svg {
-    @extend %button-icon-small;
-
-    stroke: var(--icon-foreground);
-  }
+  justify-content: center;
 }
 
 .top-bar {
   display: flex;
-  gap: deprecated.$s-8;
+  gap: var(--sp-s);
 }
 
 .open-button {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: deprecated.$s-68;
-  min-width: deprecated.$s-68;
-  height: deprecated.$s-32;
+  inline-size: px2rem(68);
+  min-inline-size: px2rem(68);
+  block-size: $sz-32;
   text-transform: uppercase;
 }
 
 .plugins-list {
-  padding-top: deprecated.$s-20;
+  padding-block-start: var(--sp-xl);
   overflow: hidden auto;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: deprecated.$s-12;
+  gap: var(--sp-m);
 }
 
 .plugins-list-element {
   display: flex;
-  gap: deprecated.$s-12;
+  gap: var(--sp-m);
 }
 
 .plugin-icon {
-  min-width: deprecated.$s-32;
-  min-height: deprecated.$s-32;
-  width: deprecated.$s-32;
-  height: deprecated.$s-32;
-  background: var(--button-secondary-background-color-rest);
-  padding: deprecated.$s-2;
-  border-radius: deprecated.$s-4;
+  min-inline-size: $sz-32;
+  min-block-size: $sz-32;
+  inline-size: $sz-32;
+  block-size: $sz-32;
+  background: var(--color-background-tertiary);
+  padding: var(--sp-xxs);
+  border-radius: $br-4;
 }
 
 .plugin-description {
   display: flex;
   flex-direction: column;
-  gap: deprecated.$s-8;
-  width: 100%;
-  min-width: 0;
+  gap: var(--sp-s);
+  inline-size: 100%;
+  min-inline-size: 0;
 }
 
 .plugin-title {
-  @include deprecated.body-medium-typography;
+  @include use-typography("body-medium");
   @include text-ellipsis;
 
   color: var(--color-foreground-primary);
 }
 
 .plugin-summary {
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
   @include two-line-text-ellipsis;
 
   overflow-wrap: anywhere;
@@ -184,116 +168,111 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: deprecated.$s-20;
-  height: 100%;
+  gap: var(--sp-xl);
+  block-size: 100%;
   justify-content: center;
-  padding: deprecated.$s-36 0;
+  padding: px2rem(36) 0;
 }
 
 .plugins-empty-logo {
-  width: deprecated.$s-44;
-  height: deprecated.$s-44;
-  border-radius: 50%;
+  inline-size: px2rem(44);
+  block-size: px2rem(44);
+  border-radius: $br-circle;
   display: flex;
   justify-content: center;
   align-items: center;
   background: var(--color-background-tertiary);
-
-  svg {
-    width: deprecated.$s-16;
-    height: deprecated.$s-16;
-    stroke: var(--color-foreground-secondary);
-    fill: none;
-  }
+  color: var(--color-foreground-secondary);
 }
 
 .plugins-empty-text {
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
   color: var(--color-foreground-primary);
 }
 
 div.input-error {
-  border: deprecated.$s-1 solid var(--input-border-color-error);
+  border: $b-1 solid var(--status-color-error-500);
 }
 
 .info {
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
-  margin-top: deprecated.$s-4;
+  margin-block-start: var(--sp-xs);
+  color: var(--info-foreground-color);
 
   &.error {
-    color: var(--input-border-color-error);
+    --info-foreground-color: var(--status-color-error-500);
   }
 
   &.success {
-    color: var(--input-border-color-success);
+    --info-foreground-color: var(--color-accent-primary);
   }
 }
 
 .plugins-link {
+  // TODO: No exact DS typography match found.
+  // Closest match: body-small.
+  font-size: px2rem(12);
   color: var(--color-accent-primary);
-  font-size: deprecated.$fs-12;
   display: inline-flex;
   align-items: center;
-  gap: deprecated.$s-4;
+  gap: var(--sp-xs);
+}
 
-  svg {
-    margin-top: calc(-1 * deprecated.$s-2);
-    width: deprecated.$s-12;
-    height: deprecated.$s-12;
-    stroke: var(--color-accent-primary);
-    fill: none;
-  }
+.plugins-link-icon {
+  margin-block-start: calc(-1 * var(--sp-xxs));
 }
 
 .permissions-list {
   display: flex;
   flex-direction: column;
-  gap: deprecated.$s-24;
+  gap: var(--sp-xxl);
 }
 
 .permissions-list-entry {
   display: grid;
-  grid-template-columns: 24px 1fr;
-  gap: deprecated.$s-16;
+  grid-template-columns: $sz-24 1fr;
+  gap: var(--sp-l);
   align-items: center;
 
+  // The permission icons are legacy brand art with no class.
   svg {
-    width: deprecated.$s-24;
-    height: deprecated.$s-24;
+    inline-size: $sz-24;
+    block-size: $sz-24;
     stroke: var(--color-accent-primary);
     fill: none;
   }
 }
 
 .permissions-list-text {
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
   margin: 0;
   color: var(--color-foreground-secondary);
 }
 
 .permissions-disclaimer {
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
-  padding: deprecated.$s-16;
+  padding: var(--sp-l);
   background: var(--color-background-quaternary);
   color: var(--color-foreground-primary);
-  border-radius: deprecated.$br-4;
+  border-radius: $br-4;
 }
 
 .action-buttons {
   display: flex;
-  gap: deprecated.$s-12;
+  gap: var(--sp-m);
 }
 
 .discover {
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
-  margin-top: deprecated.$s-24;
+  margin-block-start: var(--sp-xxl);
 
+  // The link comes from a translated HTML string, with no class.
   a {
     color: var(--color-accent-primary);
   }

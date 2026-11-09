@@ -7,11 +7,12 @@
 (ns app.main.ui.workspace.sidebar.options.menus.svg-attrs
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
+   [app.common.svg :as csvg]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.util.dom :as dom]
    [app.util.functions :as uf]
    [app.util.i18n :refer [tr]]
@@ -40,7 +41,7 @@
          (fn []
            (on-delete attr)))
 
-        label (->> attr last d/name)]
+        label (->> attr last csvg/stored-attr-display-name)]
     [:*
      (if (string? value)
        [:div {:class (stl/css :attr-content)}
@@ -48,13 +49,13 @@
         [:div  {:class (stl/css :attr-input)}
          [:input {:value @last-value
                   :on-change handle-change}]]
-        [:div  {:class (stl/css :attr-actions)}
-         [:button {:class (stl/css :attr-action-btn)
-                   :on-click handle-delete}
-          deprecated-icon/remove-icon]]]
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.sidebar.options.svg-attrs.remove")
+                          :on-click handle-delete
+                          :icon i/remove}]]
        [:div {:class (stl/css :attr-nested-content)}
         [:div  {:class (stl/css :attr-title)}
-         (str (d/name (last attr)))]
+         (str (csvg/stored-attr-display-name (last attr)))]
         (for [[key value] value]
           [:div {:class (stl/css :attr-row) :key key}
            [:> attribute-value* {:key key

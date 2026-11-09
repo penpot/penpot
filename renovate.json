@@ -1,0 +1,42 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>penpot/renovate-config"],
+  "labels": ["dependencies", "team infra", "no issue required"],
+  "semanticCommits": "disabled",
+  "commitMessagePrefix": ":arrow_up:",
+  "commitMessageAction": "Update",
+  "pinDigest": {
+    "commitMessageAction": "Pin"
+  },
+  "nvm": {
+    "enabled": false
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Keep .nvmrc in sync with the DHI Node image",
+      "managerFilePatterns": ["/^\\.nvmrc$/"],
+      "matchStrings": ["v(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      "depNameTemplate": "dhi.io/node",
+      "datasourceTemplate": "docker",
+      "extractVersionTemplate": "^(?<version>\\d+\\.\\d+\\.\\d+)-debian13$"
+    },
+    {
+      "customType": "regex",
+      "description": "Keep the devenv Node in sync with the DHI Node image",
+      "managerFilePatterns": ["/^docker/devenv/Dockerfile$/"],
+      "matchStrings": ["NODE_VERSION=v(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      "depNameTemplate": "dhi.io/node",
+      "datasourceTemplate": "docker",
+      "extractVersionTemplate": "^(?<version>\\d+\\.\\d+\\.\\d+)-debian13$"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Node versions in plain text have no digest to pin",
+      "matchManagers": ["custom.regex"],
+      "matchDatasources": ["docker"],
+      "pinDigests": false
+    }
+  ]
+}

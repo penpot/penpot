@@ -7,9 +7,9 @@
 (ns backend-tests.srepl-main-test
   (:require
    [app.common.time :as ct]
+   [app.jobs :as jobs]
    [app.srepl.main :as srepl]
    [app.system :as sys]
-   [app.worker :as wrk]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [mockery.core :refer [with-mocks]]))
@@ -20,19 +20,19 @@
 ;; --- HELPERS
 
 (defn- capture-submissions!
-  "Runs `f` with `wrk/submit!` replaced by a collector, and returns the option
+  "Runs `f` with `jobs/submit` replaced by a collector, and returns the option
   maps it was called with, in order."
   [f]
   (let [submitted (atom [])]
-    (with-redefs [wrk/submit! (fn [opts]
+    (with-redefs [jobs/submit (fn [_cfg opts]
                                 (swap! submitted conj opts)
-                                (get-in opts [::wrk/params :id]))]
+                                (get-in opts [::jobs/params :id]))]
       (f))
     @submitted))
 
 (defn- params-of
   [submitted]
-  (mapv ::wrk/params submitted))
+  (mapv ::jobs/params submitted))
 
 (defn- create-deleted-profile!
   [i deleted-at]
@@ -60,7 +60,7 @@
   (t/is (thrown? clojure.lang.ExceptionInfo
                  (srepl/parse-emails 42))))
 
-(t/deftest cascade-enqueues-one-delete-object-task-per-deleted-row
+(t/deftest cascade-enqueues-one-delete-object-job-per-deleted-row
   (let [deleted   (create-deleted-profile! 991 (ct/in-past {:days 30}))
         _         (th/create-profile* 992)
         submitted (capture-submissions!
@@ -70,19 +70,19 @@
     (t/testing "only the soft-deleted row is processed"
       (t/is (= 1 (count submitted))))
 
-    (t/testing "the enqueued task is a delete-object for that row"
+    (t/testing "the enqueued job is a delete-object for that row"
       (let [opts (first submitted)]
-        (t/is (= :delete-object (::wrk/task opts)))
+        (t/is (= :delete-object (::jobs/name opts)))
         (t/is (= {:object :profile :id (:id deleted)}
-                 (select-keys (::wrk/params opts) [:object :id])))))
+                 (select-keys (::jobs/params opts) [:object :id])))))
 
     (t/testing "the date is the row's own, not now"
-      (t/is (ct/is-before? (:deleted-at (::wrk/params (first submitted)))
+      (t/is (ct/is-before? (:deleted-at (::jobs/params (first submitted)))
                            (ct/in-past {:days 29}))))
 
     (t/testing "label is the row id and dedupe is on"
-      (t/is (= (str (:id deleted)) (::wrk/label (first submitted))))
-      (t/is (true? (::wrk/dedupe (first submitted)))))))
+      (t/is (= (str (:id deleted)) (::jobs/label (first submitted))))
+      (t/is (true? (::jobs/dedupe (first submitted)))))))
 
 (t/deftest cascade-honours-limit-and-ids
   (let [p1 (create-deleted-profile! 993 (ct/in-past {:days 10}))
@@ -105,7 +105,7 @@
 (t/deftest cascade-dry-run-counts-without-enqueueing
   (let [_         (create-deleted-profile! 996 (ct/in-past {:days 10}))
         submitted (atom [])
-        result    (with-redefs [wrk/submit! (fn [opts] (swap! submitted conj opts))]
+        result    (with-redefs [jobs/submit (fn [_cfg opts] (swap! submitted conj opts))]
                     (#'srepl/submit-deleted-cascade
                      th/*system* {:table "profile" :object :profile :dry-run? true}))]
 
@@ -157,7 +157,7 @@
   ;; props is what makes the row attributable. Both insert and cascade are
   ;; mocked, so this has no side effects.
   (with-mocks [audit-mock {:target 'app.loggers.audit/insert :return nil}
-               wrk-mock {:target 'app.worker/invoke! :return nil}]
+               wrk-mock {:target 'app.jobs/invoke :return nil}]
     (let [profile (th/create-profile* 1 {:is-active true})]
       (srepl/delete-profile! (str (:id profile)))
       (let [events (->> (:call-args-list @audit-mock)
@@ -173,7 +173,7 @@
 
 (t/deftest delete-team-emits-identifiable-audit-event
   (with-mocks [audit-mock {:target 'app.loggers.audit/insert :return nil}
-               wrk-mock {:target 'app.worker/invoke! :return nil}]
+               wrk-mock {:target 'app.jobs/invoke :return nil}]
     (let [profile (th/create-profile* 1 {:is-active true})
           team    (th/create-team* 95 {:profile-id (:id profile)})]
       (srepl/delete-team! (str (:id team)))
@@ -191,7 +191,7 @@
   ;; SREPL has no actor, so the event profile stays zero; the subject id in
   ;; props is what makes the row attributable.
   (with-mocks [audit-mock {:target 'app.loggers.audit/insert :return nil}
-               wrk-mock {:target 'app.worker/invoke! :return nil}]
+               wrk-mock {:target 'app.jobs/invoke :return nil}]
     (with-redefs [sys/system th/*system*]
       (let [profile (th/create-profile* 1 {:is-active true})]
         (srepl/restore-profile! (str (:id profile)))

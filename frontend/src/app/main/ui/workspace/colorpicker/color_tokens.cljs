@@ -310,6 +310,7 @@
                    :variant "comfortable"
                    :class (stl/css :search-input)
                    :default-value filter-term
+                   :auto-focus true
                    :on-change on-filter-tokens}]
        (if (seq sorted-tokens)
          [:div {:class (stl/css :color-tokens-inputs)}

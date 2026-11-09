@@ -16,12 +16,15 @@ export class ExecuteCodeArgs {
             .string()
             .min(1, "Code cannot be empty")
             .describe("The JavaScript code to execute in the plugin context."),
+        sessionId: Tool.SESSION_ID_SCHEMA,
     };
 
     /**
      * The JavaScript code to execute in the plugin context.
      */
     code!: string;
+
+    sessionId?: string;
 }
 
 /**
@@ -46,8 +49,8 @@ export class ExecuteCodeTool extends Tool<ExecuteCodeArgs> {
             "Executes JavaScript code in the Penpot plugin context.\n" +
             "IMPORTANT: Before using this tool, make sure you have read the 'Penpot High-Level Overview' and know " +
             "which Penpot API functionality is necessary and how to use it.\n" +
-            "You have access two main objects: `penpot` (the Penpot API, of type `Penpot`), `penpotUtils`, " +
-            "and `storage`.\n" +
+            "You have access to `penpot` (of type `Penpot`), `penpotMgmt` (of type `PenpotMgmt`), `penpotUtils`, and `storage`.\n" +
+            "If `penpotMgmt` is null, file management is unavailable and only the open file can be used.\n" +
             "`storage` is an object in which arbitrary data can be stored, simply by adding a new attribute; " +
             "stored attributes can be referenced in future calls to this tool, so any intermediate results that " +
             "could come in handy later should be stored in `storage` instead of just a fleeting variable; " +
@@ -67,7 +70,7 @@ export class ExecuteCodeTool extends Tool<ExecuteCodeArgs> {
     protected async executeCore(args: ExecuteCodeArgs): Promise<ToolResponse> {
         const taskParams: ExecuteCodeTaskParams = { code: args.code };
         const task = new ExecuteCodePluginTask(taskParams);
-        const result = await this.mcpServer.pluginBridge.executePluginTask(task);
+        const result = await this.mcpServer.pluginBridge.executePluginTask(task, args.sessionId);
 
         if (result.data !== undefined) {
             return new TextResponse(JSON.stringify(result.data, null, 2));

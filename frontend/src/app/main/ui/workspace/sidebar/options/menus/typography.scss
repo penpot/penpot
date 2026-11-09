@@ -63,7 +63,8 @@ $font-preview-box-height: 28px;
 
 .typography-selection-wrapper {
   display: grid;
-  grid-template-columns: $sz-24 auto 1fr;
+  grid-template-columns: minmax($sz-24, auto) auto 1fr;
+  column-gap: var(--sp-xs);
   flex: 1;
   block-size: 100%;
   inline-size: 100%;
@@ -72,6 +73,16 @@ $font-preview-box-height: 28px;
   &.is-selectable {
     cursor: pointer;
   }
+}
+
+.typography-sample {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-inline-size: $sz-24;
+  block-size: $sz-32;
+  white-space: nowrap;
+  color: var(--color-foreground-secondary);
 }
 
 .typography-name {
@@ -87,6 +98,7 @@ $font-preview-box-height: 28px;
 
   display: flex;
   align-items: center;
+  gap: var(--sp-xs);
   block-size: $sz-32;
   inline-size: 100%;
   border-radius: $br-8;
@@ -113,8 +125,10 @@ $font-preview-box-height: 28px;
   display: flex;
   justify-content: center;
   align-items: center;
-  inline-size: $sz-24;
+  flex-shrink: 0;
+  min-inline-size: $sz-24;
   block-size: 100%;
+  white-space: nowrap;
   overflow: hidden;
   color: var(--color-foreground-primary);
 }
@@ -126,6 +140,7 @@ $font-preview-box-height: 28px;
   font-size: px2rem(12);
   color: var(--font-name-wrapper-foreground-color);
   flex-grow: 1;
+  min-inline-size: 0;
   padding-inline-start: px2rem(6);
   margin: 0;
   border: none;
@@ -156,7 +171,8 @@ $font-preview-box-height: 28px;
   @include t.use-typography("body-small");
 
   display: grid;
-  grid-template-columns: $sz-24 auto 1fr $sz-28;
+  grid-template-columns: minmax($sz-24, auto) auto 1fr $sz-28;
+  column-gap: var(--sp-xs);
   flex: 1;
   align-items: center;
   block-size: $sz-32;
@@ -178,6 +194,7 @@ $font-preview-box-height: 28px;
   align-items: center;
   min-inline-size: $sz-24;
   block-size: $sz-32;
+  white-space: nowrap;
   padding: 0;
   overflow: hidden;
   color: var(--color-foreground-primary);

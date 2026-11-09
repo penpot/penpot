@@ -15,7 +15,7 @@ use crate::state::ShapesPool;
 use crate::utils::uuid_from_u32_quartet;
 use crate::uuid::Uuid;
 
-use super::render_tree_to_svg;
+use super::{render_tree_to_svg, render_trees_to_svg};
 
 /// Font URL referenced in exported SVG `@font-face` rules.
 pub(super) const TEST_FONT_URL: &str = "fonts/sourcesanspro-regular.ttf";
@@ -336,22 +336,38 @@ pub(super) fn add_text_with_fills(
     font_size: f32,
     fills: Vec<Fill>,
 ) {
+    add_text_with_spans(pool, id, (l, t, r, b), font_size, vec![(text, fills)]);
+}
+
+/// Fixed text with one paragraph of `spans`, each a text and its fills.
+pub(super) fn add_text_with_spans(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    font_size: f32,
+    spans: Vec<(&str, Vec<Fill>)>,
+) {
     let bounds = skia::Rect::from_ltrb(l, t, r, b);
     let mut content = TextContent::new(bounds, GrowType::Fixed);
     let line_height = 1.2;
-    let span = TextSpan::new(
-        text.to_string(),
-        FontFamily::new(Uuid::nil(), 400, FontStyle::Normal),
-        font_size,
-        line_height,
-        0.0,
-        None,
-        None,
-        TextDirection::LTR,
-        400,
-        Uuid::nil(),
-        fills,
-    );
+    let spans = spans
+        .into_iter()
+        .map(|(text, fills)| {
+            TextSpan::new(
+                text.to_string(),
+                FontFamily::new(Uuid::nil(), 400, FontStyle::Normal),
+                font_size,
+                line_height,
+                0.0,
+                None,
+                None,
+                TextDirection::LTR,
+                400,
+                Uuid::nil(),
+                fills,
+            )
+        })
+        .collect();
     content.add_paragraph(Paragraph::new(
         TextAlign::Left,
         TextDirection::LTR,
@@ -359,7 +375,7 @@ pub(super) fn add_text_with_fills(
         None,
         line_height,
         0.0,
-        vec![span],
+        spans,
     ));
 
     let shape = pool.add_shape(id);
@@ -589,6 +605,18 @@ pub(super) fn with_stable_clip_ids(svg: &str) -> String {
 
 pub(super) fn render(pool: &ShapesPool, root: Uuid) -> String {
     render_with(pool, root, |_resources| {})
+}
+
+/// Multi-root SVG export for tests (one document, joined viewBox).
+pub(super) fn render_multi(pool: &ShapesPool, roots: &[Uuid]) -> String {
+    let _serial = svg_export_test_lock()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    let mut resources = RenderResources::try_new_headless().expect("headless resources");
+    register_test_font_urls(&mut resources.fonts);
+    let _guard = TestRenderResourcesGuard::install(&mut resources);
+    let bytes = render_trees_to_svg(&mut resources, roots, pool, 1.0).expect("svg multi export");
+    String::from_utf8(bytes).expect("utf8 svg")
 }
 
 /// SVG export installs a process-wide resources pointer; serialize tests that

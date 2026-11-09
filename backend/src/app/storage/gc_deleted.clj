@@ -15,8 +15,10 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.db :as db]
+   [app.jobs :as jobs]
    [app.metrics :as mtx]
    [app.storage :as sto]
    [app.storage.impl :as impl]
@@ -166,6 +168,11 @@
                   :inc n
                   :labels [(name backend-id)]))
 
+      ;; Beat the job after every chunk: each chunk commits on its own, so a
+      ;; long sweep neither loses work on a late failure nor outruns the
+      ;; orphan lease.
+      (jobs/heartbeat cfg)
+
       (if-let [cursor (peek rows)]
         (let [new-total (+ total (reduce + 0 (vals counts)))]
           (throttle total new-total)
@@ -174,15 +181,36 @@
                  (:id cursor)))
         total))))
 
-(defmethod ig/assert-key ::handler
+(declare execute-storage-gc-deleted)
+
+(defmethod ig/assert-key ::job-def
   [_ params]
   (assert (sto/valid-storage? (::sto/storage params)) "expect valid storage")
-  (assert (db/pool? (::db/pool params)) "expect valid storage")
+  (assert (db/pool? (::db/pool params)) "expect valid db pool")
   (assert (mtx/metrics? (::mtx/metrics params)) "expect valid metrics instance"))
 
-(defmethod ig/init-key ::handler
+(def schema:storage-gc-deleted-params
+  "Params map (no params needed; cfg-provided config only)."
+  [:map {:closed true}])
+
+(defmethod ig/init-key ::job-def
   [_ cfg]
-  (fn [_]
-    (let [total (clean-deleted cfg)]
-      (l/inf :hint "task finished" :total total)
-      {:deleted total})))
+  {::jobs/name      :storage-gc-deleted
+   ::jobs/schema    schema:storage-gc-deleted-params
+   ::jobs/handler
+   (fn [_context params]
+     (execute-storage-gc-deleted cfg params))
+   ::jobs/decoder   (sm/decoder schema:storage-gc-deleted-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:storage-gc-deleted-params)})
+
+(defn execute-storage-gc-deleted
+  "Plain job handler: clean the marked-deleted storage objects."
+  ([cfg] (execute-storage-gc-deleted cfg {}))
+  ([cfg _params]
+   ;; NOTE: no outer transaction here on purpose — clean-deleted
+   ;; commits each chunk in its own transaction, so a late failure
+   ;; only loses the in-flight chunk.
+   (jobs/heartbeat cfg)
+   (let [total (clean-deleted cfg)]
+     (l/inf :hint "task finished" :total total)
+     {:deleted total})))

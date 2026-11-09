@@ -4,7 +4,7 @@
  */
 export interface Penpot extends Omit<
   Context,
-  'addListener' | 'removeListener'
+  'addListener' | 'removeListener' | 'management'
 > {
   readonly ui: {
     /**
@@ -110,6 +110,7 @@ export interface Penpot extends Omit<
    *  - themechange: event emitted when the user changes its theme. The callback will receive the new theme (currently: either `dark` or `light`)
    *  - filechange: event emitted when a different file is opened. The callback will receive the new file.
    *  - contentsave: event emitted after the file content is saved in the backend. The callback receives no arguments.
+   *  - contentrollback: event emitted after the backend rejected some changes and they were undone in the workspace. The callback receives a `ContentRollback` with the files, pages and shapes affected.
    *  - finish: event emitted when the current file is closed. The callback will receive the id of the closed file.
    *
    * @param type The event type to listen for.
@@ -778,10 +779,277 @@ export interface CommonLayout {
   remove(): void;
 }
 
+/** Current workspace of this browser tab. */
+export interface WorkspaceContext {
+  readonly status: 'none' | 'loading' | 'ready';
+  readonly fileId: string | null;
+  readonly fileName: string | null;
+  readonly teamId: string | null;
+}
+
+/**
+ * A team the user belongs to. Requires `manage:teams`.
+ *
+ * Values are a snapshot taken when the team was listed; changes made through
+ * this object update it.
+ * Property assignments run asynchronously and update values after success.
+ * Backend failures are logged to the console; assignments cannot be awaited.
+ */
+export interface Team {
+  readonly id: string;
+  /** Whether this is the user's personal team. */
+  readonly isDefault: boolean;
+  /**
+   * The team name. Assigning renames the team; requires `manage:teams`.
+   * Trims the name and requires 1 to 250 characters.
+   */
+  name: string;
+  /**
+   * Lists the team's projects. Requires `content:read`.
+   *
+   * @example
+   * ```ts
+   * const [team] = await penpotMgmt.listTeams();
+   * const projects = await team.listProjects();
+   * ```
+   */
+  listProjects(): Promise<Project[]>;
+  /** Lists projects still recoverable from Trash. Requires `content:read`. */
+  listDeletedProjects(): Promise<Project[]>;
+  /** Lists files still recoverable from Trash. Requires `content:read`. */
+  listDeletedFiles(): Promise<ProjectFile[]>;
+  /**
+   * Creates a project in the team. Requires `manage:projects`.
+   *
+   * - Trims `name` and requires 1 to 250 characters.
+   * - Does not change navigation.
+   *
+   * @example
+   * ```ts
+   * const project = await team.createProject({ name: 'Design system' });
+   * ```
+   */
+  createProject(options: { name: string }): Promise<Project>;
+}
+
+/**
+ * A project in the dashboard.
+ *
+ * Values are a snapshot taken when the project was listed; changes made through
+ * this object update it.
+ * Property assignments run asynchronously and update values after success.
+ * Backend failures are logged to the console; assignments cannot be awaited.
+ */
+export interface Project {
+  readonly id: string;
+  readonly teamId: string;
+  /** Whether this is the team's Drafts project. */
+  readonly isDefault: boolean;
+  /** Number of files when the project was listed; file operations do not update it. */
+  readonly fileCount: number;
+  /**
+   * The project name. Assigning renames the project; requires `manage:projects`.
+   * Trims the name and requires 1 to 250 characters.
+   */
+  name: string;
+  /** Whether the project is pinned in the sidebar. Assigning requires `manage:projects`. */
+  pinned: boolean;
+  /**
+   * Lists the files in the project. Requires `content:read`.
+   *
+   * @example
+   * ```ts
+   * const files = await project.listFiles();
+   * ```
+   */
+  listFiles(): Promise<ProjectFile[]>;
+  /** Lists the project's files still recoverable from Trash. Requires `content:read`. */
+  listDeletedFiles(): Promise<ProjectFile[]>;
+  /**
+   * Restores the project through its files using the dashboard's Trash operation.
+   * Requires `manage:projects` and team edit access. Does not require `manage:delete`.
+   * Rejects if the project has no recoverable files, including empty projects.
+   */
+  restore(): Promise<void>;
+  /**
+   * Creates a file with an initial page in the project. Requires `content:write`.
+   *
+   * - Trims `name` and requires 1 to 250 characters.
+   * - Does not open the file. Use `ProjectFile.open` to edit it.
+   *
+   * @example
+   * ```ts
+   * const file = await project.createFile({ name: 'Login' });
+   * await file.open();
+   * ```
+   */
+  createFile(options: { name: string }): Promise<ProjectFile>;
+  /**
+   * Duplicates the project with all its files. Requires `manage:projects`.
+   *
+   * `name` defaults to the name the backend chooses.
+   */
+  duplicate(options?: { name?: string }): Promise<Project>;
+  /** Moves the project to another team. Requires `manage:teams`. */
+  moveTo(team: Team): Promise<void>;
+  /**
+   * Moves the project and its files to Trash. Requires `manage:delete`.
+   * They can be restored during the retention period. Cannot permanently delete.
+   */
+  remove(): Promise<void>;
+}
+
+/**
+ * A file in the dashboard, which may or may not be open.
+ *
+ * Values are a snapshot taken when the file was listed; changes made through
+ * this object update it. To read or edit its content, `open` it and use
+ * `penpot.currentFile`.
+ * Property assignments run asynchronously and update values after success.
+ * Backend failures are logged to the console; assignments cannot be awaited.
+ */
+export interface ProjectFile {
+  readonly id: string;
+  readonly teamId: string;
+  readonly projectId: string;
+  /** Last modification time as an ISO 8601 string in UTC. */
+  readonly modifiedAt: string;
+  /**
+   * The file name. Assigning renames the file; requires `content:write`.
+   * Trims the name and requires 1 to 250 characters.
+   */
+  name: string;
+  /**
+   * Whether the file is shared as a library with its team. Assigning requires
+   * `library:write`. A shared file is listed by
+   * `penpot.library.availableLibraries()`; unsharing copies its assets into
+   * every file that uses it and disconnects them.
+   */
+  shared: boolean;
+  /**
+   * Opens the file in this tab and resolves once its workspace and page are
+   * ready. Requires `content:read`.
+   */
+  open(): Promise<void>;
+  /**
+   * Restores the file using the dashboard's Trash operation, including its parent
+   * project if deleted. Requires `content:write` and team edit access.
+   * Rejects if the file no longer exists. Does not require `manage:delete`.
+   */
+  restore(): Promise<void>;
+  /**
+   * Moves the file to another project of the same team. Requires `content:write`.
+   * Rejects a destination that currently belongs to another team.
+   */
+  moveTo(project: Project): Promise<void>;
+  /**
+   * Duplicates the file in its project. Requires `content:write`.
+   *
+   * `name` defaults to the name the backend chooses.
+   */
+  duplicate(options?: { name?: string }): Promise<ProjectFile>;
+  /**
+   * Moves the file to Trash. Requires `manage:delete`.
+   * It can be restored during the retention period. Cannot permanently delete.
+   */
+  remove(): Promise<void>;
+}
+
+/**
+ * Application management API exposed as `penpotMgmt` to global plugins.
+ *
+ * - Lists teams, projects and files, and opens files, from the dashboard or a
+ *   file workspace. Teams, projects and files are objects with their own
+ *   properties and methods.
+ * - Listing and opening require `content:read`; teams require `manage:teams`.
+ * - File operations on `penpot` require a ready workspace.
+ * - Reacquire file, page and shape objects after changing files.
+ */
+export interface PenpotMgmt {
+  /** Current workspace availability and metadata; usable for file operations when status is `ready`. */
+  readonly workspace: WorkspaceContext;
+  /**
+   * Lists the teams of the user. Requires `manage:teams`.
+   *
+   * @example
+   * ```ts
+   * const teams = await penpotMgmt.listTeams();
+   * ```
+   */
+  listTeams(): Promise<Team[]>;
+  /**
+   * Creates a team with the user as owner. Requires `manage:teams`.
+   *
+   * - Trims `name` and requires 1 to 250 characters.
+   * - Does not change navigation.
+   *
+   * @example
+   * ```ts
+   * const team = await penpotMgmt.createTeam({ name: 'Marketing' });
+   * ```
+   */
+  createTeam(options: { name: string }): Promise<Team>;
+  /**
+   * Lists the projects of a team. Requires `content:read`.
+   *
+   * - `teamId` defaults to the current team.
+   * - Rejects invalid identifiers and backend access errors.
+   *
+   * @example
+   * ```ts
+   * const projects = await penpotMgmt.listProjects();
+   * ```
+   */
+  listProjects(options?: { teamId?: string }): Promise<Project[]>;
+  /**
+   * Lists projects still recoverable from Trash. Requires `content:read`.
+   * `teamId` defaults to the current team. Use `Project.restore` to recover them.
+   */
+  listDeletedProjects(options?: { teamId?: string }): Promise<Project[]>;
+  /**
+   * Lists files still recoverable from Trash. Requires `content:read`.
+   * `teamId` defaults to the current team. Use `ProjectFile.restore` to recover them.
+   */
+  listDeletedFiles(options?: { teamId?: string }): Promise<ProjectFile[]>;
+  /**
+   * Loads a file by id, open or not. Requires `content:read`.
+   *
+   * @example
+   * ```ts
+   * const file = await penpotMgmt.getFile(penpotMgmt.workspace.fileId!);
+   * file.name = 'Checkout';
+   * ```
+   */
+  getFile(fileId: string): Promise<ProjectFile>;
+  /**
+   * Opens a file in this tab and resolves once its workspace and page are ready.
+   *
+   * - `teamId` defaults to the current team.
+   * - Rejects invalid identifiers, failed or superseded navigation, and waits exceeding 30 seconds.
+   *
+   * @example
+   * ```ts
+   * await penpotMgmt.openFile(file.id, { teamId: file.teamId });
+   * ```
+   */
+  openFile(fileId: string, options?: { teamId?: string }): Promise<void>;
+  /** Subscribes to workspace availability and metadata changes. */
+  on(
+    type: 'workspacechange',
+    callback: (workspace: WorkspaceContext) => void,
+  ): symbol;
+  off(listenerId: symbol): void;
+}
+
 /**
  * Represents the context of Penpot, providing access to various Penpot functionalities and data.
  */
 export interface Context {
+  /**
+   * Backs `penpotMgmt`. Its events go through the plugin listener registry,
+   * so `on` and `off` are not part of it.
+   */
+  readonly management?: Omit<PenpotMgmt, 'on' | 'off'>;
   /**
    * Returns the current penpot version.
    */
@@ -1556,6 +1824,8 @@ export interface Ellipse extends ShapeBase {
  * ```
  */
 export interface EventsMap {
+  readonly workspacechange: WorkspaceContext;
+  readonly logout: void;
   /**
    * The `pagechange` event is triggered when the active page in the project is changed.
    */
@@ -1590,6 +1860,37 @@ export interface EventsMap {
    * The `contentsave` event will trigger after the file content is saved in the backend.
    */
   readonly contentsave: void;
+
+  /**
+   * The `contentrollback` event will trigger after the backend rejected some changes
+   * and the workspace undid them, together with the rest of their undo steps and any
+   * later change to the same file. Changes made by a plugin can be undone this way
+   * after the call that made them returned, so a plugin that relies on them should
+   * read the affected shapes again. The event fires once the undone data is in the
+   * workspace. When the workspace could not undo the changes in place, it reloads the
+   * file from the server first; the whole file then holds the server data, so shapes
+   * outside the listed ones may have changed too.
+   */
+  readonly contentrollback: ContentRollback;
+}
+
+/**
+ * What a rollback of rejected changes undid, as given to the `contentrollback` event.
+ */
+export interface ContentRollback {
+  /**
+   * Ids of the files that lost changes.
+   */
+  readonly fileIds: string[];
+  /**
+   * Ids of the pages the undone changes touched.
+   */
+  readonly pageIds: string[];
+  /**
+   * Ids of the page shapes the undone changes touched. A shape the undone changes
+   * created no longer exists; one they removed exists again.
+   */
+  readonly shapeIds: string[];
 }
 
 /**
@@ -5880,4 +6181,5 @@ export interface Viewport {
 
 declare global {
   const penpot: Penpot;
+  const penpotMgmt: PenpotMgmt;
 }

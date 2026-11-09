@@ -17,9 +17,11 @@
    [app.common.spec :as us]
    [app.common.time :as ct]
    [app.common.transit :as tr]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.jobs :as jobs]
    [app.main :as main]
    [app.media]
    [app.media :as-alias mtx]
@@ -37,7 +39,6 @@
    [app.rpc.helpers :as rph]
    [app.util.blob :as blob]
    [app.util.services :as sv]
-   [app.worker :as wrk]
    [app.worker.runner]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
@@ -105,6 +106,22 @@
        (fs/create-dir "/tmp/penpot")
        (next)))))
 
+(defn- remove-job-runners
+  "Drops every `[<profile> :app.worker/runner]` from the system.
+
+  The tests drive the runner loop by hand (`wdisp/run-batch` plus
+  `run-worker-loop` over a system they build themselves), so a live runner
+  of any queue races them: it takes the job the test just dispatched and
+  completes it behind the test's back. Matching the key by shape, instead
+  of listing the known queues by hand, keeps a new queue from silently
+  bringing that race back (which is what happened to the `binfile` runner
+  this key list was missing)."
+  [system]
+  (apply dissoc system
+         (filter #(and (vector? %)
+                       (= :app.worker/runner (second %)))
+                 (keys system))))
+
 (defn init-system
   [next]
   (let [templates [{:id "test"
@@ -136,9 +153,8 @@
                            :app.loggers.database/reporter
                            :app.loggers.metrics/reporter
                            :app.worker/cron
-                           :app.worker/dispatcher
-                           [:app.main/default :app.worker/runner]
-                           [:app.main/webhook :app.worker/runner]))
+                           :app.worker/dispatcher)
+                   (remove-job-runners))
         _      (ig/load-namespaces system)
         system (-> (ig/expand system) (ig/init))]
     (try
@@ -239,11 +255,37 @@
                                                      :features features}
                                                     params)))))))
 
+(defn create-job*
+  "A job row in the state a worker finds it: running, in the `binfile` queue,
+  owned by `profile-id` and holding `resource-id` when it consumes one.
+  `job-name` is the kind of the job (a keyword like the `::jobs/name` a caller
+  would pass, or the text the row holds) and it is what resolves the job-def
+  of the row when its result is read or checked."
+  [job-name {:keys [profile-id resource-id]}]
+  (let [id (uuid/next)]
+    (db/insert! *pool* :job {:id           id
+                             :name         (name job-name)
+                             :tenant       (cf/get :tenant)
+                             :queue        "binfile"
+                             :params       (db/json {})
+                             :priority     100
+                             :max-retries  0
+                             :retry-num    0
+                             :status       "running"
+                             :profile-id   profile-id
+                             :resource-id  resource-id
+                             :scheduled-at (ct/now)
+                             :created-at   (ct/now)
+                             :modified-at  (ct/now)})
+    id))
+
 (defn mark-file-deleted*
   ([params]
    (mark-file-deleted* *system* params))
-  ([conn {:keys [id] :as params}]
-   (#'files/mark-file-deleted conn {} id)))
+  ([system {:keys [id] :as params}]
+   (db/tx-run! system
+               (fn [cfg]
+                 (#'files/mark-file-deleted cfg {} id)))))
 
 (defn create-team*
   ([i params] (create-team* *system* i params))
@@ -337,6 +379,21 @@
                                                      :changes changes
                                                      :session-id session-id
                                                      :profile-id profile-id})))))))
+
+(defn add-rect-change
+  "A change that adds a 10x10 rect `id` to the root of `page-id`."
+  [page-id id]
+  {:type :add-obj
+   :page-id page-id
+   :id id
+   :parent-id uuid/zero
+   :frame-id uuid/zero
+   :obj (cts/setup-shape {:id id
+                          :type :rect
+                          :name "rect"
+                          :x 0 :y 0 :width 10 :height 10
+                          :parent-id uuid/zero
+                          :frame-id uuid/zero})})
 
 (declare command!)
 
@@ -507,13 +564,38 @@
       (method-fn params))))
 
 (defn management-command!
+  "Invokes a management RPC method.
+
+  Resolves the shared-key id from an explicit `::rpc/auth-key-id`, from
+  `:app.http/auth-key-id` on the data or on the supplied request, and falls
+  back to the first id the method declares. The fallback lets the existing
+  tests exercise the allowed path without repeating the key; a test that
+  checks a rejection declares the key explicitly, including `nil`."
   [{:keys [::type] :as data}]
-  (let [[_ method-fn] (get-in *system* [:app.rpc/management-methods type])]
+  (let [[mdata method-fn] (get-in *system* [:app.rpc/management-methods type])]
     (when-not method-fn
       (ex/raise :type :assertion
                 :code :rpc-method-not-found
                 :hint (str/ffmt "management rpc method '%' not found" (name type))))
-    (let [params (prepare-rpc-params data)]
+    (let [request (-> data meta :app.http/request)
+          key-id  (cond
+                    (contains? data ::rpc/auth-key-id)
+                    (::rpc/auth-key-id data)
+
+                    (contains? data :app.http/auth-key-id)
+                    (:app.http/auth-key-id data)
+
+                    (and (map? request)
+                         (contains? request :app.http/auth-key-id))
+                    (:app.http/auth-key-id request)
+
+                    :else
+                    (first (::rpc/allowed-shared-keys mdata)))
+          data    (if (or (contains? data ::rpc/auth-key-id)
+                          (nil? key-id))
+                    data
+                    (assoc data ::rpc/auth-key-id key-id))
+          params  (prepare-rpc-params data)]
       (try-on! (method-fn params)))))
 
 (def multipart-headers
@@ -544,28 +626,37 @@
   (management-command! (with-multipart data)))
 
 (defn run-task!
+  "Execute a job handler directly (in-process, no row): the handler gets a
+  nil context, because there is no job to describe."
   ([name]
    (run-task! name {}))
   ([name params]
-   (wrk/invoke! (-> *system*
-                    (assoc ::wrk/task name)
-                    (assoc ::wrk/params params)))))
+   (jobs/invoke (-> *system*
+                    (assoc ::jobs/name name)
+                    (assoc ::jobs/params params)))))
 
-(def sql:pending-tasks
-  "select t.* from task as t
-    where t.status = 'new'
-    order by t.priority desc, t.scheduled_at")
+(def sql:pending-jobs
+  "select * from job
+    where status = 'new'
+    order by priority desc, scheduled_at")
 
-(defn run-pending-tasks!
+(defn run-pending-jobs
+  "Execute the pending (status='new') `job` rows in-process (simulating
+  the dispatcher + runner for the tests). Each row gets its context and its
+  job-id, so heartbeats and progress reach it exactly like in the runner.
+  Does not touch the row status; only the handler side effects matter."
   []
-  (db/tx-run! *system* (fn [{:keys [::db/conn] :as cfg}]
-                         (let [tasks (->> (db/exec! conn [sql:pending-tasks])
-                                          (map #'app.worker.runner/decode-task-row))]
-                           (doseq [task tasks]
-                             (let [cfg (-> cfg
-                                           (assoc :app.worker.runner/queue (:queue task))
-                                           (assoc :app.worker.runner/id 0))]
-                               (#'app.worker.runner/run-task cfg task)))))))
+  (db/tx-run! *system*
+              (fn [{:keys [::db/conn]}]
+                (let [jobs-rows (db/exec! conn [sql:pending-jobs])]
+                  (doseq [row jobs-rows]
+                    (jobs/invoke (-> *system*
+                                     ;; the row stores a string; invoke
+                                     ;; takes the canonical keyword
+                                     (assoc ::jobs/name (keyword (:name row)))
+                                     (assoc ::jobs/params (:params row))
+                                     (assoc ::jobs/context (jobs/make-context row))
+                                     (assoc ::jobs/job-id (:id row)))))))))
 
 (defn metrics-stub
   "A metrics instance with no collectors, where every `run!` is a no-op."
@@ -716,6 +807,17 @@
 (defn db-delete!
   [& params]
   (apply db/delete! *pool* params))
+
+(defn db-force-delete
+  "Deletes rows whose table is guarded by `raise_deletion_protection`,
+  inside a transaction that disables the guard. Test-only escape hatch:
+  production delete paths disable protection in their own transaction
+  (see `app.jobs.gc`)."
+  [& params]
+  (db/tx-run! *pool*
+              (fn [{:keys [::db/conn]}]
+                (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
+                (apply db/delete! conn params))))
 
 (defn db-query
   [& params]

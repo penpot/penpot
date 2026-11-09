@@ -9,10 +9,12 @@
   of deleted or unreachable objects."
   (:require
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
    [app.features.fdata :as fdata]
+   [app.jobs :as jobs]
    [app.loggers.audit :as audit]
    [app.storage :as sto]
    [app.tasks.delete-object :as dobj]
@@ -28,6 +30,10 @@
 ;; A plan row is a view over the open result set, valid only while the
 ;; reduction is running, so the key is read inside the reducing function:
 ;; buffering the row itself yields nil columns.
+;;
+;; Every proc beats its job (`jobs/heartbeat`) after each processed chunk,
+;; through the pool and never through the chunk transaction, so a long backlog
+;; in a single proc cannot outrun the orphan lease.
 
 (defn- submit-hard-delete-event
   "Emits one hard-delete audit event for the batch of rows just purged
@@ -89,10 +95,10 @@
   [cfg ids]
   (try
     (db/tx-run! cfg
-                (fn [{:keys [::db/conn ::timestamp ::sto/storage]}]
-                  (let [stalled-threshold (ct/minus timestamp {:hours 1})
+                (fn [{:keys [::db/conn ::threshold ::sto/storage]}]
+                  (let [stalled-threshold (ct/minus threshold {:hours 1})
                         ids (db/create-array conn "uuid" ids)]
-                    (->> (db/exec! conn [sql:lock-upload-sessions ids timestamp stalled-threshold timestamp])
+                    (->> (db/exec! conn [sql:lock-upload-sessions ids threshold stalled-threshold threshold])
                          (reduce (fn [total {:keys [id]}]
                                    (l/trc :obj "upload-session" :id (str id))
 
@@ -113,14 +119,17 @@
       0)))
 
 (defn- delete-upload-sessions
-  [{:keys [::timestamp ::chunk-size] :as cfg}]
-  (let [stalled-threshold (ct/minus timestamp {:hours 1})
+  [{:keys [::threshold ::chunk-size] :as cfg}]
+  (let [stalled-threshold (ct/minus threshold {:hours 1})
         rf (fn ([total] total)
-             ([total chunk] (+ total (delete-upload-sessions-chunk cfg chunk))))]
+             ([total chunk]
+              (let [deleted (delete-upload-sessions-chunk cfg chunk)]
+                (jobs/heartbeat cfg)
+                (+ total deleted))))]
     (db/tx-run! (assoc cfg ::db/read-only true)
                 (fn [{:keys [::db/conn]}]
                   (transduce (comp (map :id) (partition-all chunk-size)) rf 0
-                             (db/plan conn [sql:get-upload-sessions timestamp stalled-threshold timestamp]
+                             (db/plan conn [sql:get-upload-sessions threshold stalled-threshold threshold]
                                       {:fetch-size 5}))))))
 
 (def ^:private sql:get-profiles
@@ -141,10 +150,10 @@
   [cfg ids]
   (try
     (db/tx-run! cfg
-                (fn [{:keys [::db/conn ::timestamp ::sto/storage] :as cfg}]
+                (fn [{:keys [::db/conn ::threshold ::sto/storage] :as cfg}]
                   (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
                   (let [ids (db/create-array conn "uuid" ids)]
-                    (->> (db/exec! conn [sql:lock-profiles ids timestamp])
+                    (->> (db/exec! conn [sql:lock-profiles ids threshold])
                          (reduce (fn [total {:keys [id photo-id deleted-at]}]
                                    (l/trc :obj "profile" :id (str id))
 
@@ -153,7 +162,7 @@
 
                                    ;; Cascade soft-delete to owned teams, projects, files, etc.
                                    ;; with the deletion date of the profile, not the
-                                   ;; timestamp of the run.
+                                   ;; date of the run.
                                    (dobj/delete-object cfg {:object :profile
                                                             :id id
                                                             :deleted-at deleted-at})
@@ -170,13 +179,16 @@
       0)))
 
 (defn- delete-profiles
-  [{:keys [::timestamp ::chunk-size] :as cfg}]
+  [{:keys [::threshold ::chunk-size] :as cfg}]
   (let [rf (fn ([total] total)
-             ([total chunk] (+ total (delete-profiles-chunk cfg chunk))))]
+             ([total chunk]
+              (let [deleted (delete-profiles-chunk cfg chunk)]
+                (jobs/heartbeat cfg)
+                (+ total deleted))))]
     (db/tx-run! (assoc cfg ::db/read-only true)
                 (fn [{:keys [::db/conn]}]
                   (transduce (comp (map :id) (partition-all chunk-size)) rf 0
-                             (db/plan conn [sql:get-profiles timestamp]
+                             (db/plan conn [sql:get-profiles threshold]
                                       {:fetch-size 5}))))))
 
 (def ^:private sql:get-teams
@@ -197,11 +209,11 @@
   [cfg ids]
   (try
     (db/tx-run! cfg
-                (fn [{:keys [::db/conn ::timestamp ::sto/storage] :as cfg}]
+                (fn [{:keys [::db/conn ::threshold ::sto/storage] :as cfg}]
                   (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
                   (let [ids (db/create-array conn "uuid" ids)
                         [total deleted-ids]
-                        (->> (db/exec! conn [sql:lock-teams ids timestamp])
+                        (->> (db/exec! conn [sql:lock-teams ids threshold])
                              (reduce (fn [[total deleted-ids] {:keys [id photo-id deleted-at]}]
                                        (l/trc :obj "team"
                                               :id (str id)
@@ -227,13 +239,16 @@
       0)))
 
 (defn- delete-teams
-  [{:keys [::timestamp ::chunk-size] :as cfg}]
+  [{:keys [::threshold ::chunk-size] :as cfg}]
   (let [rf (fn ([total] total)
-             ([total chunk] (+ total (delete-teams-chunk cfg chunk))))]
+             ([total chunk]
+              (let [deleted (delete-teams-chunk cfg chunk)]
+                (jobs/heartbeat cfg)
+                (+ total deleted))))]
     (db/tx-run! (assoc cfg ::db/read-only true)
                 (fn [{:keys [::db/conn]}]
                   (transduce (comp (map :id) (partition-all chunk-size)) rf 0
-                             (db/plan conn [sql:get-teams timestamp]
+                             (db/plan conn [sql:get-teams threshold]
                                       {:fetch-size 5}))))))
 
 (def ^:private sql:get-fonts
@@ -255,10 +270,10 @@
   [cfg ids]
   (try
     (db/tx-run! cfg
-                (fn [{:keys [::db/conn ::timestamp ::sto/storage]}]
+                (fn [{:keys [::db/conn ::threshold ::sto/storage]}]
                   (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
                   (let [ids (db/create-array conn "uuid" ids)]
-                    (->> (db/exec! conn [sql:lock-fonts ids timestamp])
+                    (->> (db/exec! conn [sql:lock-fonts ids threshold])
                          (reduce (fn [total {:keys [id team-id deleted-at] :as font}]
                                    (l/trc :obj "font-variant"
                                           :id (str id)
@@ -283,13 +298,16 @@
       0)))
 
 (defn- delete-fonts
-  [{:keys [::timestamp ::chunk-size] :as cfg}]
+  [{:keys [::threshold ::chunk-size] :as cfg}]
   (let [rf (fn ([total] total)
-             ([total chunk] (+ total (delete-fonts-chunk cfg chunk))))]
+             ([total chunk]
+              (let [deleted (delete-fonts-chunk cfg chunk)]
+                (jobs/heartbeat cfg)
+                (+ total deleted))))]
     (db/tx-run! (assoc cfg ::db/read-only true)
                 (fn [{:keys [::db/conn]}]
                   (transduce (comp (map :id) (partition-all chunk-size)) rf 0
-                             (db/plan conn [sql:get-fonts timestamp]
+                             (db/plan conn [sql:get-fonts threshold]
                                       {:fetch-size 5}))))))
 
 (def ^:private sql:get-projects
@@ -310,11 +328,11 @@
   [cfg ids]
   (try
     (db/tx-run! cfg
-                (fn [{:keys [::db/conn ::timestamp] :as cfg}]
+                (fn [{:keys [::db/conn ::threshold] :as cfg}]
                   (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
                   (let [ids (db/create-array conn "uuid" ids)
                         [total deleted-ids]
-                        (->> (db/exec! conn [sql:lock-projects ids timestamp])
+                        (->> (db/exec! conn [sql:lock-projects ids threshold])
                              (reduce (fn [[total deleted-ids] {:keys [id team-id deleted-at]}]
                                        (l/trc :obj "project"
                                               :id (str id)
@@ -337,13 +355,16 @@
       0)))
 
 (defn- delete-projects
-  [{:keys [::timestamp ::chunk-size] :as cfg}]
+  [{:keys [::threshold ::chunk-size] :as cfg}]
   (let [rf (fn ([total] total)
-             ([total chunk] (+ total (delete-projects-chunk cfg chunk))))]
+             ([total chunk]
+              (let [deleted (delete-projects-chunk cfg chunk)]
+                (jobs/heartbeat cfg)
+                (+ total deleted))))]
     (db/tx-run! (assoc cfg ::db/read-only true)
                 (fn [{:keys [::db/conn]}]
                   (transduce (comp (map :id) (partition-all chunk-size)) rf 0
-                             (db/plan conn [sql:get-projects timestamp]
+                             (db/plan conn [sql:get-projects threshold]
                                       {:fetch-size 5}))))))
 
 (def ^:private sql:get-files
@@ -364,11 +385,11 @@
   [cfg ids]
   (try
     (db/tx-run! cfg
-                (fn [{:keys [::db/conn ::timestamp] :as cfg}]
+                (fn [{:keys [::db/conn ::threshold] :as cfg}]
                   (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
                   (let [ids (db/create-array conn "uuid" ids)
                         [total deleted-ids]
-                        (->> (db/exec! conn [sql:lock-files ids timestamp])
+                        (->> (db/exec! conn [sql:lock-files ids threshold])
                              (reduce (fn [[total deleted-ids] {:keys [id deleted-at project-id]}]
                                        (l/trc :obj "file"
                                               :id (str id)
@@ -397,13 +418,16 @@
   unmarked and its `NO ACTION` foreign key still points at it) aborts the
   transaction of the whole chunk: the chunk is reported and skipped, and the
   next run retries its files."
-  [{:keys [::timestamp ::chunk-size] :as cfg}]
+  [{:keys [::threshold ::chunk-size] :as cfg}]
   (let [rf (fn ([total] total)
-             ([total chunk] (+ total (delete-files-chunk cfg chunk))))]
+             ([total chunk]
+              (let [deleted (delete-files-chunk cfg chunk)]
+                (jobs/heartbeat cfg)
+                (+ total deleted))))]
     (db/tx-run! (assoc cfg ::db/read-only true)
                 (fn [{:keys [::db/conn]}]
                   (transduce (comp (map :id) (partition-all chunk-size)) rf 0
-                             (db/plan conn [sql:get-files timestamp]
+                             (db/plan conn [sql:get-files threshold]
                                       {:fetch-size 5}))))))
 
 (def ^:private sql:get-file-thumbnails
@@ -425,11 +449,11 @@
   [cfg rows]
   (try
     (db/tx-run! cfg
-                (fn [{:keys [::db/conn ::timestamp ::sto/storage]}]
+                (fn [{:keys [::db/conn ::threshold ::sto/storage]}]
                   (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
                   (let [file-ids (db/create-array conn "uuid" (map :file-id rows))
                         revns    (db/create-array conn "int8" (map :revn rows))]
-                    (->> (db/exec! conn [sql:lock-file-thumbnails file-ids revns timestamp])
+                    (->> (db/exec! conn [sql:lock-file-thumbnails file-ids revns threshold])
                          (reduce (fn [total {:keys [file-id revn media-id deleted-at]}]
                                    (l/trc :obj "file-thumbnail"
                                           :file-id (str file-id)
@@ -451,15 +475,18 @@
       0)))
 
 (defn- delete-file-thumbnails
-  [{:keys [::timestamp ::chunk-size] :as cfg}]
+  [{:keys [::threshold ::chunk-size] :as cfg}]
   (let [rf (fn ([total] total)
-             ([total chunk] (+ total (delete-file-thumbnails-chunk cfg chunk))))]
+             ([total chunk]
+              (let [deleted (delete-file-thumbnails-chunk cfg chunk)]
+                (jobs/heartbeat cfg)
+                (+ total deleted))))]
     (db/tx-run! (assoc cfg ::db/read-only true)
                 (fn [{:keys [::db/conn]}]
                   (transduce (comp (map (fn [row] {:file-id (:file-id row) :revn (:revn row)}))
                                    (partition-all chunk-size))
                              rf 0
-                             (db/plan conn [sql:get-file-thumbnails timestamp]
+                             (db/plan conn [sql:get-file-thumbnails threshold]
                                       {:fetch-size 5}))))))
 
 (def ^:private sql:get-file-object-thumbnails
@@ -481,11 +508,11 @@
   [cfg rows]
   (try
     (db/tx-run! cfg
-                (fn [{:keys [::db/conn ::timestamp ::sto/storage]}]
+                (fn [{:keys [::db/conn ::threshold ::sto/storage]}]
                   (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
                   (let [file-ids   (db/create-array conn "uuid" (map :file-id rows))
                         object-ids (db/create-array conn "text" (map :object-id rows))]
-                    (->> (db/exec! conn [sql:lock-file-object-thumbnails file-ids object-ids timestamp])
+                    (->> (db/exec! conn [sql:lock-file-object-thumbnails file-ids object-ids threshold])
                          (reduce (fn [total {:keys [file-id object-id media-id deleted-at]}]
                                    (l/trc :obj "file-object-thumbnail"
                                           :file-id (str file-id)
@@ -508,15 +535,18 @@
       0)))
 
 (defn- delete-file-object-thumbnails
-  [{:keys [::timestamp ::chunk-size] :as cfg}]
+  [{:keys [::threshold ::chunk-size] :as cfg}]
   (let [rf (fn ([total] total)
-             ([total chunk] (+ total (delete-file-object-thumbnails-chunk cfg chunk))))]
+             ([total chunk]
+              (let [deleted (delete-file-object-thumbnails-chunk cfg chunk)]
+                (jobs/heartbeat cfg)
+                (+ total deleted))))]
     (db/tx-run! (assoc cfg ::db/read-only true)
                 (fn [{:keys [::db/conn]}]
                   (transduce (comp (map (fn [row] {:file-id (:file-id row) :object-id (:object-id row)}))
                                    (partition-all chunk-size))
                              rf 0
-                             (db/plan conn [sql:get-file-object-thumbnails timestamp]
+                             (db/plan conn [sql:get-file-object-thumbnails threshold]
                                       {:fetch-size 5}))))))
 
 (def ^:private sql:get-file-media-objects
@@ -538,10 +568,10 @@
   [cfg ids]
   (try
     (db/tx-run! cfg
-                (fn [{:keys [::db/conn ::timestamp ::sto/storage]}]
+                (fn [{:keys [::db/conn ::threshold ::sto/storage]}]
                   (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
                   (let [ids (db/create-array conn "uuid" ids)]
-                    (->> (db/exec! conn [sql:lock-file-media-objects ids timestamp])
+                    (->> (db/exec! conn [sql:lock-file-media-objects ids threshold])
                          (reduce (fn [total {:keys [id file-id deleted-at] :as fmo}]
                                    (l/trc :obj "file-media-object"
                                           :id (str id)
@@ -564,13 +594,16 @@
       0)))
 
 (defn- delete-file-media-objects
-  [{:keys [::timestamp ::chunk-size] :as cfg}]
+  [{:keys [::threshold ::chunk-size] :as cfg}]
   (let [rf (fn ([total] total)
-             ([total chunk] (+ total (delete-file-media-objects-chunk cfg chunk))))]
+             ([total chunk]
+              (let [deleted (delete-file-media-objects-chunk cfg chunk)]
+                (jobs/heartbeat cfg)
+                (+ total deleted))))]
     (db/tx-run! (assoc cfg ::db/read-only true)
                 (fn [{:keys [::db/conn]}]
                   (transduce (comp (map :id) (partition-all chunk-size)) rf 0
-                             (db/plan conn [sql:get-file-media-objects timestamp]
+                             (db/plan conn [sql:get-file-media-objects threshold]
                                       {:fetch-size 5}))))))
 
 (def ^:private sql:get-file-data
@@ -592,11 +625,11 @@
   [cfg rows]
   (try
     (db/tx-run! cfg
-                (fn [{:keys [::db/conn ::timestamp] :as cfg}]
+                (fn [{:keys [::db/conn ::threshold] :as cfg}]
                   (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
                   (let [file-ids (db/create-array conn "uuid" (map :file-id rows))
                         ids      (db/create-array conn "uuid" (map :id rows))]
-                    (->> (db/exec! conn [sql:lock-file-data file-ids ids timestamp])
+                    (->> (db/exec! conn [sql:lock-file-data file-ids ids threshold])
                          (reduce (fn [total {:keys [file-id id type deleted-at metadata backend]}]
 
                                    (some->> metadata
@@ -625,15 +658,18 @@
       0)))
 
 (defn- delete-file-data
-  [{:keys [::timestamp ::chunk-size] :as cfg}]
+  [{:keys [::threshold ::chunk-size] :as cfg}]
   (let [rf (fn ([total] total)
-             ([total chunk] (+ total (delete-file-data-chunk cfg chunk))))]
+             ([total chunk]
+              (let [deleted (delete-file-data-chunk cfg chunk)]
+                (jobs/heartbeat cfg)
+                (+ total deleted))))]
     (db/tx-run! (assoc cfg ::db/read-only true)
                 (fn [{:keys [::db/conn]}]
                   (transduce (comp (map (fn [row] {:file-id (:file-id row) :id (:id row)}))
                                    (partition-all chunk-size))
                              rf 0
-                             (db/plan conn [sql:get-file-data timestamp]
+                             (db/plan conn [sql:get-file-data threshold]
                                       {:fetch-size 5}))))))
 
 (def ^:private sql:get-file-change
@@ -654,10 +690,10 @@
   [cfg ids]
   (try
     (db/tx-run! cfg
-                (fn [{:keys [::db/conn ::timestamp]}]
+                (fn [{:keys [::db/conn ::threshold]}]
                   (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
                   (let [ids (db/create-array conn "uuid" ids)]
-                    (->> (db/exec! conn [sql:lock-file-change ids timestamp])
+                    (->> (db/exec! conn [sql:lock-file-change ids threshold])
                          (reduce (fn [total {:keys [id file-id deleted-at]}]
                                    (l/trc :obj "file-change"
                                           :id (str id)
@@ -676,46 +712,72 @@
       0)))
 
 (defn- delete-file-changes
-  [{:keys [::timestamp ::chunk-size] :as cfg}]
+  [{:keys [::threshold ::chunk-size] :as cfg}]
   (let [rf (fn ([total] total)
-             ([total chunk] (+ total (delete-file-changes-chunk cfg chunk))))]
+             ([total chunk]
+              (let [deleted (delete-file-changes-chunk cfg chunk)]
+                (jobs/heartbeat cfg)
+                (+ total deleted))))]
     (db/tx-run! (assoc cfg ::db/read-only true)
                 (fn [{:keys [::db/conn]}]
                   (transduce (comp (map :id) (partition-all chunk-size)) rf 0
-                             (db/plan conn [sql:get-file-change timestamp]
+                             (db/plan conn [sql:get-file-change threshold]
                                       {:fetch-size 5}))))))
 
-(defmethod ig/assert-key ::handler
+(defmethod ig/assert-key ::job-def
   [_ params]
   (assert (db/pool? (::db/pool params)) "expected a valid database pool")
   (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage to be provided"))
 
-(defmethod ig/expand-key ::handler
+(defmethod ig/expand-key ::job-def
   [k v]
   {k (assoc v ::chunk-size 100)})
 
-(defmethod ig/init-key ::handler
+(declare execute-objects-gc)
+
+(def schema:objects-gc-params
+  "Optional :skip-delay processes everything immediately, ignoring
+  deleted-at schedules (operator/repl escape hatch, mirrors
+  storage-gc-touched). Optional :chunk-size overrides the per-proc batch
+  size from config."
+  [:map {:closed true}
+   [:skip-delay {:optional true} :boolean]
+   [:chunk-size {:optional true} :int]])
+
+(defmethod ig/init-key ::job-def
   [_ cfg]
-  (fn [{:keys [props]}]
-    (let [skip-delay (:skip-delay props)
-          chunk-size (or (:chunk-size props) (::chunk-size cfg))
-          cfg        (-> cfg
-                         (assoc ::chunk-size chunk-size)
-                         (assoc ::timestamp (if skip-delay
-                                              (ct/in-future {:days 3650})
-                                              (ct/now))))
-          ;; NOTE: upload sessions go first: deleting a profile cascades to its
-          ;; sessions, which would hit the upload_session_chunk NO ACTION foreign key
-          ;; while mappings still exist.
-          total (+ (delete-upload-sessions cfg)
-                   (delete-profiles cfg)
-                   (delete-file-media-objects cfg)
-                   (delete-file-object-thumbnails cfg)
-                   (delete-file-thumbnails cfg)
-                   (delete-file-data cfg)
-                   (delete-file-changes cfg)
-                   (delete-files cfg)
-                   (delete-projects cfg)
-                   (delete-fonts cfg)
-                   (delete-teams cfg))]
-      {:processed total})))
+  {::jobs/name      :objects-gc
+   ::jobs/schema    schema:objects-gc-params
+   ::jobs/handler
+   (fn [_context params]
+     (execute-objects-gc cfg params))
+   ::jobs/decoder   (sm/decoder schema:objects-gc-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:objects-gc-params)})
+
+(defn execute-objects-gc
+  "Plain job handler: garbage collect orphan storage objects."
+  ([cfg] (execute-objects-gc cfg {}))
+  ([cfg params]
+   (let [threshold (if (:skip-delay params)
+                     (ct/in-future {:days 3650})
+                     (ct/now))
+         cfg       (assoc cfg
+                          ::threshold threshold
+                          ::chunk-size (or (:chunk-size params)
+                                           (::chunk-size cfg)))
+
+         ;; NOTE: upload sessions go first: deleting a profile cascades to its
+         ;; sessions, which would hit the upload_session_chunk NO ACTION foreign
+         ;; key while mappings still exist.
+         total     (+ (delete-upload-sessions cfg)
+                      (delete-profiles cfg)
+                      (delete-file-media-objects cfg)
+                      (delete-file-object-thumbnails cfg)
+                      (delete-file-thumbnails cfg)
+                      (delete-file-data cfg)
+                      (delete-file-changes cfg)
+                      (delete-files cfg)
+                      (delete-projects cfg)
+                      (delete-fonts cfg)
+                      (delete-teams cfg))]
+     {:processed total})))

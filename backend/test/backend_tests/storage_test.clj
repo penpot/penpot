@@ -16,6 +16,7 @@
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [app.storage.fs :as-alias sto.fs]
+   [app.storage.gc-deleted :as gcd]
    [app.storage.gc-touched :as gc-touched]
    [app.storage.impl :as impl]
    [app.storage.s3 :as-alias sto.s3]
@@ -110,6 +111,44 @@
                                           ::sto/deduplicate? true
                                           ::sto/touched-at (ct/in-future {:minutes 10})
                                           :bucket "tempfile"
+                                          :content-type "text/plain"})]
+    (t/is (not= (:id object1) (:id object2)))))
+
+(t/deftest job-resource-objects-require-an-owner
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content")]
+
+    (t/testing "an object of this bucket cannot be stored without its owner"
+      (t/is (thrown? Throwable
+                     (sto/put-object! storage {::sto/content content
+                                               :bucket sto/job-resource-bucket
+                                               :content-type "text/plain"}))))
+
+    (t/testing "and storing it with an owner still works"
+      (t/is (some? (sto/put-object! storage {::sto/content content
+                                             :bucket sto/job-resource-bucket
+                                             :profile-id (uuid/next)
+                                             :content-type "text/plain"}))))))
+
+(t/deftest job-resource-objects-are-not-deduplicated
+  ;; An object in this bucket belongs to one profile: sharing a blob
+  ;; between two owners would serve one user's artifact to another.
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (-> (sto/content "content")
+                    (sto/wrap-with-hash "same-hash"))
+        object1 (sto/put-object! storage {::sto/content content
+                                          ::sto/deduplicate? true
+                                          ::sto/touched-at (ct/now)
+                                          :bucket sto/job-resource-bucket
+                                          :profile-id (uuid/next)
+                                          :content-type "text/plain"})
+        object2 (sto/put-object! storage {::sto/content content
+                                          ::sto/deduplicate? true
+                                          ::sto/touched-at (ct/now)
+                                          :bucket sto/job-resource-bucket
+                                          :profile-id (uuid/next)
                                           :content-type "text/plain"})]
     (t/is (not= (:id object1) (:id object2)))))
 
@@ -478,7 +517,7 @@
         (t/is (= 0 (:freeze res)))
         (t/is (= 0 (:delete res)))))
 
-    ;; processed immediately with skip-delay
+    ;; processed immediately with skip-delay, bypassing min-age
     (binding [ct/*clock* (ct/fixed-clock now)]
       (let [res (th/run-task! :storage-gc-touched {:skip-delay true})]
         (t/is (= 0 (:freeze res)))
@@ -642,6 +681,35 @@
     (let [res (th/run-task! :storage-gc-deleted {})]
       (t/is (= 1 (:deleted res))))))
 
+(t/deftest storage-gc-deleted-commits-each-chunk-separately
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        ;; more than one chunk (chunk-size is 25); distinct contents so
+        ;; the storage layer does not deduplicate them into one row
+        ids     (doall (for [i (range 26)]
+                         (:id (sto/put-object! storage
+                                               {::sto/content (sto/content (str "content" i))
+                                                :content-type "text/plain"}))))]
+    (t/is (= 26 (count ids)))
+    (th/db-exec! ["update storage_object set deleted_at = ?" (ct/now)])
+
+    (let [orig  @#'gcd/process-chunk-deletion
+          calls (atom 0)]
+      (alter-var-root #'gcd/process-chunk-deletion
+                      (constantly (fn [& args]
+                                    (when (= 2 (swap! calls inc))
+                                      (throw (ex-info "boom" {})))
+                                    (apply orig args))))
+      (try
+        (let [result (th/run-task! :storage-gc-deleted {})]
+          (t/testing "the fault of the second chunk is skipped, the run finishes"
+            (t/is (= 25 (:deleted result)))))
+
+        (t/testing "first chunk committed before the fault"
+          (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM storage_object WHERE deleted_at IS NOT NULL"])))))
+        (finally
+          (alter-var-root #'gcd/process-chunk-deletion (constantly orig)))))))
+
 (t/deftest objects-gc-task-skip-delay
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
@@ -679,9 +747,10 @@
       (let [res (th/run-task! :objects-gc {})]
         (t/is (= 0 (:processed res))))
 
-      ;; with skip-delay it is processed immediately
+      ;; with skip-delay the future deleted row IS processed immediately
       (let [res (th/run-task! :objects-gc {:skip-delay true})]
-        (t/is (= 1 (:processed res)))))))
+        (t/is (= 1 (:processed res)))
+        (t/is (nil? (th/db-get :file-media-object {:id (:id result-1)})))))))
 
 (t/deftest put-object-write-failure-leaves-pending-row
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -1381,3 +1450,69 @@
       (t/is (= "boom" (ex-message (ex-cause ex)))))
     ;; one initial attempt plus max-retries
     (t/is (= 4 (:call-count @mock)))))
+
+(t/deftest touched-gc-job-resource-bucket
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        job-id  (uuid/next)
+        object  (sto/put-object! storage {::sto/content (sto/content "content")
+                                          :content-type "text/plain"
+                                          :profile-id (uuid/next)
+                                          :bucket sto/job-resource-bucket})]
+
+    ;; the object is created with the job-resource bucket in metadata
+    (t/is (= sto/job-resource-bucket (:bucket (meta object))))
+
+    ;; a live job row referencing the object keeps it frozen
+    (th/db-update! :storage-object {:touched-at (ct/now)} {:id (:id object)})
+    (th/db-insert! :job {:id           job-id
+                         :name         "test-job"
+                         :tenant       (cf/get :tenant)
+                         :queue        "default"
+                         :params       (db/json {})
+                         :priority     100
+                         :max-retries  3
+                         :retry-num    0
+                         :status       "running"
+                         :resource-id  (:id object)
+                         :scheduled-at (ct/now)
+                         :created-at   (ct/now)
+                         :modified-at  (ct/now)})
+
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
+      (t/is (= 1 (:freeze res)))
+      (t/is (= 0 (:delete res)))
+      (t/is (nil? (:touched-at (th/db-get :storage-object {:id (:id object)}
+                                          :id :touched-at))))
+      (t/is (nil? (:deleted-at (th/db-get :storage-object {:id (:id object)}
+                                          :id :deleted-at)))))
+
+    ;; once the referencing row is gone, the touched object becomes
+    ;; eligible for deletion (the job table is deletion-protected)
+    (th/db-force-delete :job {:id job-id})
+    (th/db-update! :storage-object {:touched-at (ct/now)} {:id (:id object)})
+
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
+      (t/is (= 0 (:freeze res)))
+      (t/is (= 1 (:delete res)))
+      (t/is (nil? (:touched-at (th/db-get :storage-object {:id (:id object)}
+                                          :id :touched-at))))
+      (t/is (some? (:deleted-at (th/db-get :storage-object
+                                           {:id (:id object)}
+                                           {::db/remove-deleted false})))))
+
+    ;; a touched object with no referencing job row at all is deleted too
+    (let [object (sto/put-object! storage {::sto/content (sto/content "content")
+                                           :content-type "text/plain"
+                                           :profile-id (uuid/next)
+                                           :bucket sto/job-resource-bucket})]
+      (th/db-update! :storage-object {:touched-at (ct/now)} {:id (:id object)})
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                  (th/run-task! :storage-gc-touched {}))]
+        (t/is (= 0 (:freeze res)))
+        (t/is (>= (:delete res) 1))
+        (t/is (some? (:deleted-at (th/db-get :storage-object
+                                             {:id (:id object)}
+                                             {::db/remove-deleted false}))))))))

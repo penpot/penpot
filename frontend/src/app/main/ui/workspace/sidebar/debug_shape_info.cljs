@@ -13,6 +13,7 @@
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [debug :as dbg]
    [rumext.v2 :as mf]))
 
@@ -130,8 +131,12 @@
          [:div {:class (stl/css :attrs-container) :key (dm/str "shape" idx)}
           [:div {:class (stl/css :shape-title)}
            [:div {:class (stl/css :shape-name)} (:name current)]
-           [:button {:on-click #(debug/dump-object (dm/str (:id current)))} "object"]
-           [:button {:on-click #(debug/dump-subtree (dm/str (:id current)) true)} "tree"]]
+           [:> button* {:variant "secondary"
+                        :on-click #(debug/dump-object (dm/str (:id current)))}
+            "object"]
+           [:> button* {:variant "secondary"
+                        :on-click #(debug/dump-subtree (dm/str (:id current)) true)}
+            "tree"]]
 
           [:div {:class (stl/css :shape-attrs)}
            (let [attrs (get-attrs current)]

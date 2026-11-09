@@ -936,7 +936,7 @@
 
         :else
         (let [id-ref (atom nil)]
-          (st/emit! (-> (dwl/instantiate-component file-id id (gpt/point 0 0) {:id-ref id-ref :origin "plugin"})
+          (st/emit! (-> (dwl/instantiate-component file-id id (gpt/point 0 0) {:id-ref id-ref :origin "plugin" :frame-id uuid/zero})
                         (se/add-event plugin-id)))
           (shape/shape-proxy plugin-id @id-ref))))
 
@@ -1293,6 +1293,25 @@
         (let [file (u/locate-file file-id)]
           (apply array (keys (dm/get-in file [:data :plugin-data (keyword "shared" namespace)]))))))))
 
+(defn- loaded-file-ids
+  "Ids of the files whose data is loaded: the open file and its libraries.
+  Files left behind by earlier workspaces stay in `:files` without data."
+  [state]
+  (into #{} (keep (fn [[id file]] (when (:data file) id))) (:files state)))
+
+(defn- on-library-loaded
+  "Calls `f` once the data of `library-id` is in the workspace state."
+  [library-id f]
+  (let [key     (js/Symbol)
+        loaded? #(some? (dm/get-in % [:files library-id :data]))]
+    (if (loaded? @st/state)
+      (f)
+      (add-watch st/state key
+                 (fn [_ _ _ state]
+                   (when (loaded? state)
+                     (remove-watch st/state key)
+                     (f)))))))
+
 (defn library-subcontext
   [plugin-id]
   (obj/reify {:name "PenpotLibrarySubcontext"}
@@ -1304,8 +1323,7 @@
     :connected
     {:get
      (fn []
-       (let [libraries (get @st/state :files)]
-         (apply array (->> libraries keys (map (partial library-proxy plugin-id))))))}
+       (apply array (map (partial library-proxy plugin-id) (loaded-file-ids @st/state))))}
 
     :tokensSource
     {:get
@@ -1343,7 +1361,7 @@
       (let [team-id (:current-team-id @st/state)]
         (js/Promise.
          (fn [resolve reject]
-           (let [current-libs (into #{} (map first) (get @st/state :files))]
+           (let [current-libs (loaded-file-ids @st/state)]
              (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
                   (rx/map (fn [result]
                             (->> result
@@ -1374,6 +1392,8 @@
                  team-id    (:current-team-id @st/state)
                  library-id (uuid/parse library-id)]
              (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
+                  ;; Saves may have failed while the list loaded
+                  (rx/tap (fn [_] (r/check-writable)))
                   (rx/subs!
                    (fn [shared-files]
                      ;; Only published libraries of the team can be linked
@@ -1385,7 +1405,11 @@
                          (->> st/stream
                               (rx/filter (ptk/type? ::dwl/link-file-to-library-finished))
                               (rx/take 1)
-                              (rx/subs! #(resolve (library-proxy plugin-id library-id)) reject))
+                              (rx/subs! (fn [_]
+                                          (on-library-loaded
+                                           library-id
+                                           #(resolve (library-proxy plugin-id library-id))))
+                                        reject))
                          (st/emit! (-> (dwl/link-file-to-library file-id library-id)
                                        (se/add-event plugin-id))))))
                    reject)))))))))

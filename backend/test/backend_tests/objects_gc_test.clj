@@ -86,7 +86,7 @@
 
         cfg     {::db/pool th/*pool*
                  ::sto/storage (::sto/storage th/*system*)
-                 ::ogc/timestamp deleted-at}
+                 ::ogc/threshold deleted-at}
         total   (#'ogc/delete-profiles-chunk cfg [(:id profile)])]
 
     (t/testing "the profile is gone and the chunk reports it"
@@ -149,7 +149,7 @@
                       :id (:id team)})
         ;; Run the queued cascade so the default project is marked deleted too,
         ;; then purge everything the way production does.
-        (th/run-pending-tasks!)
+        (th/run-pending-jobs)
         (th/reset-mock! audit-mock)
         (th/run-task! :objects-gc {:skip-delay true})
         (t/is (nil? (th/db-get :team {:id (:id team)} {::db/remove-deleted false})))
@@ -171,7 +171,7 @@
         (th/command! {::th/type :delete-project
                       ::rpc/profile-id (:id profile)
                       :id (:id project)})
-        (th/run-pending-tasks!)
+        (th/run-pending-jobs)
         (th/reset-mock! audit-mock)
         (th/run-task! :objects-gc {:skip-delay true})
         (t/is (nil? (th/db-get :project {:id (:id project)} {::db/remove-deleted false})))
@@ -195,7 +195,7 @@
         (th/command! {::th/type :delete-file
                       ::rpc/profile-id (:id profile)
                       :id (:id file)})
-        (th/run-pending-tasks!)
+        (th/run-pending-jobs)
         (th/reset-mock! audit-mock)
         (th/run-task! :objects-gc {:skip-delay true})
         (t/is (nil? (th/db-get :file {:id (:id file)} {::db/remove-deleted false})))
@@ -216,7 +216,7 @@
       (th/command! {::th/type :delete-team
                     ::rpc/profile-id (:id profile)
                     :id (:id team)})
-      (th/run-pending-tasks!)
+      (th/run-pending-jobs)
       (th/reset-mock! audit-mock)
       (th/run-task! :objects-gc {:skip-delay true})
       (t/is (nil? (th/db-get :team {:id (:id team)} {::db/remove-deleted false})))

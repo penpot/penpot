@@ -12,6 +12,12 @@
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.mock :as mock]))
 
+(t/deftest mcp-has-default-management-permissions
+  (t/is (preg/check-permission preg/mcp-plugin-id "manage:delete"))
+  (t/is (preg/check-permission preg/mcp-plugin-id "manage:teams"))
+  (t/is (preg/check-permission preg/mcp-plugin-id "content:write"))
+  (t/is (not (preg/check-permission preg/mcp-plugin-id "unknown:permission"))))
+
 (defn- record-cmd-mock
   "Mock rp/cmd! that records calls in mock/rpc-calls and answers
   with (response-fn cmd params)."
@@ -320,3 +326,24 @@
           (t/is (= [true false] @seen) "no calls after unsubscribing")
           (done'))
         done))))
+
+;; --- parse-manifest ---
+
+(t/deftest parse-manifest-adds-allow-global-for-global-scope
+  (let [manifest (preg/parse-manifest
+                  "http://localhost:4400/manifest.json"
+                  #js {:name "Global plugin"
+                       :code "plugin.js"
+                       :scope "global"
+                       :permissions #js ["content:read"]})]
+    (t/is (= "global" (:scope manifest)))
+    (t/is (= #{"content:read" "allow:global"} (:permissions manifest)))))
+
+(t/deftest parse-manifest-keeps-workspace-plugins-without-allow-global
+  (let [manifest (preg/parse-manifest
+                  "http://localhost:4400/manifest.json"
+                  #js {:name "Workspace plugin"
+                       :code "plugin.js"
+                       :permissions #js ["content:read"]})]
+    (t/is (nil? (:scope manifest)))
+    (t/is (= #{"content:read"} (:permissions manifest)))))

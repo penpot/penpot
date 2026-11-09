@@ -13,6 +13,7 @@
    [app.main.data.uploads :as uploads]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as hva]
    [frontend-tests.helpers.http :as http]))
 
 ;; ---------------------------------------------------------------------------
@@ -115,3 +116,42 @@
                 (http/restore-fetch! orig)
                 (t/is (= 3 @chunk-calls))
                 (done))))))))
+
+(t/deftest ^:async upload-blob-chunked-reports-progress-per-chunk
+  (let [session-id (uuid/next)
+        ;; Three chunks of 10 bytes: 2 full + 1 partial
+        blob       (make-blob 25)
+        seen       (atom [])
+
+        fetch-mock
+        (fn [url _opts]
+          (let [cmd (http/url->cmd url)]
+            (js/Promise.resolve
+             (case cmd
+               :create-upload-session
+               (http/make-transit-response
+                {:session-id session-id})
+
+               :upload-chunk
+               (http/make-transit-response
+                {:session-id session-id :index 0})
+
+               (http/make-json-response
+                {:error (str "unexpected cmd: " cmd)})))))
+
+        orig (http/install-fetch-mock! fetch-mock)]
+
+    (await
+     (hva/observe (uploads/upload-blob-chunked blob
+                                               :chunk-size 10
+                                               :on-progress #(swap! seen conj %))
+                  {:on-next (fn [{:keys [session-id]}]
+                              (t/is (uuid? session-id)))}))
+    (http/restore-fetch! orig)
+
+    (t/testing "every uploaded chunk is reported with uploaded/total"
+      ;; chunks upload one at a time, so they are reported in order
+      (t/is (= [{:current 1 :total 3}
+                {:current 2 :total 3}
+                {:current 3 :total 3}]
+               @seen)))))

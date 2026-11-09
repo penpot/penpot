@@ -55,8 +55,11 @@ never carries `activation`. Do not "fix" it by inferring a signup.
 - `login-from-register` accepts an optional `:invitation-token`;
   `with-register-origin` decorates the profile and `logged-in` does the rest.
   The four places that used to navigate by hand to `:auth-verify-token`
-  (`ui/auth/register.cljs` twice, `ui/viewer/login.cljs`, `ui/static.cljs`) emit
-  `login-from-register` with the token.
+  (`ui/auth/register.cljs` twice, `ui/static.cljs`, `ui/auth/login_modal.cljs`)
+  emit `login-from-register` with the token. The modal used to live in
+  `ui/viewer/login.cljs`; it was extracted to the shared
+  `ui/auth/login_modal.cljs` (`login-register-modal*`, also used by
+  `ui/mcp_authorize.cljs`).
 - The invitation navigates through `get-invitation-nav`, which does not wait for
   `::dtm/teams-fetched`: `fetch-teams` has no error handling, so depending on it
   would leave the invitation unaccepted when `get-teams` fails. For invited
@@ -66,9 +69,11 @@ never carries `activation`. Do not "fix" it by inferring a signup.
   invitation JWE in its claims (`backend/src/app/auth/oidc.clj`), so the
   frontend follows the regular path (`login-from-token` → `logged-in`). That
   flow visits the token verification screen twice.
-- `ui/viewer/login.cljs` and `ui/static.cljs` `:is-active` branches still bypass
-  `logged-in` (they hide the modal or reload the page); they are a separate
-  decision, not an oversight.
+- `ui/auth/login_modal.cljs` (the register modal: `:is-active` branch calls
+  `on-close`, or `on-register` when the caller passes one, as in the MCP
+  authorize flow) and `ui/static.cljs` (`rt/reload true`) `:is-active`
+  branches still bypass `logged-in`; they are a separate decision, not an
+  oversight.
 
 ## Backend side
 

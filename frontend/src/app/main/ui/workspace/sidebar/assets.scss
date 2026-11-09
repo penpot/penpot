@@ -4,141 +4,97 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .assets-bar {
   display: grid;
   grid-auto-rows: max-content;
 
   // TODO: ugly hack :( Fix this! we shouldn't be hardcoding this height
-  height: calc(100vh - deprecated.$s-92);
+  block-size: calc(100vh - #{px2rem(92)});
   scrollbar-gutter: stable;
   overflow-y: auto;
-  padding-top: deprecated.$s-8;
+  padding-block-start: var(--sp-s);
 }
 
+// A DS button keeps its label at the start when it grows.
 .libraries-button {
-  @extend %button-secondary;
-  @include deprecated.uppercase-title-typography;
-
-  gap: deprecated.$s-2;
-  height: deprecated.$s-32;
-  width: 100%;
-  margin-bottom: deprecated.$s-4;
-  border-radius: deprecated.$s-8;
-
-  &:hover {
-    background-color: var(--button-secondary-background-color-hover);
-    color: var(--button-secondary-foreground-color-hover);
-    border: deprecated.$s-1 solid var(--button-secondary-border-color-hover);
-  }
-
-  &:focus {
-    background-color: var(--button-secondary-background-color-focus);
-    color: var(--button-secondary-foreground-color-focus);
-    border: deprecated.$s-1 solid var(--button-secondary-border-color-focus);
-  }
-}
-
-.add-library-button {
-  @extend %button-primary;
-  @include deprecated.uppercase-title-typography;
-
-  gap: deprecated.$s-2;
-  height: deprecated.$s-32;
-  width: 100%;
-  margin-bottom: deprecated.$s-4;
-  border-radius: deprecated.$s-8;
+  inline-size: 100%;
+  margin-block-end: var(--sp-xs);
+  justify-content: center;
 }
 
 .section-button {
-  @include deprecated.flex-center;
-  @include deprecated.button-style;
-
-  height: deprecated.$s-32;
-  width: deprecated.$s-32;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: none;
+  cursor: pointer;
+  block-size: $sz-32;
+  inline-size: $sz-32;
   margin: 0;
-  border: deprecated.$s-1 solid var(--input-border-color-rest);
-  border-radius: deprecated.$br-8 deprecated.$br-2 deprecated.$br-2 deprecated.$br-8;
-  background-color: var(--input-background-color-rest);
+  border: $b-1 solid var(--color-background-tertiary);
+  border-radius: $br-8 px2rem(2) px2rem(2) $br-8;
+  background-color: var(--color-background-tertiary);
 
-  svg {
-    height: deprecated.$s-16;
-    width: deprecated.$s-16;
-    stroke: var(--icon-foreground);
+  .section-icon {
+    flex-shrink: 0;
+    color: var(--color-foreground-secondary);
+  }
+
+  // Before :focus and :hover, as the legacy placeholder was: the focus
+  // border wins over the opened state.
+  &.opened {
+    outline: none;
+    border-color: var(--color-background-quaternary);
+    background-color: var(--color-background-quaternary);
+    color: var(--color-accent-primary);
+
+    .section-icon {
+      color: var(--color-accent-primary);
+    }
   }
 
   &:focus {
-    border: deprecated.$s-1 solid var(--input-border-color-focus);
+    border: $b-1 solid var(--color-accent-primary);
     outline: 0;
-    background-color: var(--input-background-color-focus);
-    color: var(--input-foreground-color-focus);
+    background-color: var(--color-background-tertiary);
+    color: var(--color-foreground-primary);
 
-    svg {
-      background-color: var(--input-background-color-focus);
+    .section-icon {
+      background-color: var(--color-background-tertiary);
     }
   }
 
   &:hover {
-    border: deprecated.$s-1 solid var(--input-border-color-hover);
-    background-color: var(--input-background-color-hover);
+    border: $b-1 solid var(--color-background-quaternary);
+    background-color: var(--color-background-quaternary);
 
-    svg {
-      background-color: var(--input-background-color-hover);
-      stroke: var(--button-foreground-hover);
+    .section-icon {
+      background-color: var(--color-background-quaternary);
+      color: var(--color-accent-primary);
     }
 
     &:focus {
-      border: deprecated.$s-1 solid var(--input-border-color-focus);
+      border: $b-1 solid var(--color-accent-primary);
       outline: 0;
-      background-color: var(--input-background-color-focus);
-      color: var(--input-foreground-color-focus);
+      background-color: var(--color-background-tertiary);
+      color: var(--color-foreground-primary);
 
-      svg {
-        background-color: var(--input-background-color-focus);
+      .section-icon {
+        background-color: var(--color-background-tertiary);
       }
     }
   }
-
-  &.opened {
-    @extend %button-icon-selected;
-  }
-}
-
-.sections-container {
-  @include deprecated.menu-shadow;
-  @include deprecated.flex-column;
-
-  position: absolute;
-  top: deprecated.$s-84;
-  left: deprecated.$s-12;
-  width: deprecated.$s-192;
-  padding: deprecated.$s-4;
-  border-radius: deprecated.$br-8;
-  background-color: var(--menu-background-color);
-  z-index: deprecated.$z-index-2;
-}
-
-.section-item {
-  @include deprecated.body-small-typography;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: deprecated.$s-6;
-  border-radius: deprecated.$br-8;
-}
-
-.section-btn {
-  @include deprecated.button-style;
 }
 
 .assets-header {
-  padding: 0 0 deprecated.$s-24 deprecated.$s-12;
+  padding: 0 0 var(--sp-xxl) var(--sp-m);
 }
 
 .search-wrapper {
   display: flex;
-  gap: deprecated.$s-4;
+  gap: var(--sp-xs);
 }

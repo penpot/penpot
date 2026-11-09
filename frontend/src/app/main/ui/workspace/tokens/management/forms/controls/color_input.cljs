@@ -81,10 +81,7 @@
              (sd/resolve-tokens-interactive tokens))
            (rx/mapcat
             (fn [resolved-tokens]
-              (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
-                    resolved-value (if (contains? cf/flags :tokenscript)
-                                     (ts/tokenscript-symbols->penpot-unit resolved-value)
-                                     resolved-value)]
+              (let [{:keys [errors resolved-value]} (get resolved-tokens (:name token))]
                 (if resolved-value
                   (rx/of {:value resolved-value})
                   (rx/of {:error (first errors)})))))))))

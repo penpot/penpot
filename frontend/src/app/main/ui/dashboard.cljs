@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.common.exceptions :as ex]
    [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.dashboard.shortcuts :as sc]
