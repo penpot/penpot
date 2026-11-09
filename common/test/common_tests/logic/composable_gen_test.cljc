@@ -1971,6 +1971,17 @@
                                     :grid-empty false :layout-copies true :text true}]
                        :ops [[:nest 7 0 0 0] [:transform 3 3 0 0] [:switch 1 0 0 0] [:style 3 29 1]]}))))
 
+(t/deftest switching-a-grid-copy-places-its-kept-swap-in-a-cell
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children true :grid-empty false :layout-copies true :text true}]
+                       :ops [[:combine 21 0 0 0] [:variant-property 15 4 0 0] [:switch 0] [:add-variant 4]
+                             [:switch 0] [:make-variant 11 0 0 0] [:combine 4 0 0 0] [:make-variant 7 0 0 0]
+                             [:nest 12 0 0 0] [:detach 0 0 0 0] [:delete 4] [:restore 4] [:make-variant 5]
+                             [:switch 3] [:variant-property 0 0 0 0] [:switch 14] [:add-variant 0 0 0 0]
+                             [:duplicate 1 0 0 0] [:rotate 7 0 0 0] [:variant-property 0 19 4 0]
+                             [:switch 20]]}))))
+
 (t/deftest turning-a-flipped-copy-turns-a-child-stored-as-the-other-mirror-turn
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true

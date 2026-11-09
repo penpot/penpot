@@ -324,6 +324,17 @@
                                      (and (ctsl/any-layout-immediate-child? objects related-shape-in-new)
                                           (not (ctsl/position-absolute? orig-swapped-child))))
 
+        ;; and its cell in a grid parent
+        (cond-> (ctsl/grid-layout? current-parent)
+          (pcb/update-shapes
+           [(:id current-parent)]
+           (fn [parent]
+             (let [;; the child in place of the related shape
+                   take-id #(if (= % (:id related-shape-in-new)) child-id %)]
+               (update parent :layout-grid-cells update-vals
+                       (fn [cell] (update cell :shapes (partial mapv take-id))))))
+           {:ignore-touched true}))
+
         ;; Delete new non-swapped item
         (cls/generate-delete-shapes ldata page objects (d/ordered-set (:id related-shape-in-new)) {:allow-altering-copies true})
         second)))
