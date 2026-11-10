@@ -800,7 +800,9 @@
                    (get-in saved [:remaining :case/a])))
           (when (= :screenshot stage)
             (t/is (= [:completed] (mapv :outcome (attempts-for saved :case/a))))
-            (t/is (= 1 (count (re-seq #"browser work timed out" (:report response)))))))
+            (t/is (= 1 (count (re-seq #"browser work timed out" (:report response)))))
+            (t/is (str/includes? (:report response) "\"case/a\": failed; see Harness 0"))
+            (t/is (str/includes? (:report response) "File \"case-a.png\""))))
         (finally
           (set! (.-now js/Date) system-now))))))
 

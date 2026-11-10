@@ -301,25 +301,107 @@
                          "setup failed"))))
 
 (t/deftest comparison-reports-preparation-failures-once-per-source
-  (let [failure {:phase "preparation" :message "setup failed"}
-        run     (-> (new-run 0 2 :fresh)
-                    (result/record-preparation (preparation :ready []))
-                    (add-attempt :ready false :completed [(block :main :ready [(event :test/work [2])])])
-                    (result/record-preparation {:preparation-id :failed :case-id :saved/pan :warmup? false
-                                                :diagnostics {} :phases [] :failure failure})
-                    (result/record-attempt (measurement/attempt :saved/pan :failed false
-                                                                {:status "failed" :phase "preparation"
-                                                                 :message "setup failed" :phases []}))
-                    (result/record-case-outcome :saved/pan {:outcome :failed :failure failure})
-                    (result/finish-run "end" {:reason :failed :failure failure})
-                    result/encode result/decode)
-        compared (-> (compare/compare-runs run (assoc run :run-id "candidate")
-                                           {:allow-all-differences true})
-                     result/encode result/decode)
-        text    (format/format-comparison compared)]
+  (let [failure   {:phase "preparation" :message "setup failed"}
+        run       (-> (new-run 0 2 :fresh)
+                      (result/record-preparation (preparation :ready []))
+                      (add-attempt :ready false :completed [(block :main :ready [(event :test/work [2])])])
+                      (result/record-preparation {:preparation-id :failed :case-id :saved/pan :warmup? false
+                                                  :diagnostics {} :phases [] :failure failure})
+                      (result/record-attempt (measurement/attempt :saved/pan :failed false
+                                                                  {:status "failed" :phase "preparation"
+                                                                   :message "setup failed" :phases []}))
+                      (result/record-case-outcome :saved/pan {:outcome :failed :failure failure})
+                      (result/finish-run "end" {:reason :failed :failure failure})
+                      (assoc-in [:metadata :diagnostics :screenshots]
+                                {"saved/pan" {:status :skipped :reason :no-completed-measured-attempt}})
+                      result/encode result/decode)
+        candidate (-> run
+                      (assoc :run-id "candidate")
+                      (assoc-in [:metadata :diagnostics :screenshots]
+                                {"saved/pan" {:status :ok :file "candidate-pan.png"}})
+                      result/encode result/decode)
+        compared  (-> (compare/compare-runs run candidate
+                                            {:allow-all-differences true})
+                      result/encode result/decode)
+        text      (format/format-comparison compared)]
     (t/is (= 2 (count (re-seq #"setup failed" text))))
     (t/is (str/includes? text "median change"))
-    (t/is (= 2 (count (re-seq #"Preparation :failed" text))))))
+    (t/is (= 2 (count (re-seq #"Preparation :failed" text))))
+    (t/is (str/includes? text "Baseline screenshots\n  \"saved/pan\": skipped; reason :no-completed-measured-attempt"))
+    (t/is (str/includes? text "Candidate screenshots\n  \"saved/pan\": ok\n    File \"candidate-pan.png\""))))
+
+(t/deftest equal-diagnostics-keep-failures-from-distinct-preparations
+  (let [failure {:phase "renderer" :message "shared renderer failure"}]
+    (doseq [phases [[]
+                    [(block :main :ready [])
+                     (assoc (block :reset :ready []) :outcome :failed)]]]
+      (t/testing (str "attempt phases " (mapv :phase phases))
+        (let [run  (-> (new-run 0 2 :fresh)
+                       (result/record-preparation (preparation :ready []))
+                       (result/record-attempt
+                        (measurement/attempt :saved/pan :ready false
+                                             (assoc failure :status "failed" :phases phases)))
+                       (result/record-preparation {:preparation-id :failed :case-id :saved/pan :warmup? false
+                                                   :diagnostics {} :phases [] :failure failure})
+                       (result/record-case-outcome :saved/pan {:outcome :failed :failure failure})
+                       (result/finish-run "end" {:reason :failed :failure failure})
+                       result/encode result/decode)
+              text (format/format-run (summary/summarize run))]
+          (t/is (str/includes? text "Preparation :failed (case :saved/pan): \"renderer\": \"shared renderer failure\""))
+          (t/is (str/includes? text "Attempt 0 (preparation :ready) (case :saved/pan): \"renderer\": \"shared renderer failure\""))
+          (t/is (= 2 (count (re-seq #"shared renderer failure" text)))))))))
+
+(t/deftest equal-diagnostics-keep-failures-from-distinct-cases
+  (let [failure {:phase "preparation" :message "shared setup failure"}]
+    (doseq [harness? [false true]]
+      (t/testing (if harness? "harness failure in another case" "outcome failure in another case")
+        (let [run  (-> (result/create-run
+                        {:run-id "run" :started-at "start"
+                         :plan {:cases [saved-case (assoc saved-case :id :saved/other)]
+                                :warmups 0 :repetitions 1}
+                         :metadata (assoc-in metadata [:diagnostics :failures]
+                                             (if harness?
+                                               [(assoc failure :case-id :saved/other :stage :preparation)]
+                                               []))
+                         :analysis {:draws 50}})
+                       (result/record-preparation {:preparation-id :failed :case-id :saved/pan :warmup? false
+                                                   :diagnostics {} :phases [] :failure failure})
+                       (result/record-case-outcome :saved/pan {:outcome :failed :failure failure})
+                       (result/record-case-outcome :saved/other {:outcome :failed :failure failure})
+                       (result/finish-run "end" {:reason :failed :failure failure})
+                       result/encode result/decode)
+              text (format/format-run (summary/summarize run))]
+          (t/is (str/includes? text "Preparation :failed (case :saved/pan): \"preparation\": \"shared setup failure\""))
+          (t/is (str/includes? text (str (if harness? "Harness 0 :preparation" "Case outcome")
+                                         " (case :saved/other): \"preparation\": \"shared setup failure\"")))
+          (t/is (= 2 (count (re-seq #"shared setup failure" text)))))))))
+
+(t/deftest ambiguous-screenshot-matches-report-the-warning-and-each-harness-failure
+  (let [failure {:phase "screenshot" :message "screenshot deadline exceeded"
+                 :cause [{:message "browser deadline"}]
+                 :stage :case-deadline :case-id :saved/pan}]
+    (doseq [[label case-ids failures]
+            [["multiple deadlines" [:saved/pan] [failure failure]]
+             ["distinct IDs with the same displayed name" [:saved/pan "saved/pan"] [failure]]]]
+      (t/testing label
+        (let [run  (-> (result/create-run
+                        {:run-id "run" :started-at "start"
+                         :plan {:cases (mapv #(assoc saved-case :id %) case-ids)
+                                :warmups 0 :repetitions 1}
+                         :metadata (assoc metadata :diagnostics
+                                          {:failures failures
+                                           :screenshots {"saved/pan" {:status :failed :file "saved-pan.png"
+                                                                      :message (:message failure)
+                                                                      :cause (:cause failure)}}})
+                         :analysis {:draws 50}})
+                       (result/finish-run "end" {:reason :failed :failure failure})
+                       result/encode result/decode)
+              text (format/format-run (summary/summarize run))]
+          (t/is (str/includes? text "\"saved/pan\": warning; \"screenshot deadline exceeded\""))
+          (t/is (str/includes? text "File \"saved-pan.png\""))
+          (doseq [index (range (count failures))]
+            (t/is (str/includes? text (str "Harness " index " :case-deadline (case :saved/pan): \"screenshot\": \"screenshot deadline exceeded\""))))
+          (t/is (= (inc (count failures)) (count (re-seq #"screenshot deadline exceeded" text)))))))))
 
 (t/deftest offline-comparison-uses-one-analysis-and-saved-quantity-units
   (let [base (-> (sample-run [1 2 3]) result/encode result/decode)
