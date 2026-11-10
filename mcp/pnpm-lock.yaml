@@ -186,11 +186,11 @@ importers:
   packages/plugin:
     dependencies:
       '@penpot/plugin-styles':
-        specifier: 1.5.0
-        version: 1.5.0
+        specifier: 1.6.0
+        version: 1.6.0
       '@penpot/plugin-types':
-        specifier: 1.5.0
-        version: 1.5.0
+        specifier: 1.6.0
+        version: 1.6.0
     devDependencies:
       cross-env:
         specifier: ^10.1.0
@@ -657,11 +657,11 @@ packages:
   '@oxc-project/types@0.155.0':
     resolution: {integrity: sha512-SeE8JPwW1xs1tHeNycjUtUBdhorRa8o4jlvjwk49R7/Z291i+4DQa7JJIgOm/TaYQZx+QrPQbVJ/9c8dMIZN8Q==}
 
-  '@penpot/plugin-styles@1.5.0':
-    resolution: {integrity: sha512-rwXFBRPd0IZs3ens+eRT8oA5WqkQgF6xlW6fCfH7U1NHRjej9HH7vTGXmfjoIVml6Xx1sbyYHZVxkQC8Ub8+zA==}
+  '@penpot/plugin-styles@1.6.0':
+    resolution: {integrity: sha512-vmIDYbQqIcTPxYer7/C1nmo5QJyErTI4ZcFNELuENMnLcs+UeAFWtqsMENGoY6jfldEujbUwoglS9hBKI11x5Q==}
 
-  '@penpot/plugin-types@1.5.0':
-    resolution: {integrity: sha512-hFk4Rx66rLaSUWoN6bhxXkDI2ymwKg9xokdslvZvXM5MSmEmfhsJKUMwtuzgYWljbbfaQhK+DjK8g8yVbbavtA==}
+  '@penpot/plugin-types@1.6.0':
+    resolution: {integrity: sha512-jrKBY97CT0RLsJTbZTGWr3PYVKZimPNpFD4IlAQuvnrxtTuSwCEisSF3qx+ARnQeBUzgXivvHN3pB+eXCPGT/A==}
 
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
@@ -1853,9 +1853,9 @@ snapshots:
 
   '@oxc-project/types@0.155.0': {}
 
-  '@penpot/plugin-styles@1.5.0': {}
+  '@penpot/plugin-styles@1.6.0': {}
 
-  '@penpot/plugin-types@1.5.0': {}
+  '@penpot/plugin-types@1.6.0': {}
 
   '@pinojs/redact@0.4.0': {}
 
