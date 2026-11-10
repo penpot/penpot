@@ -649,7 +649,7 @@
   (let [{:keys [a b c d]} (axes-matrix shape)]
     (not (mth/close? (+ (* a c) (* b d)) 0 0.0001))))
 
-(defn- unskewed
+(defn unskewed
   "`shape` with the transform that its rotation and flips give it, without
   the skew a layout gives a turned child that it resizes along its parent's
   axes. Of a turn before or after the flips, the one nearer its axes."
