@@ -704,7 +704,7 @@
    [:map {:title "CheckNitrateSsoParams"}
     [:team-id {:optional true} ::sm/uuid]
     [:organization-id {:optional true} ::sm/uuid]
-    [:url ::sm/uri]]
+    [:query-string [:string {:max 2048}]]]
    [::sm/contains-any #{:team-id :organization-id}]])
 
 (sv/defmethod ::check-nitrate-sso
@@ -718,36 +718,47 @@
   Returns {:authorized false :redirect-uri <url>} when SSO is active;
   the client must redirect there. The OIDC provider itself handles
   re-authentication transparently if the user already has an active SSO session.
-  A nil :redirect-uri means SSO is required but the provider is not usable."
+  A nil :redirect-uri means SSO is required but the provider is not usable.
+
+  The :query-string is the route token of the client (`?screen=…&params`): the
+  server builds the destination URL from it, so it can never point outside the
+  public URI."
   {::rpc/auth true
    ::doc/added "2.18"
    ::sm/params schema:check-nitrate-sso
    ::nitrate/sso false}
-  [cfg {:keys [::rpc/profile-id team-id organization-id url] :as params}]
+  [cfg {:keys [::rpc/profile-id team-id organization-id query-string] :as params}]
   (if (contains? cf/flags :admin-console)
     (if (and team-id
              (not (teams/has-read-permissions? cfg profile-id team-id)))
       ;; Let the destination RPC enforce its own permissions. Starting SSO before
       ;; access is established sends unrelated users through the organization's IdP.
       {:authorized true :reason :no-team-access}
-      (let [request                  (rph/get-request params)
-            {:keys [authorized sso]} (nitrate/sso-session-authorized? cfg organization-id team-id request)]
-        (if authorized
-          {:authorized true :reason :sso-satisfied}
-          (if (oidc/organization-sso-discovery-uri sso)
-            (try
-              (let [redirect-uri (oidc/build-organization-sso-auth-redirect-uri
-                                  cfg sso
-                                  :dest-url url
-                                  :organization-id organization-id)
-                    organization-id (or organization-id (:organization-id sso))]
-                (oidc/submit-organization-sso-auth-started-event
-                 cfg request profile-id organization-id)
-                {:authorized false :redirect-uri redirect-uri})
-              (catch Throwable cause
-                (oidc/submit-organization-sso-auth-failed-event
-                 cfg request profile-id (or organization-id (:organization-id sso)) cause)
-                (throw cause)))
-            {:authorized false
-             :redirect-uri nil}))))
+      (if (and organization-id
+               (not (nitrate/organization-access? cfg profile-id organization-id)))
+        ;; The organization id comes from the client: without this check any
+        ;; authenticated profile could start a flow for an organization it does
+        ;; not belong to.
+        {:authorized true :reason :no-organization-access}
+        (let [request                  (rph/get-request params)
+              {:keys [authorized sso]} (nitrate/sso-session-authorized? cfg organization-id team-id request)]
+          (if authorized
+            {:authorized true :reason :sso-satisfied}
+            (if (oidc/organization-sso-discovery-uri sso)
+              (try
+                (let [redirect-uri (oidc/build-organization-sso-auth-redirect-uri
+                                    cfg sso
+                                    :query-string query-string
+                                    :organization-id organization-id
+                                    :profile-id profile-id)
+                      organization-id (or organization-id (:organization-id sso))]
+                  (oidc/submit-organization-sso-auth-started-event
+                   cfg request profile-id organization-id)
+                  {:authorized false :redirect-uri redirect-uri})
+                (catch Throwable cause
+                  (oidc/submit-organization-sso-auth-failed-event
+                   cfg request profile-id (or organization-id (:organization-id sso)) cause)
+                  (throw cause)))
+              {:authorized false
+               :redirect-uri nil})))))
     {:authorized true :reason :sso-satisfied}))
