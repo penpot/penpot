@@ -112,14 +112,20 @@
                   :debug (= :debug console-level)
                   :info (contains? #{:info :debug} console-level)
                   true)
-        stream  (if (= :result level) stdout stderr)]
+        stream  (if (= :result level) stdout stderr)
+        display (if (contains? #{:debug :info :warn} level)
+                  (->> (str/split-lines (errors/bounded-text text 1024))
+                       (map #(errors/terminal-text % 1024))
+                       (str/join "\n")
+                       (#(errors/bounded-text % 1024)))
+                  text)]
     (when enabled
       (.write ^js stream (str (if (= :result level)
-                                text
-                                (render level text (color? stream color))) "\n")))
+                                display
+                                (render level display (color? stream color))) "\n")))
     (when failure
       (if (= :error level)
-        (.write ^js stderr (str "Could not append log: " *log-path* "\n"))
+        (.write ^js stderr (str "Could not append log: " (errors/terminal-text *log-path* 1024) "\n"))
         (throw failure)))))
 
 (defn result [text] (write :result text))
@@ -136,10 +142,19 @@
          (let [size   (.-size (fs/fstatSync fd))
                length (min size 8192)
                buffer (js/Buffer.alloc length)
-               read   (fs/readSync fd buffer 0 length (- size length))]
-           (->> (str/split-lines (.toString buffer "utf8" 0 read))
-                (remove str/blank?)
-                (take-last 20)))
+               read   (fs/readSync fd buffer 0 length (- size length))
+               text  (->> (str/split-lines (.toString buffer "utf8" 0 read))
+                          (remove str/blank?)
+                          (take-last 20)
+                          (map #(errors/terminal-text % (* 6 8192)))
+                          (str/join "\n"))
+               start (max 0 (- (count text) 8192))
+               first (.charCodeAt text start)
+               start (if (and (pos? start) (<= 0xDC00 first 0xDFFF)
+                              (<= 0xD800 (.charCodeAt text (dec start)) 0xDBFF))
+                       (inc start)
+                       start)]
+           (str/split-lines (subs text start)))
          (finally (fs/closeSync fd)))))))
 
 (defn error
@@ -148,13 +163,13 @@
   (let [tail-path (or tail-log *log-path*)
         fields    (cond-> (vec fields)
                     (and *log-path* (not (some #(= :log (first %)) fields)))
-                    (conj [:log *log-path*])
+                    (conj [:log (errors/terminal-text *log-path* 1024)])
                     (and tail-log (not= tail-log *log-path*))
-                    (conj [:tail-log tail-log]))
+                    (conj [:tail-log (errors/terminal-text tail-log 1024)]))
         width     (reduce max 0 (map #(count (name (first %))) fields))
         tail      (when tail? (get-tail tail-path))]
     (write :error
-           (str "✖ " message
+           (str "✖ " (errors/terminal-text message 1024)
                 (apply str
                        (map (fn [[key value]]
                               (let [label (name key)]

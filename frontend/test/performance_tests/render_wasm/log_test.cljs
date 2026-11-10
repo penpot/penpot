@@ -106,6 +106,25 @@
              (fs/readFileSync parent "utf8")))
     (t/is (= "child success\nchild failure\n" (fs/readFileSync child "utf8")))))
 
+(t/deftest console-diagnostics-escape-controls-and-retain-the-log-evidence
+  (let [file    (path/join @temporary-root "controls.log")
+        output  (capture)
+        message (str "work failed\u001b\u0007" (apply str (repeat 2000 "x")))]
+    (log/configure {:color :never :stderr (:stream output)})
+    (binding [log/*log-path* file]
+      (log/warn message))
+    (t/is (= (str message "\n") (fs/readFileSync file "utf8")))
+    (t/is (str/includes? @(:text output) "\\u001b\\u0007"))
+    (t/is (< (count @(:text output)) 1100))
+    (doseq [separator ["" "\n"]]
+      (reset! (:text output) "")
+      (fs/writeFileSync file (str (apply str (repeat 2000 "\u0007")) separator "FATAL: compiler failed\n") "utf8")
+      (log/error {:message "tail evidence" :tail-log file})
+      (t/is (str/includes? @(:text output) "FATAL: compiler failed"))
+      (t/is (every? #(let [code (.charCodeAt % 0)]
+                       (or (= code 10) (and (>= code 32) (or (< code 127) (> code 159)))))
+                    (seq @(:text output)))))))
+
 (t/deftest error-names-tail-source-and-bounds-evidence-before-appending
   (let [file   (path/join @temporary-root "comparison.log")
         child  (path/join @temporary-root "build.log")

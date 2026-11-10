@@ -29,6 +29,7 @@
    [:created-at :string]
    [:updated-at :string]
    [:environment {:optional true} [:map-of :string :string]]
+   [:failure {:optional true} errors/schema:diagnostic]
    [:functional :map]
    [:provenance :map]])
 

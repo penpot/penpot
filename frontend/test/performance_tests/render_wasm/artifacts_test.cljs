@@ -125,7 +125,7 @@
         log      "renderer compilation failed\n"]
     (fs/appendFileSync (:log-path failed) log "utf8")
     (artifacts/write-manifest failed (assoc (:manifest failed) :status :failed
-                                            :failure {:stage :renderer :message "compile failed"}))
+                                            :failure {:phase "renderer" :message "compile failed"}))
     (doseq [build [building failed]]
       (t/is (= ::artifacts/not-ready
                (:type (ex-data (failure #(artifacts/load-build @temporary-root (:id build))))))))

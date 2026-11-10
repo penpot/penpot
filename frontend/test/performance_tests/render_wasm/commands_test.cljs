@@ -178,6 +178,16 @@
     (t/is (= [::camera/render-sync ::camera/render-sync]
              (mapv :command (:events result))))))
 
+(t/deftest ^:async invalid-trace-stops-the-command-and-retains-earlier-measurements
+  (doseq [trace [{:handle (fn [] nil)} (repeat 0) (nth (iterate vector 0) 40)]]
+    (let [run    (fn [rtx]
+                   (async-work* rtx (fn [rtx complete _] (complete rtx {:trace trace}))))
+          result (await (cmd/execute (context (volatile! 0))
+                                     (fn [rtx] (.then (camera/render-sync* rtx) run))))]
+      (t/is (= :failed (:outcome result)))
+      (t/is (= "command trace cannot cross Transit" (errors/message-of (:error result))))
+      (t/is (= [::camera/render-sync] (mapv :command (:events result)))))))
+
 (t/deftest ^:async async-completion-retains-invalid-numeric-observations
   (let [result (await
                 (cmd/execute

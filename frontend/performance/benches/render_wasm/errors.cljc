@@ -14,6 +14,9 @@
 
   `evidence` and `describe-cause` produce diagnostics for saved records and
   Transit responses."
+  #?(:cljs (:require
+            [benches.render-wasm.codec :as codec]
+            [clojure.string :as str]))
   #?(:cljs (:require-macros
             [app.common.exceptions :as ex]
             [benches.render-wasm.errors])))
@@ -109,7 +112,8 @@
        ([cause]
         (message-of cause "unknown failure"))
        ([cause fallback]
-        (or (ex/ignoring (ex-message cause))
+        (or (ex/ignoring (let [message (ex-message cause)]
+                           (when (string? message) message)))
             (ex/ignoring (str cause))
             fallback)))
 
@@ -148,22 +152,29 @@
          (ex-info (message-of x) (merge data (ex-data x)) x)
          x))
 
+     (declare combine)
+
      (defn with-context
        "Returns an exception with `message` and added diagnostic context.
        New fields override existing fields; existing partial measurements win
        over earlier measurements in `data`. An exception with ex-data keeps
        its underlying cause. Other values become the cause."
        [cause message data]
-       (let [existing (ex-data cause)
-             context  (cond-> (merge existing data)
-                        (contains? data :partial)
-                        (assoc :partial (merge (:partial data) (:partial existing))))]
-         (ex-info message context (if (some? existing) (ex-cause cause) cause))))
+       (let [existing  (ex-data cause)
+             malformed (and (contains? existing :partial) (not (map? (:partial existing)))
+                            (map? (:partial data)))
+             source    (if malformed (combine [{:error cause :partial (:partial existing)}]) cause)
+             context   (cond-> (merge (ex-data source) data)
+                         (contains? data :partial)
+                         (assoc :partial (if (map? (:partial data))
+                                           (merge (:partial data) (when (map? (:partial existing)) (:partial existing)))
+                                           (:partial data))))]
+         (ex-info message context (if (and (some? existing) (not malformed)) (ex-cause cause) source))))
 
      (defn- merge-error-context
        [outer inner]
        (cond-> (merge outer inner)
-         (or (:partial outer) (:partial inner))
+         (and (map? (:partial outer)) (map? (:partial inner)))
          (assoc :partial (merge (:partial outer) (:partial inner)))))
 
      (defn- get-error-collection
@@ -260,7 +271,44 @@
                              (and (>= nxt 0xDC00) (<= nxt 0xDFFF))))
                     (subs cut 0 (dec max-chars))
                     cut)))))
-           unrenderable-value))
+           (subs unrenderable-value 0 (min max-chars (count unrenderable-value)))))
+
+     (defn terminal-text
+       "Returns bounded text with terminal controls escaped.
+
+       Args:
+         value: Value to render as text.
+         max-chars: Positive limit in UTF-16 units after escaping.
+
+       Returns:
+         Text with C0, DEL and C1 controls represented as Unicode escapes."
+       [value max-chars]
+       (bounded-text
+        (or (ex/ignoring
+             (str/replace (bounded-text value max-chars) #"[\x00-\x1f\x7f-\x9f]"
+                          (fn [character]
+                            (str "\\u" (.padStart (.toString (.charCodeAt character 0) 16) 4 "0")))))
+            unrenderable-value)
+        max-chars))
+
+     (defn format-value
+       "Returns a bounded, readable value with terminal controls escaped.
+
+       Args:
+         value: Value to print. Strings use JSON quoting.
+         max-chars: Positive limit in UTF-16 units after escaping.
+
+       Returns:
+         Readable text, or fallback text when printing fails."
+       [value max-chars]
+       (terminal-text
+        (or (ex/ignoring
+             (if (string? value)
+               (js/JSON.stringify (bounded-text value max-chars))
+               (binding [*print-level* 8 *print-length* 32]
+                 (pr-str value))))
+            unrenderable-value)
+        max-chars))
 
      (defn project-context
        "Returns bounded identity, process and ownership details.
@@ -287,19 +335,7 @@
          (string? (:signal data)) (assoc :signal (bounded-text (:signal data) 1024))
          (string? (:endpoint data)) (assoc :endpoint (bounded-text (:endpoint data) 1024))))
 
-     (defn project-diagnostic
-       "Returns the diagnostic fields of an execution envelope.
-
-       Args:
-         evidence: Plain execution evidence.
-
-       Returns:
-         Failure status, location, message and available diagnostic details."
-       [evidence]
-       (cond-> (merge (select-keys evidence [:status :phase :message :cause :partial :reason :deadline-exceeded
-                                             :operation :errors])
-                      (project-context evidence))
-         (string? (:path evidence)) (assoc :path (bounded-text (:path evidence) 1024))))
+     (declare project-diagnostic)
 
      (defn- sanitize-cause-value
        [value]
@@ -311,7 +347,11 @@
          (bounded-text value max-cause-chars)
 
          :else
-         (bounded-text (or (ex/ignoring (pr-str value)) unrenderable-value) max-cause-chars)))
+         (bounded-text (or (ex/ignoring
+                            (binding [*print-level* 8 *print-length* 32]
+                              (pr-str value)))
+                           unrenderable-value)
+                       max-cause-chars)))
 
      (defn- describe-cause-level
        [cause]
@@ -322,7 +362,7 @@
                             (string? message) message
                             (string? cause)   cause
                             (nil? cause)      "unknown failure"
-                            :else             (pr-str cause))
+                            :else             (binding [*print-level* 8 *print-length* 32] (pr-str cause)))
                   out     {:message (sanitize-cause-value text)}]
               (if (map? data)
                 (reduce (fn [m k]
@@ -342,14 +382,15 @@
        (or (ex/ignoring
             (loop [current cause
                    depth   0
-                   acc     []]
-              (if (or (nil? current) (>= depth evidence-cause-depth))
+                   acc     []
+                   seen    #{}]
+              (if (or (nil? current) (contains? seen current) (>= depth evidence-cause-depth))
                 (if (seq acc)
                   acc
                   [{:message "unknown failure"}])
                 (let [level (describe-cause-level current)
                       next  (ex/ignoring (ex-cause current))]
-                  (recur next (inc depth) (conj acc level))))))
+                  (recur next (inc depth) (conj acc level) (conj seen current))))))
            [{:message unrenderable-cause-text}]))
 
      (defn- diagnostic-data
@@ -358,9 +399,9 @@
          (cond-> (merge (project-context (ex-data cause))
                         (select-keys (ex-data cause) [:operation])
                         {:phase (if (keyword? phase) (name phase) (str phase))
-                         :message (message-of cause)
+                         :message (bounded-text (message-of cause) 1024)
                          :cause (describe-cause cause)})
-           partial (assoc :partial partial)
+           (contains? (ex-data cause) :partial) (assoc :partial partial)
            (string? (:path (ex-data cause)))
            (assoc :path (bounded-text (:path (ex-data cause)) 1024)))))
 
@@ -386,6 +427,74 @@
                                    partial (assoc :partial partial)
                                    (string? path) (assoc :path (bounded-text path 1024))))
                                entries))]
-         (cond-> (diagnostic-data phase cause)
-           projected (assoc :errors projected)
-           (some :unresolved-process projected) (assoc :unresolved-process true))))))
+         (project-diagnostic
+          (cond-> (diagnostic-data phase cause)
+            projected (assoc :errors projected)
+            (map? (:partial (first projected))) (assoc :partial (:partial (first projected)))
+            (some :unresolved-process projected) (assoc :unresolved-process true)))))
+
+     (defn- partial-encoding-error
+       [path cause]
+       {:phase "diagnostic-encoding" :operation :encode-diagnostic
+        :path (format-value path 1024)
+        :message "Diagnostic partial evidence cannot cross Transit"
+        :cause (describe-cause cause)})
+
+     (defn- project-partial
+       [partial]
+       (if (map? partial)
+         (reduce-kv (fn [[kept rejected] key value]
+                      (try
+                        (codec/check-value {key value})
+                        (codec/encode-str {key value})
+                        [(assoc kept key value) rejected]
+                        (catch :default cause
+                          [kept (conj rejected (partial-encoding-error [:partial key] cause))])))
+                    [{} []]
+                    partial)
+         [nil [(partial-encoding-error [:partial]
+                                       (ex-info "Diagnostic partial evidence must be a map" {}))]]))
+
+     (defn- project-entry
+       [entry]
+       (let [[partial rejected] (when (contains? entry :partial) (project-partial (:partial entry)))
+             projected          (cond-> (project-context entry)
+                                  (contains? #{"failed" "stale"} (:status entry)) (assoc :status (:status entry))
+                                  (boolean? (:deadline-exceeded entry)) (assoc :deadline-exceeded (:deadline-exceeded entry))
+                                  (keyword? (:operation entry)) (assoc :operation (:operation entry))
+                                  (contains? entry :phase) (assoc :phase (bounded-text (:phase entry) 1024))
+                                  (contains? entry :message) (assoc :message (bounded-text (:message entry) 1024))
+                                  (contains? entry :reason) (assoc :reason (sanitize-cause-value (:reason entry)))
+                                  (contains? entry :cause)
+                                  (assoc :cause (mapv (fn [level]
+                                                        (reduce-kv (fn [out key value]
+                                                                     (assoc out key (sanitize-cause-value value)))
+                                                                   {} (select-keys level [:message :fn :code :type :hint])))
+                                                      (take evidence-cause-depth (:cause entry))))
+                                  (some? partial) (assoc :partial partial)
+                                  (string? (:path entry)) (assoc :path (bounded-text (:path entry) 1024)))]
+         [projected rejected]))
+
+     (defn project-diagnostic
+       "Returns bounded diagnostic fields and representable partial evidence.
+
+       Args:
+         evidence: Execution evidence with optional failure details.
+
+       Returns:
+         Diagnostic fields with bounded text. Partial entries that cannot
+         cross Transit produce ordered encoding diagnostics. Representable
+         partial values retain their raw numeric values."
+       [evidence]
+       (let [alias?               (and (seq (:errors evidence)) (contains? evidence :partial)
+                                       (identical? (:partial evidence) (:partial (first (:errors evidence)))))
+             [projected rejected] (project-entry (if alias? (dissoc evidence :partial) evidence))
+             entries              (mapv project-entry (:errors evidence))
+             rejected             (into (vec rejected) (mapcat second) entries)
+             errors               (mapv first entries)
+             projected            (cond-> projected
+                                    (and alias? (contains? (first errors) :partial))
+                                    (assoc :partial (:partial (first errors))))]
+         (cond-> projected
+           (seq errors) (assoc :errors errors)
+           (seq rejected) (assoc :errors (into (if (seq errors) errors [(dissoc projected :partial)]) rejected)))))))

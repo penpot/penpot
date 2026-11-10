@@ -196,7 +196,7 @@
         (catch :default cause
           (let [build          @build-ref
                 context        (errors/project-context (ex-data cause))
-                failure        (merge context {:phase @phase :cause (errors/describe-cause cause)})
+                failure        (errors/evidence @phase cause)
                 saved          (when (= :building (get-in build [:manifest :status]))
                                  (attempt :catch-fatal
                                           (artifacts/write-manifest
@@ -208,5 +208,9 @@
                                                :reason (str/join " -> " (keep :message (:cause failure)))})
                                  manifest-error (assoc :manifest-error manifest-error))]
             (throw (if manifest-error
-                     (errors/fatal-error "renderer build preparation failed" data cause)
+                     (errors/fatal-error
+                      "renderer build preparation failed" data
+                      (errors/combine [{:error cause}
+                                       {:phase "storage" :operation :write-manifest
+                                        :path (:manifest-path build) :error saved}]))
                      (ex-info "renderer build preparation failed" data cause)))))))))

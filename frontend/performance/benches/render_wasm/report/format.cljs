@@ -62,13 +62,11 @@
 
 (defn- quoted-detail
   [value]
-  (errors/bounded-text (js/JSON.stringify value) 1024))
+  (errors/format-value value 1024))
 
 (defn- identifier->text
   [value]
-  (if (string? value)
-    (quoted-detail value)
-    (errors/bounded-text (pr-str value) 1024)))
+  (errors/format-value value 1024))
 
 (def ^:private process-detail-keys
   [:command :pid :pgid :signals :profile-path :fatal :unresolved-process])
@@ -82,7 +80,7 @@
   Returns:
     Bounded error text and process details when a group may still be running."
   [{:keys [phase operation message path] :as entry}]
-  (str (when operation (str (pr-str operation) " "))
+  (str (when operation (str (errors/format-value operation 1024) " "))
        (quoted-detail phase)
        (when (some? message) (str ": " (quoted-detail message)))
        (when path (str "\n      Path " (quoted-detail path)))

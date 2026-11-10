@@ -750,7 +750,7 @@ test(
     assert.equal(manifest.get(k("id")), id);
     assert.equal(manifest.get(k("status")).toString(), ":failed");
     const failure = manifest.get(k("failure"));
-    assert.equal(failure.get(k("phase")).toString(), ":renderer");
+    assert.equal(failure.get(k("phase")), "renderer");
     assert.equal(failure.get(k("exit-code")), 23);
     assert.equal(failure.get(k("command")), fixture.compiler);
     assert.equal(
@@ -807,7 +807,7 @@ test(
     );
     const failure = manifest.get(k("failure"));
     assert.equal(manifest.get(k("status")).toString(), ":failed");
-    assert.equal(failure.get(k("phase")).toString(), ":identity");
+    assert.equal(failure.get(k("phase")), "identity");
     assert.equal(
       failure.get(k("cause"))[0].get(k("type")).toString(),
       ":benches.render-wasm.identity/mismatch",

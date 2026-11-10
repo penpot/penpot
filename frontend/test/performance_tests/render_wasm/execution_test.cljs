@@ -304,6 +304,25 @@
       (t/is (str/includes? @(:errors local) (or message (errors/message-of cause))))
       (t/is (= 1 (count (re-seq #"✖" @(:errors local))))))))
 
+(t/deftest ^:async failure-text-escapes-controls-and-survives-a-throwing-printer
+  (let [local   (capture)
+        hostile (reify IPrintWithWriter
+                  (-pr-writer [_ _ _] (throw (js/Error. "cannot print path"))))
+        failure (ex-info (str "work failed\n\u001b" (apply str (repeat 2000 "x")))
+                         {:path hostile :reason "reason\u0007\u007f\u0085"
+                          :mismatches [{:field [:metric (keyword "metric" "unsafe\u001b")]}]})]
+    (t/is (= 1 (await (execution/execute
+                       (resolved "help" {:topic nil})
+                       {"help" (fn [_ _] (throw failure))} local))))
+    (t/is (str/includes? @(:errors local) "work failed"))
+    (t/is (str/includes? @(:errors local) "unrenderable value"))
+    (t/is (str/includes? @(:errors local) "\\u001b"))
+    (t/is (str/includes? @(:errors local) "\\u0007"))
+    (t/is (every? #(<= (count %) 1100) (str/split-lines @(:errors local))))
+    (t/is (every? #(let [code (.charCodeAt % 0)]
+                     (or (= code 10) (and (>= code 32) (or (< code 127) (> code 159)))))
+                  (seq @(:errors local))))))
+
 (t/deftest ^:async error-reporting-failure-uses-a-bounded-fallback
   (doseq [[code expected] [[1 1] [130 130]]]
     (let [local    (capture)
@@ -311,13 +330,15 @@
           broken   #js {:write (fn [text]
                                  (if (str/starts-with? text "Could not report")
                                    (swap! fallback conj text)
-                                   (throw (js/Error. (apply str (repeat 2000 "x"))))))}]
+                                   (throw (js/Error. (str "\u001b" (apply str (repeat 1100 "😀")))))))}]
       (t/is (= expected (await (execution/execute
                                 (resolved "help" {:topic nil})
                                 {"help" (fn [_ _] {:exit-code code :log-path nil :errors [(js/Error. "work failed")]})}
                                 (assoc local :stderr broken)))))
       (t/is (= 1 (count @fallback)))
-      (t/is (< (count (first @fallback)) 1100))))
+      (t/is (< (count (first @fallback)) 1100))
+      (t/is (str/includes? (first @fallback) "\\u001b"))
+      (t/is (not (re-find #"[\uD800-\uDBFF](?![\uDC00-\uDFFF])" (first @fallback))))))
   (let [broken #js {:write #(throw (js/Error. "closed"))}]
     (t/is (= 1 (await (execution/execute
                        (resolved "help" {:topic nil})

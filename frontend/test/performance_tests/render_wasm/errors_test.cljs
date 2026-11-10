@@ -183,6 +183,62 @@
       (t/is (= "unrenderable value" (get-in decoded [0 :cause 0 :fn])))
       (t/is (= "unrenderable cause" (get-in decoded [1 :cause 0 :message]))))))
 
+(t/deftest diagnostic-text-is-bounded-without-splitting-surrogate-pairs
+  (let [message (str (apply str (repeat 1023 "x")) "😀" "tail")
+        cause   (ex-info message {:command message})
+        data    (-> (errors/evidence :main cause) transit/encode-str transit/decode-str)
+        hostile (js/Error.)]
+    (set! (.-message hostile) #js {:toString #(throw (js/Error. "cannot print"))})
+    (t/is (= (apply str (repeat 1023 "x")) (:message data)))
+    (t/is (<= (count (:command data)) 1024))
+    (t/is (sm/validate errors/schema:diagnostic (errors/evidence :main hostile)))))
+
+(t/deftest malformed-partial-data-retains-the-failure-and-representable-evidence
+  (let [cycle #js {}]
+    (aset cycle "self" cycle)
+    (doseq [invalid [(fn [] nil) cycle (js/AbortController.)]
+            composed? [false true]]
+      (let [failure (ex-info "phase failed" {:partial {:safe {:elapsed [0 js/Infinity js/NaN]}
+                                                       :handle invalid}})
+            failure (if composed?
+                      (errors/combine [{:error failure} {:error (js/Error. "cleanup failed")}])
+                      failure)
+            data    (errors/evidence :main failure)
+            wire    (try
+                      (-> data transit/encode-str transit/decode-str)
+                      (catch :default _ nil))]
+        (t/is (= "phase failed" (:message wire)))
+        (t/is (= "phase failed" (get-in wire [:cause 0 :message])))
+        (t/is (= 0 (get-in wire [:partial :safe :elapsed 0])))
+        (t/is (= js/Infinity (get-in wire [:partial :safe :elapsed 1])))
+        (t/is (js/Number.isNaN (get-in wire [:partial :safe :elapsed 2])))
+        (t/is (= 1 (count (filter #(= :encode-diagnostic (:operation %)) (:errors wire)))))))))
+
+(t/deftest unbounded-partial-data-produces-an-encoding-diagnostic
+  (let [data (errors/evidence :main (ex-info "phase failed" {:partial {:trace (repeat 0)}}))
+        wire (-> data transit/encode-str transit/decode-str)]
+    (t/is (= "phase failed" (:message wire)))
+    (t/is (some #(= :encode-diagnostic (:operation %)) (:errors wire)))))
+
+(t/deftest malformed-partial-shapes-and-cyclic-causes-produce-portable-diagnostics
+  (doseq [partial [nil false 42 "partial"]]
+    (let [data (errors/evidence :main (ex-info "phase failed" {:partial partial}))]
+      (t/is (sm/validate errors/schema:diagnostic data))
+      (t/is (some #(= :encode-diagnostic (:operation %)) (:errors data)))))
+  (let [cycle (js/Error. "cyclic failure")]
+    (set! (.-cause cycle) cycle)
+    (let [data (-> (errors/evidence :main cycle) transit/encode-str transit/decode-str)]
+      (t/is (= "cyclic failure" (:message data)))
+      (t/is (<= (count (:cause data)) 3)))))
+
+(t/deftest malformed-optional-metadata-retains-a-valid-failure-diagnostic
+  (doseq [flag [42 (fn [] nil)]]
+    (let [cause (errors/combine [{:error (ex-info "main failed" {:deadline-exceeded flag})}])
+          data  (errors/evidence :main cause)
+          wire  (try (-> data transit/encode-str transit/decode-str) (catch :default _ nil))]
+      (t/is (= "main failed" (:message wire)))
+      (t/is (sm/validate errors/schema:diagnostic wire)))))
+
 (t/deftest non-finite-failure-details-cross-transit-as-numbers
   (let [failure (ex-info "bad measurement" {:code js/NaN :hint js/Infinity :type js/-Infinity})
         decoded (-> (errors/evidence :render failure) transit/encode-str transit/decode-str)

@@ -729,6 +729,108 @@
          (finally
            (cleanup)))))))
 
+(t/deftest ^:async diagnostic-encoding-keeps-phase-evidence-and-releases-its-owner
+  (await
+   (with-entry-env
+     (^:async fn [cleanup]
+       (try
+         (register-phase-case
+          {:params {:count 2} :context :reuse}
+          (fn [rtx]
+            (-> (camera/render-sync* rtx)
+                (.then (fn [_]
+                         (throw (ex-info "main fixture failed"
+                                         {:command "fixture" :path "scene.transit"
+                                          :partial {:safe {:elapsed [0 js/Infinity js/NaN]}
+                                                    :handle (fn [] nil)}})))))))
+         (let [request  (transit/encode-str (assoc (transit/decode-str (scene-args 7 {}))
+                                                   :preparation-id "encoding"))
+               prepared (transit/decode-str (await (browser/prepare-scene-request request)))
+               response (await (browser/run-prepared (transit/encode-str {:preparation-id "encoding"})))
+               evidence (transit/decode-str response)
+               attempt  (measurement/attempt :rects/lifecycle "encoding" false evidence)
+               saved    (-> (result/create-run
+                             {:run-id "encoding" :started-at "start"
+                              :plan {:cases [(load-case)] :warmups 0 :repetitions 1}
+                              :metadata {:git {:sha nil :dirty nil} :build {:functional {}}
+                                         :environment {} :scored? true}})
+                            (result/record-preparation (assoc (:preparation prepared) :warmup? false))
+                            (result/record-attempt attempt)
+                            (result/record-case-outcome :rects/lifecycle {:outcome :failed})
+                            (result/finish-run "end" {:reason :failed})
+                            result/encode result/decode)]
+           (t/is (= "failed" (:status evidence)))
+           (t/is (= "main" (:phase evidence)))
+           (t/is (= "main fixture failed" (:message evidence)))
+           (t/is (= "main fixture failed" (get-in evidence [:cause 0 :message])))
+           (t/is (= "fixture" (:command evidence)))
+           (t/is (= "scene.transit" (:path evidence)))
+           (t/is (= [::camera/render-sync] (mapv :command (get-in evidence [:phases 0 :events]))))
+           (t/is (= (:phases evidence) (:phases attempt)))
+           (t/is (= (:preparation prepared) (:preparation evidence)))
+           (t/is (js/Number.isNaN (get-in saved [:attempts 0 :partial :safe :elapsed 2])))
+           (t/is (some #(= :encode-diagnostic (:operation %)) (get-in saved [:attempts 0 :failure :errors])))
+           (t/is (= "invalid-args"
+                    (:phase (transit/decode-str
+                             (await (browser/run-prepared (transit/encode-str {:preparation-id "encoding"}))))))))
+         (register-phase-case {:params {:count 2}} camera/render-sync*)
+         (t/is (= "ok" (:status (transit/decode-str (await (browser/load-scene (scene-args 8 {})))))))
+         (finally
+           (cleanup)))))))
+
+(t/deftest ^:async malformed-preparation-partial-keeps-the-original-failure-and-setup
+  (await
+   (with-entry-env
+     (^:async fn [cleanup]
+       (try
+         (register-phase-case
+          {:params {:count 2}
+           :preparation {:callback (fn [rtx]
+                                     (.then (camera/render-sync* rtx)
+                                            (fn [_] (throw (ex-info "preparation failed" {:partial 42})))))}}
+          camera/render-sync*)
+         (let [request (transit/encode-str (assoc (transit/decode-str (scene-args 7 {}))
+                                                  :preparation-id "malformed"))
+               data    (transit/decode-str (await (browser/prepare-scene-request request)))]
+           (t/is (= "preparation failed" (:message data)))
+           (t/is (= "preparation" (:phase data)))
+           (t/is (= [:preparation] (mapv :phase (:phases data))))
+           (t/is (number? (get-in data [:partial :setup :upload-ms])))
+           (t/is (some #(= :encode-diagnostic (:operation %)) (:errors data)))
+           (t/is (= "invalid-args"
+                    (:phase (transit/decode-str
+                             (await (browser/run-prepared (transit/encode-str {:preparation-id "malformed"}))))))))
+         (finally (cleanup)))))))
+
+(t/deftest ^:async response-encoding-failure-retains-completed-preparation-work
+  (await
+   (with-entry-env
+     (^:async fn [cleanup]
+       (let [create-element (.-createElement js/document)]
+         (try
+           (set! (.-createElement js/document)
+                 (fn [_]
+                   (let [canvas (fake-canvas 1 nil)
+                         gl     (.getContext canvas "webgl2")]
+                     (aset gl "drawingBufferWidth" (fn [] nil))
+                     canvas)))
+           (let [request (transit/encode-str (assoc (transit/decode-str (scene-args 7 {}))
+                                                    :preparation-id "fallback"))
+                 data    (transit/decode-str (await (browser/prepare-scene-request request)))]
+             (t/is (= "failed" (:status data)))
+             (t/is (= :encode-response (:operation data)))
+             (t/is (= [:preparation] (mapv :phase (:phases data))))
+             (t/is (= :completed (get-in data [:phases 0 :outcome])))
+             (t/is (seq (:cause data)))
+             (t/is (= "invalid-args"
+                      (:phase (transit/decode-str
+                               (await (browser/run-prepared (transit/encode-str {:preparation-id "fallback"}))))))))
+           (set! (.-createElement js/document) create-element)
+           (t/is (= "ok" (:status (transit/decode-str (await (browser/load-scene (scene-args 8 {})))))))
+           (finally
+             (set! (.-createElement js/document) create-element)
+             (cleanup))))))))
+
 (t/deftest ^:async phase-failure-keeps-raw-evidence-and-stops-the-context
   (doseq [context [:fresh :reuse]
           failed-phase [:preparation :main :reset]]

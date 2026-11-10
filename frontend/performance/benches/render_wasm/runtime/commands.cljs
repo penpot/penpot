@@ -26,6 +26,7 @@
   (:require-macros [benches.render-wasm.runtime.commands])
   (:require
    [app.common.schema :as sm]
+   [benches.render-wasm.codec :as codec]
    [benches.render-wasm.declarations :as decl]
    [benches.render-wasm.errors :as errors :refer [attempt failure?]]))
 
@@ -159,6 +160,13 @@
 (defn- finish-invocation
   [{:keys [measured input output record] :as invocation}]
   (check-output input output)
+  (when (contains? invocation :trace)
+    (try
+      (codec/check-value (:trace invocation))
+      (codec/encode-str (:trace invocation))
+      (catch :default cause
+        (throw (ex-info "command trace cannot cross Transit"
+                        {:type ::invalid-trace} cause)))))
   (when measured
     (record (select-keys invocation [:command :metrics :trace])))
   output)

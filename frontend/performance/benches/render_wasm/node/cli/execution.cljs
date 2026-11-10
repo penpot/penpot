@@ -103,16 +103,10 @@
   [finished]
   (doseq [[index cause] (map-indexed vector (:errors finished))]
     (let [data          (ex-data cause)
-          context       (mapv (fn [[key value]]
-                                [key (if (string? value)
-                                       (errors/bounded-text (js/JSON.stringify value) 1024)
-                                       value)])
+          context       (mapv (fn [[key value]] [key (errors/format-value value 1024)])
                               (errors/project-context data))
           path          (when-let [path (:path data)]
-                          (errors/bounded-text (if (string? path)
-                                                 (js/JSON.stringify path)
-                                                 (pr-str path))
-                                               1024))
+                          (errors/format-value path 1024))
           validation    (some-> (::sm/explain data) sm/simplify)
           entries       (:errors (errors/evidence (or (:phase data) :execution) cause))
           alias?        (and (seq entries)
@@ -126,18 +120,22 @@
                           (rest entries)
                           entries)]
       (log/error {:message (errors/message-of cause)
-                  :fields (into (filterv (comp some? second)
-                                         [[:type (:type data)] [:cause-type (:cause-type data)]
-                                          [:path path]
-                                          [:role (:role data)] [:operation (:operation data)]
-                                          [:phase (:phase data)] [:build (:build-id data)]
-                                          [:reason (:reason data)] [:manifest-error (:manifest-error data)]
-                                          [:baseline (:baseline data)] [:candidate (:candidate data)]
-                                          [:features (:features data)]
-                                          [:count (:count data)] [:max-features (:max-features data)]
-                                          [:validation validation]])
+                  :fields (into (mapv (fn [[key value]]
+                                        [key (if (string? value)
+                                               (errors/terminal-text value 1024)
+                                               (errors/format-value value 1024))])
+                                      (filterv (comp some? second)
+                                               [[:type (:type data)] [:cause-type (:cause-type data)]
+                                                [:path path]
+                                                [:role (:role data)] [:operation (:operation data)]
+                                                [:phase (:phase data)] [:build (:build-id data)]
+                                                [:reason (:reason data)] [:manifest-error (:manifest-error data)]
+                                                [:baseline (:baseline data)] [:candidate (:candidate data)]
+                                                [:features (:features data)]
+                                                [:count (:count data)] [:max-features (:max-features data)]
+                                                [:validation validation]]))
                                 (concat context
-                                        (map #(vector :difference (:field %)) (:mismatches data))
+                                        (map #(vector :difference (errors/format-value (:field %) 1024)) (:mismatches data))
                                         (when entry-context [[:error-context entry-context]])
                                         (map #(vector :error (format/format-error-entry %)) (take 8 entries))
                                         (when (> (count entries) 8)
@@ -152,7 +150,7 @@
                  stream  (or (:stderr local) (.-stderr js/process))]
              (.write ^js stream
                      (str "Could not report benchmark failure: "
-                          (subs message 0 (min 1024 (count message))) "\n")))))
+                          (errors/terminal-text message 1024) "\n")))))
 
 (defn- finish
   "Print the optional report and errors without retrying failed report writes."

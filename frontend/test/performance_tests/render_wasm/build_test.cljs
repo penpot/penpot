@@ -232,7 +232,9 @@
           (t/is (= "" (:log created)))
           (t/is (str/includes? (:log observation) "Renderer compiling\n"))
           (t/is (= :failed (:status manifest)))
-          (t/is (= :renderer (get-in manifest [:failure :phase])))
+          (t/is (= "renderer" (get-in manifest [:failure :phase])))
+          (t/is (= "Command exited unsuccessfully" (get-in manifest [:failure :message])))
+          (t/is (= [:run-command] (mapv :operation (get-in manifest [:failure :errors]))))
           (t/is (= :process-exit (get-in manifest [:failure :cause 0 :type])))
           (t/is (= {:sha nil :dirty nil} (get-in manifest [:provenance :git])))
           (t/is (str/includes? log "compiler stdout before failure\n"))
@@ -251,10 +253,15 @@
         (let [cause (await (rejected (build/prepare {:root (frontend-root)
                                                      :build-timeout-ms 10000
                                                      :on-created record-created})))
-              data  (ex-data cause)]
+              data    (ex-data cause)
+              entries (errors/get-errors cause)]
           (t/is (errors/fatal? cause))
           (t/is (string? (:manifest-error data)))
-          (t/is (= :process-exit (:type (ex-data (ex-cause cause))))))))
+          (t/is (= :process-exit (:type (ex-data (:error (first entries))))))
+          (t/is (= 2 (count entries)))
+          (t/is (= :write-manifest (:operation (second entries))))
+          (t/is (= (:manifest-path (retained-build cause)) (:path (second entries))))
+          (t/is (str/includes? (errors/message-of (:error (second entries))) "ENOENT")))))
      done)))
 
 (t/deftest timed-out-lock-holder-retains-its-attempt-and-retry-gets-a-new-id
@@ -275,7 +282,7 @@
           (t/is (= :process-timeout (:type (ex-data (ex-cause cause)))))
           (t/is (= (:id retained) (:id manifest)))
           (t/is (= :failed (:status manifest)))
-          (t/is (= :renderer (get-in manifest [:failure :phase])))
+          (t/is (= "renderer" (get-in manifest [:failure :phase])))
           (t/is (= :process-timeout (get-in manifest [:failure :cause 0 :type])))
           (t/is (= "held" (fs/readFileSync (path/join (:renderer-dir retained) "lock-acquired.txt") "utf8")))
           (t/is (str/includes? log "compiler lock acquired\n"))

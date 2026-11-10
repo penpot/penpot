@@ -16,6 +16,42 @@
 
 (declare equivalent?)
 
+(defn check-value
+  "Checks optional transport data within depth and size limits.
+
+  Args:
+    value: Trace or diagnostic partial data to validate.
+
+  Returns:
+    The supplied value when traversal stays within depth 32, 100000 visited
+    values and 1048576 UTF-16 text units. Sequential collections have a finite
+    count. Numbers retain NaN and infinities.
+
+  Throws:
+    An error for unsupported values or data that exceeds either limit."
+  [value]
+  (loop [pending (list [value 0])
+         budget  100000
+         text-budget 1048576]
+    (when (neg? text-budget)
+      (throw (ex-info "Transport data exceeds text limits" {:type ::data-limit})))
+    (if-let [[item depth] (first pending)]
+      (do
+        (when (or (zero? budget) (> depth 32))
+          (throw (ex-info "Transport data exceeds traversal limits" {:type ::data-limit})))
+        (let [children (cond
+                         (map? item) (mapcat (fn [[key value]] [[key (inc depth)] [value (inc depth)]]) item)
+                         (or (and (sequential? item) (counted? item)) (set? item)) (map #(vector % (inc depth)) item)
+                         (or (nil? item) (boolean? item) (number? item) (string? item)
+                             (keyword? item) (symbol? item) (uuid? item) (inst? item)) nil
+                         :else (throw (ex-info "Unsupported transport value" {:type ::unsupported-value})))]
+          (recur (concat children (rest pending)) (dec budget)
+                 (- text-budget (cond
+                                  (string? item) (count item)
+                                  (or (keyword? item) (symbol? item)) (+ (count (name item)) (count (namespace item)))
+                                  :else 0)))))
+      value)))
+
 (defn- equivalent-entry?
   "Finds a map key and compares its value, including keys that contain NaN."
   [other [k v]]

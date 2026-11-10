@@ -1042,6 +1042,44 @@
                      evidence))
             (.catch #(terminal-failure epoch % "attempt")))))))
 
+(defn- encodable-phase-prefix
+  [phases]
+  (reduce (fn [kept phase]
+            (try
+              (codec/encode-str phase)
+              (conj kept phase)
+              (catch :default _ (reduced kept))))
+          [] phases))
+
+(defn- encode-response
+  [epoch evidence]
+  (try
+    (codec/encode-str evidence)
+    (catch :default cause
+      (dispose-if-current! epoch)
+      (let [encoding   (assoc (errors/evidence :bridge cause) :operation :encode-response)
+            original   (when (= "failed" (:status evidence)) (errors/project-diagnostic evidence))
+            recovered  (if original
+                         (assoc original :errors (conj (or (:errors original)
+                                                           [(dissoc original :partial)]) encoding))
+                         encoding)
+            recovered  (cond-> recovered
+                         (seq (get-in evidence [:preparation :phases]))
+                         (assoc :phases (encodable-phase-prefix (get-in evidence [:preparation :phases]))))
+            recovered  (reduce (fn [out key]
+                                 (if (contains? evidence key)
+                                   (try
+                                     (codec/encode-str (get evidence key))
+                                     (assoc out key (get evidence key))
+                                     (catch :default _
+                                       (if (= :phases key)
+                                         (assoc out :phases (encodable-phase-prefix (:phases evidence)))
+                                         out)))
+                                   out))
+                               recovered
+                               [:preparation :phases :scene :effective-graphics])]
+        (t/encode-str (errors/fail-data recovered))))))
+
 (defn- encode-evidence
   "Encodes bridge evidence after timing and resolves failures as bridge
   failures.
@@ -1058,11 +1096,10 @@
   [promise]
   (let [epoch @owner-epoch*]
     (-> promise
-        (.then codec/encode-str)
+        (.then (partial encode-response epoch))
         (.catch (fn [cause]
                   (dispose-if-current! epoch)
-                  (t/encode-str (errors/fail-data {:phase "bridge"
-                                                   :message (errors/message-of cause "result encoding failed")})))))))
+                  (t/encode-str (errors/fail-data (errors/evidence :bridge cause))))))))
 
 (defn prepare-scene-request
   "Prepares a scene from a Transit request and returns Transit evidence.
