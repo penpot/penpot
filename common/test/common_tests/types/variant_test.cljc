@@ -215,6 +215,24 @@
     (t/is (= [{:name "S" :value "(1)"}]
              (ctv/unique-values-tuple [{:name "S" :value ""}] [[""]])))))
 
+(t/deftest align-properties-set
+  (t/testing "text is cleaned and every vector gets the same names"
+    (t/is (= [[{:name "SizeBig" :value "one"} {:name "Color" :value ""}]
+              [{:name "SizeBig" :value ""} {:name "Color" :value "red"}]]
+             (ctv/align-properties-set [[{:name "Size=Big" :value "one"}]
+                                        [{:name "Color" :value "red"}]]))))
+
+  (t/testing "a repeated value tuple is kept"
+    (let [props-seq [[{:name "Size" :value "big"}]
+                     [{:name "Size" :value "big"}]]]
+      (t/is (= props-seq (ctv/align-properties-set props-seq)))))
+
+  (t/testing "a second run changes nothing"
+    (let [once (ctv/align-properties-set [[{:name "a=b" :value long-text} {:name "a=b" :value ""}]
+                                          [{:name "ab" :value long-text}]
+                                          [{:name "=" :value 5}]])]
+      (t/is (= once (ctv/align-properties-set once))))))
+
 (t/deftest sanitize-properties-set
   (t/testing "a colliding value tuple is numbered"
     (t/is (= [[{:name "Size" :value "ab"}]

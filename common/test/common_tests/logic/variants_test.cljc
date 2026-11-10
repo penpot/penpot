@@ -482,6 +482,29 @@
 
     (t/is (contains? values "Bigred"))))
 
+(t/deftest test-make-shapes-variant-clips-long-component-name-as-value
+  ;; A component name over the property length limit becomes a value cut to
+  ;; that limit, so the moved variant passes validation.
+  (let [long-name (apply str (repeat 70 "n"))
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                      (thv/add-variant :v02 :c03 :m03 :c04 :m04)
+                      (thc/update-component :c03 {:name long-name}))
+        page      (thf/current-page file)
+        container (ths/get-shape file :v01)
+        shape     (ths/get-shape file :m03)
+        changes   (-> (pcb/empty-changes nil)
+                      (pcb/with-page-id (:id page))
+                      (pcb/with-library-data (:data file))
+                      (pcb/with-objects (:objects page))
+                      (clvp/generate-make-shapes-variant [shape] container)
+                      (pcb/change-parent (:id container) [shape] 0))
+        file'     (thf/apply-changes file changes)
+        values    (map :value (:variant-properties (thc/get-component file' :c03)))]
+
+    (t/is (every? #(<= (count %) ctv/property-max-length) values))
+    (t/is (some #(= (subs long-name 0 ctv/property-max-length) %) values))))
+
 (t/deftest test-make-shapes-variant-same-name-components-get-unique-values
   ;; Mirrors combine-as-variants with components that share the container
   ;; name: the first main defines the container, the rest are moved into it.
