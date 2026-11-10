@@ -2044,6 +2044,14 @@
                              [:edit 6 0 1 1] [:update-main 6] [:add-variant 0] [:switch 3] [:edit 0 0 1 1]
                              [:update-main 0]]}))))
 
+(t/deftest switching-to-a-flipped-variant-carries-no-flip-the-variants-do-not-share
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:nest 1 0 0 0] [:combine 0 0 0 0] [:combine 2] [:switch 0] [:rotate 7 0 5 0]
+                             [:make-variant 0] [:switch 0] [:make-variant 8 0 0 0] [:make-variant 0] [:switch 2]
+                             [:transform 10 4 0 0] [:make-variant 0] [:switch 17]]}))))
+
 (t/deftest turning-a-flipped-copy-turns-a-child-stored-as-the-other-mirror-turn
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true

@@ -552,13 +552,11 @@
 
         ;; A swapped child is kept as it is, and the others carry their
         ;; touched attributes into their new child
-        new-head            (get objects (:id new-shape))
-        new-base-ref-shape  (ctf/find-remote-shape (assoc container :objects objects) libraries new-head)
-        ;; the old main's shapes turned as the copy turns its new main, so
-        ;; the switch compares them with the new copy's in one frame
-        orient-ref          (or (when new-base-ref-shape
-                                  (cll/orient-like new-base-ref-shape new-head
-                                                   (gsh/shape->center new-base-ref-shape)))
+        ;; the old main's shapes turned as the old copy turns them, so the
+        ;; switch compares them with the new copy's in one frame
+        orient-ref          (or (when orig-base-ref-shape
+                                  (cll/orient-like orig-base-ref-shape original-shape
+                                                   (gsh/shape->center orig-base-ref-shape)))
                                 identity)
         ;; `ref-shape` turned too as the copy turns the parent of `old` below
         ;; its root, so a turn a nested copy authors is not the child's own
