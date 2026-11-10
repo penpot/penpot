@@ -28,6 +28,8 @@
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
+(def raster-export-types #{:png :jpeg :webp})
+
 (def default-timeout 5000)
 
 ;; Longest wait for the pending changes of the exported files to be saved.
