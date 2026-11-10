@@ -618,7 +618,8 @@
                (t/is (= (:id group) (:parent-id (cths/get-shape file' :nested-a))))
                (t/is (= (:id group) (:parent-id (cths/get-shape file' :nested-b))))))))))
 
-(t/deftest create-layout-of-variant-container-only-does-not-commit
+;; A variant container DO may have a layout
+(t/deftest create-layout-of-variant-container-only-does-commit-and-works
   (t/async
     done
     (let [file    (variant-file)
@@ -634,8 +635,8 @@
            (fn [state]
              (let [file'  (ths/get-file-from-state state)
                    board' (cths/get-shape file' :variant)]
-               (t/is (= 0 (count @commits)))
-               (t/is (not (ctl/any-layout? board')))
+               (t/is (= 1 (count @commits)))
+               (t/is (ctl/any-layout? board'))
                (t/is (ctk/is-variant-container? board'))
                (t/is (= (:parent-id board) (:parent-id board')))))
            :commits commits))))

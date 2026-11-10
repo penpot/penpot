@@ -172,6 +172,12 @@ The Admin Console is now enabled by default and the `enable-admin-console` flag 
 - Add component management operations to the Plugin API [#12301](https://github.com/penpot/penpot/issues/12301) (PR: [#12303](https://github.com/penpot/penpot/pull/12303))
 - Record the imported file ids in the import-binfile audit event [#12485](https://github.com/penpot/penpot/issues/12485) (PR: [#12491](https://github.com/penpot/penpot/pull/12491))
 
+## 2.18.7
+
+### :bug: Bugs fixed
+
+- Fix binfile import accepting library relations outside the package and self-relations [#12895](https://github.com/penpot/penpot/issues/12895) (PR: [#12862](https://github.com/penpot/penpot/pull/12862))
+
 ## 2.18.6
 
 ### :bug: Bugs fixed

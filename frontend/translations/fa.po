@@ -1,9 +1,10 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-11-05 22:19+0000\n"
-"Last-Translator: Andrey Antukh <niwinz@users.noreply.hosted.weblate.org>\n"
-"Language-Team: Persian "
-"<https://hosted.weblate.org/projects/penpot/frontend/fa/>\n"
+"PO-Revision-Date: 2026-11-08 09:51+0000\n"
+"Last-Translator: Danial Shirali "
+"<danialshirali16@users.noreply.hosted.weblate.org>\n"
+"Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
+"fa/>\n"
 "Language: fa\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -9344,3 +9345,33 @@ msgstr "نسخه‌های ذخیرهٔ خودکار به مدت %s روز نگه
 
 #~ msgid "viewer.header.share.placeholder"
 #~ msgstr "لینک اشتراک‌گذاری در اینجا ظاهر می‌شود"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:228
+msgid "dashboard.clear-search"
+msgstr "پاک کردن جستجو"
+
+#: src/app/main/ui/dashboard/fonts.cljs:442, src/app/main/ui/dashboard/fonts.cljs:443
+msgid "dashboard.fonts.delete-variant"
+msgstr "حذف سبک فونت"
+
+#: src/app/main/ui/dashboard/import.cljs:625
+msgid "dashboard.import.check.message"
+msgstr "مطمئن شوید که هر فایل قابل وارد کردن است. این فقط یک لحظه طول می‌کشد."
+
+#: src/app/main/ui/dashboard/import.cljs:624
+msgid "dashboard.import.check.title"
+msgstr "در حال بررسی فایل‌های شما..."
+
+#: src/app/main/ui/dashboard/import.cljs:637
+msgid "dashboard.import.importing.message"
+msgstr "بازسازی صفحات، کامپوننت‌ها و دارایی‌ها در پروژه شما."
+
+#: src/app/main/ui/dashboard/import.cljs:634
+msgid "dashboard.import.queued.message"
+msgstr ""
+"فایل‌های شما آپلود شده‌اند. به محض اینکه یک جایگاه خالی شود، وارد کردن شروع "
+"می‌شود."
+
+#: src/app/main/ui/dashboard/import.cljs:633
+msgid "dashboard.import.queued.title"
+msgstr "منتظر شروع..."

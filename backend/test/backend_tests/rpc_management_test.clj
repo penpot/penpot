@@ -167,11 +167,8 @@
           (t/is (= (:media-id item) (:media-id mobj)))
           (t/is (= (:media-id item) (:id sobject)))
 
-          ;; Check if media correctly contains the new file-media-object id
-          (t/is (contains? (get-in result [:data :media]) (:id item)))
-
-          ;; And does not contains the old one
-          (t/is (not (contains? (get-in result [:data :media]) (:id mobj)))))
+          ;; The response carries the file metadata only
+          (t/is (not (contains? result :data))))
 
         ;; Check the total number of files
         (let [rows (th/db-query :file {:project-id (:id project)})]

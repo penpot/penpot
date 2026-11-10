@@ -9,6 +9,7 @@
    [frontend-tests.code-gen-style-test]
    [frontend-tests.composable-tests.comp.sync-test]
    [frontend-tests.copy-as-svg-test]
+   [frontend-tests.data.auth-test]
    [frontend-tests.data.comments-filters-test]
    [frontend-tests.data.dashboard-test]
    [frontend-tests.data.event-test]
@@ -47,6 +48,7 @@
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
    [frontend-tests.data.workspace-undo-test]
+   [frontend-tests.data.workspace-undo-translation-test]
    [frontend-tests.data.workspace-variant-rename-test]
    [frontend-tests.data.workspace-variants-test]
    [frontend-tests.data.workspace-versions-test]
@@ -184,6 +186,7 @@
    [frontend-tests.worker-snap-test]
    [frontend-tests.worker.exports-test]
    [frontend-tests.worker.index-test]
+   [frontend-tests.worker.messages-test]
    [frontend-tests.worker.trim-test]
    [goog.object :as gobj]))
 
@@ -203,6 +206,7 @@
    'frontend-tests.code-gen-style-test
    'frontend-tests.composable-tests.comp.sync-test
    'frontend-tests.copy-as-svg-test
+   'frontend-tests.data.auth-test
    'frontend-tests.data.comments-filters-test
    'frontend-tests.data.dashboard-test
    'frontend-tests.data.event-test
@@ -224,6 +228,7 @@
    'frontend-tests.data.jobs-test
    'frontend-tests.worker.exports-test
    'frontend-tests.worker.index-test
+   'frontend-tests.worker.messages-test
    'frontend-tests.worker.trim-test
    'frontend-tests.data.svg-upload-test
    'frontend-tests.data.uploads-test
@@ -244,6 +249,7 @@
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
    'frontend-tests.data.workspace-undo-test
+   'frontend-tests.data.workspace-undo-translation-test
    'frontend-tests.data.workspace-variant-rename-test
    'frontend-tests.data.workspace-variants-test
    'frontend-tests.data.workspace-versions-test

@@ -96,6 +96,7 @@
    [common-tests.text-test]
    [common-tests.time-test]
    [common-tests.token-test]
+   [common-tests.transit-test]
    [common-tests.types-shape-tree-test]
    [common-tests.types.absorb-assets-test]
    [common-tests.types.color-test]
@@ -209,6 +210,7 @@
    'common-tests.text-test
    'common-tests.time-test
    'common-tests.token-test
+   'common-tests.transit-test
    'common-tests.types-shape-tree-test
    'common-tests.types.absorb-assets-test
    'common-tests.types.color-test
