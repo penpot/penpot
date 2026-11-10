@@ -10,6 +10,7 @@
    [app.common.files.migrations :as cfm]
    [app.common.files.tokens :as cfo]
    [app.common.geom.rect :as grc]
+   [app.common.path-names :as cpn]
    [app.common.test-helpers.components :as thk]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
@@ -813,6 +814,9 @@
 (def ^:private variant-text-migration
   "0036-sanitize-variant-property-text")
 
+(def ^:private variant-library-name-migration
+  "0037-align-variant-component-names")
+
 (defn- migrate-text
   [file]
   (let [data' (cfm/migrate-data (ctf/file-data file) variant-text-migration)]
@@ -1023,3 +1027,101 @@
     (t/is (contains? (:migrations file') variant-text-migration))
     (t/is (= "SizeBig" (-> (thk/get-component file' :component2) :variant-properties first :name)))
     (t/is (some? (ctf/check-file-data (:data file'))))))
+
+(defn- named-board
+  [board-name]
+  (-> (variant-file)
+      (ths/update-shape :variant1 :name board-name)
+      (ths/update-shape :root1 :name board-name)
+      (ths/update-shape :root2 :name board-name)))
+
+(t/deftest migration-0036-aligns-component-path-with-the-board
+  (let [file   (-> (named-board "Group / Button")
+                   (thk/update-component :component1 {:path "UI" :name "Button"})
+                   (thk/update-component :component2 {:path "UI" :name "Button"})
+                   (thk/instantiate-component :component2 :copy2)
+                   (ths/update-shape :copy2 :name "Loose copy"))
+        before {:root1 (ths/get-shape file :root1)
+                :props1 (:variant-properties (thk/get-component file :component1))
+                :label1 (:variant-name (ths/get-shape file :root1))
+                :copy (ths/get-shape file :copy2)}
+        data'  (cfm/migrate-data (ctf/file-data file) variant-library-name-migration)
+        file'  (assoc file :data data')
+        comp1' (thk/get-component file' :component1)
+        comp2' (thk/get-component file' :component2)
+        root1' (ths/get-shape file' :root1)
+        copy'  (ths/get-shape file' :copy2)]
+
+    (t/is (= "Group" (:path comp1') (:path comp2')))
+    (t/is (= "Button" (:name comp1') (:name comp2')))
+    (t/is (= "Group / Button" (cpn/merge-path-item (:path comp1') (:name comp1'))))
+    (t/is (= (:name (:root1 before)) (:name root1')))
+    (t/is (= (:props1 before) (:variant-properties comp1')))
+    (t/is (= (:label1 before) (:variant-name root1')))
+    (t/is (= (:name (:copy before)) (:name copy')))
+    (t/is (= data' (cfm/migrate-data data' variant-library-name-migration)))))
+
+(t/deftest migration-0036-stores-an-empty-board-name
+  (let [file  (-> (named-board "(empty)")
+                  (thk/update-component :component1 {:path "Old" :name "Thing"})
+                  (thk/update-component :component2 {:path "Old" :name "Thing"}))
+        data' (cfm/migrate-data (ctf/file-data file) variant-library-name-migration)
+        file' (assoc file :data data')
+        comp' (thk/get-component file' :component1)]
+
+    (t/is (= "" (:path comp')))
+    (t/is (= "(empty)" (:name comp')))
+    (t/is (= "(empty)" (cpn/merge-path-item (:path comp') (:name comp'))))
+    (t/is (= data' (cfm/migrate-data data' variant-library-name-migration)))))
+
+(t/deftest migration-0036-leaves-a-matching-component-unchanged
+  (let [file  (-> (named-board "Group / Button")
+                  (thk/update-component :component1 {:path "Group" :name "Button"})
+                  (thk/update-component :component2 {:path "Group" :name "Button"}))
+        data  (ctf/file-data file)
+        data' (cfm/migrate-data data variant-library-name-migration)]
+
+    (t/is (= data data'))
+    (t/is (= data' (cfm/migrate-data data' variant-library-name-migration)))))
+
+(t/deftest migration-0036-skips-a-component-with-no-board
+  (let [orphan-id (uuid/next)
+        file      (update (thf/sample-file :file1) :data
+                          (fn [data]
+                            (assoc-in data [:components orphan-id]
+                                      {:id orphan-id
+                                       :name "Name"
+                                       :path "Old"
+                                       :variant-id (uuid/next)})))
+        data      (ctf/file-data file)
+        data'     (cfm/migrate-data data variant-library-name-migration)]
+
+    (t/is (= data data'))))
+
+(t/deftest migration-0035-then-0036-cleans-text-and-the-library-name
+  (let [file  (-> (named-board "Group / Button")
+                  (thk/update-component :component2 {:path "UI"
+                                                     :name "Button"
+                                                     :variant-properties [{:name "Size=Big" :value "red"}]})
+                  (thk/update-component :component1 {:path "UI"
+                                                     :name "Button"
+                                                     :variant-properties [{:name "Size=Big" :value "blue"}]}))
+        data' (-> (ctf/file-data file)
+                  (cfm/migrate-data variant-text-migration)
+                  (cfm/migrate-data variant-library-name-migration))
+        file' (assoc file :data data')
+        comp2 (thk/get-component file' :component2)
+        comp1 (thk/get-component file' :component1)
+        root2 (ths/get-shape file' :root2)
+        root1 (ths/get-shape file' :root1)]
+
+    (t/is (= "SizeBig" (-> comp2 :variant-properties first :name)))
+    (t/is (= "red" (-> comp2 :variant-properties first :value)))
+    (t/is (= "blue" (-> comp1 :variant-properties first :value)))
+    (t/is (= (ctv/properties-to-name (:variant-properties comp2)) (:variant-name root2)))
+    (t/is (= (ctv/properties-to-name (:variant-properties comp1)) (:variant-name root1)))
+    (t/is (= "Group" (:path comp2) (:path comp1)))
+    (t/is (= "Button" (:name comp2) (:name comp1)))
+    (t/is (= data' (-> data'
+                       (cfm/migrate-data variant-text-migration)
+                       (cfm/migrate-data variant-library-name-migration))))))
