@@ -762,7 +762,7 @@
         (t/is (nil? (:migrations stored)))
         (t/is (= 60 (:version stored)))))))
 (t/deftest snapshots-require-file-id
-  ;; Since version 2.19 the snapshot commands require the `file-id`
+  ;; Since version 2.20 the snapshot commands require the `file-id`
   ;; parameter, so partition pruning can always be applied on the
   ;; `file_change` table.
   (let [profile (th/create-profile* 1 {:is-active true})
@@ -890,8 +890,8 @@
       (t/is (some? (:deleted-at (th/db-get :file-change {:id (:id snapshot)}
                                            {::db/remove-deleted false})))))
 
-    ;; process the delete-object task enqueued by the snapshot delete
-    (th/run-pending-tasks!)))
+    ;; process the delete-object job enqueued by the snapshot delete
+    (th/run-pending-jobs)))
 
 (t/deftest unknown-snapshot-is-reported-as-not-found
   ;; The error points at the id that was not found: the snapshots are looked
