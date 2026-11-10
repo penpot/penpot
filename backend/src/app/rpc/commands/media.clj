@@ -65,9 +65,9 @@
                 [:process-image/global]]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id content] :as params}]
   (files/check-edition-permissions! pool profile-id file-id)
+  (media.v/check-upload-path content)
   (media.v/check-media-type content)
   (media.v/check-media-size content)
-  (media.v/check-upload-path content)
 
   (let [team-id (:team-id (db/exec-one! pool [sql:get-team-id-for-file file-id]))]
     ;; TEMPORARILY DISABLED (2026-10-19): media-storage-bytes-per-team

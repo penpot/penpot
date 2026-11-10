@@ -522,6 +522,26 @@
       (t/is (= :validation (-> out :error ex-data :type)))
       (t/is (= :media-type-not-allowed (-> out :error ex-data :code))))))
 
+(t/deftest create-font-variant-png-bytes-chunked-upload
+  "PNG bytes uploaded in chunks but declared as font/ttf are rejected."
+  (with-mocks [_mock {:target 'app.rpc.quotes/check! :return nil}]
+    (let [prof       (th/create-profile* 1 {:is-active true})
+          team-id    (:default-team-id prof)
+          font-id    (uuid/custom 10 63)
+          png-bytes  (-> (io/resource "backend_tests/test_files/sample.png") (io/read*))
+          session-id (upload-font-chunked! prof png-bytes "font/ttf" (* 4 1024 1024))
+          out        (th/command! {::th/type    :create-font-variant
+                                   ::rpc/profile-id (:id prof)
+                                   :team-id     team-id
+                                   :font-id     font-id
+                                   :font-family "png-as-font"
+                                   :font-weight 400
+                                   :font-style  "normal"
+                                   :uploads     {"font/ttf" session-id}})]
+      (t/is (some? (:error out)))
+      (t/is (= :validation (-> out :error ex-data :type)))
+      (t/is (= :media-type-mismatch (-> out :error ex-data :code))))))
+
 ;; --- Font family name validation / XSS prevention
 
 (t/deftest create-font-variant-with-invalid-family
