@@ -2223,7 +2223,34 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(defmethod migrate-data "0033-normalize-main-instance-names"
+(defn- repair-shape-children
+  [objects shape]
+  (if-let [shapes (:shapes shape)]
+    (let [shapes' (into []
+                        (comp (keep uuid/coerce)
+                              (filter #(contains? objects %))
+                              (distinct))
+                        shapes)]
+      (if (and (vector? shapes) (= shapes shapes'))
+        shape
+        (assoc shape :shapes shapes')))
+    shape))
+
+(defn- repair-container-children
+  [container]
+  (d/update-when container :objects
+                 (fn [objects]
+                   ;; Only assoc the shapes that change, so an ObjectsMap is
+                   ;; not marked as modified when nothing is repaired.
+                   (reduce-kv (fn [result id shape]
+                                (let [shape' (repair-shape-children objects shape)]
+                                  (if (identical? shape shape')
+                                    result
+                                    (assoc result id shape'))))
+                              objects
+                              objects))))
+
+(defmethod migrate-data "0033-normalize-main-instance-names-v2"
   [data _]
   ;; In penpot shape names always have "/" characters normalized with one space between and after,
   ;; to form paths. But this is not enforced and may be places that still admit names like
@@ -2232,71 +2259,57 @@
   ;; Here we normalize the names of all main instances, and a new file integrity validation has
   ;; been added to enforce this from now on.
   ;; Main instances in variants are a special case because they need to match the variant name.
-  ;; Old files may also list in :shapes child ids stored as strings, nil, or ids that point to
-  ;; no shape. They fail the shape schema and the uuid assert of get-shape, so first parse the
-  ;; strings into uuids and drop the rest. This also removes the duplicate that 0032 adds when
-  ;; a child is listed as a string.
-  (letfn [(fix-children [objects shapes]
-            (into []
-                  (comp (keep uuid/coerce)
-                        (filter #(contains? objects %))
-                        (distinct))
-                  shapes))
+  ;; Old files may also list in :shapes child ids stored as strings, nil, or ids that point to no
+  ;; shape. They fail the shape schema and the uuid assert of get-shape, so the container is
+  ;; repaired first (see `repair-container-children`). That repair is the reason for the `-v2`:
+  ;; files that already applied the original migration need to run it again to get it.
+  (letfn [(update-shape [container shape-id]
+            (let [shape     (ctn/get-shape container shape-id)
+                  shape'    (cond
+                              ;; Variant container must have a normalized name
+                              (ctk/is-variant-container? shape)
+                              (let [name       (:name shape)
+                                    clean-name (cpn/clean-path name)
+                                    clean-name (if (str/blank? clean-name)
+                                                 "(empty)" ;; this may occur if the name contains only separators
+                                                 clean-name)]
+                                (if (= name clean-name)
+                                  shape
+                                  (assoc shape :name clean-name)))
 
-          (fix-object [objects shape]
-            (if-let [shapes (:shapes shape)]
-              (let [shapes' (fix-children objects shapes)]
-                (if (= shapes shapes')
-                  shape
-                  (assoc shape :shapes shapes')))
-              shape))
+                              ;; Main instance inside a variant must have the same name as the container
+                              (ctk/main-instance? shape)
+                              (if (ctk/is-variant? shape)
+                                (let [variant-container (ctn/get-shape container (:parent-id shape))]
+                                  (if (or (= (:name shape) (:name variant-container))
+                                          (nil? variant-container))
+                                    shape
+                                    (assoc shape :name (:name variant-container))))
 
-          (fix-objects [objects]
-            (d/update-vals objects (partial fix-object objects)))
+                                ;; Other main instances must have the same name as the path+name of the component
+                                (let [component     (ctkl/get-component data (:component-id shape) true)
+                                      expected-name (when component
+                                                      (cpn/merge-path-item (:path component) (:name component)))]
+                                  (if (or (= expected-name (:name shape))
+                                          (nil? expected-name))
+                                    shape
+                                    (assoc shape :name expected-name))))
 
-          (update-shape [container shape-id]
-            (let [shape (ctn/get-shape container shape-id)
+                              ;; Any other shape does not need processing
+                              :else shape)]
 
-                  shape (cond
-                          ;; Variant container must have a normalized name
-                          (ctk/is-variant-container? shape)
-                          (let [name       (:name shape)
-                                clean-name (cpn/clean-path name)
-                                clean-name (if (str/blank? clean-name)
-                                             "(empty)" ;; this may occur if the name contains only separators
-                                             clean-name)]
-                            (if (= name clean-name)
-                              shape
-                              (assoc shape :name clean-name)))
-
-                          ;; Main instance inside a variant must have the same name as the container
-                          (ctk/main-instance? shape)
-                          (if (ctk/is-variant? shape)
-                            (let [variant-container (ctn/get-shape container (:parent-id shape))]
-                              (if (or (= (:name shape) (:name variant-container))
-                                      (nil? variant-container))
-                                shape
-                                (assoc shape :name (:name variant-container))))
-
-                            ;; Other main instances must have the same name as the path+name of the component
-                            (let [component     (ctkl/get-component data (:component-id shape) true)
-                                  expected-name (when component
-                                                  (cpn/merge-path-item (:path component) (:name component)))]
-                              (if (or (= expected-name (:name shape))
-                                      (nil? expected-name))
-                                shape
-                                (assoc shape :name expected-name))))
-
-                          ;; Any other shape does not need processing
-                          :else shape)]
-
+              ;; Only assoc the shape when the normalization changed it, so an
+              ;; ObjectsMap is not marked as modified, and the page is not
+              ;; rewritten, when there is nothing to normalize.
               (reduce update-shape
-                      (ctt/set-shape container shape)
-                      (:shapes shape))))
+                      (if (identical? shape shape')
+                        container
+                        (ctt/set-shape container shape'))
+                      (:shapes shape'))))
 
           (update-container
             [container]
-            (let [container (d/update-when container :objects fix-objects)
+            (let [container (repair-container-children container)
                   root      (ctn/get-container-root container)]
               (if root
                 (update-shape container (:id root))
@@ -2509,7 +2522,7 @@
          "0030-remove-stroke-per-side-attr"
          "0031-migrate-stroke-width-token-attr"
          "0032-fix-children-not-in-parent"
-         "0033-normalize-main-instance-names"
+         "0033-normalize-main-instance-names-v2"
          "0034-fix-path-content-offset"
          "0035-fix-dangling-children"
          "0035-fix-shape-svg-attrs-and-defs"]))

@@ -168,7 +168,7 @@
         file        {:id file-id
                      :data data
                      :migrations (disj cfm/available-migrations
-                                       "0033-normalize-main-instance-names"
+                                       "0033-normalize-main-instance-names-v2"
                                        "0034-fix-path-content-offset"
                                        migration)}]
 
