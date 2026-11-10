@@ -2116,6 +2116,15 @@
                        :ops [[:variant-property] [:switch 3] [:combine 11] [:combine 12] [:resize 10]
                              [:variant-property 8 9] [:add-variant] [:switch 2] [:update-main]]}))))
 
+(t/deftest updating-a-main-from-a-mirrored-copy-pushes-its-swap-without-a-geometry-override
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square true :rich-variants true
+                                    :layout-children true :grid-empty false :layout-copies true :text false}]
+                       :ops [[:swap 6 5 0] [:add-variant 4 5 3] [:make-variant 4] [:make-variant 0 1 5]
+                             [:make-variant 1] [:switch 2] [:detach 0 2 6] [:combine] [:swap 2 2 0] [:switch]
+                             [:nest 6 3 3] [:add-variant 1 5 5] [:rotate 0 4 5] [:nest 3 3 4] [:switch]
+                             [:switch] [:transform 0 4 0 2] [:update-main]]}))))
+
 (t/deftest moving-a-flex-copy-child-after-a-switch-resized-its-sibling-authors-no-geometry
   (t/is (map? (cg/run {:world [1 2 {:variants true :text-styles false :layout :flex :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true

@@ -1213,9 +1213,13 @@
         main-container (when main
                          (main-in-parent-orientation (:container (meta main)) main
                                                      container shape false))
-        expected (get-in main-container [:objects (:id main)])]
+        expected (get-in main-container [:objects (:id main)])
+        ;; a mirrored shape can store another rotation for the same axes
+        turned?  (and expected
+                      (not (gmt/unit? (gmt/multiply (axes-matrix expected)
+                                                    (gmt/inverse (axes-matrix shape))))))]
     (cond-> shape
-      (and expected (orient-like shape expected (gsh/shape->center shape)))
+      turned?
       (update :touched ctk/set-touched-group :geometry-group)
 
       (and main (some #(not= (get shape %) (get main %)) [:constraints-h :constraints-v :fixed-scroll]))
