@@ -207,6 +207,13 @@
   []
   (.-href globals/location))
 
+(defn get-current-token
+  "Return the current history token: the query string that carries the route.
+  The server builds the destination URL for the SSO flow out of it, so the
+  client never chooses the origin of that URL."
+  []
+  (bhistory/get-token))
+
 
 ;; --- History API
 

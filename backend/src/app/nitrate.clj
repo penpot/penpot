@@ -729,3 +729,20 @@
     (when-not (:is-member membership)
       (ex/raise :type :validation
                 :code :user-doesnt-belong-organization))))
+
+(defn organization-access?
+  "True when `profile-id` may act for `organization-id`: it is a member of
+  the organization or its owner.
+
+  The organization id reaches the backend from the client, so the flows that
+  take one have to check it: without this check any authenticated profile
+  could start a flow for an organization it does not belong to."
+  [cfg profile-id organization-id]
+  (let [membership (call cfg :get-organization-membership {:profile-id      profile-id
+                                                           :organization-id organization-id
+                                                           ::rpc/profile-id profile-id})]
+    (if (:is-member membership)
+      true
+      (= (:owner-id (call cfg :get-organization-summary {:organization-id organization-id
+                                                         ::rpc/profile-id profile-id}))
+         profile-id))))
