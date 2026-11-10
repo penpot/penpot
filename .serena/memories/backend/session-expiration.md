@@ -19,6 +19,12 @@
 - Renewal fires when `modified-at` is older than 6h (`default-renewal-max-age`, not configurable). It `UPDATE`s the same row (`modified-at` only) and issues a new token that keeps the original `:exp`.
 - `read-session` does not check age. Idle expiration is enforced on every request by `wrap-authz` (sessions past the idle window authenticate like missing ones and are never renewed); the GC only deletes the rows afterwards.
 
+## Revocation paths
+
+- Profile deletion → `session/invalidate-all` (all sessions of the profile die).
+- Authenticated password change → `session/invalidate-others` (every session except the caller's dies).
+- Password recovery (`recover-profile`, GHSA-3j2p-qr45-q365) → `session/invalidate-all` inside the same transaction as the password `UPDATE`; there is no current session to preserve, and a captured session must not survive recovery. Sibling of GHSA-mj9f-5cwq-7p3q (logout deletes the current session row).
+
 ## GC (`::tasks/gc`, cron `session-gc`, daily)
 
 - Deletes from `http_session_v2` where `modified_at < now - :auth-token-cookie-max-age` **or** `created_at < now - :auth-token-cookie-max-age-absolute`.
