@@ -25,8 +25,15 @@
   (merge {:exit-code 0 :errors [] :log-path nil} data))
 
 (defn failed
-  "Returns an outcome with exit code 1 for `cause`. The log path comes from
-  the ex-data of `cause`. `data` adds more keys."
+  "Returns an outcome for `cause` with defaults for errors, exit code and log.
+
+  Args:
+    cause: Failure supplying the default error and log path.
+    data: Outcome fields that override defaults, including :errors,
+      :exit-code and :log-path.
+
+  Returns:
+    An outcome with exit code 1 and the failure's log path as defaults."
   [cause data]
   (merge {:errors [cause]
           :exit-code 1

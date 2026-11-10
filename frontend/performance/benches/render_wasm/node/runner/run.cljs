@@ -34,6 +34,7 @@
    [benches.render-wasm.node.runner.browser :as browser]
    [benches.render-wasm.node.runner.build :as build]
    [benches.render-wasm.node.runner.server :as server]
+   [benches.render-wasm.node.settings :as settings]
    [benches.render-wasm.node.storage.artifacts :as artifacts]
    [benches.render-wasm.node.storage.runs :as runs]
    [benches.render-wasm.node.time :as time]
@@ -324,7 +325,7 @@
                         {:status "failed" :phase "gpu"
                          :message (str "GPU check failed; renderer: " (pr-str (:renderer graphics))
                                        ". Hardware WebGL2 with a usable vendor and renderer is required."
-                                       " Start the container with ./manage.sh run-devenv --gpu and use pnpm run render-bench.")
+                                       " " settings/gpu-guidance)
                          :partial {:graphics graphics}})
         (reset! (:abort-run? state) true)
         :abort)

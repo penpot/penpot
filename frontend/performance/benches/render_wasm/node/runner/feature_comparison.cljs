@@ -207,12 +207,25 @@
        (mark-edge state edge :unattempted {:reason reason}))
      (mark-edges-unattempted state pending reason))))
 
+(defn- storage-failure
+  "Combines earlier failures with a failed comparison-storage operation.
+
+  Args:
+    operation: Operation that failed while saving comparison evidence.
+    causes: Earlier failures in occurrence order.
+    cause: Failure of the storage operation.
+
+  Returns:
+    An Error retaining earlier failures followed by the storage failure."
+  [operation causes cause]
+  (errors/combine (conj (mapv #(hash-map :error %) causes)
+                        {:phase "comparison-storage" :operation operation :error cause})))
+
 (defn- finish
   [state status exit-code causes]
   (let [saved   (attempt :catch-fatal (persist state #(assoc % :status status :ended-at (time/now))))
         failure (when (failure? saved)
-                  (errors/combine (conj (mapv #(hash-map :error %) causes)
-                                        {:phase "comparison-storage" :operation :finish-comparison :error saved})))]
+                  (storage-failure :finish-comparison causes saved))]
     {:comparison (if failure @(:saved-ref state) saved)
      :home (:home state)
      :log-path (get-in state [:home :log-path])
@@ -244,8 +257,7 @@
                           nil)]
     (if (failure? recorded)
       (failure-outcome state signal
-                       (errors/combine [{:error error}
-                                        {:phase "comparison-storage" :operation :record-interruption :error recorded}]))
+                       (storage-failure :record-interruption [error] recorded))
       (finish state :interrupted (outcome/interruption-code signal) [error]))))
 
 (defn- record-created-build
@@ -282,8 +294,7 @@
       (interrupt-configuration state slug signal phase cause)
       (fail-configuration state slug phase (str (name phase) " failure") cause))
     (catch :default recorded
-      (throw (errors/combine [{:error cause}
-                              {:phase "comparison-storage" :operation :record-configuration-failure :error recorded}])))))
+      (throw (storage-failure :record-configuration-failure [cause] recorded)))))
 
 (defn- begin-configuration
   [state configuration]
@@ -468,8 +479,7 @@
     (try
       (record-run-result state slug evidence)
       (catch :default cause
-        (throw (errors/combine [{:error (:error evidence)}
-                                {:phase "comparison-storage" :operation :record-run-result :error cause}]))))
+        (throw (storage-failure :record-run-result [(:error evidence)] cause))))
     (config-run-outcome slug evidence)))
 
 (defn- get-missing-run-cause
@@ -609,8 +619,7 @@
                   nil)]
     (cond
       (failure? recorded)
-      (throw (errors/combine [{:error analyzed}
-                              {:phase "comparison-storage" :operation :record-edge :error recorded}]))
+      (throw (storage-failure :record-edge [analyzed] recorded))
 
       fatal? (throw analyzed)
       :else analyzed)))
@@ -623,8 +632,7 @@
       (try
         (mark-edges-unattempted state (str "interrupted by " signal))
         (catch :default cause
-          (throw (errors/combine [{:error error}
-                                  {:phase "comparison-storage" :operation :record-interruption :error cause}]))))
+          (throw (storage-failure :record-interruption [error] cause))))
       {:interrupted signal :error error})
     (if-let [[edge & pending] (seq edges)]
       (analyze-edges state pending (record-edge-outcome state edge (analyze-edge state edge) error))
@@ -644,8 +652,7 @@
                           nil)]
     (if (failure? recorded)
       (failure-outcome state (process/signal-name (:signal state))
-                       (errors/combine [{:error error}
-                                        {:phase "comparison-storage" :operation :skip-comparisons :error recorded}]))
+                       (storage-failure :skip-comparisons [error] recorded))
       (finish state :failed 1 [error]))))
 
 (defn- ^:async run-edges
@@ -659,8 +666,7 @@
         (try
           (create-comparison-directory state)
           (catch :default cause
-            (throw (errors/combine [{:error error}
-                                    {:phase "comparison-storage" :operation :create-comparison-directory :error cause}]))))
+            (throw (storage-failure :create-comparison-directory [error] cause))))
         (let [analyzed (attempt :catch-fatal
                                 (await (analyze-edges state (:edges @(:record-ref state)) error)))]
           (cond
@@ -686,8 +692,7 @@
             (try
               (mark-configs-unattempted state pending (:reason step))
               (catch :default cause
-                (throw (errors/combine [{:error (:error step)}
-                                        {:phase "comparison-storage" :operation :stop-configurations :error cause}]))))
+                (throw (storage-failure :stop-configurations [(:error step)] cause))))
             (run-edges state (:error step)))
 
           :else (run-comparisons state pending)))

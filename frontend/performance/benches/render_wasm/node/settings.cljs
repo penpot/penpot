@@ -5,7 +5,10 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.node.settings
-  "Shared operational defaults.")
+  "Shared operational settings and guidance.")
 
 (def default-build-timeout-ms 300000)
 (def default-startup-timeout-ms 30000)
+
+(def gpu-guidance
+  "Start the container with ./manage.sh run-devenv --gpu and use pnpm run render-bench.")

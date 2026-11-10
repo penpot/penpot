@@ -594,6 +594,10 @@
       {:epoch epoch
        :dims viewport})))
 
+(defn- phase-error
+  [phase message cause]
+  (ex-info message {:phase phase} cause))
+
 (defn- load-module
   "Loads and instantiates the renderer.
 
@@ -609,9 +613,9 @@
   [epoch params]
   (-> (ensure-module! (or (:module-url params) "./render-wasm.js")
                       (or (:wasm-url params) "./render-wasm.wasm"))
-      (.catch #(throw (ex-info (str "module init failed: " (or (ex-message %) %))
-                               {:phase "module-init"}
-                               %)))
+      (.catch #(throw (phase-error "module-init"
+                                   (str "module init failed: " (or (ex-message %) %))
+                                   %)))
       (.then (fn [installed]
                (guard-current! epoch "module-init")
                installed))))
@@ -653,12 +657,9 @@
                   :browser (sr/translate-browser :chrome)
                   :params {}})
                 (catch :default cause
-                  (throw (ex-info "graphics init failed"
-                                  {:phase "graphics-init"}
-                                  cause))))]
+                  (throw (phase-error "graphics-init" "graphics init failed" cause))))]
       (when (nil? ctx)
-        (throw (ex-info "WebGL2 context unavailable"
-                        {:phase "graphics-init"})))
+        (throw (phase-error "graphics-init" "WebGL2 context unavailable" nil)))
       (set! wasm/gl-context-handle (:handle ctx))
       (set! wasm/gl-context (:context ctx))
       (set! wasm/canvas canvas)
@@ -666,9 +667,7 @@
       (try
         (h/call wasm/internal-module "_resize_viewbox" width height)
         (catch :default cause
-          (throw (ex-info "resize viewbox failed"
-                          {:phase "graphics-init"}
-                          cause))))
+          (throw (phase-error "graphics-init" "resize viewbox failed" cause))))
       (install-listeners! canvas epoch)
       {:module-ms factory-ms
        :graphics-ms (- (now) g0)
@@ -706,9 +705,7 @@
     (catch :default cause
       (if (errors/stale? cause)
         (throw cause)
-        (throw (ex-info "scene build failed"
-                        {:phase "scene-build"}
-                        cause))))))
+        (throw (phase-error "scene-build" "scene build failed" cause))))))
 
 (defn- upload-scene!
   "Sets the initial view and uploads prepared shapes inside the upload timer.

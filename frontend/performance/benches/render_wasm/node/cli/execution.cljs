@@ -24,6 +24,7 @@
    [benches.render-wasm.node.cli.request :as request]
    [benches.render-wasm.node.log :as log]
    [benches.render-wasm.node.outcome :as outcome]
+   [benches.render-wasm.node.settings :as settings]
    [benches.render-wasm.report.format :as format]))
 
 (defn on-signals
@@ -96,7 +97,7 @@
              (or (= command "run")
                  (and (= command "ab") (not (:dry-run options))))
              (not= "1" (.-PENPOT_GPU (.-env js/process))))
-    (throw (ex-info "--require-gpu needs PENPOT_GPU=1. Start the container with ./manage.sh run-devenv --gpu and use pnpm run render-bench."
+    (throw (ex-info (str "--require-gpu needs PENPOT_GPU=1. " settings/gpu-guidance)
                     {:type ::gpu-required}))))
 
 (defn- log-failures
