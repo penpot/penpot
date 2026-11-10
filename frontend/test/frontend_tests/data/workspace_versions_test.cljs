@@ -221,33 +221,73 @@
       (finally
         (rx/dispose! sub)))))
 
-(t/deftest ^:async version-events-send-the-current-file-id
-  ;; The snapshot RPC commands require the `file-id` (they need it for
-  ;; partition pruning on the `file_change` table); the workspace version
-  ;; events must always send it, taken from the current file.
-  (let [file-id    (uuid/next)
-        version-id (uuid/next)
-        requests   (atom [])
-        state      {:current-file-id file-id
-                    :workspace-versions {:data [{:id version-id
-                                                 :created-at (ct/now)
-                                                 :created-by "system"}]}}
-        call!      (fn [event]
-                     (reset! requests [])
-                     (->> (ptk/watch event state (rx/empty))
-                          (rx/subs! (fn [_])))
-                     (first @requests))]
-    (await
-     (mock/with-mocks*
-       {rp/cmd! (mock/stub (fn [cmd params]
-                             (swap! requests conj [cmd params])
-                             (rx/of true)))}
-       (doseq [[cmd event] [[:update-file-snapshot (versions/rename-version version-id "name")]
-                            [:delete-file-snapshot (versions/delete-version version-id)]
-                            [:lock-file-snapshot   (versions/lock-version version-id)]
-                            [:unlock-file-snapshot (versions/unlock-version version-id)]
-                            [:update-file-snapshot (versions/pin-version version-id)]]]
-         (t/testing (name cmd)
-           (let [[sent-cmd params] (call! event)]
-             (t/is (= cmd sent-cmd))
-             (t/is (= file-id (:file-id params))))))))))
+;; The snapshot RPC commands require the `file-id` (they use it to prune the
+;; partitions of `file_change`), so every workspace version event sends the
+;; one of the file that is open.
+
+(defn- version-event-request
+  "Run a workspace version event with `file-id` open and `version-id` in the
+  history, and return the `[command params]` of the RPC request it sends."
+  [file-id version-id event]
+  (let [requests (atom [])
+        state    {:current-file-id file-id
+                  :workspace-versions {:data [{:id version-id
+                                               :created-at (ct/now)
+                                               :created-by "system"}]}}]
+    (mock/with-mocks*
+      {rp/cmd! (mock/stub (fn [cmd params]
+                            (swap! requests conj [cmd params])
+                            (rx/of true)))}
+      (->> (ptk/watch event state (rx/empty))
+           (rx/subs! (fn [_])))
+      (first @requests))))
+
+(t/deftest ^:async renaming-a-version-sends-the-current-file-id
+  (let [file-id      (uuid/next)
+        version-id   (uuid/next)
+        [cmd params] (await (version-event-request
+                             file-id version-id
+                             (versions/rename-version version-id "name")))]
+    (t/is (= :update-file-snapshot cmd))
+    (t/is (= version-id (:id params)))
+    (t/is (= file-id (:file-id params)))))
+
+(t/deftest ^:async deleting-a-version-sends-the-current-file-id
+  (let [file-id      (uuid/next)
+        version-id   (uuid/next)
+        [cmd params] (await (version-event-request
+                             file-id version-id
+                             (versions/delete-version version-id)))]
+    (t/is (= :delete-file-snapshot cmd))
+    (t/is (= version-id (:id params)))
+    (t/is (= file-id (:file-id params)))))
+
+(t/deftest ^:async locking-a-version-sends-the-current-file-id
+  (let [file-id      (uuid/next)
+        version-id   (uuid/next)
+        [cmd params] (await (version-event-request
+                             file-id version-id
+                             (versions/lock-version version-id)))]
+    (t/is (= :lock-file-snapshot cmd))
+    (t/is (= version-id (:id params)))
+    (t/is (= file-id (:file-id params)))))
+
+(t/deftest ^:async unlocking-a-version-sends-the-current-file-id
+  (let [file-id      (uuid/next)
+        version-id   (uuid/next)
+        [cmd params] (await (version-event-request
+                             file-id version-id
+                             (versions/unlock-version version-id)))]
+    (t/is (= :unlock-file-snapshot cmd))
+    (t/is (= version-id (:id params)))
+    (t/is (= file-id (:file-id params)))))
+
+(t/deftest ^:async pinning-a-version-sends-the-current-file-id
+  (let [file-id      (uuid/next)
+        version-id   (uuid/next)
+        [cmd params] (await (version-event-request
+                             file-id version-id
+                             (versions/pin-version version-id)))]
+    (t/is (= :update-file-snapshot cmd))
+    (t/is (= version-id (:id params)))
+    (t/is (= file-id (:file-id params)))))

@@ -39,10 +39,11 @@
     (swap! calls conj [cmd params])
     (rx/of (if (= :get-team-users cmd) [] true))))
 
-(t/deftest ^:async file-version-proxy-sends-the-file-id
-  ;; The snapshot RPC commands require the `file-id` (they need it for the
-  ;; partition pruning on `file_change`); the plugin proxy is the other door to
-  ;; them and has to send it on rename, remove and pin.
+;; The snapshot RPC commands require the `file-id` (they use it to prune the
+;; partitions of `file_change`); the plugin proxy is the other door to them and
+;; sends it on rename, remove and pin.
+
+(t/deftest ^:async renaming-a-version-sends-the-current-file-id
   (let [file-id    (uuid/next)
         version-id (uuid/next)
         calls      (atom [])]
@@ -52,42 +53,58 @@
        {r/check-permission (constantly true)
         rp/cmd!            (mock/stub (record-cmd! calls))}
 
-       (t/testing "rename sends the file id"
-         (reset! calls [])
-         (let [version (make-version file-id
-                                     {:id version-id
-                                      :label "Version"
-                                      :created-at (ct/now)
-                                      :created-by "user"})]
-           (aset version "label" "renamed")
-           (let [[cmd params] (last @calls)]
-             (t/is (= :update-file-snapshot cmd))
-             (t/is (= file-id (:file-id params)))
-             (t/is (= "renamed" (:label params))))))
+       (let [version (make-version file-id
+                                   {:id version-id
+                                    :label "Version"
+                                    :created-at (ct/now)
+                                    :created-by "user"})]
+         (aset version "label" "renamed")
+         (let [[cmd params] (last @calls)]
+           (t/is (= :update-file-snapshot cmd))
+           (t/is (= version-id (:id params)))
+           (t/is (= file-id (:file-id params)))
+           (t/is (= "renamed" (:label params)))))))))
 
-       (t/testing "remove sends the file id"
-         (reset! calls [])
-         (let [version (make-version file-id
-                                     {:id version-id
-                                      :label "Version"
-                                      :created-at (ct/now)
-                                      :created-by "user"})]
-           (await (.remove version))
-           (let [[cmd params] (last @calls)]
-             (t/is (= :delete-file-snapshot cmd))
-             (t/is (= file-id (:file-id params))))))
+(t/deftest ^:async removing-a-version-sends-the-current-file-id
+  (let [file-id    (uuid/next)
+        version-id (uuid/next)
+        calls      (atom [])]
 
-       (t/testing "pin sends the file id on both commands"
-         (reset! calls [])
-         (let [version (make-version file-id
-                                     {:id version-id
-                                      :label "Version"
-                                      :created-at (ct/now)
-                                      :created-by "system"})]
-           (await (.pin version))
-           (t/is (= [[:get-team-users file-id]
-                     [:update-file-snapshot file-id]]
-                    (mapv (fn [[cmd params]] [cmd (:file-id params)]) @calls)))))))))
+    (await
+     (mock/with-mocks*
+       {r/check-permission (constantly true)
+        rp/cmd!            (mock/stub (record-cmd! calls))}
+
+       (let [version (make-version file-id
+                                   {:id version-id
+                                    :label "Version"
+                                    :created-at (ct/now)
+                                    :created-by "user"})]
+         (await (.remove version))
+         (let [[cmd params] (last @calls)]
+           (t/is (= :delete-file-snapshot cmd))
+           (t/is (= version-id (:id params)))
+           (t/is (= file-id (:file-id params)))))))))
+
+(t/deftest ^:async pinning-a-version-sends-the-current-file-id
+  (let [file-id    (uuid/next)
+        version-id (uuid/next)
+        calls      (atom [])]
+
+    (await
+     (mock/with-mocks*
+       {r/check-permission (constantly true)
+        rp/cmd!            (mock/stub (record-cmd! calls))}
+
+       (let [version (make-version file-id
+                                   {:id version-id
+                                    :label "Version"
+                                    :created-at (ct/now)
+                                    :created-by "system"})]
+         (await (.pin version))
+         (t/is (= [[:get-team-users file-id]
+                   [:update-file-snapshot file-id]]
+                  (mapv (fn [[cmd params]] [cmd (:file-id params)]) @calls))))))))
 
 (t/deftest ^:async file-version-proxy-pin-resolves-the-pinned-version
   ;; `pin` answers with a proxy, not with the boolean the snapshot command
