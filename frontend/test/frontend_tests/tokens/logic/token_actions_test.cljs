@@ -18,6 +18,7 @@
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.wasm-text :as dwwt]
    [app.util.storage :as storage]
    [cljs.test :as t :include-macros true]
@@ -931,6 +932,129 @@
                (t/is (= (:stroke-width-right (:applied-tokens rect-1')) (:name token-target')))
                (t/is (= (:stroke-width-bottom (:applied-tokens rect-1')) (:name token-target')))
                (t/is (= (:stroke-width-left (:applied-tokens rect-1')) (:name token-target')))))))))))
+
+(t/deftest test-propagate-token-on-radius-and-stroke-width
+  (t/testing "changing a token applied to radius and stroke width updates both"
+    (t/async
+      done
+      (let [file (-> (setup-file-with-tokens)
+                     (ctht/update-tokens-lib
+                      #(ctob/add-token % (cthi/id :set-a)
+                                       (ctob/make-token {:name "size.md" :value "8" :type :dimensions})))
+                     (toht/apply-token-to-shape :rect-1 "size.md" ctt/border-radius-keys)
+                     (toht/apply-token-to-shape :rect-1 "size.md" ctt/per-side-stroke-width-keys))]
+        (tohs/run-store-async
+         (ths/setup-store file) done
+         [(dwtl/update-token (cthi/id :set-a) (:id (toht/get-token file "size.md")) {:value "12"})
+          (dwtp/propagate-workspace-tokens)]
+         (fn [new-state]
+           (let [rect-1' (cths/get-shape (ths/get-file-from-state new-state) :rect-1)
+                 stroke' (get-in rect-1' [:strokes 0])]
+             (t/testing "radius gets the new value"
+               (t/is (= (:r1 rect-1') 12))
+               (t/is (= (:r4 rect-1') 12)))
+             (t/testing "stroke width gets the new value"
+               (t/is (= (:stroke-width-top stroke') 12))
+               (t/is (= (:stroke-width-left stroke') 12))))))))))
+
+(t/deftest test-propagate-token-on-radius-and-margin
+  (t/testing "changing a token applied to radius and margin updates both"
+    (t/async
+      done
+      (let [file (-> (setup-file-with-tokens)
+                     (ctho/add-frame-with-child :frame-layout :rect-in-layout
+                                                {:frame-params {:layout :flex}})
+                     (ctht/update-tokens-lib
+                      #(ctob/add-token % (cthi/id :set-a)
+                                       (ctob/make-token {:name "size.md" :value "8" :type :dimensions})))
+                     (toht/apply-token-to-shape :rect-in-layout "size.md" ctt/border-radius-keys)
+                     (toht/apply-token-to-shape :rect-in-layout "size.md" ctt/spacing-margin-keys))]
+        (tohs/run-store-async
+         (ths/setup-store file) done
+         [(dwtl/update-token (cthi/id :set-a) (:id (toht/get-token file "size.md")) {:value "12"})
+          (dwtp/propagate-workspace-tokens)]
+         (fn [new-state]
+           (let [rect' (cths/get-shape (ths/get-file-from-state new-state) :rect-in-layout)]
+             (t/testing "radius gets the new value"
+               (t/is (= (:r1 rect') 12)))
+             (t/testing "margin gets the new value, and only margin keys"
+               (t/is (= {:m1 12 :m2 12 :m3 12 :m4 12}
+                        (:layout-item-margin rect')))))))))))
+
+(t/deftest test-propagate-token-on-radius-and-position
+  (t/testing "changing a token applied to radius and position updates both"
+    (t/async
+      done
+      (let [file (-> (setup-file-with-tokens)
+                     (ctht/update-tokens-lib
+                      #(ctob/add-token % (cthi/id :set-a)
+                                       (ctob/make-token {:name "size.md" :value "8" :type :dimensions})))
+                     (toht/apply-token-to-shape :rect-1 "size.md" ctt/border-radius-keys)
+                     (toht/apply-token-to-shape :rect-1 "size.md" #{:x :y}))]
+        (tohs/run-store-async
+         (ths/setup-store file) done
+         [(dwtl/update-token (cthi/id :set-a) (:id (toht/get-token file "size.md")) {:value "12"})
+          (dwtp/propagate-workspace-tokens)]
+         (fn [new-state]
+           (let [rect-1' (cths/get-shape (ths/get-file-from-state new-state) :rect-1)]
+             (t/testing "radius gets the new value"
+               (t/is (= (:r1 rect-1') 12)))
+             (t/testing "position gets the new value"
+               (t/is (= (:x rect-1') 12))
+               (t/is (= (:y rect-1') 12))))))))))
+
+(t/deftest test-propagate-tokens-reaching-the-same-value
+  (t/testing "a token whose new value equals another token's still updates its attribute"
+    (t/async
+      done
+      (let [file (-> (setup-file-with-tokens)
+                     (ctht/update-tokens-lib
+                      #(-> %
+                           (ctob/add-token (cthi/id :set-a)
+                                           (ctob/make-token {:name "radius.sm" :value "4" :type :dimensions}))
+                           (ctob/add-token (cthi/id :set-a)
+                                           (ctob/make-token {:name "stroke.md" :value "8" :type :dimensions}))))
+                     ;; The attribute applied first used to decide the only update that ran.
+                     (toht/apply-token-to-shape :rect-1 "stroke.md" ctt/per-side-stroke-width-keys)
+                     (toht/apply-token-to-shape :rect-1 "radius.sm" ctt/border-radius-keys))]
+        (tohs/run-store-async
+         (ths/setup-store file) done
+         [(dwtl/update-token (cthi/id :set-a) (:id (toht/get-token file "radius.sm")) {:value "8"})
+          (dwtp/propagate-workspace-tokens)]
+         (fn [new-state]
+           (let [rect-1' (cths/get-shape (ths/get-file-from-state new-state) :rect-1)
+                 stroke' (get-in rect-1' [:strokes 0])]
+             (t/testing "radius gets the edited token's new value"
+               (t/is (= (:r1 rect-1') 8)))
+             (t/testing "stroke width keeps the other token's value"
+               (t/is (= (:stroke-width-top stroke') 8))))))))))
+
+(t/deftest test-propagate-number-token-on-rotation-and-line-height
+  (t/testing "changing a number token applied to rotation and line height updates both"
+    (t/async
+      done
+      (let [file (-> (setup-file-with-tokens)
+                     (ctht/update-tokens-lib
+                      #(ctob/add-token % (cthi/id :set-a)
+                                       (ctob/make-token {:name "number.md" :value "2" :type :number})))
+                     (toht/apply-token-to-shape :text-1 "number.md" ctt/rotation-keys)
+                     (toht/apply-token-to-shape :text-1 "number.md" ctt/line-height-keys))]
+        (tohs/run-store-async
+         (ths/setup-store file) done
+         [(dwtl/update-token (cthi/id :set-a) (:id (toht/get-token file "number.md")) {:value "3"})
+          (dwtp/propagate-workspace-tokens)]
+         (fn [new-state]
+           (let [text-1' (cths/get-shape (ths/get-file-from-state new-state) :text-1)
+                 line-heights (->> (:content text-1')
+                                   (txt/content->text+styles)
+                                   (remove (fn [[_ text]] (str/empty? (str/trim text))))
+                                   (map (comp :line-height first)))]
+             (t/testing "rotation gets the new value"
+               (t/is (= (:rotation text-1') 3)))
+             (t/testing "line height gets the new value"
+               (t/is (seq line-heights))
+               (t/is (every? #(= 3 %) line-heights)))))
+         debounce-text-stop)))))
 
 (t/deftest test-apply-stroke-width-overwrites-per-side-token
   (t/testing "applying token to all sides overwrites per-side token"

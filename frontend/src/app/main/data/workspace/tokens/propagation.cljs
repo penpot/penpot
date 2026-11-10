@@ -122,15 +122,17 @@
 
       [tokens frame-ids text-ids])))
 
-(defn- actionize-shapes-update-info [page-id shapes-update-info]
-  (mapcat (fn [[attrs update-infos]]
-            (let [action (some attribute-actions-map attrs)]
-              (assert (fn? action) "missing action function on attributes->shape-update")
-              (map
-               (fn [[v shape-ids]]
-                 (action v shape-ids attrs page-id))
-               update-infos)))
-          shapes-update-info))
+(defn- actionize-shapes-update-info
+  "Attributes are collected by token value, so one value can cover a shape's
+  radius and its stroke width. Each kind of attribute is still updated on its
+  own."
+  [page-id shapes-update-info]
+  (for [[attrs update-infos]  shapes-update-info
+        [action action-attrs] (group-by attribute-actions-map attrs)
+        [v shape-ids]         update-infos]
+    (do
+      (assert (fn? action) "missing action function on attributes->shape-update")
+      (action v shape-ids (set action-attrs) page-id))))
 
 (defn- update-canvas-background
   "Set the background of `page-id` to the resolved value of its linked
