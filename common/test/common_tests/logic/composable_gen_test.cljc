@@ -2005,6 +2005,21 @@
                        :ops [[:duplicate 0 0 0 0] [:duplicate 0 0 0 0] [:variant-property 0 0 0 0] [:switch 12]
                              [:duplicate 16 0 0 0] [:make-variant 0] [:switch 12] [:update-main 0 0 0 0]]}))))
 
+(t/deftest switching-a-hidden-grid-child-to-a-shown-variant-gives-it-a-cell
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:add-variant 0 0 0 0] [:add-variant 2] [:switch 5] [:nest 8 0 0 0] [:delete 0]
+                             [:restore 0] [:style 6 1 1] [:variant-property 0 0 0 0] [:switch 0]]}))))
+
+(t/deftest switching-a-hidden-grid-child-of-a-library-variant-gives-it-a-cell
+  (t/is (map? (cg/run {:world [2 1 {:variants true :text-styles true :library-variants true :stale-libraries true
+                                    :layout :grid :layout-item-margins false :grid-square false :library-depth 1
+                                    :library true :rich-variants true :layout-children false :library-text true
+                                    :grid-empty false :layout-copies true :text true}]
+                       :ops [[:nest 6 0 0 0] [:style 3 1 1] [:library-variant-property 0 0 0 0] [:library-sync]
+                             [:switch 6]]}))))
+
 (t/deftest turning-a-flipped-copy-turns-a-child-stored-as-the-other-mirror-turn
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true

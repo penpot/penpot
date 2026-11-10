@@ -198,3 +198,32 @@
     (t/is (= 3 (:column cell)))
     (t/is (= (:id cell) (:id cell')))
     (t/is (= [(:id new-shape)] (:shapes cell')))))
+
+(t/deftest switching-a-hidden-grid-child-to-a-shown-variant-gives-it-a-cell
+  (let [;; ==== Setup: :m01 is hidden, so its copy in the grid board holds no cell
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant :v01 :c01 :m01 :c02 :m02 :variant1-params {:hidden true})
+                      (tho/add-grid-frame :board)
+                      (ths/add-sample-shape :first :parent-label :board)
+                      (thc/instantiate-component :c01 :copy01 :parent-label :board)
+                      (tho/place-in-grid-columns :board 2 {1 :first}))
+        page      (thf/current-page file)
+
+        ;; ==== Action
+        [new-shape changes _]
+        (clv/generate-component-swap-in-place (pcb/empty-changes nil (:id page))
+                                              page
+                                              (libraries file)
+                                              (:data file)
+                                              (ths/get-shape file :copy01)
+                                              (thi/id :c02)
+                                              true)
+        file'     (thf/apply-changes file changes)
+        new-shape (ths/get-shape-by-id file' (:id new-shape))
+        cell'     (ctl/get-cell-by-shape-id (ths/get-shape file' :board) (:id new-shape))]
+
+    ;; ==== Check: the shown head takes the free cell
+    (t/is (:hidden (ths/get-shape file :copy01)))
+    (t/is (nil? (ctl/get-cell-by-shape-id (ths/get-shape file :board) (thi/id :copy01))))
+    (t/is (not (:hidden new-shape)))
+    (t/is (= 2 (:column cell')))))

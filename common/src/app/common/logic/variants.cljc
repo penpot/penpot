@@ -793,9 +793,11 @@
         ;; temporary deletion must not change the parent's placement data.
         changes (cond-> changes
                   (ctsl/grid-layout? parent)
-                  (pcb/update-shapes [(:id parent)]
-                                     #(assoc % :layout-grid-cells (:layout-grid-cells parent))
-                                     {:ignore-touched true}))]
+                  (-> (pcb/update-shapes [(:id parent)]
+                                         #(assoc % :layout-grid-cells (:layout-grid-cells parent))
+                                         {:ignore-touched true})
+                      ;; a head that enters or leaves the flow takes or frees a cell
+                      (cll/reassign-parent-grid-cells page (:id shape))))]
     [new-shape changes (concat all-parents parents-of-swapped)]))
 
 (defn find-switch-target

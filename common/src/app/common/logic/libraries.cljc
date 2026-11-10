@@ -414,7 +414,7 @@
                   (reduce #(update %1 %2 turn) objects
                           (cfh/get-children-ids-with-self objects (:id shape-main)))))))))
 
-(defn- reassign-parent-grid-cells
+(defn reassign-parent-grid-cells
   "`changes` with the cells of the grid that holds the copy head `id`
    assigned again when they take the head in or out of the grid's flow, as
    showing or hiding a child does."
