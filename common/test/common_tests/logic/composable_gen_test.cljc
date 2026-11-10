@@ -2020,6 +2020,13 @@
                        :ops [[:nest 6 0 0 0] [:style 3 1 1] [:library-variant-property 0 0 0 0] [:library-sync]
                              [:switch 6]]}))))
 
+(t/deftest resetting-a-resized-grid-copy-gives-a-cell-to-the-child-back-in-its-flow
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children true :grid-empty false :layout-copies true :text true}]
+                       :ops [[:make-variant 4 0 0 0] [:combine 0 0 0 0] [:transform 6 7 0 0] [:nest 1 0 0 0]
+                             [:combine 3] [:switch 6] [:style 16 35 1] [:edit 8 1 1 :copy-head] [:reset 8]]}))))
+
 (t/deftest turning-a-flipped-copy-turns-a-child-stored-as-the-other-mirror-turn
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true

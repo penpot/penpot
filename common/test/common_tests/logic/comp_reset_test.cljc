@@ -50,6 +50,31 @@
     (t/is (= 2 (column reset)))
     (t/is (nil? (:touched (tm/resolve-shape reset :copy-nested))))))
 
+(t/deftest reset-a-resized-grid-copy-gives-a-cell-to-the-child-it-brings-back-into-the-flow
+  (let [;; ==== Setup: the copy takes Item B out of the flow and narrows itself
+        file    (-> (thf/sample-file :file1)
+                    (tho/add-grid-frame :main-root)
+                    (tho/add-rect :main-a :parent-label :main-root)
+                    (tho/add-rect :main-b :parent-label :main-root)
+                    (tho/place-in-grid-columns :main-root 2 {1 :main-a 2 :main-b})
+                    (thc/make-component :grid :main-root)
+                    (thc/instantiate-component :grid :copy :children-labels [:copy-a :copy-b]))
+        initial (tm/make-situation file)
+        edited  (-> initial
+                    (r/step (n/change-property :copy-b :layout-item-absolute true)) r/settle
+                    (r/step (n/transform-shape :copy :width 80)) r/settle)
+
+        ;; ==== Action
+        reset   (-> edited (r/step (n/reset :copy)) r/settle)
+        column  (fn [s]
+                  (:column (ctl/get-cell-by-shape-id (tm/resolve-shape s :copy) (thi/id :copy-b))))]
+
+    ;; ==== Check: Item B is back in its main's cell
+    (t/is (nil? (column edited)))
+    (t/is (= 80.0 (:width (tm/resolve-shape edited :copy))))
+    (t/is (= 2 (column reset)))
+    (t/is (nil? (:touched (tm/resolve-shape reset :copy-b))))))
+
 (t/deftest reset-a-nested-copy-through-a-deleted-outer-main
   (let [initial (setup/nested-component-with-copy)
         edited (-> initial
