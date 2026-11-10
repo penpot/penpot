@@ -6,11 +6,14 @@
 
 (ns backend-tests.rpc-organization-owner-permissions-test
   (:require
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.db :as db]
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
+   [app.rpc.permissions :as perms]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
@@ -247,3 +250,36 @@
                                 :id (:id target-team)})]
           (t/is (th/ex-info? (:error out)))
           (t/is (th/ex-of-type? (:error out) :not-found)))))))
+
+(t/deftest resolve-team-id-refuses-soft-deleted-ancestors
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        editor  (th/create-profile* 2 {:is-active true})
+        team    (th/create-team* 1 {:profile-id (:id owner)})
+        project (th/create-project* 1 {:profile-id (:id editor)
+                                       :team-id (:id team)})
+        file    (th/create-file* 1 {:profile-id (:id editor)
+                                    :project-id (:id project)})]
+
+    (t/testing "a live file/project/team resolves in every branch"
+      (t/is (= (:id team) (perms/resolve-team-id th/*system* {:file-id (:id file)})))
+      (t/is (= (:id team) (perms/resolve-team-id th/*system* {:project-id (:id project)})))
+      (t/is (= (:id team) (perms/resolve-team-id th/*system* {:team-id (:id team)}))))
+
+    (t/testing "a soft-deleted file refuses the file branch"
+      (db/update! th/*system* :file {:deleted-at (ct/now)} {:id (:id file)})
+      (t/is (nil? (perms/resolve-team-id th/*system* {:file-id (:id file)})))
+      (t/is (= (:id team) (perms/resolve-team-id th/*system* {:team-id (:id team)})))
+      (db/update! th/*system* :file {:deleted-at nil} {:id (:id file)}))
+
+    (t/testing "a soft-deleted project refuses the file and the project branch"
+      (db/update! th/*system* :project {:deleted-at (ct/now)} {:id (:id project)})
+      (t/is (nil? (perms/resolve-team-id th/*system* {:file-id (:id file)})))
+      (t/is (nil? (perms/resolve-team-id th/*system* {:project-id (:id project)})))
+      (t/is (= (:id team) (perms/resolve-team-id th/*system* {:team-id (:id team)})))
+      (db/update! th/*system* :project {:deleted-at nil} {:id (:id project)}))
+
+    (t/testing "a soft-deleted team refuses every branch"
+      (db/update! th/*system* :team {:deleted-at (ct/now)} {:id (:id team)})
+      (t/is (nil? (perms/resolve-team-id th/*system* {:file-id (:id file)})))
+      (t/is (nil? (perms/resolve-team-id th/*system* {:project-id (:id project)})))
+      (t/is (nil? (perms/resolve-team-id th/*system* {:team-id (:id team)}))))))

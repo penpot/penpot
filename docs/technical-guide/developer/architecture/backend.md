@@ -63,13 +63,16 @@ Rel(backend_app, redis, "Notifies", "pub/sub")
     ▸ tasks/
       main.clj
       config.clj
+      health.clj
       http.clj
+      jobs.clj
       metrics.clj
       migrations.clj
-      notifications.clj
+      nitrate.clj
       rpc.clj
       setup.clj
       srepl.clj
+      system.clj
       worker.clj
       ...
 ```
@@ -84,7 +87,7 @@ Rel(backend_app, redis, "Notifies", "pub/sub")
 * <code class="language-text">rpc</code> is the main module to handle the RPC API calls.
 * <code class="language-text">http/websocket.clj</code> manages the websocket endpoint: clients subscribe
   to open files or teams and the server keeps the subscriptions; revoked access
-  is re-checked and dropped. <code class="language-text">notifications.clj</code> publishes
+  is re-checked and dropped. <code class="language-text">rpc/notifications.clj</code> publishes
   access-change events on the bus so the websocket re-checks the subscriptions
   it owns.
 * <code class="language-text">setup</code> initializes the environment (loads config variables, sets up the

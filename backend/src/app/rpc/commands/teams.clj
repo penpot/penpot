@@ -269,13 +269,14 @@
   [cfg profile-id default-team-id params]
   (when-let [team-id (perms/resolve-team-id cfg params)]
     (when (nitrate/organization-owner-of-team? cfg profile-id team-id)
+      ;; resolve-team-id already proved the team row live; the guard
+      ;; that used to live here (when-not is-row-deleted?) was dead.
       (when-let [team (db/get* cfg :team {:id team-id})]
-        (when-not (db/is-row-deleted? team)
-          (-> team
-              (decode-row)
-              (merge perms/viewer-role-flags)
-              (assoc :is-default (= team-id default-team-id))
-              (process-permissions)))))))
+        (-> team
+            (decode-row)
+            (merge perms/viewer-role-flags)
+            (assoc :is-default (= team-id default-team-id))
+            (process-permissions))))))
 
 (defn get-team
   [cfg & {:keys [profile-id team-id project-id file-id] :as params}]

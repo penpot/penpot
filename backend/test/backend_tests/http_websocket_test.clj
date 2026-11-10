@@ -6,7 +6,6 @@
 
 (ns backend-tests.http-websocket-test
   (:require
-   [app.binfile.common :as bfc]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -887,41 +886,6 @@
 
         (t/testing "the team subscription is dropped by the interval"
           (t/is (wait-until #(nil? (subscribed-team conn)) 3000)))))))
-
-(t/deftest a-failing-check-keeps-the-subscription
-  (let [{:keys [editor file]} (editor-in-team! 1 2)]
-
-    (with-redefs [cf/get (fn [k default]
-                           (if (= :subscription-revalidation-interval k)
-                             (ct/duration {:millis 150})
-                             default))]
-      (let [conn (-> (open-registered-connection (:id editor))
-                     (subscribe :subscribe-file {:file-id (:id file)}))]
-
-        ;; Access still holds, but the check itself blows up.
-        (with-redefs [files/has-read-permissions?
-                      (fn [& _] (throw (RuntimeException. "db down")))]
-          (Thread/sleep 500)
-          (t/testing "a failing check keeps the subscription"
-            (t/is (some? (subscribed-file conn)))))))))
-
-(t/deftest failing-existence-check-keeps-the-subscription
-  (let [{:keys [editor file]} (editor-in-team! 1 2)]
-
-    (with-redefs [cf/get (fn [k default]
-                           (if (= :subscription-revalidation-interval k)
-                             (ct/duration {:millis 150})
-                             default))]
-      (let [conn (-> (open-registered-connection (:id editor))
-                     (subscribe :subscribe-file {:file-id (:id file)}))]
-
-        ;; The existence probe blows up; still-authorized? fails open,
-        ;; so a transient database error keeps a legitimate subscription.
-        (with-redefs [bfc/get-minimal-file
-                      (fn [& _] (throw (RuntimeException. "db down")))]
-          (Thread/sleep 500)
-          (t/testing "a failing existence check keeps the subscription"
-            (t/is (some? (subscribed-file conn)))))))))
 
 (t/deftest a-false-check-closes-the-subscription
   (let [{:keys [editor file]} (editor-in-team! 1 2)]

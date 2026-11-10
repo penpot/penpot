@@ -17,6 +17,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.db.sql :as sql]
    [app.http.session :as session]
    [app.metrics :as mtx]
    [app.msgbus :as mbus]
@@ -194,12 +195,12 @@
   "Same shape for teams: the team must still exist (a soft-deleted row
   grants nothing) and the profile must read it. `:subscribe-team` has
   no existence gate of its own; the re-check adds one, matching the
-  file side. Projects only `:id` and `:deleted-at` — `db/get*` filters
+  file side. Selects only `:id` and `:deleted-at` — `db/get*` filters
   soft-deleted rows through the `deleted_at` column, so it must be
   in the projection."
   [cfg profile-id team-id]
   (and (some? (db/get* cfg :team {:id team-id}
-                       {:app.db.sql/columns [:id :deleted-at]}))
+                       {::sql/columns [:id :deleted-at]}))
        (teams/has-read-permissions? cfg profile-id team-id)))
 
 (defn close-file-subscription

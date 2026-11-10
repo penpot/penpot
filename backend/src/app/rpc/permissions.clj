@@ -136,12 +136,12 @@
   row is checked for all branches — the SQL filters cover file and
   project, this final check covers the team itself."
   [cfg {:keys [team-id project-id file-id]}]
-  (let [team-id (cond (some? team-id)    team-id
-                      (some? project-id) (get-team-id-for-project cfg project-id)
-                      (some? file-id)    (get-team-id-for-file cfg file-id))]
-    (when (and team-id
-               (some? (db/get* cfg :team {:id team-id})))
-      team-id)))
+  (let [resolved-team-id (cond (some? team-id)    team-id
+                               (some? project-id) (get-team-id-for-project cfg project-id)
+                               (some? file-id)    (get-team-id-for-file cfg file-id))]
+    (when (and resolved-team-id
+               (some? (db/get* cfg :team {:id resolved-team-id})))
+      resolved-team-id)))
 
 (defn get-organization-owner-permissions
   "When `profile-id` is a non-member owner of the organization that owns
