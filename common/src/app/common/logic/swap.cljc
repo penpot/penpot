@@ -307,6 +307,26 @@
         :always
         (conj [attr attr-val])))))
 
+(defn- reoriented-operations
+  "The switch operations `[roperations uoperations]` into `current-shape`
+   with, when they carry a turn or a flip, the transform and the corners
+   the resulting turn and flips give it, so they describe one orientation.
+   Of a turn before or after the flips, the one nearer the axes of
+   `previous-shape`."
+  [[roperations uoperations] current-shape previous-shape]
+  (if-not (some (comp #{:rotation :flip-x :flip-y} :attr) roperations)
+    [roperations uoperations]
+    (let [carried  (reduce (fn [shape {:keys [attr val]}] (assoc shape attr val))
+                           current-shape roperations)
+          oriented (cll/unskewed (assoc carried :transform (:transform previous-shape)))
+          values   {:transform         (:transform oriented)
+                    :transform-inverse (:transform-inverse oriented)
+                    :points            (sized-geometry-value oriented (:width carried) (:height carried) :points)}
+          kept?    #(not (contains? values (:attr %)))
+          [rops uops] (cll/attr-operations current-shape (fn [attr] [[attr (get values attr)]]) (keys values))]
+      [(into (filterv kept? roperations) rops)
+       (into (apply list (filter kept? uoperations)) uops)])))
+
 (defn update-attrs-on-switch
   "Copy attributes that have changed in the shape previous to the switch
    to the current shape (post switch). Used only on variants switch"
@@ -333,10 +353,11 @@
                          (concat (disj ctk/swap-keep-attrs :interactions)))
 
         [roperations uoperations]
-        (cll/attr-operations current-shape
-                             #(switch-attr-operations current-shape previous-shape origin-ref-shape
-                                                      touched text-auto? %)
-                             attrs)
+        (-> (cll/attr-operations current-shape
+                                 #(switch-attr-operations current-shape previous-shape origin-ref-shape
+                                                          touched text-auto? %)
+                                 attrs)
+            (reoriented-operations current-shape previous-shape))
 
         updated-attrs (into #{} (map :attr) roperations)
         updated-sync-groups (into #{}
