@@ -1,5 +1,78 @@
 # CHANGELOG
 
+## 2.20.0
+
+### :bug: Bugs fixed
+
+- Fix dashboard file thumbnails loading slow for large multi-page files [#12053](https://github.com/penpot/penpot/issues/12053) (PR: [#12054](https://github.com/penpot/penpot/pull/12054))
+- Fix Plugin API resolving a font family token to its separate words when the family name has several words [#11748](https://github.com/penpot/penpot/issues/11748) (PR: [#11750](https://github.com/penpot/penpot/pull/11750))
+- Fix asset redirect responses advertising a cache lifetime of about 1000 days instead of 24 hours (by @ners) [#12761](https://github.com/penpot/penpot/issues/12761) (PR: [#12758](https://github.com/penpot/penpot/pull/12758))
+- Fix an internal error on typography tokens due to circular dependencies on other token types [#9580](https://github.com/penpot/penpot/issues/9580)
+- Fix the MCP server rejecting request bodies over 100kb (express.json default) with PayloadTooLargeError (by @GitNimay) [#12080](https://github.com/penpot/penpot/issues/12080) (PR: [#12450](https://github.com/penpot/penpot/pull/12450))
+- Fix library component, color and typography counters showing zero when opening files from the dashboard (by @lukel97) [#12826](https://github.com/penpot/penpot/issues/12826) (PR: [#12787](https://github.com/penpot/penpot/pull/12787))
+- Fix workspace crash with Maximum call stack size exceeded when applying a library update [#12576](https://github.com/penpot/penpot/issues/12576) (PR: [#12661](https://github.com/penpot/penpot/pull/12661))
+- Fix canvas rendering an imported shape without its hole when the SVG fill rule is evenodd [#11947](https://github.com/penpot/penpot/issues/11947) (PR: [#12006](https://github.com/penpot/penpot/pull/12006))
+- Fix Plugin API component.instance() and createShapeFromSvg() nesting the new shape into whatever board is at (0, 0) of the current page (by @makesomethingshit) [#12086](https://github.com/penpot/penpot/issues/12086) (PR: [#12499](https://github.com/penpot/penpot/pull/12499))
+- Fix view mode breaking zoom, board navigation, and comments when the URL has no page id [#12684](https://github.com/penpot/penpot/issues/12684) (PR: [#12687](https://github.com/penpot/penpot/pull/12687))
+- Fix autosave stopping and valid edits being lost when part of a save fails validation [#12553](https://github.com/penpot/penpot/issues/12553) (PR: [#12555](https://github.com/penpot/penpot/pull/12555))
+- Fix dashboard duplicate copying a file without the edits that are still saving [#12603](https://github.com/penpot/penpot/issues/12603) (PR: [#12555](https://github.com/penpot/penpot/pull/12555))
+- Fix Alt measurements still showing a shape that was deleted [#12605](https://github.com/penpot/penpot/issues/12605) (PR: [#12555](https://github.com/penpot/penpot/pull/12555))
+- Fix Plugin API ignoring changes to a deleted shape without an error [#12606](https://github.com/penpot/penpot/issues/12606) (PR: [#12555](https://github.com/penpot/penpot/pull/12555))
+- Fix typography sample overflowing its row in locales with a wider sample (ko, ar) (by @desty) [#11486](https://github.com/penpot/penpot/issues/11486) (PR: [#11487](https://github.com/penpot/penpot/pull/11487))
+- Fix token not showing when selecting two text layers (by @ShreyashAgare26) [#11924](https://github.com/penpot/penpot/issues/11924) (PR: [#11944](https://github.com/penpot/penpot/pull/11944))
+- Fix inner shadow fill not working in the SVG render while it works in WebGL [#11967](https://github.com/penpot/penpot/issues/11967) (PR: [#12141](https://github.com/penpot/penpot/pull/12141))
+- Fix @penpot/plugin-styles loading Work Sans from a third-party CDN (by @ump45nose) [#12023](https://github.com/penpot/penpot/issues/12023) (PR: [#12087](https://github.com/penpot/penpot/pull/12087))
+
+### :sparkles: New features & Enhancements
+
+- Add a feedback channel to the MCP server [#12490](https://github.com/penpot/penpot/issues/12490) (PR: [#12551](https://github.com/penpot/penpot/pull/12551))
+- Auto-scroll sortable lists when dragging an item near their top or bottom edge (by @ShreyashAgare26) [#10478](https://github.com/penpot/penpot/issues/10478) (PR: [#11595](https://github.com/penpot/penpot/pull/11595))
+- Make WebGL the default renderer for new accounts [#11855](https://github.com/penpot/penpot/issues/11855) (PR: [#12880](https://github.com/penpot/penpot/pull/12880))
+- Allow MCP to work with multiple open Penpot files [#11759](https://github.com/penpot/penpot/issues/11759)
+- Complete the Russian translations [#11955](https://github.com/penpot/penpot/issues/11955) (PR: [#11956](https://github.com/penpot/penpot/pull/11956))
+- Implement full text format paste within Penpot [#12047](https://github.com/penpot/penpot/issues/12047) (PR: [#12137](https://github.com/penpot/penpot/pull/12137))
+- Prevent the hosted MCP server from running execute_code twice when the plugin is open in two tabs [#12008](https://github.com/penpot/penpot/issues/12008) (PR: [#11927](https://github.com/penpot/penpot/pull/11927))
+- Allow detaching typography tokens [#11887](https://github.com/penpot/penpot/issues/11887) (PR: [#11969](https://github.com/penpot/penpot/pull/11969))
+- Add team, project and file management to the Plugin API for global plugins [#12170](https://github.com/penpot/penpot/issues/12170) (PR: [#12169](https://github.com/penpot/penpot/pull/12169))
+- Run .penpot file import and export as durable background jobs [#12194](https://github.com/penpot/penpot/issues/12194) (PR: [#12056](https://github.com/penpot/penpot/pull/12056), [#12192](https://github.com/penpot/penpot/pull/12192))
+- Open files and projects in a new tab with Ctrl/Cmd+click in the dashboard [#12228](https://github.com/penpot/penpot/issues/12228) (PR: [#12230](https://github.com/penpot/penpot/pull/12230))
+- Add an RPC method to read file-level plugin data [#12258](https://github.com/penpot/penpot/issues/12258) (PR: [#10171](https://github.com/penpot/penpot/pull/10171))
+- Add a get-file-tokens RPC method to read a file's design tokens [#12260](https://github.com/penpot/penpot/issues/12260) (PR: [#12172](https://github.com/penpot/penpot/pull/12172))
+- Show the progress and the size of each file in the import and export dialogs [#12340](https://github.com/penpot/penpot/issues/12340) (PR: [#12192](https://github.com/penpot/penpot/pull/12192))
+- Focus the search field when opening the color tokens tab of the color picker [#12344](https://github.com/penpot/penpot/issues/12344) (PR: [#12345](https://github.com/penpot/penpot/pull/12345))
+- Harden the file data offload job with a row lock, per-file transactions, throttle and metrics [#12398](https://github.com/penpot/penpot/issues/12398) (PR: [#12403](https://github.com/penpot/penpot/pull/12403))
+- Render email templates inside the mail job in the backend [#12445](https://github.com/penpot/penpot/issues/12445) (PR: [#12448](https://github.com/penpot/penpot/pull/12448))
+- Serve Penpot under a subpath [#3194](https://github.com/penpot/penpot/issues/3194) (PR: [#12358](https://github.com/penpot/penpot/pull/12358))
+- Run local WASM exports for shapes and boards without freezing the UI [#12512](https://github.com/penpot/penpot/issues/12512) (PR: [#12515](https://github.com/penpot/penpot/pull/12515))
+- Use WASM to generate SVG markup in the code inspector when render-wasm is active [#12567](https://github.com/penpot/penpot/issues/12567) (PR: [#12608](https://github.com/penpot/penpot/pull/12608))
+- Close the workspace search with the Escape key (by @filipsajdak) [#9540](https://github.com/penpot/penpot/issues/9540) (PR: [#12374](https://github.com/penpot/penpot/pull/12374))
+- Allow MCP to access and manage Penpot Dashboard resources [#11761](https://github.com/penpot/penpot/issues/11761)
+- Add OAuth support for MCP client connections [#12034](https://github.com/penpot/penpot/issues/12034) (PR: [#12480](https://github.com/penpot/penpot/pull/12480))
+- Restrict management RPC methods to their declared shared keys [#12730](https://github.com/penpot/penpot/issues/12730) (PR: [#12736](https://github.com/penpot/penpot/pull/12736))
+- Reduce memory used by duplicate shape ids in the workspace [#12791](https://github.com/penpot/penpot/issues/12791) (PR: [#12792](https://github.com/penpot/penpot/pull/12792))
+- Reduce memory consumption on shape decoding [#12789](https://github.com/penpot/penpot/issues/12789) (PR: [#12790](https://github.com/penpot/penpot/pull/12790))
+- Notify other users when a snapshot is restored [#12425](https://github.com/penpot/penpot/issues/12425) (PR: [#12555](https://github.com/penpot/penpot/pull/12555))
+- Normalize the configured tenant to lowercase [#12842](https://github.com/penpot/penpot/issues/12842) (PR: [#12843](https://github.com/penpot/penpot/pull/12843))
+- Speed up saves on large files by checking only the pages a save changes [#12602](https://github.com/penpot/penpot/issues/12602) (PR: [#12555](https://github.com/penpot/penpot/pull/12555))
+- Retry saves after short server failures and keep the workspace open when a save fails [#12601](https://github.com/penpot/penpot/issues/12601) (PR: [#12555](https://github.com/penpot/penpot/pull/12555))
+- Switch the workspace to read-only mode when the file can't be saved [#12507](https://github.com/penpot/penpot/issues/12507) (PR: [#12555](https://github.com/penpot/penpot/pull/12555))
+
+## 2.19.1
+
+### :lock: Security fixes
+
+- Fix editor-role team members retrieving the signed invitation token of any pending invitation (https://github.com/penpot/penpot/security/advisories/GHSA-4mmc-j8rh-74pf) (PR: [#12892](https://github.com/penpot/penpot/pull/12892))
+
+- Fix share-link page-scope escape in `get-profiles-for-file-comments` leaking the identity of comment authors outside the link's scope (https://github.com/penpot/penpot/security/advisories/GHSA-89cq-3wv7-987r) (PR: [#12888](https://github.com/penpot/penpot/pull/12888))
+
+- Fix missing authorization and unbounded array in mark-all-threads-as-read that let any authenticated user write the status of inaccessible threads (https://github.com/penpot/penpot/security/advisories/GHSA-j4vc-cmf6-jhr7) (PR: [#12894](https://github.com/penpot/penpot/pull/12894))
+
+- Fix incomplete SVG sanitizer escaping that let a "sanitized" SVG carry live script (CVE-2026-105694) (https://github.com/penpot/penpot/security/advisories/GHSA-qwhj-rchj-58mg) (PR: [#12887](https://github.com/penpot/penpot/pull/12887))
+
+### :bug: Bugs fixed
+
+- Fix component instance (variant) inside a layout resetting to its original size after a shared library update of an unrelated component [#12670](https://github.com/penpot/penpot/issues/12670) (PR: [#12851](https://github.com/penpot/penpot/pull/12851))
+
 ## 2.19.0
 
 ### :boom: Breaking changes & Deprecations
@@ -121,6 +194,7 @@ The Admin Console is now enabled by default and the `enable-admin-console` flag 
 - Fix `:referential-integrity` errors when creating, combining or renaming variant sets [#12734](https://github.com/penpot/penpot/issues/12734) (PR: [#12779](https://github.com/penpot/penpot/pull/12779))
 - Fix save errors after masking a variant with Ctrl+M [#12748](https://github.com/penpot/penpot/issues/12748) (PR: [#12749](https://github.com/penpot/penpot/pull/12749))
 - Fix icons in component instances not being shown on the canvas [#12752](https://github.com/penpot/penpot/issues/12752)
+- Fix upload endpoints accepting non-multipart upload paths and validation error bodies being truncated [#12896](https://github.com/penpot/penpot/issues/12896) (PR: [#12067](https://github.com/penpot/penpot/pull/12067))
 
 ### :sparkles: New features & Enhancements
 

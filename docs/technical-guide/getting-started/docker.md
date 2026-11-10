@@ -124,10 +124,15 @@ This will fetch the latest images. When you do <code class="language-bash">docke
 
 #### Upgrade to 2.19
 
-The Admin Console is now enabled by default, so the `enable-admin-console` flag is no longer
-needed and can be removed from `PENPOT_FLAGS`. The `penpot-admin-console` service and the
-`PENPOT_ADMIN_CONSOLE_URI` variable are now required: if you haven't set them up yet, follow
-steps 2–4 of the [2.18 upgrade](#upgrade-to-2.18).
+The Admin Console is now enabled by default, so the `enable-admin-console` flag is no longer needed and can be removed from `PENPOT_FLAGS`.
+
+The `penpot-admin-console` service and the `PENPOT_ADMIN_CONSOLE_URI` variable are part of the standard setup and are included in the official `docker-compose.yaml`. If you [upgraded to 2.18](#upgrade-to-2.18) following the guide, there is nothing else to do.
+
+If you don't want to run the Admin Console, you can disable it. Penpot keeps working as usual.
+
+1. Add `disable-admin-console` to `PENPOT_FLAGS`.
+2. Remove the `penpot-admin-console` service from your `docker-compose.yaml`, and from the `depends_on` list of `penpot-frontend`.
+3. Leave the `PENPOT_ADMIN_CONSOLE_URI` variable empty.
 
 #### Upgrade to 2.18
 

@@ -231,6 +231,7 @@
     "delete-file"
     "delete-font"
     "delete-organization"
+    "delete-organization-attribute"
     "delete-organization-member"
     "delete-project"
     "delete-team"

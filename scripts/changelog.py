@@ -8,6 +8,7 @@ flow memory (`mem:workflow/updating-changelog`) stays free of inline programs.
 Subcommands:
   check-merged  Verify that every given PR is merged (warns otherwise)
   boom          Generate the :boom: section from `breaking change` issues
+  security      Generate the :lock: section from advisories fixed in a version
   cross-ref     Compare merged milestone PRs against the changelog section
   report        Generate the anomaly report (CHANGES-ISSUES.md)
 
@@ -16,6 +17,8 @@ Usage:
   cat prs.txt | python3 scripts/changelog.py check-merged --stdin
   python3 scripts/changelog.py boom "2.19.0"
   python3 scripts/changelog.py boom "2.19.0" --write
+  python3 scripts/changelog.py security "2.19.1"
+  python3 scripts/changelog.py security "2.19.1" --write
   python3 scripts/changelog.py cross-ref "2.16.0"
   python3 scripts/changelog.py report "2.16.0"
   python3 scripts/changelog.py report "2.16.0" --changes CHANGES.md --output CHANGES-ISSUES.md
@@ -38,8 +41,14 @@ REPO = "penpot/penpot"
 GH_PY = Path(__file__).resolve().parent / "gh.py"
 
 BOOM_HEADING = "### :boom: Breaking changes & Deprecations"
+SECURITY_HEADING = "### :lock: Security fixes"
 BREAKING_LABEL = "breaking change"
 EXCLUDED_LABELS = {"release blocker", "no changelog"}
+
+# PR label carried by the security fixes that reference their advisory in the
+# PR body, and the GHSA id pattern used to find that reference.
+SECURITY_PR_LABEL = "pr pt"
+GHSA_ID_RE = re.compile(r"GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}", re.IGNORECASE)
 
 # Marker line of the issue comment that carries the changelog text of a
 # breaking change. Everything after the marker line is the entry content.
@@ -269,8 +278,8 @@ def version_section_bounds(content: str, milestone: str) -> tuple[int, int] | No
     return start, end
 
 
-def boom_body(entries: list[str]) -> str:
-    """Return the body text that follows the ``:boom:`` heading line."""
+def entry_list_body(entries: list[str]) -> str:
+    """Return the body text that follows a generated subsection heading."""
     if entries:
         return "\n\n" + "\n\n".join(entries) + "\n\n"
     return "\n\n"
@@ -292,12 +301,12 @@ def replace_boom_section(content: str, milestone: str, entries: list[str]) -> st
         body_start = start + heading.end()
         next_heading = re.search(r"(?m)^### ", content[body_start:end])
         body_end = body_start + next_heading.start() if next_heading else end
-        return content[:body_start] + boom_body(entries) + content[body_end:]
+        return content[:body_start] + entry_list_body(entries) + content[body_end:]
     header = re.match(r"(?m)^## [^\n]*\n", section)
     if header is None:
         raise ValueError(f'version "## {milestone}" header has no trailing newline')
     insert_at = start + header.end()
-    block = "\n" + BOOM_HEADING + boom_body(entries)[:-1]
+    block = "\n" + BOOM_HEADING + entry_list_body(entries)[:-1]
     return content[:insert_at] + block + content[insert_at:]
 
 
@@ -373,7 +382,7 @@ def cmd_boom(args: argparse.Namespace) -> None:
             render_boom_entry(issue, note, [pr["number"] for pr in merged], author)
         )
 
-    block = BOOM_HEADING + boom_body(entries)
+    block = BOOM_HEADING + entry_list_body(entries)
     print(block.rstrip("\n"))
 
     if not labelled:
@@ -396,6 +405,177 @@ def cmd_boom(args: argparse.Namespace) -> None:
             with open(args.changes, "w") as f:
                 f.write(updated)
             print(f"{args.changes}: :boom: section updated", file=sys.stderr)
+
+
+# ─────────────────────────────────────────────
+#  Subcommand: security
+# ─────────────────────────────────────────────
+
+
+def imperative_description(summary: str) -> str:
+    """Return a changelog description built from an advisory summary.
+
+    Advisory summaries are declarative ("Missing authorization in ... lets
+    ..."), so the description prefixes ``Fix`` and decapitalizes the first
+    word unless it starts with an acronym (``SVG``, ``CVE-...``). The wording
+    may still be polished in the flow; re-running ``security --write``
+    rewrites the entry from the advisory summary.
+    """
+    summary = strip_title_prefix((summary or "").strip())
+    if not summary:
+        return ""
+    first_word = summary.split(maxsplit=1)[0]
+    if len(first_word) > 1 and first_word[1:].islower():
+        summary = summary[0].lower() + summary[1:]
+    return f"Fix {summary}"
+
+
+def render_security_entry(advisory: dict, pr_numbers: list[int]) -> str:
+    """Render one ``:lock:`` entry: description, advisory link and PRs."""
+    ghsa_id = advisory["ghsa_id"]
+    url = advisory.get("url") or (
+        f"https://github.com/{REPO}/security/advisories/{ghsa_id}"
+    )
+    description = imperative_description(advisory.get("summary", "")) or (
+        "Fix a security issue"
+    )
+    entry = f"- {description} ({url})"
+    if pr_numbers:
+        entry += " (PR: " + ", ".join(pr_link(n) for n in pr_numbers) + ")"
+    return entry
+
+
+def fetch_security_advisories(milestone: str) -> list[dict]:
+    """Fetch the advisories that declare ``milestone`` as a patched version."""
+    return json.loads(run_gh_py("advisories", "--patched-version", milestone))
+
+
+def fetch_security_prs(milestone: str) -> dict[str, list[int]]:
+    """Map each GHSA id to the merged ``pr pt`` PRs in a milestone referencing it."""
+    by_ghsa: dict[str, list[int]] = {}
+    for pr in fetch_milestone_prs(milestone, "all"):
+        if pr.get("state") != "MERGED":
+            continue
+        if SECURITY_PR_LABEL not in pr.get("labels", []):
+            continue
+        for ghsa_id in GHSA_ID_RE.findall(pr.get("body") or ""):
+            by_ghsa.setdefault(ghsa_id.upper(), []).append(pr["number"])
+    return {ghsa_id: sorted(set(numbers)) for ghsa_id, numbers in by_ghsa.items()}
+
+
+def subsection_end(
+    content: str, section: str, start: int, end: int, heading_re: str
+) -> int | None:
+    """Return the offset where the body of a ``###`` subsection ends.
+
+    ``heading_re`` is a prefix of the heading line (e.g. ``### :rocket:``), so
+    the heading text that follows it does not matter.
+    """
+    match = re.search(rf"(?m)^{heading_re}", section)
+    if not match:
+        return None
+    body_start = start + match.end()
+    next_heading = re.search(r"(?m)^### ", content[body_start:end])
+    return body_start + next_heading.start() if next_heading else end
+
+
+def replace_security_section(
+    content: str, milestone: str, entries: list[str]
+) -> str:
+    """Return ``content`` with its ``:lock:`` subsection replaced or added.
+
+    The subsection follows ``:rocket:`` (or ``:boom:`` when there is no
+    ``:rocket:``, or the version header when neither exists), which keeps the
+    layout order. An empty ``entries`` list removes the subsection: the
+    heading only exists when the version has security fixes to list.
+    """
+    bounds = version_section_bounds(content, milestone)
+    if bounds is None:
+        raise ValueError(f'no "## {milestone}" section found')
+    start, end = bounds
+    section = content[start:end]
+
+    heading = re.search(rf"(?m)^{re.escape(SECURITY_HEADING)}[ \t]*$", section)
+    if heading:
+        heading_start = start + heading.start()
+        body_start = start + heading.end()
+        next_heading = re.search(r"(?m)^### ", content[body_start:end])
+        body_end = body_start + next_heading.start() if next_heading else end
+        if not entries:
+            return content[:heading_start] + content[body_end:]
+        return (
+            content[:heading_start]
+            + SECURITY_HEADING
+            + entry_list_body(entries)
+            + content[body_end:]
+        )
+
+    if not entries:
+        return content
+
+    anchor = subsection_end(content, section, start, end, r"### :rocket:")
+    if anchor is None:
+        anchor = subsection_end(content, section, start, end, r"### :boom:")
+    if anchor is None:
+        header = re.match(r"(?m)^## [^\n]*\n", section)
+        if header is None:
+            raise ValueError(f'version "## {milestone}" header has no trailing newline')
+        insert_at = start + header.end()
+        block = "\n" + SECURITY_HEADING + entry_list_body(entries)[:-1]
+        return content[:insert_at] + block + content[insert_at:]
+
+    block = SECURITY_HEADING + entry_list_body(entries)
+    return content[:anchor] + block + content[anchor:]
+
+
+def cmd_security(args: argparse.Namespace) -> None:
+    """Generate the ``:lock:`` section from advisories fixed in the version."""
+    milestone = args.milestone
+    advisories = fetch_security_advisories(milestone)
+    prs_by_ghsa = fetch_security_prs(milestone)
+
+    matched = {
+        advisory["ghsa_id"].upper()
+        for advisory in advisories
+        if advisory.get("ghsa_id")
+    }
+    for ghsa_id in sorted(set(prs_by_ghsa) - matched):
+        numbers = ", ".join(f"#{n}" for n in prs_by_ghsa[ghsa_id])
+        print(
+            f"WARNING: PR {numbers} references {ghsa_id}, which declares no patched "
+            f'version "{milestone}"; it will not be listed under :lock:',
+            file=sys.stderr,
+        )
+
+    entries = [
+        render_security_entry(
+            advisory, prs_by_ghsa.get(advisory["ghsa_id"].upper(), [])
+        )
+        for advisory in sorted(advisories, key=lambda advisory: advisory["ghsa_id"])
+    ]
+
+    if entries:
+        print((SECURITY_HEADING + entry_list_body(entries)).rstrip("\n"))
+    else:
+        print(
+            f"No advisories declare patched version {milestone}",
+            file=sys.stderr,
+        )
+
+    if args.write:
+        with open(args.changes) as f:
+            content = f.read()
+        try:
+            updated = replace_security_section(content, milestone, entries)
+        except ValueError as err:
+            print(f"ERROR: {err}", file=sys.stderr)
+            sys.exit(1)
+        if updated == content:
+            print(f"{args.changes}: :lock: section already up to date", file=sys.stderr)
+        else:
+            with open(args.changes, "w") as f:
+                f.write(updated)
+            print(f"{args.changes}: :lock: section updated", file=sys.stderr)
 
 
 # ─────────────────────────────────────────────
@@ -900,6 +1080,16 @@ def main() -> None:
     p_boom.add_argument("--write", action="store_true",
                         help="Replace the :boom: section in CHANGES.md in place")
     p_boom.set_defaults(func=cmd_boom)
+
+    p_security = sub.add_parser(
+        "security", help="Generate the :lock: section from advisories fixed in a version"
+    )
+    p_security.add_argument("milestone", help="Milestone title (e.g. '2.19.1')")
+    p_security.add_argument("--changes", default="CHANGES.md",
+                            help="Path to the changelog file (default: CHANGES.md)")
+    p_security.add_argument("--write", action="store_true",
+                            help="Replace the :lock: section in CHANGES.md in place")
+    p_security.set_defaults(func=cmd_security)
 
     p_cross = sub.add_parser(
         "cross-ref",
