@@ -142,6 +142,20 @@ impl ShapesPoolImpl {
         self.uuid_to_idx.contains_key(id)
     }
 
+    /// Runs `render` with the fills of `id` removed when its board hides them
+    /// on export. Only the export root loses them, so nested roots keep theirs.
+    pub fn with_export_root<T>(&mut self, id: &Uuid, render: impl FnOnce(&Self) -> T) -> T {
+        let fills = self
+            .get_mut(id)
+            .filter(|shape| shape.hide_fill_on_export)
+            .map(|shape| std::mem::take(&mut shape.fills));
+        let result = render(self);
+        if let (Some(fills), Some(shape)) = (fills, self.get_mut(id)) {
+            shape.fills = fills;
+        }
+        result
+    }
+
     pub fn get_mut(&mut self, id: &Uuid) -> Option<&mut Shape> {
         let idx = *self.uuid_to_idx.get(id)?;
         // The caller may change the shape, so its modified copy goes stale.
@@ -609,6 +623,24 @@ mod tests {
         pool.add_shape(parent).add_child(child);
         pool.add_shape(child).set_parent(parent);
         (pool, parent, child)
+    }
+
+    #[test]
+    fn with_export_root_hides_only_the_root_fills() {
+        let (mut pool, parent, child) = pool_with_parent_and_child();
+        let fills = vec![shapes::Fill::Solid(shapes::SolidColor(skia::Color::RED))];
+        for id in [parent, child] {
+            let shape = pool.get_mut(&id).expect("shape");
+            shape.set_fills(fills.clone());
+            shape.set_hide_fill_on_export(true);
+        }
+
+        pool.with_export_root(&parent, |tree| {
+            assert!(tree.get(&parent).expect("parent").fills.is_empty());
+            assert_eq!(tree.get(&child).expect("child").fills, fills);
+        });
+
+        assert_eq!(pool.get(&parent).expect("parent").fills, fills);
     }
 
     #[test]

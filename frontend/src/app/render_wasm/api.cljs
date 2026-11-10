@@ -1129,6 +1129,10 @@
   [hidden]
   (h/call wasm/internal-module "_set_shape_hidden" hidden))
 
+(defn set-shape-hide-fill-on-export
+  [hide]
+  (h/call wasm/internal-module "_set_shape_hide_fill_on_export" hide))
+
 (defn clear-shape-fills!
   "Clear the fills of the currently-selected shape (call `use-shape` first).
   Equivalent to `set-shape-fills` with an empty collection."
@@ -2916,8 +2920,9 @@
 (defn render-shape-pixels
   "Renders a shape subtree to encoded image bytes on the GPU export surface.
   `format` is :png, :jpeg or :webp; jpeg is flattened onto white on the Rust
-  side, since it has no alpha channel."
-  [shape-id scale format]
+  side, since it has no alpha channel. With `export?` the root drops its
+  fills when it hides them on export."
+  [shape-id scale format export?]
   (when (initialized?)
     (let [buffer (uuid/get-u32 shape-id)
           offset (h/call wasm/internal-module "_render_shape_pixels"
@@ -2926,7 +2931,8 @@
                          (aget buffer 2)
                          (aget buffer 3)
                          scale
-                         (sr/translate-raster-format format))]
+                         (sr/translate-raster-format format)
+                         export?)]
       (read-raster-result offset))))
 
 (defn render-shape-raster

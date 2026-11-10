@@ -11,6 +11,7 @@ use super::RawShapeType;
 
 const FLAG_CLIP_CONTENT: u8 = 0b0000_0001;
 const FLAG_HIDDEN: u8 = 0b0000_0010;
+const FLAG_HIDE_FILL_ON_EXPORT: u8 = 0b0000_0100;
 
 pub(crate) const RAW_BASE_PROPS_SIZE: usize = std::mem::size_of::<RawBasePropsData>();
 
@@ -78,6 +79,10 @@ impl RawBasePropsData {
         (self.flags & FLAG_HIDDEN) != 0
     }
 
+    fn hide_fill_on_export(&self) -> bool {
+        (self.flags & FLAG_HIDE_FILL_ON_EXPORT) != 0
+    }
+
     fn blend_mode(&self) -> BlendMode {
         RawBlendMode::from(self.blend_mode).into()
     }
@@ -112,6 +117,7 @@ pub(crate) fn apply_base_props(raw: &RawBasePropsData) -> Result<()> {
             shape.set_shape_type(shape_type.into());
             shape.set_clip(raw.clip_content());
             shape.set_hidden(raw.hidden());
+            shape.set_hide_fill_on_export(raw.hide_fill_on_export());
             shape.set_blend_mode(raw.blend_mode());
             shape.set_opacity(raw.opacity);
             shape.set_constraint_h(raw.constraint_h());

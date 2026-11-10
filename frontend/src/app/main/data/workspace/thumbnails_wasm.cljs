@@ -70,7 +70,7 @@
                           scale (mth/max 1 (/ target-size max-size))
                           ;; Thumbnails are always PNG: they need the alpha
                           ;; channel and are consumed as a `image/png` data uri.
-                          png-bytes (wasm.api/render-shape-pixels frame-id scale :png)]
+                          png-bytes (wasm.api/render-shape-pixels frame-id scale :png false)]
                       (if (or (nil? png-bytes) (zero? (.-length png-bytes)))
                         (do
                           (l/error :hint "render-shape-pixels returned empty" :frame-id (str frame-id))

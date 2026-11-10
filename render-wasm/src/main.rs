@@ -590,6 +590,15 @@ pub extern "C" fn set_shape_hidden(hidden: bool) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
+pub extern "C" fn set_shape_hide_fill_on_export(hide: bool) -> Result<()> {
+    with_current_shape_mut!(state, |shape: &mut Shape| {
+        shape.set_hide_fill_on_export(hide);
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
 pub extern "C" fn set_shape_corners(r1: f32, r2: f32, r3: f32, r4: f32) -> Result<()> {
     with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.set_corners((r1, r2, r3, r4));
@@ -775,7 +784,8 @@ pub extern "C" fn get_shape_extrect(a: u32, b: u32, c: u32, d: u32) -> Result<*m
 
 /// Raster image via the GPU surface. Returns `[len][width][height][bytes]`
 /// (LE). `format` selects the encoder: 0 = PNG, 1 = JPEG, 2 = WEBP (see
-/// `RasterFormat`).
+/// `RasterFormat`). `export` drops the root's fills when it hides them on
+/// export; thumbnails keep them.
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn render_shape_pixels(
@@ -785,6 +795,7 @@ pub extern "C" fn render_shape_pixels(
     d: u32,
     scale: f32,
     format: u32,
+    export: bool,
 ) -> Result<*mut u8> {
     let id = uuid_from_u32_quartet(a, b, c, d);
 
@@ -796,7 +807,7 @@ pub extern "C" fn render_shape_pixels(
 
     with_state!(state, {
         let (data, width, height) =
-            state.render_shape_pixels(&id, scale, performance::get_time(), format)?;
+            state.render_shape_pixels(&id, scale, performance::get_time(), format, export)?;
 
         let len = data.len() as u32;
         let mut buf = Vec::with_capacity(4 + data.len());

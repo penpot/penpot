@@ -191,6 +191,7 @@ pub struct Shape {
     pub background_blur: Option<Blur>,
     pub opacity: f32,
     pub hidden: bool,
+    pub hide_fill_on_export: bool,
     pub svg: Option<skia::svg::Dom>,
     pub svg_attrs: Option<SvgAttrs>,
     pub shadows: Vec<Shadow>,
@@ -295,6 +296,7 @@ impl Shape {
             vertical_align: VerticalAlign::Top,
             opacity: 1.,
             hidden: false,
+            hide_fill_on_export: false,
             blur: None,
             background_blur: None,
             svg: None,
@@ -464,6 +466,10 @@ impl Shape {
 
     pub fn set_hidden(&mut self, value: bool) {
         self.hidden = value;
+    }
+
+    pub fn set_hide_fill_on_export(&mut self, value: bool) {
+        self.hide_fill_on_export = value;
     }
 
     pub fn svg_transform(&self) -> Option<Matrix> {

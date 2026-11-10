@@ -191,6 +191,9 @@
         :hidden
         (api/set-shape-hidden v)
 
+        :hide-fill-on-export
+        (api/set-shape-hide-fill-on-export (boolean v))
+
         :shapes
         (api/set-shape-children v)
 
