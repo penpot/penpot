@@ -373,16 +373,23 @@
   [cfg uri]
   (try
     (let [storage (sto/resolve cfg)
-          input   (media/download-image cfg uri)
-          input   (media/run cfg {:cmd :info :input input})
-          hash    (sto/calculate-hash (:path input))
-          content (-> (sto/content (:path input) (:size input))
-                      (sto/wrap-with-hash hash))
-          sobject (sto/put-object! storage {::sto/content content
-                                            ::sto/deduplicate? true
-                                            :bucket "profile"
-                                            :content-type (:mtype input)})]
-      (:id sobject))
+          input   (media/download-image cfg uri)]
+      (if (= "image/svg+xml" (:mtype input))
+        ;; The avatar is always rendered as an image, so an SVG would only
+        ;; add the risk of storing live markup: it is not allowed here.
+        (do
+          (l/wrn :hint "ignoring svg profile picture" :uri uri)
+          nil)
+
+        (let [input   (media/run cfg {:cmd :info :input input})
+              hash    (sto/calculate-hash (:path input))
+              content (-> (sto/content (:path input) (:size input))
+                          (sto/wrap-with-hash hash))
+              sobject (sto/put-object! storage {::sto/content content
+                                                ::sto/deduplicate? true
+                                                :bucket "profile"
+                                                :content-type (:mtype input)})]
+          (:id sobject))))
     (catch Throwable cause
       (l/wrn :hint "unable to import profile picture"
              :uri uri
