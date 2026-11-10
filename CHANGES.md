@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.19.1 (Unreleased)
+## 2.19.1
 
 ### :lock: Security fixes
 
