@@ -1753,6 +1753,7 @@
       (let [libraries        (:shared-files state)
             library          (get libraries library-id)
             variants-count   (-> library :library-summary :variants count)
+            tokens-count     (or (-> library :library-summary :tokens-count) 0)
 
             loaded-libraries (->> (dsh/lookup-libraries state)
                                   (remove (fn [[_ lib]]
@@ -1773,14 +1774,25 @@
                               (rx/of (ntf/error (tr "errors.circular-library-reference")))
                               (rx/throw cause))))))
          (rx/of (ptk/reify ::link-file-to-library-finished))
-         (when (pos? variants-count)
+         (when (or (pos? variants-count) (pos? tokens-count))
            (->> (rp/cmd! :get-library-usage {:file-id library-id})
-                (rx/map (fn [library-usage]
-                          (ev/event {::ev/name "link-file-to-library-variants"
-                                     :file-id file-id
-                                     :library-id library-id
-                                     :variants-count variants-count
-                                     :library-used-in (:used-in library-usage)}))))))))))
+                (rx/mapcat (fn [library-usage]
+                             (let [used-in (:used-in library-usage)]
+                               (rx/from
+                                (cond-> []
+                                  (pos? variants-count)
+                                  (conj (ev/event {::ev/name "link-file-to-library-variants"
+                                                   :file-id file-id
+                                                   :library-id library-id
+                                                   :variants-count variants-count
+                                                   :library-used-in used-in}))
+
+                                  (pos? tokens-count)
+                                  (conj (ev/event {::ev/name "link-file-to-library-tokens"
+                                                   :file-id file-id
+                                                   :library-id library-id
+                                                   :tokens-count tokens-count
+                                                   :library-used-in used-in}))))))))))))))
 
 (defn cleanup-unlinked-libraries
   "Remove libraries from state that are no longer linked to the given file.
