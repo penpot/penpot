@@ -224,8 +224,10 @@
                     (st/emit! (ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
                     (open-permissions-dialog plugin))
                   (st/emit! (notif/error (tr "dashboard.plugins.parse-error")))))
-              (fn [_]
-                (st/emit! (notif/error (tr "dashboard.plugins.bad-url"))))))
+              (fn [err]
+                (st/emit! (notif/error (if (= ::preg/global-not-allowed (:type (ex-data err)))
+                                         (tr "workspace.plugins.error.global-not-allowed")
+                                         (tr "dashboard.plugins.bad-url")))))))
         (binding [storage/*sync* true]
           (swap! storage/session dissoc :plugin-url))))))
 

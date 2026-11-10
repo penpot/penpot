@@ -8537,6 +8537,10 @@ msgstr "Discover [more plugins](%s)"
 msgid "workspace.plugins.empty-plugins"
 msgstr "No plugins installed yet"
 
+#: src/app/main/data/plugins.cljs, src/app/main/ui/dashboard.cljs, src/app/main/ui/workspace/plugins.cljs
+msgid "workspace.plugins.error.global-not-allowed"
+msgstr "Plugins that work outside a file can only be installed from localhost for now."
+
 #: src/app/main/ui/workspace/plugins.cljs:237
 msgid "workspace.plugins.error.manifest"
 msgstr "The plugin manifest is incorrect."

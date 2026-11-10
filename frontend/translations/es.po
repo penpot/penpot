@@ -8614,6 +8614,10 @@ msgstr "Descubre [más extensiones](%s)"
 msgid "workspace.plugins.empty-plugins"
 msgstr "No se encuentran extensiones"
 
+#: src/app/main/data/plugins.cljs, src/app/main/ui/dashboard.cljs, src/app/main/ui/workspace/plugins.cljs
+msgid "workspace.plugins.error.global-not-allowed"
+msgstr "Por ahora, las extensiones que funcionan fuera de un archivo solo se pueden instalar desde localhost."
+
 #: src/app/main/ui/workspace/plugins.cljs:237
 msgid "workspace.plugins.error.manifest"
 msgstr "El manifiesto de la expansión es incorrecto."
