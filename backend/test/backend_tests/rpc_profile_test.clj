@@ -1013,6 +1013,135 @@
             (t/is (= :registration-disabled (-> out :error ex-data :code)))
             (t/is (nil? (th/db-get :profile {:email email})))))))))
 
+(defn- create-oidc-register-token
+  "Mint a `:prepared-register` token shaped like the ones the OIDC
+  callback produces in `redirect-to-register` (no real provider needed)."
+  [email extra]
+  (tokens/generate th/*system*
+                   (merge {:iss :prepared-register
+                           :exp (ct/in-future "48h")
+                           :backend "oidc"
+                           :email email
+                           :fullname "OIDC User"
+                           :email-verified true
+                           :props {}}
+                          extra)))
+
+(t/deftest register-profile-allows-oidc-registration-with-password-login-disabled
+  ;; Issue #12964: with password login and public registration disabled,
+  ;; a new user arriving from OIDC must still be able to register when
+  ;; `oidc-registration` is enabled.
+  (with-redefs [app.config/flags #{:login-with-oidc :oidc-registration}]
+    (let [email  "oidc-user@example.com"
+          token  (create-oidc-register-token email nil)
+          out    (th/command! {::th/type :register-profile
+                               :token token})
+          result (:result out)
+          mdata  (meta result)]
+      (t/is (th/success? out))
+      ;; A session is minted: the user lands on the dashboard.
+      (t/is (seq (:app.rpc/response-transform-fns mdata)))
+      (let [profile (th/db-get :profile {:email email})]
+        (t/is (some? profile))
+        (t/is (= "oidc" (:auth-backend profile)))
+        (t/is (true? (:is-active profile))))
+      ;; No password fallback while password login is disabled.
+      (let [login-out (th/command! {::th/type :login-with-password
+                                    :email email
+                                    :password "Whatever1!"})]
+        (t/is (not (th/success? login-out)))
+        (t/is (= :restriction (-> login-out :error ex-data :type)))
+        (t/is (= :login-disabled (-> login-out :error ex-data :code)))))))
+
+(t/deftest register-profile-rejects-oidc-without-registration-flags
+  (with-redefs [app.config/flags #{:login-with-oidc}]
+    (let [email "oidc-rejected@example.com"
+          token (create-oidc-register-token email nil)
+          out   (th/command! {::th/type :register-profile
+                              :token token})]
+      (t/is (not (th/success? out)))
+      (t/is (= :registration-disabled (-> out :error ex-data :code)))
+      (t/is (nil? (th/db-get :profile {:email email}))))))
+
+(t/deftest register-profile-allows-oidc-with-public-registration-and-password-login-disabled
+  (with-redefs [app.config/flags #{:login-with-oidc :registration}]
+    (let [email  "oidc-public@example.com"
+          token  (create-oidc-register-token email nil)
+          out    (th/command! {::th/type :register-profile
+                               :token token})]
+      (t/is (th/success? out))
+      (let [profile (th/db-get :profile {:email email})]
+        (t/is (some? profile))
+        (t/is (= "oidc" (:auth-backend profile)))))))
+
+(t/deftest register-profile-allows-oidc-with-invitation-and-registration-disabled
+  (let [email   "oidc-invited@example.com"
+        fixture (create-invitation-fixture email (ct/in-future "48h"))]
+    (with-redefs [app.config/flags #{:login-with-oidc :oidc-registration}]
+      (let [itoken (create-test-invitation-token fixture email)
+            token  (create-oidc-register-token email {:invitation-token itoken})
+            out    (th/command! {::th/type :register-profile
+                                 :token token})
+            result (:result out)
+            mdata  (meta result)]
+        (t/is (th/success? out))
+        ;; Invitation branch: the token is echoed back and a session is
+        ;; minted so the frontend can complete the team-invitation flow.
+        (t/is (string? (:invitation-token result)))
+        (t/is (seq (:app.rpc/response-transform-fns mdata)))
+        (let [profile (th/db-get :profile {:email email})]
+          (t/is (some? profile))
+          (t/is (= "oidc" (:auth-backend profile))))))))
+
+(t/deftest register-profile-allows-oidc-with-canceled-invitation
+  ;; The SSO branch never consults the invitation row (like the OIDC
+  ;; callback): registration succeeds even when the invitation was
+  ;; canceled, and team membership fails later at `verify-token`.
+  (let [email   "oidc-canceled@example.com"
+        fixture (create-invitation-fixture email (ct/in-future "48h"))]
+    (with-redefs [app.config/flags #{:login-with-oidc :oidc-registration}]
+      (let [itoken (create-test-invitation-token fixture email)
+            token  (create-oidc-register-token email {:invitation-token itoken})]
+        (th/db-delete! :team-invitation
+                       {:team-id (:id (:team fixture))
+                        :email-to email})
+        (let [out    (th/command! {::th/type :register-profile
+                                   :token token})
+              result (:result out)
+              mdata  (meta result)]
+          (t/is (th/success? out))
+          (t/is (string? (:invitation-token result)))
+          (t/is (seq (:app.rpc/response-transform-fns mdata)))
+          (let [profile (th/db-get :profile {:email email})]
+            (t/is (some? profile))
+            (t/is (= "oidc" (:auth-backend profile))))
+          ;; The team is not joined: with the invitation row gone,
+          ;; accepting it fails.
+          (let [vout (th/command! {::th/type :verify-token
+                                   :token (:invitation-token result)})]
+            (t/is (not (th/success? vout)))
+            (t/is (= :validation (-> vout :error ex-data :type)))
+            (t/is (= :invalid-token (-> vout :error ex-data :code)))))))))
+
+(t/deftest register-profile-rejects-prepared-token-without-backend
+  ;; The `:backend` claim is mandatory: a prepared-register token
+  ;; without it is rejected loudly instead of falling into any
+  ;; registration branch.
+  (with-redefs [app.config/flags #{:login-with-oidc :oidc-registration}]
+    (let [token (tokens/generate th/*system*
+                                 {:iss :prepared-register
+                                  :exp (ct/in-future "48h")
+                                  :email "no-backend@example.com"
+                                  :fullname "No Backend"
+                                  :email-verified true
+                                  :props {}})
+          out   (th/command! {::th/type :register-profile
+                              :token token})]
+      (t/is (not (th/success? out)))
+      (t/is (= :validation (-> out :error ex-data :type)))
+      (t/is (= :invalid-token (-> out :error ex-data :code)))
+      (t/is (nil? (th/db-get :profile {:email "no-backend@example.com"}))))))
+
 (t/deftest verify-token-redirects-invitation-based-on-member-id
   (with-redefs [app.config/flags #{:login-with-password}]
     (let [owner  (th/create-profile* 1 {:is-active true})

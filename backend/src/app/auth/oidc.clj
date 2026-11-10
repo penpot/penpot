@@ -1062,6 +1062,14 @@
             :organization-id organization-id
             :organization-name organization-name}))))))
 
+(defn sso-registration-allowed?
+  "SSO registration is allowed when public registration or explicit
+  OIDC registration is enabled. Shared by the callback gate and the
+  `register-profile` token gate — keep one definition."
+  []
+  (or (contains? cf/flags :registration)
+      (contains? cf/flags :oidc-registration)))
+
 (defn- callback-handler
   [cfg {:keys [params] :as request}]
   (if-let [error (get params :error)]
@@ -1094,8 +1102,7 @@
                 (redirect-with-error "email-domain-not-allowed")
 
                 :else
-                (if (or (contains? cf/flags :registration)
-                        (contains? cf/flags :oidc-registration))
+                (if (sso-registration-allowed?)
                   (redirect-to-register cfg info provider)
                   (redirect-with-error "registration-disabled")))
 

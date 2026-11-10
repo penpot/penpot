@@ -270,7 +270,9 @@ PENPOT_OIDC_USER_INFO_SOURCE:
 __Since version 2.1.2__
 
 Allows users to register and login with oidc without having to previously
-register with another method.
+register with another method. It also works with password login disabled
+(`disable-login-with-password`): OIDC registration only needs this flag,
+not password login.
 
 ```bash
 PENPOT_FLAGS: [...] enable-oidc-registration
