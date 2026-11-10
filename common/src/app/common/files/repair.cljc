@@ -12,6 +12,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.tokens :as cfo]
+   [app.common.files.variant :as cfv]
    [app.common.logging :as log]
    [app.common.path-names :as cpn]
    [app.common.types.component :as ctk]
@@ -722,32 +723,94 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
+(defn- repair-variant-member-changes
+  [file-data member]
+  (let [component      (:component member)
+        props          (:props member)
+        variant-name   (ctv/properties-to-name props)
+        same-props?    (= (vec (or (:variant-properties component) []))
+                          (vec props))
+        main-id        (:main-instance-id component)
+        page-id        (:main-instance-page component)
+        deleted?       (:deleted component)
+        shape          (cfv/get-variant-main-shape file-data component)
+        label-differs? (cfv/variant-main-label-changed? file-data component props)
+        comp-changes
+        (when (or (not same-props?)
+                  (and deleted? label-differs?))
+          (log/debug :hint "  -> write variant properties"
+                     :component-id (:id component)
+                     :same-props? same-props?
+                     :label-differs? label-differs?)
+          (-> (pcb/empty-changes nil)
+              (pcb/with-library-data file-data)
+              (pcb/update-component
+               (:id component)
+               (fn [component]
+                 (cond-> component
+                   (not same-props?)
+                   (assoc :variant-properties props)
+
+                   (and (not deleted?) (not same-props?))
+                   (dissoc :objects)
+
+                   (and deleted? (nil? (:objects component)))
+                   (assoc :objects {})
+
+                   (and deleted?
+                        label-differs?
+                        (map? (get-in component [:objects main-id])))
+                   (assoc-in [:objects main-id :variant-name] variant-name))))))
+        shape-changes
+        (when (and (not deleted?) label-differs? page-id main-id (map? shape))
+          (log/debug :hint "  -> set variant-name" :variant-name variant-name :page-id page-id)
+          (-> (pcb/empty-changes nil page-id)
+              (pcb/with-file-data file-data)
+              (pcb/update-shapes [main-id]
+                                 (fn [shape]
+                                   (assoc shape :variant-name variant-name)))))]
+    (cond
+      (and comp-changes shape-changes)
+      (pcb/concat-changes comp-changes shape-changes)
+
+      comp-changes
+      comp-changes
+
+      shape-changes
+      shape-changes
+
+      :else
+      (pcb/empty-changes nil))))
+
+(defn- repair-variant-property-set
+  [file-data shape page-id owner-id]
+  (let [objects  (if (some? owner-id)
+                   (get-in file-data [:components owner-id :objects])
+                   (get-in file-data [:pages-index page-id :objects]))
+        members  (cfv/qualifying-variant-members file-data objects shape)
+        repaired (cfv/repair-variant-members members)]
+    (reduce (fn [changes member]
+              (pcb/concat-changes changes
+                                  (repair-variant-member-changes file-data member)))
+            (pcb/empty-changes nil)
+            repaired)))
+
+(defn- repair-solo-variant-properties
+  [file-data component]
+  (if (some? component)
+    (repair-variant-member-changes
+     file-data
+     {:component component
+      :props     (cfv/prepare-variant-properties (:variant-properties component))})
+    (pcb/empty-changes nil)))
+
 (defmethod repair-error :invalid-variant-properties
   [_ {:keys [shape page-id args]} file-data _]
-  (let [prop-names (:prop-names args)
-
-        component   (get-in file-data [:components (:component-id shape)])
-        prop-values (into {} (map (juxt :name :value)) (:variant-properties component))
-        properties' (mapv (fn [name] {:name name :value (get prop-values name "")}) prop-names)
-        variant-name (ctv/properties-to-name properties')
-
-        repair-component
-        (fn [component]
-          ;; Rebuild component properties, removing any extra ones and adding missing ones with empty value
-          (log/debug :hint "  -> rebuild properties" :component-id (:id component) :prop-names (str prop-names))
-          (assoc component :variant-properties properties'))
-
-        repair-shape
-        (fn [shape]
-          (log/debug :hint "  -> set variant-name" :variant-name variant-name)
-          (assoc shape :variant-name variant-name))]
-
-    (log/debug :hint "repairing shape :invalid-variant-properties" :id (:id shape) :name (:name shape) :page-id page-id)
-    (-> (pcb/empty-changes nil page-id)
-        (pcb/with-file-data file-data)
-        (pcb/with-library-data file-data)
-        (pcb/update-component (:component-id shape) repair-component)
-        (pcb/update-shapes [(:id shape)] repair-shape))))
+  (log/debug :hint "repairing :invalid-variant-properties" :id (:id shape) :page-id page-id)
+  (if (ctk/is-variant-container? shape)
+    (repair-variant-property-set file-data shape page-id (:component-id args))
+    (repair-solo-variant-properties file-data
+                                    (get-in file-data [:components (:id shape)]))))
 
 (defmethod repair-error :variant-not-main
   [_ {:keys [shape page-id]} file-data _]
@@ -818,10 +881,28 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-fn))))
 
+(defn- get-rewritten-variant-props
+  "Props the property repair would store for this main.
+   Nil when the shape sits on a variant board but is not a qualifying
+   member, so the caller keeps the stored vector."
+  [file-data shape component page-id]
+  (let [objects (get-in file-data [:pages-index page-id :objects])
+        parent  (get objects (:parent-id shape))]
+    (if (and (ctk/is-variant-container? parent)
+             (= (:variant-id shape) (:id parent)))
+      (let [repaired (cfv/repair-variant-members
+                      (cfv/qualifying-variant-members file-data objects parent))]
+        (some (fn [member]
+                (when (= (:id component) (:component-id member))
+                  (:props member)))
+              repaired))
+      (cfv/prepare-variant-properties (:variant-properties component)))))
+
 (defmethod repair-error :variant-main-bad-variant-name
   [_ {:keys [shape page-id]} file-data _]
   (let [component    (get-in file-data [:components (:component-id shape)])
-        variant-name (ctv/properties-to-name (:variant-properties component))
+        props        (get-rewritten-variant-props file-data shape component page-id)
+        variant-name (ctv/properties-to-name (or props (:variant-properties component)))
         repair-fn
         (fn [shape]
           (log/debug :hint "  -> set :variant-name" :variant-name variant-name)
