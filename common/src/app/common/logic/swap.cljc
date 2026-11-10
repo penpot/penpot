@@ -289,8 +289,15 @@
     ;; If the final attr-value is the actual value, skip. Geometry values
     ;; equal up to float noise are not an override.
     (if (or skip?
-            (if (contains? #{:points :selrect :width :height :rotation} attr)
+            (cond
+              (contains? #{:points :selrect :width :height :rotation} attr)
               (gsh/close-attrs? attr attr-val (get current-shape attr))
+
+              ;; a text showing the letters and styles of the new copy is no override
+              text-change?
+              (empty? (txt/override-groups (get current-shape attr) attr-val))
+
+              :else
               (= attr-val (get current-shape attr))))
       []
       (cond-> []

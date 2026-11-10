@@ -2072,6 +2072,13 @@
                        :ops [[:combine 8] [:transform 13 4 0 6] [:nest 8] [:make-variant] [:make-variant 7]
                              [:make-variant] [:transform 0 9 0 2] [:combine 9] [:switch 6]]}))))
 
+(t/deftest switching-a-text-with-a-typography-file-but-no-typography-carries-no-override
+  (t/is (map? (cg/run {:world [1 0 {:variants true :text-styles false :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies false :text false}]
+                       :ops [[:text-style 3 8 1] [:text-style 3 1] [:nest] [:switch] [:text-style 0 8 1]
+                             [:switch 1]]}))))
+
 (t/deftest turning-a-flipped-copy-turns-a-child-stored-as-the-other-mirror-turn
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true
