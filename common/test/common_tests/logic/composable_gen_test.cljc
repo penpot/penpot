@@ -2052,6 +2052,12 @@
                              [:make-variant 0] [:switch 0] [:make-variant 8 0 0 0] [:make-variant 0] [:switch 2]
                              [:transform 10 4 0 0] [:make-variant 0] [:switch 17]]}))))
 
+(t/deftest swapping-a-resized-board-for-a-grid-component-places-its-old-children-in-cells
+  (t/is (map? (cg/run {:world [1 0 {:variants true :text-styles false :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies false :text false}]
+                       :ops [[:combine 2] [:switch] [:swap 3]]}))))
+
 (t/deftest turning-a-flipped-copy-turns-a-child-stored-as-the-other-mirror-turn
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true

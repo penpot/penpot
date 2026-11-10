@@ -660,11 +660,13 @@
                             (assoc shape :transform matrix :transform-inverse (gmt/inverse matrix))))
             turn        (orient-like (orientation before) (orientation after) (gsh/shape->center before))
             delta       (gpt/subtract (gsh/shape->center after) (gsh/shape->center before))
-            ;; the subtree as the sync left it, under the parent placed as before the sync
+            ;; the subtree as the sync left it, under the parent placed as
+            ;; before the sync, its grid holding the children the sync left
             placed      (when resized?
-                          (placed-like (assoc (pcb/get-objects changes) (:id before)
-                                              (merge after (select-keys before placement-geometry-attrs)))
-                                       before after {}))]
+                          (let [objects (pcb/get-objects changes)
+                                parent  (cond-> (merge after (select-keys before placement-geometry-attrs))
+                                          (ctsl/grid-layout? after) (ctsl/assign-cells objects))]
+                            (placed-like (assoc objects (:id before) parent) before after {})))]
         (pcb/update-shapes changes ids
                            (if resized?
                              #(get placed (:id %) %)
