@@ -567,6 +567,16 @@
                     [(:shape-ref shape) (d/without-nils (select-keys shape [:constraints-h :constraints-v]))]))))
         ids))
 
+(defn- sized-like
+  "`shape` resized to the size of `source` about its first corner."
+  [shape source]
+  (let [width  (-> source :selrect :width)
+        height (-> source :selrect :height)]
+    (if (and (mth/close? width (-> shape :selrect :width))
+             (mth/close? height (-> shape :selrect :height)))
+      shape
+      (gsh/transform-shape shape (ctm/change-size shape width height)))))
+
 (defn placed-like
   "The main `objects` with the subtree of `shape-main` placed like `placed`,
   a copy shape expressed in the main's frame: resized to its size, its
@@ -1313,7 +1323,15 @@
                 position-objects (get-in (meta position) [:container :objects])
                 ;; the head takes the place the replaced child authored
                 placement        (set/intersection (set (:touched replaced)) placement-groups)
-                positioned       (mapv take-position new-shapes)
+                ;; a plain copy of the position has its size, unless the replaced child authored its geometry
+                sized?           (fn [shape]
+                                   (and (= (:id shape) (:id new-head)) position
+                                        (not (ctk/swapped? shape))
+                                        (not (contains? placement :geometry-group))))
+                positioned       (mapv (fn [shape]
+                                         (let [shape (take-position shape)]
+                                           (cond-> shape (sized? shape) (sized-like position))))
+                                       new-shapes)
                 by-id            (d/index-by :id positioned)
                 head             (get by-id (:id new-head))
                 ;; the position's subtree placed like a head that is a plain copy of it

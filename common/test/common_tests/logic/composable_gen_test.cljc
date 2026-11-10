@@ -2109,6 +2109,13 @@
                              [:add-variant] [:add-variant] [:add-variant] [:switch 4] [:transform 0 0 0 7]
                              [:update-main 22]]}))))
 
+(t/deftest updating-a-main-with-a-swap-to-its-position-component-gives-the-head-the-positions-size
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles false :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies false :text true}]
+                       :ops [[:variant-property] [:switch 3] [:combine 11] [:combine 12] [:resize 10]
+                             [:variant-property 8 9] [:add-variant] [:switch 2] [:update-main]]}))))
+
 (t/deftest moving-a-flex-copy-child-after-a-switch-resized-its-sibling-authors-no-geometry
   (t/is (map? (cg/run {:world [1 2 {:variants true :text-styles false :layout :flex :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true
