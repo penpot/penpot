@@ -25,6 +25,7 @@
    [app.util.dom :as-alias dom]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 (declare go-to-dashboard-recent)
@@ -48,19 +49,45 @@
       (->> (rp/cmd! :create-share-link params)
            (rx/map share-link-created)))))
 
-(defn delete-share-link
-  [{:keys [id] :as link}]
-  (ptk/reify ::delete-share-link
+(defn get-link-page-names
+  "Names of the file pages a share link grants, in the file page order.
+   Ids that no longer exist in the file are ignored: a link can outlive
+   the pages it was created for."
+  [file pages]
+  (->> (dm/get-in file [:data :pages])
+       (filter #(contains? pages %))
+       (keep #(dm/get-in file [:data :pages-index % :name]))
+       (str/join ", ")))
+
+(defn share-link-deleted
+  [id]
+  (ptk/reify ::share-link-deleted
     ptk/UpdateEvent
     (update [_ state]
       (update state :share-links
               (fn [links]
-                (filterv #(not= id (:id %)) links))))
+                (filterv #(not= id (:id %)) links))))))
 
+(defn- share-link-delete-error
+  [cause]
+  (if (= :not-share-link-owner (:code (ex-data cause)))
+    (tr "common.share-link.destroy-not-owner")
+    (tr "errors.generic")))
+
+(defn delete-share-link
+  "Destroys a share link and drops its row from the list.
+
+   The row is only dropped once the server accepts the delete: a refusal
+   (the caller is neither the creator nor an admin) must not make a link
+   disappear from a window whose purpose is to show what still exists."
+  [{:keys [id]}]
+  (ptk/reify ::delete-share-link
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! :delete-share-link {:id id})
-           (rx/ignore)))))
+           (rx/map (fn [_] (share-link-deleted id)))
+           (rx/catch (fn [cause]
+                       (rx/of (ntf/error (share-link-delete-error cause)))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; NOTIFICATIONS
