@@ -848,3 +848,213 @@
                (get-in (meta (:result thread)) [:app.loggers.audit/props :team-id])))
       (t/is (= (:id team)
                (get-in (meta (:result comment)) [:app.loggers.audit/props :team-id]))))))
+
+(t/deftest mark-all-threads-as-read-requires-access-to-the-threads
+  (let [owner    (th/create-profile* 1 {:is-active true})
+        stranger (th/create-profile* 2 {:is-active true})
+
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        project  (th/create-project* 1 {:team-id (:id team)
+                                        :profile-id (:id owner)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        page-id  (get-in file [:data :pages 0])
+
+        thread   (th/command! {::th/type :create-comment-thread
+                               ::rpc/profile-id (:id owner)
+                               :file-id (:id file)
+                               :page-id page-id
+                               :position (gpt/point 0)
+                               :content "private thread"
+                               :frame-id uuid/zero})
+        thread-id (get-in thread [:result :id])]
+
+    (t/testing "the sibling rpc already rejects a profile without access"
+      (let [out (th/command! {::th/type :update-comment-thread-status
+                              ::rpc/profile-id (:id stranger)
+                              :id thread-id})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))
+
+    (t/testing "mark-all-threads-as-read rejects a profile without access"
+      (let [out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id stranger)
+                              :threads [thread-id]})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out)))))
+
+      (t/is (nil? (th/db-get :comment-thread-status
+                             {:thread-id thread-id
+                              :profile-id (:id stranger)}))))))
+
+(t/deftest mark-all-threads-as-read-behaviour
+  (let [owner    (th/create-profile* 1 {:is-active true})
+        member   (th/create-profile* 2 {:is-active true})
+        viewer   (th/create-profile* 3 {:is-active true})
+        outsider (th/create-profile* 4 {:is-active true})
+
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        _        (th/create-team-role* {:team-id (:id team)
+                                        :profile-id (:id member)
+                                        :role :editor})
+        _        (th/create-team-role* {:team-id (:id team)
+                                        :profile-id (:id viewer)
+                                        :role :viewer})
+        project  (th/create-project* 1 {:team-id (:id team)
+                                        :profile-id (:id owner)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        page-id  (get-in file [:data :pages 0])
+
+        thread   (th/command! {::th/type :create-comment-thread
+                               ::rpc/profile-id (:id owner)
+                               :file-id (:id file)
+                               :page-id page-id
+                               :position (gpt/point 0)
+                               :content "hello"
+                               :frame-id uuid/zero})
+        thread-id (get-in thread [:result :id])]
+
+    (t/testing "the thread is unread for a team member"
+      (let [out (th/command! {::th/type :get-unread-comment-threads
+                              ::rpc/profile-id (:id member)
+                              :team-id (:id team)})]
+        (t/is (th/success? out))
+        (t/is (= 1 (count (:result out))))))
+
+    (t/testing "a team member can mark the threads as read"
+      (let [out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id member)
+                              :threads [thread-id]})]
+        (t/is (th/success? out)))
+
+      (let [out (th/command! {::th/type :get-unread-comment-threads
+                              ::rpc/profile-id (:id member)
+                              :team-id (:id team)})]
+        (t/is (th/success? out))
+        (t/is (= 0 (count (:result out))))))
+
+    (t/testing "a viewer of the team can mark the threads as read"
+      (let [out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id viewer)
+                              :threads [thread-id]})]
+        (t/is (th/success? out))))
+
+    (t/testing "an unknown thread is rejected"
+      (let [out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id member)
+                              :threads [(uuid/random)]})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))
+
+    (t/testing "more threads than the allowed maximum are rejected"
+      (let [out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id member)
+                              :threads (vec (repeatedly 501 uuid/random))})]
+        (t/is (not (th/success? out)))
+        (t/is (= :validation (th/ex-type (:error out))))))
+
+    (t/testing "a list with an inaccessible thread writes nothing"
+      (let [other-team    (th/create-team* 2 {:profile-id (:id owner)})
+            other-project (th/create-project* 2 {:team-id (:id other-team)
+                                                 :profile-id (:id owner)})
+            other-file    (th/create-file* 2 {:profile-id (:id owner)
+                                              :project-id (:id other-project)})
+            other-thread  (th/command! {::th/type :create-comment-thread
+                                        ::rpc/profile-id (:id owner)
+                                        :file-id (:id other-file)
+                                        :page-id (get-in other-file [:data :pages 0])
+                                        :position (gpt/point 0)
+                                        :content "other team"
+                                        :frame-id uuid/zero})
+            other-thread-id (get-in other-thread [:result :id])
+
+            accessible-thread (th/command! {::th/type :create-comment-thread
+                                            ::rpc/profile-id (:id owner)
+                                            :file-id (:id file)
+                                            :page-id page-id
+                                            :position (gpt/point 0)
+                                            :content "accessible"
+                                            :frame-id uuid/zero})
+            accessible-thread-id (get-in accessible-thread [:result :id])
+
+            out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id member)
+                              :threads [accessible-thread-id other-thread-id]})]
+
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))
+        (t/is (nil? (th/db-get :comment-thread-status
+                               {:thread-id accessible-thread-id
+                                :profile-id (:id member)})))
+        (t/is (nil? (th/db-get :comment-thread-status
+                               {:thread-id other-thread-id
+                                :profile-id (:id member)})))))
+
+    (t/testing "a profile without any relation with the team is rejected"
+      (let [out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id outsider)
+                              :threads [thread-id]})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))))
+
+(t/deftest mark-all-threads-as-read-edge-cases
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        member  (th/create-profile* 2 {:is-active true})
+        viewer  (th/create-profile* 3 {:is-active true})
+
+        team    (th/create-team* 1 {:profile-id (:id owner)})
+        _       (th/create-team-role* {:team-id (:id team)
+                                       :profile-id (:id member)
+                                       :role :editor})
+        _       (th/create-team-role* {:team-id (:id team)
+                                       :profile-id (:id viewer)
+                                       :role :viewer})
+        project (th/create-project* 1 {:team-id (:id team)
+                                       :profile-id (:id owner)})
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id (:id project)})
+        page-id (get-in file [:data :pages 0])
+
+        thread  (th/command! {::th/type :create-comment-thread
+                              ::rpc/profile-id (:id owner)
+                              :file-id (:id file)
+                              :page-id page-id
+                              :position (gpt/point 0)
+                              :content "hello"
+                              :frame-id uuid/zero})
+        thread-id (get-in thread [:result :id])]
+
+    (t/testing "repeated thread ids are accepted and written once"
+      (let [out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id member)
+                              :threads [thread-id thread-id]})]
+        (t/is (th/success? out))
+        (t/is (= 1 (count (th/db-query :comment-thread-status
+                                       {:thread-id thread-id
+                                        :profile-id (:id member)}))))))
+
+    (t/testing "an empty list of threads is accepted and writes nothing"
+      (let [out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id viewer)
+                              :threads []})]
+        (t/is (th/success? out))
+        (t/is (= 0 (count (th/db-query :comment-thread-status
+                                       {:thread-id thread-id
+                                        :profile-id (:id viewer)}))))))
+
+    (t/testing "marking a thread as read twice keeps a single status row"
+      (let [out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id member)
+                              :threads [thread-id]})]
+        (t/is (th/success? out)))
+
+      (t/is (= 1 (count (th/db-query :comment-thread-status
+                                     {:thread-id thread-id
+                                      :profile-id (:id member)}))))
+
+      (let [out (th/command! {::th/type :get-unread-comment-threads
+                              ::rpc/profile-id (:id member)
+                              :team-id (:id team)})]
+        (t/is (th/success? out))
+        (t/is (= 0 (count (:result out))))))))
