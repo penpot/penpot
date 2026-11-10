@@ -463,7 +463,7 @@
              team-id profile-id]))
 
 (t/deftest revocation-closes-subscriptions-that-are-no-longer-authorized
-  (let [{:keys [owner editor team file]} (editor-in-team! 1 2)]
+  (let [{:keys [editor team file]} (editor-in-team! 1 2)]
 
     (let [conn (-> (open-registered-connection (:id editor))
                    (subscribe :subscribe-file {:file-id (:id file)})
@@ -473,12 +473,15 @@
         (t/is (= (:id file) (subscribed-file conn)))
         (t/is (= (:id team) (subscribed-team conn))))
 
-      (t/testing "the member is removed from the team"
-        (let [result (th/command! {::th/type :delete-team-member
-                                   ::rpc/profile-id (:id owner)
-                                   :team-id (:id team)
-                                   :member-id (:id editor)})]
-          (t/is (th/success? result))))
+      ;; A direct row delete fires no command and publishes no
+      ;; announcement, so the explicit revalidation below is the only
+      ;; thing that can close these subscriptions and the count is
+      ;; deterministic. A command would announce, and the live watcher
+      ;; could close them before the count is taken.
+      (t/testing "the member is removed straight over SQL, so nothing announces it"
+        (delete-team-membership! (:id team) (:id editor))
+        (t/is (= (:id file) (subscribed-file conn)))
+        (t/is (= (:id team) (subscribed-team conn))))
 
       (t/testing "revalidation closes the file and the team subscription"
         (t/is (= 2 (ws/revalidate-profile-subscriptions
@@ -698,7 +701,7 @@
                events)))))
 
 (t/deftest team-event-closes-every-member-subscription
-  (let [{:keys [owner editor team file]} (editor-in-team! 1 2)
+  (let [{:keys [editor team file]} (editor-in-team! 1 2)
         other (th/create-profile* 3 {:is-active true})]
     (th/create-team-role* {:team-id (:id team)
                            :profile-id (:id other)
@@ -712,11 +715,18 @@
             conn2 (-> (open-registered-connection (:id other))
                       (subscribe :subscribe-file {:file-id (:id other-file)}))]
 
-        (th/command! {::th/type :delete-team
-                      ::rpc/profile-id (:id owner)
-                      :id (:id team)})
+        ;; Same shape as the watcher test above: a direct soft-delete
+        ;; publishes nothing, so this test owns the fan-out of one event
+        ;; and the announcement of `delete-team` is left to
+        ;; `deleting-a-team-announces-once`. A second notify here would
+        ;; make the test pass even if that announcement disappeared.
+        (db/update! th/*system* :team {:deleted-at (ct/now)} {:id (:id team)})
 
-        (t/testing "the announcement reaches the watcher off the bus"
+        (t/testing "nothing closes until the event arrives"
+          (t/is (some? (subscribed-file conn)))
+          (t/is (some? (subscribed-file conn2))))
+
+        (t/testing "one team event reaches the watcher off the bus"
           (ntf/notify-team-permissions-changed th/*system* (:id team))
           (t/is (wait-until #(nil? (subscribed-file conn)) 3000))
           (t/is (wait-until #(nil? (subscribed-file conn2)) 3000)))))))
