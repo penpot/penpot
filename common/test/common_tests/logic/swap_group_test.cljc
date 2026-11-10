@@ -1145,3 +1145,14 @@
     (t/is (empty? (:touched head)))
     (t/is (= (thn/normalize-file (tm/file deleted))
              (thn/normalize-file (tm/file (r/step swapped (n/undo))))))))
+
+(t/deftest swapping-back-leaves-the-pending-changes-of-the-enclosing-copy
+  (let [initial (tm/make-situation (setup))
+        pending (r/step initial (n/change-property :card-main :fills "#555555"))
+        swapped (r/step pending (n/swap-shape :copy-star :star))
+        copy (tm/resolve-shape swapped :copy)
+        head (tm/resolve-shape swapped :copy-star)
+        child (tm/shape-by-id swapped (first (:shapes head)))]
+    (t/is (= (:fills (tm/resolve-shape pending :copy)) (:fills copy)))
+    (t/is (= "#111111" (get-in child [:fills 0 :fill-color])))
+    (t/is (empty? (:touched head)))))

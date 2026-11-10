@@ -661,7 +661,8 @@
 
 (defn- sync-restored-position
   "A swap back is an ordinary copy of its position, including that
-   position's content overrides. Sync through the head that owns its ref."
+   position's content overrides. Sync it through the head that owns its
+   ref, leaving the rest of that head as it is."
   [changes page libraries shape-id]
   (let [objects   (pcb/get-objects changes)
         shape     (get objects shape-id)
@@ -673,7 +674,7 @@
             head      (d/seek #(= (:id component) (:component-id %))
                               (ctn/get-parent-copy-heads objects parent))]
         (if head
-          (cll/generate-sync-shape-direct changes nil libraries container (:id head) false)
+          (cll/generate-sync-shape-direct changes nil libraries container (:id head) false shape-id)
           changes))
       changes)))
 
