@@ -264,6 +264,16 @@ impl Fill {
         }
     }
 
+    pub fn is_opaque(&self) -> bool {
+        match self {
+            Fill::Solid(SolidColor(color)) => color.a() == 255,
+            Fill::LinearGradient(g) | Fill::RadialGradient(g) => {
+                g.opacity == 255 && g.colors.iter().all(|c| c.a() == 255)
+            }
+            Fill::Image(i) => i.opacity == 255,
+        }
+    }
+
     pub fn with_full_opacity(&self) -> Fill {
         match self {
             Fill::Solid(SolidColor(color)) => Fill::Solid(SolidColor(skia::Color::from_argb(
