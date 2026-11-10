@@ -24,6 +24,7 @@
    [frontend-tests.data.svg-upload-test]
    [frontend-tests.data.uploads-test]
    [frontend-tests.data.viewer-test]
+   [frontend-tests.data.workspace-board-link-test]
    [frontend-tests.data.workspace-colors-test]
    [frontend-tests.data.workspace-comments-test]
    [frontend-tests.data.workspace-context-menu-test]
@@ -176,6 +177,7 @@
    'frontend-tests.data.svg-upload-test
    'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test
+   'frontend-tests.data.workspace-board-link-test
    'frontend-tests.data.workspace-colors-test
    'frontend-tests.data.workspace-comments-test
    'frontend-tests.data.workspace-context-menu-test
