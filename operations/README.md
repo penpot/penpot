@@ -13,4 +13,4 @@ not grow with procedures that nobody will run again.
 | Procedure | Version |
 |---|---|
 | [Migrate legacy file payloads to `file_data`](2.19.0-migrate-legacy-file-data.md) | 2.19.0 |
-| [Partition `file_change` by `file_id`](2.19.0-file-change-partition.md) | 2.19.0 |
+| [Partition `file_change` by `file_id`](2.20.0-file-change-partition.md) | 2.20.0 |

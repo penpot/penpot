@@ -52,7 +52,7 @@
   "Retrieve a file bundle with data from a specific snapshot for
   read-only preview. Does not modify any database state."
   {::doc/added "2.16"
-   ::doc/changes [["2.19" "An unknown snapshot is reported with the :snapshot-not-found error code"]]
+   ::doc/changes [["2.20" "An unknown snapshot is reported with the :snapshot-not-found error code"]]
    ::sm/params schema:get-file-snapshot
    ::sm/result files/schema:file-with-permissions
    ::db/transaction true}
@@ -221,7 +221,7 @@
 
 (sv/defmethod ::update-file-snapshot
   {::doc/added "1.20"
-   ::doc/changes [["2.19" "The :file-id param is now required and an unknown snapshot answers :snapshot-not-found"]]
+   ::doc/changes [["2.20" "The :file-id param is now required and an unknown snapshot answers :snapshot-not-found"]]
    ::sm/params schema:update-file-snapshot
    ::db/transaction true}
   [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id id label]}]
@@ -236,7 +236,7 @@
 
 (sv/defmethod ::delete-file-snapshot
   {::doc/added "1.20"
-   ::doc/changes [["2.19" "The :file-id param is now required and an unknown snapshot answers :snapshot-not-found"]]
+   ::doc/changes [["2.20" "The :file-id param is now required and an unknown snapshot answers :snapshot-not-found"]]
    ::sm/params schema:remove-file-snapshot
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id id]}]
@@ -273,7 +273,7 @@
 
 (sv/defmethod ::lock-file-snapshot
   {::doc/added "1.20"
-   ::doc/changes [["2.19" "The :file-id param is now required and an unknown snapshot answers :snapshot-not-found"]]
+   ::doc/changes [["2.20" "The :file-id param is now required and an unknown snapshot answers :snapshot-not-found"]]
    ::sm/params schema:lock-file-snapshot
    ::db/transaction true}
   [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id id]}]
@@ -314,7 +314,7 @@
 
 (sv/defmethod ::unlock-file-snapshot
   {::doc/added "1.20"
-   ::doc/changes [["2.19" "The :file-id param is now required and an unknown snapshot answers :snapshot-not-found"]]
+   ::doc/changes [["2.20" "The :file-id param is now required and an unknown snapshot answers :snapshot-not-found"]]
    ::sm/params schema:unlock-file-snapshot
    ::db/transaction  true}
   [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id id]}]

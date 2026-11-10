@@ -30,7 +30,7 @@
 -- rows of the table happens inside the transaction of the migration, and
 -- the pool sets a 5 minute statement timeout. On those instances mark the
 -- migration as applied and partition the table by hand, with the procedure
--- of `operations/2.19.0-file-change-partition.md`.
+-- of `operations/2.20.0-file-change-partition.md`.
 --
 -- It assumes the service is stopped (a stop-start upgrade): it renames the
 -- table, and a process of the previous version would keep writing to
@@ -67,7 +67,7 @@ BEGIN
      OR (SELECT reltuples FROM pg_class WHERE oid = 'file_change'::regclass) > 2000000
   THEN
     RAISE EXCEPTION
-      'file_change is too large for the automatic partition migration: mark 0158 as applied and follow operations/2.19.0-file-change-partition.md';
+      'file_change is too large for the automatic partition migration: mark 0158 as applied and follow operations/2.20.0-file-change-partition.md';
   END IF;
 END $$;
 
