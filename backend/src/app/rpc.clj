@@ -422,6 +422,7 @@
           'app.rpc.commands.audit
           'app.rpc.commands.auth
           'app.rpc.commands.feedback
+          'app.rpc.commands.mcp-document
           'app.rpc.commands.fonts
           'app.rpc.commands.binfile
           'app.rpc.commands.comments
