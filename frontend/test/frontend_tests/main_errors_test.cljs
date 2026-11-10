@@ -558,6 +558,7 @@
 (t/deftest ^:async update-loop-is-reported-with-the-events-in-flight
   (errors/reset-report-governor!)
   (vreset! @#'errors/update-loop-warned-at 0)
+  (vreset! @#'errors/update-loop-run nil)
   (let [events (atom [])
         loop-ev (ptk/reify ::test-update-loop-source)]
     (await
@@ -566,7 +567,7 @@
         ptk/in-flight-events  (fn [_] [loop-ev])
         st/format-last-events (mock/stub (fn [& _] "(stub last events)"))
         rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")
-        tm/schedule           (mock/stub (fn [f] (f)))}
+        tm/schedule           (mock/stub (fn [_ f] (f)))}
        (errors/on-update-loop {:rounds 26})
        ;; A second trip within the window is not reported again
        (errors/on-update-loop {:rounds 26})
@@ -578,6 +579,31 @@
          (t/is (= "update loop throttled" (:hint props)))
          (t/is (str/includes? (in-flight-section (:report props))
                               "test-update-loop-source")))))))
+
+(t/deftest ^:async update-loop-report-counts-the-trips
+  ;; A loop that goes on trips the scheduler again and again; the report
+  ;; waits a few seconds and tells how many times.
+  (errors/reset-report-governor!)
+  (vreset! @#'errors/update-loop-warned-at 0)
+  (vreset! @#'errors/update-loop-run nil)
+  (let [events    (atom [])
+        scheduled (atom nil)]
+    (await
+     (mock/with-mocks*
+       {st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
+        ptk/in-flight-events  (fn [_] [])
+        st/format-last-events (mock/stub (fn [& _] "(stub last events)"))
+        rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")
+        tm/schedule           (mock/stub (fn [_ f] (reset! scheduled f)))}
+       (errors/on-update-loop {:rounds 26})
+       (errors/on-update-loop {:rounds 26})
+       (errors/on-update-loop {:rounds 26})
+       (t/is (empty? @events) "nothing is reported while the trips are counted")
+       (@scheduled)
+       (t/is (= 1 (count @events)))
+       (let [report (:report (deref (first @events)))]
+         (t/is (str/includes? report ":trips 3"))
+         (t/is (str/includes? report ":last-trip-stack")))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Expired organization SSO session
