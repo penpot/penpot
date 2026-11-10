@@ -774,11 +774,17 @@
                               "failure: " (errors/message-of recorded) "\n")))))
 
 (defn- ^:async execute-session
-  "Runs the session. Returns the failure that ended it, or nil. An interruption
-  is not a failure."
+  "Runs the session and retains failures that require final reporting.
+
+  Args:
+    state: The session's execution state.
+
+  Returns:
+    The failure that ended execution, or nil. Interrupted sessions retain
+    fatal failures."
   [state]
   (let [ended (attempt :catch-fatal (await (run-session state)))]
-    (when (and (failure? ended) (not (interrupted? state)))
+    (when (and (failure? ended) (or (not (interrupted? state)) (errors/fatal? ended)))
       (record-session-failure state :runner ended)
       ended)))
 
@@ -789,8 +795,8 @@
     cause))
 
 (defn- remove-run-build
-  [state saved?]
-  (when (and saved? (:remove (:opts state)))
+  [state saved? failures]
+  (when (and saved? (:remove (:opts state)) (not-any? process/unresolved? failures))
     (attempt :catch-fatal
              (remove-build (:root state) (:selected-build state))
              nil)))
@@ -820,7 +826,8 @@
   [state session-error cleanup-error]
   (let [saved   (attempt :catch-fatal (finish-run state))
         run     (if (failure? saved) @(:run-ref state) saved)
-        removal (remove-run-build state (not (failure? saved)))
+        removal (remove-run-build state (not (failure? saved))
+                                  (filter failure? [session-error cleanup-error saved @(:sink-failure-ref state)]))
         report  (format-run-report state run)
         logged  (log-run-completion state run)
         causes  (->> [cleanup-error session-error saved removal report logged

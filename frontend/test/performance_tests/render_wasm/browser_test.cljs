@@ -127,6 +127,39 @@
                    (mapv :error (errors/get-errors cause)))))
         (t/is (nil? (await closing)))))))
 
+
+(t/deftest ^:async unresolved-cancellation-retains-the-browser-profile
+  (let [profile    (path/join @temporary-root "profile.info")
+        controller (js/AbortController.)
+        failure    (errors/combine
+                    [{:error (ex-info "Command cancelled" {:type :process-cancelled})}
+                     {:error (errors/fatal-error "Command group may still be running"
+                                                 {:type :process-unresolved :unresolved-process true
+                                                  :pid 4242 :pgid 4242 :signals ["SIGTERM" "SIGKILL"]} nil)}])
+        running    (js/Promise. (fn [_ reject]
+                                  (.addEventListener (.-signal controller) "abort" #(reject failure))))
+        owner      {:controller controller :process running :shutdown (atom nil)
+                    :connection (atom nil) :user-data-dir @temporary-root}]
+    (fs/writeFileSync profile "retained")
+    (let [cause (try (await (browser/close owner)) nil (catch :default cause cause))]
+      (t/is (errors/fatal? cause))
+      (t/is (process/unresolved? cause))
+      (t/is (= @temporary-root (:profile-path (errors/evidence :cleanup cause))))
+      (t/is (= "retained" (when (fs/existsSync profile) (fs/readFileSync profile "utf8")))))))
+
+
+(t/deftest ^:async process-stop-retains-other-errors-after-cancellation
+  (let [controller (js/AbortController.)
+        probe      (ex-info "Probe failed" {:type :process-probe})
+        failure    (errors/combine [{:error (ex-info "Command cancelled" {:type :process-cancelled})}
+                                    {:error probe}])
+        running    (js/Promise. (fn [_ reject]
+                                  (.addEventListener (.-signal controller) "abort" #(reject failure))))
+        owner      {:controller controller :process running :shutdown (atom nil)
+                    :connection (atom nil) :user-data-dir @temporary-root}
+        cause      (try (await (browser/close owner)) nil (catch :default cause cause))]
+    (t/is (= [probe] (mapv :error (errors/get-errors cause))))))
+
 (t/deftest ^:async browser-startup-retains-a-failure-of-its-disposal
   (let [run-process   process/run
         close         browser/close
@@ -142,7 +175,7 @@
        (let [cause   (await (rejected (browser/launch {:startup-timeout-ms 10000})))
              entries (errors/get-errors cause)]
          (t/is (= ::browser/startup-cleanup (:type (ex-data cause))))
-         (t/is (= ["Chromium exited before its CDP endpoint became ready" "startup disposal failed"]
+         (t/is (= ["Command exited unsuccessfully" "startup disposal failed"]
                   (mapv #(errors/message-of (:error %)) entries))))))))
 
 (defn- ^:async check-stopped

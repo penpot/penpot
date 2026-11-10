@@ -188,13 +188,16 @@
         (if (nil? old) (js-delete env "PENPOT_GPU") (set! (.-PENPOT_GPU env) old))))))
 
 (t/deftest ^:async thrown-and-rejected-failures-use-checked-console-and-release-listeners
-  (doseq [handler [(fn [_ _] (throw (js/Error. "failed work")))
-                   (^:async fn [_ _]
-                     (await (timers/setTimeout 1))
-                     (throw (js/Error. "failed work")))
-                   (^:async fn [_ _]
-                     (await (timers/setTimeout 1))
-                     (throw (errors/fatal-error "failed work" {} (js/Error. "storage"))))]]
+  (doseq [[handler expected] [[(fn [_ _] (throw (js/Error. "failed work")))
+                               "✖ failed work\n"]
+                              [(^:async fn [_ _]
+                                 (await (timers/setTimeout 1))
+                                 (throw (js/Error. "failed work")))
+                               "✖ failed work\n"]
+                              [(^:async fn [_ _]
+                                 (await (timers/setTimeout 1))
+                                 (throw (errors/fatal-error "failed work" {} (js/Error. "storage"))))
+                               "✖ failed work\n  fatal  true\n"]]]
     (let [local   (capture)
           before  (listeners)
           request (assoc (resolved "help" {:topic nil}) :console {:level :warn :color :never})]
@@ -202,7 +205,7 @@
                          request {"help" (fn [context options]
                                            (log/info "hidden progress")
                                            (handler context options))} local))))
-      (t/is (= "✖ failed work\n" @(:errors local)))
+      (t/is (= expected @(:errors local)))
       (t/is (= before (listeners))))))
 
 (t/deftest ^:async final-publication-uses-the-outcomes-log-and-numeric-status
@@ -281,7 +284,7 @@
                                                       {"help" handler} local)))))
       (t/is (= "partial evidence" (fs/readFileSync file "utf8")))
       (t/is (= "partial report\n" @(:output local)))
-      (t/is (= "✖ fatal storage\n" @(:errors local)))
+      (t/is (= "✖ fatal storage\n  fatal  true\n" @(:errors local)))
       (t/is (= before (listeners))))))
 
 (t/deftest failure-adapters-preserve-usage-validation-and-decoder-diagnostics

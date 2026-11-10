@@ -64,13 +64,32 @@
   [value]
   (errors/bounded-text (js/JSON.stringify value) 1024))
 
+(defn- identifier->text
+  [value]
+  (if (string? value)
+    (quoted-detail value)
+    (errors/bounded-text (pr-str value) 1024)))
+
+(def ^:private process-detail-keys
+  [:command :pid :pgid :signals :profile-path :fatal :unresolved-process])
+
 (defn format-error-entry
-  "Formats a failure location with its available operation, message and path."
-  [{:keys [phase operation message path]}]
+  "Formats an error with its location and available process details.
+
+  Args:
+    entry: A projected error occurrence.
+
+  Returns:
+    Bounded error text and process details when a group may still be running."
+  [{:keys [phase operation message path] :as entry}]
   (str (when operation (str (pr-str operation) " "))
        (quoted-detail phase)
        (when (some? message) (str ": " (quoted-detail message)))
-       (when path (str "\n      Path " (quoted-detail path)))))
+       (when path (str "\n      Path " (quoted-detail path)))
+       (when (:unresolved-process entry)
+         (apply str
+                (map (fn [[key value]] (str "\n      " (name key) " " (identifier->text value)))
+                     (select-keys entry process-detail-keys))))))
 
 (defn- failure->text
   [{:keys [failure reason]}]
@@ -78,22 +97,22 @@
     (if-let [n (:unacknowledged-differences failure)]
       (str n " unacknowledged " (if (= n 1) "difference" "differences"))
       (if-let [entries (seq (:errors failure))]
-        (str (if (not= (errors/bounded-text (:message failure) 1024) (:message (first entries)))
-               (str (format-error-entry failure) "\n    ")
-               (when (not= (select-keys failure [:phase :operation :path])
-                           (select-keys (first entries) [:phase :operation :path]))
-                 (str "Context " (format-error-entry (dissoc failure :message)) "\n    ")))
-             (str/join "\n    " (map format-error-entry (take 8 entries)))
-             (when (> (count entries) 8)
-               (str "\n    " (- (count entries) 8) " more errors recorded")))
+        (let [header     (apply dissoc failure process-detail-keys)
+              omitted    (drop 8 entries)
+              unresolved (filter :unresolved-process omitted)]
+          (str (if (not= (errors/bounded-text (:message failure) 1024) (:message (first entries)))
+                 (str (format-error-entry header) "\n    ")
+                 (when (not= (select-keys failure [:phase :operation :path])
+                             (select-keys (first entries) [:phase :operation :path]))
+                   (str "Context " (format-error-entry (dissoc header :message)) "\n    ")))
+               (str/join "\n    " (map format-error-entry (take 8 entries)))
+               (when (seq omitted)
+                 (str "\n    " (count omitted) " more errors recorded"))
+               (when-let [entry (first unresolved)]
+                 (str "\n    " (count unresolved) " unresolved process errors in the saved record; first: "
+                      (format-error-entry entry)))))
         (format-error-entry failure)))
     (quoted-detail reason)))
-
-(defn- identifier->text
-  [value]
-  (if (string? value)
-    (quoted-detail value)
-    (errors/bounded-text (pr-str value) 1024)))
 
 (defn- same-diagnostic?
   [left right]
@@ -148,8 +167,10 @@
 
 (defn- diagnostic->text
   [failure]
-  (let [details (merge (select-keys (first (:cause failure)) [:type :code :fn])
-                       (errors/project-context failure)
+  (let [context (errors/project-context failure)
+        context (if (:unresolved-process failure) (apply dissoc context process-detail-keys) context)
+        details (merge (select-keys (first (:cause failure)) [:type :code :fn])
+                       context
                        (select-keys failure [:reason :deadline-exceeded]))]
     (str (failure->text {:failure failure})
          (apply str (map (fn [[key value]]

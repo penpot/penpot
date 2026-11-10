@@ -15,6 +15,7 @@
    [benches.render-wasm.node.cli.deferred :as deferred]
    [benches.render-wasm.node.cli.request :as request]
    [benches.render-wasm.node.log :as log]
+   [benches.render-wasm.node.process :as process]
    [benches.render-wasm.node.runner.browser :as browser]
    [benches.render-wasm.node.runner.feature-comparison :as feature-comparison]
    [benches.render-wasm.node.runner.run :as run]
@@ -1250,6 +1251,43 @@
     (t/is (not (fs/existsSync (path/join dir "index.html"))))
     (t/is (= :completed (get-in result [:run :termination :reason])))
     (t/is (zero? (:exit-code result)))))
+
+
+(t/deftest ^:async unresolved-failure-retains-build-and-earlier-results-on-interruption
+  (doseq [signal [nil "SIGINT" "SIGTERM"]]
+    (let [root       @temporary-root
+          id         (str "unresolved-" (or signal "failure"))
+          dir        (path/join (artifacts/managed-root root) "builds" id)
+          index      (path/join dir "index.html")
+          controller (js/AbortController.)
+          failure    (errors/fatal-error "Command group may still be running"
+                                         {:type :process-unresolved :unresolved-process true
+                                          :pid 4242 :pgid 4242 :signals ["SIGTERM" "SIGKILL"]} nil)
+          base       (fake-browser {})
+          prepare    (get-in base [:service :prepare])
+          fake       (assoc-in base [:service :prepare]
+                               (fn [page request bounds]
+                                 (if (= :case/b (get-in (transit/decode-str request) [:case :id]))
+                                   (do
+                                     (when signal (.abort controller signal))
+                                     (throw failure))
+                                   (prepare page request bounds))))
+          out        (path/join root id)
+          home       (runs/create-home {:root root :run-id id :output-dir out :remove true})]
+      (fs/mkdirSync dir #js {:recursive true})
+      (fs/writeFileSync index "retained renderer")
+      (let [response (await (run/execute root home (selected-build dir id)
+                                         [(collected :case/a :reuse) (collected :case/b :reuse) (collected :case/c :reuse)]
+                                         (assoc (options fake out) :remove true) (.-signal controller)))
+            saved    (saved-record response)]
+        (t/is (= (case signal "SIGINT" 130 "SIGTERM" 143 1) (:exit-code response)))
+        (t/is (some process/unresolved? (:errors response)))
+        (t/is (= [:completed] (mapv :outcome (attempts-for saved :case/a))))
+        (t/is (= 1 (get-in saved [:remaining :case/c :repetitions])))
+        (t/is (str/includes? (:report response) "pgid 4242"))
+        (t/is (str/includes? (:report response) "SIGKILL"))
+        (t/is (= "retained renderer" (when (fs/existsSync index) (fs/readFileSync index "utf8"))))
+        (t/is (false? (.-listening ^js (get-in @(:state fake) [:host :server]))))))))
 
 (t/deftest ^:async failed-final-record-write-retains-the-selected-build
   (let [root       @temporary-root

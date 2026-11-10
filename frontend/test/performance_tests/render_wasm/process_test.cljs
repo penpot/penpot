@@ -7,9 +7,13 @@
 (ns performance-tests.render-wasm.process-test
   "Real Node/POSIX processes, files and Linux flock ownership."
   (:require
+   ["child_process" :as child-process]
    ["fs" :as fs]
+   ["node:module" :as node-module]
    ["os" :as os]
    ["path" :as path]
+   [app.common.transit :as transit]
+   [benches.render-wasm.errors :as errors]
    [benches.render-wasm.node.process :as process]
    [cljs.test :as t :include-macros true]
    [clojure.string :as str]))
@@ -27,17 +31,69 @@
 
 (defn- within
   "A broken lifecycle must fail the test rather than stall the test runner."
-  [promise]
-  (let [timer (volatile! nil)]
-    (-> (js/Promise.race
-         #js [promise
-              (js/Promise.
-               (fn [_ reject]
-                 (vreset! timer
-                          (js/setTimeout
-                           #(reject (ex-info "Process test stalled" {:type :test-watchdog}))
-                           5000))))])
-        (.finally #(js/clearTimeout @timer)))))
+  ([promise] (within promise 5000))
+  ([promise timeout-ms]
+   (let [timer (volatile! nil)]
+     (-> (js/Promise.race
+          #js [promise
+               (js/Promise.
+                (fn [_ reject]
+                  (vreset! timer
+                           (js/setTimeout
+                            #(reject (ex-info "Process test stalled" {:type :test-watchdog}))
+                            timeout-ms))))])
+         (.finally #(js/clearTimeout @timer))))))
+
+(defn- ^:async with-live-group
+  [faults f]
+  (let [^js native-fs ((node-module/createRequire (path/join (.cwd js/process) "package.json")) "fs")
+        kill      (.-kill js/process)
+        read-dir  (.-readdirSync native-fs)
+        read-file (.-readFileSync native-fs)
+        group     (atom nil)
+        signals   (atom [])
+        probed    (atom false)
+        fake-pid  "2147483646"]
+    (set! (.-kill js/process)
+          (fn [pid signal]
+            (if (neg? pid)
+              (do
+                (reset! group (- pid))
+                (when-not (:keep-child faults)
+                  (try
+                    (.call kill js/process pid signal)
+                    (catch :default cause
+                      (when-not (= "ESRCH" (.-code cause)) (throw cause)))))
+                (when (string? signal)
+                  (swap! signals conj {:signal signal :time-ms (js/Date.now)}))
+                (when-let [cause (get faults signal)] (throw cause))
+                true)
+              (.call kill js/process pid signal))))
+    (set! (.-readdirSync native-fs)
+          (fn [location & args]
+            (if (and (= "/proc" location) @group)
+              (if (and (:probe faults) (compare-and-set! probed false true))
+                (throw (:probe faults))
+                (.concat (apply read-dir location args) #js [fake-pid]))
+              (apply read-dir location args))))
+    (set! (.-readFileSync native-fs)
+          (fn [location & args]
+            (if (and @group (= location (str "/proc/" fake-pid "/stat")))
+              (str fake-pid " (unresolved) S 0 " @group " " @group " 0")
+              (apply read-file location args))))
+    (node-module/syncBuiltinESMExports)
+    (try
+      (await (f signals))
+      (finally
+        (when (and (:keep-child faults) @group)
+          (try
+            (.call kill js/process (- @group) "SIGKILL")
+            (catch :default cause
+              (when-not (= "ESRCH" (.-code cause)) (throw cause)))))
+        (set! (.-kill js/process) kill)
+        (set! (.-readdirSync native-fs) read-dir)
+        (set! (.-readFileSync native-fs) read-file)
+        (node-module/syncBuiltinESMExports)))))
 
 (defn- ^:async wait-for
   [pred]
@@ -124,6 +180,97 @@
           :deadline (process/deadline 3000)
           :termination-grace-ms test-grace-ms}
          overrides))
+
+(t/deftest ^:async unresolved-group-termination-is-bounded-and-fatal
+  (await
+   (with-live-group
+     {}
+     (^:async fn [signals]
+       (let [started (js/Date.now)
+             cause   (try
+                       (await (within (process/run (node-options "process.exit(0);" {:termination-grace-ms 20})) 8000))
+                       nil
+                       (catch :default cause cause))
+             data    (ex-data cause)]
+         (t/is (errors/fatal? cause))
+         (t/is (= :process-unresolved (:type data)))
+         (t/is (= (.-execPath js/process) (:command data)))
+         (t/is (integer? (:pid data)))
+         (t/is (= (:pid data) (:pgid data)))
+         (t/is (= ["SIGTERM" "SIGKILL"] (:signals data)))
+         (t/is (= ["SIGTERM" "SIGKILL"] (mapv :signal @signals)))
+         (let [killed-at (some #(when (= "SIGKILL" (:signal %)) (:time-ms %)) @signals)]
+           (t/is (and (number? killed-at) (>= (- (js/Date.now) killed-at) 5000))))
+         (t/is (< (- (js/Date.now) started) 8000))
+         (t/is (not (running? (read-pid "root.pid")))))))))
+
+
+(t/deftest ^:async unresolved-owner-retains-a-live-lock-and-all-failures
+  (let [lock-file (file "unresolved.lock")
+        messages  ["output handler failed" "TERM denied" "probe unavailable" "KILL denied"]]
+    (await
+     (with-live-group
+       {"SIGTERM" (js/Error. (nth messages 1))
+        :probe (js/Error. (nth messages 2))
+        "SIGKILL" (js/Error. (nth messages 3))
+        :keep-child true}
+       (^:async fn [signals]
+         (let [options (node-options ""
+                                     {:command "flock"
+                                      :args ["--exclusive" lock-file (.-execPath js/process) "-e"
+                                             (node-source "root.pid" "process.stdout.write('ready'); setInterval(() => {}, 1000);")]
+                                      :deadline (process/deadline 30000)
+                                      :termination-grace-ms 20
+                                      :on-output (fn [& _] (throw (js/Error. (first messages))))})
+               cause   (try
+                         (await (within (process/run options) 8000))
+                         nil
+                         (catch :default cause cause))
+               entries (errors/get-errors cause)
+               wire    (-> (errors/evidence :process cause) transit/encode-str transit/decode-str)]
+           (t/is (process/unresolved? cause))
+           (t/is (errors/fatal? cause))
+           (t/is (= [:process-output :process-signal :process-probe :process-signal :process-unresolved]
+                    (mapv #(-> % :error ex-data :type) entries)))
+           (doseq [[entry message] (map vector (:errors wire) messages)]
+             (t/is (some #(= message (:message %)) (:cause entry))))
+           (t/is (true? (:unresolved-process wire)))
+           (t/is (true? (:fatal wire)))
+           (t/is (= ["SIGTERM" "SIGKILL"] (mapv :signal @signals)))
+           (t/is (running? (read-pid "root.pid")))
+           (t/is (= 1 (.-status (child-process/spawnSync "flock" #js ["--nonblock" lock-file "true"]
+                                                         #js {:timeout 1000}))))))))
+    (await (wait-for #(zero? (.-status (child-process/spawnSync "flock" #js ["--nonblock" lock-file "true"]
+                                                                #js {:timeout 1000})))))))
+
+
+(t/deftest ^:async input-stream-errors-have-one-occurrence-each-with-line-output
+  (let [^js native ((node-module/createRequire (path/join (.cwd js/process) "package.json")) "child_process")
+        spawn      (.-spawn native)]
+    (set! (.-spawn native)
+          (fn [& args]
+            (let [^js child (apply spawn args)]
+              (.once (.-stdout child) "data"
+                     (fn [_]
+                       (.emit (.-stdout child) "error" (js/Error. "first read failed"))
+                       (.emit (.-stdout child) "error" (js/Error. "second read failed"))))
+              child)))
+    (node-module/syncBuiltinESMExports)
+    (try
+      (let [cause (try
+                    (await (within (process/run
+                                    (node-options "process.stdout.write('ready'); setInterval(() => {}, 1000);"
+                                                  {:on-line (fn [& _] nil)}))))
+                    nil
+                    (catch :default cause cause))
+            wire  (errors/evidence :process cause)]
+        (t/is (= [:process-output :process-output]
+                 (mapv #(-> % :error ex-data :type) (errors/get-errors cause))))
+        (doseq [[entry message] (map vector (:errors wire) ["first read failed" "second read failed"])]
+          (t/is (some #(= message (:message %)) (:cause entry)))))
+      (finally
+        (set! (.-spawn native) spawn)
+        (node-module/syncBuiltinESMExports)))))
 
 (defn- ^:async rejected
   [promise]
@@ -355,6 +502,20 @@
           "the root leads the group containing all generations")
     (t/is (not= (:runner @groups) (:root @groups)) "the group is separate from the runner")
     (await (assert-tree-stopped))))
+
+
+(t/deftest ^:async default-cancellation-produces-portable-error-evidence
+  (let [controller (js/AbortController.)
+        cause      (try
+                     (await (within (process/run
+                                     (node-options "process.stdout.write('ready'); setInterval(() => {}, 1000);"
+                                                   {:signal (.-signal controller)
+                                                    :on-output (fn [& _] (.abort controller))}))))
+                     nil
+                     (catch :default cause cause))
+        evidence   (errors/evidence :process cause)]
+    (t/is (= :process-cancelled (:type (ex-data cause))))
+    (t/is (= evidence (-> evidence transit/encode-str transit/decode-str)))))
 
 (t/deftest ^:async output-callback-failure-cleans-the-owned-group
   (doseq [callback [:on-output :on-line]]

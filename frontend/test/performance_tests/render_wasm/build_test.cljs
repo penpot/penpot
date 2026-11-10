@@ -19,7 +19,8 @@
    [benches.render-wasm.node.process :as process]
    [benches.render-wasm.node.runner.build :as build]
    [cljs.test :as t :include-macros true]
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [frontend-tests.helpers.mock :as mock]))
 
 (def ^:private temporary-root (atom nil))
 
@@ -182,6 +183,21 @@
                                                {:deadline (process/deadline 10000)}))]
           (t/is (= {:sha nil :dirty nil} git)))))
      done)))
+
+
+(t/deftest ^:async git-provenance-propagates-unresolved-process-failures
+  (let [failure (errors/fatal-error "Git process may still be running"
+                                    {:type :process-unresolved :unresolved-process true
+                                     :command "git" :pid 4242 :pgid 4242 :signals ["SIGTERM" "SIGKILL"]} nil)]
+    (await
+     (mock/with-mocks*
+       {process/run (fn [_] (js/Promise.reject failure))}
+       (let [cause (try
+                     (await (build/git-provenance (frontend-root) {:deadline (process/deadline 1000)}))
+                     nil
+                     (catch :default cause cause))]
+         (t/is (errors/fatal? cause))
+         (t/is (process/unresolved? cause)))))))
 
 (t/deftest nonzero-renderer-retains-created-evidence-output-and-failed-manifest
   (t/async done

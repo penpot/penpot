@@ -789,6 +789,93 @@
            (when (not= :terminal point)
              (t/is (= 1 (count (filter #(= "interrupted operation failed" (:message %)) (:errors evidence))))))))))))
 
+
+(t/deftest ^:async unresolved-run-stops-the-feature-matrix
+  (create-frontend-root)
+  (let [prepared (comparison-prepared ["a"])
+        execute  (execute-service {})
+        failure  (errors/fatal-error "Command group may still be running"
+                                     {:type :process-unresolved :unresolved-process true
+                                      :pid 4242 :pgid 4242 :signals ["SIGTERM" "SIGKILL"]} nil)
+        response (await (feature-comparison/execute
+                         (frontend-root) prepared nil
+                         {:services (comparison-services
+                                     {:prepare-build (build-service {})
+                                      :execute-run (fn [& args]
+                                                     (.then (apply execute args)
+                                                            #(assoc % :exit-code 1 :errors [failure])))})}))
+        saved    (saved-comparison response)]
+    (t/is (= 1 (:exit-code response)))
+    (t/is (some process/unresolved? (:errors response)))
+    (t/is (= [:failed :unattempted] (mapv :status (:configurations saved))))
+    (t/is (= [:unattempted] (mapv :status (:edges saved))))))
+
+
+(t/deftest ^:async unresolved-build-finishes-the-feature-matrix
+  (create-frontend-root)
+  (doseq [signal [nil "SIGTERM"]]
+    (let [prepared   (comparison-prepared ["a"] {:output-dir (path/join @temporary-root (str "unresolved-build-" signal))})
+          controller (js/AbortController.)
+          prepare    (build-service {})
+          failure    (errors/fatal-error "Compiler group may still be running"
+                                         {:type :process-unresolved :unresolved-process true
+                                          :pid 4242 :pgid 4242 :signals ["SIGTERM" "SIGKILL"]} nil)
+          response   (await (feature-comparison/execute
+                             (frontend-root) prepared (.-signal controller)
+                             {:services (comparison-services
+                                         {:prepare-build (fn [request]
+                                                           (.then (prepare request)
+                                                                  (fn [_]
+                                                                    (when signal (.abort controller signal))
+                                                                    (throw failure))))
+                                          :execute-run (execute-service {})})}))
+          saved      (saved-comparison response)]
+      (t/is (= (if signal 143 1) (:exit-code response)))
+      (t/is (= (if signal :interrupted :failed) (:status saved)))
+      (t/is (= [:failed :unattempted] (mapv :status (:configurations saved))))
+      (t/is (= [:unattempted] (mapv :status (:edges saved))))
+      (t/is (true? (get-in saved [:configurations 0 :failure :unresolved-process])))
+      (t/is (some process/unresolved? (:errors response)))
+      (t/is (= (:comparison response) saved)))))
+
+(t/deftest ^:async unresolved-build-and-failed-comparison-save-retain-both-errors
+  (create-frontend-root)
+  (doseq [signal [nil "SIGTERM"]]
+    (let [prepared   (comparison-prepared ["a"] {:output-dir (path/join @temporary-root (str "unresolved-save-" signal))})
+          controller (js/AbortController.)
+          write      feature-comparison/write-record
+          prepare    (build-service {})
+          failure    (errors/fatal-error "Compiler group may still be running"
+                                         {:type :process-unresolved :unresolved-process true
+                                          :pid 4242 :pgid 4242 :signals ["SIGTERM" "SIGKILL"]} nil)
+          save-error (js/Error. "comparison save failed")]
+      (await
+       (mock/with-mocks*
+         {feature-comparison/write-record
+          (fn [home record]
+            (if (= :failed (get-in record [:configurations 0 :status]))
+              (throw save-error)
+              (write home record)))}
+         (let [response (await (feature-comparison/execute
+                                (frontend-root) prepared (.-signal controller)
+                                {:services (comparison-services
+                                            {:prepare-build (fn [request]
+                                                              (.then (prepare request)
+                                                                     (fn [_]
+                                                                       (when signal (.abort controller signal))
+                                                                       (throw failure))))
+                                             :execute-run (execute-service {})})}))
+               evidence (errors/evidence :comparison (first (:errors response)))]
+           (t/is (= (if signal 143 1) (:exit-code response)))
+           (t/is (= :running (get-in response [:comparison :status])))
+           (t/is (= (:comparison response) (saved-comparison response)))
+           (t/is (some process/unresolved? (:errors response)))
+           (t/is (= ["Compiler group may still be running" "cannot persist feature comparison"]
+                    (mapv :message (:errors evidence))))
+           (t/is (= 4242 (get-in evidence [:errors 0 :pgid])))
+           (t/is (some #(= "comparison save failed" (:message %))
+                       (get-in evidence [:errors 1 :cause])))))))))
+
 (t/deftest ^:async edge-report-storage-failure-preserves-failed-and-unattempted-edges
   (create-frontend-root)
   (let [prepared (comparison-prepared ["a" "b"])

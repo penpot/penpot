@@ -28,7 +28,7 @@
 // The normal unit test build does not build this CLI.
 
 const assert = require("node:assert/strict");
-const { execFile, spawn } = require("node:child_process");
+const { execFile, spawn, spawnSync } = require("node:child_process");
 const { once } = require("node:events");
 const { setTimeout: pause } = require("node:timers/promises");
 const { randomUUID } = require("node:crypto");
@@ -436,6 +436,99 @@ fs.writeFileSync(path.join(process.env.RENDER_BENCH_BROWSER_DIR, 'browser.js'), 
   );
   fixture.env.PATH = `${bin}${path.delimiter}${process.env.PATH}`;
 }
+
+
+test("unresolved compiler ownership exits while retaining its build and lock", testOptions, async (t) => {
+  for (const [command, interrupt] of [["build", null], ["run", "SIGINT"], ["ab", "SIGTERM"]]) {
+    const fixture = createFrontend(t);
+    if (command === "ab") installCargoMetadata(fixture, { default: [], a: [] });
+    const groupFile = path.join(fixture.managed, "compiler-group.pid");
+    const signalsFile = path.join(fixture.managed, "termination-signals.log");
+    const lockFile = path.join(fixture.rendererRoot, "compiler.lock");
+    const guard = path.join(fixture.managed, "unresolved-process.cjs");
+    fs.writeFileSync(fixture.compiler, `#!/usr/bin/env node
+const fs = require("node:fs");
+const path = require("node:path");
+const { spawn } = require("node:child_process");
+fs.writeFileSync(path.join(process.env.FRONTEND_DEST, "partial.js"), "retained compiler output");
+const worker = spawn("flock", ["--exclusive", ${JSON.stringify(lockFile)}, process.execPath, "-e",
+  "process.stdout.write('compiler ready'); setInterval(() => {}, 1000);"], { stdio: "inherit" });
+worker.on("exit", (code) => { process.exitCode = code; });
+`, { mode: 0o755 });
+    fs.writeFileSync(guard, `
+const fs = require("node:fs");
+const cp = require("node:child_process");
+const spawn = cp.spawn;
+const kill = process.kill;
+const interrupt = ${JSON.stringify(interrupt)};
+let group;
+cp.spawn = function (command, ...args) {
+  const child = spawn.call(this, command, ...args);
+  if (command === ${JSON.stringify(fixture.compiler)} && child.pid) {
+    group = child.pid;
+    fs.writeFileSync(${JSON.stringify(groupFile)}, String(group));
+    if (interrupt) child.stdout.once("data", () => process.kill(process.pid, interrupt));
+  }
+  return child;
+};
+process.kill = function (pid, signal) {
+  if (pid === -group && ["SIGTERM", "SIGKILL"].includes(signal)) {
+    fs.appendFileSync(${JSON.stringify(signalsFile)}, signal + "\\n");
+    return true;
+  }
+  return kill.apply(this, arguments);
+};
+require("node:module").syncBuiltinESMExports();
+`);
+    fixture.nodeArgs = ["--require", guard];
+    const args = command === "ab" ? ["ab", "--features", "a", "--filter", "rects/load"] : [command];
+    if (!interrupt) args.push("--build-timeout-ms", "1000");
+    if (command === "run") args.push("--remove");
+    args.push("--no-color");
+    try {
+      const result = await runCli(fixture, args);
+      assert.equal(result.exitCode, interrupt === "SIGINT" ? 130 : interrupt === "SIGTERM" ? 143 : 1, result.stderr);
+      assert.match(result.stderr, /unresolved/);
+      assert.match(result.stderr, /pgid/);
+      assert.ok(result.stderr.includes(fixture.compiler), result.stderr);
+      assert.deepEqual(fs.readFileSync(signalsFile, "utf8").trim().split("\n"), ["SIGTERM", "SIGKILL"]);
+      const group = Number(fs.readFileSync(groupFile, "utf8"));
+      assert.ok(process.kill(group, 0));
+      assert.equal(spawnSync("flock", ["--nonblock", lockFile, "true"], { timeout: 1000 }).status, 1);
+      const ids = fs.readdirSync(fixture.builds);
+      assert.equal(ids.length, 1);
+      const directory = path.join(fixture.builds, ids[0]);
+      const manifest = readManifest(path.join(directory, "build.transit"));
+      assert.equal(manifest.get(transit.keyword("status")).toString(), ":failed");
+      assert.equal(manifest.get(transit.keyword("failure")).get(transit.keyword("unresolved-process")), true);
+      assert.equal(fs.readFileSync(path.join(directory, "renderer", "partial.js"), "utf8"), "retained compiler output");
+      if (command === "ab") {
+        const k = transit.keyword;
+        const [id] = fs.readdirSync(fixture.comparisons);
+        const comparison = readManifest(path.join(fixture.comparisons, id, "feature-comparison.transit"));
+        assert.equal(comparison.get(k("status")).toString(), ":interrupted");
+        assert.deepEqual(comparison.get(k("configurations")).map((entry) => entry.get(k("status")).toString()),
+          [":failed", ":unattempted"]);
+        assert.deepEqual(comparison.get(k("edges")).map((entry) => entry.get(k("status")).toString()), [":unattempted"]);
+      }
+    } finally {
+      if (fs.existsSync(groupFile)) {
+        const group = Number(fs.readFileSync(groupFile, "utf8"));
+        assert.ok(Number.isSafeInteger(group) && group > 0);
+        try {
+          process.kill(-group, "SIGKILL");
+        } catch (error) {
+          if (error.code !== "ESRCH") throw error;
+        }
+        const deadline = Date.now() + 3000;
+        while (spawnSync("flock", ["--nonblock", lockFile, "true"], { timeout: 1000 }).status === 1) {
+          assert.ok(Date.now() < deadline, "Owned fixture lock did not release");
+          await pause(10);
+        }
+      }
+    }
+  }
+});
 
 function runFixtureText({
   runId,

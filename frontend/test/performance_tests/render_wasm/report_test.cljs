@@ -7,6 +7,7 @@
 (ns performance-tests.render-wasm.report-test
   (:require
    [app.common.transit :as transit]
+   [benches.render-wasm.errors :as errors]
    [benches.render-wasm.measurement :as measurement]
    [benches.render-wasm.report.analysis :as method]
    [benches.render-wasm.report.compare :as compare]
@@ -347,6 +348,25 @@
     (t/is (str/includes? text ":prepare-scene \"preparation\""))
     (t/is (str/includes? text "Path \"scene.transit\""))
     (t/is (str/includes? text ":serialize-shapes \"upload\""))))
+
+(t/deftest unresolved-process-details-survive-the-report-entry-limit
+  (let [failure (errors/evidence
+                 :cleanup
+                 (errors/combine
+                  (conj (mapv (fn [index] {:phase "cleanup" :error (js/Error. (str "cleanup " index))})
+                              (range 8))
+                        {:phase "cleanup" :operation :stop-process
+                         :error (errors/fatal-error "Compiler group may still be running"
+                                                    {:unresolved-process true :pid 4242 :pgid 4242
+                                                     :signals ["SIGTERM" "SIGKILL"]} nil)})))
+        run     (-> (new-run 0 1 :fresh)
+                    (result/finish-run "end" {:reason :failed :failure failure})
+                    result/encode result/decode)
+        text    (format/format-run (summary/summarize run))]
+    (t/is (str/includes? text "pgid 4242"))
+    (t/is (str/includes? text "SIGKILL"))
+    (t/is (str/includes? text "unresolved-process true"))
+    (t/is (str/includes? text "1 more errors recorded"))))
 
 (t/deftest equal-diagnostics-keep-failures-from-distinct-preparations
   (let [failure {:phase "renderer" :message "shared renderer failure"}]

@@ -277,9 +277,13 @@
 
 (defn- fail-or-interrupt
   [state slug phase cause]
-  (if-let [signal (process/signal-name (:signal state))]
-    (interrupt-configuration state slug signal phase cause)
-    (fail-configuration state slug phase (str (name phase) " failure") cause)))
+  (try
+    (if-let [signal (process/signal-name (:signal state))]
+      (interrupt-configuration state slug signal phase cause)
+      (fail-configuration state slug phase (str (name phase) " failure") cause))
+    (catch :default recorded
+      (throw (errors/combine [{:error cause}
+                              {:phase "comparison-storage" :operation :record-configuration-failure :error recorded}])))))
 
 (defn- begin-configuration
   [state configuration]
@@ -315,15 +319,18 @@
   (if (:outcome flow)
     flow
     (let [{:keys [slug selection]} (:configuration flow)
-          built                    (attempt
-                                    (await ((:prepare-build (:services state))
-                                            {:root (:root state)
-                                             :selection selection
-                                             :build-timeout-ms (get-in state [:options :build-timeout-ms])
-                                             :signal (:signal state)
-                                             :on-created (partial record-created-build state slug)})))
+          built                    (attempt :catch-fatal
+                                            (await ((:prepare-build (:services state))
+                                                    {:root (:root state)
+                                                     :selection selection
+                                                     :build-timeout-ms (get-in state [:options :build-timeout-ms])
+                                                     :signal (:signal state)
+                                                     :on-created (partial record-created-build state slug)})))
           signal                   (process/signal-name (:signal state))]
       (cond
+        (and (failure? built) (errors/fatal? built) (not (process/unresolved? built)))
+        (throw built)
+
         (failure? built)
         (assoc flow :outcome (fail-or-interrupt state slug :build built))
 
@@ -630,25 +637,39 @@
     (catch :default cause
       (throw (storage-error cause (get-in state [:home :log-path]))))))
 
+(defn- stop-unresolved-comparison
+  [state error]
+  (let [recorded (attempt :catch-fatal
+                          (mark-edges-unattempted state "process group may still be running")
+                          nil)]
+    (if (failure? recorded)
+      (failure-outcome state (process/signal-name (:signal state))
+                       (errors/combine [{:error error}
+                                        {:phase "comparison-storage" :operation :skip-comparisons :error recorded}]))
+      (finish state :failed 1 [error]))))
+
 (defn- ^:async run-edges
   [state error]
-  (if-let [signal (process/signal-name (:signal state))]
-    (interrupt-comparison state signal error)
-    (do
-      (try
-        (create-comparison-directory state)
-        (catch :default cause
-          (throw (errors/combine [{:error error}
-                                  {:phase "comparison-storage" :operation :create-comparison-directory :error cause}]))))
-      (let [analyzed (attempt :catch-fatal
-                              (await (analyze-edges state (:edges @(:record-ref state)) error)))]
-        (cond
-          (failure? analyzed)
-          (if-let [signal (process/signal-name (:signal state))]
-            (failure-outcome state signal analyzed)
-            (finish state :failed 1 [analyzed]))
-          (:interrupted analyzed) (interrupt-comparison state (:interrupted analyzed) (:error analyzed))
-          :else (finish-root state (:error analyzed)))))))
+  (let [signal (process/signal-name (:signal state))]
+    (cond
+      signal (interrupt-comparison state signal error)
+      (process/unresolved? error) (stop-unresolved-comparison state error)
+      :else
+      (do
+        (try
+          (create-comparison-directory state)
+          (catch :default cause
+            (throw (errors/combine [{:error error}
+                                    {:phase "comparison-storage" :operation :create-comparison-directory :error cause}]))))
+        (let [analyzed (attempt :catch-fatal
+                                (await (analyze-edges state (:edges @(:record-ref state)) error)))]
+          (cond
+            (failure? analyzed)
+            (if-let [signal (process/signal-name (:signal state))]
+              (failure-outcome state signal analyzed)
+              (finish state :failed 1 [analyzed]))
+            (:interrupted analyzed) (interrupt-comparison state (:interrupted analyzed) (:error analyzed))
+            :else (finish-root state (:error analyzed))))))))
 
 (defn- ^:async run-comparisons
   [state configurations]

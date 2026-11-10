@@ -74,6 +74,12 @@
         [:actual-id {:optional true} [:string {:max 1024}]]
         [:command {:optional true} [:string {:max 1024}]]
         [:exit-code {:optional true} :int]
+        [:pid {:optional true} [:int {:min 1}]]
+        [:pgid {:optional true} [:int {:min 1}]]
+        [:signals {:optional true} [:vector [:string {:max 1024}]]]
+        [:profile-path {:optional true} [:string {:max 1024}]]
+        [:fatal {:optional true} boolean?]
+        [:unresolved-process {:optional true} boolean?]
         [:signal {:optional true} [:string {:max 1024}]]
         [:endpoint {:optional true} [:string {:max 1024}]]])
 
@@ -257,20 +263,27 @@
            unrenderable-value))
 
      (defn project-context
-       "Returns bounded build identity and process details.
+       "Returns bounded identity, process and ownership details.
 
        Args:
-         data: Diagnostic data with optional identity or process fields.
+         data: Diagnostic data with available identity or process fields.
 
        Returns:
-         Expected/actual build IDs, command, signal and endpoint limited to
-         1024 UTF-16 units, and an integer exit code when supplied."
+         Bounded text, integer process IDs and exit code, attempted signals,
+         and available fatal or unresolved-ownership markers."
        [data]
        (cond-> {}
          (string? (:expected-id data)) (assoc :expected-id (bounded-text (:expected-id data) 1024))
          (string? (:actual-id data)) (assoc :actual-id (bounded-text (:actual-id data) 1024))
          (string? (:command data)) (assoc :command (bounded-text (:command data) 1024))
          (integer? (:exit-code data)) (assoc :exit-code (:exit-code data))
+         (and (integer? (:pid data)) (pos? (:pid data))) (assoc :pid (:pid data))
+         (and (integer? (:pgid data)) (pos? (:pgid data))) (assoc :pgid (:pgid data))
+         (and (vector? (:signals data)) (every? string? (:signals data)))
+         (assoc :signals (mapv #(bounded-text % 1024) (:signals data)))
+         (string? (:profile-path data)) (assoc :profile-path (bounded-text (:profile-path data) 1024))
+         (true? (:fatal data)) (assoc :fatal true)
+         (true? (:unresolved-process data)) (assoc :unresolved-process true)
          (string? (:signal data)) (assoc :signal (bounded-text (:signal data) 1024))
          (string? (:endpoint data)) (assoc :endpoint (bounded-text (:endpoint data) 1024))))
 
@@ -362,16 +375,17 @@
          Portable diagnostics with bounded cause descriptions. Collected
          errors retain occurrence order and messages within 1024 UTF-16 units."
        [phase cause]
-       (let [entries (get-error-collection cause)]
+       (let [entries   (get-error-collection cause)
+             projected (when entries
+                         (mapv (fn [{:keys [error operation path partial] entry-phase :phase :as entry}]
+                                 (cond-> (merge (diagnostic-data (or entry-phase phase) error)
+                                                (project-context entry)
+                                                (select-keys entry [:reason :deadline-exceeded])
+                                                {:message (bounded-text (message-of error) 1024)})
+                                   operation (assoc :operation operation)
+                                   partial (assoc :partial partial)
+                                   (string? path) (assoc :path (bounded-text path 1024))))
+                               entries))]
          (cond-> (diagnostic-data phase cause)
-           entries
-           (assoc :errors
-                  (mapv (fn [{:keys [error operation path partial] entry-phase :phase :as entry}]
-                          (cond-> (merge (diagnostic-data (or entry-phase phase) error)
-                                         (project-context entry)
-                                         (select-keys entry [:reason :deadline-exceeded])
-                                         {:message (bounded-text (message-of error) 1024)})
-                            operation (assoc :operation operation)
-                            partial (assoc :partial partial)
-                            (string? path) (assoc :path (bounded-text path 1024))))
-                        entries)))))))
+           projected (assoc :errors projected)
+           (some :unresolved-process projected) (assoc :unresolved-process true))))))

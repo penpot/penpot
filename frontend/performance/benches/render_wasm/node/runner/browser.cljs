@@ -143,8 +143,12 @@
     (await process)
     nil
     (catch :default cause
-      (when-not (= :process-cancelled (:type (ex-data cause)))
-        (throw cause)))))
+      (let [entries (remove (fn [{:keys [error]}]
+                              (and (= :process-cancelled (:type (ex-data error)))
+                                   (not (errors/fatal? error))))
+                            (errors/get-errors cause))]
+        (when-let [failure (errors/combine entries)]
+          (throw (errors/with-data failure (errors/project-context (ex-data cause)))))))))
 
 (defn- disconnect
   "Disconnects only after the group has stopped. A late CDP attachment is also
@@ -192,15 +196,18 @@
   (let [page-failure       (attempt :catch-fatal (await (close-page owner)) nil)
         process-failure    (attempt :catch-fatal (await (stop-process owner)) nil)
         disconnect-failure (attempt :catch-fatal (await (disconnect owner)) nil)
-        profile-failure    (attempt :catch-fatal
-                                    (fs/rmSync user-data-dir #js {:recursive true :force true})
-                                    nil)]
+        profile-failure    (when-not (process/unresolved? process-failure)
+                             (attempt :catch-fatal
+                                      (fs/rmSync user-data-dir #js {:recursive true :force true})
+                                      nil))]
     (when (or process-failure disconnect-failure profile-failure)
-      (throw (errors/combine
-              [{:phase "cleanup" :operation :close-page :error page-failure}
-               {:phase "cleanup" :operation :stop-process :error process-failure}
-               {:phase "cleanup" :operation :disconnect-browser :error disconnect-failure}
-               {:phase "cleanup" :operation :remove-profile :path user-data-dir :error profile-failure}])))))
+      (throw (errors/with-data
+               (errors/combine
+                [{:phase "cleanup" :operation :close-page :error page-failure}
+                 {:phase "cleanup" :operation :stop-process :profile-path user-data-dir :error process-failure}
+                 {:phase "cleanup" :operation :disconnect-browser :error disconnect-failure}
+                 {:phase "cleanup" :operation :remove-profile :path user-data-dir :error profile-failure}])
+               {:profile-path user-data-dir})))))
 
 (defn close
   "Returns one shutdown Promise for this owner. Aborting the internal process
@@ -283,8 +290,7 @@
                                                    (into seen (map :error (errors/get-errors observed)))
                                                    (recur (ex-cause current) (conj seen current))))]
                                   (errors/combine
-                                   (remove #(and (= :stop-process (:operation %))
-                                                 (contains? reported (:error %)))
+                                   (remove #(contains? reported (:error %))
                                            (errors/get-errors cleanup-cause)))))]
             (if cleanup
               (throw (errors/with-context

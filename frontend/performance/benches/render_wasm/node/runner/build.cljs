@@ -40,8 +40,8 @@
 
   Return a promise of a map containing :sha, the commit ID, and :dirty, which
   is true when the checkout has local changes. If Git information is
-  unavailable, log a warning and return nil for both values. A timeout or
-  cancellation rejects the promise."
+  unavailable, log a warning and return nil for both values. Fatal process
+  failures, timeouts and cancellation reject the promise."
   [root bounds]
   (try
     (let [options (merge bounds {:command "git" :cwd root})
@@ -49,7 +49,8 @@
           status  (await (process/run (assoc options :args ["status" "--porcelain"])))]
       {:sha (str/trim (:stdout sha)) :dirty (not (str/blank? (:stdout status)))})
     (catch :default cause
-      (if (contains? #{:process-timeout :process-cancelled} (:type (ex-data cause)))
+      (if (or (errors/fatal? cause)
+              (contains? #{:process-timeout :process-cancelled} (:type (ex-data cause))))
         (throw cause)
         (do
           (log/warn (str "Git provenance unavailable: " (errors/message-of cause)))
