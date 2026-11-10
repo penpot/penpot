@@ -40,6 +40,8 @@ To assert over emitted event sequences, observe termination: subscribe through `
 - Teardown belongs to the terminal continuation, never to `finally`-around-triggers (it would dispose in-flight flows).
 - A body that awaits must be `(^:async fn …)` even if the rest is sync; sync sequences are atomic vs the event loop.
 - The `:esm` test build cannot load the CommonJS `sax` module behind `tubax`, so SVG parsing fails in tests (`dwm/valid-svg-string?` answers false, `dwm/svg->clj` errors): mock both with the parsed data.
+- A hook-order violation in a mounted component reaches neither the root's `onUncaughtError`/`onCaughtError`/`onRecoverableError` nor the markup: React logs an internal error to `console.error` and recovers, so the callbacks stay empty and the tree repaints. Assert on a captured `console.error` too. It only fires when a render *adds* hooks (nil → uuid); a render that calls none at all slips through React's bookkeeping, so the regression test needs the "hooks arrive" direction. `frontend-tests.ui.team-container-test` does both, with a jsdom document.
+- `beicon.v2.core` has no `never`; a stream that must stay open without emitting is `(rx/empty)` (it completes at once, which is enough for `merge`, `filter` and `take`). An undeclared `rx/never` compiles to an undefined var and the test dies as a rejected body, which `cljs.test` reports as a test with zero assertions instead of a failure.
 
 From `frontend/`:
 - Full unit test run (always builds, suppressed output): `pnpm run test:quiet`.
