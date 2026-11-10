@@ -106,6 +106,11 @@
    :text-content-typography :typography :text-content-align :align :text-content-direction :direction
    :text-content-valign :valign})
 
+;; the text groups of the styles a typography sets
+(def ^:private typography-groups
+  #{:text-content-family :text-content-weight :text-content-size
+    :text-content-line-height :text-content-spacing :text-content-case})
+
 (defn values
   [shape group]
   (cond
@@ -478,16 +483,18 @@
                                                   [group (if (= :geometry-group group) geometry (values shape group))]))
                                         placement))
 
-                           ;; a main shape the push keeps turns with its main afterwards;
-                           ;; its pushed geometry leaves out the turn its copy parent shows
-                           ;; against its main parent (the root's, against its main)
-                           (and (:geometry-group groups) (not pushed-swap?) (contains? before (:id ref)))
+                           ;; a main shape the push keeps or adds turns with its main
+                           ;; afterwards; its pushed geometry leaves out the turn its copy
+                           ;; parent shows against its main parent (the root's, against
+                           ;; its main), which an added main shape has only after the push
+                           (and (:geometry-group groups) (not pushed-swap?))
                            (update :geometry-group
                                    (fn [geometry]
                                      (if (= (:id shape) root-id)
                                        (in-orientation geometry root main-root)
                                        (in-orientation geometry (get before (:parent-id shape))
-                                                       (get before (:parent-id ref)))))))
+                                                       (or (get before (:parent-id ref))
+                                                           (get after (:parent-id ref))))))))
                   ;; a variant main keeps its set's name, and the copy root its own
                   kept-name (when (and (= id root-id) (:variant-id ref)) (:name-group groups))
                   groups (cond-> groups kept-name (dissoc :name-group))
@@ -498,13 +505,21 @@
                            kept-name
                            (assoc-in [id :name-group] kept-name)
                            (and (:shape-ref ref) (seq groups))
-                           (update (:id ref) merge
-                                   (cond-> (grid/remap-groups groups (grid/get-child-map after shape ref))
-                                     ;; a clone of the copy shape keeps the swap it authored against the same main
-                                     (and (= (:component-id ref)
-                                             (:component-id (get after (:shape-ref ref))))
-                                          (not= (:shape-ref ref) (:shape-ref shape)))
-                                     (dissoc :swap-group))))]
+                           (update (:id ref)
+                                   (fn [main-groups]
+                                     (let [merged (merge main-groups
+                                                         (cond-> (grid/remap-groups groups (grid/get-child-map after shape ref))
+                                                           ;; a clone of the copy shape keeps the swap it authored against the same main
+                                                           (and (= (:component-id ref)
+                                                                   (:component-id (get after (:shape-ref ref))))
+                                                                (not= (:shape-ref ref) (:shape-ref shape)))
+                                                           (dissoc :swap-group)))]
+                                       (cond-> merged
+                                         ;; a pushed style of a typography drops the typography of the main
+                                         (and (contains? merged :text-content-typography)
+                                              (not (contains? groups :text-content-typography))
+                                              (some #(contains? groups %) typography-groups))
+                                         (assoc :text-content-typography {:content (:content shape)}))))))]
               (reduce #(push %1 %2 content?) result (:shapes shape))))]
     (push model root-id false)))
 
