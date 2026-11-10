@@ -714,15 +714,21 @@
   session already holds a valid entry for the organization, and
   {:authorized true :reason :no-team-access} when the gate was skipped because the
   user cannot access the team; the reason lets the client tell a usable session
-  apart from a plain permission failure.
+  apart from a plain permission failure. When an organization id comes with the
+  request, the gate is also skipped with
+  {:authorized true :reason :no-organization-access} when the profile neither
+  belongs to that organization nor owns it.
   Returns {:authorized false :redirect-uri <url>} when SSO is active;
   the client must redirect there. The OIDC provider itself handles
   re-authentication transparently if the user already has an active SSO session.
   A nil :redirect-uri means SSO is required but the provider is not usable.
 
-  The :query-string is the route token of the client (`?screen=…&params`): the
-  server builds the destination URL from it, so it can never point outside the
-  public URI."
+  The :query-string is the route of the client as a query string
+  (`screen=…&params`, without the `?` that separates it from the path; the root
+  of the application may carry only its params, like `template=…`): the server
+  builds the destination URL from it, so it can never point outside the public
+  URI. A value without params of its own is not a route, is ignored with a
+  warning, and the user lands on the home page."
   {::rpc/auth true
    ::doc/added "2.18"
    ::sm/params schema:check-nitrate-sso
