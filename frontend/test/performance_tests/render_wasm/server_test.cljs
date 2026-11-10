@@ -199,3 +199,35 @@
       (t/is (= 200 (:status (await (request host "/" "GET")))))
       (finally
         (await (server/close host))))))
+
+
+(defn- ^:async with-listen
+  "Calls f while http.Server#listen runs `listen` and returns the promise f returns."
+  [listen f]
+  (let [proto (.-prototype http/Server)]
+    (set! (.-listen proto) listen)
+    (try
+      (await (f))
+      (finally
+        (js-delete proto "listen")))))
+
+(t/deftest ^:async startup-timeout-rejects-with-the-configured-limit
+  (let [never-listens (fn [& _] nil)
+        error         (await (with-listen never-listens
+                               #(startup-failure (server/open (build) {:startup-timeout-ms 50}))))]
+    (t/is (= ::server/startup-timeout (:type (ex-data error))))
+    (t/is (= 50 (:timeout-ms (ex-data error))))))
+
+(t/deftest ^:async startup-rejects-with-the-listen-failure
+  (let [thrown  (js/Error. "listen threw")
+        emitted (js/Error. "server emitted error")
+        throws  (fn [& _] (throw thrown))
+        emits   (fn [& _] (this-as ^js self (js/process.nextTick #(.emit self "error" emitted))))]
+    (doseq [[failure listen] [[thrown throws] [emitted emits]]]
+      (let [error (await (with-listen listen #(startup-failure (server/open (build)))))]
+        (t/is (identical? failure error) (ex-message failure))))))
+
+(t/deftest ^:async startup-rejects-when-the-build-directory-is-missing
+  (let [missing (path/join @temporary-root "missing")
+        error   (await (startup-failure (server/open {:id "missing-build" :dir missing})))]
+    (t/is (= "ENOENT" (.-code ^js error)))))
