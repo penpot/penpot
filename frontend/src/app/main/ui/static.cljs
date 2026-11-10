@@ -11,7 +11,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
-   [app.main.data.auth :refer [is-authenticated?]]
+   [app.main.data.auth :as da :refer [is-authenticated?]]
    [app.main.data.common :as dcm]
    [app.main.data.nitrate :as dnt]
    [app.main.errors :as errors]
@@ -127,7 +127,8 @@
          (fn [data]
            (cond
              (:invitation-token data)
-             (st/emit! (rt/nav :auth-verify-token {:token (:invitation-token data)}))
+             (st/emit! (da/login-from-register
+                        {:invitation-token (:invitation-token data)}))
 
              (:is-active data)
              (st/emit! (rt/reload true))
@@ -176,8 +177,10 @@
           [:div {:class (stl/css :change-section)}
            (tr "auth.register")
            " "
-           [:a {:data-section "register"
-                :on-click set-section}
+           [:button {:type "button"
+                     :class (stl/css :link)
+                     :data-section "register"
+                     :on-click set-section}
             (tr "auth.register-submit")]]]
 
          :register
@@ -190,8 +193,11 @@
           [:div {:class (stl/css :change-section)}
            (tr "auth.already-have-account")
            " "
-           [:a {:data-section "login"
-                :on-click set-section} (tr "auth.login-here")]]
+           [:button {:type "button"
+                     :class (stl/css :link)
+                     :data-section "login"
+                     :on-click set-section}
+            (tr "auth.login-here")]]
           [:div {:class (stl/css :links)}
            [:hr {:class (stl/css :separator)}]
            [:> register/terms-service-privacy-policy*]]]
@@ -424,7 +430,10 @@
       [:p {:class (stl/css :desc-text)} (tr "labels.internal-error.desc-message-second")]]
 
      (when (some? report)
-       [:a {:class (stl/css :download-link) :on-click on-download} (tr "labels.download" "report.txt")])
+       [:button {:type "button"
+                 :class (stl/css :download-link)
+                 :on-click on-download}
+        (tr "labels.download" "report.txt")])
 
      [:div {:class (stl/css :buttons-container)}
       [:> button* {:variant "secondary"

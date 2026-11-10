@@ -1,8 +1,14 @@
 import { WebSocket, WebSocketServer } from "ws";
 import * as http from "http";
 import { z } from "zod";
-import { AbstractPluginTask, PluginTask } from "./PluginTask";
-import { PluginTaskResponse, PluginTaskResult } from "@penpot/mcp-common";
+import { AbstractPluginTask, PluginTask, PluginTaskError } from "./PluginTask";
+import { RollbackNotices } from "./RollbackNotices";
+import {
+    ContentRollbackEvent,
+    PluginTaskResponse,
+    PluginTaskResult,
+    UnclaimedRollbacksMessage,
+} from "@penpot/mcp-common";
 import { createLogger } from "./logger";
 import type { PenpotMcpServer } from "./PenpotMcpServer";
 import type { RedisBridge } from "./RedisBridge";
@@ -14,6 +20,14 @@ import { MultiInstanceTaskDispatcher } from "./dispatch/MultiInstanceTaskDispatc
 
 const KEEP_ALIVE_TIME = 30000; // 30 seconds
 const INITIALIZATION_TIMEOUT_MS = 10_000;
+
+/**
+ * The interval, in ms, between the heartbeat requests sent to each plugin.
+ *
+ * A browser runs the timers of a hidden page as rarely as once a minute, which would leave the
+ * plugin's own heartbeat older than the stale threshold, but it handles socket messages at once.
+ */
+export const HEARTBEAT_REQUEST_INTERVAL_MS = 10_000;
 
 /**
  * Maximum plugin heartbeat age before a connection is stale.
@@ -78,6 +92,11 @@ export class PluginBridge implements TaskDispatchHost {
     private readonly taskTimeouts: Map<string, NodeJS.Timeout> = new Map();
     private readonly taskConnections: Map<string, PenpotConnection> = new Map();
     private readonly dispatcher: TaskDispatcher;
+
+    /**
+     * Collector of the rollbacks that task responses report, per tool execution.
+     */
+    public readonly rollbackNotices = new RollbackNotices();
 
     /**
      * Creates the plugin bridge and starts its WebSocket server.
@@ -187,8 +206,8 @@ export class PluginBridge implements TaskDispatchHost {
                 }
             });
 
-            ws.on("close", () => {
-                this.logger.info("WebSocket connection closed");
+            ws.on("close", (code: number, reason: Buffer) => {
+                this.logger.info("WebSocket connection closed (code %d%s)", code, reason.length ? `: ${reason}` : "");
                 clearTimeout(initializationTimeout);
                 this.removeConnection(ws);
             });
@@ -218,12 +237,17 @@ export class PluginBridge implements TaskDispatchHost {
         const pingInterval = setInterval(() => {
             ws.ping();
         }, KEEP_ALIVE_TIME);
+        // the plugin answers with a heartbeat, which a frozen page cannot send
+        const heartbeatRequestInterval = setInterval(() => {
+            ws.send(JSON.stringify({ type: "heartbeat-request" }));
+        }, HEARTBEAT_REQUEST_INTERVAL_MS);
 
         // register the client connection with both indexes
         const connection: PenpotConnection = {
             socket: ws,
             userToken,
             pingInterval,
+            heartbeatRequestInterval,
             session,
             ready: false,
             lastHeartbeat: Date.now(),
@@ -260,10 +284,11 @@ export class PluginBridge implements TaskDispatchHost {
     /**
      * Removes a client connection and releases all resources associated with it.
      *
-     * Clears the per-connection keep-alive interval and removes the connection from the
-     * socket-keyed index and the user's session collection. The token-keyed index entry
-     * is removed only when the user's last local connection closes. Safe to call with a
-     * socket that is not (or no longer) registered.
+     * Clears the per-connection keep-alive and heartbeat-request intervals and removes the
+     * connection from the socket-keyed index and the user's session collection. The
+     * token-keyed index entry is removed only when the user's last local connection closes.
+     * Tasks sent over the connection and still awaiting a response fail at once. Safe to call
+     * with a socket that is not (or no longer) registered.
      *
      * @param ws - The WebSocket whose connection state should be removed
      */
@@ -274,9 +299,17 @@ export class PluginBridge implements TaskDispatchHost {
         }
         connection.ready = false;
         clearInterval(connection.pingInterval);
+        clearInterval(connection.heartbeatRequestInterval);
         this.connectionsBySocket.delete(ws);
         const connections = this.getUserConnections(connection.userToken)!;
         connections.remove(connection);
+        // a task sent over the closed socket can no longer be answered, since responses only count
+        // from the connection the task went to
+        for (const [taskId, taskConnection] of [...this.taskConnections]) {
+            if (taskConnection === connection) {
+                this.rejectPendingTask(taskId, new Error("The plugin connection closed before the task finished."));
+            }
+        }
         if (connection.userToken !== null && connections.size === 0) {
             this.userPenpotConnectionsByToken.delete(connection.userToken);
         }
@@ -289,7 +322,9 @@ export class PluginBridge implements TaskDispatchHost {
      * Handles responses from the plugin for completed tasks.
      *
      * Finds the pending task by ID and resolves or rejects its promise
-     * based on the execution result.
+     * based on the execution result. A response that comes after its task
+     * timed out has no task to report its rollbacks to, so they go back to
+     * the plugin, which sends them with its next response.
      *
      * @param response - The plugin task response containing ID and result
      * @param connection - The responding local connection, or undefined for Redis responses
@@ -298,6 +333,7 @@ export class PluginBridge implements TaskDispatchHost {
         const task = this.pendingTasks.get(response.id);
         if (!task) {
             this.logger.info(`Received response for unknown task ID: ${response.id}`);
+            this.returnRollbacks(connection, response.rollbacks);
             return;
         }
 
@@ -316,13 +352,38 @@ export class PluginBridge implements TaskDispatchHost {
 
         // Resolve or reject the task's promise based on the result
         if (response.success) {
-            task.resolveWithResult({ data: response.data });
+            task.resolveWithResult({ data: response.data, rollbacks: response.rollbacks });
         } else {
-            const error = new Error(response.error || "Task execution failed (details not provided)");
+            const error = new PluginTaskError(
+                response.error || "Task execution failed (details not provided)",
+                response.rollbacks
+            );
             task.rejectWithError(error);
         }
 
         this.logger.info(`Task ${response.id} completed: success=${response.success}`);
+    }
+
+    /**
+     * Sends rollbacks that no tool execution received back to the plugin.
+     *
+     * @param connection - The plugin connection that reported them, if known
+     * @param rollbacks - The rollbacks of a response whose task is gone
+     */
+    private returnRollbacks(
+        connection: PenpotConnection | undefined,
+        rollbacks: ContentRollbackEvent[] | undefined
+    ): void {
+        if (!connection || !rollbacks || rollbacks.length === 0) {
+            return;
+        }
+        if (connection.socket.readyState !== 1) {
+            this.logger.warn("Plugin disconnected; %d rollback(s) of a late response are lost", rollbacks.length);
+            return;
+        }
+        const message: UnclaimedRollbacksMessage = { type: "unclaimed-rollbacks", rollbacks };
+        connection.socket.send(JSON.stringify(message));
+        this.logger.info("Returned %d rollback(s) of a late response to the plugin", rollbacks.length);
     }
 
     /**
@@ -363,6 +424,7 @@ export class PluginBridge implements TaskDispatchHost {
      * Executes a plugin task by sending it to the connected Penpot plugin instance,
      * either directly via WebSocket or indirectly via Redis (depending on the configuration),
      * and awaiting the result.
+     * Rollbacks the response reports go to {@link rollbackNotices}.
      *
      * @param task - The plugin task to execute
      * @param sessionId - The target session; when omitted, discovery must yield exactly one session
@@ -381,11 +443,20 @@ export class PluginBridge implements TaskDispatchHost {
             userToken = sessionContext.userToken;
         }
         // attach the result handler before dispatch can reject the task
-        const result = task.getResultPromise();
+        const resultPromise = task.getResultPromise();
         void this.dispatcher.dispatch(task, userToken, sessionId).catch((error) => {
             task.rejectWithError(error instanceof Error ? error : new Error(String(error)));
         });
-        return await result;
+        try {
+            const result = await resultPromise;
+            this.rollbackNotices.record(result.rollbacks);
+            return result;
+        } catch (error) {
+            if (error instanceof PluginTaskError) {
+                this.rollbackNotices.record(error.rollbacks);
+            }
+            throw error;
+        }
     }
 
     /**

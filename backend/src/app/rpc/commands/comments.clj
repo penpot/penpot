@@ -29,7 +29,6 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.quotes :as quotes]
    [app.rpc.retry :as rtry]
-   [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -113,10 +112,10 @@
     (doseq [mention comment-mentions]
       (let [{:keys [fullname email props]} (get team-users mention)]
         (when (mention-email? props)
-          (eml/send
+          (eml/send-template
            cfg
            {::eml/reuse-conn true
-            ::eml/factory eml/comment-mention
+            ::eml/template "comment-mention"
             :public-uri (cf/get :public-uri)
             :to email
             :name fullname
@@ -129,10 +128,10 @@
     (doseq [mention thread-mentions]
       (let [{:keys [fullname email props]} (get team-users mention)]
         (when (mention-email? props)
-          (eml/send
+          (eml/send-template
            cfg
            {::eml/reuse-conn true
-            ::eml/factory eml/comment-thread
+            ::eml/template "comment-thread"
             :public-uri (cf/get :public-uri)
             :to email
             :name fullname
@@ -145,10 +144,10 @@
     (doseq [user-id notificate-users-ids]
       (let [{:keys [id fullname email props]} (get team-users user-id)]
         (when (notification-email? id (:owner-id thread) props)
-          (eml/send
+          (eml/send-template
            cfg
            {::eml/reuse-conn true
-            ::eml/factory eml/comment-notification
+            ::eml/template "comment-notification"
             :public-uri (cf/get :public-uri)
             :to email
             :name fullname
@@ -170,7 +169,7 @@
 (defn- get-file
   "A specialized version of get-file for comments module."
   [cfg file-id page-id]
-  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+  (feat.fdata/with-pointers cfg file-id
     (let [file (bfc/get-file cfg file-id)
           data (get file :data)]
       (-> file

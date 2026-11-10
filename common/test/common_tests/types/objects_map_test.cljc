@@ -131,3 +131,40 @@
             (omap/objects-map? (:objects data))
             (omap/objects-map? (:objects res)))))
    {:num 100}))
+
+#?(:cljs
+   (t/deftest js-map-round-trip
+     (smt/check!
+      (smt/for [data (->> (sg/map-of (sg/uuid) (sg/generator cts/schema:shape))
+                          (sg/not-empty)
+                          (sg/fmap omap/wrap))]
+        (let [res (-> data omap/->js-map js/structuredClone omap/from-js-map)]
+          (and (omap/objects-map? res)
+               (= data res))))
+      {:num 100})))
+
+#?(:cljs
+   (t/deftest js-map-conversion
+     (t/testing "entries stay encoded strings"
+       (let [id           (uuid/custom 0 1)
+             ^js entries (omap/->js-map (omap/wrap {id {:foo 1}}))]
+         (t/is (= 1 (.-size entries)))
+         (t/is (string? (.get entries (str id))))))
+
+     (t/testing "added and removed shapes"
+       (let [id1 (uuid/custom 0 1)
+             id2 (uuid/custom 0 2)
+             id3 (uuid/custom 0 3)
+             obj (-> (omap/wrap {id1 {:foo 1} id2 {:bar 2}})
+                     (assoc id3 {:baz 3})
+                     (dissoc id1))
+             res (-> obj omap/->js-map omap/from-js-map)]
+         (t/is (= 2 (count res)))
+         (t/is (not (contains? res id1)))
+         (t/is (= {:bar 2} (get res id2)))
+         (t/is (= {:baz 3} (get res id3)))))
+
+     (t/testing "empty map"
+       (let [res (-> (omap/create) omap/->js-map omap/from-js-map)]
+         (t/is (omap/objects-map? res))
+         (t/is (zero? (count res)))))))

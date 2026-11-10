@@ -20,6 +20,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
+   [app.plugins.register :as r]
    [app.util.object :as obj]
    [cuerdas.core :as str]))
 
@@ -150,6 +151,29 @@
         id      (obj/get proxy "$id")]
     (when (and (some? file-id) (some? page-id) (some? id))
       (locate-shape file-id page-id id))))
+
+(defn- shape-not-found
+  [id]
+  (ex-info (dm/str "[PENPOT PLUGIN] Shape not found: " id)
+           {:type ::shape-not-found}))
+
+(defn check-shape-located
+  "Throws when shape `id` no longer exists (removed by an undo, a peer or
+  a rejected save), so a write to it does not vanish silently. Always
+  throws, whatever the plugin's validation flag: `handle-error` lets this
+  error through."
+  [file-id page-id id]
+  (when (nil? (locate-shape file-id page-id id))
+    (throw (shape-not-found id))))
+
+(defn check-shape-writable
+  "Throws when the shape behind `proxy` no longer exists (see
+  `check-shape-located`) or the workspace is read-only (see
+  `r/check-writable`)."
+  [proxy]
+  (when (nil? (proxy->shape proxy))
+    (throw (shape-not-found (obj/get proxy "$id"))))
+  (r/check-writable))
 
 (defn inside-component-copy?
   "True when `shape` is nested inside a component copy. The copy root itself is
@@ -581,6 +605,11 @@
     (let [explain (-> cause ex-data ::sm/explain)
           throw? (throw-validation-errors? plugin-id)]
       (cond
+        ;; A write to a removed shape or a read-only workspace always
+        ;; reaches the plugin
+        (contains? #{::shape-not-found ::r/read-only} (-> cause ex-data :type))
+        (throw cause)
+
         ;; If it's a clojure error we throw as a validation error
         (and throw? explain)
         (throw-not-valid :error (error-messages explain))
@@ -604,3 +633,10 @@
   [p]
   (when-let [shape (proxy->shape p)]
     (ctk/main-instance? shape)))
+
+(defn non-main-into-variant-container?
+  "True when `parent` is a variant container and `child` (a shape proxy)
+   is not a main instance."
+  [parent child]
+  (and (ctk/is-variant-container? parent)
+       (not (is-main-component-proxy? child))))

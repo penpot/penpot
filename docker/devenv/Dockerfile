@@ -1,4 +1,4 @@
-FROM dhi.io/debian-base:trixie-debian13-dev@sha256:9e479c64f8d27f8fa368ef62804c2ddb9b3e43a68c13a200b2f668b4771b049e AS base
+FROM dhi.io/debian-base:trixie-debian13-dev@sha256:94571f3dc07fbc7166f6f1cbf1fe068a7647198ee2554e6b90d59a68cc8b053c AS base
 
 ENV LANG='C.UTF-8' \
     LC_ALL='C.UTF-8' \
@@ -67,7 +67,7 @@ RUN set -ex; \
 FROM base AS setup-node
 
 ENV NODE_VERSION=v24.22.2 \
-    PNPM_VERSION=12.16.1 \
+    PNPM_VERSION=12.18.0 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -78,14 +78,14 @@ RUN set -eux; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
          NODE_SHA256='95c264150aceb7f3437a29fd6984924f5f8d1511ea3cbd6c508b83f6c555dae2'; \
          PNPM_ARCH='arm64'; \
-         PNPM_SHA256='f5847699e5d528f8f8e9bcfb385e58cb9fba7482af1b1aa7b70737be42277f81'; \
+         PNPM_SHA256='700bd1aa4028465b80e62b7c5bec8455be60bbafaf53a3262a4ab8e2057712ac'; \
          ;; \
        amd64|x86_64) \
          OPENSSL_ARCH='linux-x86_64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
          NODE_SHA256='361718c444e49af2ca5a110c83ba6a8901143f23ab285ebbef0341f391f482a9'; \
          PNPM_ARCH='x64'; \
-         PNPM_SHA256='565ff81174a14f6f7bd5d84c1b17e51031a80230d370a1fe24be5d16bd02a825'; \
+         PNPM_SHA256='3726060e236c0db3e7124c0a5af123c840ba0cb76682149b63ea0baf290017c2'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -187,7 +187,7 @@ ENV PATH=/opt/cargo/bin:$PATH \
     RUSTUP_HOME=/opt/rustup \
     CARGO_HOME=/opt/cargo \
     RUSTUP_VERSION=1.28.2 \
-    RUST_VERSION=1.91.0 \
+    RUST_VERSION=1.99.0 \
     EMSCRIPTEN_VERSION=4.0.6
 
 WORKDIR /opt

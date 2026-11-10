@@ -431,7 +431,7 @@
                   (cfeat/check-client-features! (:features params))
                   (cfeat/check-file-features! (:features file)))
 
-        page  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+        page  (feat.fdata/with-pointers cfg file-id
                 (let [page (dm/get-in file [:data :pages-index resolved-page-id])]
                   (if (pmap/pointer-map? page)
                     (deref page)
@@ -561,7 +561,7 @@
         calculate-from-db
         (fn []
           (let [file   (bfc/get-file cfg id)
-                result (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
+                result (feat.fdata/with-pointers cfg id
                          (calculate-library-summary file))]
             (-> file
                 (assoc :library-summary result)
@@ -685,7 +685,7 @@
 (defn- get-file-stats
   [{:keys [::db/conn] :as cfg} file-id]
   (let [file    (bfc/get-file cfg file-id)
-        base    (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+        base    (feat.fdata/with-pointers cfg file-id
                   (cfs/calc-file-stats (:data file)))
         lib-cnt (get-file-stats-library-counts conn file-id)]
     (-> base
@@ -774,7 +774,7 @@
   (bfc/check-file-exists cfg file-id)
   (check-read-permissions! cfg profile-id file-id)
   (let [{:keys [data]} (bfc/get-file cfg file-id)]
-    (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+    (feat.fdata/with-pointers cfg file-id
       (when-let [tokens-lib (cfo/get-tokens-lib data)]
         (ctob/export-dtcg-json tokens-lib (cfo/get-tokens-status data))))))
 
@@ -993,8 +993,7 @@
   (assert (db/connection-map? cfg)
           "expected cfg with valid connection")
 
-  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)
-            pmap/*tracked* (pmap/create-tracked)]
+  (feat.fdata/with-tracked-pointers cfg file-id
     (let [file (-> (bfc/get-file cfg file-id
                                  :include-deleted? true
                                  :lock-for-update? true)
@@ -1395,16 +1394,16 @@
     WHERE file_id = ANY(?::uuid[])")
 
 (def ^:private sql:restore-file-changes
-  ;; Only durable history comes back: a snapshot (carries `label`) or a legacy
-  ;; payload row (carries `data`, the column the new model replaces with
-  ;; `file_data`). Revisions have neither and are deliberately left alone: they
-  ;; are born already scheduled for deletion one hour later, and the collector
-  ;; only looks at rows that carry a date, so unmarking one here would keep it
-  ;; in the table for ever. The `data` half is a guard for the rows still
-  ;; pending migration, not a dependency: drop it with the last one.
+  ;; Only durable history comes back: a snapshot, the rows that carry `label`.
+  ;; Everything else is deliberately left alone. Revisions are born already
+  ;; scheduled for deletion one hour later, and the collector only looks at
+  ;; rows that carry a date, so unmarking one here would keep it in the table
+  ;; for ever. Rows that still carry a legacy payload without a label are
+  ;; garbage that no read path reaches; 0157-migrate-legacy-file-data deletes
+  ;; them, so they must keep their date and go with the collector.
   "UPDATE file_change SET deleted_at = null
     WHERE file_id = ANY(?::uuid[])
-      AND (label IS NOT NULL OR data IS NOT NULL)")
+      AND label IS NOT NULL")
 
 (def ^:private sql:restore-file-data
   "UPDATE file_data SET deleted_at = null

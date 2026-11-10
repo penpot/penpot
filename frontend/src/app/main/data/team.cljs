@@ -125,8 +125,7 @@
                   in-organization?      (and (contains? cf/flags :admin-console) organization)
                   can-create?  (if in-organization?
                                  (cto/allowed? :create-team
-                                               {:organization-perms {:owner-id    (:owner-id organization)
-                                                                     :permissions (:permissions organization)}
+                                               {:organization-perms organization
                                                 :profile-id profile-id
                                                 :team-perms (:permissions team)})
                                  true)]
@@ -151,8 +150,7 @@
                   in-organization?     (and (contains? cf/flags :admin-console) organization)
                   can-delete? (if in-organization?
                                 (cto/allowed? :delete-team
-                                              {:organization-perms {:owner-id    (:owner-id organization)
-                                                                    :permissions (:permissions organization)}
+                                              {:organization-perms organization
                                                :profile-id profile-id
                                                :team-perms (:permissions team)})
                                 (boolean (dm/get-in team [:permissions :is-owner])))

@@ -226,8 +226,9 @@
     (assoc snap-data (:id page) page-data)))
 
 (defn update-page
-  "Updates a previously inserted page with new data"
-  [snap-data old-page page]
+  "Updates a previously inserted page with new data. Only the objects in
+  `object-ids` are checked for changes."
+  [snap-data old-page page object-ids]
 
   (if (contains? snap-data (:id page))
     ;; Update page
@@ -245,7 +246,7 @@
                             new-frames
                             new-shapes
                             new-guides]}
-                    (diff/calculate-page-diff old-page page snap-attrs)]
+                    (diff/calculate-page-diff old-page page snap-attrs object-ids)]
 
                 (as-> page-data $
                   (reduce (partial update-shape objects) $ change-frame-shapes)

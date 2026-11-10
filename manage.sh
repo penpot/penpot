@@ -40,7 +40,18 @@ export PENPOT_SOURCE_PATH="${PENPOT_SOURCE_PATH:-$PWD}"
 
 # Base directory under which non-main workspace clones live (one subdir per
 # wsN, N>=1). Documented in defaults.env; default lives here so $HOME expands.
-export PENPOT_WORKSPACES_DIR="${PENPOT_WORKSPACES_DIR:-$HOME/.penpot/penpot_workspaces}"
+# The default follows the XDG base directory spec, in the data directory
+# because a clone can hold commits that exist nowhere else. A directory that
+# already exists at the former default, ~/.penpot/penpot_workspaces, keeps
+# being used, so existing clones are neither orphaned nor seeded again.
+if [[ -z "${PENPOT_WORKSPACES_DIR:-}" ]]; then
+    if [[ -d "$HOME/.penpot/penpot_workspaces" ]]; then
+        PENPOT_WORKSPACES_DIR="$HOME/.penpot/penpot_workspaces"
+    else
+        PENPOT_WORKSPACES_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/penpot-devenv/workspaces"
+    fi
+fi
+export PENPOT_WORKSPACES_DIR
 
 # Port allocation for parallel instances. Each wsN reserves a stride-wide port
 # block starting at N*stride; ws0 sits at offset 0, so a per-service base port
@@ -1085,6 +1096,11 @@ function attach-devenv {
 #   no flag    → ws0 (the live repo at $PWD).
 #   --ws N     → wsN's workspace clone at ${PENPOT_WORKSPACES_DIR}/wsN
 #                (N is an integer; non-integer values are rejected).
+#   --bin EXE  → run EXE instead of the client's default executable (e.g. a
+#                wrapper such as 'claude-alt'); the client still picks
+#                how the MCP config is wired in.
+# --ws and --bin may come in any order; everything after them is passed
+# through to the client.
 # Before launching, the function cd's into the resolved workspace and refuses
 # to start unless the target instance's 'main' container is up — the Penpot
 # and Serena MCP servers only exist while the devenv is running.
@@ -1099,14 +1115,14 @@ function attach-devenv {
 #             committed templates). Nothing is written to .codex/config.toml,
 #             so the developer's own Codex config is left untouched.
 #
-# Usage: ./manage.sh start-coding-agent <claude|opencode|vscode|codex> [--ws N] [...passthrough]
+# Usage: ./manage.sh start-coding-agent <claude|opencode|vscode|codex> [--ws N] [--bin EXE] [...passthrough]
 function start-coding-agent {
     local client="${1:-}"
     [[ $# -gt 0 ]] && shift
 
     case "$client" in
         ""|-h|--help)
-            echo "Usage: $0 start-coding-agent <claude|opencode|vscode|codex> [--ws N] [...passthrough]" >&2
+            echo "Usage: $0 start-coding-agent <claude|opencode|vscode|codex> [--ws N] [--bin EXE] [...passthrough]" >&2
             return 1
             ;;
         claude|opencode|vscode|codex)
@@ -1118,10 +1134,26 @@ function start-coding-agent {
     esac
 
     local instance="ws0"
-    if [[ $# -gt 0 && "$1" == "--ws" ]]; then
-        instance="$(parse-ws-integer "$2")" || return 1
-        shift 2
-    fi
+    local bin_override=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --ws)
+                instance="$(parse-ws-integer "$2")" || return 1
+                shift 2
+                ;;
+            --bin)
+                if [[ -z "${2:-}" ]]; then
+                    echo "start-coding-agent: --bin requires an executable name or path." >&2
+                    return 1
+                fi
+                bin_override="$2"
+                shift 2
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
 
     # --ws is the default-elided flag: only emit it in suggestion strings for
     # ws1+; ws0 is the default target so 'run-devenv --agentic' is the right hint.
@@ -1162,6 +1194,7 @@ function start-coding-agent {
         vscode)   bin="code";     cfg_rel=".vscode/mcp.json" ;;
         codex)    bin="codex";    cfg_rel=".devenv/templates/codex.toml" ;;
     esac
+    [[ -n "$bin_override" ]] && bin="$bin_override"
 
     if ! command -v "$bin" >/dev/null 2>&1; then
         echo "start-coding-agent: '$bin' is not on PATH." >&2
@@ -1179,13 +1212,13 @@ function start-coding-agent {
     cd "$workspace" || return 1
     case "$client" in
         claude)
-            exec claude --mcp-config "$cfg_rel" "$@"
+            exec "$bin" --mcp-config "$cfg_rel" "$@"
             ;;
         opencode)
-            OPENCODE_CONFIG="$cfg_rel" exec opencode "$@"
+            OPENCODE_CONFIG="$cfg_rel" exec "$bin" "$@"
             ;;
         vscode)
-            exec code "$workspace" "$@"
+            exec "$bin" "$workspace" "$@"
             ;;
         codex)
             # Build our servers as `-c mcp_servers.<name>....` overrides from the
@@ -1207,7 +1240,7 @@ function start-coding-agent {
                 echo "  .devenv/{shared,templates}/codex.toml." >&2
                 return 1
             fi
-            exec codex "${codex_args[@]}" "$@"
+            exec "$bin" "${codex_args[@]}" "$@"
             ;;
     esac
 }
@@ -1547,7 +1580,8 @@ function usage {
     echo "                                   config wired in. cd's into the workspace, refuses to launch if the"
     echo "                                   instance is not running, and forwards extra args to the client."
     echo "                                   client: claude | opencode | vscode | codex"
-    echo "                                   Options: --ws N (default: 0). See agentic-devenv.md and"
+    echo "                                   Options: --ws N (default: 0), --bin EXE (run EXE instead of"
+    echo "                                   the client's default executable). See agentic-devenv.md and"
     echo "                                   .devenv/README.md for per-client setup and override paths."
     echo ""
     echo "- build-bundle                     Build all bundles (frontend, backend, exporter, storybook and mcp)."

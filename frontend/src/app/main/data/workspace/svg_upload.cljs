@@ -70,7 +70,7 @@
   ([svg-data position]
    (add-svg-shapes nil svg-data position nil))
 
-  ([id svg-data position {:keys [change-selection? ignore-selection?]
+  ([id svg-data position {:keys [change-selection? ignore-selection? frame-id]
                           :or {ignore-selection? false change-selection? true}}]
    (ptk/reify ::add-svg-shapes
      ptk/WatchEvent
@@ -88,10 +88,11 @@
 
                base-id         (:parent-id base)
 
-               frame-id        (if (or selected-frame? (empty? selected)
-                                       (not= :frame (dm/get-in objects [base-id :type])))
-                                 (ctst/top-nested-frame objects position)
-                                 base-id)
+               frame-id        (or frame-id
+                                   (if (or selected-frame? (empty? selected)
+                                           (not= :frame (dm/get-in objects [base-id :type])))
+                                     (ctst/top-nested-frame objects position)
+                                     base-id))
 
                parent-id       (if (or selected-frame? (empty? selected) (nil? base))
                                  frame-id

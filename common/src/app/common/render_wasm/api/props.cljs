@@ -74,9 +74,7 @@
                    ;; to its default dash pattern when no override is stored.
                    dash      (or (:stroke-dash stroke) -1)
                    gap       (or (:stroke-gap stroke) -1)
-                   offset    (mem/alloc types.fills.impl/FILL-U8-SIZE)
-                   heap      (mem/get-heap-u8)
-                   dview     (js/DataView. (.-buffer heap))]
+                   offset    (mem/alloc types.fills.impl/FILL-U8-SIZE)]
                (case align
                  :inner (h/call wasm/internal-module "_add_shape_inner_stroke" width style cap-start cap-end dash gap)
                  :outer (h/call wasm/internal-module "_add_shape_outer_stroke" width style cap-start cap-end dash gap)
@@ -94,17 +92,17 @@
 
                (cond
                  (some? gradient)
-                 (do (types.fills.impl/write-gradient-fill offset dview opacity gradient)
+                 (do (types.fills.impl/write-gradient-fill offset (mem/get-data-view) opacity gradient)
                      (h/call wasm/internal-module "_add_shape_stroke_fill")
                      nil)
 
                  (some? image)
-                 (do (types.fills.impl/write-image-fill offset dview opacity image)
+                 (do (types.fills.impl/write-image-fill offset (mem/get-data-view) opacity image)
                      (h/call wasm/internal-module "_add_shape_stroke_fill")
                      (get image :id))
 
                  (some? color)
-                 (do (types.fills.impl/write-solid-fill offset dview opacity color)
+                 (do (types.fills.impl/write-solid-fill offset (mem/get-data-view) opacity color)
                      (h/call wasm/internal-module "_add_shape_stroke_fill")
                      nil))))))
         strokes))
@@ -157,9 +155,9 @@
 (defn set-shape-svg-attrs
   [attrs]
   (let [style (:style attrs)
-        fill-rule       (-> (or (:fillRule style) (:fillRule attrs)) sr/translate-fill-rule)
-        stroke-linecap  (-> (or (:strokeLinecap style) (:strokeLinecap attrs)) sr/translate-stroke-linecap)
-        stroke-linejoin (-> (or (:strokeLinejoin style) (:strokeLinejoin attrs)) sr/translate-stroke-linejoin)
+        fill-rule       (-> (or (:fill-rule style) (:fill-rule attrs)) sr/translate-fill-rule)
+        stroke-linecap  (-> (or (:stroke-linecap style) (:stroke-linecap attrs)) sr/translate-stroke-linecap)
+        stroke-linejoin (-> (or (:stroke-linejoin style) (:stroke-linejoin attrs)) sr/translate-stroke-linejoin)
         fill-none       (= "none" (or (:fill style) (:fill attrs)))]
     (h/call wasm/internal-module "_set_shape_svg_attrs" fill-rule stroke-linecap stroke-linejoin fill-none)))
 
@@ -179,15 +177,14 @@
         buffer (js/Uint8Array. padded-size)]
     (path/write-to content (.-buffer buffer) 0)
     (h/call wasm/internal-module "_start_shape_path_buffer")
-    (let [heapu32 (mem/get-heap-u32)]
-      (loop [offset 0]
-        (when (< offset padded-size)
-          (let [end (min padded-size (+ offset (* chunk-size 4)))
-                chunk (.subarray buffer offset end)
-                chunk-u32 (js/Uint32Array. chunk.buffer chunk.byteOffset (quot (.-length chunk) 4))
-                offset-size (.-length chunk-u32)
-                heap-offset (mem/alloc->offset-32 (* 4 offset-size))]
-            (.set heapu32 chunk-u32 heap-offset)
-            (h/call wasm/internal-module "_set_shape_path_chunk_buffer")
-            (recur end)))))
+    (loop [offset 0]
+      (when (< offset padded-size)
+        (let [end (min padded-size (+ offset (* chunk-size 4)))
+              chunk (.subarray buffer offset end)
+              chunk-u32 (js/Uint32Array. chunk.buffer chunk.byteOffset (quot (.-length chunk) 4))
+              offset-size (.-length chunk-u32)
+              heap-offset (mem/alloc->offset-32 (* 4 offset-size))]
+          (.set (mem/get-heap-u32) chunk-u32 heap-offset)
+          (h/call wasm/internal-module "_set_shape_path_chunk_buffer")
+          (recur end))))
     (h/call wasm/internal-module "_set_shape_path_buffer")))

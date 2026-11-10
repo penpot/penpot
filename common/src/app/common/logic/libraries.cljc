@@ -2864,11 +2864,24 @@
                                                            page
                                                            {:id (:id file)
                                                             :data file}
-                                                           libraries)))]
+                                                           libraries)))
+
+        ;; The attributes of `keep-props-values` get their value restored in the
+        ;; new shape. Keep too the touched groups they belong to, so the override
+        ;; stays marked as such (otherwise a later sync would overwrite it).
+        kept-touched-groups
+        (->> (keys keep-props-values)
+             (keep #(ctk/resolve-sync-group (:type new-shape) %))
+             (filter #(contains? (:touched shape) %))
+             (into #{}))
+
+        new-shape (update new-shape :touched (fnil into #{}) kept-touched-groups)]
 
     [new-shape (-> changes
                    ;; Restore the properties
-                   (pcb/update-shapes [(:id new-shape)] #(d/patch-object % keep-props-values))
+                   (pcb/update-shapes [(:id new-shape)]
+                                      #(d/patch-object % keep-props-values)
+                                      {:ignore-touched true})  ;; Touched attribute has already been set above
 
                    ;; We need to set the same index as the original shape
                    (pcb/change-parent (:parent-id shape) [new-shape] index {:allow-altering-copies true
@@ -3122,12 +3135,12 @@
     changes))
 
 (defn generate-duplicate-shape-change
-  ([changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id]
-   (generate-duplicate-shape-change changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id (:frame-id obj) (:parent-id obj) false false true nil))
-  ([changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id variant-props]
-   (generate-duplicate-shape-change changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id (:frame-id obj) (:parent-id obj) false false true variant-props))
+  ([changes objects page ids ids-map obj delta level-delta libraries library-data file-id]
+   (generate-duplicate-shape-change changes objects page ids ids-map obj delta level-delta libraries library-data file-id (:frame-id obj) (:parent-id obj) false false true nil))
+  ([changes objects page ids ids-map obj delta level-delta libraries library-data file-id variant-props]
+   (generate-duplicate-shape-change changes objects page ids ids-map obj delta level-delta libraries library-data file-id (:frame-id obj) (:parent-id obj) false false true variant-props))
 
-  ([changes objects page unames update-unames! ids ids-map obj delta level-delta libraries library-data file-id frame-id parent-id duplicating-component? child? remove-swap-slot? variant-props]
+  ([changes objects page ids ids-map obj delta level-delta libraries library-data file-id frame-id parent-id duplicating-component? child? remove-swap-slot? variant-props]
    (cond
      (nil? obj)
      changes
@@ -3204,7 +3217,8 @@
                (cond-> (ctsl/grid-layout? obj)
                  (ctsl/remap-grid-cells ids-map))
 
-               (cond-> (ctk/is-variant-container? parent)
+               (cond-> (and (ctk/is-variant-container? parent)
+                            (ctk/main-instance? obj))
                  (assoc :variant-id parent-id))
 
                (cond-> (and (ctk/is-variant? obj) (not (ctk/is-variant-container? parent)))
@@ -3239,8 +3253,6 @@
                  (generate-duplicate-shape-change changes
                                                   (:objects page')
                                                   page
-                                                  unames
-                                                  update-unames!
                                                   ids
                                                   ids-map
                                                   child
@@ -3267,8 +3279,6 @@
   move to the desired position, and recalculate parents and frames as needed."
   [changes all-objects page ids delta libraries library-data file-id & {:keys [variant-props alt-duplication?]}]
   (let [shapes         (map (d/getf all-objects) ids)
-        unames         (volatile! (cfh/get-used-names (:objects page)))
-        update-unames! (fn [new-name] (vswap! unames conj new-name))
         all-ids        (reduce #(into %1 (cons %2 (cfh/get-children-ids all-objects %2))) (d/ordered-set) ids)
 
         ;; We need ids-map for remapping the grid layout. But when duplicating the guides
@@ -3298,8 +3308,6 @@
              (reduce #(generate-duplicate-shape-change %1
                                                        all-objects
                                                        page
-                                                       unames
-                                                       update-unames!
                                                        ids
                                                        ids-map
                                                        %2

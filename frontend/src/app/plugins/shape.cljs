@@ -365,6 +365,7 @@
 
    (let [data (u/locate-shape file-id page-id id)]
      (-> (obj/reify {:name "ShapeProxy"
+                     :on-set u/check-shape-writable
                      :on-error (u/handle-error plugin-id)}
            :$plugin {:enumerable false :get (fn [] plugin-id)}
            :$id {:enumerable false :get (fn [] id)}
@@ -1041,6 +1042,7 @@
            ;; Methods
            :resize
            (fn [width height]
+             (u/check-shape-located file-id page-id id)
              (cond
                (or (not (sm/valid-safe-number? width)) (<= width 0))
                (u/not-valid plugin-id :resize width)
@@ -1081,6 +1083,7 @@
 
            :rotate
            (fn [angle center]
+             (u/check-shape-located file-id page-id id)
              (let [center (when center {:x (obj/get center "x") :y (obj/get center "y")})]
                (cond
                  (not (sm/valid-safe-number? angle))
@@ -1263,6 +1266,9 @@
                  (u/changes-component-copy-structure? objects shape child-shape)
                  (u/not-valid plugin-id :appendChild "Cannot change the structure of a component copy")
 
+                 (u/non-main-into-variant-container? shape child)
+                 (u/not-valid plugin-id :appendChild "Only main instances can be added to a variant container")
+
                  :else
                  (st/emit!
                   (dwsh/relocate-shapes #{child-id} id index)
@@ -1301,6 +1307,9 @@
 
                  (u/changes-component-copy-structure? objects shape child-shape)
                  (u/not-valid plugin-id :insertChild "Cannot change the structure of a component copy")
+
+                 (u/non-main-into-variant-container? shape child)
+                 (u/not-valid plugin-id :insertChild "Only main instances can be added to a variant container")
 
                  :else
                  (st/emit!
@@ -1463,18 +1472,22 @@
 
            :bringForward
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :up) [id])))
 
            :sendBackward
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :down) [id])))
 
            :bringToFront
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :top) [id])))
 
            :sendToBack
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :bottom) [id])))
 
            ;; COMPONENTS

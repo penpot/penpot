@@ -4,7 +4,6 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 
@@ -12,20 +11,22 @@
   cursor: initial;
   pointer-events: initial;
   position: absolute;
+
+  // top and height stay physical: the transition below names them.
   top: var(--sp-xl);
-  left: 50%;
+  inset-inline-start: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: flex-start;
 
   // Keep the bar stable as actions change.
-  width: $sz-430;
+  inline-size: $sz-430;
   height: $sz-48;
   padding: var(--sp-s);
   border-radius: $br-8;
   gap: var(--sp-s);
-  border: $b-2 solid var(--panel-border-color);
+  border: $b-2 solid var(--color-background-quaternary);
   z-index: var(--z-index-panels);
   background-color: var(--color-background-primary);
   transition:
@@ -45,15 +46,15 @@
 
 // Pin the snap toggle to the right.
 .snap-group {
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 .separator {
   flex-shrink: 0;
-  width: $sz-1;
-  height: $sz-24;
+  inline-size: $sz-1;
+  block-size: $sz-24;
   margin: 0 var(--sp-xs);
-  background-color: var(--panel-border-color);
+  background-color: var(--color-background-quaternary);
 }
 
 .handler-menu {
@@ -62,34 +63,17 @@
   align-items: center;
 }
 
-// Handler behavior flyout trigger.
-.handler-trigger {
-  position: relative;
-}
-
-// Flyout corner indicator.
-.flyout-indicator {
-  position: absolute;
-  inset-block-end: var(--sp-xs);
-  inset-inline-end: var(--sp-xs);
-  inline-size: $sz-6;
-  block-size: $sz-6;
-  stroke: var(--pathbar-icon-color);
-  fill: none;
-  pointer-events: none;
-}
-
 .handler-popover {
   position: absolute;
-  top: calc(100% + var(--sp-s));
-  left: 50%;
+  inset-block-start: calc(100% + var(--sp-s));
+  inset-inline-start: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   padding: var(--sp-xs);
   gap: var(--sp-xxs);
   border-radius: $br-8;
-  border: $b-2 solid var(--panel-border-color);
+  border: $b-2 solid var(--color-background-quaternary);
   background-color: var(--color-background-primary);
   z-index: var(--z-index-dropdown);
 
@@ -109,28 +93,6 @@
 }
 
 .topbar-btn {
-  --pathbar-icon-color: var(--color-foreground-secondary);
-  --button-tertiary-background-color-hover: var(--color-background-tertiary);
-
-  @extend %button-tertiary;
-
-  height: $sz-32;
-  width: $sz-32;
   flex-shrink: 0;
-  background-color: transparent;
-  border-radius: $br-8;
-  border: none;
   margin: 0 var(--sp-xxs);
-
-  &.is-toggled {
-    --pathbar-icon-color: var(--button-radio-foreground-color-active);
-
-    background-color: var(--button-radio-background-color-active);
-  }
-
-  .pathbar-icon {
-    @extend %button-icon;
-
-    stroke: var(--pathbar-icon-color);
-  }
 }

@@ -37,6 +37,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
+   [app.main.data.persistence :as dps]
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.notifications :as-alias dwn]
@@ -107,6 +108,7 @@
     (map extract-change changes)))
 
 (declare sync-file)
+(declare notify-sync-file)
 
 (defn extract-path-if-missing
   [item]
@@ -614,7 +616,7 @@
   in the given file library. Then selects the newly created instance."
   ([file-id component-id position]
    (instantiate-component file-id component-id position nil))
-  ([file-id component-id position {:keys [start-move? initial-point id-ref origin]}]
+  ([file-id component-id position {:keys [start-move? initial-point id-ref origin frame-id]}]
    (dm/assert! (uuid? file-id))
    (dm/assert! (uuid? component-id))
    (dm/assert! (gpt/point? position))
@@ -637,7 +639,11 @@
                                                  component-id
                                                  position
                                                  page
-                                                 libraries)
+                                                 libraries
+                                                 nil
+                                                 frame-id
+                                                 frame-id
+                                                 {:force-frame? (some? frame-id)})
              component (ctn/get-component-from-shape new-shape libraries)
 
              undo-id (js/Symbol)]
@@ -904,7 +910,9 @@
      ptk/WatchEvent
      (watch [it state _]
        (log/info :msg "UPDATE-COMPONENT of shape" :id (str id) :undo-group undo-group)
-       (let [page-id       (:current-page-id state)
+       (let [;; One undo group for the commits in both files
+             undo-group    (or undo-group (uuid/next))
+             page-id       (:current-page-id state)
 
              libraries     (dsh/lookup-libraries state)
              file          (dsh/lookup-file state)
@@ -961,11 +969,12 @@
         component (ctkl/get-component data component-id)
         page-id   (:main-instance-page component)
         root-id   (:main-instance-id component)]
-    (if (and (= tag "component")
-             (features/active-feature? state "render-wasm/v1"))
+    (if (features/active-feature? state "render-wasm/v1")
       ;; WASM: render immediately, UI only — server persist happens
-      ;; on the debounced path (update-component-thumbnail)
-      (dwt.wasm/render-thumbnail file-id page-id root-id)
+      ;; on the debounced path (update-component-thumbnail). Frame
+      ;; thumbnails are only shown by the SVG viewport.
+      (when (= tag "component")
+        (dwt.wasm/render-thumbnail file-id page-id root-id))
       (dwt/update-thumbnail file-id page-id root-id tag "update-component-thumbnail-sync"))))
 
 (defn- render-component-thumbnail-event
@@ -986,7 +995,9 @@
              page            (dsh/lookup-page state)
              shape           (ctn/get-shape page shape-id)
              component-id    (:component-id shape)
-             undo-id         (js/Symbol)]
+             undo-id         (js/Symbol)
+             ;; One undo group for the update and the syncs, in any file
+             undo-group      (or undo-group (uuid/next))]
          (rx/of
           (dwu/start-undo-transaction undo-id)
           (update-component shape-id undo-group)
@@ -1009,7 +1020,9 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [current-file-id (:current-file-id state)
-             undo-id         (js/Symbol)]
+             undo-id         (js/Symbol)
+             ;; One undo group for the syncs of both files
+             undo-group      (or undo-group (uuid/next))]
          (rx/of
           (dwu/start-undo-transaction undo-id)
           (sync-file current-file-id file-id :components component-id undo-group)
@@ -1057,67 +1070,123 @@
           (cfh/get-children-with-self (:objects page) (:id root))
           (cfh/get-parents-with-self objects (:parent-id shape))))))
 
+(def component-swap-layout-ids-type
+  "Companion DataEvent type emitted by `component-swap` when `:skip-layout?`
+   is set. Batch callers filter this exact keyword (libraries ns) — never a
+   bare `::component-swap-layout-ids` in another namespace."
+  ::component-swap-layout-ids)
+
+(def ^:private component-swap-batch-done-type
+  ::component-swap-batch-done)
+
+(defn coalesce-skipped-layout
+  "While `swap-source` runs, collect companion layout-id DataEvents from
+   `stream`, then emit one `:layout/update` with the union.
+
+   `swap-source` must emit WatchEvents already configured with
+   `:skip-layout? true`. Uses a done marker (not `(rx/take (count …))`) so
+   no-op swaps cannot hang the fold. Reads the buffer inside `rx/defer` so
+   the id set is not frozen empty when `watch` returns."
+  [stream swap-source]
+  (let [layout-acc (volatile! [])]
+    (rx/concat
+     (rx/merge
+      (->> stream
+           (rx/take-until (rx/filter (ptk/type? component-swap-batch-done-type) stream))
+           (rx/filter (ptk/type? component-swap-layout-ids-type))
+           (rx/tap (fn [ev]
+                     (vswap! layout-acc into (:ids (deref ev)))))
+           (rx/ignore))
+      (rx/concat
+       swap-source
+       (rx/of (ptk/data-event component-swap-batch-done-type {}))))
+     (rx/defer
+      #(rx/of (ptk/data-event :layout/update {:ids @layout-acc}))))))
+
 (defn component-swap
-  "Swaps a component with another one"
-  [shape file-id id-new-component keep-touched?]
-  (dm/assert! (uuid? id-new-component))
-  (dm/assert! (uuid? file-id))
-  (ptk/reify ::component-swap
-    ptk/WatchEvent
-    (watch [it state _]
-      ;; First delete shapes so we have space in the layout otherwise we can have problems
-      ;; in the grid creating new rows/columns to make space
-      (let [libraries   (dsh/lookup-libraries state)
-            page        (dsh/lookup-page state)
-            objects     (:objects page)
-            parent      (get objects (:parent-id shape))
+  "Swaps a component with another one.
 
-            ldata       (dsh/lookup-file-data state file-id)
-            orig-shapes (when keep-touched? (cfh/get-children-with-self objects (:id shape)))
+   Optional `opts`:
+   - `:skip-select?` — do not emit `select-shape` after the swap (batch callers
+     restore selection once).
+   - `:skip-layout?` — do not emit `:layout/update`; emit a companion
+     `component-swap-layout-ids-type` DataEvent instead so the batch can
+     coalesce one layout update."
+  ([shape file-id id-new-component keep-touched?]
+   (component-swap shape file-id id-new-component keep-touched? nil))
+  ([shape file-id id-new-component keep-touched?
+    {:keys [skip-select? skip-layout?] :or {skip-select? false skip-layout? false}}]
+   (dm/assert! (uuid? id-new-component))
+   (dm/assert! (uuid? file-id))
+   (ptk/reify ::component-swap
+     ptk/WatchEvent
+     (watch [it state _]
+       ;; First delete shapes so we have space in the layout otherwise we can have problems
+       ;; in the grid creating new rows/columns to make space
+       (let [libraries (dsh/lookup-libraries state)
+             page      (dsh/lookup-page state)
+             objects   (:objects page)]
+         ;; Re-read from live state: sibling swaps / layout can move this head.
+         ;; Gone from objects → no-op (do not swap a closed-over stale shape).
+         (if-let [shape (get objects (:id shape))]
+           (let [parent      (get objects (:parent-id shape))
 
-            ;; If the target parent is a grid layout we need to pass the target cell
-            target-cell (when (ctsl/grid-layout? parent)
-                          (ctsl/get-cell-by-shape-id parent (:id shape)))
+                 ldata       (dsh/lookup-file-data state file-id)
+                 orig-shapes (when keep-touched? (cfh/get-children-with-self objects (:id shape)))
 
-            index (find-shape-index objects (:parent-id shape) (:id shape))
+                 ;; If the target parent is a grid layout we need to pass the target cell
+                 target-cell (when (ctsl/grid-layout? parent)
+                               (ctsl/get-cell-by-shape-id parent (:id shape)))
 
-            ;; Store the properties that need to be maintained when the component is swapped
-            keep-props-values (select-keys shape ctk/swap-keep-attrs)
+                 index (find-shape-index objects (:parent-id shape) (:id shape))
 
-            undo-id (js/Symbol)
-            undo-group (uuid/next)
+                 ;; Store the properties that need to be maintained when the component is swapped
+                 keep-props-values (select-keys shape ctk/swap-keep-attrs)
 
-            [new-shape all-parents changes]
-            (-> (pcb/empty-changes it (:id page))
-                (pcb/set-undo-group undo-group)
-                (cll/generate-component-swap objects shape ldata page libraries id-new-component
-                                             index target-cell keep-props-values keep-touched?))
+                 undo-id (js/Symbol)
+                 undo-group (uuid/next)
 
-            updated-objects  (pcb/get-objects changes)
-            new-children-ids (cfh/get-children-ids-with-self updated-objects (:id new-shape))
-            new-text-ids     (->> new-children-ids
-                                  (keep (fn [id]
-                                          (when-let [child (get updated-objects id)]
-                                            (when (and (cfh/text-shape? child)
-                                                       (not= :fixed (:grow-type child)))
-                                              id))))
-                                  (vec))
+                 [new-shape all-parents changes]
+                 (-> (pcb/empty-changes it (:id page))
+                     (pcb/set-undo-group undo-group)
+                     (cll/generate-component-swap objects shape ldata page libraries id-new-component
+                                                  index target-cell keep-props-values keep-touched?))
 
-            [changes parents-of-swapped]
-            (if keep-touched?
-              (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
-              [changes []])
-            update-layout-ids (concat all-parents parents-of-swapped new-children-ids)]
-        (rx/of
-         (dwu/start-undo-transaction undo-id)
-         (dch/commit-changes changes)
-         (dwtp/propagate-workspace-tokens)  ;; Make the new instance get the token values from the current file, not from the component's library
-         (when (and (features/active-feature? state "render-wasm/v1")
-                    (seq new-text-ids))
-           (dwwt/resize-wasm-text-all new-text-ids {:skip-component-sync? true}))
-         (ptk/data-event :layout/update {:ids update-layout-ids :undo-group undo-group})
-         (dwu/commit-undo-transaction undo-id)
-         (dws/select-shape (:id new-shape) false))))))
+                 updated-objects  (pcb/get-objects changes)
+                 new-children-ids (cfh/get-children-ids-with-self updated-objects (:id new-shape))
+                 new-text-ids     (->> new-children-ids
+                                       (keep (fn [id]
+                                               (when-let [child (get updated-objects id)]
+                                                 (when (and (cfh/text-shape? child)
+                                                            (not= :fixed (:grow-type child)))
+                                                   id))))
+                                       (vec))
+
+                 [changes parents-of-swapped]
+                 (if keep-touched?
+                   (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
+                   [changes []])
+                 update-layout-ids (concat all-parents parents-of-swapped new-children-ids)]
+             (cond-> (rx/of
+                      (dwu/start-undo-transaction undo-id)
+                      (dch/commit-changes changes)
+                      ;; Make the new instance get the token values from the current file,
+                      ;; not from the component's library
+                      (dwtp/propagate-workspace-tokens)
+                      (when (and (features/active-feature? state "render-wasm/v1")
+                                 (seq new-text-ids))
+                        (dwwt/resize-wasm-text-all new-text-ids {:skip-component-sync? true})))
+               (not skip-layout?)
+               (rx/concat (rx/of (ptk/data-event :layout/update
+                                                 {:ids update-layout-ids :undo-group undo-group})))
+               skip-layout?
+               (rx/concat (rx/of (ptk/data-event component-swap-layout-ids-type
+                                                 {:ids update-layout-ids})))
+               true
+               (rx/concat (rx/of (dwu/commit-undo-transaction undo-id)))
+               (not skip-select?)
+               (rx/concat (rx/of (dws/select-shape (:id new-shape) false)))))
+           (rx/empty)))))))
 
 (defn component-multi-swap
   "Swaps several components with another one"
@@ -1131,17 +1200,21 @@
       {::ev/name "component-swap"})
 
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [undo-id (js/Symbol)]
+    (watch [_ state stream]
+      (let [undo-id   (js/Symbol)
+            swap-opts {:skip-select? true :skip-layout? true}]
         (log/info :msg "COMPONENT-SWAP"
                   :file (debug-pretty-file file-id state)
                   :id-new-component id-new-component
                   :undo-id undo-id)
         (rx/concat
          (rx/of (dwu/start-undo-transaction undo-id))
-         (rx/map #(component-swap % file-id id-new-component false) (rx/from shapes))
-         (rx/of (dwu/commit-undo-transaction undo-id))
-         (rx/of (dwsp/open-specialized-panel :component-swap)))))))
+         (coalesce-skipped-layout
+          stream
+          (->> (rx/from shapes)
+               (rx/map #(component-swap % file-id id-new-component false swap-opts))))
+         (rx/of (dwu/commit-undo-transaction undo-id)
+                (dwsp/open-specialized-panel :component-swap)))))))
 
 (def valid-asset-types
   #{:colors :components :typographies})
@@ -1191,6 +1264,30 @@
                  (when-not (= (:frame-id shape) uuid/zero)
                    (dwt/clear-thumbnail file-id (:page-id shape) (:frame-id shape) "frame")))))))))))
 
+(defn- mark-library-synced
+  "Tells the backend that `file-id` is synced with `library-id`. Only the
+  update notice depends on it, so a failure (e.g. edit rights lost
+  meanwhile) is logged and ignored."
+  [file-id library-id]
+  (->> (rp/cmd! :update-file-library-sync-status
+                {:file-id file-id
+                 :library-id library-id})
+       (rx/catch (fn [cause]
+                   (log/warn :hint "unable to mark the library as synced"
+                             :file-id (str file-id)
+                             :library-id (str library-id)
+                             :cause cause)
+                   (rx/empty)))))
+
+(defn- restore-library-synced-at
+  "Puts back the sync date of `library-id` a rejected sync moved forward,
+  so its update notice can show again."
+  [library-id synced-at]
+  (ptk/reify ::restore-library-synced-at
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/update-in-when state [:files library-id] assoc :synced-at synced-at))))
+
 (defn sync-file
   "Synchronize the given file from the given library. Walk through all
   shapes in all pages in the file that use some color, typography or
@@ -1211,70 +1308,101 @@
                    (contains? valid-asset-types asset-type)))
    (dm/assert! (or (nil? asset-id)
                    (uuid? asset-id)))
-   (ptk/reify ::sync-file
-     ptk/UpdateEvent
-     (update [_ state]
-       (if (and (not= library-id (:current-file-id state))
-                (nil? asset-id))
-         (d/update-in-when state [:files library-id] assoc :synced-at (ct/now))
-         state))
+   (let [;; The sync date this sync replaced, if it replaced one
+         synced-at (volatile! ::unchanged)]
+     (ptk/reify ::sync-file
+       ptk/UpdateEvent
+       (update [_ state]
+         (if (and (not= library-id (:current-file-id state))
+                  (nil? asset-id))
+           (do (vreset! synced-at (dm/get-in state [:files library-id :synced-at]))
+               (d/update-in-when state [:files library-id] assoc :synced-at (ct/now)))
+           state))
 
-     ptk/WatchEvent
-     (watch [it state _]
-       (when (and (some? file-id) (some? library-id)) ; Prevent race conditions while navigating out of the file
-         (log/info :msg "SYNC-FILE"
-                   :file (debug-pretty-file file-id state)
-                   :library (debug-pretty-file library-id state)
-                   :asset-type asset-type
-                   :asset-id asset-id
-                   :undo-group undo-group)
-         (let [ldata           (dsh/lookup-file-data state file-id)
-               libraries       (dsh/lookup-libraries state)
-               current-file-id (:current-file-id state)
+       ptk/WatchEvent
+       (watch [it state stream]
+         (when (and (some? file-id) (some? library-id)) ; Prevent race conditions while navigating out of the file
+           (log/info :msg "SYNC-FILE"
+                     :file (debug-pretty-file file-id state)
+                     :library (debug-pretty-file library-id state)
+                     :asset-type asset-type
+                     :asset-id asset-id
+                     :undo-group undo-group)
+           (let [ldata           (dsh/lookup-file-data state file-id)
+                 libraries       (dsh/lookup-libraries state)
+                 current-file-id (:current-file-id state)
 
-               changes         (cll/generate-sync-file-changes
-                                (pcb/empty-changes it)
-                                undo-group
-                                asset-type
-                                file-id
-                                asset-id
-                                library-id
-                                libraries
-                                current-file-id)
+                 changes         (cll/generate-sync-file-changes
+                                  (pcb/empty-changes it)
+                                  undo-group
+                                  asset-type
+                                  file-id
+                                  asset-id
+                                  library-id
+                                  libraries
+                                  current-file-id)
 
-               find-frames     (fn [change]
-                                 (->> (ch/frames-changed ldata change)
-                                      (map #(assoc %1 :page-id (:page-id change)))))
+                 find-frames     (fn [change]
+                                   (->> (ch/frames-changed ldata change)
+                                        (map #(assoc %1 :page-id (:page-id change)))))
 
-               updated-frames  (->> changes
-                                    :redo-changes
-                                    (mapcat find-frames)
-                                    distinct)
+                 updated-frames  (->> changes
+                                      :redo-changes
+                                      (mapcat find-frames)
+                                      distinct)
 
-               pending-ids     (sync-file-pending-ids file-id changes)
+                 pending-ids     (sync-file-pending-ids file-id changes)
 
-               frontend-sync
-               (sync-file-frontend-events
-                file-id changes updated-frames undo-group)]
+                 frontend-sync
+                 (sync-file-frontend-events
+                  file-id changes updated-frames undo-group)]
 
-           (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
-                                                              (:redo-changes changes)
-                                                              ldata))
-           (rx/concat
-            ;; Keep the sync pending until its layout work starts.
-            (wrf/with-pending :sync-file pending-ids frontend-sync)
+             (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
+                                                                (:redo-changes changes)
+                                                                ldata))
+             (rx/concat
+              ;; Keep the sync pending until its layout work starts.
+              (wrf/with-pending :sync-file pending-ids frontend-sync)
 
-            (when (not= file-id library-id)
-              ;; When we have just updated the library file, give some time for the
-              ;; update to finish, before marking this file as synced.
-              ;; TODO: look for a more precise way of syncing this.
-              ;; Maybe by using the stream (second argument passed to watch)
-              ;; to wait for the corresponding changes-committed and then proceed
-              ;; with the :update-file-library-sync-status mutation.
-              (rx/concat (rx/timer 3000)
-                         (rp/cmd! :update-file-library-sync-status
-                                  {:file-id file-id
-                                   :library-id library-id}))))))))))
+              (when (not= file-id library-id)
+                (let [stopper-s     (rx/filter (ptk/type? ::dw/finalize-workspace) stream)
+                      rolled-back-s (->> stream
+                                         (rx/filter (ptk/type? ::dps/rolled-back))
+                                         (rx/filter #(contains? (:file-ids (deref %)) file-id)))
+                      restore       (if (= ::unchanged @synced-at)
+                                      (rx/empty)
+                                      (rx/of (restore-library-synced-at library-id @synced-at)))
+                      ;; Checked once the rollback has undone the sync locally
+                      notify        #(->> (dps/wait-persisted)
+                                          (rx/map (fn [_] (notify-sync-file))))]
+                  (->> (rx/merge
+                        ;; The server rejected the sync: its commits were undone
+                        (rx/map (constantly ::rolled-back) rolled-back-s)
+                        ;; The flush of the sync commits starts within 3 s; a save
+                        ;; that fails for good ends the wait with no value
+                        (->> (rx/timer 3000)
+                             (rx/mapcat (fn [_] (dps/wait-persisted)))
+                             (rx/map (constantly ::saved))
+                             (rx/if-empty ::failed)))
+                       (rx/take 1)
+                       (rx/take-until stopper-s)
+                       (rx/mapcat (fn [outcome]
+                                    (case outcome
+                                      ::saved
+                                      (mark-library-synced file-id library-id)
+
+                                      ;; Never saved: the update notice can show again
+                                      ;; once the release of the failed save undoes the sync
+                                      ::failed
+                                      (rx/concat
+                                       restore
+                                       (->> rolled-back-s
+                                            (rx/take 1)
+                                            (rx/take-until stopper-s)
+                                            (rx/mapcat (fn [_] (notify)))))
+
+                                      ::rolled-back
+                                      (rx/concat restore (notify))))))))))))))))
 
 
 ;; FIXME: the data should be set on the backend for clock consistency
@@ -1399,7 +1527,9 @@
         (rx/of (dch/commit-changes {:origin it
                                     :redo-changes (:redo-changes changes)
                                     :undo-changes []
-                                    :save-undo? false}))))))
+                                    :save-undo? false
+                                    ;; Follows a change already made, a rollback included
+                                    :ignore-save-lock true}))))))
 
 (defn component-changed
   "Notify that the component with the given id has changed, so it needs to be updated
@@ -1538,7 +1668,31 @@
             notifier-s
             (->> component-events-s
                  (rx/debounce 5000)
-                 (rx/tap #(log/trc :hint "buffer initialized")))]
+                 (rx/tap #(log/trc :hint "buffer initialized")))
+
+            ;; A rollback is a rebase, not a commit: no component change
+            ;; is detected, so the thumbnails of the mains it reverted are
+            ;; rendered and uploaded here, each rebase checked against the
+            ;; file data right before it
+            rolled-back-thumbnails-s
+            (->> stream
+                 (rx/filter (ptk/type? ::dch/rebase-commits))
+                 (rx/map deref)
+                 (rx/filter (complement :failed))
+                 ;; Its own data pairing: `workspace-data-s` is shared and
+                 ;; does not replay the current data to a late subscriber
+                 (rx/with-latest-from
+                   (->> (rx/from-atom refs/workspace-data {:emit-current-value? true})
+                        (rx/concat (rx/of nil))
+                        (rx/buffer 2 1)
+                        (rx/map first)))
+                 (rx/mapcat
+                  (fn [[{:keys [file-id changes]} old-data]]
+                    (if (= file-id (:id old-data))
+                      (->> (into #{} (mapcat (partial ch/components-changed old-data)) changes)
+                           (rx/from)
+                           (rx/map #(update-component-thumbnail % file-id)))
+                      (rx/empty)))))]
 
         (when (or (contains? cf/flags :component-thumbnails)
                   (features/active-feature? state "render-wasm/v1"))
@@ -1570,7 +1724,9 @@
                 (->> component-events-s
                      (rx/filter (ptk/type? ::touch-component))
                      (rx/map deref)
-                     (rx/map render-component-thumbnail-event)))
+                     (rx/map render-component-thumbnail-event))
+
+                rolled-back-thumbnails-s)
 
                (rx/take-until stopper-s)))))))
 
