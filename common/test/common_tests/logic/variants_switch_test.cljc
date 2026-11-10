@@ -126,6 +126,25 @@
     (t/is (gsh/close-attrs? :points (:points child)
                             (:points (ths/get-shape-by-id full (:id child))) 0.001))))
 
+(t/deftest switching-to-a-turned-variant-compares-the-old-child-in-its-own-copy-frame
+  (let [file (-> (thf/sample-file :file)
+                 (thv/add-variant :variant :c01 :m01 :c02 :m02
+                                  :variant1-params {:width 100 :height 100}
+                                  :variant2-params {:width 100 :height 100})
+                 (ths/add-sample-shape :child1 :parent-label :m01 :width 50 :height 50)
+                 (ths/add-sample-shape :child2 :parent-label :m02 :width 50 :height 50)
+                 (thc/instantiate-component :c01 :copy01 :children-labels [:copy-child]))
+        initial (-> (tm/make-situation file)
+                    (r/step (n/rotate :m02 45)) r/settle
+                    (r/step (n/rotate :child2 -45)) r/settle
+                    (r/step (n/rotate :copy-child 30)) r/settle)
+        switched (-> initial (r/step (n/switch-variant :copy01 "Value2")) r/settle)
+        head (tm/resolve-shape switched :copy01)
+        child (tm/shape-by-id switched (first (:shapes head)))]
+    (t/is (mth/close? 0 (:rotation head) 0.001))
+    (t/is (mth/close? 315 (:rotation child) 0.001))
+    (t/is (not (ctk/touched-group? child :geometry-group)))))
+
 (t/deftest switch-keeps-a-resize-override-after-rotating-the-copy
   (doseq [sizing [nil :fix]]
     (let [params {:width 100 :height 100 :layout-item-v-sizing sizing}
