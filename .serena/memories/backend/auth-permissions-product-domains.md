@@ -21,7 +21,7 @@
 - Team role flags are normalized as owner > admin > editor > viewer. Owner/admin imply edit; any membership row implies read.
 - File/project role rows only count with a live team membership: the file/project permission queries require a matching `team_profile_rel` row, and leaving or removing a member deletes their team-scoped `file`/`project`/`team-project-profile-rel` rows (GHSA-v9r9-h77c-55m2).
 - File/project/comment checks are implemented in the owning command namespaces, often via helpers imported from `files`, `teams`, or `projects`; do not bypass those helpers with direct DB lookups unless preserving their not-found semantics.
-- Comment permission includes both logged-in state and the file/team comment policy. Shared viewer paths may pass `share-id`; preserve that path when changing comment queries.
+- Comment permission includes both logged-in state and the file/team comment policy. Shared viewer paths may pass `share-id`; preserve that path when changing comment queries. RPCs that accept `share-id` enforce the link's page scope before mutating (`share-link-pages` + `check-page-scope`): a thread or page outside the link raises `:not-found`, and that check runs before the ownership checks. `get-profiles-for-file-comments` filters its query by the same pages. `mark-all-threads-as-read` does not take `share-id`.
 
 ## Teams, projects, and invitations
 
