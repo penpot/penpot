@@ -983,6 +983,33 @@ set, and sends it through the [email configuration](#email-configuration). Each
 email carries the name and email address of the user who sent it, and uses that
 address as reply-to.
 
+#### MCP sign-in
+
+MCP clients with OAuth support can connect with the URL
+`https://<your-penpot-domain>/mcp/stream`, without a key. The client opens Penpot
+in the browser, the user allows access, and Penpot gives the client the user's MCP
+key. This is off by default. Turn it on by setting the public URL of the
+authorization service on the MCP container:
+
+```bash
+# MCP
+PENPOT_MCP_AUTH_URI: https://penpot.example.com/api/mcp/oauth
+```
+
+- `PENPOT_MCP_AUTH_URI`: Your Penpot public URI followed by `/api/mcp/oauth`. It
+  must use HTTPS and have no credentials, query or fragment. When unset, clients
+  must add the key to the URL as `userToken`.
+
+The MCP server must run in multi-user mode, which the official `penpotapp/mcp`
+image does by default. The server does not start if the value is invalid, and it
+logs at startup whether sign-in is on.
+
+The frontend container forwards the sign-in requests to the backend. If your proxy
+sends `/api/` straight to the backend instead, send
+`/.well-known/oauth-authorization-server/api/mcp/oauth` to the backend too.
+
+Clients that already add the key to the URL keep working with sign-in on.
+
 ### Internal resolver
 
 The frontend container resolves the backend, exporter and MCP service names with the
