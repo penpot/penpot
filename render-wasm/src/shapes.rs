@@ -1735,11 +1735,18 @@ impl Shape {
         for st in structure {
             match st.entry_type {
                 StructureEntryType::AddChild => {
-                    if result.is_empty() {
-                        result.insert(st.id);
-                    } else {
-                        let index = usize::min(result.len() - 1, st.index as usize);
-                        result.shift_insert(index, st.id);
+                    // The index counts positions before the child leaves its
+                    // place, as `insert-at-index` does when the frontend
+                    // commits the move.
+                    let index = st.index as usize;
+                    match result.get_index_of(&st.id) {
+                        Some(current) => {
+                            let target = if index > current { index - 1 } else { index };
+                            result.move_index(current, usize::min(target, result.len() - 1));
+                        }
+                        None => {
+                            result.shift_insert(usize::min(index, result.len()), st.id);
+                        }
                     }
                 }
                 StructureEntryType::RemoveChild => {
@@ -2217,6 +2224,47 @@ mod tests {
 
     fn any_shape() -> Shape {
         Shape::new(Uuid::nil())
+    }
+
+    fn shape_with_four_children() -> (Shape, [Uuid; 4]) {
+        let mut shape = any_shape();
+        let children = [1, 2, 3, 4].map(|i| Uuid::from_u64_pair(0, i));
+        shape.children = children.to_vec();
+        (shape, children)
+    }
+
+    fn add_child(id: Uuid, index: u32) -> StructureEntry {
+        StructureEntry::new(StructureEntryType::AddChild, index, Uuid::nil(), id, 0.0)
+    }
+
+    // The index counts positions before the child leaves its place, as
+    // `insert-at-index` does when the frontend commits the move.
+    #[test]
+    fn apply_structure_moves_an_existing_child_forward() {
+        let (mut shape, [a, b, c, d]) = shape_with_four_children();
+
+        shape.apply_structure(&vec![add_child(b, 3)]);
+        assert_eq!(shape.children, vec![a, c, b, d]);
+
+        shape.apply_structure(&vec![add_child(c, 4)]);
+        assert_eq!(shape.children, vec![a, b, d, c]);
+    }
+
+    #[test]
+    fn apply_structure_moves_an_existing_child_backward() {
+        let (mut shape, [a, b, c, d]) = shape_with_four_children();
+
+        shape.apply_structure(&vec![add_child(c, 0)]);
+        assert_eq!(shape.children, vec![c, a, b, d]);
+    }
+
+    #[test]
+    fn apply_structure_appends_a_new_child_at_the_end() {
+        let (mut shape, [a, b, c, d]) = shape_with_four_children();
+        let e = Uuid::from_u64_pair(0, 5);
+
+        shape.apply_structure(&vec![add_child(e, 4)]);
+        assert_eq!(shape.children, vec![a, b, c, d, e]);
     }
 
     #[test]
