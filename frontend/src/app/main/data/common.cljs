@@ -407,7 +407,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- resolve-team-id
-  "The team a team scoped navigation must carry: the id the caller
+  "The team a team scoped navigation must carry: the UUID the caller
   passes, the team initialized in the store, the team of the route
   already on screen, or the profile default. A navigation carries a nil
   id only when none of the four exists.

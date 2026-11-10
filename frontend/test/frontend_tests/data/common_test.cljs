@@ -42,26 +42,41 @@
                    :query-params {:team-id (str route-team-id)}})))
 
 (defn- ^:async emitted
-  "Runs `event` against `state` and returns the events it emitted. The
-  subscription is disposed before returning: some of these events keep
-  listening to the router, so the stream has to be a real one."
+  "Runs `event` against `state` and returns every event it emitted, once
+  the event's stream terminates.
+
+  The stream is a subject the caller of `ptk/watch` never sees: `go-to-
+  dashboard-search` keeps listening to the router after navigating and
+  completes only when it receives one `::rt/navigated`, which is the event
+  it waits for in the app to focus the search box. Pushing it here makes
+  that helper terminate like the rest, so every event of the family is
+  measured the same way, subscribe and await termination.
+
+  `observe` forces asynchronous delivery even for a synchronous source and
+  rejects when the stream does not terminate in time, so a helper that
+  stops closing its stream fails here instead of passing on the first
+  event."
   [event state]
-  (let [events (atom [])
-        sub    (rx/subs! #(swap! events conj %) (ptk/watch event state (rx/empty)))]
-    (await (async/wait-for #(seq @events) "the navigation"))
-    (rx/dispose! sub)
+  (let [stream (rx/subject)
+        events (atom [])
+        done   (async/observe (ptk/watch event state stream)
+                              :on-next #(swap! events conj %))]
+    ;; `observe` subscribes inside its promise executor, so the subject
+    ;; already has a listener; a subject drops values nobody hears.
+    (rx/push! stream (rt/navigated {:data {:name :dashboard-search}} false))
+    (await done)
     @events))
 
 (defn- nav-params
   "The params of the last navigation to `route-id`, or nil when the event
   emitted none."
   [events route-id]
-  (->> events
-       (filter #(and (= ::rt/navigate (ptk/type %))
-                     (= route-id (:id @%))))
-       (last)
-       (deref)
-       (:params)))
+  (some->> events
+           (filter #(and (= ::rt/navigate (ptk/type %))
+                         (= route-id (:id @%))))
+           (last)
+           (deref)
+           (:params)))
 
 (t/deftest ^:async go-to-workspace-takes-the-team-of-the-route-on-screen
   ;; The opened file belongs to the team of the route. The personal
@@ -102,6 +117,16 @@
                                        :route-team-id (uuid/next)
                                        :default-team-id default-team-id})))]
     (t/is (= default-team-id (:team-id (nav-params events :dashboard-recent))))))
+
+(t/deftest ^:async go-to-dashboard-deleted-keeps-the-default-sentinel
+  ;; The sentinel is a second copy of the branch in `-recent`; without its
+  ;; own test, a divergence here would navigate to the current team.
+  (let [default-team-id (uuid/next)
+        events (await (emitted (dcm/go-to-dashboard-deleted :team-id :default)
+                               (state {:current-team-id (uuid/next)
+                                       :route-team-id (uuid/next)
+                                       :default-team-id default-team-id})))]
+    (t/is (= default-team-id (:team-id (nav-params events :dashboard-deleted))))))
 
 (t/deftest ^:async go-to-dashboard-recent-resolves-a-nil-team-through-the-route
   (let [route-team-id (uuid/next)
