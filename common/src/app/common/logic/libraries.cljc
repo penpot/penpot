@@ -395,48 +395,56 @@
 
 (defn generate-sync-shape-direct
   "Generate changes to synchronize one shape that is the root of a component
-  instance, and all its children, from the given component."
-  [changes file libraries container shape-id reset?]
-  (shape-log :debug shape-id container
-             :msg "Sync shape direct" :shape-inst (str shape-id) :reset? reset?)
-  (let [changes    (if (pcb/get-objects changes)
-                     changes
-                     (-> changes
-                         (pcb/with-container container)
-                         (pcb/with-objects (:objects container))))
-        shape-inst (ctn/get-shape container shape-id)
-        library    (dm/get-in libraries [(:component-file shape-inst) :data])
-        component  (ctkl/get-component library (:component-id shape-inst) true)]
-    (if (and (ctk/in-component-copy? shape-inst)
-             (or (ctf/direct-copy? shape-inst component container nil libraries) reset?)) ; In a normal sync, we don't want to sync remote mains, only direct/near
-      (if component
-        (let [shape-main (if reset?
-                           ;; the reset is against the ref-shape, not against the original shape of the component
-                           (ctf/find-ref-shape file container libraries shape-inst :include-deleted? true)
-                           (ctf/get-content-ref-shape library component shape-inst))
-              main-container (find-main-container container shape-inst shape-main
-                                                  library file libraries component)
-              main-container (main-in-parent-orientation main-container shape-main container shape-inst reset?)
-              shape-main (ctn/get-shape main-container (:id shape-main))]
-          (-> (sync-copy-recursive changes
-                                   {:container      container
-                                    :main-container main-container
-                                    :component      component
-                                    :library        library
-                                    :file           file
-                                    :libraries      libraries
-                                    ;; Reset also places new children in the main's frame.
-                                    :root-inst      (cond-> shape-inst reset? (dissoc :touched))
-                                    :root-main      shape-main
-                                    :reset?         reset?}
-                                   shape-inst
-                                   shape-main)
-              (reassign-parent-grid-cells container shape-id)))
+  instance, and all its children, from the given component. With
+  `subtree-id`, only that shape of the copy and its children are synced."
+  ([changes file libraries container shape-id reset?]
+   (generate-sync-shape-direct changes file libraries container shape-id reset? nil))
+  ([changes file libraries container shape-id reset? subtree-id]
+   (shape-log :debug shape-id container
+              :msg "Sync shape direct" :shape-inst (str shape-id) :reset? reset?)
+   (let [changes    (if (pcb/get-objects changes)
+                      changes
+                      (-> changes
+                          (pcb/with-container container)
+                          (pcb/with-objects (:objects container))))
+         shape-inst (ctn/get-shape container shape-id)
+         library    (dm/get-in libraries [(:component-file shape-inst) :data])
+         component  (ctkl/get-component library (:component-id shape-inst) true)]
+     (if (and (ctk/in-component-copy? shape-inst)
+              (or (ctf/direct-copy? shape-inst component container nil libraries) reset?)) ; In a normal sync, we don't want to sync remote mains, only direct/near
+       (if component
+         (let [shape-main (if reset?
+                            ;; the reset is against the ref-shape, not against the original shape of the component
+                            (ctf/find-ref-shape file container libraries shape-inst :include-deleted? true)
+                            (ctf/get-content-ref-shape library component shape-inst))
+               main-container (find-main-container container shape-inst shape-main
+                                                   library file libraries component)
+               main-container (main-in-parent-orientation main-container shape-main container shape-inst reset?)
+               shape-main (ctn/get-shape main-container (:id shape-main))]
+           (-> (sync-copy-recursive changes
+                                    {:container      container
+                                     :main-container main-container
+                                     :component      component
+                                     :library        library
+                                     :file           file
+                                     :libraries      libraries
+                                     ;; Reset also places new children in the main's frame.
+                                     :root-inst      (cond-> shape-inst reset? (dissoc :touched))
+                                     :root-main      shape-main
+                                     :reset?         reset?
+                                     :subtree        subtree-id
+                                     ;; the copy shapes from the root down to the subtree
+                                     :path           (when subtree-id
+                                                       (into #{subtree-id}
+                                                             (cfh/get-parent-ids (:objects container) subtree-id)))}
+                                    shape-inst
+                                    shape-main)
+               (cond-> (nil? subtree-id) (reassign-parent-grid-cells container shape-id))))
 
-        ;; If the component is not found, because the master component has been
-        ;; deleted or the library unlinked, do nothing.
-        changes)
-      changes)))
+         ;; If the component is not found, because the master component has been
+         ;; deleted or the library unlinked, do nothing.
+         changes)
+       changes))))
 
 (def ^:private placement-geometry-attrs
   #{:x :y :width :height :selrect :points :transform :transform-inverse
@@ -716,8 +724,9 @@
   The main shapes of the children of a copy shape that keeps its own
   geometry are placed like it first, so they get their expected geometry.
   The children of a grid copy with its own cells follow the flow of those
-  cells instead of the main's order."
-  [changes {:keys [container main-container component reset?] :as ctx} shape-inst shape-main]
+  cells instead of the main's order. With a `:subtree` in `ctx`, the shapes
+  in `:path` above it are only walked through, towards that subtree."
+  [changes {:keys [container main-container component reset? path] :as ctx} shape-inst shape-main]
   (shape-log :debug (:id shape-inst) container
              :msg "Sync shape direct recursive"
              :shape-inst (str (:name shape-inst) " " (pretty-uuid (:id shape-inst)))
@@ -743,45 +752,56 @@
                            (update :objects placed-like shape-main placed
                                    (authored-constraints (:objects container)
                                                          (cfh/get-children-ids (:objects container) (:id shape-inst)))))
-          ctx            (assoc ctx :main-container main-container)
+          ;; a shape above the synced subtree only passes on its main's context
+          passing?       (and (some? path) (not= (:id shape-inst) (:subtree ctx)))
+          ctx            (cond-> (assoc ctx :main-container main-container)
+                           (not passing?) (dissoc :path :subtree))
           shape-main     (get-in main-container [:objects (:id shape-main)])
-          changes        (-> changes
-                             (sync-copy-shape ctx shape-inst shape-main)
-                             (sync-descendant-orientation container shape-inst))
+          changes        (cond-> changes
+                           (not passing?)
+                           (-> (sync-copy-shape ctx shape-inst shape-main)
+                               (sync-descendant-orientation container shape-inst)))
           container      (assoc container :objects (pcb/get-objects changes))
           ctx            (assoc ctx :container container)
           shape-inst     (ctn/get-shape container (:id shape-inst))
           children-inst  (vec (ctn/get-direct-children container shape-inst))
           children-main  (vec (ctn/get-direct-children main-container shape-main))]
-      (cond-> (-> changes
-                  (compare-children
-                   children-inst
-                   children-main
-                   {:pair?     ctk/is-main-of?
-                    :on-pair   (fn [changes child-inst child-main]
-                                 (if (and (not reset?) (ctk/swapped? child-inst)
-                                          (ctk/instance-head? child-main))
-                                   (update-swapped-placement changes ctx child-inst child-main)
-                                   (sync-copy-recursive changes ctx child-inst child-main)))
-                    :only-inst (fn [changes child-inst]
-                                 (remove-shape changes child-inst container))
-                    :only-main (fn [changes child-main]
-                                 (add-shape-to-instance changes ctx shape-inst child-main
-                                                        (d/index-of children-main child-main)))})
-                  (cond-> (not own-flow?) (reorder-copy-children shape-inst children-main container)))
+      (if passing?
+        (let [child-inst (d/seek #(contains? path (:id %)) children-inst)
+              child-main (when child-inst (d/seek #(ctk/is-main-of? % child-inst) children-main))]
+          (if (and child-main (not (and (not reset?) (ctk/swapped? child-inst)
+                                        (ctk/instance-head? child-main))))
+            (sync-copy-recursive changes ctx child-inst child-main)
+            changes))
+        (cond-> (-> changes
+                    (compare-children
+                     children-inst
+                     children-main
+                     {:pair?     ctk/is-main-of?
+                      :on-pair   (fn [changes child-inst child-main]
+                                   (if (and (not reset?) (ctk/swapped? child-inst)
+                                            (ctk/instance-head? child-main))
+                                     (update-swapped-placement changes ctx child-inst child-main)
+                                     (sync-copy-recursive changes ctx child-inst child-main)))
+                      :only-inst (fn [changes child-inst]
+                                   (remove-shape changes child-inst container))
+                      :only-main (fn [changes child-main]
+                                   (add-shape-to-instance changes ctx shape-inst child-main
+                                                          (d/index-of children-main child-main)))})
+                    (cond-> (not own-flow?) (reorder-copy-children shape-inst children-main container)))
 
-        (ctsl/grid-layout? shape-inst)
-        (update-grid-copy-attrs shape-before shape-main (not reset?))
+          (ctsl/grid-layout? shape-inst)
+          (update-grid-copy-attrs shape-before shape-main (not reset?))
 
-        (and own-flow? (= :page (:type container)))
-        (pcb/reorder-grid-children [(:id shape-inst)])
+          (and own-flow? (= :page (:type container)))
+          (pcb/reorder-grid-children [(:id shape-inst)])
 
-        ;; cells only carry between grids, so a copy that sync leaves
-        ;; without one drops its own
-        (and (not (ctsl/grid-layout? shape-inst)) (seq (:layout-grid-cells shape-inst)))
-        (pcb/update-shapes [(:id shape-inst)]
-                           #(-> % (dissoc :layout-grid-cells) (update :touched disj :layout-grid-cells))
-                           {:ignore-touched true})))))
+          ;; cells only carry between grids, so a copy that sync leaves
+          ;; without one drops its own
+          (and (not (ctsl/grid-layout? shape-inst)) (seq (:layout-grid-cells shape-inst)))
+          (pcb/update-shapes [(:id shape-inst)]
+                             #(-> % (dissoc :layout-grid-cells) (update :touched disj :layout-grid-cells))
+                             {:ignore-touched true}))))))
 
 (defn generate-rename-component
   "Generate the changes for rename the component with the given id, in the current file library."
