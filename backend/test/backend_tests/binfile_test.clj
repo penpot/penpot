@@ -3368,6 +3368,57 @@
           (t/is (not (contains? (bfc/get-libraries th/*system* [file-id])
                                 file-id))))))))
 
+(t/deftest import-v1-tolerates-repeated-file-entries
+  ;; Old v1 exports could list the same file twice in the package metadata:
+  ;; the exporter unioned the requested files with their libraries without
+  ;; deduplicating, and a file inside a library cycle is one of its own
+  ;; libraries. The import must read every entry and import each file once.
+  (let [profile (th/create-profile* 1)
+        lib-a   (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library A"})
+        lib-b   (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library B"})]
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-a)
+                 :library-file-id (:id lib-b)})
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-b)
+                 :library-file-id (:id lib-a)})
+
+    (let [output (tmp/tempfile :suffix ".penpot")]
+      ;; exporting only lib-a repeats its id in the metadata, because it is
+      ;; among its own transitive libraries
+      (v1/export-files!
+       (-> th/*system*
+           (assoc ::bfc/file-ids #{(:id lib-a)})
+           (assoc ::bfc/include-libraries true))
+       (io/output-stream output))
+
+      (let [result (:file-ids (-> th/*system*
+                                  (assoc ::bfc/project-id (:default-project-id profile))
+                                  (assoc ::bfc/profile-id (:id profile))
+                                  (assoc ::bfc/input output)
+                                  (v1/import-files!)))
+            rels   (mapcat #(db/query th/*system* :file-library-rel {:file-id %})
+                           result)
+            syncs  (mapcat #(db/query th/*system* :file-library-sync {:file-id %})
+                           result)]
+        ;; two files: the repeated entry is imported once
+        (t/is (= 2 (count result)))
+        ;; one of the two cycle edges survives the import
+        (t/is (= 1 (count rels)))
+        (t/is (= 1 (count syncs)))
+        (t/is (= (set (map (juxt :file-id :library-file-id) syncs))
+                 (set (map (juxt :file-id :library-file-id) rels))))
+        ;; no imported file lists itself among its transitive libraries
+        (doseq [file-id result]
+          (t/is (not (contains? (bfc/get-libraries th/*system* [file-id])
+                                file-id))))))))
+
 (t/deftest export-multi-file-includes-package-relations
   (let [profile          (th/create-profile* 1)
         file             (prepare-simple-file profile)
