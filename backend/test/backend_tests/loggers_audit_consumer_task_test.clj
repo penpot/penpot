@@ -117,6 +117,7 @@
                    http-mock    {:target 'app.http.client/req :return {:status 204}}]
         (insert-audit-row! (:id prof) "create-project")
         (insert-audit-row! (:id prof) "create-organization-attribute")
+        (insert-audit-row! (:id prof) "delete-organization-attribute")
         (insert-audit-row! (:id prof) "update-organization-attribute")
         (insert-audit-row! (:id prof) "auditlog-exported")
         (insert-audit-row! (:id prof) "unrelated-event")
@@ -126,6 +127,7 @@
         (let [[_ _ params] (:call-args @admin-console-mock)]
           (t/is (= #{"create-project"
                      "create-organization-attribute"
+                     "delete-organization-attribute"
                      "update-organization-attribute"
                      "auditlog-exported"}
                    (into #{} (map :name) (:events params)))))
