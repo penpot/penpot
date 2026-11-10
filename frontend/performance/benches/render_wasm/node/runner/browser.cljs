@@ -140,9 +140,8 @@
   [{:keys [controller process]}]
   (.abort controller)
   (try
-    (let [result (await process)]
-      (throw (ex-info "Chromium exited before owned shutdown"
-                      {:type ::process-exit :exit-code (:exit-code result)})))
+    (await process)
+    nil
     (catch :default cause
       (when-not (= :process-cancelled (:type (ex-data cause)))
         (throw cause)))))
@@ -180,27 +179,34 @@
                      (await (within #(.close ^js context)
                                     {:deadline deadline :phase :browser-context-close})))
                    nil)]
-      (when-let [cause (or page-failure context-failure)]
+      (when-let [cause (errors/combine
+                        [{:phase "cleanup" :operation :close-page :error page-failure}
+                         {:phase "cleanup" :operation :close-context :error context-failure}])]
         (throw cause)))))
 
 (defn- ^:async shutdown-owner
-  "Closes page/context best effort, then kills the owned process group. A page
-  close failure does not mask process/disconnect/profile failures because the
-  group kill releases the same resources."
+  "Disposes the owned process group, CDP connection and profile.
+  Successful process shutdown releases page/context resources. Other shutdown
+  failures retain the available page/context failure evidence."
   [{:keys [user-data-dir] :as owner}]
-  (ex/ignoring (await (close-page owner)))
-  (let [process-failure    (attempt :catch-fatal (await (stop-process owner)) nil)
+  (let [page-failure       (attempt :catch-fatal (await (close-page owner)) nil)
+        process-failure    (attempt :catch-fatal (await (stop-process owner)) nil)
         disconnect-failure (attempt :catch-fatal (await (disconnect owner)) nil)
         profile-failure    (attempt :catch-fatal
                                     (fs/rmSync user-data-dir #js {:recursive true :force true})
                                     nil)]
-    (when-let [cause (or process-failure disconnect-failure profile-failure)]
-      (throw cause))))
+    (when (or process-failure disconnect-failure profile-failure)
+      (throw (errors/combine
+              [{:phase "cleanup" :operation :close-page :error page-failure}
+               {:phase "cleanup" :operation :stop-process :error process-failure}
+               {:phase "cleanup" :operation :disconnect-browser :error disconnect-failure}
+               {:phase "cleanup" :operation :remove-profile :path user-data-dir :error profile-failure}])))))
 
 (defn close
   "Returns one shutdown Promise for this owner. Aborting the internal process
   lifecycle invokes process/run's SIGTERM/5s/SIGKILL group cleanup, even during
-  startup or blocked page JS. Only process cancellation is normal shutdown."
+  startup or blocked page JS. A settled process exit or cancellation releases
+  the owned process resources."
   [{:keys [shutdown signal abort-listener] :as owner}]
   (or @shutdown
       (do
@@ -268,20 +274,31 @@
                                          bounds))]
           (assoc owner :browser browser :version (.version browser) :endpoint address))
         (catch :default cause
-          (let [cause (deadline-failure cause deadline)]
-            (try
-              (await (close owner))
-              (catch :default cleanup-cause
-                (throw (ex-info "browser shutdown failed after startup error"
-                                (merge (errors/project-context (ex-data cause))
-                                       (errors/project-context (ex-data cleanup-cause))
-                                       {:type ::startup-cleanup
-                                        :endpoint @(:address endpoint) :user-data-dir user-data-dir
-                                        :startup-failure (errors/describe-cause cause)})
-                                cleanup-cause))))
-            (throw (ex-info (errors/message-of cause)
-                            (assoc (ex-data cause) :endpoint @(:address endpoint) :user-data-dir user-data-dir)
-                            cause))))))))
+          (let [observed      cause
+                cause         (deadline-failure cause deadline)
+                cleanup-cause (attempt :catch-fatal (await (close owner)) nil)
+                cleanup       (when (errors/failure? cleanup-cause)
+                                (let [reported (loop [current observed seen #{}]
+                                                 (if (or (nil? current) (contains? seen current))
+                                                   (into seen (map :error (errors/get-errors observed)))
+                                                   (recur (ex-cause current) (conj seen current))))]
+                                  (errors/combine
+                                   (remove #(and (= :stop-process (:operation %))
+                                                 (contains? reported (:error %)))
+                                           (errors/get-errors cleanup-cause)))))]
+            (if cleanup
+              (throw (errors/with-context
+                       (errors/combine [{:phase "browser-startup" :operation :start-browser :error cause}
+                                        {:phase "cleanup" :operation :close-browser :error cleanup}])
+                       "browser shutdown failed after startup error"
+                       (merge (errors/project-context (ex-data cause))
+                              (errors/project-context (ex-data cleanup-cause))
+                              {:type ::startup-cleanup
+                               :endpoint @(:address endpoint) :user-data-dir user-data-dir
+                               :startup-failure (errors/describe-cause cause)})))
+              (throw (ex-info (errors/message-of cause)
+                              (assoc (ex-data cause) :endpoint @(:address endpoint) :user-data-dir user-data-dir)
+                              cause)))))))))
 
 (defn ^:async new-page
   "Creates a context and page in a browser process we own, navigates to host,

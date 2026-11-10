@@ -739,22 +739,23 @@
       (h/call wasm/internal-module "_init_shapes_pool"
               (count (:objects (:snapshot graphics))))
       (h/call wasm/internal-module "_begin_loading")
-      (try
-        ;; Current procedural scenes upload without layout data.
-        (serialize-shape/serialize-shapes-batch
-         (:ordered graphics)
-         {:include-layout? false
-          :include-fills-strokes? true})
-        (finally
-          (h/call wasm/internal-module "_end_loading")))
+      (let [uploaded (attempt :catch-fatal
+                              (serialize-shape/serialize-shapes-batch
+                               (:ordered graphics)
+                               {:include-layout? false
+                                :include-fills-strokes? true})
+                              nil)
+            ended    (attempt :catch-fatal (h/call wasm/internal-module "_end_loading") nil)]
+        (when (or uploaded ended)
+          (throw (errors/combine
+                  [{:phase "upload" :operation :serialize-shapes :error uploaded}
+                   {:phase "upload" :operation :end-loading :error ended}]))))
       (h/call wasm/internal-module "_set_view_end")
       (assoc graphics :upload-ms (- (now) u0) :view view))
     (catch :default cause
       (if (errors/stale? cause)
         (throw cause)
-        (throw (ex-info "upload failed"
-                        {:phase "upload"}
-                        cause))))))
+        (throw (errors/with-context cause "upload failed" {:phase "upload"}))))))
 
 (defn- preparation-data
   "Projects completed setup into preparation evidence.

@@ -674,7 +674,10 @@
   (let [page-failure    (await (release-resource (:page-ref state) (get-in state [:services :close-page])))
         browser-failure (await (release-resource (:owner-ref state) (get-in state [:services :close])))
         server-failure  (await (release-resource (:host-ref state) server/close))
-        failure         (or page-failure browser-failure server-failure)]
+        failure         (errors/combine
+                         [{:phase "cleanup" :operation :close-page :error page-failure}
+                          {:phase "cleanup" :operation :close-browser :error browser-failure}
+                          {:phase "cleanup" :operation :close-server :error server-failure}])]
     (when failure
       (warn-safely state (str "run: cleanup failed: " (errors/message-of failure) "\n")))
     failure))

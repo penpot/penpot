@@ -301,15 +301,16 @@
                          "setup failed"))))
 
 (t/deftest comparison-reports-preparation-failures-once-per-source
-  (let [failure   {:phase "preparation" :message "setup failed"}
+  (let [failure   {:phase "preparation" :message "setup failed"
+                   :errors [{:phase "upload" :operation :serialize-shapes :message "setup failed"}
+                            {:phase "upload" :operation :end-loading :message "ending load failed"}]}
         run       (-> (new-run 0 2 :fresh)
                       (result/record-preparation (preparation :ready []))
                       (add-attempt :ready false :completed [(block :main :ready [(event :test/work [2])])])
                       (result/record-preparation {:preparation-id :failed :case-id :saved/pan :warmup? false
                                                   :diagnostics {} :phases [] :failure failure})
                       (result/record-attempt (measurement/attempt :saved/pan :failed false
-                                                                  {:status "failed" :phase "preparation"
-                                                                   :message "setup failed" :phases []}))
+                                                                  (assoc failure :status "failed" :phases [])))
                       (result/record-case-outcome :saved/pan {:outcome :failed :failure failure})
                       (result/finish-run "end" {:reason :failed :failure failure})
                       (assoc-in [:metadata :diagnostics :screenshots]
@@ -325,10 +326,27 @@
                       result/encode result/decode)
         text      (format/format-comparison compared)]
     (t/is (= 2 (count (re-seq #"setup failed" text))))
+    (t/is (= 2 (count (re-seq #"ending load failed" text))))
     (t/is (str/includes? text "median change"))
     (t/is (= 2 (count (re-seq #"Preparation :failed" text))))
     (t/is (str/includes? text "Baseline screenshots\n  \"saved/pan\": skipped; reason :no-completed-measured-attempt"))
     (t/is (str/includes? text "Candidate screenshots\n  \"saved/pan\": ok\n    File \"candidate-pan.png\""))))
+
+(t/deftest collected-failures-print-a-long-message-once-and-retain-enclosing-context
+  (let [message (str "failure-marker " (apply str (repeat 1400 "x")))
+        failure {:phase "preparation" :operation :prepare-scene :path "scene.transit" :message message
+                 :errors [{:phase "upload" :operation :serialize-shapes
+                           :message (subs message 0 1024)}]}
+        run     (-> (new-run 0 1 :fresh)
+                    (result/record-preparation {:preparation-id :failed :case-id :saved/pan :warmup? false
+                                                :diagnostics {} :phases [] :failure failure})
+                    (result/finish-run "end" {:reason :failed :failure failure})
+                    result/encode result/decode)
+        text    (format/format-run (summary/summarize run))]
+    (t/is (= 1 (count (re-seq #"failure-marker" text))))
+    (t/is (str/includes? text ":prepare-scene \"preparation\""))
+    (t/is (str/includes? text "Path \"scene.transit\""))
+    (t/is (str/includes? text ":serialize-shapes \"upload\""))))
 
 (t/deftest equal-diagnostics-keep-failures-from-distinct-preparations
   (let [failure {:phase "renderer" :message "shared renderer failure"}]
@@ -558,7 +576,9 @@
                         [failed-attempt [:metadata :diagnostics :failures 0]]]
             invalid [{:phase 42 :message "bad location"}
                      {:phase "main" :message nil}
-                     {:phase "main" :message "bad cause" :cause [42]}]]
+                     {:phase "main" :message "bad cause" :cause [42]}
+                     {:phase "main" :message "bad error collection"
+                      :errors [{:phase "cleanup" :message "nested collection" :errors []}]}]]
       (t/is (= ::result/invalid-record
                (error-type #(result/decode (transit/encode-str (assoc-in run path invalid)))))))))
 

@@ -23,7 +23,8 @@
    [benches.render-wasm.node.cli.registry :as registry]
    [benches.render-wasm.node.cli.request :as request]
    [benches.render-wasm.node.log :as log]
-   [benches.render-wasm.node.outcome :as outcome]))
+   [benches.render-wasm.node.outcome :as outcome]
+   [benches.render-wasm.report.format :as format]))
 
 (defn on-signals
   "Listen for process interrupts so the caller can stop work and finish cleanup.
@@ -101,18 +102,29 @@
 (defn- log-failures
   [finished]
   (doseq [[index cause] (map-indexed vector (:errors finished))]
-    (let [data       (ex-data cause)
-          context    (mapv (fn [[key value]]
-                             [key (if (string? value)
-                                    (errors/bounded-text (js/JSON.stringify value) 1024)
-                                    value)])
-                           (errors/project-context data))
-          path       (when-let [path (:path data)]
-                       (errors/bounded-text (if (string? path)
-                                              (js/JSON.stringify path)
-                                              (pr-str path))
-                                            1024))
-          validation (some-> (::sm/explain data) sm/simplify)]
+    (let [data          (ex-data cause)
+          context       (mapv (fn [[key value]]
+                                [key (if (string? value)
+                                       (errors/bounded-text (js/JSON.stringify value) 1024)
+                                       value)])
+                              (errors/project-context data))
+          path          (when-let [path (:path data)]
+                          (errors/bounded-text (if (string? path)
+                                                 (js/JSON.stringify path)
+                                                 (pr-str path))
+                                               1024))
+          validation    (some-> (::sm/explain data) sm/simplify)
+          entries       (:errors (errors/evidence (or (:phase data) :execution) cause))
+          alias?        (and (seq entries)
+                             (= (errors/bounded-text (errors/message-of cause) 1024) (:message (first entries))))
+          entry-context (when (and alias?
+                                   (not= (select-keys data [:phase :operation :path])
+                                         (select-keys (first entries) [:phase :operation :path])))
+                          (format/format-error-entry
+                           (select-keys (first entries) [:phase :operation :path])))
+          entries       (if alias?
+                          (rest entries)
+                          entries)]
       (log/error {:message (errors/message-of cause)
                   :fields (into (filterv (comp some? second)
                                          [[:type (:type data)] [:cause-type (:cause-type data)]
@@ -125,7 +137,11 @@
                                           [:count (:count data)] [:max-features (:max-features data)]
                                           [:validation validation]])
                                 (concat context
-                                        (map #(vector :difference (:field %)) (:mismatches data))))
+                                        (map #(vector :difference (:field %)) (:mismatches data))
+                                        (when entry-context [[:error-context entry-context]])
+                                        (map #(vector :error (format/format-error-entry %)) (take 8 entries))
+                                        (when (> (count entries) 8)
+                                          [[:errors-omitted (- (count entries) 8)]])))
                   :tail-log (:log-path data)
                   :tail? (zero? index)}))))
 

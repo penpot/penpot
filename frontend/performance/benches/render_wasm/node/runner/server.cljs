@@ -10,6 +10,7 @@
    ["fs" :as fs]
    ["http" :as http]
    ["path" :as path]
+   [benches.render-wasm.errors :as errors]
    [benches.render-wasm.node.files :as files]
    [benches.render-wasm.node.settings :as settings]
    [clojure.string :as str]))
@@ -143,7 +144,10 @@
                     (.abort controller)
                     (.then (close host)
                            (fn [_] (reject error))
-                           (fn [_] (reject error)))))
+                           (fn [close-error]
+                             (reject (errors/combine
+                                      [{:phase "server-startup" :operation :listen :error error}
+                                       {:phase "cleanup" :operation :close-server :error close-error}]))))))
                 (aborted []
                   (failed (ex-info "renderer server startup aborted" {:type ::aborted})))
                 (listening []

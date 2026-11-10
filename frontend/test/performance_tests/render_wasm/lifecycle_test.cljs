@@ -340,8 +340,9 @@
 (def ^:private factory-source
   "ES module stubbing the Emscripten factory for entry tests. Records every
   renderer call in `globalThis.__benchCalls`; `globalThis.__benchThrowIn`
-  names one module fn that throws. `globalThis.__benchRenderScript` holds
-  optional [frame-type, duration-ms] pairs that advance `__benchNow`; absent
+  names one module fn or an array of module fns that throw.
+  `globalThis.__benchRenderScript` holds optional [frame-type, duration-ms]
+  pairs that advance `__benchNow`; absent
   a script, `_render` immediately returns Full. The instance trap answers
   `undefined` for `then` and non-strings: promise assimilation would treat the
   instance as a never-settling thenable and hang the load. A real 16 MiB
@@ -384,7 +385,8 @@
        "if (p in t) return t[p];"
        "return function () {"
        "push(['call', p]);"
-       "if (globalThis.__benchThrowIn === p) throw new Error('fake ' + p + ' failure');"
+       "var faults = globalThis.__benchThrowIn;"
+       "if (Array.isArray(faults) ? faults.includes(p) : faults === p) throw new Error('fake ' + p + ' failure');"
        "return 0;"
        "};"
        "}"
@@ -963,6 +965,22 @@
                          (t/is (string? (get-in setup [:fingerprint :digest]))))
                        (cleanup)
                        (done)))))))
+
+(t/deftest ^:async upload-retains-batch-and-end-loading-failures-in-order
+  (doseq [functions [["_set_shapes_batch" "_end_loading"] ["_end_loading"]]]
+    (await
+     (with-entry-env
+       (fn [cleanup]
+         (unchecked-set js/globalThis "__benchThrowIn" (clj->js functions))
+         (load-result (scene-args 7 {})
+                      (fn [m]
+                        (t/is (= "failed" (:status m)))
+                        (t/is (= "upload failed" (:message m)))
+                        (t/is (= (mapv {"_set_shapes_batch" :serialize-shapes "_end_loading" :end-loading} functions)
+                                 (mapv :operation (:errors m))))
+                        (t/is (= functions (mapv #(get-in % [:cause 0 :fn]) (:errors m))))
+                        (t/is (decl/transit-round-trips? m))
+                        (cleanup))))))))
 
 (t/deftest nested-stale-marker-does-not-resolve-stale
   (let [terminate @#'browser/terminal-failure

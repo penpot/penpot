@@ -209,12 +209,15 @@
 
 (defn- finish
   [state status exit-code causes]
-  (let [record (persist state #(assoc % :status status :ended-at (time/now)))]
-    {:comparison record
+  (let [saved   (attempt :catch-fatal (persist state #(assoc % :status status :ended-at (time/now))))
+        failure (when (failure? saved)
+                  (errors/combine (conj (mapv #(hash-map :error %) causes)
+                                        {:phase "comparison-storage" :operation :finish-comparison :error saved})))]
+    {:comparison (if failure @(:saved-ref state) saved)
      :home (:home state)
      :log-path (get-in state [:home :log-path])
-     :errors (vec (remove nil? causes))
-     :exit-code exit-code}))
+     :errors (if failure [failure] (vec (remove nil? causes)))
+     :exit-code (if (and failure (not (contains? #{130 143} exit-code))) 1 exit-code)}))
 
 (defn- finish-root
   [state error]
@@ -225,12 +228,25 @@
       (finish state :completed 0 [error])
       (finish state :failed 1 [error]))))
 
+(defn- failure-outcome
+  [state signal cause]
+  (assoc (outcome/failed cause {:comparison @(:saved-ref state)
+                                :home (:home state)
+                                :log-path (get-in state [:home :log-path])})
+         :exit-code (if signal (outcome/interruption-code signal) 1)))
+
 (defn- interrupt-comparison
   [state signal error]
-  (let [reason (str "interrupted by " signal)]
-    (mark-configs-unattempted state (:configurations @(:record-ref state)) reason)
-    (mark-edges-unattempted state reason)
-    (finish state :interrupted (outcome/interruption-code signal) [error])))
+  (let [reason   (str "interrupted by " signal)
+        recorded (attempt :catch-fatal
+                          (mark-configs-unattempted state (:configurations @(:record-ref state)) reason)
+                          (mark-edges-unattempted state reason)
+                          nil)]
+    (if (failure? recorded)
+      (failure-outcome state signal
+                       (errors/combine [{:error error}
+                                        {:phase "comparison-storage" :operation :record-interruption :error recorded}]))
+      (finish state :interrupted (outcome/interruption-code signal) [error]))))
 
 (defn- record-created-build
   [state slug build]
@@ -442,7 +458,11 @@
   (let [slug     (get-in flow [:configuration :slug])
         facts    (get-run-evidence slug (:run-home flow) response)
         evidence (classify-run (process/signal-name (:signal state)) facts)]
-    (record-run-result state slug evidence)
+    (try
+      (record-run-result state slug evidence)
+      (catch :default cause
+        (throw (errors/combine [{:error (:error evidence)}
+                                {:phase "comparison-storage" :operation :record-run-result :error cause}]))))
     (config-run-outcome slug evidence)))
 
 (defn- get-missing-run-cause
@@ -549,42 +569,55 @@
   "Records the result of analyzing an edge.
 
   Returns:
-    The first error seen so far.
+    An Error retaining accumulated analysis failures, or nil on success.
 
   Throws:
-    A fatal failure after the edge and the remaining edges are recorded."
+    Fatal analysis or persistence failures with available earlier failures."
   [state edge result error]
-  (cond
-    (and (failure? result) (errors/fatal? result))
-    (do
-      (mark-edge state edge :failed {:failure (errors/evidence :comparison-storage result)})
-      (mark-edges-unattempted state "not attempted after comparison storage failure")
-      (throw result))
+  (let [fatal?   (and (failure? result) (errors/fatal? result))
+        analyzed (if (failure? result)
+                   (errors/combine [{:error error}
+                                    {:phase "comparison" :operation :analyze-edge :error result}])
+                   error)
+        recorded (attempt
+                  :catch-fatal
+                  (cond
+                    fatal?
+                    (do
+                      (mark-edge state edge :failed {:failure (errors/evidence :comparison-storage result)})
+                      (mark-edges-unattempted state "not attempted after comparison storage failure"))
 
-    (failure? result)
-    (do
-      (mark-edge state edge :failed {:failure (errors/evidence :comparison result)})
-      (or error result))
+                    (failure? result)
+                    (mark-edge state edge :failed {:failure (errors/evidence :comparison result)})
 
-    (pos? (:unacknowledged result))
-    (do
-      (log/warn (str "Comparison " (:from edge) " -> " (:to edge)
-                     " has " (:unacknowledged result) " unacknowledged differences"))
-      (mark-edge state edge :failed {:path (:path result)
-                                     :failure {:unacknowledged-differences (:unacknowledged result)}})
-      error)
+                    (pos? (:unacknowledged result))
+                    (do
+                      (log/warn (str "Comparison " (:from edge) " -> " (:to edge)
+                                     " has " (:unacknowledged result) " unacknowledged differences"))
+                      (mark-edge state edge :failed {:path (:path result)
+                                                     :failure {:unacknowledged-differences (:unacknowledged result)}}))
 
-    :else
-    (do
-      (mark-edge state edge :completed {:path (:path result)})
-      error)))
+                    :else
+                    (mark-edge state edge :completed {:path (:path result)}))
+                  nil)]
+    (cond
+      (failure? recorded)
+      (throw (errors/combine [{:error analyzed}
+                              {:phase "comparison-storage" :operation :record-edge :error recorded}]))
+
+      fatal? (throw analyzed)
+      :else analyzed)))
 
 (defn- ^:async analyze-edges
   [state edges error]
   (await (timers/setImmediate))
   (if-let [signal (process/signal-name (:signal state))]
     (do
-      (mark-edges-unattempted state (str "interrupted by " signal))
+      (try
+        (mark-edges-unattempted state (str "interrupted by " signal))
+        (catch :default cause
+          (throw (errors/combine [{:error error}
+                                  {:phase "comparison-storage" :operation :record-interruption :error cause}]))))
       {:interrupted signal :error error})
     (if-let [[edge & pending] (seq edges)]
       (analyze-edges state pending (record-edge-outcome state edge (analyze-edge state edge) error))
@@ -602,11 +635,18 @@
   (if-let [signal (process/signal-name (:signal state))]
     (interrupt-comparison state signal error)
     (do
-      (create-comparison-directory state)
+      (try
+        (create-comparison-directory state)
+        (catch :default cause
+          (throw (errors/combine [{:error error}
+                                  {:phase "comparison-storage" :operation :create-comparison-directory :error cause}]))))
       (let [analyzed (attempt :catch-fatal
                               (await (analyze-edges state (:edges @(:record-ref state)) error)))]
         (cond
-          (failure? analyzed) (finish state :failed 1 [analyzed error])
+          (failure? analyzed)
+          (if-let [signal (process/signal-name (:signal state))]
+            (failure-outcome state signal analyzed)
+            (finish state :failed 1 [analyzed]))
           (:interrupted analyzed) (interrupt-comparison state (:interrupted analyzed) (:error analyzed))
           :else (finish-root state (:error analyzed)))))))
 
@@ -622,7 +662,11 @@
 
           (:stop? step)
           (do
-            (mark-configs-unattempted state pending (:reason step))
+            (try
+              (mark-configs-unattempted state pending (:reason step))
+              (catch :default cause
+                (throw (errors/combine [{:error (:error step)}
+                                        {:phase "comparison-storage" :operation :stop-configurations :error cause}]))))
             (run-edges state (:error step)))
 
           :else (run-comparisons state pending)))
@@ -655,9 +699,7 @@
                             (initialize-comparison state)
                             (await (run-comparisons state (:configurations @(:record-ref state)))))]
         (if (failure? result)
-          (outcome/failed result {:comparison @(:saved-ref state)
-                                  :home home
-                                  :log-path (:log-path home)})
+          (failure-outcome state (process/signal-name (:signal state)) result)
           result)))))
 
 (defn ^:async execute

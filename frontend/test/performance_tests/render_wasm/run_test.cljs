@@ -18,6 +18,7 @@
    [benches.render-wasm.node.runner.browser :as browser]
    [benches.render-wasm.node.runner.feature-comparison :as feature-comparison]
    [benches.render-wasm.node.runner.run :as run]
+   [benches.render-wasm.node.runner.server :as server]
    [benches.render-wasm.node.storage.artifacts :as artifacts]
    [benches.render-wasm.node.storage.runs :as runs]
    [benches.render-wasm.report.format :as format]
@@ -1108,6 +1109,23 @@
                            (if cleanup-fails "cleanup rejected" "cannot append benchmark log")))
       (t/is (= :incomplete (get-in run [:termination :reason])))
       (t/is (str/includes? (fs/readFileSync file "utf8") "Run incomplete")))))
+
+(t/deftest ^:async cleanup-retains-page-browser-and-server-failures-in-the-saved-report
+  (let [base  (fake-browser {:close-page-failure (constantly true) :close-failure (constantly true)})
+        fake  (assoc-in base [:service :prepare]
+                        (fn [& _] (throw (errors/fatal-error "preparation transport failed" {} nil))))
+        close server/close]
+    (await (mock/with-mocks*
+             {server/close (fn [host]
+                             (.then (close host) (fn [_] (throw (js/Error. "server disposal failed")))))}
+             (let [response (await (execute fake [(collected :case/a :fresh)] (options fake (output-dir))))
+                   saved    (saved-record response)
+                   failure  (get-in saved [:termination :failure])]
+               (t/is (= 1 (:exit-code response)))
+               (t/is (= ["page close failed" "browser shutdown failed" "server disposal failed"]
+                        (mapv :message (:errors failure))))
+               (t/is (str/includes? (:report response) "server disposal failed"))
+               (t/is (str/includes? (:report response) "browser shutdown failed")))))))
 
 (t/deftest ^:async cleanup-error-keeps-completed-attempt-evidence-and-exits-nonzero
   (let [base   (fake-browser {})

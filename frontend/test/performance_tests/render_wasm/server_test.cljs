@@ -11,8 +11,10 @@
    ["net" :as net]
    ["os" :as os]
    ["path" :as path]
+   [benches.render-wasm.errors :as errors]
    [benches.render-wasm.node.runner.server :as server]
-   [cljs.test :as t :include-macros true]))
+   [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.mock :as mock]))
 
 (def ^:private temporary-root (atom nil))
 (def ^:private wasm-bytes [0 97 115 109 1 0 0 0])
@@ -167,6 +169,20 @@
       (await (server/close host))
       nil)
     (catch :default error error)))
+
+(t/deftest ^:async startup-abort-retains-a-server-close-failure
+  (let [controller  (js/AbortController.)
+        close       server/close
+        close-error (js/Error. "server disposal failed")]
+    (.abort controller)
+    (await (mock/with-mocks*
+             {server/close (fn [host]
+                             (.then (close host) (fn [_] (throw close-error))))}
+             (let [cause   (await (bounded (startup-failure (server/open (build) {:signal (.-signal controller)}))))
+                   entries (errors/get-errors cause)]
+               (t/is (= ::server/aborted (:type (ex-data cause))))
+               (t/is (= ["renderer server startup aborted" "server disposal failed"]
+                        (mapv #(errors/message-of (:error %)) entries))))))))
 
 (t/deftest ^:async startup-rejects-already-aborted-and-in-flight-signals
   (let [already (js/AbortController.)]

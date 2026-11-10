@@ -60,11 +60,11 @@
         [:type {:optional true} schema:cause-value]
         [:hint {:optional true} schema:cause-value]])
 
-     (def schema:diagnostic
-       "Failure location and message with optional cause and partial evidence."
-       [:map
-        [:phase string?]
+     (def ^:private diagnostic-fields
+       [[:phase string?]
         [:message string?]
+        [:operation {:optional true} keyword?]
+        [:path {:optional true} [:string {:max 1024}]]
         [:status {:optional true} [:enum "failed" "stale"]]
         [:cause {:optional true} [:vector schema:cause-detail]]
         [:partial {:optional true} map?]
@@ -77,7 +77,16 @@
         [:signal {:optional true} [:string {:max 1024}]]
         [:endpoint {:optional true} [:string {:max 1024}]]])
 
-     (def ^:private fatal-cause-depth 8)
+     (def schema:error-entry
+       "One failure occurrence with its operation and portable diagnostics."
+       (into [:map {:closed true}] diagnostic-fields))
+
+     (def schema:diagnostic
+       "Failure location, message and an optional ordered collection of errors."
+       (into [:map]
+             (conj diagnostic-fields
+                   [:errors {:optional true} [:vector {:min 1} schema:error-entry]])))
+
      (def ^:private evidence-cause-depth 3)
      (def ^:private max-cause-chars 500)
      (def ^:private unrenderable-value "unrenderable value")
@@ -107,12 +116,12 @@
        "True when `cause` or one of its causes has the ex-data `:fatal` marker."
        [cause]
        (loop [cause cause
-              depth 0]
+              seen  #{}]
          (cond
            (nil? cause) false
            (:fatal (ex-data cause)) true
-           (>= depth fatal-cause-depth) false
-           :else (recur (ex-cause cause) (inc depth)))))
+           (contains? seen cause) false
+           :else (recur (ex-cause cause) (conj seen cause)))))
 
      (defn as-failure
        "Returns an Error for `thrown`. Errors pass through; other values supply
@@ -144,6 +153,68 @@
                         (contains? data :partial)
                         (assoc :partial (merge (:partial data) (:partial existing))))]
          (ex-info message context (if (some? existing) (ex-cause cause) cause))))
+
+     (defn- merge-error-context
+       [outer inner]
+       (cond-> (merge outer inner)
+         (or (:partial outer) (:partial inner))
+         (assoc :partial (merge (:partial outer) (:partial inner)))))
+
+     (defn- get-error-collection
+       [cause]
+       (loop [current cause
+              seen    #{}
+              context {}]
+         (let [data    (ex-data current)
+               context (merge-error-context context (dissoc data ::errors))]
+           (if-let [entries (::errors data)]
+             (update entries 0 #(merge-error-context context %))
+             (when (and (ex-cause current) (not (contains? seen current)))
+               (recur (ex-cause current) (conj seen current) context))))))
+
+     (defn get-errors
+       "Returns failure occurrences in order, retaining their Error objects.
+
+       Args:
+         cause: An Error, including one wrapped with additional context.
+
+       Returns:
+         A flat vector of maps with an Error under :error and available phase,
+         operation and path context."
+       [cause]
+       (or (get-error-collection cause)
+           [(assoc (select-keys (ex-data cause) [:phase :operation :path]) :error cause)]))
+
+     (defn combine
+       "Combines failure occurrences into an Error, or returns nil on success.
+
+       Args:
+         entries: Ordered maps with :error and optional :phase, :operation and
+           :path. Nil errors represent successful operations. An Error may
+           contain a collection from an earlier operation.
+
+       Returns:
+         An Error retaining a flat collection and the first error's message
+         and data. Retained Error objects expose their causes. Any fatal
+         occurrence makes the combined error fatal."
+       [entries]
+       (let [sources (filterv #(failure? (:error %)) entries)
+             error   (:error (first sources))
+             entries (reduce (fn [collected {:keys [error] :as entry}]
+                               (let [context (dissoc entry :error)
+                                     group   (get-errors error)
+                                     group   (if (seq context)
+                                               (mapv #(merge-error-context context %) group)
+                                               group)]
+                                 (if (empty? collected) group (into collected group))))
+                             [] sources)]
+         (when error
+           (ex-info (message-of error)
+                    (cond-> (merge (select-keys (first entries) [:phase :operation :path])
+                                   (ex-data error)
+                                   {::errors entries})
+                      (some #(fatal? (:error %)) sources) (assoc :fatal true))
+                    (if (::errors (ex-data error)) (ex-cause error) error)))))
 
      (defn stale?
        "True when the exception's own data marks superseded work."
@@ -212,8 +283,10 @@
        Returns:
          Failure status, location, message and available diagnostic details."
        [evidence]
-       (merge (select-keys evidence [:status :phase :message :cause :partial :reason :deadline-exceeded])
-              (project-context evidence)))
+       (cond-> (merge (select-keys evidence [:status :phase :message :cause :partial :reason :deadline-exceeded
+                                             :operation :errors])
+                      (project-context evidence))
+         (string? (:path evidence)) (assoc :path (bounded-text (:path evidence) 1024))))
 
      (defn- sanitize-cause-value
        [value]
@@ -266,13 +339,39 @@
                   (recur next (inc depth) (conj acc level))))))
            [{:message unrenderable-cause-text}]))
 
-     (defn evidence
-       "Returns plain diagnostics for `phase`, including available partial
-       measurements and a bounded description of the cause."
+     (defn- diagnostic-data
        [phase cause]
        (let [partial (ex/ignoring (:partial (ex-data cause)))]
          (cond-> (merge (project-context (ex-data cause))
+                        (select-keys (ex-data cause) [:operation])
                         {:phase (if (keyword? phase) (name phase) (str phase))
                          :message (message-of cause)
                          :cause (describe-cause cause)})
-           partial (assoc :partial partial))))))
+           partial (assoc :partial partial)
+           (string? (:path (ex-data cause)))
+           (assoc :path (bounded-text (:path (ex-data cause)) 1024)))))
+
+     (defn evidence
+       "Returns plain diagnostics, including ordered failure occurrences.
+
+       Args:
+         phase: Failure location for the enclosing operation.
+         cause: Error with available operation context and collected failures.
+
+       Returns:
+         Portable diagnostics with bounded cause descriptions. Collected
+         errors retain occurrence order and messages within 1024 UTF-16 units."
+       [phase cause]
+       (let [entries (get-error-collection cause)]
+         (cond-> (diagnostic-data phase cause)
+           entries
+           (assoc :errors
+                  (mapv (fn [{:keys [error operation path partial] entry-phase :phase :as entry}]
+                          (cond-> (merge (diagnostic-data (or entry-phase phase) error)
+                                         (project-context entry)
+                                         (select-keys entry [:reason :deadline-exceeded])
+                                         {:message (bounded-text (message-of error) 1024)})
+                            operation (assoc :operation operation)
+                            partial (assoc :partial partial)
+                            (string? path) (assoc :path (bounded-text path 1024))))
+                        entries)))))))

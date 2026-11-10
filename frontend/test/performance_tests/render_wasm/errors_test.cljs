@@ -6,6 +6,7 @@
 
 (ns performance-tests.render-wasm.errors-test
   (:require
+   [app.common.schema :as sm]
    [app.common.transit :as transit]
    [benches.render-wasm.errors :as errors :refer [attempt failure?]]
    [cljs.test :as t :include-macros true]
@@ -15,6 +16,54 @@
   (t/is (= 3 (attempt 1 2 3)))
   (t/is (nil? (attempt nil)))
   (t/is (= {:error :not-a-failure} (attempt {:error :not-a-failure}))))
+
+(t/deftest composed-failures-retain-occurrence-order-and-fatal-propagation
+  (let [upload   (js/Error. "upload failed")
+        end      (js/Error. "ending load failed")
+        close    (js/Error. "browser disposal failed")
+        save     (js/Error. "saving evidence failed")
+        initial  (errors/combine [{:phase "upload" :operation :serialize-shapes :error upload}
+                                  {:phase "upload" :operation :end-loading :error end}])
+        wrapped  (errors/fatal-error "preparation failed"
+                                     {::errors/stale true :partial {:setup {:upload-ms 7}}}
+                                     (errors/with-context initial "preparation failed"
+                                       {:phase "preparation" :path "scene.transit"}))
+        later    (errors/combine [{:phase "cleanup" :operation :close-browser :error close}
+                                  {:phase "storage" :operation :save-evidence :error save}])
+        later    (errors/fatal-error "cleanup failed"
+                                     {:partial {:setup {:upload-ms 9}}
+                                      :command "/bin/chromium" :exit-code 17}
+                                     (errors/with-data later {:partial {:render {:frames 2}}}))
+        combined (errors/combine [{:error wrapped} {:error later}])
+        entries  (errors/get-errors combined)
+        deep     (nth (iterate #(ex-info "wrapped" {} %) combined) 12)
+        wire     (-> (errors/evidence :runner deep)
+                     transit/encode-str transit/decode-str errors/project-diagnostic)]
+    (t/is (= [upload end close save] (mapv :error entries)))
+    (t/is (= [:serialize-shapes :end-loading :close-browser :save-evidence]
+             (mapv :operation entries)))
+    (t/is (= "scene.transit" (:path (first entries))))
+    (t/is (= {:setup {:upload-ms 7}} (:partial (first entries))))
+    (t/is (errors/stale? combined))
+    (t/is (= (mapv errors/message-of [upload end close save]) (mapv :message (:errors wire))))
+    (t/is (= {:command "/bin/chromium" :exit-code 17
+              :partial {:setup {:upload-ms 9} :render {:frames 2}}}
+             (select-keys (nth (:errors wire) 2) [:command :exit-code :partial])))
+    (t/is (sm/validate errors/schema:diagnostic wire))
+    (t/is (errors/fatal? deep))
+    (t/is (errors/fatal? (errors/combine [{:error upload} {:error later}])))
+    (t/is (try
+            (attempt (throw combined))
+            false
+            (catch :default cause
+              (= [upload end close save] (mapv :error (errors/get-errors cause))))))))
+
+(t/deftest ordinary-failures-project-operation-and-path-context
+  (let [cause (ex-info "record unavailable" {:operation :read-record :path "saved/run.transit"})
+        wire  (-> (errors/evidence :storage cause) transit/encode-str transit/decode-str)]
+    (t/is (= {:operation :read-record :path "saved/run.transit"}
+             (select-keys wire [:operation :path])))
+    (t/is (sm/validate errors/schema:diagnostic wire))))
 
 (t/deftest attempt-returns-the-error-its-body-throws
   (let [cause  (ex-info "boom" {:a 1})

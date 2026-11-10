@@ -88,6 +88,63 @@
     nil
     (catch :default cause cause)))
 
+(t/deftest ^:async page-and-context-close-failures-both-survive
+  (let [page-error    (js/Error. "page disposal failed")
+        context-error (js/Error. "context disposal failed")
+        owner         {:page #js {:isClosed (constantly false)
+                                  :close #(js/Promise.reject page-error)}
+                       :context #js {:close #(js/Promise.reject context-error)}}
+        cause         (await (rejected (browser/close-page owner)))]
+    (t/is (= [page-error context-error] (mapv :error (errors/get-errors cause))))))
+
+(t/deftest ^:async browser-disposal-collects-failures-and-repeated-close-shares-the-result
+  (doseq [stop-fails? [false true]]
+    (let [page-error       (js/Error. "page disposal failed")
+          context-error    (js/Error. "context disposal failed")
+          process-error    (js/Error. "process disposal failed")
+          disconnect-error (js/Error. "CDP disconnect failed")
+          controller       (js/AbortController.)
+          running          (js/Promise.
+                            (fn [_ reject]
+                              (.addEventListener (.-signal controller) "abort"
+                                                 #(reject (if stop-fails?
+                                                            process-error
+                                                            (ex-info "cancelled" {:type :process-cancelled}))))))
+          owner            {:controller controller :process running :shutdown (atom nil)
+                            :user-data-dir @temporary-root
+                            :page #js {:isClosed (constantly false) :close #(js/Promise.reject page-error)}
+                            :context #js {:close #(js/Promise.reject context-error)}
+                            :connection (atom (js/Promise.resolve
+                                               #js {:isConnected (constantly true)
+                                                    :close #(if stop-fails?
+                                                              (js/Promise.reject disconnect-error)
+                                                              (js/Promise.resolve nil))}))}
+          closing          (browser/close owner)]
+      (t/is (identical? closing (browser/close owner)))
+      (if stop-fails?
+        (let [cause (await (rejected closing))]
+          (t/is (= [page-error context-error process-error disconnect-error]
+                   (mapv :error (errors/get-errors cause)))))
+        (t/is (nil? (await closing)))))))
+
+(t/deftest ^:async browser-startup-retains-a-failure-of-its-disposal
+  (let [run-process   process/run
+        close         browser/close
+        cleanup-error (js/Error. "startup disposal failed")]
+    (await
+     (mock/with-mocks*
+       {process/run (fn [options]
+                      (run-process (assoc options :command "/bin/sh" :args ["-c" "exit 17"])))
+        browser/close (fn [owner]
+                        (.then (close owner)
+                               (fn [_] (throw cleanup-error))
+                               (fn [_] (throw cleanup-error))))}
+       (let [cause   (await (rejected (browser/launch {:startup-timeout-ms 10000})))
+             entries (errors/get-errors cause)]
+         (t/is (= ::browser/startup-cleanup (:type (ex-data cause))))
+         (t/is (= ["Chromium exited before its CDP endpoint became ready" "startup disposal failed"]
+                  (mapv #(errors/message-of (:error %)) entries))))))))
+
 (defn- ^:async check-stopped
   [{:keys [endpoint user-data-dir]}]
   (t/is (not (fs/existsSync user-data-dir)) "owned Chromium profile was removed")
@@ -123,7 +180,10 @@
                          (.executablePath (.-chromium playwright))
                          "/bin/sh")]
            (t/is (= {:command command :exit-code exit-code}
-                    (select-keys saved [:command :exit-code])))))))))
+                    (select-keys saved [:command :exit-code])))
+           (t/is (= ::browser/endpoint-exit (:type (ex-data cause))))
+           (t/is (= "Chromium exited before its CDP endpoint became ready" (errors/message-of cause)))
+           (t/is (= 1 (count (errors/get-errors cause))))))))))
 
 (t/deftest ^:async successful-close-removes-the-profile-and-cdp-listener
   (let [host      (await (open-host build-id true))

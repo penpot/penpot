@@ -708,6 +708,87 @@
                (mapv :phase (keep :failure (:configurations record)))))
       (t/is (every? #(= :unattempted (:status %)) (:edges record))))))
 
+(t/deftest ^:async failed-edge-evidence-save-retains-the-analysis-and-persistence-errors
+  (create-frontend-root)
+  (doseq [[kind point] [[nil :record] [:zero-attempts :record] [:zero-attempts :directory]]]
+    (let [prepared (comparison-prepared ["a" "b"]
+                                        {:output-dir (path/join @temporary-root (str "edge-save-" (or kind "completed") "-" (name point)))})
+          write    feature-comparison/write-record]
+      (await
+       (mock/with-mocks*
+         {feature-comparison/write-record
+          (fn [home record]
+            (if (= :failed (get-in record [:edges 0 :status]))
+              (throw (js/Error. "edge evidence unavailable"))
+              (write home record)))}
+         (let [response (await (feature-comparison/execute
+                                (frontend-root) prepared nil
+                                {:services (comparison-services
+                                            {:prepare-build (build-service
+                                                             {:inspect (fn [_]
+                                                                         (if (= :directory point)
+                                                                           (fs/writeFileSync (path/join (:output-dir prepared) "comparisons") "blocked")
+                                                                           (fs/mkdirSync
+                                                                            (path/join (:output-dir prepared) "comparisons" "00__10.transit")
+                                                                            #js {:recursive true})))})
+                                             :execute-run (execute-service {:kind kind})})}))
+               evidence (errors/evidence :comparison (first (:errors response)))
+               entries  (:errors evidence)]
+           (t/is (= 1 (:exit-code response)))
+           (if kind
+             (do
+               (t/is (= "configuration run made no attempts" (:message (first entries))))
+               (t/is (= 1 (count (filter #(= "configuration run made no attempts" (:message %)) entries)))))
+             (t/is (some #(str/includes? (:message %) "EISDIR") entries)))
+           (t/is (some #(some (fn [cause]
+                                (if (= :directory point)
+                                  (str/includes? (:message cause) "EEXIST")
+                                  (= "edge evidence unavailable" (:message cause)))) (:cause %)) entries))
+           (t/is (= (:comparison response) (saved-comparison response)))))))))
+
+(t/deftest ^:async comparison-save-failures-retain-progress-errors-and-signal-codes
+  (create-frontend-root)
+  (doseq [[signal point] [[nil :terminal] ["SIGINT" :terminal] ["SIGTERM" :terminal]
+                          ["SIGINT" :configuration] ["SIGTERM" :edge]
+                          ["SIGINT" :run] ["SIGTERM" :run]]]
+    (let [prepared   (comparison-prepared ["a"] {:output-dir (path/join @temporary-root (str "finish-" signal "-" (name point)))})
+          controller (js/AbortController.)
+          write      feature-comparison/write-record
+          pending    (js/Error. "interrupted operation failed")
+          execute    (execute-service (if (= :terminal point) {} {:kind :interrupted}))]
+      (when (and signal (= :terminal point)) (.abort controller signal))
+      (await
+       (mock/with-mocks*
+         {feature-comparison/write-record
+          (fn [home record]
+            (if (case point
+                  :terminal (contains? #{:completed :interrupted} (:status record))
+                  :run (some #(= :failed (:status %)) (:configurations record))
+                  :configuration (some #(= :unattempted (:status %)) (:configurations record))
+                  :edge (some #(= :unattempted (:status %)) (:edges record)))
+              (throw (js/Error. "comparison save failed"))
+              (write home record)))}
+         (let [response (await (feature-comparison/execute
+                                (frontend-root) prepared (.-signal controller)
+                                {:services (comparison-services
+                                            {:prepare-build (build-service {})
+                                             :execute-run (fn [& args]
+                                                            (.then (apply execute args)
+                                                                   (fn [response]
+                                                                     (if (= :terminal point)
+                                                                       response
+                                                                       (do
+                                                                         (.abort controller signal)
+                                                                         (assoc response :errors [pending]))))))})}))
+               evidence (errors/evidence :comparison (first (:errors response)))]
+           (t/is (= (case signal "SIGINT" 130 "SIGTERM" 143 1) (:exit-code response)))
+           (t/is (= :running (get-in response [:comparison :status])))
+           (t/is (= (:comparison response) (saved-comparison response)))
+           (t/is (some #(some (fn [cause] (= "comparison save failed" (:message cause))) (:cause %))
+                       (:errors evidence)))
+           (when (not= :terminal point)
+             (t/is (= 1 (count (filter #(= "interrupted operation failed" (:message %)) (:errors evidence))))))))))))
+
 (t/deftest ^:async edge-report-storage-failure-preserves-failed-and-unattempted-edges
   (create-frontend-root)
   (let [prepared (comparison-prepared ["a" "b"])

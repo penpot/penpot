@@ -2014,6 +2014,53 @@ test(
   },
 );
 
+test("merge retains rename and temporary-file cleanup failures", testOptions, async (t) => {
+  const fixture = createFrontend(t);
+  const base = path.join(fixture.managed, "base.transit");
+  const additional = path.join(fixture.managed, "additional.transit");
+  for (const [file, runId] of [[base, "base"], [additional, "additional"]]) {
+    fs.writeFileSync(file, runFixtureText({ runId, caseId: "case/load", value: 10, gitSha: "same" }));
+  }
+  const output = path.join(fixture.managed, "merged-run");
+  const record = path.join(output, "run.transit");
+  const guard = path.join(fixture.managed, "storage-failures.cjs");
+  fs.writeFileSync(guard, `
+    const fs = require("node:fs");
+    const rename = fs.renameSync;
+    const remove = fs.rmSync;
+    const write = fs.writeFileSync;
+    const record = ${JSON.stringify(record)};
+    fs.writeFileSync = function (file) {
+      if (String(file).startsWith(record + ".") && String(file).endsWith(".tmp")) {
+        write.call(fs, record, "previous complete record");
+      }
+      return write.apply(this, arguments);
+    };
+    fs.renameSync = function (source, destination) {
+      if (destination === record) throw new Error("record rename failed");
+      return rename.apply(this, arguments);
+    };
+    fs.rmSync = function (file) {
+      if (String(file).startsWith(record + ".") && String(file).endsWith(".tmp")) {
+        throw new Error("temporary record removal failed");
+      }
+      return remove.apply(this, arguments);
+    };
+  `);
+  fixture.nodeArgs = ["--require", guard];
+
+  const result = await runCli(fixture, ["merge", base, additional, "--output-dir", output, "--no-color"]);
+
+  assert.equal(result.exitCode, 1, result.stderr);
+  assert.match(result.stderr, /record rename failed/);
+  assert.match(result.stderr, /temporary record removal failed/);
+  assert.ok(result.stderr.indexOf("record rename failed") < result.stderr.indexOf("temporary record removal failed"), result.stderr);
+  assert.equal(fs.readFileSync(record, "utf8"), "previous complete record");
+  assert.match(result.stderr, /rename-temporary/);
+  assert.match(result.stderr, /remove-temporary/);
+  assert.ok(result.stderr.includes(record), result.stderr);
+});
+
 test("merge refuses an existing output directory", testOptions, async (t) => {
   const fixture = createFrontend(t);
   const base = path.join(fixture.managed, "base.transit");

@@ -9,6 +9,7 @@
   (:require
    ["fs" :as fs]
    ["path" :as path]
+   [benches.render-wasm.errors :as errors :refer-macros [attempt]]
    [clojure.string :as str]))
 
 (defn contained?
@@ -32,12 +33,19 @@
   so readers see either the previous complete file or the new one. The parent
   directory must exist.
 
-  A failed write or rename leaves the previous file untouched and removes the
-  temporary file."
+  A failed write or rename leaves the previous file untouched and attempts to
+  remove the temporary file. Failures retain operation context in order."
   [file content]
-  (let [temporary (str file "." (random-uuid) ".tmp")]
-    (try
-      (fs/writeFileSync temporary content #js {:encoding "utf8" :flag "wx"})
-      (fs/renameSync temporary file)
-      (finally
-        (fs/rmSync temporary #js {:force true})))))
+  (let [temporary (str file "." (random-uuid) ".tmp")
+        written   (attempt :catch-fatal
+                           (fs/writeFileSync temporary content #js {:encoding "utf8" :flag "wx"})
+                           nil)
+        renamed   (when-not written
+                    (attempt :catch-fatal (fs/renameSync temporary file) nil))
+        removed   (when (or written renamed)
+                    (attempt :catch-fatal (fs/rmSync temporary #js {:force true}) nil))]
+    (when-let [failure (errors/combine
+                        [{:phase "storage" :operation :write-temporary :path file :error written}
+                         {:phase "storage" :operation :rename-temporary :path file :error renamed}
+                         {:phase "storage" :operation :remove-temporary :path temporary :error removed}])]
+      (throw failure))))

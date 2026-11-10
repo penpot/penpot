@@ -64,12 +64,29 @@
   [value]
   (errors/bounded-text (js/JSON.stringify value) 1024))
 
+(defn format-error-entry
+  "Formats a failure location with its available operation, message and path."
+  [{:keys [phase operation message path]}]
+  (str (when operation (str (pr-str operation) " "))
+       (quoted-detail phase)
+       (when (some? message) (str ": " (quoted-detail message)))
+       (when path (str "\n      Path " (quoted-detail path)))))
+
 (defn- failure->text
   [{:keys [failure reason]}]
   (if failure
     (if-let [n (:unacknowledged-differences failure)]
       (str n " unacknowledged " (if (= n 1) "difference" "differences"))
-      (str (quoted-detail (:phase failure)) ": " (quoted-detail (:message failure))))
+      (if-let [entries (seq (:errors failure))]
+        (str (if (not= (errors/bounded-text (:message failure) 1024) (:message (first entries)))
+               (str (format-error-entry failure) "\n    ")
+               (when (not= (select-keys failure [:phase :operation :path])
+                           (select-keys (first entries) [:phase :operation :path]))
+                 (str "Context " (format-error-entry (dissoc failure :message)) "\n    ")))
+             (str/join "\n    " (map format-error-entry (take 8 entries)))
+             (when (> (count entries) 8)
+               (str "\n    " (- (count entries) 8) " more errors recorded")))
+        (format-error-entry failure)))
     (quoted-detail reason)))
 
 (defn- identifier->text
