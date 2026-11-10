@@ -197,7 +197,7 @@
                       (ex/raise :type :conflict
                                 :code :file-modified
                                 :hint "the file was modified during the restore process, please retry")))
-                  (let [snapshot (fsnap/get-minimal-snapshot cfg id)
+                  (let [snapshot (fsnap/get-minimal-snapshot cfg file-id id)
                         vern     (fsnap/restore! cfg file-id id)]
                     ;; Peers name the restored version by its label when a
                     ;; user named it, else by its date
