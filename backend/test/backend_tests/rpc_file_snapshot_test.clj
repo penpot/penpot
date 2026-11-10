@@ -115,9 +115,10 @@
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
         (t/is (nil? (:result out)))
-        ;; Peers learn who restored which version
+        ;; Peers learn who restored which version, named by the label the
+        ;; snapshot has now (the previous block renamed it)
         (t/is (= (:id profile) (:profile-id sent)))
-        (t/is (= "label1" (:label sent)))
+        (t/is (= "label1-updated" (:label sent)))
         (t/is (ct/inst? (:created-at sent))))
 
       (let [[row1 row2 :as rows]
