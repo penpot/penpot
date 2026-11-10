@@ -116,6 +116,7 @@ Rules for the note:
 - **Write it for admins**: what changes, what they must do, and what breaks if they do nothing. Do not paste the full runbook; explain the implications and link the runbook or docs.
 - **Link a long-lived branch**, `staging` or `main`, never a feature branch (`issue-1234`). The link may 404 until the PR merges; that is expected.
 - **Do not add issue or PR links**: the generator appends them.
+- **Do not hard-wrap the text**: one line per paragraph or bullet. The generator copies lines verbatim, so wrapped lines end up wrapped in `CHANGES.md`.
 - **One note per issue**. If several comments carry the marker, the generator uses the last one and warns.
 - **No note**: the generator warns on stderr and emits only the heading and references; fix the issue, not `CHANGES.md`.
 - **`####`, not `###`**: `###` is the level of the changelog sections. An entry at `###` would render as a sibling section and the scripts that read and rewrite `:boom:` would cut the section there. The note author never writes the `####`: the generator adds it.

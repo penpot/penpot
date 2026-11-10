@@ -60,6 +60,7 @@ the issue (`scripts/changelog.py boom`), so the issue must carry both:
 Post the note as a new comment. Do not add a breaking-change section to the
 issue body and do not hand-write the changelog block. When the issue comes
 from a PR, reuse the text of the PR's breaking-change section.
+Do not hard-wrap the note: one line per paragraph or bullet.
 
 The full changelog rules (sections, exclusions, `:rocket:`, pre-flight and
 anomaly report) live in `mem:workflow/updating-changelog`.
