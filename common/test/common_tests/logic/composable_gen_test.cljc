@@ -2072,12 +2072,28 @@
                        :ops [[:combine 8] [:transform 13 4 0 6] [:nest 8] [:make-variant] [:make-variant 7]
                              [:make-variant] [:transform 0 9 0 2] [:combine 9] [:switch 6]]}))))
 
+(t/deftest updating-a-main-from-a-turned-copy-unturns-a-mirrored-swap-by-its-own-turn
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles false :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies false :text false}]
+                       :ops [[:combine] [:make-variant] [:swap 4] [:add-variant 20] [:make-variant]
+                             [:text-style 6 0 1] [:make-variant] [:switch] [:update-main] [:make-variant]
+                             [:switch 8] [:switch 18] [:rotate 3] [:make-variant] [:resize 14]
+                             [:add-variant 15] [:transform 5 5 0 18] [:update-main 20] [:update-main]]}))))
+
 (t/deftest switching-a-text-with-a-typography-file-but-no-typography-carries-no-override
   (t/is (map? (cg/run {:world [1 0 {:variants true :text-styles false :layout :grid :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true
                                     :layout-children false :grid-empty false :layout-copies false :text false}]
                        :ops [[:text-style 3 8 1] [:text-style 3 1] [:nest] [:switch] [:text-style 0 8 1]
                              [:switch 1]]}))))
+
+(t/deftest switching-a-copy-holding-a-turned-copy-of-itself-in-a-swap-carries-no-turn
+  (t/is (map? (cg/run {:world [1 0 {:variants true :text-styles false :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies false :text false}]
+                       :ops [[:detach 2] [:switch 8] [:text 4] [:switch] [:nest 2] [:rotate] [:switch]
+                             [:combine] [:switch 2]]}))))
 
 (t/deftest turning-a-flipped-copy-turns-a-child-stored-as-the-other-mirror-turn
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false

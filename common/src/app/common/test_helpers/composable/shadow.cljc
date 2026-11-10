@@ -447,13 +447,15 @@
                   main-root (get before (:shape-ref root))
                   root-parent (get before (:parent-id root))
                   main-parent (get before (:parent-id main-root) {})
+                  ;; the way the rotation of `shape` stores its turn
+                  sign (geom/turn-sign shape)
                   ;; the turn the copy root inherits places it and is not pushed
                   geometry (cond-> (values shape :geometry-group)
                              (and (:component-root root) (not (get-in model [root-id :geometry-group])))
-                             (in-orientation root main-root)
+                             (in-orientation root main-root sign)
 
                              (and (not (:component-root root)) root-parent)
-                             (in-orientation root-parent main-parent))
+                             (in-orientation root-parent main-parent sign))
                   replaced (when (and (contains? groups :swap-group)
                                       (not= (:shape-ref shape) (:shape-ref updated)))
                              (get before (:shape-ref shape)))
@@ -638,9 +640,17 @@
                     ;; and authored overrides belong to its own component.
                     (when (= root-id (:id original))
                       [(get objects main-id) (get model root-id)]))))
+        ;; the shapes below an authored swap, which belong to the swapped component
+        swapped-below (into #{}
+                            (comp (filter #(and (not= root-id (:id %))
+                                                (contains? (get model (:id %)) :swap-group)))
+                                  (mapcat #(rest (subtree-shapes before (:id %))))
+                                  (map :id))
+                            (subtree-shapes before root-id))
         old-copies (into {} (keep (fn [shape]
-                                    (when-let [[main groups] (source before old-paths old-main-id shape)]
-                                      [(get old-paths (:id main)) [shape main groups]])))
+                                    (when-not (contains? swapped-below (:id shape))
+                                      (when-let [[main groups] (source before old-paths old-main-id shape)]
+                                        [(get old-paths (:id main)) [shape main groups]]))))
                          (subtree-shapes before root-id))
         ;; the rotation a clean copy of the new main takes in the root's parent
         placed-rotation (let [main (get after new-main-id)]
