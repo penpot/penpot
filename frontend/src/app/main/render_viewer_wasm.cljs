@@ -32,6 +32,7 @@
 (defonce ^:private viewer-snapshot
   (atom {:os-canvas nil
          :page-key  nil
+         :objects-key nil
          :canvas-w  0
          :canvas-h  0
          :dpr       1}))
@@ -40,6 +41,7 @@
   (reset! viewer-snapshot
           {:os-canvas nil
            :page-key nil
+           :objects-key nil
            :canvas-w 0
            :canvas-h 0
            :dpr 1}))
@@ -146,7 +148,12 @@
 
 (defn- render-viewer-frame*
   [page-key page-objects canvas size scale object-id on-render
-   {:keys [include-ids clear-fills-ids] :or {clear-fills-ids #{}}}]
+   {:keys [include-ids clear-fills-ids objects-key] :or {clear-fills-ids #{}}}]
+  ;; `page-key` identifies the page whose canvas context we keep alive and
+  ;; `objects-key` is the (unmodified) objects map of that page. The shapes
+  ;; loaded into the renderer are only valid for the objects they were loaded
+  ;; from, so when the objects change (e.g. a live update coming from the
+  ;; workspace) the shapes are loaded again into the existing context.
   (p/create
    (fn [resolve _reject]
      (let [prev-disable @wasm/disable-request-render?
@@ -159,6 +166,7 @@
            dpr          (wasm.api/get-dpr)
            snap         @viewer-snapshot
            same-page?   (and (some? page-key) (identical? page-key (:page-key snap)))
+           same-objects? (identical? objects-key (:objects-key snap))
            same-size?   (and (= vis-w (:canvas-w snap))
                              (= vis-h (:canvas-h snap))
                              (= dpr (:dpr snap)))
@@ -176,7 +184,15 @@
              (when-not same-size?
                (wasm.api/resize-offscreen-canvas! os vis-w vis-h)
                (swap! viewer-snapshot assoc :canvas-w vis-w :canvas-h vis-h :dpr dpr))
-             (do-render! os))
+             (if same-objects?
+               (do-render! os)
+               (do
+                 (swap! viewer-snapshot assoc :objects-key objects-key)
+                 (wasm.api/initialize-viewport
+                  page-objects scale size
+                  :background-opacity 0
+                  :force-sync true
+                  :on-render #(do-render! os)))))
            (let [os-canvas (js/OffscreenCanvas. vis-w vis-h)]
              (when (wasm.api/initialized?)
                (wasm.api/clear-canvas {:lose-browser-context? false}))
@@ -185,6 +201,7 @@
                  (reset! viewer-snapshot
                          {:os-canvas os-canvas
                           :page-key  page-key
+                          :objects-key objects-key
                           :canvas-w  vis-w
                           :canvas-h  vis-h
                           :dpr       dpr})
@@ -229,7 +246,7 @@
     @dpr-key))
 
 (defn- use-viewer-wasm-layers!
-  [page-id page-objects size scale frame-id not-fixed-ref fixed-ref
+  [page-id page-objects objects-key size scale frame-id not-fixed-ref fixed-ref
    not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids delta dpr-key]
   ;; The hot-areas SVG shifts every object by `-(size + delta)` so the frame
   ;; `selrect` lands flush against the overlay snap side, ignoring the extra
@@ -240,7 +257,7 @@
                         (update :x + (:x delta 0))
                         (update :y + (:y delta 0)))]
     (mf/use-layout-effect
-     (mf/deps page-id page-objects render-size scale frame-id dpr-key
+     (mf/deps page-id page-objects objects-key render-size scale frame-id dpr-key
               not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids)
      (fn []
        (when (get page-objects frame-id)
@@ -270,18 +287,18 @@
                                     (p/then chain
                                             #(render-viewer-frame* page-id page-objects
                                                                    canvas render-size scale frame-id
-                                                                   nil opts)))
+                                                                   nil (assoc opts :objects-key objects-key))))
                                   (p/resolved nil)
                                   passes))))))))))))))
 
 (defn use-viewer-wasm-viewport!
   "WASM render passes and fixed-scroll DOM sync for the viewer viewport."
-  [page-id page-objects size scale frame-id
+  [page-id page-objects objects-key size scale frame-id
    not-fixed-ref fixed-ref fixed-scroll-layer-ref
    not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids delta]
   (use-fixed-scroll-sync! (some? fixed-scroll-layer-ref) fixed-scroll-layer-ref)
   (let [dpr-key (use-viewer-dpr-key)]
-    (use-viewer-wasm-layers! page-id page-objects size scale frame-id
+    (use-viewer-wasm-layers! page-id page-objects objects-key size scale frame-id
                              not-fixed-ref fixed-ref
                              not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids
                              delta dpr-key)))

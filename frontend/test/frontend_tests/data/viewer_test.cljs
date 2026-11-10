@@ -6,6 +6,7 @@
 
 (ns frontend-tests.data.viewer-test
   (:require
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.viewer :as dv]
    [app.main.router :as rt]
@@ -201,3 +202,173 @@
                                (route-without-page-id))
           navigations (filter #(= :app.main.router/navigate (ptk/type %)) events)]
       (t/is (empty? navigations)))))
+
+;; --- Live updates
+
+(def ^:private file-id
+  (uuid/custom 1 2))
+
+(def ^:private page-id-2
+  (uuid/custom 1 4))
+
+(defn- make-page
+  [pid frame-ids]
+  (let [root   (cts/setup-shape {:id uuid/zero
+                                 :type :frame
+                                 :name "Root"
+                                 :shapes (vec frame-ids)})
+        frames (map #(cts/setup-shape {:id %
+                                       :type :frame
+                                       :name "Board"
+                                       :parent-id uuid/zero
+                                       :frame-id uuid/zero})
+                    frame-ids)]
+    {:id pid
+     :objects (into {uuid/zero root}
+                    (map (juxt :id identity))
+                    frames)}))
+
+(defn- make-file
+  [{:keys [revn vern frames-1 frames-2] :or {revn 5 vern 0}}]
+  {:id file-id
+   :revn revn
+   :vern vern
+   :data {:pages [page-id page-id-2]
+          :pages-index {page-id   (make-page page-id frames-1)
+                        page-id-2 (make-page page-id-2 frames-2)}}})
+
+(defn- live-state
+  [file index]
+  {:route {:params {:query {:page-id (str page-id) :index (str index)}}}
+   :files {file-id file}
+   :viewer {:file file
+            :pages (#'dv/build-viewer-pages file)}})
+
+(defn- hide-board-change
+  [frame-id]
+  {:type :mod-obj
+   :id frame-id
+   :page-id page-id
+   :operations [{:type :set :attr :hide-in-viewer :val true}]})
+
+(defn- refresh-requested?
+  [event]
+  (= ::dv/refresh-requested (ptk/type event)))
+
+(t/deftest file-change-is-applied-to-the-viewer
+  (let [f1      (uuid/custom 1 3)
+        f2      (uuid/custom 1 5)
+        g1      (uuid/custom 1 6)
+        file    (make-file {:frames-1 [f1 f2] :frames-2 [g1]})
+        state   (live-state file 0)
+        message {:file-id file-id
+                 :revn 6
+                 :vern 0
+                 :changes [(hide-board-change f1)]}
+        events  (watch-events (#'dv/handle-file-change message) state)
+        updated (ptk/update (first events) state)]
+
+    (t/is (= 1 (count events)))
+    (t/is (not (refresh-requested? (first events))))
+    (t/is (= 6 (get-in updated [:viewer :file :revn])))
+    (t/is (= 6 (get-in updated [:files file-id :revn])))
+    (t/is (= [f2] (mapv :id (get-in updated [:viewer :pages page-id :frames]))))
+
+    (t/testing "the board being viewed is remembered"
+      (t/is (= f1 (:viewer-sync-frame-id updated))))
+
+    (t/testing "pages not touched by the changes are not calculated again"
+      (t/is (identical? (get-in state [:viewer :pages page-id-2])
+                        (get-in updated [:viewer :pages page-id-2]))))))
+
+(t/deftest file-change-detects-out-of-sync
+  (let [f1    (uuid/custom 1 3)
+        file  (make-file {:frames-1 [f1] :frames-2 []})
+        state (live-state file 0)
+        run   (fn [message]
+                (watch-events (#'dv/handle-file-change
+                               (merge {:file-id file-id :vern 0 :changes []} message))
+                              state))]
+
+    (t/testing "a gap in the revisions refreshes the file"
+      (let [events (run {:revn 8})]
+        (t/is (= 1 (count events)))
+        (t/is (refresh-requested? (first events)))))
+
+    (t/testing "other version of the file refreshes the file"
+      (let [events (run {:revn 6 :vern 1})]
+        (t/is (= 1 (count events)))
+        (t/is (refresh-requested? (first events)))))
+
+    (t/testing "changes already included in the viewer file are ignored"
+      (t/is (empty? (run {:revn 5})))
+      (t/is (empty? (run {:revn 4}))))
+
+    (t/testing "changes of other files are ignored"
+      (t/is (empty? (run {:file-id (uuid/custom 9 9) :revn 6}))))))
+
+(t/deftest file-change-that-cannot-be-applied-refreshes-the-file
+  (let [f1      (uuid/custom 1 3)
+        file    (make-file {:frames-1 [f1] :frames-2 []})
+        state   (live-state file 0)
+        message {:file-id file-id
+                 :revn 6
+                 :vern 0
+                 ;; invalid change: unknown type
+                 :changes [{:type :this-is-not-a-change :page-id page-id}]}
+        events  (watch-events (#'dv/handle-file-change message) state)]
+    (t/is (= 1 (count events)))
+    (t/is (refresh-requested? (first events)))))
+
+(t/deftest changes-of-unknown-pages-are-not-applied
+  (let [f1       (uuid/custom 1 3)
+        file     (make-file {:frames-1 [f1] :frames-2 []})
+        unknown  (uuid/custom 7 7)
+        changes  [(hide-board-change f1)
+                  (assoc (hide-board-change f1) :page-id unknown)]]
+    (t/is (= [(hide-board-change f1)]
+             (#'dv/filter-page-changes file changes)))))
+
+(defn- navigations
+  [events]
+  (into []
+        (comp (filter #(= ::rt/navigate (ptk/type %)))
+              (map deref))
+        events))
+
+(t/deftest current-board-is-tracked-by-id
+  (let [f0 (uuid/custom 1 7)
+        f1 (uuid/custom 1 3)
+        f2 (uuid/custom 1 5)]
+
+    (t/testing "a board added before the current one does not change the board shown"
+      (let [file   (make-file {:frames-1 [f0 f1 f2] :frames-2 []})
+            state  (-> (live-state file 0)
+                       (assoc :viewer-sync-frame-id f1))
+            [nav :as navs] (navigations (watch-events @#'dv/after-file-updated state))]
+        (t/is (= 1 (count navs)))
+        (t/is (= 1 (get-in nav [:params :index])))
+        (t/is (true? (::rt/replace (:options nav))))))
+
+    (t/testing "the board is still in the same position"
+      (let [file  (make-file {:frames-1 [f1 f2] :frames-2 []})
+            state (-> (live-state file 0)
+                      (assoc :viewer-sync-frame-id f1))]
+        (t/is (empty? (navigations (watch-events @#'dv/after-file-updated state))))))
+
+    (t/testing "the current board was removed: stay in range"
+      (let [file  (make-file {:frames-1 [f0] :frames-2 []})
+            state (-> (live-state file 2)
+                      (assoc :viewer-sync-frame-id f2))
+            [nav :as navs] (navigations (watch-events @#'dv/after-file-updated state))]
+        (t/is (= 1 (count navs)))
+        (t/is (= 0 (get-in nav [:params :index])))))))
+
+(t/deftest zoom-is-recalculated-after-an-update
+  (let [f1    (uuid/custom 1 3)
+        file  (make-file {:frames-1 [f1] :frames-2 []})
+        state (-> (live-state file 0)
+                  (assoc :viewer-sync-frame-id f1)
+                  (assoc-in [:viewer-local :zoom-type] :fit))
+        types (mapv ptk/type (remove fn? (watch-events @#'dv/after-file-updated state)))]
+    (t/is (some #{::dv/zoom-to-fit} types))))
