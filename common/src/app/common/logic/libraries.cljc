@@ -1365,13 +1365,33 @@
                 take-position    (ctf/take-position nil libraries objects new-head (:shape-ref replaced) position)
                 position-objects (get-in (meta position) [:container :objects])
                 ;; the head takes the place the replaced child authored
-                placement        (set/intersection (set (:touched replaced)) placement-groups)]
+                placement        (set/intersection (set (:touched replaced)) placement-groups)
+                positioned       (mapv take-position new-shapes)
+                by-id            (d/index-by :id positioned)
+                head             (get by-id (:id new-head))
+                ;; the position's subtree placed like a head that is a plain copy of it
+                placed           (when (and position (not (ctk/swapped? head)))
+                                   (placed-like position-objects position head
+                                                (authored-constraints by-id (cfh/get-children-ids by-id (:id head)))))
+                ;; the shapes that keep their pushed geometry: the head and the subtrees of those that author theirs
+                kept-ids         (into #{(:id head)}
+                                       (comp (filter #(ctk/touched-group? % :geometry-group))
+                                             (mapcat #(cfh/get-children-ids-with-self by-id (:id %))))
+                                       positioned)
+                follow-position  (fn [shape]
+                                   (let [expected (get placed (:shape-ref shape))]
+                                     (if (and expected
+                                              (not (contains? kept-ids (:id shape)))
+                                              (= (:type shape) (:type expected)))
+                                       (merge shape (select-keys expected (cond-> placement-geometry-attrs
+                                                                            (= :path (:type shape)) (conj :content))))
+                                       shape)))]
             (mapv (fn [shape]
-                    (let [shape (cond-> (take-position shape)
+                    (let [shape (cond-> (follow-position shape)
                                   (and (= (:id shape) (:id new-head)) (seq placement))
                                   (update :touched (fnil into #{}) placement))]
                       (author-pushed-content shape (get position-objects (:shape-ref shape)))))
-                  new-shapes))
+                  positioned))
           new-shapes)
 
         ;; the link of a copy shape with its main

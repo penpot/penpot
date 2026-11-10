@@ -2095,6 +2095,14 @@
                        :ops [[:detach 2] [:switch 8] [:text 4] [:switch] [:nest 2] [:rotate] [:switch]
                              [:combine] [:switch 2]]}))))
 
+(t/deftest updating-a-main-with-a-swap-to-its-position-component-places-its-children-like-the-position
+  (t/is (map? (cg/run {:world [1 2 {:variants true :text-styles false :layout :flex :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies false :text false}]
+                       :ops [[:delete] [:add-variant] [:make-variant 1] [:switch 19] [:style 18 29]
+                             [:add-variant] [:add-variant] [:add-variant] [:switch 4] [:transform 0 0 0 7]
+                             [:update-main 22]]}))))
+
 (t/deftest turning-a-flipped-copy-turns-a-child-stored-as-the-other-mirror-turn
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true
