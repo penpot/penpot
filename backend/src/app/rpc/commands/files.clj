@@ -1401,7 +1401,9 @@
   ;; for ever. Rows that still carry a legacy payload without a label are
   ;; garbage that no read path reaches; 0157-migrate-legacy-file-data deletes
   ;; them, so they must keep their date and go with the collector.
-  "UPDATE file_change SET deleted_at = null
+  ;; Every write moves `updated_at`: the delta passes copy the rows whose
+  ;; `updated_at` changed, so a restore that left it stale could be missed.
+  "UPDATE file_change SET deleted_at = null, updated_at = now()
     WHERE file_id = ANY(?::uuid[])
       AND label IS NOT NULL")
 
