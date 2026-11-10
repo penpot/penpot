@@ -179,6 +179,24 @@
                :cause cause)
       true)))
 
+(defn- file-readable?
+  "Non-throwing mirror of the `:subscribe-file` gates: the file must
+  still exist (a soft-deleted row grants nothing) and the profile must
+  read it. Used by the re-checks, where throwing is not an option: the
+  fresh answer is the decision."
+  [cfg profile-id file-id]
+  (and (some? (db/get* cfg :file {:id file-id}))
+       (files/has-read-permissions? cfg profile-id file-id)))
+
+(defn- team-readable?
+  "Non-throwing mirror of the file re-check shape, for teams: the team
+  must still exist (a soft-deleted row grants nothing) and the profile
+  must read it. `:subscribe-team` has no existence gate of its own; the
+  re-check adds one, matching the file side."
+  [cfg profile-id team-id]
+  (and (some? (db/get* cfg :team {:id team-id}))
+       (teams/has-read-permissions? cfg profile-id team-id)))
+
 (defn close-file-subscription
   "Tears down the file subscription held by the connection `wsp`, if it
   is subscribed to `file-id`.
@@ -354,7 +372,7 @@
       (swap! state assoc ::team-subscription subs))
 
     (start-relay wsp channel
-                 #(teams/has-read-permissions? cfg profile-id team-id)
+                 #(team-readable? cfg profile-id team-id)
                  #(close-team-subscription cfg wsp team-id)
                  nil)
 
@@ -378,7 +396,7 @@
       (swap! state assoc ::file-subscription subs))
 
     (start-relay wsp fch
-                 #(files/has-read-permissions? cfg profile-id file-id)
+                 #(file-readable? cfg profile-id file-id)
                  #(close-file-subscription cfg wsp file-id)
                  (fn [{:keys [type]}]
                    (when (or (= :join-file type)
@@ -460,12 +478,12 @@
   "Re-checks every subscription held by the connections of `profile-id`
   and closes the ones that are no longer authorized.
 
-  The event is the trigger, the fresh permission check is the decision.
-  Reusing the same predicates that `:subscribe-file` and
-  `:subscribe-team` authorize with means the watcher needs no second copy
-  of the permission rules: a downgrade to viewer keeps read access and
-  so keeps the subscription, and a non-member organization owner keeps
-  the read-only access it is entitled to.
+  The event is the trigger, the fresh check is the decision.
+  `file-readable?` and `team-readable?` mirror the gates of
+  `:subscribe-file`: resource exists (a soft-deleted row grants
+  nothing) and the profile reads it. The organization-owner fallback
+  keeps a downgrade to viewer and a non-member owner from being mistaken
+  for revocations — but not a soft-deleted resource.
 
   Returns the number of subscriptions it closed."
   [cfg profile-id]
@@ -476,13 +494,13 @@
               fsub (get subs ::file-subscription)
               tsub (get subs ::team-subscription)]
           (when (and fsub
-                     (not (files/has-read-permissions? cfg profile-id
-                                                       (:file-id fsub))))
+                     (not (file-readable? cfg profile-id
+                                          (:file-id fsub))))
             (close-file-subscription cfg wsp (:file-id fsub))
             (vswap! closed inc))
           (when (and tsub
-                     (not (teams/has-read-permissions? cfg profile-id
-                                                       (:team-id tsub))))
+                     (not (team-readable? cfg profile-id
+                                          (:team-id tsub))))
             (close-team-subscription cfg wsp (:team-id tsub))
             (vswap! closed inc)))))
     @closed))

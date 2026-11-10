@@ -546,10 +546,14 @@
     (let [conn (-> (open-registered-connection (:id editor))
                    (subscribe :subscribe-file {:file-id (:id file)}))]
 
-      (th/command! {::th/type :delete-team-member
-                    ::rpc/profile-id (:id owner)
-                    :team-id (:id team)
-                    :member-id (:id editor)})
+      ;; Access is taken away the way an external change would take
+      ;; it: a direct row delete fires no command and publishes no
+      ;; announcement, so the "still subscribed" check cannot race an
+      ;; after-commit hook, and the command's own announcement cannot
+      ;; mask a broken watcher.
+      (db/exec! th/*system*
+                ["delete from team_profile_rel where team_id = ? and profile_id = ?"
+                 (:id team) (:id editor)])
 
       (t/testing "the event is not applied until it is announced"
         (t/is (= (:id file) (subscribed-file conn))))
@@ -1028,6 +1032,35 @@
       (t/testing "a member left behind in the source team loses the subscription"
         (t/is (wait-until #(nil? (subscribed-file conn)) 3000))))))
 
+(t/deftest moving-a-project-closes-source-team-subscriptions
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        editor (th/create-profile* 2 {:is-active true})
+        team-a (th/create-team* 1 {:profile-id (:id owner)})
+        team-b (th/create-team* 2 {:profile-id (:id owner)})]
+    (th/create-team-role* {:team-id (:id team-a)
+                           :profile-id (:id editor)
+                           :role :editor})
+    (let [project-a (th/create-project* 1 {:profile-id (:id owner)
+                                           :team-id (:id team-a)})
+          project-b (th/create-project* 2 {:profile-id (:id owner)
+                                           :team-id (:id team-b)})
+          file      (th/create-file* 1 {:profile-id (:id editor)
+                                        :project-id (:id project-a)})
+          conn      (-> (open-registered-connection (:id editor))
+                        (subscribe :subscribe-file {:file-id (:id file)})
+                        (subscribe :subscribe-team {:team-id (:id team-a)}))]
+
+      (th/command! {::th/type :move-project
+                    ::rpc/profile-id (:id owner)
+                    :team-id (:id team-b)
+                    :project-id (:id project-a)})
+
+      (t/testing "the file subscription drops: the file only lives in team-b now"
+        (t/is (wait-until #(nil? (subscribed-file conn)) 3000)))
+
+      (t/testing "the team subscription survives: the editor is still a member of team-a"
+        (t/is (= (:id team-a) (subscribed-team conn)))))))
+
 (t/deftest close-team-subscription-is-idempotent
   (let [profile (th/create-profile* 1 {:is-active true})
         team    (th/create-team* 1 {:profile-id (:id profile)})
@@ -1126,3 +1159,42 @@
 
         (t/testing "the read-only subscription survives"
           (t/is (some? (subscribed-file conn))))))))
+
+(t/deftest soft-deleted-file-closes-org-owner-subscription
+  (let [{:keys [owner editor team file]} (editor-in-team! 1 2)]
+
+    (let [conn (-> (open-registered-connection (:id editor))
+                   (subscribe :subscribe-file {:file-id (:id file)}))]
+
+      ;; The admin-console flag is off in tests, so Nitrate never grants
+      ;; this; stand in for an organization owner expelled from the team.
+      (with-redefs [nitrate/organization-owner-of-team? (fn [& _] true)]
+        ;; Access is taken away the way an external change would take
+        ;; it: a direct row soft-delete fires no command and publishes no
+        ;; announcement. Membership SQL grants nothing through a deleted
+        ;; file, but the org-owner fallback does not look at deleted_at,
+        ;; so only the existence gate can close the subscription.
+        (db/update! th/*system* :file {:deleted-at (ct/now)} {:id (:id file)})
+
+        (t/testing "revalidation closes the subscription although Nitrate still grants read-only"
+          (t/is (= 1 (ws/revalidate-profile-subscriptions
+                      th/*system* (:id editor)))))
+        (t/testing "the read-only subscription is gone"
+          (t/is (nil? (subscribed-file conn))))))))
+
+(t/deftest soft-deleted-team-closes-org-owner-subscription
+  (let [{:keys [owner editor team file]} (editor-in-team! 1 2)]
+
+    (let [conn (-> (open-registered-connection (:id editor))
+                   (subscribe :subscribe-team {:team-id (:id team)}))]
+
+      ;; Same shape as the file case: the org-owner fallback grants
+      ;; read-only access without looking at the team's deleted_at.
+      (with-redefs [nitrate/organization-owner-of-team? (fn [& _] true)]
+        (db/update! th/*system* :team {:deleted-at (ct/now)} {:id (:id team)})
+
+        (t/testing "revalidation closes the subscription although Nitrate still grants read-only"
+          (t/is (= 1 (ws/revalidate-profile-subscriptions
+                      th/*system* (:id editor)))))
+        (t/testing "the read-only subscription is gone"
+          (t/is (nil? (subscribed-team conn))))))))
