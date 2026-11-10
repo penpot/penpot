@@ -555,7 +555,7 @@
              ;; Retry with team-id and/or organization-id to trigger SSO check
              (st/emit! (dnt/retry-organization-sso {:team-id team-id
                                                     :organization-id organization-id
-                                                    :query-string clean-query-string}))
+                                                    :query-string (rt/token->query-string clean-query-string)}))
              ;; Fallback: just navigate to clean URL
              (st/emit! (rt/nav-raw :uri clean-url)))))]
 

@@ -43,3 +43,19 @@
   (t/is (nil? (rt/match test-routes "")))
   (t/is (nil? (rt/match test-routes "?team-id=team-1")))
   (t/is (nil? (rt/match test-routes "?screen=nope&team-id=team-1"))))
+
+(t/deftest token->query-string-drops-the-separator
+  ;; The history token is `location.search`, so it carries the `?` that
+  ;; separates it from the path; a query string does not carry it.
+  (t/is (= "screen=workspace&team-id=t1"
+           (rt/token->query-string "?screen=workspace&team-id=t1")))
+  (t/is (= "" (rt/token->query-string "?")))
+  ;; A value already without separator is not touched: no double strip.
+  (t/is (= "screen=workspace" (rt/token->query-string "screen=workspace")))
+  (t/is (= "" (rt/token->query-string "")))
+  (t/is (= "" (rt/token->query-string nil))))
+
+(t/deftest get-current-query-string-comes-from-the-current-token
+  (with-redefs [rt/get-current-token (constantly "?screen=workspace&team-id=t1")]
+    (t/is (= "screen=workspace&team-id=t1"
+             (rt/get-current-query-string)))))

@@ -260,9 +260,7 @@
 
 (defn- on-query-navigate
   [router token send-event-info?]
-  (let [token-query  (if (str/starts-with? (or token "") "?")
-                       (subs token 1)
-                       (or token ""))
+  (let [token-query  (rt/token->query-string token)
         query-params (u/query-string->map token-query)
         ;; Without a `screen` the token targets the app root; its params
         ;; (e.g. `template`) are forwarded to the dashboard or kept for
@@ -270,7 +268,7 @@
         root?        (nil? (rt/get-query-param query-params :screen))
         match        (rt/match router token)]
     (if (some? match)
-      (handle-sso-error-and-navigate match send-event-info? (rt/get-current-token))
+      (handle-sso-error-and-navigate match send-event-info? (rt/get-current-query-string))
 
       ;; We just recheck with an additional profile request; this
       ;; avoids some race conditions that causes unexpected redirects

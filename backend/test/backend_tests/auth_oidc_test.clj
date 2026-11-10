@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.http.session :as session]
@@ -665,65 +666,125 @@
 
 (t/deftest build-dest-url-builds-the-destination-on-the-public-uri
   (binding [cf/config {:public-uri "https://penpot.example.com"}]
-    (t/testing "the route token is appended to the public uri"
+    (t/testing "the route is appended to the public uri, separator included"
       (t/is (= "https://penpot.example.com/?screen=workspace&team-id=0e5f"
-               (oidc/build-dest-url "?screen=workspace&team-id=0e5f"))))
+               (oidc/build-dest-url "screen=workspace&team-id=0e5f"))))
 
     (t/testing "the app base path of the public uri is kept"
       (binding [cf/config {:public-uri "https://host/penpot"}]
         (t/is (= "https://host/penpot/?screen=workspace"
-                 (oidc/build-dest-url "?screen=workspace")))))
+                 (oidc/build-dest-url "screen=workspace")))))
 
-    (t/testing "a blank token lands on the public uri"
+    (t/testing "a blank query string lands on the public uri"
       (t/is (= "https://penpot.example.com/" (oidc/build-dest-url "")))
       (t/is (= "https://penpot.example.com/" (oidc/build-dest-url nil))))
 
-    (t/testing "anything that is not a route token is ignored"
-      (t/is (= "https://penpot.example.com/"
-               (oidc/build-dest-url "https://evil.example/")))
-      (t/is (= "https://penpot.example.com/"
-               (oidc/build-dest-url "//evil.example/x"))))
+    (t/testing "a value without params of its own is not a route"
+      (doseq [query-string ["https://evil.example/"
+                            "//evil.example/x"]]
+        (t/is (= "https://penpot.example.com/"
+                 (oidc/build-dest-url query-string)) query-string)))
+
+    (t/testing "the root of the app keeps its params (invitation, template)"
+      (t/is (= "https://penpot.example.com/?template=xyz"
+               (oidc/build-dest-url "template=xyz"))))
+
+    (t/testing "a value that still carries the separator is trimmed"
+      (t/is (= "https://penpot.example.com/?screen=workspace"
+               (oidc/build-dest-url "?screen=workspace"))))
 
     (t/testing "control characters never reach the destination"
-      (let [dest (oidc/build-dest-url "?screen=x\r\nSet-Cookie: a=b")]
+      (let [dest (oidc/build-dest-url "screen=x\r\nSet-Cookie: a=b")]
         (t/is (not (.contains dest "\r")))
         (t/is (not (.contains dest "\n")))))
 
     (t/testing "repeated params are kept"
       (t/is (= "https://penpot.example.com/?a=1&a=2"
-               (oidc/build-dest-url "?a=1&a=2"))))))
+               (oidc/build-dest-url "a=1&a=2"))))))
+
+(def ^:private foreign-dest-urls
+  "Destinations that a naive prefix check would let through: the first one
+   parses the prefix as userinfo, the second one is a look-alike host."
+  ["https://evil.example/"
+   "https://penpot.example.com@evil.example/"
+   "https://penpot.example.com.evil.example/"])
+
+(t/deftest build-organization-sso-auth-redirect-uri-seals-a-server-built-destination
+  (let [cfg      (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        provider {:id "oidc"
+                  :type "oidc"
+                  :client-id "client"
+                  :auth-uri "https://idp.example.com/authorize"
+                  :scopes ["openid"]}
+        sso      {:active true
+                  :issuer "https://idp.example.com"
+                  :organization-id test-organization-id}]
+    (binding [cf/config {:public-uri "https://penpot.example.com"}]
+      (doseq [[query-string expected]
+              [["screen=workspace" "https://penpot.example.com/?screen=workspace"]
+               ["template=xyz" "https://penpot.example.com/?template=xyz"]
+               ["https://evil.example/" "https://penpot.example.com/"]
+               ["" "https://penpot.example.com/"]]]
+        (t/testing (str "the destination sealed for " (pr-str query-string))
+          (let [uri    (oidc/build-organization-sso-auth-redirect-uri
+                        cfg sso
+                        :query-string query-string
+                        :organization-id test-organization-id
+                        :profile-id test-profile-id
+                        :provider provider)
+                claims (tokens/decode cfg (-> (u/uri uri)
+                                              :query
+                                              (u/query-string->map)
+                                              :state))]
+            ;; The destination is always composed by the server: the route
+            ;; of the client, never a URL of its own.
+            (t/is (= expected (:dest-url claims)))
+            (t/is (= test-profile-id (:profile-id claims)))))))))
 
 (t/deftest organization-sso-callback-ignores-a-destination-outside-the-public-uri
-  (t/testing "the success path redirects to the public uri"
-    (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
-          state   (make-state-token cfg {:dest-url "https://evil.example/"
-                                         :organization-id test-organization-id})
-          request (default-request cfg :state state)]
-      (binding [cf/config {:public-uri "https://penpot.example.com"}]
-        (with-redefs [app.nitrate/call                  (constantly {:active true})
-                      app.auth.oidc/prepare-organization-sso-provider (constantly {:type "oidc"})
-                      app.auth.oidc/get-info            (constantly {})]
-          (let [result (#'oidc/callback-handler cfg request)]
-            (t/is (= "https://penpot.example.com/" (redirect-location result))))))))
+  (doseq [dest-url foreign-dest-urls]
+    (t/testing (str "the success path ignores " dest-url)
+      (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+            state   (make-state-token cfg {:dest-url dest-url
+                                           :organization-id test-organization-id})
+            request (default-request cfg :state state)]
+        (binding [cf/config {:public-uri "https://penpot.example.com"}]
+          (with-redefs [app.nitrate/call                  (constantly {:active true})
+                        app.auth.oidc/prepare-organization-sso-provider (constantly {:type "oidc"})
+                        app.auth.oidc/get-info            (constantly {})]
+            (let [result (#'oidc/callback-handler cfg request)]
+              (t/is (= "https://penpot.example.com/" (redirect-location result))))))))
 
-  (t/testing "the error path redirects to the public uri as well"
-    (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
-          state   (make-state-token cfg {:dest-url "https://evil.example/"
-                                         :organization-id test-organization-id})
-          request (default-request cfg :state state)]
-      (binding [cf/config {:public-uri "https://penpot.example.com"}]
-        (with-redefs [app.nitrate/call                  (fn [_cfg method _params]
-                                                          (case method
-                                                            :get-organization-sso {:active true}
-                                                            :get-organization-summary {:name "Organization"}))
-                      app.auth.oidc/prepare-organization-sso-provider (constantly {:type "oidc"})
-                      app.auth.oidc/get-info            (fn [& _]
-                                                          (ex/raise :type :internal
-                                                                    :code :unable-to-retrieve-user-info))]
-          (let [result (#'oidc/callback-handler cfg request)
-                loc    (redirect-location result)]
-            (t/is (not (.contains loc "evil.example")))
-            (t/is (.contains loc "https://penpot.example.com/"))))))))
+    (t/testing (str "the error path ignores " dest-url " as well")
+      (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+            state   (make-state-token cfg {:dest-url dest-url
+                                           :organization-id test-organization-id})
+            request (default-request cfg :state state)]
+        (binding [cf/config {:public-uri "https://penpot.example.com"}]
+          (with-redefs [app.nitrate/call                  (fn [_cfg method _params]
+                                                            (case method
+                                                              :get-organization-sso {:active true}
+                                                              :get-organization-summary {:name "Organization"}))
+                        app.auth.oidc/prepare-organization-sso-provider (constantly {:type "oidc"})
+                        app.auth.oidc/get-info            (fn [& _]
+                                                            (ex/raise :type :internal
+                                                                      :code :unable-to-retrieve-user-info))]
+            (let [result (#'oidc/callback-handler cfg request)
+                  loc    (redirect-location result)]
+              (t/is (not (.contains loc "evil.example")))
+              (t/is (.contains loc "https://penpot.example.com/")))))))))
+
+(t/deftest trusted-dest-url-requires-the-base-path
+  (binding [cf/config {:public-uri "https://host/penpot"}]
+    (t/testing "a destination under the app base path is trusted"
+      (t/is (= "https://host/penpot/?screen=workspace"
+               (#'oidc/trusted-dest-url "https://host/penpot/?screen=workspace"))))
+
+    (t/testing "a destination in another path of the same host is not"
+      (t/is (nil? (#'oidc/trusted-dest-url "https://host/otra/?screen=workspace"))))
+
+    (t/testing "a destination in another host is not"
+      (t/is (nil? (#'oidc/trusted-dest-url "https://otro.example/penpot/?screen=workspace"))))))
 
 (t/deftest organization-sso-callback-does-not-grant-the-sso-entry-to-another-session
   (let [manager (session/inmemory-manager)
@@ -893,7 +954,7 @@
                  {:client-id "test-client"
                   :client-secret "test-secret"
                   :issuer "https://wrong-idp.example.com"}
-                 :query-string "?screen=dashboard"
+                 :query-string "screen=dashboard"
                  :organization-id #uuid "00000000-0000-0000-0000-000000000001")
                 (catch Throwable t t))]
         (t/is (ex/error? e))

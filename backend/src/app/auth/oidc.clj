@@ -690,11 +690,18 @@
                     (assoc :query (u/map->query-string params)))]
      (redirect-response uri))))
 
-(defn- public-uri-base
-  "The public URI, normalized with a trailing slash, as a string. Every URL
-  the server builds starts here, so the app base path is never lost."
+(defn- public-uri
+  "The configured public URI, parsed, with the app base path normalized with
+  a trailing slash."
   []
-  (-> (cf/get :public-uri) u/ensure-path-slash str))
+  (u/ensure-path-slash (u/uri (cf/get :public-uri))))
+
+(defn- public-uri-base
+  "The public URI as a string, with the app base path normalized with a
+  trailing slash. Every URL the server builds starts here, so the app base
+  path is never lost."
+  []
+  (str (public-uri)))
 
 (defn- redirect-with-organization-sso-error
   [{:keys [dest-url organization-id organization-name]}]
@@ -705,31 +712,75 @@
         (u/append-query-param :organization-name organization-name))
       (redirect-response)))
 
+(defn- route-params
+  "The params of `query`, as parsed by the URI helpers (keyword keys). A value
+  that is not a query string but a URL parses into a single key holding the
+  whole thing, so the keys tell one from the other."
+  [query]
+  (u/query-string->map query))
+
+(defn- routable-params?
+  "True when `params` are params of a route: at least one, and no key carries
+  a scheme, a path or a fragment. `screen=workspace&team-id=…` and the root
+  params of the application (`template=…`) qualify; `https://evil.example/`
+  does not."
+  [params]
+  (and (seq params)
+       (every? #(nil? (re-find #"[/:?#]" (name %))) (keys params))))
+
 (defn build-dest-url
   "Return the absolute URL for `query-string` under the current public URI.
 
-  The query string is the application's route token (`?screen=…&params`).
-  It is parsed into params and rendered back, so the destination is always
-  built by the server: the client picks the route, never the origin. A blank
-  query string, or one that does not start with `?`, falls back to the
-  public URI."
+  The query string is the route of the client (`screen=…&params`, and the root
+  of the application may carry only its params, like `template=…`): it does not
+  carry the `?` that separates it from the path, which is put back here, so the
+  destination is always built by the server and the client only picks the route.
+  A value that still comes with the separator is trimmed, so a client bundled
+  before that change keeps its destination.
+
+  The params are parsed and rendered back, so a value that is not a route never
+  becomes a destination: it is ignored with a warning and the user lands on the
+  public URI, which is also where a blank one lands."
   [query-string]
-  (let [base  (public-uri-base)
-        query (str query-string)]
-    (cond
-      (str/blank? query)
-      base
+  (try
+    (let [base  (public-uri-base)
+          query (str query-string)]
+      (if (str/blank? query)
+        base
+        (let [query  (if (str/starts-with? query "?")
+                       (subs query 1)
+                       query)
+              params (route-params query)]
+          (if-not (routable-params? params)
+            (do (l/warn :hint "ignoring a redirect target that is not a route"
+                        :query-string (subs query 0 (min 200 (count query))))
+                base)
+            (let [rendered (u/map->query-string params)]
+              (if (str/blank? rendered)
+                base
+                (str base "?" rendered)))))))
+    (catch Exception e
+      ;; The destination must never break the SSO flow: a query string the
+      ;; server cannot parse lands on the public URI instead.
+      (l/warn :hint "could not build the redirect target" :cause e)
+      (public-uri-base))))
 
-      (not (str/starts-with? query "?"))
-      (do (l/warn :hint "ignoring a redirect target that is not a route token"
-                  :query-string (subs query 0 (min 200 (count query))))
-          base)
+(defn- same-origin?
+  "True when `uri` has the same origin as `base`: scheme, host (case
+  insensitive) and port, with the default port made explicit."
+  [uri base]
+  (let [default-port (fn [scheme] (if (= "https" (str/lower (str scheme))) 443 80))
+        port         (fn [u] (or (:port u) (default-port (:scheme u))))]
+    (and (= (str/lower (str (:scheme uri)))
+            (str/lower (str (:scheme base))))
+         (= (str/lower (str (:host uri)))
+            (str/lower (str (:host base))))
+         (= (port uri) (port base)))))
 
-      :else
-      (let [rendered (u/map->query-string (u/query-string->map (subs query 1)))]
-        (if (str/blank? rendered)
-          base
-          (str base "?" rendered))))))
+(defn- under-base-path?
+  "True when the path of `uri` is under the base path of `base`."
+  [uri base]
+  (str/starts-with? (str (:path uri)) (:path base)))
 
 (defn- trusted-dest-url
   "Return `dest-url` when it points inside the current public URI, nil
@@ -737,12 +788,20 @@
 
   The destination is built by the server (see `build-dest-url`), but state
   tokens minted before that was the case may carry any URL, so the callback
-  checks the destination before redirecting to it."
+  checks the destination before redirecting to it. The check compares the
+  parsed origin, so neither a userinfo prefix
+  (`https://penpot.example.com@evil.example/`) nor a look-alike host
+  (`https://penpot.example.com.evil.example/`) can pass, and it requires
+  the path to be under the base path of the public URI, so the destination
+  stays inside the application."
   [dest-url]
   (when (some? dest-url)
-    (let [dest-url (str dest-url)]
-      (when (str/starts-with? dest-url (public-uri-base))
-        dest-url))))
+    (let [dest (try (u/uri (str dest-url)) (catch Exception _ nil))
+          base (public-uri)]
+      (when (and (some? dest)
+                 (same-origin? dest base)
+                 (under-base-path? dest base))
+        (str dest-url)))))
 
 (defn- redirect-to-register
   [cfg info provider]
@@ -962,8 +1021,9 @@
   "Build the OIDC authorization redirect URI for an organization SSO config.
   Raises if the config is incomplete or OIDC discovery fails.
 
-  `query-string` is the route token of the client (`?screen=…&params`): the
-  destination is built here, so it can never point outside the public URI.
+  `query-string` is the route of the client (`screen=…&params`, the query
+  string proper, without its separator): the destination is built here, so it
+  can never point outside the public URI.
   `profile-id` is the profile that started the flow; it travels in the
   state token so the callback only grants the organization SSO entry to that
   very session."

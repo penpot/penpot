@@ -804,7 +804,7 @@
   [{:keys [organization-id team-id] :as error}]
   (when-not @sso-renewal-pending?
     (vreset! sso-renewal-pending? true)
-    (let [query-string (rt/get-current-token)]
+    (let [query-string (rt/get-current-query-string)]
       (->> (dnt/check-organization-sso
             {:organization-id organization-id
              :team-id team-id
