@@ -9,7 +9,9 @@
    [app.binfile.common :as bfc]
    [app.common.features :as cfeat]
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.migrations :as fmg]
    [app.common.files.tokens :as cfo]
+   [app.common.logging :as l]
    [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
@@ -3253,6 +3255,19 @@
     (t/is (= (:id team)
              (get-in (meta (:result out)) [:app.loggers.audit/props :team-id])))))
 
+(defn- wait-for-log-record
+  "The first captured log record whose message hint is `hint`, waiting up
+  to two seconds because logging is asynchronous."
+  [records hint]
+  (loop [tries 0]
+    (if-let [record (->> @records
+                         (filter #(= hint (get-in % [::l/props :hint])))
+                         (first))]
+      record
+      (when (< tries 200)
+        (Thread/sleep 10)
+        (recur (inc tries))))))
+
 (t/deftest get-team-shared-files-skips-files-that-fail-to-load
   (let [profile  (th/create-profile* 1)
         file1    (th/create-file* 1 {:profile-id (:id profile)
@@ -3268,13 +3283,50 @@
     (doseq [cause [(ex-info "broken file" {:type :assertion})
                    (AssertionError. "point instance expected")
                    (StackOverflowError.)]]
-      (let [broken (fn [cfg id]
-                     (if (= id (:id file1))
-                       (throw cause)
-                       (get-file cfg id)))
-            out    (with-redefs-fn {#'files/get-file-with-summary broken}
-                     #(th/command! {::th/type :get-team-shared-files
-                                    ::rpc/profile-id (:id profile)
-                                    :team-id (:default-team-id profile)}))]
+      (let [records (atom [])
+            broken  (fn [cfg id]
+                      (if (= id (:id file1))
+                        (throw cause)
+                        (get-file cfg id)))
+            out     (try
+                      (add-watch l/log-record ::capture
+                                 (fn [_ _ _ record] (swap! records conj record)))
+                      (with-redefs-fn {#'files/get-file-with-summary broken}
+                        #(th/command! {::th/type :get-team-shared-files
+                                       ::rpc/profile-id (:id profile)
+                                       :team-id (:default-team-id profile)}))
+                      (finally
+                        (remove-watch l/log-record ::capture)))]
         (t/is (th/success? out) (str "skips file failing with " (class cause)))
-        (t/is (= #{(:id file2)} (into #{} (map :id) (:result out))))))))
+        (t/is (= #{(:id file2)} (into #{} (map :id) (:result out))))
+        (t/is (= (str (:id file1))
+                 (some-> (wait-for-log-record records "unable to load shared file")
+                         (get-in [::l/props :file-id])))
+              (str "reports file failing with " (class cause)))))))
+
+(t/deftest get-team-shared-files-repairs-invalid-children-ids
+  ;; A stored shared file that lists nil and a dangling id in :shapes and
+  ;; has not run 0033 yet: the migrations repair it on load, so it is
+  ;; listed instead of skipped.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true})
+        page-id (first (get-in file [:data :pages]))
+        root    [:data :pages-index page-id :objects uuid/zero :shapes]
+        broken  (-> (bfc/get-file th/*system* (:id file) :realize? true)
+                    (update-in root conj nil (str (uuid/next)))
+                    (assoc :migrations (disj fmg/available-migrations
+                                             "0033-normalize-main-instance-names"
+                                             "0036-fix-shape-children-ids")))
+        _       (db/tx-run! th/*system*
+                            (fn [cfg]
+                              (bfc/update-file! cfg broken ::bfc/reset-migrations? true)))
+        out     (th/command! {::th/type :get-team-shared-files
+                              ::rpc/profile-id (:id profile)
+                              :team-id (:default-team-id profile)})]
+
+    (t/is (th/success? out))
+    (t/is (= #{(:id file)} (into #{} (map :id) (:result out))))
+    (t/is (= [] (get-in (bfc/get-file th/*system* (:id file) :realize? true) root))
+          "the repaired data is stored")))
