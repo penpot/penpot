@@ -2516,6 +2516,41 @@
             data
             solos)))
 
+;; The board name and each main's layer name are already normalized.
+;; The library entry could still carry the previous path. Point every
+;; member of the board at that board name.
+(defmethod migrate-data "0039-align-variant-component-names"
+  [data _]
+  (letfn [(align-container [data objects container]
+            (let [board-name         (or (:name container) "")
+                  [path item-name]   (cpn/split-group-name board-name)]
+              (reduce (fn [data child-id]
+                        (let [child     (get objects child-id)
+                              component (when child
+                                          (get-in data [:components (:component-id child)]))]
+                          (if (and (ctk/is-variant? child)
+                                   (= (:id container) (:variant-id child))
+                                   (some? component)
+                                   (= (:id container) (:variant-id component))
+                                   (not= board-name
+                                         (cpn/merge-path-item (:path component) (:name component))))
+                            (update-in data [:components (:id component)]
+                                       assoc :path path :name item-name)
+                            data)))
+                      data
+                      (:shapes container))))
+
+          (containers-in [objects]
+            (filter ctk/is-variant-container? (vals objects)))]
+
+    (reduce (fn [data objects]
+              (reduce #(align-container %1 objects %2)
+                      data
+                      (containers-in objects)))
+            data
+            (concat (map :objects (vals (:pages-index data)))
+                    (map :objects (vals (:components data)))))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2609,4 +2644,5 @@
          "0035-fix-dangling-children"
          "0036-clear-nil-keys-in-objects"
          "0037-fix-shape-svg-attrs-and-defs"
-         "0038-sanitize-variant-property-text"]))
+         "0038-sanitize-variant-property-text"
+         "0039-align-variant-component-names"]))
