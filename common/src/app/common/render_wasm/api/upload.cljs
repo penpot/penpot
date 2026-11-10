@@ -27,6 +27,7 @@
 (def ^:const BASE-PROPS-SIZE 104)
 (def ^:const FLAG-CLIP-CONTENT 0x01)
 (def ^:const FLAG-HIDDEN 0x02)
+(def ^:const FLAG-HIDE-FILL-ON-EXPORT 0x04)
 
 (def ^:const SECTION-CHILDREN 0x01)
 (def ^:const SECTION-BLUR-LAYER 0x02)
@@ -61,9 +62,11 @@
                        (not (get shape :show-content))
                        false)
         hidden       (get shape :hidden false)
+        hide-fill    (get shape :hide-fill-on-export false)
         flags        (cond-> 0
                        clip-content (bit-or FLAG-CLIP-CONTENT)
-                       hidden       (bit-or FLAG-HIDDEN))
+                       hidden       (bit-or FLAG-HIDDEN)
+                       hide-fill    (bit-or FLAG-HIDE-FILL-ON-EXPORT))
         blend-mode   (sr/translate-blend-mode (get shape :blend-mode))
         constraint-h (sr/translate-constraint-h (or (get shape :constraints-h) :none))
         constraint-v (sr/translate-constraint-v (or (get shape :constraints-v) :none))
