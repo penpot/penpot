@@ -22,6 +22,7 @@
    [app.features.fdata :as feat.fdata]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
+   [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
@@ -443,7 +444,7 @@
 ;; MUTATION COMMANDS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare ^:private create-comment-thread)
+(declare ^:private insert-comment-thread)
 
 ;; --- COMMAND: Create Comment Thread
 
@@ -513,15 +514,14 @@
       (assoc :owner-email (:email profile))
       (assoc :owner-photo-id (:photo-id profile))))
 
-(sv/defmethod ::create-comment-thread
-  {::doc/added "1.15"
-   ::webhooks/event? true
-   ::rtry/enabled true
-   ::rtry/when rtry/conflict-exception?
-   ::sm/params schema:create-comment-thread}
-  [cfg {:keys [::rpc/profile-id file-id page-id share-id] :as params}]
-  (files/check-comment-permissions! cfg profile-id file-id share-id)
-
+(defn create-comment-thread
+  "Create a thread with its first message on the page `page-id` of
+  `file-id`, once the quotes of threads and comments allow it. It joins
+  the transaction of `cfg` when there is one: a task created on the canvas
+  gets its thread this way (`app.rpc.commands.files-task`). The caller
+  checks the permissions. Returns the thread with the id of its first
+  message (`:comment-id`)."
+  [cfg {:keys [::rpc/profile-id file-id page-id] :as params}]
   (let [{:keys [team-id project-id] :as file} (get-file cfg file-id page-id)]
     (-> cfg
         (assoc ::quotes/profile-id profile-id)
@@ -531,12 +531,20 @@
         (quotes/check! {::quotes/id ::quotes/comment-threads-per-file}
                        {::quotes/id ::quotes/comments-per-file}))
 
-    (let [params (assoc params ::file file)
-          thread (db/tx-run! cfg create-comment-thread params)]
-
+    (let [thread (db/tx-run! cfg insert-comment-thread (assoc params ::file file))]
       (vary-meta thread assoc ::audit/props (assoc thread :team-id team-id)))))
 
-(defn- create-comment-thread
+(sv/defmethod ::create-comment-thread
+  {::doc/added "1.15"
+   ::webhooks/event? true
+   ::rtry/enabled true
+   ::rtry/when rtry/conflict-exception?
+   ::sm/params schema:create-comment-thread}
+  [cfg {:keys [::rpc/profile-id file-id share-id] :as params}]
+  (files/check-comment-permissions! cfg profile-id file-id share-id)
+  (create-comment-thread cfg params))
+
+(defn- insert-comment-thread
   [{:keys [::db/conn] :as cfg}
    {:keys [::rpc/profile-id ::rpc/request-at ::file position content mentions frame-id
            pull-request-id anchor]}]
@@ -764,7 +772,29 @@
    [:id ::sm/uuid]
    [:share-id {:optional true} [:maybe ::sm/uuid]]])
 
+(def ^:private sql:delete-thread-tasks
+  "UPDATE file_task
+      SET deleted_at = ?,
+          updated_at = ?
+    WHERE thread_id = ?
+      AND deleted_at IS NULL")
+
+(defn- delete-thread-tasks
+  "Delete the tasks of the thread `thread-id`, which live in its messages,
+  and tell the open clients of `file-id` once the transaction commits."
+  [{:keys [::db/conn ::mbus/msgbus]} profile-id file-id thread-id]
+  (let [ts     (ct/now)
+        result (db/exec-one! conn [sql:delete-thread-tasks ts ts thread-id])]
+    (when (pos? (db/get-update-count result))
+      (db/after-commit
+       #(mbus/pub! msgbus
+                   :topic file-id
+                   :message {:type :file-tasks-change
+                             :file-id file-id
+                             :profile-id profile-id})))))
+
 (sv/defmethod ::delete-comment-thread
+  "Delete a thread with its messages and the tasks they hold."
   {::doc/added "1.15"
    ::sm/params schema:delete-comment-thread
    ::db/transaction true}
@@ -775,6 +805,7 @@
       (ex/raise :type :validation
                 :code :not-allowed))
 
+    (delete-thread-tasks cfg profile-id file-id id)
     (db/delete! conn :comment-thread {:id id}
                 {::db/return-keys false})
     nil))

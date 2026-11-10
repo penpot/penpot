@@ -48,11 +48,6 @@
   margin-inline-start: auto;
 }
 
-.push-end-row {
-  display: flex;
-  justify-content: flex-end;
-}
-
 .muted {
   color: var(--color-foreground-secondary);
 }
@@ -173,16 +168,43 @@
   text-transform: uppercase;
 }
 
+// a description reads as the one of a branch (its info dialog): a filled
+// box as high as 400px, which scrolls inside past it, or a dashed one while
+// there is none
 .description {
+  max-block-size: px2rem(400);
+  overflow-y: auto;
   margin: 0;
+  padding: var(--sp-s);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
   color: var(--color-foreground-primary);
   white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.description-empty {
+  margin: 0;
+  padding: var(--sp-s);
+  border-radius: $br-8;
+  border: $b-1 dashed var(--color-background-quaternary);
+  color: var(--color-foreground-secondary);
+  font-style: italic;
 }
 
 .edit-block {
   display: flex;
   flex-direction: column;
   gap: var(--sp-s);
+
+  // the text of the textarea of a branch description, and room to write:
+  // as high as the description may grow while read. Two classes, so it
+  // wins over the DS textarea whatever the order of the styles
+  .description-input {
+    @include use-typography("body-medium");
+
+    min-block-size: px2rem(400);
+  }
 }
 
 .edit-actions {

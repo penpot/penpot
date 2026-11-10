@@ -27,6 +27,7 @@
    [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.product.review-label :refer [review-label*]]
+   [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.hooks :as h]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -921,23 +922,39 @@
            (dom/stop-propagation event)
            (st/emit! (dcm/toggle-comment-options uuid/zero))))
 
+        ;; the tasks of the thread live in its messages and go with it
+        tasks    (mf/deref refs/tasks)
+        tasks?   (mf/with-memo [tasks thread]
+                   (boolean (seq (dwtk/get-tasks-of-thread tasks (:id thread)))))
+
         delete-thread
         (mf/use-fn
+         (mf/deps thread origin tasks?)
          (fn []
            (st/emit! (dcm/close-thread)
-                     (if (= origin :viewer)
+                     (cond
+                       (= origin :viewer)
                        (dcm/delete-comment-thread-on-viewer thread)
+
+                       tasks?
+                       (dcm/delete-comment-thread-on-workspace
+                        thread #(st/emit! (dwtk/fetch-tasks)))
+
+                       :else
                        (dcm/delete-comment-thread-on-workspace thread)))))
 
         on-delete-thread
         (mf/use-fn
+         (mf/deps delete-thread tasks?)
          (fn [event]
            (dom/stop-propagation event)
            (st/emit! (dcm/hide-comment-options))
            (st/emit! (modal/show
                       {:type :confirm
                        :title (tr "modals.delete-comment-thread.title")
-                       :message (tr "modals.delete-comment-thread.message")
+                       :message (if tasks?
+                                  (tr "modals.delete-comment-thread.message-tasks")
+                                  (tr "modals.delete-comment-thread.message"))
                        :accept-label (tr "modals.delete-comment-thread.accept")
                        :on-accept delete-thread}))))
 
@@ -953,9 +970,14 @@
       (tr "labels.comment") " " [:span {:class (stl/css :grayed-text)} "#" (:seqn thread)]]
      [:div {:class (stl/css :floating-thread-header-right)}
       (when (some? thread)
-        [:> checkbox* {:class (stl/css :checkbox-wrapper)
-                       :checked (:is-resolved thread)
-                       :on-change toggle-resolved}])
+        (let [label (if (:is-resolved thread)
+                      (tr "labels.mark-as-unresolved")
+                      (tr "labels.mark-as-resolved"))]
+          [:> tooltip* {:content label :placement "top"}
+           [:div {:class (stl/css :checkbox-wrapper)}
+            [:> checkbox* {:checked (:is-resolved thread)
+                           :aria-label label
+                           :on-change toggle-resolved}]]]))
       (when (= (:id profile) (:id owner))
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "labels.options")

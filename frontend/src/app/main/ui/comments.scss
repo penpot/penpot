@@ -149,8 +149,8 @@
 // after it
 .message {
   padding: var(--sp-s) var(--sp-m);
-  border: $b-1 solid var(--color-background-quaternary);
   border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
 }
 
 .replies {
@@ -317,9 +317,12 @@
   color: var(--color-foreground-primary);
 }
 
+// the same gap as the author of a message, so the checkbox and the menu
+// line up with its buttons
 .floating-thread-header-right {
   display: flex;
   align-items: center;
+  gap: var(--sp-s);
 }
 
 .floating-thread-main {
@@ -342,9 +345,17 @@
   gap: var(--sp-s);
 }
 
-// .checkbox-wrapper {
-//   margin-inline-end: var(--sp-s);
-// }
+// the resolve checkbox takes the box of an icon button, so it lines up
+// with the buttons of the messages under it. The DS checkbox keeps an
+// empty column for its label after the box: centering the whole would move
+// the box to the left, so the box sits at the middle from the start.
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  inline-size: $sz-32;
+  block-size: $sz-32;
+  padding-inline-start: calc(($sz-32 - $sz-16) / 2);
+}
 
 .dropdown-menu {
   position: absolute;

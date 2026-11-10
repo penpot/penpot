@@ -6,6 +6,7 @@
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 @use "ds/typography.scss" as *;
 
 // --- State badges
@@ -275,12 +276,17 @@
   min-block-size: 0;
 }
 
+// the same box as the description of a branch (its info dialog), as high
+// as 400px; a longer one scrolls inside
 .pr-info-description {
+  max-block-size: px2rem(400);
   margin: 0;
+  padding: var(--sp-s);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
   color: var(--color-foreground-primary);
   white-space: pre-wrap;
   overflow-y: auto;
-  padding-inline-end: var(--sp-s);
 
   // user content: long words / urls must never push past the card
   overflow-wrap: anywhere;

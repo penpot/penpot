@@ -6,6 +6,7 @@
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 @use "ds/mixins.scss" as *;
 @use "ds/typography.scss" as *;
 
@@ -209,13 +210,17 @@
   background-color: var(--entry-card-bg-color);
 }
 
+// unfolded, the text grows up to 400px and scrolls inside past it, as the
+// descriptions of the dialogs do
 .clamped-text {
   @include use-typography("body-medium");
 
+  max-block-size: px2rem(400);
   margin: 0;
   color: var(--color-foreground-primary);
   white-space: pre-line;
   overflow-wrap: anywhere;
+  overflow-y: auto;
 }
 
 .is-folded {

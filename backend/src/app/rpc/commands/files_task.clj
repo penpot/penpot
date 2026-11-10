@@ -8,11 +8,13 @@
   "RPC commands for tasks: a piece of work on a file, assigned to someone
   and tied to a layer (see the `file_task` migration).
 
-  A task may come from a comment thread, which stays attached to it, and
-  from a design review. Everybody who can read the file may create a
-  task and move it between states; every move is recorded as an event
-  of the task with who made it, which is what the thread of the task
-  shows between its comments.
+  Every task lives in a message of a comment thread, so its thread can
+  go on: a task made from a message keeps that thread, and a task
+  created on the canvas gets a thread whose first message is its title.
+  A task may also belong to a design review. Everybody who can read the
+  file may create a task and move it between states; every move is
+  recorded as an event of the task with who made it, which is what the
+  thread of the task shows between its comments.
 
   The merge of a branch moves its tasks into main (`move-branch-tasks`,
   called from `app.rpc.commands.files-branch`): the open ones keep going
@@ -32,6 +34,7 @@
    [app.loggers.webhooks :as-alias webhooks]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.comments :as comments]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
@@ -234,14 +237,16 @@
    [:page-id ::sm/uuid]
    [:frame-id ::sm/uuid]
    [:shape-id {:optional true} [:maybe ::sm/uuid]]
-   ;; where its mark goes when it points at no layer
-   [:position {:optional true} [:maybe ::gpt/point]]
+   ;; where its mark goes when it points at no layer, and where its
+   ;; thread sits
+   [:position ::gpt/point]
    [:assignee-id {:optional true} [:maybe ::sm/uuid]]
    ;; the design review the task is created in: an open pull request
    ;; of this file (the branch file it reviews)
    [:pull-request-id {:optional true} [:maybe ::sm/uuid]]
    ;; the comment thread the task comes from, which stays attached, and
-   ;; the message of that thread it was made from
+   ;; the message of that thread it was made from; without them the
+   ;; task gets a thread of its own
    [:thread-id {:optional true} [:maybe ::sm/uuid]]
    [:comment-id {:optional true} [:maybe ::sm/uuid]]])
 
@@ -283,16 +288,36 @@
                 :hint "the comment already has a task"
                 :comment-id comment-id))))
 
+(defn- create-task-thread
+  "The thread of a task created on the canvas: its first message is the
+  title, it points at the layer of the task (at the spot of the canvas
+  when there is none) and belongs to the design review of the task."
+  [cfg profile-id {:keys [file-id title page-id frame-id shape-id position pull-request-id]}]
+  (comments/create-comment-thread
+   cfg
+   (cond-> {::rpc/profile-id profile-id
+            ::rpc/request-at (ct/now)
+            :file-id file-id
+            :page-id page-id
+            :frame-id frame-id
+            :position position
+            :content title
+            :anchor (if (some? shape-id)
+                      {:type :layer :shape-id shape-id}
+                      {:type :canvas})}
+     (some? pull-request-id) (assoc :pull-request-id pull-request-id))))
+
 (sv/defmethod ::create-task
-  "Create an open task on a file. A task created from a message of a
-  comment thread keeps the thread attached; a task created in a design
-  review belongs to it. The assignee, when there is one, must be a member of the team
-  and is told by email."
+  "Create an open task on a file, in a message of a comment thread: the
+  message it was made from (`thread-id` and `comment-id`), or the first
+  message of a new thread that carries its title. A task created in a
+  design review belongs to it. The assignee, when there is one, must be
+  a member of the team and is told by email."
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:create-task}
   [cfg {:keys [::rpc/profile-id file-id title page-id frame-id shape-id position assignee-id
-               pull-request-id thread-id comment-id]}]
+               pull-request-id thread-id comment-id] :as params}]
   (check-tasks-enabled)
   (when (str/blank? title)
     (ex/raise :type :validation
@@ -314,14 +339,16 @@
            _       (when comment-id
                      (check-comment conn comment-id thread-id))
            _       (check-assignee conn team-id assignee-id)
+           thread  (when (nil? thread-id)
+                     (create-task-thread cfg profile-id (update params :title str/trim)))
            ts      (ct/now)
            task    {:id (uuid/next)
                     :position position
                     :file-id file-id
                     :pull-request-id pull-request-id
                     :review-title (:title review)
-                    :thread-id thread-id
-                    :comment-id comment-id
+                    :thread-id (or thread-id (:id thread))
+                    :comment-id (or comment-id (:comment-id thread))
                     :title (str/trim title)
                     :status "open"
                     :assignee-id assignee-id
@@ -332,8 +359,7 @@
                     :created-at ts
                     :updated-at ts}]
        (db/insert! conn :file-task
-                   (cond-> task
-                     (some? position) (assoc :position (db/pgpoint position)))
+                   (assoc task :position (db/pgpoint position))
                    {::db/return-keys false})
        (insert-event conn (:id task) profile-id "created" nil)
        (when (some? assignee-id)
@@ -555,7 +581,8 @@
    [:id ::sm/uuid]])
 
 (sv/defmethod ::delete-task
-  "Delete a task. Its comment thread, when it has one, stays."
+  "Delete a task. Its thread stays: the message the task lived in goes
+  on as a plain comment."
   {::doc/added "2.16"
    ::sm/params schema:delete-task}
   [cfg {:keys [::rpc/profile-id id]}]
@@ -613,6 +640,7 @@
   "SELECT * FROM file_task
     WHERE file_id = ?
       AND deleted_at IS NULL
+    ORDER BY created_at ASC
       FOR UPDATE")
 
 (def ^:private sql:lock-thread-seqn

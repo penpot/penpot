@@ -6,8 +6,11 @@
 
 (ns frontend-tests.ui.review-details-test
   (:require
+   [app.main.data.workspace.review :as dwrv]
+   [app.main.ui.workspace.review.common :as rvc]
    [app.main.ui.workspace.review.details :as details]
-   [cljs.test :as t :include-macros true]))
+   [cljs.test :as t :include-macros true]
+   [potok.v2.core :as ptk]))
 
 (def ^:private display-attr @#'details/display-attr)
 
@@ -28,3 +31,13 @@
   (let [[_ before after] (display-attr :opacity [0.5 1] [{:fill "a"} {:fill "b"}])]
     (t/is (= 0.5 before))
     (t/is (= 1 after))))
+
+(t/deftest the-tasks-filter-keeps-one-state-or-all
+  (let [state (ptk/update (dwrv/set-task-status-filter "verified") {})]
+    (t/is (= "verified" (get-in state [:workspace-review-local :task-status-filter])))
+    (t/is (= :all (-> (ptk/update (dwrv/set-task-status-filter :all) state)
+                      (get-in [:workspace-review-local :task-status-filter]))))))
+
+(t/deftest every-task-state-has-its-colour
+  (t/is (= ["info" "success" "warning" "purple" "error"]
+           (mapv rvc/status-tone dwrv/task-statuses))))

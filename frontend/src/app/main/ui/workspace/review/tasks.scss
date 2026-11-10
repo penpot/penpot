@@ -38,8 +38,11 @@
   align-items: flex-start;
   gap: var(--sp-s);
   padding: var(--sp-s);
+
+  // outlined on the background of the thread, apart from its messages,
+  // which are filled
+  border: $b-1 solid var(--color-background-quaternary);
   border-radius: $br-8;
-  background-color: var(--color-background-tertiary);
   color: var(--task-event-fg-color);
 
   &.is-warning {
@@ -272,14 +275,6 @@
   gap: var(--sp-m);
   padding: var(--sp-m);
   overflow-y: auto;
-}
-
-.task-title {
-  margin: 0;
-  padding: var(--sp-s) var(--sp-m);
-  border: $b-1 solid var(--color-background-quaternary);
-  border-radius: $br-8;
-  overflow-wrap: anywhere;
 }
 
 // --- New task form

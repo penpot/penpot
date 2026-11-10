@@ -162,7 +162,8 @@
 (defn update-pull-request-snapshot
   "Publish the branch's current state to the reviewers (repositions the
   review snapshot). When the branch is the currently open file, pending
-  local changes are force-persisted first."
+  local changes are force-persisted first. Once published, the review
+  open in the workspace learns it is up to date."
   [id]
   (assert (uuid? id) "expected valid uuid for `id`")
   (ptk/reify ::update-pull-request-snapshot
@@ -181,7 +182,8 @@
                  (rx/of (if updated
                           (ntf/success (tr "workspace.pull-requests.publish.success"))
                           (ntf/info (tr "workspace.pull-requests.publish.up-to-date")))
-                        (fetch-pull-requests))))
+                        (fetch-pull-requests)
+                        (refresh-pull-request-preview-info id))))
               (rx/catch
                (fn [_]
                  (rx/of (ntf/error (tr "workspace.pull-requests.lifecycle.error")))))))))))

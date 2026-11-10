@@ -34,6 +34,7 @@
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.ds.product.avatar :refer [avatar*]]
    [app.main.ui.ds.product.progress-bar :refer [progress-bar*]]
+   [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -527,8 +528,12 @@
 (mf/defc pr-review-banner*
   "The bar at the bottom of the canvas inside a design review: the review
   being reviewed, the progress of its tasks, its details, the verdict of
-  the reviewer and the way out. The review is read-only; merging,
-  publishing the branch and cancelling the review sit behind the menu."
+  the reviewer and the way out. The review is read-only; merging and
+  cancelling the review sit behind the menu.
+
+  When the branch moved past what the review shows, its author gets the
+  button that publishes the latest changes; everybody else gets a badge
+  that says the branch has changes they cannot see yet."
   []
   (let [preview    (mf/deref refs/pull-request-preview)
         pr         (:info preview)
@@ -540,6 +545,7 @@
         can-merge? (boolean (get-in team [:permissions :can-edit]))
         can-cancel? (and (or author? (boolean (get-in team [:permissions :is-admin])))
                          (= "open" (:status pr)))
+        outdated?  (boolean (:outdated pr))
 
         tasks      (mf/with-memo [tasks* pr]
                      (filterv #(= (:id pr) (:pull-request-id %)) (vals tasks*)))
@@ -563,6 +569,11 @@
         on-exit
         (mf/use-fn #(st/emit! (dwpr/exit-pull-request-preview)))
 
+        on-publish
+        (mf/use-fn
+         (mf/deps pr)
+         #(st/emit! (dwpr/update-pull-request-snapshot (:id pr))))
+
         on-menu-action
         (mf/use-fn
          (mf/deps pr)
@@ -570,8 +581,6 @@
            (reset! menu-open* false)
            (case action
              "compare" (open-compare! pr)
-             "publish" (st/emit! (dwpr/update-pull-request-snapshot (:id pr))
-                                 (dwpr/refresh-pull-request-preview-info (:id pr)))
              "merge"   (confirm-merge! pr)
              "cancel"  (confirm-close! pr)
              nil)))]
@@ -587,9 +596,12 @@
          [:span {:class (stl/css :pr-banner-title)}
           (tr "workspace.pull-requests.banner.reviewing")]
          [:span {:class (stl/css :pr-banner-name)} (:title pr)]
-         (when (:outdated pr)
-           [:span {:class (stl/css :pr-badge :badge-outdated)}
-            (tr "workspace.pull-requests.badge.outdated")])]
+         ;; the author publishes them with the button instead
+         (when (and outdated? (not author?))
+           [:> tooltip* {:content (tr "workspace.pull-requests.badge.outdated-hint")
+                         :placement "top"}
+            [:span {:class (stl/css :pr-badge :badge-outdated)}
+             (tr "workspace.pull-requests.badge.outdated")]])]
 
         [:div {:class (stl/css :pr-banner-separator)}]
 
@@ -609,6 +621,11 @@
         [:div {:class (stl/css :pr-banner-actions)}
          [:> button* {:variant "secondary" :on-click on-details}
           (tr "workspace.review.bar.details")]
+         (when (and outdated? author?)
+           [:> tooltip* {:content (tr "workspace.pull-requests.banner.publish-hint")
+                         :placement "top"}
+            [:> button* {:variant "primary" :on-click on-publish}
+             (tr "workspace.pull-requests.banner.publish")]])
          (when reviewer?
            [:> button* {:variant "primary" :on-click on-review}
             (tr "workspace.review.submit")])
@@ -630,9 +647,6 @@
                                         :on-click on-toggle-menu}])}
            [:> menu-item* {:id "compare"}
             (tr "workspace.branches.compare")]
-           (when (and author? (:outdated pr))
-             [:> menu-item* {:id "publish"}
-              (tr "workspace.pull-requests.banner.publish")])
            (when can-merge?
              [:> menu-item* {:id "merge"}
               (tr "workspace.pull-requests.actions.merge")])

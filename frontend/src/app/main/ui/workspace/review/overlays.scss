@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
 @use "ds/_utils.scss" as *;
 @use "ds/typography.scss" as *;
 
@@ -72,9 +73,11 @@
   }
 }
 
+// right above the review bar (`.pr-banner`): its offset from the bottom,
+// its height (the buttons, its padding and its border) and a small gap
 .navigator {
   position: absolute;
-  inset-block-end: px2rem(88);
+  inset-block-end: calc(var(--sp-m) + #{$sz-32} + var(--sp-s) * 2 + #{$b-2} * 2 + var(--sp-s));
   inset-inline-start: 50%;
   transform: translateX(-50%);
   display: flex;

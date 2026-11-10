@@ -20,6 +20,16 @@
   (or (get-in profiles [profile-id :fullname])
       (tr "workspace.review.unknown-name")))
 
+(defn status-tone
+  "The tone a task in `status` is drawn in, the colour of its state."
+  [status]
+  (case status
+    "done"     "success"
+    "reopened" "warning"
+    "verified" "purple"
+    "wont-do"  "error"
+    "info"))
+
 (defn status-label
   [status]
   (case status

@@ -3274,6 +3274,14 @@ msgstr "Entrar"
 msgid "labels.logout"
 msgstr "Salir"
 
+#: src/app/main/ui/comments.cljs
+msgid "labels.mark-as-resolved"
+msgstr "Marcar como resuelto"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.mark-as-unresolved"
+msgstr "Marcar como no resuelto"
+
 #: src/app/main/ui/onboarding/questions.cljs:86
 msgid "labels.marketing"
 msgstr "Marketing"
@@ -3984,6 +3992,12 @@ msgid "modals.delete-comment-thread.message"
 msgstr ""
 "¿Seguro que quieres eliminar esta conversación? Todos los comentarios en "
 "este hilo serán eliminados."
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.message-tasks"
+msgstr ""
+"¿Seguro que quieres eliminar esta conversación? Todos los comentarios en "
+"este hilo y sus tareas serán eliminados."
 
 #: src/app/main/ui/comments.cljs:939
 msgid "modals.delete-comment-thread.title"
@@ -10203,9 +10217,28 @@ msgstr "Los autoguardados duran %s días."
 msgid "workspace.pull-requests.header-label"
 msgstr "Revisión:"
 
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
+msgid "workspace.pull-requests.badge.outdated"
+msgstr "Cambios sin publicar"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
+msgid "workspace.pull-requests.badge.outdated-hint"
+msgstr ""
+"La rama tiene cambios que los reviewers aún no ven. Al fusionar se incluyen."
+
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:623
 msgid "workspace.pull-requests.banner.cancel"
 msgstr "Cancelar revisión"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
+msgid "workspace.pull-requests.banner.publish"
+msgstr "Publicar últimos cambios"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
+msgid "workspace.pull-requests.banner.publish-hint"
+msgstr ""
+"Los reviewers verán los últimos cambios de la rama. Las aprobaciones dadas "
+"hasta ahora se tendrán que renovar."
 
 msgid "mcp.oauth.access"
 msgstr "Este cliente puede leer y modificar diseños mediante conexiones MCP establecidas desde Penpot."
@@ -10705,6 +10738,10 @@ msgstr "Título tomado del comentario. El hilo queda unido a la tarea."
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.new-task"
 msgstr "Nueva tarea"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.new-task.hint"
+msgstr "El título es el primer mensaje de su hilo, donde todos pueden seguir comentando."
 
 #: src/app/main/ui/workspace/review/overlays.cljs
 msgid "workspace.tasks.relink.link-to"

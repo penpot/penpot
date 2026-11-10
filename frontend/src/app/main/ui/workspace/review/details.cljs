@@ -89,23 +89,30 @@
       [:> heading* {:level 3 :typography t/body-small :class (stl/css :section-title)}
        (tr "workspace.pull-requests.info.description")]
       (when (and can-edit (not editing?))
-        [:> link-button* {:on-click on-edit}
+        [:> button* {:variant "ghost" :on-click on-edit}
          (tr "labels.edit")])]
-     (if editing?
+     ;; the same look as the description of a branch (its info dialog)
+     (cond
+       editing?
        [:div {:class (stl/css :edit-block)}
-        [:> textarea* {:value value
+        [:> textarea* {:class (stl/css :description-input)
+                       :value value
                        :rows 3
                        :max-length 4000
                        :auto-focus true
                        :aria-label (tr "workspace.pull-requests.info.description")
                        :on-change on-change}]
         [:div {:class (stl/css :edit-actions)}
-         [:> button* {:variant "ghost" :on-click on-cancel} (tr "labels.cancel")]
+         [:> button* {:variant "secondary" :on-click on-cancel} (tr "labels.cancel")]
          [:> button* {:variant "primary" :on-click on-save} (tr "labels.save")]]]
-       [:> text* {:as "p" :typography t/body-small :class (stl/css :description)}
-        (if (str/blank? (:description pr))
-          (tr "workspace.review.details.no-description")
-          (:description pr))])]))
+
+       (str/blank? (:description pr))
+       [:> text* {:as "p" :typography t/body-medium :class (stl/css :description-empty)}
+        (tr "workspace.review.details.no-description")]
+
+       :else
+       [:> text* {:as "p" :typography t/body-medium :class (stl/css :description)}
+        (:description pr)])]))
 
 (defn- verdict-label
   [{:keys [state stale]}]
@@ -519,30 +526,62 @@
 ;; --- Tasks
 
 (mf/defc tasks-tab*
+  "The tasks of the review: filters by state, as the activity has by kind
+  of change, how many are closed and the list. With every state shown,
+  the closed tasks fold under the open ones."
   {::mf/private true}
   [{:keys [tasks]}]
-  (let [closed-open* (mf/use-state false)
+  (let [local        (mf/deref refs/review-local)
+        status       (get local :task-status-filter :all)
+        closed-open* (mf/use-state false)
         closed-open? (deref closed-open*)
         counts       (frequencies (map :status tasks))
         open-tasks   (remove dwtk/closed? tasks)
         closed-tasks (filter dwtk/closed? tasks)
+        shown        (mf/with-memo [tasks status]
+                       (filterv #(= status (:status %)) tasks))
 
-        on-toggle    (mf/use-fn #(swap! closed-open* not))
-        on-new       (mf/use-fn #(st/emit! (modal/hide) (dwrv/set-tool :task)))]
+        on-filter
+        (mf/use-fn
+         (fn [event]
+           (let [value (-> (dom/get-current-target event) (dom/get-data "filter"))]
+             (st/emit! (dwrv/set-task-status-filter
+                        (if (= "all" value) :all value))))))
+
+        on-toggle    (mf/use-fn #(swap! closed-open* not))]
 
     [:div {:class (stl/css :tab-body)}
      [:div {:class (stl/css :tasks-head)}
-      [:> text* {:as "span" :typography t/body-small :class (stl/css :strong)}
-       (tr "workspace.tasks.closed-of" (count closed-tasks) (count tasks))]
       [:div {:class (stl/css :filters)}
-       (for [status ["open" "done" "reopened" "verified" "wont-do"]]
-         [:> task-status* {:key status
-                           :status status
-                           :label (tr "workspace.review.label-count" (rvc/status-label status) (get counts status 0))}])]]
+       [:> filter-chip* {:label (tr "workspace.review.label-count"
+                                    (tr "workspace.review.activity.all")
+                                    (count tasks))
+                         :is-selected (= :all status)
+                         :data-filter "all"
+                         :on-click on-filter}]
+       (for [id dwrv/task-statuses]
+         [:> filter-chip* {:key id
+                           :label (tr "workspace.review.label-count"
+                                      (rvc/status-label id)
+                                      (get counts id 0))
+                           :tone (rvc/status-tone id)
+                           :is-selected (= status id)
+                           :data-filter id
+                           :on-click on-filter}])]
+      [:> text* {:as "span" :typography t/body-small :class (stl/css :strong)}
+       (tr "workspace.tasks.closed-of" (count closed-tasks) (count tasks))]]
      [:> progress-bar* {:value (count closed-tasks) :total (count tasks) :class (stl/css :wide-bar)}]
 
-     (if (empty? tasks)
+     (cond
+       (empty? tasks)
        [:> empty-state* {:icon i/view-as-list :text (tr "workspace.tasks.empty")}]
+
+       (not= :all status)
+       (if (empty? shown)
+         [:> empty-state* {:icon i/view-as-list :text (tr "workspace.tasks.empty")}]
+         [:> rvt/task-list* {:tasks shown}])
+
+       :else
        [:*
         [:> rvt/task-list* {:tasks (vec open-tasks)}]
         (when (seq closed-tasks)
@@ -554,11 +593,7 @@
                              :on-click on-toggle}
             (tr "workspace.review.details.closed" (count closed-tasks))]
            (when closed-open?
-             [:> rvt/task-list* {:tasks (vec closed-tasks)}])])])
-
-     [:div {:class (stl/css :push-end-row)}
-      [:> link-button* {:icon i/add :on-click on-new}
-       (tr "workspace.tasks.new-task")]]]))
+             [:> rvt/task-list* {:tasks (vec closed-tasks)}])])])]))
 
 ;; --- Dialog
 

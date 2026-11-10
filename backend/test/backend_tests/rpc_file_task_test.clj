@@ -91,6 +91,7 @@
   (th/command! (merge {::th/type :create-task
                        ::rpc/profile-id (:id profile)
                        :frame-id uuid/zero
+                       :position (gpt/point 0)
                        :title "Use the secondary token on the pay button"}
                       params)))
 
@@ -276,11 +277,14 @@
         (t/is (= "Checkout redesign"
                  (:review-title (th/db-get :file-task {:id (:id open)})))))
 
-      (let [moved (th/db-get :comment-thread {:id (:id thread)})]
-        (t/is (= (:id file) (:file-id moved)))
-        (t/is (= 2 (:seqn moved)))
-        (t/is (= 2 (:comment-thread-seqn (th/db-get :file {:id (:id file)}
-                                                    {::db/remove-deleted false}))))))))
+      (t/testing "the threads move with their tasks and take the next numbers of main"
+        (let [moved  (th/db-get :comment-thread {:id (:id thread)})
+              closed (th/db-get :comment-thread {:id (:thread-id closed)})]
+          (t/is (= (:id file) (:file-id moved)))
+          (t/is (= (:id file) (:file-id closed)))
+          (t/is (= [2 3] [(:seqn moved) (:seqn closed)]))
+          (t/is (= 3 (:comment-thread-seqn (th/db-get :file {:id (:id file)}
+                                                      {::db/remove-deleted false})))))))))
 
 (t/deftest each-message-of-a-thread-may-be-a-task
   (with-redefs [cf/flags flags]
@@ -346,3 +350,72 @@
         (t/is (= {:x 120.0 :y 340.0} (into {} (:position row)))))
       (t/testing "a move of its state answers with the task"
         (t/is (nil? (:error (set-status* author (:id task) "done"))))))))
+
+(t/deftest task-created-on-the-canvas-gets-a-thread
+  (with-redefs [cf/flags flags
+                eml/send (fn [_ _] nil)]
+    (let [{:keys [author reviewer page-id rect-id branch-file-id review]} (setup-review)
+          out  (create-task* reviewer {:file-id branch-file-id
+                                       :page-id page-id
+                                       :shape-id rect-id
+                                       :position (gpt/point 30 40)
+                                       :title "  Use the secondary token  "
+                                       :pull-request-id (:id review)})
+          task (:result out)]
+      (t/is (nil? (:error out)))
+      (t/is (some? (:thread-id task)))
+      (t/is (some? (:comment-id task)))
+
+      (t/testing "the thread points at the layer of the task, in its review"
+        (let [thread (th/db-get :comment-thread {:id (:thread-id task)})]
+          (t/is (= branch-file-id (:file-id thread)))
+          (t/is (= (:id reviewer) (:owner-id thread)))
+          (t/is (= (:id review) (:pull-request-id thread)))
+          (t/is (= "layer" (:anchor-type thread)))
+          (t/is (= rect-id (:shape-id thread)))))
+
+      (t/testing "its first message is the title and holds the task"
+        (let [[message] (:result (th/command! {::th/type :get-comments
+                                               ::rpc/profile-id (:id author)
+                                               :thread-id (:thread-id task)}))]
+          (t/is (= (:comment-id task) (:id message)))
+          (t/is (= "Use the secondary token" (:content message)))))
+
+      (t/testing "anybody can go on commenting in it"
+        (let [out (th/command! {::th/type :create-comment
+                                ::rpc/profile-id (:id author)
+                                :thread-id (:thread-id task)
+                                :content "On it"})]
+          (t/is (nil? (:error out)))
+          (t/is (= 2 (count (th/db-query :comment {:thread-id (:thread-id task)})))))))))
+
+(t/deftest task-on-the-empty-canvas-gets-a-thread-on-its-spot
+  (with-redefs [cf/flags flags]
+    (let [{:keys [author page-id branch-file-id]} (setup-review)
+          task   (:result (create-task* author {:file-id branch-file-id
+                                                :page-id page-id
+                                                :position (gpt/point 120 340)}))
+          thread (th/db-get :comment-thread {:id (:thread-id task)})]
+      (t/is (= "canvas" (:anchor-type thread)))
+      (t/is (nil? (:shape-id thread)))
+      (t/is (nil? (:pull-request-id thread)))
+      (t/is (= {:x 120.0 :y 340.0} (into {} (db/decode-pgpoint (:position thread))))))))
+
+(t/deftest deleting-a-thread-deletes-its-tasks
+  (with-redefs [cf/flags flags]
+    (let [{:keys [author page-id branch-file-id]} (setup-review)
+          task  (:result (create-task* author {:file-id branch-file-id :page-id page-id}))
+          other (:result (create-task* author {:file-id branch-file-id
+                                               :page-id page-id
+                                               :title "Another one"}))
+          out   (th/command! {::th/type :delete-comment-thread
+                              ::rpc/profile-id (:id author)
+                              :id (:thread-id task)})]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (th/db-get :comment-thread {:id (:thread-id task)})))
+      (t/is (some? (:deleted-at (th/db-get :file-task {:id (:id task)}
+                                           {::db/remove-deleted false}))))
+      (t/is (= [(:id other)]
+               (mapv :id (:result (th/command! {::th/type :get-file-tasks
+                                                ::rpc/profile-id (:id author)
+                                                :file-id branch-file-id}))))))))

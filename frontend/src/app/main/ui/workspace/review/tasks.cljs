@@ -527,55 +527,13 @@
         (tr "workspace.tasks.assigned-to" (rvc/profile-name profiles (:assignee-id task)))
         (tr "workspace.tasks.unassigned"))]]))
 
-;; --- A task without a thread, open on the canvas
-
-(mf/defc task-panel*
-  "A task that has no comment thread, open on the canvas next to its
-  mark: its title, state, what happened to it and what to do next."
-  [{:keys [task style class]}]
-  (let [data    (mf/deref refs/workspace-data)
-        objects (page-objects data (:page-id task))
-        events  (use-task-events (:id task))
-
-        on-close
-        (mf/use-fn #(st/emit! (dwtk/close-task)))
-
-        on-key-down
-        (mf/use-fn
-         (fn [event]
-           (when (kbd/esc? event)
-             (dom/stop-propagation event)
-             (st/emit! (dwtk/close-task)))))]
-
-    [:div {:class [class (stl/css :floating-panel)]
-           :style style
-           :role "dialog"
-           :aria-label (:title task)
-           :on-key-down on-key-down
-           :on-click dom/stop-propagation}
-     [:div {:class (stl/css :floating-header)}
-      [:> text* {:as "span" :typography t/body-small :class (stl/css :floating-title)}
-       (tr "workspace.review.text-and-detail"
-           (tr "workspace.tasks.task")
-           (rvc/board-name objects (:frame-id task)))]
-      [:> task-menu* {:task task}]
-      [:> icon-button* {:variant "ghost"
-                        :icon i/close
-                        :aria-label (tr "labels.close")
-                        :on-click on-close}]]
-     [:div {:class (stl/css :floating-body)}
-      [:> task-state-line* {:task task}]
-      [:> text* {:as "p" :typography t/body-medium :class (stl/css :task-title)} (:title task)]
-      (for [event events]
-        [:> task-event* {:key (dm/str (:id event)) :event event}])
-      [:> task-next-step* {:task task}]]]))
-
 ;; --- A new task
 
 (mf/defc new-task-form*
   "The form of a new task, next to the layer it is linked to. From a
   message of a thread it is \"Make it a task\": the title comes from the
-  message and the thread stays attached to the task."
+  message, which the task lives in. Any other task gets a thread whose
+  first message is its title."
   [{:keys [params style class]}]
   (let [data      (mf/deref refs/workspace-data)
         objects   (page-objects data (:page-id params))
@@ -645,9 +603,10 @@
                      :aria-label (tr "workspace.tasks.title")
                      :placeholder (tr "workspace.tasks.title-placeholder")
                      :on-change on-title-change}]
-      (when thread?
-        [:> text* {:as "p" :typography t/body-small :class (stl/css :form-hint)}
-         (tr "workspace.tasks.make-task.hint")])
+      [:> text* {:as "p" :typography t/body-small :class (stl/css :form-hint)}
+       (if thread?
+         (tr "workspace.tasks.make-task.hint")
+         (tr "workspace.tasks.new-task.hint"))]
       [:div {:class (stl/css :form-row)}
        [:> text* {:as "span" :typography t/body-small :class (stl/css :form-label)}
         (tr "workspace.tasks.assignee")]

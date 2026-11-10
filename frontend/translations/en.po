@@ -3247,6 +3247,14 @@ msgstr "Login"
 msgid "labels.logout"
 msgstr "Logout"
 
+#: src/app/main/ui/comments.cljs
+msgid "labels.mark-as-resolved"
+msgstr "Mark as resolved"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.mark-as-unresolved"
+msgstr "Mark as unresolved"
+
 #: src/app/main/ui/onboarding/questions.cljs:86
 msgid "labels.marketing"
 msgstr "Marketing"
@@ -3949,6 +3957,12 @@ msgid "modals.delete-comment-thread.message"
 msgstr ""
 "Are you sure you want to delete this conversation? All comments in this "
 "thread will be deleted."
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.message-tasks"
+msgstr ""
+"Are you sure you want to delete this conversation? All comments in this "
+"thread and the tasks they hold will be deleted."
 
 #: src/app/main/ui/comments.cljs:939
 msgid "modals.delete-comment-thread.title"
@@ -9695,7 +9709,12 @@ msgstr "%s conflicts"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:356, src/app/main/ui/workspace/sidebar/pull_requests.cljs:534, src/app/main/ui/workspace/sidebar/pull_requests.cljs:719
 msgid "workspace.pull-requests.badge.outdated"
-msgstr "New changes on branch"
+msgstr "Unpublished changes"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
+msgid "workspace.pull-requests.badge.outdated-hint"
+msgstr ""
+"The branch has changes the reviewers can't see yet. Merging includes them."
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:623
 msgid "workspace.pull-requests.banner.cancel"
@@ -9708,6 +9727,12 @@ msgstr "Exit review"
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:742
 msgid "workspace.pull-requests.banner.publish"
 msgstr "Publish latest changes"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
+msgid "workspace.pull-requests.banner.publish-hint"
+msgstr ""
+"Reviewers will see the latest changes of the branch. Approvals given so far "
+"will have to be renewed."
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:748
 msgid "workspace.pull-requests.banner.review"
@@ -12622,6 +12647,10 @@ msgstr "Title taken from the comment. The thread stays attached to the task."
 #: src/app/main/ui/workspace/review/tasks.cljs
 msgid "workspace.tasks.new-task"
 msgstr "New task"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.new-task.hint"
+msgstr "The title is the first message of its thread, where anyone can go on commenting."
 
 #: src/app/main/ui/workspace/review/overlays.cljs
 msgid "workspace.tasks.relink.link-to"

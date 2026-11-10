@@ -6,9 +6,11 @@
 
 (ns app.main.data.workspace.tasks
   "Data layer for tasks: a piece of work on a file, assigned to someone
-  and tied to a layer. A task may come from a message of a comment thread
-  (the thread stays attached to it, and may hold several tasks) and from
-  a design review.
+  and tied to a layer. Every task lives in a message of a comment thread,
+  so its thread can go on (a thread may hold several tasks): a task made
+  from a message keeps that thread, and a task created on the canvas gets
+  a thread whose first message is its title. A task may also belong to a
+  design review.
 
   The tasks of the open file live in `:workspace-tasks`, the events of a
   task (what the thread of the task shows between its comments) in
@@ -113,15 +115,17 @@
        (first)))
 
 (defn anchor-position
-  "Where the mark of a task goes on the canvas: the top right corner of
-  its layer, or of its board when the layer is gone, or the spot it was
-  made on when it points at the canvas itself (`position`)."
+  "Where the mark of a task goes on the canvas, as a point: the top right
+  corner of its layer, or of its board when the layer is gone, or the
+  spot it was made on when it points at the canvas itself (`position`).
+  The thread of a layer opens there too, and a thread keeps its position
+  as a point."
   [objects {:keys [position] :as task}]
   (let [shape (anchor-shape objects task)]
     (if (some? shape)
       (let [{:keys [x y width]} (:selrect shape)]
-        {:x (+ x width) :y y})
-      (some-> position (select-keys [:x :y])))))
+        (gpt/point (+ x width) y))
+      (some-> position (gpt/point)))))
 
 ;; --- Fetching
 
@@ -189,8 +193,7 @@
 ;; --- Opening a task
 
 (defn open-task
-  "Open the task `task-id` on the canvas. A task attached to a comment
-  thread opens as that thread."
+  "Open the task `task-id` on the canvas, as the thread it lives in."
   [task-id]
   (ptk/reify ::open-task
     ptk/UpdateEvent
@@ -290,34 +293,54 @@
     (update [_ state]
       (assoc-in state [:workspace-tasks :data (:id task)] task))))
 
+(defn- fetch-task-thread
+  "The thread a new task created on the canvas got: keep it before the
+  task opens as that thread."
+  [{:keys [file-id thread-id]}]
+  (->> (rp/cmd! :get-comment-thread {:file-id file-id :id thread-id})
+       (rx/map #(dcmt/created-thread-on-workspace % false))))
+
 (defn create-task
-  "Create a task from the form. It opens once created."
+  "Create a task from the form. A task made from a message lives in it;
+  any other gets a thread of its own, whose first message is its title,
+  on the spot of its mark. It opens once created."
   [{:keys [title] :as params}]
   (assert (string? title) "expected a string `title`")
   (ptk/reify ::create-task
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-id (:current-file-id state)
+            objects (dsh/lookup-page-objects state (:page-id params))
             params  (-> params
                         (select-keys [:title :page-id :frame-id :shape-id :assignee-id
                                       :pull-request-id :thread-id :comment-id :position])
-                        (update :position #(some-> % (gpt/point)))
                         ;; the root of the page is the canvas: no layer
                         (update :shape-id #(when (not= uuid/zero %) %))
-                        (assoc :file-id file-id)
                         (update :frame-id #(or % uuid/zero))
-                        (d/without-nils))]
+                        (assoc :file-id file-id))
+            ;; a task on a selected layer comes with no spot: its thread
+            ;; sits where its mark goes
+            params  (-> params
+                        (assoc :position (some-> (or (:position params)
+                                                     (anchor-position objects params))
+                                                 (gpt/point)))
+                        (d/without-nils))
+            thread? (some? (:thread-id params))]
         (rx/concat
          (rx/of (ev/event {::ev/name "create-task"
-                           :from-thread (some? (:thread-id params))
+                           :from-thread thread?
                            :in-review (some? (:pull-request-id params))}))
          (->> (rp/cmd! :create-task params)
               (rx/mapcat (fn [task]
-                           (rx/of (task-created task)
-                                  (cancel-new-task)
-                                  (ntf/success (tr "workspace.tasks.created"))
-                                  (fetch-tasks)
-                                  (open-task (:id task)))))
+                           (rx/concat
+                            (if thread?
+                              (rx/empty)
+                              (fetch-task-thread task))
+                            (rx/of (task-created task)
+                                   (cancel-new-task)
+                                   (ntf/success (tr "workspace.tasks.created"))
+                                   (fetch-tasks)
+                                   (open-task (:id task))))))
               (rx/catch (fn [cause]
                           (if (= :comment-already-has-task (:code (ex-data cause)))
                             (rx/of (ntf/warn (tr "workspace.tasks.error.comment-has-task")))

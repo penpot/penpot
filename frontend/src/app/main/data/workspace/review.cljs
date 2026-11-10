@@ -107,6 +107,21 @@
     (update [_ state]
       (update state :workspace-review-local assoc :task-filter filter))))
 
+(def task-statuses
+  "The states a task can be in, in the order the filters show them."
+  ["open" "done" "reopened" "verified" "wont-do"])
+
+(defn set-task-status-filter
+  "Show the tasks of the details of a review in one state (`:all` for
+  every one)."
+  [status]
+  (assert (or (= :all status) (contains? (set task-statuses) status))
+          "expected a task status or :all")
+  (ptk/reify ::set-task-status-filter
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-review-local assoc :task-status-filter status))))
+
 (defn toggle-hide-closed-tasks
   []
   (ptk/reify ::toggle-hide-closed-tasks

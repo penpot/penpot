@@ -575,7 +575,10 @@
     :fn (mg/resource "app/migrations/sql/0812-mod-file-task-add-position.sql")}
 
    {:name "0813-mod-file-task-add-comment"
-    :fn (mg/resource "app/migrations/sql/0813-mod-file-task-add-comment.sql")}])
+    :fn (mg/resource "app/migrations/sql/0813-mod-file-task-add-comment.sql")}
+
+   {:name "0814-mod-file-task-give-thread"
+    :fn (mg/resource "app/migrations/sql/0814-mod-file-task-give-thread.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

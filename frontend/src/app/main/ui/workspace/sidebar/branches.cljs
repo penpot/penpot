@@ -521,7 +521,7 @@
           [:> button* {:variant "ghost" :on-click on-edit} (tr "labels.edit")])]
        (if (deref editing?)
          [:div {:class (stl/css :info-desc-edit)}
-          [:textarea {:class (stl/css :textarea)
+          [:textarea {:class (stl/css :textarea :info-desc-input)
                       :value desc
                       :on-change on-desc-change
                       :rows 3

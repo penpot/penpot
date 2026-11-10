@@ -10,8 +10,8 @@
   canvas point `p` sits at `p * zoom`.
 
   A thread written in a design review shows as a numbered review mark
-  (in the review colour, wherever the file is open), a thread attached
-  to a task and a task show as a task mark, and a thread on an area
+  (in the review colour, wherever the file is open), the tasks of a
+  thread show as a task mark that opens it, and a thread on an area
   draws its area while it is open. Marks that would overlap show as one,
   with a counter, and fan out on a click. Hovering a mark outlines its
   layer."
@@ -177,9 +177,9 @@
                          :on-click on-click}]]))
 
 (mf/defc task-marker*
-  "The mark of its `tasks`: a task on its own, or the tasks of a thread on
-  the same layer, which open as that thread. `offset` and `ring` place it
-  when it is fanned out."
+  "The mark of its `tasks`: the tasks of a thread on the same layer, which
+  open as that thread. `offset` and `ring` place it when it is fanned
+  out."
   {::mf/private true}
   [{:keys [mark zoom offset ring is-open]}]
   (let [tasks (:tasks mark)
@@ -273,12 +273,10 @@
                          :tab-index -1}]]))
 
 (defn- group-task-marks
-  "The tasks of a page by mark: one per task on its own, and one per layer
-  for the tasks of a thread, which all open the same thread."
+  "The tasks of a page by mark: one per thread and layer, as the tasks of
+  a thread all open it."
   [tasks]
-  (->> (group-by (fn [{:keys [id thread-id shape-id]}]
-                   (if (some? thread-id) [thread-id shape-id] id))
-                 tasks)
+  (->> (group-by (juxt :thread-id :shape-id) tasks)
        (vals)
        (mapv #(vec (sort-by :created-at %)))))
 
@@ -320,13 +318,13 @@
       (boolean
        (some (fn [{:keys [id thread-id]}]
                (or (= id (:id open-task))
-                   (and (some? thread-id) (= open-id thread-id))))
+                   (= open-id thread-id)))
              tasks))))
 
 (mf/defc review-markers*
   "The marks of the page `page-id`: the threads the review layer draws
   (`threads`) and the open tasks, the area of the open thread or draft,
-  and the panel of the open task or of the new one."
+  and the form of the new task. An open task shows as its thread."
   [{:keys [threads page-id zoom open-id draft expanded]}]
   (let [objects     (mf/deref refs/workspace-page-objects)
         tasks       (mf/deref refs/tasks)
@@ -384,15 +382,6 @@
                              :mark mark
                              :zoom zoom
                              :is-open (mark-open? mark open-task open-id)}])))
-
-     ;; a task without a thread opens as a panel by its mark
-     (when (and (some? open-task)
-                (nil? (:thread-id open-task))
-                (= page-id (:page-id open-task)))
-       (when-let [position (dwtk/anchor-position objects open-task)]
-         [:> rvt/task-panel* {:key (dm/str (:id open-task))
-                              :task open-task
-                              :style (panel-style position zoom)}]))
 
      (when (and (some? new-task) (= page-id (:page-id new-task)))
        (when-let [position (or (dwtk/anchor-position objects new-task)
