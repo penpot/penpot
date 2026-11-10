@@ -129,7 +129,8 @@
   {:undo-changes [{:type :mod-page :id page-id :name "Page 1"}]
    :redo-changes [{:type :mod-page :id page-id :name name}]
    :undo-group group
-   :tags #{}})
+   :tags #{}
+   :translation false})
 
 ;; Scenario: inside one transaction, a commit names another undo group (as a
 ;; component update does). Proves: the history entry records both groups,
