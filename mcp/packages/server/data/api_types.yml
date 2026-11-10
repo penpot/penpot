@@ -128,7 +128,8 @@ Penpot:
 
           Example
           ```
-          const size = penpot.ui.size;console.log(size);
+          const size = penpot.ui.size;
+          console.log(size);
           ```
         * resize: (width: number, height: number) => void
 
@@ -186,7 +187,8 @@ Penpot:
 
         Example
         ```
-        const rootShape = context.root;console.log(rootShape);
+        const rootShape = context.root;
+        console.log(rootShape);
         ```
       currentFile: |-
         ```
@@ -201,7 +203,8 @@ Penpot:
 
         Example
         ```
-        const fileData = context.currentFile;console.log(fileData);
+        const fileData = context.currentFile;
+        console.log(fileData);
         ```
       currentPage: |-
         ```
@@ -212,7 +215,8 @@ Penpot:
 
         Example
         ```
-        const currentPage = context.currentPage;console.log(currentPage);
+        const currentPage = context.currentPage;
+        console.log(currentPage);
         ```
       viewport: |-
         ```
@@ -223,7 +227,8 @@ Penpot:
 
         Example
         ```
-        const viewportSettings = context.viewport;console.log(viewportSettings);
+        const viewportSettings = context.viewport;
+        console.log(viewportSettings);
         ```
       flags: |-
         ```
@@ -240,7 +245,8 @@ Penpot:
 
         Example
         ```
-        const historyContext = context.history;console.log(historyContext);
+        const historyContext = context.history;
+        console.log(historyContext);
         ```
       library: |-
         ```
@@ -251,7 +257,8 @@ Penpot:
 
         Example
         ```
-        const libraryContext = context.library;console.log(libraryContext);
+        const libraryContext = context.library;
+        console.log(libraryContext);
         ```
       fonts: |-
         ```
@@ -262,7 +269,8 @@ Penpot:
 
         Example
         ```
-        const fontsContext = context.fonts;console.log(fontsContext);
+        const fontsContext = context.fonts;
+        console.log(fontsContext);
         ```
       currentUser: |-
         ```
@@ -273,7 +281,8 @@ Penpot:
 
         Example
         ```
-        const currentUser = context.currentUser;console.log(currentUser);
+        const currentUser = context.currentUser;
+        console.log(currentUser);
         ```
       activeUsers: |-
         ```
@@ -284,7 +293,8 @@ Penpot:
 
         Example
         ```
-        const activeUsers = context.activeUsers;console.log(activeUsers);
+        const activeUsers = context.activeUsers;
+        console.log(activeUsers);
         ```
       theme: |-
         ```
@@ -295,7 +305,8 @@ Penpot:
 
         Example
         ```
-        const currentTheme = context.theme;console.log(currentTheme);
+        const currentTheme = context.theme;
+        console.log(currentTheme);
         ```
       localStorage: |-
         ```
@@ -312,7 +323,8 @@ Penpot:
 
         Example
         ```
-        const selectedShapes = context.selection;console.log(selectedShapes);
+        const selectedShapes = context.selection;
+        console.log(selectedShapes);
         ```
     Methods:
       on: |-
@@ -334,7 +346,8 @@ Penpot:
           that will be observed. For example:
 
         ```
-        // Observe the current selected shapepenpot.on('shapechange', (shape) => console.log(shape.name), { shapeId: penpot.selection[0].id });
+        // Observe the current selected shape
+        penpot.on('shapechange', (shape) => console.log(shape.name), { shapeId: penpot.selection[0].id });
         ```
 
         * selectionchange: event emitted when the current selection changes. The callback will receive the list of ids for the new selection
@@ -384,7 +397,8 @@ Penpot:
 
         Example
         ```
-        const listenerId = penpot.on('contentsave', () => console.log("Changed"));penpot.off(listenerId);
+        const listenerId = penpot.on('contentsave', () => console.log("Changed"));
+        penpot.off(listenerId);
         ```
       shapesColors: |-
         ```
@@ -403,7 +417,8 @@ Penpot:
 
         Example
         ```
-        const colors = context.shapesColors(shapes);console.log(colors);
+        const colors = context.shapesColors(shapes);
+        console.log(colors);
         ```
       replaceColor: |-
         ```
@@ -446,7 +461,14 @@ Penpot:
 
         Example
         ```
-        const imageData = await context.uploadMediaUrl('example', 'https://example.com/image.jpg');console.log(imageData);// to insert the image in a shape we can doconst board = penpot.createBoard();const shape = penpot.createRectangle();board.appendChild(shape);shape.fills = [{ fillOpacity: 1, fillImage: imageData }];
+        const imageData = await context.uploadMediaUrl('example', 'https://example.com/image.jpg');
+        console.log(imageData);
+
+        // to insert the image in a shape we can do
+        const board = penpot.createBoard();
+        const shape = penpot.createRectangle();
+        board.appendChild(shape);
+        shape.fills = [{ fillOpacity: 1, fillImage: imageData }];
         ```
       uploadMediaData: |-
         ```
@@ -475,7 +497,8 @@ Penpot:
 
         Example
         ```
-        const imageData = await context.uploadMediaData('example', imageData, 'image/jpeg');console.log(imageData);
+        const imageData = await context.uploadMediaData('example', imageData, 'image/jpeg');
+        console.log(imageData);
         ```
       group: |-
         ```
@@ -496,7 +519,8 @@ Penpot:
 
         Example
         ```
-        const penpotShapesArray = penpot.selection;penpot.group(penpotShapesArray);
+        const penpotShapesArray = penpot.selection;
+        penpot.group(penpotShapesArray);
         ```
       ungroup: |-
         ```
@@ -518,7 +542,11 @@ Penpot:
 
         Example
         ```
-        const penpotShapesArray = penpot.selection;// We need to make sure that something is selected, and that the selected shape is a groupif (penpotShapesArray.length && penpot.utils.types.isGroup(penpotShapesArray[0])) {  penpot.ungroup(penpotShapesArray[0]);}
+        const penpotShapesArray = penpot.selection;
+        // We need to make sure that something is selected, and that the selected shape is a group
+        if (penpotShapesArray.length && penpot.utils.types.isGroup(penpotShapesArray[0])) {
+          penpot.ungroup(penpotShapesArray[0]);
+        }
         ```
       createRectangle: |-
         ```
@@ -531,7 +559,48 @@ Penpot:
 
         Example
         ```
-        const shape = penpot.createRectangle();// just change the values like thisshape.name = "Example rectangle";// for solid colorshape.fills = [{ fillColor: "#7EFFF5" }];// for linear gradient colorshape.fills = [{ fillColorGradient: {   "type": "linear",   "startX": 0.5,   "startY": 0,   "endX": 0.5,   "endY": 1,   "width": 1,   "stops": [     {       "color": "#003ae9",       "opacity": 1,       "offset": 0     },     {       "color": "#003ae9",       "opacity": 0,       "offset": 1     }   ] }}];// for a image fillconst imageData = await context.uploadMediaUrl('example', 'https://example.com/image.jpg');shape.fills = [{ fillOpacity: 1, fillImage: imageData }];shape.borderRadius = 8;shape.strokes = [ {   strokeColor: "#2e3434",   strokeStyle: "solid",   strokeWidth: 2,   strokeAlignment: "center", },];
+        const shape = penpot.createRectangle();
+        // just change the values like this
+        shape.name = "Example rectangle";
+
+        // for solid color
+        shape.fills = [{ fillColor: "#7EFFF5" }];
+        // for linear gradient color
+        shape.fills = [{
+         fillColorGradient: {
+           "type": "linear",
+           "startX": 0.5,
+           "startY": 0,
+           "endX": 0.5,
+           "endY": 1,
+           "width": 1,
+           "stops": [
+             {
+               "color": "#003ae9",
+               "opacity": 1,
+               "offset": 0
+             },
+             {
+               "color": "#003ae9",
+               "opacity": 0,
+               "offset": 1
+             }
+           ]
+         }
+        }];
+        // for a image fill
+        const imageData = await context.uploadMediaUrl('example', 'https://example.com/image.jpg');
+        shape.fills = [{ fillOpacity: 1, fillImage: imageData }];
+
+        shape.borderRadius = 8;
+        shape.strokes = [
+         {
+           strokeColor: "#2e3434",
+           strokeStyle: "solid",
+           strokeWidth: 2,
+           strokeAlignment: "center",
+         },
+        ];
         ```
       createBoard: |-
         ```
@@ -546,7 +615,16 @@ Penpot:
 
         Example
         ```
-        const board = penpot.createBoard();// to add grid layoutboard.addGridLayout();// to add flex layoutboard.addFlexLayout();// to create a shape inside the boardconst shape = penpot.createRectangle();board.appendChild(shape);
+        const board = penpot.createBoard();
+
+        // to add grid layout
+        board.addGridLayout();
+        // to add flex layout
+        board.addFlexLayout();
+
+        // to create a shape inside the board
+        const shape = penpot.createRectangle();
+        board.appendChild(shape);
         ```
       createEllipse: |-
         ```
@@ -559,7 +637,47 @@ Penpot:
 
         Example
         ```
-        const shape = penpot.createEllipse();// just change the values like thisshape.name = "Example ellipse";// for solid colorshape.fills = [{ fillColor: "#7EFFF5" }];// for linear gradient colorshape.fills = [{ fillColorGradient: {   "type": "linear",   "startX": 0.5,   "startY": 0,   "endX": 0.5,   "endY": 1,   "width": 1,   "stops": [     {       "color": "#003ae9",       "opacity": 1,       "offset": 0     },     {       "color": "#003ae9",       "opacity": 0,       "offset": 1     }   ] }}];// for an image fillconst imageData = await context.uploadMediaUrl('example', 'https://example.com/image.jpg');shape.fills = [{ fillOpacity: 1, fillImage: imageData }];shape.strokes = [ {   strokeColor: "#2e3434",   strokeStyle: "solid",   strokeWidth: 2,   strokeAlignment: "center", },];
+        const shape = penpot.createEllipse();
+        // just change the values like this
+        shape.name = "Example ellipse";
+
+        // for solid color
+        shape.fills = [{ fillColor: "#7EFFF5" }];
+        // for linear gradient color
+        shape.fills = [{
+         fillColorGradient: {
+           "type": "linear",
+           "startX": 0.5,
+           "startY": 0,
+           "endX": 0.5,
+           "endY": 1,
+           "width": 1,
+           "stops": [
+             {
+               "color": "#003ae9",
+               "opacity": 1,
+               "offset": 0
+             },
+             {
+               "color": "#003ae9",
+               "opacity": 0,
+               "offset": 1
+             }
+           ]
+         }
+        }];
+        // for an image fill
+        const imageData = await context.uploadMediaUrl('example', 'https://example.com/image.jpg');
+        shape.fills = [{ fillOpacity: 1, fillImage: imageData }];
+
+        shape.strokes = [
+         {
+           strokeColor: "#2e3434",
+           strokeStyle: "solid",
+           strokeWidth: 2,
+           strokeAlignment: "center",
+         },
+        ];
         ```
       createPath: |-
         ```
@@ -572,7 +690,11 @@ Penpot:
 
         Example
         ```
-        const path = penpot.createPath();path.name = "My path";// for solid colorpath.fills = [{ fillColor: "#7EFFF5" }];
+        const path = penpot.createPath();
+        path.name = "My path";
+
+        // for solid color
+        path.fills = [{ fillColor: "#7EFFF5" }];
         ```
       createBoolean: |-
         ```
@@ -661,7 +783,16 @@ Penpot:
 
         Example
         ```
-        const board = penpot.createBoard();let text;text = penpot.createText();// just change the values like thistext.growType = 'auto-height';text.fontFamily = 'Work Sans';text.fontSize = '12';text.fills = [{fillColor: '#9f05ff', fillOpacity: 1}];text.strokes = [{strokeOpacity: 1, strokeStyle: 'solid', strokeWidth: 2, strokeColor: '#deabff', strokeAlignment: 'outer'}];board.appendChild(text);
+        const board = penpot.createBoard();
+        let text;
+        text = penpot.createText();
+        // just change the values like this
+        text.growType = 'auto-height';
+        text.fontFamily = 'Work Sans';
+        text.fontSize = '12';
+        text.fills = [{fillColor: '#9f05ff', fillOpacity: 1}];
+        text.strokes = [{strokeOpacity: 1, strokeStyle: 'solid', strokeWidth: 2, strokeColor: '#deabff', strokeAlignment: 'outer'}];
+        board.appendChild(text);
         ```
       generateMarkup: |-
         ```
@@ -683,7 +814,8 @@ Penpot:
 
         Example
         ```
-        const markup = context.generateMarkup(shapes, { type: 'html' });console.log(markup);
+        const markup = context.generateMarkup(shapes, { type: 'html' });
+        console.log(markup);
         ```
       generateStyle: |-
         ```
@@ -713,7 +845,8 @@ Penpot:
 
         Example
         ```
-        const styles = context.generateStyle(shapes, { type: 'css' });console.log(styles);
+        const styles = context.generateStyle(shapes, { type: 'css' });
+        console.log(styles);
         ```
       generateFontFaces: |-
         ```
@@ -731,7 +864,8 @@ Penpot:
 
         Example
         ```
-        const fontfaces = context.generateFontFaces(penpot.selection);console.log(fontfaces);
+        const fontfaces = context.generateFontFaces(penpot.selection);
+        console.log(fontfaces);
         ```
       openViewer: |-
         ```
@@ -756,7 +890,12 @@ Penpot:
 
         Example
         ```
-        const page = penpot.createPage();page.name = 'New Page';await penpot.openPage(page); // make the new page active firstconst board = penpot.createBoard();board.resize(375, 812);page.root.appendChild(board);
+        const page = penpot.createPage();
+        page.name = 'New Page';
+        await penpot.openPage(page); // make the new page active first
+        const board = penpot.createBoard();
+        board.resize(375, 812);
+        page.root.appendChild(board);
         ```
       openPage: |-
         ```
@@ -939,7 +1078,8 @@ ActiveUser:
 
         Example
         ```
-        const userPosition = activeUser.position;console.log(userPosition);
+        const userPosition = activeUser.position;
+        console.log(userPosition);
         ```
       zoom: |-
         ```
@@ -950,7 +1090,8 @@ ActiveUser:
 
         Example
         ```
-        const userZoom = activeUser.zoom;console.log(userZoom);
+        const userZoom = activeUser.zoom;
+        console.log(userZoom);
         ```
       id: |-
         ```
@@ -961,7 +1102,8 @@ ActiveUser:
 
         Example
         ```
-        const userId = user.id;console.log(userId);
+        const userId = user.id;
+        console.log(userId);
         ```
       name: |-
         ```
@@ -972,7 +1114,8 @@ ActiveUser:
 
         Example
         ```
-        const userName = user.name;console.log(userName);
+        const userName = user.name;
+        console.log(userName);
         ```
       avatarUrl: |-
         ```
@@ -983,7 +1126,8 @@ ActiveUser:
 
         Example
         ```
-        const avatarUrl = user.avatarUrl;console.log(avatarUrl);
+        const avatarUrl = user.avatarUrl;
+        console.log(avatarUrl);
         ```
       color: |-
         ```
@@ -994,7 +1138,8 @@ ActiveUser:
 
         Example
         ```
-        const userColor = user.color;console.log(userColor);
+        const userColor = user.color;
+        console.log(userColor);
         ```
       sessionId: |-
         ```
@@ -1005,7 +1150,8 @@ ActiveUser:
 
         Example
         ```
-        const sessionId = user.sessionId;console.log(sessionId);
+        const sessionId = user.sessionId;
+        console.log(sessionId);
         ```
 Blur:
   overview: |-
@@ -1151,6 +1297,10 @@ Board:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -1187,6 +1337,7 @@ Board:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         resetOverrides(): void;
+        updateMain(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -1567,6 +1718,10 @@ Board:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -1661,7 +1816,16 @@ Board:
 
         Example
         ```
-        const board = penpot.createBoard();const flex = board.addFlexLayout();// You can change the flex properties as follows.flex.dir = "column";flex.wrap = "wrap";flex.alignItems = "center";flex.justifyContent = "center";flex.horizontalSizing = "fill";flex.verticalSizing = "fill";
+        const board = penpot.createBoard();
+        const flex = board.addFlexLayout();
+
+        // You can change the flex properties as follows.
+        flex.dir = "column";
+        flex.wrap = "wrap";
+        flex.alignItems = "center";
+        flex.justifyContent = "center";
+        flex.horizontalSizing = "fill";
+        flex.verticalSizing = "fill";
         ```
       addGridLayout: |-
         ```
@@ -1676,7 +1840,16 @@ Board:
 
         Example
         ```
-        const board = penpot.createBoard();const grid = board.addGridLayout();// You can change the grid properties as follows.grid.alignItems = "center";grid.justifyItems = "start";grid.rowGap = 10;grid.columnGap = 10;grid.verticalPadding = 5;grid.horizontalPadding = 5;
+        const board = penpot.createBoard();
+        const grid = board.addGridLayout();
+
+        // You can change the grid properties as follows.
+        grid.alignItems = "center";
+        grid.justifyItems = "start";
+        grid.rowGap = 10;
+        grid.columnGap = 10;
+        grid.verticalPadding = 5;
+        grid.horizontalPadding = 5;
         ```
       addRulerGuide: |-
         ```
@@ -1734,7 +1907,8 @@ Board:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -1771,7 +1945,8 @@ Board:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -1795,7 +1970,8 @@ Board:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -1841,7 +2017,8 @@ Board:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
       setParentIndex: |-
         ```
@@ -1970,6 +2147,18 @@ Board:
         (and those of its children) to the ones in the linked main component.
         Similar to the "reset overrides" action on the Penpot interface.
         The current shape must be a component copy instance.
+
+        Returns void
+      updateMain: |-
+        ```
+        updateMain(): void
+        ```
+
+        Applies this copy's overrides to its main component and synchronizes copies.
+        Similar to the editor's "update main component" action.
+        Requires `content:write` and `library:write` permissions.
+        The shape must be a component copy head on the active page of the current file,
+        outside any other component copy, with a main component that is not deleted.
 
         Returns void
       switchVariant: |-
@@ -2179,6 +2368,11 @@ Board:
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
 
+          NOTE that the per-side stroke width properties (`strokeWidthTop`,
+          `strokeWidthRight`, `strokeWidthBottom`, `strokeWidthLeft`) are only valid on
+          boards and rectangles. Applying one to any other shape raises a validation
+          error. The uniform `strokeWidth` property is accepted on every shape.
+
         Returns void
       clone: |-
         ```
@@ -2326,6 +2520,10 @@ VariantContainer:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -2362,6 +2560,7 @@ VariantContainer:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         resetOverrides(): void;
+        updateMain(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -2745,6 +2944,10 @@ VariantContainer:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -2839,7 +3042,16 @@ VariantContainer:
 
         Example
         ```
-        const board = penpot.createBoard();const flex = board.addFlexLayout();// You can change the flex properties as follows.flex.dir = "column";flex.wrap = "wrap";flex.alignItems = "center";flex.justifyContent = "center";flex.horizontalSizing = "fill";flex.verticalSizing = "fill";
+        const board = penpot.createBoard();
+        const flex = board.addFlexLayout();
+
+        // You can change the flex properties as follows.
+        flex.dir = "column";
+        flex.wrap = "wrap";
+        flex.alignItems = "center";
+        flex.justifyContent = "center";
+        flex.horizontalSizing = "fill";
+        flex.verticalSizing = "fill";
         ```
       addGridLayout: |-
         ```
@@ -2854,7 +3066,16 @@ VariantContainer:
 
         Example
         ```
-        const board = penpot.createBoard();const grid = board.addGridLayout();// You can change the grid properties as follows.grid.alignItems = "center";grid.justifyItems = "start";grid.rowGap = 10;grid.columnGap = 10;grid.verticalPadding = 5;grid.horizontalPadding = 5;
+        const board = penpot.createBoard();
+        const grid = board.addGridLayout();
+
+        // You can change the grid properties as follows.
+        grid.alignItems = "center";
+        grid.justifyItems = "start";
+        grid.rowGap = 10;
+        grid.columnGap = 10;
+        grid.verticalPadding = 5;
+        grid.horizontalPadding = 5;
         ```
       addRulerGuide: |-
         ```
@@ -2912,7 +3133,8 @@ VariantContainer:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -2949,7 +3171,8 @@ VariantContainer:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -2973,7 +3196,8 @@ VariantContainer:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -3019,7 +3243,8 @@ VariantContainer:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
       setParentIndex: |-
         ```
@@ -3148,6 +3373,18 @@ VariantContainer:
         (and those of its children) to the ones in the linked main component.
         Similar to the "reset overrides" action on the Penpot interface.
         The current shape must be a component copy instance.
+
+        Returns void
+      updateMain: |-
+        ```
+        updateMain(): void
+        ```
+
+        Applies this copy's overrides to its main component and synchronizes copies.
+        Similar to the editor's "update main component" action.
+        Requires `content:write` and `library:write` permissions.
+        The shape must be a component copy head on the active page of the current file,
+        outside any other component copy, with a main component that is not deleted.
 
         Returns void
       switchVariant: |-
@@ -3357,6 +3594,11 @@ VariantContainer:
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
 
+          NOTE that the per-side stroke width properties (`strokeWidthTop`,
+          `strokeWidthRight`, `strokeWidthBottom`, `strokeWidthLeft`) are only valid on
+          boards and rectangles. Applying one to any other shape raises a validation
+          error. The uniform `strokeWidth` property is accepted on every shape.
+
         Returns void
       clone: |-
         ```
@@ -3491,6 +3733,10 @@ Boolean:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -3527,6 +3773,7 @@ Boolean:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         resetOverrides(): void;
+        updateMain(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -3864,6 +4111,10 @@ Boolean:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -3978,7 +4229,8 @@ Boolean:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -4015,7 +4267,8 @@ Boolean:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -4039,7 +4292,8 @@ Boolean:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -4085,7 +4339,8 @@ Boolean:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
       setParentIndex: |-
         ```
@@ -4214,6 +4469,18 @@ Boolean:
         (and those of its children) to the ones in the linked main component.
         Similar to the "reset overrides" action on the Penpot interface.
         The current shape must be a component copy instance.
+
+        Returns void
+      updateMain: |-
+        ```
+        updateMain(): void
+        ```
+
+        Applies this copy's overrides to its main component and synchronizes copies.
+        Similar to the editor's "update main component" action.
+        Requires `content:write` and `library:write` permissions.
+        The shape must be a component copy head on the active page of the current file,
+        outside any other component copy, with a main component that is not deleted.
 
         Returns void
       switchVariant: |-
@@ -4422,6 +4689,11 @@ Boolean:
           several tokens with the same name in different sets, the actual token applied
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
+
+          NOTE that the per-side stroke width properties (`strokeWidthTop`,
+          `strokeWidthRight`, `strokeWidthBottom`, `strokeWidthLeft`) are only valid on
+          boards and rectangles. Applying one to any other shape raises a validation
+          error. The uniform `strokeWidth` property is accepted on every shape.
 
         Returns void
       clone: |-
@@ -5097,7 +5369,8 @@ Context:
 
         Example
         ```
-        const rootShape = context.root;console.log(rootShape);
+        const rootShape = context.root;
+        console.log(rootShape);
         ```
       currentFile: |-
         ```
@@ -5112,7 +5385,8 @@ Context:
 
         Example
         ```
-        const fileData = context.currentFile;console.log(fileData);
+        const fileData = context.currentFile;
+        console.log(fileData);
         ```
       currentPage: |-
         ```
@@ -5123,7 +5397,8 @@ Context:
 
         Example
         ```
-        const currentPage = context.currentPage;console.log(currentPage);
+        const currentPage = context.currentPage;
+        console.log(currentPage);
         ```
       viewport: |-
         ```
@@ -5134,7 +5409,8 @@ Context:
 
         Example
         ```
-        const viewportSettings = context.viewport;console.log(viewportSettings);
+        const viewportSettings = context.viewport;
+        console.log(viewportSettings);
         ```
       flags: |-
         ```
@@ -5151,7 +5427,8 @@ Context:
 
         Example
         ```
-        const historyContext = context.history;console.log(historyContext);
+        const historyContext = context.history;
+        console.log(historyContext);
         ```
       library: |-
         ```
@@ -5162,7 +5439,8 @@ Context:
 
         Example
         ```
-        const libraryContext = context.library;console.log(libraryContext);
+        const libraryContext = context.library;
+        console.log(libraryContext);
         ```
       fonts: |-
         ```
@@ -5173,7 +5451,8 @@ Context:
 
         Example
         ```
-        const fontsContext = context.fonts;console.log(fontsContext);
+        const fontsContext = context.fonts;
+        console.log(fontsContext);
         ```
       currentUser: |-
         ```
@@ -5184,7 +5463,8 @@ Context:
 
         Example
         ```
-        const currentUser = context.currentUser;console.log(currentUser);
+        const currentUser = context.currentUser;
+        console.log(currentUser);
         ```
       activeUsers: |-
         ```
@@ -5195,7 +5475,8 @@ Context:
 
         Example
         ```
-        const activeUsers = context.activeUsers;console.log(activeUsers);
+        const activeUsers = context.activeUsers;
+        console.log(activeUsers);
         ```
       theme: |-
         ```
@@ -5206,7 +5487,8 @@ Context:
 
         Example
         ```
-        const currentTheme = context.theme;console.log(currentTheme);
+        const currentTheme = context.theme;
+        console.log(currentTheme);
         ```
       localStorage: |-
         ```
@@ -5223,7 +5505,8 @@ Context:
 
         Example
         ```
-        const selectedShapes = context.selection;console.log(selectedShapes);
+        const selectedShapes = context.selection;
+        console.log(selectedShapes);
         ```
     Methods:
       shapesColors: |-
@@ -5243,7 +5526,8 @@ Context:
 
         Example
         ```
-        const colors = context.shapesColors(shapes);console.log(colors);
+        const colors = context.shapesColors(shapes);
+        console.log(colors);
         ```
       replaceColor: |-
         ```
@@ -5286,7 +5570,14 @@ Context:
 
         Example
         ```
-        const imageData = await context.uploadMediaUrl('example', 'https://example.com/image.jpg');console.log(imageData);// to insert the image in a shape we can doconst board = penpot.createBoard();const shape = penpot.createRectangle();board.appendChild(shape);shape.fills = [{ fillOpacity: 1, fillImage: imageData }];
+        const imageData = await context.uploadMediaUrl('example', 'https://example.com/image.jpg');
+        console.log(imageData);
+
+        // to insert the image in a shape we can do
+        const board = penpot.createBoard();
+        const shape = penpot.createRectangle();
+        board.appendChild(shape);
+        shape.fills = [{ fillOpacity: 1, fillImage: imageData }];
         ```
       uploadMediaData: |-
         ```
@@ -5315,7 +5606,8 @@ Context:
 
         Example
         ```
-        const imageData = await context.uploadMediaData('example', imageData, 'image/jpeg');console.log(imageData);
+        const imageData = await context.uploadMediaData('example', imageData, 'image/jpeg');
+        console.log(imageData);
         ```
       group: |-
         ```
@@ -5336,7 +5628,8 @@ Context:
 
         Example
         ```
-        const penpotShapesArray = penpot.selection;penpot.group(penpotShapesArray);
+        const penpotShapesArray = penpot.selection;
+        penpot.group(penpotShapesArray);
         ```
       ungroup: |-
         ```
@@ -5358,7 +5651,11 @@ Context:
 
         Example
         ```
-        const penpotShapesArray = penpot.selection;// We need to make sure that something is selected, and that the selected shape is a groupif (penpotShapesArray.length && penpot.utils.types.isGroup(penpotShapesArray[0])) {  penpot.ungroup(penpotShapesArray[0]);}
+        const penpotShapesArray = penpot.selection;
+        // We need to make sure that something is selected, and that the selected shape is a group
+        if (penpotShapesArray.length && penpot.utils.types.isGroup(penpotShapesArray[0])) {
+          penpot.ungroup(penpotShapesArray[0]);
+        }
         ```
       createRectangle: |-
         ```
@@ -5371,7 +5668,48 @@ Context:
 
         Example
         ```
-        const shape = penpot.createRectangle();// just change the values like thisshape.name = "Example rectangle";// for solid colorshape.fills = [{ fillColor: "#7EFFF5" }];// for linear gradient colorshape.fills = [{ fillColorGradient: {   "type": "linear",   "startX": 0.5,   "startY": 0,   "endX": 0.5,   "endY": 1,   "width": 1,   "stops": [     {       "color": "#003ae9",       "opacity": 1,       "offset": 0     },     {       "color": "#003ae9",       "opacity": 0,       "offset": 1     }   ] }}];// for a image fillconst imageData = await context.uploadMediaUrl('example', 'https://example.com/image.jpg');shape.fills = [{ fillOpacity: 1, fillImage: imageData }];shape.borderRadius = 8;shape.strokes = [ {   strokeColor: "#2e3434",   strokeStyle: "solid",   strokeWidth: 2,   strokeAlignment: "center", },];
+        const shape = penpot.createRectangle();
+        // just change the values like this
+        shape.name = "Example rectangle";
+
+        // for solid color
+        shape.fills = [{ fillColor: "#7EFFF5" }];
+        // for linear gradient color
+        shape.fills = [{
+         fillColorGradient: {
+           "type": "linear",
+           "startX": 0.5,
+           "startY": 0,
+           "endX": 0.5,
+           "endY": 1,
+           "width": 1,
+           "stops": [
+             {
+               "color": "#003ae9",
+               "opacity": 1,
+               "offset": 0
+             },
+             {
+               "color": "#003ae9",
+               "opacity": 0,
+               "offset": 1
+             }
+           ]
+         }
+        }];
+        // for a image fill
+        const imageData = await context.uploadMediaUrl('example', 'https://example.com/image.jpg');
+        shape.fills = [{ fillOpacity: 1, fillImage: imageData }];
+
+        shape.borderRadius = 8;
+        shape.strokes = [
+         {
+           strokeColor: "#2e3434",
+           strokeStyle: "solid",
+           strokeWidth: 2,
+           strokeAlignment: "center",
+         },
+        ];
         ```
       createBoard: |-
         ```
@@ -5386,7 +5724,16 @@ Context:
 
         Example
         ```
-        const board = penpot.createBoard();// to add grid layoutboard.addGridLayout();// to add flex layoutboard.addFlexLayout();// to create a shape inside the boardconst shape = penpot.createRectangle();board.appendChild(shape);
+        const board = penpot.createBoard();
+
+        // to add grid layout
+        board.addGridLayout();
+        // to add flex layout
+        board.addFlexLayout();
+
+        // to create a shape inside the board
+        const shape = penpot.createRectangle();
+        board.appendChild(shape);
         ```
       createEllipse: |-
         ```
@@ -5399,7 +5746,47 @@ Context:
 
         Example
         ```
-        const shape = penpot.createEllipse();// just change the values like thisshape.name = "Example ellipse";// for solid colorshape.fills = [{ fillColor: "#7EFFF5" }];// for linear gradient colorshape.fills = [{ fillColorGradient: {   "type": "linear",   "startX": 0.5,   "startY": 0,   "endX": 0.5,   "endY": 1,   "width": 1,   "stops": [     {       "color": "#003ae9",       "opacity": 1,       "offset": 0     },     {       "color": "#003ae9",       "opacity": 0,       "offset": 1     }   ] }}];// for an image fillconst imageData = await context.uploadMediaUrl('example', 'https://example.com/image.jpg');shape.fills = [{ fillOpacity: 1, fillImage: imageData }];shape.strokes = [ {   strokeColor: "#2e3434",   strokeStyle: "solid",   strokeWidth: 2,   strokeAlignment: "center", },];
+        const shape = penpot.createEllipse();
+        // just change the values like this
+        shape.name = "Example ellipse";
+
+        // for solid color
+        shape.fills = [{ fillColor: "#7EFFF5" }];
+        // for linear gradient color
+        shape.fills = [{
+         fillColorGradient: {
+           "type": "linear",
+           "startX": 0.5,
+           "startY": 0,
+           "endX": 0.5,
+           "endY": 1,
+           "width": 1,
+           "stops": [
+             {
+               "color": "#003ae9",
+               "opacity": 1,
+               "offset": 0
+             },
+             {
+               "color": "#003ae9",
+               "opacity": 0,
+               "offset": 1
+             }
+           ]
+         }
+        }];
+        // for an image fill
+        const imageData = await context.uploadMediaUrl('example', 'https://example.com/image.jpg');
+        shape.fills = [{ fillOpacity: 1, fillImage: imageData }];
+
+        shape.strokes = [
+         {
+           strokeColor: "#2e3434",
+           strokeStyle: "solid",
+           strokeWidth: 2,
+           strokeAlignment: "center",
+         },
+        ];
         ```
       createPath: |-
         ```
@@ -5412,7 +5799,11 @@ Context:
 
         Example
         ```
-        const path = penpot.createPath();path.name = "My path";// for solid colorpath.fills = [{ fillColor: "#7EFFF5" }];
+        const path = penpot.createPath();
+        path.name = "My path";
+
+        // for solid color
+        path.fills = [{ fillColor: "#7EFFF5" }];
         ```
       createBoolean: |-
         ```
@@ -5501,7 +5892,16 @@ Context:
 
         Example
         ```
-        const board = penpot.createBoard();let text;text = penpot.createText();// just change the values like thistext.growType = 'auto-height';text.fontFamily = 'Work Sans';text.fontSize = '12';text.fills = [{fillColor: '#9f05ff', fillOpacity: 1}];text.strokes = [{strokeOpacity: 1, strokeStyle: 'solid', strokeWidth: 2, strokeColor: '#deabff', strokeAlignment: 'outer'}];board.appendChild(text);
+        const board = penpot.createBoard();
+        let text;
+        text = penpot.createText();
+        // just change the values like this
+        text.growType = 'auto-height';
+        text.fontFamily = 'Work Sans';
+        text.fontSize = '12';
+        text.fills = [{fillColor: '#9f05ff', fillOpacity: 1}];
+        text.strokes = [{strokeOpacity: 1, strokeStyle: 'solid', strokeWidth: 2, strokeColor: '#deabff', strokeAlignment: 'outer'}];
+        board.appendChild(text);
         ```
       generateMarkup: |-
         ```
@@ -5523,7 +5923,8 @@ Context:
 
         Example
         ```
-        const markup = context.generateMarkup(shapes, { type: 'html' });console.log(markup);
+        const markup = context.generateMarkup(shapes, { type: 'html' });
+        console.log(markup);
         ```
       generateStyle: |-
         ```
@@ -5553,7 +5954,8 @@ Context:
 
         Example
         ```
-        const styles = context.generateStyle(shapes, { type: 'css' });console.log(styles);
+        const styles = context.generateStyle(shapes, { type: 'css' });
+        console.log(styles);
         ```
       generateFontFaces: |-
         ```
@@ -5571,7 +5973,8 @@ Context:
 
         Example
         ```
-        const fontfaces = context.generateFontFaces(penpot.selection);console.log(fontfaces);
+        const fontfaces = context.generateFontFaces(penpot.selection);
+        console.log(fontfaces);
         ```
       addListener: |-
         ```
@@ -5598,7 +6001,9 @@ Context:
 
         Example
         ```
-        const listenerId = context.addListener('selectionchange', (event) => {  console.log(event);});
+        const listenerId = context.addListener('selectionchange', (event) => {
+          console.log(event);
+        });
         ```
       removeListener: |-
         ```
@@ -5640,7 +6045,12 @@ Context:
 
         Example
         ```
-        const page = penpot.createPage();page.name = 'New Page';await penpot.openPage(page); // make the new page active firstconst board = penpot.createBoard();board.resize(375, 812);page.root.appendChild(board);
+        const page = penpot.createPage();
+        page.name = 'New Page';
+        await penpot.openPage(page); // make the new page active first
+        const board = penpot.createBoard();
+        board.resize(375, 812);
+        page.root.appendChild(board);
         ```
       openPage: |-
         ```
@@ -5795,7 +6205,8 @@ ContextGeometryUtils:
 
     Example
     ```
-    const centerPoint = geometryUtils.center(shapes);console.log(centerPoint);
+    const centerPoint = geometryUtils.center(shapes);
+    console.log(centerPoint);
     ```
 
     ```
@@ -5827,7 +6238,8 @@ ContextGeometryUtils:
 
         Example
         ```
-        const centerPoint = geometryUtils.center(shapes);console.log(centerPoint);
+        const centerPoint = geometryUtils.center(shapes);
+        console.log(centerPoint);
         ```
 ContextTypesUtils:
   overview: |-
@@ -5838,7 +6250,8 @@ ContextTypesUtils:
 
     Example
     ```
-    const isBoard = typesUtils.isBoard(shape);console.log(isBoard);
+    const isBoard = typesUtils.isBoard(shape);
+    console.log(isBoard);
     ```
 
     ```
@@ -6067,7 +6480,8 @@ ContextUtils:
 
         Example
         ```
-        const centerPoint = penpot.utils.geometry.center(shapes);console.log(centerPoint);
+        const centerPoint = penpot.utils.geometry.center(shapes);
+        console.log(centerPoint);
         ```
       types: |-
         ```
@@ -6079,7 +6493,8 @@ ContextUtils:
 
         Example
         ```
-        const isBoard = utils.types.isBoard(shape);console.log(isBoard);
+        const isBoard = utils.types.isBoard(shape);
+        console.log(isBoard);
         ```
 Dissolve:
   overview: |-
@@ -6205,6 +6620,10 @@ Ellipse:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -6241,6 +6660,7 @@ Ellipse:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         resetOverrides(): void;
+        updateMain(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -6550,6 +6970,10 @@ Ellipse:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -6609,7 +7033,8 @@ Ellipse:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -6646,7 +7071,8 @@ Ellipse:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -6670,7 +7096,8 @@ Ellipse:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -6716,7 +7143,8 @@ Ellipse:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
       setParentIndex: |-
         ```
@@ -6845,6 +7273,18 @@ Ellipse:
         (and those of its children) to the ones in the linked main component.
         Similar to the "reset overrides" action on the Penpot interface.
         The current shape must be a component copy instance.
+
+        Returns void
+      updateMain: |-
+        ```
+        updateMain(): void
+        ```
+
+        Applies this copy's overrides to its main component and synchronizes copies.
+        Similar to the editor's "update main component" action.
+        Requires `content:write` and `library:write` permissions.
+        The shape must be a component copy head on the active page of the current file,
+        outside any other component copy, with a main component that is not deleted.
 
         Returns void
       switchVariant: |-
@@ -7054,6 +7494,11 @@ Ellipse:
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
 
+          NOTE that the per-side stroke width properties (`strokeWidthTop`,
+          `strokeWidthRight`, `strokeWidthBottom`, `strokeWidthLeft`) are only valid on
+          boards and rectangles. Applying one to any other shape raises a validation
+          error. The uniform `strokeWidth` property is accepted on every shape.
+
         Returns void
       clone: |-
         ```
@@ -7104,7 +7549,9 @@ EventsMap:
 
     Example
     ```
-    penpot.on('pagechange', (event) => {  console.log(event);});
+    penpot.on('pagechange', (event) => {
+      console.log(event);
+    });
     ```
 
     ```
@@ -7343,7 +7790,8 @@ File:
 
         Example
         ```
-        const errors = file.validate();if (errors.length) console.error(errors);
+        const errors = file.validate();
+        if (errors.length) console.error(errors);
         ```
       getPluginData: |-
         ```
@@ -7364,7 +7812,8 @@ File:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -7401,7 +7850,8 @@ File:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -7425,7 +7875,8 @@ File:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -7471,7 +7922,8 @@ File:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
 FileValidationError:
   overview: |-
@@ -8192,7 +8644,10 @@ FontsContext:
 
         Example
         ```
-        const font = fontsContext.findById('font-id');if (font) {  console.log(font.name);}
+        const font = fontsContext.findById('font-id');
+        if (font) {
+          console.log(font.name);
+        }
         ```
       findByName: |-
         ```
@@ -8213,7 +8668,10 @@ FontsContext:
 
         Example
         ```
-        const font = fontsContext.findByName('font-name');if (font) {  console.log(font.name);}
+        const font = fontsContext.findByName('font-name');
+        if (font) {
+          console.log(font.name);
+        }
         ```
       findAllById: |-
         ```
@@ -8234,7 +8692,8 @@ FontsContext:
 
         Example
         ```
-        const fonts = fontsContext.findAllById('font-id');console.log(fonts);
+        const fonts = fontsContext.findAllById('font-id');
+        console.log(fonts);
         ```
       findAllByName: |-
         ```
@@ -8255,7 +8714,8 @@ FontsContext:
 
         Example
         ```
-        const fonts = fontsContext.findAllByName('font-name');console.log(fonts);
+        const fonts = fontsContext.findAllByName('font-name');
+        console.log(fonts);
         ```
 GridLayout:
   overview: |-
@@ -8522,7 +8982,9 @@ GridLayout:
 
         Example
         ```
-        const board = penpot.createBoard();const grid = board.addGridLayout();grid.addRow("flex", 1);
+        const board = penpot.createBoard();
+        const grid = board.addGridLayout();
+        grid.addRow("flex", 1);
         ```
       addRowAtIndex: |-
         ```
@@ -8569,7 +9031,9 @@ GridLayout:
 
         Example
         ```
-        const board = penpot.createBoard();const grid = board.addGridLayout();grid.addColumn('percent', 50);
+        const board = penpot.createBoard();
+        const grid = board.addGridLayout();
+        grid.addColumn('percent', 50);
         ```
       addColumnAtIndex: |-
         ```
@@ -8803,6 +9267,10 @@ Group:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -8839,6 +9307,7 @@ Group:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         resetOverrides(): void;
+        updateMain(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -9152,6 +9621,10 @@ Group:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -9277,7 +9750,8 @@ Group:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -9314,7 +9788,8 @@ Group:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -9338,7 +9813,8 @@ Group:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -9384,7 +9860,8 @@ Group:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
       setParentIndex: |-
         ```
@@ -9513,6 +9990,18 @@ Group:
         (and those of its children) to the ones in the linked main component.
         Similar to the "reset overrides" action on the Penpot interface.
         The current shape must be a component copy instance.
+
+        Returns void
+      updateMain: |-
+        ```
+        updateMain(): void
+        ```
+
+        Applies this copy's overrides to its main component and synchronizes copies.
+        Similar to the editor's "update main component" action.
+        Requires `content:write` and `library:write` permissions.
+        The shape must be a component copy head on the active page of the current file,
+        outside any other component copy, with a main component that is not deleted.
 
         Returns void
       switchVariant: |-
@@ -9721,6 +10210,11 @@ Group:
           several tokens with the same name in different sets, the actual token applied
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
+
+          NOTE that the per-side stroke width properties (`strokeWidthTop`,
+          `strokeWidthRight`, `strokeWidthBottom`, `strokeWidthLeft`) are only valid on
+          boards and rectangles. Applying one to any other shape raises a validation
+          error. The uniform `strokeWidth` property is accepted on every shape.
 
         Returns void
       clone: |-
@@ -10106,6 +10600,10 @@ Image:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -10142,6 +10640,7 @@ Image:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         resetOverrides(): void;
+        updateMain(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -10451,6 +10950,10 @@ Image:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -10510,7 +11013,8 @@ Image:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -10547,7 +11051,8 @@ Image:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -10571,7 +11076,8 @@ Image:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -10617,7 +11123,8 @@ Image:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
       setParentIndex: |-
         ```
@@ -10746,6 +11253,18 @@ Image:
         (and those of its children) to the ones in the linked main component.
         Similar to the "reset overrides" action on the Penpot interface.
         The current shape must be a component copy instance.
+
+        Returns void
+      updateMain: |-
+        ```
+        updateMain(): void
+        ```
+
+        Applies this copy's overrides to its main component and synchronizes copies.
+        Similar to the editor's "update main component" action.
+        Requires `content:write` and `library:write` permissions.
+        The shape must be a component copy head on the active page of the current file,
+        outside any other component copy, with a main component that is not deleted.
 
         Returns void
       switchVariant: |-
@@ -10954,6 +11473,11 @@ Image:
           several tokens with the same name in different sets, the actual token applied
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
+
+          NOTE that the per-side stroke width properties (`strokeWidthTop`,
+          `strokeWidthRight`, `strokeWidthBottom`, `strokeWidthLeft`) are only valid on
+          boards and rectangles. Applying one to any other shape raises a validation
+          error. The uniform `strokeWidth` property is accepted on every shape.
 
         Returns void
       clone: |-
@@ -11282,6 +11806,7 @@ Library:
         colors: LibraryColor[];
         typographies: LibraryTypography[];
         components: LibraryComponent[];
+        deletedComponents: LibraryComponent[];
         tokens: TokenCatalog;
         createColor(): LibraryColor;
         createTypography(): LibraryTypography;
@@ -11343,6 +11868,13 @@ Library:
         ```
         console.log(penpot.library.local.components
         ```
+      deletedComponents: |-
+        ```
+        readonly deletedComponents: LibraryComponent[]
+        ```
+
+        Deleted components, including individual deleted variants.
+        Use a component's `restore()` method to restore it.
       tokens: |-
         ```
         readonly tokens: TokenCatalog
@@ -11365,7 +11897,8 @@ Library:
 
         Example
         ```
-        const newColor = penpot.library.local.createColor();console.log(newColor);
+        const newColor = penpot.library.local.createColor();
+        console.log(newColor);
         ```
       createTypography: |-
         ```
@@ -11422,7 +11955,8 @@ Library:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -11459,7 +11993,8 @@ Library:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -11483,7 +12018,8 @@ Library:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -11529,7 +12065,8 @@ Library:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
 LibraryColor:
   overview: |-
@@ -11666,7 +12203,8 @@ LibraryColor:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -11703,7 +12241,8 @@ LibraryColor:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -11727,7 +12266,8 @@ LibraryColor:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -11773,7 +12313,8 @@ LibraryColor:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
 LibraryComponent:
   overview: |-
@@ -11785,6 +12326,10 @@ LibraryComponent:
 
     ```
     interface LibraryComponent {
+        annotation: string | null;
+        duplicate(): LibraryComponent;
+        remove(): void;
+        restore(): void;
         instance(): Shape;
         mainInstance(): Shape;
         isVariant(): this is LibraryVariantComponent;
@@ -11808,9 +12353,18 @@ LibraryComponent:
       + LibraryComponent
         - LibraryVariantComponent
 
-    Referenced by: Board, Boolean, ContextTypesUtils, Ellipse, Group, Image, Library, Path, Rectangle, ShapeBase, SvgRaw, Text, VariantContainer, Variants
+    Referenced by: Board, Boolean, ContextTypesUtils, Ellipse, Group, Image, Library, LibraryComponent, LibraryVariantComponent, Path, Rectangle, ShapeBase, SvgRaw, Text, VariantContainer, Variants
   members:
     Properties:
+      annotation: |-
+        ```
+        annotation: string | null
+        ```
+
+        The component annotation, or null when none is set.
+        Set null to delete it. Text can contain at most 300 characters.
+        Writing requires `library:write` permission and a live component in the
+        current file's library.
       id: |-
         ```
         readonly id: string
@@ -11836,6 +12390,41 @@ LibraryComponent:
 
         The path of the library element.
     Methods:
+      duplicate: |-
+        ```
+        duplicate(): LibraryComponent
+        ```
+
+        Duplicates this component and its main instance in the current file's library.
+        Requires `library:write` permission. The component must not be deleted.
+
+        Returns LibraryComponent
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        Deletes this component and its main instance from the current file's library.
+        Requires `library:write` permission. Does nothing if already deleted.
+        Surviving copies keep their link so the component can be restored later.
+
+        Returns void
+      restore: |-
+        ```
+        restore(): void
+        ```
+
+        Restores this component if it has been deleted, including its main instance,
+        in the current file's library.
+        Leaves the current page, selection, zoom, and viewport unchanged.
+        Requires `library:write` permission. Does nothing if already restored.
+
+        Returns void
+
+        Example
+        ```
+        penpot.selection[0].component()?.restore();
+        ```
       instance: |-
         ```
         instance(): Shape
@@ -11898,7 +12487,8 @@ LibraryComponent:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -11935,7 +12525,8 @@ LibraryComponent:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -11959,7 +12550,8 @@ LibraryComponent:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -12005,7 +12597,8 @@ LibraryComponent:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
 LibraryVariantComponent:
   overview: |-
@@ -12017,6 +12610,10 @@ LibraryVariantComponent:
 
     ```
     interface LibraryVariantComponent {
+        annotation: string | null;
+        duplicate(): LibraryComponent;
+        remove(): void;
+        restore(): void;
         instance(): Shape;
         mainInstance(): Shape;
         isVariant(): this is LibraryVariantComponent;
@@ -12047,6 +12644,15 @@ LibraryVariantComponent:
     Referenced by: ContextTypesUtils, LibraryComponent, LibraryVariantComponent
   members:
     Properties:
+      annotation: |-
+        ```
+        annotation: string | null
+        ```
+
+        The component annotation, or null when none is set.
+        Set null to delete it. Text can contain at most 300 characters.
+        Writing requires `library:write` permission and a live component in the
+        current file's library.
       variants: |-
         ```
         readonly variants: Variants | null
@@ -12091,6 +12697,41 @@ LibraryVariantComponent:
 
         The path of the library element.
     Methods:
+      duplicate: |-
+        ```
+        duplicate(): LibraryComponent
+        ```
+
+        Duplicates this component and its main instance in the current file's library.
+        Requires `library:write` permission. The component must not be deleted.
+
+        Returns LibraryComponent
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        Deletes this component and its main instance from the current file's library.
+        Requires `library:write` permission. Does nothing if already deleted.
+        Surviving copies keep their link so the component can be restored later.
+
+        Returns void
+      restore: |-
+        ```
+        restore(): void
+        ```
+
+        Restores this component if it has been deleted, including its main instance,
+        in the current file's library.
+        Leaves the current page, selection, zoom, and viewport unchanged.
+        Requires `library:write` permission. Does nothing if already restored.
+
+        Returns void
+
+        Example
+        ```
+        penpot.selection[0].component()?.restore();
+        ```
       instance: |-
         ```
         instance(): Shape
@@ -12178,7 +12819,8 @@ LibraryVariantComponent:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -12215,7 +12857,8 @@ LibraryVariantComponent:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -12239,7 +12882,8 @@ LibraryVariantComponent:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -12285,7 +12929,8 @@ LibraryVariantComponent:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
 LibraryElement:
   overview: |-
@@ -12363,7 +13008,8 @@ LibraryElement:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -12400,7 +13046,8 @@ LibraryElement:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -12424,7 +13071,8 @@ LibraryElement:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -12470,7 +13118,8 @@ LibraryElement:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
 LibrarySummary:
   overview: |-
@@ -12724,7 +13373,8 @@ LibraryTypography:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -12761,7 +13411,8 @@ LibraryTypography:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -12785,7 +13436,8 @@ LibraryTypography:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -12831,7 +13483,8 @@ LibraryTypography:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
 LocalStorage:
   overview: |-
@@ -13262,7 +13915,8 @@ Page:
 
         Example
         ```
-        const page = penpot.createPage();page.remove();
+        const page = penpot.createPage();
+        page.remove();
         ```
       getShapeById: |-
         ```
@@ -13468,7 +14122,8 @@ Page:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -13505,7 +14160,8 @@ Page:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -13529,7 +14185,8 @@ Page:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -13575,7 +14232,8 @@ Page:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
 Path:
   overview: |-
@@ -13668,6 +14326,10 @@ Path:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -13704,6 +14366,7 @@ Path:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         resetOverrides(): void;
+        updateMain(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -14035,6 +14698,10 @@ Path:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -14108,7 +14775,8 @@ Path:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -14145,7 +14813,8 @@ Path:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -14169,7 +14838,8 @@ Path:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -14215,7 +14885,8 @@ Path:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
       setParentIndex: |-
         ```
@@ -14344,6 +15015,18 @@ Path:
         (and those of its children) to the ones in the linked main component.
         Similar to the "reset overrides" action on the Penpot interface.
         The current shape must be a component copy instance.
+
+        Returns void
+      updateMain: |-
+        ```
+        updateMain(): void
+        ```
+
+        Applies this copy's overrides to its main component and synchronizes copies.
+        Similar to the editor's "update main component" action.
+        Requires `content:write` and `library:write` permissions.
+        The shape must be a component copy head on the active page of the current file,
+        outside any other component copy, with a main component that is not deleted.
 
         Returns void
       switchVariant: |-
@@ -14552,6 +15235,11 @@ Path:
           several tokens with the same name in different sets, the actual token applied
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
+
+          NOTE that the per-side stroke width properties (`strokeWidthTop`,
+          `strokeWidthRight`, `strokeWidthBottom`, `strokeWidthLeft`) are only valid on
+          boards and rectangles. Applying one to any other shape raises a validation
+          error. The uniform `strokeWidth` property is accepted on every shape.
 
         Returns void
       clone: |-
@@ -14787,7 +15475,8 @@ PluginData:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -14824,7 +15513,8 @@ PluginData:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -14848,7 +15538,8 @@ PluginData:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -14894,7 +15585,8 @@ PluginData:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
 PreviousScreen:
   overview: |-
@@ -15049,6 +15741,10 @@ Rectangle:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -15085,6 +15781,7 @@ Rectangle:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         resetOverrides(): void;
+        updateMain(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -15394,6 +16091,10 @@ Rectangle:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -15453,7 +16154,8 @@ Rectangle:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -15490,7 +16192,8 @@ Rectangle:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -15514,7 +16217,8 @@ Rectangle:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -15560,7 +16264,8 @@ Rectangle:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
       setParentIndex: |-
         ```
@@ -15689,6 +16394,18 @@ Rectangle:
         (and those of its children) to the ones in the linked main component.
         Similar to the "reset overrides" action on the Penpot interface.
         The current shape must be a component copy instance.
+
+        Returns void
+      updateMain: |-
+        ```
+        updateMain(): void
+        ```
+
+        Applies this copy's overrides to its main component and synchronizes copies.
+        Similar to the editor's "update main component" action.
+        Requires `content:write` and `library:write` permissions.
+        The shape must be a component copy head on the active page of the current file,
+        outside any other component copy, with a main component that is not deleted.
 
         Returns void
       switchVariant: |-
@@ -15897,6 +16614,11 @@ Rectangle:
           several tokens with the same name in different sets, the actual token applied
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
+
+          NOTE that the per-side stroke width properties (`strokeWidthTop`,
+          `strokeWidthRight`, `strokeWidthBottom`, `strokeWidthLeft`) are only valid on
+          boards and rectangles. Applying one to any other shape raises a validation
+          error. The uniform `strokeWidth` property is accepted on every shape.
 
         Returns void
       clone: |-
@@ -16149,6 +16871,10 @@ ShapeBase:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -16185,6 +16911,7 @@ ShapeBase:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         resetOverrides(): void;
+        updateMain(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -16493,6 +17220,10 @@ ShapeBase:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -16552,7 +17283,8 @@ ShapeBase:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -16589,7 +17321,8 @@ ShapeBase:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -16613,7 +17346,8 @@ ShapeBase:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -16659,7 +17393,8 @@ ShapeBase:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
       setParentIndex: |-
         ```
@@ -16788,6 +17523,18 @@ ShapeBase:
         (and those of its children) to the ones in the linked main component.
         Similar to the "reset overrides" action on the Penpot interface.
         The current shape must be a component copy instance.
+
+        Returns void
+      updateMain: |-
+        ```
+        updateMain(): void
+        ```
+
+        Applies this copy's overrides to its main component and synchronizes copies.
+        Similar to the editor's "update main component" action.
+        Requires `content:write` and `library:write` permissions.
+        The shape must be a component copy head on the active page of the current file,
+        outside any other component copy, with a main component that is not deleted.
 
         Returns void
       switchVariant: |-
@@ -16997,6 +17744,11 @@ ShapeBase:
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
 
+          NOTE that the per-side stroke width properties (`strokeWidthTop`,
+          `strokeWidthRight`, `strokeWidthBottom`, `strokeWidthLeft`) are only valid on
+          boards and rectangles. Applying one to any other shape raises a validation
+          error. The uniform `strokeWidth` property is accepted on every shape.
+
         Returns void
       clone: |-
         ```
@@ -17100,8 +17852,8 @@ Stroke:
     Interface Stroke
     ================
 
-    Represents stroke properties in Penpot. You can add a stroke to any shape except for groups.
-    This interface includes properties for defining the color, style, width, alignment, and caps of a stroke.
+    Stroke properties for any shape except groups.
+    Literals apply strokeWidth before top/right/bottom/left widths.
 
     ```
     interface Stroke {
@@ -17111,6 +17863,11 @@ Stroke:
         strokeOpacity?: number;
         strokeStyle?: "none" | "svg" | "mixed" | "solid" | "dotted" | "dashed";
         strokeWidth?: number;
+        strokeWidthType?: "simple" | "multiple";
+        strokeWidthTop?: number;
+        strokeWidthRight?: number;
+        strokeWidthBottom?: number;
+        strokeWidthLeft?: number;
         strokeAlignment?: "center" | "inner" | "outer";
         strokeCapStart?: StrokeCap;
         strokeCapEnd?: StrokeCap;
@@ -17158,7 +17915,41 @@ Stroke:
         strokeWidth?: number
         ```
 
-        The optional width of the stroke.
+        Reads the top width. Setting it selects simple mode and sets all four sides.
+      strokeWidthType: |-
+        ```
+        readonly strokeWidthType?: "simple" | "multiple"
+        ```
+
+        Computed width mode: simple when all four effective widths match, multiple otherwise.
+      strokeWidthTop: |-
+        ```
+        strokeWidthTop?: number
+        ```
+
+        Top side width; setting it preserves the other side widths.
+        Boards and rectangles only; other shape types raise a validation error.
+      strokeWidthRight: |-
+        ```
+        strokeWidthRight?: number
+        ```
+
+        Right side width; setting it preserves the other side widths.
+        Boards and rectangles only; other shape types raise a validation error.
+      strokeWidthBottom: |-
+        ```
+        strokeWidthBottom?: number
+        ```
+
+        Bottom side width; setting it preserves the other side widths.
+        Boards and rectangles only; other shape types raise a validation error.
+      strokeWidthLeft: |-
+        ```
+        strokeWidthLeft?: number
+        ```
+
+        Left side width; setting it preserves the other side widths.
+        Boards and rectangles only; other shape types raise a validation error.
       strokeAlignment: |-
         ```
         strokeAlignment?: "center" | "inner" | "outer"
@@ -17276,6 +18067,10 @@ SvgRaw:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -17312,6 +18107,7 @@ SvgRaw:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         resetOverrides(): void;
+        updateMain(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -17614,6 +18410,10 @@ SvgRaw:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -17679,7 +18479,8 @@ SvgRaw:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -17716,7 +18517,8 @@ SvgRaw:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -17740,7 +18542,8 @@ SvgRaw:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -17786,7 +18589,8 @@ SvgRaw:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
       setParentIndex: |-
         ```
@@ -17915,6 +18719,18 @@ SvgRaw:
         (and those of its children) to the ones in the linked main component.
         Similar to the "reset overrides" action on the Penpot interface.
         The current shape must be a component copy instance.
+
+        Returns void
+      updateMain: |-
+        ```
+        updateMain(): void
+        ```
+
+        Applies this copy's overrides to its main component and synchronizes copies.
+        Similar to the editor's "update main component" action.
+        Requires `content:write` and `library:write` permissions.
+        The shape must be a component copy head on the active page of the current file,
+        outside any other component copy, with a main component that is not deleted.
 
         Returns void
       switchVariant: |-
@@ -18124,6 +18940,11 @@ SvgRaw:
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
 
+          NOTE that the per-side stroke width properties (`strokeWidthTop`,
+          `strokeWidthRight`, `strokeWidthBottom`, `strokeWidthLeft`) are only valid on
+          boards and rectangles. Applying one to any other shape raises a validation
+          error. The uniform `strokeWidth` property is accepted on every shape.
+
         Returns void
       clone: |-
         ```
@@ -18251,6 +19072,10 @@ Text:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -18287,6 +19112,7 @@ Text:
         detach(): void;
         swapComponent(component: LibraryComponent): void;
         resetOverrides(): void;
+        updateMain(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -18607,6 +19433,10 @@ Text:
             shadow: string;
             strokeColor: string;
             strokeWidth: string;
+            strokeWidthTop: string;
+            strokeWidthRight: string;
+            strokeWidthBottom: string;
+            strokeWidthLeft: string;
             fontFamilies: string;
             fontSize: string;
             fontWeight: string;
@@ -18774,7 +19604,8 @@ Text:
 
         Example
         ```
-        const data = shape.getPluginData('exampleKey');console.log(data);
+        const data = shape.getPluginData('exampleKey');
+        console.log(data);
         ```
       setPluginData: |-
         ```
@@ -18811,7 +19642,8 @@ Text:
 
         Example
         ```
-        const keys = shape.getPluginDataKeys();console.log(keys);
+        const keys = shape.getPluginDataKeys();
+        console.log(keys);
         ```
       getSharedPluginData: |-
         ```
@@ -18835,7 +19667,8 @@ Text:
 
         Example
         ```
-        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');console.log(sharedData);
+        const sharedData = shape.getSharedPluginData('exampleNamespace', 'exampleKey');
+        console.log(sharedData);
         ```
       setSharedPluginData: |-
         ```
@@ -18881,7 +19714,8 @@ Text:
 
         Example
         ```
-        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
+        const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');
+        console.log(sharedKeys);
         ```
       setParentIndex: |-
         ```
@@ -19010,6 +19844,18 @@ Text:
         (and those of its children) to the ones in the linked main component.
         Similar to the "reset overrides" action on the Penpot interface.
         The current shape must be a component copy instance.
+
+        Returns void
+      updateMain: |-
+        ```
+        updateMain(): void
+        ```
+
+        Applies this copy's overrides to its main component and synchronizes copies.
+        Similar to the editor's "update main component" action.
+        Requires `content:write` and `library:write` permissions.
+        The shape must be a component copy head on the active page of the current file,
+        outside any other component copy, with a main component that is not deleted.
 
         Returns void
       switchVariant: |-
@@ -19219,6 +20065,11 @@ Text:
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
 
+          NOTE that the per-side stroke width properties (`strokeWidthTop`,
+          `strokeWidthRight`, `strokeWidthBottom`, `strokeWidthLeft`) are only valid on
+          boards and rectangles. Applying one to any other shape raises a validation
+          error. The uniform `strokeWidth` property is accepted on every shape.
+
         Returns void
       clone: |-
         ```
@@ -19281,7 +20132,8 @@ Text:
 
         Example
         ```
-        const textRange = textShape.getRange(0, 10);console.log(textRange.characters);
+        const textRange = textShape.getRange(0, 10);
+        console.log(textRange.characters);
         ```
       applyTypography: |-
         ```
@@ -19716,6 +20568,10 @@ TokenBase:
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
 
+          NOTE that the per-side stroke width properties are only valid on boards and
+          rectangles; applying one to any other shape raises a validation error. The
+          uniform `strokeWidth` property is accepted on every shape.
+
         Returns void
       applyToSelected: |-
         ```
@@ -19856,6 +20712,10 @@ TokenBorderRadius:
           several tokens with the same name in different sets, the actual token applied
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
+
+          NOTE that the per-side stroke width properties are only valid on boards and
+          rectangles; applying one to any other shape raises a validation error. The
+          uniform `strokeWidth` property is accepted on every shape.
 
         Returns void
       applyToSelected: |-
@@ -20120,6 +20980,10 @@ TokenShadow:
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
 
+          NOTE that the per-side stroke width properties are only valid on boards and
+          rectangles; applying one to any other shape raises a validation error. The
+          uniform `strokeWidth` property is accepted on every shape.
+
         Returns void
       applyToSelected: |-
         ```
@@ -20261,6 +21125,10 @@ TokenColor:
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
 
+          NOTE that the per-side stroke width properties are only valid on boards and
+          rectangles; applying one to any other shape raises a validation error. The
+          uniform `strokeWidth` property is accepted on every shape.
+
         Returns void
       applyToSelected: |-
         ```
@@ -20401,6 +21269,10 @@ TokenDimension:
           several tokens with the same name in different sets, the actual token applied
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
+
+          NOTE that the per-side stroke width properties are only valid on boards and
+          rectangles; applying one to any other shape raises a validation error. The
+          uniform `strokeWidth` property is accepted on every shape.
 
         Returns void
       applyToSelected: |-
@@ -20546,6 +21418,10 @@ TokenFontFamilies:
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
 
+          NOTE that the per-side stroke width properties are only valid on boards and
+          rectangles; applying one to any other shape raises a validation error. The
+          uniform `strokeWidth` property is accepted on every shape.
+
         Returns void
       applyToSelected: |-
         ```
@@ -20686,6 +21562,10 @@ TokenFontSizes:
           several tokens with the same name in different sets, the actual token applied
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
+
+          NOTE that the per-side stroke width properties are only valid on boards and
+          rectangles; applying one to any other shape raises a validation error. The
+          uniform `strokeWidth` property is accepted on every shape.
 
         Returns void
       applyToSelected: |-
@@ -20829,6 +21709,10 @@ TokenFontWeights:
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
 
+          NOTE that the per-side stroke width properties are only valid on boards and
+          rectangles; applying one to any other shape raises a validation error. The
+          uniform `strokeWidth` property is accepted on every shape.
+
         Returns void
       applyToSelected: |-
         ```
@@ -20970,6 +21854,10 @@ TokenLetterSpacing:
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
 
+          NOTE that the per-side stroke width properties are only valid on boards and
+          rectangles; applying one to any other shape raises a validation error. The
+          uniform `strokeWidth` property is accepted on every shape.
+
         Returns void
       applyToSelected: |-
         ```
@@ -21110,6 +21998,10 @@ TokenNumber:
           several tokens with the same name in different sets, the actual token applied
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
+
+          NOTE that the per-side stroke width properties are only valid on boards and
+          rectangles; applying one to any other shape raises a validation error. The
+          uniform `strokeWidth` property is accepted on every shape.
 
         Returns void
       applyToSelected: |-
@@ -21253,6 +22145,10 @@ TokenOpacity:
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
 
+          NOTE that the per-side stroke width properties are only valid on boards and
+          rectangles; applying one to any other shape raises a validation error. The
+          uniform `strokeWidth` property is accepted on every shape.
+
         Returns void
       applyToSelected: |-
         ```
@@ -21395,6 +22291,10 @@ TokenRotation:
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
 
+          NOTE that the per-side stroke width properties are only valid on boards and
+          rectangles; applying one to any other shape raises a validation error. The
+          uniform `strokeWidth` property is accepted on every shape.
+
         Returns void
       applyToSelected: |-
         ```
@@ -21535,6 +22435,10 @@ TokenSizing:
           several tokens with the same name in different sets, the actual token applied
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
+
+          NOTE that the per-side stroke width properties are only valid on boards and
+          rectangles; applying one to any other shape raises a validation error. The
+          uniform `strokeWidth` property is accepted on every shape.
 
         Returns void
       applyToSelected: |-
@@ -21677,6 +22581,10 @@ TokenSpacing:
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
 
+          NOTE that the per-side stroke width properties are only valid on boards and
+          rectangles; applying one to any other shape raises a validation error. The
+          uniform `strokeWidth` property is accepted on every shape.
+
         Returns void
       applyToSelected: |-
         ```
@@ -21817,6 +22725,10 @@ TokenBorderWidth:
           several tokens with the same name in different sets, the actual token applied
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
+
+          NOTE that the per-side stroke width properties are only valid on boards and
+          rectangles; applying one to any other shape raises a validation error. The
+          uniform `strokeWidth` property is accepted on every shape.
 
         Returns void
       applyToSelected: |-
@@ -21960,6 +22872,10 @@ TokenTextCase:
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
 
+          NOTE that the per-side stroke width properties are only valid on boards and
+          rectangles; applying one to any other shape raises a validation error. The
+          uniform `strokeWidth` property is accepted on every shape.
+
         Returns void
       applyToSelected: |-
         ```
@@ -22101,6 +23017,10 @@ TokenTextDecoration:
           several tokens with the same name in different sets, the actual token applied
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
+
+          NOTE that the per-side stroke width properties are only valid on boards and
+          rectangles; applying one to any other shape raises a validation error. The
+          uniform `strokeWidth` property is accepted on every shape.
 
         Returns void
       applyToSelected: |-
@@ -22377,6 +23297,10 @@ TokenTypography:
           several tokens with the same name in different sets, the actual token applied
           and the value set to the attributes will depend on which sets are active
           (and will change if different sets or themes are activated later).
+
+          NOTE that the per-side stroke width properties are only valid on boards and
+          rectangles; applying one to any other shape raises a validation error. The
+          uniform `strokeWidth` property is accepted on every shape.
 
         Returns void
       applyToSelected: |-
@@ -22807,7 +23731,8 @@ User:
 
         Example
         ```
-        const userId = user.id;console.log(userId);
+        const userId = user.id;
+        console.log(userId);
         ```
       name: |-
         ```
@@ -22818,7 +23743,8 @@ User:
 
         Example
         ```
-        const userName = user.name;console.log(userName);
+        const userName = user.name;
+        console.log(userName);
         ```
       avatarUrl: |-
         ```
@@ -22829,7 +23755,8 @@ User:
 
         Example
         ```
-        const avatarUrl = user.avatarUrl;console.log(avatarUrl);
+        const avatarUrl = user.avatarUrl;
+        console.log(avatarUrl);
         ```
       color: |-
         ```
@@ -22840,7 +23767,8 @@ User:
 
         Example
         ```
-        const userColor = user.color;console.log(userColor);
+        const userColor = user.color;
+        console.log(userColor);
         ```
       sessionId: |-
         ```
@@ -22851,7 +23779,8 @@ User:
 
         Example
         ```
-        const sessionId = user.sessionId;console.log(sessionId);
+        const sessionId = user.sessionId;
+        console.log(sessionId);
         ```
 Variants:
   overview: |-
@@ -23096,7 +24025,8 @@ Bounds:
 
     Example
     ```
-    const bounds = { x: 50, y: 50, width: 200, height: 100 };console.log(bounds);
+    const bounds = { x: 50, y: 50, width: 200, height: 100 };
+    console.log(bounds);
     ```
 
     ```
@@ -23459,7 +24389,10 @@ Shape:
 
     Example
     ```
-    let shape: Shape;if (penpot.utils.types.isRectangle(shape)) {  console.log(shape.type);}
+    let shape: Shape;
+    if (penpot.utils.types.isRectangle(shape)) {
+      console.log(shape.type);
+    }
     ```
 
     Referenced by: Board, Boolean, Context, ContextGeometryUtils, ContextTypesUtils, Ellipse, EventsMap, FlexLayout, GridLayout, Group, Image, Interaction, Library, LibraryComponent, LibraryTypography, LibraryVariantComponent, OpenOverlay, OverlayAction, Page, Path, Penpot, Rectangle, ShapeBase, SvgRaw, Text, ToggleOverlay, TokenBase, TokenBorderRadius, TokenBorderWidth, TokenColor, TokenDimension, TokenFontFamilies, TokenFontSizes, TokenFontWeights, TokenLetterSpacing, TokenNumber, TokenOpacity, TokenRotation, TokenShadow, TokenSizing, TokenSpacing, TokenTextCase, TokenTextDecoration, TokenTypography, VariantContainer, Viewport
@@ -23632,7 +24565,14 @@ TokenDimensionProps:
     ==============================
 
     ```
-    TokenDimensionProps: "x" | "y" | "strokeWidth"
+    TokenDimensionProps:
+        | "x"
+        | "y"
+        | "strokeWidth"
+        | "strokeWidthTop"
+        | "strokeWidthRight"
+        | "strokeWidthBottom"
+        | "strokeWidthLeft"
     ```
 
     The properties that a Dimension token can be applied to.
@@ -23765,7 +24705,12 @@ TokenBorderWidthProps:
     ================================
 
     ```
-    TokenBorderWidthProps: "strokeWidth"
+    TokenBorderWidthProps:
+        | "strokeWidth"
+        | "strokeWidthTop"
+        | "strokeWidthRight"
+        | "strokeWidthBottom"
+        | "strokeWidthLeft"
     ```
 
     The properties that a BorderWidth token can be applied to.

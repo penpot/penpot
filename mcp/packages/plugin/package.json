@@ -13,8 +13,8 @@
     "clean": "rm -rf dist/"
   },
   "dependencies": {
-    "@penpot/plugin-styles": "1.5.0",
-    "@penpot/plugin-types": "1.5.0"
+    "@penpot/plugin-styles": "1.6.0",
+    "@penpot/plugin-types": "1.6.0"
   },
   "devDependencies": {
     "cross-env": "^10.1.0",
