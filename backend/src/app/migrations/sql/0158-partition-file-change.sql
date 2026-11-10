@@ -67,7 +67,7 @@ BEGIN
      OR (SELECT reltuples FROM pg_class WHERE oid = 'file_change'::regclass) > 2000000
   THEN
     RAISE EXCEPTION
-      'file_change is too large for the automatic partition migration: mark 0158 as applied and follow operations/2.20.0-file-change-partition.md';
+      'file_change is too large for the automatic partition migration: mark 0158-partition-file-change as applied and follow operations/2.20.0-file-change-partition.md';
   END IF;
 END $$;
 
