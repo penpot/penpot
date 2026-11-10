@@ -3314,6 +3314,60 @@
         (t/is (= (set (map (juxt :file-id :library-file-id) syncs))
                  (set (map (juxt :file-id :library-file-id) rels))))))))
 
+(t/deftest import-v1-skips-circular-library-relations
+  ;; Issue #12052 also names the version 1 importer: importing a package
+  ;; whose libraries use each other must not recreate the cycle. The cycle
+  ;; is built with direct inserts because `link-file-to-library` already
+  ;; rejects it. The exported file only *uses* one of the libraries, so the
+  ;; package carries the cycle the same way a real export does.
+  (let [profile (th/create-profile* 1)
+        file    (prepare-simple-file profile)
+        lib-a   (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library A"})
+        lib-b   (th/create-file* 3 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library B"})]
+    (th/link-file-to-library* {:file-id (:id file)
+                               :library-id (:id lib-a)})
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-a)
+                 :library-file-id (:id lib-b)})
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-b)
+                 :library-file-id (:id lib-a)})
+
+    (let [output (tmp/tempfile :suffix ".penpot")]
+      (v1/export-files!
+       (-> th/*system*
+           (assoc ::bfc/file-ids #{(:id file)})
+           (assoc ::bfc/include-libraries true))
+       (io/output-stream output))
+
+      (let [result (:file-ids (-> th/*system*
+                                  (assoc ::bfc/project-id (:default-project-id profile))
+                                  (assoc ::bfc/profile-id (:id profile))
+                                  (assoc ::bfc/input output)
+                                  (v1/import-files!)))
+            rels   (mapcat #(db/query th/*system* :file-library-rel {:file-id %})
+                           result)
+            syncs  (mapcat #(db/query th/*system* :file-library-sync {:file-id %})
+                           result)]
+        (t/is (= 3 (count result)))
+        ;; the relation of the file to its library, plus one of the two
+        ;; cycle edges; the edge that would close the cycle is skipped
+        (t/is (= 2 (count rels)))
+        ;; the skipped edge leaves no sync row behind
+        (t/is (= 2 (count syncs)))
+        (t/is (= (set (map (juxt :file-id :library-file-id) syncs))
+                 (set (map (juxt :file-id :library-file-id) rels))))
+        ;; no imported file lists itself among its transitive libraries
+        (doseq [file-id result]
+          (t/is (not (contains? (bfc/get-libraries th/*system* [file-id])
+                                file-id))))))))
+
 (t/deftest export-multi-file-includes-package-relations
   (let [profile          (th/create-profile* 1)
         file             (prepare-simple-file profile)

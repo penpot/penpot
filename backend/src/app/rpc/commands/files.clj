@@ -1231,22 +1231,19 @@
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id library-id] :as params}]
 
-  (case (bfc/library-link-status cfg file-id library-id)
-    :self-link
+  (when (= file-id library-id)
     (ex/raise :type :validation
               :code :invalid-library
-              :hint "A file cannot be linked to itself")
-
-    :circular
-    (ex/raise :type :validation
-              :code :circular-library-reference
-              :hint "linking this library would create a circular dependency")
-
-    :ok nil)
+              :hint "A file cannot be linked to itself"))
 
   (check-edition-permissions! conn profile-id file-id)
   (check-edition-permissions! conn profile-id library-id)
   (check-library-team-ownership! conn file-id library-id)
+
+  (when (= :circular (bfc/library-link-status cfg file-id library-id))
+    (ex/raise :type :validation
+              :code :circular-library-reference
+              :hint "linking this library would create a circular dependency"))
 
   (link-file-to-library conn params)
   (bfc/get-libraries cfg [library-id]))

@@ -572,27 +572,42 @@
         file-id'))))
 
 (defmethod read-section :v1/rels
-  [{:keys [::db/conn ::bfc/input ::bfc/timestamp]}]
-  (let [rels (read-obj! input)
+  [{:keys [::db/conn ::bfc/input ::bfc/timestamp] :as cfg}]
+  (let [rels (->> (read-obj! input)
+                  (sort-by (fn [{:keys [file-id library-file-id]}]
+                             [(str file-id) (str library-file-id)])))
         ids  (into #{} (-> bfc/*state* deref :files))]
-    ;; Insert all file relations
     (doseq [{:keys [library-file-id] :as rel} rels]
       (let [rel (-> rel
                     (update :file-id bfc/lookup-index)
                     (update :library-file-id bfc/lookup-index))]
 
         (if (contains? ids library-file-id)
-          (do
-            (l/dbg :hint "create file library link"
-                   :file-id (:file-id rel)
-                   :lib-id (:library-file-id rel)
-                   ::l/sync? true)
-            (let [rel-params (dissoc rel :synced-at)]
-              (db/insert! conn :file-library-rel rel-params)
-              (bfc/upsert-file-library-sync! conn {:file-id (:file-id rel-params)
-                                                   :library-file-id (:library-file-id rel-params)
-                                                   :synced-at (or (:synced-at rel)
-                                                                  timestamp)})))
+          (case (bfc/library-link-status cfg (:file-id rel) (:library-file-id rel))
+            :self-link
+            (l/warn :hint "ignoring self-referencing library link"
+                    :file-id (:file-id rel)
+                    :lib-id (:library-file-id rel)
+                    ::l/sync? true)
+
+            :circular
+            (l/warn :hint "ignoring circular library link"
+                    :file-id (:file-id rel)
+                    :lib-id (:library-file-id rel)
+                    ::l/sync? true)
+
+            :ok
+            (do
+              (l/dbg :hint "create file library link"
+                     :file-id (:file-id rel)
+                     :lib-id (:library-file-id rel)
+                     ::l/sync? true)
+              (let [rel-params (dissoc rel :synced-at)]
+                (db/insert! conn :file-library-rel rel-params)
+                (bfc/upsert-file-library-sync! conn {:file-id (:file-id rel-params)
+                                                     :library-file-id (:library-file-id rel-params)
+                                                     :synced-at (or (:synced-at rel)
+                                                                    timestamp)}))))
 
           (l/warn :hint "ignoring file library link"
                   :file-id (:file-id rel)
