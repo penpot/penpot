@@ -1594,13 +1594,17 @@
   (t/is (thrown? #?(:clj Exception :cljs js/Error)
                  (cg/run {:world [2 0] :ops [[:restore 0]]}))))
 
+;; programs each random composition test draws, enough for every kind to reach its coverage share
+(def ^:private coverage-programs 50)
+
 (t/deftest random-compositions
   (let [coverage (atom {})
         failure (atom nil)]
     (smt/check!
      (smt/for [program cg/program-gen]
        (cg/check-program program coverage failure))
-     :max-size 30)
+     :max-size 30
+     :default-num coverage-programs)
     (println "Component operation coverage:" (pr-str @coverage))
     (t/is (empty? (cg/coverage-errors @coverage [:edit :reset :update-main :detach :sync :undo :redo]))
           (pr-str (cg/coverage-errors @coverage [:edit :reset :update-main :detach :sync :undo :redo])))))
@@ -1611,7 +1615,8 @@
     (smt/check!
      (smt/for [program cg/structure-program-gen]
        (cg/check-program program coverage failure))
-     :max-size 30)
+     :max-size 30
+     :default-num coverage-programs)
     (println "Structure operation coverage:" (pr-str @coverage))
     (t/is (empty? (cg/coverage-errors @coverage cg/structure-kinds))
           (pr-str (cg/coverage-errors @coverage cg/structure-kinds)))))
@@ -1660,7 +1665,8 @@
     (smt/check!
      (smt/for [program cg/swap-program-gen]
        (cg/check-program program coverage failure))
-     :max-size 30)
+     :max-size 30
+     :default-num coverage-programs)
     (println "Swap operation coverage:" (pr-str @coverage))
     (t/is (empty? (cg/coverage-errors @coverage cg/swap-kinds))
           (pr-str (cg/coverage-errors @coverage cg/swap-kinds)))))
@@ -2103,6 +2109,12 @@
                              [:add-variant] [:add-variant] [:add-variant] [:switch 4] [:transform 0 0 0 7]
                              [:update-main 22]]}))))
 
+(t/deftest moving-a-flex-copy-child-after-a-switch-resized-its-sibling-authors-no-geometry
+  (t/is (map? (cg/run {:world [1 2 {:variants true :text-styles false :layout :flex :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:nest 8] [:switch 17] [:duplicate 8] [:transform 9 0 0 3]]}))))
+
 (t/deftest turning-a-flipped-copy-turns-a-child-stored-as-the-other-mirror-turn
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true
@@ -2135,7 +2147,8 @@
     (smt/check!
      (smt/for [program cg/variant-program-gen]
        (cg/check-program program coverage failure))
-     :max-size 30)
+     :max-size 30
+     :default-num coverage-programs)
     (println "Variant operation coverage:" (pr-str @coverage))
     (t/is (empty? (cg/coverage-errors @coverage cg/variant-coverage-kinds))
           (pr-str (cg/coverage-errors @coverage cg/variant-coverage-kinds)))))
@@ -2196,7 +2209,8 @@
     (smt/check!
      (smt/for [program cg/library-program-gen]
        (cg/check-program program coverage failure))
-     :max-size 30)
+     :max-size 30
+     :default-num coverage-programs)
     (println "Library operation coverage:" (pr-str @coverage))
     (t/is (empty? (cg/coverage-errors @coverage cg/library-kinds))
           (pr-str (cg/coverage-errors @coverage cg/library-kinds)))))
@@ -2207,7 +2221,8 @@
     (smt/check!
      (smt/for [program cg/stale-library-program-gen]
        (cg/check-program program coverage failure))
-     :max-size 30)
+     :max-size 30
+     :default-num coverage-programs)
     (println "Stale library operation coverage:" (pr-str @coverage))
     (t/is (empty? (cg/coverage-errors @coverage cg/stale-library-coverage-kinds #{:sync}))
           (pr-str (cg/coverage-errors @coverage cg/stale-library-coverage-kinds #{:sync})))))
@@ -2218,7 +2233,8 @@
     (smt/check!
      (smt/for [program cg/dependency-program-gen]
        (cg/check-program program coverage failure))
-     :max-size 30)
+     :max-size 30
+     :default-num coverage-programs)
     (println "Library dependency operation coverage:" (pr-str @coverage))
     (t/is (empty? (cg/coverage-errors @coverage cg/dependency-kinds #{:sync}))
           (pr-str (cg/coverage-errors @coverage cg/dependency-kinds #{:sync})))))

@@ -39,3 +39,12 @@
                 :reporter-fn #(when (= :complete (:type %)) (reset! seed (:seed %))))
     (when (some? expected)
       (t/is (= expected @seed)))))
+
+(t/deftest check-runs-the-default-num-unless-the-environment-sets-one
+  (let [runs (atom 0)
+        environment-num #?(:clj (System/getenv "PENPOT_GEN_NUM")
+                           :cljs (some-> js/globalThis .-process .-env .-PENPOT_GEN_NUM))]
+    (when-not environment-num
+      (smt/check! (smt/for [_ gen/nat] (swap! runs inc) true)
+                  :default-num 3)
+      (t/is (= 3 @runs)))))

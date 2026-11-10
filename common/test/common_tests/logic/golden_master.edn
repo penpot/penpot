@@ -14,7 +14,7 @@
  [{:transcript "create-component {:component \"main\", :id sync-main-component}\n  create-component {:component \"s1\", :id sync-s1-component}\n  make-nested-component {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n  instantiate-copy {:component \"main\", :copy sync-main-copyhead-0}\n  swap-shape {:target #fn, :to \"s1\", :keep-touched? false}\n  detach {:target #fn, :detached sync-main-copyhead-0}\n  change-property {:target #fn, :property :fills, :value \"#0000ff\"}", :states ["a3cb16fb335bc929" "e10b1283627fbeb6" "9be2dfab826240b0" "1fc0e554196dfd2b"]}
   {:transcript "create-component {:component \"main\", :id sync-main-component}\n  create-component {:component \"s1\", :id sync-s1-component}\n  make-nested-component {:component \"main\", :level 0, :outer sync-main-outercomp-0}\n  instantiate-copy {:component \"main\", :copy sync-main-copyhead-0}\n  swap-shape {:target #fn, :to \"s1\", :keep-touched? false}\n  duplicate {:target #fn, :new-head 5}\n  change-property {:target #fn, :property :fills, :value \"#0000ff\"}", :states ["a3cb16fb335bc929" "d291c9ca9a187b1b" "99bb6214c05d575b" "0694d4feab3cb633"]}]
  :af
- [{:transcript "swap-shape {:target :copy-child, :to :other, :keep-touched? false}\n  move-to-cell {:board :main-root, :child :main-child, :row 1, :column 3}", :states ["0ad5feb2c5e1a843" "9d4bf4912c552f43" "317588029f30f1ef"]}
+ [{:transcript "swap-shape {:target :copy-child, :to :other, :keep-touched? false}\n  move-to-cell {:board :main-root, :child :main-child, :row 1, :column 3}", :states ["c53dfdd17c491952" "9d4bf4912c552f43" "317588029f30f1ef"]}
   {:transcript "one-of -> skip\n  move-to-cell {:board :main-root, :child :main-child, :row 1, :column 3}", :states ["92614cf6d7575ad8" "00312b9131f4fec6"]}]
  :ag
  [{:transcript "move-child {:target :sub1, :parent :row-root, :to-index 3}", :states ["b8a611163a069cb1" "7b199a2abaca4eeb"]}]
@@ -23,7 +23,7 @@
   {:transcript "one-of -> recorded-choice\n  remove-child {:target :copy-sub3}", :states ["e2e4320b1a62202d" "44788f4405295d27"]}
   {:transcript "one-of -> skip", :states ["4f8193bba8dbfb0d"]}]
  :ak
- [{:transcript "swap-shape {:target :copy-child, :to :other, :keep-touched? false}\n  move-to-cell {:board :copy-root, :child :copy-child, :row 1, :column 3}\n  update-main {:target :copy-root, :updated grid-copy}", :states ["0ad5feb2c5e1a843" "7e8833e5c26e234c" "2508613c0f17bc78" "f3d331b4689dd5b9"]}
+ [{:transcript "swap-shape {:target :copy-child, :to :other, :keep-touched? false}\n  move-to-cell {:board :copy-root, :child :copy-child, :row 1, :column 3}\n  update-main {:target :copy-root, :updated grid-copy}", :states ["c53dfdd17c491952" "c2b95eac774d215f" "270882861b7b147e" "5bf41603d2d1f53d"]}
   {:transcript "one-of -> skip\n  move-to-cell {:board :copy-root, :child :copy-child, :row 1, :column 3}\n  update-main {:target :copy-root, :updated grid-copy}", :states ["8aad596633c254fd" "7f1f0be7424c543f" "7c9214e430ebb4e8"]}]
  :al
  [{:transcript "change-property {:target :copy-root, :property :name, :value \"Renamed\"}\n  change-property {:target :copy-instance, :property :name, :value \"Renamed child\"}\n  update-main {:target :copy-root, :updated copy-root}", :states ["0166c98332ed23a7" "6c0c864aa286702f" "af3a00259b74b965" "6598d0729b91c5b3"]}
