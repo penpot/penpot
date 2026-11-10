@@ -699,9 +699,11 @@
                             (assoc shape :transform matrix :transform-inverse (gmt/inverse matrix))))
             turn        (orient-like (orientation before) (orientation after) (gsh/shape->center before))
             delta       (gpt/subtract (gsh/shape->center after) (gsh/shape->center before))
-            ;; the subtree as the sync left it, under the parent before the sync
+            ;; the subtree as the sync left it, under the parent placed as before the sync
             placed      (when resized?
-                          (placed-like (assoc (pcb/get-objects changes) (:id before) before) before after {}))]
+                          (placed-like (assoc (pcb/get-objects changes) (:id before)
+                                              (merge after (select-keys before placement-geometry-attrs)))
+                                       before after {}))]
         (pcb/update-shapes changes ids
                            (if resized?
                              #(get placed (:id %) %)
@@ -2054,29 +2056,41 @@
   fixes it, and the layout child attributes of each of its children, from
   the child of `src` it pairs with (`src-child`); a child with none is left
   as it is. With `omit-touched?`, an attribute whose group is touched is
-  left as it is."
+  left as it is. A grid `dest` assigns its cells again when that takes a
+  child in or out of its flow."
   [changes container dest src src-child omit-touched?]
-  (pcb/concat-changes
-   changes
-   (-> (pcb/empty-changes)
-       (pcb/with-container container)
-       (pcb/with-objects (:objects container))
-       (pcb/update-shapes
-        [(:id dest)]
-        (fn [dest]
-          (cond-> dest
-            (contains? #{:auto :fix} (:layout-item-h-sizing src))
-            (propagate-attrs src #{:layout-item-h-sizing} omit-touched?)
+  (let [objects    (:objects container)
+        propagated #(if-let [src-child (src-child %)]
+                      (propagate-attrs % src-child layout-child-attrs omit-touched?)
+                      %)
+        ;; whether a child enters or leaves the flow of a grid
+        reflow?    (and (ctsl/grid-layout? dest)
+                        (some #(let [child (get objects %)]
+                                 (and child
+                                      (not= (ctsl/position-absolute? child)
+                                            (ctsl/position-absolute? (propagated child)))))
+                              (:shapes dest)))]
+    (pcb/concat-changes
+     changes
+     (cond-> (-> (pcb/empty-changes)
+                 (pcb/with-container container)
+                 (pcb/with-objects objects)
+                 (pcb/update-shapes
+                  [(:id dest)]
+                  (fn [dest]
+                    (cond-> dest
+                      (contains? #{:auto :fix} (:layout-item-h-sizing src))
+                      (propagate-attrs src #{:layout-item-h-sizing} omit-touched?)
 
-            (contains? #{:auto :fix} (:layout-item-v-sizing src))
-            (propagate-attrs src #{:layout-item-v-sizing} omit-touched?)))
-        {:ignore-touched true})
-       (pcb/update-shapes
-        (:shapes dest)
-        #(if-let [src-child (src-child %)]
-           (propagate-attrs % src-child layout-child-attrs omit-touched?)
-           %)
-        {:ignore-touched true}))))
+                      (contains? #{:auto :fix} (:layout-item-v-sizing src))
+                      (propagate-attrs src #{:layout-item-v-sizing} omit-touched?)))
+                  {:ignore-touched true})
+                 (pcb/update-shapes (:shapes dest) propagated {:ignore-touched true}))
+       reflow?
+       (pcb/update-shapes [(:id dest)] ctsl/assign-cells {:with-objects? true :ignore-touched true})
+
+       (and reflow? (= :page (:type container)))
+       (pcb/reorder-grid-children [(:id dest)])))))
 
 (defn- add-inherited-grid-cells
   "Add default cells in newly inherited tracks without replacing authored cells."
