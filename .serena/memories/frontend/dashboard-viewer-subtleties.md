@@ -6,6 +6,7 @@
 - Project fetch replaces each project map completely instead of merging, so fields such as `deleted-at` can disappear cleanly.
 - Dashboard file/project mutations are often optimistic local updates with fire-and-forget RPC watchers. Bulk permanent delete/restore paths use SSE progress and progress notifications.
 - File creation/duplication strips file `:data` before putting file summaries into dashboard state.
+- The pending invitations are a team-admin only list (backend `:is-admin` already includes the owner). The dashboard hides the invitations entry from the header tabs and the team-options dropdown for non-admins, `invitations-section-content` keys the section on `:is-admin`, and `fetch-invitations` answers `insufficient-permissions` by emitting `invitations-fetched` with `[]`, so a demoted admin does not keep the cached emails and the header does not paint the invite button from a stale list. The organization `send-invitations` policy only gates inviting and resending, not the list.
 
 ## Viewer
 
