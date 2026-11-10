@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 2.19.1 (Unreleased)
+
+### :lock: Security fixes
+
+- Fix editor-role team members retrieving the signed invitation token of any pending invitation (https://github.com/penpot/penpot/security/advisories/GHSA-4mmc-j8rh-74pf) (PR: [#12892](https://github.com/penpot/penpot/pull/12892))
+
+- Fix share-link page-scope escape in `get-profiles-for-file-comments` leaking the identity of comment authors outside the link's scope (https://github.com/penpot/penpot/security/advisories/GHSA-89cq-3wv7-987r) (PR: [#12888](https://github.com/penpot/penpot/pull/12888))
+
+- Fix missing authorization and unbounded array in mark-all-threads-as-read that let any authenticated user write the status of inaccessible threads (https://github.com/penpot/penpot/security/advisories/GHSA-j4vc-cmf6-jhr7) (PR: [#12894](https://github.com/penpot/penpot/pull/12894))
+
+- Fix incomplete SVG sanitizer escaping that let a "sanitized" SVG carry live script (CVE-2026-105694) (https://github.com/penpot/penpot/security/advisories/GHSA-qwhj-rchj-58mg) (PR: [#12887](https://github.com/penpot/penpot/pull/12887))
+
+### :bug: Bugs fixed
+
+- Fix component instance (variant) inside a layout resetting to its original size after a shared library update of an unrelated component [#12670](https://github.com/penpot/penpot/issues/12670) (PR: [#12851](https://github.com/penpot/penpot/pull/12851))
+
 ## 2.19.0
 
 ### :boom: Breaking changes & Deprecations

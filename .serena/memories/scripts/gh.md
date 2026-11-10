@@ -118,6 +118,9 @@ python3 scripts/gh.py advisories --severity critical
 # Filter by state
 python3 scripts/gh.py advisories --state triage
 
+# Filter by patched version declared in the advisory
+python3 scripts/gh.py advisories --patched-version 2.19.1
+
 # Get full detail for a single advisory
 python3 scripts/gh.py advisories GHSA-xvj6-fh9w-gjw7
 ```
@@ -125,6 +128,8 @@ python3 scripts/gh.py advisories GHSA-xvj6-fh9w-gjw7
 **Summary output fields**: ghsa_id, cve_id, severity, cvss_score, state, summary, cwes, published_at, closed_at, url.
 
 **Detail output** (single advisory) adds: description, vulnerabilities (package, version ranges), credits, timestamps.
+
+`--patched-version` filters the raw advisories before formatting: the match is an exact token of `vulnerabilities[*].patched_versions` (split on `,`/`;`), so `2.19.1` never matches `2.19.10`. Every state is included (`triage`, `draft`, `published`, `closed`, `withdrawn`). The raw `vulnerabilities` stay internal to the filter: the list output keeps the summary schema.
 
 **Output**: JSON to stdout; progress to stderr.
 
