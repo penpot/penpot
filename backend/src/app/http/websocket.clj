@@ -182,19 +182,24 @@
 (defn- file-readable?
   "Non-throwing mirror of the `:subscribe-file` gates: the file must
   still exist (a soft-deleted row grants nothing) and the profile must
-  read it. Used by the re-checks, where throwing is not an option: the
-  fresh answer is the decision."
+  read it. Same `sql:get-minimal-file` as the subscribe gate, with the
+  existence failure turned into a boolean — the fresh answer is the
+  decision."
   [cfg profile-id file-id]
-  (and (some? (db/get* cfg :file {:id file-id}))
+  (and (some? (bfc/get-minimal-file cfg file-id
+                                    {::db/throw-if-not-exists false}))
        (files/has-read-permissions? cfg profile-id file-id)))
 
 (defn- team-readable?
-  "Non-throwing mirror of the file re-check shape, for teams: the team
-  must still exist (a soft-deleted row grants nothing) and the profile
-  must read it. `:subscribe-team` has no existence gate of its own; the
-  re-check adds one, matching the file side."
+  "Same shape for teams: the team must still exist (a soft-deleted row
+  grants nothing) and the profile must read it. `:subscribe-team` has
+  no existence gate of its own; the re-check adds one, matching the
+  file side. Projects only `:id` and `:deleted-at` — `db/get*` filters
+  soft-deleted rows through the `deleted_at` column, so it must be
+  in the projection."
   [cfg profile-id team-id]
-  (and (some? (db/get* cfg :team {:id team-id}))
+  (and (some? (db/get* cfg :team {:id team-id}
+                       {:app.db.sql/columns [:id :deleted-at]}))
        (teams/has-read-permissions? cfg profile-id team-id)))
 
 (defn close-file-subscription
@@ -480,10 +485,11 @@
 
   The event is the trigger, the fresh check is the decision.
   `file-readable?` and `team-readable?` mirror the gates of
-  `:subscribe-file`: resource exists (a soft-deleted row grants
-  nothing) and the profile reads it. The organization-owner fallback
-  keeps a downgrade to viewer and a non-member owner from being mistaken
-  for revocations — but not a soft-deleted resource.
+  `:subscribe-file` and extend them to teams: resource exists
+  (a soft-deleted row grants nothing) and the profile reads it.
+  The organization-owner fallback keeps a downgrade to viewer and a
+  non-member owner from being mistaken for revocations — but not a
+  soft-deleted resource.
 
   Returns the number of subscriptions it closed."
   [cfg profile-id]

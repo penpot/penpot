@@ -6,6 +6,7 @@
 
 (ns backend-tests.http-websocket-test
   (:require
+   [app.binfile.common :as bfc]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -453,6 +454,15 @@
                                             :project-id (:id project)})]
       {:owner owner :editor editor :team team :file file})))
 
+(defn- delete-team-membership!
+  "Takes `profile-id` out of `team-id` the way an external change would:
+  a direct row delete. Fires no command and publishes no announcement,
+  so no `db/after-commit` hook can race the test."
+  [team-id profile-id]
+  (db/exec! th/*system*
+            ["delete from team_profile_rel where team_id = ? and profile_id = ?"
+             team-id profile-id]))
+
 (t/deftest revocation-closes-subscriptions-that-are-no-longer-authorized
   (let [{:keys [owner editor team file]} (editor-in-team! 1 2)]
 
@@ -551,9 +561,7 @@
       ;; announcement, so the "still subscribed" check cannot race an
       ;; after-commit hook, and the command's own announcement cannot
       ;; mask a broken watcher.
-      (db/exec! th/*system*
-                ["delete from team_profile_rel where team_id = ? and profile_id = ?"
-                 (:id team) (:id editor)])
+      (delete-team-membership! (:id team) (:id editor))
 
       (t/testing "the event is not applied until it is announced"
         (t/is (= (:id file) (subscribed-file conn))))
@@ -817,9 +825,7 @@
         ;; it: a direct row delete fires no command and publishes no
         ;; announcement, so the interval is the only thing that can
         ;; close the subscription.
-        (db/exec! th/*system*
-                  ["delete from team_profile_rel where team_id = ? and profile_id = ?"
-                   (:id team) (:id editor)])
+        (delete-team-membership! (:id team) (:id editor))
 
         (t/testing "the interval re-check drops it anyway"
           (t/is (wait-until #(nil? (subscribed-file conn)) 3000)))
@@ -877,9 +883,7 @@
 
         ;; Same external-change shape as above: no command, no
         ;; announcement, only the interval.
-        (db/exec! th/*system*
-                  ["delete from team_profile_rel where team_id = ? and profile_id = ?"
-                   (:id team) (:id editor)])
+        (delete-team-membership! (:id team) (:id editor))
 
         (t/testing "the team subscription is dropped by the interval"
           (t/is (wait-until #(nil? (subscribed-team conn)) 3000)))))))
@@ -899,6 +903,24 @@
                       (fn [& _] (throw (RuntimeException. "db down")))]
           (Thread/sleep 500)
           (t/testing "a failing check keeps the subscription"
+            (t/is (some? (subscribed-file conn)))))))))
+
+(t/deftest failing-existence-check-keeps-the-subscription
+  (let [{:keys [editor file]} (editor-in-team! 1 2)]
+
+    (with-redefs [cf/get (fn [k default]
+                           (if (= :subscription-revalidation-interval k)
+                             (ct/duration {:millis 150})
+                             default))]
+      (let [conn (-> (open-registered-connection (:id editor))
+                     (subscribe :subscribe-file {:file-id (:id file)}))]
+
+        ;; The existence probe blows up; still-authorized? fails open,
+        ;; so a transient database error keeps a legitimate subscription.
+        (with-redefs [bfc/get-minimal-file
+                      (fn [& _] (throw (RuntimeException. "db down")))]
+          (Thread/sleep 500)
+          (t/testing "a failing existence check keeps the subscription"
             (t/is (some? (subscribed-file conn)))))))))
 
 (t/deftest a-false-check-closes-the-subscription
@@ -1198,3 +1220,45 @@
                       th/*system* (:id editor)))))
         (t/testing "the read-only subscription is gone"
           (t/is (nil? (subscribed-team conn))))))))
+
+(t/deftest soft-deleted-project-closes-org-owner-file-subscription
+  (let [{:keys [owner editor team file]} (editor-in-team! 1 2)]
+
+    (let [conn (-> (open-registered-connection (:id editor))
+                   (subscribe :subscribe-file {:file-id (:id file)}))]
+
+      ;; The admin-console flag is off in tests, so Nitrate never grants
+      ;; this; stand in for an organization owner expelled from the team.
+      (with-redefs [nitrate/organization-owner-of-team? (fn [& _] true)]
+        ;; A direct row soft-delete fires no command and publishes no
+        ;; announcement. Membership SQL denies through a deleted project,
+        ;; but the org-owner fallback resolves the team without any
+        ;; deleted_at filter, so only the root fix can close the file
+        ;; subscription.
+        (db/update! th/*system* :project {:deleted-at (ct/now)}
+                    {:id (:project-id file)})
+
+        (t/testing "revalidation closes the file subscription although Nitrate still grants read-only"
+          (t/is (= 1 (ws/revalidate-profile-subscriptions
+                      th/*system* (:id editor)))))
+        (t/testing "the read-only subscription is gone"
+          (t/is (nil? (subscribed-file conn))))))))
+
+(t/deftest soft-deleted-team-closes-org-owner-file-subscription
+  (let [{:keys [owner editor team file]} (editor-in-team! 1 2)]
+
+    (let [conn (-> (open-registered-connection (:id editor))
+                   (subscribe :subscribe-file {:file-id (:id file)}))]
+
+      ;; Same shape with the ancestor unavailable at the team level:
+      ;; membership denies (t.deleted_at is null), the org-owner
+      ;; fallback grants, and only resolve-team-id's team-row check
+      ;; can close the file subscription.
+      (with-redefs [nitrate/organization-owner-of-team? (fn [& _] true)]
+        (db/update! th/*system* :team {:deleted-at (ct/now)} {:id (:id team)})
+
+        (t/testing "revalidation closes the file subscription although Nitrate still grants read-only"
+          (t/is (= 1 (ws/revalidate-profile-subscriptions
+                      th/*system* (:id editor)))))
+        (t/testing "the read-only subscription is gone"
+          (t/is (nil? (subscribed-file conn))))))))

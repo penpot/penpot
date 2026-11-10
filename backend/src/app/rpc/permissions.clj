@@ -108,13 +108,16 @@
    :can-edit false})
 
 (def ^:private sql:get-team-id-for-project
-  "SELECT team_id FROM project WHERE id = ?")
+  "SELECT team_id FROM project WHERE id = ?
+     AND deleted_at IS NULL")
 
 (def ^:private sql:get-team-id-for-file
   "SELECT p.team_id
      FROM file AS f
      JOIN project AS p ON (p.id = f.project_id)
-    WHERE f.id = ?")
+    WHERE f.id = ?
+      AND f.deleted_at IS NULL
+      AND p.deleted_at IS NULL")
 
 (defn get-team-id-for-project
   [cfg project-id]
@@ -127,11 +130,18 @@
           (:team-id)))
 
 (defn resolve-team-id
+  "Resolves the team that owns the project/file `params` references, or
+  `params`' own `:team-id`. A soft-deleted file/project/team resolves to
+  nil: no caller may rely on a dead team for access decisions. The team
+  row is checked for all branches — the SQL filters cover file and
+  project, this final check covers the team itself."
   [cfg {:keys [team-id project-id file-id]}]
-  (cond
-    (some? team-id)    team-id
-    (some? project-id) (get-team-id-for-project cfg project-id)
-    (some? file-id)    (get-team-id-for-file cfg file-id)))
+  (let [team-id (cond (some? team-id)    team-id
+                      (some? project-id) (get-team-id-for-project cfg project-id)
+                      (some? file-id)    (get-team-id-for-file cfg file-id))]
+    (when (and team-id
+               (some? (db/get* cfg :team {:id team-id})))
+      team-id)))
 
 (defn get-organization-owner-permissions
   "When `profile-id` is a non-member owner of the organization that owns
