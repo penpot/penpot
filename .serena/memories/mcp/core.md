@@ -57,7 +57,7 @@ mcp/
 │   ├── src/
 │   │   ├── main.ts            # handles communication
 │   │   └── plugin.ts          # plugin implementation
-│   └── package.json           # Includes @penpot-mcp/common dependency
+│   └── package.json           # Plugin deps: published plugin-styles, linked plugin-types
 └── prepare-api-docs           # Python project for the generation of API docs
 ```
 
@@ -107,6 +107,13 @@ From the `mcp/` directory, run
   (node reports `Promise resolution is still pending but the event loop has
   already resolved` for the file's root test). Inside tests the logger writes to
   stdout directly. `NODE_TEST_CONTEXT` is the env var `node --test` sets.
+* `packages/plugin` takes `@penpot/plugin-styles` from the registry but links
+  `@penpot/plugin-types` to `plugins/libs/plugin-types` (`link:` in the manifest
+  and in `mcp/pnpm-lock.yaml`, with no registry entry, because a linked package
+  has no resolution): the published types do not declare the `penpotMgmt`
+  global the plugin needs. On a plugins libs version bump, only the styles
+  version moves. After editing the manifest, `pnpm install --lockfile-only` in
+  `mcp/` must leave the lock untouched.
 * Cross-cutting testing principles and anti-patterns: `mem:testing`.
 
 ## OAuth for remote MCP clients

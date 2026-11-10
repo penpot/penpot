@@ -22,7 +22,6 @@
 - Fix token not showing when selecting two text layers (by @ShreyashAgare26) [#11924](https://github.com/penpot/penpot/issues/11924) (PR: [#11944](https://github.com/penpot/penpot/pull/11944))
 - Fix inner shadow fill not working in the SVG render while it works in WebGL [#11967](https://github.com/penpot/penpot/issues/11967) (PR: [#12141](https://github.com/penpot/penpot/pull/12141))
 - Fix @penpot/plugin-styles loading Work Sans from a third-party CDN (by @ump45nose) [#12023](https://github.com/penpot/penpot/issues/12023) (PR: [#12087](https://github.com/penpot/penpot/pull/12087))
-- Fix component instance (variant) inside a layout resetting to its original size after a shared library update of an unrelated component [#12670](https://github.com/penpot/penpot/issues/12670) (PR: [#12851](https://github.com/penpot/penpot/pull/12851))
 
 ### :sparkles: New features & Enhancements
 
@@ -57,6 +56,22 @@
 - Speed up saves on large files by checking only the pages a save changes [#12602](https://github.com/penpot/penpot/issues/12602) (PR: [#12555](https://github.com/penpot/penpot/pull/12555))
 - Retry saves after short server failures and keep the workspace open when a save fails [#12601](https://github.com/penpot/penpot/issues/12601) (PR: [#12555](https://github.com/penpot/penpot/pull/12555))
 - Switch the workspace to read-only mode when the file can't be saved [#12507](https://github.com/penpot/penpot/issues/12507) (PR: [#12555](https://github.com/penpot/penpot/pull/12555))
+
+## 2.19.1
+
+### :lock: Security fixes
+
+- Fix editor-role team members retrieving the signed invitation token of any pending invitation (https://github.com/penpot/penpot/security/advisories/GHSA-4mmc-j8rh-74pf) (PR: [#12892](https://github.com/penpot/penpot/pull/12892))
+
+- Fix share-link page-scope escape in `get-profiles-for-file-comments` leaking the identity of comment authors outside the link's scope (https://github.com/penpot/penpot/security/advisories/GHSA-89cq-3wv7-987r) (PR: [#12888](https://github.com/penpot/penpot/pull/12888))
+
+- Fix missing authorization and unbounded array in mark-all-threads-as-read that let any authenticated user write the status of inaccessible threads (https://github.com/penpot/penpot/security/advisories/GHSA-j4vc-cmf6-jhr7) (PR: [#12894](https://github.com/penpot/penpot/pull/12894))
+
+- Fix incomplete SVG sanitizer escaping that let a "sanitized" SVG carry live script (CVE-2026-105694) (https://github.com/penpot/penpot/security/advisories/GHSA-qwhj-rchj-58mg) (PR: [#12887](https://github.com/penpot/penpot/pull/12887))
+
+### :bug: Bugs fixed
+
+- Fix component instance (variant) inside a layout resetting to its original size after a shared library update of an unrelated component [#12670](https://github.com/penpot/penpot/issues/12670) (PR: [#12851](https://github.com/penpot/penpot/pull/12851))
 
 ## 2.19.0
 
