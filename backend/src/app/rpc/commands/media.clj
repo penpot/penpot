@@ -137,15 +137,7 @@
 
 (defn- process-main-image
   [info]
-  (let [path  (:path info)
-        mtype (:mtype info)
-        path  (if (= mtype "image/svg+xml")
-                (let [content   (slurp path)
-                      sanitized (svg/sanitize-svg content)
-                      temp-path (tmp/tempfile :prefix "penpot-svg-" :suffix ".svg" :min-age "5m")]
-                  (spit (str temp-path) sanitized)
-                  temp-path)
-                path)
+  (let [{:keys [path mtype]} (svg/sanitize-svg-upload info)
         hash  (sto/calculate-hash path)
         data  (-> (sto/content path)
                   (sto/wrap-with-hash hash))]

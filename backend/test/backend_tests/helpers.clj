@@ -777,6 +777,21 @@
              (io/file tmp))
     tmp))
 
+(defmacro with-temp-file
+  "Evaluate `body` with `sym` bound to the path of a temporary file that
+   holds `content`. The file is created under /tmp/penpot, one of the two
+   places the upload validation accepts (/tmp/undertow is the other one),
+   and it is deleted when the body ends, also when it throws."
+  [[sym content] & body]
+  `(let [path# (fs/create-tempfile :dir "/tmp/penpot" :prefix "penpot-test-")]
+     (try
+       (spit (str path#) ~content :encoding "UTF-8")
+       (let [~sym path#]
+         ~@body)
+       (finally
+         (when (fs/exists? path#)
+           (fs/delete path#))))))
+
 (defn pause
   []
   (let [^java.io.Console cnsl (System/console)]

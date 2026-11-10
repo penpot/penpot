@@ -23,6 +23,7 @@
    [app.features.fdata :as fdata]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
+   [app.media.svg :as svg]
    [app.media.validation :as media.v]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
@@ -247,8 +248,7 @@
 
 (defn- persist-thumbnail!
   [storage media created-at]
-  (let [path  (:path media)
-        mtype (:mtype media)
+  (let [{:keys [path mtype]} (svg/sanitize-svg-upload media)
         hash  (sto/calculate-hash path)
         data  (-> (sto/content path)
                   (sto/wrap-with-hash hash))]
@@ -415,7 +415,7 @@
     (let [storage (::sto/storage cfg)
           file    (bfc/get-file cfg file-id :include-deleted? true :load-data? false)
           props   (db/tjson (or (:props params) {}))
-          {:keys [path mtype]} (:media params)
+          {:keys [path mtype]} (svg/sanitize-svg-upload (:media params))
           hash    (sto/calculate-hash path)
           data    (-> (sto/content path)
                       (sto/wrap-with-hash hash))

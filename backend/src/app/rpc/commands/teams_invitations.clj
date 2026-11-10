@@ -484,7 +484,7 @@
    ::doc/module :teams
    ::sm/params schema:create-team-invitations}
   [cfg {:keys [::rpc/profile-id team-id role emails] :as params}]
-  (let [perms    (teams/get-permissions cfg profile-id team-id)
+  (let [perms    (teams/check-invitation-permissions cfg profile-id team-id)
         profile  (db/get-by-id cfg :profile profile-id)
         team     (db/get-by-id cfg :team team-id)
         ;; Strict lookup: a failed Nitrate call must not skip the
@@ -502,10 +502,6 @@
         invitation-count (if using-emails-format?
                            (count emails)
                            (count (:invitations params)))]
-
-    (when-not (:is-admin perms)
-      (ex/raise :type :validation
-                :code :insufficient-permissions))
 
     (when (and (contains? cf/flags :admin-console)
                organization
@@ -633,26 +629,43 @@
    ::doc/module :teams
    ::sm/params schema:get-team-invitation-token}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email] :as params}]
-  (teams/check-edition-permissions! cfg profile-id team-id)
-  (let [email (profile/clean-email email)
+  ;; The token is a bearer credential that accepts the invitation with the
+  ;; role of the invitation row, so it takes the same permissions as the
+  ;; rest of the invitation commands.
+  (let [perms (teams/check-invitation-permissions cfg profile-id team-id)
+        email (profile/clean-email email)
         invit (-> (db/get pool :team-invitation
                           {:team-id team-id
                            :email-to email})
-                  (update :role keyword))
+                  (update :role keyword))]
 
-        member (profile/get-profile-by-email pool (:email-to invit))
-        token  (create-invitation-token cfg {:team-id (:team-id invit)
-                                             ;; The inviter is the creator of
-                                             ;; the invitation row, not the
-                                             ;; profile requesting the token.
-                                             :profile-id (or (:created-by invit)
-                                                             profile-id)
-                                             :valid-until (:valid-until invit)
-                                             :role (:role invit)
-                                             :member-id (:id member)
-                                             :member-email (or (:email member)
-                                                               (profile/clean-email (:email-to invit)))})]
-    {:token token}))
+    ;; An admin cannot create nor promote an owner invitation, so it
+    ;; cannot mint its token either: only the team owner can.
+    (when (and (= :owner (:role invit))
+               (not (:is-owner perms)))
+      (ex/raise :type :validation
+                :code :cant-promote-to-owner
+                :hint "only the team owner can get an owner invitation token"))
+
+    (let [member (profile/get-profile-by-email pool (:email-to invit))
+          token  (create-invitation-token cfg {:team-id (:team-id invit)
+                                               ;; The inviter is the creator of
+                                               ;; the invitation row, not the
+                                               ;; profile requesting the token.
+                                               :profile-id (or (:created-by invit)
+                                                               profile-id)
+                                               :valid-until (:valid-until invit)
+                                               :role (:role invit)
+                                               :member-id (:id member)
+                                               :member-email (or (:email member)
+                                                                 (profile/clean-email (:email-to invit)))})]
+      ;; The event is named as an action and carries the granted role, so
+      ;; the minting of the token is traceable in the audit log.
+      (rph/with-meta
+        {:token token}
+        {::audit/name "create-team-invitation-token"
+         ::audit/props {:role (:role invit)
+                        :invitation-id (:id invit)}}))))
 
 ;; --- Mutation: Update invitation role
 
@@ -668,11 +681,7 @@
    ::sm/params schema:update-team-invitation-role
    ::db/transaction true}
   [{:keys [::db/conn]} {:keys [::rpc/profile-id team-id email role] :as params}]
-  (let [perms (teams/get-permissions conn profile-id team-id)]
-
-    (when-not (:is-admin perms)
-      (ex/raise :type :validation
-                :code :insufficient-permissions))
+  (let [perms (teams/check-invitation-permissions conn profile-id team-id)]
 
     ;; Don't allow promote to owner to admin users.
     (when (and (not (:is-owner perms)) (= role :owner))
@@ -697,17 +706,13 @@
    ::sm/params schema:delete-team-invition
    ::db/transaction true}
   [{:keys [::db/conn]} {:keys [::rpc/profile-id team-id email] :as params}]
-  (let [perms (teams/get-permissions conn profile-id team-id)]
+  (teams/check-invitation-permissions conn profile-id team-id)
 
-    (when-not (:is-admin perms)
-      (ex/raise :type :validation
-                :code :insufficient-permissions))
-
-    (let [invitation (db/delete! conn :team-invitation
-                                 {:team-id team-id
-                                  :email-to (profile/clean-email email)}
-                                 {::db/return-keys true})]
-      (rph/wrap nil {::audit/props {:invitation-id (:id invitation)}}))))
+  (let [invitation (db/delete! conn :team-invitation
+                               {:team-id team-id
+                                :email-to (profile/clean-email email)}
+                               {::db/return-keys true})]
+    (rph/wrap nil {::audit/props {:invitation-id (:id invitation)}})))
 
 
 ;; --- Mutation: Request Team Invitation

@@ -85,6 +85,17 @@
 (def check-read-permissions!
   (perms/make-check-fn has-read-permissions?))
 
+(defn check-invitation-permissions
+  "Returns the team permissions of `profile-id`, raising the error of the
+  invitation family when they are not the admin ones that every invitation
+  command requires. Accepts a connection, a pool or a cfg."
+  [conn profile-id team-id]
+  (let [perms (get-permissions conn profile-id team-id)]
+    (when-not (:is-admin perms)
+      (ex/raise :type :validation
+                :code :insufficient-permissions))
+    perms))
+
 (defn decode-row
   [{:keys [features subscription] :as row}]
   (when row
@@ -489,8 +500,9 @@
   {::doc/added "1.17"
    ::sm/params schema:get-team-invitations}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
+  (check-invitation-permissions cfg profile-id team-id)
+
   (dm/with-open [conn (db/open pool)]
-    (check-read-permissions! cfg profile-id team-id)
     (get-team-invitations conn team-id)))
 
 

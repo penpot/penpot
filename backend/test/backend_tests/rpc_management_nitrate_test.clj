@@ -15,10 +15,12 @@
    [app.email :as eml]
    [app.http :as-alias http]
    [app.jobs :as jobs]
+   [app.media.svg :as svg]
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
+   [app.storage :as sto]
    [app.util.ssrf :as ssrf]
    [backend-tests.helpers :as th]
    [clojure.set :as set]
@@ -2311,3 +2313,44 @@
                              :size 123}}
           out     (th/management-command! params)]
       (t/is (th/ex-of-code? (:error out) :params-validation)))))
+
+(t/deftest upload-organization-logo-sanitizes-svg
+  ;; The logo lands in a public bucket, so an SVG with live markup must
+  ;; be sanitized before it is stored.
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          content "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\" id=\"x' onload='alert(1)\"><rect width=\"10\" height=\"10\"/></svg>"]
+      (th/with-temp-file [path content]
+        (let [params {::th/type :upload-organization-logo
+                      ::rpc/profile-id (:id profile)
+                      :organization-id (uuid/random)
+                      :content {:filename "evil.svg"
+                                :path path
+                                :mtype "image/svg+xml"
+                                :size (fs/size path)}}
+              out    (th/multipart-management-command! params)]
+          (t/is (th/success? out))
+          (let [storage (:app.storage/storage th/*system*)
+                sobject (sto/get-object storage (get-in out [:result :id]))
+                stored  (slurp (sto/get-object-data storage sobject))
+                parsed  (svg/parse-svg stored)]
+            (t/is (not (contains? (:attrs parsed) :onload)))
+            (t/is (= "x' onload='alert(1)" (get (:attrs parsed) :id)))))))))
+
+(t/deftest upload-organization-logo-rejects-oversized-file
+  ;; The sanitizer reads the whole logo, so the logo must honor the media
+  ;; size limit before it is read.
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})]
+      (th/with-temp-file [path "<svg xmlns=\"http://www.w3.org/2000/svg\"><rect/></svg>"]
+        (with-redefs [app.config/config (assoc app.config/config :media-max-file-size 1)]
+          (let [params {::th/type :upload-organization-logo
+                        ::rpc/profile-id (:id profile)
+                        :organization-id (uuid/random)
+                        :content {:filename "big.svg"
+                                  :path path
+                                  :mtype "image/svg+xml"
+                                  :size (fs/size path)}}
+                out    (th/multipart-management-command! params)]
+            (t/is (th/ex-of-type? (:error out) :restriction))
+            (t/is (th/ex-of-code? (:error out) :media-max-file-size-reached))))))))
