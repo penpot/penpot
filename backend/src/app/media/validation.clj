@@ -190,24 +190,28 @@
 (defn- read-head
   "Read at most `svg-probe-bytes` leading bytes of the file at `path`,
   decoded as UTF-8 like the rest of the pipeline. Malformed sequences
-  become replacement chars and can never match a tag. Returns nil on
-  any read failure."
+  become replacement chars and can never match a tag. A leading U+FEFF
+  (UTF-8 BOM) is stripped: it is an encoding artifact, not content.
+  Returns nil on any read failure."
   [^Path path]
   (try
     (with-open [in (java.io.FileInputStream. (str path))]
       (let [buf (byte-array svg-probe-bytes)
             n   (.read in buf)]
         (when (pos? n)
-          (String. ^bytes buf (int 0) (int n) "UTF-8"))))
+          (let [s (String. ^bytes buf (int 0) (int n) "UTF-8")]
+            (if (and (pos? (.length s)) (= \uFEFF (.charAt s 0)))
+              (subs s 1)
+              s)))))
     (catch Exception _ nil)))
 
 (defn- svg-file?
   "True when the file at `path` opens with an `<svg` root element.
-  This is the only sniffing SVG gets: it is XML text, so the magic
-  database never matches it. Reads at most `svg-probe-bytes` leading
-  bytes, so memory stays constant no matter the file size. Full
-  validity stays downstream (`parse-svg` + sanitize): this only tells
-  SVG-looking text apart from other magic-less files."
+  This is the arbiter for SVG when magic returns nothing or a generic
+  XML type. Reads at most `svg-probe-bytes` leading bytes, so memory
+  stays constant no matter the file size. Full validity stays
+  downstream (`parse-svg` + sanitize): this only tells SVG-looking
+  text apart from other magic-less files."
   [^Path path]
   (boolean
    (when (and (some? path) (fs/exists? path))
@@ -235,16 +239,18 @@
 
 (defn- sniff-match?
   "Strict comparison of the declared client mime against the sniffed
-  file content. SVG is the only exception: the magic database never
-  matches it (it is XML text), so a declared `image/svg+xml` with no
-  magic match is accepted only when the file parses as an SVG
-  document. Everything else must be exactly equal — including
+  file content. SVG is the only exception: magic may return
+  `image/svg+xml` (an SVG with an XML prolog) or a generic XML type;
+  when sniffed is nil or a generic XML type, a declared `image/svg+xml`
+  is accepted only when the root-tag probe confirms an `<svg` root.
+  Everything else must be exactly equal — including
   `application/octet-stream`, which never matches."
   [declared sniffed path]
   (and (some? declared)
        (or (= declared sniffed)
            (and (svg-declared? declared)
-                (nil? sniffed)
+                (or (nil? sniffed)
+                    (contains? #{"application/xml" "text/xml"} sniffed))
                 (svg-file? path)))))
 
 (defn check-media-type

@@ -41,6 +41,26 @@
                                        (slurp (io/resource "backend_tests/test_files/sample1.svg"))))
           upload {:filename "sample.svg" :size 1234 :path path :mtype "image/svg+xml"}]
       (t/is (= upload (media.v/check-media-type upload)))))
+  (t/testing "matching bom svg with prolog passes through"
+    (let [path   (fs/create-tempfile :dir "/tmp/penpot" :prefix "penpot-test-bom-svg-")
+          _      (spit (str path) (str "\uFEFF<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                                       "<svg xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"10\" height=\"10\"/></svg>"))
+          upload {:filename "bom.svg" :size 1234 :path path :mtype "image/svg+xml"}]
+      (t/is (= upload (media.v/check-media-type upload)))))
+  (t/testing "matching bom svg without prolog passes through"
+    (let [path   (fs/create-tempfile :dir "/tmp/penpot" :prefix "penpot-test-bom-svg2-")
+          _      (spit (str path) (str "\uFEFF<svg xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"10\" height=\"10\"/></svg>"))
+          upload {:filename "bom2.svg" :size 1234 :path path :mtype "image/svg+xml"}]
+      (t/is (= upload (media.v/check-media-type upload)))))
+  (t/testing "bom plain text declared as svg is rejected"
+    (let [path   (fs/create-tempfile :dir "/tmp/penpot" :prefix "penpot-test-bom-txt-")
+          _      (spit (str path) "\uFEFFjust some text, no markup at all")
+          upload {:filename "evil.svg" :size 1234 :path path :mtype "image/svg+xml"}
+          error  (try (media.v/check-media-type upload) nil
+                      (catch clojure.lang.ExceptionInfo e e))]
+      (t/is (some? error))
+      (t/is (th/ex-of-type? error :validation))
+      (t/is (th/ex-of-code? error :media-type-mismatch))))
   (t/testing "plain text declared as svg is rejected"
     (let [path   (fs/create-tempfile :dir "/tmp/penpot" :prefix "penpot-test-txt-")
           _      (spit (str path) "just some text, no markup at all")
@@ -63,6 +83,22 @@
     (let [path   (th/tempfile "backend_tests/test_files/font-1.ttf")
           upload {:filename "font.ttf" :size 1234 :path path :mtype "font/ttf"}]
       (t/is (= upload (media.v/check-media-type upload cm/font-types)))))
+  (t/testing "matching woff passes through"
+    (let [path   (th/tempfile "backend_tests/test_files/font-1.woff")
+          upload {:filename "font.woff" :size 1234 :path path :mtype "font/woff"}]
+      (t/is (= upload (media.v/check-media-type upload cm/font-types)))))
+  (t/testing "matching woff2 passes through"
+    (let [path   (th/tempfile "backend_tests/test_files/font-1.woff2")
+          upload {:filename "font.woff2" :size 1234 :path path :mtype "font/woff2"}]
+      (t/is (= upload (media.v/check-media-type upload cm/font-types)))))
+  (t/testing "matching otf passes through"
+    (let [path   (th/tempfile "backend_tests/test_files/font-1.otf")
+          upload {:filename "font.otf" :size 1234 :path path :mtype "font/otf"}]
+      (t/is (= upload (media.v/check-media-type upload cm/font-types)))))
+  (t/testing "matching webp passes through"
+    (let [path   (th/tempfile "backend_tests/test_files/sample.webp")
+          upload {:filename "sample.webp" :size 1234 :path path :mtype "image/webp"}]
+      (t/is (= upload (media.v/check-media-type upload)))))
   (t/testing "png bytes declared as jpeg are rejected"
     (let [path   (th/tempfile "backend_tests/test_files/sample.png")
           upload {:filename "sample.png" :size 1234 :path path :mtype "image/jpeg"}
