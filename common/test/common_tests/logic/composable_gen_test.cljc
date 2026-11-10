@@ -2027,6 +2027,23 @@
                        :ops [[:make-variant 4 0 0 0] [:combine 0 0 0 0] [:transform 6 7 0 0] [:nest 1 0 0 0]
                              [:combine 3] [:switch 6] [:style 16 35 1] [:edit 8 1 1 :copy-head] [:reset 8]]}))))
 
+(t/deftest pushing-a-swap-into-a-main-leaves-out-the-flip-its-children-show-from-their-copy
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:switch 7 0 0 0] [:update-main 0 0 0 0] [:delete 0 0 0 0] [:duplicate 14 0 0 0]
+                             [:transform 4 4 0 4] [:combine 1] [:switch 9] [:transform 5 0 0 7]
+                             [:update-main 3 0 0 0] [:edit 1 0 1 1] [:update-main 1]]}))))
+
+(t/deftest pushing-a-style-of-a-typography-into-a-main-drops-the-mains-typography
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:combine 0] [:switch 2] [:make-variant 0 0 0 0] [:swap 4 0 0 0] [:add-variant 20 0 0 0]
+                             [:text-style 6 8 1] [:make-variant 0] [:switch 5] [:make-variant 0] [:switch 6]
+                             [:edit 6 0 1 1] [:update-main 6] [:add-variant 0] [:switch 3] [:edit 0 0 1 1]
+                             [:update-main 0]]}))))
+
 (t/deftest turning-a-flipped-copy-turns-a-child-stored-as-the-other-mirror-turn
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true
@@ -2449,6 +2466,42 @@
         expected (get-in model [:pushed :geometry-group])]
     (t/is (= 0 (:rotation expected)))
     (t/is (= 120 (:height expected)))))
+
+(t/deftest pushed-swap-shadow-leaves-out-the-flip-a-child-shows-from-its-flipped-copy
+  (let [geometry {:width 50 :height 50 :rotation 0 :flip-x true :flip-y nil :content-scale nil}
+        before {:copy {:id :copy :shape-ref :main :component-root true :flip-x true :shapes [:child]}
+                :main {:id :main :component-root true}
+                :child {:id :child :parent-id :copy :component-id :target :shape-ref :position
+                        :flip-x true :shapes [:leaf]}
+                :leaf (merge {:id :leaf :parent-id :child :shape-ref :position-leaf} geometry)
+                :position {:id :position :component-id :target :shapes [:position-leaf]}
+                :position-leaf {:id :position-leaf :parent-id :position}}
+        after (-> before
+                  (assoc-in [:child :shape-ref] :pushed)
+                  (assoc-in [:leaf :shape-ref] :pushed-leaf)
+                  (assoc :pushed {:id :pushed :component-id :target :shape-ref :position
+                                  :parent-id :main :shapes [:pushed-leaf]}
+                         :pushed-leaf {:id :pushed-leaf :shape-ref :position-leaf :parent-id :pushed}))
+        model (shadow/update-main {:child {:swap-group {}} :leaf {:geometry-group geometry}}
+                                  before after :copy)]
+    (t/is (false? (get-in model [:pushed-leaf :geometry-group :flip-x])))
+    (t/is (= 50 (get-in model [:pushed-leaf :geometry-group :width])))))
+
+(t/deftest update-main-shadow-drops-the-main-typography-a-pushed-style-mixes
+  (let [before {:copy {:id :copy :shape-ref :main :component-root true :shapes [:text]}
+                :main {:id :main :component-root true :shapes [:main-text]}
+                :text {:id :text :type :text :parent-id :copy :shape-ref :main-text :content :copy-content}
+                :main-text {:id :main-text :type :text :parent-id :main :shape-ref :position
+                            :content :main-content}
+                :position {:id :position :type :text}}
+        model  (shadow/update-main {:text {:text-content-family {:content :copy-content} :content-group {}}
+                                    :main-text {:text-content-typography {:content :main-content}
+                                                :text-content-size {:content :main-content}
+                                                :content-group {}}}
+                                   before before :copy)]
+    (t/is (= {:content :copy-content} (get-in model [:main-text :text-content-typography])))
+    (t/is (= {:content :copy-content} (get-in model [:main-text :text-content-family])))
+    (t/is (= {:content :main-content} (get-in model [:main-text :text-content-size])))))
 
 (t/deftest pushed-swap-shadow-predicts-content-without-reading-the-new-child
   (let [before {:copy {:id :copy :shape-ref :main :shapes [:child]}
