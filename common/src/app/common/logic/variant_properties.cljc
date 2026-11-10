@@ -166,17 +166,7 @@
 
 (defn- generate-make-shape-no-variant
   [changes shape]
-  (let [new-name      (ctv/variant-name-to-name shape)
-        [cpath cname] (cpn/split-group-name new-name)]
-    (-> changes
-        (pcb/update-component (:component-id shape)
-                              #(-> (dissoc % :variant-id :variant-properties)
-                                   (assoc :name cname
-                                          :path cpath))
-                              {:apply-changes-local-library? true})
-        (pcb/update-shapes [(:id shape)]
-                           #(-> (dissoc % :variant-id :variant-name)
-                                (assoc :name new-name))))))
+  (cfv/generate-detach-variant changes shape (ctv/variant-name-to-name shape)))
 
 (defn generate-make-shapes-no-variant
   [changes shapes]
@@ -196,7 +186,7 @@
         props     (ctv/add-new-props props (repeat new-props ""))]
 
     (if add-name?
-      (ctv/add-new-prop props (or (ctv/sanitize-property-text (:name component)) ""))
+      (ctv/add-new-prop props (ctv/sanitize-property-value (:name component)))
       props)))
 
 (defn- create-new-properties-from-non-variant

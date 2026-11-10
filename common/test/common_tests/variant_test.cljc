@@ -219,3 +219,8 @@
         result (ctv/path-to-properties "Button / Big, red" props)]
     (t/is (= "Button" (-> result first :value)))
     (t/is (= "Big red" (-> result second :value)))))
+
+(t/deftest path-to-properties-clips-long-values
+  (let [segment (apply str (repeat 70 "s"))
+        result  (ctv/path-to-properties (str "Button / " segment) [{:name "Property 1" :value ""}])]
+    (t/is (= (subs segment 0 ctv/property-max-length) (-> result second :value)))))
