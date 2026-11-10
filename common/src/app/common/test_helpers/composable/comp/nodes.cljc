@@ -165,6 +165,15 @@
       (-> (reduce with-layout-reflow changes layout-ids)
           (assoc ::layout-reflow? true)))))
 
+(defn- with-swap-layouts-reflow
+  "Reflow the layouts a swap of `new-shape` changes: the `parent-ids` it
+   returns and those of the new subtree, as the frontend's `component-swap`
+   does."
+  [changes new-shape parent-ids]
+  (let [objects (pcb/get-objects changes)
+        ids     (concat parent-ids (cfh/get-children-ids-with-self objects (:id new-shape)))]
+    (reduce with-layout-reflow changes (filter #(:layout (get objects %)) ids))))
+
 (defn layout-reflow?
   "Whether a property operation requires layout after its component sync."
   [changes]
@@ -1338,13 +1347,15 @@
     (let [the-file      (tm/file situation)
           page          (thf/current-page the-file)
           shape         (get (:objects page) (tm/target-shape-id situation target))
-          [_ changes _] (clv/generate-component-swap-in-place (pcb/empty-changes nil (:id page))
-                                                              page
-                                                              (libraries situation)
-                                                              (:data (get (libraries situation) (swap-target-file-id situation to)))
-                                                              shape
-                                                              (swap-target-id situation to)
-                                                              (boolean keep-touched?))
+          [new-shape changes parent-ids]
+          (clv/generate-component-swap-in-place (pcb/empty-changes nil (:id page))
+                                                page
+                                                (libraries situation)
+                                                (:data (get (libraries situation) (swap-target-file-id situation to)))
+                                                shape
+                                                (swap-target-id situation to)
+                                                (boolean keep-touched?))
+          changes       (with-swap-layouts-reflow changes new-shape parent-ids)
           file'         (thf/apply-changes the-file changes :validate? false)]
       (-> situation
           (tm/with-file file')
@@ -1608,9 +1619,10 @@
 
         :else
         (let [ldata         (get-in libraries [(:component-file shape) :data])
-              [_ changes _] (clv/generate-component-swap-in-place
-                             (pcb/empty-changes nil (:id page))
-                             page libraries ldata shape (:id component) true)
+              [new-shape changes parent-ids] (clv/generate-component-swap-in-place
+                                              (pcb/empty-changes nil (:id page))
+                                              page libraries ldata shape (:id component) true)
+              changes       (with-swap-layouts-reflow changes new-shape parent-ids)
               file'         (thf/apply-changes the-file changes :validate? false)]
           (-> situation
               (tm/with-file file')

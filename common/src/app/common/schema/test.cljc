@@ -105,12 +105,13 @@
 
 (defn check!
   "Check a property with reproducible size and seed. PENPOT_GEN_NUM and
-   PENPOT_GEN_SEED override the defaults; explicit options take precedence."
+   PENPOT_GEN_SEED override the defaults, `:default-num` (20) among them;
+   explicit options take precedence."
   [p & {:as options}]
-  (let [num     (or (:num options) (environment-number "PENPOT_GEN_NUM") 20)
+  (let [num     (or (:num options) (environment-number "PENPOT_GEN_NUM") (:default-num options) 20)
         seed    (or (:seed options) (environment-number "PENPOT_GEN_SEED"))
         options (cond-> (merge {:max-size 50 :reporter-fn default-reporter-fn}
-                               (dissoc options :num))
+                               (dissoc options :num :default-num))
                   seed (assoc :seed seed))
         result (tc/quick-check num p options)
         pass?        (:pass? result)
