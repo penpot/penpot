@@ -453,6 +453,28 @@
     (t/is (= "Value 3" (:variant-name (ths/get-shape file' :m03))))))
 
 
+
+(t/deftest test-combine-as-variants-same-name-values-follow-combine-order
+  ;; The combine order differs from the layer order of the mains
+  (let [file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component :c01 :m01 :r01
+                                              :root-params {:name "Tag" :x 0 :y 0 :width 100 :height 80})
+                    (tho/add-simple-component :c02 :m02 :r02
+                                              :root-params {:name "Tag" :x 150 :y 0 :width 100 :height 80})
+                    (tho/add-simple-component :c03 :m03 :r03
+                                              :root-params {:name "Tag" :x 300 :y 0 :width 100 :height 80}))
+        page    (thf/current-page file)
+        changes (-> (pcb/empty-changes nil (:id page))
+                    (pcb/with-objects (:objects page))
+                    (pcb/with-library-data (:data file))
+                    (clv/generate-combine-as-variants [(thi/id :m03) (thi/id :m01) (thi/id :m02)]
+                                                      (uuid/next)))
+        file'   (thf/apply-changes file changes)
+        values  (mapv #(-> (thc/get-component file' %) :variant-properties first :value)
+                      [:c03 :c01 :c02])]
+
+    (t/is (= ["Value 1" "Value 2" "Value 3"] values))))
+
 (t/deftest test-duplicate-variant-container
   (let [;; ==== Setup
         file    (-> (thf/sample-file :file1)

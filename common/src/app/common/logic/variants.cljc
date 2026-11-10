@@ -223,7 +223,9 @@
                                                            (- (:y rect) (:y first-shape) 30))
                                       :prefix   prefix
                                       :wrapper? (empty? prefix)})
-      (generate-move-into $ (set (rest ids)) variant-id 0)
+      ;; one move per main, in the order of `ids`, so the property values it
+      ;; generates follow that order
+      (reduce #(generate-move-into %1 #{%2} variant-id 0) $ (rest ids))
       ;; the members in the order of `ids`: the board's children go the other
       ;; way, and a change of parent at index 0 reverses the shapes it takes
       (let [children (set (get-in (pcb/get-objects $) [variant-id :shapes]))
