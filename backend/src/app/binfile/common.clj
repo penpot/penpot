@@ -24,7 +24,6 @@
    [app.common.weak :as weak]
    [app.config :as cf]
    [app.db :as db]
-   [app.db.sql :as sql]
    [app.features.fdata :as fdata]
    [app.features.file-migrations :as fmigr]
    [app.loggers.audit :as-alias audit]
@@ -130,17 +129,11 @@
 (defn initial-state
   []
   {:storage-objects #{}
-   :files #{}
-   :teams #{}
-   :projects #{}})
+   :files #{}})
 
 (defn collect-storage-objects
   [state items]
   (update state :storage-objects into xf-map-media-id items))
-
-(defn collect-summary
-  [state key items]
-  (update state key into xf-map-media-id items))
 
 (defn lookup-index
   [id]
@@ -457,27 +450,6 @@
   [cfg project-id]
   (db/get cfg :project {:id project-id}))
 
-(def ^:private sql:get-teams
-  "SELECT t.* FROM team WHERE id = ANY(?)")
-
-(defn get-teams
-  [cfg ids]
-  (let [conn (db/get-connection cfg)
-        ids  (db/create-array conn "uuid" ids)]
-    (->> (db/exec! conn [sql:get-teams ids])
-         (map decode-row-features))))
-
-(defn get-team
-  [cfg team-id]
-  (-> (db/get cfg :team {:id team-id})
-      (decode-row-features)))
-
-(defn get-fonts
-  [cfg team-id]
-  (db/query cfg :team-font-variant
-            {:team-id team-id
-             :deleted-at nil}))
-
 (def ^:private sql:get-files-rels
   "SELECT flr.*,
 	      fls.synced_at
@@ -541,15 +513,6 @@
                  {:file-id file-id
                   :deleted-at nil})
        (not-empty)))
-
-(defn get-file-thumbnail
-  "Return the thumbnail for the specified file-id"
-  [cfg {:keys [id revn]}]
-  (db/get* cfg :file-thumbnail
-           {:file-id id
-            :revn revn
-            :data nil}
-           {::sql/columns [:media-id :file-id :revn]}))
 
 (def ^:private sql:get-missing-media-references
   "SELECT fmo.*
