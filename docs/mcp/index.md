@@ -65,7 +65,7 @@ There are three key pieces:
 
 * **MCP server**: a service that exposes tools to your AI client. It receives requests from the client and forwards them to Penpot.
 * **MCP plugin in Penpot**: a plugin that runs inside Penpot and connects your open file to the MCP server. It allows the server to access that file and its pages.
-* **MCP client**: the tool where you write prompts (Cursor, Claude Code, Copilot-style tools, etc.). It connects to the MCP server using a server URL and an MCP key (or your active Penpot session in the current local setup).
+* **MCP client**: the tool where you write prompts (Cursor, Claude Code, Copilot-style tools, etc.). It connects to the MCP server using a server URL and an MCP key. In remote MCP, the client can get the key by asking you to sign in to Penpot, or you can add it to the URL yourself. The local setup uses your active Penpot session instead.
 
 ![How the AI client, Penpot MCP server, plugin, and design file connect](/img/mcp/mcp-flow.webp)
 
@@ -73,7 +73,7 @@ There are three key pieces:
 
 Some important concepts for users:
 * **Integrations page**: MCP is configured under **Your account → Integrations → MCP Server**. Here you enable or disable MCP, get the server URL and manage the MCP key.
-* **MCP key**: a personal, non-recoverable token that authenticates your AI client with the MCP server. Only one key can exist per user at a time. This is used by the remote MCP setup.
+* **MCP key**: a personal, non-recoverable token that authenticates your AI client with the MCP server. Only one key can exist per user at a time. This is used by the remote MCP setup. Clients connected through Penpot sign-in use this same key.
 * **MCP session**: a connection from a Penpot tab to the MCP server, identified by a short session ID derived from the tab's user session. Several tabs can connect independently, including tabs showing the same file.
 * **Current page**: the page open in the selected session. Switching browser focus to another tab does not change which session the agent uses.
 
@@ -130,7 +130,29 @@ Because **remote MCP** does not expose local file-system access:
 
 If you just want to try Penpot AI workflows quickly through the MCP, follow this path for the **hosted (remote) MCP server**.
 
-### Remote MCP in 5 steps
+### Remote MCP in 3 steps
+
+Use this path if your MCP client can sign in to remote MCP servers (OAuth), for example Claude Code, Codex, or Claude.ai custom connectors. It works in the official SaaS and in self-hosted instances that [enable it](/technical-guide/configuration/#mcp-sign-in).
+
+1. #### Add the server to your MCP client
+   Use the server URL without a key:
+
+   ```
+   https://<your-penpot-domain>/mcp/stream
+   ```
+
+   In the official SaaS the domain is `design.penpot.app`. See [Connect your MCP client](#connect-your-mcp-client) for client-specific commands.
+
+2. #### Sign in and allow access
+   Your client opens Penpot in the browser. Sign in if needed, check the client name and your account, and choose **Allow access**. Penpot enables MCP and creates your MCP key if you do not have one yet. If you already have a key, Penpot keeps it. Your client stores the key; you never need to copy it.
+
+3. #### Open a Penpot file and connect MCP
+   In Penpot, open a design file and choose **MCP → Connect** in the toolbar. Allowing access does not connect a file automatically.
+
+<a id="remote-mcp-in-5-steps"></a>
+### Remote MCP with an MCP key
+
+Use this path if your client cannot sign in to remote MCP servers, or if your Penpot instance does not offer sign-in.
 
 1. #### Enable MCP in Penpot
    Go to **Your account → Integrations → MCP Server** and enable the feature.
@@ -226,7 +248,7 @@ You can use Penpot MCP server in two main ways:
   * Hosted for you (no need to run anything on your machine).
   * Best option for most users, simpler installation and fewer moving parts.
   * Does **not** have privileged access to your local file system, it can only work with what Penpot exposes (design files, libraries, tokens, etc.).
-  * The **server URL** is provided in **Your account → Integrations → MCP Server** and looks like:
+  * The **server URL** is `https://<your-penpot-domain>/mcp/stream`. Clients that sign in to Penpot use it as it is. Other clients use the URL shown in **Your account → Integrations → MCP Server**, which adds your key:
     * `https://<your-penpot-domain>/mcp/stream?userToken=YOUR_MCP_KEY`
     * The domain depends on the Penpot installation. In the official SaaS it will be `design.penpot.app`.
 * **Local MCP server**
@@ -239,10 +261,17 @@ You can use Penpot MCP server in two main ways:
 
 ## Connect your MCP client
 
-* **Remote MCP**
+* **Remote MCP, signing in to Penpot**
+  * URL: `https://<your-penpot-domain>/mcp/stream`, with no key.
+  * Add the server to your client, then start the sign-in. Penpot opens in the browser and asks you to allow access. For example:
+    * Claude Code: run `claude mcp add --transport http penpot https://<your-penpot-domain>/mcp/stream`, then run `/mcp`, select `penpot` and choose **Authenticate**.
+    * Codex: run `codex mcp add penpot --url https://<your-penpot-domain>/mcp/stream`, then `codex mcp login penpot`.
+    * Claude.ai and Claude Desktop: add a custom [connector](http://claude.ai/customize/connectors) with the URL above and choose **Connect**.
+    * Other clients: follow your client's instructions for remote MCP servers that use OAuth.
+* **Remote MCP, with the MCP key in the URL**
   * URL (copy from your Penpot account overview): `https://<your-penpot-domain>/mcp/stream?userToken=YOUR_MCP_KEY`
   * Configure your MCP client with `npx -y add-mcp -g -n penpot <URL>` or by following your client's instructions for connecting to a remote MCP server.
-    For Claude Desktop, the server can be added as a custom [connector](http://claude.ai/customize/connectors).
+  * Use this option for clients that cannot sign in, or if your Penpot instance does not offer sign-in.
 * **Local MCP**
   * Configure your MCP client with `npx -y add-mcp -g -n penpot http://localhost:4401/mcp` (adjust the port if you changed `PENPOT_MCP_SERVER_PORT`) or by following your client's instructions for connecting to an HTTP MCP server.
 
@@ -273,6 +302,8 @@ Remote MCP is the easiest way to start using AI agents with Penpot. It's hosted 
 <a id="install-and-activate-remote"></a>
 ### Install and activate
 
+If your client signs in to Penpot, you can skip this section: allowing access from the client enables MCP and creates your key. See [Remote MCP in 3 steps](#remote-mcp-in-3-steps).
+
 1. Open **Your account → Integrations**.
 2. In the **MCP Server** section, read the short description to confirm that feature is available for your account.
 3. Use the **Status** toggle to enable MCP Server. Penpot remembers this state per user across sessions. You still need to connect each tab explicitly.
@@ -286,8 +317,16 @@ Remote MCP is the easiest way to start using AI agents with Penpot. It's hosted 
 <a id="connect-remote"></a>
 ### Connect
 
-For remote mode, use the URL shown in **Your account → Integrations → MCP Server**, which includes your `userToken`.
-See the section **Connect your MCP client** for details on how to connect.
+There are two ways to connect a client in remote mode:
+
+* **Sign in to Penpot.** Add `https://<your-penpot-domain>/mcp/stream` to your client without a key. When the client starts the sign-in, Penpot opens in the browser. If you are not logged in, Penpot asks you to log in first. The approval page shows the client that is asking for access and the account you are signed in with. Choose **Allow access** to connect, or **Cancel** to stop without changing anything.
+* **Use the MCP key.** Use the URL shown in **Your account → Integrations → MCP Server**, which includes your `userToken`.
+
+Allowing access enables MCP for your account and gives the client your MCP key. Penpot creates a key only if you do not have a valid one; an existing key stays the same, so clients that already use it keep working. The client receives the key directly from Penpot. It never appears in the browser address bar.
+
+If the approval page says the request expired or was already used, start the connection again from your MCP client.
+
+See the section [Connect your MCP client](#connect-your-mcp-client) for details on how to connect.
 
 ### Setup videos
 
@@ -355,16 +394,16 @@ If no key exists and you enable MCP, a modal guides you through creating one. Th
 
 **Regenerate MCP key**
 
-The **Regenerate MCP key** action immediately revokes the current key. A warning explains that any client using the old key will stop working until you update its configuration. After regenerating, Penpot shows the new key and an updated configuration snippet with the new `userToken` that you need to copy into your MCP client configuration.
+The **Regenerate MCP key** action immediately revokes the current key. A warning explains that any client using the old key will stop working until you update its configuration. This includes clients connected by signing in to Penpot: sign in again from those clients to give them the new key. After regenerating, Penpot shows the new key and an updated configuration snippet with the new `userToken` that you need to copy into your MCP client configuration.
 
 **Expired key state**
 
-If your key is expired, an error block explains that the connection cannot be established until you regenerate the key. Regenerating the key clears the error state.
+If your key is expired, an error block explains that the connection cannot be established until you regenerate the key. Regenerating the key clears the error state. Signing in again from a client also replaces an expired key with a new one.
 
 Security recommendations to highlight in the Help Center:
 
 * Treat your MCP key like a password or access token, do not share it in screenshots or code samples.
-* Regenerate the key if you suspect it may have leaked.
+* Regenerate the key if you suspect it may have leaked. Clients connected by signing in to Penpot hold the same key, so regenerating it disconnects them too.
 * Disabling MCP Server disconnects your integrated sessions. Disconnecting one tab stops access through that connection; other connected sessions remain available.
 
 ***
