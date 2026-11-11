@@ -197,7 +197,7 @@
         hints   (atom [])]
     (await
      (with-persistence
-       (^:async fn [{:keys [file-id requests store]}]
+       (^:async fn [{:keys [file-id requests requests$ store]}]
          (await
           (mock/with-mocks*
             {rx/timer     (mock/stub (fn [ms]
@@ -215,7 +215,7 @@
                      (get-in @store [:notification :content])))
             (doseq [n [2 3 4]]
               (rx/push! timer-s :tick)
-              (await (async/wait-for #(= n (count @requests)) "the retry is sent")))
+              (await (async/wait-for #(= n (count @requests)) "the retry is sent" {:signal requests$})))
             (await (async/wait-for #(seq @hints) "the slow-cycle notice"))
             (t/is (= ["translated:errors.save-still-retrying-busy"] @hints))
             (rx/end! timer-s))))
@@ -251,14 +251,14 @@
   (let [delays (atom [])]
     (await
      (with-persistence
-       (^:async fn [{:keys [file-id failures requests store]}]
+       (^:async fn [{:keys [file-id failures requests requests$ store]}]
          (await
           (mock/with-mocks*
             {rx/timer (mock/stub (fn [ms] (swap! delays conj ms) (instant-backoff ms)))}
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
             (await (async/wait-for #(and (= :error (get-in @store [:persistence :status]))
                                          (= 4 (count @requests)))
-                                   "retries exhaust into terminal error"))
+                                   "retries exhaust into terminal error" {:signal (rx/merge requests$ (ptk/input-stream store))}))
             (t/is (= :error (get-in @store [:persistence :status])))
             (t/is (= :save-failed (get-in @store [:persistence :error :code])))
             (t/is (= 1 (count (get-in @store [:persistence :queue]))))
@@ -277,7 +277,7 @@
         timer-s (rx/subject)]
     (await
      (with-persistence
-       (^:async fn [{:keys [file-id requests store]}]
+       (^:async fn [{:keys [file-id requests requests$ store]}]
          (await
           (mock/with-mocks*
             {rx/timer (mock/stub (fn [ms] (swap! delays conj ms) timer-s))}
@@ -290,7 +290,7 @@
             ;; Phase 2 — the online signal resends the head under the live
             ;; episode (status stays :retrying), hanging in flight.
             (ptk/emit! store (#'dps/resume-on-online))
-            (await (async/wait-for #(= 2 (count @requests)) "online resends"))
+            (await (async/wait-for #(= 2 (count @requests)) "online resends" {:signal requests$}))
             (t/is (= :retrying (get-in @store [:persistence :status])))
             (t/is (= 1 (get-in @store [:persistence :attempts])))
             ;; Phase 3 — the pending timer fires into the in-flight request:
@@ -440,7 +440,7 @@
         second-s (atom nil)]
     (await
      (with-persistence
-       (^:async fn [{:keys [file-id requests store]}]
+       (^:async fn [{:keys [file-id requests requests$ store]}]
          (await
           (mock/with-mocks*
             {rx/timer (mock/stub (fn [_] timer-s))}
@@ -449,7 +449,7 @@
                                    "transient failure retries"))
             (t/is (= 1 (count @requests)))
             (ptk/emit! store (#'dps/resume-on-online))
-            (await (async/wait-for #(= 2 (count @requests)) "online resends"))
+            (await (async/wait-for #(= 2 (count @requests)) "online resends" {:signal requests$}))
             (t/is (= 2 (count @requests)))
             (t/is (= :retrying (get-in @store [:persistence :status])))
             (t/is (= 1 (get-in @store [:persistence :attempts])))
@@ -485,7 +485,7 @@
         timer-s (rx/subject)]
     (await
      (with-persistence
-       (^:async fn [{:keys [file-id requests store]}]
+       (^:async fn [{:keys [file-id requests requests$ store]}]
          (await
           (mock/with-mocks*
             {rx/timer (mock/stub (fn [_] timer-s))}
@@ -498,7 +498,7 @@
             ;; Phase 2 — the retry timer fires and resends the head,
             ;; hanging in flight.
             (rx/push! timer-s :tick)
-            (await (async/wait-for #(= 2 (count @requests)) "retry resends"))
+            (await (async/wait-for #(= 2 (count @requests)) "retry resends" {:signal requests$}))
             (t/is (= :retrying (get-in @store [:persistence :status])))
             ;; Phase 3 — online arrives mid-flight: silent, never a third send.
             (ptk/emit! store (#'dps/resume-on-online))
@@ -561,7 +561,7 @@
          (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
                                 "first save lands"))
          (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-         (await (async/wait-for #(= 2 (count @requests)) "second edit is sent"))
+         (await (async/wait-for #(= 2 (count @requests)) "second edit is sent" {:signal requests$}))
          (reset! clock (+ 300001 errors/report-window-ms 300001))
          (rx/push! ticks :tick)
          (await (async/wait-for #(= 2 (count (audit-events @events)))
@@ -799,7 +799,7 @@
         cycles (atom [])]
     (await
      (with-persistence
-       (^:async fn [{:keys [file-id requests store]}]
+       (^:async fn [{:keys [file-id requests requests$ store]}]
          (await
           (mock/with-mocks*
             {rx/timer (mock/stub (slow-cycle-timer cycles))
@@ -809,7 +809,7 @@
 
             (reset! clock (+ dps/retry-give-up-ms 1000))
             (rx/push! (last @cycles) :tick)
-            (await (async/wait-for #(= 5 (count @requests)) "the last slow attempt"))
+            (await (async/wait-for #(= 5 (count @requests)) "the last slow attempt" {:signal requests$}))
             (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
                                    "the attempt fails"))
             (await (async/settle))
@@ -829,7 +829,7 @@
         cycles (atom [])]
     (await
      (with-persistence
-       (^:async fn [{:keys [file-id requests store]}]
+       (^:async fn [{:keys [file-id requests requests$ store]}]
          (await
           (mock/with-mocks*
             {rx/timer (mock/stub (slow-cycle-timer cycles))
@@ -843,7 +843,7 @@
             (t/is (dps/save-retrying? (:persistence @store)))
             (rx/push! (last @cycles) :tick)
             (await (async/wait-for #(= (+ 4 dps/max-slow-failures) (count @requests))
-                                   "the last slow attempt is sent"))
+                                   "the last slow attempt is sent" {:signal requests$}))
             (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
                                    "the last slow attempt fails"))
             (await (async/settle))
@@ -966,12 +966,12 @@
         first-s (rx/subject)]
     (await
      (with-persistence
-       (^:async fn [{:keys [file-id requests store]}]
+       (^:async fn [{:keys [file-id requests requests$ store]}]
          (await
           (mock/with-mocks*
             {rx/timer (mock/stub (fn [ms] (swap! timers conj ms) (rx/subject)))}
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(= 1 (count @requests)) "the edit is sent"))
+            (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
 
             (ptk/emit! store (ptk/data-event :app.main.data.workspace/finalize-workspace))
             (await (async/wait-for #(get-in @store [:persistence :suspended])
@@ -1006,12 +1006,12 @@
         last-s (rx/subject)]
     (await
      (with-persistence
-       (^:async fn [{:keys [file-id requests store]}]
+       (^:async fn [{:keys [file-id requests requests$ store]}]
          (await
           (mock/with-mocks*
             {rx/timer (mock/stub (slow-cycle-timer cycles))}
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(= 4 (count @requests)) "the last retry is sent"))
+            (await (async/wait-for #(= 4 (count @requests)) "the last retry is sent" {:signal requests$}))
 
             (ptk/emit! store (ptk/data-event :app.main.data.workspace/finalize-workspace))
             (await (async/wait-for #(get-in @store [:persistence :suspended])

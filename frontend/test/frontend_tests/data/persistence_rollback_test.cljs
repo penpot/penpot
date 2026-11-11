@@ -66,7 +66,7 @@
 (t/deftest ^:async a-rejected-save-undoes-the-rejected-commit-and-every-later-one
   (await
    (thp/with-persistence
-     (^:async fn [{:keys [file-id response requests store failures]}]
+     (^:async fn [{:keys [file-id response requests requests$ store failures]}]
        (let [page-id  (uuid/next)
              shape-id (uuid/next)
              other-id (uuid/next)
@@ -84,7 +84,7 @@
                                                  :index 3})
                          (assoc-in [:workspace-local :selected] #{shape-id})))
          (ptk/emit! store commit1 commit2 ::dps/force-persist)
-         (await (async/wait-for #(= 1 (count @requests)) "the first two commits are sent"))
+         (await (async/wait-for #(= 1 (count @requests)) "the first two commits are sent" {:signal requests$}))
          (ptk/emit! store commit3 other ::dps/force-persist)
          (await (async/wait-for #(= 3 (count (get-in @store [:persistence :queue])))
                                 "the third commit and the other file's edit are queued"))
@@ -93,7 +93,7 @@
                                 "the fourth commit is buffered"))
 
          (rx/push! response (thp/rejection (:id @commit2)))
-         (await (async/wait-for #(= 2 (count @requests)) "the other file's edit is sent next"))
+         (await (async/wait-for #(= 2 (count @requests)) "the other file's edit is sent next" {:signal requests$}))
 
          (t/is (= "B" (thp/shape-name store file-id page-id shape-id))
                "the file holds the commits the server kept")
@@ -118,14 +118,14 @@
 (t/deftest ^:async a-pending-notice-after-a-rollback-leaves-the-status-saved
   (await
    (thp/with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
+     (^:async fn [{:keys [file-id response requests requests$ store]}]
        (let [page-id  (uuid/next)
              shape-id (uuid/next)
              commit1  (thp/rename-commit file-id page-id shape-id "A" "B")
              commit2  (thp/rename-commit file-id page-id shape-id "B" "C")]
          (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "C")))
          (ptk/emit! store commit1 ::dps/force-persist)
-         (await (async/wait-for #(= 1 (count @requests)) "the first commit is sent"))
+         (await (async/wait-for #(= 1 (count @requests)) "the first commit is sent" {:signal requests$}))
          (ptk/emit! store commit2)
          (rx/push! response (thp/rejection (:id @commit1)))
          (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
@@ -145,7 +145,7 @@
 (t/deftest ^:async a-rollback-keeps-a-peer-change-to-the-same-attribute
   (await
    (thp/with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
+     (^:async fn [{:keys [file-id response requests requests$ store]}]
        (let [page-id  (uuid/next)
              shape-id (uuid/next)
              commit1  (thp/rename-commit file-id page-id shape-id "A" "B")
@@ -159,7 +159,7 @@
          (t/is (= 0.9 (thp/shape-attr store file-id page-id shape-id :opacity))
                "the local edit stays on top of the peer's while pending")
          (ptk/emit! store ::dps/force-persist)
-         (await (async/wait-for #(= 1 (count @requests)) "the edits are sent"))
+         (await (async/wait-for #(= 1 (count @requests)) "the edits are sent" {:signal requests$}))
          (rx/push! response (thp/rejection (:id @commit2)))
          (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
                                 "the rollback settles"))
@@ -177,7 +177,7 @@
 (t/deftest ^:async a-rollback-ignores-peer-changes-older-than-the-pending-commits
   (await
    (thp/with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
+     (^:async fn [{:keys [file-id response requests requests$ store]}]
        (let [page-id  (uuid/next)
              shape-id (uuid/next)
              commit0  (thp/attr-commit file-id page-id shape-id :opacity 0.5 0.7)
@@ -188,7 +188,7 @@
          (await (async/wait-for #(seq (get-in @store [:persistence :buffer])) "the edit is buffered"))
          (ptk/emit! store (thp/remote-commit file-id 1 [(thp/set-attr page-id shape-id :opacity 0.3)]))
          (ptk/emit! store ::dps/force-persist)
-         (await (async/wait-for #(= 1 (count @requests)) "the opacity edit is sent"))
+         (await (async/wait-for #(= 1 (count @requests)) "the opacity edit is sent" {:signal requests$}))
          (rx/push! response {:revn 1})
          (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
                                 "the opacity edit is saved"))
@@ -197,7 +197,7 @@
          (ptk/emit! store
                     #(assoc-in % [:files file-id :data :pages-index page-id :objects shape-id :name] "C")
                     commit1 commit2 ::dps/force-persist)
-         (await (async/wait-for #(= 2 (count @requests)) "the renames are sent"))
+         (await (async/wait-for #(= 2 (count @requests)) "the renames are sent" {:signal requests$}))
          (rx/push! response (thp/rejection (:id @commit2)))
          (await (async/wait-for #(= "B" (thp/shape-name store file-id page-id shape-id))
                                 "the rejected rename is undone"))
@@ -216,7 +216,7 @@
 (t/deftest ^:async a-rejection-reverts-the-pending-commits-of-the-same-action-in-other-files
   (await
    (thp/with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
+     (^:async fn [{:keys [file-id response requests requests$ store]}]
        (let [lib-id    (uuid/next)
              page-id   (uuid/next)
              shape-id  (uuid/next)
@@ -231,9 +231,9 @@
                                                       (thp/file-data page-id shape-id "C")
                                                       (thp/file-data page-id lshape-id "W")))
          (ptk/emit! store commit1 commit2 before linked after ::dps/force-persist)
-         (await (async/wait-for #(= 1 (count @requests)) "this file's save is sent"))
+         (await (async/wait-for #(= 1 (count @requests)) "this file's save is sent" {:signal requests$}))
          (rx/push! response (thp/rejection (:id @commit2)))
-         (await (async/wait-for #(= 2 (count @requests)) "the library's save is sent next"))
+         (await (async/wait-for #(= 2 (count @requests)) "the library's save is sent next" {:signal requests$}))
          (t/is (= "B" (thp/shape-name store file-id page-id shape-id)))
          (t/is (= "Y" (thp/shape-name store lib-id page-id lshape-id))
                "the library goes back to the edit made before the action")
@@ -251,7 +251,7 @@
 (t/deftest ^:async a-rejection-undoes-the-saved-commits-of-the-same-action-with-a-new-commit
   (await
    (thp/with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
+     (^:async fn [{:keys [file-id response requests requests$ store]}]
        (let [lib-id    (uuid/next)
              page-id   (uuid/next)
              shape-id  (uuid/next)
@@ -263,15 +263,15 @@
                                                       (thp/file-data page-id shape-id "B")
                                                       (thp/file-data page-id lshape-id "Y")))
          (ptk/emit! store linked commit ::dps/force-persist)
-         (await (async/wait-for #(= 1 (count @requests)) "the library's save is sent first"))
+         (await (async/wait-for #(= 1 (count @requests)) "the library's save is sent first" {:signal requests$}))
          (t/is (= lib-id (get-in (first @requests) [1 :id])))
          (rx/push! response {:revn 1})
-         (await (async/wait-for #(= 2 (count @requests)) "this file's save is sent"))
+         (await (async/wait-for #(= 2 (count @requests)) "this file's save is sent" {:signal requests$}))
          (rx/push! response (thp/rejection (:id @commit)))
          (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
                                 "a new commit undoes the library's"))
          (ptk/emit! store ::dps/force-persist)
-         (await (async/wait-for #(= 3 (count @requests)) "the new commit is sent"))
+         (await (async/wait-for #(= 3 (count @requests)) "the new commit is sent" {:signal requests$}))
          (t/is (= lib-id (get-in (nth @requests 2) [1 :id])))
          (t/is (= [[(thp/rename page-id lshape-id "X")]] (sent-changes requests 2)))
          (t/is (= "A" (thp/shape-name store file-id page-id shape-id)))
@@ -286,7 +286,7 @@
 (t/deftest ^:async the-undo-of-a-saved-commit-stays-out-of-an-open-transaction
   (await
    (thp/with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
+     (^:async fn [{:keys [file-id response requests requests$ store]}]
        (let [lib-id    (uuid/next)
              page-id   (uuid/next)
              shape-id  (uuid/next)
@@ -298,9 +298,9 @@
                                                       (thp/file-data page-id shape-id "B")
                                                       (thp/file-data page-id lshape-id "Y")))
          (ptk/emit! store linked commit ::dps/force-persist)
-         (await (async/wait-for #(= 1 (count @requests)) "the library's save is sent first"))
+         (await (async/wait-for #(= 1 (count @requests)) "the library's save is sent first" {:signal requests$}))
          (rx/push! response {:revn 1})
-         (await (async/wait-for #(= 2 (count @requests)) "this file's save is sent"))
+         (await (async/wait-for #(= 2 (count @requests)) "this file's save is sent" {:signal requests$}))
          (ptk/emit! store (dwu/start-undo-transaction (js/Symbol) :timeout 0))
          (let [tx-group (get-in @store [:workspace-undo :transaction :commit-group])]
            (rx/push! response (thp/rejection (:id @commit)))
@@ -309,7 +309,7 @@
            (t/is (some? tx-group))
            (t/is (not= tx-group (get-in @store [:persistence :buffer 0 :undo-group])))
            (ptk/emit! store ::dps/force-persist)
-           (await (async/wait-for #(= 3 (count @requests)) "the new commit is sent"))
+           (await (async/wait-for #(= 3 (count @requests)) "the new commit is sent" {:signal requests$}))
            (rx/push! response {:revn 2})
            (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
                                   "the queue drains"))))))))
@@ -320,7 +320,7 @@
 (t/deftest ^:async a-rejection-queues-the-undo-of-a-saved-commit-of-a-file-not-loaded
   (await
    (thp/with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
+     (^:async fn [{:keys [file-id response requests requests$ store]}]
        (let [lib-id    (uuid/next)
              page-id   (uuid/next)
              shape-id  (uuid/next)
@@ -332,12 +332,12 @@
                                                       (thp/file-data page-id shape-id "B")
                                                       (thp/file-data page-id lshape-id "Y")))
          (ptk/emit! store linked commit ::dps/force-persist)
-         (await (async/wait-for #(= 1 (count @requests)) "the library's save is sent first"))
+         (await (async/wait-for #(= 1 (count @requests)) "the library's save is sent first" {:signal requests$}))
          (rx/push! response {:revn 1})
-         (await (async/wait-for #(= 2 (count @requests)) "this file's save is sent"))
+         (await (async/wait-for #(= 2 (count @requests)) "this file's save is sent" {:signal requests$}))
          (ptk/emit! store #(update % :files dissoc lib-id))
          (rx/push! response (thp/rejection (:id @commit)))
-         (await (async/wait-for #(= 3 (count @requests)) "the undo is queued and sent"))
+         (await (async/wait-for #(= 3 (count @requests)) "the undo is queued and sent" {:signal requests$}))
          (t/is (= lib-id (get-in (nth @requests 2) [1 :id])))
          (t/is (= [[(thp/rename page-id lshape-id "X")]] (sent-changes requests 2)))
          (t/is (empty? (get-in @store [:persistence :buffer])))
@@ -353,7 +353,7 @@
 (t/deftest ^:async a-rejection-undoes-the-kept-commits-of-the-same-action
   (await
    (thp/with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
+     (^:async fn [{:keys [file-id response requests requests$ store]}]
        (let [page-id  (uuid/next)
              shape-id (uuid/next)
              group    (uuid/next)
@@ -361,12 +361,12 @@
              commit2  (grouped (thp/attr-commit file-id page-id shape-id :opacity 1 0.5) group)]
          (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "B" :opacity 0.5)))
          (ptk/emit! store commit1 commit2 ::dps/force-persist)
-         (await (async/wait-for #(= 1 (count @requests)) "the action is sent"))
+         (await (async/wait-for #(= 1 (count @requests)) "the action is sent" {:signal requests$}))
          (rx/push! response (thp/rejection (:id @commit2)))
          (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
                                 "a new commit undoes the kept one"))
          (ptk/emit! store ::dps/force-persist)
-         (await (async/wait-for #(= 2 (count @requests)) "the new commit is sent"))
+         (await (async/wait-for #(= 2 (count @requests)) "the new commit is sent" {:signal requests$}))
          (t/is (= [[(thp/rename page-id shape-id "A")]] (sent-changes requests 1)))
          (t/is (= "A" (thp/shape-name store file-id page-id shape-id)))
          (t/is (= 1 (thp/shape-attr store file-id page-id shape-id :opacity)))
@@ -382,7 +382,7 @@
 (t/deftest ^:async a-rejection-reverts-every-commit-of-an-undo-transaction
   (await
    (thp/with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
+     (^:async fn [{:keys [file-id response requests requests$ store]}]
        (let [page-id   (uuid/next)
              shape-ids (into [] (repeatedly 5 uuid/next))
              shapes    (map #(cts/setup-shape {:id % :type :rect :name "R" :opacity 1
@@ -416,14 +416,14 @@
                     (apply-to (subvec shape-ids 4 5))
                     (dwu/commit-undo-transaction tx-id)
                     ::dps/force-persist)
-         (await (async/wait-for #(= 1 (count @requests)) "the action is sent"))
+         (await (async/wait-for #(= 1 (count @requests)) "the action is sent" {:signal requests$}))
          (let [groups (get-in (first @requests) [1 :changes-with-metadata])]
            (t/is (= 3 (count groups)) "the save carries the three commits")
            (rx/push! response (thp/rejection (:commit-id (nth groups 2)))))
          (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
                                 "a new commit undoes the kept ones"))
          (ptk/emit! store ::dps/force-persist)
-         (await (async/wait-for #(= 2 (count @requests)) "the new commit is sent"))
+         (await (async/wait-for #(= 2 (count @requests)) "the new commit is sent" {:signal requests$}))
          (doseq [id shape-ids]
            (t/is (= 1 (thp/shape-attr store file-id page-id id :opacity)))
            (t/is (nil? (thp/shape-attr store file-id page-id id :applied-tokens))))
@@ -447,7 +447,7 @@
 (t/deftest ^:async a-rollback-leaves-the-edition-of-a-removed-shape
   (await
    (thp/with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
+     (^:async fn [{:keys [file-id response requests requests$ store]}]
        (let [page-id  (uuid/next)
              shape-id (uuid/next)
              text-id  (uuid/next)
@@ -458,7 +458,7 @@
                                                        (thp/add-shape page-id text)))
                     #(assoc-in % [:workspace-local :edition] text-id))
          (ptk/emit! store commit ::dps/force-persist)
-         (await (async/wait-for #(= 1 (count @requests)) "the new text is sent"))
+         (await (async/wait-for #(= 1 (count @requests)) "the new text is sent" {:signal requests$}))
          (rx/push! response (thp/rejection (:id @commit)))
          (await (async/wait-for #(nil? (get-in @store [:workspace-local :edition]))
                                 "the rollback leaves edition mode"))
@@ -472,7 +472,7 @@
 (t/deftest ^:async a-rollback-leaves-the-edition-of-a-changed-path
   (await
    (thp/with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
+     (^:async fn [{:keys [file-id response requests requests$ store]}]
        (let [page-id  (uuid/next)
              shape-id (uuid/next)
              commit   (thp/rename-commit file-id page-id shape-id "A" "B")]
@@ -485,7 +485,7 @@
                          (assoc-in [:workspace-drawing :object]
                                    {:id shape-id :content [:rejected]})))
          (ptk/emit! store commit ::dps/force-persist)
-         (await (async/wait-for #(= 1 (count @requests)) "the edit is sent"))
+         (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
          (rx/push! response (thp/rejection (:id @commit)))
          (await (async/wait-for #(nil? (get-in @store [:workspace-local :edition]))
                                 "the rollback leaves edition mode"))
@@ -502,7 +502,7 @@
 (t/deftest ^:async a-rollback-keeps-the-edition-of-an-unchanged-shape
   (await
    (thp/with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
+     (^:async fn [{:keys [file-id response requests requests$ store]}]
        (let [page-id  (uuid/next)
              shape-id (uuid/next)
              other-id (uuid/next)
@@ -514,7 +514,7 @@
                                                        (thp/add-shape page-id other)))
                     #(assoc-in % [:workspace-local :edition] other-id))
          (ptk/emit! store commit ::dps/force-persist)
-         (await (async/wait-for #(= 1 (count @requests)) "the edit is sent"))
+         (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
          (rx/push! response (thp/rejection (:id @commit)))
          (await (async/wait-for #(= "A" (thp/shape-name store file-id page-id shape-id))
                                 "the rollback lands"))
@@ -527,7 +527,7 @@
 (t/deftest ^:async a-rollback-closes-the-color-picker-of-a-removed-shape
   (await
    (thp/with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
+     (^:async fn [{:keys [file-id response requests requests$ store]}]
        (let [page-id  (uuid/next)
              shape-id (uuid/next)
              rect-id  (uuid/next)
@@ -540,7 +540,7 @@
                          (assoc-in [:workspace-local :selected] #{rect-id})
                          (assoc ::modal/modal {:id (uuid/next) :type :colorpicker :props {}})))
          (ptk/emit! store commit ::dps/force-persist)
-         (await (async/wait-for #(= 1 (count @requests)) "the new rectangle is sent"))
+         (await (async/wait-for #(= 1 (count @requests)) "the new rectangle is sent" {:signal requests$}))
          (rx/push! response (thp/rejection (:id @commit)))
          (await (async/wait-for #(empty? (get-in @store [:workspace-local :selected]))
                                 "the rollback deselects the removed shape"))
@@ -552,7 +552,7 @@
 (t/deftest ^:async a-rejected-undo-puts-the-change-and-the-history-back
   (await
    (thp/with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
+     (^:async fn [{:keys [file-id response requests requests$ store]}]
        (let [page-id  (uuid/next)
              shape-id (uuid/next)
              item     (thp/undo-entry (thp/rename-commit file-id page-id shape-id "A" "B"))]
@@ -564,7 +564,7 @@
                                 "the rename is undone"))
          (t/is (= -1 (get-in @store [:workspace-undo :index])))
          (ptk/emit! store ::dps/force-persist)
-         (await (async/wait-for #(= 1 (count @requests)) "the undo is sent"))
+         (await (async/wait-for #(= 1 (count @requests)) "the undo is sent" {:signal requests$}))
          (rx/push! response (thp/rejection
                              (get-in (first @requests) [1 :changes-with-metadata 0 :commit-id])))
          (await (async/wait-for #(= "B" (thp/shape-name store file-id page-id shape-id))
@@ -598,7 +598,7 @@
     (try
       (await
        (thp/with-persistence
-         (^:async fn [{:keys [file-id response requests store]}]
+         (^:async fn [{:keys [file-id response requests requests$ store]}]
            (let [page-id  (uuid/next)
                  shape-id (uuid/next)
                  ;; A change type with no handler, so its undo throws
@@ -614,7 +614,7 @@
                                                    (thp/shape-name store file-id page-id shape-id)]))))]
              (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "B")))
              (ptk/emit! store commit ::dps/force-persist)
-             (await (async/wait-for #(= 1 (count @requests)) "the rename is sent"))
+             (await (async/wait-for #(= 1 (count @requests)) "the rename is sent" {:signal requests$}))
              (rx/push! response (thp/rejection (:id @commit)))
              (await (async/wait-for #(= 1 @reloads) "the rollback reloads the file"))
              (await (async/settle))
@@ -639,7 +639,7 @@
 (t/deftest ^:async an-answer-from-before-a-restore-leaves-the-reloaded-file-alone
   (await
    (thp/with-persistence
-     (^:async fn [{:keys [file-id response requests store failures]}]
+     (^:async fn [{:keys [file-id response requests requests$ store failures]}]
        (let [page-id  (uuid/next)
              shape-id (uuid/next)
              commit1  (thp/rename-commit file-id page-id shape-id "A" "B")
@@ -649,7 +649,7 @@
                     (thp/open-file file-id page-id (thp/file-data page-id shape-id "D"))
                     #(assoc-in % [:files file-id :vern] 0))
          (ptk/emit! store commit1 commit2 ::dps/force-persist)
-         (await (async/wait-for #(= 1 (count @requests)) "the first two renames are sent"))
+         (await (async/wait-for #(= 1 (count @requests)) "the first two renames are sent" {:signal requests$}))
          (ptk/emit! store commit3 ::dps/force-persist)
          (await (async/wait-for #(= 2 (count (get-in @store [:persistence :queue])))
                                 "the third rename is queued"))
@@ -677,14 +677,14 @@
 (t/deftest ^:async a-save-refused-after-a-restore-is-dropped
   (await
    (thp/with-persistence
-     (^:async fn [{:keys [file-id response requests store failures]}]
+     (^:async fn [{:keys [file-id response requests requests$ store failures]}]
        (let [page-id  (uuid/next)
              shape-id (uuid/next)]
          (ptk/emit! store
                     (thp/open-file file-id page-id (thp/file-data page-id shape-id "B"))
                     #(assoc-in % [:files file-id :vern] 0))
          (ptk/emit! store (thp/rename-commit file-id page-id shape-id "A" "B") ::dps/force-persist)
-         (await (async/wait-for #(= 1 (count @requests)) "the rename is sent"))
+         (await (async/wait-for #(= 1 (count @requests)) "the rename is sent" {:signal requests$}))
          (ptk/emit! store (restore-version file-id (thp/file-data page-id shape-id "Restored")))
          (rx/error! response (ex-info "A different version has been restored for the file."
                                       {:type :validation :code :vern-conflict}))
@@ -783,7 +783,7 @@
   [prepare answer]
   (let [flashes (atom [])]
     (-> (thp/with-persistence
-          (^:async fn [{:keys [file-id response requests store]}]
+          (^:async fn [{:keys [file-id response requests requests$ store]}]
             (await
              (mock/with-mocks*
                {errors/flash (fn [& {:as params}]
@@ -795,7 +795,7 @@
                      commit1  (thp/rename-commit file-id page-id shape-id "A" "B")]
                  (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "B")))
                  (ptk/emit! store commit1 ::dps/force-persist)
-                 (await (async/wait-for #(= 1 (count @requests)) "the rename is sent"))
+                 (await (async/wait-for #(= 1 (count @requests)) "the rename is sent" {:signal requests$}))
                  (ptk/emit! store #(prepare % file-id))
                  (rx/push! response (answer (thp/rejection (:id @commit1))))
                  (await (async/wait-for #(seq @flashes) "the notice is flashed")))))))
