@@ -615,12 +615,15 @@
 
 (defn- slow-cycle-timer
   "Timer double: the backoff delays fire at once, and every slow cycle waits
-  on a subject collected in `cycles`, so the test fires them one by one."
-  [cycles]
+  on a subject collected in `cycles`, so the test fires them one by one. When
+  `cycles$` is given, each new subject is also emitted there, so a wait can
+  resolve on the cycle being armed instead of polling the atom."
+  [cycles & [cycles$]]
   (fn [ms]
     (if (= ms dps/slow-retry-delay-ms)
       (let [cycle-s (rx/subject)]
         (swap! cycles conj cycle-s)
+        (when (some? cycles$) (rx/push! cycles$ cycle-s))
         cycle-s)
       (rx/of :tick))))
 
@@ -629,18 +632,22 @@
 ;; again, and saves once the network is back. Proves: a session outlasting
 ;; the backoff still recovers on its own.
 (t/deftest ^:async a-spent-backoff-keeps-trying-on-a-slow-cycle
-  (let [calls  (atom 0)
-        cycles (atom [])]
+  (let [calls   (atom 0)
+        cycles  (atom [])
+        cycles$ (rx/subject)]
     (await
      (with-persistence
        (^:async fn [{:keys [file-id failures requests store]}]
          (await
           (mock/with-mocks*
-            {rx/timer (mock/stub (slow-cycle-timer cycles))}
+            {rx/timer (mock/stub (slow-cycle-timer cycles cycles$))}
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for-store store #(and (= :error (get-in @store [:persistence :status]))
-                                                     (= 1 (count @cycles)))
-                                         "the spent backoff arms the slow cycle"))
+            ;; The predicate reads both the store and the cycle counter, so it
+            ;; passes the merged signal; the wrapper only provides the store one.
+            (await (async/wait-for #(and (= :error (get-in @store [:persistence :status]))
+                                         (= 1 (count @cycles)))
+                                   "the spent backoff arms the slow cycle"
+                                   {:signal (rx/merge cycles$ (ptk/input-stream store))}))
             (t/is (= 4 (count @requests)))
             (t/is (= 1 (count @failures)))
 
@@ -678,17 +685,20 @@
 (t/deftest ^:async the-slow-cycle-keeps-the-workspace-locked-until-a-save-lands
   (let [calls     (atom 0)
         cycles    (atom [])
+        cycles$   (rx/subject)
         attempt-s (rx/subject)]
     (await
      (with-persistence
        (^:async fn [{:keys [file-id store]}]
          (await
           (mock/with-mocks*
-            {rx/timer (mock/stub (slow-cycle-timer cycles))}
+            {rx/timer (mock/stub (slow-cycle-timer cycles cycles$))}
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for-store store #(and (= 1 (count @cycles))
-                                                     (some? (get-in @store [:workspace-global :persistence-lock])))
-                                         "the spent backoff locks the workspace"))
+            ;; Same as above: the predicate also reads the cycle counter.
+            (await (async/wait-for #(and (= 1 (count @cycles))
+                                         (some? (get-in @store [:workspace-global :persistence-lock])))
+                                   "the spent backoff locks the workspace"
+                                   {:signal (rx/merge cycles$ (ptk/input-stream store))}))
             (t/is (true? (get-in @store [:workspace-global :read-only?])))
             (t/is (dps/save-retrying? (:persistence @store)))
 

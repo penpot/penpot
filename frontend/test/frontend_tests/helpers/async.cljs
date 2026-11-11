@@ -95,6 +95,19 @@
       (do (await (settle))
           (await (wait-poll pred msg deadline))))))
 
+(defn- cause-text
+  "Readable, bounded text for a signal error: its message when it has one,
+  otherwise the printed value inside a `try` (a cyclic value would not print),
+  and never more than 500 characters."
+  [cause]
+  (let [text (or (ex-message cause)
+                 (try
+                   (pr-str cause)
+                   (catch :default _ "#<unprintable>")))]
+    (if (> (count text) 500)
+      (str (subs text 0 500) "…")
+      text)))
+
 (defn- wait-signal
   "Resolves when `pred` holds, re-checking it on every emission of `signal`.
 
@@ -132,7 +145,7 @@
                   (if (pred)
                     (finish)
                     (fail (str "Signal failed while waiting for: " msg ": "
-                               (pr-str cause)))))
+                               (cause-text cause)))))
                 (fn []
                   (if (pred)
                     (finish)
@@ -152,7 +165,9 @@
   event that changes the state, not after a number of event-loop turns.
   Without one it is a poll budget, and turns are not a unit of time (50
   turns are ~54 ms idle and much less ground under load). Records a single
-  `Timed out waiting for: <msg>` instead of hanging."
+  failure instead of hanging: `Timed out waiting for: <msg>` when the ceiling
+  expires, or the signal's own reason when it ends or fails (see
+  `wait-signal`)."
   [pred msg & [{:keys [signal timeout-ms]
                 :or   {timeout-ms default-timeout-ms}}]]
   (when-not (pred)

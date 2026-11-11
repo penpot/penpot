@@ -148,3 +148,15 @@
   (t/is (some #(str/includes? % "Signal failed while waiting for: the broken signal")
               @reported)
         "an errored signal is not reported as a timeout"))
+
+(t/deftest ^:async a-signal-error-bounds-a-long-cause
+  (reset! reported [])
+  (let [sig   (rx/subject)
+        cause (apply str (repeat 600 "x"))]
+    (binding [t/*current-env* (t/empty-env ::silent)]
+      (let [done (async/wait-for (constantly false) "the long cause" {:signal sig})]
+        (rx/error! sig cause)
+        (await done))))
+  (let [text (first @reported)]
+    (t/is (str/includes? text "Signal failed while waiting for: the long cause"))
+    (t/is (<= (count text) 600) "the cause text is bounded")))
