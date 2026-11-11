@@ -228,6 +228,10 @@ services:
     image: "penpotapp/exporter:${PENPOT_VERSION:-2.18}"
     restart: always
 
+    # Run an init process as PID 1 so the Chromium helper processes left
+    # behind after each export are reaped instead of becoming zombies.
+    init: true
+
     depends_on:
       penpot-valkey:
         condition: service_healthy
