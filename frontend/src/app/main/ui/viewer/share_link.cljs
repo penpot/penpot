@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
-   [app.common.uuid :as uuid]
    [app.main.data.common :as dc]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -30,101 +29,225 @@
 
 (log/set-level! :warn)
 
-(defn- prepare-params
+(defn- link-params
   [{:keys [pages who-comment who-inspect]}]
   {:pages pages
    :who-comment who-comment
    :who-inspect who-inspect})
 
-(mf/defc share-link-dialog
-  {::mf/register modal/components
-   ::mf/register-as :share-link
-   ::mf/wrap-props false}
-  [{:keys [file page]}]
-  (let [current-page    page
-        current-page-id (:id page)
-        slinks          (mf/deref refs/share-links)
-        router          (mf/deref refs/router)
-        route           (mf/deref refs/route)
-        zoom-type       (mf/deref refs/viewer-zoom-type)
-        page-ids        (dm/get-in file [:data :pages])
+(defn- link->url
+  [router route page-ids zoom-type link]
+  (let [page-id (d/seek #(contains? (:pages link) %) page-ids)
+        params  (-> (:query-params route)
+                    (assoc :share-id (:id link))
+                    (assoc :page-id page-id)
+                    (assoc :index "0"))
+        params  (if (nil? zoom-type)
+                  (dissoc params :zoom)
+                  (assoc params :zoom zoom-type))]
+    (rt/resolve-uri router :viewer params)))
 
-        perms-visible*  (mf/use-state false)
-        perms-visible?  (deref perms-visible*)
+(defn- copy-url-to-clipboard
+  [url]
+  (clipboard/to-clipboard url)
+  (st/emit! (ntf/show {:level :info
+                       :type :toast
+                       :content (tr "common.share-link.link-copied-success")
+                       :timeout 1000})
+            (ev/event {::ev/name "copy-share-link"
+                       ::ev/origin "viewer"})))
 
-        confirm*        (mf/use-state false)
-        confirm?        (deref confirm*)
+(defn- use-collapsible
+  []
+  (let [expanded* (mf/use-state false)
+        expanded  (deref expanded*)
+        toggle    (mf/use-fn
+                   #(swap! expanded* not))]
+    {:expanded expanded
+     :toggle toggle}))
 
-        options*        (mf/use-state
-                         {:pages-mode "current"
-                          :all-pages false
-                          :pages #{(:id page)}
-                          :who-comment "team"
-                          :who-inspect "team"})
-        options         (deref options*)
+(mf/defc collapsible-panel*
+  {::mf/private true}
+  [{:keys [class title children]}]
+  (let [{:keys [expanded toggle]} (use-collapsible)]
+    [:div {:class class}
+     [:button {:class (stl/css :collapsible-title :collapsible-panel-toggle)
+               :type "button"
+               :aria-expanded expanded
+               :on-click toggle}
+      [:> icon* {:icon-id (if expanded i/arrow-down i/arrow-right)
+                 :class (stl/css :collapsible-title-icon)}]
+      title]
 
-        current-link
-        (mf/with-memo [slinks options page-ids]
-          (let [{:keys [pages who-comment who-inspect] :as params} (prepare-params options)
-                slink  (d/seek #(and (= (:who-inspect %) who-inspect)
-                                     (= (:who-comment %) who-comment)
-                                     (= (:pages %) pages))
-                               slinks)]
-            (when slink
-              (let [page-id (d/seek #(contains? (:pages slink) %) page-ids)
-                    params  (-> (:query-params route)
-                                (assoc :share-id (:id slink))
-                                (assoc :page-id page-id)
-                                (assoc :index "0"))
-                    params  (if (nil? zoom-type)
-                              (dissoc params :zoom)
-                              (assoc params :zoom zoom-type))
+     (when ^boolean expanded
+       [:div children])]))
 
-                    href    (rt/resolve-uri router :viewer params)]
-                href))))
+(mf/defc permissions-select-row*
+  {::mf/private true}
+  [{:keys [label value options on-change]}]
+  [:div {:class (stl/css :permissions-select-row)}
+   [:div {:class (stl/css :permissions-label)} label]
+   [:div {:class (stl/css :permissions-control)}
+    [:& select {:default-value (dm/str value)
+                :options options
+                :on-change on-change}]]])
 
-        on-close
-        (fn [event]
-          (dom/prevent-default event)
-          (st/emit! (modal/hide))
-          (modal/disallow-click-outside!))
+(mf/defc permissions-page-selection*
+  {::mf/private true}
+  [{:keys [file page selected on-toggle-all on-checked-page]}]
+  (let [pages         (->> (get-in file [:data :pages])
+                           (map #(get-in file [:data :pages-index %])))
+        page-id       (:id page)
+        all-selected? (= selected (into #{} (map :id) pages))]
+
+    [:div {:class (stl/css :permissions-pages-field)}
+     [:div {:class (stl/css :permissions-label)}
+      (tr "common.share-link.permissions-pages")]
+     [:div {:class (stl/css :permissions-control)}
+      (if (= 1 (count pages))
+        [:div {:class (stl/css :permissions-page-row)}
+         [:div {:class (stl/css :permissions-checkbox)}
+          [:label {:for (dm/str "page-" page-id)
+                   :class (stl/css-case :global/checked true)}
+           [:span {:class (stl/css :checked)}
+            deprecated-icon/status-tick]
+           (:name page)]
+          [:input {:type "checkbox"
+                   :id (dm/str "page-" page-id)
+                   :checked true}]]
+         [:span {:class (stl/css :permissions-current-tag)}
+          (tr "common.share-link.current-tag")]]
+
+        [:*
+         [:div {:class (stl/css :permissions-select-all-row)}
+          [:div {:class (stl/css :permissions-checkbox)}
+           [:label {:for "view-all"}
+            [:span {:class (stl/css-case :global/checked all-selected?)}
+             (when all-selected?
+               deprecated-icon/status-tick)]
+            (tr "common.share-link.view-all")
+            [:input {:type "checkbox"
+                     :id "view-all"
+                     :checked all-selected?
+                     :on-change on-toggle-all}]]]
+          [:span {:class (stl/css :permissions-page-count)}
+           (tr "common.share-link.page-shared" (i18n/c (count selected)))]]
+
+         [:ul {:class (stl/css :permissions-pages-selection)}
+          (for [{:keys [id name]} pages]
+            (let [checked? (contains? selected id)]
+              [:li {:class (stl/css :permissions-page-row)
+                    :key (dm/str id)}
+               [:div {:class (stl/css :permissions-checkbox)}
+                [:label {:for (dm/str "page-" id)}
+                 [:span {:class (stl/css-case :global/checked checked?)}
+                  (when checked?
+                    deprecated-icon/status-tick)]
+                 name
+                 [:input {:type "checkbox"
+                          :id (dm/str "page-" id)
+                          :on-change #(on-checked-page id %)
+                          :checked checked?}]]]
+               (when (= page-id id)
+                 [:span {:class (stl/css :permissions-current-tag)}
+                  (tr "common.share-link.current-tag")])]))]])]]))
+
+(mf/defc permissions-section*
+  {::mf/private true}
+  [{:keys [file page link-options on-toggle-all on-checked-page
+           on-comment-change on-inspect-change]}]
+  (let [selected    (:pages link-options)
+        permissions [{:id "team" :label (tr "common.share-link.team-members")}
+                     {:id "all"  :label (tr "common.share-link.all-users")}]]
+
+    [:> collapsible-panel* {:class (stl/css :permissions-section)
+                            :title (tr "common.share-link.manage-ops")}
+     [:div {:class (stl/css :permissions-content)}
+      [:> permissions-page-selection* {:file file
+                                       :page page
+                                       :selected selected
+                                       :on-toggle-all on-toggle-all
+                                       :on-checked-page on-checked-page}]
+
+      [:> permissions-select-row* {:label (tr "common.share-link.permissions-can-comment")
+                                   :value (:who-comment link-options)
+                                   :options permissions
+                                   :on-change on-comment-change}]
+
+      [:> permissions-select-row* {:label (tr "common.share-link.permissions-can-inspect")
+                                   :value (:who-inspect link-options)
+                                   :options permissions
+                                   :on-change on-inspect-change}]]]))
+
+(mf/defc destroy-link-confirmation*
+  {::mf/private true}
+  [{:keys [on-cancel on-destroy]}]
+  [:div {:class (stl/css :share-link-confirm)}
+   [:div {:class (stl/css :share-link-confirm-description)}
+    (tr "common.share-link.confirm-deletion-link-description")]
+   [:div {:class (stl/css :share-link-confirm-actions)}
+    [:> button* {:variant "secondary"
+                 :type "button"
+                 :on-click on-cancel}
+     (tr "labels.cancel")]
+    [:> button* {:variant "destructive"
+                 :type "button"
+                 :on-click on-destroy}
+     (tr "common.share-link.destroy-link")]]])
+
+(mf/defc share-link-content*
+  {::mf/private true}
+  [{:keys [file page on-request-destroy]}]
+  (let [share-links      (mf/deref refs/share-links)
+        router           (mf/deref refs/router)
+        route            (mf/deref refs/route)
+        zoom-type        (mf/deref refs/viewer-zoom-type)
+
+        page-ids         (dm/get-in file [:data :pages])
+        all-page-ids     (into #{} page-ids)
+
+        link-options*    (mf/use-state
+                          {:pages #{(:id page)}
+                           :who-comment "team"
+                           :who-inspect "team"})
+        link-options     (deref link-options*)
+
+        current-share-link
+        (mf/with-memo [share-links link-options]
+          (let [{:keys [pages who-comment who-inspect]} (link-params link-options)]
+            (d/seek #(and (= (:who-inspect %) who-inspect)
+                          (= (:who-comment %) who-comment)
+                          (= (:pages %) pages))
+                    share-links)))
+
+        current-share-url
+        (mf/with-memo [current-share-link page-ids route router zoom-type]
+          (when (some? current-share-link)
+            (link->url router route page-ids zoom-type current-share-link)))
 
         on-toggle-all
         (fn [_event]
-          (reset! confirm* false)
-          (swap! options*
-                 (fn [state]
-                   (if (true? (:all-pages state))
-                     (-> state
-                         (assoc :all-pages false)
-                         (assoc :pages #{(:id page)}))
-                     (-> state
-                         (assoc :all-pages true)
-                         (assoc :pages (into #{} (get-in file [:data :pages]))))))))
+          (swap! link-options*
+                 (fn [{:keys [pages] :as state}]
+                   (if (= pages all-page-ids)
+                     (assoc state :pages #{(:id page)})
+                     (assoc state :pages all-page-ids)))))
 
-        on-mark-checked-page
-        (fn [event]
-          (let [target         (dom/get-target event)
-                checked?       (dom/checked? target)
-                page-id        (uuid/parse (dom/get-data target "page-id"))
-                dif-pages?     (not= page-id (first (:pages options)))
-                no-one-page    (< 1 (count (:pages options)))
-                should-change? (or ^boolean no-one-page
-                                   ^boolean dif-pages?)]
-            (when ^boolean should-change?
-              (reset! confirm* false)
-              (swap! options*
-                     (fn [{:keys [pages] :as state}]
-                       (let [pages (if checked?
-                                     (conj pages page-id)
-                                     (disj pages page-id))]
-                         (-> state
-                             (assoc :pages pages)
-                             (assoc :all-pages (= (count pages) (count page-ids))))))))))
+        on-checked-page
+        (fn [page-id event]
+          (let [checked? (dom/checked? (dom/get-target event))]
+            (swap! link-options*
+                   (fn [{:keys [pages] :as state}]
+                     (let [pages (if checked?
+                                   (conj pages page-id)
+                                   (disj pages page-id))]
+                       (if (seq pages)
+                         (assoc state :pages pages)
+                         state))))))
 
-        create-link
+        on-create-link
         (fn [_]
-          (let [params (prepare-params options)
+          (let [params (link-params link-options)
                 params (assoc params :file-id (:id file))]
             (st/emit! (dc/create-share-link params)
                       (ev/event {::ev/name "create-share-link"
@@ -132,43 +255,92 @@
                                  :can-comment (:who-comment params)
                                  :can-inspect-code (:who-inspect params)}))))
 
-        copy-link
-        (fn [_]
-          (clipboard/to-clipboard current-link)
-          (st/emit! (ntf/show {:level :info
-                               :type :toast
-                               :content (tr "common.share-link.link-copied-success")
-                               :timeout 1000})
-                    (ev/event {::ev/name "copy-share-link"
-                               ::ev/origin "viewer"})))
+        on-copy-current-share-url
+        (mf/use-fn
+         (mf/deps current-share-url)
+         (fn [_]
+           (copy-url-to-clipboard current-share-url)))
 
-        try-delete-link
-        (fn [_]
-          (reset! confirm* true))
-
-        delete-link
-        (fn [_]
-          (let [params (prepare-params options)
-                slink  (d/seek #(= (:flags %) (:flags params)) slinks)]
-            (reset! confirm* false)
-            (st/emit! (dc/delete-share-link slink))))
-
-        toggle-perms-visibility
-        (fn [_]
-          (swap! perms-visible* not))
+        on-destroy-current-share-link
+        (mf/use-fn
+         (mf/deps current-share-link on-request-destroy)
+         (fn [_]
+           (on-request-destroy current-share-link)))
 
         on-inspect-change
         (fn [value]
-          (reset! confirm* false)
-          (swap! options* assoc :who-inspect value))
+          (swap! link-options* assoc :who-inspect value))
 
         on-comment-change
         (fn [value]
-          (reset! confirm* false)
-          (swap! options* assoc :who-comment value))]
+          (swap! link-options* assoc :who-comment value))]
 
-    [:div {:class (stl/css :share-modal)}
-     [:div  {:class (stl/css :share-link-dialog)}
+    [:div {:class (stl/css :share-link-content)}
+     [:div {:class (stl/css :share-link-form)}
+      (when (some? current-share-url)
+        [:div {:class (stl/css :share-link-url)}
+         [:input {:class (stl/css :share-link-url-input)
+                  :type "text"
+                  :value (or current-share-url "")
+                  :placeholder (tr "common.share-link.placeholder")
+                  :read-only true}]
+         [:> icon-button* {:variant "secondary"
+                           :class (stl/css :share-link-url-button)
+                           :aria-label (tr "viewer.header.share.copy-link")
+                           :icon i/clipboard
+                           :on-click on-copy-current-share-url}]])
+
+      [:div {:class (stl/css :share-link-hint-row)}
+       [:div {:class (stl/css :share-link-hint)} (tr "common.share-link.permissions-hint")]
+       (if (some? current-share-link)
+         [:> button* {:variant "destructive"
+                      :type "button"
+                      :on-click on-destroy-current-share-link}
+          (tr "common.share-link.destroy-link")]
+         [:> button* {:variant "primary"
+                      :type "button"
+                      :on-click on-create-link}
+          (tr "common.share-link.get-link")])]]
+
+     [:> permissions-section* {:file file
+                               :page page
+                               :link-options link-options
+                               :on-toggle-all on-toggle-all
+                               :on-checked-page on-checked-page
+                               :on-comment-change on-comment-change
+                               :on-inspect-change on-inspect-change}]]))
+
+(mf/defc share-link-dialog
+  {::mf/register modal/components
+   ::mf/register-as :share-link
+   ::mf/wrap-props false}
+  [{:keys [file page]}]
+  (let [link-to-destroy* (mf/use-state nil)
+        link-to-destroy  (deref link-to-destroy*)
+
+        on-close
+        (fn [event]
+          (dom/prevent-default event)
+          (st/emit! (modal/hide))
+          (modal/disallow-click-outside!))
+
+        on-request-destroy
+        (mf/use-fn
+         (fn [link]
+           (reset! link-to-destroy* link)))
+
+        on-destroy-link
+        (fn [_]
+          (let [link link-to-destroy]
+            (reset! link-to-destroy* nil)
+            (st/emit! (dc/delete-share-link link))))
+
+        on-cancel-destroy
+        (fn [_]
+          (reset! link-to-destroy* nil))]
+
+    [:div {:class (stl/css :share-link-modal)}
+     [:div {:class (stl/css :share-link-dialog)}
       [:div {:class (stl/css :share-link-header)}
        [:h2 {:class (stl/css :share-link-title)}
         (tr "common.share-link.title")]
@@ -177,147 +349,13 @@
                          :aria-label (tr "labels.close")
                          :icon i/close
                          :on-click on-close}]]
-      [:div {:class (stl/css :modal-content)}
-       [:div {:class (stl/css :share-link-section)}
-        (when (and (not confirm?) (some? current-link))
-          [:div {:class (stl/css :custon-input-wrapper)}
-           [:input {:class (stl/css :input-text)
-                    :type "text"
-                    :value (or current-link "")
-                    :placeholder (tr "common.share-link.placeholder")
-                    :read-only true}]
 
-           [:> icon-button* {:variant "secondary"
-                             :aria-label (tr "viewer.header.share.copy-link")
-                             :icon i/clipboard
-                             :on-click copy-link}]])
+      [:div {:class (stl/css :share-link-scroll)
+             :hidden (some? link-to-destroy)}
+       [:> share-link-content* {:file file
+                                :page page
+                                :on-request-destroy on-request-destroy}]]
 
-        [:div {:class (stl/css :hint-wrapper)}
-         (when (not ^boolean confirm?)
-           [:div {:class (stl/css :hint)} (tr "common.share-link.permissions-hint")])
-         (cond
-           (true? confirm?)
-           [:div {:class (stl/css :confirm-dialog)}
-            [:div {:class (stl/css :description)}
-             (tr "common.share-link.confirm-deletion-link-description")]
-            [:div {:class (stl/css :actions)}
-             [:> button* {:variant "secondary"
-                          :type "button"
-                          :on-click #(reset! confirm* false)}
-              (tr "labels.cancel")]
-             [:> button* {:variant "destructive"
-                          :type "button"
-                          :on-click delete-link}
-              (tr "common.share-link.destroy-link")]]]
-
-           (some? current-link)
-           [:> button* {:variant "destructive"
-                        :type "button"
-                        :on-click try-delete-link}
-            (tr "common.share-link.destroy-link")]
-
-           :else
-           [:> button* {:variant "primary"
-                        :type "button"
-                        :on-click create-link}
-            (tr "common.share-link.get-link")])]]
-
-
-       (when (not ^boolean confirm?)
-         [:div {:class (stl/css :permissions-section)}
-          [:button {:class (stl/css :manage-permissions)
-                    :type "button"
-                    :aria-expanded perms-visible?
-                    :on-click toggle-perms-visibility}
-           [:span {:class (stl/css-case :icon true
-                                        :rotated perms-visible?)}
-            [:> icon* {:icon-id i/arrow
-                       :class (stl/css :arrow-icon)}]]
-           (tr "common.share-link.manage-ops")]
-
-          (when ^boolean perms-visible?
-            [:*
-             (let [all-selected? (:all-pages options)
-                   pages         (->> (get-in file [:data :pages])
-                                      (map #(get-in file [:data :pages-index %])))
-                   selected      (:pages options)]
-               [:div {:class (stl/css :view-mode)}
-                [:div {:class (stl/css :subtitle)}
-                 (tr "common.share-link.permissions-pages")]
-                [:div {:class (stl/css :items)}
-                 (if (= 1 (count pages))
-                   [:div {:class (stl/css :checkbox-wrapper)}
-
-                    [:label {:for (str "page-" current-page-id)
-                             :class (stl/css-case :global/checked true)}
-
-                     [:span  {:class (stl/css :checked)}
-                      deprecated-icon/status-tick]
-
-                     (:name current-page)]
-
-                    [:input {:type "checkbox"
-                             :id (dm/str "page-" current-page-id)
-                             :data-page-id (dm/str current-page-id)
-                             :on-change on-mark-checked-page
-                             :checked true}]
-                    [:span  (str  " " (tr "common.share-link.current-tag"))]]
-
-                   [:*
-                    [:div {:class (stl/css :select-all-row)}
-                     [:div {:class (stl/css :checkbox-wrapper)}
-                      [:label {:for "view-all"
-                               :class (stl/css :select-all-label)}
-                       [:span {:class (stl/css-case :global/checked all-selected?)}
-                        (when all-selected?
-                          deprecated-icon/status-tick)]
-                       (tr "common.share-link.view-all")
-                       [:input {:type "checkbox"
-                                :id "view-all"
-                                :checked all-selected?
-                                :name "pages-mode"
-                                :on-change on-toggle-all}]]]
-
-                     [:span {:class (stl/css :count-pages)}
-                      (tr "common.share-link.page-shared" (i18n/c (count selected)))]]
-
-                    [:ul {:class (stl/css :pages-selection)}
-                     (for [{:keys [id name]} pages]
-                       [:li {:class (stl/css :checkbox-wrapper :page-row)
-                             :key (dm/str id)}
-                        [:label {:for (dm/str "page-" id)}
-                         [:span {:class (stl/css-case :global/checked (contains? selected id))}
-                          (when (contains? selected id)
-                            deprecated-icon/status-tick)]
-                         name
-                         (when (= current-page-id id)
-                           [:div {:class (stl/css :current-tag)} (dm/str  " " (tr "common.share-link.current-tag"))])
-                         [:input {:type "checkbox"
-                                  :id (dm/str "page-" id)
-                                  :data-page-id (dm/str id)
-                                  :on-change on-mark-checked-page
-                                  :checked (contains? selected id)}]]])]])]])
-
-             [:div {:class (stl/css :access-mode)}
-              [:div {:class (stl/css :subtitle)}
-               (tr "common.share-link.permissions-can-comment")]
-              [:div {:class (stl/css :items)}
-               [:& select
-                {:class (stl/css :who-comment-select)
-                 :default-value (dm/str (:who-comment options))
-                 :options [{:value "team" :label (tr "common.share-link.team-members")}
-                           {:value "all" :label (tr "common.share-link.all-users")}]
-                 :on-change on-comment-change}]]]
-             [:div {:class (stl/css :inspect-mode)}
-              [:div {:class (stl/css :subtitle)}
-               (tr "common.share-link.permissions-can-inspect")]
-              [:div {:class (stl/css :items)}
-               [:& select
-                {:class (stl/css :who-inspect-select)
-                 :default-value (dm/str (:who-inspect options))
-                 :options [{:value "team" :label (tr "common.share-link.team-members")}
-                           {:value "all" :label (tr "common.share-link.all-users")}]
-                 :on-change on-inspect-change}]]]])])]]]))
-
-
-
+      (when (some? link-to-destroy)
+        [:> destroy-link-confirmation* {:on-cancel on-cancel-destroy
+                                        :on-destroy on-destroy-link}])]]))
