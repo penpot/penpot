@@ -775,7 +775,7 @@
   Splits out `shape-ids` into separate default actions:
   - Layouts take the `default` update function
   - Shapes inside layout will only take margin"
-  [{:keys [token shapes attr]}]
+  [{:keys [token shapes]}]
   (ptk/reify ::apply-spacing-token-separated
     ptk/WatchEvent
     (watch [it state _]
@@ -788,7 +788,7 @@
             (group-by #(if (ctsl/any-layout-immediate-child? objects %) :frame-children :other) shapes)]
 
         (rx/of
-         (-> (apply-token {:attributes (or attr attributes)
+         (-> (apply-token {:attributes attributes
                            :token token
                            :shape-ids (map :id other)
                            :on-update-shape on-update-shape})
@@ -829,113 +829,87 @@
           (update shape :applied-tokens #(when % (apply dissoc % attributes)))))))))
 
 
+(defn- target-shapes
+  "The selected shapes a token goes on. A selected group can stand for
+  its children, since groups take no tokens."
+  [objects shape-ids expand-with-children]
+  (cond->> (into [] (keep (d/getf objects)) shape-ids)
+    expand-with-children
+    (into [] (mapcat (fn [shape]
+                       (if (= (:type shape) :group)
+                         (keep objects (:shapes shape))
+                         [shape]))))))
+
+(defn- apply-action
+  "Works out which attributes the token goes on: the chosen ones, or its
+  type's defaults. A spacing token without chosen attributes goes on
+  layouts, and only on the margins of the shapes inside them."
+  [token attrs]
+  (let [{:keys [attributes on-update-shape]} (get token-properties (:type token))]
+    (if (and (= (:type token) :spacing) (nil? attrs))
+      {:action :apply-spacing}
+      {:action :apply
+       :attributes (if (empty? attrs) attributes attrs)
+       :on-update-shape (or (get attr->shape-update (first attrs)) on-update-shape)})))
+
+(defn- toggle-action
+  "Works out whether toggling the token removes it from the selection
+  or applies it, and on which attributes. From the token pill it comes
+  off when any shape has it; on chosen attributes (a design tab input,
+  a plugin) only when every shape has it on all of them, so a partial
+  application is completed instead."
+  [token attrs shapes]
+  (let [{:keys [attributes all-attributes]} (get token-properties (:type token))
+        target-attrs (or attrs all-attributes attributes)
+        unapply?     (if (seq attrs)
+                       (cfo/shapes-applied-all?
+                        (cfo/shapes-ids-by-applied-attributes token shapes target-attrs)
+                        (into #{} (map :id) shapes)
+                        target-attrs)
+                       (cfo/shapes-token-applied? token shapes target-attrs))]
+    (if unapply?
+      {:action :unapply :attributes target-attrs}
+      (apply-action token attrs))))
+
+(defn- action->event
+  [{:keys [action attributes on-update-shape]} token shapes shape-ids]
+  (case action
+    :unapply
+    (unapply-token {:attributes attributes
+                    :token-name (:name token)
+                    :shape-ids shape-ids})
+
+    :apply-spacing
+    (apply-spacing-token-separated {:token token
+                                    :shapes shapes})
+
+    :apply
+    (apply-token {:attributes attributes
+                  :token token
+                  :shape-ids shape-ids
+                  :on-update-shape on-update-shape})))
+
 (defn toggle-token
   [{:keys [token attrs shape-ids expand-with-children]}]
   (ptk/reify ::on-toggle-token
     ptk/WatchEvent
     (watch [it state _]
-      (let [objects (dsh/lookup-page-objects state)
-            shapes (into [] (keep (d/getf objects)) shape-ids)
-
-            shapes
-            (if expand-with-children
-              (into []
-                    (mapcat (fn [shape]
-                              (if (= (:type shape) :group)
-                                (keep objects (:shapes shape))
-                                [shape])))
-                    shapes)
-              shapes)
-
-            {:keys [attributes all-attributes on-update-shape]}
-            (get token-properties (:type token))
-
-            on-update-shape
-            (if (seq attrs)
-              (or (get attr->shape-update (first attrs)) on-update-shape)
-              on-update-shape)
-
-            target-attrs
-            (or attrs all-attributes attributes)
-
-            unapply-tokens?
-            (if (seq attrs)
-              ;; Explicit attributes come from an input or a plugin apply
-              ;; call. Only toggle off when the token already covers every
-              ;; target attribute on every selected shape; a partial
-              ;; application is completed instead of removed.
-              (and (seq target-attrs)
-                   (cfo/shapes-applied-all?
-                    (cfo/shapes-ids-by-applied-attributes token shapes target-attrs)
-                    (into #{} (map :id) shapes)
-                    target-attrs))
-              ;; No explicit attributes (token pill): toggle off when any
-              ;; selected shape has the token on any attribute.
-              (cfo/shapes-token-applied? token shapes target-attrs))
-
-            shape-ids
-            (map :id shapes)]
-
-        (if unapply-tokens?
-          (rx/of
-           (unapply-token {:attributes target-attrs
-                           :token-name (:name token)
-                           :shape-ids shape-ids}))
-          (rx/of
-           (cond
-             (and (= (:type token) :spacing)
-                  (nil? attrs))
-             (-> (apply-spacing-token-separated {:token token
-                                                 :attr attrs
-                                                 :shapes shapes})
-                 (with-meta (meta it)))
-
-             :else
-             (-> (apply-token {:attributes (if (empty? attrs) attributes attrs)
-                               :token token
-                               :shape-ids shape-ids
-                               :on-update-shape on-update-shape})
-                 (with-meta (meta it))))))))))
+      (let [shapes (target-shapes (dsh/lookup-page-objects state) shape-ids expand-with-children)
+            action (toggle-action token attrs shapes)
+            event  (action->event action token shapes (map :id shapes))]
+        (rx/of
+         (if (= :unapply (:action action))
+           event
+           (with-meta event (meta it))))))))
 
 (defn apply-token-from-input
   [{:keys [token attrs shape-ids expand-with-children]}]
   (ptk/reify ::apply-token-from-input
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (dsh/lookup-page-objects state)
-            shapes (into [] (keep (d/getf objects)) shape-ids)
-
-            shapes
-            (if expand-with-children
-              (into []
-                    (mapcat (fn [shape]
-                              (if (= (:type shape) :group)
-                                (keep objects (:shapes shape))
-                                [shape])))
-                    shapes)
-              shapes)
-
-            {:keys [attributes _ on-update-shape]}
-            (get token-properties (:type token))
-
-            on-update-shape
-            (if (seq attrs)
-              (or (get attr->shape-update (first attrs)) on-update-shape)
-              on-update-shape)]
-
+      (let [shapes (target-shapes (dsh/lookup-page-objects state) shape-ids expand-with-children)]
         (rx/of
-         (cond
-           (and (= (:type token) :spacing)
-                (nil? attrs))
-           (apply-spacing-token-separated {:token token
-                                           :attr attrs
-                                           :shapes shapes})
-
-           :else
-           (apply-token {:attributes (if (empty? attrs) attributes attrs)
-                         :token token
-                         :shape-ids shape-ids
-                         :on-update-shape on-update-shape})))))))
+         (action->event (apply-action token attrs) token shapes shape-ids))))))
 
 
 (defn apply-token-on-color-selected
