@@ -2274,6 +2274,14 @@
                              [:update-main 22 21 23 7] [:text-style 18 0 25 10] [:variant-property 1 9 23 5]
                              [:switch 20]]}))))
 
+(t/deftest switching-a-copy-carries-no-mirrored-turn-its-mains-store-alike-but-point-apart
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles false :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies false :text true}]
+                       :ops [[:swap] [:make-variant 12] [:rotate 0 0 1] [:delete 5] [:restore] [:transform 6 5]
+                             [:transform 3 9 7 13] [:switch] [:undo] [:update-main 1] [:duplicate 2]
+                             [:update-main 15] [:switch]]}))))
+
 (t/deftest pushing-a-grid-direction-orders-the-copies-like-the-reflowed-main
   (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles false :layout :grid :variant-diff false
                                     :layout-item-margins false :grid-square true :rich-variants false

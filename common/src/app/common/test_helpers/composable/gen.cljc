@@ -815,6 +815,7 @@
         model (-> model
                   (shadow/parent-orientation (all-objects situation) (all-objects settled))
                   (shadow/layout-released (all-objects situation) (all-objects settled))
+                  (shadow/sync-scaled-heads (all-objects situation) (all-objects settled))
                   (settle-model settled true))
         all (into (set (synchronizable-components situation)) (r/pending-components situation))
         full-before (r/settle situation all)
@@ -1079,7 +1080,8 @@
             next-model (cond-> (or next-model model)
                          (not (#{:undo :redo} kind))
                          (-> (shadow/parent-orientation (all-objects situation) (all-objects after))
-                             (shadow/layout-released (all-objects situation) (all-objects after))))
+                             (shadow/layout-released (all-objects situation) (all-objects after))
+                             (shadow/sync-scaled-heads (all-objects situation) (all-objects after))))
             next-model (settle-model next-model after (empty? (r/pending-components after)))
             meaningful (not (oracle/equivalent? (oracle/design-snapshot situation {:free-head-placement false})
                                                 (oracle/design-snapshot after {:free-head-placement false})))
