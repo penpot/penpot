@@ -2194,6 +2194,21 @@
                                     :layout-children false :grid-empty false :layout-copies false :text true}]
                        :ops [[:swap] [:make-variant 12] [:rotate] [:delete] [:transform 6 5] [:switch]]}))))
 
+(t/deftest switching-a-copy-carries-a-mirrored-turn-that-shares-the-new-copys-rotation
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles false :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies false :text true}]
+                       :ops [[:swap] [:make-variant 12] [:rotate 0 0 1] [:delete] [:transform 6 5]
+                             [:transform 3 9 7 13] [:switch]]}))))
+
+(t/deftest updating-a-turned-main-from-a-swapped-head-turns-the-new-head-with-its-parent
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles false :layout :flex :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants false
+                                    :layout-children false :grid-empty false :layout-copies false :text true}]
+                       :ops [[:combine 10] [:combine 1] [:rotate 8] [:combine 13] [:combine 8] [:switch]
+                             [:combine 18] [:make-variant] [:switch 18] [:combine] [:rotate 8]
+                             [:update-main]]}))))
+
 (t/deftest pushing-a-grid-direction-orders-the-copies-like-the-reflowed-main
   (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles false :layout :grid :variant-diff false
                                     :layout-item-margins false :grid-square true :rich-variants false
