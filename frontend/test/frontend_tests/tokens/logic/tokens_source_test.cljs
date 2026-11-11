@@ -82,7 +82,7 @@
   (ptk/emit! store (dwtl/set-tokens-source (:id library)))
   (await (async/wait-for #(= "#00ff00" (fill-color store))
                          "the fill uses the library value of `red`"
-                         {:max-ticks 200})))
+                         {:timeout-ms 2000})))
 
 (t/deftest ^:async switching-tokens-source-updates-the-canvas
   (let [library (setup-library)
@@ -94,7 +94,7 @@
     (ptk/emit! store (dwtl/set-tokens-source (:id library)))
     (await (async/wait-for #(= "#00ff00" (fill-color store))
                            "the fill uses the library value of `red`"
-                           {:max-ticks 200}))
+                           {:timeout-ms 2000}))
     (t/is (= "#00ff00" (fill-color store))
           "Setting the library as tokens source resolves `red` from the library")
 
@@ -104,7 +104,7 @@
           "Going back to the local tokens keeps the local set active")
     (await (async/wait-for #(= "#7b2222" (fill-color store))
                            "the fill uses the local value of `red` again"
-                           {:max-ticks 200}))
+                           {:timeout-ms 2000}))
     (t/is (= "#7b2222" (fill-color store))
           "Going back to the local tokens resolves `red` from the file again")
 
@@ -125,7 +125,7 @@
                   (dwtl/set-tokens-source (:id file)))
        (await (async/wait-for #(= "#7b2222" (fill-color store))
                               "the fill uses the local value of `red` again"
-                              {:max-ticks 200}))))
+                              {:timeout-ms 2000}))))
 
     (t/is (nil? (tokens-source store)))
     (t/is (contains? (active-set-ids store) (cthi/id :local-set))

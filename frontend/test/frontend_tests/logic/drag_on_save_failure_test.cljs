@@ -148,7 +148,7 @@
          (ptk/emit! store stop)
          ;; A box drawing ends 100 ms after its stop
          (await (async/wait-for #(nil? (get-in @store [:workspace-drawing :object]))
-                                "the drawing ends" {:max-ticks 500}))
+                                "the drawing ends" {:timeout-ms 5000}))
          (await (async/settle))
          (finally
            (rx/push! ms/mouse-position nil)
