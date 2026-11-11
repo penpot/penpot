@@ -485,18 +485,19 @@
                                                   [group (if (= :geometry-group group) geometry (values shape group))]))
                                         placement))
 
-                           ;; a main shape the push keeps or adds turns with its main
-                           ;; afterwards; its pushed geometry leaves out the turn its copy
-                           ;; parent shows against its main parent (the root's, against
-                           ;; its main), which an added main shape has only after the push
+                           ;; a main shape the push keeps turns with its main afterwards;
+                           ;; its pushed geometry leaves out the turn its copy parent shows
+                           ;; against its main parent (the root's, against its main). A
+                           ;; main shape the push adds takes its parent's turn after the push
                            (and (:geometry-group groups) (not pushed-swap?))
                            (update :geometry-group
                                    (fn [geometry]
                                      (if (= (:id shape) root-id)
                                        (in-orientation geometry root main-root)
                                        (in-orientation geometry (get before (:parent-id shape))
-                                                       (or (get before (:parent-id ref))
-                                                           (get after (:parent-id ref))))))))
+                                                       (if (contains? before (:id ref))
+                                                         (get before (:parent-id ref))
+                                                         (get after (:parent-id ref))))))))
                   ;; a variant main keeps its set's name, and the copy root its own
                   kept-name (when (and (= id root-id) (:variant-id ref)) (:name-group groups))
                   groups (cond-> groups kept-name (dissoc :name-group))
@@ -815,11 +816,18 @@
 
                                           :else
                                           (same? (get old-placed attr) (get placed attr))))
+                              ;; the same turn of two mirrors differs where they point
+                              ;; their axes apart
+                              differs? (fn [attr]
+                                         (or (not (same? (get old attr) (get placed attr)))
+                                             (and (= attr :rotation) (not root?) old-parent new-parent
+                                                  (mirrored? old) (mirrored? placed)
+                                                  (not (geom/same-placed-axes? old old-parent new-parent
+                                                                               main (get after (:parent-id main)) new-parent)))))
                               carried (filter (fn [attr]
-                                                (let [new-value (get placed attr)]
-                                                  (and (attribute-applicable? main attr)
-                                                       (agrees? attr)
-                                                       (not (same? (get old attr) new-value))))) attrs)]
+                                                (and (attribute-applicable? main attr)
+                                                     (agrees? attr)
+                                                     (differs? attr))) attrs)]
                           (cond-> result
                             (seq carried)
                             (assoc-in [(:id shape) group]
