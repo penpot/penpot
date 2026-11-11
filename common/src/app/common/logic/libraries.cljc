@@ -928,6 +928,46 @@
                 (= :path (:type shape-inst)) (conj :content))]
     (merge shape-inst (select-keys (reposition-shape shape-main root-main root-inst) attrs))))
 
+(defn- set-sizing
+  "Set the layout `sizing` of `shape` of `container`, with its undo."
+  [changes container shape sizing]
+  (let [operations (fn [values]
+                     (mapv (fn [attr] {:type :set :attr attr :val (get values attr) :ignore-touched true})
+                           (keys sizing)))]
+    (pcb/add-changes changes container
+                     [{:type :mod-obj :id (:id shape) :operations (operations sizing)}]
+                     [{:type :mod-obj :id (:id shape) :operations (operations shape)}])))
+
+(defn- pushed-size-sizing
+  "The layout sizing that `shape-main` of `objects` takes when an update main
+   pushes the geometry of `source`, the copy shape `shape-inst` of
+   `inst-objects`, into it: fixed on each axis that a layout sizes (fill or
+   auto) and that the push resizes, or on both when it turns the shape in its
+   parent, since a layout resizes a turned child. Only a copy that authors
+   its geometry resizes or turns the main; the layout sizes the rest. A shape
+   that is not a layout drops the sizing, which leaves it fixed as its copies
+   are. A sizing the copy authors is pushed as it is."
+  [objects shape-main inst-objects shape-inst source]
+  (let [laid?    (and (ctk/touched-group? shape-inst :geometry-group)
+                      (or (ctsl/any-layout-immediate-child? objects shape-main)
+                          (ctsl/any-layout? shape-main)))
+        ;; the axes of a shape relative to its parent's
+        in-parent (fn [objects shape]
+                    (cond-> (axes-matrix shape)
+                      (cfh/frame-shape? (get objects (:parent-id shape)))
+                      (gmt/multiply (gmt/inverse (axes-matrix (get objects (:parent-id shape)))))))
+        turned?  (not (gmt/unit? (gmt/multiply (in-parent inst-objects shape-inst)
+                                               (gmt/inverse (in-parent objects shape-main)))))
+        fix?     (fn [sizing size]
+                   (and laid?
+                        (not (ctk/touched-group? shape-inst sizing))
+                        (contains? #{:fill :auto} (get shape-main sizing))
+                        (or turned? (not (mth/close? (get source size) (get shape-main size))))))
+        fixed    (when (ctsl/any-layout? shape-main) :fix)]
+    (cond-> {}
+      (fix? :layout-item-h-sizing :width) (assoc :layout-item-h-sizing fixed)
+      (fix? :layout-item-v-sizing :height) (assoc :layout-item-v-sizing fixed))))
+
 (defn- update-main-shape
   "Push the copy shape `shape-inst` into `shape-main`, the main shape it
   pairs with: the copy's values, overrides included, go into the main, and
@@ -937,18 +977,26 @@
   [changes {:keys [container main-container root-inst root-main remote-synced inherited-turn kept? keep-name?]} shape-inst shape-main]
   (let [;; the root of a variant keeps its name, and the copy its override of it
         keep-name? (and keep-name? (= (:id shape-inst) (:id root-inst)))
-        inst-touched (cond-> (:touched shape-inst) keep-name? (disj :name-group))]
+        inst-touched (cond-> (:touched shape-inst) keep-name? (disj :name-group))
+        source (cond-> shape-inst
+                 keep-name? (assoc :name (:name shape-main))
+                 (some? inherited-turn) inherited-turn
+                 kept? (with-main-geometry shape-main
+                         (cond-> root-inst (some? inherited-turn) inherited-turn)
+                         root-main))
+        ;; the axes a layout sized that take the pushed size, fixed as a resize fixes them
+        fixed (when-not kept? (pushed-size-sizing (:objects main-container) shape-main
+                                                  (:objects container) shape-inst source))]
     (cond-> (-> changes
                 (update-attrs shape-main
-                              (cond-> shape-inst
-                                keep-name? (assoc :name (:name shape-main))
-                                (some? inherited-turn) inherited-turn
-                                kept? (with-main-geometry shape-main
-                                        (cond-> root-inst (some? inherited-turn) inherited-turn)
-                                        root-main))
+                              source
                               root-main
                               (cond-> root-inst (some? inherited-turn) inherited-turn)
                               main-container false)
+                ;; the copy keeps the sizing it pushed
+                (cond-> (seq fixed)
+                  (-> (set-sizing main-container shape-main fixed)
+                      (set-sizing container shape-inst fixed)))
                 ;; the copy keeps its swap, and the main takes the copy's overrides
                 (set-touched shape-inst container
                              (not-empty (cond-> #{}
