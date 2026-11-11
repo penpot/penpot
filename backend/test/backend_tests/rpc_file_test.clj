@@ -23,6 +23,7 @@
    [app.features.fdata :as fdata]
    [app.http :as http]
    [app.loggers.audit :as-alias audit]
+   [app.redis :as rds]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.storage :as sto]
@@ -3380,3 +3381,55 @@
       (t/is (nil? (:error out)))
       (t/is (= #{(:id file)} (into #{} (map :id) result)))
       (t/is (every? #(not (contains? % :storage-object-id)) result)))))
+
+(t/deftest save-reads-the-file-row-for-update
+  ;; The save persists the map it read, so the read holds the `file` row from
+  ;; the read to the write, with the exclusive lock: the migration-on-read
+  ;; re-read cannot upgrade a shared one and deadlock with another reader.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        page-id (first (get-in file [:data :pages]))
+        [_ sqls] (th/read-recording-sql
+                  #(update-file! :profile-id (:id profile)
+                                 :file-id (:id file)
+                                 :revn 0
+                                 :changes [(th/add-rect-change page-id (uuid/random))]))]
+    (t/is (some #(= (str bfc/sql:get-file " FOR UPDATE of f") %) sqls))
+    (t/is (not-any? #(str/includes? % "FOR SHARE") sqls))))
+
+(t/deftest get-team-shared-files-does-not-return-the-applied-migrations
+  ;; The applied migrations are read bookkeeping for the write path: this
+  ;; summary is not where a client completes a read, so both cache paths strip
+  ;; the key. The recorded SQL proves which path ran: a miss reads the file, a
+  ;; hit reads the row only.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true})
+        shared  (fn []
+                  (th/command! {::th/type :get-team-shared-files
+                                ::rpc/profile-id (:id profile)
+                                :team-id (:default-team-id profile)}))]
+    ;; Redis is not reset between tests and the helper builds deterministic
+    ;; file ids: drop the entry so the first call is a real cache miss.
+    (rds/run! th/*system*
+              (fn [{:keys [::rds/conn]}]
+                (rds/del conn (files/file-summary-cache-key (:id file)))))
+    (with-redefs [cf/flags (conj cf/flags :redis-cache)]
+      (let [[miss sqls-miss] (th/read-recording-sql shared)
+            [hit  sqls-hit]  (th/read-recording-sql shared)]
+        (t/is (= [bfc/sql:get-file] sqls-miss))
+        (t/is (= [bfc/sql:get-file-without-data] sqls-hit))
+
+        (t/testing "the cache miss does not carry the applied migrations"
+          (t/is (nil? (:error miss)))
+          (t/is (= #{(:id file)} (into #{} (map :id) (:result miss))))
+          (t/is (every? #(not (contains? % :migrations)) (:result miss))))
+
+        (t/testing "the cache hit does not carry the applied migrations"
+          (t/is (nil? (:error hit)))
+          (t/is (= (into #{} (map :id) (:result miss))
+                   (into #{} (map :id) (:result hit))))
+          (t/is (every? #(not (contains? % :migrations)) (:result hit))))))))

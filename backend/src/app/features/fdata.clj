@@ -138,100 +138,120 @@
                        backend=?,
                        metadata=?,
                        data=?,
-                       storage_object_id=?"))
+                       storage_object_id=?
+         WHERE file_data.storage_object_id IS NOT DISTINCT FROM ?"))
 
 (defn- upsert-in-database
-  [cfg {:keys [id file-id created-at modified-at deleted-at type backend data metadata storage-object-id]}]
+  [cfg {:keys [id file-id created-at modified-at deleted-at type backend data metadata storage-object-id]} expected-storage-object-id]
   (let [created-at  (or created-at (ct/now))
         ;; The metadata pointer is dead (the column is the only source of
         ;; truth). Clean it here, the single point where every branch
         ;; serializes the metadata, so no write can resurrect it.
         metadata    (some-> metadata (dissoc :storage-ref-id) (db/json))
-        modified-at (or modified-at created-at)]
+        modified-at (or modified-at created-at)
 
-    (db/exec-one! cfg [sql:upsert-file-data
-                       file-id id
-                       created-at
-                       modified-at
-                       deleted-at
-                       type
-                       backend
-                       metadata
-                       data
-                       storage-object-id
-                       modified-at
-                       deleted-at
-                       backend
-                       metadata
-                       data
-                       storage-object-id])))
+        result
+        (db/exec-one! cfg [sql:upsert-file-data
+                           file-id id
+                           created-at
+                           modified-at
+                           deleted-at
+                           type
+                           backend
+                           metadata
+                           data
+                           storage-object-id
+                           modified-at
+                           deleted-at
+                           backend
+                           metadata
+                           data
+                           storage-object-id
+                           expected-storage-object-id])]
+
+    ;; A zero count means the row exists with another pointer: the caller
+    ;; read it before someone else replaced it. Every writer holds the `file`
+    ;; row lock, so this is a protocol violation, not a race to retry.
+    (when-not (pos? (db/get-update-count result))
+      (ex/raise :type :internal
+                :code :stale-file-data-pointer
+                :hint "the file data row changed since it was read"
+                :file-id file-id
+                :id id))
+
+    result))
 
 (defn- handle-persistence
   [cfg {:keys [type backend id file-id data] :as params}]
-
-  (cond
-    (= backend "storage")
-    ;; IMPORTANT: we strongly do not reuse the main connection that can
-    ;; run inside a transaction because the storage upload process can
-    ;; fail in the middle of uploading and leave garbage on the underlying
-    ;; backend, if we participate in the main transaction and it aborts
-    ;; we will lose all registry of the pending to reconcile blobs
-    ;; what the storage subsystem registers in other parallel
-    ;; transaction
-    (let [storage  (sto/resolve cfg)
-          content  (sto/content data)
-          sobject  (sto/put-object! storage
-                                    {::sto/content content
-                                     ::sto/touch true
-                                     :bucket "file-data"
-                                     :content-type "application/octet-stream"
-                                     :file-id file-id
-                                     :id id})
-          params   (-> params
-                       (assoc :storage-object-id (:id sobject))
-                       (assoc :data nil))]
-      (upsert-in-database cfg params))
-
-    (= backend "db")
-    (upsert-in-database cfg (assoc params :storage-object-id nil))
-
-    (= backend "legacy-db")
+  (let [expected (:storage-object-id params)]
     (cond
-      (= type "main")
-      (do
-        (db/delete! cfg :file-data
-                    {:id id :file-id file-id :type "main"}
-                    {::db/return-keys false})
-        (db/update! cfg :file
-                    {:data data}
-                    {:id file-id}
-                    {::db/return-keys false}))
+      (= backend "storage")
+      ;; IMPORTANT: we strongly do not reuse the main connection that can
+      ;; run inside a transaction because the storage upload process can
+      ;; fail in the middle of uploading and leave garbage on the underlying
+      ;; backend, if we participate in the main transaction and it aborts
+      ;; we will lose all registry of the pending to reconcile blobs
+      ;; what the storage subsystem registers in other parallel
+      ;; transaction
+      (let [storage  (sto/resolve cfg)
+            content  (sto/content data)
+            sobject  (sto/put-object! storage
+                                      {::sto/content content
+                                       ::sto/touch true
+                                       :bucket "file-data"
+                                       :content-type "application/octet-stream"
+                                       :file-id file-id
+                                       :id id})
+            params   (-> params
+                         (assoc :storage-object-id (:id sobject))
+                         (assoc :data nil))]
+        {:result (upsert-in-database cfg params expected)
+         :storage-object-id (:id sobject)})
 
-      (= type "snapshot")
-      (do
-        (db/delete! cfg :file-data
-                    {:id id :file-id file-id :type "snapshot"}
-                    {::db/return-keys false})
-        ;; every mutation of `file_change` moves `updated_at`: the partition
-        ;; runbook uses it as the watermark of the delta passes
-        (db/update! cfg :file-change
-                    {:data data
-                     :updated-at (ct/now)}
-                    {:file-id file-id :id id}
-                    {::db/return-keys false}))
+      (= backend "db")
+      {:result (upsert-in-database cfg (assoc params :storage-object-id nil) expected)
+       :storage-object-id nil}
 
-      (= type "fragment")
-      (upsert-in-database cfg
-                          (-> (dissoc params :metadata)
-                              (assoc :backend "db")
-                              (assoc :storage-object-id nil)))
+      (= backend "legacy-db")
+      {:result
+       (cond
+         (= type "main")
+         (do
+           (db/delete! cfg :file-data
+                       {:id id :file-id file-id :type "main"}
+                       {::db/return-keys false})
+           (db/update! cfg :file
+                       {:data data}
+                       {:id file-id}
+                       {::db/return-keys false}))
+
+         (= type "snapshot")
+         (do
+           (db/delete! cfg :file-data
+                       {:id id :file-id file-id :type "snapshot"}
+                       {::db/return-keys false})
+           ;; every mutation of `file_change` moves `updated_at`: the partition
+           ;; runbook uses it as the watermark of the delta passes
+           (db/update! cfg :file-change
+                       {:data data
+                        :updated-at (ct/now)}
+                       {:file-id file-id :id id}
+                       {::db/return-keys false}))
+
+         (= type "fragment")
+         (upsert-in-database cfg
+                             (-> (dissoc params :metadata)
+                                 (assoc :backend "db")
+                                 (assoc :storage-object-id nil))
+                             expected)
+
+         :else
+         (throw (RuntimeException. "not implemented")))
+       :storage-object-id nil}
 
       :else
-      (throw (RuntimeException. "not implemented")))
-
-    :else
-    (throw (IllegalArgumentException.
-            (str "backend '" backend "' not supported")))))
+      (throw (IllegalArgumentException.
+              (str "backend '" backend "' not supported"))))))
 
 (defn touch-storage-object
   "Mark a storage object as touched so the storage GC can reclaim it once
@@ -281,7 +301,9 @@
   storage GC can reclaim the blob once nothing references it.
 
   The function does not query the row: the caller must hand the pointer it
-  read. Returns true when a row was written."
+  read. Returns a map with `:written` (whether a row was written) and the
+  `:storage-object-id` of the object this write created, nil for the `db`
+  and `legacy-db` backends."
   [cfg params & {:as opts}]
   (let [params (-> (check-update-params params)
                    (update :backend default-backend))]
@@ -289,9 +311,9 @@
     (some->> (:storage-object-id params)
              (touch-storage-object cfg))
 
-    (-> (handle-persistence cfg params)
-        (db/get-update-count)
-        (pos?))))
+    (let [{:keys [result storage-object-id]} (handle-persistence cfg params)]
+      {:written (pos? (db/get-update-count result))
+       :storage-object-id storage-object-id})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; POINTER-MAP

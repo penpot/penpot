@@ -43,7 +43,6 @@
 
 (def ^:dynamic *state* nil)
 (def ^:dynamic *options* nil)
-(def ^:dynamic *reference-file* nil)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DEFAULTS
@@ -159,7 +158,7 @@
   [index obj & attrs]
   (reduce (fn [index attr-fn]
             (let [old-id (attr-fn obj)
-                  new-id (if (::overwrite *options*) old-id (uuid/next))]
+                  new-id (uuid/next)]
               (assoc index old-id new-id)))
           index
           attrs))
@@ -219,27 +218,37 @@
   (str sql:files-with-data " WHERE f.id = ?"))
 
 (def sql:get-file-without-data
-  (str "WITH files AS (" sql:files-with-data ")"
-       "SELECT f.id,
-               f.project_id,
-               f.created_at,
-               f.modified_at,
-               f.deleted_at,
-               f.name,
-               f.is_shared,
-               f.has_media_trimmed,
-               f.revn,
-               f.ignore_sync_until,
-               f.comment_thread_seqn,
-               f.features,
-               f.version,
-               f.vern,
-               f.team_id
-          FROM files AS f
-         WHERE f.id = ?"))
+  "SELECT f.id,
+          f.project_id,
+          f.created_at,
+          f.modified_at,
+          f.deleted_at,
+          f.name,
+          f.is_shared,
+          f.has_media_trimmed,
+          f.revn,
+          f.ignore_sync_until,
+          f.comment_thread_seqn,
+          f.features,
+          f.version,
+          f.vern,
+          p.team_id
+     FROM file AS f
+    INNER JOIN project AS p ON (p.id = f.project_id)
+    WHERE f.id = ?")
 
 (defn- migrate-file
-  [{:keys [::db/conn] :as cfg} {:keys [read-only?]} {:keys [id] :as file}]
+  "Apply the pending migrations to the file.
+
+  With `persist-after-migration?` the migrated map is also persisted, which is
+  only safe from a map read under the `file` row lock (see `get-file*`). The
+  returned map is then the reattached one: decoded data where the pages the
+  migration did not change keep their pointers and their fragment ids, plus
+  the `:storage-object-id` of the row the write left, so a caller that
+  persists again touches the current object. Without `persist-after-migration?`
+  the realized map is returned, which is what a read-only context can do.
+  `get-file*` realizes the result when the caller asks for it."
+  [cfg {:keys [id] :as file} {:keys [persist-after-migration?]}]
   (fdata/with-tracked-pointers cfg id
     (let [libs                (delay (get-resolved-file-libraries cfg file))
           ;; Capture the pointer layout before realizing: the migration
@@ -253,111 +262,175 @@
           objects-map-added?  (and (not objects-map-before?)
                                    (contains? (:features realized) "fdata/objects-map"))]
 
-      (if (or read-only? (db/read-only? conn))
-        realized
-        (let [file (if objects-map-added?
-                     realized
-                     (fdata/reattach-unchanged original realized))]
+      (if persist-after-migration?
+        (let [file    (if objects-map-added?
+                        realized
+                        (fdata/reattach-unchanged original realized))
+              written (update-file! cfg file)]
           ;; When the file is migrated, we break the rule of not
           ;; performing mutations on get operations and update the file
-          ;; with all migrations applied. The caller still receives the
-          ;; realized file: the read contract is plain data.
-          (update-file! cfg file)
-          (fmigr/resolve-applied-migrations cfg realized))))))
+          ;; with all migrations applied. The reattached map is also what
+          ;; the read returns: the caller realizes it only when it asks.
+          (assoc (fmigr/resolve-applied-migrations cfg file)
+                 :storage-object-id (:storage-object-id written)))
+        realized))))
+
+(defn- fetch-row
+  "Read the file row. With `load-data?` the file data columns come along, but
+  they are not resolved nor decoded (see `attach-file-data`). With
+  `load-migrations?` the applied migrations are resolved, which is what
+  `need-migration?` expects. A skip-locked read answers nil instead of raising
+  when the row is gone."
+  [{:keys [::db/conn] :as cfg} id
+   {:keys [include-deleted?
+           skip-locked?
+           lock-for-update?
+           lock-for-share?
+           throw-if-not-exists?
+           load-migrations?
+           load-data?]}]
+
+  (let [sql  (if load-data?
+               sql:get-file
+               sql:get-file-without-data)
+        sql  (cond
+               lock-for-update?
+               (str sql " FOR UPDATE of f")
+
+               lock-for-share?
+               (str sql " FOR SHARE of f")
+
+               :else
+               sql)
+
+        sql  (if (and skip-locked? (or lock-for-share? lock-for-update?))
+               (str sql " SKIP LOCKED")
+               sql)
+
+        file (db/get-with-sql conn [sql id] {::db/throw-if-not-exists false
+                                             ::db/remove-deleted (not include-deleted?)})
+        file (some-> file
+                     (d/update-when :features db/decode-pgarray #{})
+                     (d/update-when :metadata fdata/decode-metadata))
+        file (if (and file load-migrations?)
+               (fmigr/resolve-applied-migrations cfg file)
+               file)]
+
+    (or file
+        (when-not (or skip-locked? (not throw-if-not-exists?))
+          (ex/raise :type :not-found
+                    :code :object-not-found
+                    :hint "database object not found"
+                    :table :file
+                    :file-id id)))))
+
+
+(defn- attach-file-data
+  "Resolve the data of an already read row and decode it when `decode?`. It
+  completes the map it receives instead of reading the row again. It does not
+  realize: `get-file*` owns that step, once per path."
+  [cfg file {:keys [decode?]}]
+  (let [file (fdata/resolve-file-data cfg file)]
+    (if decode?
+      (fdata/decode-file-data cfg file)
+      file)))
+
+(defn- fetch-file
+  "Read the row with its data resolved and decoded, under the requested lock."
+  [cfg id options]
+  (when-let [file (fetch-row cfg id options)]
+    (attach-file-data cfg file options)))
+
+(def ^:private
+  default-get-file-options
+  {:load-migrations? true
+   :throw-if-not-exists? true
+   :persist-after-migration? true
+   :load-data? true
+   :migrate? true
+   :decode? true})
 
 (defn- get-file*
-  [{:keys [::db/conn] :as cfg} id
-   {:keys [migrate?
-           realize?
-           decode?
-           skip-locked?
-           include-deleted?
-           load-data?
-           throw-if-not-exists?
-           lock-for-update?
-           lock-for-share?]
-    :or {lock-for-update? false
-         lock-for-share? false
-         load-data? true
-         migrate? true
-         decode? true
-         include-deleted? false
-         throw-if-not-exists? true
-         realize? false}
-    :as options}]
+  [{:keys [::db/conn] :as cfg} id options]
 
   (assert (db/connection? conn) "expected cfg with valid connection")
-  (when (and (not load-data?)
-             (or lock-for-share? lock-for-update? skip-locked?))
-    (throw (IllegalArgumentException. "locking is incompatible when `load-data?` is false")))
 
-  (let [sql
-        (if load-data?
-          sql:get-file
-          sql:get-file-without-data)
+  (let [{:keys [migrate?
+                realize?
+                decode?
+                load-data?
+                lock-for-share?
+                read-only?]
+         :as options}
+        (merge default-get-file-options options)
 
-        sql
-        (cond
-          lock-for-update?
-          (str sql " FOR UPDATE of f")
+        read-only?
+        (or read-only? (db/read-only? conn))]
 
-          lock-for-share?
-          (str sql " FOR SHARE of f")
+    (when (and realize? (or (not load-data?) (not decode?)))
+      (throw (IllegalArgumentException. "invalid options, you only can realize when loading data and decoding")))
 
-          :else
-          sql)
+    (when (and lock-for-share? load-data?)
+      (throw (IllegalArgumentException. "invalid options, `:lock-for-share?` is only allowed on row-only reads")))
 
-        sql
-        (if skip-locked?
-          (str sql " SKIP LOCKED")
-          sql)
+    (cond
+      ;; The caller only wants the row: that read is the answer.
+      (not load-data?)
+      (fetch-row cfg id options)
 
-        file
-        (db/get-with-sql conn [sql id]
-                         {::db/throw-if-not-exists false
-                          ::db/remove-deleted (not include-deleted?)})
+      (and migrate? decode? (not read-only?))
+      (when-let [file (fetch-row cfg id options)]
+        (if (fmg/need-migration? file)
+          (when-let [file (fetch-file cfg id (assoc options :lock-for-update? true))]
+            (cond-> file
+              (fmg/need-migration? file)
+              (as-> $ (migrate-file cfg $ options))
 
-        file
-        (-> file
-            (d/update-when :features db/decode-pgarray #{})
-            (d/update-when :metadata fdata/decode-metadata))]
+              realize?
+              (->> (fdata/realize cfg))))
 
-    (if file
-      (if load-data?
-        (let [file
-              (->> file
-                   (fmigr/resolve-applied-migrations cfg)
-                   (fdata/resolve-file-data cfg))
+          (let [file (attach-file-data cfg file options)]
+            (cond-> file
+              realize?
+              (->> (fdata/realize cfg))))))
 
-              will-migrate?
-              (and migrate? (fmg/need-migration? file))]
+      :else
+      (when-let [file (fetch-file cfg id options)]
+        (cond-> file
+          (and migrate? decode? (fmg/need-migration? file))
+          (as-> $ (migrate-file cfg $ (assoc options :persist-after-migration? false)))
 
-          (if decode?
-            (cond->> (fdata/decode-file-data cfg file)
-              (and realize? (not will-migrate?))
-              (fdata/realize cfg)
-
-              will-migrate?
-              (migrate-file cfg options))
-
-            file))
-        file)
-
-      (when-not (or skip-locked? (not throw-if-not-exists?))
-        (ex/raise :type :not-found
-                  :code :object-not-found
-                  :hint "database object not found"
-                  :table :file
-                  :file-id id)))))
+          realize?
+          (->> (fdata/realize cfg)))))))
 
 (defn get-file
   "Get file, resolve all features and apply migrations.
 
+  Runs inside a transaction: it joins the caller's when the cfg already
+  carries a connection and opens one otherwise, so the migration write
+  commits with the read. Accepts a cfg map only: a bare pool or a
+  connection raises.
+
   Useful when you have plan to apply massive or not surgical
   operations on file, because it removes the overhead of lazy fetching
-  and decoding."
+  and decoding.
+
+  Options:
+  - `:realize?` returns plain data instead of fragment pointers; it
+    requires `:load-data?` and `:decode?`.
+  - `:decode?` decodes the stored blob (default true).
+  - `:load-data?` reads the data columns (default true). A row-only read
+    (`false`) is the only mode that accepts `:lock-for-share?`.
+  - `:migrate?` applies the pending migrations on read (default true).
+  - `:load-migrations?` resolves the applied migrations on a row read
+    (default true).
+  - `:lock-for-update?`, `:skip-locked?`, `:include-deleted?`,
+    `:throw-if-not-exists?` and `:read-only?` are the usual read knobs.
+  - `:persist-after-migration?` is internal: `get-file*` turns it off
+    for the in-memory migration of a read-only context. Do not pass it."
   [cfg file-id & {:as opts}]
-  (db/run! cfg get-file* file-id opts))
+  (assert (map? cfg) "expected cfg map, not a pool or a connection")
+  (db/tx-run! cfg get-file* file-id opts))
 
 (defn clean-file-features
   [file]
@@ -727,7 +800,12 @@
   (let [library-ids (get-libraries cfg [file-id])
         data        (reduce (fn [data library-id]
                               (if-let [library (get-file cfg library-id :include-deleted? true)]
-                                (cond-> (ctf/absorb-assets data (:data library))
+                                ;; The library is read without `:realize?`, so its
+                                ;; `:components` may be a pointer map. Bind the
+                                ;; library's own loader: the absorb walks the
+                                ;; components and would raise without one.
+                                (cond-> (fdata/with-pointers cfg library-id
+                                          (ctf/absorb-assets data (:data library)))
                                   (= library-id (cfo/get-tokens-source data))
                                   (cfo/absorb-tokens-lib (:data library)))
                                 data))
@@ -878,13 +956,17 @@
   That is why the caller must pass the map it read instead of building a
   partial one: nothing is queried here. The params only change mutable fields
   of the file: the pointer and the identity (`:id`, `:file-id`) always come
-  from the read map."
+  from the read map.
+
+  Returns the map `fdata/upsert!` answers with: `:written` and the
+  `:storage-object-id` of the object this write created, so a caller that
+  persists again touches the current object instead of the replaced one."
   [{:keys [::db/conn] :as cfg} file & {:as params}]
 
-  ;; A map read with `:load-data? false` has no `:data` and no pointer;
-  ;; persisting it would wipe the file content and skip the storage touch.
-  ;; `ex/raise` instead of `assert`: the guard must exist in the deployed
-  ;; binary, where `clojure.core/assert` is compiled out.
+  ;; A map read with `:load-data? false` has no `:data`; persisting it would
+  ;; wipe the file content. `ex/raise` instead of `assert`: the guard must
+  ;; exist in the deployed binary, where `clojure.core/assert` is compiled
+  ;; out.
   (when-not (contains? file :data)
     (ex/raise :type :internal
               :code :missing-file-data
@@ -912,8 +994,7 @@
                   {:id (:id file)}
                   {::db/return-keys false})
 
-      (fdata/upsert! cfg (file->file-data-params file))
-      nil)))
+      (fdata/upsert! cfg (file->file-data-params file)))))
 
 (defn save-file!
   "Applies all the final validations and perist the file, binfile
@@ -926,8 +1007,7 @@
   (let [file (-> file
                  (assoc :created-at timestamp)
                  (assoc :modified-at timestamp)
-                 (cond-> (not (::overwrite cfg))
-                   (assoc :ignore-sync-until (ct/plus timestamp (ct/duration {:seconds 5}))))
+                 (assoc :ignore-sync-until (ct/plus timestamp (ct/duration {:seconds 5})))
                  (update :features
                          (fn [features]
                            (-> (::features cfg #{})
@@ -944,13 +1024,7 @@
         (when (ex/exception? result)
           (l/error :hint "file schema validation error" :cause result))))
 
-    ;; LEGACY: the `::overwrite` branch is the in-place import, dead code that
-    ;; will be removed in a separate PR. It does not carry the previous
-    ;; `storage_object_id`, so it is not supported by the storage pointer
-    ;; model; only the insert branch is live.
-    (if (::overwrite cfg)
-      (update-file! cfg file ::reset-migrations? true)
-      (insert-file! cfg file opts))))
+    (insert-file! cfg file opts)))
 
 (def ^:private sql:get-file-libraries
   "WITH RECURSIVE libs AS (

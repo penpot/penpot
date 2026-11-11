@@ -568,7 +568,7 @@
             (let [file    (bfc/get-file cfg id :load-data? false)
                   summary (t/decode-str result)]
               (-> (assoc file :library-summary summary)
-                  (dissoc :data)
+                  (dissoc :data :migrations)
                   (bfc/file->response)))))
 
         calculate-from-db
@@ -577,11 +577,13 @@
                 result (feat.fdata/with-pointers cfg id
                          (calculate-library-summary file))]
             ;; The storage pointer is internal bookkeeping: this summary is an
-            ;; RPC response and must not expose it.
+            ;; RPC response and must not expose it. The applied migrations go
+            ;; for the same reason: this endpoint is not where a client
+            ;; completes a read, and `schema:file` declares the key optional.
             (-> file
                 (assoc :library-summary result)
                 (dissoc :legacy-data)
-                (dissoc :data)
+                (dissoc :data :migrations)
                 (bfc/file->response))))
 
         persist-to-cache

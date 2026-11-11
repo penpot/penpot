@@ -373,7 +373,6 @@
                                          :profile-id profile-id
                                          :project-id project-id)
               cfg        (assoc cfg
-                                ::bfc/overwrite false
                                 ::bfc/profile-id profile-id
                                 ::bfc/project-id project-id
                                 ::bfc/team-id (:id team)

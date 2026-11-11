@@ -191,7 +191,7 @@
                   (fn [cfg]
                     (let [file (bfc/get-file cfg (:id file)
                                              :migrate? false
-                                             :lock-for-share? true)]
+                                             :lock-for-update? true)]
                       (bfc/update-file! cfg file
                                         :storage-object-id nil
                                         :modified-at (ct/now)))))
@@ -277,7 +277,7 @@
                 (fn [cfg]
                   (let [file (bfc/get-file cfg (:id file)
                                            :migrate? false
-                                           :lock-for-share? true)]
+                                           :lock-for-update? true)]
                     (bfc/update-file! cfg file :id other :modified-at when))))
 
     (t/testing "the read file is updated"
@@ -309,7 +309,7 @@
                   (fn [cfg]
                     (let [file (bfc/get-file cfg (:id file)
                                              :migrate? false
-                                             :lock-for-share? true)]
+                                             :lock-for-update? true)]
                       (bfc/update-file! cfg file :modified-at (ct/now)))))
 
       (let [row     (th/db-get :file-data {:file-id (:id file) :id (:id file)})

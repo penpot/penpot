@@ -28,10 +28,10 @@
 
 (def ^:private sql:lock-file
   ;; NOTE: SKIP LOCKED only serializes against writers that also lock
-  ;; the file row. Every file_data writer must therefore hold at least
-  ;; FOR SHARE on it (the update RPC via lock-for-share?, file-gc via
-  ;; FOR UPDATE); a writer skipping that lock would reopen the
-  ;; lost-update race this lock closes.
+  ;; the file row. Every file_data writer must therefore lock it too:
+  ;; the update RPC and the snapshot paths via `lock-for-update?`, and
+  ;; file-gc via FOR UPDATE. A writer skipping that lock would reopen
+  ;; the lost-update race this lock closes.
   "SELECT id FROM file WHERE id = ? AND deleted_at IS NULL FOR UPDATE SKIP LOCKED")
 
 (defn- decode-row
