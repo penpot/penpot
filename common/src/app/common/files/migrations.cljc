@@ -1906,21 +1906,6 @@
                     {})]
     (cfcp/sync-component-id-with-ref-shape data libraries)))
 
-(defmethod migrate-data "0021-fix-shape-svg-attrs"
-  [data _]
-  (some-> cfeat/*new* (swap! conj "fdata/shape-data-type"))
-  (letfn [(update-object [object]
-            (-> object
-                (d/update-when :svg-attrs csvg/attrs->props)
-                (d/update-when :svg-viewbox grc/make-rect)))
-
-          (update-container [container]
-            (d/update-when container :objects d/update-vals update-object))]
-
-    (-> data
-        (update :pages-index d/update-vals update-container)
-        (d/update-when :components d/update-vals update-container))))
-
 ;; Re-run the 0019 and 0020 fixers after normalizing :component-root.
 ;; Migrations 0019 and 0020 missed shapes with an explicit :component-root
 ;; false because subcopy-head? expects nil. Normalize first, then re-run.
@@ -2375,6 +2360,91 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0034-fix-path-content-offset"
+  [data _]
+  ;; A path stores its geometry twice: the box (:selrect and :points) and the
+  ;; drawing (:content), and the box is always derived from the drawing. Some
+  ;; files have component copies whose drawing and box were moved apart, so
+  ;; the drawing renders away from where the sidebar, the layouts and the
+  ;; syncs place the shape. We move the content back onto the box. A path whose drawing
+  ;; has another size than its box is not a displaced drawing, and is left as
+  ;; it is.
+  (let [tolerance 0.1]
+    (letfn [(fix-path [shape]
+              (when (and (cfh/path-shape? shape)
+                         (some? (:selrect shape))
+                         (some? (path.segment/content->selrect (:content shape))))
+                (let [selrect  (:selrect shape)
+                      derived  (:selrect (path/update-geometry shape))
+                      offset   (gpt/subtract (grc/rect->center selrect)
+                                             (grc/rect->center derived))]
+                  (when (and (mth/close? (:width selrect) (:width derived) tolerance)
+                             (mth/close? (:height selrect) (:height derived) tolerance)
+                             (or (> (abs (:x offset)) tolerance)
+                                 (> (abs (:y offset)) tolerance)))
+                    (update shape :content path/move-content offset)))))
+
+            (fix-objects [objects]
+              (reduce-kv (fn [objects id shape]
+                           (if-let [shape (fix-path shape)]
+                             (assoc objects id shape)
+                             objects))
+                         objects
+                         objects))
+
+            (update-container [container]
+              (d/update-when container :objects fix-objects))]
+
+      (-> data
+          (update :pages-index d/update-vals update-container)
+          (d/update-when :components d/update-vals update-container)))))
+
+(defmethod migrate-data "0035-fix-shape-svg-attrs-and-defs"
+  ;; Stored svg attribute keys are kebab-case (issue #11947): the v3 reader
+  ;; already outputs kebab and birth normalizes any outside spelling, so
+  ;; export/import converges to the same state. Old birth and the cleaner
+  ;; era stored camelCase React prop names instead, which the reader
+  ;; kebab-ized on import beyond repair. Convert once, with the same
+  ;; birth transforms: `:svg-attrs` and `:svg-defs` node attrs go through
+  ;; the whitelist+kebab transform (unknown attrs drop, same as birth),
+  ;; while svg-raw `:content` attrs are kebab-ized spelling-only (unknown
+  ;; keys kept: the sidebar reads keys outside the whitelist). Kebab
+  ;; input passes through unchanged, so re-running is safe. This replaces
+  ;; "0021-fix-shape-svg-attrs" (id withdrawn from `available-migrations`
+  ;; below): files that recorded it migrate again through this one.
+  ;; Node tags in defs and svg-raw content are stored as keywords; files
+  ;; that hold them as strings get them converted here, since the closed
+  ;; node schemas reject strings. `:svg-transform` held as a plain map
+  ;; becomes a matrix, because the svg defs renderer multiplies it as one.
+  ;; Non-lowercase XML ids stay lossy: the reader lowercases them before
+  ;; anything runs.
+  [data _]
+  (some-> cfeat/*new* (swap! conj "fdata/shape-data-type"))
+  (letfn [(migrate-defs [defs]
+            (if (map? defs)
+              (d/mapm (fn [_ node] (csvg/normalize-def-node node)) defs)
+              defs))
+
+          (migrate-shape [shape]
+            (-> shape
+                (d/update-when :svg-attrs
+                               (fn [attrs]
+                                 (if (map? attrs)
+                                   (csvg/attrs->kebab-props attrs)
+                                   attrs)))
+                (d/update-when :svg-defs migrate-defs)
+                (d/update-when :svg-viewbox grc/make-rect)
+                (d/update-when :svg-transform gmt/coerce)
+                (cond-> (= :svg-raw (:type shape))
+                  (d/update-when :content csvg/kebabize-content-node))))
+
+          (migrate-container [container]
+            (d/update-when container :objects d/update-vals migrate-shape))]
+
+    (-> data
+        (update :pages-index d/update-vals migrate-container)
+        (d/update-when :components d/update-vals migrate-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2453,7 +2523,6 @@
          "0018-remove-unneeded-objects-from-components"
          "0019-fix-missing-swap-slots"
          "0020-sync-component-id-with-near-main"
-         "0021-fix-shape-svg-attrs"
          "0022-normalize-component-root-and-resync"
          "0023-repair-token-themes-with-inexistent-sets"
          "0024b-fix-stroke-cap-placement"
@@ -2465,4 +2534,6 @@
          "0030-remove-stroke-per-side-attr"
          "0031-migrate-stroke-width-token-attr"
          "0032-fix-children-not-in-parent"
-         "0033-normalize-main-instance-names"]))
+         "0033-normalize-main-instance-names"
+         "0034-fix-path-content-offset"
+         "0035-fix-shape-svg-attrs-and-defs"]))

@@ -20,7 +20,12 @@
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
-(def ^:private flags
+(defn- task-flags
+  "The test flags plus `:branching`. Read at run time, inside the
+  `th/state-init` fixture, so the flags it turns off (the admin
+  console among them) stay off: a value captured when the namespace
+  loads would carry the production defaults instead."
+  []
   (conj cf/flags :branching))
 
 (defn- page-id-of
@@ -103,8 +108,8 @@
                 :status status}))
 
 (t/deftest task-lifecycle-records-who-made-each-move
-  (with-redefs [cf/flags flags
-                eml/send (fn [_ _] nil)]
+  (with-redefs [cf/flags (task-flags)
+                eml/send-template (fn [_ _] nil)]
     (let [{:keys [author reviewer page-id rect-id branch-file-id review]} (setup-review)
           out  (create-task* reviewer {:file-id branch-file-id
                                        :page-id page-id
@@ -136,14 +141,14 @@
           (t/is (= {"verified" 1} (-> row :counts :tasks))))))))
 
 (t/deftest task-refuses-a-move-its-state-does-not-allow
-  (with-redefs [cf/flags flags]
+  (with-redefs [cf/flags (task-flags)]
     (let [{:keys [author page-id branch-file-id]} (setup-review)
           task (:result (create-task* author {:file-id branch-file-id :page-id page-id}))
           out  (set-status* author (:id task) "verified")]
       (t/is (= :invalid-task-transition (-> out :error ex-data :code))))))
 
 (t/deftest task-assignee-must-be-a-team-member
-  (with-redefs [cf/flags flags]
+  (with-redefs [cf/flags (task-flags)]
     (let [{:keys [author page-id branch-file-id]} (setup-review)
           stranger (th/create-profile* 3 {:is-active true})
           out      (create-task* author {:file-id branch-file-id
@@ -152,7 +157,7 @@
       (t/is (= :assignee-not-team-member (-> out :error ex-data :code))))))
 
 (t/deftest deleted-layer-moves-its-task-to-the-board
-  (with-redefs [cf/flags flags]
+  (with-redefs [cf/flags (task-flags)]
     (let [{:keys [author page-id rect-id branch-file-id]} (setup-review)
           board-id (uuid/random)
           task     (:result (create-task* author {:file-id branch-file-id
@@ -180,7 +185,7 @@
         (t/is (nil? (:lost-shape-name (th/db-get :file-task {:id (:id task)}))))))))
 
 (t/deftest review-thread-points-at-a-layer
-  (with-redefs [cf/flags flags]
+  (with-redefs [cf/flags (task-flags)]
     (let [{:keys [reviewer page-id rect-id branch-file-id review]} (setup-review)
           out (th/command! {::th/type :create-comment-thread
                             ::rpc/profile-id (:id reviewer)
@@ -201,7 +206,7 @@
         (t/is (= rect-id (:shape-id thread)))))))
 
 (t/deftest review-thread-refuses-a-review-of-another-file
-  (with-redefs [cf/flags flags]
+  (with-redefs [cf/flags (task-flags)]
     (let [{:keys [reviewer page-id file review]} (setup-review)
           out (th/command! {::th/type :create-comment-thread
                             ::rpc/profile-id (:id reviewer)
@@ -214,7 +219,7 @@
       (t/is (= :pull-request-not-open (-> out :error ex-data :code))))))
 
 (t/deftest branch-save-under-review-records-its-activity
-  (with-redefs [cf/flags flags]
+  (with-redefs [cf/flags (task-flags)]
     (let [{:keys [author page-id rect-id branch-file-id review]} (setup-review)]
       (update-file* author branch-file-id
                     [{:type :mod-obj :page-id page-id :id rect-id
@@ -228,8 +233,8 @@
                  (mapv #(select-keys % [:id :kind :attrs]) (:entries row))))))))
 
 (t/deftest merge-moves-the-tasks-and-their-threads-into-main
-  (with-redefs [cf/flags flags
-                eml/send (fn [_ _] nil)]
+  (with-redefs [cf/flags (task-flags)
+                eml/send-template (fn [_ _] nil)]
     (let [{:keys [author page-id rect-id file branch branch-file-id review]} (setup-review)
           ;; main has a thread of its own already: the moved one must not
           ;; take its number
@@ -287,7 +292,7 @@
                                                       {::db/remove-deleted false})))))))))
 
 (t/deftest each-message-of-a-thread-may-be-a-task
-  (with-redefs [cf/flags flags]
+  (with-redefs [cf/flags (task-flags)]
     (let [{:keys [author page-id branch-file-id]} (setup-review)
           thread   (:result (th/command! {::th/type :create-comment-thread
                                           ::rpc/profile-id (:id author)
@@ -336,7 +341,7 @@
           (t/is (= :comment-not-in-thread (-> out :error ex-data :code))))))))
 
 (t/deftest task-on-the-canvas-keeps-its-position
-  (with-redefs [cf/flags flags]
+  (with-redefs [cf/flags (task-flags)]
     (let [{:keys [author page-id branch-file-id]} (setup-review)
           out  (create-task* author {:file-id branch-file-id
                                      :page-id page-id
@@ -352,8 +357,8 @@
         (t/is (nil? (:error (set-status* author (:id task) "done"))))))))
 
 (t/deftest task-created-on-the-canvas-gets-a-thread
-  (with-redefs [cf/flags flags
-                eml/send (fn [_ _] nil)]
+  (with-redefs [cf/flags (task-flags)
+                eml/send-template (fn [_ _] nil)]
     (let [{:keys [author reviewer page-id rect-id branch-file-id review]} (setup-review)
           out  (create-task* reviewer {:file-id branch-file-id
                                        :page-id page-id
@@ -390,7 +395,7 @@
           (t/is (= 2 (count (th/db-query :comment {:thread-id (:thread-id task)})))))))))
 
 (t/deftest task-on-the-empty-canvas-gets-a-thread-on-its-spot
-  (with-redefs [cf/flags flags]
+  (with-redefs [cf/flags (task-flags)]
     (let [{:keys [author page-id branch-file-id]} (setup-review)
           task   (:result (create-task* author {:file-id branch-file-id
                                                 :page-id page-id
@@ -402,7 +407,7 @@
       (t/is (= {:x 120.0 :y 340.0} (into {} (db/decode-pgpoint (:position thread))))))))
 
 (t/deftest deleting-a-thread-deletes-its-tasks
-  (with-redefs [cf/flags flags]
+  (with-redefs [cf/flags (task-flags)]
     (let [{:keys [author page-id branch-file-id]} (setup-review)
           task  (:result (create-task* author {:file-id branch-file-id :page-id page-id}))
           other (:result (create-task* author {:file-id branch-file-id

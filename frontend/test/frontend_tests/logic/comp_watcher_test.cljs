@@ -11,6 +11,7 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
+   [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.pages :as dwpg]
@@ -97,4 +98,35 @@
                "the copy lost its rect"))
 
        (ptk/emit! store (dwpg/finalize-page (:id file) (cthf/current-page-id file)))
+       (await (async/settle))))))
+
+;; Scenario: a rollback reverts the opacity of the main's child. A rollback
+;; is not a commit, so the change watch sees no component change.
+;; Proves: the component's thumbnail is rendered again and uploaded, so
+;; neither the tab nor the server keeps a thumbnail of the rejected data.
+(t/deftest ^:async a-rollback-of-a-main-renders-and-uploads-its-thumbnail
+  (let [file    (setup-file)
+        store   (ths/setup-store file)
+        page-id (cthf/current-page-id file)
+        renders (atom [])]
+    (await
+     (mock/with-mocks*
+       {refs/workspace-data      (l/derived dsh/lookup-file-data store)
+        st/state                 store
+        dwt.wasm/render-thumbnail (fn [_ _ frame-id & {:as opts}]
+                                    (swap! renders conj [frame-id opts])
+                                    (noop-render-thumbnail))}
+
+       (ptk/emit! store (dwl/watch-component-changes))
+       (ptk/emit! store (dch/rebase-commits
+                         (:id file)
+                         {:undo   []
+                          :remote [{:type :mod-obj :id (cthi/id :main-child) :page-id page-id
+                                    :operations [{:type :set :attr :opacity :val 0.5}]}]
+                          :redo   []}))
+
+       (await (async/wait-for #(seq @renders) "the thumbnail to render"))
+       (t/is (= [[(cthi/id :main-root) {:persist? true}]] @renders))
+
+       (ptk/emit! store (dwpg/finalize-page (:id file) page-id))
        (await (async/settle))))))

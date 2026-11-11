@@ -362,10 +362,11 @@
                          (remove #(dm/get-in objects [% :blocked]))
                          (cfh/order-by-indexed-shapes objects))
 
+            data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it page-id)
-                        (pcb/with-objects objects))
-
-            changes (cfsh/prepare-move-shapes-into-frame changes frame-id shapes objects true)]
+                        (pcb/with-objects objects)
+                        (pcb/with-library-data data)
+                        (cls/generate-move-shapes-into-frame frame-id shapes objects true))]
 
         (if (some? changes)
           (rx/of (dch/commit-changes changes))
@@ -503,16 +504,14 @@
    (ptk/reify ::create-artboard-from-selection
      ptk/WatchEvent
      (watch [_ state _]
-       (let [page-id      (:current-page-id state)
-             objects      (dsh/lookup-page-objects state page-id)
-             selected     (->> (dsh/lookup-selected state)
-                               (cfh/clean-loops objects)
-                               (remove #(ctn/has-any-copy-parent? objects (get objects %)))
-                               (remove #(->> %
-                                             (get objects)
-                                             (ctc/is-variant?))))]
+       (let [page-id  (:current-page-id state)
+             objects  (dsh/lookup-page-objects state page-id)
+             selected (vec (ctn/ids-for-structure-op
+                            objects
+                            (dsh/get-selected-ids state)))]
 
-         (rx/of (create-artboard-from-shapes selected id parent-id index name delta)))))))
+         (when (seq selected)
+           (rx/of (create-artboard-from-shapes selected id parent-id index name delta))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shape Flags

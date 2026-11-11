@@ -22,7 +22,12 @@
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
-(def ^:private pr-flags
+(defn- pr-flags
+  "The test flags plus `:branching`. Read at run time, inside the
+  `th/state-init` fixture, so the flags it turns off (the admin
+  console among them) stay off: a value captured when the namespace
+  loads would carry the production defaults instead."
+  []
   (conj cf/flags :branching))
 
 (defn- apply-change*
@@ -59,7 +64,7 @@
                       params)))
 
 (t/deftest create-and-list-pull-requests
-  (with-redefs [cf/flags pr-flags]
+  (with-redefs [cf/flags (pr-flags)]
     (let [author   (th/create-profile* 1 {:is-active true})
           reviewer (th/create-profile* 2 {:is-active true})
           proj-id  (:default-project-id author)
@@ -134,7 +139,7 @@
             (t/is (= "review me" (-> out :result :title)))))))))
 
 (t/deftest one-open-pull-request-per-branch
-  (with-redefs [cf/flags pr-flags]
+  (with-redefs [cf/flags (pr-flags)]
     (let [author (th/create-profile* 1 {:is-active true})
           file   (th/create-file* 1 {:profile-id (:id author)
                                      :project-id (:default-project-id author)})
@@ -148,7 +153,7 @@
         (t/is (= :pull-request-already-exists (-> error ex-data :code)))))))
 
 (t/deftest create-validates-reviewers-and-permissions
-  (with-redefs [cf/flags pr-flags]
+  (with-redefs [cf/flags (pr-flags)]
     (let [author   (th/create-profile* 1 {:is-active true})
           stranger (th/create-profile* 2 {:is-active true})
           viewer   (th/create-profile* 3 {:is-active true})
@@ -179,7 +184,7 @@
           (t/is (some? (:error out))))))))
 
 (t/deftest bundle-serves-the-pinned-snapshot
-  (with-redefs [cf/flags pr-flags]
+  (with-redefs [cf/flags (pr-flags)]
     (let [author  (th/create-profile* 1 {:is-active true})
           file    (th/create-file* 1 {:profile-id (:id author)
                                       :project-id (:default-project-id author)})
@@ -243,7 +248,7 @@
             (t/is (false? (-> out :result :updated)))))))))
 
 (t/deftest viewer-bundle-serves-the-pinned-snapshot
-  (with-redefs [cf/flags pr-flags]
+  (with-redefs [cf/flags (pr-flags)]
     (let [author  (th/create-profile* 1 {:is-active true})
           file    (th/create-file* 1 {:profile-id (:id author)
                                       :project-id (:default-project-id author)})
@@ -298,7 +303,7 @@
             (t/is (= :pull-request-not-open (-> error ex-data :code)))))))))
 
 (t/deftest review-lifecycle
-  (with-redefs [cf/flags pr-flags]
+  (with-redefs [cf/flags (pr-flags)]
     (let [author   (th/create-profile* 1 {:is-active true})
           reviewer (th/create-profile* 2 {:is-active true})
           other    (th/create-profile* 3 {:is-active true})
@@ -367,7 +372,7 @@
             (t/is (= "changes-requested" (:review-state row)))))))))
 
 (t/deftest update-pull-request-metadata-and-reviewers
-  (with-redefs [cf/flags pr-flags]
+  (with-redefs [cf/flags (pr-flags)]
     (let [author     (th/create-profile* 1 {:is-active true})
           reviewer-1 (th/create-profile* 2 {:is-active true})
           reviewer-2 (th/create-profile* 3 {:is-active true})
@@ -416,7 +421,7 @@
             (t/is (= :not-a-reviewer (-> error ex-data :code)))))))))
 
 (t/deftest close-and-reopen-pull-request
-  (with-redefs [cf/flags pr-flags]
+  (with-redefs [cf/flags (pr-flags)]
     (let [author (th/create-profile* 1 {:is-active true})
           editor (th/create-profile* 2 {:is-active true})
           admin  (th/create-profile* 3 {:is-active true})
@@ -475,7 +480,7 @@
             (t/is (= (:revn bf) (-> out :result :review-revn)))))))))
 
 (t/deftest branch-lifecycle-closes-pull-requests
-  (with-redefs [cf/flags pr-flags]
+  (with-redefs [cf/flags (pr-flags)]
     (let [author (th/create-profile* 1 {:is-active true})
           file   (th/create-file* 1 {:profile-id (:id author)
                                      :project-id (:default-project-id author)})]
@@ -526,7 +531,7 @@
   ;; that wins the race closes the branch while the create waits for the
   ;; lock, so a create arriving afterwards must refuse instead of opening
   ;; a review over a branch that is already merged and gone.
-  (with-redefs [cf/flags pr-flags]
+  (with-redefs [cf/flags (pr-flags)]
     (let [author (th/create-profile* 1 {:is-active true})
           file   (th/create-file* 1 {:profile-id (:id author)
                                      :project-id (:default-project-id author)})
@@ -560,7 +565,7 @@
   ;; merge that wins the race closes the branch under the closed pull
   ;; request's feet, so a reopen arriving afterwards must refuse instead
   ;; of reviving a review over a branch that is already merged and gone.
-  (with-redefs [cf/flags pr-flags]
+  (with-redefs [cf/flags (pr-flags)]
     (let [author (th/create-profile* 1 {:is-active true})
           file   (th/create-file* 1 {:profile-id (:id author)
                                      :project-id (:default-project-id author)})
@@ -593,7 +598,7 @@
               (t/is (= "closed" (:status (first (th/db-query :file-pull-request {:id (:id pr)}))))))))))))
 
 (t/deftest closed-pull-requests-listing
-  (with-redefs [cf/flags pr-flags]
+  (with-redefs [cf/flags (pr-flags)]
     (let [author (th/create-profile* 1 {:is-active true})
           file   (th/create-file* 1 {:profile-id (:id author)
                                      :project-id (:default-project-id author)})
@@ -621,7 +626,7 @@
           (t/is (= "closed" (-> out :result first :status))))))))
 
 (t/deftest pull-request-listing-shares-the-branch-summary-cache
-  (with-redefs [cf/flags pr-flags]
+  (with-redefs [cf/flags (pr-flags)]
     (let [author (th/create-profile* 1 {:is-active true})
           file   (th/create-file* 1 {:profile-id (:id author)
                                      :project-id (:default-project-id author)})
@@ -666,7 +671,7 @@
   (let [author (th/create-profile* 1 {:is-active true})
         file   (th/create-file* 1 {:profile-id (:id author)
                                    :project-id (:default-project-id author)})
-        branch (with-redefs [cf/flags pr-flags]
+        branch (with-redefs [cf/flags (pr-flags)]
                  (create-branch* author file "feature"))
         out    (create-pr* author (:id branch) {})
         error  (:error out)]
@@ -674,7 +679,7 @@
     (t/is (= :branching-disabled (-> error ex-data :code)))))
 
 (t/deftest pull-request-commands-notify-only-after-the-commit
-  (with-redefs [cf/flags pr-flags]
+  (with-redefs [cf/flags (pr-flags)]
     (let [author   (th/create-profile* 1 {:is-active true})
           reviewer (th/create-profile* 2 {:is-active true})
           file     (th/create-file* 1 {:profile-id (:id author)
@@ -772,7 +777,7 @@
               (recur (rest cases) (or pr-id (-> out :result :id))))))))))
 
 (t/deftest rolled-back-pull-request-commands-notify-nothing
-  (with-redefs [cf/flags pr-flags]
+  (with-redefs [cf/flags (pr-flags)]
     (let [author   (th/create-profile* 1 {:is-active true})
           reviewer (th/create-profile* 2 {:is-active true})
           file     (th/create-file* 1 {:profile-id (:id author)
@@ -784,9 +789,9 @@
             seen   (atom [])]
         ;; the reviewer emails are queued inside the transaction: make
         ;; that queueing fail after the pull request row is written
-        (with-redefs [mbus/pub!   (fn [_ & {:keys [message]}]
-                                    (swap! seen conj message))
-                      eml/send    (fn [_ _] (throw (IllegalStateException. "boom")))]
+        (with-redefs [mbus/pub!         (fn [_ & {:keys [message]}]
+                                          (swap! seen conj message))
+                      eml/send-template (fn [_ _] (throw (IllegalStateException. "boom")))]
           (let [out (create-pr* author (:id branch) {:reviewers [(:id reviewer)]})]
             (t/is (some? (:error out)))))
         (t/is (empty? @seen))

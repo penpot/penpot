@@ -444,7 +444,8 @@
                       [:map
                        [:organization-id ::sm/uuid]
                        [:owner-id ::sm/uuid]
-                       [:permissions [:map-of :keyword :string]]]
+                       [:permissions [:map-of :keyword :string]]
+                       [:restrictions-met {:optional true} [:maybe [:map-of :keyword :boolean]]]]
                       params))
 
 (defn- get-organization-sso-api
@@ -651,6 +652,35 @@
                    :team-id (:id team)
                    :cause cause)
           team)))))
+
+(defn add-organization-info-to-team-strict
+  "Like `add-organization-info-to-team`, but fails closed for authorization
+  checks: the team is returned unchanged only when Nitrate answers 404 (the
+  team belongs to no organization). Any other failure, including a 4xx or an
+  invalid response body, raises instead of looking like a team without an
+  organization."
+  [cfg team params]
+  (let [params (assoc (or params {})
+                      :team-id (:id team)
+                      :throw-on-error? true)
+        team-with-organization
+        (try
+          (call cfg :get-team-organization params)
+          (catch Throwable cause
+            (let [{:keys [type status]} (ex-data cause)]
+              (if (and (= :nitrate-http-error type) (= 404 status))
+                ::no-organization
+                (throw cause)))))]
+    (cond
+      (= ::no-organization team-with-organization)
+      team
+
+      (nil? team-with-organization)
+      (ex/raise :type :nitrate-unavailable
+                :hint "nitrate did not return a valid team organization response")
+
+      :else
+      (apply-organization-info-to-team team team-with-organization))))
 
 (defn add-organization-info-to-teams
   "Enriches teams with organization information using one batched Nitrate request.

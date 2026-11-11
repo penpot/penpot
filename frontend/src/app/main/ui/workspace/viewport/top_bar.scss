@@ -52,6 +52,26 @@
   color: var(--color-foreground-secondary);
   padding-inline-start: var(--sp-s);
   inline-size: max-content;
+
+  strong {
+    font-weight: 700;
+  }
+}
+
+.viewport-actions-save-failed {
+  inline-size: max-content;
+  min-inline-size: min(#{$sz-400}, calc(100% - var(--sp-xl)));
+  max-inline-size: calc(100% - var(--sp-xl));
+
+  .viewport-actions-container {
+    block-size: auto;
+    min-block-size: $sz-48;
+    min-inline-size: 0;
+  }
+
+  .viewport-actions-title {
+    inline-size: auto;
+  }
 }
 
 .viewport-actions-no-rulers {

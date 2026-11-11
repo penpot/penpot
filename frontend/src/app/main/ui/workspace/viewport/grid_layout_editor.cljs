@@ -180,6 +180,12 @@
                (when on-drag-delta (on-drag-delta event (gpt/to-vec start pos)))
                (when on-drag-position (on-drag-position event pt))))))]
 
+    ;; Unmounted mid-drag, as when saves fail and edition ends, the drag
+    ;; never gets its release: its preview is dropped and nothing is committed
+    (mf/with-effect []
+      #(when (mf/ref-val dragging-ref)
+         (st/emit! (dwt/cancel-transform))))
+
     {:handle-pointer-down handle-pointer-down
      :handle-lost-pointer-capture handle-lost-pointer-capture
      :handle-pointer-move handle-pointer-move}))

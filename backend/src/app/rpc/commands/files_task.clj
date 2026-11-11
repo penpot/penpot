@@ -142,15 +142,16 @@
                      (map profile/decode-row)
                      (d/index-by :id))]
       (when-let [{:keys [fullname email]} (get users assignee-id)]
-        (eml/send cfg
-                  {::eml/reuse-conn true
-                   ::eml/factory eml/task-assigned
-                   :public-uri (cf/get :public-uri)
-                   :to email
-                   :name fullname
-                   :source-user (get-in users [actor-id :fullname] "")
-                   :task-title title
-                   :task-url (format-task-url task team-id)})))))
+        (eml/send-template
+         cfg
+         {::eml/reuse-conn true
+          ::eml/template "task-assigned"
+          :public-uri (cf/get :public-uri)
+          :to email
+          :name fullname
+          :source-user (get-in users [actor-id :fullname] "")
+          :task-title title
+          :task-url (format-task-url task team-id)})))))
 
 ;; --- COMMAND QUERY: get-file-tasks
 
@@ -675,20 +676,21 @@
       (when-let [{:keys [fullname email]} (and (some? assignee-id)
                                                (not= assignee-id actor-id)
                                                (get users assignee-id))]
-        (eml/send cfg
-                  {::eml/reuse-conn true
-                   ::eml/factory eml/tasks-moved
-                   :public-uri (cf/get :public-uri)
-                   :to email
-                   :name fullname
-                   :source-user actor
-                   :branch-name branch-name
-                   :file-name file-name
-                   :task-titles (str/join "\n" (map #(str "- " (:title %)) tasks))
-                   :file-url (str/join [(cf/get :public-uri)
-                                        "/#/workspace?"
-                                        (uri/map->query-string {:file-id main-id
-                                                                :team-id team-id})])})))))
+        (eml/send-template
+         cfg
+         {::eml/reuse-conn true
+          ::eml/template "tasks-moved"
+          :public-uri (cf/get :public-uri)
+          :to email
+          :name fullname
+          :source-user actor
+          :branch-name branch-name
+          :file-name file-name
+          :task-titles (str/join "\n" (map #(str "- " (:title %)) tasks))
+          :file-url (str/join [(cf/get :public-uri)
+                               "/#/workspace?"
+                               (uri/map->query-string {:file-id main-id
+                                                       :team-id team-id})])})))))
 
 (defn move-branch-tasks
   "Move every task of the branch file into main, inside the merge

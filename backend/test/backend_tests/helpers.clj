@@ -17,6 +17,7 @@
    [app.common.spec :as us]
    [app.common.time :as ct]
    [app.common.transit :as tr]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -86,7 +87,8 @@
    :enable-quotes
    :enable-rpc-climit
    :enable-auto-file-snapshot
-   :disable-file-validation])
+   :disable-file-validation
+   :disable-admin-console])
 
 (defn init-config
   ([next]
@@ -384,6 +386,21 @@
                                                        :profile-id profile-id}
                                                       tpoint))))))))
 
+(defn add-rect-change
+  "A change that adds a 10x10 rect `id` to the root of `page-id`."
+  [page-id id]
+  {:type :add-obj
+   :page-id page-id
+   :id id
+   :parent-id uuid/zero
+   :frame-id uuid/zero
+   :obj (cts/setup-shape {:id id
+                          :type :rect
+                          :name "rect"
+                          :x 0 :y 0 :width 10 :height 10
+                          :parent-id uuid/zero
+                          :frame-id uuid/zero})})
+
 (declare command!)
 
 (defn update-file! [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
@@ -553,13 +570,38 @@
       (method-fn params))))
 
 (defn management-command!
+  "Invokes a management RPC method.
+
+  Resolves the shared-key id from an explicit `::rpc/auth-key-id`, from
+  `:app.http/auth-key-id` on the data or on the supplied request, and falls
+  back to the first id the method declares. The fallback lets the existing
+  tests exercise the allowed path without repeating the key; a test that
+  checks a rejection declares the key explicitly, including `nil`."
   [{:keys [::type] :as data}]
-  (let [[_ method-fn] (get-in *system* [:app.rpc/management-methods type])]
+  (let [[mdata method-fn] (get-in *system* [:app.rpc/management-methods type])]
     (when-not method-fn
       (ex/raise :type :assertion
                 :code :rpc-method-not-found
                 :hint (str/ffmt "management rpc method '%' not found" (name type))))
-    (let [params (prepare-rpc-params data)]
+    (let [request (-> data meta :app.http/request)
+          key-id  (cond
+                    (contains? data ::rpc/auth-key-id)
+                    (::rpc/auth-key-id data)
+
+                    (contains? data :app.http/auth-key-id)
+                    (:app.http/auth-key-id data)
+
+                    (and (map? request)
+                         (contains? request :app.http/auth-key-id))
+                    (:app.http/auth-key-id request)
+
+                    :else
+                    (first (::rpc/allowed-shared-keys mdata)))
+          data    (if (or (contains? data ::rpc/auth-key-id)
+                          (nil? key-id))
+                    data
+                    (assoc data ::rpc/auth-key-id key-id))
+          params  (prepare-rpc-params data)]
       (try-on! (method-fn params)))))
 
 (def multipart-headers
@@ -740,6 +782,21 @@
     (io/copy (io/file rsc)
              (io/file tmp))
     tmp))
+
+(defmacro with-temp-file
+  "Evaluate `body` with `sym` bound to the path of a temporary file that
+   holds `content`. The file is created under /tmp/penpot, one of the two
+   places the upload validation accepts (/tmp/undertow is the other one),
+   and it is deleted when the body ends, also when it throws."
+  [[sym content] & body]
+  `(let [path# (fs/create-tempfile :dir "/tmp/penpot" :prefix "penpot-test-")]
+     (try
+       (spit (str path#) ~content :encoding "UTF-8")
+       (let [~sym path#]
+         ~@body)
+       (finally
+         (when (fs/exists? path#)
+           (fs/delete path#))))))
 
 (defn pause
   []

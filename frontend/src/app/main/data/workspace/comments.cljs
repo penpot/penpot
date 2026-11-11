@@ -20,6 +20,7 @@
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
+   [app.main.data.persistence :as-alias dps]
    [app.main.data.workspace.common :as dwco]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.edition :as dwe]
@@ -242,21 +243,62 @@
              (rx/ignore))
         (rx/empty)))))
 
+(defn- restore-rolled-back-threads
+  "After a rollback, puts the threads in `comment-thread-ids` back where the
+  restored page data has them, in the rendered threads and the backend.
+  Threads left on a frame the rollback removed (in `shape-ids`) move to the
+  page root, as deleting the frame does."
+  [{:keys [comment-thread-ids shape-ids]}]
+  (ptk/reify ::restore-rolled-back-threads
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [threads  (:comment-threads state)
+
+            restored
+            (into {}
+                  (keep (fn [id]
+                          (when-let [{:keys [page-id]} (get threads id)]
+                            (when-let [{:keys [position frame-id]}
+                                       (-> (dsh/lookup-page state page-id)
+                                           (dm/get-in [:comment-thread-positions id]))]
+                              [id {:comment-thread-id id
+                                   :position position
+                                   :frame-id frame-id}]))))
+                  comment-thread-ids)
+
+            orphaned?
+            (fn [{:keys [id page-id] :as thread}]
+              (let [frame-id (or (dm/get-in restored [id :frame-id]) (:frame-id thread))]
+                (and (contains? shape-ids frame-id)
+                     (nil? (get (dsh/lookup-page-objects state page-id) frame-id)))))]
+
+        (rx/concat
+         (rx/from (map sync-comment-thread-position (vals restored)))
+         (->> (vals threads)
+              (filter orphaned?)
+              (map dcmt/update-comment-thread-frame)
+              (rx/from)))))))
+
 (defn watch-comment-thread-position-changes
-  "Syncs rendered threads and the backend when an undo/redo changes a comment position."
+  "Syncs rendered threads and the backend when an undo/redo changes a comment
+  position, and when a rollback reverts a change of positions or frames."
   [stopper]
   (ptk/reify ::watch-comment-thread-position-changes
     ptk/WatchEvent
     (watch [_ _ stream]
-      (->> stream
-           (rx/filter dwc/commit?)
-           (rx/map deref)
-           (rx/filter #(contains? undo-origins (:origin %)))
-           (rx/mapcat (fn [commit]
-                        (->> (:redo-changes commit)
-                             (filter #(= :set-comment-thread-position (:type %)))
-                             (rx/from))))
-           (rx/map sync-comment-thread-position)
+      (->> (rx/merge
+            (->> stream
+                 (rx/filter dwc/commit?)
+                 (rx/map deref)
+                 (rx/filter #(contains? undo-origins (:origin %)))
+                 (rx/mapcat (fn [commit]
+                              (->> (:redo-changes commit)
+                                   (filter #(= :set-comment-thread-position (:type %)))
+                                   (rx/from))))
+                 (rx/map sync-comment-thread-position))
+            (->> stream
+                 (rx/filter (ptk/type? ::dps/rolled-back))
+                 (rx/map (comp restore-rolled-back-threads deref))))
            (rx/take-until stopper)))))
 
 (defn frame-pin-transform

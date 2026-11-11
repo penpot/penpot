@@ -535,6 +535,12 @@
    {:name "0157-add-audit-log-pending-table"
     :fn (mg/resource "app/migrations/sql/0157-add-audit-log-pending-table.sql")}
 
+   {:name "0157-migrate-legacy-file-data"
+    :fn (mg/resource "app/migrations/sql/0157-migrate-legacy-file-data.sql")}
+
+   {:name "0158-del-forbidden-file-library-rels"
+    :fn (mg/resource "app/migrations/sql/0158-del-forbidden-file-library-rels.sql")}
+
    {:name "0800-add-file-branch-table"
     :fn (mg/resource "app/migrations/sql/0800-add-file-branch-table.sql")}
 

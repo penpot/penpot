@@ -36,6 +36,7 @@ From `render-wasm/`:
 - Rust tests: `./test` or `cargo test <name>`.
 - Cross-cutting testing principles and anti-patterns: `mem:testing`.
 - Lint: `./lint`.
-- Format check: `cargo fmt --check`.
+- Format: `./fmt`; check only: `./fmt --check`.
+- `./build`, `./test`, `./lint` and `./fmt` all run `setup`, which selects the Rust version pinned in `_build_env` (skip with `PENPOT_WASM_PREPARED=1`).
 
 Do not change exported WASM function signatures without updating the corresponding frontend bridge and verifying the frontend renderer path.

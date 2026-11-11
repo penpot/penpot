@@ -15,6 +15,7 @@
    [clojure.test :as t]
    [cuerdas.core :as str]
    [integrant.core :as ig]
+   [lambdaisland.uri :as u]
    [promesa.core :as p]))
 
 (t/use-fixtures :once th/state-init)
@@ -142,3 +143,196 @@
                                            (assoc email ::emails/reuse-conn true))))]
     (t/testing "the email job is submitted through the caller conn"
       (t/is (= "sendmail" (:name (th/db-get :job {:id job-id})))))))
+
+(defn- templated-job-def
+  [sendmail]
+  (ig/init-key ::emails/templated-job-def
+               {::emails/sendmail sendmail}))
+
+(defn- submit-templated
+  [job-def params]
+  (db/tx-run! {::db/pool th/*pool*}
+              (fn [cfg]
+                (emails/send-template (assoc cfg
+                                             ::jobs/defs {:send-templated-mail job-def}
+                                             ::mtx/metrics (get th/*system* :app.metrics/metrics))
+                                      (assoc params ::emails/reuse-conn true)))))
+
+(def ^:private invite-to-team-recipe
+  {:to "invitee@example.com"
+   :public-uri (cf/get :public-uri)
+   :invited-by "Owner User"
+   :team "Design Team"
+   :token "test-token"
+   :organization {:name "Acme Inc"
+                  :sso-active false}})
+
+(t/deftest templated-registry-covers-all-factories
+  (t/is (= #{"feedback" "register" "password-recovery" "password-changed"
+             "change-email" "invite-to-team" "invite-to-organization"
+             "organization-setup-sso" "renewal-notice" "join-team"
+             "request-file-access" "request-file-access-yourpenpot"
+             "request-file-access-yourpenpot-view" "request-team-access"
+             "comment-mention" "comment-thread" "comment-notification"
+             "review-request" "task-assigned" "tasks-moved"}
+           (set (keys emails/templates)))))
+
+(t/deftest send-template-validation
+  (t/testing "missing template fails fast"
+    (t/is (thrown-with-msg? clojure.lang.ExceptionInfo #"template"
+                            (emails/send-template {} {:to "a@example.com"}))))
+  (t/testing "unknown template fails fast"
+    (t/is (thrown-with-msg? clojure.lang.ExceptionInfo #"unknown email template"
+                            (emails/send-template {} {:to "a@example.com"
+                                                      ::emails/template "nope"}))))
+  (t/testing "template ids are strings, never keywords"
+    (t/is (thrown-with-msg? clojure.lang.ExceptionInfo #"unknown email template"
+                            (emails/send-template {} {:to "a@example.com"
+                                                      ::emails/template :app.email/register}))))
+  (t/testing "reuse-conn without a caller connection fails fast"
+    (t/is (thrown-with-msg? clojure.lang.ExceptionInfo #"reuse-conn"
+                            (emails/send-template {} {:to "a@example.com"
+                                                      ::emails/reuse-conn true
+                                                      ::emails/template "register"})))))
+
+(t/deftest send-template-stores-recipe-not-rendered-mail
+  (let [job-def  (templated-job-def (fn [_] nil))
+        job-id   (submit-templated job-def (assoc invite-to-team-recipe
+                                                  ::emails/template "invite-to-team"))
+        row      (th/db-get :job {:id job-id})
+        params   (jobs/decode-params job-def (:params row))
+        rendered (emails/render emails/invite-to-team invite-to-team-recipe)]
+    (t/testing "the job lands on the new queue"
+      (t/is (= "send-templated-mail" (:name row))))
+    (t/testing "stored params carry the template id and no rendered content"
+      (t/is (= "invite-to-team" (:template params)))
+      (t/is (not (contains? params :subject)))
+      (t/is (not (contains? params :body))))
+    (t/testing "stored params are smaller than the rendered html alone"
+      (let [stored-size   (count (str (:params row)))
+            rendered-html (count (get-in rendered [:body "text/html"]))]
+        (t/is (< stored-size rendered-html))))
+    (t/testing "the worker renders the same mail from the stored recipe"
+      (t/is (= rendered (emails/render-template (:template params)
+                                                (dissoc params :template)))))))
+
+(defn- decode-template-data
+  [params]
+  (let [decode (get-in emails/templates [(:template params) ::emails/decode])]
+    (decode (dissoc params :template))))
+
+(t/deftest send-template-roundtrips-uuids-and-profile
+  (let [sent     (atom nil)
+        job-def  (templated-job-def (fn [_ email] (reset! sent email)))
+        team-id  (random-uuid)
+        recipe   {:to "member@example.com"
+                  :public-uri (cf/get :public-uri)
+                  :invited-by "Owner User"
+                  :team "Design Team"
+                  :team-id team-id}
+        job-id   (submit-templated job-def (assoc recipe
+                                                  ::emails/template "join-team"))
+        params   (jobs/decode-params job-def (:params (th/db-get :job {:id job-id})))]
+    (t/testing "uuids survive the plain-JSON queue roundtrip typed"
+      (let [data (decode-template-data params)]
+        (t/is (uuid? (:team-id data)))
+        (t/is (= team-id (:team-id data)))))
+    (t/testing "the handler renders and delivers the mail"
+      ((::jobs/handler job-def) nil params)
+      (t/is (= (:subject (emails/render emails/join-team recipe))
+               (:subject @sent)))
+      (t/is (= "member@example.com" (:to @sent)))))
+  (let [sent     (atom nil)
+        job-def  (templated-job-def (fn [_ email] (reset! sent email)))
+        recipe   {:to "dest@example.com"
+                  :reply-to "user@example.com"
+                  :email "user@example.com"
+                  :attachments {"error-report.txt" "trace"}
+                  :feedback-subject "subj"
+                  :feedback-type "bug"
+                  :feedback-content "content"
+                  :profile {:id (random-uuid) :fullname "User" :email "user@example.com"}}
+        job-id   (submit-templated job-def (assoc recipe
+                                                  ::emails/template "feedback"))
+        params   (jobs/decode-params job-def (:params (th/db-get :job {:id job-id})))]
+    (t/testing "nested profile id survives the roundtrip typed"
+      (t/is (uuid? (get-in (decode-template-data params) [:profile :id]))))
+    (t/testing "the handler renders the feedback mail"
+      ((::jobs/handler job-def) nil params)
+      (t/is (= (:subject (emails/render emails/user-feedback recipe))
+               (:subject @sent))))))
+
+(def ^:private organization-with-uris
+  {:id (random-uuid)
+   :name "Acme Inc"
+   :initials "AI"
+   :logo (u/uri "https://example.com/assets/by-id/logo")
+   :avatar-bg-url (u/uri "https://example.com/images/avatar-bg.jpg")
+   :sso-active false})
+
+(t/deftest send-template-roundtrips-organization-uris
+  (doseq [[template factory recipe]
+          [["invite-to-team" emails/invite-to-team
+            {:to "invitee@example.com"
+             :public-uri (cf/get :public-uri)
+             :invited-by "Owner User"
+             :team "Design Team"
+             :organization organization-with-uris
+             :token "test-token"}]
+           ["invite-to-organization" emails/invite-to-organization
+            {:to "invitee@example.com"
+             :public-uri (cf/get :public-uri)
+             :invited-by "Owner User"
+             :user-name "Invitee"
+             :organization organization-with-uris
+             :token "test-token"}]
+           ["renewal-notice" emails/renewal-notice
+            {:to "billing@example.com"
+             :public-uri (cf/get :public-uri)
+             :user-name "Billing"
+             :renewal-date "2026-12-01"
+             :estimated-amount "$10.00"
+             :organizations [organization-with-uris]}]]]
+    (t/testing template
+      (let [sent    (atom nil)
+            job-def (templated-job-def (fn [_ email] (reset! sent email)))
+            job-id  (submit-templated job-def (assoc recipe ::emails/template template))
+            params  (jobs/decode-params job-def (:params (th/db-get :job {:id job-id})))]
+        ((::jobs/handler job-def) nil params)
+        (t/is (= (emails/render factory recipe) @sent))))))
+
+;; `send-template` drops nil values before enqueuing, so a nil
+;; `:user-name` (e.g. inviting an unregistered email) must still render.
+(t/deftest send-template-renders-with-nil-user-name
+  (doseq [[template factory recipe]
+          [["invite-to-organization" emails/invite-to-organization
+            {:to "invitee@example.com"
+             :public-uri (cf/get :public-uri)
+             :invited-by "Owner User"
+             :user-name nil
+             :organization {:name "Acme Inc"}
+             :token "test-token"}]
+           ["renewal-notice" emails/renewal-notice
+            {:to "billing@example.com"
+             :public-uri (cf/get :public-uri)
+             :user-name nil
+             :renewal-date "2026-12-01"
+             :estimated-amount "$10.00"
+             :organizations [{:name "Acme"}]}]]]
+    (t/testing template
+      (let [sent    (atom nil)
+            job-def (templated-job-def (fn [_ email] (reset! sent email)))
+            job-id  (submit-templated job-def (assoc recipe ::emails/template template))
+            params  (jobs/decode-params job-def (:params (th/db-get :job {:id job-id})))]
+        ((::jobs/handler job-def) nil params)
+        (t/is (= (emails/render factory recipe) @sent))))))
+
+(t/deftest send-templated-mail-handler-rejects-unknown-template
+  (let [job-def (templated-job-def (fn [_] nil))
+        code    (try
+                  ((::jobs/handler job-def) nil {:template "nope"
+                                                 :to "a@example.com"})
+                  nil
+                  (catch clojure.lang.ExceptionInfo e
+                    (-> e ex-data :code)))]
+    (t/is (= :unknown-email-template code))))

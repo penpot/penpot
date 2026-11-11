@@ -41,6 +41,23 @@
 
 (def comment-max-length 750)
 
+(defn- share-link-pages
+  "The set of pages granted by a share-link, or nil when the access to the
+   file is not restricted to a page scope."
+  [perms]
+  (when (= :share-link (:type perms))
+    (or (:pages perms) #{})))
+
+(defn- check-page-scope
+  "Raises a :not-found error when `page-id` is outside the page scope granted
+   by a share-link."
+  [perms page-id]
+  (when-let [pages (share-link-pages perms)]
+    (when-not (contains? pages page-id)
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "not found"))))
+
 (defn- format-comment
   [{:keys [content]}]
   (->> (d/interleave-all
@@ -113,10 +130,10 @@
     (doseq [mention comment-mentions]
       (let [{:keys [fullname email props]} (get team-users mention)]
         (when (mention-email? props)
-          (eml/send
+          (eml/send-template
            cfg
            {::eml/reuse-conn true
-            ::eml/factory eml/comment-mention
+            ::eml/template "comment-mention"
             :public-uri (cf/get :public-uri)
             :to email
             :name fullname
@@ -129,10 +146,10 @@
     (doseq [mention thread-mentions]
       (let [{:keys [fullname email props]} (get team-users mention)]
         (when (mention-email? props)
-          (eml/send
+          (eml/send-template
            cfg
            {::eml/reuse-conn true
-            ::eml/factory eml/comment-thread
+            ::eml/template "comment-thread"
             :public-uri (cf/get :public-uri)
             :to email
             :name fullname
@@ -145,10 +162,10 @@
     (doseq [user-id notificate-users-ids]
       (let [{:keys [id fullname email props]} (get team-users user-id)]
         (when (notification-email? id (:owner-id thread) props)
-          (eml/send
+          (eml/send-template
            cfg
            {::eml/reuse-conn true
-            ::eml/factory eml/comment-notification
+            ::eml/template "comment-notification"
             :public-uri (cf/get :public-uri)
             :to email
             :name fullname
@@ -238,8 +255,8 @@
   (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
                  (let [perms (files/check-comment-permissions! cfg profile-id file-id share-id)
                        threads (get-comment-threads conn profile-id file-id)]
-                   (if (= :share-link (:type perms))
-                     (filterv #(contains? (:pages perms) (:page-id %)) threads)
+                   (if-let [pages (share-link-pages perms)]
+                     (filterv #(contains? pages (:page-id %)) threads)
                      threads)))))
 
 (defn- get-comment-threads-sql
@@ -343,11 +360,8 @@
                  (let [perms  (files/check-comment-permissions! cfg profile-id file-id share-id)
                        thread (some-> (db/exec-one! conn [sql:get-comment-thread profile-id file-id id])
                                       (decode-row))]
-                   (when (and thread (= :share-link (:type perms)))
-                     (when-not (contains? (:pages perms) (:page-id thread))
-                       (ex/raise :type :not-found
-                                 :code :object-not-found
-                                 :hint "not found")))
+                   (when thread
+                     (check-page-scope perms (:page-id thread)))
                    thread))))
 
 ;; --- COMMAND: Retrieve Comments
@@ -367,11 +381,7 @@
   (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
                  (let [{:keys [file-id page-id]} (get-comment-thread conn thread-id)
                        perms (files/check-comment-permissions! cfg profile-id file-id share-id)]
-                   (when (and (= :share-link (:type perms))
-                              (not (contains? (:pages perms) page-id)))
-                     (ex/raise :type :not-found
-                               :code :object-not-found
-                               :hint "not found"))
+                   (check-page-scope perms page-id)
                    (get-comments conn thread-id)))))
 
 (def sql:get-comments
@@ -396,32 +406,49 @@
 ;; All the profiles that had comment the file, plus the current
 ;; profile.
 
+(defn- file-comment-users-sql
+  [where]
+  (str/ffmt
+   "WITH available_profiles AS (
+      SELECT DISTINCT c.owner_id AS id
+        FROM comment c
+        JOIN comment_thread ct
+          ON ct.id = c.thread_id
+       WHERE ct.file_id = ?::uuid
+         %1
+    ),
+    profile_ids AS (
+      SELECT id FROM available_profiles
+      UNION
+      SELECT ?::uuid
+    )
+    SELECT p.id,
+           p.email,
+           p.fullname AS name,
+           p.fullname,
+           p.photo_id,
+           p.is_active
+      FROM profile p
+      JOIN profile_ids AS x
+        ON x.id = p.id;"
+   where))
+
 (def ^:private sql:file-comment-users
-  "WITH available_profiles AS (
-     SELECT DISTINCT c.owner_id AS id
-     FROM comment c
-     JOIN comment_thread ct
-       ON ct.id = c.thread_id
-    WHERE ct.file_id = ?::uuid
-  ),
-  profile_ids AS (
-    SELECT id FROM available_profiles
-    UNION
-    SELECT ?::uuid
-  )
-  SELECT p.id,
-         p.email,
-         p.fullname AS name,
-         p.fullname,
-         p.photo_id,
-         p.is_active
-    FROM profile p
-    JOIN profile_ids AS x
-      ON x.id = p.id;")
+  (file-comment-users-sql ""))
+
+(def ^:private sql:file-comment-users-by-page
+  (file-comment-users-sql "AND ct.page_id = ANY(?::uuid[])"))
 
 (defn get-file-comments-users
-  [conn file-id profile-id]
-  (db/exec! conn [sql:file-comment-users file-id profile-id]))
+  "Returns the profiles of the users that commented the file. When `pages` is
+   not nil, only the commenters of the threads on those pages are returned."
+  [conn file-id profile-id pages]
+  (if (some? pages)
+    (db/exec! conn [sql:file-comment-users-by-page
+                    file-id
+                    (db/create-array conn "uuid" pages)
+                    profile-id])
+    (db/exec! conn [sql:file-comment-users file-id profile-id])))
 
 (def ^:private
   schema:get-profiles-for-file-comments
@@ -431,14 +458,17 @@
 
 (sv/defmethod ::get-profiles-for-file-comments
   "Retrieves a list of profiles with limited set of properties of all
-  participants on comment threads of the file."
+  participants on comment threads of the file. When the request is done with
+  a share link, only the participants on the pages granted by the link are
+  returned."
   {::doc/added "1.15"
-   ::doc/changes ["1.15" "Imported from queries and renamed."]
+   ::doc/changes ["1.15" "Imported from queries and renamed."
+                  "2.19" "With a share link, only the participants on the pages granted by the link are returned."]
    ::sm/params schema:get-profiles-for-file-comments}
   [cfg {:keys [::rpc/profile-id file-id share-id]}]
   (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                 (files/check-comment-permissions! cfg profile-id file-id share-id)
-                 (get-file-comments-users conn file-id profile-id))))
+                 (let [perms (files/check-comment-permissions! cfg profile-id file-id share-id)]
+                   (get-file-comments-users conn file-id profile-id (share-link-pages perms))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MUTATION COMMANDS
@@ -540,9 +570,10 @@
    ::rtry/enabled true
    ::rtry/when rtry/conflict-exception?
    ::sm/params schema:create-comment-thread}
-  [cfg {:keys [::rpc/profile-id file-id share-id] :as params}]
-  (files/check-comment-permissions! cfg profile-id file-id share-id)
-  (create-comment-thread cfg params))
+  [cfg {:keys [::rpc/profile-id file-id page-id share-id] :as params}]
+  (let [perms (files/check-comment-permissions! cfg profile-id file-id share-id)]
+    (check-page-scope perms page-id)
+    (create-comment-thread cfg params)))
 
 (defn- insert-comment-thread
   [{:keys [::db/conn] :as cfg}
@@ -621,8 +652,9 @@
    ::sm/params schema:update-comment-thread-status
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id share-id]}]
-  (let [{:keys [file-id]} (get-comment-thread conn id ::sql/for-update true)]
-    (files/check-comment-permissions! cfg profile-id file-id share-id)
+  (let [thread (get-comment-thread conn id ::sql/for-update true)
+        perms  (files/check-comment-permissions! cfg profile-id (:file-id thread) share-id)]
+    (check-page-scope perms (:page-id thread))
     (upsert-comment-thread-status! conn profile-id id)))
 
 ;; --- COMMAND: Update Comment Thread
@@ -639,8 +671,9 @@
    ::sm/params schema:update-comment-thread
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id is-resolved share-id]}]
-  (let [{:keys [file-id]} (get-comment-thread conn id ::sql/for-update true)]
-    (files/check-comment-permissions! cfg profile-id file-id share-id)
+  (let [thread (get-comment-thread conn id ::sql/for-update true)
+        perms  (files/check-comment-permissions! cfg profile-id (:file-id thread) share-id)]
+    (check-page-scope perms (:page-id thread))
     (db/update! conn :comment-thread
                 {:is-resolved is-resolved}
                 {:id id})
@@ -665,56 +698,58 @@
   (let [{:keys [file-id page-id] :as thread}
         (get-comment-thread conn thread-id ::sql/for-update true)
 
-        {:keys [team-id project-id] :as file}
-        (get-file cfg file-id page-id)]
+        perms (files/check-comment-permissions! cfg profile-id file-id share-id)]
 
-    (files/check-comment-permissions! cfg profile-id file-id share-id)
+    (check-page-scope perms page-id)
 
-    (quotes/check! cfg {::quotes/id ::quotes/comments-per-file
-                        ::quotes/profile-id profile-id
-                        ::quotes/team-id team-id
-                        ::quotes/project-id project-id
-                        ::quotes/file-id file-id})
+    (let [{:keys [team-id project-id] :as file}
+          (get-file cfg file-id page-id)]
 
-    (let [profile  (profile/get-profile conn profile-id)
-          mentions (into #{} mentions)
-          params   {:id (uuid/next)
-                    :created-at request-at
-                    :modified-at request-at
-                    :thread-id thread-id
-                    :owner-id profile-id
-                    :content content
-                    :mentions (db/encode-pgarray mentions conn "uuid")}
+      (quotes/check! cfg {::quotes/id ::quotes/comments-per-file
+                          ::quotes/profile-id profile-id
+                          ::quotes/team-id team-id
+                          ::quotes/project-id project-id
+                          ::quotes/file-id file-id})
 
-          comment (-> (db/insert! conn :comment params)
-                      (decode-row)
-                      (assoc :file-id file-id)
-                      (add-owner profile))]
+      (let [profile  (profile/get-profile conn profile-id)
+            mentions (into #{} mentions)
+            params   {:id (uuid/next)
+                      :created-at request-at
+                      :modified-at request-at
+                      :thread-id thread-id
+                      :owner-id profile-id
+                      :content content
+                      :mentions (db/encode-pgarray mentions conn "uuid")}
 
-      ;; Update thread modified-at attribute and assoc the current
-      ;; profile to the participant set.
-      (let [mentions     (into (:mentions thread) mentions)
-            participants (-> (:participants thread #{})
-                             (conj profile-id))
-            params       {:modified-at request-at
-                          :participants (db/tjson participants)
-                          :mentions (db/encode-pgarray mentions conn "uuid")}
+            comment (-> (db/insert! conn :comment params)
+                        (decode-row)
+                        (assoc :file-id file-id)
+                        (add-owner profile))]
 
-            ;; Update the page-name cached attribute on comment thread table.
-            params       (cond-> params
-                           (not= (:page-name file) (:page-name thread))
-                           (assoc :page-name (:page-name file)))]
+        ;; Update thread modified-at attribute and assoc the current
+        ;; profile to the participant set.
+        (let [mentions     (into (:mentions thread) mentions)
+              participants (-> (:participants thread #{})
+                               (conj profile-id))
+              params       {:modified-at request-at
+                            :participants (db/tjson participants)
+                            :mentions (db/encode-pgarray mentions conn "uuid")}
 
-        (db/update! conn :comment-thread params
-                    {:id thread-id}
-                    {::db/return-keys false}))
+              ;; Update the page-name cached attribute on comment thread table.
+              params       (cond-> params
+                             (not= (:page-name file) (:page-name thread))
+                             (assoc :page-name (:page-name file)))]
 
-      ;; Update the current profile status in relation to the current thread
-      (upsert-comment-thread-status! conn profile-id thread-id)
+          (db/update! conn :comment-thread params
+                      {:id thread-id}
+                      {::db/return-keys false}))
 
-      (send-comment-emails! cfg profile comment thread file)
+        ;; Update the current profile status in relation to the current thread
+        (upsert-comment-thread-status! conn profile-id thread-id)
 
-      (vary-meta comment assoc ::audit/props (assoc comment :team-id team-id)))))
+        (send-comment-emails! cfg profile comment thread file)
+
+        (vary-meta comment assoc ::audit/props (assoc comment :team-id team-id))))))
 
 ;; --- COMMAND: Update Comment
 
@@ -737,9 +772,11 @@
         (get-comment conn id ::sql/for-update true)
 
         {:keys [file-id page-id] :as thread}
-        (get-comment-thread conn thread-id ::sql/for-update true)]
+        (get-comment-thread conn thread-id ::sql/for-update true)
 
-    (files/check-comment-permissions! cfg profile-id file-id share-id)
+        perms (files/check-comment-permissions! cfg profile-id file-id share-id)]
+
+    (check-page-scope perms page-id)
 
     ;; Don't allow edit comments to not owners
     (when-not (= owner-id profile-id)
@@ -772,10 +809,18 @@
    [:id ::sm/uuid]
    [:share-id {:optional true} [:maybe ::sm/uuid]]])
 
+;; The thread delete that follows clears `thread_id` and `comment_id` of
+;; the task rows through two ON DELETE SET NULL actions, whose order
+;; Postgres picks by trigger name. A row this statement already updated
+;; gets its FK rechecked by the first of them, and when that is the
+;; `thread_id` one, `comment_id` still names a message the cascade has
+;; deleted. Clearing both here leaves the delete no referencing row.
 (def ^:private sql:delete-thread-tasks
   "UPDATE file_task
       SET deleted_at = ?,
-          updated_at = ?
+          updated_at = ?,
+          thread_id = NULL,
+          comment_id = NULL
     WHERE thread_id = ?
       AND deleted_at IS NULL")
 
@@ -799,8 +844,13 @@
    ::sm/params schema:delete-comment-thread
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id share-id]}]
-  (let [{:keys [owner-id file-id] :as thread} (get-comment-thread conn id ::sql/for-update true)]
-    (files/check-comment-permissions! cfg profile-id file-id share-id)
+  (let [{:keys [owner-id file-id page-id] :as thread}
+        (get-comment-thread conn id ::sql/for-update true)
+
+        perms (files/check-comment-permissions! cfg profile-id file-id share-id)]
+
+    (check-page-scope perms page-id)
+
     (when-not (= owner-id profile-id)
       (ex/raise :type :validation
                 :code :not-allowed))
@@ -826,10 +876,12 @@
   (let [{:keys [owner-id thread-id] :as comment}
         (get-comment conn id ::sql/for-update true)
 
-        {:keys [file-id]}
-        (get-comment-thread conn thread-id)]
+        {:keys [file-id page-id]}
+        (get-comment-thread conn thread-id)
 
-    (files/check-comment-permissions! cfg profile-id file-id share-id)
+        perms (files/check-comment-permissions! cfg profile-id file-id share-id)]
+
+    (check-page-scope perms page-id)
     (when-not (= owner-id profile-id)
       (ex/raise :type :validation
                 :code :not-allowed))
@@ -853,8 +905,9 @@
    ::sm/params schema:update-comment-thread-position
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id ::rpc/request-at id position frame-id share-id]}]
-  (let [{:keys [file-id]} (get-comment-thread conn id ::sql/for-update true)]
-    (files/check-comment-permissions! cfg profile-id file-id share-id)
+  (let [thread (get-comment-thread conn id ::sql/for-update true)
+        perms  (files/check-comment-permissions! cfg profile-id (:file-id thread) share-id)]
+    (check-page-scope perms (:page-id thread))
     (db/update! conn :comment-thread
                 {:modified-at request-at
                  :position (db/pgpoint position)
@@ -877,8 +930,9 @@
    ::sm/params schema:update-comment-thread-frame
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id ::rpc/request-at id frame-id share-id]}]
-  (let [{:keys [file-id]} (get-comment-thread conn id ::sql/for-update true)]
-    (files/check-comment-permissions! cfg profile-id file-id share-id)
+  (let [thread (get-comment-thread conn id ::sql/for-update true)
+        perms  (files/check-comment-permissions! cfg profile-id (:file-id thread) share-id)]
+    (check-page-scope perms (:page-id thread))
     (db/update! conn :comment-thread
                 {:modified-at request-at
                  :frame-id frame-id}
@@ -886,17 +940,69 @@
                 {::db/return-keys false})
     nil))
 
+;; --- COMMAND: Mark all comment threads as read
+
+;; The dashboard sends the thread ids in batches of this same size
+;; (frontend/src/app/main/data/comments.cljs), so the batch has to fit in
+;; this limit.
+(def ^:private max-mark-all-threads 500)
+
 (def ^:private
   schema:mark-all-threads-as-read
   [:map {:title "mark-all-threads-as-read"}
-   [:threads [:vector ::sm/uuid]]])
+   [:threads [:vector {:max max-mark-all-threads} ::sm/uuid]]])
+
+(def ^:private sql:comment-threads-files
+  "SELECT ct.id, ct.file_id
+     FROM comment_thread ct
+    WHERE ct.id = ANY(?::uuid[])")
+
+(def ^:private sql:upsert-comment-thread-status-batch
+  "insert into comment_thread_status (thread_id, profile_id, modified_at)
+   select t.id, ?::uuid, ?::timestamptz
+     from unnest(?::uuid[]) as t(id)
+       on conflict (thread_id, profile_id)
+       do update set modified_at = excluded.modified_at;")
+
+(defn- get-comment-threads-files
+  [conn thread-ids]
+  (db/exec! conn [sql:comment-threads-files
+                  (db/create-array conn "uuid" thread-ids)]))
+
+(defn- check-threads-access
+  "Raises a :not-found error when any of the threads does not exist or the
+   caller has no access to the file that owns it."
+  [cfg profile-id thread-ids]
+  (let [rows  (get-comment-threads-files (::db/conn cfg) thread-ids)
+        found (into #{} (map :id) rows)]
+    (when-not (= (count thread-ids) (count found))
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "not found"))
+    (doseq [file-id (distinct (map :file-id rows))]
+      (files/check-comment-permissions! cfg profile-id file-id nil))))
+
+(defn- upsert-comment-thread-status-batch
+  [conn profile-id thread-ids]
+  (db/exec! conn [sql:upsert-comment-thread-status-batch
+                  profile-id
+                  (ct/in-future "1s")
+                  (db/create-array conn "uuid" thread-ids)]))
 
 (sv/defmethod ::mark-all-threads-as-read
+  "Marks the given comment threads as read for the current profile. The
+  caller needs to have access to the file that owns every thread."
   {::doc/added "1.15"
+   ::doc/changes [["2.19" "The caller needs access to the file that owns every thread and the number of threads is limited to 500"]]
    ::sm/params schema:mark-all-threads-as-read}
-  [cfg {:keys [::rpc/profile-id threads] :as params}]
-  (db/tx-run!
-   cfg
-   (fn [{:keys [::db/conn]}]
-     (doseq [thread-id threads]
-       (upsert-comment-thread-status! conn profile-id thread-id)))))
+  [cfg {:keys [::rpc/profile-id threads]}]
+  (let [thread-ids (distinct threads)]
+    ;; Nothing to check and nothing to write: an empty list must not open a
+    ;; transaction nor run the queries with an empty array.
+    (when (seq thread-ids)
+      (db/tx-run!
+       cfg
+       (fn [{:keys [::db/conn] :as cfg}]
+         (check-threads-access cfg profile-id thread-ids)
+         (upsert-comment-thread-status-batch conn profile-id thread-ids)
+         nil)))))

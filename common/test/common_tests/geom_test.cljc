@@ -126,3 +126,13 @@
     (let [m   (gmt/matrix 1 0 0 1 0 0)
           enc (sm/encode gmt/schema:matrix m (sm/string-transformer))]
       (t/is (= 5 (count (filter #(= \, %) enc)))))))
+
+(t/deftest matrix-coerce-test
+  (t/is (= (gmt/matrix 1 0 0 1 10 20)
+           (gmt/coerce {:a 1.0 :b 0.0 :c 0.0 :d 1.0 :e 10.0 :f 20.0}))
+        "a plain map becomes a matrix")
+  (t/is (gmt/matrix? (gmt/coerce {:a 1 :b 0 :c 0 :d 1 :e 0 :f 0})))
+  (let [m (gmt/matrix 2 0 0 2 0 0)]
+    (t/is (identical? m (gmt/coerce m)) "matrices pass through"))
+  (t/is (= {:a 1 :b 0} (gmt/coerce {:a 1 :b 0})) "incomplete maps are left as they are")
+  (t/is (nil? (gmt/coerce nil))))

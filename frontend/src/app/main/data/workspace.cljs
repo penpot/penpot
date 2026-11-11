@@ -21,6 +21,7 @@
    [app.common.math :as mth]
    [app.common.path-names :as cpn]
    [app.common.render-wasm.wasm :as wasm-state]
+   [app.common.transit :as t]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape :as cts]
@@ -243,7 +244,9 @@
                     :save-undo? false
                     :origin it
                     :tags #{:position-data}
-                    :skip-component-sync? true}))
+                    :skip-component-sync? true
+                    ;; Derived from the text, so it follows it while saves fail
+                    :ignore-save-lock true}))
            (rx/empty)))))))
 
 (defn- workspace-initialized
@@ -341,7 +344,8 @@
       (let [file (restore-pending-changes state file)]
         (-> state
             (assoc :thumbnails (d/update-vals thumbnails (fn [uri] {:uri uri :rendered-at nil})))
-            (update :files assoc file-id file))))))
+            (update :files assoc file-id file)
+            (dps/forget-other-versions file))))))
 
 (defn zoom-to-frame
   []
@@ -416,7 +420,10 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stoper-s     (rx/filter (ptk/type? ::finalize-workspace) stream)
+      (let [;; A reload starts a new `initialize-workspace`, which replaces these streams
+            stoper-s     (rx/filter #(or (ptk/type? ::finalize-workspace %)
+                                         (ptk/type? ::initialize-workspace %))
+                                    stream)
             rparams      (rt/get-params state)
             features     (features/get-enabled-features state team-id)
             render-wasm-enabled? (features/active-feature? state "render-wasm/v1")
@@ -576,20 +583,23 @@
                               {:redo-changes changes :undo-changes []
                                :save-undo? false
                                :tags #{:position-data}
-                               :skip-component-sync? true})))))
+                               :skip-component-sync? true
+                               ;; Derived from commits already made, rollbacks included
+                               :ignore-save-lock true})))))
                       (rx/take-until stoper-s)))
 
                (->> stream
                     (rx/filter dch/commit?)
                     (rx/map deref)
                     (rx/mapcat
-                     (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo? selected-before]}]
+                     (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo? selected-before translation?]}]
                        (if (and save-undo? (seq undo-changes))
                          (let [entry {:undo-changes undo-changes
                                       :redo-changes redo-changes
                                       :undo-group undo-group
                                       :tags tags
-                                      :selected-before selected-before}]
+                                      :selected-before selected-before
+                                      :translation (boolean translation?)}]
                            (rx/of (dwu/append-undo entry stack-undo?)))
                          (rx/empty))))))
 
@@ -617,12 +627,14 @@
            :workspace-tokens
            :workspace-undo
            :workspace-versions)
-          (update :workspace-global dissoc :read-only? :preview-id :default-font)
+          (update :workspace-global dissoc :read-only? :preview-id :default-font
+                  :persistence-lock)
           (assoc-in [:workspace-global :options-mode] :design)
           (update :files d/update-vals #(dissoc % :data))))
 
     ptk/WatchEvent
     (watch [_ state _]
+      (t/clear-uuid-cache)
       (let [project-id (:current-project-id state)]
         (rx/of (dwn/finalize file-id)
                (dpj/finalize-project project-id)

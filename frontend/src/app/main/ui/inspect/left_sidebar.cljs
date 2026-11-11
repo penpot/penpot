@@ -23,14 +23,14 @@
   #(-> (l/in [:viewer-local :collapsed id])
        (l/derived st/state)))
 
-(mf/defc layer-item
-  [{:keys [item selected objects  depth component-child? hide-toggle?] :as props}]
+(mf/defc layer-item*
+  [{:keys [item selected objects depth is-component-child hide-toggle]}]
   (let [id        (:id item)
         selected? (contains? selected id)
         item-ref  (mf/use-ref nil)
         depth     (+ depth 1)
 
-        component-tree? (or component-child? (ctk/instance-root? item) (ctk/instance-head? item))
+        component-tree? (or is-component-child (ctk/instance-root? item) (ctk/instance-head? item))
 
         collapsed-iref
         (mf/use-memo
@@ -77,7 +77,7 @@
       :is-component-tree component-tree?
       :is-filtered false
       :is-expanded expanded?
-      :hide-toggle hide-toggle?
+      :hide-toggle hide-toggle
       :on-select-shape select-shape
       :on-toggle-collapse toggle-collapse}
 
@@ -88,16 +88,16 @@
               :data-testid (dm/str "children-" id)}
         (for [[index id] (reverse (d/enumerate (:shapes item)))]
           (when-let [item (get objects id)]
-            [:& layer-item
+            [:> layer-item*
              {:item item
               :selected selected
               :index index
               :objects objects
               :key (dm/str id)
               :depth depth
-              :component-child? component-tree?}]))])]))
+              :is-component-child component-tree?}]))])]))
 
-(mf/defc left-sidebar
+(mf/defc left-sidebar*
   [{:keys [frame page local]}]
   (let [selected (:selected local)
         objects  (:objects page)]
@@ -105,12 +105,10 @@
     [:aside {:class (stl/css :settings-bar-left)}
      [:div {:class (stl/css :settings-bar-inside)}
       [:div {:class (stl/css :element-list)}
-       [:& layer-item
+       [:> layer-item*
         {:item frame
          :selected selected
          :index 0
          :objects objects
-         :sortable? false
-         :filtered? false
          :depth -2
-         :hide-toggle? true}]]]]))
+         :hide-toggle true}]]]]))

@@ -5,7 +5,7 @@ Compose-based dev environment under `docker/devenv/`, driven by `manage.sh`. Par
 ## Compose project layout
 
 - `penpotdev-infra`: shared `postgres`, `rustfs`, `valkey`, `mailer`, `ldap`. File: `docker-compose.infra.yml`.
-- `penpotdev-wsN` (N=0,1,…): per-instance `main` + `redis` (Valkey). File: `docker-compose.main.yml`. ws0 (a.k.a. `main`) binds `$PWD`; ws1+ bind clones at `${PENPOT_WORKSPACES_DIR}/wsN/` (default `~/.penpot/penpot_workspaces/`), maintained by the developer.
+- `penpotdev-wsN` (N=0,1,…): per-instance `main` + `redis` (Valkey). File: `docker-compose.main.yml`. ws0 (a.k.a. `main`) binds `$PWD`; ws1+ bind clones at `${PENPOT_WORKSPACES_DIR}/wsN/` (default `${XDG_DATA_HOME:-~/.local/share}/penpot-devenv/workspaces/`, or the former `~/.penpot/penpot_workspaces/` when it already exists), maintained by the developer.
 - Optional overlay `docker-compose.opencode.yml`: added by `instance-compose` as an extra `-f` only when `PENPOT_OPENCODE_CONFIG_DIR` is set (i.e. `run-devenv --opencode-config-dir DIR` ran in this process). Bind-mounts the host dir at `/home/penpot/.config/opencode` (`:z`). Flag-only, per-call; not read from ambient env. Parser `parse-opencode-config-dir` absolutizes (`~`, realpath) because compose resolves relative bind sources against the compose file's dir. Only instances brought up with the flag get the mount.
 - All projects join external network `penpot_shared`. Created idempotently by `ensure-devenv-network`, never removed by lifecycle commands.
 
