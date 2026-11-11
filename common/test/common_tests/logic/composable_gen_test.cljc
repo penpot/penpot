@@ -20,6 +20,7 @@
    [app.common.test-helpers.composable.comp.setups :as setup]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.composable.gen :as cg]
+   [app.common.test-helpers.composable.geometry :as geom]
    [app.common.test-helpers.composable.grid :as grid]
    [app.common.test-helpers.composable.oracle :as oracle]
    [app.common.test-helpers.composable.shadow :as shadow]
@@ -2165,6 +2166,21 @@
                                     :layout-children false :grid-empty false :layout-copies false :text true}]
                        :ops [[:swap] [:make-variant 12] [:rotate] [:delete] [:transform 6 5]
                              [:transform 3 9 0 13] [:switch]]}))))
+
+(t/deftest switching-a-copy-carries-the-turn-of-a-mirrored-child-with-its-transform
+  (let [situation (:situation
+                   (cg/run {:world [2 2 {:variants true :text-styles false :layout :grid :variant-diff false
+                                         :layout-item-margins false :grid-square false :rich-variants true
+                                         :layout-children false :grid-empty false :layout-copies false :text true}]
+                            :ops [[:swap] [:make-variant 12] [:rotate] [:delete] [:transform 6 5]
+                                  [:transform 3 9 0 13] [:switch]]}))
+        turned    (for [file (vals (cf/all-files situation))
+                        objects (cf/object-trees file)
+                        shape (vals objects)
+                        :when (and (ctk/touched-group? shape :geometry-group) (:flip-y shape))]
+                    shape)]
+    (t/is (seq turned))
+    (t/is (every? geom/decomposes? turned))))
 
 (t/deftest moving-a-flex-copy-child-after-a-switch-resized-its-sibling-authors-no-geometry
   (t/is (map? (cg/run {:world [1 2 {:variants true :text-styles false :layout :flex :variant-diff false
