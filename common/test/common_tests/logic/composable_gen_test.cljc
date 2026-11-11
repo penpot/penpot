@@ -2209,6 +2209,16 @@
                              [:combine 18] [:make-variant] [:switch 18] [:combine] [:rotate 8]
                              [:update-main]]}))))
 
+(t/deftest nesting-a-copy-that-squeezes-a-fill-frame-moves-the-child-at-its-end
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles false :layout :flex :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:add-variant] [:delete 10] [:restore] [:delete 10] [:restore] [:combine 12]
+                             [:combine 9] [:combine] [:style 0 29 1] [:add-variant] [:add-variant]
+                             [:make-variant] [:combine] [:add-variant] [:add-variant] [:add-variant]
+                             [:add-variant] [:combine] [:add-variant] [:combine] [:update-main]
+                             [:nest 13]]}))))
+
 (t/deftest pushing-a-grid-direction-orders-the-copies-like-the-reflowed-main
   (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles false :layout :grid :variant-diff false
                                     :layout-item-margins false :grid-square true :rich-variants false
