@@ -454,3 +454,49 @@
         selected (de/collect-export-objects state exports)]
     (t/is (= #{root child} (set (keys selected))))
     (t/is (not (contains? selected other)))))
+
+;; Scenario: a shape is drawn in the browser while its file has a change not
+;; saved yet. Proves: the export waits for the save first, and the user is
+;; told the export includes changes the server does not have.
+(t/deftest ^:async client-export-waits-for-the-save-and-warns-of-unsaved-changes
+  (let [file-id (uuid/next)
+        calls   (atom [])
+        store   (export-store (assoc (unsaved-state file-id) :features #{"render-wasm/v1"})
+                              (atom []))]
+    (await
+     (mock/with-mocks*
+       {dwp/force-persist-files-and-wait (mock/stub (fn [file-ids _]
+                                                      (swap! calls conj [:wait file-ids])
+                                                      (rx/empty)))
+        wasm.api/export-target           (mock/stub (constantly :client))
+        de/collect-export-objects        (mock/stub (fn [_ _] {}))
+        mw/ask-many!                     (mock/stub (fn [_]
+                                                      (swap! calls conj [:export])
+                                                      (rx/empty)))
+        i18n/tr                          (mock/stub #(str "translated:" %))
+        st/ongoing-tasks                 (atom #{})}
+       (ptk/emit! store (de/request-simple-export {:export (assoc export :file-id file-id)}))
+       (await (async/wait-for #(= 2 (count @calls)) "the export runs"))
+       (t/is (= [[:wait #{file-id}] [:export]] @calls)
+             "the export starts once the save is done")
+       (t/is (= "translated:workspace.export.unsaved-changes-included"
+                (get-in @store [:notification :content])))))))
+
+;; Scenario: a shape is drawn in the browser with every change saved.
+;; Proves: no warning is shown.
+(t/deftest ^:async client-export-shows-no-warning-when-the-file-is-saved
+  (let [exported (atom false)
+        store    (export-store (wasm-state) (atom []))]
+    (await
+     (mock/with-mocks*
+       {dwp/force-persist-files-and-wait (mock/stub (fn [_ _] (rx/empty)))
+        wasm.api/export-target           (mock/stub (constantly :client))
+        de/collect-export-objects        (mock/stub (fn [_ _] {}))
+        mw/ask-many!                     (mock/stub (fn [_]
+                                                      (reset! exported true)
+                                                      (rx/empty)))
+        st/ongoing-tasks                 (atom #{})}
+       (ptk/emit! store (de/request-simple-export {:export (assoc export :file-id (uuid/next))}))
+       (await (async/wait-for #(true? @exported) "the export runs"))
+       (await (async/settle))
+       (t/is (nil? (:notification @store)))))))

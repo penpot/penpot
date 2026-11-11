@@ -10,29 +10,16 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.ui.components.link-button :as lb]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [rumext.v2 :as mf]))
 
-(def ^:private neutral-icon
-  (deprecated-icon/icon-xref :msg-neutral (stl/css :icon)))
-
-(def ^:private error-icon
-  (deprecated-icon/icon-xref :delete-text (stl/css :icon)))
-
-(def ^:private success-icon
-  (deprecated-icon/icon-xref :status-tick (stl/css :icon)))
-
-(def ^:private info-icon
-  (deprecated-icon/icon-xref :help (stl/css :icon)))
-
-(defn get-icon-by-level
+(defn- level->icon-id
   [level]
   (case level
-    :warning neutral-icon
-    :error error-icon
-    :success success-icon
-    :info info-icon
-    neutral-icon))
+    :error   i/delete-text
+    :success i/status-tick
+    :info    i/help
+    i/msg-neutral))
 
 (mf/defc context-notification
   "They are persistent, informative and non-actionable.
@@ -49,7 +36,8 @@
                                  :success      (= level :success)
                                  :info         (= level :info)))}
 
-   (get-icon-by-level level)
+   [:> icon* {:icon-id (level->icon-id level)
+              :class (stl/css :icon)}]
 
    ;; The content can arrive in markdown format, in these cases
    ;;  we will use the prop is-html to true to indicate it and

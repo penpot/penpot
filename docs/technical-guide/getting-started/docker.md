@@ -122,6 +122,18 @@ This will fetch the latest images. When you do <code class="language-bash">docke
     It is strongly recommended to update the Penpot version in small increments, rather than updating between two distant versions.
 </p>
 
+#### Upgrade to 2.19
+
+The Admin Console is now enabled by default, so the `enable-admin-console` flag is no longer needed and can be removed from `PENPOT_FLAGS`.
+
+The `penpot-admin-console` service and the `PENPOT_ADMIN_CONSOLE_URI` variable are part of the standard setup and are included in the official `docker-compose.yaml`. If you [upgraded to 2.18](#upgrade-to-2.18) following the guide, there is nothing else to do.
+
+If you don't want to run the Admin Console, you can disable it. Penpot keeps working as usual.
+
+1. Add `disable-admin-console` to `PENPOT_FLAGS`.
+2. Remove the `penpot-admin-console` service from your `docker-compose.yaml`, and from the `depends_on` list of `penpot-frontend`.
+3. Leave the `PENPOT_ADMIN_CONSOLE_URI` variable empty.
+
 #### Upgrade to 2.18
 
 This version deploys a new service, **`penpot-admin-console`**, in the official `docker-compose.yaml`
@@ -132,10 +144,9 @@ example. If you maintain your own compose file, you need to replicate the follow
 **NOTE:** Enabling the Admin Console is not required in this version, but it will be in a future release.
 We recommend setting it up now to avoid a more complex upgrade later.
 
-This step (the `enable-admin-console` flag) only applies to this version 2.18. In a future release, the
-Admin Console will be enabled by default and this flag will be removed. If you're upgrading directly to a
-version where the flag has already been removed, skip step 1 and go straight to steps 2–4, which remain
-required.
+This step (the `enable-admin-console` flag) only applies to this version 2.18. Since 2.19 the Admin
+Console is enabled by default: if you're upgrading directly to 2.19 or later, skip step 1 and go straight
+to steps 2–4, which remain required.
 
 Wherever you set `PENPOT_FLAGS` (frontend and backend):
 

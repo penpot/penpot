@@ -1497,6 +1497,12 @@ impl Shape {
             .filter(|shadow| shadow.style() == ShadowStyle::Drop && !shadow.hidden())
     }
 
+    pub fn clears_drop_shadow_underneath(&self) -> bool {
+        !matches!(self.shape_type, Type::Text(_))
+            && self.has_fills()
+            && !self.fills.iter().any(Fill::is_opaque)
+    }
+
     #[allow(dead_code)]
     pub fn inner_shadows(&self) -> impl DoubleEndedIterator<Item = &Shadow> {
         self.shadows
@@ -2185,20 +2191,6 @@ impl Shape {
             }
         }
         true
-    }
-
-    pub fn drop_shadow_paints(&self) -> Vec<skia_safe::Paint> {
-        let drop_shadows: Vec<&Shadow> = self.drop_shadows_visible().collect();
-
-        drop_shadows
-            .into_iter()
-            .map(|shadow| {
-                let mut paint = skia_safe::Paint::default();
-                let filter = shadow.get_drop_shadow_filter();
-                paint.set_image_filter(filter);
-                paint
-            })
-            .collect()
     }
 
     pub fn inner_shadow_paints(&self) -> Vec<skia_safe::Paint> {

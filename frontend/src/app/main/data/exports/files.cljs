@@ -105,7 +105,8 @@
                                         (= "completed" status)
                                         (rx/of {:file-id  (:id file)
                                                 :uri      (:resource-uri result)
-                                                :filename (:name file)})
+                                                :filename (:name file)
+                                                :size     (:size result)})
 
                                         (= "failed" status)
                                         (rx/of {:file-id (:id file)
@@ -121,9 +122,14 @@
 
                                         :else
                                         (rx/empty)))))))
+       ;; a transport failure carries no job error: a nil `ex-data` would
+       ;; make the dialog drop the message and leave the row hanging, so a
+       ;; synthetic error takes its place and the row reports it
        (rx/catch (fn [cause]
                    (rx/of {:file-id (:id file)
-                           :error   (ex-data cause)})))))
+                           :error (or (ex-data cause)
+                                      {:type :internal
+                                       :code :unknown-error})})))))
 
 (defn export-files
   "Start files exportation process.

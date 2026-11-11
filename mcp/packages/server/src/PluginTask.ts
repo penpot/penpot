@@ -5,7 +5,7 @@
  * A task defines a specific operation for the plugin to execute along with
  * strongly-typed parameters and provides request/response correlation.
  */
-import { PluginTaskRequest, PluginTaskResult } from "@penpot/mcp-common";
+import { ContentRollbackEvent, PluginTaskRequest, PluginTaskResult } from "@penpot/mcp-common";
 import { randomUUID } from "crypto";
 
 /**
@@ -151,5 +151,25 @@ export class PluginTask<
             throw new Error("Result promise not initialized");
         }
         this.rejectResult(error);
+    }
+}
+
+/**
+ * Error of a plugin task that failed in the plugin.
+ *
+ * Carries the rollbacks the failed task's response reported, which must reach the LLM like those of a
+ * successful response.
+ */
+export class PluginTaskError extends Error {
+    /**
+     * @param message - the error message reported by the plugin
+     * @param rollbacks - the rollbacks the response reported
+     */
+    constructor(
+        message: string,
+        public readonly rollbacks: ContentRollbackEvent[] = []
+    ) {
+        super(message);
+        this.name = "PluginTaskError";
     }
 }

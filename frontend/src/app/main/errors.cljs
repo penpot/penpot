@@ -22,7 +22,8 @@
    [app.main.worker]
    [app.util.dom :as dom]
    [app.util.globals :as g]
-   [app.util.i18n :refer [tr]]
+   [app.util.http :as http]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as ts]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
@@ -439,16 +440,31 @@
 
 (defn on-update-loop
   "Handler for the rumext update scheduler trips: logs the throttled
-  update loop with the events being processed, at most once per
-  `report-window-ms`. Runs inside store watchers and effect bodies, so it
-  never throws."
-  [_]
+  update loop and reports it as an unhandled exception with the events
+  being processed, at most once per `report-window-ms`. Runs inside store
+  watchers and effect bodies, so it never throws."
+  [{:keys [rounds]}]
   (try
     (let [now (inst-ms (ct/now))]
       (when (>= (- now @update-loop-warned-at) report-window-ms)
         (vreset! update-loop-warned-at now)
-        (.warn js/console "[update-scheduler] update loop throttled; in-flight events:"
-               (into-array (map ptk/repr-event (ptk/in-flight-events st/state))))))
+        (let [events (ptk/in-flight-events st/state)
+              cause  (ex-info "update loop throttled"
+                              {:type :internal
+                               :code :update-loop-throttled
+                               :rounds rounds})]
+          (.warn js/console "[update-scheduler] update loop throttled; in-flight events:"
+                 (into-array (map ptk/repr-event events)))
+          (when (seq events)
+            (.set in-flight-by-cause cause (in-flight-lines events)))
+          ;; Report outside the loop that tripped the scheduler, as an
+          ;; unhandled exception: a throttled loop is an application defect,
+          ;; so it must reach the error reports and alerts, not only audit.
+          (ts/schedule
+           #(submit-report :event-name "unhandled-exception"
+                           :hint (ex-message cause)
+                           :report (fn [] (generate-report cause))
+                           :cause cause)))))
     (catch :default _
       nil)))
 
@@ -490,7 +506,8 @@
 (defn flash
   "Show error notification banner and emit error report.
   A nil timeout keeps the notification visible until dismissed or replaced.
-  A `:tag` lets the notification be hidden later by that tag.
+  A `:tag` lets the notification be hidden later by that tag. `:level`
+  defaults to `:error`.
 
   The payload format is derived from the cause: environment failures get a
   compact report. The audit event name is the canonical one requested by
@@ -521,8 +538,8 @@
   synchronously from inside an error handler creates a re-entrant
   event-processing cycle that can exhaust the JS call stack
   (RangeError: Maximum call stack size exceeded)."
-  [& {:keys [type hint cause timeout tag report-link? links]
-      :or {type :handled timeout 5000}}]
+  [& {:keys [type hint cause timeout tag report-link? links level]
+      :or {type :handled timeout 5000 level :error}}]
   (js/Promise.
    (fn [resolve _reject]
      (ts/schedule
@@ -547,7 +564,7 @@
                 (ntf/show
                  (cond-> {:content (or ^boolean hint (tr "errors.generic"))
                           :type :toast
-                          :level :error
+                          :level level
                           :timeout timeout}
                    (some? tag)
                    (assoc :tag tag)
@@ -605,8 +622,10 @@
 
 (def ^:private delegated-persistence-types
   "Save failure causes routed to their own error handler: retaining the
-  changes cannot resolve them."
-  #{:authentication :not-found})
+  changes cannot resolve them. A save answered not-found (file gone, edit
+  rights lost, missing data) is not here: it keeps the workspace open and
+  notifies like any other failed save."
+  #{:authentication})
 
 (defn- delegated-persistence-failure?
   [{:keys [type cause-type code]}]
@@ -656,8 +675,9 @@
 (defn flash-persistence
   "Notifies a save failure. With `:retrying` the failure is transient and
   the queue keeps trying in the background, so the toast says the changes
-  are kept and offers no reload, which would lose them."
-  [cause & {:keys [retrying]}]
+  are kept and offers no reload, which would lose them. `:busy` tells that
+  the server was too busy, not out of reach."
+  [cause & {:keys [retrying busy]}]
   (let [data (ex-data cause)]
     (cond
       (delegated-persistence-failure? data)
@@ -672,7 +692,18 @@
              :timeout nil
              :tag persistence-failed-tag
              :report-link? true
-             :hint (tr "errors.save-still-retrying"))
+             :hint (if busy
+                     (tr "errors.save-still-retrying-busy")
+                     (tr "errors.save-still-retrying")))
+
+      (= :save-permission-denied (:code data))
+      (flash :cause cause
+             :type (persistence-report-type data)
+             :timeout nil
+             :tag persistence-failed-tag
+             :report-link? true
+             :links [(reload-page-link)]
+             :hint (tr "errors.save-permission-lost" (i18n/c (:unsaved-commits data 0))))
 
       :else
       (flash :cause cause
@@ -1123,6 +1154,15 @@
         (and (= (.-name ^js cause) "NotFoundError")
              (str/includes? message "removeChild")))))
 
+(defn network-failure->error
+  "Wrap a raw network TypeError as a connectivity error, so it is reported
+  as an environment failure instead of an application crash."
+  [cause]
+  (ex-info (ex-message cause)
+           {:type (if (false? (.-onLine ^js g/navigator)) :offline :network)
+            :hint "unable to perform fetch operation"}
+           cause))
+
 (defn- from-plugin?
   "Check if the error is marked as originating from plugin code. The
   plugin runtime tracks plugin errors in a WeakMap, which works even
@@ -1148,6 +1188,10 @@
                 ;; Other ignorable exceptions: ignore silently
                 (is-ignorable-exception? cause)
                 nil
+
+                ;; Raw fetch failures: connectivity, not a crash
+                (http/network-failure? cause)
+                (on-error (network-failure->error cause))
 
                 ;; All other errors: show exception page
                 :else
@@ -1175,6 +1219,10 @@
                 ;; Other ignorable exceptions: ignore silently
                 (is-ignorable-exception? cause)
                 nil
+
+                ;; Raw fetch failures: connectivity, not a crash
+                (http/network-failure? cause)
+                (on-error (network-failure->error cause))
 
                 ;; All other errors: show exception page
                 :else

@@ -33,7 +33,8 @@
   "Enabled route names. Query-string routing: the `screen` query param
   carries the route name (`?screen=<name>&params`); it is router-owned
   and reserved, every other param travels as a plain query param."
-  (into #{:auth-login
+  (into #{:mcp-authorize
+          :auth-login
           :auth-register
           :auth-register-validate
           :auth-register-success

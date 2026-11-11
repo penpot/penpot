@@ -211,8 +211,6 @@
 }
 
 .toggle-content-icon {
-  // Same stroke weight as the old 12px icons.
-  stroke-width: 1.33px;
   color: var(--color-foreground-secondary);
 
   .layer-row.hidden & {
@@ -284,9 +282,6 @@
   // The DS icon box is 16px and the button leaves 12px: keep the box
   // whole, centered, instead of letting it shrink and cut the icon.
   flex-shrink: 0;
-
-  // Same stroke weight as the old 12px icons.
-  stroke-width: 1.33px;
   color: var(--color-foreground-secondary);
 
   .layer-row.hidden & {

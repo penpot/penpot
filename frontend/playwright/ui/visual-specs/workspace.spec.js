@@ -691,6 +691,67 @@ test.describe("Guides", () => {
   });
 });
 
+test.describe("Path actions", () => {
+  test("Shows the path editing bar and its menus", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+
+    // A path with a curve node, so the handler menu shows.
+    await page.keyboard.press("p");
+    await workspace.clickAt(200, 200);
+    await workspace.clickAndMove(400, 200, 450, 300);
+    await workspace.clickAt(300, 400);
+    await page.keyboard.press("Enter");
+
+    const bar = page.locator("[class*='sub-actions']").first();
+    await expect(bar).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(bar).toHaveScreenshot("path-actions-draw.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    // Select every node so all the node actions show.
+    await bar.getByRole("button", { name: /Move nodes/ }).click();
+    await workspace.clickWithDragViewportAt(150, 150, 350, 300);
+    await page.mouse.move(640, 600);
+    await expect(bar).toHaveScreenshot("path-actions.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    const box = await bar.boundingBox();
+    const clip = {
+      x: box.x - 40,
+      y: box.y,
+      width: box.width + 80,
+      height: box.height + 46,
+    };
+
+    await bar.getByRole("button", { name: /Merge nodes/ }).hover();
+    // Let the tooltip show.
+    await page.waitForTimeout(1000);
+    await expect(page).toHaveScreenshot("path-actions-hover.png", {
+      clip,
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await bar.getByRole("button", { name: /Handler/ }).click();
+    await expect(
+      bar.getByRole("button", { name: "Independent" }),
+    ).toBeVisible();
+    // Let the menu fade in.
+    await page.waitForTimeout(500);
+    await expect(page).toHaveScreenshot("path-actions-handlers.png", {
+      clip,
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
 test.describe("Viewport top bar", () => {
   test("Shows the view only bar of the inspect tab", async ({ page }) => {
     const workspace = new WorkspacePage(page);
@@ -744,6 +805,26 @@ test.describe("Left header", () => {
       threshold: 0,
     });
   });
+
+  test("Shows the Penpot logo link", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+
+    const logo = page.locator("header a[class*='main-icon']");
+    await expect(logo).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(logo).toHaveScreenshot("left-header-logo.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await logo.hover();
+    await expect(logo).toHaveScreenshot("left-header-logo-hover.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
 });
 
 test.describe("Right header", () => {
@@ -777,6 +858,30 @@ test.describe("Right header", () => {
       maxDiffPixelRatio: 0,
       threshold: 0,
     });
+  });
+});
+
+test.describe("Share button", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Share button in the right header", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    // A shared team where the user is admin, so the header shows Share.
+    await workspace.mockRPC("get-teams", "workspace/get-teams-shared.json");
+    await workspace.goToWorkspace();
+
+    const header = page.locator('[class*="workspace-header-right"]');
+    const share = header
+      .locator("[class*='share-btn']")
+      .or(header.getByRole("button", { name: "Share" }));
+    await expect(share).toBeVisible();
+    await page.mouse.move(640, 300);
+    await expect(header).toHaveScreenshot(shot);
+
+    await share.hover();
+    await page.waitForTimeout(1000);
+    await expect(header).toHaveScreenshot(shot);
   });
 });
 
@@ -1221,5 +1326,108 @@ test.describe("Assets tab controls", () => {
     await expect(modal).toBeVisible();
     await page.mouse.move(10, 700);
     await expect(modal).toHaveScreenshot(shot);
+  });
+});
+
+test.describe("Comments panel filter", () => {
+  test("Shows the filter trigger and its menu", async ({ page }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.showComments();
+
+    const trigger = workspace.rightSidebar.getByRole("button", {
+      name: "Show all comments",
+    });
+    await expect(trigger).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(trigger).toHaveScreenshot(shot);
+
+    await trigger.hover();
+    await expect(trigger).toHaveScreenshot(shot);
+
+    await trigger.click();
+    const menu = page.locator("[class*='comment-mode-dropdown']");
+    await expect(menu).toBeVisible();
+    await page.mouse.move(640, 600);
+    await expect(menu).toHaveScreenshot(shot);
+  });
+});
+
+test.describe("Gradient type select", () => {
+  test("Shows the gradient type select closed, open and changed", async ({
+    page,
+  }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-not-empty.json");
+    await workspace.goToWorkspace({
+      fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+      pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+    });
+    await workspace.clickLeafLayer("Rectangle");
+    await page.getByRole("button", { name: "#B1B2B5" }).click();
+    await page.getByText("Solid").click();
+    await page.getByText("Gradient").click();
+
+    const typeSelect = workspace.colorpicker
+      .getByRole("combobox")
+      .filter({ hasText: "Linear" });
+    await expect(typeSelect).toBeVisible();
+    const pickerBox = await workspace.colorpicker.boundingBox();
+    const selectBox = await typeSelect.boundingBox();
+    // The gradient bar above the select and room below it for the open list.
+    const clip = {
+      x: Math.floor(pickerBox.x),
+      y: Math.floor(selectBox.y) - 60,
+      width: Math.ceil(pickerBox.width),
+      height: 200,
+    };
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await typeSelect.hover();
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await typeSelect.click();
+    const radial = page.getByRole("option", { name: "Radial" });
+    await expect(radial).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await radial.click();
+    await expect(
+      workspace.colorpicker.getByRole("combobox").filter({ hasText: "Radial" }),
+    ).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    // The whole gradient panel: preview bar, stops and the stop list.
+    const panel = workspace.colorpicker.locator("[class*='gradient-panel']");
+    await expect(panel).toHaveScreenshot(shot);
+  });
+});
+
+test.describe("Shortcuts panel", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Wraps long key lists between combinations", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+
+    await page.keyboard.press("Shift+?");
+    const list = page.locator("[class*='shortcuts-list']");
+    await expect(list).toBeVisible();
+    await page.getByRole("textbox").first().fill("board");
+
+    const next = page.getByRole("listitem", { name: "Next board" });
+    const prev = page.getByRole("listitem", { name: "Previous board" });
+    await prev.scrollIntoViewIfNeeded();
+    await page.mouse.move(640, 300);
+    await expect(next).toHaveScreenshot(shot);
+    await expect(prev).toHaveScreenshot(shot);
   });
 });

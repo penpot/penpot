@@ -34,8 +34,7 @@
 
 (sv/defmethod ::add-profile-plugin
   {::doc/added "2.18"
-   ::climit/id [[:profile-plugin-ops/by-profile ::rpc/profile-id]
-                [:profile-plugin-ops/global]]
+   ::climit/id [[:profile-plugin-ops/by-profile ::rpc/profile-id]]
    ::sm/params schema:add-profile-plugin
    ::sm/result ctp/schema:registry-entry
    ::db/transaction true}
@@ -69,8 +68,7 @@
 
 (sv/defmethod ::remove-profile-plugin
   {::doc/added "2.18"
-   ::climit/id [[:profile-plugin-ops/by-profile ::rpc/profile-id]
-                [:profile-plugin-ops/global]]
+   ::climit/id [[:profile-plugin-ops/by-profile ::rpc/profile-id]]
    ::sm/params schema:remove-profile-plugin
    ::sm/result :nil
    ::db/transaction true}

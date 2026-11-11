@@ -218,6 +218,14 @@
     (t/is (some? (:error out)))
     (t/is (= :not-found (th/ex-type (:error out))))))
 
+(t/deftest get-file-for-analysis-rejects-a-key-it-does-not-declare
+  (let [out (th/management-command! {::th/type :get-file-for-analysis
+                                     ::rpc/auth-key-id :exporter
+                                     :file-id (uuid/random)})]
+    (t/is (some? (:error out)))
+    (t/is (= :authorization (th/ex-type (:error out))))
+    (t/is (= :shared-key-not-allowed (th/ex-code (:error out))))))
+
 ;; --- Audit prop coverage (through the commands, into real events)
 ;;
 ;; NOTE: the test system neutralizes `audit/submit`, so no audit row

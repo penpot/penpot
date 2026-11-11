@@ -27,9 +27,9 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.helpers :as dsh]
+   [app.main.data.persistence.lock :as plk]
    [app.main.data.workspace.drawing.common :as common]
    [app.main.streams :as ms]
-   [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -128,17 +128,18 @@
     (ptk/reify ::handle-drawing
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [stopper (mse/drag-stopper stream)
-              zoom    (dm/get-in state [:workspace-local :zoom] 1)
-              start   @ms/mouse-position
-              shape   (cts/setup-shape {:type :path
-                                        :initialized? true
-                                        :click-draw? true
-                                        :frame-id uuid/zero
-                                        :parent-id uuid/zero
-                                        :strokes (arrow-strokes arrow?)
-                                        :fills []
-                                        :content (path/points->content [start start])})]
+        (let [cancelled? (volatile! false)
+              stopper    (plk/gesture-stopper stream cancelled?)
+              zoom       (dm/get-in state [:workspace-local :zoom] 1)
+              start      @ms/mouse-position
+              shape      (cts/setup-shape {:type :path
+                                           :initialized? true
+                                           :click-draw? true
+                                           :frame-id uuid/zero
+                                           :parent-id uuid/zero
+                                           :strokes (arrow-strokes arrow?)
+                                           :fills []
+                                           :content (path/points->content [start start])})]
           (rx/concat
            (rx/of #(update % :workspace-drawing assoc :object shape))
 
@@ -152,7 +153,9 @@
                 (rx/map (partial update-endpoint start))
                 (rx/take-until stopper))
 
-           (rx/of
-            (setup-frame)
-            (finalize)
-            (common/handle-finish-drawing))))))))
+           (rx/defer
+            #(if @cancelled?
+               (rx/of (common/cancel-drawing))
+               (rx/of (setup-frame)
+                      (finalize)
+                      (common/handle-finish-drawing))))))))))

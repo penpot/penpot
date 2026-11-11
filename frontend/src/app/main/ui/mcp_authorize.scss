@@ -1,0 +1,61 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_sizes.scss" as *;
+
+.page {
+  display: grid;
+  place-items: center;
+  min-block-size: 100%;
+  padding: var(--sp-xl);
+  background: var(--color-background-primary);
+  color: var(--color-foreground-primary);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+  max-inline-size: 36rem;
+  padding: var(--sp-xxl);
+  border: 1px solid var(--color-background-quaternary);
+  border-radius: var(--br-8);
+}
+
+.client {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-l);
+  margin-block-end: var(--sp-s);
+  overflow-wrap: anywhere;
+}
+
+.client-logo {
+  inline-size: $sz-48;
+  block-size: $sz-48;
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: var(--br-8);
+}
+
+.client-details {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--sp-s) - var(--sp-xxs));
+  min-inline-size: 0;
+}
+
+.client-text {
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--sp-m);
+  margin-block-start: var(--sp-l);
+}

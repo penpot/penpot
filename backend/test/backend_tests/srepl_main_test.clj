@@ -205,3 +205,104 @@
             ;; to the zero one.
             (t/is (nil? (:profile-id event)))
             (t/is (= (:id profile) (get-in event [:props :id])))))))))
+
+(t/deftest update-profile-email-changes-email
+  (with-mocks [audit-mock {:target 'app.loggers.audit/insert :return nil}]
+    (with-redefs [sys/system th/*system*]
+      (let [profile (th/create-profile* 1 {:is-active true})
+            result  (srepl/update-profile-email!
+                     :email (:email profile)
+                     :new-email "corrected@example.com")]
+        (t/is (= :updated result))
+        (t/is (= "corrected@example.com"
+                 (:email (th/db-get :profile {:id (:id profile)}))))
+        (let [event (->> (:call-args-list @audit-mock)
+                         (map second)
+                         first)]
+          (t/is (= "update-profile-email" (:name event)))
+          (t/is (= "action" (:type event)))
+          (t/is (= (:id profile) (get-in event [:props :id])))
+          (t/is (= (:email profile) (get-in event [:props :email])))
+          (t/is (= "corrected@example.com"
+                   (get-in event [:props :new-email]))))))))
+
+(t/deftest update-profile-email-rejects-collision
+  (with-redefs [sys/system th/*system*]
+    (let [profile1 (th/create-profile* 1 {:is-active true})
+          profile2 (th/create-profile* 2 {:is-active true})
+          error    (try
+                     (srepl/update-profile-email!
+                      :email (:email profile1)
+                      :new-email (:email profile2))
+                     (catch Throwable e e))]
+      (t/is (th/ex-of-code? error :email-already-exists))
+      (t/is (= (:email profile1)
+               (:email (th/db-get :profile {:id (:id profile1)})))))))
+
+(t/deftest update-profile-email-unchanged-when-same
+  (with-mocks [audit-mock {:target 'app.loggers.audit/insert :return nil}]
+    (with-redefs [sys/system th/*system*]
+      (let [profile (th/create-profile* 1 {:is-active true})
+            result  (srepl/update-profile-email!
+                     :email (:email profile)
+                     :new-email (:email profile))]
+        (t/is (= :unchanged result))
+        (t/is (empty? (:call-args-list @audit-mock)))))))
+
+(t/deftest update-profile-email-not-found
+  (with-mocks [audit-mock {:target 'app.loggers.audit/insert :return nil}]
+    (with-redefs [sys/system th/*system*]
+      (let [error (try
+                    (srepl/update-profile-email!
+                     :email "missing@example.com"
+                     :new-email "corrected@example.com")
+                    (catch Throwable e e))]
+        (t/is (th/ex-of-code? error :profile-not-found))
+        (t/is (= :not-found (:type (ex-data error))))
+        (t/is (empty? (:call-args-list @audit-mock)))))))
+
+(t/deftest clear-email-complaint-reports-deletes-and-unmutes
+  (with-mocks [audit-mock {:target 'app.loggers.audit/insert :return nil}]
+    (with-redefs [sys/system th/*system*]
+      (let [profile (th/create-profile* 1 {:is-active true :is-muted true
+                                           :email "bounced@example.com"})
+            _       (th/create-complaint-for th/*system*
+                                             {:id (:id profile) :type :bounce})
+            _       (th/create-complaint-for th/*system*
+                                             {:id (:id profile) :type :complaint})
+            _       (th/create-global-complaint-for th/*system*
+                                                    {:email (:email profile)
+                                                     :type :bounce})
+            _       (th/create-global-complaint-for th/*system*
+                                                    {:email (:email profile)
+                                                     :type :complaint})
+            result  (srepl/clear-email-complaint-reports! (:email profile))]
+        (t/is (= :cleared result))
+        (t/is (empty? (th/db-query :global-complaint-report
+                                   {:email (:email profile)})))
+        (t/is (empty? (th/db-query :profile-complaint-report
+                                   {:profile-id (:id profile)})))
+        (t/is (false? (:is-muted (th/db-get :profile {:id (:id profile)}))))
+        (let [event (->> (:call-args-list @audit-mock)
+                         (map second)
+                         first)]
+          (t/is (= "clear-email-complaint-reports" (:name event)))
+          (t/is (= "action" (:type event)))
+          (t/is (= (:id profile) (get-in event [:props :id])))
+          (t/is (= (:email profile) (get-in event [:props :email]))))))))
+
+(t/deftest clear-email-complaint-reports-without-profile
+  (with-mocks [audit-mock {:target 'app.loggers.audit/insert :return nil}]
+    (with-redefs [sys/system th/*system*]
+      (let [email "orphan-bounce@example.com"
+            _     (th/create-global-complaint-for th/*system*
+                                                  {:email email :type :bounce})
+            result (srepl/clear-email-complaint-reports! email)]
+        (t/is (= :cleared result))
+        (t/is (empty? (th/db-query :global-complaint-report {:email email})))
+        (let [event (->> (:call-args-list @audit-mock)
+                         (map second)
+                         first)]
+          (t/is (= "clear-email-complaint-reports" (:name event)))
+          (t/is (= email (get-in event [:props :email])))
+          (t/is (nil? (get-in event [:props :id]))))))))

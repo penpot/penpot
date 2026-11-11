@@ -13,10 +13,6 @@
 @use "ds/z-index.scss" as *;
 @use "ds/mixins.scss" as *;
 
-// The shared dashboard header styles move in their own change: they are
-// used by ten dashboard modules.
-@use "common/refactor/common-dashboard";
-
 // refactor/ stays for the menu placeholders (%menu-dropdown,
 // %menu-item-base) of the profile menu and its submenus.
 @use "common/refactor/common-refactor.scss" as deprecated;
@@ -147,7 +143,6 @@
 // side keeps the drawing and the text where they were.
 .pin-icon {
   flex-shrink: 0;
-  stroke-width: 1.33px;
   color: var(--color-foreground-secondary);
   margin: 0 px2rem(10);
 }
@@ -213,7 +208,6 @@
 
 .search-icon {
   flex-shrink: 0;
-  stroke-width: 1px;
 }
 
 .clear-search-btn:hover {
@@ -374,6 +368,5 @@
 }
 
 .exit-icon {
-  stroke-width: 1px;
   color: var(--color-foreground-secondary);
 }

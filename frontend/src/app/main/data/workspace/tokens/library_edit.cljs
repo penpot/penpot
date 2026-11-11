@@ -510,7 +510,8 @@
                         (pcb/with-library-data data)
                         (clo/generate-set-tokens-source library)
                         (pcb/set-tokens-source library-id))]
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of (dch/commit-changes changes)
+               (dwtp/propagate-workspace-tokens))))))
 
 (defn delete-token-set
   [id]

@@ -40,7 +40,18 @@ export PENPOT_SOURCE_PATH="${PENPOT_SOURCE_PATH:-$PWD}"
 
 # Base directory under which non-main workspace clones live (one subdir per
 # wsN, N>=1). Documented in defaults.env; default lives here so $HOME expands.
-export PENPOT_WORKSPACES_DIR="${PENPOT_WORKSPACES_DIR:-$HOME/.penpot/penpot_workspaces}"
+# The default follows the XDG base directory spec, in the data directory
+# because a clone can hold commits that exist nowhere else. A directory that
+# already exists at the former default, ~/.penpot/penpot_workspaces, keeps
+# being used, so existing clones are neither orphaned nor seeded again.
+if [[ -z "${PENPOT_WORKSPACES_DIR:-}" ]]; then
+    if [[ -d "$HOME/.penpot/penpot_workspaces" ]]; then
+        PENPOT_WORKSPACES_DIR="$HOME/.penpot/penpot_workspaces"
+    else
+        PENPOT_WORKSPACES_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/penpot-devenv/workspaces"
+    fi
+fi
+export PENPOT_WORKSPACES_DIR
 
 # Port allocation for parallel instances. Each wsN reserves a stride-wide port
 # block starting at N*stride; ws0 sits at offset 0, so a per-service base port
@@ -238,6 +249,24 @@ function infra-compose {
             "$@"
 }
 
+function check-devenv-gpu-support {
+    local runtimes
+    if ! runtimes=$(env -i HOME="$HOME" PATH="$PATH" PWD="$PWD" \
+        docker info --format '{{range $name, $_ := .Runtimes}}{{$name}} {{end}}'); then
+        echo "run-devenv: cannot query Docker runtimes; check that Docker is running and accessible." >&2
+        return 1
+    fi
+    if [[ " $runtimes " != *" nvidia "* ]]; then
+        echo "run-devenv: --gpu requires Docker runtime 'nvidia'; install and configure NVIDIA Container Toolkit." >&2
+        return 1
+    fi
+    local icd=/usr/share/vulkan/icd.d/nvidia_icd.json
+    if [[ ! -f "$icd" || ! -r "$icd" ]]; then
+        echo "run-devenv: --gpu requires a readable $icd; install the host NVIDIA Vulkan driver." >&2
+        return 1
+    fi
+}
+
 function instance-compose {
     local instance="$1"; shift
     local source_path
@@ -259,6 +288,10 @@ function instance-compose {
     if [[ -n "${PENPOT_OPENCODE_CONFIG_DIR:-}" ]]; then
         compose_files+=(-f docker/devenv/docker-compose.opencode.yml)
         opencode_env=("PENPOT_OPENCODE_CONFIG_DIR=${PENPOT_OPENCODE_CONFIG_DIR}")
+    fi
+    # Bash dynamic scope exposes run-devenv's local option here.
+    if [[ "${devenv_gpu:-false}" == "true" ]]; then
+        compose_files+=(-f docker/devenv/docker-compose.gpu.yml)
     fi
 
     env -i HOME="$HOME" PATH="$PATH" PWD="$PWD" \
@@ -786,13 +819,16 @@ function start-instance {
 
     instance-compose "$instance" up -d main
 
-    # Wait briefly for main to be reachable; the tmux session lives inside.
+    # Running does not mean entrypoint setup has finished. Nginx starts only
+    # after ownership and Cargo setup, so wait for its local health endpoint
+    # before launching builds as penpot (especially on a fresh container).
     local container deadline
     container=$(devenv-main-container "$instance")
-    deadline=$(( SECONDS + 30 ))
-    while ! docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null | grep -q true; do
+    deadline=$(( SECONDS + 120 ))
+    while ! docker exec "$container" curl --fail --silent --max-time 2 \
+        --output /dev/null http://127.0.0.1:8082/stub_status 2>/dev/null; do
         [[ $SECONDS -ge $deadline ]] && {
-            echo "[${instance}] main container did not reach Running within 30s" >&2
+            echo "[${instance}] main container initialization did not finish within 120s; check docker logs $container" >&2
             return 1
         }
         sleep 1
@@ -874,6 +910,7 @@ function run-devenv {
     local do_sync=false
     local do_attach=false
     local agentic=false
+    local devenv_gpu=false
     local serena_context="desktop-app"
     local git_user_name=""
     local git_user_email=""
@@ -888,6 +925,8 @@ function run-devenv {
                 do_sync=true; shift;;
             --agentic)
                 agentic=true; shift;;
+            --gpu)
+                devenv_gpu=true; shift;;
             --attach)
                 do_attach=true; shift;;
             --serena-context)
@@ -903,12 +942,13 @@ function run-devenv {
             -e*)
                 extra_env_args+=(-e "${1#-e}"); shift;;
             -h|--help)
-                echo "Usage: run-devenv [--ws N] [--sync] [--attach] [--agentic] [--serena-context CTX] [--opencode-config-dir DIR] [--git-user-name NAME] [--git-user-email EMAIL] [-e KEY=VAL]"
+                echo "Usage: run-devenv [--ws N] [--sync] [--attach] [--agentic] [--gpu] [--serena-context CTX] [--opencode-config-dir DIR] [--git-user-name NAME] [--git-user-email EMAIL] [-e KEY=VAL]"
                 echo "  Bring a single workspace up."
                 echo "  --ws N                target workspace (default: 0)."
                 echo "  --sync                re-seed the wsN clone from the live repo (forbidden on ws0)."
                 echo "  --attach              attach to the tmux session after startup."
                 echo "  --agentic             enable MCP + Serena (AI-agent mode)."
+                echo "  --gpu                 grant NVIDIA GPU access at container creation."
                 echo "  --serena-context CTX  context passed to Serena (default: desktop-app)."
                 echo "  --opencode-config-dir DIR  bind-mount DIR at ~/.config/opencode inside the"
                 echo "                        container (personal agents/prompts/skills kept in a"
@@ -960,6 +1000,10 @@ function run-devenv {
     if devenv-main-running "$target"; then
         echo "run-devenv: instance '$target' is already running." >&2
         return 1
+    fi
+
+    if [[ "$devenv_gpu" == "true" ]]; then
+        check-devenv-gpu-support || return 1
     fi
 
     pull-devenv-if-not-exists
@@ -1054,6 +1098,11 @@ function attach-devenv {
 #   no flag    → ws0 (the live repo at $PWD).
 #   --ws N     → wsN's workspace clone at ${PENPOT_WORKSPACES_DIR}/wsN
 #                (N is an integer; non-integer values are rejected).
+#   --bin EXE  → run EXE instead of the client's default executable (e.g. a
+#                wrapper such as 'claude-alt'); the client still picks
+#                how the MCP config is wired in.
+# --ws and --bin may come in any order; everything after them is passed
+# through to the client.
 # Before launching, the function cd's into the resolved workspace and refuses
 # to start unless the target instance's 'main' container is up — the Penpot
 # and Serena MCP servers only exist while the devenv is running.
@@ -1068,14 +1117,14 @@ function attach-devenv {
 #             committed templates). Nothing is written to .codex/config.toml,
 #             so the developer's own Codex config is left untouched.
 #
-# Usage: ./manage.sh start-coding-agent <claude|opencode|vscode|codex> [--ws N] [...passthrough]
+# Usage: ./manage.sh start-coding-agent <claude|opencode|vscode|codex> [--ws N] [--bin EXE] [...passthrough]
 function start-coding-agent {
     local client="${1:-}"
     [[ $# -gt 0 ]] && shift
 
     case "$client" in
         ""|-h|--help)
-            echo "Usage: $0 start-coding-agent <claude|opencode|vscode|codex> [--ws N] [...passthrough]" >&2
+            echo "Usage: $0 start-coding-agent <claude|opencode|vscode|codex> [--ws N] [--bin EXE] [...passthrough]" >&2
             return 1
             ;;
         claude|opencode|vscode|codex)
@@ -1087,10 +1136,26 @@ function start-coding-agent {
     esac
 
     local instance="ws0"
-    if [[ $# -gt 0 && "$1" == "--ws" ]]; then
-        instance="$(parse-ws-integer "$2")" || return 1
-        shift 2
-    fi
+    local bin_override=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --ws)
+                instance="$(parse-ws-integer "$2")" || return 1
+                shift 2
+                ;;
+            --bin)
+                if [[ -z "${2:-}" ]]; then
+                    echo "start-coding-agent: --bin requires an executable name or path." >&2
+                    return 1
+                fi
+                bin_override="$2"
+                shift 2
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
 
     # --ws is the default-elided flag: only emit it in suggestion strings for
     # ws1+; ws0 is the default target so 'run-devenv --agentic' is the right hint.
@@ -1131,6 +1196,7 @@ function start-coding-agent {
         vscode)   bin="code";     cfg_rel=".vscode/mcp.json" ;;
         codex)    bin="codex";    cfg_rel=".devenv/templates/codex.toml" ;;
     esac
+    [[ -n "$bin_override" ]] && bin="$bin_override"
 
     if ! command -v "$bin" >/dev/null 2>&1; then
         echo "start-coding-agent: '$bin' is not on PATH." >&2
@@ -1148,13 +1214,13 @@ function start-coding-agent {
     cd "$workspace" || return 1
     case "$client" in
         claude)
-            exec claude --mcp-config "$cfg_rel" "$@"
+            exec "$bin" --mcp-config "$cfg_rel" "$@"
             ;;
         opencode)
-            OPENCODE_CONFIG="$cfg_rel" exec opencode "$@"
+            OPENCODE_CONFIG="$cfg_rel" exec "$bin" "$@"
             ;;
         vscode)
-            exec code "$workspace" "$@"
+            exec "$bin" "$workspace" "$@"
             ;;
         codex)
             # Build our servers as `-c mcp_servers.<name>....` overrides from the
@@ -1176,7 +1242,7 @@ function start-coding-agent {
                 echo "  .devenv/{shared,templates}/codex.toml." >&2
                 return 1
             fi
-            exec codex "${codex_args[@]}" "$@"
+            exec "$bin" "${codex_args[@]}" "$@"
             ;;
     esac
 }
@@ -1484,6 +1550,7 @@ function usage {
     echo "                                                           start of a wsN with no on-disk workspace yet)."
     echo "                                     --attach              attach to the tmux session after startup."
     echo "                                     --agentic             enable MCP + Serena (AI-agent mode)."
+    echo "                                     --gpu                 grant NVIDIA GPU access at container creation."
     echo "                                     --serena-context CTX  passed to Serena (default: desktop-app)."
     echo "                                     --opencode-config-dir DIR"
     echo "                                                           bind-mount DIR over the container's"
@@ -1515,7 +1582,8 @@ function usage {
     echo "                                   config wired in. cd's into the workspace, refuses to launch if the"
     echo "                                   instance is not running, and forwards extra args to the client."
     echo "                                   client: claude | opencode | vscode | codex"
-    echo "                                   Options: --ws N (default: 0). See agentic-devenv.md and"
+    echo "                                   Options: --ws N (default: 0), --bin EXE (run EXE instead of"
+    echo "                                   the client's default executable). See agentic-devenv.md and"
     echo "                                   .devenv/README.md for per-client setup and override paths."
     echo ""
     echo "- build-bundle                     Build all bundles (frontend, backend, exporter, storybook and mcp)."

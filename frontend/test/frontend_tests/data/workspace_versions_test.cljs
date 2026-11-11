@@ -6,14 +6,17 @@
 
 (ns frontend-tests.data.workspace-versions-test
   (:require
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
+   [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.versions :as versions]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
+   [app.main.ui.workspace.sidebar.versions :as versions-ui]
    [app.util.timers :as tm]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -27,6 +30,7 @@
       (let [file-id  (uuid/next)
             resolved (atom [])
             rejected (atom [])
+            emitted  (atom [])
             requests (atom [])
             state    {:current-file-id file-id}
             event    (case operation
@@ -42,12 +46,41 @@
                       rx/timeout (mock/stub (fn [_ fallback source]
                                               (if (= failure :timeout) fallback source)))]
           (->> (ptk/watch event state (rx/empty))
-               (rx/subs! (fn [_]) #(swap! rejected conj %)))
+               (rx/subs! #(swap! emitted conj %) #(swap! rejected conj %)))
           (t/is (empty? @requests) "Do not create a version without saving")
           (t/is (empty? @resolved) "Do not resolve the plugin promise on failure")
-          (t/is (= 1 (count @rejected)))
-          (t/is (= (if (= failure :error) :save-permission-denied :save-timeout)
-                   (:code (ex-data (first @rejected))))))))))
+          (if (= operation :create)
+            ;; The save failure is reported on its own; the user is told
+            ;; why the version is missing instead
+            (let [notice (some #(when (= ::ntf/show (ptk/type %))
+                                  (:notification (ptk/update % {})))
+                               @emitted)]
+              (t/is (empty? @rejected))
+              (t/is (= "workspace.versions.create-failed-unsaved" (:content notice)))
+              (t/is (= :warning (:level notice))))
+            (do
+              (t/is (= 1 (count @rejected)))
+              (t/is (= (if (= failure :error) :save-permission-denied :save-timeout)
+                       (:code (ex-data (first @rejected))))))))))))
+
+(t/deftest repair-snapshots-are-told-apart-from-autosaves
+  (t/is (versions/repair-snapshot? {:label "internal/repair/5" :created-by "system"}))
+  (t/is (not (versions/repair-snapshot? {:label "internal/snapshot/20" :created-by "system"})))
+  (t/is (not (versions/repair-snapshot? {:label "My version" :created-by "user"})))
+  (t/is (not (versions/repair-snapshot? {:created-by "user"}))))
+
+;; Scenario: on one day the backend kept two autosaves and the copy from
+;; before a repair. Proves: the history shows the repair copy as its own
+;; entry, above the day's autosaves, so it can be found by its label.
+(t/deftest the-history-lists-the-copy-before-a-repair-apart
+  (let [at      (fn [hh] (ct/inst (str "2026-11-03T" hh ":00:00Z")))
+        data    [{:id (uuid/next) :created-by "system" :label "internal/snapshot/0" :created-at (at "10")}
+                 {:id (uuid/next) :created-by "system" :label "internal/repair/5" :created-at (at "11")}
+                 {:id (uuid/next) :created-by "system" :label "internal/snapshot/20" :created-at (at "12")}]
+        entries (#'versions-ui/group-snapshots data)]
+    (t/is (= [:repair :autosave] (mapv :kind entries)))
+    (t/is (= [["internal/repair/5"] ["internal/snapshot/0" "internal/snapshot/20"]]
+             (mapv #(mapv :label (:snapshots %)) entries)))))
 
 (t/deftest leaving-the-workspace-clears-the-preview-flags
   (let [team-id  (uuid/next)

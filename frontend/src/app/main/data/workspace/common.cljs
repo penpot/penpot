@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.common
   (:require
+   [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.main.data.profile :as du]
    [app.main.data.workspace.layout :as dwl]
@@ -70,11 +71,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn set-workspace-read-only
+  "Sets the read-only mode. While failing saves lock the workspace, the
+  value is kept for when the lock is lifted."
   [read-only?]
   (ptk/reify ::set-workspace-read-only
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-global assoc :read-only? read-only?))
+      (if (dm/get-in state [:workspace-global :persistence-lock])
+        (assoc-in state [:workspace-global :persistence-lock :read-only?] read-only?)
+        (update state :workspace-global assoc :read-only? read-only?)))
 
     ptk/WatchEvent
     (watch [_ _ _]

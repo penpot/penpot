@@ -193,6 +193,7 @@ describe('Management', () => {
 
       try {
         team.name = renamed;
+        await waitFor(() => team.name === renamed, { timeout: 5000 });
         expect(team.name).toBe(renamed);
         await waitForAsync(
           async () => (await currentTeam(ctx)).name === renamed,
@@ -225,7 +226,9 @@ describe('Management', () => {
       expect(file.projectId).toBe(created.id);
       expect(file.teamId).toBe(team.id);
       expect(file.shared).toBe(false);
-      expect(created.fileCount).toBe(1);
+      // fileCount is a listing snapshot, so list the project again.
+      expect(created.fileCount).toBe(0);
+      expect((await listedProject(ctx, created.id))?.fileCount).toBe(1);
       expect((await created.listFiles()).map((f) => f.id)).toEqual([file.id]);
       // Creating does not navigate.
       expect(ctx.penpotMgmt.workspace).toEqual(home);
@@ -240,6 +243,9 @@ describe('Management', () => {
 
       created.name = renamed;
       created.pinned = true;
+      await waitFor(() => created.name === renamed && created.pinned, {
+        timeout: 5000,
+      });
       expect(created.name).toBe(renamed);
       expect(created.pinned).toBe(true);
 
@@ -282,20 +288,18 @@ describe('Management', () => {
         name: temporaryName('team'),
       });
 
-      try {
-        const moved = await team.createProject({
-          name: temporaryName('moved'),
-        });
-        await moved.moveTo(target);
+      // Teams cannot be deleted through the API; the live CI driver deletes
+      // the temporary team after the run.
+      const moved = await team.createProject({
+        name: temporaryName('moved'),
+      });
+      await moved.moveTo(target);
 
-        expect(moved.teamId).toBe(target.id);
-        expect((await target.listProjects()).map((p) => p.id)).toContain(
-          moved.id,
-        );
-        expect(await listedProject(ctx, moved.id)).toBeUndefined();
-      } finally {
-        await target.remove();
-      }
+      expect(moved.teamId).toBe(target.id);
+      expect((await target.listProjects()).map((p) => p.id)).toContain(
+        moved.id,
+      );
+      expect(await listedProject(ctx, moved.id)).toBeUndefined();
     });
   });
 
@@ -305,6 +309,7 @@ describe('Management', () => {
       const parent = await temporaryProject(ctx);
 
       file.name = '  Renamed  ';
+      await waitFor(() => file.name === 'Renamed', { timeout: 5000 });
       expect(file.name).toBe('Renamed');
       await waitForAsync(
         async () => (await listedFile(parent, file.id))?.name === 'Renamed',
@@ -361,6 +366,9 @@ describe('Management', () => {
         expect(ctx.penpotMgmt.workspace.fileName).toBe(`${original} (renamed)`);
       } finally {
         file.name = original;
+        await waitFor(() => ctx.penpotMgmt.workspace.fileName === original, {
+          timeout: 5000,
+        });
       }
     });
   });
@@ -460,6 +468,7 @@ describe('Management', () => {
         );
 
       file.shared = true;
+      await waitFor(() => file.shared, { timeout: 5000 });
       expect(file.shared).toBe(true);
       await waitForAsync(isListed);
       expect(await isListed()).toBe(true);

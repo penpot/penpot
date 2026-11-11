@@ -338,6 +338,74 @@ test.describe("Delete account modal", () => {
   });
 });
 
+test.describe("Fonts page controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Installed font variant, menu and edition", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.goToDashboard();
+    await dashboardPage.fontsLink.click();
+    await expect(dashboardPage.mainHeading).toHaveText("Fonts");
+
+    const installed = page.locator("[class*='dashboard-installed-fonts']");
+    const row = installed.locator("[class*='font-item']").first();
+    await expect(row).toBeVisible();
+
+    // The variant delete icon only shows on hover.
+    await row.locator("[class$='__variant'], [class*='__variant ']").hover();
+    await expect(installed).toHaveScreenshot(shot);
+
+    // The menu button: a span before the DS migration, a DS icon button
+    // named "Options" after it.
+    const options = row.locator("[class*='options']");
+    await options
+      .locator("span[class*='icon']")
+      .or(options.getByRole("button", { name: "Options" }))
+      .first()
+      .click();
+    await expect(page.getByText("Download")).toBeVisible();
+    await expect(page).toHaveScreenshot(shot);
+
+    await page.getByText("Edit", { exact: true }).click();
+    await expect(row.locator("input")).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(installed).toHaveScreenshot(shot);
+  });
+
+  test("Fonts ready to upload", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.goToDashboard();
+    await dashboardPage.fontsLink.click();
+    await expect(dashboardPage.mainHeading).toHaveText("Fonts");
+
+    await page
+      .locator("#font-upload")
+      .setInputFiles("playwright/data/render-wasm/assets/ebgaramond.ttf");
+    await expect(page.getByTestId("upload-all")).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(
+      page.locator("[class*='dashboard-fonts-upload']"),
+    ).toHaveScreenshot(shot);
+  });
+
+  test("Fonts loading placeholder", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    // Never answer, so the page keeps showing the loader.
+    await page.route(/get-font-variants/, () => {});
+    await dashboardPage.goToDashboard();
+    await dashboardPage.fontsLink.click();
+    await expect(dashboardPage.mainHeading).toHaveText("Fonts");
+
+    const placeholder = page.locator("[class*='fonts-placeholder']");
+    await expect(placeholder).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(placeholder).toHaveScreenshot(shot);
+  });
+});
+
 test.describe("Subscription controls", () => {
   const shot = { maxDiffPixelRatio: 0, threshold: 0 };
 
@@ -439,6 +507,78 @@ test.describe("Subscription controls", () => {
   });
 });
 
+test.describe("Dashboard list controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Trash project options", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    // Deleted files due in 2100, so the trash keeps them.
+    await dashboardPage.mockRPC(
+      "get-team-deleted-files?team-id=*",
+      "dashboard/get-team-deleted-files-pending.json",
+    );
+    // A deleted project, so its row shows the options button.
+    await dashboardPage.mockRPC(
+      "get-projects?team-id=*",
+      "dashboard/get-projects-deleted.json",
+    );
+    await dashboardPage.goToDeleted();
+
+    const options = page.getByTestId("project-options").first();
+    await expect(options).toBeVisible();
+    const row = page.locator("[class*='dashboard-project-row']").first();
+    await page.mouse.move(640, 700);
+    await expect(row.locator("header")).toHaveScreenshot(shot);
+    await options.hover();
+    await expect(row.locator("header")).toHaveScreenshot(shot);
+  });
+
+  test("Empty project create button", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupNewProject();
+    await dashboardPage.goToDashboard();
+    await expect(dashboardPage.projectName).toBeVisible();
+
+    const create = page.locator("[class*='create-new']").first();
+    await expect(create).toBeVisible();
+    await page.mouse.move(640, 700);
+    await expect(create).toHaveScreenshot(shot);
+    await create.hover();
+    await expect(create).toHaveScreenshot(shot);
+  });
+
+  test("Project rename", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.goToDashboard();
+
+    await page.getByTestId("project-options").first().click();
+    await page.getByText("Rename", { exact: true }).click();
+    const edit = page.locator("[class*='edit-wrapper']").first();
+    await expect(edit).toBeVisible();
+    await expect(edit).toHaveScreenshot(shot);
+  });
+
+  test("Comments placeholder", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.mockRPC(
+      "get-unread-comment-threads?team-id=*",
+      "logged-in-user/get-unread-comment-threads-empty.json",
+    );
+    await dashboardPage.goToDashboard();
+
+    await page.getByTestId("open-comments").click();
+    const placeholder = page.locator("[class*='thread-groups-placeholder']");
+    await expect(placeholder).toBeVisible();
+    await expect(placeholder).toHaveScreenshot(shot);
+    // The whole dropdown, with the header title.
+    await expect(
+      page.locator("[class*='comment-threads-section']"),
+    ).toHaveScreenshot(shot);
+  });
+});
+
 test.describe("Team modals controls", () => {
   const shot = { maxDiffPixelRatio: 0, threshold: 0 };
 
@@ -484,6 +624,43 @@ test.describe("Team modals controls", () => {
     await expect(modal).toBeVisible();
     await page.mouse.move(10, 700);
     await expect(modal).toHaveScreenshot(shot);
+  });
+});
+
+test.describe("Settings subscription controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Plans page and management dialog", async ({ page }) => {
+    await DashboardPage.mockConfigFlags(
+      page,
+      ["enable-subscriptions", "disable-onboarding"],
+      { penpotIsSaas: true },
+    );
+    await DashboardPage.mockRPC(
+      page,
+      "get-subscription-usage",
+      "subscription/get-subscription-usage.json",
+    );
+    await page.goto("/?screen=settings-subscription");
+    await expect(
+      page.getByRole("heading", { name: "Subscription", level: 2 }),
+    ).toBeVisible();
+
+    const trial = page
+      .getByRole("button", { name: "Try it free for 14 days" })
+      .first();
+    await expect(trial).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(page).toHaveScreenshot(shot);
+
+    await trial.click();
+    const dialog = page.locator("[class*='modal-dialog']");
+    await expect(dialog).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(dialog).toHaveScreenshot(shot);
+
+    await dialog.locator("button").first().hover();
+    await expect(dialog).toHaveScreenshot(shot);
   });
 });
 
@@ -602,6 +779,88 @@ test.describe("Team pages controls", () => {
   });
 });
 
+test.describe("Dashboard headers", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+  const header = (page) => page.getByTestId("dashboard-header");
+
+  test("Page headers", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+
+    await dashboardPage.goToDashboard();
+    await expect(header(page)).toHaveScreenshot(shot);
+    await dashboardPage.goToDrafts();
+    await expect(header(page)).toHaveScreenshot(shot);
+    await dashboardPage.goToLibraries();
+    await expect(header(page)).toHaveScreenshot(shot);
+    await dashboardPage.goToFonts();
+    await expect(header(page)).toHaveScreenshot(shot);
+    await dashboardPage.goToDeleted();
+    await expect(header(page)).toHaveScreenshot(shot);
+    await dashboardPage.goToSearch();
+    await expect(dashboardPage.mainHeading).toBeVisible();
+    await expect(header(page)).toHaveScreenshot(shot);
+  });
+
+  test("Team header menu", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.goToSecondTeamMembersSection();
+    await expect(dashboardPage.mainHeading).toHaveText("Members");
+
+    await page.mouse.move(10, 700);
+    await expect(header(page)).toHaveScreenshot(shot);
+    await header(page).getByText("Invitations").hover();
+    await expect(header(page)).toHaveScreenshot(shot);
+  });
+
+  test("Libraries page and search placeholder", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.goToLibraries();
+    await expect(page).toHaveScreenshot(shot);
+
+    await dashboardPage.goToSearch();
+    const placeholder = page.locator("[class*='grid-empty-placeholder']");
+    await expect(placeholder).toBeVisible();
+    await expect(placeholder).toHaveScreenshot(shot);
+  });
+
+  test("Account header", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.goToDashboard();
+    await dashboardPage.goToAccount();
+    await expect(page.getByTestId("account-title")).toBeVisible();
+    await expect(header(page)).toHaveScreenshot(shot);
+  });
+});
+
+test.describe("Settings controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Sidebar and change email modal", async ({ page }) => {
+    await DashboardPage.mockConfigFlags(page, ["enable-user-feedback"]);
+    await page.goto("/?screen=settings-profile");
+    const sidebar = page.locator(
+      "[class*='settings_sidebar__dashboard-sidebar']",
+    );
+    await expect(page.getByText("Contact us")).toBeVisible();
+    await page.mouse.move(640, 700);
+    await expect(sidebar).toHaveScreenshot(shot);
+
+    await page.getByText("Dashboard", { exact: true }).hover();
+    await expect(sidebar).toHaveScreenshot(shot);
+
+    await page.getByText("Change email", { exact: true }).click();
+    const modal = page.locator("[class*='modal-container']");
+    await expect(modal).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(modal).toHaveScreenshot(shot);
+    await modal.locator("[class*='modal-header'] button").hover();
+    await expect(modal).toHaveScreenshot(shot);
+  });
+});
+
 test.describe("Onboarding questions controls", () => {
   const shot = { maxDiffPixelRatio: 0, threshold: 0 };
 
@@ -627,5 +886,220 @@ test.describe("Onboarding questions controls", () => {
 
     await previous.hover();
     await expect(actions).toHaveScreenshot(shot);
+  });
+});
+
+test.describe("Profile page controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Profile page avatar, form and links", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.goToDashboard();
+    await dashboardPage.goToAccount();
+
+    const container = page.locator(
+      "[class*='settings_profile__form-container']",
+    );
+    await expect(page.getByText("Change email")).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(container).toHaveScreenshot(shot);
+
+    // The "Update" overlay shows when the pointer is on the avatar.
+    await page.locator("[class*='image-change-field']").hover();
+    await expect(container).toHaveScreenshot(shot);
+
+    // Save turns enabled once the name changes.
+    await page.getByLabel("Your name").fill("Renamed user");
+    await page.mouse.move(10, 700);
+    await expect(container).toHaveScreenshot(shot);
+
+    await page.getByText("Change email").hover();
+    await expect(container).toHaveScreenshot(shot);
+
+    await page.getByText("Want to remove your account?").hover();
+    await expect(container).toHaveScreenshot(shot);
+
+    // The "Update" overlay is a button: it shows on keyboard focus too.
+    await page.mouse.move(10, 700);
+    await page.getByRole("button", { name: "Update" }).focus();
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Tab");
+    await expect(container).toHaveScreenshot(shot);
+  });
+});
+
+test.describe("Templates section controls", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Template cards, scroll buttons and collapse", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.mockRPC(
+      "get-builtin-templates",
+      "dashboard/get-builtin-templates.json",
+    );
+    await dashboardPage.goToDashboard();
+
+    const section = page.locator("[class*='dashboard-templates-section']");
+    const card = section.locator("[class*='template-card']").first();
+    await expect(card).toBeVisible();
+    await expect(section.locator("img").first()).toHaveJSProperty(
+      "complete",
+      true,
+    );
+    await page.mouse.move(640, 100);
+    await expect(section).toHaveScreenshot(shot);
+
+    // Hovering a card shows its add icon in the accent color.
+    await card.hover();
+    await expect(card).toHaveScreenshot(shot);
+
+    // Focused from the keyboard, a card looks like on hover.
+    await page.mouse.move(640, 100);
+    await page.keyboard.press("Shift");
+    await card.focus();
+    await expect(card).toHaveScreenshot(shot);
+    await card.blur();
+
+    const moveButtons = section.locator("[class*='move-button']");
+    await moveButtons.last().hover();
+    await expect(moveButtons.last()).toHaveScreenshot(shot);
+
+    await moveButtons.last().click();
+    await expect(moveButtons).toHaveCount(2);
+    await page.mouse.move(640, 100);
+    await expect(moveButtons.first()).toHaveScreenshot(shot);
+
+    await section.locator("[class*='title-btn']").click();
+    await expect(section).toHaveClass(/collapsed/);
+    await page.waitForTimeout(500);
+    await expect(section.locator("[class*='title-btn']")).toHaveScreenshot(
+      shot,
+    );
+  });
+});
+
+test.describe("Context notification", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+  test("Info and warning levels", async ({ page }) => {
+    await page.goto("/?screen=settings-profile");
+
+    // Info: the change email modal.
+    await page.getByText("Change email", { exact: true }).click();
+    const info = page.locator("[class*='modal-container'] aside");
+    await expect(info).toBeVisible();
+    await expect(info).toHaveScreenshot(shot);
+    await page.keyboard.press("Escape");
+    await expect(info).toBeHidden();
+
+    // Warning: the delete account modal.
+    await page.getByText("Want to remove your account?").click();
+    const warning = page.locator("[class*='modal-container'] aside");
+    await expect(warning).toBeVisible();
+    await expect(warning).toHaveScreenshot(shot);
+  });
+
+  test("Warning with html content", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.goToDashboard();
+    await dashboardPage.fontsLink.click();
+    await page
+      .locator("#font-upload")
+      .setInputFiles("playwright/data/render-wasm/assets/ebgaramond.ttf");
+    const warning = page
+      .locator("[class*='dashboard-fonts-hero'] aside")
+      .last();
+    await expect(warning).toBeVisible();
+    await expect(warning).toHaveScreenshot(shot);
+  });
+});
+
+test.describe("Download report", () => {
+  test("Error page and feedback page links", async ({ page }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    await DashboardPage.mockConfigFlags(page, [
+      "disable-onboarding",
+      "enable-user-feedback",
+    ]);
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await page.route("**/api/main/methods/get-projects?*", (route) =>
+      route.fulfill({
+        status: 500,
+        contentType: "application/transit+json",
+        body: '["^ ","~:type","~:server-error","~:code","~:unexpected"]',
+      }),
+    );
+    await page.goto(
+      `/?screen=dashboard-recent&team-id=${DashboardPage.anyTeamId}`,
+    );
+
+    const errorLink = page.getByText("Download report.txt", { exact: true });
+    await expect(errorLink).toBeVisible();
+    await page.mouse.move(10, 10);
+    await expect(errorLink).toHaveScreenshot(shot);
+    await errorLink.hover();
+    await expect(errorLink).toHaveScreenshot(shot);
+
+    const errorDownload = page.waitForEvent("download");
+    await errorLink.focus();
+    await page.keyboard.press("Enter");
+    expect((await errorDownload).suggestedFilename()).toBe("report.txt");
+
+    await page.getByRole("button", { name: "Contact support" }).click();
+    const feedbackLink = page.getByText("Download report.txt", {
+      exact: true,
+    });
+    await expect(page.getByText("Send")).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(feedbackLink).toHaveScreenshot(shot);
+    await feedbackLink.hover();
+    await expect(feedbackLink).toHaveScreenshot(shot);
+
+    const feedbackDownload = page.waitForEvent("download");
+    await feedbackLink.focus();
+    await page.keyboard.press("Enter");
+    expect((await feedbackDownload).suggestedFilename()).toBe("report.txt");
+    // The button is in the feedback form: Enter must not send it.
+    await expect(page.getByText("Send", { exact: true })).toBeVisible();
+  });
+});
+
+test.describe("Team settings organization", () => {
+  test("Shows the Add to an organization link", async ({ page }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    // Organizations need the admin console flag, a team the user owns that
+    // is in no organization, and an organization the user belongs to.
+    await DashboardPage.mockConfigFlags(page, [
+      "disable-onboarding",
+      "enable-admin-console",
+    ]);
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.mockRPC(
+      "get-teams",
+      "dashboard/get-teams-organization.json",
+    );
+    await dashboardPage.mockRPC(
+      /check-nitrate-sso/,
+      "dashboard/check-nitrate-sso-authorized.json",
+    );
+    await dashboardPage.mockRPC(
+      /get-environment-data/,
+      "dashboard/get-environment-data-empty.json",
+    );
+    await dashboardPage.mockRPC(
+      "get-team-stats?team-id=*",
+      "dashboard/get-team-stats.json",
+    );
+    await dashboardPage.goToSecondTeamSettingsSection();
+
+    const add = page.getByText("Add to an organization", { exact: true });
+    await expect(add).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(add).toHaveScreenshot(shot);
+
+    await add.hover();
+    await expect(add).toHaveScreenshot(shot);
   });
 });

@@ -18,6 +18,24 @@
 
 (t/use-fixtures :once th/state-init)
 
+(defn- get-consistent-pool-stats
+  "Read pool stats until total equals active + idle, or attempts run out.
+  Hikari exposes each counter through a separate MXBean call, so a borrow
+  or return between the reads can leave a single snapshot inconsistent
+  (total off by one). Retrying until the pool is quiescent keeps the test
+  deterministic without weakening the invariant."
+  [pool]
+  (loop [attempt 20]
+    (let [stats  (db/pool-stats pool)
+          total  (:total-connections stats)
+          active (:active-connections stats)
+          idle   (:idle-connections stats)]
+      (if (or (= total (+ active idle))
+              (zero? attempt))
+        stats
+        (do (Thread/sleep 10)
+            (recur (dec attempt)))))))
+
 (t/deftest pool-requires-metrics
   ;; Metrics is required by the pool schema: a pool wired without it
   ;; fails at the boundary (AssertionError when asserts are enabled) or
@@ -28,7 +46,7 @@
                               {::db/uri (java.net.URI. "postgresql://localhost/test")}))))
 
 (t/deftest pool-stats-returns-expected-keys
-  (let [stats (db/pool-stats th/*pool*)]
+  (let [stats (get-consistent-pool-stats th/*pool*)]
     (t/testing "all expected keys are present"
       (t/is (contains? stats :active-connections))
       (t/is (contains? stats :idle-connections))

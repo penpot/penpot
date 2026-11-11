@@ -26,6 +26,7 @@ No manual line wrapping: one line per bullet or paragraph, however long. Memorie
 ## Add/update threshold
 
 Add or update memories only with stable, non-obvious project conventions that avoid complex rediscovery in the future.
+Do not restate what the code already says (comments included): keep only what code cannot represent — decisions and their reasons, cross-file invariants, ordering constraints, environment and tool behavior, and traps that break builds.
 Do not add: quick-read facts; generic language/framework knowledge; one-off task notes; volatile line-level details; behavior likely to change soon.
 
 ## Maintenance Actions

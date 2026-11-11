@@ -70,7 +70,7 @@
     [:string {:min 1}]]])
 
 (mf/defc login-form*
-  [{:keys [params handle-redirect on-success-callback on-recovery-request origin] :as props}]
+  [{:keys [params handle-redirect on-success-callback on-recovery-request origin hide-recovery-link] :as props}]
   (let [initial (mf/with-memo [params] params)
 
         form    (fm/use-form :schema schema:login-form
@@ -193,7 +193,8 @@
                        :label (tr "auth.password")
                        :class (stl/css :form-field)}]])
 
-      (when (and (not= origin :viewer)
+      (when (and (not hide-recovery-link)
+                 (not= origin :viewer)
                  (or (contains? cf/flags :login)
                      (contains? cf/flags :login-with-password)))
         [:div {:class (stl/css :form-row :forgot-password-row)}

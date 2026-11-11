@@ -207,8 +207,8 @@
   []
   (let [state             (mf/deref refs/export)
         profile           (mf/deref refs/profile)
-        theme             (or (:theme profile) theme/default)
-        is-default-theme? (= theme/default theme)
+        theme             (theme/use-theme profile)
+        dark-theme?       (= "dark" theme)
         error?            (:error state)
         ;; The exporter is at capacity: worth its own wording, so the user
         ;; knows retrying later is the thing to do.
@@ -245,13 +245,13 @@
           error?         clr/new-danger
           (or cancelling?
               cancelled?) clr/new-warning
-          healthy?       (if is-default-theme?
+          healthy?       (if dark-theme?
                            clr/new-primary
                            clr/new-primary-light)
           (not healthy?) clr/new-warning)
 
         background-clr
-        (if is-default-theme?
+        (if dark-theme?
           clr/background-quaternary
           clr/background-quaternary-light)
 

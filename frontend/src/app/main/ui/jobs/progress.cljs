@@ -5,8 +5,8 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.jobs.progress
-  "How a milestone of a job is written in a row: the stage in course and
-  its counter.
+  "How the milestone of a job is written: the stage in course and its
+  counter.
 
   The stage is a stable key of the vocabulary of the worker, never a
   display string, so it is resolved here with a `case` of literal `tr`
@@ -42,28 +42,38 @@
       (str current "/" total)
       (str current))))
 
+(defn upload-pct
+  "The whole percentage of the file already uploaded. The chunked upload
+  knows how many chunks the file has and which one is in course, so
+  this is the only counter the client can trust as a percentage."
+  [{:keys [counters]}]
+  (let [{:keys [current total]} (get counters :upload)]
+    (when (and (some? current) (some? total) (pos? total))
+      (js/Math.round (* 100 (/ current total))))))
+
 (defn- upload-label
   "The upload of a file counts chunks, not units of work, so it is written
   as the percentage of the file already sent instead of a counter."
-  [{:keys [current total]}]
-  (when (and (some? current) (some? total) (pos? total))
-    (str "(" (js/Math.round (* 100 (/ current total))) "%)")))
+  [milestone]
+  (when-some [pct (upload-pct milestone)]
+    (str "(" pct "%)")))
 
 (defn milestone-text
-  "The text of a milestone: the stage in course and its counter, and with
-  `:file?` the file in course behind it, when the milestone carries its
-  counter. The upload stage is the exception: it counts chunks, so it is
-  written as a percentage of the file."
-  [milestone & {:keys [file?]}]
+  "The text of a milestone: the stage in course and its counter. The
+  upload of a file counts chunks, not units of work, so it is written as
+  the percentage of the file already sent instead of a counter."
+  [milestone]
   (when-some [stage (:stage milestone)]
-    (let [counters (:counters milestone)
-          own      (if (= :upload stage)
-                     (upload-label (get counters :upload))
-                     (counter-label (get counters stage)))]
+    (let [own (if (= :upload stage)
+                (upload-label milestone)
+                (counter-label (get (:counters milestone) stage)))]
       (str (stage-label stage)
            (when (some? own)
-             (str " " own))
-           (when-let [files (and file?
-                                 (not= :files stage)
-                                 (counter-label (get counters :files)))]
-             (str " · " (stage-label :files) " " files))))))
+             (str " " own))))))
+
+(defn current-milestone-text
+  "The text of the milestone in course, for a caller that writes the
+  progress once for a whole group of files: every file of a container
+  reports the same milestone, so a row would repeat it."
+  [entries]
+  (some (comp milestone-text :progress) entries))

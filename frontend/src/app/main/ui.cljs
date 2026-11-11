@@ -20,6 +20,7 @@
    [app.main.ui.error-boundary :refer [error-boundary*]]
    [app.main.ui.exports.files]
    [app.main.ui.frame-preview :as frame-preview]
+   [app.main.ui.mcp-authorize :refer [mcp-authorize*]]
    [app.main.ui.nitrate.entry :as nitrate-entry]
    [app.main.ui.notifications :as notifications]
    [app.main.ui.onboarding.questions :refer [questions-modal]]
@@ -63,16 +64,14 @@
                 :code :invalid-team-id
                 :hint "provided team-id is invalid or nil")))
 
-  (if-not (uuid? team-id)
-    nil
-    (let [{:keys [permissions] :as team} (mf/deref refs/team)]
-      (when (= team-id (:id team))
-        [:> (mf/provider ctx/current-team-id) {:value team-id}
-         [:> (mf/provider ctx/permissions) {:value permissions}
-          [:> (mf/provider ctx/can-edit?) {:value (:can-edit permissions)}
-           ;; The `:key` is mandatory here because we want to reinitialize
-           ;; all dom tree instead of simple rerender.
-           [:* {:key (str team-id)} children]]]]))))
+  (let [{:keys [permissions] :as team} (mf/deref refs/team)]
+    (when (and (uuid? team-id) (= team-id (:id team)))
+      [:> (mf/provider ctx/current-team-id) {:value team-id}
+       [:> (mf/provider ctx/permissions) {:value permissions}
+        [:> (mf/provider ctx/can-edit?) {:value (:can-edit permissions)}
+         ;; The `:key` is mandatory here because we want to reinitialize
+         ;; all dom tree instead of simple rerender.
+         [:* {:key (str team-id)} children]]]])))
 
 (mf/defc page*
   {::mf/props :obj
@@ -117,6 +116,9 @@
 
        :auth-verify-token
        [:? [:> verify-token-page* {:route route}]]
+
+       :mcp-authorize
+       [:> mcp-authorize* {:route route :profile profile}]
 
        :nitrate-entry
        [:> nitrate-entry/nitrate-entry-page* {:profile profile}]

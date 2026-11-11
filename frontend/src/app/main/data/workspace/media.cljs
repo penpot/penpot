@@ -487,10 +487,14 @@
     (watch [_ _ _]
       (->> (svg->clj [name svg-string])
            (rx/take 1)
-           (rx/map #(svg/add-svg-shapes id % position {:ignore-selection? true
+           (rx/map #(svg/add-svg-shapes id % position {:frame-id uuid/zero
+                                                       :ignore-selection? true
                                                        :change-selection? false}))))))
 (defn create-svg-shape-with-images
-  [file-id id name svg-string position on-success on-error]
+  "Uploads the images of `svg-string` and adds it as shape `id`.
+  `check-writable` runs once the images are uploaded, before the shape is
+  added; when it throws, no shape is added and `on-error` gets the error."
+  [file-id id name svg-string position {:keys [check-writable on-success on-error]}]
   (ptk/reify ::create-svg-shape-with-images
     ptk/WatchEvent
     (watch [_ _ _]
@@ -500,13 +504,15 @@
             (fn [svg-data]
               (->> (svg/upload-images svg-data file-id)
                    (rx/map #(assoc svg-data :image-data %)))))
+           (rx/tap (fn [_] (check-writable)))
            (rx/map
             (fn [svg-data]
               (svg/add-svg-shapes
                id
                svg-data
                position
-               {:ignore-selection? true
+               {:frame-id uuid/zero
+                :ignore-selection? true
                 :change-selection? false})))
            (rx/tap on-success)
            (rx/catch on-error)))))

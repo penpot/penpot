@@ -31,7 +31,9 @@
    io.prometheus.client.Counter
    io.prometheus.client.Counter$Child))
 
-(t/use-fixtures :once th/state-init)
+(t/use-fixtures :once (t/compose-fixtures
+                       (partial th/init-config [:enable-access-tokens])
+                       th/init-system))
 (t/use-fixtures :each (th/serial
                        th/database-reset
                        th/clean-storage))
@@ -464,7 +466,7 @@
         ;; 2. actoken/authz reads ::http/auth-data and sets ::actoken/profile-id
         request {::http/auth-data {:type :token
                                    :token (:token atoken)
-                                   :claims {:tid (:id atoken)}}
+                                   :claims (actoken/decode-token th/*system* (:token atoken))}
                  :path-params {:id (str (:id object))}}
 
         ;; Apply actoken/authz middleware
@@ -517,7 +519,7 @@
     (t/testing "access token auth sets ::actoken/profile-id"
       (let [request  {::http/auth-data {:type :token
                                         :token (:token atoken)
-                                        :claims {:tid (:id atoken)}}}
+                                        :claims (actoken/decode-token th/*system* (:token atoken))}}
             result   (with-session request)]
         (t/is (= (:id profile) (::actoken/profile-id result)))))
 

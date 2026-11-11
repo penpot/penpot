@@ -94,8 +94,8 @@ const _SPECIAL_ALIASES = {
 /**
  * Physical codes treated positionally. Letters and digits resolve by
  * glyph (`event.key`), but punctuation resolves by position (`event.code`)
- * through the layout map, so the same physical key matches on every
- * layout with and without `Shift`. Without a map the typed glyph applies.
+ * through the layout map, or `_US_PUNCTUATION` without one, so the same
+ * physical key matches with and without `Shift`. See `_candidates`.
  *
  * @type {Set<string>}
  */
@@ -112,6 +112,45 @@ const _PUNCTUATION_CODES = new Set([
   "Period",
   "Slash",
 ]);
+
+/**
+ * Primary character of each punctuation key on a US layout. Used when
+ * the browser has no layout map (Firefox, Safari), so punctuation still
+ * resolves by position and every browser names a key the same way.
+ *
+ * @type {Object}
+ */
+const _US_PUNCTUATION = {
+  Minus: "-",
+  Equal: "=",
+  BracketLeft: "[",
+  BracketRight: "]",
+  Backslash: "\\",
+  Semicolon: ";",
+  Quote: "'",
+  Backquote: "`",
+  Comma: ",",
+  Period: ".",
+  Slash: "/",
+};
+
+/**
+ * Letter or digit named by `keyCode`. With a modifier held, `event.key`
+ * carries the glyph the modifier makes (`!` for Shift+1, `µ` for
+ * Option+M on macOS, or `Dead`), while `keyCode` still names the key.
+ * Unlike `event.code` it follows the layout, so Ctrl+Z stays `z` on
+ * AZERTY.
+ *
+ * @param {Event} e
+ * @return {string|null}
+ */
+function _letterOrDigitFromKeyCode(e) {
+  const keyCode = e.keyCode;
+  if ((keyCode >= 48 && keyCode <= 57) || (keyCode >= 65 && keyCode <= 90)) {
+    return String.fromCharCode(keyCode).toLowerCase();
+  }
+  return null;
+}
 
 /**
  * Resolves an event to its canonical key. Implemented as
@@ -131,26 +170,37 @@ function _modifiersMatch(modifiers1, modifiers2) {
 }
 
 /**
+ * whether the `AltGraph` modifier is active for the event
+ *
+ * @param {Event} e
+ * @returns {boolean}
+ */
+function _isAltGraph(e) {
+  return (
+    typeof e.getModifierState === "function" && e.getModifierState("AltGraph")
+  );
+}
+
+/**
  * takes a key event and figures out what the modifiers are
  *
  * On Windows `AltGr` reports `ctrlKey + altKey` as well. When the
- * `AltGraph` modifier is active the phantom `ctrl` is dropped so typing
- * (e.g. `]` on Spanish keyboards) does not fire `ctrl+alt` shortcuts.
+ * `AltGraph` modifier is active both phantom modifiers are dropped, so
+ * typing (e.g. `]` or `\` on Spanish keyboards) neither fires `ctrl+alt`
+ * shortcuts nor hides the plain glyph binding.
  *
  * @param {Event} e
  * @returns {Array}
  */
 function _eventModifiers(e) {
   const modifiers = [];
-  const altGraph =
-    typeof e.getModifierState === "function" &&
-    e.getModifierState("AltGraph");
+  const altGraph = _isAltGraph(e);
 
   if (e.shiftKey) {
     modifiers.push("shift");
   }
 
-  if (e.altKey) {
+  if (e.altKey && !altGraph) {
     modifiers.push("alt");
   }
 
@@ -383,22 +433,209 @@ class Mousetrap {
   }
 
   /**
-   * takes the event and returns the canonical key
+   * drops the layout map when it does not describe the active layout
    *
-   * Letters, digits and named keys resolve by glyph: single characters
-   * lowercase so `Shift+Z` matches a `ctrl+shift+z` bind, `" "` maps to
-   * `space`, and named keys map through `_KEY_NAMES`. The exception is a
-   * digit row key held with `Shift`, which resolves to the digit itself
-   * (`Digit0` types ")" on US layouts but "0" on AZERTY, so `shift+0`
-   * must mean the physical digit key everywhere). Punctuation
-   * resolves positionally via the layout map (see `setLayoutMap`),
-   * falling back to the glyph when no map is set. Numpad digits stay
-   * positional (`num0`..`num9`) so they keep their own bindings.
+   * Chrome on Linux returns the map of the first configured layout, not
+   * the active one: with Spanish first and US active, the map names the
+   * `=` key `¡`. A punctuation key pressed without modifiers types the
+   * primary character of its position, so when that differs from the
+   * map, punctuation goes back to the glyph and US-table fallback for the
+   * rest of the session.
+   *
+   * @param {Event} e
+   * @returns void
+   */
+  _checkLayoutMap(e) {
+    if (
+      !this._layoutMap ||
+      e.type !== "keydown" ||
+      !e.code ||
+      !_PUNCTUATION_CODES.has(e.code) ||
+      typeof e.key !== "string" ||
+      e.key.length !== 1 ||
+      e.shiftKey ||
+      e.ctrlKey ||
+      e.altKey ||
+      e.metaKey ||
+      _isAltGraph(e)
+    ) {
+      return;
+    }
+
+    let mapped = null;
+    try {
+      mapped = this._layoutMap.get(e.code);
+    } catch {
+      mapped = null;
+    }
+
+    if (
+      typeof mapped === "string" &&
+      mapped !== "" &&
+      mapped.toLowerCase() !== e.key.toLowerCase()
+    ) {
+      this._layoutMap = null;
+    }
+  }
+
+  /**
+   * takes the event and returns the canonical key: the first candidate
+   * of `_candidates`, which is also what the shortcut recorder stores
+   * (see `keyForRecording`).
    *
    * @param {Event} e
    * @return {string|null}
    */
   _characterFromEvent(e) {
+    const candidates = this._candidates(e);
+    return candidates.length ? candidates[0][0] : null;
+  }
+
+  /**
+   * public entry point for the shortcut recorder: the key token to store
+   * for this event, always one of `_candidates`, so this instance matches
+   * the recorded shortcut. Returns `null` for modifiers alone.
+   *
+   * Letters and digits with a modifier use `keyCode`. Punctuation uses
+   * its position when there is a layout map, since the map names the
+   * printed key. Without a map (Firefox, Safari) the typed glyph is a
+   * better label than the US key at that position, so the Spanish `+`
+   * records `+`, not `]`. With AltGr the typed glyph wins too: AltGr+º
+   * on a Spanish layout records `\`, the character the user typed.
+   *
+   * @param {Event} e
+   * @return {string|null}
+   */
+  keyForRecording(e) {
+    this._checkLayoutMap(e);
+
+    const modifiers = _eventModifiers(e);
+    const numpad = e.code && e.code.indexOf("Numpad") === 0;
+    const keyCodeKey =
+      modifiers.length && !numpad ? _letterOrDigitFromKeyCode(e) : null;
+    const position = this._positionFromEvent(e);
+    const glyph = this._glyphFromEvent(e);
+
+    let key;
+    if (keyCodeKey) {
+      key = keyCodeKey;
+    } else if (this._layoutMap && !_isAltGraph(e)) {
+      key = position || glyph;
+    } else {
+      key = glyph || position;
+    }
+
+    return key && !_isModifier(key) ? key : null;
+  }
+
+  /**
+   * the `[key, modifiers]` pairs an event may match, most specific
+   * first. `_handleKeyEvent` dispatches the first pair that has a
+   * binding:
+   *
+   * 1. With a modifier held, letters and digits by `keyCode`, so
+   *    `Shift+1` is `shift+1` and `Option+M` is `alt+m`.
+   * 2. Punctuation by position: the primary character from the layout
+   *    map (see `setLayoutMap`), or from a US table when the browser has
+   *    no map, so `Shift+*` on a Spanish layout is `shift++`.
+   * 3. The typed glyph (`event.key`), so `+` on a US layout (typed with
+   *    Shift) matches a `shift++` binding.
+   * 4. The typed glyph without the Shift it needed, so `?` and `+`
+   *    bindings fire.
+   *
+   * With AltGr, 3 comes before 2 (see `keyForRecording`).
+   *
+   * @param {Event} e
+   * @return {Array}
+   */
+  _candidates(e) {
+    const modifiers = _eventModifiers(e);
+    const candidates = [];
+    const add = (key, mods) => {
+      if (key) {
+        candidates.push([key, mods]);
+      }
+    };
+
+    const numpad = e.code && e.code.indexOf("Numpad") === 0;
+    if (modifiers.length && !numpad) {
+      add(_letterOrDigitFromKeyCode(e), modifiers);
+    }
+
+    // With AltGr the typed glyph comes before the position: AltGr+º
+    // types `\` on a Spanish layout, and the key at that position is `º`.
+    const altGraph = _isAltGraph(e);
+    const position = this._positionFromEvent(e);
+    const glyph = this._glyphFromEvent(e);
+    if (altGraph) {
+      add(glyph, modifiers);
+      add(position, modifiers);
+    } else {
+      add(position, modifiers);
+      add(glyph, modifiers);
+    }
+
+    if (
+      glyph &&
+      glyph.length === 1 &&
+      modifiers.includes("shift") &&
+      !/[a-z0-9]/.test(glyph)
+    ) {
+      add(
+        glyph,
+        modifiers.filter((m) => m !== "shift"),
+      );
+    }
+
+    // On Windows Ctrl+Alt is AltGr: Ctrl+Alt+E types `€` on a Spanish
+    // layout. When nothing is bound to the glyph, fall back to the
+    // `ctrl+alt` binding of the key.
+    if (altGraph && e.ctrlKey && e.altKey && !numpad) {
+      add(_letterOrDigitFromKeyCode(e), [...modifiers, "alt", "ctrl"]);
+    }
+
+    return candidates;
+  }
+
+  /**
+   * primary character of a punctuation key by its position, or `null`
+   *
+   * @param {Event} e
+   * @return {string|null}
+   */
+  _positionFromEvent(e) {
+    if (!e.code || !_PUNCTUATION_CODES.has(e.code)) {
+      return null;
+    }
+
+    let mapped = null;
+    if (this._layoutMap) {
+      try {
+        mapped = this._layoutMap.get(e.code);
+      } catch {
+        mapped = null;
+      }
+    }
+
+    if (typeof mapped !== "string" || mapped === "") {
+      mapped = _US_PUNCTUATION[e.code];
+    }
+
+    return mapped ? mapped.toLowerCase() : null;
+  }
+
+  /**
+   * the typed glyph of the event as a canonical key
+   *
+   * Single characters lowercase so `Shift+Z` matches a `ctrl+shift+z`
+   * bind, `" "` maps to `space`, and named keys map through
+   * `_KEY_NAMES`. Numpad digits stay positional (`num0`..`num9`) so they
+   * keep their own bindings.
+   *
+   * @param {Event} e
+   * @return {string|null}
+   */
+  _glyphFromEvent(e) {
     // Numpad digits as "num0".."num9" — keeps them separate from main-row bindings across NumLock states and event types.
     if (e.code && e.code.indexOf("Numpad") === 0) {
       const suffix = e.code.substring(6);
@@ -407,33 +644,9 @@ class Mousetrap {
       }
     }
 
-    // Punctuation is positional: with a layout map the primary
-    // (unshifted) character of the physical key wins, so `Shift+*` on a
-    // Spanish layout (code `BracketRight`) resolves to `+` like the
-    // recorder stores. Without a map the typed glyph applies.
-    if (e.code && _PUNCTUATION_CODES.has(e.code) && this._layoutMap) {
-      let mapped = null;
-      try {
-        mapped = this._layoutMap.get(e.code);
-      } catch {
-        mapped = null;
-      }
-      if (typeof mapped === "string" && mapped !== "") {
-        return mapped.toLowerCase();
-      }
-    }
-
     const key = e.key;
     if (typeof key !== "string" || key === "") {
       return null;
-    }
-
-    // Shifted digits resolve to the digit itself: with `Shift` held,
-    // `Digit0` types ")" on US layouts but "0" on AZERTY, so the glyph
-    // can't be the token. `shift+0` means the physical digit key
-    // everywhere, like `shift+z` means `z` regardless of `Shift`.
-    if (e.shiftKey && e.code && /^Digit[0-9]$/.test(e.code) && key.length === 1) {
-      return e.code.charAt(5);
     }
 
     if (_KEY_NAMES[key]) {
@@ -862,18 +1075,35 @@ class Mousetrap {
    * @returns void
    */
   _handleKeyEvent(e) {
-    const character = this._characterFromEvent(e);
+    this._checkLayoutMap(e);
+
+    const candidates = this._candidates(e);
     // no character found then stop
-    if (!character) {
+    if (!candidates.length) {
       return;
     }
+
+    // dispatch the first candidate that has a binding, or the first one
+    // so sequences still reset on unbound keys
+    let picked = candidates[0];
+    for (const candidate of candidates) {
+      if (
+        this._callbacks[candidate[0]] &&
+        this._getMatches(candidate[0], candidate[1], e).length
+      ) {
+        picked = candidate;
+        break;
+      }
+    }
+
+    const [character, modifiers] = picked;
 
     if (e.type == "keyup" && this._ignoreNextKeyup === character) {
       this._ignoreNextKeyup = false;
       return;
     }
 
-    this.handleKey(character, _eventModifiers(e), e);
+    this.handleKey(character, modifiers, e);
   }
 }
 

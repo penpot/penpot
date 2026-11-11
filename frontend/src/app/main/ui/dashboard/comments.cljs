@@ -15,13 +15,9 @@
    [app.main.ui.comments :as cmt]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
-
-(def ^:private comments-icon-svg
-  (deprecated-icon/icon-xref :comments (stl/css :comments-icon)))
 
 (mf/defc comments-icon*
   [{:keys [profile on-show-comments]}]
@@ -116,5 +112,7 @@
               :key (:page-id tgroup)}])]
 
          [:div {:class (stl/css :thread-groups-placeholder)}
-          comments-icon-svg
+          [:> icon* {:icon-id i/comments
+                     :size "l"
+                     :class (stl/css :comments-icon)}]
           (tr "labels.no-comments-available")])]]]))

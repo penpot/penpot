@@ -165,9 +165,22 @@ export async function compileSassAll(worker) {
 
 export function concatSass(data) {
   const output = [];
+  const charset = '@charset "UTF-8";';
+  let hasCharset = false;
 
+  // Sass adds @charset to each file with non-ASCII characters. Browsers
+  // only honor it as the first rule of the stylesheet, so move it there.
   for (let path of data.items) {
-    output.push(data.index[path]);
+    let css = data.index[path];
+    if (css.includes(charset)) {
+      hasCharset = true;
+      css = css.replaceAll(charset + "\n", "").replaceAll(charset, "");
+    }
+    output.push(css);
+  }
+
+  if (hasCharset) {
+    output.unshift(charset);
   }
 
   return output.join("\n");
@@ -315,7 +328,7 @@ export async function compileTranslations() {
     "nl",
     // this happens when file does not matches correct
     // iso code for the language.
-    ["ja_jp", "jpn_JP"],
+    ["ja", "jpn_JP"],
     ["uk", "ukr_UA"],
     "ha",
   ];

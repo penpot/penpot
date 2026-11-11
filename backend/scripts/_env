@@ -62,6 +62,7 @@ export PENPOT_FLAGS="\
        disable-tiered-file-data-storage \
        enable-file-validation \
        enable-file-schema-validation \
+       enable-debug-save-faults \
        enable-redis-cache \
        enable-link-preview \
        enable-subscriptions";
@@ -92,6 +93,7 @@ export JAVA_OPTS="\
        -XX:+UseShenandoahGC \
        -XX:+UseCompactObjectHeaders \
        -XX:ShenandoahGCMode=generational \
+       -XX:NativeMemoryTracking=summary \
        -XX:-OmitStackTraceInFastThrow  \
        --sun-misc-unsafe-memory-access=allow \
        --enable-preview \
