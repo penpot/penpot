@@ -567,3 +567,62 @@
     ;; blue2' has not swap-id after move
     (t/is (some? blue2'))
     (t/is (nil? (ctk/get-swap-slot blue2')))))
+
+(defn- setup-nested-swap-file
+  []
+  ;; {:frame-icon-a} [:name Frame1]                   # [Component :icon-a]
+  ;; {:frame-icon-b} [:name Frame1]                   # [Component :icon-b]
+  ;; {:frame-card} [:name Frame1]                     # [Component :card]
+  ;;     :frame-inner [:name Frame1]
+  ;;         :icon-copy [:name Frame1]                @--> :frame-icon-a
+  ;; :card-copy [:name Frame1]                        @--> :frame-card
+  ;;     :inner-copy [:name Frame1]                   @--> :frame-inner
+  ;;         :icon-in-card-copy [:name Frame1]        @--> :frame-icon-a
+  ;;                                                  swapped to :icon-b, it becomes
+  ;;         :icon-b-copy [:name Frame1, swap-slot]   @--> :frame-icon-b
+  (-> (thf/sample-file :file1)
+      (tho/add-frame :frame-icon-a)
+      (thc/make-component :icon-a :frame-icon-a)
+      (tho/add-frame :frame-icon-b)
+      (thc/make-component :icon-b :frame-icon-b)
+      (tho/add-frame :frame-card)
+      (thc/make-component :card :frame-card)
+      (tho/add-frame :frame-inner :parent-label :frame-card)
+      (thc/instantiate-component :icon-a :icon-copy :parent-label :frame-inner)
+      (thc/instantiate-component :card :card-copy
+                                 :children-labels [:inner-copy :icon-in-card-copy])
+      (thc/component-swap :icon-in-card-copy :icon-b :icon-b-copy)))
+
+(t/deftest test-keep-swap-slot-duplicating-swapped-nested-copy-inside-copy
+  (let [;; ==== Setup
+        file                   (setup-nested-swap-file)
+
+        page                   (thf/current-page file)
+        icon-b-copy            (ths/get-shape file :icon-b-copy)
+
+        ;; ==== Action
+        changes                (-> (pcb/empty-changes nil)
+                                   (cll/generate-duplicate-changes (:objects page)         ;; objects
+                                                                   page                    ;; page
+                                                                   #{(:id icon-b-copy)}    ;; ids
+                                                                   (gpt/point 0 0)         ;; delta
+                                                                   {(:id file) file}       ;; libraries
+                                                                   (:data file)            ;; library-data
+                                                                   (:id file))             ;; file-id
+                                   (cll/generate-duplicate-changes-update-indices (:objects page)         ;; objects
+                                                                                  #{(:id icon-b-copy)}))  ;; ids
+
+        file'                  (thf/apply-changes file changes)
+
+        ;; ==== Get
+        page'                  (thf/current-page file')
+        duplicated-icon-b'     (find-duplicated-shape icon-b-copy page')]
+
+    ;; ==== Check
+
+    ;; icon-b-copy has swap-slot
+    (t/is (some? (ctk/get-swap-slot icon-b-copy)))
+
+    ;; duplicated icon-b copy keeps its swap-slot
+    (t/is (some? duplicated-icon-b'))
+    (t/is (some? (ctk/get-swap-slot duplicated-icon-b')))))

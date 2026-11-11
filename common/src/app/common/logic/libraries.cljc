@@ -3165,6 +3165,7 @@
            is-component-main?     (ctk/main-instance? obj)
            subinstance-head?      (ctk/subinstance-head? obj)
            instance-root?         (ctk/instance-root? obj)
+           parent-not-in-copy     (not (ctk/in-component-copy? parent))
 
            into-component?        (and duplicating-component?
                                        (ctn/in-any-component? objects parent))
@@ -3173,6 +3174,8 @@
                                     level-delta
                                     (ctn/get-nesting-level-delta objects obj parent))
            new-shape-ref          (ctf/advance-shape-ref nil page libraries obj level-delta {:include-deleted? true})
+
+
 
            regenerate-component
            (fn [changes shape]
@@ -3188,7 +3191,8 @@
 
                (cond-> (and (not instance-root?)
                             subinstance-head?
-                            remove-swap-slot?)
+                            remove-swap-slot?
+                            parent-not-in-copy)
                  (ctk/remove-swap-slot))
 
                (dissoc :shapes
