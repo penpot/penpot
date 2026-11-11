@@ -8,6 +8,7 @@
   (:require
    [app.common.uuid :as uuid]
    [app.main.data.dashboard :as dd]
+   [app.main.data.event :as ev]
    [app.main.data.team :as dtm]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -79,6 +80,15 @@
    (fn
      ([command] (swap! requests conj [command]) (respond command nil))
      ([command params] (swap! requests conj [command params]) (respond command params)))))
+
+(defn- origins
+  "Maps each recorded command that is not a read to the origin of its params."
+  [requests]
+  (into {}
+        (keep (fn [[command params]]
+                (when-not (re-find #"^get-" (name command))
+                  [command (::ev/origin (meta params))])))
+        requests))
 
 (defn- emit-stub
   "Mock `st/emit!` applying update functions to `state` and recording events."
@@ -231,18 +241,20 @@
                   (props team* ["id" "name" "isDefault"])))
          (t/is (= [[:create-team "Brand"]]
                   (mapv (fn [[command params]] [command (:name params)]) @requests)))
+         (t/is (= {:create-team "plugin"} (origins @requests)))
          (t/is (= 1 (count (filter #(= ::dtm/fetch-teams (ptk/type %)) @events))))
          (t/is (= "Expected a name with 1 to 250 characters"
                   (await (message (.createTeam (management/create-context plugin-id) #js {:name ""}))))))))))
 
 (t/deftest ^:async setters-update-values-after-the-backend-succeeds
-  (let [state  (atom (throwing dashboard))
-        events (atom [])]
+  (let [state    (atom (throwing dashboard))
+        events   (atom [])
+        requests (atom [])]
     (await
      (mock/with-mocks*
        {st/state state
         st/emit! (emit-stub state events)
-        rp/cmd! (mock/stub (fn [& _] (->> (rx/of {}) (rx/observe-on :async))))}
+        rp/cmd! (cmd-stub requests (fn [& _] (->> (rx/of {}) (rx/observe-on :async))))}
        (let [team*    (management/team-proxy plugin-id team)
              project* (management/project-proxy plugin-id project)
              file*    (management/file-proxy plugin-id file)]
@@ -260,7 +272,10 @@
          (t/is (true? (obj/get project* "pinned")))
          (t/is (= "Login" (obj/get file* "name")))
          (t/is (true? (obj/get file* "shared")))
-         (t/is (= 5 (count @events))))))))
+         (t/is (= 5 (count @events)))
+         (t/is (= {:update-team "plugin" :rename-project "plugin" :update-project-pin "plugin"
+                   :rename-file "plugin" :set-file-shared "plugin"}
+                  (origins @requests))))))))
 
 (t/deftest ^:async stale-object-setter-errors-stay-out-of-the-global-handler
   (doseq [[constructor property value original]
@@ -340,6 +355,7 @@
              (t/is (= {"name" "Login" "teamId" (str team-id)} (props file* ["name" "teamId"])))
              (t/is (= 2 (obj/get parent "fileCount")))
              (t/is (= [:create-project {:team-id team-id :name "Icons"}] (first @requests)))
+             (t/is (= {:create-project "plugin" :create-file "plugin"} (origins @requests)))
              (if (= initial dashboard)
                (do (t/is (contains? (:projects @state) (:id created-project)))
                    (t/is (contains? (:files @state) (:id created-file))))
@@ -383,7 +399,10 @@
                    [:move-project {:project-id other-id :team-id other-id}]
                    [:delete-file {:id file-id}]
                    [:delete-project {:id other-id}]]
-                  @requests)))))))
+                  @requests))
+         (t/is (= {:duplicate-file "plugin" :duplicate-project "plugin" :move-files "plugin"
+                   :move-project "plugin" :delete-file "plugin" :delete-project "plugin"}
+                  (origins @requests))))))))
 
 (t/deftest ^:async methods-reject-invalid-input-and-missing-permissions
   (let [requests (atom [])]
@@ -475,7 +494,8 @@
        (doseq [proxy [(management/project-proxy r/mcp-plugin-id project)
                       (management/file-proxy r/mcp-plugin-id file)]]
          (t/is (nil? (await (.remove proxy)))))
-       (t/is (= [[:delete-project {:id project-id}] [:delete-file {:id file-id}]] @requests))))))
+       (t/is (= [[:delete-project {:id project-id}] [:delete-file {:id file-id}]] @requests))
+       (t/is (= {:delete-project "mcp" :delete-file "mcp"} (origins @requests)))))))
 
 (t/deftest ^:async deleted-objects-can-be-listed-and-restored
   (let [state    (atom ready)
@@ -532,6 +552,7 @@
         rp/cmd! (mock/stub (fn [command params]
                              (t/is (= ::sse/restore-deleted-team-files command))
                              (t/is (= {:team-id team-id :ids #{file-id}} params))
+                             (t/is (= "plugin" (::ev/origin (meta params))))
                              (rx/observe-on :async response)))}
        (let [promise (.then (.restore (management/file-proxy plugin-id file))
                             #(reset! completed? true))]
