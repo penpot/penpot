@@ -12,6 +12,7 @@
   (:require
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.handlers.export :as export]
    [app.instance :as instance]
    [app.jobs :as jobs]
    [app.jobs.queue :as queue]
@@ -292,3 +293,43 @@
                (t/is (= instance/id (:owner settled)))
                (t/is (= 0 depth))
                (t/is (= [] held))))))))
+
+(t/deftest worker-pulls-a-job-runs-it-and-records-the-result
+  (t/testing "a claimed job reaches the export step with its payload, ends done, and leaves no claim behind"
+    (t/async done
+      (run done
+           (fn []
+             (let [original export/run-claimed!
+                   seen     (atom nil)
+                   ;; Stands in for the render: same lifecycle calls the real
+                   ;; export makes, without needing a browser.
+                   stub     (fn [job payload]
+                              (reset! seen payload)
+                              (p/let [job (jobs/adopt! job (fn [_] nil))
+                                      _   (jobs/complete! job {:uri "http://assets/test.png"
+                                                               :filename "test.png"
+                                                               :mtype "image/png"
+                                                               :size 1})]
+                                (jobs/release! (:id job))))]
+               (set! export/run-claimed! stub)
+               (p/finally
+                 (p/let [job     (queued-job!)
+                         _       (worker/init)
+                         settled (jobs/await-settled (:id job) 10000)
+                         _       (until #(zero? (worker/in-flight)) 5000)
+                         _       (worker/stop)
+                         depth   (queue/depth)
+                         held    (redis/lrange (queue/processing-key instance/id))
+                         payload (queue/payload (:id job))]
+                   (t/is (= "done" (:state settled)))
+                   (t/is (= "http://assets/test.png" (:resource-uri settled)))
+                   (t/is (= instance/id (:owner settled)))
+                   (t/is (= 1 (:attempts settled)))
+                   (t/is (= :export-shapes (:cmd @seen)))
+                   (t/is (= "session-token" (:auth-token @seen)))
+                   (t/is (= 0 depth))
+                   (t/is (= [] held))
+                   (t/is (nil? payload)))
+                 (fn []
+                   (worker/stop)
+                   (set! export/run-claimed! original)))))))))
