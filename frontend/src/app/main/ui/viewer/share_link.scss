@@ -9,9 +9,8 @@
 @use "ds/_utils.scss" as *;
 @use "ds/typography.scss" as *;
 
-// refactor/ stays for the modal placeholder (%modal-container-base), the
-// link input (%input-element) and the page checkboxes (%input-checkbox,
-// %button-icon-small for their tick), which move with their own groups.
+// refactor/ stays for the modal placeholder (%modal-container-base), which
+// moves with its own group.
 @use "refactor/common-refactor.scss" as deprecated;
 
 // --- Collapsible (shared)
@@ -89,14 +88,19 @@
   block-size: $sz-32;
 }
 
-.permissions-select-all-row {
-  justify-content: space-between;
+.permissions-page-row .permissions-checkbox,
+.permissions-select-all-row .permissions-checkbox {
+  --input-checkbox-text-color: var(--color-foreground-primary);
 }
 
 .permissions-current-tag {
   @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
+}
+
+.permissions-select-all-row {
+  justify-content: space-between;
 }
 
 .permissions-page-count {
@@ -107,26 +111,6 @@
 
 .permissions-pages-selection {
   margin: 0;
-}
-
-// The deprecated page checkboxes move with their own group.
-.permissions-checkbox {
-  @extend %input-checkbox;
-
-  block-size: $sz-32;
-  padding: 0;
-
-  span.checked {
-    background-color: var(--color-accent-primary);
-    border: $b-1 solid var(--color-accent-primary);
-
-    // The legacy tick icon has no class; it moves with the checkboxes.
-    svg {
-      @extend %button-icon-small;
-
-      stroke: var(--color-background-primary);
-    }
-  }
 }
 
 // --- Share link dialog
@@ -184,29 +168,14 @@
 
 .share-link-url {
   display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-  border-radius: $br-8;
-  inline-size: 100%;
-  background-color: var(--color-background-tertiary);
   padding: $sz-1;
 }
 
 .share-link-url-input {
-  @extend %input-element;
-  @include use-typography("body-small");
-
-  color: var(--color-foreground-primary);
-  padding-inline-start: var(--sp-s);
-  margin: 0;
-  flex-grow: 1;
+  position: relative;
+  z-index: 1;
   border-end-end-radius: 0;
   border-start-end-radius: 0;
-
-  &:focus {
-    outline: none;
-    border: $b-1 solid var(--color-accent-primary);
-  }
 }
 
 .share-link-url-button {

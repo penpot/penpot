@@ -17,11 +17,12 @@
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
-   [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
+   [app.main.ui.ds.controls.select :refer [select*]]
+   [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
-   [app.main.ui.icons :as deprecated-icon]
    [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -88,9 +89,11 @@
   [:div {:class (stl/css :permissions-select-row)}
    [:div {:class (stl/css :permissions-label)} label]
    [:div {:class (stl/css :permissions-control)}
-    [:& select {:default-value (dm/str value)
-                :options options
-                :on-change on-change}]]])
+    [:> select* {:default-selected (dm/str value)
+                 :options options
+                 :has-portal true
+                 :aria-label label
+                 :on-change on-change}]]])
 
 (mf/defc permissions-page-selection*
   {::mf/private true}
@@ -106,48 +109,36 @@
      [:div {:class (stl/css :permissions-control)}
       (if (= 1 (count pages))
         [:div {:class (stl/css :permissions-page-row)}
-         [:div {:class (stl/css :permissions-checkbox)}
-          [:label {:for (dm/str "page-" page-id)
-                   :class (stl/css-case :global/checked true)}
-           [:span {:class (stl/css :checked)}
-            deprecated-icon/status-tick]
-           (:name page)]
-          [:input {:type "checkbox"
-                   :id (dm/str "page-" page-id)
-                   :checked true}]]
+         [:> checkbox* {:id (dm/str "page-" page-id)
+                        :class (stl/css :permissions-checkbox)
+                        :label (:name page)
+                        :checked true
+                        :disabled true}]
          [:span {:class (stl/css :permissions-current-tag)}
           (tr "common.share-link.current-tag")]]
 
         [:*
          [:div {:class (stl/css :permissions-select-all-row)}
-          [:div {:class (stl/css :permissions-checkbox)}
-           [:label {:for "view-all"}
-            [:span {:class (stl/css-case :global/checked all-selected?)}
-             (when all-selected?
-               deprecated-icon/status-tick)]
-            (tr "common.share-link.view-all")
-            [:input {:type "checkbox"
-                     :id "view-all"
-                     :checked all-selected?
-                     :on-change on-toggle-all}]]]
+          [:> checkbox* {:id "view-all"
+                         :class (stl/css :permissions-checkbox)
+                         :label (tr "common.share-link.view-all")
+                         :checked all-selected?
+                         :on-change on-toggle-all}]
           [:span {:class (stl/css :permissions-page-count)}
            (tr "common.share-link.page-shared" (i18n/c (count selected)))]]
 
          [:ul {:class (stl/css :permissions-pages-selection)}
           (for [{:keys [id name]} pages]
-            (let [checked? (contains? selected id)]
+            (let [checked?       (contains? selected id)
+                  only-selected? (and checked? (= 1 (count selected)))]
               [:li {:class (stl/css :permissions-page-row)
                     :key (dm/str id)}
-               [:div {:class (stl/css :permissions-checkbox)}
-                [:label {:for (dm/str "page-" id)}
-                 [:span {:class (stl/css-case :global/checked checked?)}
-                  (when checked?
-                    deprecated-icon/status-tick)]
-                 name
-                 [:input {:type "checkbox"
-                          :id (dm/str "page-" id)
-                          :on-change #(on-checked-page id %)
-                          :checked checked?}]]]
+               [:> checkbox* {:id (dm/str "page-" id)
+                              :class (stl/css :permissions-checkbox)
+                              :label name
+                              :checked checked?
+                              :disabled only-selected?
+                              :on-change #(on-checked-page id %)}]
                (when (= page-id id)
                  [:span {:class (stl/css :permissions-current-tag)}
                   (tr "common.share-link.current-tag")])]))]])]]))
@@ -279,11 +270,12 @@
      [:div {:class (stl/css :share-link-form)}
       (when (some? current-share-url)
         [:div {:class (stl/css :share-link-url)}
-         [:input {:class (stl/css :share-link-url-input)
-                  :type "text"
-                  :value (or current-share-url "")
-                  :placeholder (tr "common.share-link.placeholder")
-                  :read-only true}]
+         [:> input-field* {:id "share-link-url-input"
+                           :type "text"
+                           :class (stl/css :share-link-url-input)
+                           :value (or current-share-url "")
+                           :placeholder (tr "common.share-link.placeholder")
+                           :read-only true}]
          [:> icon-button* {:variant "secondary"
                            :class (stl/css :share-link-url-button)
                            :aria-label (tr "viewer.header.share.copy-link")
