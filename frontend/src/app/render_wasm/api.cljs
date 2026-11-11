@@ -16,6 +16,7 @@
    [app.common.fonts :as cfnt]
    [app.common.logging :as log]
    [app.common.math :as mth]
+   [app.common.render-wasm.api.modifiers :as modifiers]
    [app.common.render-wasm.api.props :as props]
    [app.common.render-wasm.api.select :as wselect]
    [app.common.render-wasm.helpers :as h]
@@ -227,13 +228,6 @@
 
 (def ^:const UUID-U8-SIZE 16)
 (def ^:const UUID-U32-SIZE (/ UUID-U8-SIZE 4))
-
-;; FIXME: Migrate this as we adjust the DTO structure in wasm
-(def ^:const MODIFIER-U8-SIZE 40)
-(def ^:const MODIFIER-U32-SIZE (/ MODIFIER-U8-SIZE 4))
-(def ^:const MODIFIER-TRANSFORM-U8-OFFSET-SIZE 16)
-(def ^:const INPUT-MODIFIER-U8-SIZE 44)
-(def ^:const INPUT-MODIFIER-U32-SIZE (/ INPUT-MODIFIER-U8-SIZE 4))
 
 (def ^:const GRID-LAYOUT-ROW-U8-SIZE 8)
 (def ^:const GRID-LAYOUT-COLUMN-U8-SIZE 8)
@@ -2096,87 +2090,25 @@
 
 (defn set-structure-modifiers
   [entries]
-  (when (and (initialized?) (not ^boolean (empty? entries)))
-    (let [size    (mem/get-alloc-size entries 44)
-          offset  (mem/alloc->offset-32 size)
-          heapu32 (mem/get-heap-u32)
-          heapf32 (mem/get-heap-f32)]
-
-
-      (reduce (fn [offset {:keys [type parent id index value]}]
-                (-> offset
-                    (mem.h32/write-u32 heapu32 (sr/translate-structure-modifier-type type))
-                    (mem.h32/write-u32 heapu32 (d/nilv index 0))
-                    (mem.h32/write-uuid heapu32 parent)
-                    (mem.h32/write-uuid heapu32 id)
-                    (mem.h32/write-f32 heapf32 value)))
-              offset
-              entries)
-
-      (h/call wasm/internal-module "_set_structure_modifiers"))))
+  (when (initialized?)
+    (modifiers/set-structure-modifiers entries)))
 
 ;; Axes the pixel grid rounds, as `propagate_modifiers` expects them.
-(def ^:private pixel-precision
-  {:disabled 0
-   :both     1
-   :only-x   2
-   :only-y   3})
-
-(defn- pixel-precision-mode
-  "Encodes the pixel grid snapping for the renderer. `snap-ignore-axis`
-  names the axis to leave alone (`:x`, `:y` or nil)."
-  [snap-pixel? snap-ignore-axis]
-  (pixel-precision
-   (cond
-     (not snap-pixel?)       :disabled
-     (= :x snap-ignore-axis) :only-y
-     (= :y snap-ignore-axis) :only-x
-     :else                   :both)))
-
 (defn propagate-modifiers
-  "Propagates geometry modifiers through the WASM shape tree.
+  "Propagates geometry transforms when the renderer is ready.
 
-  Rounds the resulting geometry to the pixel grid when `snap-pixel?` is set,
-  skipping the axis named by `snap-ignore-axis` (`:x`, `:y` or nil).
+  Args:
+    entries: Collection of [uuid {:transform matrix :kind kind}].
+    snap-pixel?: Whether to round geometry to the pixel grid.
+    snap-ignore-axis: Axis to leave unsnapped, :x, :y or nil.
 
-  Always returns a vector. When the context is not ready (lost / mid-reload)
-  or `entries` is empty, returns `[]` so callers never receive `nil` (which
-  would trip `set-modifiers`' vector assert)."
+  Returns:
+    A vector of [uuid matrix], or [] for an unavailable renderer or empty
+    entries."
   [entries snap-pixel? snap-ignore-axis]
-  (if-not (and (initialized?) (not ^boolean (empty? entries)))
-    []
-    (let [size    (mem/get-alloc-size entries INPUT-MODIFIER-U8-SIZE)
-          offset  (mem/alloc->offset-32 size)
-          heapf32 (mem/get-heap-f32)
-          heapu32 (mem/get-heap-u32)]
-
-      (reduce (fn [offset [id data]]
-                (let [transform (:transform data)
-                      kind (:kind data)]
-                  (-> offset
-                      (mem.h32/write-uuid heapu32 id)
-                      (mem.h32/write-matrix heapf32 transform)
-                      (mem.h32/write-u32 heapu32 (sr/translate-transform-entry-kind kind)))))
-              offset
-              entries)
-
-      (let [precision  (pixel-precision-mode snap-pixel? snap-ignore-axis)
-            offset     (-> (h/call wasm/internal-module "_propagate_modifiers" precision)
-                           (mem/->offset-32))
-            heapf32    (mem/get-heap-f32)
-            heapu32    (mem/get-heap-u32)
-            length     (aget heapu32 offset)
-            max-offset (+ offset 1 (* length MODIFIER-U32-SIZE))
-            result     (loop [result (transient [])
-                              offset (inc offset)]
-                         (if (< offset max-offset)
-                           (let [entry (dr/read-modifier-entry heapu32 heapf32 offset)]
-                             (recur (conj! result entry)
-                                    (+ offset MODIFIER-U32-SIZE)))
-                           (persistent! result)))]
-
-        (mem/free)
-        result))))
+  (if (initialized?)
+    (modifiers/propagate-modifiers entries snap-pixel? snap-ignore-axis)
+    []))
 
 (defn get-selection-rect
   [entries]
@@ -2211,48 +2143,29 @@
 (defn clean-modifiers
   []
   (when (initialized?)
-    (h/call wasm/internal-module "_clean_modifiers")))
+    (modifiers/clean-modifiers)))
 
 (defn set-modifiers-start
-  "Enter interactive transform mode (drag / resize / rotate). Enables
-   fast-mode effect skipping in the renderer and activates an atlas
-   backdrop so tiles do not appear sequentially or flicker while the
-   gesture is in progress."
+  "Enables interactive rendering for shape transforms when the renderer is ready."
   []
   (when (initialized?)
-    (h/call wasm/internal-module "_set_modifiers_start")))
+    (modifiers/set-modifiers-start)))
 
 (defn set-modifiers-end
-  "Leave interactive transform mode. Cancels any pending async render
-   scheduled under it; the caller is expected to trigger a full-quality
-   render (via `request-render`) once the gesture is committed."
+  "Ends interactive rendering for shape transforms when the renderer is ready.
+
+  A subsequent render produces the final full-quality image."
   []
   (when (initialized?)
-    (h/call wasm/internal-module "_set_modifiers_end")))
+    (modifiers/set-modifiers-end)))
 
 (defn set-modifiers
-  [modifiers]
+  [entries]
   (when (initialized?)
-    ;; Assert only when we would touch WASM; callers may still build
-    ;; modifiers while the context is unavailable.
-    (assert (vector? modifiers) "expected a vector for `set-modifiers`")
-
-    (let [length (count modifiers)]
-      (when (pos? length)
-        (let [offset  (mem/alloc->offset-32 (* MODIFIER-U8-SIZE length))
-              heapu32 (mem/get-heap-u32)
-              heapf32 (mem/get-heap-f32)]
-
-          (reduce (fn [offset [id transform]]
-                    (-> offset
-                        (mem.h32/write-uuid heapu32 id)
-                        (mem.h32/write-matrix heapf32 transform)))
-                  offset
-                  modifiers)
-
-          (h/call wasm/internal-module "_set_modifiers")
-
-          (request-render "set-modifiers"))))))
+    (assert (vector? entries) "expected a vector for `set-modifiers`")
+    (when (seq entries)
+      (modifiers/set-modifiers entries)
+      (request-render "set-modifiers"))))
 
 (defn initialize-viewport
   [base-objects zoom vbox &
