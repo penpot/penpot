@@ -92,7 +92,8 @@
      (watch [_ state _]
        (let [objects (dsh/lookup-page-objects state)
              shape   (get objects id)
-             apply-opts (or opts {})
+             ;; Auto-grow size is derived from content; never mark geometry overrides.
+             apply-opts (assoc (or opts {}) :ignore-touched true)
              resize-stream
              (if (and (some? shape)
                       (cfh/text-shape? shape)
@@ -132,7 +133,9 @@
             ;; When undo-id is present, extend the current undo transaction instead of
             ;; creating a new one, and commit it after the resize (single undo action).
             extend-tx? (some? undo-id)
-            apply-opts (cond-> {}
+            ;; Auto-grow size is derived; hardcode here (debounce caller opts
+            ;; whitelist does not forward :ignore-touched).
+            apply-opts (cond-> {:ignore-touched true}
                          (some? undo-group) (assoc :undo-group undo-group)
                          extend-tx? (assoc :undo-transation? false)
                          skip-component-sync? (assoc :skip-component-sync? true))]

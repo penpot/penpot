@@ -1291,13 +1291,16 @@
 
 (defn- add-geometry-undo-to-commit
   "Adds geometry undo/redo to a commit so undo restores both content and geometry.
-  old-geom and final-geom are maps with :selrect :points and optionally :width :height."
+  old-geom and final-geom are maps with :selrect :points and optionally :width :height.
+  Uses :ignore-touched so auto-grow size from content edit is not a geometry override
+  on component copies (mirrors commit-resize-text)."
   [base objects id old-geom final-geom attrs]
   (let [objects-with-old (update objects id #(merge % old-geom))
         final-shape-fn   (fn [shape] (merge shape final-geom))]
     (-> base
         (pcb/with-objects objects-with-old)
-        (pcb/update-shapes [id] final-shape-fn {:attrs attrs}))))
+        (pcb/update-shapes [id] final-shape-fn {:attrs attrs
+                                                :ignore-touched true}))))
 
 (defn- build-finalize-commit-changes
   "Builds the commit changes for text finalization (content + geometry undo).
@@ -1436,7 +1439,9 @@
               ;; Push the auto-grow geometry to WASM/app state; the commit persists it via `resize-geom`.
               ;; Skipped for a no-op finalize: applying it would record an undo transaction.
               (when (and (some? resize-modifiers) (not finalize-no-op?))
-                (dwm/apply-wasm-modifiers resize-modifiers {:undo-group (when new-shape? id)})))
+                (dwm/apply-wasm-modifiers resize-modifiers
+                                          {:undo-group (when new-shape? id)
+                                           :ignore-touched true})))
 
              (when finalize?
                (rx/concat
