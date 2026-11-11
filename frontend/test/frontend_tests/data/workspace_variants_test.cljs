@@ -204,11 +204,11 @@
   []
   (-> (cthf/sample-file :file1)
       (ctho/add-simple-component :c01 :m01 :r01
-                                :root-params {:name "Tag" :x 0 :y 0 :width 100 :height 80})
+                                 :root-params {:name "Tag" :x 0 :y 0 :width 100 :height 80})
       (ctho/add-simple-component :c02 :m02 :r02
-                                :root-params {:name "Tag" :x 150 :y 0 :width 100 :height 80})
+                                 :root-params {:name "Tag" :x 150 :y 0 :width 100 :height 80})
       (ctho/add-simple-component :c03 :m03 :r03
-                                :root-params {:name "Tag" :x 300 :y 0 :width 100 :height 80})))
+                                 :root-params {:name "Tag" :x 300 :y 0 :width 100 :height 80})))
 
 (defn- path-named-main-file
   []
