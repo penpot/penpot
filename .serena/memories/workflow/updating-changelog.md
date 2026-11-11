@@ -24,7 +24,7 @@ Editing `CHANGES.md` happens only on explicit request or as part of the release 
 | Is it a breaking change? | `breaking change` label |
 | Is it a highlight? | `release highlight` label |
 
-- **Issue Type decides the section**: `Bug` → `:bug:`, `Feature`/`Enhancement` → `:sparkles:`, `Task` is excluded (internal chores). Labels `bug`/`enhancement` and title emoji prefixes are often wrong or missing; do not use them.
+- **Issue Type decides the section**: `Feature` → `:tada:`, `Enhancement` → `:sparkles:`, `Bug` → `:bug:`, `Task` is excluded (internal chores). Labels `bug`/`enhancement` and title emoji prefixes are often wrong or missing; do not use them.
 - **Security fixes come from advisories**: an advisory whose `patched_versions` include the version becomes a `:lock:` entry (section 7). `triage`, `draft` and `published` are all valid states; the advisory may still be unpublished when the changelog is written. A security fix may also carry a regular bug issue; both entries are legal and independent (the issue lives in `:bug:` as any other bug).
 - **Two labels override the Issue Type**: `breaking change` → an entry only under `:boom:`, never in its regular section; `release highlight` → an extra entry under `:rocket:` on top of its regular entry.
 - **Only closed issues**. An open issue in the milestone is not generated, even if someone added a provisional entry by hand before the merge.
@@ -40,7 +40,7 @@ The newest version goes at the top, right after the `# CHANGELOG` header. Inside
 ```markdown
 # CHANGELOG
 
-## 2.19.0 (Unreleased)
+## 2.20.0 (Unreleased)
 
 ### :boom: Breaking changes & Deprecations
 
@@ -58,21 +58,27 @@ The newest version goes at the top, right after the `# CHANGELOG` header. Inside
 
 - Fix <user-facing description of the vulnerability> (<advisory URL>) (PR: [#PR](https://github.com/penpot/penpot/pull/PR))
 
-### :bug: Bugs fixed
-
-- Fix <user-facing description of the bug> [#ISSUE](https://github.com/penpot/penpot/issues/ISSUE) (PR: [#PR](https://github.com/penpot/penpot/pull/PR))
-
-### :sparkles: New features & Enhancements
+### :tada: Features
 
 - Add <user-facing description of the feature> [#ISSUE](https://github.com/penpot/penpot/issues/ISSUE) (PR: [#PR](https://github.com/penpot/penpot/pull/PR))
+
+### :sparkles: Enhancements
+
+- Improve <user-facing description of the existing behaviour> [#ISSUE](https://github.com/penpot/penpot/issues/ISSUE) (PR: [#PR](https://github.com/penpot/penpot/pull/PR))
+
+### :bug: Bugs
+
+- Fix <user-facing description of the bug> [#ISSUE](https://github.com/penpot/penpot/issues/ISSUE) (PR: [#PR](https://github.com/penpot/penpot/pull/PR))
 ```
 
-- `:boom:` first, then `:rocket:`, `:lock:`, `:bug:`, `:sparkles:`. Other headings exist in old versions (`:heart:` community contributions); do not add them to new versions.
+- `:boom:` first, then `:rocket:`, `:lock:`, `:tada:`, `:sparkles:`, `:bug:`. Features come before enhancements so they stand out to readers deciding whether to update.
+- **This layout applies from 2.20.0.** Versions up to 2.19.x use the old one: `:bug: Bugs fixed` before `:sparkles: New features & Enhancements`, which mixes features and enhancements. Keep the old layout in those sections, including new 2.19.x patches, so a minor line reads the same. The in-app update dialog only reads `:rocket:`, so the change does not affect it.
+- Other headings exist in old versions (`:heart:` community contributions); do not add them to new versions.
 - Include a section only when it has entries. Historical versions may have an empty `:boom:` or `:rocket:` heading; `boom --write` keeps the `:boom:` heading even when there are no entries. `:lock:` is omitted (and removed on `--write`) when the version has no security advisories.
 - One blank line between the last entry of a section and the next heading.
 - No manual line wrapping: one line per bullet or paragraph, however long.
 
-## 4. Regular entries (`:bug:`, `:sparkles:`)
+## 4. Regular entries (`:tada:`, `:sparkles:`, `:bug:`)
 
 The entry shape is:
 
@@ -175,7 +181,7 @@ Re-fetch the milestone (do not trust cached data) and fix these in `CHANGES.md` 
 3. **Newly applied exclusion labels** (`no changelog`, `release blocker`) → remove the entry.
 4. **Issue no longer closed, deleted, or now `Rejected`** → remove the entry.
 5. **Unmerged or moved PR reference** → fix the reference or remove the entry. A PR merged in a different milestone is an anomaly (section 10); do not remove it silently.
-6. **Issue Type changed to `Task`** → remove the entry.
+6. **Issue Type changed** → to `Task`: remove the entry; to another type: move the entry to that type's section.
 7. **Breaking change out of sync** (a `breaking change` issue outside `:boom:`, or a `:boom:` entry without the label) → regenerate the section; a labelled issue has no regular entry.
 8. **Highlight out of sync** (`:rocket:` entry without the label, or a labelled issue missing) → remove it or add it.
 9. **Missing valid issues** (closed, non-excluded, referenced nowhere) → add them to their section.
