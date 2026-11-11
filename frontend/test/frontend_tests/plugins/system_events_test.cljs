@@ -19,20 +19,18 @@
   [file-id]
   (set! st/state
         (atom {:current-file-id file-id
-               :mcp {:session-id "tab-session"}
                :profile {:props {:plugins {:data {plugin-id {:name "Plugin"
                                                              :url "https://plugin.test"}}}}}})))
 
-(t/deftest mcp-event-carries-file-and-session
+(t/deftest mcp-event-carries-file
   (let [file-id (random-uuid)]
     (set-state file-id)
     (let [data (deref (se/event r/mcp-plugin-id "create-version" :file-id file-id))]
       (t/is (= "mcp" (::ev/origin data)))
-      (t/is (= {:file-id file-id :mcp-session-id "tab-session"}
-               (::ev/context data)))
+      (t/is (= {:file-id file-id} (::ev/context data)))
       (t/is (= file-id (:file-id data))))))
 
-(t/deftest plugin-event-carries-file-but-no-session
+(t/deftest plugin-event-carries-file-and-plugin
   (let [file-id (random-uuid)]
     (set-state file-id)
     (t/is (= {:file-id file-id
@@ -40,11 +38,11 @@
               :plugin-url "https://plugin.test"}
              (::ev/context (deref (se/event plugin-id "add-flow")))))))
 
-(t/deftest mcp-add-event-carries-file-and-session
+(t/deftest mcp-add-event-carries-file
   (let [file-id (random-uuid)]
     (set-state file-id)
     (t/is (= {::ev/origin "mcp"
-              ::ev/context {:file-id file-id :mcp-session-id "tab-session"}}
+              ::ev/context {:file-id file-id}}
              (meta (se/add-event (ptk/data-event ::test) r/mcp-plugin-id))))))
 
 (t/deftest event-has-no-file-on-the-dashboard

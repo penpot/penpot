@@ -6,7 +6,6 @@
 
 (ns app.plugins.system-events
   (:require
-   [app.common.data.macros :as dm]
    [app.main.data.event :as ev]
    [app.main.store :as st]
    [app.plugins.register :as r]))
@@ -17,13 +16,12 @@
 
 (defn- get-context
   "Returns the audit context of an action run by a plugin: the file it ran
-  in (none on the dashboard) and, for the MCP, the session of the tab that
-  ran it. Events drop the nil values."
+  in (none on the dashboard) and, for plugins other than the MCP, the
+  plugin name and URL. Events drop the nil values."
   [state plugin-id]
   (let [file-id (:current-file-id state)]
     (if (= plugin-id r/mcp-plugin-id)
-      {:file-id file-id
-       :mcp-session-id (dm/get-in state [:mcp :session-id])}
+      {:file-id file-id}
       (let [plugin-data (r/get-plugin-data state plugin-id)]
         {:file-id file-id
          :plugin-name (:name plugin-data)
