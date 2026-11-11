@@ -944,7 +944,8 @@
    `inst-objects`, into it: fixed on each axis that a layout sizes (fill or
    auto) and that the push resizes, or on both when it turns the shape in its
    parent, since a layout resizes a turned child. Only a copy that authors
-   its geometry resizes or turns the main; the layout sizes the rest. A shape
+   its geometry resizes or turns the main, and no copy authors a size its own
+   layout gives it; the layout sizes the rest. A shape
    that is not a layout drops the sizing, which leaves it fixed as its copies
    are. A sizing the copy authors is pushed as it is."
   [objects shape-main inst-objects shape-inst source]
@@ -958,11 +959,20 @@
                       (gmt/multiply (gmt/inverse (axes-matrix (get objects (:parent-id shape)))))))
         turned?  (not (gmt/unit? (gmt/multiply (in-parent inst-objects shape-inst)
                                                (gmt/inverse (in-parent objects shape-main)))))
+        ;; whether the copy's own layout gives it its size on an axis
+        copy-sized? (fn [sizing]
+                      (let [value (get shape-inst sizing)]
+                        (or (and (contains? #{:fill :auto} value)
+                                 (ctsl/any-layout-immediate-child? inst-objects shape-inst)
+                                 (not (ctsl/position-absolute? shape-inst)))
+                            (and (= :auto value) (ctsl/any-layout? shape-inst)))))
         fix?     (fn [sizing size]
                    (and laid?
                         (not (ctk/touched-group? shape-inst sizing))
                         (contains? #{:fill :auto} (get shape-main sizing))
-                        (or turned? (not (mth/close? (get source size) (get shape-main size))))))
+                        (or turned?
+                            (and (not (copy-sized? sizing))
+                                 (not (mth/close? (get source size) (get shape-main size)))))))
         fixed    (when (ctsl/any-layout? shape-main) :fix)]
     (cond-> {}
       (fix? :layout-item-h-sizing :width) (assoc :layout-item-h-sizing fixed)
