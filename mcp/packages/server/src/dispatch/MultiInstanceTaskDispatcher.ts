@@ -71,7 +71,7 @@ export class MultiInstanceTaskDispatcher extends TaskDispatcher {
             this.discoveryTimeoutMs
         );
         this.pendingDiscoveries.set(requestId, () =>
-            fail(new SessionDiscoveryError("the MCP server is shutting down"))
+            fail(new SessionDiscoveryError("the MCP server is shutting down", "You can retry the request."))
         );
         const releaseResponses = () => {
             void this.redisBridge
