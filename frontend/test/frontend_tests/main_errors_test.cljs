@@ -21,7 +21,8 @@
     - organization SSO recovery   – expired SSO sessions go back to the provider
     - invalid-sso-config handler  – requires :organization-id to promote to :sso-error
     - save failure notification   – sticky toast carrying the error report
-    - delegated save failures     – causes handled by the handler for their type"
+    - delegated save failures     – causes handled by the handler for their type
+    - wasm-error handler          – only non-blocking errors keep the workspace"
   (:require
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
@@ -1151,3 +1152,27 @@
                   (map (comp ::ev/name deref) (report-events @events)))
                (str type " is reported as handled, not unhandled"))
          (t/is (= 2 (count @events)) (str type " must show one notification")))))))
+
+;; ---------------------------------------------------------------------------
+;; WASM errors
+;; ---------------------------------------------------------------------------
+
+(defn- assigned-wasm-error
+  "Runs `on-error` for a WASM error with `code` and returns the error passed
+  to `rt/assign-exception`, or nil when none was."
+  [code]
+  (let [assigned* (atom nil)]
+    (with-redefs [st/emit!            (mock/stub (fn [& _] nil))
+                  rt/get-current-href (constantly "https://penpot.example.com/#/workspace")
+                  rt/assign-exception (fn [error] (reset! assigned* error))]
+      (errors/on-error (error-cause :type :wasm-error :code code :hint "WASM Error"))
+      @assigned*)))
+
+(t/deftest wasm-critical-error-shows-the-exception-page
+  (t/is (= :wasm-critical (:code (assigned-wasm-error :wasm-critical)))))
+
+(t/deftest wasm-panic-shows-the-exception-page
+  (t/is (= :panic (:code (assigned-wasm-error :panic)))))
+
+(t/deftest wasm-non-blocking-error-keeps-the-workspace
+  (t/is (nil? (assigned-wasm-error :non-blocking))))

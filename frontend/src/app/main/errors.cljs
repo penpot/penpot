@@ -741,12 +741,10 @@
   (when-let [cause (::instance error)]
     (ex/print-throwable cause)
     (let [code (get error :code)]
-      (cond
-        (= code :panic)
-        (st/emit! (rt/assign-exception error))
-
-        :else
-        (flash :type :handled :cause cause)))))
+      (if (= code :non-blocking)
+        (flash :type :handled :cause cause)
+        ;; Panics and traps leave the WASM instance unusable.
+        (st/emit! (rt/assign-exception error))))))
 
 ;; We receive a explicit authentication error; If the uri is for
 ;; workspace, dashboard, viewer or settings, then assign the exception
