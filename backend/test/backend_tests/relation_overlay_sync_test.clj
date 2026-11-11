@@ -645,6 +645,7 @@
    :del-media                   {:coverage :no-op :why "the same reason as an add's"}
    :set-token-theme             {:coverage :no-op :why "themes are not indexed"}
    :set-tokens-status           {:coverage :no-op :why "the active theme and set status is not indexed"}
+   :set-own-tokens-status       {:coverage :no-op :why "the status a file keeps aside for its own tokens-lib is not indexed"}
    :set-base-font-size          {:coverage :no-op :why "file options are not indexed"}
    :set-tokens-source           {:coverage :no-op :why "the builder reads the file's own `:tokens-lib` whatever the source, so pointing the file at a library writes no datom"}})
 
