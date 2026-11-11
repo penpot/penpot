@@ -1166,6 +1166,19 @@
              (ch/components-changed (:data file) (change {:type :assign :value {:opacity 0.5}}))))
     (t/is (nil? (ch/components-changed (:data file) (change {:type :assign :value {:interactions []}}))))))
 
+(t/deftest reordering-the-children-of-a-main-changes-its-component
+  (let [file   (-> (thf/sample-file :file1)
+                   (tho/add-component-with-many-children-and-copy :component1 :main-root
+                                                                  [:main-child1 :main-child2] :copy-root))
+        page   (thf/current-page file)
+        root   (ths/get-shape file :main-root)
+        change (fn [shapes]
+                 {:type :reorder-children :parent-id (:id root) :page-id (:id page) :shapes shapes})]
+    (t/is (= #{(thi/id :component1)}
+             (ch/components-changed (:data file) (change (vec (reverse (:shapes root)))))))
+    (t/testing "a reorder that keeps the order changes nothing"
+      (t/is (empty? (ch/components-changed (:data file) (change (:shapes root))))))))
+
 (t/deftest a-copy-grid-with-its-own-cells-orders-its-children-by-their-flow
   (let [page-id (thi/new-id! :page)
         grid    {:id (thi/new-id! :grid) :type :frame :layout :grid :layout-grid-dir :row

@@ -1289,6 +1289,19 @@
       (into #{} xform shape-and-parents))
     (when component-id #{component-id})))
 
+(defmethod components-changed :reorder-children
+  [file-data {:keys [parent-id page-id component-id shapes]}]
+  (if page-id
+    (let [page    (ctpl/get-page file-data page-id)
+          parents (map (partial ctn/get-shape page)
+                       (cons parent-id (cfh/get-parent-ids (:objects page) parent-id)))
+          xform   (comp (filter :main-instance)
+                        (map :component-id))]
+      ;; a reorder that keeps the order changes nothing
+      (when (not= (vec shapes) (vec (:shapes (ctn/get-shape page parent-id))))
+        (into #{} xform parents)))
+    (when component-id #{component-id})))
+
 (defmethod components-changed :restore-component
   [_ {:keys [id]}]
   #{id})

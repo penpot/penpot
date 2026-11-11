@@ -2182,6 +2182,13 @@
     (t/is (seq turned))
     (t/is (every? geom/decomposes? turned))))
 
+(t/deftest pushing-a-grid-direction-orders-the-copies-like-the-reflowed-main
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles false :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square true :rich-variants false
+                                    :layout-children true :grid-empty false :layout-copies false :text true}]
+                       :ops [[:make-variant] [:make-variant 6] [:combine] [:make-variant 11] [:combine]
+                             [:remove-child 9] [:grid-direction 0 0 13] [:update-main]]}))))
+
 (t/deftest moving-a-flex-copy-child-after-a-switch-resized-its-sibling-authors-no-geometry
   (t/is (map? (cg/run {:world [1 2 {:variants true :text-styles false :layout :flex :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true
