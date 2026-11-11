@@ -2125,6 +2125,32 @@
                              [:nest 6 3 3] [:add-variant 1 5 5] [:rotate 0 4 5] [:nest 3 3 4] [:switch]
                              [:switch] [:transform 0 4 0 2] [:update-main]]}))))
 
+(t/deftest updating-a-fill-main-from-a-resized-copy-fixes-the-main-size
+  (t/is (map? (cg/run {:world [1 0 {:variants true :text-styles false :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants false
+                                    :layout-children false :grid-empty false :layout-copies false :text false}]
+                       :ops [[:combine] [:swap] [:make-variant] [:style 0 30 1] [:detach] [:detach]
+                             [:switch] [:resize] [:nest] [:switch] [:update-main]]}))))
+
+(t/deftest updating-a-turned-fill-main-from-its-copy-fixes-the-main-size
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles false :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:remove-child 12] [:combine 6] [:combine 18] [:combine] [:make-variant 18]
+                             [:style 4 30 1] [:rotate 8] [:make-variant 5] [:update-main]]}))))
+
+(t/deftest updating-a-main-with-a-turned-copy-keeps-the-fill-of-its-laid-out-children
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :flex :layout-item-margins false
+                                    :grid-square false :library true :rich-variants true :layout-children false
+                                    :grid-empty false :layout-copies true :text true}]
+                       :ops [[:style 0 29 1] [:rotate 23 0 0 0] [:edit 3 0 1 1] [:update-main 3]]}))))
+
+(t/deftest updating-a-main-whose-copy-padding-resized-a-fill-child-keeps-its-fill
+  (t/is (map? (cg/run {:world [1 2 {:variants false :text-styles false :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants false
+                                    :layout-children true :grid-empty true :layout-copies true :text true}]
+                       :ops [[:make-variant 1] [:style 4 29 1] [:style 7 12] [:update-main]]}))))
+
 (t/deftest moving-a-flex-copy-child-after-a-switch-resized-its-sibling-authors-no-geometry
   (t/is (map? (cg/run {:world [1 2 {:variants true :text-styles false :layout :flex :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true
