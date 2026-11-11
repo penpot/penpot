@@ -291,3 +291,42 @@
     (t/testing "two ordinary outside shapes are both kept"
       (t/is (= [outside-id outside-2-id]
                (vec (ctc/ids-for-structure-op objects [outside-id outside-2-id])))))))
+
+(t/deftest get-nesting-level-delta
+  (let [page-id  uuid/zero
+        head-id  (uuid/next)
+        frame-id (uuid/next)
+        sub-id   (uuid/next)
+        head-2-id (uuid/next)
+        plain-id (uuid/next)
+        ;; copy head with a plain frame and a nested copy head inside
+        head     (make-shape head-id
+                             :parent-id page-id
+                             :type :frame
+                             :component-id (uuid/next)
+                             :component-root true
+                             :shape-ref (uuid/next))
+        frame    (make-shape frame-id :parent-id head-id :type :frame :shape-ref (uuid/next))
+        sub      (make-shape sub-id
+                             :parent-id frame-id
+                             :type :frame
+                             :component-id (uuid/next)
+                             :shape-ref (uuid/next))
+        head-2   (make-shape head-2-id
+                             :parent-id page-id
+                             :type :frame
+                             :component-id (uuid/next)
+                             :component-root true
+                             :shape-ref (uuid/next))
+        plain    (make-shape plain-id :parent-id page-id)
+        root     (root-shape)
+        objects  (objects-map root head frame sub head-2 plain)]
+    (t/testing "shape stays under the same copy head"
+      (t/is (= 0 (ctc/get-nesting-level-delta objects sub frame))))
+    (t/testing "shape leaves its copy head to the page"
+      (t/is (= 1 (ctc/get-nesting-level-delta objects sub root))))
+    (t/testing "shape moves to a different copy head"
+      (t/is (= 1 (ctc/get-nesting-level-delta objects sub head-2))))
+    (t/testing "shape outside any copy head goes inside one"
+      (t/is (= 0 (ctc/get-nesting-level-delta objects plain frame))))))
+
