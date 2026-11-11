@@ -52,3 +52,8 @@ its own drift. Comparing `:selrect.width` from shape A to
 `:selrect.width` from shape B is comparing two values that
 "semantically" should be equal but were computed via different
 operation chains — exact equality will often be false.
+
+## Library sync comparison
+
+- `update-attrs` (`app.common.logic.libraries`) compares main vs copy attrs exactly first, then with tolerance for: `drifting-geometry-attrs` (`:x :y :width :height :selrect :points`, via `gsh/close-attrs?`); path and bool `:content` (`segment/content-close?`; bool shapes keep their path in `:content`); and text `:position-data` (`position-data-close?` over `mth/close-map?`: every numeric field of every entry within `mth/close?`, other fields such as fills, fonts and text exact). All other attrs (`:opacity`, radii, `:transform`, `:rotation`, text `:content`) stay exact: tolerance there hides real changes.
+- `close-attrs?` pairs lists with `d/zip`, which truncates to the shorter list and treats nil vs vector as equal for `:points`/`:position-data`. Do not use it for variable-length data. That is why `:position-data` has its own helper, and why `attr-equal?` checks the `:points` count before calling it.

@@ -2864,3 +2864,30 @@
         result  (path/splice-content content sub)]
     (t/is (path.impl/path-data? result))
     (t/is (= (into (vec content) sub) (vec result)))))
+
+(t/deftest content-close?
+  (let [content [{:command :move-to :params {:x 10.3 :y 10.7}}
+                 {:command :line-to :params {:x 24.3 :y 10.7}}
+                 {:command :close-path}]
+        shifted (fn [f] (update-in content [1 :params :x] f))]
+    (t/testing "params within tolerance are close"
+      (t/is (path.segment/content-close? content (shifted #(+ % 0.0004)))))
+
+    (t/testing "a param beyond tolerance is not close"
+      (t/is (not (path.segment/content-close? content (shifted #(+ % 0.01))))))
+
+    (t/testing "a different command is not close"
+      (t/is (not (path.segment/content-close? content (assoc-in content [1 :command] :move-to)))))
+
+    (t/testing "a different segment count is not close"
+      (t/is (not (path.segment/content-close? content (butlast content)))))
+
+    (t/testing "a different param count is not close"
+      (t/is (not (path.segment/content-close? content (assoc-in content [1 :params] {:x 24.3})))))
+
+    (t/testing "plain vector and PathData are comparable"
+      (t/is (path.segment/content-close? content (path.impl/path-data content))))
+
+    (t/testing "nil equals an empty content, but not a non-empty one"
+      (t/is (path.segment/content-close? nil []))
+      (t/is (not (path.segment/content-close? nil content))))))
