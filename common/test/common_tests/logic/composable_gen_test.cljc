@@ -2188,6 +2188,12 @@
     (t/is (seq turned))
     (t/is (every? geom/decomposes? turned))))
 
+(t/deftest switching-a-copy-carries-no-turn-a-mirrored-child-only-stores-the-other-way
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles false :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies false :text true}]
+                       :ops [[:swap] [:make-variant 12] [:rotate] [:delete] [:transform 6 5] [:switch]]}))))
+
 (t/deftest pushing-a-grid-direction-orders-the-copies-like-the-reflowed-main
   (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles false :layout :grid :variant-diff false
                                     :layout-item-margins false :grid-square true :rich-variants false
