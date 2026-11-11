@@ -140,13 +140,13 @@
             decoded (profile/decode-row saved)]
         (t/is (= :svg (get-in decoded [:props :renderer])))))))
 
-(t/deftest create-demo-profile-omits-renderer-by-default
+(t/deftest create-demo-profile-stores-wasm-renderer-by-default
   (with-redefs [cf/flags (conj cf/flags :demo-users)]
     (let [{:keys [error result]} (th/command! {::th/type :create-demo-profile})]
       (t/is (nil? error))
       (let [saved   (th/db-get :profile {:email (:email result)})
             decoded (profile/decode-row saved)]
-        (t/is (false? (contains? (:props decoded) :renderer)))))))
+        (t/is (= :wasm (get-in decoded [:props :renderer])))))))
 
 (t/deftest create-demo-profile-rejects-unknown-renderer
   (with-redefs [cf/flags (conj cf/flags :demo-users)]

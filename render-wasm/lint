@@ -10,6 +10,8 @@ fi
 
 . ./_build_env frontend
 
+setup || exit $?
+
 ALLOWED_RULES="-D static_mut_refs"
 
 # ./lint --fix

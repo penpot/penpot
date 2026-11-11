@@ -27,6 +27,7 @@
    [app.http.session :as session]
    [app.jobs :as jobs]
    [app.loggers.audit :as audit]
+   [app.media.svg :as svg]
    [app.media.validation :as media.v]
    [app.nitrate :as nitrate]
    [app.rpc :as rpc]
@@ -209,17 +210,19 @@
    ::sm/result schema:upload-organization-logo-result
    ::nitrate/sso false}
   [{:keys [::sto/storage]} {:keys [content organization-id previous-id]}]
-  (media.v/check-media-type content cm/image-types)
   (media.v/check-upload-path content)
+  (media.v/check-media-type content cm/image-types)
+  (media.v/check-media-size content)
   (when previous-id
     (sto/touch-object! storage previous-id))
-  (let [hash (sto/calculate-hash (:path content))
-        data (-> (sto/content (:path content))
+  (let [{:keys [path mtype]} (svg/sanitize-svg-upload content)
+        hash (sto/calculate-hash path)
+        data (-> (sto/content path)
                  (sto/wrap-with-hash hash))
         obj  (sto/put-object! storage {::sto/content      data
                                        ::sto/deduplicate? true
                                        :bucket            "organization"
-                                       :content-type      (:mtype content)
+                                       :content-type      mtype
                                        :organization-id   organization-id})]
     {:id (:id obj)}))
 
@@ -540,6 +543,33 @@ RETURNING id, deleted_at;")
     (profile-to-map profile)))
 
 
+;; ---- API: get-profiles-by-ids
+
+(def ^:private sql:get-profiles-by-ids
+  "SELECT DISTINCT id, fullname, email, photo_id
+     FROM profile
+    WHERE id = ANY(?)
+      AND deleted_at IS NULL;")
+
+(def ^:private schema:get-profiles-by-ids-params
+  [:map [:ids [:vector ::sm/uuid]]])
+
+(sv/defmethod ::get-profiles-by-ids
+  "Get multiple profiles by id. Unknown ids are simply absent from the result."
+  {::doc/added "2.20"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
+   ::sm/params schema:get-profiles-by-ids-params
+   ::sm/result [:vector schema:profile]
+   ::nitrate/sso false}
+  [cfg {:keys [ids]}]
+  (if (empty? ids)
+    []
+    (db/run! cfg (fn [{:keys [::db/conn]}]
+                   (let [ids-array (db/create-array conn "uuid" ids)]
+                     (->> (db/exec! conn [sql:get-profiles-by-ids ids-array])
+                          (mapv profile-to-map)))))))
+
+
 ;; ---- API: get-organization-member-team-counts
 
 (def ^:private sql:get-organization-member-team-counts
@@ -581,6 +611,47 @@ RETURNING id, deleted_at;")
       (db/run! cfg (fn [{:keys [::db/conn]}]
                      (let [ids-array (db/create-array conn "uuid" team-ids)]
                        (db/exec! conn [sql:get-organization-member-team-counts ids-array])))))))
+
+
+;; ---- API: get-organization-team-roles
+
+(def ^:private sql:get-organization-team-roles
+  "SELECT t.id AS team_id, t.name AS team_name, tpr.profile_id,
+          CASE WHEN tpr.is_owner THEN 'owner' ELSE 'admin' END AS role
+     FROM team_profile_rel AS tpr
+     JOIN team AS t ON t.id = tpr.team_id
+     JOIN profile AS p ON p.id = tpr.profile_id
+    WHERE t.id = ANY(?)
+      AND t.deleted_at IS NULL
+      AND t.is_default IS FALSE
+      AND p.deleted_at IS NULL
+      AND (tpr.is_owner OR tpr.is_admin);")
+
+(def ^:private schema:get-organization-team-roles-params
+  [:map [:team-ids [:vector ::sm/uuid]]])
+
+(def ^:private schema:get-organization-team-roles-result
+  [:vector [:map
+            [:team-id ::sm/uuid]
+            [:team-name ::sm/text]
+            [:profile-id ::sm/uuid]
+            [:role [:enum :owner :admin]]]])
+
+(sv/defmethod ::get-organization-team-roles
+  "Get the owner and admin profiles of each non-default team within a set of teams."
+  {::doc/added "2.20"
+   ::rpc/allowed-shared-keys allowed-shared-key-ids
+   ::sm/params schema:get-organization-team-roles-params
+   ::sm/result schema:get-organization-team-roles-result
+   ::rpc/auth false}
+  [cfg {:keys [team-ids]}]
+  (if (empty? team-ids)
+    []
+    (db/run! cfg (fn [{:keys [::db/conn]}]
+                   (let [ids-array (db/create-array conn "uuid" team-ids)]
+                     (->> (db/exec! conn [sql:get-organization-team-roles ids-array])
+                          (mapv (fn [{:keys [role] :as row}]
+                                  (assoc row :role (keyword role))))))))))
 
 
 ;; ---- API: get-organization-member-teams
@@ -878,14 +949,14 @@ RETURNING id, deleted_at;")
                      (:fullname (profile/get-profile cfg profile-id))
                      (str/trim user-name))]
     (db/tx-run! cfg (fn [tx-cfg]
-                      (eml/send tx-cfg {::eml/reuse-conn true
-                                        ::eml/factory eml/renewal-notice
-                                        :public-uri   (cf/get :public-uri)
-                                        :to           user-email
-                                        :user-name    user-name
-                                        :renewal-date renewal-date
-                                        :estimated-amount amount-str
-                                        :organizations organizations}))))
+                      (eml/send-template tx-cfg {::eml/reuse-conn true
+                                                 ::eml/template "renewal-notice"
+                                                 :public-uri   (cf/get :public-uri)
+                                                 :to           user-email
+                                                 :user-name    user-name
+                                                 :renewal-date renewal-date
+                                                 :estimated-amount amount-str
+                                                 :organizations organizations}))))
   nil)
 
 ;; API: exists-organization-team-invitations-for-non-members /

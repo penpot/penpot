@@ -462,6 +462,18 @@
              (rx/map #(partial fetched-comments %))
              (rx/catch #(rx/throw {:type :comment-error})))))))
 
+;; Has to fit in the limit of the backend rpc
+;; (backend/src/app/rpc/commands/comments.clj).
+(def ^:private mark-all-threads-batch-size 500)
+
+(defn mark-all-threads-batches
+  "Splits the thread ids into the batches that the backend accepts on a
+  single call."
+  [thread-ids]
+  (->> thread-ids
+       (partition-all mark-all-threads-batch-size)
+       (mapv vec)))
+
 (defn mark-all-threads-as-read
   "Mark all threads as read"
   [team-id]
@@ -470,11 +482,23 @@
     (-data [_] {})
     ptk/WatchEvent
     (watch [_ state _]
-      (let [threads (-> state :comment-threads vals)]
+      (let [threads       (-> state :comment-threads vals)
+            batches       (mark-all-threads-batches (mapv :id threads))
+            refresh-event (retrieve-unread-comment-threads team-id)]
         (rx/concat
-         (->> (rp/cmd! :mark-all-threads-as-read {:threads (mapv :id threads)})
-              (rx/map #(retrieve-unread-comment-threads team-id))
-              (rx/catch #(rx/throw {:type :comment-error})))
+         (->> (rx/from batches)
+              (rx/mapcat (fn [batch]
+                           (rp/cmd! :mark-all-threads-as-read {:threads batch})))
+              (rx/reduce (fn [_ _] nil) nil)
+              (rx/map (fn [_] refresh-event))
+              ;; Each batch commits on the server on its own, so a failure in
+              ;; a later batch leaves the previous ones already marked as
+              ;; read. The unread list is re-read anyway and the error is
+              ;; propagated afterwards, so the success toast below stays
+              ;; limited to a full success.
+              (rx/catch (fn [_]
+                          (rx/concat (rx/of refresh-event)
+                                     (rx/throw {:type :comment-error})))))
          (rx/of (ntf/show {:level :info
                            :type :toast
                            :content (tr "dashboard.mark-all-as-read.success")

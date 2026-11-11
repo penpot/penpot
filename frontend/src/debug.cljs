@@ -9,11 +9,14 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.repair :as cfr]
    [app.common.files.validate :as cfv]
    [app.common.json :as json]
    [app.common.logging :as l]
+   [app.common.logic.libraries :as cll]
+   [app.common.path-names :as cpn]
    [app.common.pprint :as pp]
    [app.common.render-wasm.helpers :as wasm.h]
    [app.common.render-wasm.mem :as wasm.mem]
@@ -28,6 +31,7 @@
    [app.main.data.common :as dcm]
    [app.main.data.dashboard.shortcuts]
    [app.main.data.helpers :as dsh]
+   [app.main.data.persistence :as dps]
    [app.main.data.preview :as dp]
    [app.main.data.viewer.shortcuts]
    [app.main.data.workspace :as dw]
@@ -613,6 +617,419 @@
 (defn ^:export set-shape-ref
   [id shape-ref]
   (st/emit! (set-shape-ref* id shape-ref)))
+
+;; --- Save faults
+
+(def ^:private rejecting-faults
+  "Debug faults the backend rejects a commit for."
+  #{"validation" "runtime" "ex-info" "assertion"})
+
+(def ^:private request-faults
+  "Debug faults that fail the whole save, as an infrastructure error does."
+  #{"sql" "io" "eof" "interrupted" "not-found" "stack-overflow"})
+
+(defn- debug-plugin-data-change
+  "A change that removes plugin data `key` of the file, which is never set,
+  so it changes no data."
+  [key]
+  {:type :set-plugin-data
+   :object-type :file
+   :namespace :penpot-debug
+   :key key
+   :value nil})
+
+(defn- save-fault-marker
+  "A change that makes the backend fail with `fault` when it applies it
+  (`debug-save-faults` backend flag). It changes no data."
+  [fault]
+  (debug-plugin-data-change (str "save-fault:" fault)))
+
+(defn- fault-error
+  "Why `fault` is not one of `faults`, or nil if it is."
+  [fault faults]
+  (when-not (contains? faults fault)
+    (str "unknown fault " fault ", expected one of "
+         (str/join ", " (sort faults)))))
+
+;; Armed `:hold` and `:faults` for update-file calls, and the `:original`
+;; method while they wrap it.
+(defonce ^:private save-hook (atom {}))
+
+(defn- mark-save
+  "Adds the fault armed for the file of `params` to the commit it names,
+  and counts the save against it."
+  [params]
+  (let [file-id (:id params)
+        [old _] (swap-vals! save-hook
+                            (fn [{:keys [faults] :as hook}]
+                              (let [{:keys [times]} (get faults file-id)]
+                                (cond
+                                  (nil? times) hook
+                                  (> times 1)  (update-in hook [:faults file-id :times] dec)
+                                  :else        (update hook :faults dissoc file-id)))))]
+    (if-let [{:keys [fault commit]} (get-in old [:faults file-id])]
+      (let [marker (save-fault-marker fault)
+            groups (:changes-with-metadata params)]
+        (if (seq groups)
+          (update-in params [:changes-with-metadata (min commit (dec (count groups))) :changes]
+                     conj marker)
+          (update params :changes (fnil conj []) marker)))
+      params)))
+
+(defn- hooked-update-file
+  "Sends an update-file call through `send` with the armed fault, and holds
+  its answer while saves are held."
+  [send id params]
+  (let [response (send id (mark-save params))]
+    (if-let [gate (dm/get-in @save-hook [:hold :gate])]
+      (rx/mapcat (fn [result]
+                   (rx/map (constantly result) (rx/from gate)))
+                 response)
+      response)))
+
+(defn- sync-save-hook
+  "Wraps update-file calls while a hold or a fault is armed, and unwraps
+  them when none is."
+  []
+  (let [{:keys [hold faults original]} @save-hook
+        armed? (or (some? hold) (seq faults))]
+    (cond
+      (and armed? (nil? original))
+      (let [original (get-method rp/cmd! :update-file)]
+        (swap! save-hook assoc :original original)
+        (-add-method rp/cmd! :update-file
+                     (fn [id params] (hooked-update-file original id params))))
+
+      (and (not armed?) (some? original))
+      (do
+        (if (identical? original (get-method rp/cmd! :default))
+          (remove-method rp/cmd! :update-file)
+          (-add-method rp/cmd! :update-file original))
+        (swap! save-hook dissoc :original)))))
+
+(defn ^:export releaseSaves
+  "Answers the held saves now and stops holding new ones."
+  []
+  (when-let [{:keys [gate timer]} (:hold @save-hook)]
+    (js/clearTimeout timer)
+    (p/resolve gate nil))
+  (swap! save-hook dissoc :hold)
+  (sync-save-hook)
+  "saves are answered as they arrive")
+
+(defn ^:export holdSaves
+  "Holds the answers to the saves sent in the next `seconds` (default 5)
+  until then, or until `debug.releaseSaves()`. The backend applies each
+  save at once; only the tab waits, so edits made meanwhile stay pending
+  behind it, as with a slow backend.
+
+  debug.holdSaves()
+  debug.holdSaves(10)"
+  ([] (holdSaves 5))
+  ([seconds]
+   (releaseSaves)
+   (swap! save-hook assoc :hold {:gate  (p/deferred)
+                                 :timer (js/setTimeout releaseSaves (* 1000 seconds))})
+   (sync-save-hook)
+   (str "holding the answers to saves for " seconds " seconds")))
+
+(defn ^:export failNextSave
+  "Makes the backend fail the next `times` saves (default 1) of a file (by
+  default the open one) with `fault`, from the commit at index `commit`
+  (default 0) on. Needs the `debug-save-faults` backend flag.
+
+  Faults 'validation', 'runtime', 'ex-info' and 'assertion' reject the
+  commits from that one on; 'sql', 'io', 'eof', 'interrupted', 'not-found'
+  and 'stack-overflow' fail the whole save, as an infrastructure error
+  does. Of these, 'sql', 'io' and 'interrupted' pass on their own (503,
+  retried); the rest do not. A retry is a new save and counts against
+  `times`.
+
+  debug.failNextSave({fault: 'sql'})
+  debug.failNextSave({fault: 'runtime', commit: 2, times: 3, fileId: '…'})"
+  [options]
+  (let [{:keys [fault times commit fileId]
+         :or {times 1 commit 0}} (js->clj options :keywordize-keys true)
+        file-id (if fileId (uuid/parse fileId) (:current-file-id @st/state))]
+    (or (fault-error fault (into rejecting-faults request-faults))
+        (do
+          (swap! save-hook assoc-in [:faults file-id]
+                 {:fault fault :times times :commit commit})
+          (sync-save-hook)
+          (str "the next " times " saves of " file-id " fail with " fault
+               " from commit " commit " on")))))
+
+(defn ^:export clearSaveFaults
+  "Disarms every fault armed with `debug.failNextSave`."
+  []
+  (swap! save-hook dissoc :faults)
+  (sync-save-hook)
+  "no save fault armed")
+
+(defn- pending-of-file
+  "Applies `f` to the pending commits of `file-id`, queued and buffered."
+  [pstate file-id f]
+  (let [file?    #(= file-id (:file-id %))
+        queued   (filter #(file? (get-in pstate [:index %])) (:queue pstate))
+        buffered #(if (file? %) (f %) %)]
+    (as-> pstate $
+      (reduce (fn [pstate id] (update-in pstate [:index id :commits] #(mapv f %))) $ queued)
+      (update $ :buffer #(mapv buffered %)))))
+
+(defn ^:export failNextRollback
+  "Makes the undo of the commits pending now in the open file fail if a
+  rollback reverts them, so the rollback falls back to reloading the
+  file. Pair it with `debug.holdSaves` to have commits pending.
+
+  debug.holdSaves(); debug.commitInvalidChange(); debug.failNextRollback()"
+  []
+  (let [state   @st/state
+        file-id (:current-file-id state)]
+    (if (empty? (concat (:queue (:persistence state)) (:buffer (:persistence state))))
+      "nothing is pending: hold the saves and commit something first"
+      (do
+        (st/emit!
+         (ptk/reify ::fail-next-rollback
+           ptk/UpdateEvent
+           (update [_ state]
+             ;; A change type with no handler, so applying it throws
+             (update state :persistence pending-of-file file-id
+                     #(update % :undo-changes (fn [changes]
+                                                (into [{:type :debug-fail}] changes)))))))
+        "the next rollback of the pending commits fails and reloads the file"))))
+
+(defn- get-persistence-summary
+  "What is pending in the tab and what could block the user."
+  [state]
+  (let [{:keys [status queue index buffer saved remote-changes]} (:persistence state)
+        queued  (count (mapcat #(get-in index [% :commits]) queue))
+        warn?   (contains? @st/ongoing-tasks :persistence)
+        crash?  (some? (:exception state))]
+    {:status        status
+     :queued        queued
+     :buffered      (count buffer)
+     :saved         (count saved)
+     :remoteChanges (count (mapcat val remote-changes))
+     :leaveWarning  warn?
+     :undoItems     (count (dm/get-in state [:workspace-undo :items]))
+     :edition       (some-> (dm/get-in state [:workspace-local :edition]) str)
+     :crashed       crash?
+     :held          (some? (:hold @save-hook))
+     :faults        (count (:faults @save-hook))
+     :clean         (and (contains? #{nil :saved} status)
+                         (zero? queued)
+                         (empty? buffer)
+                         (empty? saved)
+                         (empty? remote-changes)
+                         (not warn?)
+                         (not crash?))}))
+
+(defn ^:export persistenceState
+  "The save state of the tab: what is pending, the leave-page warning, the
+  undo history, the edited shape and a crash. `clean` is true when nothing
+  is pending and nothing blocks the user."
+  []
+  (clj->js (get-persistence-summary @st/state)))
+
+;; --- Invalid changes
+
+(def ^:private invalid-change-kinds
+  "Ways to break page objects that backend validation rejects, with the
+  error code each raises."
+  {"parent" {:code  :parent-not-found
+             :break (fn [objects shape]
+                      (assoc-in objects [(:id shape) :parent-id] (uuid/next)))}
+   "child"  {:code  :child-not-found
+             :break (fn [objects shape]
+                      (update-in objects [(:parent-id shape) :shapes] conj (uuid/next)))}})
+
+(defn- changed-ids
+  [objects objects']
+  (into [] (remove #(identical? (get objects %) (get objects' %))) (keys objects')))
+
+(defn- renamed-main-instances
+  "Main instances whose name differs between `objects` and `objects'`."
+  [objects objects']
+  (into []
+        (comp (map #(get objects' %))
+              (filter ctk/main-instance?)
+              (remove #(= (:name %) (:name (get objects (:id %))))))
+        (changed-ids objects objects')))
+
+(defn- rename-components
+  "Renames in `data` the components of the main instances renamed in
+  `objects'`."
+  [data objects objects']
+  (reduce (fn [data {:keys [component-id name]}]
+            (let [[path name] (cpn/split-group-name name)]
+              (update-in data [:components component-id] assoc :path path :name name)))
+          data
+          (renamed-main-instances objects objects')))
+
+(defn- objects-changes
+  "Changes for the shapes that differ between `objects` and `objects'`."
+  [origin page-id objects objects']
+  (-> (pcb/empty-changes origin page-id)
+      (pcb/with-objects objects)
+      (pcb/update-shapes (changed-ids objects objects') #(get objects' (:id %)))))
+
+(defn- commit-objects-change
+  "Commits the shapes that differ between `objects` and `objects'`. A
+  renamed main instance renames its component too, as validation requires.
+  `params` go to `commit-changes`."
+  [origin page-id data objects objects' params]
+  (dwc/commit-changes
+   (merge (reduce (fn [changes {:keys [component-id name]}]
+                    (cll/generate-rename-component changes component-id name data))
+                  (objects-changes origin page-id objects objects')
+                  (renamed-main-instances objects objects'))
+          params)))
+
+(defn- objects-step
+  "A step that commits the shapes `f` changes in the page objects, with
+  `params` for `commit-changes`."
+  ([f] (objects-step f nil))
+  ([f params]
+   (fn [origin page-id data objects]
+     (let [objects' (f objects)]
+       [(rename-components data objects objects')
+        objects'
+        (commit-objects-change origin page-id data objects objects' params)]))))
+
+(defn- fault-step
+  "A step that commits a marker the backend fails on with `fault`, with
+  `params` for `commit-changes`."
+  [fault params]
+  (fn [origin _ data objects]
+    [data
+     objects
+     ;; A real undo change, so the commit gets an undo entry as others do
+     (dwc/commit-changes (merge {:origin origin
+                                 :redo-changes [(save-fault-marker fault)]
+                                 :undo-changes [(debug-plugin-data-change "save-fault-undo")]}
+                                params))]))
+
+(defn ^:export commitInvalidChange
+  "Commits a change that the backend rejects, on the selected shape or the
+  first one of the page, with optional valid renames before and after it,
+  all in one save.
+
+  Kinds: 'parent' (the shape points to a missing parent, the default) and
+  'child' (its parent lists a missing child). With `fault` ('validation',
+  'runtime', 'ex-info' or 'assertion') the bad commit changes nothing and
+  the backend fails on it with that error instead (`debug-save-faults`
+  backend flag). With `undo: false` the bad commit gets no undo entry, so
+  rolling it back clears the whole undo history.
+
+  debug.commitInvalidChange()
+  debug.commitInvalidChange({kind: 'child', before: 2, after: 1})
+  debug.commitInvalidChange({fault: 'runtime', before: 1})
+  debug.commitInvalidChange({undo: false})"
+  ([] (commitInvalidChange nil))
+  ([options]
+   (let [{:keys [kind fault before after undo]
+          :or {kind "parent" before 0 after 0 undo true}} (js->clj options :keywordize-keys true)
+
+         state    @st/state
+         objects  (dsh/lookup-page-objects state)
+         shape-id (or (first (dm/get-in state [:workspace-local :selected]))
+                      (first (dm/get-in objects [uuid/zero :shapes])))
+         shape    (get objects shape-id)
+         {:keys [code break]} (get invalid-change-kinds kind)]
+
+     (cond
+       (nil? break)
+       (str "unknown kind " kind ", expected one of "
+            (str/join ", " (keys invalid-change-kinds)))
+
+       (and (some? fault) (fault-error fault rejecting-faults))
+       (fault-error fault rejecting-faults)
+
+       (nil? shape)
+       "select a shape, or open a page that has one"
+
+       :else
+       (let [rename (fn [label]
+                      (objects-step #(assoc-in % [shape-id :name] (str (:name shape) " [" label "]"))))
+             steps  (concat (map #(rename (str "before " (inc %))) (range before))
+                            [(if fault
+                               (fault-step fault {:save-undo? undo})
+                               (objects-step #(break % shape) {:save-undo? undo}))]
+                            (map #(rename (str "after " (inc %))) (range after)))]
+         (st/emit!
+          (ptk/reify ::commit-invalid-change
+            ptk/WatchEvent
+            (watch [it state _]
+              (let [page-id (:current-page-id state)
+                    commits (->> steps
+                                 (reduce (fn [[data objects commits] step]
+                                           (let [[data objects commit] (step it page-id data objects)]
+                                             [data objects (conj commits commit)]))
+                                         [(dsh/lookup-file-data state) (dsh/lookup-page-objects state) []])
+                                 (last))]
+                (rx/concat
+                 (rx/from commits)
+                 ;; Saves once all commits are buffered and the 200ms pending debounce passed
+                 (->> (rx/timer 300)
+                      (rx/map (constantly ::dps/force-persist))))))))
+         (str "committed " (+ before 1 after) " changes on '" (:name shape)
+              "'; commit " (inc before) " should fail with " (or fault (name code))))))))
+
+(defn- broken-component-change
+  "A change that points the component of `shape`, or the first one of the
+  file, to a main instance that does not exist."
+  [data shape]
+  (when-let [component-id (or (:component-id shape)
+                              (:id (first (ctkl/components-seq data))))]
+    {:type :mod-component
+     :id component-id
+     :main-instance-id (uuid/next)}))
+
+(defn ^:export saveBrokenData
+  "Saves, skipping backend validation, data that fails it: the kinds of
+  `debug.commitInvalidChange` on the selected shape or the first one of the
+  page, or 'component' (the component of the selected shape, or the first
+  of the file, points to a missing main instance). Then reloads the tab so
+  it opens the broken file. Undo with `debug.repair()`.
+
+  debug.saveBrokenData({kind: 'child'})
+  debug.saveBrokenData({kind: 'component'})"
+  ([] (saveBrokenData nil))
+  ([options]
+   (let [{:keys [kind] :or {kind "parent"}} (js->clj options :keywordize-keys true)
+         state    @st/state
+         file     (dsh/lookup-file state)
+         page-id  (:current-page-id state)
+         objects  (dsh/lookup-page-objects state)
+         shape    (get objects (or (first (dm/get-in state [:workspace-local :selected]))
+                                   (first (dm/get-in objects [uuid/zero :shapes]))))
+         break    (get-in invalid-change-kinds [kind :break])
+         changes  (cond
+                    (= "component" kind)
+                    (some-> (broken-component-change (:data file) shape) vector)
+
+                    (and (some? break) (some? shape))
+                    (:redo-changes (objects-changes nil page-id objects (break objects shape))))]
+     (cond
+       (not (:clean (get-persistence-summary state)))
+       "wait until every change is saved"
+
+       (empty? changes)
+       (str "nothing to break: kinds are " (str/join ", " (keys invalid-change-kinds))
+            " and component, and they need a shape or a component")
+
+       :else
+       (do
+         (->> (rp/cmd! :update-file {:id (:id file)
+                                     :revn (:revn file)
+                                     :vern (:vern file)
+                                     :session-id (:session-id state)
+                                     :features (:features state)
+                                     :changes changes
+                                     :skip-validate true})
+              (rx/subs! (fn [_] (dom/reload-current-window))
+                        (fn [cause] (ex/print-throwable cause))))
+         (str "saving broken " kind " data, then reloading"))))))
 
 (defn ^:export network-averages
   []

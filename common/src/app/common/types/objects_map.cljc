@@ -504,6 +504,23 @@
          (into (create))
          (compact))))
 
+#?(:cljs
+   (defn ->js-map
+     "Builds a `js/Map` from the entries of an `ObjectsMap`."
+     [objects]
+     (reduce-kv (fn [^js result id shape]
+                  (.set result (str id) shape))
+                (js/Map.)
+                (get-data objects))))
+
+#?(:cljs
+   (defn from-js-map
+     "Builds an `ObjectsMap` from a `js/Map`."
+     [^js entries]
+     (from-data (into {}
+                      (map (fn [[id shape]] [(uuid id) shape]))
+                      (js/Array.from entries)))))
+
 #?(:clj
    (fres/add-handlers!
     {:name "penpot/objects-map/v2"

@@ -304,29 +304,32 @@
                (dch/commit-changes changes)
                (dwu/commit-undo-transaction undo-id)))))))))
 
-(defn- set-variant-id
-  "Sets the variant-id on a component"
-  [component-id variant-id]
-  (ptk/reify ::set-variant-id
+(defn- define-variant-container
+  "Read page objects after the artboard exists, then commit the defining
+   variant fields in one change."
+  [variant-id main-id component-id name]
+  (ptk/reify ::define-variant-container
     ptk/WatchEvent
     (watch [it state _]
       (let [page-id (:current-page-id state)
             data    (dsh/lookup-file-data state)
+            objects (dsh/lookup-page-objects state page-id)
             changes (-> (pcb/empty-changes it page-id)
+                        (pcb/with-objects objects)
                         (pcb/with-library-data data)
-                        (pcb/update-component component-id #(assoc % :variant-id variant-id)))
-            undo-id  (js/Symbol)]
-        (rx/of
-         (dwu/start-undo-transaction undo-id)
-         (dch/commit-changes changes)
-         (dwu/commit-undo-transaction undo-id))))))
+                        (clv/generate-define-variant-container
+                         variant-id main-id component-id name))]
+        (rx/of (dch/commit-changes changes))))))
 
 (defn- focus-property
   [variant-id]
   (ptk/reify ::focus-property
     ptk/EffectEvent
     (effect [_ _ _]
-      (dom/focus! (dom/get-element (str "variant-prop-" variant-id "-0"))))))
+      ;; Unit tests run without a DOM; skip rather than throw into the store.
+      (when (exists? js/document)
+        (some-> (dom/get-element (str "variant-prop-" variant-id "-0"))
+                (dom/focus!))))))
 
 (defn- resposition-and-resize-variant
   "Resize the variant container, and move the shape (that is a variant) to the right"
@@ -397,6 +400,92 @@
               (->> (rx/of (focus-property (:id variant-container)))
                    (rx/delay 250))))))))))
 
+(defn- transform-in-variant-stream
+  "Event stream that turns `main-instance-id` into a variant set.
+   The defining fields share one commit (`define-variant-container`).
+   Combine concatenates this stream before relocating the other mains.
+   `page-id` is the page that holds the main; nil means the open page."
+  [state main-instance-id variant-id delta prefix add-wrapper? duplicate? flex? page-id]
+  (let [variant-id   (or variant-id (uuid/next))
+        variant-vec  [variant-id]
+        file-id      (:current-file-id state)
+        page-id      (or page-id (:current-page-id state))
+        objects      (dsh/lookup-page-objects state file-id page-id)
+        main         (get objects main-instance-id)
+        parent       (get objects (:parent-id main))
+        component-id (:component-id main)
+        name         (if add-wrapper?
+                       (str "Component/" (:name main))
+                       (:name main))
+        ;; If there is a prefix, set is as first item of path
+        cpath (-> name
+                  cpn/split-path
+                  (cond->
+                   (seq prefix)
+                    (->> (drop (count prefix))
+                         (cons (cpn/join-path prefix))
+                         vec)))
+
+        name         (first cpath)
+        num-props    (max 1 (dec (count cpath)))
+        style-props  (cond-> {:r1 20
+                              :r2 20
+                              :r3 20
+                              :r4 20
+                              :layout-item-absolute true}
+                       flex?
+                       (into {:layout-item-h-sizing :auto
+                              :layout-item-v-sizing :auto
+                              :layout-padding {:p1 30 :p2 30 :p3 30 :p4 30}
+                              :layout-gap     {:row-gap 0 :column-gap 20}}))
+
+        stroke-props {:stroke-alignment :inner
+                      :stroke-style :solid
+                      :stroke-color "#bb97d8" ;; todo use color var?
+                      :stroke-opacity 1
+                      :stroke-width 2}
+
+        ;; Move the position of the variant container so the main shape doesn't
+        ;; change its position
+        delta        (or delta
+                         (if (ctsl/any-layout? parent)
+                           (gpt/point 0 0)
+                           (gpt/point -30 -30)))
+        undo-id      (js/Symbol)]
+
+    (rx/concat
+     (rx/of
+      (dwu/start-undo-transaction undo-id)
+
+      ;; Create the frame while it is still a normal board
+      (dwsh/create-artboard-from-shapes [main-instance-id] variant-id nil nil nil delta flex?)
+      (cl/remove-all-fills variant-vec {:color clr/black :opacity 1})
+      (when flex? (dwsl/create-layout-from-id variant-id :flex))
+      (dwsh/update-shapes variant-vec #(merge % style-props))
+      (cl/add-stroke variant-vec stroke-props))
+
+     (rx/of (define-variant-container variant-id main-instance-id component-id name))
+
+     ;; First property is in the defining commit
+     (when (> num-props 1)
+       (rx/from
+        (repeatedly (dec num-props)
+                    #(add-new-property variant-id {:fill-values? true}))))
+
+     ;; When the component has path, set the path items as properties values
+     (when (> (count cpath) 1)
+       (rx/from
+        (map
+         #(update-property-value component-id % (nth cpath (inc %)))
+         (range num-props))))
+
+     (rx/of
+      (when duplicate? (add-new-variant main-instance-id))
+      (dwsh/update-shapes variant-vec #(dissoc % :layout-item-absolute))
+      (dwu/commit-undo-transaction undo-id)
+      (when flex?
+        (ptk/data-event :layout/update {:ids [variant-id]}))))))
+
 (defn transform-in-variant
   "Given the id of a main shape of a component, creates a variant structure for
    that component"
@@ -406,98 +495,7 @@
    (ptk/reify ::transform-in-variant
      ptk/WatchEvent
      (watch [_ state _]
-       (let [variant-id   (or variant-id (uuid/next))
-             variant-vec  [variant-id]
-             file-id      (:current-file-id state)
-             page-id      (:current-page-id state)
-             objects      (dsh/lookup-page-objects state file-id page-id)
-             main         (get objects main-instance-id)
-             parent       (get objects (:parent-id main))
-             component-id (:component-id main)
-             name         (if add-wrapper?
-                            (str "Component/" (:name main))
-                            (:name main))
-             ;; If there is a prefix, set is as first item of path
-             cpath (-> name
-                       cpn/split-path
-                       (cond->
-                        (seq prefix)
-                         (->> (drop (count prefix))
-                              (cons (cpn/join-path prefix))
-                              vec)))
-
-             name         (first cpath)
-             num-props    (max 1 (dec (count cpath)))
-             base-props   {:is-variant-container true
-                           :name name
-                           :r1 20
-                           :r2 20
-                           :r3 20
-                           :r4 20
-                           :layout-item-absolute true}
-             flex-props   {:layout-item-h-sizing :auto
-                           :layout-item-v-sizing :auto
-                           :layout-padding {:p1 30 :p2 30 :p3 30 :p4 30}
-                           :layout-gap     {:row-gap 0 :column-gap 20}}
-             cont-props   (if flex?
-                            (into base-props flex-props)
-                            base-props)
-             main-props   {:name name
-                           :variant-id variant-id}
-
-             stroke-props {:stroke-alignment :inner
-                           :stroke-style :solid
-                           :stroke-color "#bb97d8" ;; todo use color var?
-                           :stroke-opacity 1
-                           :stroke-width 2}
-
-             ;; Move the position of the variant container so the main shape doesn't
-             ;; change its position
-             delta        (or delta
-                              (if (ctsl/any-layout? parent)
-                                (gpt/point 0 0)
-                                (gpt/point -30 -30)))
-             undo-id      (js/Symbol)]
-
-
-         ;;TODO Refactor all called methods in order to be able to
-         ;;generate changes instead of call the events
-
-
-         (rx/concat
-          (rx/of
-           (dwu/start-undo-transaction undo-id)
-
-           (when (not= name (:name main))
-             (dwl/rename-component component-id name))
-
-           ;; Create variant container
-           (dwsh/create-artboard-from-shapes [main-instance-id] variant-id nil nil nil delta flex?)
-           (cl/remove-all-fills variant-vec {:color clr/black :opacity 1})
-           (when flex? (dwsl/create-layout-from-id variant-id :flex))
-           (dwsh/update-shapes variant-vec #(merge % cont-props))
-           (dwsh/update-shapes [main-instance-id] #(merge % main-props))
-           (cl/add-stroke variant-vec stroke-props)
-           (set-variant-id component-id variant-id))
-
-          ;; Add the necessary number of new properties, with default values
-          (rx/from
-           (repeatedly num-props
-                       #(add-new-property variant-id {:fill-values? true})))
-
-          ;; When the component has path, set the path items as properties values
-          (when (> (count cpath) 1)
-            (rx/from
-             (map
-              #(update-property-value component-id % (nth cpath (inc %)))
-              (range num-props))))
-
-          (rx/of
-           (when duplicate? (add-new-variant main-instance-id))
-           (dwsh/update-shapes variant-vec #(dissoc % :layout-item-absolute))
-           (dwu/commit-undo-transaction undo-id)
-           (when flex?
-             (ptk/data-event :layout/update {:ids [variant-id]})))))))))
+       (transform-in-variant-stream state main-instance-id variant-id delta prefix add-wrapper? duplicate? flex? nil)))))
 
 (defn add-component-or-variant
   "Manage the shared shortcut, and do the pertinent action"
@@ -567,20 +565,19 @@
   (ptk/reify ::rename-variant
 
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [it state _]
       (let [data (dsh/lookup-file-data state)]
         (with-main-page data {:variant-id variant-id}
           (fn [page-id objects]
-            (let [variant-components (cfv/find-variant-components data objects variant-id)
-                  clean-name         (cpn/clean-path name)
-                  undo-id            (js/Symbol)]
-              (rx/concat
-               (rx/of (dwu/start-undo-transaction undo-id)
-                      (dwsh/update-shapes [variant-id] #(assoc % :name clean-name) {:page-id page-id}))
-               (rx/from (map
-                         #(dwl/rename-component-and-main-instance (:id %) clean-name)
-                         variant-components))
-               (rx/of (dwu/commit-undo-transaction undo-id))))))))))
+            (let [changes (-> (pcb/empty-changes it page-id)
+                              (pcb/with-library-data data)
+                              (pcb/with-objects objects)
+                              (clv/generate-rename-variant variant-id name))
+                  undo-id (js/Symbol)]
+              (rx/of
+               (dwu/start-undo-transaction undo-id)
+               (dch/commit-changes changes)
+               (dwu/commit-undo-transaction undo-id)))))))))
 
 (defn rename-comp-or-variant-and-main
   "If the component is in a variant, rename the variant.
@@ -696,12 +693,17 @@
                        (rx/of (dcm/go-to-workspace :page-id page-id))
                        (rx/empty))
 
-                     (rx/of (dwu/start-undo-transaction undo-id)
-                            (transform-in-variant (first ids) variant-id delta prefix add-wrapper? false false)
-                            (dwsh/relocate-shapes (into #{} (rest ids)) variant-id 0)
-                            ;; relocate-shapes inserts the shapes in layer-tree
-                            ;; order, so restore the intended order afterwards
-                            (order-variant-children variant-id ids)
+                     (rx/of (dwu/start-undo-transaction undo-id))
+
+                     (transform-in-variant-stream state (first ids) variant-id delta prefix add-wrapper? false false current-page)
+
+                     ;; One relocation per main, in `ids` order, so the
+                     ;; generated property values follow the combine order
+                     (rx/from (map #(dwsh/relocate-shapes #{%} variant-id 0) (rest ids)))
+
+                     ;; Each relocation inserts at index 0, so restore the
+                     ;; intended order afterwards
+                     (rx/of (order-variant-children variant-id ids)
                             (dwsh/update-shapes ids #(-> %
                                                          (assoc :constraints-h :left)
                                                          (assoc :constraints-v :top)
@@ -781,60 +783,72 @@
         (rx/of (combine-as-variants selected options))))))
 
 (defn- variant-switch
-  "Switch the shape (that must be a variant copy head) for the closest one with the property value passed as parameter"
-  [shape {:keys [pos val] :as params}]
+  "Switch the shape (that must be a variant copy head) for the closest one with the property value passed as parameter.
+
+   `params` may include `:swap-opts` forwarded to `component-swap` (e.g.
+   `{:skip-select? true :skip-layout? true}` for a multi batch)."
+  [shape {:keys [pos val swap-opts] :as params}]
   (ptk/reify ::variant-switch
     ptk/WatchEvent
     (watch [it state _]
-      (let [libraries    (dsh/lookup-libraries state)
-            component-id (:component-id shape)
-            component    (ctf/get-component libraries (:component-file shape) component-id :include-deleted? false)]
-        ;; If the value is already val, do nothing
-        (when (not= val (dm/get-in component [:variant-properties pos :value]))
-          (let [current-page-objects   (dsh/lookup-page-objects state)
-                variant-id             (:variant-id component)
-                component-file-data    (dm/get-in libraries [(:component-file shape) :data])
-                component-page-objects (-> (dsh/get-page component-file-data (:main-instance-page component))
-                                           (get :objects))
-                variant-comps          (cfv/find-variant-components component-file-data component-page-objects variant-id)
-                target-props           (-> (:variant-properties component)
-                                           (update pos assoc :value val))
-                valid-comps            (->> variant-comps
-                                            (remove #(= (:id %) component-id))
-                                            (filter #(= (dm/get-in % [:variant-properties pos :value]) val))
-                                            (reverse))
-                nearest-comp           (apply min-key #(ctv/distance target-props (:variant-properties %)) valid-comps)
-                shape-parents          (cfh/get-parents-with-self current-page-objects (:parent-id shape))
-                nearest-comp-children  (cfh/get-children-with-self component-page-objects (:main-instance-id nearest-comp))
-                comps-nesting-loop?    (seq? (cfh/components-nesting-loop? nearest-comp-children shape-parents))
+      (let [objects (dsh/lookup-page-objects state)]
+        ;; Sibling swaps / layout can move this head before our turn.
+        ;; Gone from objects → no-op (do not switch a closed-over stale shape).
+        (if-let [shape (get objects (:id shape))]
+          (let [libraries    (dsh/lookup-libraries state)
+                component-id (:component-id shape)
+                component    (ctf/get-component libraries (:component-file shape) component-id :include-deleted? false)]
+            ;; If the value is already val, do nothing
+            (if (not= val (dm/get-in component [:variant-properties pos :value]))
+              (let [variant-id             (:variant-id component)
+                    component-file-data    (dm/get-in libraries [(:component-file shape) :data])
+                    component-page-objects (-> (dsh/get-page component-file-data (:main-instance-page component))
+                                               (get :objects))
+                    variant-comps          (cfv/find-variant-components component-file-data component-page-objects variant-id)
+                    target-props           (-> (:variant-properties component)
+                                               (update pos assoc :value val))
+                    valid-comps            (->> variant-comps
+                                                (remove #(= (:id %) component-id))
+                                                (filter #(= (dm/get-in % [:variant-properties pos :value]) val))
+                                                (reverse))
+                    nearest-comp           (apply min-key #(ctv/distance target-props (:variant-properties %)) valid-comps)
+                    shape-parents          (cfh/get-parents-with-self objects (:parent-id shape))
+                    nearest-comp-children  (cfh/get-children-with-self component-page-objects (:main-instance-id nearest-comp))
+                    comps-nesting-loop?    (seq? (cfh/components-nesting-loop? nearest-comp-children shape-parents))
 
-                {:keys [on-error]
-                 :or {on-error rx/throw}} (meta params)]
+                    {:keys [on-error]
+                     :or {on-error rx/throw}} (meta params)]
 
-            ;; If there is no nearest-comp, do nothing
-            (when nearest-comp
-              (if comps-nesting-loop?
-                (do
-                  (on-error)
-                  (rx/empty))
-                (rx/of
-                 (dwl/component-swap shape (:component-file shape) (:id nearest-comp) true)
-                 (ev/event (-> {::ev/name "variant-switch" ::ev/origin "workspace:design-tab"}
-                               (merge (meta it)))))))))))))
+                ;; If there is no nearest-comp, do nothing
+                (if nearest-comp
+                  (if comps-nesting-loop?
+                    (do
+                      (on-error)
+                      (rx/empty))
+                    (rx/of
+                     (dwl/component-swap shape (:component-file shape) (:id nearest-comp) true swap-opts)
+                     (ev/event (-> {::ev/name "variant-switch" ::ev/origin "workspace:design-tab"}
+                                   (merge (meta it))))))
+                  (rx/empty)))
+              (rx/empty)))
+          (rx/empty))))))
 
 (defn variants-switch
   "Switch each shape (that must be a variant copy head) for the closest one with the property value passed as parameter"
   [{:keys [shapes] :as params}]
   (ptk/reify ::variants-switch
     ptk/WatchEvent
-    (watch [it _ _]
-      (let [ids (into (d/ordered-set) d/xf:map-id shapes)
-            undo-id (js/Symbol)]
+    (watch [it _ stream]
+      (let [ids       (into (d/ordered-set) d/xf:map-id shapes)
+            undo-id   (js/Symbol)
+            swap-opts {:skip-select? true :skip-layout? true}]
         (rx/concat
          (rx/of (dwu/start-undo-transaction undo-id))
-         (->> (rx/from shapes)
-              (rx/map (fn [data]
-                        (-> (variant-switch data params)
-                            (with-meta (meta it))))))
+         (dwl/coalesce-skipped-layout
+          stream
+          (->> (rx/from shapes)
+               (rx/map (fn [shape]
+                         (-> (variant-switch shape (assoc params :swap-opts swap-opts))
+                             (with-meta (meta it)))))))
          (rx/of (dwu/commit-undo-transaction undo-id)
                 (dws/select-shapes ids)))))))

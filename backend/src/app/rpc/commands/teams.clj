@@ -85,6 +85,17 @@
 (def check-read-permissions!
   (perms/make-check-fn has-read-permissions?))
 
+(defn check-invitation-permissions
+  "Returns the team permissions of `profile-id`, raising the error of the
+  invitation family when they are not the admin ones that every invitation
+  command requires. Accepts a connection, a pool or a cfg."
+  [conn profile-id team-id]
+  (let [perms (get-permissions conn profile-id team-id)]
+    (when-not (:is-admin perms)
+      (ex/raise :type :validation
+                :code :insufficient-permissions))
+    perms))
+
 (defn decode-row
   [{:keys [features subscription] :as row}]
   (when row
@@ -489,8 +500,9 @@
   {::doc/added "1.17"
    ::sm/params schema:get-team-invitations}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
+  (check-invitation-permissions cfg profile-id team-id)
+
   (dm/with-open [conn (db/open pool)]
-    (check-read-permissions! cfg profile-id team-id)
     (get-team-invitations conn team-id)))
 
 
@@ -544,7 +556,8 @@
     (nitrate/assert-membership cfg profile-id organization-id)
 
     (let [organization-perms (nitrate/call cfg :get-organization-permissions
-                                           {:organization-id organization-id})]
+                                           {:organization-id organization-id
+                                            ::rpc/profile-id profile-id})]
       (if (nil? organization-perms)
         (ex/raise :type :validation
                   :code :not-allowed
@@ -892,8 +905,7 @@
         can-delete?
         (if in-organization?
           (cto/allowed? :delete-team
-                        {:organization-perms {:owner-id    (dm/get-in team [:organization :owner-id])
-                                              :permissions (dm/get-in team [:organization :permissions])}
+                        {:organization-perms organization
                          :profile-id profile-id
                          :team-perms perms})
           (boolean (:is-owner perms)))]
@@ -1102,9 +1114,9 @@
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
 
+  (media.v/check-upload-path file)
   (media.v/check-media-type file #{"image/jpeg" "image/png" "image/webp"})
   (media.v/check-media-size file)
-  (media.v/check-upload-path file)
   (update-team-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-team-photo

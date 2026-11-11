@@ -8,9 +8,11 @@
   "Unit tests for app.plugins.events, the plugin state-change listeners."
   (:require
    [app.common.uuid :as uuid]
+   [app.main.data.persistence :as dps]
    [app.main.store :as st]
    [app.plugins.events :as events]
-   [cljs.test :as t :include-macros true]))
+   [cljs.test :as t :include-macros true]
+   [potok.v2.core :as ptk]))
 
 (def ^:private plugin-id (str (uuid/next)))
 
@@ -64,3 +66,24 @@
         (remove-watch st/state ::probe-watch)
         (events/remove-listener key)
         (swap! st/state dissoc ::probe)))))
+
+(t/deftest contentrollback-listener-gets-every-rollback
+  (t/async done
+    (let [[file-id page-id shape-id] (repeatedly 3 uuid/next)
+          seen (atom [])
+          key  (events/add-listener "contentrollback" plugin-id #(swap! seen conj (js->clj %)) nil)]
+      (st/emit! (ptk/data-event ::dps/rolled-back {:file-ids #{file-id} :page-ids #{page-id} :shape-ids #{shape-id}})
+                (ptk/data-event ::dps/rolled-back {:file-ids #{file-id} :page-ids #{} :shape-ids #{}}))
+      (js/setTimeout
+       (fn []
+         (events/remove-listener key)
+         (t/is (= [{"fileIds" [(str file-id)] "pageIds" [(str page-id)] "shapeIds" [(str shape-id)]}
+                   {"fileIds" [(str file-id)] "pageIds" [] "shapeIds" []}]
+                  @seen))
+         (st/emit! (ptk/data-event ::dps/rolled-back {:file-ids #{file-id}}))
+         (js/setTimeout
+          (fn []
+            (t/is (= 2 (count @seen)) "a removed listener gets nothing")
+            (done))
+          20))
+       20))))

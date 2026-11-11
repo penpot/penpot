@@ -308,10 +308,11 @@ impl ShapesPoolImpl {
             }
         }
 
-        // Expand every root modifier to its full descendant subtree.
+        // Expand every pure-move root modifier to the descendants without one.
         // When CLJS sends only root shapes (translation on drag), descendants
-        // need the same matrix.
-        // For resize/rotate, propagate-modifiers already includes all descendants.
+        // need the same matrix. Other matrices come from propagate-modifiers,
+        // where a missing child means the child stays put (e.g. an auto-size
+        // layout parent or a layout child that does not move).
         // Descendants are NOT pushed into `ids` / `modifier_uuids`: rebuild_modifier_tiles
         // runs for roots, and drops the non-clipping ancestors' extrects separately.
         let root_pairs: Vec<(usize, skia::Matrix)> = ids
@@ -319,7 +320,7 @@ impl ShapesPoolImpl {
             .filter_map(|uuid| {
                 let idx = self.uuid_to_idx.get(uuid).copied()?;
                 let matrix = modifiers_with_idx.get(&idx).copied()?;
-                Some((idx, matrix))
+                math::is_move_only_matrix(&matrix).then_some((idx, matrix))
             })
             .collect();
 
@@ -598,5 +599,34 @@ mod tests {
 
         pool.get_mut(&id).expect("shape").set_opacity(0.5);
         assert_eq!(pool.get(&id).expect("shape").opacity, 0.5);
+    }
+
+    fn pool_with_parent_and_child() -> (ShapesPool, Uuid, Uuid) {
+        let mut pool = ShapesPool::new();
+        pool.initialize(2);
+        let parent = Uuid::new_v4();
+        let child = Uuid::new_v4();
+        pool.add_shape(parent).add_child(child);
+        pool.add_shape(child).set_parent(parent);
+        (pool, parent, child)
+    }
+
+    #[test]
+    fn set_modifiers_passes_a_move_down_to_children() {
+        let (mut pool, parent, child) = pool_with_parent_and_child();
+        let translate = skia::Matrix::translate((10.0, 0.0));
+
+        pool.set_modifiers(HashMap::from([(parent, translate)]));
+
+        assert_eq!(pool.get_modifier(&child), Some(&translate));
+    }
+
+    #[test]
+    fn set_modifiers_keeps_a_resize_on_the_parent() {
+        let (mut pool, parent, child) = pool_with_parent_and_child();
+
+        pool.set_modifiers(HashMap::from([(parent, skia::Matrix::scale((1.0, 2.4)))]));
+
+        assert_eq!(pool.get_modifier(&child), None);
     }
 }

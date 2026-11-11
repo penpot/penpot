@@ -17,9 +17,9 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.helpers :as dsh]
+   [app.main.data.persistence.lock :as plk]
    [app.main.data.workspace.drawing.common :as common]
    [app.main.streams :as ms]
-   [app.util.mouse :as mse]
    [app.util.path.simplify-curve :as ups]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -104,19 +104,22 @@
   (ptk/reify ::handle-drawing
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stopper (mse/drag-stopper stream)
-            mouse   (rx/sample 10 ms/mouse-position)
-            shape   (cts/setup-shape {:type :path
-                                      :initialized? true
-                                      :frame-id uuid/zero
-                                      :parent-id uuid/zero
-                                      ::points []})]
+      (let [cancelled? (volatile! false)
+            stopper    (plk/gesture-stopper stream cancelled?)
+            mouse      (rx/sample 10 ms/mouse-position)
+            shape      (cts/setup-shape {:type :path
+                                         :initialized? true
+                                         :frame-id uuid/zero
+                                         :parent-id uuid/zero
+                                         ::points []})]
         (rx/concat
          (rx/of #(update % :workspace-drawing assoc :object shape))
          (->> mouse
               (rx/map insert-point)
               (rx/take-until stopper))
-         (rx/of
-          (setup-frame)
-          (finish-drawing)
-          (common/handle-finish-drawing)))))))
+         (rx/defer
+          #(if @cancelled?
+             (rx/of (common/cancel-drawing))
+             (rx/of (setup-frame)
+                    (finish-drawing)
+                    (common/handle-finish-drawing)))))))))

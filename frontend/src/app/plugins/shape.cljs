@@ -365,6 +365,7 @@
 
    (let [data (u/locate-shape file-id page-id id)]
      (-> (obj/reify {:name "ShapeProxy"
+                     :on-set u/check-shape-writable
                      :on-error (u/handle-error plugin-id)}
            :$plugin {:enumerable false :get (fn [] plugin-id)}
            :$id {:enumerable false :get (fn [] id)}
@@ -1041,6 +1042,7 @@
            ;; Methods
            :resize
            (fn [width height]
+             (u/check-shape-located file-id page-id id)
              (cond
                (or (not (sm/valid-safe-number? width)) (<= width 0))
                (u/not-valid plugin-id :resize width)
@@ -1081,6 +1083,7 @@
 
            :rotate
            (fn [angle center]
+             (u/check-shape-located file-id page-id id)
              (let [center (when center {:x (obj/get center "x") :y (obj/get center "y")})]
                (cond
                  (not (sm/valid-safe-number? angle))
@@ -1469,18 +1472,22 @@
 
            :bringForward
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :up) [id])))
 
            :sendBackward
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :down) [id])))
 
            :bringToFront
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :top) [id])))
 
            :sendToBack
            (fn []
+             (r/check-writable)
              (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :bottom) [id])))
 
            ;; COMPONENTS

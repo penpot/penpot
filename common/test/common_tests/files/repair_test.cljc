@@ -546,3 +546,74 @@
       ;; First iteration used the seed; errors-fn runs only after the repair.
       (t/is (= 1 @calls)))))
 
+
+(defn- lost-main-file
+  "A component whose main is on page1 and its copy on page2, with the
+  component's `:main-instance-id` pointing to a missing shape."
+  []
+  (-> (thf/sample-file :file1 :page-label :page1)
+      (tho/add-simple-component :component1 :root1 :child1)
+      (thf/add-sample-page :page2)
+      (thc/instantiate-component :component1 :copy1)
+      (thc/update-component :component1 :main-instance-id (uuid/next))))
+
+(defn- edit-copy-changes
+  []
+  [{:type :mod-obj
+    :page-id (thi/id :page2)
+    :id (thi/id :copy1)
+    :operations [{:type :set :attr :name :val "renamed"}]}])
+
+(defn- repair-scoped
+  [file changes]
+  (cfr/repair-file-until-valid
+   file {}
+   (fn [file applied]
+     (cfv/validate-file-affected file {} (into applied changes)))))
+
+(t/deftest repair-ref-shape-not-found-fixes-lost-main-instance-id
+  (t/testing "a repair scoped to the copy's page points the component back
+              to its main and keeps the copy linked"
+    (let [file       (lost-main-file)
+          changes    (edit-copy-changes)
+          errors     (cfv/validate-file-affected file {} changes)
+          result     (repair-scoped file changes)
+          file'      (:file result)
+          copy1'     (ths/get-shape file' :copy1 :page-label :page2)
+          component' (thc/get-component file' :component1)]
+
+      (t/is (= #{:ref-shape-not-found} (into #{} (map :code) errors)))
+      (t/is (nil? (:errors result)))
+      (t/is (nil? (cfv/validate-file file' {})))
+      (t/is (= (thi/id :root1) (:main-instance-id component')))
+      (t/is (= (thi/id :component1) (:component-id copy1')))
+      (t/is (= (thi/id :file1) (:component-file copy1')))
+      (t/is (= (thi/id :root1) (:shape-ref copy1')))
+      (t/is (true? (:component-root copy1'))))))
+
+(t/deftest repair-whole-file-keeps-copy-of-lost-main
+  (t/testing "a whole-file repair fixes the component and keeps the copy linked"
+    (let [file    (lost-main-file)
+          result  (cfr/repair-file-until-valid
+                   file {}
+                   (fn [file _] (cfv/validate-file file {})))
+          file'   (:file result)
+          copy1'  (ths/get-shape file' :copy1 :page-label :page2)]
+
+      (t/is (nil? (:errors result)))
+      (t/is (nil? (cfv/validate-file file' {})))
+      (t/is (= (thi/id :root1) (:main-instance-id (thc/get-component file' :component1))))
+      (t/is (= (thi/id :root1) (:shape-ref copy1')))
+      (t/is (= (thi/id :component1) (:component-id copy1'))))))
+
+(t/deftest repair-ref-shape-not-found-detaches-copy-of-missing-main
+  (t/testing "a copy is detached when no shape on the component's page is its main"
+    (let [file    (-> (lost-main-file)
+                      (ths/update-shape :root1 :main-instance nil :page-label :page1))
+          changes (edit-copy-changes)
+          result  (repair-scoped file changes)
+          copy1'  (ths/get-shape (:file result) :copy1 :page-label :page2)]
+
+      (t/is (nil? (:errors result)))
+      (t/is (nil? (:component-id copy1')))
+      (t/is (nil? (:shape-ref copy1'))))))

@@ -46,14 +46,13 @@
 
 (t/deftest upload-tempfile-returns-fresh-object-for-same-content
   (let [profile (th/create-profile* 1 {:is-active true})
-        path    (fs/create-tempfile :dir "/tmp/penpot" :prefix "test-upload-tempfile-")
-        _       (io/write* path "content")
+        path    (th/tempfile "backend_tests/test_files/sample.png")
         params  {::th/type :upload-tempfile
                  ::rpc/profile-id (:id profile)
                  :content {:filename "export.png"
                            :path path
                            :mtype "image/png"
-                           :size 7}}
+                           :size (fs/size path)}}
         config  (assoc cf/config :public-uri "https://example.com/penpot")
         out1    (binding [cf/config config]
                   (th/multipart-management-command! params))
@@ -92,9 +91,7 @@
 (t/deftest upload-tempfile-accepts-both-declared-keys
   (let [profile (th/create-profile* 1 {:is-active true})]
     (doseq [key-id [:exporter :media-processor]]
-      (let [path (fs/create-tempfile :dir "/tmp/penpot"
-                                     :prefix (str "test-upload-" (name key-id) "-"))
-            _    (io/write* path "content")
+      (let [path (th/tempfile "backend_tests/test_files/sample.png")
             out  (th/multipart-management-command!
                   {::th/type :upload-tempfile
                    ::rpc/auth-key-id key-id
@@ -102,7 +99,7 @@
                    :content {:filename "export.png"
                              :path path
                              :mtype "image/png"
-                             :size 7}})]
+                             :size (fs/size path)}})]
         (t/is (nil? (:error out)) (name key-id))))))
 
 (t/deftest duplicate-file
@@ -167,11 +164,8 @@
           (t/is (= (:media-id item) (:media-id mobj)))
           (t/is (= (:media-id item) (:id sobject)))
 
-          ;; Check if media correctly contains the new file-media-object id
-          (t/is (contains? (get-in result [:data :media]) (:id item)))
-
-          ;; And does not contains the old one
-          (t/is (not (contains? (get-in result [:data :media]) (:id mobj)))))
+          ;; The response carries the file metadata only
+          (t/is (not (contains? result :data))))
 
         ;; Check the total number of files
         (let [rows (th/db-query :file {:project-id (:id project)})]

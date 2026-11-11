@@ -31,6 +31,24 @@
 (def write-handler-map (atom nil))
 (def read-handler-map (atom nil))
 
+;; Readers are built lazily on first use and reused afterwards. Building a
+;; reader on every call is expensive: transit merges the handlers, allocates
+;; a read cache and prepares the marshaller machinery. A reader captures the
+;; handler maps it was created with, so `add-handlers!` replaces them.
+#?(:cljs
+   (def ^:private ^:dynamic *json-reader* nil))
+
+#?(:cljs
+   (def ^:private ^:dynamic *json-verbose-reader* nil))
+
+#?(:cljs
+   (defn- rebuild-readers
+     []
+     (set! *json-reader*
+           (delay (t/reader :json {:handlers @read-handler-map})))
+     (set! *json-verbose-reader*
+           (delay (t/reader :json-verbose {:handlers @read-handler-map})))))
+
 ;; A generic pointer; mainly used for deserialize backend pointer-map
 ;; instances that serializes to pointer but may in other ways.
 (deftype Pointer [id metadata]
@@ -95,6 +113,10 @@
 
       (reset! write-handler-map #?(:clj (t/write-handler-map cwh) :cljs cwh))
       (reset! read-handler-map #?(:clj (t/read-handler-map crh) :cljs crh))
+      ;; A reader captures the handler maps, so build new ones from the maps
+      ;; just stored. A handler registered after a read then applies on the
+      ;; next read.
+      #?(:cljs (rebuild-readers))
       nil)))
 
 ;; --- HANDLERS
@@ -109,6 +131,37 @@
              (let [kw (keyword value)]
                (.set cache value kw)
                kw))))))
+
+#?(:cljs
+   (def ^:private uuid-cache-size
+     "Twice the ids of a very large page (~60k shapes), so decoding one
+     page does not rotate the cache."
+     131072))
+
+#?(:cljs (def ^:private recent-uuids (js/Map.)))
+#?(:cljs (def ^:private previous-uuids (js/Map.)))
+
+#?(:cljs
+   (defn clear-uuid-cache
+     "Forget the cached uuids, so the ids of a closed file can be freed."
+     []
+     (set! recent-uuids (js/Map.))
+     (set! previous-uuids (js/Map.))))
+
+#?(:cljs
+   (defn- read-uuid
+     "Give the same uuid instance for each value. Entries live in two
+     generations: when the recent one is full it becomes the previous one
+     and the older one is dropped, so the cache stays bounded."
+     [value]
+     (or (.get recent-uuids value)
+         (let [id (or (.get previous-uuids value)
+                      (parse-uuid value))]
+           (when (>= (.-size recent-uuids) uuid-cache-size)
+             (set! previous-uuids recent-uuids)
+             (set! recent-uuids (js/Map.)))
+           (.set recent-uuids value id)
+           id))))
 
 (add-handlers!
  #?@(:clj
@@ -128,7 +181,7 @@
 
  #?(:cljs
     {:id "u"
-     :rfn parse-uuid})
+     :rfn read-uuid})
 
  #?(:cljs
     {:id ":"
@@ -253,10 +306,19 @@
   ([data] (decode-str data nil))
   ([data opts]
    #?(:cljs
-      (let [type   (:type opts :json)
-            params {:handlers @read-handler-map}
-            reader (t/reader type params)]
-        (t/read reader data))
+      (let [reader (case (:type opts :json)
+                     :json         @*json-reader*
+                     :json-verbose @*json-verbose-reader*)]
+        (try
+          (t/read reader data)
+          (catch :default cause
+            ;; The reader clears its internal read cache after a successful
+            ;; read but not after a failed one, so a reused reader would
+            ;; resolve cache codes against the failed read. Clear it before
+            ;; propagating the error.
+            (when-let [cache (.-cache reader)]
+              (.clear cache))
+            (throw cause))))
       :clj
       (-> (str->bytes data)
           (decode opts)))))

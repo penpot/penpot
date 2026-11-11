@@ -17,6 +17,7 @@
    [app.common.spec :as us]
    [app.common.time :as ct]
    [app.common.transit :as tr]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -86,7 +87,8 @@
    :enable-quotes
    :enable-rpc-climit
    :enable-auto-file-snapshot
-   :disable-file-validation])
+   :disable-file-validation
+   :disable-admin-console])
 
 (defn init-config
   ([next]
@@ -377,6 +379,21 @@
                                                      :changes changes
                                                      :session-id session-id
                                                      :profile-id profile-id})))))))
+
+(defn add-rect-change
+  "A change that adds a 10x10 rect `id` to the root of `page-id`."
+  [page-id id]
+  {:type :add-obj
+   :page-id page-id
+   :id id
+   :parent-id uuid/zero
+   :frame-id uuid/zero
+   :obj (cts/setup-shape {:id id
+                          :type :rect
+                          :name "rect"
+                          :x 0 :y 0 :width 10 :height 10
+                          :parent-id uuid/zero
+                          :frame-id uuid/zero})})
 
 (declare command!)
 
@@ -759,6 +776,21 @@
     (io/copy (io/file rsc)
              (io/file tmp))
     tmp))
+
+(defmacro with-temp-file
+  "Evaluate `body` with `sym` bound to the path of a temporary file that
+   holds `content`. The file is created under /tmp/penpot, one of the two
+   places the upload validation accepts (/tmp/undertow is the other one),
+   and it is deleted when the body ends, also when it throws."
+  [[sym content] & body]
+  `(let [path# (fs/create-tempfile :dir "/tmp/penpot" :prefix "penpot-test-")]
+     (try
+       (spit (str path#) ~content :encoding "UTF-8")
+       (let [~sym path#]
+         ~@body)
+       (finally
+         (when (fs/exists? path#)
+           (fs/delete path#))))))
 
 (defn pause
   []
