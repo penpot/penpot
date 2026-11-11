@@ -444,7 +444,8 @@ impl PendingTiles {
 
         // Farthest first, since we use pop() to process the tiles
         // in order of priority (closest first)
-        self.tile_order.sort_unstable_by(|a, b| b.0.cmp(&a.0));
+        self.tile_order
+            .sort_unstable_by_key(|a| std::cmp::Reverse(a.0));
 
         for (_, tile) in self.tile_order.iter() {
             let tile = *tile;

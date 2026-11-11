@@ -10,6 +10,7 @@
    [app.common.features :as cfeat]
    [app.common.files.repair :as cfr]
    [app.common.files.validate :as cfv]
+   [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -249,12 +250,38 @@
             page-id (thi/id :page1)
             changes [(set-attr page-id (thi/id :other) :name "renamed")]
             cfg     {::files-update/validation-timings (atom {})}
-            result  (with-redefs [bfc/get-resolved-file-libraries (fn [_ _] {})]
-                      (@#'files-update/process-changes-and-validate cfg file changes nil))
+            result  (binding [pmap/*tracked* (pmap/create-tracked)]
+                      (with-redefs [bfc/get-resolved-file-libraries (fn [_ _] {})]
+                        (@#'files-update/process-changes-and-validate cfg file changes nil nil)))
             stored  result]
         (t/is (some? (::files-update/repair stored)))
         (t/is (nil? (cfv/validate-file stored {})))
         (t/is (nil? (get-in stored [:data :components (thi/id :component1) :objects])))))))
+
+(t/deftest repair-on-copy-page-keeps-copy-of-lost-main
+  (thi/reset-idmap!)
+  (with-repair-flags
+    (fn []
+      (let [file    (-> (thf/sample-file :file1 :page-label :page1)
+                        (assoc :revn 0)
+                        (tho/add-simple-component :component1 :root1 :child1)
+                        (thf/add-sample-page :page2)
+                        (thc/instantiate-component :component1 :copy1)
+                        (thc/update-component :component1 :main-instance-id (uuid/next)))
+            page-id (thi/id :page2)
+            changes [(set-attr page-id (thi/id :copy1) :name "renamed")]
+            cfg     {::files-update/validation-timings (atom {})}
+            stored  (binding [pmap/*tracked* (pmap/create-tracked)]
+                      (with-redefs [bfc/get-resolved-file-libraries (fn [_ _] {})]
+                        (@#'files-update/process-changes-and-validate cfg file changes nil nil)))
+            copy1   (get-in stored [:data :pages-index page-id :objects (thi/id :copy1)])]
+        (t/is (some? (::files-update/repair stored)))
+        (t/is (nil? (cfv/validate-file stored {})))
+        (t/is (= (thi/id :root1)
+                 (get-in stored [:data :components (thi/id :component1) :main-instance-id])))
+        (t/is (= "renamed" (:name copy1)))
+        (t/is (= (thi/id :root1) (:shape-ref copy1)))
+        (t/is (= (thi/id :component1) (:component-id copy1)))))))
 
 (t/deftest repair-records-timings-with-schema-validation
   (thi/reset-idmap!)
@@ -267,8 +294,9 @@
             changes [(set-attr (thi/id :page1) (thi/id :shape1) :name "renamed")]
             timings (atom {})
             cfg     {::files-update/validation-timings timings}
-            result  (with-redefs [bfc/get-resolved-file-libraries (fn [_ _] {})]
-                      (@#'files-update/process-changes-and-validate cfg file changes nil))]
+            result  (binding [pmap/*tracked* (pmap/create-tracked)]
+                      (with-redefs [bfc/get-resolved-file-libraries (fn [_ _] {})]
+                        (@#'files-update/process-changes-and-validate cfg file changes nil nil)))]
         (t/is (some? (::files-update/repair result)))
         (t/is (number? (:repair-ms @timings)))
         (t/is (number? (:reprocess-changes-ms @timings)))

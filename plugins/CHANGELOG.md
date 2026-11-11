@@ -1,4 +1,4 @@
-## 1.6.0 (Unreleased)
+## 1.6.0 (2026-11-10)
 
 ### 🚀 Features
 
@@ -10,13 +10,17 @@
 - **plugin-types:** Added `paddingType` (`'simple' | 'multiple'`) to flex and grid layouts and `marginType` (`'simple' | 'multiple'`) to layout children, exposing whether the four padding/margin sides are mirrored or honoured independently.
 - **plugin-types**: Added `waitForLayoutUpdate` to wait until pending layout updates have finished. It rejects when the optional timeout elapses, defaulting to 30 seconds so a wait never hangs.
 - **plugin-types**: Added `waitForLayoutUpdate` to the `Shape` interface to wait until the pending layout updates of a shape and its children have finished
+- **plugin-types:** Added the `contentrollback` event and the `ContentRollback` type. The event fires after the backend rejected some changes and the workspace undid them, with the ids of the files, pages and shapes affected. It fires once the undone data is in the workspace, also when the workspace has to reload the file to undo the changes.
 - **plugin-types:** `Stroke` exposes per-side widths for boards and rectangles, also supported by `borderWidth` and `dimension` tokens. Read-only `strokeWidthType` reports `simple` when all four effective widths match, otherwise `multiple`.
 
 ### 🩹 Fixes
 
+- **plugin-runtime:** `LibraryComponent.instance()`, `createShapeFromSvg()` and `createShapeFromSvgWithImages()` now create shapes at the page root instead of inside a board at the page origin. Closes #12086.
 - **plugin-types, plugin-runtime:** Dashboard property setters now update values after backend success and log failures without interrupting the workspace. File moves reject projects in other teams, backend rejections include their type and code, and `project.fileCount` stays at its listing snapshot. Duplicated projects include their file count and pinned state.
 - **plugin-runtime:** Cancel plugin loads before they execute after unloading or logout, and allow reopening plugins that close during startup.
 - **plugins-runtime**: `library.connectLibrary()` now resolves once the library's assets are loaded; it used to resolve with an empty library the first time. `library.connected` and `library.availableLibraries()` ignore files opened earlier in the same tab, which used to show up as connected and be left out of the available libraries.
+- **plugins-runtime:** Writes now fail with an error while the workspace cannot take them (saves failing, a user who cannot edit, a version preview, a canvas that stopped rendering), whatever the `throwValidationErrors` flag. They used to change the workspace with edits that would never be saved. The error says why. The Inspect tab does not block writes, and undo blocks still open and close.
+- **plugins-runtime:** Writes that wait for the server (`createShapeFromSvgWithImages`, `uploadMediaData`, `uploadMediaUrl`, `connectLibrary`) check again when the server answers. If the workspace turned read-only meanwhile (a save failed), the promise rejects with the read-only error: no shape is added and no library is linked. An image the server already stored stays in the file's media, unused.
 - **plugins-runtime:** `LibraryComponent.remove()` now rejects linked-library and missing component handles, and does nothing for an already deleted component.
 - **plugins-runtime**: An interaction obtained from `Shape.interactions` now keeps addressing that interaction instead of the position it held when the array was read. Removing every interaction of a shape from a single read removes all of them rather than leaving some behind, and writing through a held interaction after an earlier one is removed no longer lands on a different interaction.
 - **plugins-runtime**: `Shape.removeInteraction()` now rejects an interaction belonging to a different shape with a validation error, instead of removing whichever interaction sat at the same position on the target shape.

@@ -111,8 +111,14 @@
    :ssrf-extra-blocked-cidrs #{}})
 
 (def schema:tenant
-  "Tenant identifier: hostname-label-style (letters, digits and
-  hyphens). It is interpolated into Redis keys separated by dots (msgbus
+  "Tenant identifier: hostname-label-style, lowercase (letters, digits
+  and hyphens). The value is normalized to lowercase when the
+  configuration is read, so an operator writing `PENPOT_TENANT=ACME` and
+  one writing `acme` name the same tenant: the value is compared as an
+  exact string in the keys and rows it lands in, and one uppercase
+  letter would otherwise split one tenant into two.
+
+  It is interpolated into Redis keys separated by dots (msgbus
   topics, rate-limit buckets, exporter job keys, which are also matched
   with a glob pattern), so `.` and whitespace are rejected at startup
   because one tenant would then be able to read or overwrite another's
@@ -125,7 +131,14 @@
   tenant asking for it, and a tenant that has one would have to be
   renamed. Tenants using those characters must be renamed before
   upgrading."
-  [:re #"^[A-Za-z0-9-]+$"])
+  [:re #"^[a-z0-9-]+$"])
+
+(defn- normalize-tenant
+  "Lowercase the configured tenant before it is validated, so
+  `PENPOT_TENANT=ACME` and `acme` mean the same tenant everywhere."
+  [config]
+  (cond-> config
+    (string? (:tenant config)) (update :tenant str/lower)))
 
 (def schema:config
   (do #_sm/optional-keys
@@ -401,6 +414,7 @@
   [& {:keys [prefix default] :or {prefix "penpot"}}]
   (->> (read-env prefix)
        (merge default)
+       (normalize-tenant)
        (decode-config)))
 
 (def version

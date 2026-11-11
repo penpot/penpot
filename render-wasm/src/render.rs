@@ -764,6 +764,13 @@ impl RenderState {
         Self::union_stroke_outset(base, stroke_outset)
     }
 
+    /// Fill ∪ outer stroke outline in shape-local space: the area a drop
+    /// shadow must not show under (vector, SVG).
+    pub(crate) fn drop_shadow_clear_path(shape: &Shape) -> skia::Path {
+        let stroke_outset = Stroke::max_bounds_width(shape.visible_strokes(), shape.is_open());
+        Self::background_blur_clip_path(shape, stroke_outset)
+    }
+
     /// Unions a centered stroke of width `2 * stroke_outset` into `base`.
     /// The inward half disappears in the union, leaving `stroke_outset` beyond
     /// the fill outline.
@@ -3431,20 +3438,11 @@ impl RenderState {
             return self.render_masked_group_silhouette(shape, clip_bounds, pass);
         }
 
-        let flat = Shadow::new(
-            skia::Color::BLACK,
-            0.0,
-            0.0,
-            (0.0, 0.0),
-            crate::shapes::ShadowStyle::Drop,
-            false,
-        );
-
         self.render_drop_black_shadow(
             shape,
             pass.tree,
             &shape.extrect(pass.tree, pass.scale),
-            &flat,
+            &Shadow::silhouette(),
             clip_bounds.clone(),
             pass.scale,
             pass.extra_layer_blur,
@@ -3649,7 +3647,19 @@ impl RenderState {
         // High zoom with blur: use render_into_filter_surface to ensure blur has enough space
         // Apply spread geometrically to avoid dilate filter rounding issues
         let layer_blur_value = combined_blur.map(|b| b.value).unwrap_or(0.0);
-        let cache_key = clip_bounds.is_none().then(|| {
+
+        // Only the part that can blur into this tile matters. A shadow bigger
+        // than the filter surface would otherwise be cut at MIN_FIT_SCALE.
+        let mut filter_bounds = bounds;
+        if target_surface != SurfaceId::Export {
+            let reach = 2.0 * (shadow.blur + layer_blur_value) + 1.0;
+            let tile_reach = self.render_area_with_margins.with_outset((reach, reach));
+            if !filter_bounds.intersect(tile_reach) {
+                return Ok(());
+            }
+        }
+
+        let cache_key = (clip_bounds.is_none() && filter_bounds == bounds).then(|| {
             shadows::DropShadowFilterCacheKey::for_shape(
                 shape.id,
                 shadow,
@@ -3682,7 +3692,7 @@ impl RenderState {
         // Apply spread geometrically to avoid dilate filter rounding issues
         let filter_result = filters::render_into_filter_surface(
             self,
-            bounds,
+            filter_bounds,
             blur_downscale,
             |state, temp_surface| {
                 let canvas = state.surfaces.canvas(temp_surface);
@@ -3712,7 +3722,8 @@ impl RenderState {
         )?;
 
         if let Some((mut surface, filter_scale)) = filter_result {
-            let cached = shadows::CachedDropShadowFilter::new(bounds, filter_scale, &mut surface);
+            let cached =
+                shadows::CachedDropShadowFilter::new(filter_bounds, filter_scale, &mut surface);
             shadows::blit_cached_drop_shadow_filter(
                 &mut self.surfaces,
                 &cached,
@@ -3818,6 +3829,27 @@ impl RenderState {
             self.surfaces
                 .canvas(SurfaceId::DropShadows)
                 .draw_paint(&paint);
+
+            // Like CSS box-shadow, the shadow never shows under the shape.
+            if element.clears_drop_shadow_underneath() {
+                let mut paint = skia::Paint::default();
+                paint.set_blend_mode(skia::BlendMode::DstOut);
+                let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+                self.surfaces
+                    .canvas(SurfaceId::DropShadows)
+                    .save_layer(&layer_rec);
+                self.render_drop_black_shadow(
+                    element,
+                    tree,
+                    element_extrect,
+                    &Shadow::silhouette(),
+                    clip_bounds.clone(),
+                    scale,
+                    None,
+                    target_surface,
+                )?;
+                self.surfaces.canvas(SurfaceId::DropShadows).restore();
+            }
 
             self.surfaces.canvas(SurfaceId::DropShadows).restore();
         }

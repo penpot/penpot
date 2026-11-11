@@ -507,6 +507,33 @@
     (t/is (= 1 @calls) "the update function ran once for the committed shape")
     (t/is (= 0.5 (.-opacity rect)) "the single computed result was committed")))
 
+(t/deftest test-writing-to-a-removed-shape-throws
+  (let [store    (ths/setup-store (cthf/sample-file :file1 :page-label :page1)
+                                  {:renderer :svg})
+        _        (set! st/state store)
+        _        (set! st/stream (ptk/input-stream store))
+        ^js ctx  (api/create-context zero-id)
+        ^js rect (.createRectangle ctx)]
+    (set! (.-name rect) "Before")
+    (t/is (= "Before" (.-name rect)) "a write to an existing shape works")
+    (.remove rect)
+    (t/is (thrown-with-msg? js/Error #"Shape not found"
+                            (set! (.-name rect) "After"))
+          "a write to a removed shape throws, even without throwValidationErrors")))
+
+(t/deftest test-resizing-or-rotating-a-removed-shape-throws
+  (let [store    (ths/setup-store (cthf/sample-file :file1 :page-label :page1)
+                                  {:renderer :svg})
+        _        (set! st/state store)
+        _        (set! st/stream (ptk/input-stream store))
+        ^js ctx  (api/create-context zero-id)
+        ^js rect (.createRectangle ctx)]
+    (.remove rect)
+    (t/is (thrown-with-msg? js/Error #"Shape not found" (.resize rect 10 10))
+          "resizing a removed shape throws instead of doing nothing")
+    (t/is (thrown-with-msg? js/Error #"Shape not found" (.rotate rect 45))
+          "rotating a removed shape throws instead of doing nothing")))
+
 (t/deftest test-wait-for-layout-update-no-pending
   ;; When nothing is pending the promise resolves immediately via the fast path
   ;; (the behavior-subject replays the empty map on subscribe).

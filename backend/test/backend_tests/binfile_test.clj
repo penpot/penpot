@@ -15,6 +15,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.tokens :as cfo]
    [app.common.files.validate :as cfv]
+   [app.common.geom.matrix :as gmt]
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
    [app.common.types.shape :as cts]
@@ -30,13 +31,16 @@
    [app.storage.tmp :as tmp]
    [backend-tests.helpers :as th]
    [backend-tests.storage-test :as stt]
-   [clojure.java.io :as jio]
+   [clojure.data.json :as json]
    [clojure.test :as t]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [datoteka.io :as io])
   (:import
    java.io.ByteArrayInputStream
+   java.io.ByteArrayOutputStream
+   java.io.DataInputStream
+   java.io.DataOutputStream
    java.io.OutputStreamWriter
    java.io.Writer
    java.util.zip.Deflater
@@ -216,6 +220,63 @@
      :token-radius token-radius
      :token-opacity token-opacity}))
 
+(defn- export-file
+  [file & {:keys [include-libraries]}]
+  (let [output (tmp/tempfile :suffix ".zip")]
+    (v3/export-files!
+     (cond-> (-> th/*system*
+                 (assoc ::bfc/file-ids #{(:id file)})
+                 (assoc ::bfc/output (io/output-stream output)))
+       include-libraries
+       (assoc ::bfc/export-type :include-libraries)))
+    output))
+
+(defn- import-bundle
+  [profile path]
+  (-> th/*system*
+      (assoc ::bfc/project-id (:default-project-id profile))
+      (assoc ::bfc/team-id (:default-team-id profile))
+      (assoc ::bfc/profile-id (:id profile))
+      (assoc ::bfc/input path)
+      (v3/import-files!)
+      (:file-ids)))
+
+(defn- read-manifest
+  [path]
+  (with-open [zip (ZipFile. (.toFile ^java.nio.file.Path path))]
+    (let [entry (.getEntry zip "manifest.json")]
+      (with-open [input (.getInputStream zip entry)]
+        (json/read-str (slurp input :encoding "UTF-8"))))))
+
+(defn- tamper-manifest-relations
+  [src dst relations]
+  (with-open [zin  (ZipFile. (.toFile ^java.nio.file.Path src))
+              zout (ZipOutputStream. (io/output-stream dst))]
+    (doseq [entry (enumeration-seq (.entries zin))]
+      (let [name (.getName ^ZipEntry entry)]
+        (if (= name "manifest.json")
+          (let [manifest (-> (slurp (.getInputStream zin entry) :encoding "UTF-8")
+                             (json/read-str)
+                             (assoc "relations" relations))]
+            (.putNextEntry zout (ZipEntry. name))
+            (.write zout (.getBytes (json/write-str manifest) "UTF-8"))
+            (.closeEntry zout))
+          (do
+            (.putNextEntry zout (ZipEntry. name))
+            (with-open [input (.getInputStream zin entry)]
+              (io/copy input zout))
+            (.closeEntry zout)))))))
+
+(defn- prepare-victim-file
+  [n]
+  (let [profile  (th/create-profile* n)
+        team     (th/create-team* n {:profile-id (:id profile)})
+        project  (th/create-project* n {:team-id (:id team)
+                                        :profile-id (:id profile)})
+        file     (th/create-file* n {:profile-id (:id profile)
+                                     :project-id (:id project)})]
+    [profile file]))
+
 (def ^:private svg-raw-page-id (uuid/custom 1 1))
 (def ^:private svg-raw-root-id (uuid/custom 3 1))
 (def ^:private svg-raw-child-id (uuid/custom 3 2))
@@ -316,12 +377,12 @@
 
 (defn- import-svg-attrs-asset
   "Imports the `svg-attrs-camel-case.penpot` asset, a real penpot export
-  whose shapes carry `:svg-attrs` keys in camelCase (the format the
-  binary export writes), and returns the imported file."
+  whose shapes carry `:svg-attrs` keys in camelCase (the spelling the
+  binary export wrote at the time), and returns the imported file. The
+  v3 reader kebab-izes every key, so the shapes come back with
+  kebab-case keys."
   [profile]
-  (let [input  (-> "backend_tests/test_files/svg-attrs-camel-case.penpot"
-                   io/resource
-                   jio/file)
+  (let [input  (th/tempfile "backend_tests/test_files/svg-attrs-camel-case.penpot")
         result (-> th/*system*
                    (assoc ::bfc/project-id (:default-project-id profile))
                    (assoc ::bfc/profile-id (:id profile))
@@ -330,13 +391,11 @@
                    (v3/import-files!))]
     (bfc/get-file th/*system* (first (:file-ids result)))))
 
-(t/deftest import-binfile-v3-preserves-camel-case-svg-attrs
+(t/deftest import-binfile-v3-normalizes-svg-attrs-to-kebab
   ;; The json reader used by the v3 import rewrites every key of every
-  ;; zip entry to kebab-case, and `:svg-attrs` is the one shape map
-  ;; whose keys are camelCase react prop names. A shape exported with
-  ;; `fillRule: "evenodd"` must not come back as `:fill-rule`, or the
-  ;; renderer falls back to the default fill rule and the shape is
-  ;; painted without its hole.
+  ;; zip entry to kebab-case, and birth stores `:svg-attrs` in kebab-case
+  ;; too, so a shape exported with `fillRule: "evenodd"` stays kebab and
+  ;; the renderer finds the fill rule it expects.
   (let [profile (th/create-profile* 1)
         file    (import-svg-attrs-asset profile)
         shape   (get-in file [:data :pages-index
@@ -344,10 +403,11 @@
                               :objects
                               (uuid/uuid "ce3641bd-48c8-804c-8008-b54d35cc6f80")])]
 
-    (t/is (= {:fillRule "evenodd"}
+    (t/is (some? shape) "the fixture shape was found")
+    (t/is (= {:fill-rule "evenodd"}
              (:svg-attrs shape)))))
 
-(t/deftest import-binfile-v3-preserves-camel-case-svg-attrs-on-components
+(t/deftest import-binfile-v3-normalizes-svg-attrs-to-kebab-on-components
   ;; Same guarantee for shapes stored inside a component: the v3 import
   ;; cleans those in a different code path than page shapes.
   (let [profile (th/create-profile* 1)
@@ -358,13 +418,131 @@
                       (get (uuid/uuid shape-id))
                       :svg-attrs))]
 
-    (t/is (= {:fillRule "evenodd"}
+    (t/is (= {:fill-rule "evenodd"}
              (shape "fae4bc76-0cc2-8057-8008-b540912cdf78"
                     "fae4bc76-0cc2-8057-8008-b540912774cb")))
 
-    (t/is (= {:fillRule "nonzero"}
+    (t/is (= {:fill-rule "nonzero"}
              (shape "fae4bc76-0cc2-8057-8008-b540912c917b"
                     "fae4bc76-0cc2-8057-8008-b540912774c8")))))
+
+(def ^:private svg-defs-page-id (uuid/custom 4 1))
+(def ^:private svg-defs-shape-id (uuid/custom 4 2))
+
+(defn- prepare-svg-defs-file
+  "A file with an svg-raw shape carrying a filter def, the stored
+  kebab form birth produces (what an SVG import leaves behind)."
+  ([profile] (prepare-svg-defs-file profile 1))
+  ([profile idx]
+   (let [page-id  svg-defs-page-id
+         shape-id svg-defs-shape-id
+
+         file     (th/create-file* idx {:profile-id (:id profile)
+                                        :project-id (:default-project-id profile)
+                                        :is-shared false})]
+     (update-file!
+      :file-id (:id file)
+      :profile-id (:id profile)
+      :revn 0
+      :vern 0
+      :changes
+      [{:type :add-page
+        :name "page 1"
+        :id page-id}])
+
+     (update-file!
+      :file-id (:id file)
+      :profile-id (:id profile)
+      :revn 0
+      :vern 0
+      :changes
+      [{:type :add-obj
+        :page-id page-id
+        :id shape-id
+        :parent-id uuid/zero
+        :frame-id uuid/zero
+        :components-v2 true
+        :obj (cts/setup-shape
+              {:id shape-id
+               :name "svg-filter"
+               :frame-id uuid/zero
+               :parent-id uuid/zero
+               :type :svg-raw
+               :content {:tag :rect
+                         :attrs {:x "10" :fill "red"}
+                         :content []}
+               :svg-attrs {:fill-rule "evenodd"}
+               :svg-transform (gmt/matrix 1 0 0 1 10 20)
+               :svg-defs {"f1" {:tag :filter
+                                :attrs {:id "f1"}
+                                :content [{:tag :feGaussianBlur
+                                           :attrs {:std-deviation "2"}
+                                           :content []}]}}})}])
+
+     (dissoc file :data))))
+
+(defn- export-import-file
+  "Exports `file` to a zip and imports it back, returning a map with
+  the export output and the imported file."
+  [profile file]
+  (let [output (tmp/tempfile :suffix ".zip")]
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/file-ids #{(:id file)})
+         (assoc ::bfc/export-type :detach-libraries)
+         (assoc ::bfc/output (io/output-stream output))))
+    (let [result (-> th/*system*
+                     (assoc ::bfc/project-id (:default-project-id profile))
+                     (assoc ::bfc/profile-id (:id profile))
+                     (assoc ::bfc/team-id (:default-team-id profile))
+                     (assoc ::bfc/input output)
+                     (v3/import-files!))]
+      {:output output
+       :imported (bfc/get-file th/*system* (first (:file-ids result)))})))
+
+(defn- svg-defs-shape
+  [file]
+  (get-in file [:data :pages-index svg-defs-page-id :objects svg-defs-shape-id]))
+
+(t/deftest import-binfile-v3-normalizes-svg-defs-to-kebab
+  ;; Def node attrs converge to the stored kebab convention through an
+  ;; export/import cycle: tags come back as keywords (the schema decoder
+  ;; restores them from the stored strings), attr keys stay kebab, outer
+  ;; def keys come back as strings (the decoder prefers the string
+  ;; branch), and the string ids inside survive byte-identical.
+  (let [profile  (th/create-profile* 1)
+        file     (prepare-svg-defs-file profile)
+        {:keys [imported]} (export-import-file profile file)
+        shape    (svg-defs-shape imported)
+        node     (get (:svg-defs shape) "f1")]
+    (t/is (some? shape) "the svg shape was found")
+    (t/is (= {:fill-rule "evenodd"} (:svg-attrs shape)))
+    (t/is (some? node) "the filter def was found")
+    (t/is (= :filter (:tag node)) "tags decode back to keywords")
+    (t/is (= "f1" (get-in node [:attrs :id])) "def ids survive byte-identical")
+    (t/is (= "2" (get-in node [:content 0 :attrs :std-deviation])))
+    (t/is (gmt/matrix? (:svg-transform shape))
+          "svg-transform comes back as a matrix, not a plain map")
+    (t/is (= (gmt/matrix 1 0 0 1 10 20) (:svg-transform shape)))))
+
+(t/deftest export-import-svg-roundtrip-converges
+  ;; The determinism proof: export, import, export, import. The first
+  ;; import lands on the kebab end state and the second trip leaves it
+  ;; exactly there.
+  (let [profile   (th/create-profile* 1)
+        file      (prepare-svg-defs-file profile)
+        trip-1    (:imported (export-import-file profile file))
+        shape-1   (svg-defs-shape trip-1)
+        trip-2    (:imported (export-import-file profile trip-1))
+        shape-2   (svg-defs-shape trip-2)]
+    (t/is (some? shape-1) "the svg shape survived the first trip")
+    (t/is (some? shape-2) "the svg shape survived the second trip")
+    (t/is (= {:fill-rule "evenodd"} (:svg-attrs shape-1))
+          "first trip lands on the kebab end state")
+    (t/is (= (:svg-attrs shape-1) (:svg-attrs shape-2))
+          "svg-attrs are a fixed point")
+    (t/is (= (:svg-defs shape-1) (:svg-defs shape-2))
+          "svg-defs are a fixed point")))
 
 (t/deftest export-binfile-v3
   (let [profile (th/create-profile* 1)
@@ -2915,3 +3093,181 @@
     (t/is (thrown? IllegalArgumentException
                    (bfc/get-file th/*system* (uuid/random)
                                  :load-data? false opt true)))))
+
+;; --- Library relations security tests
+
+(t/deftest import-v3-ignores-relations-outside-package
+  (let [profile     (th/create-profile* 1)
+        file        (prepare-simple-file profile)
+        [_ victim]  (prepare-victim-file 3)
+        bundle      (export-file file)
+        evil        (tmp/tempfile :suffix ".zip")
+        _           (tamper-manifest-relations bundle evil
+                                               [[(str (:id file)) (str (:id victim))]])
+        [file-id :as result] (import-bundle profile evil)]
+    (t/is (= 1 (count result)))
+    (t/is (empty? (th/db-query :file-library-rel {:file-id file-id})))
+    (t/is (empty? (th/db-query :file-library-sync {:file-id file-id})))))
+
+(defn- prepare-other-team
+  [n]
+  (let [profile (th/create-profile* n)
+        team    (th/create-team* n {:profile-id (:id profile)})
+        project (th/create-project* n {:team-id (:id team)
+                                       :profile-id (:id profile)})
+        file    (th/create-file* n {:profile-id (:id profile)
+                                    :project-id (:id project)})
+        library (th/create-file* (inc n) {:profile-id (:id profile)
+                                          :project-id (:id project)})]
+    [profile file library]))
+
+(t/deftest import-v3-ignores-foreign-file-id
+  (let [profile     (th/create-profile* 1)
+        file        (prepare-simple-file profile)
+        [_ victim]  (prepare-victim-file 3)
+        bundle      (export-file file)
+        evil        (tmp/tempfile :suffix ".zip")
+        _           (tamper-manifest-relations bundle evil
+                                               [[(str (:id victim)) (str (:id file))]])
+        result      (import-bundle profile evil)]
+    (t/is (= 1 (count result)))
+    (t/is (empty? (th/db-query :file-library-rel {:file-id (:id victim)})))
+    (t/is (empty? (th/db-query :file-library-sync {:file-id (:id victim)})))))
+
+(t/deftest import-v3-ignores-unknown-library
+  (let [profile     (th/create-profile* 1)
+        file        (prepare-simple-file profile)
+        bundle      (export-file file)
+        evil        (tmp/tempfile :suffix ".zip")
+        _           (tamper-manifest-relations bundle evil
+                                               [[(str (:id file)) (str (uuid/random))]])
+        [file-id :as result] (import-bundle profile evil)]
+    (t/is (= 1 (count result)))
+    (t/is (empty? (th/db-query :file-library-rel {:file-id file-id})))))
+
+(t/deftest import-v3-ignores-self-library-relation
+  (let [profile     (th/create-profile* 1)
+        file        (prepare-simple-file profile)
+        bundle      (export-file file)
+        evil        (tmp/tempfile :suffix ".zip")
+        _           (tamper-manifest-relations bundle evil
+                                               [[(str (:id file)) (str (:id file))]])
+        [file-id :as result] (import-bundle profile evil)]
+    (t/is (= 1 (count result)))
+    (t/is (empty? (th/db-query :file-library-rel {:file-id file-id})))))
+
+(t/deftest import-v3-keeps-valid-library-relation
+  (let [profile  (th/create-profile* 1)
+        file     (prepare-simple-file profile)
+        library  (th/create-file* 2 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)})]
+    (th/link-file-to-library* {:file-id (:id file)
+                               :library-id (:id library)})
+    (let [bundle   (export-file file :include-libraries true)
+          result   (import-bundle profile bundle)
+          new-file (->> result
+                        (map #(bfc/get-file th/*system* %))
+                        (some #(when (= (:name %) (:name file)) %)))]
+      (t/is (= 2 (count result)))
+      (t/is (some? new-file))
+      (t/is (= 1 (count (th/db-query :file-library-rel
+                                     {:file-id (:id new-file)})))))))
+
+(t/deftest export-multi-file-includes-package-relations
+  (let [profile          (th/create-profile* 1)
+        file             (prepare-simple-file profile)
+        library          (th/create-file* 2 {:profile-id (:id profile)
+                                             :project-id (:default-project-id profile)})
+        [_ other-file other-library] (prepare-other-team 3)
+        _                (th/link-file-to-library* {:file-id (:id file)
+                                                    :library-id (:id library)})
+        _                (th/link-file-to-library* {:file-id (:id other-file)
+                                                    :library-id (:id other-library)})
+        _                (th/db-insert! :file-library-rel
+                                        {:file-id (:id file)
+                                         :library-file-id (:id other-library)})
+        output           (tmp/tempfile :suffix ".zip")]
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/file-ids #{(:id file) (:id other-file)})
+         (assoc ::bfc/export-type :include-libraries)
+         (assoc ::bfc/output (io/output-stream output))))
+    (let [rels (set (map vec (get (read-manifest output) "relations")))]
+      (t/is (contains? rels [(str (:id file)) (str (:id library))]))
+      (t/is (contains? rels [(str (:id other-file)) (str (:id other-library))]))
+      (t/is (contains? rels [(str (:id file)) (str (:id other-library))])))))
+
+;; --- Forbidden library relations cleanup (migration candidate)
+;;
+;; The two statements below are the exact cleanup proposed for a future
+;; migration (see tmp/CHECK-LIBRARY-RELATIONS.sql, section 6). The sync
+;; rows must go first: the second statement reads file_library_rel
+;; while it still contains the forbidden rows.
+
+(def ^:private sql:delete-forbidden-library-sync
+  "WITH forbidden AS (
+     SELECT flr.file_id, flr.library_file_id
+       FROM file_library_rel flr
+       JOIN file f ON f.id = flr.file_id
+       JOIN project fp ON fp.id = f.project_id
+       JOIN file l ON l.id = flr.library_file_id
+       JOIN project lp ON lp.id = l.project_id
+      WHERE fp.team_id <> lp.team_id
+         OR flr.file_id = flr.library_file_id
+   )
+   DELETE FROM file_library_sync fls
+   USING forbidden
+   WHERE fls.file_id = forbidden.file_id
+     AND fls.library_file_id = forbidden.library_file_id")
+
+(def ^:private sql:delete-forbidden-library-rel
+  "WITH forbidden AS (
+     SELECT flr.file_id, flr.library_file_id
+       FROM file_library_rel flr
+       JOIN file f ON f.id = flr.file_id
+       JOIN project fp ON fp.id = f.project_id
+       JOIN file l ON l.id = flr.library_file_id
+       JOIN project lp ON lp.id = l.project_id
+      WHERE fp.team_id <> lp.team_id
+         OR flr.file_id = flr.library_file_id
+   )
+   DELETE FROM file_library_rel flr
+   USING forbidden
+   WHERE flr.file_id = forbidden.file_id
+     AND flr.library_file_id = forbidden.library_file_id")
+
+(t/deftest cleanup-deletes-forbidden-library-relations
+  (let [profile    (th/create-profile* 1)
+        file       (prepare-simple-file profile)
+        library    (th/create-file* 2 {:profile-id (:id profile)
+                                       :project-id (:default-project-id profile)})
+        [_ victim] (prepare-victim-file 3)
+        _          (th/link-file-to-library* {:file-id (:id file)
+                                              :library-id (:id library)})
+        _          (th/db-insert! :file-library-rel
+                                  {:file-id (:id file)
+                                   :library-file-id (:id victim)})
+        _          (th/db-insert! :file-library-sync
+                                  {:file-id (:id file)
+                                   :library-file-id (:id victim)})
+        _          (th/db-insert! :file-library-rel
+                                  {:file-id (:id file)
+                                   :library-file-id (:id file)})
+        _          (th/db-insert! :file-library-sync
+                                  {:file-id (:id file)
+                                   :library-file-id (:id file)})]
+    (t/is (= 3 (count (th/db-query :file-library-rel {:file-id (:id file)}))))
+    (th/db-exec! [sql:delete-forbidden-library-sync])
+    (th/db-exec! [sql:delete-forbidden-library-rel])
+    (t/testing "same-team relation and its sync row survive"
+      (t/is (= [{:file-id (:id file) :library-file-id (:id library)}]
+               (map #(select-keys % [:file-id :library-file-id])
+                    (th/db-query :file-library-rel {:file-id (:id file)}))))
+      (t/is (= [{:file-id (:id file) :library-file-id (:id library)}]
+               (map #(select-keys % [:file-id :library-file-id])
+                    (th/db-query :file-library-sync {:file-id (:id file)})))))
+    (t/testing "cross-team and self relations and their sync rows are gone"
+      (t/is (empty? (th/db-query :file-library-rel {:library-file-id (:id victim)})))
+      (t/is (empty? (th/db-query :file-library-sync {:library-file-id (:id victim)})))
+      (t/is (empty? (th/db-query :file-library-rel {:library-file-id (:id file)})))
+      (t/is (empty? (th/db-query :file-library-sync {:library-file-id (:id file)}))))))

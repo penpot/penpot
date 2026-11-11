@@ -196,13 +196,20 @@
                       (ex/raise :type :conflict
                                 :code :file-modified
                                 :hint "the file was modified during the restore process, please retry")))
-                  (let [vern (fsnap/restore! cfg file-id id)]
+                  (let [snapshot (fsnap/get-minimal-snapshot cfg id)
+                        vern     (fsnap/restore! cfg file-id id)]
+                    ;; Peers name the restored version by its label when a
+                    ;; user named it, else by its date
                     (mbus/pub! msgbus
                                :topic file-id
-                               :message {:type :file-restored
-                                         :session-id session-id
-                                         :file-id file-id
-                                         :vern vern})
+                               :message (cond-> {:type :file-restored
+                                                 :session-id session-id
+                                                 :profile-id profile-id
+                                                 :file-id file-id
+                                                 :vern vern
+                                                 :created-at (:created-at snapshot)}
+                                          (= "user" (:created-by snapshot))
+                                          (assoc :label (:label snapshot))))
                     nil)))))
 
 (def ^:private schema:update-file-snapshot

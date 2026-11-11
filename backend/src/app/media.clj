@@ -19,6 +19,7 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.media :as cm]
    [app.config :as cf]
    [app.db :as-alias db]
    [app.http.client :as http]
@@ -58,9 +59,22 @@
                           :code :unknown-size
                           :hint "seems like the url points to resource with unknown size"))
 
-              (-> {:size size :mtype mtype}
-                  (validation/validate-media-type!)
-                  (validation/validate-media-size!))))]
+              ;; Fast fail on the declared header type and size; the
+              ;; downloaded bytes are strictly verified after the write
+              ;; (there is no file on disk yet to measure or sniff).
+              (when-not (contains? cm/image-types mtype)
+                (ex/raise :type :validation
+                          :code :media-type-not-allowed
+                          :hint "seems like you are uploading an invalid media object"))
+
+              (when (> size (cf/get :media-max-file-size))
+                (ex/raise :type :restriction
+                          :code :media-max-file-size-reached
+                          :hint (str/ffmt "the uploaded file size % is greater than the maximum %"
+                                          size
+                                          (cf/get :media-max-file-size))))
+
+              {:size size :mtype mtype}))]
 
     (let [{:keys [body] :as response}
           (try
@@ -102,7 +116,11 @@
                         :hint "unexpected state: unable to write to file"))
 
             ;; Sanitize: strip trailing data after image EOF markers
-            (let [new-size (sanitize/truncate-after-eof path mtype)]
+            (let [new-size (sanitize/truncate-after-eof path mtype)
+                  upload   {:path path :mtype mtype :size new-size}]
+              ;; Strict: the downloaded bytes must be what the remote
+              ;; header claimed, same rule as direct uploads.
+              (validation/check-media-type upload)
               {:path  path
                :mtype mtype
                :size  new-size})))

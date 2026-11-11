@@ -779,6 +779,62 @@ test.describe("Team pages controls", () => {
   });
 });
 
+test.describe("Dashboard headers", () => {
+  const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+  const header = (page) => page.getByTestId("dashboard-header");
+
+  test("Page headers", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+
+    await dashboardPage.goToDashboard();
+    await expect(header(page)).toHaveScreenshot(shot);
+    await dashboardPage.goToDrafts();
+    await expect(header(page)).toHaveScreenshot(shot);
+    await dashboardPage.goToLibraries();
+    await expect(header(page)).toHaveScreenshot(shot);
+    await dashboardPage.goToFonts();
+    await expect(header(page)).toHaveScreenshot(shot);
+    await dashboardPage.goToDeleted();
+    await expect(header(page)).toHaveScreenshot(shot);
+    await dashboardPage.goToSearch();
+    await expect(dashboardPage.mainHeading).toBeVisible();
+    await expect(header(page)).toHaveScreenshot(shot);
+  });
+
+  test("Team header menu", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.goToSecondTeamMembersSection();
+    await expect(dashboardPage.mainHeading).toHaveText("Members");
+
+    await page.mouse.move(10, 700);
+    await expect(header(page)).toHaveScreenshot(shot);
+    await header(page).getByText("Invitations").hover();
+    await expect(header(page)).toHaveScreenshot(shot);
+  });
+
+  test("Libraries page and search placeholder", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.goToLibraries();
+    await expect(page).toHaveScreenshot(shot);
+
+    await dashboardPage.goToSearch();
+    const placeholder = page.locator("[class*='grid-empty-placeholder']");
+    await expect(placeholder).toBeVisible();
+    await expect(placeholder).toHaveScreenshot(shot);
+  });
+
+  test("Account header", async ({ page }) => {
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.goToDashboard();
+    await dashboardPage.goToAccount();
+    await expect(page.getByTestId("account-title")).toBeVisible();
+    await expect(header(page)).toHaveScreenshot(shot);
+  });
+});
+
 test.describe("Settings controls", () => {
   const shot = { maxDiffPixelRatio: 0, threshold: 0 };
 
@@ -860,6 +916,9 @@ test.describe("Profile page controls", () => {
     await page.getByText("Change email").hover();
     await expect(container).toHaveScreenshot(shot);
 
+    await page.getByText("Want to remove your account?").hover();
+    await expect(container).toHaveScreenshot(shot);
+
     // The "Update" overlay is a button: it shows on keyboard focus too.
     await page.mouse.move(10, 700);
     await page.getByRole("button", { name: "Update" }).focus();
@@ -893,6 +952,13 @@ test.describe("Templates section controls", () => {
     // Hovering a card shows its add icon in the accent color.
     await card.hover();
     await expect(card).toHaveScreenshot(shot);
+
+    // Focused from the keyboard, a card looks like on hover.
+    await page.mouse.move(640, 100);
+    await page.keyboard.press("Shift");
+    await card.focus();
+    await expect(card).toHaveScreenshot(shot);
+    await card.blur();
 
     const moveButtons = section.locator("[class*='move-button']");
     await moveButtons.last().hover();
@@ -945,5 +1011,95 @@ test.describe("Context notification", () => {
       .last();
     await expect(warning).toBeVisible();
     await expect(warning).toHaveScreenshot(shot);
+  });
+});
+
+test.describe("Download report", () => {
+  test("Error page and feedback page links", async ({ page }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    await DashboardPage.mockConfigFlags(page, [
+      "disable-onboarding",
+      "enable-user-feedback",
+    ]);
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await page.route("**/api/main/methods/get-projects?*", (route) =>
+      route.fulfill({
+        status: 500,
+        contentType: "application/transit+json",
+        body: '["^ ","~:type","~:server-error","~:code","~:unexpected"]',
+      }),
+    );
+    await page.goto(
+      `/?screen=dashboard-recent&team-id=${DashboardPage.anyTeamId}`,
+    );
+
+    const errorLink = page.getByText("Download report.txt", { exact: true });
+    await expect(errorLink).toBeVisible();
+    await page.mouse.move(10, 10);
+    await expect(errorLink).toHaveScreenshot(shot);
+    await errorLink.hover();
+    await expect(errorLink).toHaveScreenshot(shot);
+
+    const errorDownload = page.waitForEvent("download");
+    await errorLink.focus();
+    await page.keyboard.press("Enter");
+    expect((await errorDownload).suggestedFilename()).toBe("report.txt");
+
+    await page.getByRole("button", { name: "Contact support" }).click();
+    const feedbackLink = page.getByText("Download report.txt", {
+      exact: true,
+    });
+    await expect(page.getByText("Send")).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(feedbackLink).toHaveScreenshot(shot);
+    await feedbackLink.hover();
+    await expect(feedbackLink).toHaveScreenshot(shot);
+
+    const feedbackDownload = page.waitForEvent("download");
+    await feedbackLink.focus();
+    await page.keyboard.press("Enter");
+    expect((await feedbackDownload).suggestedFilename()).toBe("report.txt");
+    // The button is in the feedback form: Enter must not send it.
+    await expect(page.getByText("Send", { exact: true })).toBeVisible();
+  });
+});
+
+test.describe("Team settings organization", () => {
+  test("Shows the Add to an organization link", async ({ page }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    // Organizations need the admin console flag, a team the user owns that
+    // is in no organization, and an organization the user belongs to.
+    await DashboardPage.mockConfigFlags(page, [
+      "disable-onboarding",
+      "enable-admin-console",
+    ]);
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await dashboardPage.mockRPC(
+      "get-teams",
+      "dashboard/get-teams-organization.json",
+    );
+    await dashboardPage.mockRPC(
+      /check-nitrate-sso/,
+      "dashboard/check-nitrate-sso-authorized.json",
+    );
+    await dashboardPage.mockRPC(
+      /get-environment-data/,
+      "dashboard/get-environment-data-empty.json",
+    );
+    await dashboardPage.mockRPC(
+      "get-team-stats?team-id=*",
+      "dashboard/get-team-stats.json",
+    );
+    await dashboardPage.goToSecondTeamSettingsSection();
+
+    const add = page.getByText("Add to an organization", { exact: true });
+    await expect(add).toBeVisible();
+    await page.mouse.move(10, 700);
+    await expect(add).toHaveScreenshot(shot);
+
+    await add.hover();
+    await expect(add).toHaveScreenshot(shot);
   });
 });

@@ -131,6 +131,7 @@ function sendTaskResponse(response: any): void {
                 id: response.id,
                 success: false,
                 error: errorMessage,
+                rollbacks: response.rollbacks,
             };
             responseString = JSON.stringify(response);
         }

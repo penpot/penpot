@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.helpers :as dsh]
+   [app.main.data.persistence :as dps]
    [app.main.store :as st]
    [app.plugins.file :as file]
    [app.plugins.management :as management]
@@ -16,7 +17,9 @@
    [app.plugins.shape :as shape]
    [app.util.object :as obj]
    [app.util.theme :as theme]
-   [goog.functions :as gf]))
+   [beicon.v2.core :as rx]
+   [goog.functions :as gf]
+   [potok.v2.core :as ptk]))
 
 (defmulti handle-state-change (fn [type _ _ _ _] type))
 
@@ -111,6 +114,25 @@
   [props]
   {:shape-id (-> (obj/get props "shapeId") parser/parse-id)})
 
+;; Stream subscriptions of the listeners that follow events, not state
+(defonce ^:private subscriptions (atom {}))
+
+(defn- format-rollback
+  [{:keys [file-ids page-ids shape-ids]}]
+  #js {:fileIds  (apply array (map str file-ids))
+       :pageIds  (apply array (map str page-ids))
+       :shapeIds (apply array (map str shape-ids))})
+
+(defn- subscribe-rollbacks
+  "Calls `callback` after each rollback of rejected changes, once the
+  reverted data is in the state. Not debounced: every rollback counts."
+  [callback]
+  (->> st/stream
+       (rx/filter (ptk/type? ::dps/rolled-back))
+       (rx/map (comp format-rollback deref))
+       (rx/observe-on :async)
+       (rx/subs! callback)))
+
 (defn add-listener
   [type plugin-id callback props]
   (let [plugin-id (parser/parse-id plugin-id)
@@ -131,23 +153,28 @@
         ;; We also debounce the callbacks so we don't get too many at the same time
         debounced-callback (gf/debounce safe-callback 10)]
 
-    (add-watch
-     st/state key
-     (fn [_ _ old-val new-val]
-       ;; The store notifies its watches with a plain iteration: a throw
-       ;; here starves the watches registered after this one.
-       (try
-         (let [result (handle-state-change type plugin-id old-val new-val props)]
-           (when (not= ::not-changed result)
-             (if (contains? #{"workspacechange" "logout"} type)
-               (safe-callback result)
-               (debounced-callback result))))
-         (catch :default cause
-           (.error js/console cause)))))
+    (if (= "contentrollback" type)
+      (swap! subscriptions assoc key (subscribe-rollbacks safe-callback))
+      (add-watch
+       st/state key
+       (fn [_ _ old-val new-val]
+         ;; The store notifies its watches with a plain iteration: a throw
+         ;; here starves the watches registered after this one.
+         (try
+           (let [result (handle-state-change type plugin-id old-val new-val props)]
+             (when (not= ::not-changed result)
+               (if (contains? #{"workspacechange" "logout"} type)
+                 (safe-callback result)
+                 (debounced-callback result))))
+           (catch :default cause
+             (.error js/console cause))))))
 
     ;; return the generated key
     key))
 
 (defn remove-listener
   [key]
+  (when-let [subscription (get @subscriptions key)]
+    (rx/dispose! subscription)
+    (swap! subscriptions dissoc key))
   (remove-watch st/state key))

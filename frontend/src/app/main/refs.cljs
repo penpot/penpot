@@ -335,6 +335,9 @@
 (def workspace-read-only?
   (l/derived :read-only? workspace-global))
 
+(def persistence-lock
+  (l/derived :persistence-lock workspace-global))
+
 (def workspace-paddings-selected
   (l/derived :paddings-selected workspace-global))
 

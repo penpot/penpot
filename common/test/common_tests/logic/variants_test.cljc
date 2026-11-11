@@ -11,11 +11,15 @@
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
+   [app.common.logic.variants :as clv]
+   [app.common.path-names :as cpn]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.variants :as thv]
+   [app.common.types.component :as ctk]
    [app.common.types.variant :as ctv]
    [clojure.test :as t]
    [cuerdas.core :as str]))
@@ -408,6 +412,42 @@
 
     (t/is (contains? values "Bigred"))))
 
+(t/deftest test-make-shapes-variant-same-name-components-get-unique-values
+  ;; Mirrors combine-as-variants with components that share the container
+  ;; name: the first main defines the container, the rest are moved into it.
+  (let [file       (-> (thf/sample-file :file1)
+                       (tho/add-frame :v01 {:name "Tag"})
+                       (tho/add-simple-component :c01 :m01 :r01
+                                                 :root-params {:parent-label :v01 :name "Tag"})
+                       (tho/add-simple-component :c02 :m02 :r02
+                                                 :root-params {:name "Tag"})
+                       (tho/add-simple-component :c03 :m03 :r03
+                                                 :root-params {:name "Tag"}))
+        page       (thf/current-page file)
+        define     (-> (pcb/empty-changes nil (:id page))
+                       (pcb/with-objects (:objects page))
+                       (pcb/with-library-data (:data file))
+                       (clv/generate-define-variant-container
+                        (thi/id :v01) (thi/id :m01) (thi/id :c01) "Tag"))
+        file       (thf/apply-changes file define)
+
+        page       (thf/current-page file)
+        container  (ths/get-shape file :v01)
+        shapes     [(ths/get-shape file :m02) (ths/get-shape file :m03)]
+        changes    (-> (pcb/empty-changes nil)
+                       (pcb/with-page-id (:id page))
+                       (pcb/with-library-data (:data file))
+                       (pcb/with-objects (:objects page))
+                       (clvp/generate-make-shapes-variant shapes container)
+                       (pcb/change-parent (:id container) shapes 0))
+        file'      (thf/apply-changes file changes)
+        values     (mapv #(-> (thc/get-component file' %) :variant-properties first :value)
+                         [:c01 :c02 :c03])]
+
+    (t/is (= ["Value 1" "Value 2" "Value 3"] values))
+    (t/is (= "Value 2" (:variant-name (ths/get-shape file' :m02))))
+    (t/is (= "Value 3" (:variant-name (ths/get-shape file' :m03))))))
+
 
 (t/deftest test-duplicate-variant-container
   (let [;; ==== Setup
@@ -511,3 +551,174 @@
     (thf/validate-file! file')
     (t/is (some? new-shape'))
     (t/is (not= (:parent-id new-shape') (:id container)))))
+
+(defn- two-property-file-with-other-page
+  []
+  (-> (thf/sample-file :file1 :page-label :page1)
+      (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02)
+      (thf/add-sample-page :page2)))
+
+(t/deftest test-update-property-value-skips-when-main-not-in-objects
+  (let [file    (two-property-file-with-other-page)
+        other   (thf/current-page file)
+        comp01  (thc/get-component file :c01)
+        main    (ths/get-shape file :m01 :page-label :page1)
+        before  (:variant-properties comp01)
+        label   (:variant-name main)
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id other))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects other))
+                    (clvp/generate-update-property-value (:id comp01) 1 "crítica"))
+
+        file'   (thf/apply-changes file changes)
+        comp01' (thc/get-component file' :c01)
+        main'   (ths/get-shape file' :m01 :page-label :page1)]
+
+    (thf/validate-file! file')
+    (t/is (empty? (:redo-changes changes)))
+    (t/is (= before (:variant-properties comp01')))
+    (t/is (= label (:variant-name main')))))
+
+(t/deftest test-update-property-value-writes-main-page-and-chains
+  (let [file     (two-property-file-with-other-page)
+        mains    (thf/get-page file :page1)
+        comp01   (thc/get-component file :c01)
+
+        changes  (-> (pcb/empty-changes nil)
+                     (pcb/with-page-id (:id mains))
+                     (pcb/with-library-data (:data file))
+                     (pcb/with-objects (:objects mains))
+                     (clvp/generate-update-property-value (:id comp01) 0 "active")
+                     (clvp/generate-update-property-value (:id comp01) 1 "crítica"))
+
+        file'    (thf/apply-changes file changes)
+        comp01'  (thc/get-component file' :c01)
+        main'    (ths/get-shape file' :m01 :page-label :page1)
+        props'   (:variant-properties comp01')]
+
+    (thf/validate-file! file')
+    (t/is (= "active" (-> props' first :value)))
+    (t/is (= "crítica" (-> props' second :value)))
+    (t/is (= (ctv/properties-to-name props') (:variant-name main')))
+    (t/is (= "active, crítica" (:variant-name main')))))
+
+(defn- post-artboard-alpha-file
+  "A normal frame holding one main named Alpha — before the container flag."
+  []
+  (-> (thf/sample-file :file1)
+      (tho/add-frame :v01 {:name "Board"})
+      (tho/add-simple-component :c01 :m01 :r01
+                                :root-params {:parent-label :v01 :name "Alpha"})))
+
+(t/deftest test-define-variant-container-renames-component-in-same-vector
+  (let [file         (post-artboard-alpha-file)
+        page         (thf/current-page file)
+        variant-id   (thi/id :v01)
+        main-id      (thi/id :m01)
+        component-id (:id (thc/get-component file :c01))
+        changes      (-> (pcb/empty-changes nil (:id page))
+                         (pcb/with-objects (:objects page))
+                         (pcb/with-library-data (:data file))
+                         (clv/generate-define-variant-container
+                          variant-id main-id component-id "Component"))
+        file'        (thf/apply-changes file changes)
+        container'   (ths/get-shape file' :v01)
+        main'        (ths/get-shape file' :m01)
+        comp'        (thc/get-component file' :c01)
+        restored       (thf/apply-undo-changes file' changes)
+        container-rest (ths/get-shape restored :v01)
+        main-rest      (ths/get-shape restored :m01)
+        comp-rest      (thc/get-component restored :c01)]
+
+    (t/is (ctk/is-variant-container? container'))
+    (t/is (= "Component"
+             (:name container')
+             (:name main')
+             (cpn/merge-path-item (:path comp') (:name comp'))))
+    (t/is (= variant-id (:variant-id main') (:variant-id comp')))
+    (t/is (= (ctv/properties-to-name (:variant-properties comp'))
+             (:variant-name main')))
+    (t/is (not (ctk/is-variant-container? container-rest)))
+    (t/is (= "Alpha" (:name main-rest)))
+    (t/is (= "Alpha" (cpn/merge-path-item (:path comp-rest) (:name comp-rest))))
+    (t/is (nil? (:variant-id main-rest)))
+    (t/is (nil? (:variant-id comp-rest)))))
+
+(defn- rename-variant-changes
+  [file name]
+  (let [page (thf/current-page file)]
+    (-> (pcb/empty-changes nil)
+        (pcb/with-page-id (:id page))
+        (pcb/with-library-data (:data file))
+        (pcb/with-objects (:objects page))
+        (clv/generate-rename-variant (thi/id :v01) name))))
+
+(defn- redo-ids
+  [changes change-type]
+  (into #{}
+        (comp (filter #(= change-type (:type %)))
+              (map :id))
+        (:redo-changes changes)))
+
+(t/deftest test-rename-variant-one-vector
+  (let [file     (-> (thf/sample-file :file1)
+                     (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        board    (ths/get-shape file :v01)
+        main1    (ths/get-shape file :m01)
+        main2    (ths/get-shape file :m02)
+        comp1    (thc/get-component file :c01)
+        comp2    (thc/get-component file :c02)
+        changes  (rename-variant-changes file "Group / Button")
+        file'    (thf/apply-changes file changes)
+        board'   (ths/get-shape file' :v01)
+        main1'   (ths/get-shape file' :m01)
+        main2'   (ths/get-shape file' :m02)
+        comp1'   (thc/get-component file' :c01)
+        comp2'   (thc/get-component file' :c02)
+        restored (thf/apply-undo-changes file' changes)]
+
+    (t/is (= #{(thi/id :v01) (thi/id :m01) (thi/id :m02)}
+             (redo-ids changes :mod-obj)))
+    (t/is (= #{(thi/id :c01) (thi/id :c02)}
+             (redo-ids changes :mod-component)))
+    (t/is (= "Group / Button" (:name board') (:name main1') (:name main2')))
+    (t/is (= "Group" (:path comp1') (:path comp2')))
+    (t/is (= "Button" (:name comp1') (:name comp2')))
+    (t/is (= "Group / Button"
+             (cpn/merge-path-item (:path comp1') (:name comp1'))
+             (cpn/merge-path-item (:path comp2') (:name comp2'))))
+    (t/is (= (:id board) (:variant-id comp1') (:variant-id comp2')))
+    (t/is (= (:variant-name main1) (:variant-name main1')))
+    (t/is (= (:variant-name main2) (:variant-name main2')))
+    (t/is (= (:variant-properties comp1) (:variant-properties comp1')))
+    (t/is (= (:variant-properties comp2) (:variant-properties comp2')))
+    (t/is (= (:name board) (:name (ths/get-shape restored :v01))))
+    (t/is (= (:name main1) (:name (ths/get-shape restored :m01))))
+    (t/is (= (:name main2) (:name (ths/get-shape restored :m02))))
+    (t/is (= (:path comp1) (:path (thc/get-component restored :c01))))
+    (t/is (= (:name comp1) (:name (thc/get-component restored :c01))))
+    (t/is (= (:path comp2) (:path (thc/get-component restored :c02))))
+    (t/is (= (:name comp2) (:name (thc/get-component restored :c02))))))
+
+(t/deftest test-rename-variant-slash-only-name
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        changes (rename-variant-changes file "///")
+        file'   (thf/apply-changes file changes)
+        comp1'  (thc/get-component file' :c01)
+        comp2'  (thc/get-component file' :c02)]
+
+    (t/is (= "(empty)"
+             (:name (ths/get-shape file' :v01))
+             (:name (ths/get-shape file' :m01))
+             (:name (ths/get-shape file' :m02))
+             (:name comp1')
+             (:name comp2')))
+    (t/is (= "" (:path comp1') (:path comp2')))
+    (t/is (= "(empty)"
+             (cpn/merge-path-item (:path comp1') (:name comp1'))
+             (cpn/merge-path-item (:path comp2') (:name comp2'))))
+    (t/is (some? (:variant-id comp1')))
+    (t/is (some? (:variant-id comp2')))))

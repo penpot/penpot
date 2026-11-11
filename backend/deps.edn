@@ -54,6 +54,8 @@
 
   org.jsoup/jsoup {:mvn/version "1.23.2"}
 
+  com.j256.simplemagic/simplemagic {:mvn/version "1.17"}
+
   at.yawk.lz4/lz4-java
   {:mvn/version "1.12.0"}
 
