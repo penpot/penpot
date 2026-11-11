@@ -1,4 +1,4 @@
-import { AbstractPluginTask } from "./PluginTask";
+import { AbstractPluginTask, PluginTaskError } from "./PluginTask";
 import { PluginTaskResult } from "@penpot/mcp-common";
 import type { RedisBridge } from "./RedisBridge";
 
@@ -43,6 +43,7 @@ export class RemotePluginTask extends AbstractPluginTask<any, PluginTaskResult<a
             id: this.originalTaskId,
             success: true,
             data: result.data,
+            rollbacks: result.rollbacks,
         });
     }
 
@@ -51,6 +52,7 @@ export class RemotePluginTask extends AbstractPluginTask<any, PluginTaskResult<a
             id: this.originalTaskId,
             success: false,
             error: error.message,
+            rollbacks: error instanceof PluginTaskError ? error.rollbacks : undefined,
         });
     }
 }

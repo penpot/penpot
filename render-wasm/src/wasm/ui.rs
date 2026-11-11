@@ -76,11 +76,13 @@ impl TryFrom<&[u8]> for RawGuide {
 
 fn read_guides_from_bytes(buffer: &[u8], count: usize) -> Result<Vec<Guide>> {
     buffer
-        .chunks_exact(RAW_GUIDE_SIZE)
+        .as_chunks::<RAW_GUIDE_SIZE>()
+        .0
+        .iter()
         .take(count)
         .enumerate()
         .map(|(i, bytes)| {
-            RawGuide::try_from(bytes).map(|raw_guide| {
+            RawGuide::try_from(bytes.as_slice()).map(|raw_guide| {
                 let mut guide: Guide = raw_guide.into();
                 guide.index = i;
                 guide

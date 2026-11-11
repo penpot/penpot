@@ -39,7 +39,8 @@
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
-   [clojure.set :as set]))
+   [clojure.set :as set]
+   [cuerdas.core :as str]))
 
 (declare ^:private get-lagged-changes)
 (declare ^:private send-notifications!)
@@ -71,19 +72,38 @@
    [:changes-with-metadata {:optional true}
     [:vector [:map
               [:changes [:vector cpc/schema:change]]
+              [:commit-id {:optional true} ::sm/uuid]
               [:hint-origin {:optional true} :keyword]
               [:hint-events {:optional true} [:vector [:string {:max 250}]]]]]]
    [:skip-validate {:optional true} ::sm/boolean]])
 
 (def ^:private
   schema:update-file-result
-  [:vector {:title "update-file-result"}
-   [:map
-    [:changes [:vector cpc/schema:change]]
-    [:file-id ::sm/uuid]
-    [:id ::sm/uuid]
-    [:revn {:min 0} ::sm/int]
-    [:session-id ::sm/uuid]]])
+  [:map {:title "update-file-result"}
+   ;; The revision the file had before this update
+   [:revn {:min 0} ::sm/int]
+   ;; Every change stored after the incoming revision, this one included
+   [:lagged
+    [:vector
+     [:map
+      [:changes [:vector cpc/schema:change]]
+      [:file-id ::sm/uuid]
+      [:id ::sm/uuid]
+      [:revn {:min 0} ::sm/int]
+      [:session-id ::sm/uuid]]]]
+   ;; Commits not saved: the first one that failed and every later one
+   [:rejected {:optional true}
+    [:map
+     [:commit-ids [:vector ::sm/uuid]]
+     [:failed-commit-id ::sm/uuid]
+     ;; The data the failed commit touches was invalid before it
+     [:preexisting-damage {:optional true} :boolean]
+     [:error
+      [:map
+       [:type :keyword]
+       [:code {:optional true} [:maybe :keyword]]
+       [:hint {:optional true} [:maybe :string]]
+       [:details {:optional true} [:vector :any]]]]]]])
 
 ;; --- HELPERS
 
@@ -218,12 +238,18 @@
                    (->> changes-with-metadata (mapcat :changes) vec)
                    (vec changes))
 
+        ;; Saved commit by commit only when every group names its commit
+        commits  (when (and (seq changes-with-metadata)
+                            (every? :commit-id changes-with-metadata))
+                   changes-with-metadata)
+
         params   (-> params
                      (assoc :profile-id profile-id)
                      (assoc :features (set/difference features cfeat/frontend-only-features))
                      (assoc :team team)
                      (assoc :file file)
-                     (assoc :changes changes))
+                     (assoc :changes changes)
+                     (assoc :commits commits))
 
         cfg      (assoc cfg ::timestamp (ct/now)
                         ::validation-timings (atom {}))]
@@ -318,7 +344,7 @@
 
   Only intended for internal use on this module."
   [{:keys [::db/conn ::timestamp] :as cfg}
-   {:keys [profile-id file team features changes session-id skip-validate] :as params}
+   {:keys [profile-id file team features changes commits session-id skip-validate] :as params}
    tpoint]
 
   (fdata/with-tracked-pointers cfg (:id file)
@@ -332,20 +358,28 @@
           revn
           (get file :revn)
 
-          ;; The changes application runs the media fix-up, which may
-          ;; rewrite the media references. It returns the change vector
-          ;; as fixed: that is the vector a branch appends to its op
-          ;; log, the state its derive reproduces. The xlog row below
-          ;; keeps the client's changes, exactly as on an ordinary save.
-          ;; `media-index` is the id remapping the fix-up applied
-          ;; ({foreign-id -> copy-id}); a branch stamps it on the op log
-          ;; row so the comparison pairs from the branch's own record.
-          [file op-changes media-index]
+          file
           (binding [cfeat/*current*  features
                     cfeat/*previous* (:features file)]
             (update-file-data! cfg file
                                process-changes-and-validate
-                               changes skip-validate))
+                               changes commits skip-validate))
+
+          ;; Only the accepted changes are stored and broadcast. The xlog
+          ;; row below keeps the client's changes, exactly as on an
+          ;; ordinary save. `media-index` is the id remapping the media
+          ;; fix-up applied ({foreign-id -> copy-id}); a branch stamps it
+          ;; on the op log row so the comparison pairs from the branch's
+          ;; own record.
+          changes     (::changes file)
+          rejected    (::rejected file)
+          media-index (::media-index file)
+          params      (assoc params :changes changes)
+          file        (dissoc file ::changes ::rejected ::media-index)
+
+          ;; A request whose first commit is rejected leaves the file as is
+          saved?   (or (nil? rejected) (seq changes))
+          snapshot (when saved? (::snapshot file))
 
           deleted-at
           (ct/plus timestamp (ct/duration {:hours 1}))
@@ -362,7 +396,7 @@
             (ct/plus (ct/duration {:millis 1})))]
 
       (if repair
-        (let [snapshot-file (or (::snapshot file)
+        (let [snapshot-file (or snapshot
                                 (fdata/realize cfg (:original repair)))]
           (fsnap/create! cfg snapshot-file
                          {:label (str "internal/repair/" revn)
@@ -370,66 +404,81 @@
                           :deleted-at snapshot-deleted-at
                           :profile-id profile-id
                           :session-id repair-session-id}))
-        (when-let [file (::snapshot file)]
-          (fsnap/create! cfg file
+        (when snapshot
+          (fsnap/create! cfg snapshot
                          {:label (str "internal/snapshot/" revn)
                           :created-by "system"
                           :deleted-at snapshot-deleted-at
                           :profile-id profile-id
                           :session-id session-id})))
 
-      (when repair
+      (when saved?
+        (when repair
+          (db/insert! conn :file-change
+                      {:id (uuid/next)
+                       :session-id repair-session-id
+                       :profile-id profile-id
+                       :created-at timestamp
+                       :updated-at timestamp
+                       :deleted-at deleted-at
+                       :file-id (:id file)
+                       :revn (:revn repair)
+                       :version (:version file)
+                       :features (into-array (:features file))
+                       :changes (blob/encode (:changes repair))}
+                      {::db/return-keys false})
+          (l/wrn :hint "file auto-repaired"
+                 :file-id (str (:id file))
+                 :error-codes (error-codes (:errors repair))
+                 :error-count (count (:errors repair))
+                 :change-count (count (:changes repair)))
+          (record-repair-outcome cfg :repaired))
+
+        ;; Insert change (xlog) with deleted_at in a future data for
+        ;; make them automatically eleggible for GC once they expires
         (db/insert! conn :file-change
                     {:id (uuid/next)
-                     :session-id repair-session-id
+                     :session-id session-id
                      :profile-id profile-id
-                     :created-at timestamp
-                     :updated-at timestamp
+                     :created-at change-created-at
+                     :updated-at change-created-at
                      :deleted-at deleted-at
                      :file-id (:id file)
-                     :revn (:revn repair)
+                     :revn (:revn file)
                      :version (:version file)
                      :features (into-array (:features file))
-                     :changes (blob/encode (:changes repair))}
+                     :changes (blob/encode changes)}
                     {::db/return-keys false})
-        (l/wrn :hint "file auto-repaired"
-               :file-id (str (:id file))
-               :error-codes (error-codes (:errors repair))
-               :error-count (count (:errors repair))
-               :change-count (count (:changes repair)))
-        (record-repair-outcome cfg :repaired))
 
-      ;; Insert change (xlog) with deleted_at in a future data for
-      ;; make them automatically eleggible for GC once they expires
-      (db/insert! conn :file-change
-                  {:id (uuid/next)
-                   :session-id session-id
-                   :profile-id profile-id
-                   :created-at change-created-at
-                   :updated-at change-created-at
-                   :deleted-at deleted-at
-                   :file-id (:id file)
-                   :revn (:revn file)
-                   :version (:version file)
-                   :features (into-array (:features file))
-                   :changes (blob/encode changes)}
-                  {::db/return-keys false})
+        (let [file (dissoc file ::repair)]
+          (if (:is-branch file)
+            ;; A branch derives its data from its op log, so the log
+            ;; records the repair changes ahead of the client's ones,
+            ;; and the client's ones as the media fix-up rewrote them
+            ;; (`bm/remap-changes`): that is the state its derive
+            ;; reproduces.
+            (persist-branch-file! cfg file
+                                  (cond->> (cond-> changes
+                                             media-index
+                                             (bm/remap-changes media-index))
+                                    repair
+                                    (into (vec (:changes repair))))
+                                  media-index)
+            (persist-file! cfg file)))
 
-      (let [file (dissoc file ::repair)]
-        (if (:is-branch file)
-          (persist-branch-file! cfg file op-changes media-index)
-          (persist-file! cfg file)))
+        (when (contains? cf/flags :redis-cache)
+          (invalidate-caches! cfg file))
 
-      (when (contains? cf/flags :redis-cache)
-        (invalidate-caches! cfg file))
-
-      ;; Send asynchronous notifications
-      (when repair
-        (send-repair-notifications cfg params file repair))
-      (send-notifications! cfg params file)
+        ;; Send asynchronous notifications
+        (when repair
+          (send-repair-notifications cfg params file repair))
+        (send-notifications! cfg params file))
 
       (let [branch?  (:is-branch file)
-            duration (inst-ms (tpoint))]
+            duration (inst-ms (tpoint))
+            ;; A request whose first commit is rejected appends nothing
+            ;; to a branch's op log
+            outcome  (if saved? "saved" "rejected")]
 
         ;; A save routed to a branch's op log is the preview's most
         ;; frequent operation, so it reports its duration and outcome in
@@ -439,9 +488,11 @@
         ;; nothing at all.
         (when branch?
           (l/inf :hint "branch operation" :operation "save-branch"
-                 :outcome "saved" :duration duration))
+                 :outcome outcome :duration duration))
 
-        (with-meta {:revn revn :lagged (get-lagged-changes conn params)}
+        (with-meta (cond-> {:revn revn :lagged (get-lagged-changes conn params)}
+                     (some? rejected)
+                     (assoc :rejected rejected))
           {::audit/replace-props
            (cond-> {:id          (:id file)
                     :name        (:name file)
@@ -453,14 +504,14 @@
                     ;; `modified-at` mirrors `persist-file!`: same `::timestamp`
                     ;; fallback, so both agree to the millisecond when the
                     ;; request timestamp exists.
-                    :revn        (:revn file)
+                    :revn        (if saved? (:revn file) revn)
                     :modified-at (or timestamp (ct/now))}
 
              ;; The ordinary save path is untouched: the props above are
              ;; the ones it has always carried.
              branch?
              (assoc :branch-operation "save-branch"
-                    :branch-outcome "saved"
+                    :branch-outcome outcome
                     :branch-duration-ms duration))})))))
 
 (defn get-file
@@ -501,7 +552,8 @@
   keeps the lagged-changes machinery working unchanged.
 
   The vector stores the media fix-up the save ran: `update-file*` passes
-  the changes as rewritten by `process-changes-and-validate`, so the
+  the accepted changes rewritten with the remap that
+  `process-changes-and-validate` returns (`bm/remap-changes`), so the
   derive reproduces the copied media rows and their references.
 
   The row records the data version the changes were applied at:
@@ -640,9 +692,9 @@
     (apply update-fn cfg file args)))
 
 (defn- soft-validate-file-schema!
-  [file]
+  [file changes]
   (try
-    (val/validate-file-schema! file)
+    (val/validate-file-schema-affected! file changes)
     (catch Throwable cause
       (l/error :hint "file schema validation error" :cause cause))))
 
@@ -664,21 +716,213 @@
       (l/error :hint "file validation error"
                :cause cause))))
 
+(defmacro ^:private with-validation-timing
+  "Runs `body` and records its time as the validation step `step-key`
+  (`step-label` in the metric), also when it throws."
+  [cfg step-key step-label & body]
+  `(let [t# (ct/tpoint)]
+     (try
+       ~@body
+       (finally
+         (record-validation-timing ~cfg ~step-key ~step-label (inst-ms (t#)))))))
+
+(defn- validate-file
+  "Validates the entities `changes` affect and the schema of the data they
+  modify."
+  [cfg file libs changes skip-validate]
+  (binding [pmap/*tracked* nil]
+    (when (contains? cf/flags :soft-file-validation)
+      (with-validation-timing cfg :soft-validate-affected-ms "soft-validate-affected"
+        (soft-validate-file! file libs changes)))
+
+    (when (contains? cf/flags :soft-file-schema-validation)
+      (with-validation-timing cfg :soft-validate-schema-ms "soft-validate-schema"
+        (soft-validate-file-schema! file changes)))
+
+    (when (and (contains? cf/flags :file-validation)
+               (not skip-validate))
+      (with-validation-timing cfg :validate-affected-ms "validate-affected"
+        (val/validate-file-affected! file libs changes)))
+
+    (when (and (contains? cf/flags :file-schema-validation)
+               (not skip-validate))
+      (with-validation-timing cfg :validate-schema-ms "validate-schema"
+        (val/validate-file-schema-affected! file changes)))))
+
+(def ^:private debug-fault-prefix
+  "Start of the plugin data key that asks for a debug save fault."
+  "save-fault:")
+
+(defn- get-debug-fault
+  "Name of the fault a debug marker in `changes` asks for, or nil. A marker
+  is a `:set-plugin-data` of the file in the `:penpot-debug` namespace with
+  no value, so applying it changes nothing."
+  [changes]
+  (some (fn [{:keys [type namespace key]}]
+          (when (and (= :set-plugin-data type)
+                     (= :penpot-debug namespace)
+                     (str/starts-with? key debug-fault-prefix))
+            (subs key (count debug-fault-prefix))))
+        changes))
+
+(defn- raise-debug-fault
+  "Throws the error named `fault`, standing in for a real failure while the
+  changes are applied."
+  [fault]
+  (let [message "debug save fault"]
+    (case fault
+      "validation"     (ex/raise :type :validation :code :debug-fault :hint message)
+      "runtime"        (throw (RuntimeException. message))
+      "ex-info"        (throw (ex-info message {}))
+      "assertion"      (throw (AssertionError. message))
+      "sql"            (throw (org.postgresql.util.PSQLException.
+                               message org.postgresql.util.PSQLState/CONNECTION_FAILURE))
+      "io"             (throw (java.net.SocketTimeoutException. message))
+      "eof"            (throw (java.io.EOFException. message))
+      "interrupted"    (throw (InterruptedException. message))
+      "not-found"      (ex/raise :type :not-found :code :object-not-found :hint message)
+      "stack-overflow" (throw (StackOverflowError. message))
+      (ex/raise :type :validation :code :unknown-debug-fault :hint fault))))
+
 (defn- apply-changes
-  "Apply `changes` to `file` and run the media fix-up. Returns the
-  triple `[file op-changes media-index]`: the changes as the fix-up
-  rewrote them (the vector a branch appends to its op log) and the id
-  remapping the fix-up applied, nil when it applied none."
-  [cfg file changes]
-  (let [state (atom {})
-        file  (binding [cpc/*state* state]
-                (-> file
-                    (update :data cpc/process-changes changes)
-                    (update :data d/without-nils)))]
-    (if-let [media-refs (-> @state :media-refs not-empty)]
-      (let [[file media-index] (bfc/update-media-references! cfg file media-refs)]
-        [file (bm/remap-changes changes media-index) media-index])
-      [file changes nil])))
+  "Applies and validates `changes`. With the `debug-save-faults` flag, a
+  debug marker in them makes this fail with the error it names."
+  [cfg file libs changes skip-validate]
+  (when (contains? cf/flags :debug-save-faults)
+    (some-> (get-debug-fault changes) (raise-debug-fault)))
+  (let [file (with-validation-timing cfg :process-changes-ms "process-changes"
+               (update file :data (fn [data]
+                                    (-> data
+                                        (cpc/process-changes changes)
+                                        (d/without-nils)))))]
+    (validate-file cfg file libs changes skip-validate)
+    file))
+
+(defn- decode-objects
+  "Decodes the objects of the pages `changes` touch. Every file derived from
+  `file` shares them, so each attempt does not decode them again."
+  [file changes]
+  (doseq [page-id (into #{} (keep :page-id) changes)]
+    (let [objects (get-in file [:data :pages-index page-id :objects])]
+      (doseq [id (keys objects)]
+        (get objects id)))))
+
+(defn- infrastructure-error?
+  [cause]
+  (some (fn [cause]
+          (or (instance? java.sql.SQLException cause)
+              (instance? java.io.IOException cause)
+              (instance? InterruptedException cause)
+              ;; A file fragment that cannot be loaded
+              (= :not-found (:type (ex-data cause)))))
+        (take-while some? (iterate ex-cause cause))))
+
+(defn- change-failure?
+  "True when `cause` comes from applying or validating changes. Only these
+  reject a commit; any other error fails the whole request."
+  [cause]
+  (and (or (instance? Exception cause)
+           (instance? AssertionError cause))
+       (not (infrastructure-error? cause))))
+
+(defn- preexisting-damage?
+  "True when `file` already fails validation on the pages and components
+  `changes` touch, before they are applied."
+  [file libs changes skip-validate]
+  (try
+    (binding [pmap/*tracked* nil]
+      (when (and (contains? cf/flags :file-validation)
+                 (not skip-validate))
+        (val/validate-file-affected! file libs changes))
+      (when (and (contains? cf/flags :file-schema-validation)
+                 (not skip-validate))
+        (val/validate-file-schema-affected! file changes)))
+    false
+    (catch Throwable cause
+      (if (change-failure? cause)
+        true
+        (throw cause)))))
+
+(defn- rejection
+  "Describes `commits` as rejected, the first one failing with `cause`.
+  With `damaged`, the data that commit touches was invalid before it."
+  [commits cause damaged]
+  (let [data (ex-data cause)]
+    (cond-> {:commit-ids       (mapv :commit-id commits)
+             :failed-commit-id (:commit-id (first commits))
+             ;; An ex-info without a type reports like any unexpected exception
+             :error            (if (:type data)
+                                 (cond-> {:type (:type data)
+                                          :code (:code data)
+                                          :hint (or (:hint data) (ex-message cause))}
+                                   (:details data)
+                                   (assoc :details (mapv #(dissoc % :shape) (:details data))))
+                                 {:type :internal
+                                  :code :unexpected-error
+                                  :hint (or (ex-message cause) (.getName (class cause)))})}
+      damaged
+      (assoc :preexisting-damage true))))
+
+(defn- apply-prefix
+  "Applies and validates the first `n` commits of `attempt`, starting from
+  its `:file` and its `:tracked` pointers. Returns the resulting `:file`,
+  with the pointers to persist in `:tracked` and the media refs in `:refs`,
+  or the cause of the failure."
+  [{:keys [cfg file libs commits skip-validate state tracked]} n]
+  (reset! pmap/*tracked* tracked)
+  (reset! state {})
+  (let [changes (into [] (comp (take n) (mapcat :changes)) commits)]
+    (try
+      (let [file (apply-changes cfg file libs changes skip-validate)]
+        {:file    (assoc file ::changes changes)
+         :tracked @pmap/*tracked*
+         :refs    @state})
+      (catch Throwable cause
+        (when-not (change-failure? cause)
+          (throw cause))
+        cause))))
+
+(defn- apply-commits
+  "Keeps the longest prefix of the `:commits` of `attempt` that applies and
+  validates, found by bisection, and rejects the rest. `cause` is the
+  failure of all of them together. Takes about log2 of the commits
+  attempts; a commit that repairs an earlier one can keep both. Leaves the
+  pointers and media refs of the kept prefix in place and returns its file,
+  with the accepted changes in `::changes` and the rejection in
+  `::rejected`, which tells whether the data the first rejected commit
+  touches was already invalid. The whole search is timed as the `retry`
+  step of `cfg`."
+  [cfg {:keys [file libs commits skip-validate state tracked] :as attempt} cause]
+  (let [tpoint (ct/tpoint)]
+    (with-validation-timing cfg :retry-ms "retry"
+      (loop [lo       0
+             hi       (count commits)
+             cause    cause
+             attempts 0
+             accepted nil]
+        (if (> (- hi lo) 1)
+          (let [mid    (quot (+ lo hi) 2)
+                result (apply-prefix attempt mid)]
+            (if (instance? Throwable result)
+              (recur lo mid result (inc attempts) accepted)
+              (recur mid hi cause (inc attempts) result)))
+          (let [rejected (subvec commits lo)
+                base     (:file accepted file)
+                damaged  (preexisting-damage? base libs (:changes (first rejected))
+                                              skip-validate)]
+            (reset! pmap/*tracked* (:tracked accepted tracked))
+            (reset! state (:refs accepted {}))
+            (l/error :hint "update-file commit rejected"
+                     :file-id (str (:id file))
+                     :commit-id (str (:commit-id (first rejected)))
+                     :rejected (count rejected)
+                     :commits (count commits)
+                     :attempts attempts
+                     :preexisting-damage damaged
+                     :elapsed (ct/format-duration (tpoint))
+                     :cause cause)
+            (assoc (:file accepted (assoc file ::changes []))
+                   ::rejected (rejection rejected cause damaged))))))))
 
 (defn- fail-repair
   [cfg file errors cause]
@@ -691,10 +935,11 @@
 
 (defn- repair-preexisting-damage
   "Repair damage that was already in `original` on the pages/components
-  the client's `changes` touch, then re-apply those changes. Throws
-  `cause` when the client's changes are at fault or the repair cannot
-  fix the file."
-  [cfg original libs changes tracked tracked-0 cause]
+  the client's `changes` touch, then re-apply those changes. Starts from
+  the `tracked` pointers and leaves the media refs of the changes in
+  `cpc/*state*`. Throws `cause` when the client's changes are at fault
+  or the repair cannot fix the file."
+  [cfg original libs changes tracked cause]
   (let [libs (or libs {})]
     (try
       (let [pre-errors
@@ -704,58 +949,46 @@
         (when (empty? pre-errors)
           (throw cause))
 
-        (when tracked
-          (reset! tracked tracked-0))
+        (reset! pmap/*tracked* tracked)
 
-        (let [trepair (ct/tpoint)
-
-              result
-              (try
-                (binding [pmap/*tracked* tracked]
-                  (cfr/repair-file-until-valid
-                   original libs
-                   (fn [file applied]
-                     (binding [pmap/*tracked* nil]
-                       (val/validate-file-affected file libs (into applied changes))))
-                   :initial-errors pre-errors))
-                (finally
-                  (record-validation-timing cfg :repair-ms "repair" (inst-ms (trepair)))))
+        (let [result
+              (with-validation-timing cfg :repair-ms "repair"
+                (cfr/repair-file-until-valid
+                 original libs
+                 (fn [file applied]
+                   (binding [pmap/*tracked* nil]
+                     (val/validate-file-affected file libs (into applied changes))))
+                 :initial-errors pre-errors))
 
               repair-changes (:changes result)]
 
           (when (seq (:errors result))
             (fail-repair cfg original (:errors result) cause))
 
-          (let [treprocess (ct/tpoint)
-                [repaired op-changes media-index]
-                (try
-                  (binding [pmap/*tracked* tracked]
-                    (apply-changes cfg (:file result) changes))
-                  (finally
-                    (record-validation-timing cfg :reprocess-changes-ms "reprocess-changes"
-                                              (inst-ms (treprocess)))))
-                scope      (into repair-changes changes)]
+          (reset! cpc/*state* {})
+
+          (let [repaired (with-validation-timing cfg :reprocess-changes-ms "reprocess-changes"
+                           (update (:file result) :data
+                                   (fn [data]
+                                     (-> data
+                                         (cpc/process-changes changes)
+                                         (d/without-nils)))))
+                scope    (into repair-changes changes)]
 
             (binding [pmap/*tracked* nil]
               (val/validate-file-affected! repaired libs scope)
 
               (when (contains? cf/flags :file-schema-validation)
-                (let [t (ct/tpoint)]
-                  (try
-                    (val/validate-file-schema! repaired)
-                    (finally
-                      (record-validation-timing cfg :validate-schema-ms "validate-schema" (inst-ms (t))))))))
+                (with-validation-timing cfg :validate-schema-ms "validate-schema"
+                  (val/validate-file-schema! repaired))))
 
-            ;; A branch derives its data from its op log, so the log
-            ;; records the repair changes ahead of the client's ones.
-            [(-> repaired
-                 (assoc :revn (+ (:revn original) 2))
-                 (assoc ::repair {:changes repair-changes
-                                  :errors  pre-errors
-                                  :revn    (inc (:revn original))
-                                  :original (dissoc original ::snapshot)}))
-             (into (vec repair-changes) op-changes)
-             media-index])))
+            (-> repaired
+                (assoc :revn (+ (:revn original) 2))
+                (assoc ::changes changes)
+                (assoc ::repair {:changes repair-changes
+                                 :errors  pre-errors
+                                 :revn    (inc (:revn original))
+                                 :original (dissoc original ::snapshot)})))))
       (catch Throwable inner
         (if (identical? inner cause)
           (throw cause)
@@ -766,90 +999,102 @@
             (record-repair-outcome cfg :unrepaired)
             (throw cause)))))))
 
+(defn- repair-or-reject
+  "Handles the failure `cause` of applying all `changes` at once. Repairs
+  damage `original` already had when `cause` is a referential integrity
+  error. If that does not save every change and there are `commits`,
+  keeps the longest prefix of them that validates."
+  [cfg original file libs changes commits skip-validate tracked cause]
+  (let [repaired
+        (when (and (referential-integrity-error? cause)
+                   (contains? cf/flags :file-validation)
+                   (not skip-validate))
+          (try
+            (repair-preexisting-damage cfg original libs changes tracked cause)
+            (catch Throwable inner
+              (when-not (identical? inner cause)
+                (throw inner)))))]
+    (cond
+      (some? repaired)
+      repaired
+
+      (and (some? commits)
+           (change-failure? cause))
+      (apply-commits cfg
+                     {;; The retries record no step timings
+                      :cfg           (dissoc cfg ::mtx/metrics ::validation-timings)
+                      :file          file
+                      :libs          libs
+                      :commits       (vec commits)
+                      :skip-validate skip-validate
+                      :state         cpc/*state*
+                      :tracked       tracked}
+                     cause)
+
+      :else
+      (throw cause))))
+
 (defn- process-changes-and-validate
-  [cfg file changes skip-validate]
-  (let [original  file
-        tracked   pmap/*tracked*
-        tracked-0 (some-> tracked deref)
+  "Applies and validates all `changes` at once. If that fails, repairs
+  damage the file already had or keeps the longest prefix of the
+  `commits` that validates."
+  [cfg file changes commits skip-validate]
+  (let [original file
 
         should-resolve-libs?
         (and (or (contains? cf/flags :file-validation)
                  (contains? cf/flags :soft-file-validation))
              (not skip-validate))
 
-        tlibs
-        (ct/tpoint)
-
         libs
-        (try
-          (when should-resolve-libs?
-            (bfc/get-resolved-file-libraries cfg file))
-          (finally
-            (when should-resolve-libs?
-              (record-validation-timing cfg :resolve-libs-ms "resolve-libs" (inst-ms (tlibs))))))
+        (when should-resolve-libs?
+          (with-validation-timing cfg :resolve-libs-ms "resolve-libs"
+            (bfc/get-resolved-file-libraries cfg file)))
 
-        tproc
-        (ct/tpoint)
+        ;; The main purpose of this atom is provide a contextual state
+        ;; for the changes subsystem where optionally some hints can
+        ;; be provided for the changes processing. Right now we are
+        ;; using it for notify about the existence of media refs when
+        ;; a new shape is added.
+        state
+        (atom {})
 
-        ;; The media fix-up copies the foreign media rows into the file
-        ;; and rewrites the references on the file data. A branch
-        ;; persists no data: its state is the change vector, so the same
-        ;; rewrite is recorded in it and the derive reproduces the fix
-        ;; (`bm/remap-changes` is a no-op with an empty remap). The
-        ;; remap itself travels out: a branch stamps it on the op log
-        ;; row (`persist-branch-file!`), so the comparison reads the
-        ;; pairing from the branch's own record.
-        [file op-changes media-index]
-        (try
-          (apply-changes cfg
-                         (-> (files/check-version! file)
-                             (update :revn inc))
-                         changes)
-          (finally
-            (record-validation-timing cfg :process-changes-ms "process-changes" (inst-ms (tproc)))))
+        ;; True when validation reads every object of the touched pages
+        schema-check?
+        (or (contains? cf/flags :soft-file-schema-validation)
+            (and (contains? cf/flags :file-schema-validation)
+                 (not skip-validate)))
 
-        pending-repair
-        (atom nil)]
+        file
+        (-> (files/check-version! file)
+            (update :revn inc))
 
-    (fdata/with-untracked
-      (when (contains? cf/flags :soft-file-validation)
-        (let [t (ct/tpoint)]
+        tracked
+        @pmap/*tracked*
+
+        file
+        (binding [cpc/*state* state]
+          ;; Decoded on `file`, the objects the schema check reads are
+          ;; shared by every retry
+          (when (and (next commits) schema-check?)
+            (decode-objects file changes))
           (try
-            (soft-validate-file! file libs changes)
-            (finally
-              (record-validation-timing cfg :soft-validate-affected-ms "soft-validate-affected" (inst-ms (t)))))))
-
-      (when (contains? cf/flags :soft-file-schema-validation)
-        (let [t (ct/tpoint)]
-          (try
-            (soft-validate-file-schema! file)
-            (finally
-              (record-validation-timing cfg :soft-validate-schema-ms "soft-validate-schema" (inst-ms (t)))))))
-
-      (when (and (contains? cf/flags :file-validation)
-                 (not skip-validate))
-        (let [t (ct/tpoint)]
-          (try
-            (val/validate-file-affected! file libs changes)
+            (-> (apply-changes cfg file libs changes skip-validate)
+                (assoc ::changes changes))
             (catch Throwable cause
-              (reset! pending-repair cause)
-              (when-not (referential-integrity-error? cause)
-                (throw cause)))
-            (finally
-              (record-validation-timing cfg :validate-affected-ms "validate-affected" (inst-ms (t)))))))
+              (repair-or-reject cfg original file libs changes commits
+                                skip-validate tracked cause))))]
 
-      (when (and (contains? cf/flags :file-schema-validation)
-                 (not skip-validate)
-                 (nil? @pending-repair))
-        (let [t (ct/tpoint)]
-          (try
-            (val/validate-file-schema! file)
-            (finally
-              (record-validation-timing cfg :validate-schema-ms "validate-schema" (inst-ms (t))))))))
-
-    (if-let [cause @pending-repair]
-      (repair-preexisting-damage cfg original libs changes tracked tracked-0 cause)
-      [file op-changes media-index])))
+    ;; The media fix-up copies the foreign media rows into the file and
+    ;; rewrites the references on the file data. A branch persists no
+    ;; data: its state is the change vector, so `update-file*` records
+    ;; the same rewrite in it, and stamps the remap in `::media-index`
+    ;; on the op log row (`persist-branch-file!`), so the comparison
+    ;; reads the pairing from the branch's own record.
+    (if-let [media-refs (-> @state :media-refs not-empty)]
+      (let [[file media-index] (bfc/update-media-references! cfg file media-refs)]
+        (assoc file ::media-index media-index))
+      file)))
 
 (defn- take-snapshot?
   "Defines the rule when file `data` snapshot should be saved."

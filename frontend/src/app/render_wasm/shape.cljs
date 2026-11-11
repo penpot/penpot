@@ -77,7 +77,17 @@
 
   c/ICounted
   (-count [_]
-    (+ 1 (count delegate)))
+    (+ 2 (count delegate)))
+
+  c/IKVReduce
+  (-kv-reduce [_ f init]
+    (let [acc (f init :id id)]
+      (if (reduced? acc)
+        @acc
+        (let [acc (f acc :type type)]
+          (if (reduced? acc)
+            @acc
+            (reduce-kv f acc delegate))))))
 
   c/ILookup
   (-lookup [coll k]
@@ -354,6 +364,18 @@
     (let [id (:id self)]
       (.set changes id (conj* (.get changes id) k)))))
 
+(defn- assoc-delegate
+  "Keeps an array map delegate as an array map when adding a new key."
+  [delegate k v]
+  (if (and (instance? PersistentArrayMap delegate)
+           (not (contains? delegate k)))
+    (PersistentArrayMap. (meta delegate)
+                         (inc (count delegate))
+                         (doto (aclone (.-arr ^PersistentArrayMap delegate))
+                           (.push k v))
+                         nil)
+    (assoc delegate k v)))
+
 (defn- impl-assoc
   [self k v]
   (track-change! self k)
@@ -369,7 +391,7 @@
                  (.-delegate ^ShapeProxy self))
 
     (let [delegate  (.-delegate ^ShapeProxy self)
-          delegate' (assoc delegate k v)]
+          delegate' (assoc-delegate delegate k v)]
       (if (identical? delegate' delegate)
         self
         (ShapeProxy. (.-id ^ShapeProxy self)
@@ -418,18 +440,19 @@
                    (next es))
             (throw (js/Error. "conj on a map takes map entries or seqables of map entries"))))))))
 
-(def ^:private xf:without-id-and-type
-  (remove (fn [kvpair]
-            (let [k (key kvpair)]
-              (or (= k :id)
-                  (= k :type))))))
-
 (defn create-shape
-  "Instantiate a shape from a map"
+  "Instantiate a shape from a map. The delegate is an array map because
+  it takes far less memory than a hash map for shape-sized maps."
   [attrs]
-  (ShapeProxy. (:id attrs)
-               (:type attrs)
-               (into {} xf:without-id-and-type attrs)))
+  (let [arr (reduce-kv (fn [arr k v]
+                         (when-not (or (= k :id) (= k :type))
+                           (.push arr k v))
+                         arr)
+                       #js []
+                       attrs)]
+    (ShapeProxy. (:id attrs)
+                 (:type attrs)
+                 (PersistentArrayMap. nil (/ (alength arr) 2) arr nil))))
 
 (t/add-handlers!
  ;; We only add a write handler, read handler uses the dynamic dispatch

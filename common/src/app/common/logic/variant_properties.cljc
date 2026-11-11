@@ -61,15 +61,18 @@
   [changes component-id pos value]
   (if-let [value (ctv/prepare-property-value value)]
     (let [data      (pcb/get-library-data changes)
+          objects   (pcb/get-objects changes)
           component (ctcl/get-component data component-id true)
-          main-id   (:main-instance-id component)
-          name      (-> (:variant-properties component)
-                        (update pos assoc :value value)
-                        ctv/properties-to-name)]
-      (-> changes
-          (pcb/update-component component-id #(assoc-in % [:variant-properties pos :value] value)
-                                {:apply-changes-local-library? true})
-          (pcb/update-shapes [main-id] #(assoc % :variant-name name))))
+          main-id   (:main-instance-id component)]
+      (if (contains? objects main-id)
+        (let [name (-> (:variant-properties component)
+                       (update pos assoc :value value)
+                       ctv/properties-to-name)]
+          (-> changes
+              (pcb/update-component component-id #(assoc-in % [:variant-properties pos :value] value)
+                                    {:apply-changes-local-library? true})
+              (pcb/update-shapes [main-id] #(assoc % :variant-name name))))
+        changes))
     changes))
 
 
@@ -193,6 +196,19 @@
         shape-name (ctv/remove-prefix (:name shape) container-name)]
     (ctv/path-to-properties shape-name base-properties min-props)))
 
+(defn- fill-blank-properties
+  "When every value in `props` is blank, set the last one to the first
+   `Value N` not contained in `used-values`, so the variant does not end up
+   with an empty combination."
+  [props used-values]
+  (if (and (seq props) (every? (comp str/blank? :value) props))
+    (let [value (->> (iterate inc 1)
+                     (map #(str ctv/value-prefix %))
+                     (remove used-values)
+                     first)]
+      (assoc-in (vec props) [(dec (count props)) :value] value))
+    props))
+
 
 (defn generate-make-shapes-variant
   [changes shapes variant-container]
@@ -241,24 +257,32 @@
 
         changes        (pcb/update-shapes changes (map :id shapes)
                                           #(assoc % :variant-id variant-id
-                                                  :name (:name variant-container)))]
-    (reduce
-     (fn [changes shape]
-       (let [component (ctcl/get-component data (:component-id shape) true)]
-         (if (or (zero? num-shapes)                      ;; do nothing if there are no shapes
-                 (and (= variant-id (:variant-id shape)) ;; or we are only moving the shape inside its parent (it is
-                      (not (:deleted component))))       ;; the same parent and the component isn't deleted)
-           changes
-           (let [props               (create-new-properties shape total-props)
-                 variant-name        (ctv/properties-to-name props)]
-             (-> (pcb/update-component changes
-                                       (:component-id shape)
-                                       #(assoc % :variant-id variant-id
-                                               :variant-properties props
-                                               :name cname
-                                               :path cpath)
-                                       {:apply-changes-local-library? true})
-                 (pcb/update-shapes [(:id shape)]
-                                    #(assoc % :variant-name variant-name)))))))
-     changes
-     shapes)))
+                                                  :name (:name variant-container)))
+
+        ;; Property values already present in the container's variants
+        used-values    (->> (cfv/extract-properties-values data objects variant-id)
+                            (mapcat :value)
+                            set)]
+    (first
+     (reduce
+      (fn [[changes used-values] shape]
+        (let [component (ctcl/get-component data (:component-id shape) true)]
+          (if (or (zero? num-shapes)                      ;; do nothing if there are no shapes
+                  (and (= variant-id (:variant-id shape)) ;; or we are only moving the shape inside its parent (it is
+                       (not (:deleted component))))       ;; the same parent and the component isn't deleted)
+            [changes used-values]
+            (let [props               (-> (create-new-properties shape total-props)
+                                          (fill-blank-properties used-values))
+                  variant-name        (ctv/properties-to-name props)]
+              [(-> (pcb/update-component changes
+                                         (:component-id shape)
+                                         #(assoc % :variant-id variant-id
+                                                 :variant-properties props
+                                                 :name cname
+                                                 :path cpath)
+                                         {:apply-changes-local-library? true})
+                   (pcb/update-shapes [(:id shape)]
+                                      #(assoc % :variant-name variant-name)))
+               (into used-values (map :value) props)]))))
+      [changes used-values]
+      shapes))))

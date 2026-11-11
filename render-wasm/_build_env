@@ -164,6 +164,11 @@ function setup_rust {
 }
 
 function setup {
+    if [ "${PENPOT_WASM_PREPARED:-}" = "1" ]; then
+        echo "Skipping rustup and pnpm setup (PENPOT_WASM_PREPARED=1)" >&2
+        return 0
+    fi
+
     setup_rust
     pnpm install;
 }

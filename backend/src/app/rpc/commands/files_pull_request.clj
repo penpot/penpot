@@ -222,10 +222,10 @@
           url   (format-pull-request-url pr team-id)]
       (doseq [reviewer-id reviewers]
         (when-let [{:keys [fullname email]} (get users reviewer-id)]
-          (eml/send
+          (eml/send-template
            cfg
            {::eml/reuse-conn true
-            ::eml/factory eml/review-request
+            ::eml/template "review-request"
             :public-uri (cf/get :public-uri)
             :to email
             :name fullname

@@ -55,7 +55,7 @@
    {:label "आधुनिक मानक हिन्दी (community)" :value "hi"}
    {:label "عربي/عربى (community)" :value "ar"}
    {:label "فارسی (community)" :value "fa"}
-   {:label "日本語 (Community)" :value "ja_jp"}
+   {:label "日本語 (Community)" :value "ja"}
    {:label "简体中文 (community)" :value "zh_cn"}
    {:label "繁體中文 (community)" :value "zh_hant"}])
 

@@ -38,6 +38,10 @@ Useful builders:
 
 `add-variant-with-copy` does not accept position params for children; use `gsh/absolute-move` after creation if positions matter.
 
+## Generative sampling caution
+
+- `sg/sample` is unseeded per run. If a test filters samples by type (e.g. keep only `:svg-raw`) then `first` can yield nil on unlucky seeds; `assoc` onto nil builds a typeless map that fails `:multi` dispatch on `:type`. Pin `:seed` in `sg/sample` opts whenever a test depends on a filtered subtype being present (verified seed 42 deals svg-raw shapes on JVM and JS).
+
 ## Driving production paths
 
 For shape mutations, prefer production-path helpers such as `cls/generate-update-shapes` plus `thf/apply-changes`. For component swaps with keep-touched behavior, use `tho/swap-component-in-shape` with `{:keep-touched? true}`.

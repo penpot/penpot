@@ -13,6 +13,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.media.svg :as svg]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.auth :as cauth]
    [app.setup.clock :as clock]
@@ -27,6 +28,17 @@
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
+
+(def ^:private evil-svg
+  "An SVG that smuggles an event handler inside an attribute value."
+  "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\" id=\"x' onload='alert(1)\"><rect width=\"10\" height=\"10\"/></svg>")
+
+(defn- stored-svg-attrs
+  "Return the attributes of the SVG stored in the storage object `id`."
+  [storage id]
+  (let [sobject (sto/get-object storage id)
+        content (slurp (sto/get-object-data storage sobject))]
+    (:attrs (svg/parse-svg content))))
 
 (t/deftest upsert-file-object-thumbnail
   (let [storage (::sto/storage th/*system*)
@@ -259,6 +271,63 @@
           (t/is (= 1 (:deleted result)))))
 
       (t/is (some? (sto/get-object storage (:media-id row2)))))))
+
+(t/deftest create-file-object-thumbnail-sanitizes-svg
+  (let [storage (::sto/storage th/*system*)
+        profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})]
+    (th/with-temp-file [path evil-svg]
+      (let [data {::th/type :create-file-object-thumbnail
+                  ::rpc/profile-id (:id profile)
+                  :file-id (:id file)
+                  :object-id "test-key-svg"
+                  :media {:filename "evil.svg"
+                          :size (fs/size path)
+                          :path path
+                          :mtype "image/svg+xml"}}]
+
+        (let [out (th/multipart-command! data)]
+          (t/is (nil? (:error out))))
+
+        (let [[row] (th/db-query :file-tagged-object-thumbnail
+                                 {:file-id (:id file)}
+                                 {:order-by [[:created-at :asc]]})]
+          (t/is (some? row))
+
+          (let [attrs (stored-svg-attrs storage (:media-id row))]
+            (t/is (not (contains? attrs :onload)))
+            (t/is (= "x' onload='alert(1)" (get attrs :id)))))))))
+
+(t/deftest create-file-thumbnail-sanitizes-svg
+  (let [storage (::sto/storage th/*system*)
+        profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false
+                                    :revn 1})]
+    (th/with-temp-file [path evil-svg]
+      (let [data {::th/type :create-file-thumbnail
+                  ::rpc/profile-id (:id profile)
+                  :file-id (:id file)
+                  :revn 1
+                  :media {:filename "evil.svg"
+                          :size (fs/size path)
+                          :path path
+                          :mtype "image/svg+xml"}}]
+
+        (let [out (th/multipart-command! data)]
+          (t/is (nil? (:error out))))
+
+        (let [[row] (th/db-query :file-thumbnail
+                                 {:file-id (:id file)}
+                                 {:order-by [[:revn :asc]]})]
+          (t/is (some? row))
+
+          (let [attrs (stored-svg-attrs storage (:media-id row))]
+            (t/is (not (contains? attrs :onload)))
+            (t/is (= "x' onload='alert(1)" (get attrs :id)))))))))
 
 (t/deftest create-file-thumbnail-requires-edit-permissions
   (let [owner  (th/create-profile* 1)
@@ -921,39 +990,44 @@
       (t/is (= 1 (count rows2)))
       (t/is (nil? (:deleted-at (first rows2)))))))
 
-
-(t/deftest create-file-thumbnail-rejects-forged-media
-  ;; A transit body like {"~:media": {"~:path": ["~#path", "/etc/passwd"]}}
-  ;; decodes to this exact map. Without a multipart request it must fail at
-  ;; params validation, before any file is read. NOTE: plain command! on
-  ;; purpose, a multipart header would make it legitimate.
+(t/deftest rejects-forged-path-on-create-file-thumbnail
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
                                     :project-id (:default-project-id profile)
                                     :is-shared false})
-        out     (th/command! {::th/type :create-file-thumbnail
-                              ::rpc/profile-id (:id profile)
-                              :file-id (:id file)
-                              :revn 0
-                              :media {:filename "evil.jpg"
-                                      :size 123
-                                      :path (fs/path "/etc/passwd")
-                                      :mtype "image/jpeg"}})]
-    (t/is (th/ex-of-code? (:error out) :params-validation))))
+        data    {::th/type :create-file-thumbnail
+                 ::rpc/profile-id (:id profile)
+                 :file-id (:id file)
+                 :revn 1
+                 :media {:filename "x.png"
+                         :size 1
+                         :path (fs/path "/etc/passwd")
+                         :mtype "image/png"}}
+        out     (th/command! data)
+        error   (:error out)]
+    (t/is (nil? (:result out)))
+    (t/is (th/ex-info? error))
+    (t/is (th/ex-of-type? error :validation))
+    (t/is (th/ex-of-code? error :params-validation))
+    (t/is (= 0 (count (th/db-query :file-thumbnail {:file-id (:id file)}))))))
 
-(t/deftest create-file-object-thumbnail-rejects-forged-media
-  ;; Same transit-forgery vector through object thumbnails. NOTE: plain
-  ;; command! on purpose, a multipart header would make it legitimate.
+(t/deftest rejects-forged-path-on-create-file-object-thumbnail
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
                                     :project-id (:default-project-id profile)
                                     :is-shared false})
-        out     (th/command! {::th/type :create-file-object-thumbnail
-                              ::rpc/profile-id (:id profile)
-                              :file-id (:id file)
-                              :object-id "obj"
-                              :media {:filename "evil.jpg"
-                                      :size 123
-                                      :path (fs/path "/etc/passwd")
-                                      :mtype "image/jpeg"}})]
-    (t/is (th/ex-of-code? (:error out) :params-validation))))
+        data    {::th/type :create-file-object-thumbnail
+                 ::rpc/profile-id (:id profile)
+                 :file-id (:id file)
+                 :object-id "test-key-forged"
+                 :media {:filename "x.png"
+                         :size 1
+                         :path (fs/path "/etc/passwd")
+                         :mtype "image/png"}}
+        out     (th/command! data)
+        error   (:error out)]
+    (t/is (nil? (:result out)))
+    (t/is (th/ex-info? error))
+    (t/is (th/ex-of-type? error :validation))
+    (t/is (th/ex-of-code? error :params-validation))
+    (t/is (= 0 (count (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)}))))))

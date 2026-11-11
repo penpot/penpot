@@ -120,8 +120,7 @@
 
         on-duplicate
         (fn []
-          (apply st/emit! (map dd/duplicate-file files))
-          (st/emit! (ntf/success (tr "dashboard.success-duplicate-file" (i18n/c file-count)))))
+          (st/emit! (dd/duplicate-files files)))
 
         on-delete-accept
         (fn [_]
