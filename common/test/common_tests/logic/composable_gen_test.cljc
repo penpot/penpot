@@ -2151,6 +2151,14 @@
                                     :layout-children true :grid-empty true :layout-copies true :text true}]
                        :ops [[:make-variant 1] [:style 4 29 1] [:style 7 12] [:update-main]]}))))
 
+(t/deftest resetting-a-nested-copy-of-a-swapped-layout-head-restores-its-sizing
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :grid :variant-diff true
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:variant-property 5 1 3] [:variant-property 0 6 3] [:combine 6]
+                             [:add-variant 0 6 7] [:combine 4 4 7] [:resize 3 7 4] [:switch 6] [:delete 5]
+                             [:restore 0 5 7 5] [:swap 1 3 1 5] [:style 0 30 1] [:reset 3]]}))))
+
 (t/deftest moving-a-flex-copy-child-after-a-switch-resized-its-sibling-authors-no-geometry
   (t/is (map? (cg/run {:world [1 2 {:variants true :text-styles false :layout :flex :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true
