@@ -175,6 +175,17 @@
   [shape]
   (not= (boolean (:flip-x shape)) (boolean (:flip-y shape))))
 
+(defn- close-geometry?
+  "Whether `a` and `b` hold the geometry `attr` within its precision. A
+   mirror stores its turn either way, so the turns of two mirrors are also
+   close where both point their axes alike."
+  [attr a b]
+  (or (gsh/close-attrs? attr (get a attr) (get b attr))
+      (and (= attr :rotation)
+           (mirrored? a)
+           (mirrored? b)
+           (gmt/close? (cll/axes-matrix a) (cll/axes-matrix b)))))
+
 (defn- switch-attr-operations
   "The `[attr value]` pairs that carry `attr` over a variant switch, from
    `previous-shape`, the copy shape before the switch placed like
@@ -202,7 +213,7 @@
          ;; If the values are already equal, don't copy them; geometry
          ;; within its precision
          (if (= sync-group :geometry-group)
-           (gsh/close-attrs? attr (get previous-shape attr) (get current-shape attr))
+           (close-geometry? attr previous-shape current-shape)
            (= (get previous-shape attr) (get current-shape attr)))
 
          ;; If :selrect/:points values are already equal ignoring displacement,
@@ -222,17 +233,10 @@
          ;; 3. We set Copy’s bg to green (so it it has an override on the bg).
          ;; 4. We switch Copy to use C2 as base.
          ;; 5. The bg of Copy now is blue (we ignore the override)
-         ;; A mirror stores its turn either way, so the turns of two
-         ;; mirrors also agree where both point their axes alike.
          (and
           (not (contains? #{:points :selrect :content} attr))
           (not (if (= sync-group :geometry-group)
-                 (or (gsh/close-attrs? attr (get origin-ref-shape attr) (get current-shape attr))
-                     (and (= attr :rotation)
-                          (mirrored? origin-ref-shape)
-                          (mirrored? current-shape)
-                          (gmt/close? (cll/axes-matrix origin-ref-shape)
-                                      (cll/axes-matrix current-shape))))
+                 (close-geometry? attr origin-ref-shape current-shape)
                  (= (get origin-ref-shape attr) (get current-shape attr)))))
 
          ;; The :content attr cant't be copied to elements of different type
