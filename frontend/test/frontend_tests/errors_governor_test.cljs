@@ -174,6 +174,17 @@
     (t/is (= 1 (count events)))
     (t/is (= 1 (:occurrences (deref (first events)))))))
 
+(t/deftest submit-report-carries-the-active-renderer
+  (let [submit (fn [features hint]
+                 (with-redefs [st/state (atom {:features features})]
+                   (capture-reports!
+                    #(errors/submit-report :event-name "handled-exception"
+                                           :report "report"
+                                           :hint hint
+                                           :cause (error-cause :hint hint)))))]
+    (t/is (= "wasm" (:renderer (deref (first (submit #{"render-wasm/v1"} "a"))))))
+    (t/is (= "svg" (:renderer (deref (first (submit #{} "b"))))))))
+
 (t/deftest invalid-report-does-not-consume-a-reservation
   (let [cause  (error-cause :type :network :hint "boom")
         events (capture-reports!

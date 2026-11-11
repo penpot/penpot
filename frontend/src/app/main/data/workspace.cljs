@@ -314,7 +314,8 @@
                                 ::ev/name "open-workspace-file"
                                 ::ev/origin "workspace"
                                 :file-id file-id
-                                :team-id team-id)))))))
+                                :team-id team-id
+                                :renderer (features/get-active-renderer state))))))))
 
 (defn- restore-pending-changes
   "Applies the edits still waiting to be saved to a freshly loaded `file`.

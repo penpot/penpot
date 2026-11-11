@@ -16,6 +16,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.transforms :as dwt]
@@ -58,6 +59,7 @@
    [app.main.ui.workspace.viewport.viewport-ref :as vp-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.api.webgl :as webgl]
    [app.render-wasm.rulers-state :as rs]
    [app.util.debug :as dbg]
    [app.util.text-editor :as ted]
@@ -69,6 +71,10 @@
    [rumext.v2 :as mf]))
 
 ;; --- Viewport
+
+;; Retries after the first failed WebGL context init before showing the
+;; "WebGL unavailable" modal.
+(def ^:private ^:const max-init-retries 3)
 
 (defn- apply-modifiers-to-objects
   [objects modifiers]
@@ -460,21 +466,28 @@
         (let [timeout-id-ref   (volatile! nil)
               unmounted?       (volatile! false)
               modal-shown?     (volatile! false)
+              init-error       (volatile! nil)
 
               show-unavailable
               (fn []
                 (when-not (or @unmounted? @modal-shown?)
                   (vreset! modal-shown? true)
                   (reset! canvas-init? false)
-                  (st/emit! (modal/show {:type :webgl-unavailable}))))
+                  (st/emit! (modal/show {:type :webgl-unavailable})
+                            (ev/event (assoc (webgl/get-environment)
+                                             ::ev/name "webgl-unavailable"
+                                             ::ev/origin "workspace"
+                                             :hint (or @init-error "no webgl2 context"))))))
 
               try-init
               (fn try-init [retries]
                 (when-not @unmounted?
+                  (vreset! init-error nil)
                   (let [init? (try
                                 (wasm.api/init-canvas-context canvas)
                                 (catch :default e
                                   (js/console.error "Error initializing canvas context:" e)
+                                  (vreset! init-error (ex-message e))
                                   false))]
                     (cond
                       init?
@@ -490,7 +503,7 @@
           (->> @wasm.api/module
                (p/fmap (fn [ready?]
                          (when ready?
-                           (try-init 3)))))
+                           (try-init max-init-retries)))))
           (fn []
             (vreset! unmounted? true)
             (when-let [timeout-id @timeout-id-ref]

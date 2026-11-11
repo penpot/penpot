@@ -20,6 +20,7 @@
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
+   [app.render-wasm.api.webgl :as webgl]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.theme :as theme]
@@ -101,10 +102,11 @@
         handle-render-change
         (mf/use-fn
          (fn [enabled?]
-           (st/emit! (ev/event {::ev/name (if enabled?
-                                            "enable-webgl-rendering"
-                                            "disable-webgl-rendering")
-                                ::ev/origin "settings"})
+           (st/emit! (ev/event (assoc (webgl/get-environment)
+                                      ::ev/name (if enabled?
+                                                  "enable-webgl-rendering"
+                                                  "disable-webgl-rendering")
+                                      ::ev/origin "settings"))
                      (du/update-profile-props {:renderer (if enabled? :wasm :svg)})
                      (ntf/success (if enabled?
                                     (tr "webgl.toast.webgl-render-enabled")
