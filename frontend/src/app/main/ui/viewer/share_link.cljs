@@ -329,10 +329,10 @@
         link-to-destroy  (deref link-to-destroy*)
 
         on-close
-        (fn [event]
-          (dom/prevent-default event)
-          (st/emit! (modal/hide))
-          (modal/disallow-click-outside!))
+        (mf/use-fn
+         (fn [event]
+           (dom/prevent-default event)
+           (modal/hide!)))
 
         on-request-destroy
         (mf/use-fn
