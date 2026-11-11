@@ -40,7 +40,6 @@
   nrepl/nrepl {:mvn/version "1.8.0"}
 
   org.postgresql/postgresql {:mvn/version "42.7.13"}
-  org.xerial/sqlite-jdbc {:mvn/version "3.53.4.0"}
 
   com.zaxxer/HikariCP {:mvn/version "7.1.0"}
 
