@@ -58,6 +58,26 @@
        ;; We don't do automatic update of the `layout-grid-cells` property.
        (remove #(= :layout-grid-cells %))))
 
+;; Attrs whose value drifts by float noise when a shape is moved; they
+;; are compared with tolerance during sync. The rest compare exactly.
+(def ^:private drifting-geometry-attrs
+  #{:x :y :width :height :selrect :points})
+
+(defn- attr-equal?
+  [attr origin-shape dest-shape]
+  (let [origin-val (get origin-shape attr)
+        dest-val   (get dest-shape attr)]
+    (or (= origin-val dest-val)
+        (cond
+          (contains? drifting-geometry-attrs attr)
+          (gsh/close-attrs? attr origin-val dest-val)
+
+          (and (= :content attr) (cfh/path-shape? origin-shape))
+          (segment/content-close? origin-val dest-val)
+
+          :else
+          false))))
+
 ;; Flex-child layout attrs synced between main and copy (interactions are only kept on swap)
 (def ^:private flex-child-attrs
   (disj ctk/swap-keep-attrs :interactions))
@@ -2007,7 +2027,7 @@
                      (touched sync-group))
 
                 skip-operations?
-                (or (= (get origin-shape attr) (get dest-shape attr))
+                (or (attr-equal? attr origin-shape dest-shape)
                     (and (touched sync-group)
                          omit-touched?
                          ;; When it is a text-partial-change, we should generate operations

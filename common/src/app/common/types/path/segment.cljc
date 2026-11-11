@@ -1355,6 +1355,26 @@
       (grc/points->rect extremities)
       (grc/make-rect))))
 
+(defn- segment-close?
+  [a b]
+  (let [pa (:params a)
+        pb (:params b)]
+    (and (= (:command a) (:command b))
+         (= (count pa) (count pb))
+         (every? (fn [[k v]]
+                   (let [w (get pb k)]
+                     (and (number? w) (mth/close? v w))))
+                 pa))))
+
+(defn content-close?
+  "True when both path contents have the same segments and every param
+  is within `mth/close?` of its counterpart."
+  [content-a content-b]
+  (let [a (vec content-a)
+        b (vec content-b)]
+    (and (= (count a) (count b))
+         (every? true? (map segment-close? a b)))))
+
 (defn content-center
   [content]
   (-> content
