@@ -2226,7 +2226,7 @@
                              [:add-variant] [:combine] [:add-variant] [:combine] [:update-main]
                              [:nest 13]]}))))
 
-(t/deftest updating-a-main-pushes-a-margin-a-switch-carried-out-of-a-layout
+(t/deftest updating-a-main-keeps-on-the-copy-a-margin-a-switch-carried-out-of-a-layout
   (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout :flex :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true
                                     :layout-children false :grid-empty false :layout-copies true :text true}]
@@ -2243,6 +2243,36 @@
                                     :layout-children false :grid-empty true :layout-copies false :text false}]
                        :ops [[:make-variant 3] [:nest 4] [:combine 4] [:rotate 2] [:detach 1] [:combine 3]
                              [:switch] [:update-main] [:detach 2] [:resize 2] [:switch 5] [:update-main]]}))))
+
+(t/deftest switching-to-a-head-under-a-plain-parent-keeps-the-margin-its-main-never-took
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout :flex :variant-diff true
+                                    :layout-item-margins true :grid-square true :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:edit 26 0 1 1] [:update-main 26] [:combine 10 4 3 4] [:edit 24 0 1 1]
+                             [:update-main 24] [:add-variant 3 22 9 6] [:combine 1] [:rotate 8 0 15 17]
+                             [:combine 13] [:switch 24] [:variant-property 8 6 27 16] [:switch 19]
+                             [:duplicate 14 16 18 1] [:delete 2] [:restore 2] [:transform 15 16 17 19]
+                             [:combine 8 20 15 5] [:restore 3] [:delete 15 13 14 0] [:restore 15 2 3 23]
+                             [:add-variant 4] [:switch 24] [:switch 0 22 11 21] [:restore 18]
+                             [:combine 18 2 19 17] [:style 17 7 15 20] [:resize 10 7 1 6]
+                             [:text-style 27 21 20 1] [:remove-child 9 13 12 10]
+                             [:variant-property 16 3 25 0] [:rotate 26 0 8 14] [:remove-child 22 15 10 27]
+                             [:grid-cell 4 13 3 12] [:make-variant 15 11 13 10] [:edit 16 1 1 :copy-head]
+                             [:reset 16] [:switch 18 17 4 10] [:combine 21 21 15 3] [:style 22 27 20 12]
+                             [:add-child 7 16 13 1] [:restore 17 14 17 0] [:switch 2] [:text-style 7 8 1]
+                             [:delete 4] [:restore 4] [:restore 11 2 5 7] [:detach 20 14 19 7]
+                             [:text-style 3 5 1] [:transform 14 12 18 8] [:add-variant 25] [:switch 22]
+                             [:make-variant 17 1 20 5] [:rotate 8 9 10 1] [:duplicate 1 12 11 0]
+                             [:style 3 26 1] [:style 2 20 5 21] [:grid-direction 24 0 0 1]
+                             [:grid-cell 24 4 3 1] [:text-style 10 1 1] [:update-main 20 3 12 15]
+                             [:variant-property 21 3 19 2] [:switch 24] [:switch 22 26 5 15]
+                             [:grid-cell 11 20 18 3] [:detach 20 23 12 11] [:add-variant 13 0 2 27]
+                             [:add-child 13 24 12 16] [:undo 14 10 15 25] [:edit 15 1 1 :copy-head]
+                             [:reset 15] [:remove-child 23 17 24 27] [:reset 27 21 15 14]
+                             [:add-variant 1 19 19 11] [:duplicate 7 20 19 8] [:add-variant 11 26 22 16]
+                             [:make-variant 4] [:switch 6] [:redo 6 18 5 13] [:nest 23 14 6 6]
+                             [:update-main 22 21 23 7] [:text-style 18 0 25 10] [:variant-property 1 9 23 5]
+                             [:switch 20]]}))))
 
 (t/deftest pushing-a-grid-direction-orders-the-copies-like-the-reflowed-main
   (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles false :layout :grid :variant-diff false
