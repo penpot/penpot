@@ -1133,7 +1133,7 @@ test.describe("Tokens - creation", () => {
 
     // 8. Valid spread → resolved
 
-    await blurField.fill("3 - 3");
+    await spreadField.fill("3 - 3");
     await expect(
       tokensUpdateCreateModal.getByText("Resolved value: 0"),
     ).toBeVisible();
@@ -1175,7 +1175,7 @@ test.describe("Tokens - creation", () => {
     await referenceField.fill("{my-token}");
     await expect(
       tokensUpdateCreateModal.getByText(
-        "Resolved value: - X: 6 - Y: 10 - Blur: 0 - Spread: 0 ",
+        "Resolved value: - X: 6 - Y: 10 - Blur: 4 - Spread: 0 ",
       ),
     ).toBeVisible();
 
@@ -1818,85 +1818,6 @@ test.describe("Tokens - creation", () => {
       tokensSidebar.getByRole("button", { name: "colors.blue.100-copy" }),
     ).toBeVisible();
   });
-});
-
-test("User creates grouped color token", async ({ page }) => {
-  const { workspacePage, tokensUpdateCreateModal, tokensSidebar } =
-    await setupEmptyTokensFileRender(page);
-
-  await tokensSidebar.getByRole("button", { name: "Add Token: Color" }).click();
-
-  // Create grouped color token with mouse
-
-  await expect(tokensUpdateCreateModal).toBeVisible();
-
-  const nameField = tokensUpdateCreateModal.getByLabel("Name");
-  const valueField = tokensUpdateCreateModal.getByLabel("Value");
-
-  await nameField.click();
-  await nameField.fill("dark.primary");
-
-  await valueField.click();
-  await valueField.fill("red");
-
-  const submitButton = tokensUpdateCreateModal.getByRole("button", {
-    name: "Save",
-  });
-  await expect(submitButton).toBeEnabled();
-  await submitButton.click();
-
-  await unfoldTokenType(tokensSidebar, "color");
-
-  await expect(tokensSidebar.getByLabel("primary")).toBeEnabled();
-});
-
-test("User can't create regular token with value missing", async ({ page }) => {
-  const { tokensUpdateCreateModal } = await setupEmptyTokensFileRender(page);
-
-  const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
-  await tokensTabPanel
-    .getByRole("button", { name: "Add Token: Color" })
-    .click();
-
-  await expect(tokensUpdateCreateModal).toBeVisible();
-
-  const nameField = tokensUpdateCreateModal.getByLabel("Name");
-  const submitButton = tokensUpdateCreateModal.getByRole("button", {
-    name: "Save",
-  });
-
-  // Initially submit button should be disabled
-  await expect(submitButton).toBeDisabled();
-
-  // Fill in name but leave value empty
-  await nameField.click();
-  await nameField.fill("primary");
-
-  // Submit button should remain disabled when value is empty
-  await expect(submitButton).toBeDisabled();
-});
-
-test("User duplicate color token", async ({ page }) => {
-  const { tokensSidebar, tokenContextMenuForToken } =
-    await setupTokensFileRender(page);
-
-  await expect(tokensSidebar).toBeVisible();
-
-  await unfoldTokenType(tokensSidebar, "color");
-
-  const colorToken = tokensSidebar.getByRole("button", {
-    name: "colors.blue.100",
-  });
-
-  await colorToken.click({ button: "right" });
-  await expect(tokenContextMenuForToken).toBeVisible();
-
-  await tokenContextMenuForToken.getByText("Duplicate token").click();
-  await expect(tokenContextMenuForToken).not.toBeVisible();
-
-  await expect(
-    tokensSidebar.getByRole("button", { name: "colors.blue.100-copy" }),
-  ).toBeVisible();
 });
 
 test("User disables the current set but token still have resolved values shown in the sidebar", async ({
