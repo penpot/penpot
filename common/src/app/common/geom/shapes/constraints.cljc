@@ -148,6 +148,9 @@
   ((if (= :x axis) center-horizontal-vector center-vertical-vector) child-points parent-points))
 
 (defn displacement
+  "The move that gives a child the vector `before-v` to its parent's side
+   again, where it now has `after-v`. A child on the side has no direction
+   to it, so the parent's side gives the one `before-v` had."
   [before-v after-v before-parent-side-v after-parent-side-v]
 
   (let [before-angl (gpt/angle-with-other before-v before-parent-side-v)
@@ -155,8 +158,17 @@
         sign (if (mth/close? before-angl after-angl) 1 -1)
         length (* sign (gpt/length before-v))]
 
-    (if (mth/almost-zero? length)
+    (cond
+      (mth/almost-zero? length)
       after-v
+
+      (mth/almost-zero? (gpt/length after-v))
+      (let [;; the parent's side, pointing as `before-v` did along it
+            direction (cond-> (gpt/unit after-parent-side-v)
+                        (not (mth/close? before-angl 0)) (gpt/negate))]
+        (gpt/subtract after-v (gpt/scale direction (gpt/length before-v))))
+
+      :else
       (gpt/subtract after-v (gpt/scale (gpt/unit after-v) length)))))
 
 (defn side-vector
