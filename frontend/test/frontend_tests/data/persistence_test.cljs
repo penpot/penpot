@@ -1015,9 +1015,12 @@
        (ptk/emit! store (local-commit file-id)
                   (dps/initialize-persistence)
                   ::dps/force-persist)
-       (await (async/wait-for-store store #(and (= 1 (count @requests))
-                                                (= 1 (count (get-in @store [:persistence :queue]))))
-                                    "buffered edit is sent once" {:signal (rx/merge requests$ (ptk/input-stream store))}))
+       ;; The predicate reads both the store and the request counter, so it
+       ;; passes the merged signal; the wrapper only provides the store one.
+       (await (async/wait-for #(and (= 1 (count @requests))
+                                    (= 1 (count (get-in @store [:persistence :queue]))))
+                              "buffered edit is sent once"
+                              {:signal (rx/merge requests$ (ptk/input-stream store))}))
        (t/is (= 1 (count @requests)))
        (t/is (= 1 (count (get-in @store [:persistence :queue]))))
        (rx/push! response {:revn 1})

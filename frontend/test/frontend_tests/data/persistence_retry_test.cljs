@@ -256,9 +256,12 @@
           (mock/with-mocks*
             {rx/timer (mock/stub (fn [ms] (swap! delays conj ms) (instant-backoff ms)))}
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for-store store #(and (= :error (get-in @store [:persistence :status]))
-                                                     (= 4 (count @requests)))
-                                         "retries exhaust into terminal error" {:signal (rx/merge requests$ (ptk/input-stream store))}))
+            ;; The predicate reads both the store and the request counter, so it
+            ;; passes the merged signal; the wrapper only provides the store one.
+            (await (async/wait-for #(and (= :error (get-in @store [:persistence :status]))
+                                         (= 4 (count @requests)))
+                                   "retries exhaust into terminal error"
+                                   {:signal (rx/merge requests$ (ptk/input-stream store))}))
             (t/is (= :error (get-in @store [:persistence :status])))
             (t/is (= :save-failed (get-in @store [:persistence :error :code])))
             (t/is (= 1 (count (get-in @store [:persistence :queue]))))

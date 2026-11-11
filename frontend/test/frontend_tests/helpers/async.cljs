@@ -17,6 +17,7 @@
     order, so awaiting the last scheduled delivery observes every effect
     scheduled before it."
   (:require
+   [app.common.time :as ct]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [potok.v2.core :as ptk]))
@@ -89,7 +90,7 @@
   [pred msg deadline]
   (if (pred)
     nil
-    (if (>= (js/Date.now) deadline)
+    (if (>= (inst-ms (ct/now)) deadline)
       (t/is false (str "Timed out waiting for: " msg))
       (do (await (settle))
           (await (wait-poll pred msg deadline))))))
@@ -98,34 +99,45 @@
   "Resolves when `pred` holds, re-checking it on every emission of `signal`.
 
   The deadline only bounds failure: it records the failure and resolves, so
-  the caller never hangs. A signal that ends without the predicate holding
-  counts as a failure too. The subscription is disposed on every path."
+  the caller never hangs. A signal that ends or fails without the predicate
+  holding is reported with its own reason. The subscription is disposed on
+  every path."
   [pred msg signal deadline]
   (js/Promise.
    (fn [resolve]
-     (let [done?   (atom false)
-           sub*    (atom nil)
-           timer*  (atom nil)
-           stop!   (fn []
-                     (when-let [s @sub*] (rx/dispose! s))
-                     (when-let [t @timer*] (js/clearTimeout t)))
-           fail!   (fn []
-                     (when-not @done?
-                       (reset! done? true)
-                       (stop!)
-                       (t/is false (str "Timed out waiting for: " msg))
-                       (resolve nil)))
-           settle! (fn []
-                     (when-not @done?
-                       (reset! done? true)
-                       (stop!)
-                       (resolve nil)))]
-       (reset! timer* (js/setTimeout fail! (max 0 (- deadline (js/Date.now)))))
-       (reset! sub* (rx/subs!
-                     (fn [_] (when (pred) (settle!)))
-                     (fn [_] (if (pred) (settle!) (fail!)))
-                     (fn [] (if (pred) (settle!) (fail!)))
-                     signal))
+     (let [done?  (atom false)
+           sub*   (atom nil)
+           timer* (atom nil)
+           stop   (fn []
+                    (when-let [s @sub*] (rx/dispose! s))
+                    (when-let [t @timer*] (js/clearTimeout t)))
+           fail   (fn [text]
+                    (when-not @done?
+                      (reset! done? true)
+                      (stop)
+                      (t/is false text)
+                      (resolve nil)))
+           finish (fn []
+                    (when-not @done?
+                      (reset! done? true)
+                      (stop)
+                      (resolve nil)))]
+       (reset! timer*
+               (js/setTimeout #(fail (str "Timed out waiting for: " msg))
+                              (max 0 (- deadline (inst-ms (ct/now))))))
+       (reset! sub*
+               (rx/subs!
+                (fn [_] (when (pred) (finish)))
+                (fn [cause]
+                  (if (pred)
+                    (finish)
+                    (fail (str "Signal failed while waiting for: " msg ": "
+                               (pr-str cause)))))
+                (fn []
+                  (if (pred)
+                    (finish)
+                    (fail (str "Signal ended while waiting for: " msg))))
+                signal))
        ;; A source that emits while subscribing already settled the wait.
        (when @done?
          (rx/dispose! @sub*))
@@ -144,14 +156,15 @@
   [pred msg & [{:keys [signal timeout-ms]
                 :or   {timeout-ms default-timeout-ms}}]]
   (when-not (pred)
-    (let [deadline (+ (js/Date.now) timeout-ms)]
+    (let [deadline (+ (inst-ms (ct/now)) timeout-ms)]
       (if (some? signal)
         (await (wait-signal pred msg signal deadline))
         (await (wait-poll pred msg deadline))))))
 
 (defn wait-for-store
   "Resolves once `pred` holds over `store`, re-checking it on every store
-  event. The store notifies its subscribers after applying the update, so
-  the predicate already sees the new state. Same ceiling as `wait-for`."
-  [store pred msg & [opts]]
-  (wait-for pred msg (assoc opts :signal (ptk/input-stream store))))
+  event. The store notifies its subscribers after applying the update, so the
+  predicate already sees the new state. One signal only: a predicate that also
+  reads another source passes a merged signal to `wait-for` itself."
+  [store pred msg]
+  (wait-for pred msg {:signal (ptk/input-stream store)}))
