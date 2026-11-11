@@ -76,9 +76,7 @@ export default defineConfig({
     },
     {
       name: "ds",
-      // Accounts without a theme follow the system one; keep the visual
-      // specs on the dark theme so their screenshots stay comparable.
-      use: { ...devices["Desktop Chrome"], colorScheme: "dark" },
+      use: { ...devices["Desktop Chrome"] },
       testDir: "./playwright/ui/visual-specs",
       expect: {
         timeout: expectTimeout,
