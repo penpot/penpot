@@ -7,6 +7,8 @@ import { RedisBridge } from "./RedisBridge";
 import { PluginBridge } from "./PluginBridge";
 import { PluginTask } from "./PluginTask";
 import type { PenpotMcpServer } from "./PenpotMcpServer";
+import type { PenpotSession } from "@penpot/mcp-common";
+import { InvalidDiscoveryResponseError } from "./dispatch/TaskDispatcher";
 
 // Replace only the Redis command boundary; exercise the real transport,
 // dispatchers, task tracking, and WebSockets above it.
@@ -105,8 +107,11 @@ test("Redis discovery receives one reply per subscribed instance and returns pub
         second.publishDiscoveryResponse(id, { instanceId: "second", sessions: [] });
     });
     const responders: string[] = [];
-    const count = await requester.sendDiscoveryRequest("alice", "query", (response) =>
-        responders.push(response.instanceId)
+    const count = await requester.sendDiscoveryRequest(
+        "alice",
+        "query",
+        (response) => responders.push(response.instanceId),
+        assert.fail
     );
     assert.equal(count, 2);
     assert.deepEqual(responders.sort(), ["first", "second"]);
@@ -140,12 +145,12 @@ test("a failed discovery subscription is cleaned up and can be retried", async (
         owner.subscribeToDiscovery("alice", () => {}),
         /Subscription failed/
     );
-    assert.equal(await caller.sendDiscoveryRequest("alice", "after-failure", () => {}), 0);
+    assert.equal(await caller.sendDiscoveryRequest("alice", "after-failure", () => {}, assert.fail), 0);
     await caller.unsubscribeFromDiscoveryResponses("after-failure");
     await owner.subscribeToDiscovery("alice", ({ id }) => {
         owner.publishDiscoveryResponse(id, { instanceId: "owner", sessions: [] });
     });
-    assert.equal(await caller.sendDiscoveryRequest("alice", "retry", () => {}), 1);
+    assert.equal(await caller.sendDiscoveryRequest("alice", "retry", () => {}, assert.fail), 1);
     await caller.unsubscribeFromDiscoveryResponses("retry");
 });
 
@@ -172,13 +177,14 @@ function instance(t: TestContext) {
     const connect = async (
         sessionId: string,
         outcome: "success" | "error" | "silent" = "success",
-        reply: string = sessionId
+        reply: string = sessionId,
+        file: { fileId: string | null; fileName: string | null } = { fileId: "file", fileName: "Design" }
     ) => {
         const socket = new WebSocket(`ws://127.0.0.1:${wsPort}?userToken=alice`);
         sockets.push(socket);
         await once(socket, "open");
         const initialized = once(socket, "message", { signal: AbortSignal.timeout(2000) });
-        socket.send(JSON.stringify({ type: "initialize", session: { sessionId, fileId: "file", fileName: "Design" } }));
+        socket.send(JSON.stringify({ type: "initialize", session: { sessionId, ...file } }));
         await initialized;
         socket.on("message", (raw) => {
             const request = JSON.parse(raw.toString());
@@ -212,6 +218,34 @@ test("full Redis discovery implicitly selects a sole remote WebSocket", async (t
     const requester = instance(t);
     await owner.connect("only");
     assert.equal((await requester.bridge.executePluginTask(new PluginTask("test", {}))).data, "only");
+});
+
+test("full Redis discovery implicitly selects a sole remote WebSocket without an open file", async (t) => {
+    const owner = instance(t);
+    const requester = instance(t);
+    await owner.connect("dashboard", "success", "dashboard", { fileId: null, fileName: null });
+    assert.equal((await requester.bridge.executePluginTask(new PluginTask("test", {}))).data, "dashboard");
+});
+
+test("an unreadable discovery reply fails discovery at once without suggesting a retry", async (t) => {
+    const responder = transport(t);
+    const requester = instance(t);
+    await responder.subscribeToDiscovery("alice", ({ id }) => {
+        responder.publishDiscoveryResponse(id, {
+            instanceId: "other-version",
+            sessions: [{ sessionId: "tab", fileId: 42 } as unknown as PenpotSession],
+        });
+    });
+    const started = Date.now();
+    await assert.rejects(requester.bridge.executePluginTask(new PluginTask("test", {})), (error: Error) => {
+        assert.ok(error instanceof InvalidDiscoveryResponseError);
+        assert.match(error.message, /cannot be read/);
+        assert.match(error.message, /fileId/);
+        assert.match(error.message, /Retrying will not help/);
+        assert.doesNotMatch(error.message, /temporary server load/);
+        return true;
+    });
+    assert.ok(Date.now() - started < 1000);
 });
 
 test("forwarded plugin failures retain the regular execution failure route", async (t) => {
