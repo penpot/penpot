@@ -86,6 +86,9 @@
          (ptk/emit! store commit1 commit2 ::dps/force-persist)
          (await (async/wait-for #(= 1 (count @requests)) "the first two commits are sent" {:signal requests$}))
          (ptk/emit! store commit3 other ::dps/force-persist)
+         ;; This test drives the pipeline step by step: these two waits are the
+         ;; pause that lets the persistence side effect advance before the next
+         ;; emit, not an effect to observe, so they keep the poll.
          (await (async/wait-for #(= 3 (count (get-in @store [:persistence :queue])))
                                 "the third commit and the other file's edit are queued"))
          (ptk/emit! store commit4)
@@ -107,8 +110,8 @@
          (t/is (= 1 (count @failures)) "the user is told once")
          (t/is (= other-id (get-in (second @requests) [1 :id])))
          (rx/push! response {:revn 1})
-         (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                "the queue drains")))))))
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "the queue drains")))))))
 
 ;; Scenario: an edit is buffered while a save is in flight and the save comes
 ;; back rejected, so the rollback drops the edit; the 200 ms pending notice
@@ -128,9 +131,9 @@
          (await (async/wait-for #(= 1 (count @requests)) "the first commit is sent" {:signal requests$}))
          (ptk/emit! store commit2)
          (rx/push! response (thp/rejection (:id @commit1)))
-         (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
-                                      (empty? (get-in @store [:persistence :buffer])))
-                                "the rollback drops both commits"))
+         (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                  (empty? (get-in @store [:persistence :buffer])))
+                                      "the rollback drops both commits"))
          ;; The notice the dropped edit scheduled
          (ptk/emit! store (#'dps/update-status :pending))
          (await (async/settle))
@@ -152,8 +155,8 @@
              commit2  (thp/attr-commit file-id page-id shape-id :opacity 0.5 0.9)]
          (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "B" :opacity 0.9)))
          (ptk/emit! store commit1 commit2)
-         (await (async/wait-for #(= 2 (count (get-in @store [:persistence :buffer])))
-                                "both edits are buffered"))
+         (await (async/wait-for-store store #(= 2 (count (get-in @store [:persistence :buffer])))
+                                      "both edits are buffered"))
          (ptk/emit! store (thp/remote-commit file-id 1 [(thp/set-attr page-id shape-id :opacity 0.3)]))
          (await (async/settle))
          (t/is (= 0.9 (thp/shape-attr store file-id page-id shape-id :opacity))
@@ -161,8 +164,8 @@
          (ptk/emit! store ::dps/force-persist)
          (await (async/wait-for #(= 1 (count @requests)) "the edits are sent" {:signal requests$}))
          (rx/push! response (thp/rejection (:id @commit2)))
-         (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                "the rollback settles"))
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "the rollback settles"))
          (t/is (= 0.3 (thp/shape-attr store file-id page-id shape-id :opacity))
                "the peer's opacity, as on the server")
          (t/is (= "B" (thp/shape-name store file-id page-id shape-id))
@@ -185,13 +188,13 @@
              commit2  (thp/rename-commit file-id page-id shape-id "B" "C")]
          (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "A" :opacity 0.7)))
          (ptk/emit! store commit0)
-         (await (async/wait-for #(seq (get-in @store [:persistence :buffer])) "the edit is buffered"))
+         (await (async/wait-for-store store #(seq (get-in @store [:persistence :buffer])) "the edit is buffered"))
          (ptk/emit! store (thp/remote-commit file-id 1 [(thp/set-attr page-id shape-id :opacity 0.3)]))
          (ptk/emit! store ::dps/force-persist)
          (await (async/wait-for #(= 1 (count @requests)) "the opacity edit is sent" {:signal requests$}))
          (rx/push! response {:revn 1})
-         (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                "the opacity edit is saved"))
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "the opacity edit is saved"))
          (t/is (empty? (get-in @store [:persistence :remote-changes file-id]))
                "nothing pending, nothing kept")
          (ptk/emit! store
@@ -199,8 +202,8 @@
                     commit1 commit2 ::dps/force-persist)
          (await (async/wait-for #(= 2 (count @requests)) "the renames are sent" {:signal requests$}))
          (rx/push! response (thp/rejection (:id @commit2)))
-         (await (async/wait-for #(= "B" (thp/shape-name store file-id page-id shape-id))
-                                "the rejected rename is undone"))
+         (await (async/wait-for-store store #(= "B" (thp/shape-name store file-id page-id shape-id))
+                                      "the rejected rename is undone"))
          (t/is (= 0.7 (thp/shape-attr store file-id page-id shape-id :opacity))
                "the saved opacity edit stays"))))))
 
@@ -241,8 +244,8 @@
          (t/is (= [[(thp/rename page-id lshape-id "Y")]] (sent-changes requests 1))
                "only the library's edit made before the action is saved")
          (rx/push! response {:revn 1})
-         (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                "the queue drains")))))))
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "the queue drains")))))))
 
 ;; Scenario: one action makes a commit in a library and one in this file.
 ;; The library's is saved first; then this file's save comes back with the
@@ -268,8 +271,8 @@
          (rx/push! response {:revn 1})
          (await (async/wait-for #(= 2 (count @requests)) "this file's save is sent" {:signal requests$}))
          (rx/push! response (thp/rejection (:id @commit)))
-         (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
-                                "a new commit undoes the library's"))
+         (await (async/wait-for-store store #(seq (get-in @store [:persistence :buffer]))
+                                      "a new commit undoes the library's"))
          (ptk/emit! store ::dps/force-persist)
          (await (async/wait-for #(= 3 (count @requests)) "the new commit is sent" {:signal requests$}))
          (t/is (= lib-id (get-in (nth @requests 2) [1 :id])))
@@ -277,8 +280,8 @@
          (t/is (= "A" (thp/shape-name store file-id page-id shape-id)))
          (t/is (= "X" (thp/shape-name store lib-id page-id lshape-id)))
          (rx/push! response {:revn 2})
-         (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                "the queue drains")))))))
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "the queue drains")))))))
 
 ;; Scenario: as above, while the user has an undo transaction open. Proves:
 ;; the undo commit gets its own group, not the transaction's, so a later
@@ -304,15 +307,15 @@
          (ptk/emit! store (dwu/start-undo-transaction (js/Symbol) :timeout 0))
          (let [tx-group (get-in @store [:workspace-undo :transaction :commit-group])]
            (rx/push! response (thp/rejection (:id @commit)))
-           (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
-                                  "a new commit undoes the library's"))
+           (await (async/wait-for-store store #(seq (get-in @store [:persistence :buffer]))
+                                        "a new commit undoes the library's"))
            (t/is (some? tx-group))
            (t/is (not= tx-group (get-in @store [:persistence :buffer 0 :undo-group])))
            (ptk/emit! store ::dps/force-persist)
            (await (async/wait-for #(= 3 (count @requests)) "the new commit is sent" {:signal requests$}))
            (rx/push! response {:revn 2})
-           (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                  "the queue drains"))))))))
+           (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                        "the queue drains"))))))))
 
 ;; Scenario: as above, but the library is no longer loaded when this file's
 ;; save comes back. Proves: the undo of the library's saved commit is still
@@ -344,8 +347,8 @@
          (t/is (nil? (get-in @store [:files lib-id])) "no local data is made up")
          (t/is (= "A" (thp/shape-name store file-id page-id shape-id)))
          (rx/push! response {:revn 2})
-         (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                "the queue drains")))))))
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "the queue drains")))))))
 
 ;; Scenario: one action makes two commits in this file and the save keeps
 ;; the first and rejects the second. Proves: the kept commit of the action
@@ -363,16 +366,16 @@
          (ptk/emit! store commit1 commit2 ::dps/force-persist)
          (await (async/wait-for #(= 1 (count @requests)) "the action is sent" {:signal requests$}))
          (rx/push! response (thp/rejection (:id @commit2)))
-         (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
-                                "a new commit undoes the kept one"))
+         (await (async/wait-for-store store #(seq (get-in @store [:persistence :buffer]))
+                                      "a new commit undoes the kept one"))
          (ptk/emit! store ::dps/force-persist)
          (await (async/wait-for #(= 2 (count @requests)) "the new commit is sent" {:signal requests$}))
          (t/is (= [[(thp/rename page-id shape-id "A")]] (sent-changes requests 1)))
          (t/is (= "A" (thp/shape-name store file-id page-id shape-id)))
          (t/is (= 1 (thp/shape-attr store file-id page-id shape-id :opacity)))
          (rx/push! response {:revn 1})
-         (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                "the queue drains")))))))
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "the queue drains")))))))
 
 ;; Scenario: applying a token to five shapes makes three commits inside one
 ;; undo transaction, all sent in one save; the server keeps the first two
@@ -420,8 +423,8 @@
          (let [groups (get-in (first @requests) [1 :changes-with-metadata])]
            (t/is (= 3 (count groups)) "the save carries the three commits")
            (rx/push! response (thp/rejection (:commit-id (nth groups 2)))))
-         (await (async/wait-for #(seq (get-in @store [:persistence :buffer]))
-                                "a new commit undoes the kept ones"))
+         (await (async/wait-for-store store #(seq (get-in @store [:persistence :buffer]))
+                                      "a new commit undoes the kept ones"))
          (ptk/emit! store ::dps/force-persist)
          (await (async/wait-for #(= 2 (count @requests)) "the new commit is sent" {:signal requests$}))
          (doseq [id shape-ids]
@@ -436,8 +439,8 @@
                         (get-in (second @requests) [1 :changes-with-metadata])))
                "the new commit puts the kept opacity back on the server")
          (rx/push! response {:revn 1})
-         (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                "the queue drains")))))))
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "the queue drains")))))))
 
 ;; UI state after a rollback.
 
@@ -460,8 +463,8 @@
          (ptk/emit! store commit ::dps/force-persist)
          (await (async/wait-for #(= 1 (count @requests)) "the new text is sent" {:signal requests$}))
          (rx/push! response (thp/rejection (:id @commit)))
-         (await (async/wait-for #(nil? (get-in @store [:workspace-local :edition]))
-                                "the rollback leaves edition mode"))
+         (await (async/wait-for-store store #(nil? (get-in @store [:workspace-local :edition]))
+                                      "the rollback leaves edition mode"))
          (t/is (nil? (thp/shape-attr store file-id page-id text-id :id))))))))
 
 ;; Scenario: the user edits the nodes of a saved path and the rejected commit
@@ -487,8 +490,8 @@
          (ptk/emit! store commit ::dps/force-persist)
          (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
          (rx/push! response (thp/rejection (:id @commit)))
-         (await (async/wait-for #(nil? (get-in @store [:workspace-local :edition]))
-                                "the rollback leaves edition mode"))
+         (await (async/wait-for-store store #(nil? (get-in @store [:workspace-local :edition]))
+                                      "the rollback leaves edition mode"))
          (t/is (= "A" (thp/shape-name store file-id page-id shape-id)))
          (t/is (nil? (get-in @store [:workspace-local :edit-path shape-id]))
                "the editor's state is dropped")
@@ -516,8 +519,8 @@
          (ptk/emit! store commit ::dps/force-persist)
          (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
          (rx/push! response (thp/rejection (:id @commit)))
-         (await (async/wait-for #(= "A" (thp/shape-name store file-id page-id shape-id))
-                                "the rollback lands"))
+         (await (async/wait-for-store store #(= "A" (thp/shape-name store file-id page-id shape-id))
+                                      "the rollback lands"))
          (await (async/settle))
          (t/is (= other-id (get-in @store [:workspace-local :edition]))))))))
 
@@ -542,8 +545,8 @@
          (ptk/emit! store commit ::dps/force-persist)
          (await (async/wait-for #(= 1 (count @requests)) "the new rectangle is sent" {:signal requests$}))
          (rx/push! response (thp/rejection (:id @commit)))
-         (await (async/wait-for #(empty? (get-in @store [:workspace-local :selected]))
-                                "the rollback deselects the removed shape"))
+         (await (async/wait-for-store store #(empty? (get-in @store [:workspace-local :selected]))
+                                      "the rollback deselects the removed shape"))
          (t/is (nil? (::modal/modal @store)) "the color picker is closed"))))))
 
 ;; Scenario: the user undoes a rename with Ctrl+Z and the server rejects the
@@ -560,19 +563,19 @@
                     (thp/open-file file-id page-id (thp/file-data page-id shape-id "B"))
                     #(assoc % :workspace-undo {:items [item] :index 0}))
          (ptk/emit! store dwu/undo)
-         (await (async/wait-for #(= "A" (thp/shape-name store file-id page-id shape-id))
-                                "the rename is undone"))
+         (await (async/wait-for-store store #(= "A" (thp/shape-name store file-id page-id shape-id))
+                                      "the rename is undone"))
          (t/is (= -1 (get-in @store [:workspace-undo :index])))
          (ptk/emit! store ::dps/force-persist)
          (await (async/wait-for #(= 1 (count @requests)) "the undo is sent" {:signal requests$}))
          (rx/push! response (thp/rejection
                              (get-in (first @requests) [1 :changes-with-metadata 0 :commit-id])))
-         (await (async/wait-for #(= "B" (thp/shape-name store file-id page-id shape-id))
-                                "the rename is back"))
+         (await (async/wait-for-store store #(= "B" (thp/shape-name store file-id page-id shape-id))
+                                      "the rename is back"))
          (t/is (= [item] (get-in @store [:workspace-undo :items])) "the history stays")
          (t/is (= 0 (get-in @store [:workspace-undo :index])) "it points at the rename again")
-         (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                "the rollback settles")))))))
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "the rollback settles")))))))
 
 ;; Version restores.
 
@@ -651,8 +654,8 @@
          (ptk/emit! store commit1 commit2 ::dps/force-persist)
          (await (async/wait-for #(= 1 (count @requests)) "the first two renames are sent" {:signal requests$}))
          (ptk/emit! store commit3 ::dps/force-persist)
-         (await (async/wait-for #(= 2 (count (get-in @store [:persistence :queue])))
-                                "the third rename is queued"))
+         (await (async/wait-for-store store #(= 2 (count (get-in @store [:persistence :queue])))
+                                      "the third rename is queued"))
 
          (ptk/emit! store (restore-version file-id (thp/file-data page-id shape-id "Restored")))
          (ptk/emit! store (thp/remote-commit file-id 1 [(thp/set-attr page-id shape-id :opacity 0.5)]))
@@ -660,9 +663,9 @@
          (t/is (= "Restored" (thp/shape-name store file-id page-id shape-id))
                "a peer's change does not replay the renames")
          (rx/push! response (thp/rejection (:id @commit2)))
-         (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
-                                      (empty? (get-in @store [:persistence :queue])))
-                                "the queue drains"))
+         (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                  (empty? (get-in @store [:persistence :queue])))
+                                      "the queue drains"))
          (t/is (= "Restored" (thp/shape-name store file-id page-id shape-id))
                "the file keeps the restored version")
          (t/is (= 0.5 (thp/shape-attr store file-id page-id shape-id :opacity)))
@@ -688,9 +691,9 @@
          (ptk/emit! store (restore-version file-id (thp/file-data page-id shape-id "Restored")))
          (rx/error! response (ex-info "A different version has been restored for the file."
                                       {:type :validation :code :vern-conflict}))
-         (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
-                                      (empty? (get-in @store [:persistence :queue])))
-                                "the refused save is dropped"))
+         (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                  (empty? (get-in @store [:persistence :queue])))
+                                      "the refused save is dropped"))
          (t/is (empty? @failures))
          (t/is (nil? (get-in @store [:workspace-global :persistence-lock])))
          (t/is (= "Restored" (thp/shape-name store file-id page-id shape-id))))))))

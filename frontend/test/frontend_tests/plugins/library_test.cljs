@@ -77,8 +77,8 @@
                  component (.component copy)]
              (t/is (true? (get-in @store [:files (:id file) :data :components (thi/id :restorable) :deleted])))
              (.restore component)
-             (await (async/wait-for #(not (get-in @store [:files (:id file) :data :components (thi/id :restorable) :deleted]))
-                                    "component restored"))
+             (await (async/wait-for-store store #(not (get-in @store [:files (:id file) :data :components (thi/id :restorable) :deleted]))
+                                          "component restored"))
              (.restore component)
              (await (async/settle))
              (t/is (= (thi/id :main)

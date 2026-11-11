@@ -154,8 +154,8 @@
      (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
        (t/is (= (str (:id file)) (.. context -tokensSource -id)))
        (set! (.-tokensSource context) source-proxy)
-       (await (async/wait-for #(= (:id source) (get-in @store [:files (:id file) :data :tokens-source]))
-                              "library token source"))
+       (await (async/wait-for-store store #(= (:id source) (get-in @store [:files (:id file) :data :tokens-source]))
+                                    "library token source"))
        (t/is (= (str (:id source)) (.. context -tokensSource -id)))
        (t/is (= (datafy (ctht/get-tokens-status source))
                 (datafy (get-in @store [:files (:id file) :data :tokens-status]))))
@@ -175,8 +175,8 @@
     (await
      (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
        (set! (.-tokensSource context) (.-local context))
-       (await (async/wait-for #(nil? (get-in @store [:files (:id file) :data :tokens-source]))
-                              "local token source"))
+       (await (async/wait-for-store store #(nil? (get-in @store [:files (:id file) :data :tokens-source]))
+                                    "local token source"))
        (let [^js catalog (.. context -local -tokens)]
          (t/is (= (str (:id file)) (.. context -tokensSource -id)))
          (t/is (true? (.-isEditableTokens catalog)))
@@ -194,16 +194,16 @@
      (mock/with-mocks* {st/state store st/stream (ptk/input-stream store)}
        (st/emit! (tohs/watch-undo-stack))
        (set! (.-tokensSource context) source-proxy)
-       (await (async/wait-for #(seq (get-in @store [:workspace-undo :items]))
-                              "token source undo entry"))
+       (await (async/wait-for-store store #(seq (get-in @store [:workspace-undo :items]))
+                                    "token source undo entry"))
        (st/emit! dwu/undo)
-       (await (async/wait-for #(nil? (get-in @store [:files (:id file) :data :tokens-source]))
-                              "undo token source"))
+       (await (async/wait-for-store store #(nil? (get-in @store [:files (:id file) :data :tokens-source]))
+                                    "undo token source"))
        (t/is (= (datafy (ctht/get-tokens-status file))
                 (datafy (get-in @store [:files (:id file) :data :tokens-status]))))
        (st/emit! dwu/redo)
-       (await (async/wait-for #(= (:id source) (get-in @store [:files (:id file) :data :tokens-source]))
-                              "redo token source"))
+       (await (async/wait-for-store store #(= (:id source) (get-in @store [:files (:id file) :data :tokens-source]))
+                                    "redo token source"))
        (t/is (= (datafy (ctht/get-tokens-status source))
                 (datafy (get-in @store [:files (:id file) :data :tokens-status]))))))))
 
@@ -379,13 +379,13 @@
              ^js theme   (aget (.-themes catalog) 0)]
          (st/emit! (tohs/watch-undo-stack))
          (.toggleActive theme)
-         (await (async/wait-for #(seq (get-in @store [:workspace-undo :items]))
-                                "theme toggle undo entry"))
+         (await (async/wait-for-store store #(seq (get-in @store [:workspace-undo :items]))
+                                      "theme toggle undo entry"))
          (t/is (false? (.-active theme)))
          (st/emit! dwu/undo)
-         (await (async/wait-for #(= (datafy status)
-                                    (datafy (get-in @store [:files (:id file) :data :tokens-status])))
-                                "undo external theme toggle"))
+         (await (async/wait-for-store store #(= (datafy status)
+                                                (datafy (get-in @store [:files (:id file) :data :tokens-status])))
+                                      "undo external theme toggle"))
          (t/is (tokens-unchanged? store source)))))))
 
 (t/deftest ^:async external-token-source-allows-applying-tokens-to-shapes
@@ -413,10 +413,10 @@
          (.applyToSelected token #js ["fill"])
          (doseq [label [:rect1 :rect2 :rect3]]
            (let [shape-path [:files (:id file) :data :pages-index page-id :objects (cthi/id label)]]
-             (await (async/wait-for #(= "color.primary" (get-in @store (conj shape-path :applied-tokens :fill)))
-                                    (str "apply external token to " label)))
-             (await (async/wait-for #(= "#ff0000" (get-in @store (conj shape-path :fills 0 :fill-color)))
-                                    (str "resolve external token on " label)))))
+             (await (async/wait-for-store store #(= "color.primary" (get-in @store (conj shape-path :applied-tokens :fill)))
+                                          (str "apply external token to " label)))
+             (await (async/wait-for-store store #(= "#ff0000" (get-in @store (conj shape-path :fills 0 :fill-color)))
+                                          (str "resolve external token on " label)))))
          (t/is (= (ctht/get-tokens-lib file) (get-in @store [:files (:id file) :data :tokens-lib])))
          (t/is (= (datafy (ctht/get-tokens-status file))
                   (datafy (get-in @store [:files (:id file) :data :tokens-status]))))
@@ -728,9 +728,9 @@
     ;; token and resolves to a uniform width, which the strokes setter accepts.
     (t/testing "the uniform strokeWidth alias is still accepted"
       (.applyToken ellipse token #js ["strokeWidth"])
-      (await (async/wait-for
-              #(= "width.sm" (get-in @store (conj path :stroke-width-top)))
-              "uniform stroke width token applied"))
+      (await (async/wait-for-store store
+                                   #(= "width.sm" (get-in @store (conj path :stroke-width-top)))
+                                   "uniform stroke width token applied"))
       (t/is (= "width.sm" (get-in @store (conj path :stroke-width-top)))))))
 
 (t/deftest token-attr?-rejects-unknown-input

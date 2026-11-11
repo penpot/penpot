@@ -252,7 +252,7 @@
        (t/is (= [[:wait #{file-id}] [:duplicate-file]] @calls))
        (t/is (nil? (:notification @store)) "nothing is told before the copy exists")
        (rx/push! answer {:id (uuid/next)})
-       (await (async/wait-for #(some? (:notification @store)) "the user is told"))
+       (await (async/wait-for-store store #(some? (:notification @store)) "the user is told"))
        (await (async/settle))
        (t/is (= "translated:dashboard.duplicate-unsaved-changes"
                 (get-in @store [:notification :content])))
@@ -276,7 +276,7 @@
        (await (async/wait-for #(= 1 @sent) "the copy is requested"))
        (t/is (nil? (:notification @store)))
        (rx/push! answer {:id (uuid/next)})
-       (await (async/wait-for #(some? (:notification @store)) "the user is told"))
+       (await (async/wait-for-store store #(some? (:notification @store)) "the user is told"))
        (t/is (= "translated:dashboard.success-duplicate-file"
                 (get-in @store [:notification :content])))
        (t/is (= :success (get-in @store [:notification :level])))))))

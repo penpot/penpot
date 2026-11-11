@@ -83,7 +83,7 @@
                     (thp/open-file file-id page-id (thp/file-data page-id shape-id "B"))
                     (thp/rename-commit file-id page-id shape-id "A" "B")
                     ::dps/force-persist)
-         (await (async/wait-for #(plk/locked? @store) "the failed save locks the workspace"))
+         (await (async/wait-for-store store #(plk/locked? @store) "the failed save locks the workspace"))
          (reset! made [])
          (ptk/emit! store
                     (dch/commit-changes {:redo-changes [(thp/rename page-id shape-id "C")]
@@ -156,7 +156,7 @@
                                                       (thp/file-data page-id shape-id "B")
                                                       (thp/file-data page-id lshape-id "Y")))
          (ptk/emit! store linked commit ::dps/force-persist)
-         (await (async/wait-for #(plk/locked? @store) "this file's failed save locks the workspace"))
+         (await (async/wait-for-store store #(plk/locked? @store) "this file's failed save locks the workspace"))
          (reset! made [])
          (ptk/emit! store (ptk/data-event :app.main.data.common/change-team-role))
          (await (async/wait-for #(seq @made) "the library's rename is undone"))
@@ -164,8 +164,8 @@
          (t/is (= "X" (thp/shape-name store lib-id page-id lshape-id)))
          (t/is (= "A" (thp/shape-name store file-id page-id shape-id)))
          (ptk/emit! store ::dps/force-persist)
-         (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                "the undo is saved"))
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "the undo is saved"))
          (rx/dispose! sub)
          (t/is (= 3 (count @requests)))
          (t/is (= lib-id (get-in (nth @requests 2) [1 :id])))

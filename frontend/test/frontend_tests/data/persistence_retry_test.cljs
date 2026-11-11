@@ -50,11 +50,11 @@
        (mock/with-mocks*
          {rx/timer (mock/stub instant-backoff)}
          (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-         (await (async/wait-for #(and (= :error (get-in @store [:persistence :status]))
-                                      (= :invalid-save-response
-                                         (get-in @store [:persistence :error :code]))
-                                      (= 1 (count (get-in @store [:persistence :queue]))))
-                                "invalid response fails the save"))
+         (await (async/wait-for-store store #(and (= :error (get-in @store [:persistence :status]))
+                                                  (= :invalid-save-response
+                                                     (get-in @store [:persistence :error :code]))
+                                                  (= 1 (count (get-in @store [:persistence :queue]))))
+                                      "invalid response fails the save"))
          (t/is (= :error (get-in @store [:persistence :status])))
          (t/is (= :invalid-save-response (get-in @store [:persistence :error :code])))
          (t/is (= 1 (count (get-in @store [:persistence :queue]))))
@@ -97,9 +97,9 @@
           (mock/with-mocks*
             {rx/timer (mock/stub instant-backoff)}
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
-                                         (empty? (get-in @store [:persistence :queue])))
-                                   "retry saves the file"))
+            (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                     (empty? (get-in @store [:persistence :queue])))
+                                         "retry saves the file"))
             (t/is (= :saved (get-in @store [:persistence :status])))
             (t/is (empty? (get-in @store [:persistence :queue])))
             (t/is (= 2 (count @requests)) "failed send plus one retry")
@@ -124,9 +124,9 @@
          (mock/with-mocks*
            {rx/timer (mock/stub instant-backoff)}
            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-           (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
-                                        (empty? (get-in @store [:persistence :queue])))
-                                  (str "a " status " is retried and the save lands")))
+           (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                    (empty? (get-in @store [:persistence :queue])))
+                                        (str "a " status " is retried and the save lands")))
            (t/is (= 2 (count @requests)) "the proxy error plus one retry")
            (t/is (empty? @failures) "a retried proxy error never reaches the failure toast"))))
       (fn [_ _]
@@ -158,9 +158,9 @@
          (mock/with-mocks*
            {rx/timer (mock/stub instant-backoff)}
            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-           (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
-                                        (empty? (get-in @store [:persistence :queue])))
-                                  (str "a busy " (:status response) " is retried and the save lands")))
+           (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                    (empty? (get-in @store [:persistence :queue])))
+                                        (str "a busy " (:status response) " is retried and the save lands")))
            (t/is (= 2 (count @requests)) "the busy answer plus one retry")
            (t/is (empty? @failures) "a retried busy answer never reaches the failure toast"))))
       (fn [_ _]
@@ -209,8 +209,8 @@
                             (js/Promise.resolve nil))
              i18n/tr      (fn ([key] (str "translated:" key)) ([key & _] (str "translated:" key)))}
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(= 1 (get-in @store [:persistence :attempts]))
-                                   "the first answer starts the retries"))
+            (await (async/wait-for-store store #(= 1 (get-in @store [:persistence :attempts]))
+                                         "the first answer starts the retries"))
             (t/is (= "translated:errors.save-retrying-busy"
                      (get-in @store [:notification :content])))
             (doseq [n [2 3 4]]
@@ -234,8 +234,8 @@
         (mock/with-mocks*
           {rx/timer (mock/stub instant-backoff)}
           (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-          (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
-                                 "the save fails"))
+          (await (async/wait-for-store store #(= :error (get-in @store [:persistence :status]))
+                                       "the save fails"))
           (t/is (= :server-error (get-in @store [:persistence :error :cause-type])))
           (t/is (= 1 (count @requests)) "no retry"))))
      (fn [_ _]
@@ -256,9 +256,9 @@
           (mock/with-mocks*
             {rx/timer (mock/stub (fn [ms] (swap! delays conj ms) (instant-backoff ms)))}
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(and (= :error (get-in @store [:persistence :status]))
-                                         (= 4 (count @requests)))
-                                   "retries exhaust into terminal error" {:signal (rx/merge requests$ (ptk/input-stream store))}))
+            (await (async/wait-for-store store #(and (= :error (get-in @store [:persistence :status]))
+                                                     (= 4 (count @requests)))
+                                         "retries exhaust into terminal error" {:signal (rx/merge requests$ (ptk/input-stream store))}))
             (t/is (= :error (get-in @store [:persistence :status])))
             (t/is (= :save-failed (get-in @store [:persistence :error :code])))
             (t/is (= 1 (count (get-in @store [:persistence :queue]))))
@@ -284,8 +284,8 @@
             ;; Phase 1 — first send fails transiently; the retry pends on
             ;; the hand-fired timer.
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(= :retrying (get-in @store [:persistence :status]))
-                                   "transient failure retries"))
+            (await (async/wait-for-store store #(= :retrying (get-in @store [:persistence :status]))
+                                         "transient failure retries"))
             (t/is (= 1 (count @requests)))
             ;; Phase 2 — the online signal resends the head under the live
             ;; episode (status stays :retrying), hanging in flight.
@@ -318,8 +318,8 @@
         (mock/with-mocks*
           {rx/timer (mock/stub (fn [_] (rx/subject)))}
           (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-          (await (async/wait-for #(= :retrying (get-in @store [:persistence :status]))
-                                 "transient failure retries"))
+          (await (async/wait-for-store store #(= :retrying (get-in @store [:persistence :status]))
+                                       "transient failure retries"))
           (t/is (= 1 (count @requests)))
           (ptk/emit! store (#'dps/persist-commit
                             (peek (get-in @store [:persistence :queue]))
@@ -348,13 +348,13 @@
             ;; Phase 1 — first send fails transiently; the retry pends on
             ;; the hand-fired timer.
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(= :retrying (get-in @store [:persistence :status]))
-                                   "transient failure retries"))
+            (await (async/wait-for-store store #(= :retrying (get-in @store [:persistence :status]))
+                                         "transient failure retries"))
             (t/is (= 1 (count @requests)))
             ;; Phase 2 — a new edit joins the queue without resending.
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(= 2 (count (get-in @store [:persistence :queue])))
-                                   "second edit is queued"))
+            (await (async/wait-for-store store #(= 2 (count (get-in @store [:persistence :queue])))
+                                         "second edit is queued"))
             (await (async/settle))
             (t/is (= 1 (count @requests)) "the edit does not resend the head")
             (t/is (= 1 (get-in @store [:persistence :attempts])) "no attempt is spent")
@@ -362,9 +362,9 @@
             (t/is (= :retrying (get-in @store [:persistence :status])))
             ;; Phase 3 — the timer fires: the head saves, then the new edit.
             (rx/push! timer-s :tick)
-            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
-                                         (empty? (get-in @store [:persistence :queue])))
-                                   "both edits save"))
+            (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                     (empty? (get-in @store [:persistence :queue])))
+                                         "both edits save"))
             (t/is (= 3 (count @requests)) "failed send, retry, then the new edit")
             (let [[first-id retry-id edit-id] (map (comp :commit-id second) @requests)]
               (t/is (= first-id retry-id) "the retry resends the head")
@@ -391,17 +391,17 @@
             {rx/timer (mock/stub (fn [_] timer-s))
              i18n/tr  (mock/stub #(str "translated:" %))}
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(= 1 (get-in @store [:persistence :attempts]))
-                                   "first attempt fails into retrying"))
+            (await (async/wait-for-store store #(= 1 (get-in @store [:persistence :attempts]))
+                                         "first attempt fails into retrying"))
             (let [notice (get @store :notification)]
               (t/is (map? notice) "a single notice is visible, never stacked"))
             (t/is (= :persistence-reconnecting (get-in @store [:notification :tag])))
             (t/is (= "translated:errors.save-retrying"
                      (get-in @store [:notification :content])))
             (rx/push! timer-s :tick)
-            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
-                                         (nil? (get @store :notification)))
-                                   "save hides the notice"))
+            (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                     (nil? (get @store :notification)))
+                                         "save hides the notice"))
             (t/is (= :saved (get-in @store [:persistence :status])))
             (t/is (nil? (get @store :notification)) "recovery is silent")
             (rx/end! timer-s))))
@@ -421,8 +421,8 @@
         (mock/with-mocks*
           {rx/timer (mock/stub instant-backoff)}
           (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-          (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
-                                 "retries exhaust into terminal error"))
+          (await (async/wait-for-store store #(= :error (get-in @store [:persistence :status]))
+                                       "retries exhaust into terminal error"))
           (t/is (= :error (get-in @store [:persistence :status])))
           (t/is (nil? (get @store :notification))
                 "the terminal path hides the reconnect notice"))))
@@ -445,8 +445,8 @@
           (mock/with-mocks*
             {rx/timer (mock/stub (fn [_] timer-s))}
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(= :retrying (get-in @store [:persistence :status]))
-                                   "transient failure retries"))
+            (await (async/wait-for-store store #(= :retrying (get-in @store [:persistence :status]))
+                                         "transient failure retries"))
             (t/is (= 1 (count @requests)))
             (ptk/emit! store (#'dps/resume-on-online))
             (await (async/wait-for #(= 2 (count @requests)) "online resends" {:signal requests$}))
@@ -454,9 +454,9 @@
             (t/is (= :retrying (get-in @store [:persistence :status])))
             (t/is (= 1 (get-in @store [:persistence :attempts])))
             (rx/push! @second-s {:revn 1})
-            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
-                                         (empty? (get-in @store [:persistence :queue])))
-                                   "resumed save lands"))
+            (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                     (empty? (get-in @store [:persistence :queue])))
+                                         "resumed save lands"))
             (t/is (= :saved (get-in @store [:persistence :status])))
             (ptk/emit! store (#'dps/resume-on-online))
             (await (async/settle))
@@ -492,8 +492,8 @@
             ;; Phase 1 — first send fails transiently; the retry pends on
             ;; the hand-fired timer.
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(= :retrying (get-in @store [:persistence :status]))
-                                   "transient failure retries"))
+            (await (async/wait-for-store store #(= :retrying (get-in @store [:persistence :status]))
+                                         "transient failure retries"))
             (t/is (= 1 (count @requests)))
             ;; Phase 2 — the retry timer fires and resends the head,
             ;; hanging in flight.
@@ -558,8 +558,8 @@
          ;; Phase 2 — the save lands, resetting the stall clock; a new
          ;; edit stalls again, over a governor window later.
          (rx/push! response {:revn 1})
-         (await (async/wait-for #(= :saved (get-in @store [:persistence :status]))
-                                "first save lands"))
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "first save lands"))
          (ptk/emit! store (local-commit file-id) ::dps/force-persist)
          (await (async/wait-for #(= 2 (count @requests)) "second edit is sent" {:signal requests$}))
          (reset! clock (+ 300001 errors/report-window-ms 300001))
@@ -594,9 +594,9 @@
                                      (swap! timeouts conj ms)
                                      (timeout 0 with ob)))}
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
-                                         (empty? (get-in @store [:persistence :queue])))
-                                   "the retry saves the file"))
+            (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                     (empty? (get-in @store [:persistence :queue])))
+                                         "the retry saves the file"))
             (t/is (= 2 (count @requests)) "hung send plus one retry")
             (t/is (apply = (map (comp :commit-id second) @requests))
                   "both sends carry the same commit id")
@@ -635,9 +635,9 @@
           (mock/with-mocks*
             {rx/timer (mock/stub (slow-cycle-timer cycles))}
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(and (= :error (get-in @store [:persistence :status]))
-                                         (= 1 (count @cycles)))
-                                   "the spent backoff arms the slow cycle"))
+            (await (async/wait-for-store store #(and (= :error (get-in @store [:persistence :status]))
+                                                     (= 1 (count @cycles)))
+                                         "the spent backoff arms the slow cycle"))
             (t/is (= 4 (count @requests)))
             (t/is (= 1 (count @failures)))
 
@@ -652,9 +652,9 @@
             (ptk/emit! store #(assoc % :notification {:tag errors/persistence-failed-tag
                                                       :level :error}))
             (rx/push! (last @cycles) :tick)
-            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
-                                         (empty? (get-in @store [:persistence :queue])))
-                                   "the slow attempt saves"))
+            (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                     (empty? (get-in @store [:persistence :queue])))
+                                         "the slow attempt saves"))
             (t/is (= 6 (count @requests)))
             (t/is (apply = (map (comp :commit-id second) @requests))
                   "every attempt carries the same commit id")
@@ -683,9 +683,9 @@
           (mock/with-mocks*
             {rx/timer (mock/stub (slow-cycle-timer cycles))}
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(and (= 1 (count @cycles))
-                                         (some? (get-in @store [:workspace-global :persistence-lock])))
-                                   "the spent backoff locks the workspace"))
+            (await (async/wait-for-store store #(and (= 1 (count @cycles))
+                                                     (some? (get-in @store [:workspace-global :persistence-lock])))
+                                         "the spent backoff locks the workspace"))
             (t/is (true? (get-in @store [:workspace-global :read-only?])))
             (t/is (dps/save-retrying? (:persistence @store)))
 
@@ -697,8 +697,8 @@
                   "a slow attempt in flight keeps the lock")
 
             (rx/push! attempt-s {:revn 1})
-            (await (async/wait-for #(nil? (get-in @store [:workspace-global :persistence-lock]))
-                                   "the landed save lifts the lock"))
+            (await (async/wait-for-store store #(nil? (get-in @store [:workspace-global :persistence-lock]))
+                                         "the landed save lifts the lock"))
             (t/is (false? (get-in @store [:workspace-global :read-only?]))))))
        (fn [_ _]
          (if (< (swap! calls inc) 5)
@@ -725,9 +725,9 @@
               (t/is (= 1 (count (get-in @store [:persistence :queue]))))
 
               (rx/push! (last @cycles) :tick)
-              (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
-                                           (empty? (get-in @store [:persistence :queue])))
-                                     (str status " recovers on the slow cycle")))
+              (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                       (empty? (get-in @store [:persistence :queue])))
+                                           (str status " recovers on the slow cycle")))
               (t/is (= 5 (count @requests)))
               (t/is (apply = (map (comp :commit-id second) @requests))
                     "the slow cycle saves the held commit"))))
@@ -747,8 +747,8 @@
           (mock/with-mocks*
             {rx/timer (mock/stub (slow-cycle-timer cycles))}
             (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
-                                   "the save fails"))
+            (await (async/wait-for-store store #(= :error (get-in @store [:persistence :status]))
+                                         "the save fails"))
             (await (async/settle))
             (t/is (= 1 (count @requests)))
             (t/is (empty? @cycles)))))
@@ -773,8 +773,8 @@
               {rx/timer (mock/stub (slow-cycle-timer cycles))
                ct/now   (mock/stub #(ct/inst @clock))}
               (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-              (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
-                                     (str slow-count " slow failures spend the backoff")))
+              (await (async/wait-for-store store #(= :error (get-in @store [:persistence :status]))
+                                           (str slow-count " slow failures spend the backoff")))
               (await (async/settle))
               (t/is (= (if armed? 4 slow-count) (count @requests))
                     "the backoff sends no attempt past the limit")
@@ -784,8 +784,8 @@
 
               (when-not armed?
                 (ptk/emit! store (ptk/data-event :app.main.data.common/change-team-role))
-                (await (async/wait-for #(empty? (get-in @store [:persistence :queue]))
-                                       "recovery releases the held edit"))
+                (await (async/wait-for-store store #(empty? (get-in @store [:persistence :queue]))
+                                             "recovery releases the held edit"))
                 (t/is (= slow-count (count @requests)) "the released edit is not sent again")))))
          (fn [_ _]
            (when (<= (swap! calls inc) slow-count)
@@ -810,8 +810,8 @@
             (reset! clock (+ dps/retry-give-up-ms 1000))
             (rx/push! (last @cycles) :tick)
             (await (async/wait-for #(= 5 (count @requests)) "the last slow attempt" {:signal requests$}))
-            (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
-                                   "the attempt fails"))
+            (await (async/wait-for-store store #(= :error (get-in @store [:persistence :status]))
+                                         "the attempt fails"))
             (await (async/settle))
             (t/is (= 1 (count @cycles)) "no further cycle is armed")
             (t/is (= 1 (count (get-in @store [:persistence :queue]))))
@@ -844,8 +844,8 @@
             (rx/push! (last @cycles) :tick)
             (await (async/wait-for #(= (+ 4 dps/max-slow-failures) (count @requests))
                                    "the last slow attempt is sent" {:signal requests$}))
-            (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
-                                   "the last slow attempt fails"))
+            (await (async/wait-for-store store #(= :error (get-in @store [:persistence :status]))
+                                         "the last slow attempt fails"))
             (await (async/settle))
             (t/is (= dps/max-slow-failures (count @cycles)) "no further cycle is armed")
             (t/is (nil? (get-in @store [:persistence :recovering])))
@@ -873,9 +873,9 @@
             (await (async/wait-for #(= 1 (count @cycles)) "the slow cycle is armed"))
             (ptk/emit! store (ptk/data-event :app.main.data.workspace/finalize-workspace))
             (ptk/emit! store (ptk/data-event :app.main.data.common/change-team-role))
-            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
-                                         (empty? (get-in @store [:persistence :queue])))
-                                   "recovery saves the held edit"))
+            (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                     (empty? (get-in @store [:persistence :queue])))
+                                         "recovery saves the held edit"))
             (t/is (= 5 (count @requests)))
             (t/is (apply = (map (comp :commit-id second) @requests))
                   "recovery sends the same commit, not a released queue"))))
@@ -902,9 +902,9 @@
             (ptk/emit! store
                        #(assoc-in % [:permissions :can-edit] false)
                        (ptk/data-event :app.main.data.common/change-team-role))
-            (await (async/wait-for #(= :save-permission-denied
-                                       (get-in @store [:persistence :error :code]))
-                                   "the viewer cannot send the edit"))
+            (await (async/wait-for-store store #(= :save-permission-denied
+                                                   (get-in @store [:persistence :error :code]))
+                                         "the viewer cannot send the edit"))
             (ptk/emit! store (ptk/data-event :app.main.data.common/change-team-role))
             (await (async/settle))
             (t/is (= :error (get-in @store [:persistence :status])))
@@ -935,8 +935,8 @@
             (await (async/wait-for #(= 1 (count @timers)) "the failure schedules a retry"))
 
             (ptk/emit! store (ptk/data-event :app.main.data.workspace/finalize-workspace))
-            (await (async/wait-for #(get-in @store [:persistence :suspended])
-                                   "leaving the workspace suspends retries"))
+            (await (async/wait-for-store store #(get-in @store [:persistence :suspended])
+                                         "leaving the workspace suspends retries"))
             (rx/push! (first @timers) :tick)
             (await (async/settle))
             (t/is (= 1 (count @requests)) "the pending retry stays silent")
@@ -944,9 +944,9 @@
             (t/is (= 1 (count (get-in @store [:persistence :queue]))))
 
             (ptk/emit! store (ptk/data-event :app.main.data.workspace/workspace-initialized))
-            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
-                                         (empty? (get-in @store [:persistence :queue])))
-                                   "opening a file saves the held edit"))
+            (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                     (empty? (get-in @store [:persistence :queue])))
+                                         "opening a file saves the held edit"))
             (t/is (= 2 (count @requests)))
             (t/is (apply = (map (comp :commit-id second) @requests))
                   "the same commit is sent again")
@@ -974,11 +974,11 @@
             (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
 
             (ptk/emit! store (ptk/data-event :app.main.data.workspace/finalize-workspace))
-            (await (async/wait-for #(get-in @store [:persistence :suspended])
-                                   "leaving the workspace suspends retries"))
+            (await (async/wait-for-store store #(get-in @store [:persistence :suspended])
+                                         "leaving the workspace suspends retries"))
             (rx/error! first-s (ex-info "offline" {:type :offline}))
-            (await (async/wait-for #(= :retrying (get-in @store [:persistence :status]))
-                                   "the failure keeps the edit queued"))
+            (await (async/wait-for-store store #(= :retrying (get-in @store [:persistence :status]))
+                                         "the failure keeps the edit queued"))
             (await (async/settle))
             (t/is (empty? @timers) "no backoff is scheduled")
 
@@ -987,9 +987,9 @@
             (t/is (= 1 (count @requests)) "the online event does not resend")
 
             (ptk/emit! store (ptk/data-event :app.main.data.workspace/workspace-initialized))
-            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
-                                         (empty? (get-in @store [:persistence :queue])))
-                                   "opening a file saves the held edit"))
+            (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                     (empty? (get-in @store [:persistence :queue])))
+                                         "opening a file saves the held edit"))
             (t/is (= 2 (count @requests))))))
        (fn [_ _]
          (if (= 1 (swap! calls inc))
@@ -1014,19 +1014,19 @@
             (await (async/wait-for #(= 4 (count @requests)) "the last retry is sent" {:signal requests$}))
 
             (ptk/emit! store (ptk/data-event :app.main.data.workspace/finalize-workspace))
-            (await (async/wait-for #(get-in @store [:persistence :suspended])
-                                   "leaving the workspace suspends retries"))
+            (await (async/wait-for-store store #(get-in @store [:persistence :suspended])
+                                         "leaving the workspace suspends retries"))
             (rx/error! last-s (ex-info "offline" {:type :offline}))
-            (await (async/wait-for #(= :error (get-in @store [:persistence :status]))
-                                   "the spent backoff halts the queue"))
+            (await (async/wait-for-store store #(= :error (get-in @store [:persistence :status]))
+                                         "the spent backoff halts the queue"))
             (await (async/settle))
             (t/is (empty? @cycles) "no slow cycle is armed")
             (t/is (= 1 (count (get-in @store [:persistence :queue]))))
 
             (ptk/emit! store (ptk/data-event :app.main.data.workspace/workspace-initialized))
-            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
-                                         (empty? (get-in @store [:persistence :queue])))
-                                   "opening a file saves the held edit"))
+            (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                     (empty? (get-in @store [:persistence :queue])))
+                                         "opening a file saves the held edit"))
             (t/is (= 5 (count @requests))))))
        (fn [_ _]
          (let [n (swap! calls inc)]

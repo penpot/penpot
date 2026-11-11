@@ -300,7 +300,7 @@
         wasm.api/export-target (mock/stub (constantly :too-large))
         i18n/tr                (mock/stub #(str "translated:" %))}
        (ptk/emit! store (de/request-simple-export {:export one}))
-       (await (async/wait-for #(some? (:notification @store)) "the toast shows"))
+       (await (async/wait-for-store store #(some? (:notification @store)) "the toast shows"))
        (t/is (empty? @cmd-calls) "no exporter RPC")
        (t/is (= "translated:errors.export-too-large"
                 (get-in @store [:notification :content])))
@@ -418,14 +418,14 @@
                                                (reset! downloaded [filename mtype uri])))
         st/ongoing-tasks          (atom #{})}
        (ptk/emit! store (de/request-multiple-export {:exports exports :name "page"}))
-       (await (async/wait-for #(= "running" (get-in @store [:export :status]))
-                              "export is running"))
+       (await (async/wait-for-store store #(= "running" (get-in @store [:export :status]))
+                                    "export is running"))
        (rx/push! worker-bus {:type :progress :done 1 :total 2})
-       (await (async/wait-for #(= 1 (get-in @store [:export :progress]))
-                              "first progress lands"))
+       (await (async/wait-for-store store #(= 1 (get-in @store [:export :progress]))
+                                    "first progress lands"))
        (ptk/emit! store (de/cancel-export))
-       (await (async/wait-for #(= "cancelled" (get-in @store [:export :status]))
-                              "export is cancelled"))
+       (await (async/wait-for-store store #(= "cancelled" (get-in @store [:export :status]))
+                                    "export is cancelled"))
        (rx/push! worker-bus {:type :progress :done 2 :total 2})
        (rx/push! worker-bus {:type :done
                              :filename "page.zip"
