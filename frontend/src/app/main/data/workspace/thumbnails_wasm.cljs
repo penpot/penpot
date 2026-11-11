@@ -46,48 +46,58 @@
              (fn [e] (reject e)))
        (.readAsDataURL reader blob)))))
 
-;; This constant stores the target thumbnail minimum max-size so
-;; the images doesn't lose quality when rendered
-(def ^:private ^:const target-size 200)
+;; Bounds for a thumbnail's longest side, in pixels. Full-size renders of big
+;; components block the main thread for seconds.
+(def ^:private ^:const min-target-size 200)
+(def ^:private ^:const max-target-size 512)
+
+(defn- thumbnail-scale
+  [longest-side]
+  (if (pos? longest-side)
+    (-> 1
+        (mth/max (/ min-target-size longest-side))
+        (mth/min (/ max-target-size longest-side)))
+    1))
 
 (defn- render-component-pixels
-  "Renders a component frame using the workspace WASM context.
-   Returns an observable that emits a data-uri string.
-   Deferred by one animation frame so that process-shape-changes!
-   has time to sync all child shapes to WASM memory first."
+  "Returns an observable emitting the component frame as a PNG data uri.
+   Waits for a frame with no viewport render pending so it never delays it."
   [file-id page-id frame-id]
   (rx/create
    (fn [subs]
-     (let [req-id
-           (timers/raf
-            (fn [_]
-              (try
-                (let [objects (dsh/lookup-page-objects @st/state file-id page-id)]
-                  (if-let [frame (get objects frame-id)]
-                    (let [{ext-w :width ext-h :height} (wasm.api/get-shape-extrect frame-id)
-                          {sel-w :width sel-h :height} (:selrect frame)
-                          max-size (mth/max (or ext-w sel-w) (or ext-h sel-h))
-                          scale (mth/max 1 (/ target-size max-size))
-                          ;; Thumbnails are always PNG: they need the alpha
-                          ;; channel and are consumed as a `image/png` data uri.
-                          png-bytes (wasm.api/render-shape-pixels frame-id scale :png)]
-                      (if (or (nil? png-bytes) (zero? (.-length png-bytes)))
-                        (do
-                          (l/error :hint "render-shape-pixels returned empty" :frame-id (str frame-id))
-                          (rx/end! subs))
-                        (.then
-                         (png-bytes->data-uri png-bytes)
-                         (fn [data-uri]
-                           (rx/push! subs data-uri)
+     (let [req-id (volatile! nil)
+           render
+           (fn render [_]
+             (if (wasm.api/render-pending?)
+               (vreset! req-id (timers/raf render))
+               (try
+                 (let [objects (dsh/lookup-page-objects @st/state file-id page-id)]
+                   (if-let [frame (get objects frame-id)]
+                     (let [{ext-w :width ext-h :height} (wasm.api/get-shape-extrect frame-id)
+                           {sel-w :width sel-h :height} (:selrect frame)
+                           longest-side (mth/max (or ext-w sel-w) (or ext-h sel-h))
+                           scale        (thumbnail-scale longest-side)
+                           ;; Thumbnails are always PNG: they need the alpha
+                           ;; channel and are consumed as a `image/png` data uri.
+                           png-bytes    (wasm.api/render-shape-pixels frame-id scale :png)]
+                       (if (or (nil? png-bytes) (zero? (.-length png-bytes)))
+                         (do
+                           (l/error :hint "render-shape-pixels returned empty" :frame-id (str frame-id))
                            (rx/end! subs))
-                         (fn [err]
-                           (rx/error! subs err)))))
+                         (.then
+                          (png-bytes->data-uri png-bytes)
+                          (fn [data-uri]
+                            (rx/push! subs data-uri)
+                            (rx/end! subs))
+                          (fn [err]
+                            (rx/error! subs err)))))
 
-                    ;; A missing frame. Nothing to render, so end quietly. 
-                    (rx/end! subs)))
-                (catch :default err
-                  (rx/error! subs err)))))]
-       #(timers/cancel-af! req-id)))))
+                     ;; A missing frame. Nothing to render, so end quietly.
+                     (rx/end! subs)))
+                 (catch :default err
+                   (rx/error! subs err)))))]
+       (vreset! req-id (timers/raf render))
+       #(timers/cancel-af! @req-id)))))
 
 (defn render-thumbnail
   "Renders a component thumbnail via WASM and updates the UI immediately.
