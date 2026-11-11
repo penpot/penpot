@@ -29,6 +29,7 @@ Editing `CHANGES.md` happens only on explicit request or as part of the release 
 - **Two labels override the Issue Type**: `breaking change` → an entry only under `:boom:`, never in its regular section; `release highlight` → an extra entry under `:rocket:` on top of its regular entry.
 - **Only closed issues**. An open issue in the milestone is not generated, even if someone added a provisional entry by hand before the merge.
 - **Excluded issues**: `no changelog`, `release blocker`, `Task` issue type, `Rejected` project status.
+- **Bugs that never reached production** stay out: a bug found and fixed while building a feature of the same, unreleased version never affected users. The team rarely labels them, so the flow finds them with `dev-only-bugs` and labels them `no changelog` (section 8, step 3).
 - **Excluded PRs**: a PR with `release blocker` or `no issue required` does not bring an entry of its own.
 - **An issue with no milestone** belongs to another (probably private) project: it is neither changelog candidate nor anomaly.
 
@@ -152,15 +153,18 @@ Generated from the advisories that declare the version in `patched_versions`; ne
 
 1. **Confirm the version** (a semver string such as `2.19.0`) with the user when it is not obvious.
 2. **Fetch the milestone issues**: `python3 scripts/gh.py issues "<VERSION>" --exclude "release blocker,no changelog"` (closed by default; add `--state all` only to inspect open issues). `gh.py` already drops `Task` and `Rejected`; pass `--include-tasks` / `--include-rejected` only to inspect them. To find what is missing from an existing section, add `--compare CHANGES.md`.
-3. **Fetch PR details when needed**: `python3 scripts/gh.py prs <numbers...>` (also `--milestone`). Use it for the PR author, labels and merge state.
-4. **Categorize** by Issue Type and the two labels (section 2), and **build the descriptions** (section 4).
-5. **Verify PR merge status** before writing: `python3 scripts/changelog.py check-merged <PR numbers...>`. Only merged PRs go in the changelog; if a closing PR was closed unmerged, look for the PR that superseded it.
-6. **Reconcile the existing text** (section 9).
-7. **Generate `:boom:`**: `python3 scripts/changelog.py boom "<VERSION>"` prints the section; add `--write` to replace it in `CHANGES.md`. The write replaces only that subsection, inserts it after the version header when missing, keeps the heading when there are no entries, and is idempotent.
-8. **Generate `:rocket:`** from the `release highlight` label (section 6).
-9. **Generate `:lock:`**: `python3 scripts/changelog.py security "<VERSION>"` prints the section; add `--write` to replace it in `CHANGES.md`. The contract lives in section 7.
-10. **Cross-check PRs**: `python3 scripts/changelog.py cross-ref "<VERSION>"`. It lists merged milestone PRs missing from the section and warns about closed (unmerged) PRs. PRs linked from `:lock:` count as referenced; an advisory with no PR is invisible here by design.
-11. **Generate the anomaly report**: `python3 scripts/changelog.py report "<VERSION>"`. It overwrites `CHANGES-ISSUES.md` with the current state (section 10).
+3. **Keep out bugs that never reached production**: `python3 scripts/changelog.py dev-only-bugs "<VERSION>"` lists them; add `--apply` to label the sure ones `no changelog` on GitHub, then re-fetch step 2. The label puts the decision on the issue, so it survives a regeneration.
+   - **Sure**: a bug whose parent issue is a `Feature` or `Enhancement` of the same milestone. `--apply` labels these.
+   - **Candidates**: a bug whose parent is an epic of the same milestone, that carries the `regression` label, or whose "Affected versions" / "Environment" field names only hourly, develop, staging, PRE or a version of this milestone. `regression` also marks regressions users hit in production, and the field says where the bug was seen, not since when it exists, so never label these yourself: show them to the user, who labels the ones they confirm. The anomaly report lists them too (section 10).
+4. **Fetch PR details when needed**: `python3 scripts/gh.py prs <numbers...>` (also `--milestone`). Use it for the PR author, labels and merge state.
+5. **Categorize** by Issue Type and the two labels (section 2), and **build the descriptions** (section 4).
+6. **Verify PR merge status** before writing: `python3 scripts/changelog.py check-merged <PR numbers...>`. Only merged PRs go in the changelog; if a closing PR was closed unmerged, look for the PR that superseded it.
+7. **Reconcile the existing text** (section 9).
+8. **Generate `:boom:`**: `python3 scripts/changelog.py boom "<VERSION>"` prints the section; add `--write` to replace it in `CHANGES.md`. The write replaces only that subsection, inserts it after the version header when missing, keeps the heading when there are no entries, and is idempotent.
+9. **Generate `:rocket:`** from the `release highlight` label (section 6).
+10. **Generate `:lock:`**: `python3 scripts/changelog.py security "<VERSION>"` prints the section; add `--write` to replace it in `CHANGES.md`. The contract lives in section 7.
+11. **Cross-check PRs**: `python3 scripts/changelog.py cross-ref "<VERSION>"`. It lists merged milestone PRs missing from the section and warns about closed (unmerged) PRs. PRs linked from `:lock:` count as referenced; an advisory with no PR is invisible here by design.
+12. **Generate the anomaly report**: `python3 scripts/changelog.py report "<VERSION>"`. It overwrites `CHANGES-ISSUES.md` with the current state (section 10).
 
 ## 9. Pre-flight: reconcile before writing
 
@@ -188,6 +192,8 @@ Re-fetch the milestone (do not trust cached data) and fix these in `CHANGES.md` 
 - **C — released X.Y.0 version without a `:rocket:` section** (gap; patches never carry highlights).
 - **D — `:rocket:` entry without issue AND PR references** (gap).
 
+**Bugs that may never have reached production** are warnings too (section 8, step 3): sub-issues of a milestone feature still unlabelled (run `dev-only-bugs --apply`) and candidates for the user to confirm. They never count toward the total.
+
 Anything else is a rule violation, not a report item: fix it in the pre-flight and re-run.
 
 ## 11. Pitfalls
@@ -202,6 +208,6 @@ Anything else is a rule violation, not a report item: fix it in the pre-flight a
 ## 12. Where the code is
 
 - `scripts/gh.py`: `issues`, `issue`, `comments`, `prs`, `link-issue`, `advisories` (with `--patched-version`). Details: `mem:scripts/gh`.
-- `scripts/changelog.py`: `check-merged`, `boom`, `security`, `cross-ref`, `report`. Details: `mem:scripts/changelog`.
+- `scripts/changelog.py`: `check-merged`, `boom`, `security`, `cross-ref`, `dev-only-bugs`, `report`. Details: `mem:scripts/changelog`.
 - Tests: `scripts/test_gh.py`, `scripts/test_changelog.py`.
 - The note contract for issue authors: `mem:workflow/creating-issues`, section **Breaking changes**.
