@@ -2282,6 +2282,13 @@
                              [:transform 3 9 7 13] [:switch] [:undo] [:update-main 1] [:duplicate 2]
                              [:update-main 15] [:switch]]}))))
 
+(t/deftest syncing-a-resized-copy-parent-authors-the-size-it-gives-a-swapped-head
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles false :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies false :text false}]
+                       :ops [[:add-variant 15] [:duplicate 10] [:make-variant 8] [:switch 15] [:style 21 9 1]
+                             [:update-main] [:duplicate 16] [:resize 16]]}))))
+
 (t/deftest pushing-a-grid-direction-orders-the-copies-like-the-reflowed-main
   (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles false :layout :grid :variant-diff false
                                     :layout-item-margins false :grid-square true :rich-variants false

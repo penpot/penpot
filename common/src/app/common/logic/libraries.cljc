@@ -657,7 +657,8 @@
   "A parent turned or moved by sync carries its whole subtree, including
    geometry overrides. Resize remains the job of constraints, not matrix
    scale: a parent turned and resized at once resizes its subtree through
-   their constraints first, then turns and moves it as one piece."
+   their constraints first, then turns and moves it as one piece. A swapped
+   head the resize gives another size authors that size."
   [changes container before]
   (let [after    (get (pcb/get-objects changes) (:id before))
         resized? (and after
@@ -684,10 +685,23 @@
                           (let [objects (pcb/get-objects changes)
                                 parent  (cond-> (merge after (select-keys before placement-geometry-attrs))
                                           (ctsl/grid-layout? after) (ctsl/assign-cells objects))]
-                            (placed-like (assoc objects (:id before) parent) before after {})))]
+                            (placed-like (assoc objects (:id before) parent) before after {})))
+            ;; untouched swapped heads the resize gives another size
+            scaled      (when resized?
+                          (into #{}
+                                (filter #(let [shape (get (:objects container) %)
+                                               moved (get placed %)]
+                                           (and (ctk/swapped? shape)
+                                                (not (ctk/touched-group? shape :geometry-group))
+                                                (some? moved)
+                                                (not (and (mth/close? (:width shape) (:width moved))
+                                                          (mth/close? (:height shape) (:height moved)))))))
+                                ids))]
         (pcb/update-shapes changes ids
                            (if resized?
-                             #(get placed (:id %) %)
+                             #(cond-> (get placed (:id %) %)
+                                (contains? scaled (:id %))
+                                (update :touched ctk/set-touched-group :geometry-group))
                              #(cond-> % (some? turn) turn :always (gsh/move delta)))
                            {:ignore-touched true}))
       changes)))
