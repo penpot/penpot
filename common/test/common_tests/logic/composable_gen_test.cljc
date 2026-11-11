@@ -2201,6 +2201,13 @@
                        :ops [[:swap] [:make-variant 12] [:rotate 0 0 1] [:delete] [:transform 6 5]
                              [:transform 3 9 7 13] [:switch]]}))))
 
+(t/deftest switching-a-copy-carries-no-mirrored-turn-stored-the-other-way-in-the-model
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles false :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies false :text true}]
+                       :ops [[:swap] [:make-variant 12] [:rotate] [:delete] [:transform 6 5]
+                             [:transform 3 0 0 13] [:switch]]}))))
+
 (t/deftest updating-a-turned-main-from-a-swapped-head-turns-the-new-head-with-its-parent
   (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles false :layout :flex :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants false
@@ -2229,6 +2236,13 @@
                              [:style 22 27] [:text-style 7 0 1] [:detach 20] [:transform 14 0 0 8]
                              [:add-variant] [:switch 22] [:duplicate 1] [:detach 20] [:text-style 23 0 1]
                              [:switch 6] [:update-main 22]]}))))
+
+(t/deftest updating-a-main-from-a-resized-root-keeps-the-turn-its-parent-gives-a-swapped-head
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff true
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty true :layout-copies false :text false}]
+                       :ops [[:make-variant 3] [:nest 4] [:combine 4] [:rotate 2] [:detach 1] [:combine 3]
+                             [:switch] [:update-main] [:detach 2] [:resize 2] [:switch 5] [:update-main]]}))))
 
 (t/deftest pushing-a-grid-direction-orders-the-copies-like-the-reflowed-main
   (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles false :layout :grid :variant-diff false
