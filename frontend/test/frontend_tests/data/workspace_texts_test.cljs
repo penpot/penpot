@@ -7,7 +7,10 @@
 (ns frontend-tests.data.workspace-texts-test
   (:require
    [app.common.geom.rect :as grc]
+   [app.common.test-helpers.components :as cthc]
+   [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
+   [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
@@ -19,7 +22,15 @@
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
+   [frontend-tests.helpers.wasm :as thw]
    [potok.v2.core :as ptk]))
+
+(t/use-fixtures :each
+  {:before (fn []
+             (cthi/reset-idmap!)
+             (thw/setup-wasm-mocks!))
+   :after  (fn []
+             (thw/teardown-wasm-mocks!))})
 
 ;; ---------------------------------------------------------------------------
 ;; Helpers
@@ -312,6 +323,39 @@
     (t/is (not-any? #(and (ptk/event? %)
                           (= :app.main.data.workspace.shapes/update-shapes (ptk/type %)))
                     @events))))
+
+;; Scenario: finalize an auto-grow text edit on a component copy under
+;; render-wasm/v1. Proves: content is committed and the auto-resize does
+;; not mark :geometry-group (so later main font-size sync can still size
+;; the box). See #12721.
+(t/deftest finalize-auto-grow-copy-skips-geometry-touched
+  (t/async
+    done
+    (let [file   (-> (cthf/sample-file :file1)
+                     (ctho/add-frame-with-text :main-root :main-child "hello world")
+                     (cthc/make-component :component1 :main-root)
+                     (cthc/instantiate-component :component1 :copy-root
+                                                 {:children-labels [:copy-child]}))
+          copy   (cths/get-shape file :copy-child)
+          copy-id (:id copy)
+          store  (ths/setup-store file)
+          mid    (txt/change-text (:content copy) "typing")
+          final  (txt/change-text (:content copy) "changed")
+          ;; Non-finalize first so session geom is stored; otherwise finalize
+          ;; is treated as a no-op and skips the geometry commit path.
+          events [(dwt/v2-update-text-shape-content copy-id mid :finalize? false)
+                  (dwt/v2-update-text-shape-content copy-id final :finalize? true)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [file'  (ths/get-file-from-state new-state)
+               copy'  (cths/get-shape file' :copy-child)
+               text'  (get-in copy' [:content :children 0 :children 0 :children 0 :text])]
+           (t/is (= "changed" text')
+                 "finalize must commit the edited content")
+           (t/is (not (contains? (:touched copy') :geometry-group))
+                 "auto-grow finalize must not mark :geometry-group on a component copy")))))))
 
 (t/deftest add-typography-normalises-float-line-height
   (t/async
