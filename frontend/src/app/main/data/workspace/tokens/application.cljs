@@ -743,7 +743,8 @@
                                      (-> {::ev/name "apply-tokens"
                                           :type type
                                           :applied-to attributes
-                                          :applied-to-variant any-variant?}
+                                          :applied-to-variant any-variant?
+                                          :shape-count (count shape-ids)}
                                          (merge (meta it)))))
                           (dwu/start-undo-transaction undo-id)
                           (dwsh/update-shapes shape-ids (fn [shape]
