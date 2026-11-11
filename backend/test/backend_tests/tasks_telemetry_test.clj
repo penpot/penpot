@@ -828,6 +828,79 @@
     (t/is (not (contains? (:props result) :active)))
     (t/is (not (contains? (:props result) :label)))))
 
+(t/deftest test-filter-telemetry-props-subscription-creation-keeps-safe-fields
+  (let [ftp (ns-resolve 'app.loggers.audit 'filter-telemetry-props)
+        organization-id (uuid/next)
+        props {:type "nitrate:enterprise"
+               :deployment "saas"
+               :quantity 5
+               :subscription-mode "paid"
+               :organization-id organization-id
+               :email "owner@example.com"
+               :unsafe-label "should-be-stripped"}
+        expected {:type "nitrate:enterprise"
+                  :deployment "saas"
+                  :quantity 5
+                  :subscription-mode "paid"
+                  :organization-id organization-id}]
+    (doseq [source ["backend" "frontend"]
+            name ["create-subscription" "create-trial-subscription"]]
+      (t/testing (str source " " name)
+        (let [result (ftp {:source source
+                           :name name
+                           :type "action"
+                           :props props})]
+          (t/is (= expected (:props result))))))))
+
+(t/deftest test-filter-telemetry-props-subscription-update-keeps-safe-fields
+  (let [ftp (ns-resolve 'app.loggers.audit 'filter-telemetry-props)
+        props {:type "nitrate:enterprise"
+               :deployment "selfhost"
+               :previous-status "trialing"
+               :status "active"
+               :previous-cancel-at-period-end false
+               :cancel-at-period-end true
+               :previous-cancel-at nil
+               :cancel-at "2026-12-01T00:00:00.000Z"
+               :changed-fields ["status" "cancel-at-period-end" "cancel-at"]
+               :email "owner@example.com"
+               :unsafe-label "should-be-stripped"}
+        result (ftp {:source "backend"
+                     :name "update-subscription"
+                     :type "action"
+                     :props props})]
+    (t/is (= (dissoc props :email :unsafe-label)
+             (:props result)))))
+
+(t/deftest test-filter-telemetry-props-subscription-summary-keeps-safe-fields
+  (let [ftp (ns-resolve 'app.loggers.audit 'filter-telemetry-props)
+        props {:type "nitrate:enterprise"
+               :deployment "saas"
+               :instance-id "00000000-0000-4000-8000-000000000099"
+               :snapshot-date "2026-11-05"
+               :trialing-count 1
+               :active-count 2
+               :active-cancel-scheduled-count 3
+               :past-due-count 4
+               :canceled-count 5
+               :unpaid-count 6
+               :incomplete-count 7
+               :incomplete-expired-count 8
+               :paused-count 9
+               :other-count 10
+               :total-count 55
+               :sync-succeeded 54
+               :sync-failed 1
+               :snapshot-complete false
+               :email "owner@example.com"
+               :unsafe-label "should-be-stripped"}
+        result (ftp {:source "backend"
+                     :name "subscription-summary"
+                     :type "action"
+                     :props props})]
+    (t/is (= (dissoc props :email :unsafe-label)
+             (:props result)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SEND-EVENT-BATCH PAYLOAD STRUCTURE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

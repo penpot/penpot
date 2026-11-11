@@ -23,6 +23,8 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
@@ -61,7 +63,10 @@
   [:header {:class (stl/css :dashboard-header)
             :data-testid "dashboard-header"}
    [:div#dashboard-deleted-title {:class (stl/css :dashboard-title)}
-    [:h1 (tr "dashboard.projects-title")]]
+    [:> heading* {:level 1
+                  :typography t/title-large
+                  :class (stl/css :dashboard-title-text)}
+     (tr "dashboard.projects-title")]]
    [:div {:class (stl/css :dashboard-header-actions)}
     [:> dashboard-mcp-menu*]
     [:> layout-toggle* {:layout layout :on-change on-change}]]])

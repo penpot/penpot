@@ -457,7 +457,8 @@
         library-id (uuid/next)
         stream     (rx/subject)
         events     (atom [])
-        state      (atom {:current-file-id file-id :current-team-id team-id})]
+        state      (atom {:current-file-id file-id :current-team-id team-id
+                          :permissions {:can-edit true}})]
     (await
      (mock/with-mocks*
        {st/state           state
@@ -490,7 +491,8 @@
         events     (atom [])]
     (await
      (mock/with-mocks*
-       {st/state           (atom {:current-file-id file-id :current-team-id (uuid/next)})
+       {st/state           (atom {:current-file-id file-id :current-team-id (uuid/next)
+                                  :permissions {:can-edit true}})
         st/emit!           (mock/stub (fn [& emitted] (swap! events into emitted)))
         rp/cmd!            (shared-files-cmd [{:id (uuid/next) :name "Other published"}])
         r/check-permission (mock/stub (constantly true))}
@@ -504,7 +506,8 @@
         events  (atom [])]
     (await
      (mock/with-mocks*
-       {st/state           (atom {:current-file-id file-id :current-team-id (uuid/next)})
+       {st/state           (atom {:current-file-id file-id :current-team-id (uuid/next)
+                                  :permissions {:can-edit true}})
         st/emit!           (mock/stub (fn [& emitted] (swap! events into emitted)))
         rp/cmd!            (shared-files-cmd [{:id file-id :name "Current file"}])
         r/check-permission (mock/stub (constantly true))}
@@ -558,3 +561,29 @@
                   (into #{} (map #(obj/get % "$id")) (.-connected context))))
          (t/is (= #{(str visited-id) (str other-id)}
                   (into #{} (map #(.-id %)) (await (.availableLibraries context))))))))))
+
+;; Scenario: a library is linked; while the list of published libraries
+;; loads, a save fails and locks the workspace. Proves: the library is not
+;; linked and the promise rejects with the read-only error.
+(t/deftest ^:async connect-library-is-refused-when-a-save-fails-meanwhile
+  (let [library-id (uuid/next)
+        state      (atom {:current-file-id (uuid/next)
+                          :current-team-id (uuid/next)
+                          :permissions {:can-edit true}})
+        answer     (rx/subject)
+        events     (atom [])]
+    (await
+     (mock/with-mocks*
+       {st/state state
+        st/emit! (mock/stub (fn [& emitted] (swap! events into emitted)))
+        rp/cmd!  (mock/stub (fn [cmd params]
+                              (swap! mock/rpc-calls conj {:cmd cmd :params params})
+                              (->> answer (rx/take 1) (rx/observe-on :async))))}
+       (let [context (library/library-subcontext plugin-id)
+             result  (settled (.connectLibrary context (str library-id)))]
+         (await (async/wait-for #(seq @mock/rpc-calls) "the published libraries are requested"))
+         (swap! state assoc-in [:workspace-global :persistence-lock] {:read-only? false})
+         (rx/push! answer [{:id library-id :name "Published"}])
+         (let [{:keys [rejected]} (await result)]
+           (t/is (str/includes? (ex-message rejected) "cannot be saved"))
+           (t/is (empty? @events) "the library is not linked")))))))

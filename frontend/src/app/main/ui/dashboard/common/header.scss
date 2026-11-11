@@ -1,0 +1,91 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+// Page header shared by the dashboard and settings pages.
+
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  block-size: $sz-64;
+  max-block-size: $sz-64;
+  padding: var(--sp-xs) var(--sp-l) var(--sp-xs) var(--sp-s);
+  user-select: none;
+
+  &.team {
+    display: grid;
+    grid-template-columns: 20% 1fr 20%;
+  }
+}
+
+.dashboard-title {
+  display: flex;
+  align-items: center;
+  margin-inline-start: var(--sp-m);
+}
+
+.dashboard-title-text {
+  display: block;
+  flex-shrink: 0;
+  inline-size: 100%;
+  max-inline-size: $sz-712;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: all;
+  color: var(--color-foreground-primary);
+}
+
+.dashboard-header-actions {
+  display: flex;
+  column-gap: var(--sp-l);
+}
+
+.dashboard-buttons {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.dashboard-header-menu {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.dashboard-header-options {
+  display: flex;
+  justify-content: center;
+  margin: 0;
+}
+
+.dashboard-header-link {
+  @include use-typography("body-large");
+
+  --dashboard-header-link-color: var(--color-foreground-secondary);
+
+  display: flex;
+  align-items: center;
+  block-size: $sz-40;
+  padding: var(--sp-xs) var(--sp-xxl);
+  border-block-end: px2rem(3) solid transparent;
+  color: var(--dashboard-header-link-color);
+
+  &:hover {
+    --dashboard-header-link-color: var(--color-foreground-primary);
+
+    text-decoration: none;
+  }
+
+  &.active {
+    --dashboard-header-link-color: var(--color-foreground-primary);
+  }
+}

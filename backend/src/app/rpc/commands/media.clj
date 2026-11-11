@@ -65,8 +65,9 @@
                 [:process-image/global]]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id content] :as params}]
   (files/check-edition-permissions! pool profile-id file-id)
-  (media.v/validate-media-type! content)
-  (media.v/validate-media-size! content)
+  (media.v/check-upload-path content)
+  (media.v/check-media-type content)
+  (media.v/check-media-size content)
 
   (let [team-id (:team-id (db/exec-one! pool [sql:get-team-id-for-file file-id]))]
     ;; TEMPORARILY DISABLED (2026-10-19): media-storage-bytes-per-team
@@ -136,15 +137,7 @@
 
 (defn- process-main-image
   [info]
-  (let [path  (:path info)
-        mtype (:mtype info)
-        path  (if (= mtype "image/svg+xml")
-                (let [content   (slurp path)
-                      sanitized (svg/sanitize-svg content)
-                      temp-path (tmp/tempfile :prefix "penpot-svg-" :suffix ".svg" :min-age "5m")]
-                  (spit (str temp-path) sanitized)
-                  temp-path)
-                path)
+  (let [{:keys [path mtype]} (svg/sanitize-svg-upload info)
         hash  (sto/calculate-hash path)
         data  (-> (sto/content path)
                   (sto/wrap-with-hash hash))]
@@ -376,6 +369,7 @@
    ::sm/result schema:upload-chunk-result}
   [{:keys [::db/pool] :as cfg}
    {:keys [::rpc/profile-id session-id index content] :as _params}]
+  (media.v/check-upload-path content)
   (let [session (db/tx-run! cfg check-upload-chunk-slot session-id profile-id index content)]
     (l/trc :hint "upload-chunk"
            :session-id session-id
@@ -576,8 +570,8 @@
                       content (-> content
                                   (assoc :filename (str "upload:" name))
                                   (assoc :mtype mtype)
-                                  (media.v/validate-media-type!)
-                                  (media.v/validate-media-size!))
+                                  (media.v/check-media-type)
+                                  (media.v/check-media-size))
                       mobj    (create-file-media-object cfg (assoc params
                                                                    :from-chunks? true
                                                                    :content content))]

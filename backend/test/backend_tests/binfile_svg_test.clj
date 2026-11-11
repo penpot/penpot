@@ -146,7 +146,7 @@
 (defn- write-temp-svg
   "Write `text` to a tempfile and return `[path size]`."
   [text]
-  (let [path (fs/create-tempfile :prefix "penpot-svg-import-test-" :suffix ".svg")
+  (let [path (fs/create-tempfile :dir "/tmp/penpot" :prefix "penpot-svg-import-test-" :suffix ".svg")
         data (utf8bytes text)]
     (spit (str path) text :encoding "UTF-8")
     [path (alength data)]))

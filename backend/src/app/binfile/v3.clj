@@ -1039,15 +1039,17 @@
 
 (defn- import-file-relations
   [{:keys [::db/conn ::manifest ::bfc/timestamp] :as cfg}]
-  (let [relations (:relations manifest)]
+  (let [relations (:relations manifest)
+        file-ids  (into #{} (map :id) (:files manifest))]
     (doseq [[index [file-id libr-id]] (d/enumerate relations)]
       (tap-progress cfg {:section :relations
                          :current (inc index) :total (count relations)})
 
-      (let [file-id (bfc/lookup-index file-id)
-            libr-id (bfc/lookup-index libr-id)]
-
-        (when (and file-id libr-id)
+      (if (and (not= file-id libr-id)
+               (contains? file-ids file-id)
+               (contains? file-ids libr-id))
+        (let [file-id (bfc/lookup-index file-id)
+              libr-id (bfc/lookup-index libr-id)]
           (l/dbg :hint "create file library link"
                  :file-id (str file-id)
                  :lib-id (str libr-id)
@@ -1055,7 +1057,10 @@
           (let [rel-params {:file-id file-id
                             :library-file-id libr-id}]
             (db/insert! conn :file-library-rel rel-params)
-            (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp))))))))
+            (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp))))
+        (l/warn :hint "ignoring invalid file library relation"
+                :file-id (str file-id)
+                :lib-id (str libr-id))))))
 
 (defn- import-storage-objects
   [{:keys [::bfc/input ::entries-index ::bfc/timestamp] :as cfg}]

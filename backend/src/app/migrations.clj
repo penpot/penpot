@@ -532,7 +532,13 @@
     :fn (mg/resource "app/migrations/sql/0156-reset-pg-storage-defaults.sql")}
 
    {:name "0157-add-audit-log-pending-table"
-    :fn (mg/resource "app/migrations/sql/0157-add-audit-log-pending-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0157-add-audit-log-pending-table.sql")}
+
+   {:name "0157-migrate-legacy-file-data"
+    :fn (mg/resource "app/migrations/sql/0157-migrate-legacy-file-data.sql")}
+
+   {:name "0158-del-forbidden-file-library-rels"
+    :fn (mg/resource "app/migrations/sql/0158-del-forbidden-file-library-rels.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

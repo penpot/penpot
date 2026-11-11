@@ -118,8 +118,8 @@
       (t/testing "the snapshot comes back"
         (t/is (nil? (:deleted-at (find-change snapshot-id)))))
 
-      (t/testing "the legacy payload row comes back"
-        (t/is (nil? (:deleted-at (find-change legacy-id))))))))
+      (t/testing "the legacy payload row keeps its date"
+        (t/is (= trash-at (:deleted-at (find-change legacy-id))))))))
 
 (t/deftest deleting-a-file-does-not-push-the-revision-schedule-out
   (binding [ct/*clock* (ct/fixed-clock test-now)]

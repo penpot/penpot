@@ -48,6 +48,46 @@
     "incomplete-user-info"
     "unexpected-error"})
 
+(def ^:private subscription-creation-events
+  #{"create-subscription" "create-trial-subscription"})
+
+(def ^:private subscription-creation-telemetry-props
+  #{:type
+    :deployment
+    :quantity
+    :subscription-mode})
+
+(def ^:private subscription-update-telemetry-props
+  #{:type
+    :deployment
+    :previous-status
+    :status
+    :previous-cancel-at-period-end
+    :cancel-at-period-end
+    :previous-cancel-at
+    :cancel-at
+    :changed-fields})
+
+(def ^:private subscription-summary-telemetry-props
+  #{:type
+    :deployment
+    :instance-id
+    :snapshot-date
+    :trialing-count
+    :active-count
+    :active-cancel-scheduled-count
+    :past-due-count
+    :canceled-count
+    :unpaid-count
+    :incomplete-count
+    :incomplete-expired-count
+    :paused-count
+    :other-count
+    :total-count
+    :sync-succeeded
+    :sync-failed
+    :snapshot-complete})
+
 (def ^:private safe-backend-context-keys
   #{:version
     :initiator
@@ -348,6 +388,24 @@
 (defn filter-telemetry-props
   [{:keys [source name props type] :as params}]
   (cond
+    (and (= type "action")
+         (contains? subscription-creation-events name)
+         (or (= source "backend")
+             (= source "frontend")))
+    (let [props' (into {} xf:filter-telemetry-props props)
+          props' (merge props' (select-keys props subscription-creation-telemetry-props))]
+      (assoc params :props props'))
+
+    (and (= source "backend")
+         (= type "action")
+         (= name "update-subscription"))
+    (assoc params :props (select-keys props subscription-update-telemetry-props))
+
+    (and (= source "backend")
+         (= type "action")
+         (= name "subscription-summary"))
+    (assoc params :props (select-keys props subscription-summary-telemetry-props))
+
     (and (= source "backend")
          (= name "organization-sso-auth-failed"))
     (let [props' (into {} xf:filter-telemetry-props props)
@@ -365,6 +423,8 @@
           props' (-> props'
                      (assoc :lang (:lang props))
                      (assoc :auth-backend (:auth-backend props))
+                     (assoc :source (:source props))
+                     (assoc :activation (:activation props))
                      (assoc :email-domain (email/get-domain (:email props)))
                      (d/without-nils))]
       (assoc params :props props'))

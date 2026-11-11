@@ -18,6 +18,7 @@
    [app.metrics.definition :as-alias mdef]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files-update :as files-update]
+   [app.util.pointer-map :as pmap]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [integrant.core :as ig])
@@ -117,6 +118,15 @@
                                    :name "Page 1"
                                    :objects {uuid/zero root child-id child}}}}}))
 
+(defn- touch-first-page
+  "A change that touches the first page of `file` and leaves it as it
+  was: the schema check covers only the pages a save touches."
+  [file]
+  [{:type :mod-obj
+    :page-id (first (:pages (:data file)))
+    :id uuid/zero
+    :operations []}])
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -142,11 +152,13 @@
 (t/deftest soft-schema-failure-is-counted-with-the-failing-schema-key
   (let [metrics (metrics)
         cfg     (validation-cfg metrics)
+        file    (broken-schema-file)
         before  (counter metrics "penpot_rpc_update_file_soft_failure_total"
                          ["check" "reason"] ["schema" "type"])]
-    (binding [cf/flags #{:soft-file-schema-validation}]
+    (binding [cf/flags #{:soft-file-schema-validation}
+              pmap/*tracked* (pmap/create-tracked)]
       (@#'files-update/process-changes-and-validate
-       cfg (broken-schema-file) [] nil))
+       cfg file (touch-first-page file) nil nil))
 
     (t/is (= (inc before)
              (counter metrics "penpot_rpc_update_file_soft_failure_total"
@@ -159,12 +171,13 @@
         page-id (first (:pages (:data file)))
         before  (counter metrics "penpot_rpc_update_file_soft_failure_total"
                          ["check" "reason"] ["affected" "child-not-found"])]
-    (binding [cf/flags #{:soft-file-validation}]
+    (binding [cf/flags #{:soft-file-validation}
+              pmap/*tracked* (pmap/create-tracked)]
       (with-redefs [bfc/get-resolved-file-libraries (fn [_ _] {})]
         (@#'files-update/process-changes-and-validate
          cfg file
          [{:type :mod-obj :page-id page-id :id uuid/zero :operations []}]
-         nil)))
+         nil nil)))
 
     (t/is (= (inc before)
              (counter metrics "penpot_rpc_update_file_soft_failure_total"
@@ -185,10 +198,11 @@
                    :operations [{:type :set
                                  :attr :parent-id
                                  :val (uuid/next)}]}]
-        cause    (binding [cf/flags #{:file-validation}]
+        cause    (binding [cf/flags #{:file-validation}
+                           pmap/*tracked* (pmap/create-tracked)]
                    (with-redefs [bfc/get-resolved-file-libraries (fn [_ _] {})]
                      (try
-                       (@#'files-update/process-changes-and-validate cfg file changes nil)
+                       (@#'files-update/process-changes-and-validate cfg file changes nil nil)
                        nil
                        (catch Throwable cause
                          cause))))]
@@ -202,12 +216,14 @@
 (t/deftest soft-failure-records-nothing-without-a-metrics-instance
   ;; `mtx/run!` fails on a missing instance, so an unguarded recording
   ;; would turn a soft check into a refusal for callers without metrics.
-  (let [cfg {::files-update/validation-timings (atom {})
-             ::files-update/incoming-revn 0
-             ::files-update/stored-revn 0}]
-    (binding [cf/flags #{:soft-file-schema-validation}]
+  (let [cfg  {::files-update/validation-timings (atom {})
+              ::files-update/incoming-revn 0
+              ::files-update/stored-revn 0}
+        file (broken-schema-file)]
+    (binding [cf/flags #{:soft-file-schema-validation}
+              pmap/*tracked* (pmap/create-tracked)]
       (t/is (map? (@#'files-update/process-changes-and-validate
-                   cfg (broken-schema-file) [] nil))))))
+                   cfg file (touch-first-page file) nil nil))))))
 
 (t/deftest refused-update-file-is-counted-with-stage-and-code
   (let [profile (th/create-profile* 1 {:is-active true})

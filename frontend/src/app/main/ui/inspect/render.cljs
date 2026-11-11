@@ -12,7 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
-   [app.main.ui.inspect.selection-feedback :refer [selection-feedback]]
+   [app.main.ui.inspect.selection-feedback :refer [selection-feedback*]]
    [app.main.ui.shapes.bool :as bool]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.frame :as frame]
@@ -208,7 +208,7 @@
       :fill "none"}
 
      [:& render {:shape frame :view-box (:vbox size)}]
-     [:& selection-feedback
+     [:> selection-feedback*
       {:frame frame
        :objects objects
        :local local

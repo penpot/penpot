@@ -1,12 +1,14 @@
 # Changelog helper
 
-`scripts/changelog.py` holds the checks used by the `update-changelog` skill (extracted from the skill file so the skill stays workflow-only). Calls `scripts/gh.py` via subprocess; never call the GitHub API directly from this script.
+`scripts/changelog.py` holds the checks used by the changelog flow. The rules and the step-by-step live in `mem:workflow/updating-changelog`; this memory documents the subcommands. Calls `scripts/gh.py` via subprocess; never call the GitHub API directly from this script.
 
 ## Subcommands
 
 - `check-merged <PR...>` (`--file`, `--stdin` accepted) — warn on any non-merged PR, exit 1 when found; run before writing changelog entries.
-- `cross-ref <MILESTONE> [--changes CHANGES.md]` — fetch milestone PRs with `--state all` once, report merged PRs missing from the version section plus CLOSED (unmerged) warnings; GHSA entries never appear here by design.
-- `report <MILESTONE> [--changes CHANGES.md --output CHANGES-ISSUES.md]` — overwrite the anomaly report (milestone mismatches type A/B plus `:rocket:` gaps C/D); rule violations never belong in the report, they are fixed in CHANGES.md first.
+- `boom <MILESTONE> [--changes CHANGES.md --write]` — generate `### :boom: Breaking changes & Deprecations` from the closed, non-excluded milestone issues labelled `breaking change`, sorted by issue number. Each issue becomes a `#### <issue title>` block: content = body of the issue's last `## Breaking change note` comment (whole markdown, headings demoted to `#####` outside code fences; fallback = heading plus refs with a stderr warning), refs = issue link plus merged closing PRs on their own line, with `(by @author)` for `community contribution`. `--write` replaces only that subsection of the version (inserts it after the version header when missing, keeps the heading when there are no entries; idempotent). Print-only by default. Uses `gh.py comments`.
+- `security <MILESTONE> [--changes CHANGES.md --write]` — generate `### :lock: Security fixes` from the advisories whose `patched_versions` include the version (via `gh.py advisories --patched-version`), sorted by GHSA id. Entry: `- Fix <description> (<advisory URL>) (PR: [#N](...))`; description = `Fix` + advisory summary, first word decapitalized unless it starts with an acronym; PRs = merged milestone PRs labelled `pr pt` whose body contains the GHSA id, comma-separated, and no PR is legal. Warns on stderr when a `pr pt` PR references an advisory with no matching `patched_versions`. `--write` replaces only that subsection, placed after `:rocket:` (or `:boom:`, or the version header when neither exists); empty entries remove the subsection; idempotent. Print-only by default.
+- `cross-ref <MILESTONE> [--changes CHANGES.md]` — fetch milestone PRs with `--state all` once, report merged PRs missing from the version section plus CLOSED (unmerged) warnings. PR links inside `:lock:` entries count as referenced; advisory URLs never appear here by design.
+- `report <MILESTONE> [--changes CHANGES.md --output CHANGES-ISSUES.md]` — overwrite the anomaly report: A/B milestone mismatches, E `:boom:` entry without the label, F `:rocket:` sync, G `:boom:` sync, plus the C/D `:rocket:` gaps (warnings). `:boom:`/`:rocket:` rule violations are fixed by regenerating or relabelling, not by editing entries in place.
 
 ## Conventions
 
@@ -15,4 +17,5 @@
 - Version-section lookup accepts an optional `(suffix)` after the version header (e.g. `(Unreleased)`); a missing section is an error for `cross-ref` and an empty section for `report`.
 - PR/issue reference parsing covers standard `[#N](.../pull/N)` / `[#N](.../issues/N)` links plus legacy `PR:[N]` / `[Github #N]` forms.
 - Shared parsing helpers (`extract_version_section`, `extract_subsection`, `collect_changelog_prs/issues`) live at module top so future subcommands reuse them instead of duplicating regexes.
-- Report anomaly types: A/B milestone mismatches, E `:boom:` entry whose issue lacks the `breaking change` label (counted, entries preserved — human labels the issue or moves the entry); C/D are `:rocket:` gaps (warnings, never counted).
+- Report anomaly types: A/B milestone mismatches, E `:boom:` entry whose issue lacks the `breaking change` label (counted, entries preserved — human labels the issue or moves the entry), G `breaking change` issue missing from `:boom:` (counted, same contract as F); C/D are `:rocket:` gaps (warnings, never counted).
+- `issue_excluded` (closed, non-Task, non-Rejected, no `release blocker`/`no changelog` label) is module-level and shared by `report` and `boom` so the exclusions cannot drift.

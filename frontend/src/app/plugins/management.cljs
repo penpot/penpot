@@ -90,6 +90,13 @@
       (when (<= 1 (count value) 250)
         value))))
 
+(defn- granted?
+  "True when the plugin was granted `permission`. Management calls act on
+  files through the backend, not on the open workspace, so the workspace's
+  read-only state does not apply to them."
+  [plugin-id permission]
+  (r/has-permission? plugin-id permission))
+
 (defn- permission-error
   [permission]
   (js/Error. (str "Permission " permission " is not granted")))
@@ -110,7 +117,7 @@
   "Resolves with the single value of the stream built by `make-stream` when
   the plugin has `permission`."
   [plugin-id permission make-stream]
-  (if (r/check-permission plugin-id permission)
+  (if (granted? plugin-id permission)
     (js/Promise.
      (fn [resolve reject]
        (rx/subs! resolve #(reject (backend-error %)) (make-stream))))
@@ -294,7 +301,7 @@
        (fn [value]
          (let [name (valid-name value)]
            (cond
-             (not (r/check-permission plugin-id "manage:teams"))
+             (not (granted? plugin-id "manage:teams"))
              (u/not-valid plugin-id :name "Plugin doesn't have 'manage:teams' permission")
 
              (nil? name)
@@ -340,7 +347,7 @@
        (fn [value]
          (let [name (valid-name value)]
            (cond
-             (not (r/check-permission plugin-id "manage:projects"))
+             (not (granted? plugin-id "manage:projects"))
              (u/not-valid plugin-id :name "Plugin doesn't have 'manage:projects' permission")
 
              (nil? name)
@@ -355,7 +362,7 @@
        :set
        (fn [value]
          (cond
-           (not (r/check-permission plugin-id "manage:projects"))
+           (not (granted? plugin-id "manage:projects"))
            (u/not-valid plugin-id :pinned "Plugin doesn't have 'manage:projects' permission")
 
            (not (boolean? value))
@@ -465,7 +472,7 @@
        (fn [value]
          (let [name (valid-name value)]
            (cond
-             (not (r/check-permission plugin-id "content:write"))
+             (not (granted? plugin-id "content:write"))
              (u/not-valid plugin-id :name "Plugin doesn't have 'content:write' permission")
 
              (nil? name)
@@ -480,7 +487,7 @@
        :set
        (fn [value]
          (cond
-           (not (r/check-permission plugin-id "library:write"))
+           (not (granted? plugin-id "library:write"))
            (u/not-valid plugin-id :shared "Plugin doesn't have 'library:write' permission")
 
            (not (boolean? value))
@@ -492,7 +499,7 @@
 
       :open
       (fn []
-        (if (r/check-permission plugin-id "content:read")
+        (if (granted? plugin-id "content:read")
           (open-file (str (:id @data)) #js {:teamId (str (:team-id @data))})
           (js/Promise.reject (permission-error "content:read"))))
 

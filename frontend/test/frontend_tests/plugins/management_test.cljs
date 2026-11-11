@@ -306,7 +306,7 @@
                                    [file* "name" nil]
                                    [file* "shared" 1]]]
           (t/is (thrown? js/Error (obj/set! proxy key value)) key))
-        (with-redefs [r/check-permission (mock/stub (constantly false))]
+        (with-redefs [r/has-permission? (mock/stub (constantly false))]
           (doseq [[proxy key value permission] [[team* "name" "Brand" "manage:teams"]
                                                 [project* "name" "Icons" "manage:projects"]
                                                 [project* "pinned" true "manage:projects"]
@@ -399,7 +399,7 @@
          (t/is (= "Expected a name with 1 to 250 characters" (await (message (.duplicate file* #js {:name " "})))))
          (t/is (= "Expected a project" (await (message (.moveTo file* #js {:id "invalid"})))))
          (t/is (= "Expected a team" (await (message (.moveTo project* nil)))))
-         (with-redefs [r/check-permission (mock/stub (constantly false))]
+         (with-redefs [r/has-permission? (mock/stub (constantly false))]
            (doseq [[promise permission] [[(.createTeam (management/create-context plugin-id) #js {:name "Brand"}) "manage:teams"]
                                          [(.listProjects team*) "content:read"]
                                          [(.createProject team* #js {:name "Icons"}) "manage:projects"]

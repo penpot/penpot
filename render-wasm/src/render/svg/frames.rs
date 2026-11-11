@@ -34,6 +34,7 @@ pub(super) fn render_frame(
     // (GPU), filter only blurs/tints — keeps stroke-ring width and rotation.
     if !builder.suppress_filters {
         let drops: Vec<Shadow> = element.drop_shadows_visible().copied().collect();
+        let cleared = !drops.is_empty() && builder.open_drop_shadow_clear_group(element);
         for shadow in &drops {
             let id = push_container_drop_filter(builder, shadow);
             builder.open_group(&format!("filter=\"url(#{id})\""));
@@ -47,6 +48,9 @@ pub(super) fn render_frame(
             builder.silhouette_offset = prev_offset;
             builder.silhouette_spread = prev_spread;
             builder.suppress_filters = prev_suppress;
+            builder.close_group();
+        }
+        if cleared {
             builder.close_group();
         }
     }

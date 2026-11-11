@@ -11,6 +11,7 @@ repository via GraphQL and REST APIs through the authenticated `gh` CLI.
 - Comparing milestone issues against CHANGES.md to find missing entries.
 - Explicitly linking a GitHub issue to a pull request.
 - Listing or inspecting GitHub Security Advisories (GHSA).
+- Fetching issue comments (the `## Breaking change note` markdown for the changelog).
 
 ## Prerequisites
 
@@ -82,6 +83,16 @@ Fetch issue details by number in batches of 50 (same input styles as `prs`: numb
 
 **Output**: JSON array to stdout; progress to stderr.
 
+### `comments`
+
+Fetch every comment of one or more issues via REST (paginated, 100 per page), oldest first. Same input styles as `issue`: numbers, `--file`, `--stdin`.
+
+```bash
+python3 scripts/gh.py comments 11235 11236
+```
+
+**Output fields per comment**: `issue`, `id`, `author`, `created_at`, `body`. JSON array to stdout; progress to stderr. `changelog.py boom` reads the `## Breaking change note` comment from this output.
+
 ### `link-issue`
 
 Explicitly assign a GitHub issue to a pull request:
@@ -91,7 +102,7 @@ python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>
 # Short alias: python3 scripts/gh.py link <ISSUE_NUMBER> <PR_NUMBER>
 ```
 
-The command resolves both node IDs and calls `addCloseIssueReferences`. It trusts the successful mutation instead of re-querying, because GitHub does not reliably report mutation-created links through `closedByPullRequestsReferences(userLinkedOnly: true)`. It is safe to rerun, works for merged PRs, and does not close an issue retroactively. JSON goes to stdout; progress and errors go to stderr; a missing issue/PR or a failed mutation exits non-zero.
+The command resolves both node IDs and calls `addCloseIssueReferences`. It trusts the successful mutation instead of re-querying, because GitHub does not reliably report mutation-created links through `closedByPullRequestsReferences(userLinkedOnly: true)`. It is safe to rerun and works for merged PRs. It does not guarantee the issue stays open: adding `Closes #N` to the body of an already-merged PR closed the issue immediately when tried (#12896 / PR #12067, 2026-11-09). JSON goes to stdout; progress and errors go to stderr; a missing issue/PR or a failed mutation exits non-zero.
 
 ### `advisories`
 
@@ -107,6 +118,9 @@ python3 scripts/gh.py advisories --severity critical
 # Filter by state
 python3 scripts/gh.py advisories --state triage
 
+# Filter by patched version declared in the advisory
+python3 scripts/gh.py advisories --patched-version 2.19.1
+
 # Get full detail for a single advisory
 python3 scripts/gh.py advisories GHSA-xvj6-fh9w-gjw7
 ```
@@ -114,6 +128,8 @@ python3 scripts/gh.py advisories GHSA-xvj6-fh9w-gjw7
 **Summary output fields**: ghsa_id, cve_id, severity, cvss_score, state, summary, cwes, published_at, closed_at, url.
 
 **Detail output** (single advisory) adds: description, vulnerabilities (package, version ranges), credits, timestamps.
+
+`--patched-version` filters the raw advisories before formatting: the match is an exact token of `vulnerabilities[*].patched_versions` (split on `,`/`;`), so `2.19.1` never matches `2.19.10`. Every state is included (`triage`, `draft`, `published`, `closed`, `withdrawn`). The raw `vulnerabilities` stay internal to the filter: the list output keeps the summary schema.
 
 **Output**: JSON to stdout; progress to stderr.
 

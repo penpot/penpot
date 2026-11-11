@@ -124,6 +124,7 @@
 
     :remove
     (fn []
+      (r/check-writable)
       (cond
         (not (u/page-active? page-id))
         (u/not-valid plugin-id :remove "Cannot modify a page that is not currently active")

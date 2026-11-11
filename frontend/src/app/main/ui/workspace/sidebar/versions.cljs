@@ -65,6 +65,9 @@
       (tr "workspace.versions.warning.subtext" support-email))))
 
 (defn- group-snapshots
+  "History entries of `data`: each pinned version, and the system
+  snapshots grouped by day, the copies kept before a repair apart from
+  the autosaves."
   [data]
   (->> (concat
         (->> data
@@ -72,12 +75,15 @@
              (map #(assoc % :type :version)))
         (->> data
              (filter #(= "system" (:created-by %)))
-             (group-by #(ct/format-inst (:created-at %) :iso-date))
-             (map (fn [[day entries]]
+             (group-by (juxt #(ct/format-inst (:created-at %) :iso-date)
+                             #(if (dwv/repair-snapshot? %) :repair :autosave)))
+             (map (fn [[[day kind] entries]]
                     {:type :snapshot
+                     :kind kind
                      :created-at (ct/inst day)
                      :snapshots entries}))))
-       (sort-by :created-at)
+       ;; On the same day the copies before a repair come above the autosaves
+       (sort-by (juxt :created-at #(if (= :repair (:kind %)) 1 0)))
        (map-indexed (fn [index item]
                       (assoc item :index index)))
        (reverse)))
@@ -297,8 +303,10 @@
 
     [:li {:ref entry-ref :class (stl/css :version-entry-wrap)}
      [:> milestone-group*
-      {:label (tr "workspace.versions.autosaved.version"
-                  (ct/format-inst (:created-at entry) :localized-date))
+      {:label (let [day (ct/format-inst (:created-at entry) :localized-date)]
+                (if (= :repair (:kind entry))
+                  (tr "workspace.versions.repair.version" day)
+                  (tr "workspace.versions.autosaved.version" day)))
        :snapshots (mapv :created-at (:snapshots entry))
        :on-menu-click on-open-snapshot-menu}]
 

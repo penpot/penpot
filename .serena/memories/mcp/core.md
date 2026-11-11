@@ -57,7 +57,7 @@ mcp/
 │   ├── src/
 │   │   ├── main.ts            # handles communication
 │   │   └── plugin.ts          # plugin implementation
-│   └── package.json           # Includes @penpot-mcp/common dependency
+│   └── package.json           # Plugin deps: published plugin-styles, linked plugin-types
 └── prepare-api-docs           # Python project for the generation of API docs
 ```
 
@@ -107,6 +107,13 @@ From the `mcp/` directory, run
   (node reports `Promise resolution is still pending but the event loop has
   already resolved` for the file's root test). Inside tests the logger writes to
   stdout directly. `NODE_TEST_CONTEXT` is the env var `node --test` sets.
+* `packages/plugin` takes `@penpot/plugin-styles` from the registry but links
+  `@penpot/plugin-types` to `plugins/libs/plugin-types` (`link:` in the manifest
+  and in `mcp/pnpm-lock.yaml`, with no registry entry, because a linked package
+  has no resolution): the published types do not declare the `penpotMgmt`
+  global the plugin needs. On a plugins libs version bump, only the styles
+  version moves. After editing the manifest, `pnpm install --lockfile-only` in
+  `mcp/` must leave the lock untouched.
 * Cross-cutting testing principles and anti-patterns: `mem:testing`.
 
 ## OAuth for remote MCP clients
@@ -136,3 +143,7 @@ For parallel devenvs, prefer same-origin MCP routing: each Penpot instance shoul
 - The MCP server emits `1008` for a missing `userToken` in multi-user mode, for missing/invalid connection metadata, and to close a connection displaced by a newer one with the same user and session ID.
 - Session IDs are deterministic per tab and file, so a reconnect reuses its ID while the old socket may be half-open: the newest connection wins (`PluginBridge.displaceConnection`). Across instances, each new connection publishes a session claim on a per-user Redis channel; an instance displaces its local connection only on a foreign claim that arrives after its own claim (channel order, no clocks). Discovery deduplicates by session ID.
 - A tab rejected with `1008` never reaches `connected`, so the frontend's 60s reconnect watcher (`start-reconnect-watcher` in `app.main.data.workspace.mcp`, started only on `connected`) does not engage; recovery is manual via the MCP menu.
+
+## Rollback warnings
+
+- The plugin's `RollbackLog` (`packages/plugin/src/RollbackLog.ts`) holds the `contentrollback` events not yet sent with a task response; `Task.sendResponse` attaches them and acknowledges them once sent, and the server's `unclaimed-rollbacks` message (a response that came after its task timed out) puts them back. With a `RollbackStore` (`LocalStorageRollbackStore` over `penpot.localStorage`, one entry per file) every change is written through, so a reload of the tab or plugin keeps them; storage failures fall back to memory. Plugin tests run with `node --experimental-strip-types`, which rejects TypeScript parameter properties: declare fields explicitly.

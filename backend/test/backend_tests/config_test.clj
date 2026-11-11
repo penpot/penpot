@@ -6,9 +6,20 @@
 
 (ns backend-tests.config-test
   (:require
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.config :as cf]
    [clojure.test :as t]))
+
+(t/deftest tenant-is-normalized-to-lowercase
+  (t/testing "an uppercase tenant names the same tenant"
+    (t/is (= "acme" (:tenant (#'cf/normalize-tenant {:tenant "ACME"}))))
+    (t/is (= "acme" (:tenant (#'cf/normalize-tenant {:tenant "acme"})))))
+  (t/testing "a config without a tenant is left untouched"
+    (t/is (= {:x 1} (#'cf/normalize-tenant {:x 1}))))
+  (t/testing "the validated form is lowercase-only"
+    (t/is (not (sm/validate cf/schema:tenant "ACME")))
+    (t/is (sm/validate cf/schema:tenant "acme"))))
 
 (t/deftest get-public-uri-normalizes-base
   (t/testing "trailing slash is ensured with and without subpath"
