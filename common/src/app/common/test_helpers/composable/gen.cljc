@@ -296,7 +296,8 @@
                           (cond-> (and (zero? index) (pos? depth) (:layout opts)
                                        (:layout-copies opts) (:layout-children opts))
                             (with-settled-layout name))
-                          (as-> s (reduce #(tm/apply-to %2 %1) s [(n/instantiate-copy name) (n/instantiate-copy name)])))))
+                          (as-> s (reduce #(tm/apply-to %2 %1) s
+                                          (repeatedly (:copies opts 2) #(n/instantiate-copy name)))))))
                   (let [s (setup/empty-situation)
                         s (if (:variants opts)
                             (let [s (reduce #(tm/apply-to %2 %1) s
@@ -332,7 +333,8 @@
     (:layout opts) (r/settle-layout)
     (:library opts) (with-library opts)
     (:stale-libraries opts) (cf/freeze-libraries)
-    (:rich-variants opts) (as-> s (assoc s :shape-budget (+ 80 (count (tree s)))))))
+    (:rich-variants opts) (as-> s (assoc s :shape-budget (+ 80 (count (tree s)))))
+    (:scale opts) (as-> s (assoc s :shape-budget (+ 120 (count (tree s)))))))
 
 (defn candidates
   [situation model kind scope]
@@ -1396,6 +1398,28 @@
                            :text true :text-styles true :layout layout :layout-copies true
                            :layout-children layout-children :layout-item-margins layout-item-margins
                            :grid-square (= grid :square) :grid-empty (= grid :empty)}]
+     :ops ops}))
+
+(def scale-coverage-kinds
+  "The kinds the scale programs must cover: the steps that walk every copy
+   and every nesting level."
+  [:edit :reset :update-main :sync :swap :switch :undo :redo])
+
+(def scale-program-gen
+  "Worlds deeper and wider than the other properties draw: up to four
+   components nested three or four levels, with up to six copies each."
+  (gen/let [components (gen/choose 3 4)
+            depth (gen/choose 3 4)
+            copies (gen/choose 3 6)
+            differ? gen/boolean
+            layout (gen/elements [nil :flex :grid])
+            layout-children gen/boolean
+            grid (gen/elements [nil :square :empty])
+            ops (operation-gen variant-kinds)]
+    {:world [components depth {:scale true :copies copies :variants true :variant-diff differ?
+                               :rich-variants true :text true :text-styles true :layout layout
+                               :layout-copies true :layout-children layout-children
+                               :grid-square (= grid :square) :grid-empty (= grid :empty)}]
      :ops ops}))
 
 (def library-kinds

@@ -2289,6 +2289,19 @@
                        :ops [[:add-variant 15] [:duplicate 10] [:make-variant 8] [:switch 15] [:style 21 9 1]
                              [:update-main] [:duplicate 16] [:resize 16]]}))))
 
+(t/deftest resizing-a-copy-parent-leaves-unauthored-the-size-it-gives-a-swapped-head
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles false :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants false
+                                    :layout-children false :grid-empty false :layout-copies false :text false}]
+                       :ops [[:make-variant 17] [:style 16 9 1] [:switch 7] [:detach 15] [:resize 15]]}))))
+
+(t/deftest swapping-a-copy-head-keeps-the-margin-it-authors
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles false :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:combine 10] [:make-variant 12] [:make-variant 4] [:make-variant 1] [:swap 8]
+                             [:style 0 10] [:swap 25]]}))))
+
 (t/deftest pushing-a-grid-direction-orders-the-copies-like-the-reflowed-main
   (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles false :layout :grid :variant-diff false
                                     :layout-item-margins false :grid-square true :rich-variants false
@@ -2339,6 +2352,19 @@
     (println "Variant operation coverage:" (pr-str @coverage))
     (t/is (empty? (cg/coverage-errors @coverage cg/variant-coverage-kinds))
           (pr-str (cg/coverage-errors @coverage cg/variant-coverage-kinds)))))
+
+(t/deftest random-scale-compositions
+  ;; scale programs run several times longer than the others; the gates draw more
+  (let [coverage (atom {})
+        failure (atom nil)]
+    (smt/check!
+     (smt/for [program cg/scale-program-gen]
+       (cg/check-program program coverage failure))
+     :max-size 30
+     :default-num 12)
+    (println "Scale operation coverage:" (pr-str @coverage))
+    (t/is (empty? (cg/coverage-errors @coverage cg/scale-coverage-kinds))
+          (pr-str (cg/coverage-errors @coverage cg/scale-coverage-kinds)))))
 
 (t/deftest random-renames-leave-variant-management-to-its-own-operations
   (let [situation (cg/world [2 2 {:variants true}])

@@ -573,25 +573,35 @@
    model model))
 
 (defn sync-scaled-heads
-  "A copy parent that a sync resizes sizes its untouched swapped heads
-  through their constraints. A head it gives another size authors that
-  size, placed in the parent."
+  "A copy shape that a sync resizes sizes its subtree through constraints.
+  An untouched swapped head in it that the resize gives another size
+  authors that size, placed in its parent. The resize starts at the
+  topmost resized ancestor of the head: a sync resizes only a copy shape
+  without authored geometry."
   [model before after]
   (let [sized-alike? #(and (mth/close? (:width %1) (:width %2))
-                           (mth/close? (:height %1) (:height %2)))]
+                           (mth/close? (:height %1) (:height %2)))
+        ;; whether `id` keeps its parent and has another size in `after`
+        resized?     (fn [id]
+                       (let [old (get before id) shape (get after id)]
+                         (and old shape (= (:parent-id old) (:parent-id shape))
+                              (not (sized-alike? old shape)))))]
     (reduce-kv
      (fn [result id groups]
-       (let [old        (get before id)
-             shape      (get after id)
-             old-parent (get before (:parent-id old))
-             parent     (get after (:parent-id shape))]
+       (let [shape  (get after id)
+             parent (get after (:parent-id shape))
+             origin (when (and parent (resized? (:id parent)))
+                      (loop [current parent]
+                        (let [above (get after (:parent-id current))]
+                          (if (and above (not= (:id above) (:id current)) (resized? (:id above)))
+                            (recur above)
+                            current))))]
          (if (and (contains? groups :swap-group)
                   (not (contains? groups :geometry-group))
-                  old shape old-parent parent
-                  (= (:parent-id old) (:parent-id shape))
-                  (:shape-ref parent)
-                  (not (sized-alike? old-parent parent))
-                  (not (sized-alike? old shape)))
+                  (resized? id)
+                  (some? origin)
+                  (:shape-ref origin)
+                  (not (contains? (get model (:id origin)) :geometry-group)))
            (assoc-in result [id :geometry-group] (author-geometry shape parent))
            result)))
      model model)))
@@ -891,9 +901,8 @@
         retained-orientation? (or (not (mth/close? (mod (or (:rotation old-root) 0) 360) rotation 0.01))
                                   (not= (boolean (:flip-x old-root)) (flip :flip-x))
                                   (not= (boolean (:flip-y old-root)) (flip :flip-y)))
-        ;; a switch keeps the old head's layout item values, and their overrides
-        layout-items (when keep?
-                       (into {} (filter #(.startsWith (name (key %)) "layout-item-")) (get model root-id)))
+        ;; a swap keeps the old head's layout item values, and their overrides
+        layout-items (into {} (filter #(.startsWith (name (key %)) "layout-item-")) (get model root-id))
         ;; a swap in a copy keeps an authored place its position does not give,
         ;; unless a layout places the head
         kept-place? (and (:shape-ref parent) position
