@@ -75,8 +75,21 @@ fn layout_span_texts_with_breaks(
             .iter()
             .map(|span| span.has_ruby().then(Vec::new))
             .collect();
-        let shifted =
-            line_breaks::apply_policy_with_breaks(&texts, &ruby_breaks, policy, emergency, forced);
+        // A base that crosses spans stays whole across their boundaries.
+        let group_of = paragraph.ruby_group_of_spans();
+        let joined: Vec<bool> = group_of
+            .iter()
+            .enumerate()
+            .map(|(index, group)| index > 0 && group.is_some() && *group == group_of[index - 1])
+            .collect();
+        let shifted = line_breaks::apply_policy_with_breaks(
+            &texts,
+            &ruby_breaks,
+            &joined,
+            policy,
+            emergency,
+            forced,
+        );
         if let Some((shifted, map)) = shifted {
             return (shifted, map);
         }

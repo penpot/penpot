@@ -9185,6 +9185,50 @@ msgstr "Añadir página"
 msgid "workspace.sitemap"
 msgstr "Mapa del sitio"
 
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.back"
+msgstr "Volver"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.combine"
+msgstr "Combinar"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.emphasis"
+msgstr "Énfasis"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.reading"
+msgstr "Lectura"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.reading-hint"
+msgstr "Selecciona texto sin lectura ni warichu, o una lectura completa"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.remove"
+msgstr "Quitar"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.ruby"
+msgstr "Ruby"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.ruby-options"
+msgstr "Opciones de ruby"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.single-span-hint"
+msgstr "Selecciona texto con un solo estilo o una anotación completa"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.title"
+msgstr "Anotaciones de texto"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.warichu"
+msgstr "Warichu"
+
 #: src/app/main/data/workspace/comments.cljs:49
 msgid "workspace.toast.comments-hidden"
 msgstr "Comentarios ocultos"

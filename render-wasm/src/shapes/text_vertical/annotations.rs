@@ -102,11 +102,12 @@ pub(super) fn ruby_strip_x(
     }
 }
 
-/// The base text of one ruby span: the transformed UTF-16 range it covers in
-/// its paragraph and the glyph count of its reading.
-#[derive(Debug, Clone, Copy)]
+/// The base text of one reading: its spans (`Paragraph::ruby_groups`), the
+/// transformed UTF-16 range they cover in their paragraph and the glyph
+/// count of the reading, which the first span holds.
+#[derive(Debug, Clone)]
 pub(super) struct RubyBaseUnit {
-    span: usize,
+    spans: std::ops::Range<usize>,
     start: usize,
     end: usize,
     /// Flow length of the reading set solid.
@@ -119,7 +120,7 @@ pub(super) struct RubyBaseUnit {
 
 impl RubyBaseUnit {
     fn annotates(&self, cell: &VerticalCell) -> bool {
-        cell.span == self.span && cell.start < self.end && cell.end > self.start
+        self.spans.contains(&cell.span) && cell.start < self.end && cell.end > self.start
     }
 
     /// Flow length of the reading set solid.
@@ -136,16 +137,29 @@ pub(super) fn ruby_base_units(
     span_starts: &[usize],
     fonts: &Fonts,
 ) -> Vec<RubyBaseUnit> {
+    let spans = paragraph.children();
     paragraph
-        .children()
-        .iter()
-        .zip(transforms)
-        .enumerate()
-        .filter(|(_, (span, transform))| span.has_ruby() && !transform.text.is_empty())
-        .map(|(span_index, (span, transform))| RubyBaseUnit {
-            span: span_index,
-            start: span_starts[span_index],
-            end: span_starts[span_index] + transform.text.encode_utf16().count(),
+        .ruby_groups()
+        .into_iter()
+        .filter(|group| {
+            group
+                .clone()
+                .any(|index| !transforms[index].text.is_empty())
+        })
+        .map(|group| {
+            let span = &spans[group.start];
+            let last = group.end - 1;
+            (
+                group.clone(),
+                span,
+                span_starts[group.start],
+                span_starts[last] + transforms[last].text.encode_utf16().count(),
+            )
+        })
+        .map(|(group, span, start, end)| RubyBaseUnit {
+            spans: group,
+            start,
+            end,
             ruby_length: if span.is_zhuyin() {
                 span.font_size
             } else {
@@ -250,7 +264,7 @@ fn units_by_span(ruby_units: &[RubyBaseUnit]) -> HashMap<usize, usize> {
     ruby_units
         .iter()
         .enumerate()
-        .map(|(index, unit)| (unit.span, index))
+        .flat_map(|(index, unit)| unit.spans.clone().map(move |span| (span, index)))
         .collect()
 }
 
@@ -300,7 +314,7 @@ pub(super) type RubyRooms = HashMap<(usize, usize), (f32, f32)>;
 pub(super) fn ruby_rooms(paragraph: usize, ruby_units: &[RubyBaseUnit]) -> RubyRooms {
     ruby_units
         .iter()
-        .map(|unit| ((paragraph, unit.span), unit.room))
+        .map(|unit| ((paragraph, unit.spans.start), unit.room))
         .collect()
 }
 
@@ -446,8 +460,9 @@ fn room_inside_column(
 
 /// Ruby (furigana) placement. Runs after column placement, since ruby follows
 /// its base's final column and flow extent. Group ruby keeps each base in one
-/// column, so each reading is one `RubyCell`. `rooms` holds the overhang
-/// room of each (paragraph, span).
+/// column, so each reading is one `RubyCell`, keyed by the first span of its
+/// base (`Paragraph::ruby_groups`). `rooms` holds the overhang room of each
+/// (paragraph, first span).
 pub(super) fn layout_ruby(
     text_content: &TextContent,
     cells: &[VerticalCell],
@@ -459,13 +474,19 @@ pub(super) fn layout_ruby(
     let span_cells = cells_by_span(cells);
     let column_cells = cells_by_column(cells);
     for (paragraph_index, paragraph) in text_content.paragraphs().iter().enumerate() {
-        for (span_index, span) in paragraph.children().iter().enumerate() {
-            if !span.has_ruby() {
+        for group in paragraph.ruby_groups() {
+            // The first span holds the reading; the base is the text of
+            // every span of the group.
+            let span_index = group.start;
+            let span = &paragraph.children()[span_index];
+            let base: Vec<usize> = group
+                .filter_map(|index| span_cells.get(&(paragraph_index, index)))
+                .flatten()
+                .copied()
+                .collect();
+            if base.is_empty() {
                 continue;
             }
-            let Some(base) = span_cells.get(&(paragraph_index, span_index)) else {
-                continue;
-            };
             let (Some(first), Some(last)) = (
                 base.iter()
                     .map(|index| &cells[*index])
@@ -1507,6 +1528,66 @@ mod tests {
                 "mark at {centre}, glyph ink centred at {ink_centre}"
             );
         }
+    }
+
+    fn reading_over(spans: Vec<TextSpan>) -> VerticalLayout {
+        layout_content(
+            &spans_content(
+                [vec![make_span("か")], spans, vec![make_span("か")]].concat(),
+                1000.0,
+            ),
+            1000.0,
+        )
+    }
+
+    #[test]
+    fn a_reading_joined_over_spans_of_other_styles_is_set_like_one_span() {
+        let one = reading_over(vec![TextSpan {
+            ruby: "にほんご".to_string(),
+            ..make_span("日本")
+        }]);
+        let joined = reading_over(vec![
+            TextSpan {
+                ruby: "にほんご".to_string(),
+                ..make_span("日")
+            },
+            TextSpan {
+                ruby: "にほんご".to_string(),
+                ruby_joins_previous: true,
+                text_emphasis: TextEmphasis::FilledSesame,
+                ..make_span("本")
+            },
+        ]);
+
+        assert_eq!(joined.ruby_cells.len(), 1, "one reading over the two spans");
+        let (one, joined) = (&one.ruby_cells[0], &joined.ruby_cells[0]);
+        assert_eq!(
+            joined.span, 1,
+            "the first span of the base holds the reading"
+        );
+        assert_eq!(joined.glyphs.len(), one.glyphs.len());
+        for (a, b) in one.glyph_tops.iter().zip(&joined.glyph_tops) {
+            assert!(
+                (a - b).abs() < 0.01,
+                "glyph at {b}, one span sets it at {a}"
+            );
+        }
+    }
+
+    #[test]
+    fn neighbour_readings_without_the_join_annotate_each_span() {
+        let layout = reading_over(vec![
+            TextSpan {
+                ruby: "てん".to_string(),
+                ..make_span("天")
+            },
+            TextSpan {
+                ruby: "てん".to_string(),
+                ..make_span("天")
+            },
+        ]);
+
+        assert_eq!(layout.ruby_cells.len(), 2);
     }
 
     fn neighbour_ruby_content(overhang: RubyOverhang) -> TextContent {

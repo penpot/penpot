@@ -628,6 +628,7 @@
            :current-file-id
            :workspace-editor-state
            :workspace-wasm-editor-styles
+           :workspace-wasm-editor-selection-rects
            :workspace-media-objects
            :workspace-presence
            :workspace-tokens

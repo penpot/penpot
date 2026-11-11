@@ -198,24 +198,35 @@ pub(super) fn horizontal_ruby_spacing_with(
         .collect()
     };
     let mut claims = OverhangClaims::new();
-    let mut span_start = 0usize;
-    for (index, (span, text)) in spans.iter().zip(texts).enumerate() {
-        let text_start = span_start;
-        span_start += text.encode_utf16().count();
-        if !span.has_ruby() {
-            continue;
-        }
-        // Source characters of the base; inserted spacing and joiners are not.
-        let mut utf16 = text_start;
-        let base: Vec<usize> = text
-            .chars()
-            .enumerate()
-            .filter(|(_, ch)| {
-                let inserted = offset_map.is_inserted(utf16);
-                utf16 += ch.len_utf16();
-                !inserted
+    // UTF-16 start of each span in the layout text.
+    let span_starts: Vec<usize> = texts
+        .iter()
+        .scan(0usize, |start, text| {
+            let span_start = *start;
+            *start += text.encode_utf16().count();
+            Some(span_start)
+        })
+        .collect();
+    for group in paragraph.ruby_groups() {
+        // The first span holds the reading and its presentation.
+        let index = group.start;
+        let span = &spans[index];
+        // Source characters of the base, as (span, char index); inserted
+        // spacing and joiners are not.
+        let base: Vec<(usize, usize)> = group
+            .clone()
+            .flat_map(|member| {
+                let mut utf16 = span_starts[member];
+                texts[member]
+                    .chars()
+                    .enumerate()
+                    .filter(move |(_, ch)| {
+                        let inserted = offset_map.is_inserted(utf16);
+                        utf16 += ch.len_utf16();
+                        !inserted
+                    })
+                    .map(move |(char_index, _)| (member, char_index))
             })
-            .map(|(char_index, _)| char_index)
             .collect();
         let Some(&last) = base.last() else {
             continue;
@@ -223,8 +234,8 @@ pub(super) fn horizontal_ruby_spacing_with(
         if span.is_zhuyin() {
             // Inter-character annotations consume inline space, not ruby's
             // above/below leading. Reserve the strip even at a line end.
-            for char_index in &base {
-                spacing.adjustments[index].push((
+            for (member, char_index) in &base {
+                spacing.adjustments[*member].push((
                     *char_index,
                     span.font_size * super::super::text_zhuyin::STRIP_WIDTH,
                 ));
@@ -232,10 +243,21 @@ pub(super) fn horizontal_ruby_spacing_with(
             continue;
         }
         let ruby_font_size = span.ruby_font_size();
-        let base_width = advances(span, &span.apply_text_transform(), span.font_size)
-            .iter()
-            .sum::<f32>()
-            + span.letter_spacing * base.len() as f32;
+        let base_width: f32 = group
+            .clone()
+            .map(|member| {
+                let member_span = &spans[member];
+                let chars = base.iter().filter(|(owner, _)| *owner == member).count();
+                advances(
+                    member_span,
+                    &member_span.apply_text_transform(),
+                    member_span.font_size,
+                )
+                .iter()
+                .sum::<f32>()
+                    + member_span.letter_spacing * chars as f32
+            })
+            .sum();
         // The painter sets the reading in pieces (see `RubyLine::paint`).
         let shaped = shape_segment_with_fallbacks(
             span.ruby_text(),
@@ -250,8 +272,8 @@ pub(super) fn horizontal_ruby_spacing_with(
         let (_, pieces, _) =
             horizontal_ruby_pieces(&ruby_glyph_refs(span.ruby_text(), &shaped, ruby_font_size));
         let ruby_length: f32 = pieces.iter().sum();
-        let previous = layout_neighbour(texts, index, false);
-        let next = layout_neighbour(texts, index, true);
+        let previous = layout_neighbour(texts, group.start, false);
+        let next = layout_neighbour(texts, group.end - 1, true);
         let room = |neighbour: Option<(usize, usize, char)>| {
             neighbour.map_or(0.0, |(owner, _, ch)| {
                 ruby_overhang_room(
@@ -276,16 +298,20 @@ pub(super) fn horizontal_ruby_spacing_with(
             continue;
         }
         spacing.base_gaps[index] = gap;
-        for &char_index in &base {
-            let amount = if char_index == last { gap / 2.0 } else { gap };
-            spacing.adjustments[index].push((char_index, amount));
+        for &(member, char_index) in &base {
+            let amount = if (member, char_index) == last {
+                gap / 2.0
+            } else {
+                gap
+            };
+            spacing.adjustments[member].push((char_index, amount));
         }
         match previous {
             Some((owner, char_index, _)) => {
                 spacing.adjustments[owner].push((char_index, gap / 2.0));
                 spacing.leading_gaps[index] = gap / 2.0;
             }
-            None => spacing.adjustments[index].push((last, gap / 2.0)),
+            None => spacing.adjustments[last.0].push((last.1, gap / 2.0)),
         }
     }
     spacing
@@ -317,24 +343,42 @@ pub(super) fn split_counts_by_extent(extents: &[f32], total: usize) -> Vec<usize
     counts
 }
 
-/// (span index, builder-text range) of every span whose ruby is painted:
-/// visible ruby on a base that is not warichu.
+/// (first span index, builder-text range) of every base whose ruby is
+/// painted: visible ruby on a base that is not warichu. A base covers the
+/// spans of its `Paragraph::ruby_groups` entry; its first span holds the
+/// reading and its presentation.
 pub(super) fn horizontal_ruby_targets(
     paragraph: &Paragraph,
     offsets: &HorizontalOffsets,
 ) -> Vec<(usize, std::ops::Range<usize>)> {
     paragraph
-        .children()
-        .iter()
-        .zip(&offsets.ranges)
-        .filter(|(span, range)| span.has_ruby() && range.builder_start < range.builder_end)
-        .map(|(_, range)| {
-            (
-                range.span,
-                offsets.transformed_to_builder(range.source_start)..range.builder_end,
-            )
+        .ruby_groups()
+        .into_iter()
+        .filter_map(|spans| {
+            let first = offsets.ranges.get(spans.start)?;
+            let last = offsets.ranges.get(spans.end - 1)?;
+            let start = offsets.transformed_to_builder(first.source_start);
+            (start < last.builder_end).then_some((first.span, start..last.builder_end))
         })
         .collect()
+}
+
+/// Rects of a base range joined per line: a base that crosses spans or
+/// font runs gets one rect for each run, but its reading spreads over the
+/// whole line part.
+fn base_line_rects(rects: Vec<skia::textlayout::TextBox>) -> Vec<skia::textlayout::TextBox> {
+    let mut lines: Vec<skia::textlayout::TextBox> = Vec::new();
+    for rect in rects {
+        match lines.last_mut() {
+            Some(line)
+                if rect.rect.top() < line.rect.bottom() && rect.rect.bottom() > line.rect.top() =>
+            {
+                line.rect.join(rect.rect)
+            }
+            _ => lines.push(rect),
+        }
+    }
+    lines
 }
 
 /// Paint of the pass that laid out the base: fill, stroke, shadow or mask.
@@ -548,11 +592,11 @@ fn visit_horizontal_ruby_glyphs(
             &offsets.ranges[span_index],
             merge_fills(&span.fills, bounds),
         );
-        let rects = laid_out.get_rects_for_range(
+        let rects = base_line_rects(laid_out.get_rects_for_range(
             span_range,
             skia::textlayout::RectHeightStyle::Tight,
             skia::textlayout::RectWidthStyle::Tight,
-        );
+        ));
         if let Some(syllable) = super::super::text_zhuyin::syllable(span) {
             if let Some(rect) = rects.first() {
                 let (origin, glyphs) = horizontal_zhuyin_glyphs(

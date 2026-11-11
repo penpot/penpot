@@ -71,20 +71,22 @@
 (def ruby-presentation-attrs
   [:ruby-hidden :ruby-zhuyin :ruby-size :ruby-align :ruby-overhang :ruby-side])
 
-;; Span attrs; `:ruby` holds the reading (furigana) of the span.
+;; Span attrs; `:ruby` holds the reading (furigana) of the span and
+;; `:ruby-group` joins it to the spans of the same reading (`ruby-groups`).
 (def span-attrs
-  (into [:text-combine-upright :text-emphasis :text-emphasis-position :text-underline-position :ruby]
+  (into [:text-combine-upright :text-emphasis :text-emphasis-position :text-underline-position
+         :ruby :ruby-group]
         (concat ruby-presentation-attrs
                 [:warichu :font-features :annotation-clearance])))
 
 ;; Span attrs owned by the span's characters, not its style: a reading or a
-;; warichu note annotates one span and is never copied to other text.
+;; warichu note annotates its own text and is never copied to other text.
 (def text-content-attrs
-  [:ruby :warichu])
+  [:ruby :ruby-group :warichu])
 
 ;; Values of the span attrs above when a span does not store them.
 (def span-attr-defaults
-  (into {:ruby "" :ruby-hidden false :ruby-zhuyin false}
+  (into {:ruby "" :ruby-group "" :ruby-hidden false :ruby-zhuyin false}
         (comp (filter #(contains? enum-values %))
               (map (juxt identity enum-default)))
         span-attrs))
@@ -176,6 +178,67 @@
   [node]
   (not (str/blank? (:ruby node))))
 
+(defn ruby-joins-previous?
+  "True when text node `node` continues the reading of `previous`, the node
+  before it: both carry the same reading in the same non-blank
+  `:ruby-group`, so their text is one base whose first node sets the
+  presentation. Without a group, neighbours with the same reading stay
+  apart, as in 天天 (tiān tiān). Zhuyin annotates one character, so its
+  nodes stand alone."
+  [previous node]
+  (let [group (:ruby-group node)]
+    (boolean
+     (and (some? previous)
+          (string? group)
+          (not (str/blank? group))
+          (= group (:ruby-group previous))
+          (ruby-span? node)
+          (ruby-span? previous)
+          (not= "warichu" (:warichu node))
+          (not= "warichu" (:warichu previous))
+          (not (true? (:ruby-zhuyin node)))
+          (not (true? (:ruby-zhuyin previous)))
+          (= (str/trim (:ruby node)) (str/trim (:ruby previous)))))))
+
+(defn ruby-groups
+  "Index ranges `[start end)` of the text `nodes` of a paragraph whose text is
+  one ruby base: a node with a reading and the nodes after it that join it
+  (`ruby-joins-previous?`). A reading over characters of several styles,
+  such as some with emphasis marks, is one base."
+  [nodes]
+  (let [nodes (vec nodes)]
+    (reduce (fn [groups index]
+              (let [node (nth nodes index)]
+                (cond
+                  (not (ruby-span? node))
+                  groups
+
+                  (and (seq groups)
+                       (= index (second (peek groups)))
+                       (ruby-joins-previous? (nth nodes (dec index)) node))
+                  (conj (pop groups) [(first (peek groups)) (inc index)])
+
+                  :else
+                  (conj groups [index (inc index)]))))
+            []
+            (range (count nodes)))))
+
+(defn ruby-base-runs
+  "Index ranges `[start end)` that cover the `nodes` of a paragraph in order:
+  each reading over several nodes (`ruby-groups`) as one range, every other
+  node alone. Renderers draw a range as one reading over its nodes."
+  [nodes]
+  (let [nodes  (vec nodes)
+        starts (into {} (comp (filter (fn [[start end]] (> (- end start) 1)))
+                              (map (juxt first identity)))
+                     (ruby-groups nodes))]
+    (loop [index 0
+           runs  []]
+      (if (>= index (count nodes))
+        runs
+        (let [[_ end :as run] (get starts index [index (inc index)])]
+          (recur end (conj runs run)))))))
+
 (defn annotated-span?
   "True when a text node carries a ruby reading or is a warichu note."
   [node]
@@ -250,7 +313,7 @@
       nil)))
 
 (def ^:private ruby-attrs
-  (into #{:ruby} ruby-presentation-attrs))
+  (into #{:ruby :ruby-group} ruby-presentation-attrs))
 
 ;; CJK attrs each language renders; the others stay in the content and come
 ;; back when the text takes that language again.

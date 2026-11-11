@@ -167,6 +167,8 @@ pub(crate) fn horizontal_pairwise_justify_spacing(
         })
         .collect();
     let mut result = vec![Vec::new(); plan.texts.len()];
+    // Ruby base of each span: distribution never opens a base.
+    let group_of = paragraph.ruby_group_of_spans();
     let notes: Vec<_> = plan
         .offsets
         .ranges
@@ -202,8 +204,8 @@ pub(crate) fn horizontal_pairwise_justify_spacing(
                 || nonbreaking
                 || starts.binary_search(&(index + 1)).is_err()
                 || (distribute
-                    && before.span == after.span
-                    && paragraph.children()[before.span].has_ruby())
+                    && group_of[before.span].is_some()
+                    && group_of[before.span] == group_of[after.span])
                 || note.is_some_and(|r| {
                     r.builder_start > before.utf16 && r.builder_start < after.utf16
                 })

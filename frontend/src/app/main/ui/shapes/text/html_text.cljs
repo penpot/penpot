@@ -49,6 +49,32 @@
       [:span.text-node {:style style :class class}
        (if (= text "") "\u00A0" (sts/text-children text node))])))
 
+(mf/defc render-ruby-group*
+  "One reading over the text `nodes` of its base (`cjk/ruby-groups`), each
+  node with its own style. The first node holds the reading."
+  {::mf/private true}
+  [{:keys [nodes shape is-code]}]
+  (let [node  (first nodes)
+        class (when is-code (:$id node))
+        ruby  (cjk/visible-ruby node)]
+    (if (some? ruby)
+      [:ruby.ruby-node {:style (sts/generate-ruby-container-styles node)
+                        :class (when is-code (dm/str class "-ruby"))}
+       (for [[index node] (d/enumerate nodes)]
+         [:span.text-node {:key index
+                           :style (sts/generate-text-styles shape node)
+                           :class (when is-code (:$id node))}
+          (sts/text-children (:text node) node)])
+       [:rt {:style (sts/generate-ruby-styles shape node)
+             :class (when is-code (dm/str class "-rt"))}
+        ruby]]
+      [:*
+       (for [[index node] (d/enumerate nodes)]
+         [:span.text-node {:key index
+                           :style (sts/generate-text-styles shape node)
+                           :class (when is-code (:$id node))}
+          (sts/text-children (:text node) node)])])))
+
 (mf/defc render-root*
   [{:keys [node children shape is-code]}]
   (let [style (sts/generate-root-styles shape node is-code)
@@ -85,15 +111,21 @@
                         "paragraph" render-paragraph*
                         nil)]
         (when component
-          [:> component props
-           (for [[index child-node] (d/enumerate children)]
-             [:> render-node*
-              (mf/spread-props props
-                               {:node child-node
-                                :parent parent
-                                :index index
-                                :key index
-                                :is-code is-code})])])))))
+          (let [children (vec children)]
+            [:> component props
+             (for [[start end] (cjk/ruby-base-runs children)]
+               (if (= (inc start) end)
+                 [:> render-node*
+                  (mf/spread-props props
+                                   {:node (nth children start)
+                                    :parent parent
+                                    :index start
+                                    :key start
+                                    :is-code is-code})]
+                 [:> render-ruby-group* {:key start
+                                         :nodes (subvec children start end)
+                                         :shape (unchecked-get props "shape")
+                                         :is-code is-code}]))]))))))
 
 (mf/defc text-shape*
   {::mf/forward-ref true}

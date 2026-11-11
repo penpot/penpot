@@ -148,6 +148,10 @@
                :lengthAdjust "spacingAndGlyphs"
                :style style}))
       (let [rtl?       (= "rtl" (:direction data))
+            ;; A reading over several strips spans its whole base.
+            data       (assoc data
+                              :x (:ruby-x data (:x data))
+                              :width (:ruby-width data (:width data)))
             ruby-align (if word? "center" (:ruby-align data (cjk/enum-default :ruby-align)))
             fit?       (and (not word?)
                             (or (= "none" (:ruby-overhang data (cjk/enum-default :ruby-overhang)))

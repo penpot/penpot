@@ -112,3 +112,54 @@
     (let [para   {:children [{:text "ab"} {:text "cd" :text-emphasis "filled-dot"} {:text "ef"}]}
           result (apply-attrs-to-paragraph para 2 4 {:text-emphasis "none"})]
       (t/is (= [{:text "abcdef"}] (:children result))))))
+
+(defn- editor-selection
+  "A WASM editor selection from `start` to `end` in the first paragraph."
+  [start end]
+  {:anchor-para 0 :anchor-offset start :focus-para 0 :focus-offset end})
+
+(def ^:private reading-text
+  "日本 has one reading over two spans, the second with emphasis; 語 has
+  none; 天 has a reading of its own, without a group."
+  (content [(para [{:text "日" :ruby "にほん" :ruby-group "g"}
+                   {:text "本" :ruby "にほん" :ruby-group "g" :text-emphasis "filled-sesame"}
+                   {:text "語"}
+                   {:text "を" :text-emphasis "filled-dot"}
+                   {:text "天" :ruby "てん"}])]))
+
+(t/deftest a-reading-takes-text-of-several-styles
+  (t/is (text-editor/reading-selection?
+         (content [(para [{:text "日"} {:text "本" :text-emphasis "filled-dot"}])])
+         (editor-selection 0 2))
+        "emphasis on part of the text does not block a reading"))
+
+(t/deftest a-reading-edits-a-whole-base-only
+  (t/is (text-editor/reading-selection? reading-text (editor-selection 0 2))
+        "the whole base of a reading over two spans")
+  (t/is (not (text-editor/reading-selection? reading-text (editor-selection 1 2)))
+        "part of a base")
+  (t/is (not (text-editor/reading-selection? reading-text (editor-selection 1 3)))
+        "a base and the text after it")
+  (t/is (text-editor/reading-selection? reading-text (editor-selection 2 4))
+        "text of two styles without readings")
+  (t/is (text-editor/reading-selection? reading-text (editor-selection 4 5))
+        "the whole of a reading without a group"))
+
+(t/deftest a-warichu-note-takes-one-span
+  (t/is (text-editor/single-span-selection? reading-text (editor-selection 2 3)))
+  (t/is (not (text-editor/single-span-selection? reading-text (editor-selection 2 4)))))
+
+(t/deftest emphasis-on-part-of-a-grouped-reading-keeps-one-base
+  (let [paragraph {:children [{:text "日本" :ruby "にほん" :ruby-group "g"} {:text "語"}]}
+        result    (apply-attrs-to-paragraph paragraph 1 2 {:text-emphasis "filled-dot"})]
+    (t/is (= [{:text "日" :ruby "にほん" :ruby-group "g"}
+              {:text "本" :ruby "にほん" :ruby-group "g" :text-emphasis "filled-dot"}
+              {:text "語"}]
+             (:children result)))))
+
+(t/deftest emphasis-on-part-of-a-reading-without-a-group-covers-its-base
+  (let [paragraph {:children [{:text "日本" :ruby "にほん"} {:text "語"}]}
+        result    (apply-attrs-to-paragraph paragraph 1 2 {:text-emphasis "filled-dot"})]
+    (t/is (= [{:text "日本" :ruby "にほん" :text-emphasis "filled-dot"} {:text "語"}]
+             (:children result))
+          "splitting it would repeat the reading")))

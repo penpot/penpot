@@ -23,3 +23,20 @@
           (update-in state [:workspace-wasm-editor-styles id]
                      (fn [current-styles]
                        (merge defaults current-styles new-styles))))))))
+
+(defn v3-update-text-editor-selection-rect
+  "Store the box around the text selected in the editor of the text `id`, in
+  page coordinates, or drop it when `rect` is nil: the selection collapsed."
+  [id rect]
+  (ptk/reify ::v3-update-text-editor-selection-rect
+    ptk/UpdateEvent
+    (update [_ state]
+      (cond
+        (not= id (get-in state [:workspace-local :edition]))
+        state
+
+        (nil? rect)
+        (update state :workspace-wasm-editor-selection-rects dissoc id)
+
+        :else
+        (assoc-in state [:workspace-wasm-editor-selection-rects id] rect)))))

@@ -56,10 +56,12 @@
 (t/deftest reading-selection-stays-with-one-base-group
   (let [content (editor-content [{:text "你好"} {:text "世界" :font-weight "700"}]
                                 [{:text "中国" :ruby "zhōng guó"}])]
+    ;; A reading joins text of several styles into one base.
     (doseq [range [(selection 0 0 0 1) (selection 0 2 0 0)
-                   (selection 0 2 0 4) (selection 1 0 1 2)]]
+                   (selection 0 2 0 4) (selection 1 0 1 2)
+                   (selection 0 1 0 3)]]
       (t/is (true? (text-editor/reading-selection? content range))))
-    (doseq [range [(selection 0 1 0 3) (selection 0 0 1 2)
+    (doseq [range [(selection 0 0 1 2)
                    (selection 0 1 0 1) (selection 1 0 1 1)]]
       (t/is (false? (text-editor/reading-selection? content range))))
     (t/is (false? (text-editor/reading-selection? nil nil)))))
@@ -73,6 +75,7 @@
               :text-emphasis-position "auto"
               :text-underline-position "auto"
               :ruby "にち"
+              :ruby-group ""
               :ruby-hidden false
               :ruby-zhuyin false
               :ruby-size "half"
@@ -89,6 +92,7 @@
               :text-emphasis-position "auto"
               :text-underline-position "auto"
               :ruby ""
+              :ruby-group ""
               :ruby-hidden false
               :ruby-zhuyin false
               :ruby-size "half"
@@ -141,6 +145,7 @@
               :text-emphasis-position :multiple
               :text-underline-position :multiple
               :ruby :multiple
+              :ruby-group ""
               :ruby-hidden :multiple
               :ruby-zhuyin false
               :ruby-size :multiple

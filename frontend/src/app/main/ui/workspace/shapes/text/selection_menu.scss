@@ -1,0 +1,207 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
+
+%surface {
+  background-color: var(--color-background-tertiary);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  box-shadow: 0 px2rem(2) px2rem(8) 0 var(--color-shadow-light);
+}
+
+%plain-button {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  block-size: $sz-32;
+  border: none;
+  border-radius: $br-6;
+  background: transparent;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--color-background-quaternary);
+  }
+
+  &:focus-visible {
+    outline: $b-1 solid var(--color-accent-primary);
+  }
+}
+
+// Its left and top, set inline, are the centre of the selection top edge.
+.selection-menu {
+  @extend %surface;
+
+  --selection-menu-margin: var(--sp-s);
+
+  position: absolute;
+  translate: -50% calc(-100% - var(--selection-menu-margin));
+  display: flex;
+  align-items: center;
+  column-gap: var(--sp-xxs);
+  padding: var(--sp-xs);
+  white-space: nowrap;
+  pointer-events: auto;
+}
+
+.ruby-view {
+  column-gap: var(--sp-s);
+}
+
+.menu-item {
+  @extend %plain-button;
+
+  column-gap: px2rem(6);
+  padding: 0 var(--sp-s);
+  color: var(--color-foreground-primary);
+
+  &[aria-expanded="true"] {
+    background-color: var(--color-background-quaternary);
+  }
+
+  &[aria-disabled="true"] {
+    color: var(--color-foreground-secondary);
+    cursor: default;
+
+    &:hover {
+      background: transparent;
+    }
+  }
+}
+
+// The selected text has the annotation.
+.menu-item-active {
+  background-color: var(--color-background-quaternary);
+  color: var(--color-accent-primary);
+}
+
+.label {
+  @include use-typography("body-small");
+}
+
+.glyph {
+  @include use-typography("body-medium");
+
+  inline-size: $sz-16;
+  text-align: center;
+}
+
+.caret {
+  color: var(--color-icon-default);
+}
+
+.separator {
+  inline-size: $b-1;
+  block-size: px2rem(20);
+  margin: 0;
+  border: none;
+  background-color: var(--color-background-quaternary);
+}
+
+// The list hangs below the Emphasis button, past the menu padding and border.
+.emphasis-anchor {
+  position: relative;
+}
+
+.emphasis-list {
+  @extend %surface;
+
+  position: absolute;
+  inset-block-start: calc(100% + 2 * var(--sp-xs) + #{$b-1});
+  inset-inline-start: 0;
+  display: flex;
+  flex-direction: column;
+  inline-size: $sz-200;
+  margin: 0;
+  padding: var(--sp-xs);
+  list-style: none;
+}
+
+.emphasis-option {
+  @extend %plain-button;
+
+  column-gap: var(--sp-s);
+  inline-size: 100%;
+  padding: 0 var(--sp-m);
+  color: var(--color-foreground-primary);
+}
+
+.emphasis-check {
+  color: var(--color-accent-primary);
+  visibility: hidden;
+}
+
+.emphasis-mark-none {
+  color: var(--color-foreground-secondary);
+}
+
+.emphasis-label {
+  @include use-typography("body-small");
+}
+
+.emphasis-option-selected {
+  .emphasis-check {
+    visibility: visible;
+  }
+
+  .emphasis-label {
+    color: var(--color-accent-primary);
+  }
+}
+
+.back-button {
+  @extend %plain-button;
+
+  column-gap: var(--sp-xs);
+  padding: 0 var(--sp-xs);
+  color: var(--color-foreground-secondary);
+}
+
+.reading-input {
+  @include use-typography("body-medium");
+
+  inline-size: px2rem(180);
+  block-size: $sz-32;
+  margin: 0;
+  padding: 0 var(--sp-s);
+  border: $b-1 solid transparent;
+  border-radius: $br-6;
+  background-color: var(--color-background-primary);
+  color: var(--color-foreground-primary);
+  caret-color: var(--color-accent-primary);
+
+  &:focus {
+    border-color: var(--color-accent-primary);
+    outline: none;
+  }
+
+  &[aria-invalid="true"] {
+    border-color: var(--color-accent-error);
+  }
+}
+
+.remove-button {
+  @extend %plain-button;
+
+  padding: 0 var(--sp-s);
+  color: var(--color-foreground-primary);
+}
+
+.more-button {
+  @extend %plain-button;
+
+  padding: 0 var(--sp-s);
+  color: var(--color-foreground-secondary);
+}
+
+// The menu icon is vertical; the design shows it lying down.
+.more-icon {
+  rotate: 90deg;
+}

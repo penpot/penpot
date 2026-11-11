@@ -417,16 +417,30 @@
 ;; See `request-render-preserving-target`.
 (defonce ^:private preserve-target-render? (atom false))
 
+(defn- sync-text-editor-selection-rect!
+  "Store the box around the editor selection when it moved: the selection,
+   the text or its layout changed."
+  []
+  (let [shape-id (text-editor/text-editor-get-active-shape-id)
+        rect     (text-editor/text-editor-get-selection-rect)]
+    (when (not= rect (dm/get-in @st/state [:workspace-wasm-editor-selection-rects shape-id]))
+      (st/emit! (texts/v3-update-text-editor-selection-rect shape-id rect)))))
+
 (defn- drain-text-editor-events!
   "Pop and handle every pending text-editor event.
 
-   StylesChanged syncs the caret's current styles to the toolbar. Returns true
-   when some event needs a full shape re-render (content or layout changed)."
+   StylesChanged syncs the caret's current styles to the toolbar, and any
+   event refreshes the box around the selection. Returns true when some event
+   needs a full shape re-render (content or layout changed)."
   []
-  (loop [needs-render? false]
+  (loop [needs-render? false
+         drained?      false]
     (let [ev (text-editor/text-editor-poll-event)]
       (if (or (nil? ev) (= ev TEXT_EDITOR_EVENT_NONE))
-        needs-render?
+        (do
+          (when drained?
+            (sync-text-editor-selection-rect!))
+          needs-render?)
         (do
           (when (= ev TEXT_EDITOR_EVENT_STYLES_CHANGED)
             (let [current-styles (merge
@@ -438,7 +452,8 @@
               (st/emit! (texts/v3-update-text-editor-styles shape-id current-styles))))
           (recur (or needs-render?
                      (= ev TEXT_EDITOR_EVENT_CONTENT_CHANGED)
-                     (= ev TEXT_EDITOR_EVENT_NEEDS_LAYOUT))))))))
+                     (= ev TEXT_EDITOR_EVENT_NEEDS_LAYOUT))
+                 true))))))
 
 ;; This should never be called from the outside.
 (defn- render
@@ -3053,6 +3068,42 @@
          :fills           (get element :fills)
          :text            (subs element-text start-pos end-pos)})))))
 
+(defn- ruby-base-starts
+  "First span of the reading of each span of `paragraph` that has one
+  (`cjk/ruby-groups`), by span index."
+  [paragraph]
+  (into {}
+        (mapcat (fn [[start end]] (map (fn [span] [span start]) (range start end))))
+        (cjk/ruby-groups (:children paragraph))))
+
+(defn- join-ruby-strips
+  "A horizontal reading draws once per line of its base. When its base has
+  several strips on a line (spans of other styles, fallback fonts), the
+  first keeps the reading, spread over all of them (`:ruby-x`,
+  `:ruby-width`), and the others drop it. `::ruby-base` keys each strip
+  with a reading by its paragraph and base."
+  [entries]
+  (let [line-of (fn [entry] [(::ruby-base entry) (:y entry)])
+        lines   (->> entries
+                     (filter #(and (some? (::ruby-base %)) (some? (:ruby %))))
+                     (group-by line-of))]
+    (mapv (fn [entry]
+            (let [strips (get lines (line-of entry))
+                  first? (identical? entry (first strips))
+                  entry  (dissoc entry ::ruby-base)]
+              (cond
+                (< (count strips) 2)
+                entry
+
+                first?
+                (let [left  (apply min (map :x strips))
+                      right (apply max (map #(+ (:x %) (:width %)) strips))]
+                  (assoc entry :ruby-x left :ruby-width (- right left)))
+
+                :else
+                (dissoc entry :ruby))))
+          entries)))
+
 (defn calculate-position-data
   [shape]
   (when (initialized?)
@@ -3078,19 +3129,24 @@
 
       (mem/free)
 
-      (into []
-            (keep
-             (fn [{:keys [paragraph span direction] :as entry}]
-               (let [paragraph-node (-> content :children
-                                        (get 0) :children ;; paragraph-set
-                                        (get paragraph))
-                     element        (-> paragraph-node :children (get span))]
-                 (condp = direction
-                   POSITION-DATA-RUBY          (ruby-strip-entry element entry)
-                   POSITION-DATA-ZHUYIN        (zhuyin-glyph-entry element entry)
-                   POSITION-DATA-EMPHASIS-MARK (emphasis-mark-entry element entry)
-                   (text-strip-entry paragraph-node element entry)))))
-            result))))
+      (let [base-starts (memoize ruby-base-starts)]
+        (->> result
+             (into []
+                   (keep
+                    (fn [{:keys [paragraph span direction] :as entry}]
+                      (let [paragraph-node (-> content :children
+                                               (get 0) :children ;; paragraph-set
+                                               (get paragraph))
+                            element        (-> paragraph-node :children (get span))]
+                        (condp = direction
+                          POSITION-DATA-RUBY          (ruby-strip-entry element entry)
+                          POSITION-DATA-ZHUYIN        (zhuyin-glyph-entry element entry)
+                          POSITION-DATA-EMPHASIS-MARK (emphasis-mark-entry element entry)
+                          (some-> (text-strip-entry paragraph-node element entry)
+                                  (assoc ::ruby-base
+                                         (when-let [start (get (base-starts paragraph-node) span)]
+                                           [paragraph start]))))))))
+             (join-ruby-strips))))))
 
 (defn apply-canvas-blur
   []

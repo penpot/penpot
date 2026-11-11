@@ -390,3 +390,30 @@
     (is (str/includes? css "text-emphasis-position: over left"))
     (is (str/includes? css "text-underline-position: under right"))
     (is (str/includes? css "text-emphasis-position: under right"))))
+
+(def ^:private joined-ruby-text-content
+  "One reading over two spans, the second with emphasis marks."
+  (assoc-in ruby-text-content [:children 0 :children 0 :children]
+            [{:text "漢" :ruby "かんじ" :ruby-group "g" :font-size "20"
+              :fill-color "#000000" :fill-opacity 1}
+             {:text "字" :ruby "かんじ" :ruby-group "g" :font-size "20"
+              :text-emphasis "filled-dot" :fill-color "#000000" :fill-opacity 1}]))
+
+(defn- count-of [re text]
+  (count (re-seq re text)))
+
+(deftest a-reading-over-two-spans-is-one-ruby-in-the-markup
+  (testing "generated markup and the foreignObject render draw the reading once over both spans"
+    (let [text (text-shape joined-ruby-text-content)]
+      (doseq [markup [(html/generate-markup (objects text) [text])
+                      (rds/renderToStaticMarkup
+                       (mf/element fo-text/text-shape* #js {:shape text :grow-type :fixed}))]]
+        (is (= 1 (count-of #"<ruby" markup)))
+        (is (= 1 (count-of #"かんじ" markup)))
+        (is (re-find #"<ruby[^>]*>.*漢.*字.*<rt" markup))))))
+
+(deftest a-reading-over-two-spans-has-one-set-of-ruby-rules
+  (testing "the code rules the wrapper of the first span only"
+    (let [css (css/generate-text-css (text-shape joined-ruby-text-content))]
+      (is (= 1 (count-of #"-ruby \{" css)))
+      (is (= 1 (count-of #"-rt \{" css))))))

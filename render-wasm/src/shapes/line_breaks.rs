@@ -173,12 +173,15 @@ pub fn apply_policy_to_span_texts(
     ruby_breaks: &[Option<Vec<usize>>],
     policy: TextLayoutPolicy,
 ) -> Option<(Vec<String>, OffsetMap)> {
-    apply_policy_with_breaks(span_texts, ruby_breaks, policy, &[], &[])
+    apply_policy_with_breaks(span_texts, ruby_breaks, &[], policy, &[], &[])
 }
 
+/// `joined[span]` is true when the span continues the ruby base of the span
+/// before it, so its start is internal to that base too.
 pub fn apply_policy_with_breaks(
     span_texts: &[String],
     ruby_breaks: &[Option<Vec<usize>>],
+    joined: &[bool],
     policy: TextLayoutPolicy,
     emergency_breaks: &[usize],
     forced_breaks: &[usize],
@@ -211,7 +214,8 @@ pub fn apply_policy_with_breaks(
                 continue;
             }
             let current = (c, classify(c));
-            let ruby_forbids_break = local_utf16 > 0
+            let inside_base = local_utf16 > 0 || joined.get(span_index).copied().unwrap_or(false);
+            let ruby_forbids_break = inside_base
                 && ruby_breaks
                     .get(span_index)
                     .and_then(Option::as_ref)

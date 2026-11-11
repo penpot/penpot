@@ -22,6 +22,7 @@
    [app.common.render-wasm.serializers :as sr]
    [app.common.render-wasm.wasm :as wasm]
    [app.common.types.fills.impl :as types.fills.impl]
+   [app.common.types.text.cjk-layout :as cjk]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
@@ -142,7 +143,7 @@
         paragraph-font-weight (-> paragraph :font-weight serialize-font-weight)
         paragraph-line-height (serialize-line-height (get paragraph :line-height))]
     (reduce
-     (fn [offset span]
+     (fn [offset [previous span]]
        (let [font-style      (sr/translate-font-style (get span :font-style "normal"))
              font-size       (serialize-font-size (get span :font-size paragraph-font-size))
              line-height     (serialize-line-height (get span :line-height) paragraph-line-height)
@@ -194,7 +195,11 @@
              (mem/write-u8 dview ruby-size)
              (mem/write-u8 dview ruby-align)
              (mem/write-u8 dview ruby-overhang)
-             (mem/write-u8 dview (bit-or ruby-side (if (true? (:ruby-zhuyin span)) 2 0)))
+             ;; Bit 1 selects Zhuyin; bit 2 joins the span to the reading of
+             ;; the span before it (`cjk/ruby-groups`).
+             (mem/write-u8 dview (bit-or ruby-side
+                                         (if (true? (:ruby-zhuyin span)) 2 0)
+                                         (if (cjk/ruby-joins-previous? previous span) 4 0)))
              ;; Use the former padding bytes; the span header stays the same size.
              (mem/write-u8 dview emphasis-position)
              (mem/write-u8 dview underline-position)
@@ -211,7 +216,7 @@
              (mem/assert-written offset SPAN-ATTR-U8-SIZE)
              (write-span-fills dview fills))))
      offset
-     spans)))
+     (map vector (cons nil spans) spans))))
 
 (defn write-shape-text!
   "Writes one paragraph's spans + text into WASM and appends it to the current

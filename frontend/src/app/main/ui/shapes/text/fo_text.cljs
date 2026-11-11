@@ -30,6 +30,24 @@
       [:span.text-node {:style style}
        (if (= text "") "\u00A0" (sts/text-children text node))])))
 
+(mf/defc render-ruby-group*
+  "One reading over the text `nodes` of its base (`cjk/ruby-groups`), each
+  node with its own style. The first node holds the reading."
+  {::mf/private true}
+  [{:keys [nodes shape]}]
+  (let [node (first nodes)
+        ruby (cjk/visible-ruby node)]
+    (if (some? ruby)
+      [:ruby.ruby-node {:style (sts/generate-ruby-container-styles node)}
+       (for [[index node] (d/enumerate nodes)]
+         [:span.text-node {:key index :style (sts/generate-text-styles shape node)}
+          (sts/text-children (:text node) node)])
+       [:rt {:style (sts/generate-ruby-styles shape node)} ruby]]
+      [:*
+       (for [[index node] (d/enumerate nodes)]
+         [:span.text-node {:key index :style (sts/generate-text-styles shape node)}
+          (sts/text-children (:text node) node)])])))
+
 (mf/defc render-root*
   [{:keys [node children shape]}]
   (let [style (sts/generate-root-styles shape node)]
@@ -62,10 +80,15 @@
                         "paragraph" render-paragraph*
                         nil)]
         (when component
-          [:> component props
-           (for [[index child-node] (d/enumerate children)]
-             [:> render-node*
-              (mf/spread-props props {:node child-node :index index :key index})])])))))
+          (let [children (vec children)]
+            [:> component props
+             (for [[start end] (cjk/ruby-base-runs children)]
+               (if (= (inc start) end)
+                 [:> render-node*
+                  (mf/spread-props props {:node (nth children start) :index start :key start})]
+                 [:> render-ruby-group* {:key start
+                                         :nodes (subvec children start end)
+                                         :shape (unchecked-get props "shape")}]))]))))))
 
 (defn- next-color
   "Given a set of colors try to get a color not yet used"

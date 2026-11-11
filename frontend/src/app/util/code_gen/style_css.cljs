@@ -275,16 +275,31 @@ body {
               (types.text/node-seq types.text/is-text-node? (:content shape)))
     (dm/fmt ".% .tcy {\n%\n}" shape-selector (format-js-styles sts/tcy-run-style nil))))
 
+(defn- joined-ruby-ids
+  "Ids of the text nodes that continue the reading of an earlier node
+  (`cjk/ruby-groups`): the markup draws one reading per base, under the
+  wrapper of its first node."
+  [content]
+  (into #{}
+        (comp (filter types.text/is-paragraph-node?)
+              (mapcat (fn [paragraph]
+                        (let [nodes (vec (:children paragraph))]
+                          (for [[start end] (cjk/ruby-groups nodes)
+                                index (range (inc start) end)]
+                            (:$id (nth nodes index)))))))
+        (types.text/node-seq content)))
+
 (defn generate-text-css
   [shape]
-  (let [selector (cgc/shape->selector shape)]
-    (->> shape
-         :content
-         (legacy.txt/index-content)
+  (let [selector (cgc/shape->selector shape)
+        content  (legacy.txt/index-content (:content shape))
+        joined   (joined-ruby-ids content)]
+    (->> content
          (types.text/node-seq)
          (mapcat (fn [node]
                    [(node->css shape selector node)
-                    (ruby-css shape selector node)]))
+                    (when-not (contains? joined (:$id node))
+                      (ruby-css shape selector node))]))
          (cons (tcy-css shape selector))
          (remove nil?)
          (str/join "\n"))))

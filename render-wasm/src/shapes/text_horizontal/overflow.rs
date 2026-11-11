@@ -13,19 +13,25 @@ fn transformed_text(paragraph: &Paragraph) -> String {
         .collect()
 }
 
-/// UTF-16 ranges, in the transformed text, of the spans whose ruby or
-/// warichu must stay whole.
+/// UTF-16 ranges, in the transformed text, of the ruby bases
+/// (`Paragraph::ruby_groups`) and warichu spans that must stay whole.
 fn annotation_ranges(paragraph: &Paragraph) -> Vec<std::ops::Range<usize>> {
+    let group_of = paragraph.ruby_group_of_spans();
     let mut offset = 0;
-    paragraph
-        .children()
-        .iter()
-        .filter_map(|span| {
-            let start = offset;
-            offset += span.apply_text_transform().encode_utf16().count();
-            (span.has_ruby() || span.is_warichu()).then_some(start..offset)
-        })
-        .collect()
+    let mut ranges: Vec<(Option<usize>, std::ops::Range<usize>)> = Vec::new();
+    for (index, span) in paragraph.children().iter().enumerate() {
+        let start = offset;
+        offset += span.apply_text_transform().encode_utf16().count();
+        let group = group_of[index];
+        match ranges.last_mut() {
+            Some((last_group, range)) if group.is_some() && *last_group == group => {
+                range.end = offset
+            }
+            _ if group.is_some() || span.is_warichu() => ranges.push((group, start..offset)),
+            _ => {}
+        }
+    }
+    ranges.into_iter().map(|(_, range)| range).collect()
 }
 
 /// True when `position` falls strictly inside one of the ascending

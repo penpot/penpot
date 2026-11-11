@@ -76,6 +76,7 @@
             [:text-emphasis-position {:optional true} (schema:cjk-enum :text-emphasis-position)]
             [:text-underline-position {:optional true} (schema:cjk-enum :text-underline-position)]
             [:ruby {:optional true} :string]
+            [:ruby-group {:optional true} :string]
             [:ruby-hidden {:optional true} :boolean]
             [:ruby-zhuyin {:optional true} :boolean]
             [:ruby-size {:optional true} (schema:cjk-enum :ruby-size)]
@@ -113,6 +114,9 @@
     [:emphasis-mark {:optional true} :boolean]
     [:zhuyin-glyph {:optional true} :boolean]
     [:ruby {:optional true} :string]
+    ;; A horizontal reading over several strips of its base spans them all.
+    [:ruby-x {:optional true} ::sm/safe-number]
+    [:ruby-width {:optional true} ::sm/safe-number]
     [:ruby-size {:optional true} ::sm/text]
     [:ruby-align {:optional true} ::sm/text]
     [:ruby-overhang {:optional true} ::sm/text]

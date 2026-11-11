@@ -86,10 +86,15 @@ behavior; the supported modes do not claim complete CSS `keep-all` conformance.
 
 The Chinese layout panel offers typed Pinyin readings when the selected
 paragraph has an explicit Chinese profile. In the WASM text editor, select
-one character or a group within one text style, then enter its reading.
-To edit an existing reading, select its whole base. Selections across styles
-or paragraphs do not offer a reading field, which prevents repeated readings.
-For character-by-character readings, annotate each character separately.
+one character or a group, in any text styles, then enter its reading. A
+reading over spans of several styles, such as characters with and without
+emphasis marks, gives them one `ruby-group`; the renderer draws one base
+over the spans of a group (`Paragraph::ruby_groups`), whose first span holds
+the reading and its presentation. To edit an existing reading, select its
+whole base. Selections across paragraphs, or that cut a reading or warichu
+note, do not offer a reading field, which prevents repeated readings. For
+character-by-character readings, annotate each character separately:
+neighbours with the same reading but no shared group stay separate bases.
 
 Readings use the saved `ruby` attributes and the shared annotation renderer.
 They support size, alignment, overhang, side, hiding and annotation clearance.
@@ -145,8 +150,9 @@ Position data carries the mark's em box centred on it, because SVG export
 draws the mark at a font size of that box's width. Vertical marks already
 centre the glyph and their position-data box on the same point.
 
-Decoration edits that intersect a reading or note apply to its whole base,
-so changing a side cannot duplicate its reading on split spans. Other text
+Decoration edits that intersect a note, or a reading without a group, apply
+to its whole base, so changing a side cannot duplicate its reading on split
+spans. A grouped reading keeps one base when an edit splits its spans. Other text
 styles remain unchanged. Selection snapshots, Plugin API properties,
 CSS handoff and saved content retain the independent positions. CSS auto
 positions inherit the Chinese paragraph defaults; explicit positions emit

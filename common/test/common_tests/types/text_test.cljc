@@ -640,3 +640,38 @@
   (let [active (cjk/active-content (cjk-content {:text-language "ko"}) "ja")]
     (t/is (= "ko" (:text-language (first-paragraph active)))
           "the text language wins over the file language")))
+
+(defn- reading
+  ([text ruby] {:text text :ruby ruby})
+  ([text ruby group] {:text text :ruby ruby :ruby-group group}))
+
+(t/deftest a-reading-joins-the-spans-of-its-group
+  (let [nodes [(reading "日" "にほん" "g")
+               (assoc (reading "本" "にほん" "g") :text-emphasis "filled-sesame")
+               {:text "語"}]]
+    (t/is (cjk/ruby-joins-previous? (first nodes) (second nodes)))
+    (t/is (= [[0 2]] (cjk/ruby-groups nodes)))
+    (t/is (= [[0 2] [2 3]] (cjk/ruby-base-runs nodes)))))
+
+(t/deftest neighbours-with-the-same-reading-stay-apart-without-a-group
+  (let [nodes [(reading "天" "tiān") (reading "天" "tiān")]]
+    (t/is (not (cjk/ruby-joins-previous? (first nodes) (second nodes))))
+    (t/is (= [[0 1] [1 2]] (cjk/ruby-groups nodes)))
+    (t/is (= [[0 1] [1 2]] (cjk/ruby-base-runs nodes)))))
+
+(t/deftest a-group-joins-only-the-same-reading
+  (t/is (= [[0 1] [1 2]]
+           (cjk/ruby-groups [(reading "日" "に" "g") (reading "本" "ほん" "g")])))
+  (t/is (= [[0 1] [1 2]]
+           (cjk/ruby-groups [(reading "日" "にほん" "a") (reading "本" "にほん" "b")]))))
+
+(t/deftest zhuyin-and-warichu-spans-never-join
+  (t/is (= [[0 1] [1 2]]
+           (cjk/ruby-groups [(assoc (reading "天" "ㄊㄧㄢ" "g") :ruby-zhuyin true)
+                             (assoc (reading "天" "ㄊㄧㄢ" "g") :ruby-zhuyin true)])))
+  (t/is (not (cjk/ruby-joins-previous? (reading "割" "わり" "g")
+                                       (assoc (reading "注" "わり" "g") :warichu "warichu")))))
+
+(t/deftest the-ruby-group-is-text-content-not-style
+  (t/is (some #{:ruby-group} cjk/text-content-attrs))
+  (t/is (= "" (:ruby-group cjk/span-attr-defaults))))

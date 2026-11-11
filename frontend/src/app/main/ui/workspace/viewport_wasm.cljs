@@ -29,6 +29,7 @@
    [app.main.ui.measurements :as msr]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor*]]
    [app.main.ui.workspace.shapes.text.editor :as editor-v1]
+   [app.main.ui.workspace.shapes.text.selection-menu :as text-selection-menu]
    [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline*]]
    [app.main.ui.workspace.shapes.text.v2-editor :as editor-v2]
    [app.main.ui.workspace.shapes.text.v3-editor :as editor-v3]
@@ -695,7 +696,13 @@
 
       (when picking-color?
         [:> pixel-overlay/pixel-overlay-wasm* {:viewport-ref viewport-ref
-                                               :canvas-ref canvas-ref}])]
+                                               :canvas-ref canvas-ref}])
+
+      (when (and show-text-editor?
+                 (features/active-feature? @st/state "text-editor-wasm/v1"))
+        [:> text-selection-menu/selection-menu* {:shape editing-shape
+                                                 :vbox vbox
+                                                 :zoom zoom}])]
 
      [:canvas {:id "render"
                :data-testid "canvas-wasm-shapes"

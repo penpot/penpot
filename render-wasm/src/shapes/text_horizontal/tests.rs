@@ -2808,3 +2808,136 @@ fn push_out_first_keeps_push_out_when_it_resolves_the_line_start() {
         );
     }
 }
+
+fn reading_paragraph(spans: Vec<TextSpan>) -> Paragraph {
+    let mut paragraph = make_paragraph(
+        [vec![make_span("a", 0.0)], spans, vec![make_span("b", 0.0)]].concat(),
+        0.0,
+    );
+    paragraph.set_language("ja".to_string());
+    paragraph
+}
+
+fn long_reading(text: &str, joins_previous: bool) -> TextSpan {
+    TextSpan {
+        ruby: "MMMMMMMMMMMM".to_string(),
+        ruby_overhang: RubyOverhang::None,
+        ruby_joins_previous: joins_previous,
+        ..make_span(text, 0.0)
+    }
+}
+
+#[test]
+fn a_joined_long_reading_spreads_its_whole_base_like_one_span() {
+    init_state();
+    let one = test_ruby_spacing(&reading_paragraph(vec![long_reading("ii", false)]));
+    let paragraph = reading_paragraph(vec![
+        long_reading("i", false),
+        TextSpan {
+            text_emphasis: TextEmphasis::FilledDot,
+            ..long_reading("i", true)
+        },
+    ]);
+    let joined = test_ruby_spacing(&paragraph);
+    // A joiner keeps the line from breaking between the two spans.
+    let (texts, _) = paragraph.layout_span_texts();
+    let second = texts[2].chars().position(|ch| ch == 'i').unwrap();
+
+    let gap = one.base_gaps[1];
+    assert!(gap > 0.0, "the base grows under a long reading");
+    assert_eq!(joined.base_gaps[1], gap);
+    assert_eq!(joined.leading_gaps[1], one.leading_gaps[1]);
+    assert_eq!(joined.adjustments[1], vec![(0, gap)]);
+    assert_eq!(joined.adjustments[2], vec![(second, gap / 2.0)]);
+}
+
+#[test]
+fn a_joined_reading_never_breaks_between_its_spans() {
+    init_state();
+    let paragraph = reading_paragraph(vec![long_reading("日", false), long_reading("本", true)]);
+    let (texts, map) = paragraph.layout_span_texts();
+    let start = texts[..2]
+        .iter()
+        .map(|text| text.encode_utf16().count())
+        .sum::<usize>();
+
+    assert!(
+        texts[2].starts_with('\u{2060}') && map.is_inserted(start),
+        "a word joiner starts the joined span: {texts:?}"
+    );
+}
+
+#[test]
+fn a_joined_reading_has_one_target_over_its_spans() {
+    init_state();
+    let mut resources =
+        crate::render::RenderResources::try_new_headless().expect("headless resources");
+    let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+    let paragraph = reading_paragraph(vec![
+        long_reading("日", false),
+        long_reading("本", true),
+        long_reading("語", false),
+    ]);
+    let plan = HorizontalParagraphPlan::new(&paragraph);
+    let ranges = &plan.offsets.ranges;
+
+    assert_eq!(
+        horizontal_ruby_targets(&paragraph, &plan.offsets),
+        vec![
+            (
+                1,
+                plan.offsets.transformed_to_builder(ranges[1].source_start)..ranges[2].builder_end
+            ),
+            (
+                3,
+                plan.offsets.transformed_to_builder(ranges[3].source_start)..ranges[3].builder_end
+            ),
+        ]
+    );
+}
+
+#[test]
+fn a_joined_reading_paints_like_the_reading_of_one_span() {
+    init_state();
+    let mut resources =
+        crate::render::RenderResources::try_new_headless().expect("headless resources");
+    let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+    let ink = |spans: Vec<TextSpan>| {
+        let bounds = crate::math::Rect::from_xywh(0.0, 0.0, 360.0, 60.0);
+        let mut content = TextContent::new(bounds, crate::shapes::GrowType::Fixed);
+        content.add_paragraph(reading_paragraph(spans));
+        content.update_layout(bounds);
+        super::ruby::horizontal_ruby_ink_bounds(
+            &content,
+            0,
+            &content.layout.paragraphs[0][0],
+            0.0,
+            0.0,
+        )
+        .expect("the reading paints")
+    };
+    let reading = |text: &str, joins_previous| TextSpan {
+        font_size: 48.0,
+        ruby: "にほんご".to_string(),
+        ruby_joins_previous: joins_previous,
+        ..make_span(text, 0.0)
+    };
+
+    let one = ink(vec![reading("日本", false)]);
+    let joined = ink(vec![
+        reading("日", false),
+        TextSpan {
+            text_emphasis: TextEmphasis::FilledSesame,
+            ..reading("本", true)
+        },
+    ]);
+
+    assert!(
+        (joined.left() - one.left()).abs() < 0.5,
+        "{joined:?} vs {one:?}"
+    );
+    assert!(
+        (joined.right() - one.right()).abs() < 0.5,
+        "{joined:?} vs {one:?}"
+    );
+}

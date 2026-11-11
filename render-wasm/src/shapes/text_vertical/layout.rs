@@ -475,13 +475,15 @@ fn keep_transform_expansions_together(flow: &mut [FlowCell], text_map: &Paragrap
     }
 }
 
-/// A span reading is group ruby: its base moves between columns whole, so
-/// the reading never splits.
+/// A reading is group ruby: its base, which can cross spans
+/// (`Paragraph::ruby_groups`), moves between columns whole, so the reading
+/// never splits.
 fn keep_ruby_bases_together(flow: &mut [FlowCell], paragraph: &Paragraph) {
-    let spans = paragraph.children();
+    let group_of = paragraph.ruby_group_of_spans();
+    let group = |span: usize| group_of.get(span).copied().flatten();
     for index in 1..flow.len() {
-        let span = flow[index].cell.span;
-        if flow[index - 1].cell.span == span && spans.get(span).is_some_and(TextSpan::has_ruby) {
+        let current = group(flow[index].cell.span);
+        if current.is_some() && group(flow[index - 1].cell.span) == current {
             flow[index].keep_with_previous = true;
         }
     }

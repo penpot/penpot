@@ -352,6 +352,27 @@ pub(crate) fn range_origin(
         .map(|rect| Point::new(rect.left(), rect.top()))
 }
 
+/// Box in page coordinates around the line boxes of the text between `start`
+/// and `end` (paragraph, char offset), mapped through the shape transform: on
+/// a rotated text it encloses the text as drawn. `None` when the range covers
+/// no text.
+pub(crate) fn range_page_bounds(
+    start: (usize, usize),
+    end: (usize, usize),
+    text_content: &TextContent,
+    shape: &Shape,
+) -> Option<Rect> {
+    let matrix = shape.get_matrix();
+    let bounds = range_rects(start, end, text_content, shape)
+        .iter()
+        .map(|rect| matrix.map_rect(rect).0)
+        .reduce(|mut bounds, rect| {
+            bounds.join(rect);
+            bounds
+        })?;
+    (!bounds.is_empty()).then_some(bounds)
+}
+
 /// Line boxes, shape-local, of the text between `start` and `end` (paragraph,
 /// char offset).
 fn range_rects(
@@ -529,6 +550,54 @@ mod tests {
 
         assert!(world.x.abs() < 0.01, "{world:?}");
         assert!(world.y > 10.0, "{world:?}");
+    }
+
+    fn page_bounds_of(shape: &Shape, start: usize, end: usize) -> Option<Rect> {
+        let Type::Text(content) = &shape.shape_type else {
+            unreachable!()
+        };
+        range_page_bounds((0, start), (0, end), content, shape)
+    }
+
+    #[test]
+    fn range_page_bounds_are_offset_by_the_shape_position() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let mut shape = text_shape("hello world", 500.0);
+        let local = page_bounds_of(&shape, 6, 11).expect("world has text");
+        shape.set_selrect(100.0, 50.0, 600.0, 150.0);
+
+        let page = page_bounds_of(&shape, 6, 11).expect("world has text");
+
+        assert!(
+            (page.left() - (local.left() + 100.0)).abs() < 0.01,
+            "{page:?}"
+        );
+        assert!((page.top() - (local.top() + 50.0)).abs() < 0.01, "{page:?}");
+        assert!((page.width() - local.width()).abs() < 0.01, "{page:?}");
+    }
+
+    #[test]
+    fn range_page_bounds_of_wrapped_text_cover_every_line() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        // Too narrow for both words on one line.
+        let shape = text_shape("hello world", 45.0);
+
+        let hello = page_bounds_of(&shape, 0, 5).expect("hello has text");
+        let both = page_bounds_of(&shape, 0, 11).expect("the text has text");
+
+        assert!(both.top() <= hello.top() + 0.01, "{both:?}");
+        assert!(both.height() > hello.height() * 1.5, "{both:?}");
+    }
+
+    #[test]
+    fn range_page_bounds_are_none_for_an_empty_range() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let shape = text_shape("hello", 500.0);
+
+        assert!(page_bounds_of(&shape, 2, 2).is_none());
     }
 
     #[test]

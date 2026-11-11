@@ -22,7 +22,8 @@
    [app.render-wasm.api.fonts :as fonts]
    [app.render-wasm.text-editor-history :as history]
    [app.util.color :as uc]
-   [app.util.dom :as dom]))
+   [app.util.dom :as dom]
+   [cuerdas.core :as str]))
 
 (def multiple-state-multiple (sr/translate-multiple-state :multiple))
 
@@ -396,6 +397,23 @@
   []
   (when (wasm/ready?)
     (let [ptr (h/call wasm/internal-module "_text_editor_get_cursor_rect")]
+      (when (and ptr (not (zero? ptr)))
+        (let [heap-f32 (mem/get-heap-f32)
+              offset   (mem/->offset-32 ptr)
+              x        (aget heap-f32 offset)
+              y        (aget heap-f32 (+ offset 1))
+              width    (aget heap-f32 (+ offset 2))
+              height   (aget heap-f32 (+ offset 3))]
+          (mem/free)
+          {:x x :y y :width width :height height})))))
+
+(defn text-editor-get-selection-rect
+  "Read the box around the selected text from the WASM editor, in page
+  coordinates: a map with :x :y :width :height that encloses the text as
+  drawn, rotated or not. Nil when the selection is collapsed."
+  []
+  (when (wasm/ready?)
+    (let [ptr (h/call wasm/internal-module "_text_editor_get_selection_rect")]
       (when (and ptr (not (zero? ptr)))
         (let [heap-f32 (mem/get-heap-f32)
               offset   (mem/->offset-32 ptr)
@@ -878,8 +896,45 @@
                                         (if (= idx end-para) end-offset (para-char-count para)))))
           (range start-para (inc end-para))))
 
+(defn- span-bounds
+  "Char range `[start end)` of each span of `paragraph`."
+  [paragraph]
+  (->> (:children paragraph)
+       (reductions (fn [[_ end] span] [end (+ end (count (:text span)))]) [0 0])
+       (rest)
+       (vec)))
+
+(defn- annotation-bases
+  "Char ranges `[start end)` of the annotated text of `paragraph`: each
+  reading (`cjk/ruby-groups`, which can cross spans) and each warichu note."
+  [paragraph]
+  (let [spans  (:children paragraph)
+        bounds (span-bounds paragraph)]
+    (into (mapv (fn [[start end]] [(first (nth bounds start)) (second (nth bounds (dec end)))])
+                (cjk/ruby-groups spans))
+          (keep-indexed (fn [index span]
+                          (when (= "warichu" (:warichu span)) (nth bounds index))))
+          spans)))
+
 (defn reading-selection?
-  "True for characters in one span, including the whole base of an existing reading."
+  "True for text that can take one reading: characters of one paragraph
+  without a reading or warichu note, whatever their styles (the reading
+  joins their spans into one base), or the whole base of an existing one."
+  [content selection]
+  (boolean
+   (when (and content selection)
+     (let [{:keys [start-para start-offset end-para end-offset]} (normalize-selection selection)
+           paragraph (get-in content [:children 0 :children start-para])]
+       (and (= start-para end-para)
+            (some? paragraph)
+            (< start-offset end-offset)
+            (or (not-any? cjk/annotated-span?
+                          (paragraph-selected-spans paragraph start-offset end-offset))
+                (some #(= [start-offset end-offset] %) (annotation-bases paragraph))))))))
+
+(defn single-span-selection?
+  "True for characters of one span, including the whole of an annotated one:
+  the text a warichu note can take, as it never crosses spans."
   [content selection]
   (boolean
    (when (and content selection)
@@ -956,6 +1011,15 @@
       (merge (selection-cjk-styles content selection)
              (selection-paragraph-styles content selection)))))
 
+(defn- whole-base-span?
+  "True for an annotated span that a decoration edit must cover whole: a
+  warichu note, or a reading without `:ruby-group`, which splitting would
+  repeat over each piece. A grouped reading keeps one base when split."
+  [span]
+  (and (cjk/annotated-span? span)
+       (or (= "warichu" (:warichu span))
+           (str/blank? (:ruby-group span)))))
+
 (defn- annotation-style-range
   [paragraph start end styles]
   (if (and (< start end)
@@ -965,7 +1029,7 @@
     (let [[start end]
           (reduce (fn [[from to offset] span]
                     (let [span-end (+ offset (count (:text span)))]
-                      (if (and (< offset end) (< start span-end) (cjk/annotated-span? span))
+                      (if (and (< offset end) (< start span-end) (whole-base-span? span))
                         [(min from offset) (max to span-end) span-end]
                         [from to span-end])))
                   [start end 0]
@@ -1171,11 +1235,19 @@
                     (= k :text-decoration) [k "none"])))
           styles)))
 
+(defn- with-ruby-group
+  "A reading set on a selection joins its spans into one base with a fresh
+  `:ruby-group`, whatever their styles; removing the reading drops it."
+  [styles]
+  (if (and (map? styles) (contains? styles :ruby) (not (contains? styles :ruby-group)))
+    (assoc styles :ruby-group (if (str/blank? (:ruby styles)) "" (str (uuid/next))))
+    styles))
+
 (defn apply-styles-to-selection
   "Apply `styles` (attrs map, or a fn per span) to the selected spans; `:with-fills?` also returns `:fills`."
   [styles use-shape-fn set-shape-text-content-fn & [{:keys [with-fills?]}]]
   (when (wasm/ready?)
-    (let [styles    (clean-styles styles)
+    (let [styles    (-> styles clean-styles with-ruby-group)
           shape-id  (text-editor-get-active-shape-id)
           selection (text-editor-get-selection)]
 

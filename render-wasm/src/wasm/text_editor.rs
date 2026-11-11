@@ -3,7 +3,7 @@ use macros::{wasm_error, ToJs};
 use crate::globals::{get_render_state, get_text_editor_state};
 use crate::math::{Matrix, Point};
 use crate::mem;
-use crate::render::text_editor::range_origin;
+use crate::render::text_editor::{range_origin, range_page_bounds};
 use crate::shapes::{TextAlign, TextContent, TextPositionWithAffinity, Type, VerticalAlign};
 use crate::state::{State, TextEditorEvent, TextEditorState};
 use crate::utils::uuid_from_u32_quartet;
@@ -740,6 +740,52 @@ pub extern "C" fn text_editor_get_cursor_rect() -> *mut u8 {
         let mut bytes = vec![0u8; 16];
         bytes[0..4].copy_from_slice(&(selrect.x() + rect.left()).to_le_bytes());
         bytes[4..8].copy_from_slice(&(selrect.y() + rect.top()).to_le_bytes());
+        bytes[8..12].copy_from_slice(&rect.width().to_le_bytes());
+        bytes[12..16].copy_from_slice(&rect.height().to_le_bytes());
+        mem::write_bytes(bytes)
+    })
+}
+
+/// Box in page coordinates around the selected text (x, y, width, height),
+/// enclosing it as drawn on a rotated text. Null when the selection is
+/// collapsed or covers no text.
+#[no_mangle]
+pub extern "C" fn text_editor_get_selection_rect() -> *mut u8 {
+    with_state!(state, {
+        let editor_state = get_text_editor_state();
+        if !editor_state.selection.is_selection() {
+            return std::ptr::null_mut();
+        }
+
+        let Some(shape_id) = editor_state.active_shape_id else {
+            return std::ptr::null_mut();
+        };
+
+        update_text_layout_if_needed(state, shape_id);
+
+        let Some(shape) = state.shapes.get(&shape_id) else {
+            return std::ptr::null_mut();
+        };
+
+        let Type::Text(text_content) = &shape.shape_type else {
+            return std::ptr::null_mut();
+        };
+
+        let selection = &editor_state.selection;
+        let start = selection.start();
+        let end = selection.end();
+        let Some(rect) = range_page_bounds(
+            (start.paragraph, start.offset),
+            (end.paragraph, end.offset),
+            text_content,
+            shape,
+        ) else {
+            return std::ptr::null_mut();
+        };
+
+        let mut bytes = vec![0u8; 16];
+        bytes[0..4].copy_from_slice(&rect.x().to_le_bytes());
+        bytes[4..8].copy_from_slice(&rect.y().to_le_bytes());
         bytes[8..12].copy_from_slice(&rect.width().to_le_bytes());
         bytes[12..16].copy_from_slice(&rect.height().to_le_bytes());
         mem::write_bytes(bytes)

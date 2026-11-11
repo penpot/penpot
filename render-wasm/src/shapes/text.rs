@@ -2268,6 +2268,41 @@ impl Paragraph {
         &self.children
     }
 
+    /// Index ranges of the spans whose text forms one ruby base: a span with
+    /// a reading and the spans after it that join it
+    /// (`TextSpan::shares_ruby_base_with`). A reading over characters of
+    /// several styles, such as some with emphasis marks, is one base.
+    pub fn ruby_groups(&self) -> Vec<std::ops::Range<usize>> {
+        let mut groups: Vec<std::ops::Range<usize>> = Vec::new();
+        for (index, span) in self.children.iter().enumerate() {
+            if !span.has_ruby() {
+                continue;
+            }
+            match groups.last_mut() {
+                Some(group)
+                    if group.end == index
+                        && span.shares_ruby_base_with(&self.children[index - 1]) =>
+                {
+                    group.end = index + 1
+                }
+                _ => groups.push(index..index + 1),
+            }
+        }
+        groups
+    }
+
+    /// Index in `ruby_groups` of the base of each span, or None for a span
+    /// without a reading.
+    pub fn ruby_group_of_spans(&self) -> Vec<Option<usize>> {
+        let mut group_of = vec![None; self.children.len()];
+        for (group, spans) in self.ruby_groups().into_iter().enumerate() {
+            for span in spans {
+                group_of[span] = Some(group);
+            }
+        }
+        group_of
+    }
+
     pub fn children_mut(&mut self) -> &mut Vec<TextSpan> {
         &mut self.children
     }
@@ -2550,6 +2585,10 @@ pub struct TextSpan {
     /// Ruby (furigana) annotation for this span; empty means no ruby.
     pub ruby: String,
     pub ruby_zhuyin: bool,
+    /// The span continues the reading of the span before it: the frontend
+    /// gives the spans of one reading the same group, so their text forms
+    /// one base (`Paragraph::ruby_groups`).
+    pub ruby_joins_previous: bool,
     pub ruby_size: RubySize,
     pub ruby_align: RubyAlign,
     pub ruby_overhang: RubyOverhang,
@@ -2585,6 +2624,7 @@ impl Default for TextSpan {
             text_underline_position: TextUnderlinePosition::default(),
             ruby: String::default(),
             ruby_zhuyin: false,
+            ruby_joins_previous: false,
             ruby_size: RubySize::default(),
             ruby_align: RubyAlign::default(),
             ruby_overhang: RubyOverhang::default(),
@@ -2657,6 +2697,20 @@ impl TextSpan {
     /// note replaces the base text, so a reading has nothing to annotate.
     pub fn has_ruby(&self) -> bool {
         !self.warichu && !self.ruby_text().is_empty()
+    }
+
+    /// True when this span continues the reading of `previous`, the span
+    /// before it: it joins that reading and shows the same one, so their text
+    /// forms one base whose first span sets the presentation. Neighbours with
+    /// the same reading stay apart without the join, as in 天天 (tiān tiān).
+    /// Zhuyin annotates one character, so its spans stand alone.
+    pub fn shares_ruby_base_with(&self, previous: &TextSpan) -> bool {
+        self.ruby_joins_previous
+            && self.has_ruby()
+            && previous.has_ruby()
+            && !self.is_zhuyin()
+            && !previous.is_zhuyin()
+            && self.ruby_text() == previous.ruby_text()
     }
 
     pub fn ruby_font_size(&self) -> f32 {
@@ -3321,6 +3375,77 @@ mod tests {
         };
         assert!(!span.has_ruby());
         assert_eq!(span.annotation_room_em(), 0.0);
+    }
+
+    fn reading_span(text: &str, ruby: &str, joins_previous: bool) -> TextSpan {
+        TextSpan {
+            text: text.to_string(),
+            ruby: ruby.to_string(),
+            ruby_joins_previous: joins_previous,
+            ..TextSpan::default()
+        }
+    }
+
+    fn paragraph_of(spans: Vec<TextSpan>) -> Paragraph {
+        Paragraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.2,
+            0.0,
+            spans,
+        )
+    }
+
+    #[test]
+    fn a_reading_over_spans_of_other_styles_is_one_base() {
+        let emphasized = TextSpan {
+            text_emphasis: TextEmphasis::FilledSesame,
+            ..reading_span("本", "にほん", true)
+        };
+        let paragraph = paragraph_of(vec![
+            reading_span("日", "にほん", false),
+            emphasized,
+            reading_span("語", "", false),
+        ]);
+
+        assert_eq!(paragraph.ruby_groups(), vec![0..2]);
+        assert_eq!(
+            paragraph.ruby_group_of_spans(),
+            vec![Some(0), Some(0), None]
+        );
+    }
+
+    #[test]
+    fn neighbours_with_the_same_reading_stay_apart_without_the_join() {
+        let paragraph = paragraph_of(vec![
+            reading_span("天", "tiān", false),
+            reading_span("天", "tiān", false),
+        ]);
+
+        assert_eq!(paragraph.ruby_groups(), vec![0..1, 1..2]);
+    }
+
+    #[test]
+    fn a_join_to_another_reading_starts_a_new_base() {
+        let paragraph = paragraph_of(vec![
+            reading_span("日", "に", false),
+            reading_span("本", "ほん", true),
+        ]);
+
+        assert_eq!(paragraph.ruby_groups(), vec![0..1, 1..2]);
+    }
+
+    #[test]
+    fn zhuyin_readings_never_join() {
+        let zhuyin = |joins_previous| TextSpan {
+            ruby_zhuyin: true,
+            ..reading_span("天", "ㄊㄧㄢ", joins_previous)
+        };
+        let paragraph = paragraph_of(vec![zhuyin(false), zhuyin(true)]);
+
+        assert_eq!(paragraph.ruby_groups(), vec![0..1, 1..2]);
     }
 
     #[test]

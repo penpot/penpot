@@ -445,6 +445,9 @@
 (def workspace-wasm-editor-styles
   (l/derived :workspace-wasm-editor-styles st/state))
 
+(def workspace-wasm-editor-selection-rects
+  (l/derived :workspace-wasm-editor-selection-rects st/state))
+
 (def workspace-wasm-modifiers
   (let [a (atom nil)]
     (rx/sub! ms/wasm-modifiers #(reset! a %))
