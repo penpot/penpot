@@ -170,6 +170,11 @@
       (contains? carried :text-content-typography)
       (into (filter agreed) txt/typography-units))))
 
+(defn- mirrored?
+  "Whether `shape` has exactly one flip."
+  [shape]
+  (not= (boolean (:flip-x shape)) (boolean (:flip-y shape))))
+
 (defn- switch-attr-operations
   "The `[attr value]` pairs that carry `attr` over a variant switch, from
    `previous-shape`, the copy shape before the switch placed like
@@ -217,10 +222,17 @@
          ;; 3. We set Copy’s bg to green (so it it has an override on the bg).
          ;; 4. We switch Copy to use C2 as base.
          ;; 5. The bg of Copy now is blue (we ignore the override)
+         ;; A mirror stores its turn either way, so the turns of two
+         ;; mirrors also agree where both point their axes alike.
          (and
           (not (contains? #{:points :selrect :content} attr))
           (not (if (= sync-group :geometry-group)
-                 (gsh/close-attrs? attr (get origin-ref-shape attr) (get current-shape attr))
+                 (or (gsh/close-attrs? attr (get origin-ref-shape attr) (get current-shape attr))
+                     (and (= attr :rotation)
+                          (mirrored? origin-ref-shape)
+                          (mirrored? current-shape)
+                          (gmt/close? (cll/axes-matrix origin-ref-shape)
+                                      (cll/axes-matrix current-shape))))
                  (= (get origin-ref-shape attr) (get current-shape attr)))))
 
          ;; The :content attr cant't be copied to elements of different type

@@ -652,7 +652,7 @@
                               (grc/rect->center (:selrect (get objects (:id shape-main)))))]
     (reduce #(update %1 %2 gsh/move delta) objects ids)))
 
-(defn- axes-matrix
+(defn axes-matrix
   "The directions of the axes of the transform of `shape`, without their
    lengths: the transform of a tiny shape scales them by its rounding."
   [shape]
