@@ -149,7 +149,9 @@ jobs:
   build:
     name: "Build artifacts"
     needs: [test-backend, test-frontend, test-exporter]
-    if: github.event_name == 'push'
+    # Manual runs build too, so the deploy smoke test can be tried on a
+    # branch before it reaches develop.
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     container:
       image: penpotapp/devenv:latest
@@ -168,12 +170,15 @@ jobs:
           pnpm run build:wasm
           pnpm run build:app
 
+      # `scripts/build` makes the full bundle the exporter image needs:
+      # the app plus package.json, the lockfile, the render-wasm files and
+      # the `setup` script the Dockerfile runs.
+      # Steps in a container job run under `sh` unless told otherwise; the
+      # version string below needs bash.
       - name: Build exporter bundle
         working-directory: ./exporter
-        run: |
-          pnpm install
-          pnpm run build:wasm
-          pnpm run build
+        shell: bash
+        run: ./scripts/build "${GITHUB_REF_NAME}-${GITHUB_SHA::12}"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -185,22 +190,121 @@ jobs:
             exporter/target
           retention-days: 7
 
+  # Smoke-test deploy of the scalable exporter: builds the exporter image
+  # from this run's bundle, then starts the real docker-compose services
+  # (Valkey, the `api` exporter and several `worker` replicas) and checks
+  # they all come up on the one shared queue and process jobs.
   deploy:
-    name: "Deploy"
+    name: "Deploy (multi-worker smoke test)"
     needs: build
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    environment: production
+    timeout-minutes: 30
+    env:
+      COMPOSE: docker compose -f docker/images/docker-compose.yaml
+      PENPOT_EXPORTER_IMAGE: penpot-exporter:ci
+      WORKERS: 3
+      JOBS: 6
+      KEYS: penpot.exporter.default
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: penpot-build-${{ github.sha }}
+          path: artifacts
 
-      - name: Deploy
+      # Artifacts drop file modes, so `setup` gets its execute bit back.
+      - name: Stage exporter bundle
         run: |
-          echo "Deploy target not yet provisioned for this course project."
-          echo "This step is where we would push images/artifacts to our host"
-          echo "(e.g. docker build + push to a registry, then SSH/compose up,"
-          echo "or a cloud provider's deploy CLI) once one is chosen."
-          ls -R
+          rm -rf docker/images/bundle-exporter
+          cp -r artifacts/exporter/target docker/images/bundle-exporter
+          chmod +x docker/images/bundle-exporter/setup
+
+      # The release base (dhi.io) needs a Docker Hub login; a public
+      # Debian 13 Node image stands in for it here.
+      - name: Build exporter image
+        run: |
+          docker build \
+            -f docker/images/Dockerfile.exporter \
+            --build-arg BASE_IMAGE=node:24-trixie \
+            -t "$PENPOT_EXPORTER_IMAGE" \
+            docker/images
+
+      - name: Start Valkey, the api exporter and the workers
+        run: |
+          $COMPOSE up -d --wait --wait-timeout 120 \
+            --scale penpot-exporter-worker=$WORKERS \
+            penpot-valkey penpot-exporter penpot-exporter-worker
+          $COMPOSE ps
+
+      - name: Check every exporter registered on the shared queue
+        run: |
+          vk() { $COMPOSE exec -T penpot-valkey valkey-cli "$@"; }
+          expected=$((WORKERS + 1))
+
+          running=$($COMPOSE ps --status running -q penpot-exporter-worker | wc -l)
+          echo "running worker containers: $running"
+          [ "$running" -eq "$WORKERS" ] || { echo "::error::expected $WORKERS workers, $running running"; exit 1; }
+
+          for _ in $(seq 1 30); do
+            n=$(vk scard "$KEYS.instances")
+            [ "$n" -ge "$expected" ] && break
+            sleep 2
+          done
+          echo "registered exporters: $n (expected $expected)"
+          [ "$n" -ge "$expected" ] || { echo "::error::only $n of $expected exporters registered"; exit 1; }
+
+          workers=0
+          for id in $(vk smembers "$KEYS.instances"); do
+            role=$(vk get "$KEYS.instance.$id")
+            echo "  $id -> ${role:-no heartbeat}"
+            [ -n "$role" ] || { echo "::error::exporter $id has no heartbeat"; exit 1; }
+            [ "$role" = "worker" ] && workers=$((workers + 1))
+          done
+          [ "$workers" -eq "$WORKERS" ] || { echo "::error::expected $WORKERS live workers, found $workers"; exit 1; }
+
+      # No backend or browser runs here, so the renders themselves fail.
+      # What this checks is that jobs sent to the api reach the workers
+      # and each one is claimed and settled.
+      - name: Check the workers take jobs from the queue
+        run: |
+          vk() { $COMPOSE exec -T penpot-valkey valkey-cli "$@"; }
+          uuid() { cat /proc/sys/kernel/random/uuid; }
+          profile=$(uuid)
+
+          for i in $(seq 1 "$JOBS"); do
+            body='["^ ","~:cmd","~:export-shapes","~:profile-id","~u'$profile'","~:wait",false,"~:force-multiple",true,"~:exports",[["^ ","~:page-id","~u'$(uuid)'","~:file-id","~u'$(uuid)'","~:object-id","~u'$(uuid)'","~:type","~:png","~:suffix","","~:scale",1,"~:name","obj'$i'"]]]'
+            code=$($COMPOSE exec -T penpot-exporter curl -s -o /dev/null -w '%{http_code}' \
+                     -X POST http://localhost:6061/api/export \
+                     -H 'content-type: application/transit+json' --data "$body")
+            echo "export $i -> HTTP $code"
+            [ "$code" = "200" ] || { echo "::error::api answered $code"; exit 1; }
+          done
+
+          for _ in $(seq 1 30); do
+            settled=0
+            for k in $(vk --scan --pattern "$KEYS.job.*"); do
+              vk hget "$k" data | grep -Eq '"~:state","(done|failed|ended|error|cancelled)"' && settled=$((settled + 1))
+            done
+            depth=$(vk llen "$KEYS.queue")
+            [ "$settled" -ge "$JOBS" ] && [ "$depth" -eq 0 ] && break
+            sleep 2
+          done
+          echo "settled jobs: $settled of $JOBS, queue depth: $depth"
+          [ "$settled" -ge "$JOBS" ] && [ "$depth" -eq 0 ] || { echo "::error::jobs were not processed"; exit 1; }
+
+          echo "jobs per worker:"
+          for k in $(vk --scan --pattern "$KEYS.job.*"); do
+            vk hget "$k" data | grep -o '"~:owner","[^"]*"' | cut -d'"' -f4
+          done | sort | uniq -c
+
+      - name: Exporter logs
+        if: failure()
+        run: $COMPOSE logs --no-color --tail 200 penpot-exporter penpot-exporter-worker
+
+      - name: Stop services
+        if: always()
+        run: $COMPOSE down

@@ -213,7 +213,9 @@ services:
   ## The exporter runs in two roles that share a job queue in Valkey:
   ## `penpot-exporter` (role `api`) takes export requests from the
   ## frontend and queues them; `penpot-exporter-worker` (role `worker`)
-  ## renders them. Scale renders by changing the worker `replicas`.
+  ## renders them. Scale renders by changing the worker `replicas`, or at
+  ## start-up: `docker compose up -d --scale penpot-exporter-worker=3`.
+  ## Every replica uses the same Valkey, so they share one queue.
   ##
   ## Both need an exporter image with the queue (the CS4233 fork's image,
   ## published by its CI). The upstream `penpotapp/exporter` image ignores

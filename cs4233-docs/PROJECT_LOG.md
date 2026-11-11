@@ -264,3 +264,41 @@ Success in 6m 24s.)
 - Implemented state transitions: queued -> processing on worker claim, processing -> done on success, processing -> failed -> queued on failure/crash, and failed (dead-lettered) after max attempts.
 - Added unit tests for claim race (two workers grab simultaneously, one wins), crash recovery/retry, and dead-lettering once max attempts is reached.
 - Balanced delimiters verified across all ClojureScript files.
+
+### 24. Multi-worker deploy smoke test, issue #5 (2026-10-07)
+
+> Now I need to fix one issue that is on the github. Other people have
+> already done theirs, and one I will be choosing is below. A lot of
+> updates were pushed here, and I will be making a new branch as well for
+> this fix
+
+(Kyle pasted issue #5: run several exporter workers with docker compose
+and replace the CI deploy placeholder.)
+
+> Yeah continue with it, here is the link to it btw
+> https://github.com/MooketsiNoko/penpot/issues/5
+
+- Compose already ran workers as replicas on one Valkey (from PR #7);
+  AI documented `--scale`.
+- AI replaced the CI deploy placeholder with a smoke test: build the
+  exporter image, start Valkey + 1 api + 3 workers, check all register
+  and that sent jobs get processed.
+- Dry-run of the checks against local exporters passed (6 jobs, 2 per
+  worker). The full job needs Docker, so it is first tested in CI.
+
+> I dont wanna wait
+
+- Rather than wait for PR #10, AI copied its one-line scheduler test fix
+  into `export-infra-scaling` so the pipeline can run.
+
+(Kyle sent a screenshot: the pipeline run on `export-infra-scaling` failed
+in Build artifacts with exit code 2.)
+
+- The exporter bundle step used bash syntax, but container steps run
+  under `sh`. AI set that step to bash.
+
+(Kyle sent a screenshot: run #14 on `export-infra-scaling` passed, Deploy
+included.)
+
+- Every deploy step passed: image built, Valkey + api + 3 workers started,
+  all registered on the shared queue, and the workers processed jobs.

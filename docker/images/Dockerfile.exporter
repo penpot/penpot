@@ -1,4 +1,8 @@
-FROM dhi.io/node:24.20.0-debian13-dev
+# The base can be swapped for a public Debian 13 Node image (e.g.
+# `node:24-trixie`) where there is no Docker Hub login for dhi.io, as in the
+# CS4233 CI smoke test.
+ARG BASE_IMAGE=dhi.io/node:24.20.0-debian13-dev
+FROM ${BASE_IMAGE}
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG=en_US.UTF-8 \
