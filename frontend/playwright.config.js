@@ -48,6 +48,9 @@ export default defineConfig({
 
     locale: "en-US",
 
+    /* Profiles without a theme follow the system one; run the UI in dark */
+    colorScheme: "dark",
+
     permissions: ["clipboard-write", "clipboard-read"],
   },
 
