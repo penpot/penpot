@@ -6,35 +6,41 @@
 
 (ns app.plugins.system-events
   (:require
+   [app.common.data.macros :as dm]
    [app.main.data.event :as ev]
    [app.main.store :as st]
    [app.plugins.register :as r]))
 
+(defn- get-origin
+  [plugin-id]
+  (if (= plugin-id r/mcp-plugin-id) "mcp" "plugin"))
+
+(defn- get-context
+  "Returns the audit context of an action run by a plugin: the file it ran
+  in (none on the dashboard) and, for the MCP, the session of the tab that
+  ran it. Events drop the nil values."
+  [state plugin-id]
+  (let [file-id (:current-file-id state)]
+    (if (= plugin-id r/mcp-plugin-id)
+      {:file-id file-id
+       :mcp-session-id (dm/get-in state [:mcp :session-id])}
+      (let [plugin-data (r/get-plugin-data state plugin-id)]
+        {:file-id file-id
+         :plugin-name (:name plugin-data)
+         :plugin-url (:url plugin-data)}))))
+
 ;; Formats an event from the plugin system
 (defn event
   [plugin-id name & {:as props}]
-  (if (= plugin-id r/mcp-plugin-id)
-    (-> props
-        (assoc ::ev/name name)
-        (assoc ::ev/origin "mcp")
-        (ev/event))
-
-    (let [plugin-data (r/get-plugin-data @st/state plugin-id)]
-      (-> props
-          (assoc ::ev/name name)
-          (assoc ::ev/origin "plugin")
-          (assoc ::ev/context
-                 {:plugin-name (:name plugin-data)
-                  :plugin-url (:url plugin-data)})
-          (ev/event)))))
+  (-> props
+      (assoc ::ev/name name)
+      (assoc ::ev/origin (get-origin plugin-id))
+      (assoc ::ev/context (get-context @st/state plugin-id))
+      (ev/event)))
 
 (defn add-event
   [event plugin-id]
-  (let [plugin-data (r/get-plugin-data @st/state plugin-id)]
-    (with-meta
-      event
-      (if (= plugin-id r/mcp-plugin-id)
-        {::ev/origin "mcp"}
-        {::ev/origin "plugin"
-         ::ev/context {:plugin-name (:name plugin-data)
-                       :plugin-url (:url plugin-data)}}))))
+  (with-meta
+    event
+    {::ev/origin (get-origin plugin-id)
+     ::ev/context (get-context @st/state plugin-id)}))
