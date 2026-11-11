@@ -24,6 +24,17 @@
         vertical (gpt/unit (gpt/point c d))]
     (gmt/matrix (:x horizontal) (:y horizontal) (:x vertical) (:y vertical) 0 0)))
 
+(defn same-placed-axes?
+  "Whether `a`, moved from its parent `a-parent` into `a-target`, points its
+   axes as `b` does moved from `b-parent` into `b-target`. A mirror stores
+   its turn either way, so the axes tell what the rotations may not."
+  [a a-parent a-target b b-parent b-target]
+  (let [placed (fn [shape parent target]
+                 (gmt/multiply (orientation-matrix target)
+                               (gmt/inverse (orientation-matrix parent))
+                               (orientation-matrix shape)))]
+    (gmt/close? (placed a a-parent a-target) (placed b b-parent b-target))))
+
 (defn turn-sign
   "-1 when `shape` is a mirror whose rotation is only the opposite of the
    turn its transform holds, so it stores a turn of its subtree subtracted;

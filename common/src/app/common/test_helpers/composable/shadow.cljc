@@ -614,6 +614,11 @@
                  [(assoc result (:id shape) [p ordinal]) (update counts p (fnil inc 0))]))
              [{} {}] (reverse (subtree-shapes objects root-id))))))
 
+(defn- mirrored?
+  "Whether `values` hold exactly one flip."
+  [values]
+  (not= (boolean (:flip-x values)) (boolean (:flip-y values))))
+
 (defn swap
   "Predict switch carry from authored groups and the two mains. Matching
    uses main names and ancestor kinds; copy renames never change a match."
@@ -796,8 +801,19 @@
                               ;; the head's turn and flips carry as one: only where the
                               ;; mains share all of them
                               agrees? (fn [attr]
-                                        (if (and root? (contains? orientation attr))
+                                        (cond
+                                          (and root? (contains? orientation attr))
                                           (every? #(same? (get old-placed %) (get placed %)) orientation)
+
+                                          ;; a mirror stores its turn either way: the turns of two
+                                          ;; mirrored mains agree where they point their axes alike
+                                          (and (= attr :rotation) old-main old-parent new-parent)
+                                          (or (same? (get old-placed attr) (get placed attr))
+                                              (and (mirrored? old-placed) (mirrored? placed)
+                                                   (geom/same-placed-axes? old-main (get before (:parent-id old-main)) old-parent
+                                                                           main (get after (:parent-id main)) new-parent)))
+
+                                          :else
                                           (same? (get old-placed attr) (get placed attr))))
                               carried (filter (fn [attr]
                                                 (let [new-value (get placed attr)]
