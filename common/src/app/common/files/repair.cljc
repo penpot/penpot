@@ -281,9 +281,26 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
+(defn- find-lost-main
+  "Return the main of the local copy root `root-shape` when its component's
+  `:main-instance-id` points to a missing shape and the main is still on
+  the component's page; nil otherwise."
+  [file-data root-shape]
+  (when (= (:component-file root-shape) (:id file-data))
+    (let [component (ctkl/get-component file-data (:component-id root-shape))]
+      (when (and (some? component)
+                 (nil? (ctf/get-component-root file-data component)))
+        (d/seek #(and (ctk/main-instance? %)
+                      (= (:component-id %) (:id component))
+                      (= (:component-file %) (:id file-data)))
+                (ctn/shapes-seq (ctf/get-component-page file-data component)))))))
+
 (defmethod repair-error :ref-shape-not-found
   [_ {:keys [shape page-id] :as error} file-data libraries]
-  (let [matching-shape (let [page              (ctpl/get-page file-data page-id)
+  (let [lost-main      (let [page (ctpl/get-page file-data page-id)]
+                         (find-lost-main file-data (ctn/get-component-shape (:objects page) shape)))
+
+        matching-shape (let [page              (ctpl/get-page file-data page-id)
                              root-shape        (ctn/get-component-shape (:objects page) shape)
                              component-file    (if (= (:component-file root-shape) (:id file-data))
                                                  file-data
@@ -321,13 +338,24 @@
           (log/debug :hint "  -> detach shape" :shape-id (:id shape))
           (ctk/detach-shape shape))]
 
-    ;; If the shape still refers to the remote component, try to find the corresponding near one
+    ;; If the copy's component has lost track of its main, point it back to the main. Else, if
+    ;; the shape still refers to the remote component, try to find the corresponding near one
     ;; and link to it. If not, detach the shape.
     (log/debug :hint "repairing shape :ref-shape-not-found" :id (:id shape) :name (:name shape) :page-id page-id)
-    (if (some? matching-shape)
+    (cond
+      (some? lost-main)
+      (do
+        (log/debug :hint "  -> assign main-instance-id" :main-instance-id (:id lost-main))
+        (-> (pcb/empty-changes nil page-id)
+            (pcb/with-library-data file-data)
+            (pcb/update-component (:component-id lost-main) #(assoc % :main-instance-id (:id lost-main)))))
+
+      (some? matching-shape)
       (-> (pcb/empty-changes nil page-id)
           (pcb/with-file-data file-data)
           (pcb/update-shapes [(:id shape)] reassign-shape))
+
+      :else
       (let [page      (ctpl/get-page file-data page-id)
             shape-ids (cfh/get-children-ids-with-self (:objects page) (:id shape))]
         (-> (pcb/empty-changes nil page-id)

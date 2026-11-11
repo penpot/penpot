@@ -27,14 +27,6 @@
   inline-size: fit-content;
 }
 
-.beta {
-  color: var(--color-accent-primary);
-  border: $b-1 solid var(--color-accent-primary);
-  inline-size: fit-content;
-  padding: var(--sp-xxs) var(--sp-s);
-  border-radius: $br-4;
-}
-
 .title {
   display: flex;
   flex-direction: row;

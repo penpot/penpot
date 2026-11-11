@@ -194,6 +194,8 @@
                     (assoc params :file file))
                   params)
 
+        _       (media.v/check-upload-path (:file params))
+
         version (or version
                     (case (bfc/parse-file-format (-> params :file :path))
                       :binfile-v1 1

@@ -1115,11 +1115,15 @@
 
               :else
               (let [sxf     (session/create-fn cfg profile info)
-                    token   (or (:invitation-token info)
-                                (tokens/generate cfg
-                                                 {:iss :auth
-                                                  :exp (ct/in-future "15m")
-                                                  :profile-id (:id profile)}))
+                    ;; The session token is always an :auth one; the
+                    ;; invitation token, when present, travels inside its
+                    ;; claims so the frontend goes through the regular
+                    ;; token verification path and then `logged-in`.
+                    token   (tokens/generate cfg
+                                             {:iss :auth
+                                              :exp (ct/in-future "15m")
+                                              :profile-id (:id profile)
+                                              :invitation-token (:invitation-token info)})
 
                     ;; If proceed, update profile on the database
                     profile (update-profile-with-info cfg profile info)

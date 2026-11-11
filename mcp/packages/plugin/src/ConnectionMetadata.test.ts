@@ -4,15 +4,40 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
+import * as ErrorUtils from "./ErrorUtils.ts";
 import { shouldReconnectAfterClose } from "./ReconnectPolicy.ts";
 import { SessionId } from "./SessionId.ts";
 import { SessionIdDisplay } from "./SessionIdDisplay.ts";
+import * as VersionCompatibility from "./VersionCompatibility.ts";
 
 /** Compiles the actual plugin entry point for a simulated browser boundary. */
 function compile(name: string) {
     return ts.transpileModule(readFileSync(new URL(name, import.meta.url), "utf8"), {
         compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
     }).outputText;
+}
+
+/** Exports of a compiled module that Node's type stripping cannot load directly. */
+function compiledModule(name: string) {
+    const exports = {};
+    runInNewContext(compile(name), { exports });
+    return exports;
+}
+
+/** Resolves the imports of `plugin.ts`, stubbing the code execution handler and the rollback log. */
+function pluginRequire(name: string) {
+    if (name === "./task-handlers/ExecuteCodeTaskHandler") return { ExecuteCodeTaskHandler: class {} };
+    if (name === "./TaskHandler") return compiledModule("TaskHandler.ts");
+    if (name === "./ErrorUtils") return ErrorUtils;
+    if (name === "./VersionCompatibility") return VersionCompatibility;
+    if (name === "./RollbackLog")
+        return {
+            LocalStorageRollbackStore: class {},
+            RollbackLog: class {
+                listen() {}
+            },
+        };
+    throw new Error(`Unexpected import: ${name}`);
 }
 
 function pluginUi() {
@@ -184,7 +209,7 @@ test("plugin reads the current file for each connection metadata request", () =>
             on() {},
         },
         mcp: undefined,
-        require: () => ({ ExecuteCodeTaskHandler: class {} }),
+        require: pluginRequire,
     });
     onMessage({ type: "connection-metadata-request", sessionId: "first" });
     penpot.currentFile = { id: "file-2", name: "Second design" };
@@ -223,7 +248,7 @@ test("plugin without penpotMgmt derives metadata from the open file", () => {
         exports: {},
         penpot,
         mcp: undefined,
-        require: () => ({ ExecuteCodeTaskHandler: class {} }),
+        require: pluginRequire,
     });
     onMessage({ type: "connection-metadata-request", sessionId: "first" });
     penpot.currentFile = null;
@@ -313,7 +338,7 @@ test("integrated plugin stays idle until explicitly connected, including while t
             setMcpStatus: (status: string) => statuses.push(status),
             on: (event: string, callback: () => void) => events.set(event, callback),
         },
-        require: () => ({ ExecuteCodeTaskHandler: class {} }),
+        require: pluginRequire,
     });
     assert.ok(!statuses.includes("connecting"));
     events.get("connect")!();

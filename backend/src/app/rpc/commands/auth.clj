@@ -202,11 +202,11 @@
                            (update-password conn))]
       (when profile
         (login-lockout/clear-attempts! cfg (:id profile))
-        (eml/send cfg {::eml/reuse-conn true
-                       ::eml/factory eml/password-changed
-                       :public-uri (cf/get :public-uri)
-                       :to (:email profile)
-                       :name (:fullname profile)})))
+        (eml/send-template cfg {::eml/reuse-conn true
+                                ::eml/template "password-changed"
+                                :public-uri (cf/get :public-uri)
+                                :to (:email profile)
+                                :name (:fullname profile)})))
 
     nil))
 
@@ -373,21 +373,32 @@
   [cfg uri]
   (try
     (let [storage (sto/resolve cfg)
-          input   (media/download-image cfg uri)
-          input   (media/run cfg {:cmd :info :input input})
-          hash    (sto/calculate-hash (:path input))
-          content (-> (sto/content (:path input) (:size input))
-                      (sto/wrap-with-hash hash))
-          sobject (sto/put-object! storage {::sto/content content
-                                            ::sto/deduplicate? true
-                                            :bucket "profile"
-                                            :content-type (:mtype input)})]
-      (:id sobject))
+          input   (media/download-image cfg uri)]
+      (if (= "image/svg+xml" (:mtype input))
+        ;; The avatar is always rendered as an image, so an SVG would only
+        ;; add the risk of storing live markup: it is not allowed here.
+        (do
+          (l/wrn :hint "ignoring svg profile picture" :uri uri)
+          nil)
+
+        (let [input   (media/run cfg {:cmd :info :input input})
+              hash    (sto/calculate-hash (:path input))
+              content (-> (sto/content (:path input) (:size input))
+                          (sto/wrap-with-hash hash))
+              sobject (sto/put-object! storage {::sto/content content
+                                                ::sto/deduplicate? true
+                                                :bucket "profile"
+                                                :content-type (:mtype input)})]
+          (:id sobject))))
     (catch Throwable cause
       (l/wrn :hint "unable to import profile picture"
              :uri uri
              :cause cause)
       nil)))
+
+(def ^:private default-renderer-new-profiles
+  "Renderer stored on new profiles. Profiles without one fall back to SVG."
+  :wasm)
 
 (defn create-profile
   "Create the profile entry on the database with limited set of input
@@ -395,6 +406,7 @@
   [{:keys [::db/conn] :as cfg} {:keys [email] :as params}]
   (let [id        (or (:id params) (uuid/next))
         props     (-> (:props params)
+                      (update :renderer d/nilv default-renderer-new-profiles)
                       (merge {:viewed-tutorial? false
                               :viewed-walkthrough? false
                               :nudge {:big 10 :small 1}
@@ -485,13 +497,13 @@
                                   {:iss :profile-identity
                                    :profile-id (:id profile)
                                    :exp (ct/in-future {:days 30})})]
-     (eml/send cfg {::eml/reuse-conn true
-                    ::eml/factory eml/register
-                    :public-uri (cf/get :public-uri)
-                    :to (:email profile)
-                    :name (:fullname profile)
-                    :token vtoken
-                    :extra-data ptoken}))))
+     (eml/send-template cfg {::eml/reuse-conn true
+                             ::eml/template "register"
+                             :public-uri (cf/get :public-uri)
+                             :to (:email profile)
+                             :name (:fullname profile)
+                             :token vtoken
+                             :extra-data ptoken}))))
 
 (defn register-profile
   [{:keys [::db/conn] :as cfg} {:keys [token] :as params}]
@@ -516,8 +528,9 @@
 
         created?   (-> profile meta :created true?)
 
-        props      (-> (audit/profile->props profile)
-                       (assoc :from-invitation (some? invitation)))]
+        props      (cond-> (audit/profile->props profile)
+                     :always  (assoc :from-invitation (some? invitation))
+                     created? (assoc :renderer-default (-> profile :props :renderer)))]
 
     (cond
       ;; When profile is blocked, we just ignore it and return plain data
@@ -543,8 +556,8 @@
       ;;     return :invitation-token. The frontend redirects to
       ;;     :auth-verify-token, which immediately accepts the
       ;;     invitation.
-      ;;   - active     + no/mismatched invitation → mint session
-      ;;     ("login" action). New profile, no further action.
+      ;;   - active     + no/mismatched invitation → mint session.
+      ;;     New profile, no further action.
       ;;   - not-active + matching invitation → send the
       ;;     verify-email mail with the invitation token EMBEDDED
       ;;     into the verify-email JWE. No session yet. When the
@@ -557,7 +570,11 @@
       created?
       (let [accept-invitation? (and (some? invitation)
                                     (= (:email profile)
-                                       (:member-email invitation)))]
+                                       (:member-email invitation)))
+            props             (assoc props :activation
+                                     (if (:is-active profile)
+                                       "immediate"
+                                       "email-verification"))]
         (cond
           (and (:is-active profile) accept-invitation?)
           (let [invitation (assoc invitation :member-id (:id profile))
@@ -567,7 +584,6 @@
                  :invitation-token token}
                 (rph/with-transform (session/create-fn cfg profile claims))
                 (rph/with-meta {::audit/replace-props props
-                                ::audit/context {:action "accept-invitation"}
                                 ::audit/profile-id (:id profile)})))
 
           (:is-active profile)
@@ -575,7 +591,6 @@
               (rph/with-transform (session/create-fn cfg profile claims))
               (rph/with-meta
                 {::audit/replace-props props
-                 ::audit/context {:action "login"}
                  ::audit/profile-id (:id profile)}))
 
           :else
@@ -589,7 +604,6 @@
                  :email (:email profile)}
                 (rph/with-meta
                   {::audit/replace-props props
-                   ::audit/context {:action "email-verification"}
                    ::audit/profile-id (:id profile)})))))
 
       ;; When email verification is disabled and an inactive profile already
@@ -654,13 +668,13 @@
                                           {:iss :profile-identity
                                            :profile-id (:id profile)
                                            :exp (ct/in-future {:days 30})})]
-              (eml/send cfg {::eml/reuse-conn true
-                             ::eml/factory eml/password-recovery
-                             :public-uri (cf/get :public-uri)
-                             :to (:email profile)
-                             :token (:token profile)
-                             :name (:fullname profile)
-                             :extra-data ptoken})
+              (eml/send-template cfg {::eml/reuse-conn true
+                                      ::eml/template "password-recovery"
+                                      :public-uri (cf/get :public-uri)
+                                      :to (:email profile)
+                                      :token (:token profile)
+                                      :name (:fullname profile)
+                                      :extra-data ptoken})
               nil))]
 
     (let [profile (->> (profile/clean-email email)

@@ -35,10 +35,35 @@ Command what should be built. Format: `[Imperative verb] [what] in/on [where]`.
 
 | Field | Rule |
 |-------|------|
-| **Labels** | `community contribution` (PRs from non-core) · skip workflow labels (`backport candidate`, `team-qa`) · do **not** add `bug` or `enhancement` labels (use Issue Type instead) |
+| **Labels** | `community contribution` (PRs from non-core) · `breaking change` when the change breaks compatibility (see below) · skip workflow labels (`backport candidate`, `team-qa`) · do **not** add `bug` or `enhancement` labels (use Issue Type instead) |
 | **Milestone** | Use the current or next planned milestone. Fetch available milestones: `gh api repos/penpot/penpot/milestones --jq '.[].title'`. If unsure, omit. |
 | **Project** | Always `Main` (project number 8). Use `--project "Main"` flag. |
 | **Issue Type** | See Issue Type section below. Cannot be set via `gh issue create` — use GraphQL after creation. |
+
+## Breaking changes
+
+When the issue introduces a breaking change or a deprecation, it is the unit
+`mem:workflow/updating-changelog` turns into a block under
+`### :boom: Breaking changes & Deprecations`. The section is generated from
+the issue (`scripts/changelog.py boom`), so the issue must carry both:
+
+1. The `breaking change` label.
+2. A `## Breaking change note` **comment** (not a body section). Everything
+   after that marker line is copied to the changelog: paragraphs, bullet
+   lists, code blocks and headings are kept (headings are demoted to level 5
+   in `CHANGES.md`). Write it for self-hosters: what changes, what they must
+   do, and what breaks if they do nothing. Keep it short: explain the
+   implications and link the runbook or docs for the detail, never paste the
+   runbook itself. Links must point to a long-lived branch (`staging` or
+   `main`), never to a feature branch.
+
+Post the note as a new comment. Do not add a breaking-change section to the
+issue body and do not hand-write the changelog block. When the issue comes
+from a PR, reuse the text of the PR's breaking-change section.
+Do not hard-wrap the note: one line per paragraph or bullet.
+
+The full changelog rules (sections, exclusions, `:rocket:`, pre-flight and
+anomaly report) live in `mem:workflow/updating-changelog`.
 
 ## Issue Body Template
 
@@ -237,6 +262,9 @@ Identify:
   description). Omit internal details. Use the templates above.
 - **Issue Type:** use the mapping table above (also handles `:bug:` /
   `:sparkles:` / `:tada:` title prefixes).
+- **Breaking changes:** when the PR body has a breaking-change section, post
+  its user-facing text as a `## Breaking change note` comment on the issue and
+  add the `breaking change` label (see **Breaking changes** above).
 
 ### Create the issue
 
@@ -287,7 +315,7 @@ Add `Closes #<ISSUE_NUMBER>` to the PR body for readable context, then run the e
 python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>
 ```
 
-The command creates the GitHub Development link by calling `addCloseIssueReferences` and trusts the successful mutation (GitHub does not reliably report mutation-created links back through the API). It is safe to rerun and does not close an issue retroactively when the PR is already merged. Do not rely on the body keyword as the assignment operation.
+The command creates the GitHub Development link by calling `addCloseIssueReferences` and trusts the successful mutation (GitHub does not reliably report mutation-created links back through the API). It is safe to rerun. Do not rely on it to keep the issue open: adding `Closes #N` to the body of an already-merged PR closed the issue immediately when tried (#12896 / PR #12067, 2026-11-09; the timeline shows a cross-reference plus a ClosedEvent with no closer). For changelog units that outcome is fine — a merged fix means a closed issue — but be aware when linking old merged PRs. Do not rely on the body keyword as the assignment operation.
 
 ### Clean up
 
@@ -303,6 +331,8 @@ rm -f /tmp/issue-body.md /tmp/pr-body.md
   label or the author is not a core team member, add the label to the issue.
 - **Don't put implementation details in the issue body** — the issue is for
   users, QA, and changelog readers.
+- **Drop the PR's `no issue required` label** once the issue exists: it only
+  marks PRs that need no changelog unit, and it is stale from then on.
 
 ## Creating Issues from Draft Body
 

@@ -16,8 +16,7 @@
    [app.common.geom.shapes.text :as gst]
    [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]
-   [app.util.quadtree :as qdt]
-   [clojure.set :as set]))
+   [app.util.quadtree :as qdt]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMPL
@@ -107,22 +106,13 @@
                                  (dissoc objects uuid/zero))]
     {:index index :bounds bounds :parents-index parents-index :clip-index clip-index}))
 
-;; FIXME: optimize
 (defn- update-index
-  [{index :index :as data} old-objects new-objects]
-  (let [object-changed?
-        (fn [id]
-          (not= (get old-objects id)
-                (get new-objects id)))
-
-        changed-ids
+  [{index :index :as data} new-objects object-ids]
+  (let [changed-ids
         (into #{}
-              (comp (filter #(not= % uuid/zero))
-                    (filter object-changed?)
+              (comp (remove #(= % uuid/zero))
                     (mapcat #(into [%] (cfh/get-children-ids new-objects %))))
-
-              (set/union (set (keys old-objects))
-                         (set (keys new-objects))))
+              object-ids)
 
         shapes
         (->> changed-ids
@@ -272,13 +262,13 @@
   (assoc state id (create-index objects)))
 
 (defn update-page
-  "Update page index on the state"
-  [state old-page new-page]
+  "Update page index on the state. `object-ids` are the objects that
+  changed between `old-page` and `new-page`."
+  [state old-page new-page object-ids]
   (let [page-id (get old-page :id)]
     (update state page-id
             (fn [index]
-              (let [old-objects (:objects old-page)
-                    new-objects (:objects new-page)
+              (let [new-objects (:objects new-page)
                     old-bounds  (:bounds index)
                     new-bounds  (objects-bounds new-objects)]
 
@@ -287,7 +277,7 @@
                 ;; re-create it.
                 (if (and (some? index)
                          (grc/contains-rect? old-bounds new-bounds))
-                  (update-index index old-objects new-objects)
+                  (update-index index new-objects object-ids)
                   (create-index new-objects)))))))
 
 (defn query

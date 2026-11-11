@@ -122,9 +122,9 @@
   (let [data (reduce-kv
               (fn [acc mtype session-id]
                 (let [assembled (assemble-chunks cfg profile-id session-id)]
-                  (-> {:mtype mtype :size (:size assembled)}
-                      (media.v/validate-media-type! cm/font-types)
-                      (media.v/validate-font-size!))
+                  (-> {:mtype mtype :size (:size assembled) :path (:path assembled)}
+                      (media.v/check-media-type cm/font-types)
+                      (media.v/check-font-size))
                   (assoc acc mtype (:path assembled))))
               {}
               uploads)]

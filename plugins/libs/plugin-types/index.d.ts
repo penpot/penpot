@@ -110,6 +110,7 @@ export interface Penpot extends Omit<
    *  - themechange: event emitted when the user changes its theme. The callback will receive the new theme (currently: either `dark` or `light`)
    *  - filechange: event emitted when a different file is opened. The callback will receive the new file.
    *  - contentsave: event emitted after the file content is saved in the backend. The callback receives no arguments.
+   *  - contentrollback: event emitted after the backend rejected some changes and they were undone in the workspace. The callback receives a `ContentRollback` with the files, pages and shapes affected.
    *  - finish: event emitted when the current file is closed. The callback will receive the id of the closed file.
    *
    * @param type The event type to listen for.
@@ -1859,6 +1860,37 @@ export interface EventsMap {
    * The `contentsave` event will trigger after the file content is saved in the backend.
    */
   readonly contentsave: void;
+
+  /**
+   * The `contentrollback` event will trigger after the backend rejected some changes
+   * and the workspace undid them, together with the rest of their undo steps and any
+   * later change to the same file. Changes made by a plugin can be undone this way
+   * after the call that made them returned, so a plugin that relies on them should
+   * read the affected shapes again. The event fires once the undone data is in the
+   * workspace. When the workspace could not undo the changes in place, it reloads the
+   * file from the server first; the whole file then holds the server data, so shapes
+   * outside the listed ones may have changed too.
+   */
+  readonly contentrollback: ContentRollback;
+}
+
+/**
+ * What a rollback of rejected changes undid, as given to the `contentrollback` event.
+ */
+export interface ContentRollback {
+  /**
+   * Ids of the files that lost changes.
+   */
+  readonly fileIds: string[];
+  /**
+   * Ids of the pages the undone changes touched.
+   */
+  readonly pageIds: string[];
+  /**
+   * Ids of the page shapes the undone changes touched. A shape the undone changes
+   * created no longer exists; one they removed exists again.
+   */
+  readonly shapeIds: string[];
 }
 
 /**

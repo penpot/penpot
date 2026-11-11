@@ -184,6 +184,16 @@
                         :new-position new-position
                         :new-frame-id new-frame-id))))))]
 
+    ;; A drag in progress when the workspace turns read-only (saves fail)
+    ;; is dropped, so the guide goes back and its release changes nothing
+    (mf/with-effect [read-only?]
+      (when read-only?
+        (mf/set-ref-val! dragging-ref false)
+        (mf/set-ref-val! start-ref nil)
+        (mf/set-ref-val! start-pos-ref nil)
+        (when (some? (:new-position @state))
+          (swap! state assoc :new-position nil))))
+
     {:on-pointer-enter on-pointer-enter
      :on-pointer-leave on-pointer-leave
      :on-pointer-down on-pointer-down

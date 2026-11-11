@@ -106,10 +106,12 @@
                     (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
 
                     (binding [bfc/*state* (volatile! {:index {file-id (uuid/next)}})]
-                      (duplicate-file (assoc cfg ::bfc/timestamp (ct/now))
-                                      (-> params
-                                          (assoc :profile-id profile-id)
-                                          (assoc :reset-shared-flag true)))))))
+                      (-> (duplicate-file (assoc cfg ::bfc/timestamp (ct/now))
+                                          (-> params
+                                              (assoc :profile-id profile-id)
+                                              (assoc :reset-shared-flag true)))
+                          ;; Clients only need the metadata, don't send the full file contents.
+                          (dissoc :data))))))
 
 ;; --- COMMAND: Duplicate Project
 

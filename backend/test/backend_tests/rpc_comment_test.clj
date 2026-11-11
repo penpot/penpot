@@ -323,6 +323,14 @@
                               :frame-id uuid/zero
                               :share-id share-id})]
         (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))
+
+    (t/testing "outsider with who-comment=team share-link cannot get-profiles-for-file-comments"
+      (let [out (th/command! {::th/type :get-profiles-for-file-comments
+                              ::rpc/profile-id (:id outsider)
+                              :file-id (:id file)
+                              :share-id share-id})]
+        (t/is (not (th/success? out)))
         (t/is (= :not-found (th/ex-type (:error out))))))))
 
 (t/deftest share-link-who-comment-all-can-comment
@@ -449,6 +457,292 @@
         (t/is (not (th/success? out)))
         (t/is (= :not-found (th/ex-type (:error out))))))))
 
+(t/deftest share-link-page-scope-enforced-for-comment-profiles
+  (let [owner    (th/create-profile* 1 {:is-active true})
+        outsider (th/create-profile* 2 {:is-active true})
+        member   (th/create-profile* 3 {:is-active true})
+
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        _        (th/create-team-role* {:team-id (:id team)
+                                        :profile-id (:id member)
+                                        :role :editor})
+        project  (th/create-project* 1 {:team-id (:id team)
+                                        :profile-id (:id owner)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+
+        page-a   (get-in file [:data :pages 0])
+        page-b   (uuid/random)
+
+        _        (th/command! {::th/type :update-file
+                               ::rpc/profile-id (:id owner)
+                               :id (:id file)
+                               :session-id (uuid/random)
+                               :revn 0
+                               :vern 0
+                               :changes [{:type :add-page
+                                          :id page-b
+                                          :page {:id page-b
+                                                 :name "Page B"
+                                                 :options {}
+                                                 :objects {}}}]})
+
+        thread-a (th/command! {::th/type :create-comment-thread
+                               ::rpc/profile-id (:id owner)
+                               :file-id (:id file)
+                               :page-id page-a
+                               :position (gpt/point 0)
+                               :content "comment on page A"
+                               :frame-id uuid/zero})
+
+        thread-b (th/command! {::th/type :create-comment-thread
+                               ::rpc/profile-id (:id member)
+                               :file-id (:id file)
+                               :page-id page-b
+                               :position (gpt/point 0)
+                               :content "comment on page B"
+                               :frame-id uuid/zero})
+
+        thread-a-id (get-in thread-a [:result :id])
+        thread-b-id (get-in thread-b [:result :id])
+        thread-b-comment-id (get-in thread-b [:result :comment-id])
+
+        share    (th/command! {::th/type :create-share-link
+                               ::rpc/profile-id (:id owner)
+                               :file-id (:id file)
+                               :pages #{page-a}
+                               :who-comment "all"
+                               :who-inspect "all"})
+        share-id (get-in share [:result :id])
+
+        ;; A link without pages grants access to nothing.
+        empty-share    (th/command! {::th/type :create-share-link
+                                     ::rpc/profile-id (:id owner)
+                                     :file-id (:id file)
+                                     :pages #{}
+                                     :who-comment "all"
+                                     :who-inspect "all"})
+        empty-share-id (get-in empty-share [:result :id])]
+
+    (t/testing "the comment threads are created"
+      (t/is (th/success? thread-a))
+      (t/is (th/success? thread-b)))
+
+    (t/testing "share-link holder only gets the profiles of the shared page commenters"
+      (let [out    (th/command! {::th/type :get-profiles-for-file-comments
+                                 ::rpc/profile-id (:id outsider)
+                                 :file-id (:id file)
+                                 :share-id share-id})
+            emails (set (map :email (:result out)))]
+        (t/is (th/success? out))
+        (t/is (contains? emails (:email owner)))
+        (t/is (contains? emails (:email outsider)))
+        (t/is (not (contains? emails (:email member))))))
+
+    (t/testing "share-link holder cannot update the status of a thread of an unshared page"
+      (let [out (th/command! {::th/type :update-comment-thread-status
+                              ::rpc/profile-id (:id outsider)
+                              :id thread-b-id
+                              :share-id share-id})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))
+
+    (t/testing "share-link holder cannot update a comment of an unshared page"
+      (let [out (th/command! {::th/type :update-comment
+                              ::rpc/profile-id (:id outsider)
+                              :id thread-b-comment-id
+                              :content "outsider edit on page B"
+                              :share-id share-id})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))
+
+    (t/testing "share-link holder cannot delete a comment of an unshared page"
+      (let [out (th/command! {::th/type :delete-comment
+                              ::rpc/profile-id (:id outsider)
+                              :id thread-b-comment-id
+                              :share-id share-id})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))
+
+    (t/testing "share-link holder cannot delete a thread of an unshared page"
+      (let [out (th/command! {::th/type :delete-comment-thread
+                              ::rpc/profile-id (:id outsider)
+                              :id thread-b-id
+                              :share-id share-id})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))
+
+    (t/testing "share-link holder cannot create a thread on an unshared page"
+      (let [out (th/command! {::th/type :create-comment-thread
+                              ::rpc/profile-id (:id outsider)
+                              :file-id (:id file)
+                              :page-id page-b
+                              :position (gpt/point 0)
+                              :content "comment on page B"
+                              :frame-id uuid/zero
+                              :share-id share-id})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))
+
+    (t/testing "share-link holder cannot move a thread of an unshared page"
+      (let [out (th/command! {::th/type :update-comment-thread-position
+                              ::rpc/profile-id (:id outsider)
+                              :id thread-b-id
+                              :position (gpt/point 10 10)
+                              :frame-id uuid/zero
+                              :share-id share-id})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))
+
+    (t/testing "share-link holder cannot resize a thread of an unshared page"
+      (let [out (th/command! {::th/type :update-comment-thread-frame
+                              ::rpc/profile-id (:id outsider)
+                              :id thread-b-id
+                              :frame-id uuid/zero
+                              :share-id share-id})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))
+
+    (t/testing "share-link holder can move a thread of the shared page"
+      (let [out (th/command! {::th/type :update-comment-thread-position
+                              ::rpc/profile-id (:id outsider)
+                              :id thread-a-id
+                              :position (gpt/point 10 10)
+                              :frame-id uuid/zero
+                              :share-id share-id})]
+        (t/is (th/success? out))))
+
+    (t/testing "share-link holder can resize a thread of the shared page"
+      (let [out (th/command! {::th/type :update-comment-thread-frame
+                              ::rpc/profile-id (:id outsider)
+                              :id thread-a-id
+                              :frame-id uuid/zero
+                              :share-id share-id})]
+        (t/is (th/success? out))))
+
+    (t/testing "share-link holder cannot reply to a thread of an unshared page"
+      (let [out (th/command! {::th/type :create-comment
+                              ::rpc/profile-id (:id outsider)
+                              :thread-id thread-b-id
+                              :content "outsider reply on page B"
+                              :share-id share-id})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))
+
+    (t/testing "share-link holder can reply to a thread of the shared page"
+      (let [out (th/command! {::th/type :create-comment
+                              ::rpc/profile-id (:id outsider)
+                              :thread-id thread-a-id
+                              :content "outsider reply on page A"
+                              :share-id share-id})]
+        (t/is (th/success? out))))
+
+    (t/testing "share-link holder cannot resolve a thread of an unshared page"
+      (let [out (th/command! {::th/type :update-comment-thread
+                              ::rpc/profile-id (:id outsider)
+                              :id thread-b-id
+                              :is-resolved true
+                              :share-id share-id})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))
+
+    (t/testing "share-link holder can resolve a thread of the shared page"
+      (let [out (th/command! {::th/type :update-comment-thread
+                              ::rpc/profile-id (:id outsider)
+                              :id thread-a-id
+                              :is-resolved true
+                              :share-id share-id})]
+        (t/is (th/success? out))))
+
+    (t/testing "share-link holder can write on the shared page"
+      (let [thread (th/command! {::th/type :create-comment-thread
+                                 ::rpc/profile-id (:id outsider)
+                                 :file-id (:id file)
+                                 :page-id page-a
+                                 :position (gpt/point 0)
+                                 :content "outsider comment on page A"
+                                 :frame-id uuid/zero
+                                 :share-id share-id})
+            thread-id  (get-in thread [:result :id])
+            comment-id (get-in thread [:result :comment-id])]
+
+        (t/is (th/success? thread))
+
+        (t/testing "can mark a thread as read"
+          (let [out (th/command! {::th/type :update-comment-thread-status
+                                  ::rpc/profile-id (:id outsider)
+                                  :id thread-id
+                                  :share-id share-id})]
+            (t/is (th/success? out))))
+
+        (t/testing "can edit its comment"
+          (let [out (th/command! {::th/type :update-comment
+                                  ::rpc/profile-id (:id outsider)
+                                  :id comment-id
+                                  :content "outsider edit on page A"
+                                  :share-id share-id})]
+            (t/is (th/success? out))))
+
+        (t/testing "can delete its comment"
+          (let [out (th/command! {::th/type :delete-comment
+                                  ::rpc/profile-id (:id outsider)
+                                  :id comment-id
+                                  :share-id share-id})]
+            (t/is (th/success? out))))
+
+        (t/testing "can delete its thread"
+          (let [out (th/command! {::th/type :delete-comment-thread
+                                  ::rpc/profile-id (:id outsider)
+                                  :id thread-id
+                                  :share-id share-id})]
+            (t/is (th/success? out))))))
+
+    (t/testing "share-link without pages does not leak the commenter profiles"
+      (let [out    (th/command! {::th/type :get-profiles-for-file-comments
+                                 ::rpc/profile-id (:id outsider)
+                                 :file-id (:id file)
+                                 :share-id empty-share-id})
+            emails (set (map :email (:result out)))]
+        (t/is (th/success? out))
+        (t/is (= #{(:email outsider)} emails))))
+
+    (t/testing "share-link without pages cannot create a thread"
+      (let [out (th/command! {::th/type :create-comment-thread
+                              ::rpc/profile-id (:id outsider)
+                              :file-id (:id file)
+                              :page-id page-a
+                              :position (gpt/point 0)
+                              :content "outsider comment on page A"
+                              :frame-id uuid/zero
+                              :share-id empty-share-id})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))
+
+    (t/testing "share-link without pages lists no comment threads"
+      (let [out (th/command! {::th/type :get-comment-threads
+                              ::rpc/profile-id (:id outsider)
+                              :file-id (:id file)
+                              :share-id empty-share-id})]
+        (t/is (th/success? out))
+        (t/is (= [] (:result out)))))
+
+    (t/testing "share-link without pages cannot get a comment thread"
+      (let [out (th/command! {::th/type :get-comment-thread
+                              ::rpc/profile-id (:id outsider)
+                              :file-id (:id file)
+                              :id thread-a-id
+                              :share-id empty-share-id})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))
+
+    (t/testing "share-link without pages cannot get the comments of a thread"
+      (let [out (th/command! {::th/type :get-comments
+                              ::rpc/profile-id (:id outsider)
+                              :thread-id thread-a-id
+                              :share-id empty-share-id})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))))
+
 (t/deftest membership-can-still-comment
   (let [owner   (th/create-profile* 1 {:is-active true})
         member  (th/create-profile* 2 {:is-active true})
@@ -461,7 +755,23 @@
                                        :profile-id (:id owner)})
         file    (th/create-file* 1 {:profile-id (:id owner)
                                     :project-id (:id project)})
-        page-id (get-in file [:data :pages 0])]
+        page-id (get-in file [:data :pages 0])
+
+        _       (th/command! {::th/type :create-comment-thread
+                              ::rpc/profile-id (:id owner)
+                              :file-id (:id file)
+                              :page-id page-id
+                              :position (gpt/point 0)
+                              :content "owner comment"
+                              :frame-id uuid/zero})
+
+        thread  (th/command! {::th/type :create-comment-thread
+                              ::rpc/profile-id (:id member)
+                              :file-id (:id file)
+                              :page-id page-id
+                              :position (gpt/point 0)
+                              :content "member comment"
+                              :frame-id uuid/zero})]
 
     (t/testing "team member can get-comment-threads without share-id"
       (let [out (th/command! {::th/type :get-comment-threads
@@ -470,14 +780,45 @@
         (t/is (th/success? out))))
 
     (t/testing "team member can create-comment-thread without share-id"
-      (let [out (th/command! {::th/type :create-comment-thread
+      (t/is (th/success? thread)))
+
+    (t/testing "team member can move a thread of the file"
+      (let [out (th/command! {::th/type :update-comment-thread-position
                               ::rpc/profile-id (:id member)
-                              :file-id (:id file)
-                              :page-id page-id
-                              :position (gpt/point 0)
-                              :content "member comment"
+                              :id (get-in thread [:result :id])
+                              :position (gpt/point 10 10)
                               :frame-id uuid/zero})]
-        (t/is (th/success? out))))))
+        (t/is (th/success? out))))
+
+    (t/testing "team member can resize a thread of the file"
+      (let [out (th/command! {::th/type :update-comment-thread-frame
+                              ::rpc/profile-id (:id member)
+                              :id (get-in thread [:result :id])
+                              :frame-id uuid/zero})]
+        (t/is (th/success? out))))
+
+    (t/testing "team member can reply to a thread of the file"
+      (let [out (th/command! {::th/type :create-comment
+                              ::rpc/profile-id (:id member)
+                              :thread-id (get-in thread [:result :id])
+                              :content "member reply"})]
+        (t/is (th/success? out))))
+
+    (t/testing "team member can resolve a thread of the file"
+      (let [out (th/command! {::th/type :update-comment-thread
+                              ::rpc/profile-id (:id member)
+                              :id (get-in thread [:result :id])
+                              :is-resolved true})]
+        (t/is (th/success? out))))
+
+    (t/testing "team member gets the profiles of all the file commenters"
+      (let [out    (th/command! {::th/type :get-profiles-for-file-comments
+                                 ::rpc/profile-id (:id member)
+                                 :file-id (:id file)})
+            emails (set (map :email (:result out)))]
+        (t/is (th/success? out))
+        (t/is (contains? emails (:email member)))
+        (t/is (contains? emails (:email owner)))))))
 
 (t/deftest comment-audit-events-carry-team-id
   ;; Comment events carry the file id, so the resolver could find the team; the
@@ -507,3 +848,213 @@
                (get-in (meta (:result thread)) [:app.loggers.audit/props :team-id])))
       (t/is (= (:id team)
                (get-in (meta (:result comment)) [:app.loggers.audit/props :team-id]))))))
+
+(t/deftest mark-all-threads-as-read-requires-access-to-the-threads
+  (let [owner    (th/create-profile* 1 {:is-active true})
+        stranger (th/create-profile* 2 {:is-active true})
+
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        project  (th/create-project* 1 {:team-id (:id team)
+                                        :profile-id (:id owner)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        page-id  (get-in file [:data :pages 0])
+
+        thread   (th/command! {::th/type :create-comment-thread
+                               ::rpc/profile-id (:id owner)
+                               :file-id (:id file)
+                               :page-id page-id
+                               :position (gpt/point 0)
+                               :content "private thread"
+                               :frame-id uuid/zero})
+        thread-id (get-in thread [:result :id])]
+
+    (t/testing "the sibling rpc already rejects a profile without access"
+      (let [out (th/command! {::th/type :update-comment-thread-status
+                              ::rpc/profile-id (:id stranger)
+                              :id thread-id})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))
+
+    (t/testing "mark-all-threads-as-read rejects a profile without access"
+      (let [out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id stranger)
+                              :threads [thread-id]})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out)))))
+
+      (t/is (nil? (th/db-get :comment-thread-status
+                             {:thread-id thread-id
+                              :profile-id (:id stranger)}))))))
+
+(t/deftest mark-all-threads-as-read-behaviour
+  (let [owner    (th/create-profile* 1 {:is-active true})
+        member   (th/create-profile* 2 {:is-active true})
+        viewer   (th/create-profile* 3 {:is-active true})
+        outsider (th/create-profile* 4 {:is-active true})
+
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        _        (th/create-team-role* {:team-id (:id team)
+                                        :profile-id (:id member)
+                                        :role :editor})
+        _        (th/create-team-role* {:team-id (:id team)
+                                        :profile-id (:id viewer)
+                                        :role :viewer})
+        project  (th/create-project* 1 {:team-id (:id team)
+                                        :profile-id (:id owner)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        page-id  (get-in file [:data :pages 0])
+
+        thread   (th/command! {::th/type :create-comment-thread
+                               ::rpc/profile-id (:id owner)
+                               :file-id (:id file)
+                               :page-id page-id
+                               :position (gpt/point 0)
+                               :content "hello"
+                               :frame-id uuid/zero})
+        thread-id (get-in thread [:result :id])]
+
+    (t/testing "the thread is unread for a team member"
+      (let [out (th/command! {::th/type :get-unread-comment-threads
+                              ::rpc/profile-id (:id member)
+                              :team-id (:id team)})]
+        (t/is (th/success? out))
+        (t/is (= 1 (count (:result out))))))
+
+    (t/testing "a team member can mark the threads as read"
+      (let [out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id member)
+                              :threads [thread-id]})]
+        (t/is (th/success? out)))
+
+      (let [out (th/command! {::th/type :get-unread-comment-threads
+                              ::rpc/profile-id (:id member)
+                              :team-id (:id team)})]
+        (t/is (th/success? out))
+        (t/is (= 0 (count (:result out))))))
+
+    (t/testing "a viewer of the team can mark the threads as read"
+      (let [out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id viewer)
+                              :threads [thread-id]})]
+        (t/is (th/success? out))))
+
+    (t/testing "an unknown thread is rejected"
+      (let [out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id member)
+                              :threads [(uuid/random)]})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))
+
+    (t/testing "more threads than the allowed maximum are rejected"
+      (let [out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id member)
+                              :threads (vec (repeatedly 501 uuid/random))})]
+        (t/is (not (th/success? out)))
+        (t/is (= :validation (th/ex-type (:error out))))))
+
+    (t/testing "a list with an inaccessible thread writes nothing"
+      (let [other-team    (th/create-team* 2 {:profile-id (:id owner)})
+            other-project (th/create-project* 2 {:team-id (:id other-team)
+                                                 :profile-id (:id owner)})
+            other-file    (th/create-file* 2 {:profile-id (:id owner)
+                                              :project-id (:id other-project)})
+            other-thread  (th/command! {::th/type :create-comment-thread
+                                        ::rpc/profile-id (:id owner)
+                                        :file-id (:id other-file)
+                                        :page-id (get-in other-file [:data :pages 0])
+                                        :position (gpt/point 0)
+                                        :content "other team"
+                                        :frame-id uuid/zero})
+            other-thread-id (get-in other-thread [:result :id])
+
+            accessible-thread (th/command! {::th/type :create-comment-thread
+                                            ::rpc/profile-id (:id owner)
+                                            :file-id (:id file)
+                                            :page-id page-id
+                                            :position (gpt/point 0)
+                                            :content "accessible"
+                                            :frame-id uuid/zero})
+            accessible-thread-id (get-in accessible-thread [:result :id])
+
+            out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id member)
+                              :threads [accessible-thread-id other-thread-id]})]
+
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))
+        (t/is (nil? (th/db-get :comment-thread-status
+                               {:thread-id accessible-thread-id
+                                :profile-id (:id member)})))
+        (t/is (nil? (th/db-get :comment-thread-status
+                               {:thread-id other-thread-id
+                                :profile-id (:id member)})))))
+
+    (t/testing "a profile without any relation with the team is rejected"
+      (let [out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id outsider)
+                              :threads [thread-id]})]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))))
+
+(t/deftest mark-all-threads-as-read-edge-cases
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        member  (th/create-profile* 2 {:is-active true})
+        viewer  (th/create-profile* 3 {:is-active true})
+
+        team    (th/create-team* 1 {:profile-id (:id owner)})
+        _       (th/create-team-role* {:team-id (:id team)
+                                       :profile-id (:id member)
+                                       :role :editor})
+        _       (th/create-team-role* {:team-id (:id team)
+                                       :profile-id (:id viewer)
+                                       :role :viewer})
+        project (th/create-project* 1 {:team-id (:id team)
+                                       :profile-id (:id owner)})
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id (:id project)})
+        page-id (get-in file [:data :pages 0])
+
+        thread  (th/command! {::th/type :create-comment-thread
+                              ::rpc/profile-id (:id owner)
+                              :file-id (:id file)
+                              :page-id page-id
+                              :position (gpt/point 0)
+                              :content "hello"
+                              :frame-id uuid/zero})
+        thread-id (get-in thread [:result :id])]
+
+    (t/testing "repeated thread ids are accepted and written once"
+      (let [out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id member)
+                              :threads [thread-id thread-id]})]
+        (t/is (th/success? out))
+        (t/is (= 1 (count (th/db-query :comment-thread-status
+                                       {:thread-id thread-id
+                                        :profile-id (:id member)}))))))
+
+    (t/testing "an empty list of threads is accepted and writes nothing"
+      (let [out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id viewer)
+                              :threads []})]
+        (t/is (th/success? out))
+        (t/is (= 0 (count (th/db-query :comment-thread-status
+                                       {:thread-id thread-id
+                                        :profile-id (:id viewer)}))))))
+
+    (t/testing "marking a thread as read twice keeps a single status row"
+      (let [out (th/command! {::th/type :mark-all-threads-as-read
+                              ::rpc/profile-id (:id member)
+                              :threads [thread-id]})]
+        (t/is (th/success? out)))
+
+      (t/is (= 1 (count (th/db-query :comment-thread-status
+                                     {:thread-id thread-id
+                                      :profile-id (:id member)}))))
+
+      (let [out (th/command! {::th/type :get-unread-comment-threads
+                              ::rpc/profile-id (:id member)
+                              :team-id (:id team)})]
+        (t/is (th/success? out))
+        (t/is (= 0 (count (:result out))))))))
