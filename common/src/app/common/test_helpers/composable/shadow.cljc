@@ -572,6 +572,30 @@
          result)))
    model model))
 
+(defn sync-scaled-heads
+  "A copy parent that a sync resizes sizes its untouched swapped heads
+  through their constraints. A head it gives another size authors that
+  size, placed in the parent."
+  [model before after]
+  (let [sized-alike? #(and (mth/close? (:width %1) (:width %2))
+                           (mth/close? (:height %1) (:height %2)))]
+    (reduce-kv
+     (fn [result id groups]
+       (let [old        (get before id)
+             shape      (get after id)
+             old-parent (get before (:parent-id old))
+             parent     (get after (:parent-id shape))]
+         (if (and (contains? groups :swap-group)
+                  (not (contains? groups :geometry-group))
+                  old shape old-parent parent
+                  (= (:parent-id old) (:parent-id shape))
+                  (:shape-ref parent)
+                  (not (sized-alike? old-parent parent))
+                  (not (sized-alike? old shape)))
+           (assoc-in result [id :geometry-group] (author-geometry shape parent))
+           result)))
+     model model)))
+
 (defn settle
   "A detached position turns its copies into ordinary shapes. Their former
    component choice stops applying; other authored groups stay in place.
@@ -818,10 +842,10 @@
                                           ;; a mirror stores its turn either way: the turns of two
                                           ;; mirrored mains agree where they point their axes alike
                                           (and (= attr :rotation) old-main old-parent new-parent)
-                                          (or (same? (get old-placed attr) (get placed attr))
-                                              (and (mirrored? old-placed) (mirrored? placed)
-                                                   (geom/same-placed-axes? old-main (get before (:parent-id old-main)) old-parent
-                                                                           main (get after (:parent-id main)) new-parent)))
+                                          (if (and (mirrored? old-placed) (mirrored? placed))
+                                            (geom/same-placed-axes? old-main (get before (:parent-id old-main)) old-parent
+                                                                    main (get after (:parent-id main)) new-parent)
+                                            (same? (get old-placed attr) (get placed attr)))
 
                                           :else
                                           (same? (get old-placed attr) (get placed attr))))
