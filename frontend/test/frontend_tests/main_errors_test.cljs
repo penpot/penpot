@@ -23,6 +23,7 @@
     - save failure notification   – sticky toast carrying the error report
     - delegated save failures     – causes handled by the handler for their type"
   (:require
+   [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.persistence :as dps]
@@ -42,6 +43,15 @@
    [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
+
+(defn- quiet-throwable
+  "Console stub for the tests that run a real error handler end to end.
+  Those handlers print the cause with `ex/print-throwable` before notifying,
+  which is what a developer wants in the app; in a test it only floods the
+  run log, and one of them replays the same error thousands of times. No
+  test asserts the printed text, so the stub changes nothing but the noise."
+  [& _]
+  nil)
 
 ;; ---------------------------------------------------------------------------
 ;; stale-asset-error?
@@ -247,7 +257,8 @@
           cause  (ex-info "http error" {:type type :hint "http error"})]
       (await
        (mock/with-mocks*
-         {st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
+         {ex/print-throwable    quiet-throwable
+          st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
           rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")
           tm/schedule           (mock/stub (fn [f] (f)))
           st/format-last-events (mock/stub (fn [& _] (throw (ex-info "must not be called" {}))))}
@@ -303,7 +314,8 @@
         cause  (ex-info "http error" {:type :offline :hint "http error"})]
     (await
      (mock/with-mocks*
-       {st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
+       {ex/print-throwable    quiet-throwable
+        st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
         rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")
         tm/schedule           (mock/stub (fn [f] (mock/asap f)))
         st/format-last-events (mock/stub (fn [& _] (throw (ex-info "must not be called" {}))))}
@@ -1060,7 +1072,8 @@
   (t/testing "a version restored elsewhere reloads the file instead of notifying"
     (let [events    (atom [])
           scheduled (atom [])]
-      (with-redefs [st/emit!    (mock/stub (fn [& emitted] (swap! events into emitted)))
+      (with-redefs [ex/print-throwable quiet-throwable
+                    st/emit!    (mock/stub (fn [& emitted] (swap! events into emitted)))
                     tm/schedule (mock/stub (fn [callback]
                                              (swap! scheduled conj callback)))]
         (errors/flash-persistence (ex-info "A different version has been restored"
@@ -1138,7 +1151,8 @@
                              :uri "https://design.penpot.app/api/main/methods/get-teams"})]
       (await
        (mock/with-mocks*
-         {st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
+         {ex/print-throwable    quiet-throwable
+          st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
           rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")
           rt/assign-exception   (fn [error] (swap! assigned conj error) error)
           tm/schedule           (mock/stub (fn [f] (f)))

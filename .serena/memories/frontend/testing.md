@@ -42,6 +42,7 @@ To assert over emitted event sequences, observe termination: subscribe through `
 - With `rp/cmd!` mocked, a store-state wait can resolve before the flow that changes it ends, and the mock scope then closes in flight: the next call hits the real HTTP layer (malformed URL from a nil `cf/public-uri`) and the error is reported on a later test. `unlink-file-from-library` dissocs the library before its async chain, so the only proof the chain ran inside the mock is its second RPC call; wait for that, through the mock.
 - Teardown belongs to the terminal continuation, never to `finally`-around-triggers (it would dispose in-flight flows).
 - A body that awaits must be `(^:async fn …)` even if the rest is sync; sync sequences are atomic vs the event loop.
+- `app.main.errors` prints every handled cause with `ex/print-throwable` before notifying, and the app logger does not gate it. A test that runs a real handler end to end stubs that var (`main-errors-test/quiet-throwable`): without it, the 10 000-error governor test alone wrote 190 k of the 192 k lines of a run log (13,8 MB), and GitHub truncates a step log past ~4 MB, cutting the summary and any failing assertion.
 - The `:esm` test build cannot load the CommonJS `sax` module behind `tubax`, so SVG parsing fails in tests (`dwm/valid-svg-string?` answers false, `dwm/svg->clj` errors): mock both with the parsed data.
 
 From `frontend/`:
