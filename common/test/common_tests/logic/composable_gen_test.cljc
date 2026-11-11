@@ -2152,6 +2152,12 @@
                                     :layout-children true :grid-empty true :layout-copies true :text true}]
                        :ops [[:make-variant 1] [:style 4 29 1] [:style 7 12] [:update-main]]}))))
 
+(t/deftest updating-a-main-whose-copy-fills-a-child-of-touched-geometry-keeps-its-fill
+  (t/is (map? (cg/run {:world [1 2 {:variants true :text-styles false :layout :flex :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants false
+                                    :layout-children true :grid-empty false :layout-copies false :text true}]
+                       :ops [[:style 4 21 1] [:detach 8] [:style 0 29 1] [:update-main]]}))))
+
 (t/deftest resetting-a-nested-copy-of-a-swapped-layout-head-restores-its-sizing
   (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout :grid :variant-diff true
                                     :layout-item-margins false :grid-square false :rich-variants true
