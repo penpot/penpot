@@ -43,7 +43,7 @@
     (set-state file-id)
     (t/is (= {::ev/origin "mcp"
               ::ev/context {:file-id file-id}}
-             (meta (se/add-event (ptk/data-event ::test) r/mcp-plugin-id))))))
+             (meta (se/add-event (ptk/reify ::test) r/mcp-plugin-id))))))
 
 (t/deftest event-has-no-file-on-the-dashboard
   (set-state nil)
