@@ -2219,6 +2219,17 @@
                              [:add-variant] [:combine] [:add-variant] [:combine] [:update-main]
                              [:nest 13]]}))))
 
+(t/deftest updating-a-main-pushes-a-margin-a-switch-carried-out-of-a-layout
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles true :layout :flex :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:combine 10] [:add-variant 3] [:combine 1] [:rotate 8] [:combine 13] [:combine 8]
+                             [:delete 3] [:restore] [:add-variant 4] [:switch 24] [:switch] [:combine 18]
+                             [:style 17 0 15] [:remove-child] [:remove-child 22] [:make-variant] [:combine]
+                             [:style 22 27] [:text-style 7 0 1] [:detach 20] [:transform 14 0 0 8]
+                             [:add-variant] [:switch 22] [:duplicate 1] [:detach 20] [:text-style 23 0 1]
+                             [:switch 6] [:update-main 22]]}))))
+
 (t/deftest pushing-a-grid-direction-orders-the-copies-like-the-reflowed-main
   (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles false :layout :grid :variant-diff false
                                     :layout-item-margins false :grid-square true :rich-variants false

@@ -152,6 +152,8 @@
 (declare set-touched)
 (declare change-remote-synced)
 (declare update-attrs)
+(declare attr-operations)
+(declare add-update-attr-changes)
 (declare update-grid-main-attrs)
 (declare update-grid-copy-attrs)
 (declare update-layout-children)
@@ -1056,7 +1058,8 @@
   pairs with: the copy's values, overrides included, go into the main, and
   its touched groups move there (the copy keeps a swap). A geometry that
   sync kept for the copy (`:kept?`) is not the copy's, so the main keeps
-  its own."
+  its own. A layout parent pushes the layout child attributes of its
+  children; under any other parent, those the copy authored go alone."
   [changes {:keys [container main-container root-inst root-main remote-synced inherited-turn kept? keep-name?]} shape-inst shape-main]
   (let [;; the root of a variant keeps its name, and the copy its override of it
         keep-name? (and keep-name? (= (:id shape-inst) (:id root-inst)))
@@ -1069,13 +1072,25 @@
                          root-main))
         ;; the axes a layout sized that take the pushed size, fixed as a resize fixes them
         fixed (when-not kept? (pushed-size-sizing (:objects main-container) shape-main
-                                                  (:objects container) shape-inst source))]
+                                                  (:objects container) shape-inst source))
+        ;; the layout child attributes the copy authored that no layout parent pushes
+        item-attrs (when (and (not= (:id shape-inst) (:id root-inst))
+                              (not (ctsl/any-layout? (:objects main-container) (:parent-id shape-main))))
+                     (into #{}
+                           (filter #(and (ctk/touched-group? shape-inst (ctk/resolve-sync-group (:type shape-inst) %))
+                                         (not= (get shape-inst %) (get shape-main %))))
+                           layout-child-attrs))
+        [item-roperations item-uoperations]
+        (attr-operations shape-main #(when (contains? item-attrs %) [[% (get shape-inst %)]])
+                         item-attrs)]
     (cond-> (-> changes
                 (update-attrs shape-main
                               source
                               root-main
                               (cond-> root-inst (some? inherited-turn) inherited-turn)
                               main-container false)
+                (cond-> (seq item-roperations)
+                  (add-update-attr-changes shape-main main-container item-roperations item-uoperations))
                 ;; the copy keeps the sizing it pushed
                 (cond-> (seq fixed)
                   (-> (set-sizing main-container shape-main fixed)
