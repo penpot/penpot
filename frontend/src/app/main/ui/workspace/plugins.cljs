@@ -111,12 +111,13 @@
         plugin-url*     (mf/use-state "")
         plugin-url      (deref plugin-url*)
 
-        input-status*   (mf/use-state nil) ;; :error-url :error-manifest :success
+        input-status*   (mf/use-state nil) ;; :error-url :error-manifest :error-global :success
         input-status    (deref input-status*)
 
         error-url?      (= :error-url input-status)
         error-manifest? (= :error-manifest input-status)
-        error?          (or error-url? error-manifest?)
+        error-global?   (= :error-global input-status)
+        error?          (or error-url? error-manifest? error-global?)
 
         permissions     (mf/deref refs/permissions)
         user-can-edit?  (get permissions :can-edit)
@@ -159,7 +160,10 @@
                  (fn [err]
                    (.error js/console err)
                    (reset! fetching-manifest? false)
-                   (reset! input-status* :error-url))))))
+                   (reset! input-status*
+                           (if (= ::preg/global-not-allowed (:type (ex-data err)))
+                             :error-global
+                             :error-url)))))))
 
         on-open-plugin
         (mf/use-fn
@@ -235,6 +239,10 @@
        (when error-manifest?
          [:div {:class (stl/css-case :info true :error error?)}
           (tr "workspace.plugins.error.manifest")])
+
+       (when error-global?
+         [:div {:class (stl/css-case :info true :error error?)}
+          (tr "workspace.plugins.error.global-not-allowed")])
 
        (when-not (empty? plugins-state)
          [:> i18n/tr-html*

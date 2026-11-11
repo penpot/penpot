@@ -347,3 +347,71 @@
                        :permissions #js ["content:read"]})]
     (t/is (nil? (:scope manifest)))
     (t/is (= #{"content:read"} (:permissions manifest)))))
+
+;; --- global plugins restriction ---
+
+(defn- global-not-allowed-error
+  "The ex-data type thrown by `(f)`, or nil when it does not throw."
+  [f]
+  (try
+    (f)
+    nil
+    (catch :default cause
+      (:type (ex-data cause)))))
+
+(t/deftest global-plugins-are-allowed-for-mcp-and-localhost
+  (t/is (preg/global-allowed? {:plugin-id preg/mcp-plugin-id
+                               :host "https://design.penpot.app/plugins/mcp/"}))
+  (doseq [host ["http://localhost:4400/" "http://127.0.0.1:4400/" "http://[::1]:4400/"
+                "http://LOCALHOST:4400/" "http://LocalHost/" "http://localhost.:4400/"]]
+    (t/is (preg/global-allowed? {:plugin-id "local" :host host}) host))
+  (t/is (not (preg/global-allowed? {:plugin-id "remote" :host "https://plugins.example.com/"})))
+  (t/is (not (preg/global-allowed? {:plugin-id "remote" :host "https://localhost.example.com/"}))))
+
+(t/deftest parse-manifest-rejects-remote-global-scope
+  (t/is (= ::preg/global-not-allowed
+           (global-not-allowed-error
+            #(preg/parse-manifest
+              "https://plugins.example.com/manifest.json"
+              #js {:name "Remote global plugin"
+                   :code "plugin.js"
+                   :scope "global"
+                   :permissions #js ["content:read"]})))))
+
+(t/deftest parse-manifest-rejects-remote-management-permissions
+  (doseq [permission ["manage:projects" "manage:teams" "manage:delete" "allow:global"]]
+    (t/is (= ::preg/global-not-allowed
+             (global-not-allowed-error
+              #(preg/parse-manifest
+                "https://plugins.example.com/manifest.json"
+                #js {:name "Remote management plugin"
+                     :code "plugin.js"
+                     :permissions #js ["content:read" permission]})))
+          permission)))
+
+(t/deftest parse-manifest-keeps-remote-workspace-plugins
+  (let [manifest (preg/parse-manifest
+                  "https://plugins.example.com/manifest.json"
+                  #js {:name "Remote workspace plugin"
+                       :code "plugin.js"
+                       :permissions #js ["content:read"]})]
+    (t/is (= #{"content:read"} (:permissions manifest)))))
+
+(t/deftest ^:async stored-remote-plugins-lose-global-permissions
+  (await
+   (mock/with-mocks*
+     {rp/cmd! (record-cmd-mock (fn [_ _] (rx/of {:ok true})))}
+     (let [permissions #{"content:read" "allow:global" "manage:projects"}]
+       (preg/install-plugin! {:plugin-id "reg-global-remote"
+                              :host "https://plugins.example.com/"
+                              :scope "global"
+                              :permissions permissions})
+       (preg/install-plugin! {:plugin-id "reg-global-local"
+                              :host "http://localhost:4400/"
+                              :scope "global"
+                              :permissions permissions})
+       (t/is (preg/has-permission? "reg-global-remote" "content:read"))
+       (t/is (not (preg/has-permission? "reg-global-remote" "allow:global")))
+       (t/is (not (preg/has-permission? "reg-global-remote" "manage:projects")))
+       (t/is (preg/has-permission? "reg-global-local" "allow:global"))
+       (t/is (preg/has-permission? "reg-global-local" "manage:projects"))))))
