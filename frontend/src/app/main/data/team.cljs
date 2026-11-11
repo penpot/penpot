@@ -13,6 +13,7 @@
    [app.common.types.organization :as cto]
    [app.common.types.team :as ctt]
    [app.common.uri :as u]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
@@ -24,7 +25,9 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.util.clipboard :as clipboard]
+   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [app.util.session-state :as ss]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [clojure.string :as str]
@@ -111,8 +114,8 @@
              (f team)))))))
 
 (defn check-and-create-team
-  "Fetches fresh team data from the server to ensure up-to-date organization
-  permissions, then shows the team-form modal or a no-permission modal."
+  "Fetches fresh team data, checks organization permissions and SSO, then
+  shows the team form or the appropriate access error."
   [team-id]
   (ptk/reify ::check-and-create-team
     ptk/WatchEvent
@@ -127,13 +130,44 @@
                                                {:organization-perms organization
                                                 :profile-id profile-id
                                                 :team-perms (:permissions team)})
-                                 true)]
-              (rx/of (if can-create?
-                       (modal/show :team-form (if in-organization?
-                                                {:organization-id   (:id organization)
-                                                 :organization-name (:name organization)}
-                                                {}))
-                       (modal/show :no-permission-modal {:type :create-team}))))))))))
+                                 true)
+                  team-form-modal (modal/show :team-form (if in-organization?
+                                                           {:organization-id   (:id organization)
+                                                            :organization-name (:name organization)}
+                                                           {}))]
+              (cond
+                (not can-create?)
+                (rx/of (modal/show :no-permission-modal {:type :create-team}))
+
+                (not in-organization?)
+                (rx/of team-form-modal)
+
+                :else
+                (let [pending-id   (str (uuid/next))
+                      callback-url (dom/append-query-param (rt/get-current-href)
+                                                           :pending-action-id pending-id)]
+                  (->> (rp/cmd! :check-nitrate-sso {:team-id team-id
+                                                    :url callback-url})
+                       (rx/mapcat
+                        (fn [{:keys [authorized redirect-uri]}]
+                          (cond
+                            authorized
+                            (rx/of team-form-modal)
+
+                            redirect-uri
+                            (do
+                              (ss/save-pending-action! pending-id
+                                                       {:type :create-team-in-organization
+                                                        :team-id team-id})
+                              (rx/of (rt/nav-raw :uri (str redirect-uri))))
+
+                            :else
+                            (rx/of (rt/assign-exception
+                                    {:type :sso-error
+                                     :organization-id (:id organization)
+                                     :organization-name (:name organization)
+                                     :team-id team-id
+                                     :is-dashboard true})))))))))))))))
 
 (defn check-and-delete-team
   "Fetches fresh team data from the server to ensure up-to-date organization

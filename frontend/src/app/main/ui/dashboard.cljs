@@ -18,6 +18,7 @@
    [app.main.data.plugins :as dp]
    [app.main.data.profile :as dprof]
    [app.main.data.project :as dpj]
+   [app.main.data.team :as dtm]
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -298,6 +299,8 @@
           (st/emit! (dnt/add-team-to-organization {:team-id         (:team-id action)
                                                    :organization-id (:organization-id action)
                                                    :skip-audit?     true}))
+          :create-team-in-organization
+          (st/emit! (dtm/check-and-create-team (:team-id action)))
           nil)))))
 
 (mf/defc dashboard*
