@@ -5,7 +5,10 @@ import {
   setupEmptyTokensFileRender,
   setupTokensFileRender,
   setupTypographyTokensFileRender,
-  testTokenCreationFlow,
+  openTokenCreationForm,
+  assertTokenCreationLadder,
+  saveToken,
+  createTokenWithValue,
   unfoldTokenType,
   createToken,
   createSet,
@@ -17,19 +20,64 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe("Tokens - creation", () => {
-  test("User creates border radius token", async ({ page }) => {
-    await testTokenCreationFlow(page, {
-      tokenLabel: "Border Radius",
-      namePlaceholder: "Enter border radius token name",
-      valuePlaceholder: "Enter a value or alias with {alias}",
-      invalidValue: "red",
-      validValue: "2 + 3",
-      selfReferenceValue: "{my-token}",
-      missingReferenceValue: "{missing-token}",
-      secondValidValue: "{my-token} - 2",
-      resolvedValueText: "Resolved value: 5",
-      secondResolvedValueText: "Resolved value: 3",
+  test("User creates tokens of every numeric type", async ({ page }) => {
+    const { tokensUpdateCreateModal } = await setupEmptyTokensFileRender(page);
+
+    const cases = [
+      ["Border Radius", "border radius", "my-token-border-radius"],
+      ["Dimensions", "dimensions", "my-token-dimensions"],
+      ["Font Size", "font size", "my-token-font-size"],
+      ["Letter spacing", "letter spacing", "my-token-letter-spacing"],
+      ["Number", "number", "my-token-number"],
+      ["Rotation", "rotation", "my-token-rotation"],
+      ["Sizing", "sizing", "my-token-sizing"],
+      ["Spacing", "spacing", "my-token-spacing"],
+      ["Stroke width", "stroke width", "my-token-stroke-width"],
+    ];
+
+    const [first, ...rest] = cases;
+
+    await test.step(first[0], async () => {
+      const [tokenLabel, placeholder, name] = first;
+      const namePlaceholder = `Enter ${placeholder} token name`;
+
+      await openTokenCreationForm(page, tokensUpdateCreateModal, {
+        tokenLabel,
+        namePlaceholder,
+      });
+
+      await assertTokenCreationLadder(tokensUpdateCreateModal, { name });
+
+      await saveToken(page, tokensUpdateCreateModal, {
+        tokenLabel,
+        name,
+        value: "2 + 3",
+        resolvedText: "Resolved value: 5",
+      });
+
+      // A second token that references the first one
+      await openTokenCreationForm(page, tokensUpdateCreateModal, {
+        tokenLabel,
+        namePlaceholder,
+      });
+
+      await saveToken(page, tokensUpdateCreateModal, {
+        tokenLabel,
+        name: `${name}-ref`,
+        value: `{${name}} - 2`,
+        resolvedText: "Resolved value: 3",
+      });
     });
+
+    for (const [tokenLabel, placeholder, name] of rest) {
+      await test.step(tokenLabel, async () => {
+        await createTokenWithValue(page, tokensUpdateCreateModal, {
+          tokenLabel,
+          namePlaceholder: `Enter ${placeholder} token name`,
+          name,
+        });
+      });
+    }
   });
 
   test("User creates border radius token with combobox", async ({ page }) => {
@@ -185,126 +233,6 @@ test.describe("Tokens - creation", () => {
     await expect(
       tokensTabPanel.getByRole("button", { name: "my-token-2" }),
     ).toBeEnabled();
-  });
-
-  test("User creates dimensions token", async ({ page }) => {
-    await testTokenCreationFlow(page, {
-      tokenLabel: "Dimensions",
-      namePlaceholder: "Enter dimensions token name",
-      valuePlaceholder: "Enter a value or alias with {alias}",
-      invalidValue: "red",
-      validValue: "2 + 3",
-      selfReferenceValue: "{my-token}",
-      missingReferenceValue: "{missing-token}",
-      secondValidValue: "{my-token} - 2",
-      resolvedValueText: "Resolved value: 5",
-      secondResolvedValueText: "Resolved value: 3",
-    });
-  });
-
-  test("User creates font size token", async ({ page }) => {
-    await testTokenCreationFlow(page, {
-      tokenLabel: "Font Size",
-      namePlaceholder: "Enter font size token name",
-      valuePlaceholder: "Enter a value or alias with {alias}",
-      invalidValue: "red",
-      validValue: "2 + 3",
-      selfReferenceValue: "{my-token}",
-      missingReferenceValue: "{missing-token}",
-      secondValidValue: "{my-token} - 2",
-      resolvedValueText: "Resolved value: 5",
-      secondResolvedValueText: "Resolved value: 3",
-    });
-  });
-
-  test("User creates letter spacing token", async ({ page }) => {
-    await testTokenCreationFlow(page, {
-      tokenLabel: "Letter spacing",
-      namePlaceholder: "Enter letter spacing token name",
-      valuePlaceholder: "Enter a value or alias with {alias}",
-      invalidValue: "red",
-      validValue: "2 + 3",
-      selfReferenceValue: "{my-token}",
-      missingReferenceValue: "{missing-token}",
-      secondValidValue: "{my-token} - 2",
-      resolvedValueText: "Resolved value: 5",
-      secondResolvedValueText: "Resolved value: 3",
-    });
-  });
-
-  test("User creates number token", async ({ page }) => {
-    await testTokenCreationFlow(page, {
-      tokenLabel: "Number",
-      namePlaceholder: "Enter number token name",
-      valuePlaceholder: "Enter a value or alias with {alias}",
-      invalidValue: "red",
-      validValue: "2 + 3",
-      selfReferenceValue: "{my-token}",
-      missingReferenceValue: "{missing-token}",
-      secondValidValue: "{my-token} - 2",
-      resolvedValueText: "Resolved value: 5",
-      secondResolvedValueText: "Resolved value: 3",
-    });
-  });
-
-  test("User creates rotation token", async ({ page }) => {
-    await testTokenCreationFlow(page, {
-      tokenLabel: "Rotation",
-      namePlaceholder: "Enter rotation token name",
-      valuePlaceholder: "Enter a value or alias with {alias}",
-      invalidValue: "red",
-      validValue: "2 + 3",
-      selfReferenceValue: "{my-token}",
-      missingReferenceValue: "{missing-token}",
-      secondValidValue: "{my-token} - 2",
-      resolvedValueText: "Resolved value: 5",
-      secondResolvedValueText: "Resolved value: 3",
-    });
-  });
-
-  test("User creates sizing token", async ({ page }) => {
-    await testTokenCreationFlow(page, {
-      tokenLabel: "Sizing",
-      namePlaceholder: "Enter sizing token name",
-      valuePlaceholder: "Enter a value or alias with {alias}",
-      invalidValue: "red",
-      validValue: "2 + 3",
-      selfReferenceValue: "{my-token}",
-      missingReferenceValue: "{missing-token}",
-      secondValidValue: "{my-token} - 2",
-      resolvedValueText: "Resolved value: 5",
-      secondResolvedValueText: "Resolved value: 3",
-    });
-  });
-
-  test("User creates spacing token", async ({ page }) => {
-    await testTokenCreationFlow(page, {
-      tokenLabel: "Spacing",
-      namePlaceholder: "Enter spacing token name",
-      valuePlaceholder: "Enter a value or alias with {alias}",
-      invalidValue: "red",
-      validValue: "2 + 3",
-      selfReferenceValue: "{my-token}",
-      missingReferenceValue: "{missing-token}",
-      secondValidValue: "{my-token} - 2",
-      resolvedValueText: "Resolved value: 5",
-      secondResolvedValueText: "Resolved value: 3",
-    });
-  });
-
-  test("User creates stroke width token", async ({ page }) => {
-    await testTokenCreationFlow(page, {
-      tokenLabel: "Stroke width",
-      namePlaceholder: "Enter stroke width token name",
-      valuePlaceholder: "Enter a value or alias with {alias}",
-      invalidValue: "red",
-      validValue: "2 + 3",
-      selfReferenceValue: "{my-token}",
-      missingReferenceValue: "{missing-token}",
-      secondValidValue: "{my-token} - 2",
-      resolvedValueText: "Resolved value: 5",
-      secondResolvedValueText: "Resolved value: 3",
-    });
   });
 
   test("User creates color token and auto created set show up in the sidebar", async ({
