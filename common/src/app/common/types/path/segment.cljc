@@ -1357,14 +1357,8 @@
 
 (defn- segment-close?
   [a b]
-  (let [pa (:params a)
-        pb (:params b)]
-    (and (= (:command a) (:command b))
-         (= (count pa) (count pb))
-         (every? (fn [[k v]]
-                   (let [w (get pb k)]
-                     (and (number? w) (mth/close? v w))))
-                 pa))))
+  (and (= (:command a) (:command b))
+       (mth/close-map? (:params a) (:params b))))
 
 (defn content-close?
   "True when both path contents have the same segments and every param

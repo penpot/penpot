@@ -63,17 +63,35 @@
 (def ^:private drifting-geometry-attrs
   #{:x :y :width :height :selrect :points})
 
+(defn- position-data-close?
+  "Compares text position-data entry by entry: numbers with tolerance,
+  every other field (fills, fonts, text) exactly."
+  [a b]
+  (let [a (vec a)
+        b (vec b)]
+    (and (= (count a) (count b))
+         (every? true? (map mth/close-map? a b)))))
+
 (defn- attr-equal?
   [attr origin-shape dest-shape]
   (let [origin-val (get origin-shape attr)
         dest-val   (get dest-shape attr)]
     (or (= origin-val dest-val)
         (cond
+          ;; close-attrs? zips :points and would ignore a length mismatch
+          (= :points attr)
+          (and (= (count origin-val) (count dest-val))
+               (gsh/close-attrs? attr origin-val dest-val))
+
           (contains? drifting-geometry-attrs attr)
           (gsh/close-attrs? attr origin-val dest-val)
 
-          (and (= :content attr) (cfh/path-shape? origin-shape))
+          (and (= :content attr)
+               (or (cfh/path-shape? origin-shape) (cfh/bool-shape? origin-shape)))
           (segment/content-close? origin-val dest-val)
+
+          (= :position-data attr)
+          (position-data-close? origin-val dest-val)
 
           :else
           false))))
@@ -2013,7 +2031,7 @@
                 reset-pos-data?
                 (and (cfh/text-shape? origin-shape)
                      (= attr :position-data)
-                     (not= (:position-data origin-shape) (:position-data dest-shape))
+                     (not (attr-equal? :position-data origin-shape dest-shape))
                      (touched :geometry-group))
 
                 ;; On texts, when we want to omit the touched attrs, both text (the actual letters)
