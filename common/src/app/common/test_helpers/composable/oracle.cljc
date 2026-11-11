@@ -552,13 +552,13 @@
                     (select-keys target [:component-id :component-file])))
 
         :else
-        (let [source-parent (get source-objects (:parent-id source))
-              item-group    (.startsWith (name group) "layout-item-")
+        (let [item-group    (.startsWith (name group) "layout-item-")
               intrinsic     (and (:layout source)
                                  (#{:layout-item-h-sizing :layout-item-v-sizing} group)
                                  (#{:fix :auto} (get source group)))
+              ;; only a layout parent in the main pushes layout child groups
               push-item     (or intrinsic
-                                (and (not= id root-id) (:layout source-parent)))
+                                (and (not= id root-id) (:layout (get objects (:parent-id target)))))
               target        (if (and item-group (not push-item)) kept target)
               expected      (if (= group :layout-grid-cells)
                               (get (grid/remap-groups {group (shadow/values source group)}

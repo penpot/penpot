@@ -449,12 +449,14 @@
                   main-parent (get before (:parent-id main-root) {})
                   ;; the way the rotation of `shape` stores its turn
                   sign (geom/turn-sign shape)
-                  ;; the turn the copy root inherits places it and is not pushed
+                  ;; the turn the copy root inherits places it and is not pushed:
+                  ;; all of a top root's that authors no geometry, else its parent's
+                  inherits-all? (and (:component-root root) (not (get-in model [root-id :geometry-group])))
                   geometry (cond-> (values shape :geometry-group)
-                             (and (:component-root root) (not (get-in model [root-id :geometry-group])))
+                             inherits-all?
                              (in-orientation root main-root sign)
 
-                             (and (not (:component-root root)) root-parent)
+                             (and (not inherits-all?) root-parent)
                              (in-orientation root-parent main-parent sign))
                   replaced (when (and (contains? groups :swap-group)
                                       (not= (:shape-ref shape) (:shape-ref updated)))
@@ -501,10 +503,17 @@
                   ;; a variant main keeps its set's name, and the copy root its own
                   kept-name (when (and (= id root-id) (:variant-id ref)) (:name-group groups))
                   groups (cond-> groups kept-name (dissoc :name-group))
+                  ;; only a layout parent pushes layout child groups; the copy keeps the others
+                  kept-items (when (and (not= id root-id) (not (ctl/any-layout? (get after (:parent-id ref)))))
+                               (into {} (filter #(.startsWith (name (key %)) "layout-item-")) groups))
+                  groups (apply dissoc groups (keys kept-items))
                   result (cond-> (dissoc result id)
                            (and (contains? groups :swap-group)
                                 (not= (:component-id updated) (:component-id ref)))
                            (assoc id {:swap-group {}})
+
+                           (seq kept-items)
+                           (update id merge kept-items)
                            kept-name
                            (assoc-in [id :name-group] kept-name)
                            (and (:shape-ref ref) (seq groups))
@@ -816,14 +825,14 @@
 
                                           :else
                                           (same? (get old-placed attr) (get placed attr))))
-                              ;; the same turn of two mirrors differs where they point
-                              ;; their axes apart
+                              ;; a mirror stores its turn either way: the turns of two
+                              ;; mirrors differ where they point their axes apart
                               differs? (fn [attr]
-                                         (or (not (same? (get old attr) (get placed attr)))
-                                             (and (= attr :rotation) (not root?) old-parent new-parent
-                                                  (mirrored? old) (mirrored? placed)
-                                                  (not (geom/same-placed-axes? old old-parent new-parent
-                                                                               main (get after (:parent-id main)) new-parent)))))
+                                         (if (and (= attr :rotation) (not root?) old-parent new-parent
+                                                  (mirrored? old) (mirrored? placed))
+                                           (not (geom/same-placed-axes? old old-parent new-parent
+                                                                        main (get after (:parent-id main)) new-parent))
+                                           (not (same? (get old attr) (get placed attr)))))
                               carried (filter (fn [attr]
                                                 (and (attribute-applicable? main attr)
                                                      (agrees? attr)
