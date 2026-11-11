@@ -2524,8 +2524,9 @@
 
 (defn- reset-layout-item
   "Give a reset head the layout item values it inherits: those of its ref
-   when its parent is the copy of the ref's layout parent. Sync passes them
-   from parent to children, so the reset of the head alone keeps them."
+   when its parent is the copy of the ref's layout parent, or a swapped head
+   whose main is that parent. Sync passes them from parent to children, so
+   the reset of the head alone keeps them."
   [changes file libraries container shape-id]
   (let [objects (pcb/get-objects changes)
         shape   (get objects shape-id)
@@ -2533,8 +2534,12 @@
         ref     (when (and (:layout parent) (:shape-ref parent))
                   (ctf/find-ref-shape file (assoc container :objects objects) libraries shape
                                       :include-deleted? true :with-context? true))
-        ref-parent (get-in (meta ref) [:container :objects (:parent-id ref)])]
-    (if (and ref (:layout ref-parent) (= (:id ref-parent) (:shape-ref parent)))
+        ref-parent (get-in (meta ref) [:container :objects (:parent-id ref)])
+        ;; whether sync pairs the parent with the ref's parent
+        paired? (or (= (:id ref-parent) (:shape-ref parent))
+                    (and (ctk/main-instance? ref-parent)
+                         (= (:component-id ref-parent) (:component-id parent))))]
+    (if (and ref (:layout ref-parent) paired?)
       (pcb/update-shapes changes [shape-id] #(propagate-attrs % ref layout-child-attrs false)
                          {:ignore-touched true})
       changes)))
