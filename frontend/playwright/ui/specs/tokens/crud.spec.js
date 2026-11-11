@@ -569,7 +569,9 @@ test.describe("Tokens - creation", () => {
     });
     await selectDropdown.click();
 
-    const fontOption = tokensUpdateCreateModal.getByRole('img', { name: 'ABeeZee' })
+    const fontOption = tokensUpdateCreateModal.getByRole("img", {
+      name: "ABeeZee",
+    });
     await expect(fontOption).toBeVisible();
 
     await fontOption.click();
@@ -583,7 +585,9 @@ test.describe("Tokens - creation", () => {
       name: "Search font",
     });
     await searchField.fill("alme");
-    const fontOption2 = tokensUpdateCreateModal.getByRole('img', {name: "Almendra Display"});
+    const fontOption2 = tokensUpdateCreateModal.getByRole("img", {
+      name: "Almendra Display",
+    });
     await expect(fontOption2).toBeVisible();
     await fontOption2.click();
 
@@ -1521,7 +1525,9 @@ test.describe("Tokens - creation", () => {
     });
     await selectDropdown.click();
 
-    const fontOption = tokensUpdateCreateModal.getByRole("img", {name: "ABeeZee"});
+    const fontOption = tokensUpdateCreateModal.getByRole("img", {
+      name: "ABeeZee",
+    });
     await expect(fontOption).toBeVisible();
 
     await fontOption.click();
@@ -1536,7 +1542,9 @@ test.describe("Tokens - creation", () => {
       name: "Search font",
     });
     await searchField.fill("alme");
-    const fontOption2 = tokensUpdateCreateModal.getByRole("img", {name: "Almendra Display"});
+    const fontOption2 = tokensUpdateCreateModal.getByRole("img", {
+      name: "Almendra Display",
+    });
     await expect(fontOption2).toBeVisible();
     await fontOption2.click();
     await expect(
@@ -1853,401 +1861,135 @@ test("User disables the current set but token still have resolved values shown i
 });
 
 test.describe("User can't create groups that clash with token names", () => {
-  const createBadToken = async (page, type, name, textFieldName, value, inputType) => {
+  const clashError = (name) =>
+    `Group name of ${name} conflicts with a token of the same name in another active set.`;
+
+  const setupClashingFile = async (page) => {
+    const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json",
+        flags: ["enable-token-shadow"],
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    return { tokensUpdateCreateModal };
+  };
+
+  const openTokenForm = async (page, tokensUpdateCreateModal, type) => {
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
-    const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
-      // Same file as the outer setup: re-navigating would reload the
-      // app and wipe the fixture tokens this test clashes against.
-      file: "workspace/get-file-tokens-all-types.json",
-      flags: ["enable-token-shadow"],
-    });
-
-    // Add a token of the given type
     await tokensTabPanel
       .getByRole("button", { name: `Add Token: ${type}` })
       .click();
+
     await expect(tokensUpdateCreateModal).toBeVisible();
-
-    // Fill the bad name
-    const nameField = tokensUpdateCreateModal.getByLabel("Name");
-    await nameField.fill(name);
-
-    // Fill the value
-    const valueField = tokensUpdateCreateModal.getByRole(inputType, {
-      name: textFieldName,
-    });
-    await valueField.fill(value);
-
-    // Check that the value has an error
-    const errorNode = tokensUpdateCreateModal.getByText(
-      `Group name of ${name} conflicts with a token of the same name in another active set.`,
-    );
-
-    await expect(errorNode).toBeVisible();
-
-    // Check that the form cannot be saved
-    const submitButton = tokensUpdateCreateModal.getByRole("button", {
-      name: "Save",
-    });
-    await expect(submitButton).toBeDisabled();
   };
 
-  test("User can't create Border Radius token with group name that clashes with existing token", async ({
-    page,
-  }) => {
-    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFileRender(page, {
-        file: "workspace/get-file-tokens-all-types.json",
-        flags: ["enable-token-shadow"],
-      });
-
-    await expect(tokensSidebar).toBeVisible();
-
-    await createSet(tokenThemesSetsSidebar, "Second set");
-
-    await createBadToken(page, "Border Radius", "rad1.bad", "Value", "10", "combobox");
-  });
-
-  test("User can't create Color token with group name that clashes with existing token", async ({
-    page,
-  }) => {
-    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFileRender(page, {
-        file: "workspace/get-file-tokens-all-types.json",
-        flags: ["enable-token-shadow"],
-      });
-
-    await expect(tokensSidebar).toBeVisible();
-
-    await createSet(tokenThemesSetsSidebar, "Second set");
-
-    await createBadToken(page, "Color", "col1.bad", "Value", "red", "textbox");
-  });
-
-  test("User can't create Dimensions token with group name that clashes with existing token", async ({
-    page,
-  }) => {
-    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFileRender(page, {
-        file: "workspace/get-file-tokens-all-types.json",
-        flags: ["enable-token-shadow"],
-      });
-
-    await expect(tokensSidebar).toBeVisible();
-
-    await createSet(tokenThemesSetsSidebar, "Second set");
-
-    await createBadToken(page, "Dimensions", "dim1.bad", "Value", "100", "combobox");
-  });
-
-  test("User can't create Font Size token with group name that clashes with existing token", async ({
-    page,
-  }) => {
-    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFileRender(page, {
-        file: "workspace/get-file-tokens-all-types.json",
-        flags: ["enable-token-shadow"],
-      });
-
-    await expect(tokensSidebar).toBeVisible();
-
-    await createSet(tokenThemesSetsSidebar, "Second set");
-
-    await createBadToken(page, "Font Size", "fsiz1.bad", "Value", "16", "combobox");
-  });
-
-  test("User can't create Font Weight token with group name that clashes with existing token", async ({
-    page,
-  }) => {
-    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFileRender(page, {
-        file: "workspace/get-file-tokens-all-types.json",
-        flags: ["enable-token-shadow"],
-      });
-
-    await expect(tokensSidebar).toBeVisible();
-
-    await createSet(tokenThemesSetsSidebar, "Second set");
-
-    await createBadToken(page, "Font Weight", "wei1.bad", "Value", "400", "combobox");
-  });
-
-  test("User can't create Letter Spacing token with group name that clashes with existing token", async ({
-    page,
-  }) => {
-    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFileRender(page, {
-        file: "workspace/get-file-tokens-all-types.json",
-        flags: ["enable-token-shadow"],
-      });
-
-    await expect(tokensSidebar).toBeVisible();
-
-    await createSet(tokenThemesSetsSidebar, "Second set");
-
-    await createBadToken(page, "Letter Spacing", "lspa1.bad", "Value", "1", "combobox");
-  });
-
-  test("User can't create Number token with group name that clashes with existing token", async ({
-    page,
-  }) => {
-    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFileRender(page, {
-        file: "workspace/get-file-tokens-all-types.json",
-        flags: ["enable-token-shadow"],
-      });
-
-    await expect(tokensSidebar).toBeVisible();
-
-    await createSet(tokenThemesSetsSidebar, "Second set");
-
-    await createBadToken(page, "Number", "num1.bad", "Value", "10", "combobox");
-  });
-
-  test("User can't create Rotation token with group name that clashes with existing token", async ({
-    page,
-  }) => {
-    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFileRender(page, {
-        file: "workspace/get-file-tokens-all-types.json",
-        flags: ["enable-token-shadow"],
-      });
-
-    await expect(tokensSidebar).toBeVisible();
-
-    await createSet(tokenThemesSetsSidebar, "Second set");
-
-    await createBadToken(page, "Rotation", "rot1.bad", "Value", "90", "combobox");
-  });
-
-  test("User can't create Sizing token with group name that clashes with existing token", async ({
-    page,
-  }) => {
-    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFileRender(page, {
-        file: "workspace/get-file-tokens-all-types.json",
-        flags: ["enable-token-shadow"],
-      });
-
-    await expect(tokensSidebar).toBeVisible();
-
-    await createSet(tokenThemesSetsSidebar, "Second set");
-
-    await createBadToken(page, "Sizing", "siz1.bad", "Value", "100", "combobox");
-  });
-
-  test("User can't create Spacing token with group name that clashes with existing token", async ({
-    page,
-  }) => {
-    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFileRender(page, {
-        file: "workspace/get-file-tokens-all-types.json",
-        flags: ["enable-token-shadow"],
-      });
-
-    await expect(tokensSidebar).toBeVisible();
-
-    await createSet(tokenThemesSetsSidebar, "Second set");
-
-    await createBadToken(page, "Spacing", "spa1.bad", "Value", "10", "combobox");
-  });
-
-  test("User can't create Stroke Width token with group name that clashes with existing token", async ({
-    page,
-  }) => {
-    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFileRender(page, {
-        file: "workspace/get-file-tokens-all-types.json",
-        flags: ["enable-token-shadow"],
-      });
-
-    await expect(tokensSidebar).toBeVisible();
-
-    await createSet(tokenThemesSetsSidebar, "Second set");
-
-    await createBadToken(page, "Stroke Width", "str1.bad", "Value", "2", "combobox");
-  });
-
-  test("User can't create Text Case token with group name that clashes with existing token", async ({
-    page,
-  }) => {
-    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFileRender(page, {
-        file: "workspace/get-file-tokens-all-types.json",
-        flags: ["enable-token-shadow"],
-      });
-
-    await expect(tokensSidebar).toBeVisible();
-
-    await createSet(tokenThemesSetsSidebar, "Second set");
-
-    await createBadToken(page, "Text Case", "cas1.bad", "Value", "uppercase", "combobox");
-  });
-
-  test("User can't create Text Decoration token with group name that clashes with existing token", async ({
-    page,
-  }) => {
-    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFileRender(page, {
-        file: "workspace/get-file-tokens-all-types.json",
-        flags: ["enable-token-shadow"],
-      });
-
-    await expect(tokensSidebar).toBeVisible();
-
-    await createSet(tokenThemesSetsSidebar, "Second set");
-
-    await createBadToken(
-      page,
-      "Text Decoration",
-      "dec1.bad",
-      "Value",
-      "strike-through",
-      "combobox"
-    );
-  });
-
-  test("User can't create Typography token with group name that clashes with existing token", async ({
-    page,
-  }) => {
-    const { tokenThemesSetsSidebar, tokensSidebar } =
-      await setupTokensFileRender(page, {
-        file: "workspace/get-file-tokens-all-types.json",
-        flags: ["enable-token-shadow"],
-      });
-
-    await expect(tokensSidebar).toBeVisible();
-
-    await createSet(tokenThemesSetsSidebar, "Second set");
-
-    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
-
-    const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
-      // Same file as the outer setup: re-navigating would reload the
-      // app and wipe the fixture tokens this test clashes against.
-      file: "workspace/get-file-tokens-all-types.json",
-      flags: ["enable-token-shadow"],
-    });
-
-    await tokensTabPanel
-      .getByRole("button", { name: `Add Token: Typography` })
+  const closeTokenForm = async (tokensUpdateCreateModal) => {
+    await tokensUpdateCreateModal
+      .getByRole("button", { name: "Cancel" })
       .click();
-    await expect(tokensUpdateCreateModal).toBeVisible();
 
-    const nameField = tokensUpdateCreateModal.getByLabel("Name");
-    await nameField.fill("typ1.bad");
+    await expect(tokensUpdateCreateModal).not.toBeVisible();
+  };
 
-    const fontFamilyField = tokensUpdateCreateModal.getByRole("textbox", {
-      name: "Font family",
-    });
-    await fontFamilyField.fill("Arial");
+  const expectClashError = async (tokensUpdateCreateModal, name) => {
+    await expect(
+      tokensUpdateCreateModal.getByText(clashError(name)),
+    ).toHaveCount(1);
 
-    const fontSizeField = tokensUpdateCreateModal.getByRole("textbox", {
-      name: "Font size",
-    });
-    await fontSizeField.fill("16");
+    await expect(
+      tokensUpdateCreateModal.getByRole("button", { name: "Save" }),
+    ).toBeDisabled();
+  };
 
-    const fontWeightField = tokensUpdateCreateModal.getByRole("textbox", {
-      name: "Font weight",
-    });
-    await fontWeightField.fill("400");
-
-    const lineHeightField = tokensUpdateCreateModal.getByRole("textbox", {
-      name: "Line height",
-    });
-    await lineHeightField.fill("1.5");
-
-    const letterSpacingField = tokensUpdateCreateModal.getByRole("textbox", {
-      name: "Letter spacing",
-    });
-    await letterSpacingField.fill("0");
-
-    const textCaseField = tokensUpdateCreateModal.getByRole("textbox", {
-      name: "Text case",
-    });
-    await textCaseField.fill("none");
-
-    const textDecorationField = tokensUpdateCreateModal.getByRole("textbox", {
-      name: "Text decoration",
-    });
-    await textDecorationField.fill("none");
-
-    const submitButton = tokensUpdateCreateModal.getByRole("button", {
-      name: "Save",
-    });
-
-    const errorNode = tokensUpdateCreateModal.getByText(
-      "Group name of typ1.bad conflicts with a token of the same name in another active set.",
-    );
-    await expect(errorNode).toHaveCount(1);
-    await expect(submitButton).toBeDisabled();
-  });
-
-  test("User can't create Shadow token with group name that clashes with existing token", async ({
+  test("User can't create a simple token with group name that clashes with existing token", async ({
     page,
   }) => {
-    const { tokenThemesSetsSidebar, tokensSidebar } =
-      await setupTokensFileRender(page, {
-        file: "workspace/get-file-tokens-all-types.json",
-        flags: ["enable-token-shadow"],
+    const { tokensUpdateCreateModal } = await setupClashingFile(page);
+
+    const cases = [
+      ["Border Radius", "rad1.bad", "Value", "10", "combobox"],
+      ["Color", "col1.bad", "Value", "red", "textbox"],
+      ["Dimensions", "dim1.bad", "Value", "100", "combobox"],
+      ["Font Size", "fsiz1.bad", "Value", "16", "combobox"],
+      ["Font Weight", "wei1.bad", "Value", "400", "combobox"],
+      ["Letter Spacing", "lspa1.bad", "Value", "1", "combobox"],
+      ["Number", "num1.bad", "Value", "10", "combobox"],
+      ["Rotation", "rot1.bad", "Value", "90", "combobox"],
+      ["Sizing", "siz1.bad", "Value", "100", "combobox"],
+      ["Spacing", "spa1.bad", "Value", "10", "combobox"],
+      ["Stroke Width", "str1.bad", "Value", "2", "combobox"],
+      ["Text Case", "cas1.bad", "Value", "uppercase", "combobox"],
+      ["Text Decoration", "dec1.bad", "Value", "strike-through", "combobox"],
+    ];
+
+    for (const [type, name, field, value, role] of cases) {
+      await test.step(type, async () => {
+        await openTokenForm(page, tokensUpdateCreateModal, type);
+        await tokensUpdateCreateModal.getByLabel("Name").fill(name);
+        await tokensUpdateCreateModal
+          .getByRole(role, { name: field })
+          .fill(value);
+        await expectClashError(tokensUpdateCreateModal, name);
+        await closeTokenForm(tokensUpdateCreateModal);
       });
+    }
+  });
 
-    await expect(tokensSidebar).toBeVisible();
+  test("User can't create a composite token with group name that clashes with existing token", async ({
+    page,
+  }) => {
+    const { tokensUpdateCreateModal } = await setupClashingFile(page);
 
-    await createSet(tokenThemesSetsSidebar, "Second set");
+    await test.step("Typography", async () => {
+      await openTokenForm(page, tokensUpdateCreateModal, "Typography");
+      await tokensUpdateCreateModal.getByLabel("Name").fill("typ1.bad");
 
-    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+      const fields = {
+        "Font family": "Arial",
+        "Font size": "16",
+        "Font weight": "400",
+        "Line height": "1.5",
+        "Letter spacing": "0",
+        "Text case": "none",
+        "Text decoration": "none",
+      };
 
-    const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
-      // Same file as the outer setup: re-navigating would reload the
-      // app and wipe the fixture tokens this test clashes against.
-      file: "workspace/get-file-tokens-all-types.json",
-      flags: ["enable-token-shadow"],
+      for (const [label, value] of Object.entries(fields)) {
+        await tokensUpdateCreateModal
+          .getByRole("textbox", { name: label })
+          .fill(value);
+      }
+
+      await expectClashError(tokensUpdateCreateModal, "typ1.bad");
+      await closeTokenForm(tokensUpdateCreateModal);
     });
 
-    await tokensTabPanel
-      .getByRole("button", { name: `Add Token: Shadow` })
-      .click();
-    await expect(tokensUpdateCreateModal).toBeVisible();
+    await test.step("Shadow", async () => {
+      await openTokenForm(page, tokensUpdateCreateModal, "Shadow");
+      await tokensUpdateCreateModal.getByLabel("Name").fill("sha1.bad");
 
-    const nameField = tokensUpdateCreateModal.getByLabel("Name");
-    await nameField.fill("sha1.bad");
+      const fields = {
+        Color: "red",
+        X: "7",
+        Y: "8",
+        Blur: "5",
+        Spread: "1",
+      };
 
-    const colorField = tokensUpdateCreateModal.getByRole("textbox", {
-      name: "Color",
+      for (const [label, value] of Object.entries(fields)) {
+        await tokensUpdateCreateModal
+          .getByRole("textbox", { name: label })
+          .fill(value);
+      }
+
+      await expectClashError(tokensUpdateCreateModal, "sha1.bad");
+      await closeTokenForm(tokensUpdateCreateModal);
     });
-    await colorField.fill("red");
-
-    const offsetXField = tokensUpdateCreateModal.getByRole("textbox", {
-      name: "X",
-    });
-    await offsetXField.fill("7");
-
-    const offsetYField = tokensUpdateCreateModal.getByRole("textbox", {
-      name: "Y",
-    });
-    await offsetYField.fill("8");
-
-    const blurField = tokensUpdateCreateModal.getByRole("textbox", {
-      name: "Blur",
-    });
-    await blurField.fill("5");
-
-    const spreadField = tokensUpdateCreateModal.getByRole("textbox", {
-      name: "Spread",
-    });
-    await spreadField.fill("1");
-
-    const submitButton = tokensUpdateCreateModal.getByRole("button", {
-      name: "Save",
-    });
-
-    const errorNode = tokensUpdateCreateModal.getByText(
-      "Group name of sha1.bad conflicts with a token of the same name in another active set.",
-    );
-    await expect(errorNode).toHaveCount(1);
-    await expect(submitButton).toBeDisabled();
   });
 });
 
