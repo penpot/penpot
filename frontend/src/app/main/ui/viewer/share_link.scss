@@ -24,6 +24,11 @@
   align-items: center;
   justify-content: flex-start;
   padding: 0;
+
+  &:focus-visible {
+    outline: $b-1 solid var(--color-accent-primary);
+    outline-offset: 2px;
+  }
 }
 
 .collapsible-title-icon {
@@ -128,6 +133,10 @@
   display: flex;
   flex-direction: column;
   min-block-size: unset;
+
+  &:focus {
+    outline: none;
+  }
 }
 
 .share-link-scroll {
@@ -145,8 +154,7 @@
   color: var(--color-foreground-primary);
 }
 
-// Tooltip wrapper of the close button: it places it in the corner.
-.modal-close-button {
+.share-link-close-button {
   position: absolute;
   inset-block-start: var(--sp-s);
   inset-inline-end: var(--sp-xs);
@@ -201,6 +209,10 @@
   justify-content: center;
   min-block-size: 0;
   overflow-y: auto;
+
+  &:focus {
+    outline: none;
+  }
 }
 
 .share-link-confirm-description {

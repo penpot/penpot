@@ -26,6 +26,7 @@
    [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
 
 (log/set-level! :warn)
@@ -60,28 +61,32 @@
 
 (defn- use-collapsible
   []
-  (let [expanded* (mf/use-state false)
-        expanded  (deref expanded*)
-        toggle    (mf/use-fn
-                   #(swap! expanded* not))]
+  (let [expanded*  (mf/use-state false)
+        expanded   (deref expanded*)
+        content-id (mf/use-id)
+        toggle     (mf/use-fn
+                    #(swap! expanded* not))]
     {:expanded expanded
+     :content-id content-id
      :toggle toggle}))
 
 (mf/defc collapsible-panel*
   {::mf/private true}
   [{:keys [class title children]}]
-  (let [{:keys [expanded toggle]} (use-collapsible)]
+  (let [{:keys [expanded content-id toggle]} (use-collapsible)]
     [:div {:class class}
      [:button {:class (stl/css :collapsible-title :collapsible-panel-toggle)
                :type "button"
                :aria-expanded expanded
+               :aria-controls content-id
                :on-click toggle}
       [:> icon* {:icon-id (if expanded i/arrow-down i/arrow-right)
                  :class (stl/css :collapsible-title-icon)}]
       title]
 
      (when ^boolean expanded
-       [:div children])]))
+       [:div {:id content-id}
+        children])]))
 
 (mf/defc permissions-select-row*
   {::mf/private true}
@@ -173,18 +178,31 @@
 (mf/defc destroy-link-confirmation*
   {::mf/private true}
   [{:keys [on-cancel on-destroy]}]
-  [:div {:class (stl/css :share-link-confirm)}
-   [:div {:class (stl/css :share-link-confirm-description)}
-    (tr "common.share-link.confirm-deletion-link-description")]
-   [:div {:class (stl/css :share-link-confirm-actions)}
-    [:> button* {:variant "secondary"
-                 :type "button"
-                 :on-click on-cancel}
-     (tr "labels.cancel")]
-    [:> button* {:variant "destructive"
-                 :type "button"
-                 :on-click on-destroy}
-     (tr "common.share-link.destroy-link")]]])
+  (let [on-key-down
+        (fn [event]
+          (when (kbd/esc? event)
+            (dom/stop-propagation event)
+            (on-cancel event)))]
+
+    [:div {:class (stl/css :share-link-confirm)
+           :role "alertdialog"
+           :aria-modal true
+           :aria-labelledby "share-link-title"
+           :aria-describedby "share-link-confirm-description"
+           :tab-index "-1"
+           :on-key-down on-key-down}
+     [:div {:id "share-link-confirm-description"
+            :class (stl/css :share-link-confirm-description)}
+      (tr "common.share-link.confirm-deletion-link-description")]
+     [:div {:class (stl/css :share-link-confirm-actions)}
+      [:> button* {:variant "secondary"
+                   :type "button"
+                   :on-click on-cancel}
+       (tr "labels.cancel")]
+      [:> button* {:variant "destructive"
+                   :type "button"
+                   :on-click on-destroy}
+       (tr "common.share-link.destroy-link")]]]))
 
 (mf/defc share-link-content*
   {::mf/private true}
@@ -332,12 +350,17 @@
           (reset! link-to-destroy* nil))]
 
     [:div {:class (stl/css :share-link-modal)}
-     [:div {:class (stl/css :share-link-dialog)}
+     [:div {:class (stl/css :share-link-dialog)
+            :role "dialog"
+            :aria-modal true
+            :aria-labelledby "share-link-title"
+            :tab-index "-1"}
       [:div {:class (stl/css :share-link-header)}
-       [:h2 {:class (stl/css :share-link-title)}
+       [:h2 {:id "share-link-title"
+             :class (stl/css :share-link-title)}
         (tr "common.share-link.title")]
        [:> icon-button* {:variant "ghost"
-                         :tooltip-class (stl/css :modal-close-button)
+                         :class (stl/css :share-link-close-button)
                          :aria-label (tr "labels.close")
                          :icon i/close
                          :on-click on-close}]]
