@@ -243,7 +243,7 @@
 
         on-double-click
         (mf/use-fn
-         (mf/deps id is-new)
+         (mf/deps id is-new on-start-edition)
          (fn []
            (when-not is-new
              (on-start-edition id))))
