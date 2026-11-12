@@ -966,7 +966,7 @@
                               (dom/reload-current-window true))
                             (fn [_]
                               (st/emit! (ntf/error (tr "errors.generic"))))))
-             (st/emit! (ev/event (assoc (webgl/detect-environment)
+             (st/emit! (ev/event (assoc (webgl/get-environment)
                                         ::ev/name ev-name
                                         ::ev/origin "workspace:menu"))
                        (ptk/data-event ::ev/force-persist {})))))

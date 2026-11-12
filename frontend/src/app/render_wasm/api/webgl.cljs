@@ -375,23 +375,6 @@ void main() {
   (when-let [info (try (read-gpu-info gl) (catch :default _ nil))]
     (vreset! gpu-info info)))
 
-(defn- probe-gpu-info
-  "GPU details from a throwaway WebGL context, or nil when the browser
-  cannot create one."
-  []
-  (try
-    (let [^js canvas (.createElement js/document "canvas")
-          gl         (or (.getContext canvas "webgl2")
-                         (.getContext canvas "webgl"))]
-      (when (some? gl)
-        (let [info (read-gpu-info gl)]
-          (some-> (.getExtension ^js gl "WEBGL_lose_context") (.loseContext))
-          info)))
-    (catch :default _ nil)))
-
-(defonce ^:private probe-attempted?
-  (volatile! false))
-
 (defn get-environment
   "Environment details for WebGL telemetry: GPU family, GPU backend and max
   texture size when already remembered, device memory, CPU cores and
@@ -402,12 +385,3 @@ void main() {
            :device-memory (.-deviceMemory navigator)
            :cpu-cores     (.-hardwareConcurrency navigator)
            :electron      (str/includes? (.-userAgent navigator) "Electron/"))))
-
-(defn detect-environment
-  "Like `get-environment`, but when no GPU details are remembered yet, reads
-  them from a throwaway WebGL context. Creates that context at most once."
-  []
-  (when-not (or @gpu-info @probe-attempted?)
-    (vreset! probe-attempted? true)
-    (vreset! gpu-info (probe-gpu-info)))
-  (get-environment))
