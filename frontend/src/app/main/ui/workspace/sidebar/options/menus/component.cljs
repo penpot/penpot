@@ -757,7 +757,9 @@
         on-library-change
         (mf/use-fn
          (fn [id]
-           (swap! filters* assoc :file-id id :term "" :path "")))
+           ;; Keep the search term: it describes what the user is looking
+           ;; for, not where, so it applies to the newly selected library.
+           (swap! filters* assoc :file-id id :path "")))
 
         on-search-term-change
         (mf/use-fn
