@@ -144,41 +144,45 @@
     [group changes]))
 
 (defn remove-group-changes
-  [it page-id group objects]
-  (let [children (->> (:shapes group)
-                      (cfh/order-by-indexed-shapes objects)
-                      (mapv #(get objects %)))
-        parent-id (cfh/get-parent-id objects (:id group))
-        parent    (get objects parent-id)
+  ([it page-id group objects]
+   (remove-group-changes it page-id group objects nil))
+  ([it page-id group objects options]
+   (let [children (->> (:shapes group)
+                       (cfh/order-by-indexed-shapes objects)
+                       (mapv #(get objects %)))
+         parent-id (cfh/get-parent-id objects (:id group))
+         parent    (get objects parent-id)
 
-        index-in-parent
-        (->> (:shapes parent)
-             (map-indexed vector)
-             (filter #(#{(:id group)} (second %)))
-             (ffirst)
-             inc)]
+         index-in-parent
+         (->> (:shapes parent)
+              (map-indexed vector)
+              (filter #(#{(:id group)} (second %)))
+              (ffirst)
+              inc)]
 
-    (-> (pcb/empty-changes it page-id)
-        (pcb/with-objects objects)
-        (pcb/change-parent parent-id children index-in-parent)
-        (pcb/remove-objects [(:id group)]))))
+     (-> (pcb/empty-changes it page-id)
+         (pcb/with-objects objects)
+         (pcb/change-parent parent-id children index-in-parent options)
+         (pcb/remove-objects [(:id group)] options)))))
 
 (defn remove-frame-changes
-  [it page-id frame objects]
-  (let [children (->> (:shapes frame)
-                      (cfh/order-by-indexed-shapes objects)
-                      (mapv #(get objects %)))
-        parent-id     (cfh/get-parent-id objects (:id frame))
-        idx-in-parent (->> (:id frame)
-                           (cfh/get-position-on-parent objects)
-                           inc)]
+  ([it page-id frame objects]
+   (remove-frame-changes it page-id frame objects nil))
+  ([it page-id frame objects options]
+   (let [children (->> (:shapes frame)
+                       (cfh/order-by-indexed-shapes objects)
+                       (mapv #(get objects %)))
+         parent-id     (cfh/get-parent-id objects (:id frame))
+         idx-in-parent (->> (:id frame)
+                            (cfh/get-position-on-parent objects)
+                            inc)]
 
-    (-> (pcb/empty-changes it page-id)
-        (pcb/with-objects objects)
-        (cond-> (ctl/any-layout? frame)
-          (pcb/update-shapes (:shapes frame) ctl/remove-layout-item-data))
-        (pcb/change-parent parent-id children idx-in-parent)
-        (pcb/remove-objects [(:id frame)]))))
+     (-> (pcb/empty-changes it page-id)
+         (pcb/with-objects objects)
+         (cond-> (ctl/any-layout? frame)
+           (pcb/update-shapes (:shapes frame) ctl/remove-layout-item-data (select-keys options [:ignore-touched])))
+         (pcb/change-parent parent-id children idx-in-parent options)
+         (pcb/remove-objects [(:id frame)] options)))))
 
 (defn ungroup-ids
   "The shapes of `ids` an ungroup takes apart: not inside a copy, not a
@@ -189,29 +193,65 @@
        (remove #(ctk/instance-head? (get objects %)))
        (remove #(ctk/is-variant-container? (get objects %)))))
 
+(defn- copies-of
+  "The `[page-id id]` of the shapes of `pages-index` that refer to a shape
+   of `ids`, directly or through other copies."
+  [pages-index ids]
+  (let [ref-index (reduce-kv (fn [index page-id page]
+                               (reduce (fn [index shape]
+                                         (cond-> index
+                                           (:shape-ref shape)
+                                           (update (:shape-ref shape) (fnil conj []) [page-id (:id shape)])))
+                                       index
+                                       (vals (:objects page))))
+                             {}
+                             pages-index)]
+    (loop [pending (seq ids) result []]
+      (if-let [id (first pending)]
+        (let [hits (get ref-index id)]
+          (recur (concat (rest pending) (map second hits)) (into result hits)))
+        result))))
+
+(defn- ungroup-shape-changes
+  "The changes that ungroup the group, bool or board `shape-id` of the
+   page `page-id`, whose shapes are `objects`; `options` of the moves and
+   removals."
+  [it page-id objects shape-id options]
+  (let [shape (get objects shape-id)
+        changes
+        (cond
+          (or (cfh/group-shape? shape) (cfh/bool-shape? shape))
+          (remove-group-changes it page-id shape objects options)
+
+          (cfh/frame-shape? shape)
+          (remove-frame-changes it page-id shape objects options))]
+
+    (cond-> changes
+      (and changes (ctl/grid-layout? objects (:parent-id shape)))
+      (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells
+                         (merge {:with-objects? true} (select-keys options [:ignore-touched]))))))
+
 (defn generate-ungroup-changes
   "The changes that ungroup the groups, bools and boards of `ids`, which
-   `ungroup-ids` gives."
-  [it page-id objects ids]
-  (let [prepare
-        (fn [shape-id]
-          (let [shape (get objects shape-id)
-                changes
-                (cond
-                  (or (cfh/group-shape? shape) (cfh/bool-shape? shape))
-                  (remove-group-changes it page-id shape objects)
-
-                  (cfh/frame-shape? shape)
-                  (remove-frame-changes it page-id shape objects))]
-
-            (cond-> changes
-              (ctl/grid-layout? objects (:parent-id shape))
-              (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells {:with-objects? true}))))
-
-        changes-list (sequence (keep prepare) ids)]
-    {:redo-changes (vec (mapcat :redo-changes changes-list))
-     :undo-changes (vec (mapcat :undo-changes changes-list))
-     :origin it}))
+   `ungroup-ids` gives. With the file's `pages-index`, the copies of each
+   one in the file are ungrouped alike: their children keep their
+   overrides and nothing is left referring to a removed shape."
+  ([it page-id objects ids]
+   (generate-ungroup-changes it page-id objects ids nil))
+  ([it page-id objects ids pages-index]
+   (let [copies       (copies-of pages-index ids)
+         changes-list (concat
+                       (keep #(ungroup-shape-changes it page-id objects % nil) ids)
+                       (keep (fn [[copy-page-id id]]
+                               (let [copy-objects (if (= copy-page-id page-id)
+                                                    objects
+                                                    (get-in pages-index [copy-page-id :objects]))]
+                                 (ungroup-shape-changes it copy-page-id copy-objects id
+                                                        {:allow-altering-copies true :ignore-touched true})))
+                             copies))]
+     {:redo-changes (vec (mapcat :redo-changes changes-list))
+      :undo-changes (vec (mapcat :undo-changes changes-list))
+      :origin it})))
 
 (defn generate-mask-changes
   "The group that masks `shapes`, which `shapes-for-group-or-mask` gives,

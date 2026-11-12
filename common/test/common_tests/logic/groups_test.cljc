@@ -9,6 +9,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.bool :as clb]
    [app.common.logic.groups :as clg]
+   [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -100,3 +101,29 @@
         file   (thf/apply-changes file changes)
         grid   (get (objects file) (thi/id :grid))]
     (t/is (some #(= [(:id shape)] (:shapes %)) (vals (:layout-grid-cells grid))))))
+
+(t/deftest ungrouping-a-group-a-main-holds-leaves-no-copy-referring-to-it
+  (let [file  (-> (thf/sample-file :file1)
+                  (tho/add-frame :main-root)
+                  (ths/add-sample-shape :rect :parent-label :main-root))
+        page  (thf/current-page file)
+        [group changes] (clg/prepare-create-group (pcb/empty-changes nil) (uuid/next) (:objects page) (:id page)
+                                                  (clg/shapes-for-group-or-mask (:objects page) [(thi/id :rect)])
+                                                  "Group" false)
+        file  (-> (thf/apply-changes file changes)
+                  (thc/make-component :component :main-root)
+                  (thc/instantiate-component :component :copy-root))
+        copy-group (first (:shapes (get (objects file) (thi/id :copy-root))))
+        copy-rect  (first (:shapes (get (objects file) copy-group)))
+        file  (-> file
+                  (ths/update-shape-by-id copy-rect :opacity 0.5)
+                  (ths/update-shape-by-id copy-rect :touched #{:layer-effects-group}))
+        page  (thf/current-page file)
+        ids   (clg/ungroup-ids (:objects page) [(:id group)])
+        file  (thf/apply-changes file (clg/generate-ungroup-changes nil (:id page) (:objects page) ids
+                                                                    (get-in file [:data :pages-index])))
+        rect  (get (objects file) copy-rect)]
+    (t/is (nil? (get (objects file) copy-group)))
+    (t/is (= (thi/id :copy-root) (:parent-id rect)))
+    (t/is (= 0.5 (:opacity rect)))
+    (t/is (= #{:layer-effects-group} (:touched rect)))))
