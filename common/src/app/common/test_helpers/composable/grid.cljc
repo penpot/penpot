@@ -163,10 +163,10 @@
 (def ^:private default-cell
   {:row-span 1 :column-span 1 :position :auto :align-self :auto :justify-self :auto :shapes []})
 
-(defn- fit-cells
+(defn fit-cells
   "`cells` placed within a grid of `rows` by `columns` that flows in
    `direction`, as the contract keeps a copy's cells when its inherited
-   tracks shrink: cells with children first, then authored empty ones, then
+   tracks shrink, or the cells it takes from a main with other tracks: cells with children first, then authored empty ones, then
    default ones, each where it fits, else in the first free slot, else in
    one track; children left without a slot join the cell where theirs
    would start. Free slots take default cells."

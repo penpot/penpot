@@ -661,7 +661,14 @@
                                        (and manual (= :auto (:position cell)))
                                        (assoc :position :manual)))]))
                    [false []] cells)))
-        cells (->> (grid-cells main)
+        rows    (count (:layout-grid-rows shape))
+        columns (count (:layout-grid-columns shape))
+        ;; a copy with its own track lists keeps its main's cells within them
+        fitted  (if (and (= rows (count (:layout-grid-rows main)))
+                         (= columns (count (:layout-grid-columns main))))
+                  (grid-cells main)
+                  (grid/fit-cells (grid-cells main) rows columns (or (:layout-grid-dir shape) :row)))
+        cells (->> fitted
                    (sort-by flow-order)
                    (mapv #(update % :shapes (fn [ids] (filterv participating ids))))
                    end-auto-prefix)
