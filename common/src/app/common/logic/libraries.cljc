@@ -1422,9 +1422,9 @@
                 placed           (when (and position (not (ctk/swapped? head)))
                                    (placed-like position-objects position head
                                                 (authored-constraints by-id (cfh/get-children-ids by-id (:id head)))))
-                ;; the shapes that keep their pushed geometry: the head and the subtrees of those that author theirs
+                ;; the shapes that keep their pushed geometry: the head and the subtrees of those that author theirs or are swapped
                 kept-ids         (into #{(:id head)}
-                                       (comp (filter #(ctk/touched-group? % :geometry-group))
+                                       (comp (filter #(or (ctk/touched-group? % :geometry-group) (ctk/swapped? %)))
                                              (mapcat #(cfh/get-children-ids-with-self by-id (:id %))))
                                        positioned)
                 follow-position  (fn [shape]
