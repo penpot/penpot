@@ -2387,6 +2387,12 @@
                                     :layout-copies false :text false}]
                        :ops [[:grid-track 10 5 0 11] [:grid-track 0 1] [:grid-cell 0 0 0 1]]}))))
 
+(t/deftest updating-a-main-keeps-the-fill-sizing-its-child-authors
+  (t/is (map? (cg/run {:world [1 1 {:variants false :text-styles false :layout :flex :layout-item-margins false
+                                    :grid-square false :library false :rich-variants false :layout-children true
+                                    :grid-empty false :layout-copies true :text false}]
+                       :ops [[:style 8 35 1] [:style 0 29 1] [:update-main]]}))))
+
 (t/deftest updating-a-main-pushes-a-swapped-shape-nested-in-a-swap-with-its-children
   (t/is (map? (cg/run {:world [3 3 {:variants true :text-styles true :scale true :layout :flex :variant-diff true
                                     :grid-square false :copies 5 :rich-variants true :layout-children true
