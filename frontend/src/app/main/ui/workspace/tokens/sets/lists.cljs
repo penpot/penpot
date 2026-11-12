@@ -10,6 +10,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -361,7 +362,13 @@
          (fn [path]
            (swap! collapsed-paths* #(if (contains? % path)
                                       (disj % path)
-                                      (conj % path)))))]
+                                      (conj % path)))))
+
+        ;; The set being created is not persisted yet, so its id is generated
+        ;; on every walk of the tree. Keep one for the lifetime of this
+        ;; creation so the node can be keyed by identity like the rest.
+        new-node-id
+        (mf/use-memo (mf/deps new-path) #(dm/str (uuid/next)))]
 
     (mf/with-effect []
       (let [sub (rx/subs! (fn [paths']
@@ -381,7 +388,7 @@
         (cond
           ^boolean is-group
           [:> sets-tree-set-group*
-           {:key index
+           {:key id
             :id id
             :label (peek path)
             :is-editing (= edition-id id)
@@ -403,7 +410,7 @@
 
           ^boolean is-new
           [:> sets-tree-set*
-           {:key index
+           {:key new-node-id
             :id id
             :set token-set
             :label ""
@@ -423,7 +430,7 @@
 
           :else
           [:> sets-tree-set*
-           {:key index
+           {:key id
             :id id
             :set token-set
             :label (peek path)
