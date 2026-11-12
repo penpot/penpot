@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns common-tests.files-migrations-0035-test
+(ns common-tests.files-migrations-0035b-test
   (:require
    [app.common.files.migrations :as cfm]
    [app.common.geom.matrix :as gmt]

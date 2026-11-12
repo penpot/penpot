@@ -2766,7 +2766,8 @@
                                            page-id
                                            nil
                                            variant-id
-                                           props))]
+                                           props
+                                           {:apply-changes-local-library? true}))]
     [root-shape changes]))
 
 (defn generate-add-component
@@ -3281,6 +3282,25 @@
            changes (cond-> changes
                      (and is-component-root? is-component-main?)
                      (regenerate-component new-obj))
+
+           ;; Unknown-component paste into a variant set: align props/names
+           ;; after regenerate. Reload the shape so we use the new component-id.
+           ;; Prefit the component name/path to the container so
+           ;; create-new-properties-from-variant does not treat the component
+           ;; full name as a former set name and inflate properties (add-name?).
+           changes (cond-> changes
+                     (and is-component-root?
+                          is-component-main?
+                          (ctk/is-variant-container? parent))
+                     (as-> $
+                           (let [shape         (get (pcb/get-objects $) (:id new-obj))
+                                 [cpath cname] (cpn/split-group-name (:name parent))
+                                 changes       (pcb/update-component
+                                                $
+                                                (:component-id shape)
+                                                #(assoc % :name cname :path cpath)
+                                                {:apply-changes-local-library? true})]
+                             (clvp/generate-make-shapes-variant changes [shape] parent))))
 
            ;; This is needed for the recursive call to find the new object as parent
            page' (ctst/add-shape (:id new-obj)

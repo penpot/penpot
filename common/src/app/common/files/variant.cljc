@@ -28,6 +28,25 @@
         (map #(ctcl/get-component data % true))
         reverse)))
 
+(defn collect-variant-properties
+  "Map of component-id → variant-properties for clipboard copy.
+   Variant container: every related component. Variant main: that
+   component only. Anything else: empty map."
+  [data objects shape]
+  (cond
+    (ctc/is-variant-container? shape)
+    (into {}
+          (map (juxt :id :variant-properties))
+          (find-variant-components data objects (:id shape)))
+
+    (ctc/is-variant-main? shape)
+    (if-let [component (ctcl/get-component data (:component-id shape) true)]
+      {(:id component) (:variant-properties component)}
+      {})
+
+    :else
+    {}))
+
 (defn extract-properties-names
   [shape data]
   (->> shape

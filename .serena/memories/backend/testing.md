@@ -3,6 +3,8 @@
 JVM `clojure.test` (kaocha runner) under `backend/test/backend_tests/`.
 
 - READ `mem:testing` FIRST — it defines the execution discipline (no piping, tee to file, preferred commands) that applies to all JVM test runs.
+- Test DB/Redis come from the `PENPOT_TEST_*` env vars already set in the shell (`PENPOT_TEST_DATABASE_URI`, `PENPOT_TEST_REDIS_URI`, ...); per instance they point at `penpot_test` / `penpot_test_wsN` and valkey DB `6+N` (`mem:devenv/core`). Do not override them with values copied from CI logs or other sources unless the user asks (e.g. "use a temporary database"); the CI env (`redis://redis/1`, `postgresql://postgres/penpot_test`) only works inside the CI docker network.
+- The test database may have migrations applied from newer versions (it is shared dev infra). Reinitializing it — `dropdb`/`createdb` of the `PENPOT_TEST_*` database only — is explicitly permitted when that blocks a test run; never drop the main `penpot` database or another instance's test database.
 - All CLI commands must be executed from the `backend/` subdirectory.
 - Tests are invoked directly via `clojure -M:dev:test` (kaocha) — there is no pnpm wrapper. Kaocha auto-discovers test namespaces, so no runner registration is needed.
 - **Preferred way to run them: `scripts/ci <module> --test`**, which runs lint, tests and format per module and writes a log per task under `.ci-logs/`. It exports `PENPOT_FLAGS` with `enable-backend-asserts` appended, so use it rather than calling `clojure -M:dev:test` by hand.
