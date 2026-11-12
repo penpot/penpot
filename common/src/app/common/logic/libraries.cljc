@@ -2152,11 +2152,19 @@
                                             :include-deleted? true :with-context? true)
            main-objects (:objects (:container (meta main)))
            main-parent  (get main-objects (:parent-id main))
+           ;; a group or bool takes its bounds from its children, so they are
+           ;; placed in the board around it
+           board?       (and (#{:group :bool} (:type parent)) (#{:group :bool} (:type main-parent))
+                             (not (ctsl/any-layout? (get objects (:frame-id shape)))))
+           parent       (if board? (get objects (:frame-id shape)) parent)
+           main-parent  (if board? (get main-objects (:frame-id main)) main-parent)
            ;; a layout places the shape, so only its size and orientation can be its own
            layout-placed? (and (ctsl/any-layout-immediate-child? objects shape)
                                (not (ctsl/position-absolute? shape)))]
        (if (and (some? main)
                 (not (ctk/touched-group? shape :geometry-group))
+                ;; the bounds of a group or bool follow its children's places
+                (not (#{:group :bool} (:type shape)))
                 (if (and (some? (:shape-ref parent)) (not layout-placed?))
                   (and (some? main-parent)
                        (not (close-geometry? shape (get (placed-like main-objects main-parent parent
