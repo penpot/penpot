@@ -7678,6 +7678,22 @@ msgstr[1] "Exportar %s elementos"
 msgid "workspace.options.export.add-export"
 msgstr "Añadir exportación"
 
+#: src/app/main/ui/exports/preview.cljs:170
+msgid "workspace.options.export.preview"
+msgstr "Vista previa"
+
+#: src/app/main/ui/exports/preview.cljs:98
+msgid "workspace.options.export.preview-error"
+msgstr "No se ha podido cargar la vista previa"
+
+#: src/app/main/ui/exports/preview.cljs:94, src/app/main/ui/exports/preview.cljs:156
+msgid "workspace.options.export.preview-image"
+msgstr "Vista previa de la exportación"
+
+#: src/app/main/ui/exports/preview.cljs:142
+msgid "workspace.options.export.preview-preset"
+msgstr "Ajuste de exportación de la vista previa"
+
 #: src/app/main/ui/inspect/exports.cljs:177, src/app/main/ui/inspect/exports.cljs:211, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:228, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:263
 msgid "workspace.options.export.remove-export"
 msgstr "Eliminar exportación"
