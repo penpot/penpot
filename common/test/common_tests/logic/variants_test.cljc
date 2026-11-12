@@ -210,7 +210,11 @@
     (t/is (= (count (:variant-properties comp01')) 1))
     (t/is (= (count (:variant-properties comp02)) 2))
     (t/is (= (count (:variant-properties comp02')) 1))
-    (t/is (= (-> comp01' :variant-properties first :name) "Property 2"))))
+    (t/is (= (-> comp01' :variant-properties first :name) "Property 2"))
+    (t/is (= "" (-> comp02' :variant-properties first :value)))
+    (t/is (= "(1)" (-> comp01' :variant-properties first :value)))
+    (t/is (= "" (:variant-name (ths/get-shape file' :m02))))
+    (t/is (= "(1)" (:variant-name (ths/get-shape file' :m01))))))
 
 (t/deftest test-update-property-value
   (let [;; ==== Setup

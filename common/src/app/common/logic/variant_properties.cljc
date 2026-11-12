@@ -43,17 +43,37 @@
         related-components (cfv/find-variant-components data objects variant-id)
         props              (-> related-components first :variant-properties)]
     (if (and (seq props) (<= 0 pos) (< pos (count props)))
-      (reduce (fn [changes component]
-                (let [props   (:variant-properties component)
-                      props   (d/remove-at-index props pos)
-                      main-id (:main-instance-id component)
-                      name    (ctv/properties-to-name props)]
-                  (-> changes
-                      (pcb/update-component (:id component) #(assoc % :variant-properties props)
-                                            {:apply-changes-local-library? true})
-                      (pcb/update-shapes [main-id] #(assoc % :variant-name name)))))
-              changes
-              related-components)
+      (let [stripped     (into {}
+                               (map (fn [component]
+                                      [(:id component)
+                                       (d/remove-at-index (:variant-properties component) pos)]))
+                               related-components)
+            members      (->> (cfv/qualifying-variant-members data objects (get objects variant-id))
+                              (mapv (fn [member]
+                                      (let [props (get stripped (:component-id member))]
+                                        (if (some? props)
+                                          (assoc-in member [:component :variant-properties] props)
+                                          member)))))
+            repaired     (cfv/repair-variant-members members)
+            repaired-ids (into #{} (map :component-id) repaired)
+            write        (fn [changes component props]
+                           (let [name (ctv/properties-to-name props)]
+                             (-> changes
+                                 (pcb/update-component (:id component)
+                                                       #(assoc % :variant-properties props)
+                                                       {:apply-changes-local-library? true})
+                                 (pcb/update-shapes [(:main-instance-id component)]
+                                                    #(assoc % :variant-name name)))))
+            changes      (reduce (fn [changes member]
+                                   (write changes (:component member) (:props member)))
+                                 changes
+                                 repaired)]
+        (reduce (fn [changes component]
+                  (if (contains? repaired-ids (:id component))
+                    changes
+                    (write changes component (get stripped (:id component)))))
+                changes
+                related-components))
       changes)))
 
 
