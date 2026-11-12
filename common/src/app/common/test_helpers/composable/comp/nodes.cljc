@@ -2294,7 +2294,8 @@
                                                          (:id page) shapes "Group" false)))
             :mask    (let [shapes (clg/shapes-for-group-or-mask objects ids)]
                        (second (clg/generate-mask-changes nil (uuid/next) (:id page) objects shapes)))
-            :ungroup (clg/generate-ungroup-changes nil (:id page) objects (clg/ungroup-ids objects ids))
+            :ungroup (clg/generate-ungroup-changes nil (:id page) objects (clg/ungroup-ids objects ids)
+                                                   (get-in the-file [:data :pages-index]))
             :unmask  (clg/generate-unmask-changes nil (:id page) objects ids)
             :bool    (second (clb/generate-create-bool nil (:id page) objects ids (:bool-type params) nil))
             :path    (-> (pcb/empty-changes nil (:id page))
