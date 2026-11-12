@@ -14,7 +14,8 @@
     - events in flight            – the full report lists the events the
       store was processing when it caught the exception; a failing stream
       pipeline lists the emitters of the value, not its own event
-    - on-update-loop              – never throws into the scheduler's caller
+    - on-update-loop              – never throws into the scheduler's caller;
+      reports the throttled loop as unhandled, with the events in flight
     - flash schedules async report and toast – neither the report nor
       ntf/show is emitted synchronously
     - organization SSO recovery   – expired SSO sessions go back to the provider
@@ -554,6 +555,30 @@
      {ptk/in-flight-events (fn [_] (throw (js/Error. "in-flight read failure")))}
      (t/is (nil? (errors/on-update-loop {:rounds 26}))))))
 
+(t/deftest ^:async update-loop-is-reported-with-the-events-in-flight
+  (errors/reset-report-governor!)
+  (vreset! @#'errors/update-loop-warned-at 0)
+  (let [events (atom [])
+        loop-ev (ptk/reify ::test-update-loop-source)]
+    (await
+     (mock/with-mocks*
+       {st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
+        ptk/in-flight-events  (fn [_] [loop-ev])
+        st/format-last-events (mock/stub (fn [& _] "(stub last events)"))
+        rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")
+        tm/schedule           (mock/stub (fn [f] (f)))}
+       (errors/on-update-loop {:rounds 26})
+       ;; A second trip within the window is not reported again
+       (errors/on-update-loop {:rounds 26})
+       (t/is (= 1 (count @events)))
+       (let [props (deref (first @events))]
+         ;; An unhandled report: it reaches the error reports and alerts,
+         ;; not only the audit log.
+         (t/is (= "unhandled-exception" (::ev/name props)))
+         (t/is (= "update loop throttled" (:hint props)))
+         (t/is (str/includes? (in-flight-section (:report props))
+                              "test-update-loop-source")))))))
+
 ;; ---------------------------------------------------------------------------
 ;; Expired organization SSO session
 ;;
@@ -804,6 +829,17 @@
           (t/is (= timeout (get-in state [:notification :timeout])))
           (t/is (= :visible (get-in state [:notification :status]))))))))
 
+(t/deftest flash-shows-errors-unless-asked-for-another-level
+  (doseq [[notify level] [[#(errors/flash :hint "Ordinary error") :error]
+                          [#(errors/flash :hint "Undone changes" :level :warning) :warning]]]
+    (let [scheduled (atom [])
+          events    (atom [])]
+      (with-redefs [tm/schedule (mock/stub #(swap! scheduled conj %))
+                    st/emit! (mock/stub (fn [& emitted] (swap! events into emitted)))]
+        (notify)
+        (doseq [callback @scheduled] (callback))
+        (t/is (= level (get-in (ptk/update (first @events) {}) [:notification :level])))))))
+
 (t/deftest ^:async persistence-notifications-include-an-error-report-download
   (let [scheduled      (atom [])
         idle-callbacks (atom [])
@@ -985,8 +1021,15 @@
          (await (async/settle))
          (t/is (= [::rt/nav-raw] (mapv ptk/type @events))))))))
 
-(t/deftest a-deleted-file-during-save-shows-the-exception-page
-  (t/testing "a file that no longer exists shows its page, not the save notification"
+(defn- shown-notifications
+  "Notifications the scheduled callbacks of a flash put on screen."
+  [events]
+  (keep #(when (implements? ptk/UpdateEvent %)
+           (get-in (ptk/update % {}) [:notification :content]))
+        events))
+
+(t/deftest a-not-found-save-keeps-the-workspace
+  (t/testing "a save answered not-found notifies instead of leaving the workspace"
     (let [events    (atom [])
           scheduled (atom [])]
       (with-redefs [rt/assign-exception (fn [error] error)
@@ -994,9 +1037,24 @@
                                                      (swap! events into emitted)))
                     tm/schedule         (mock/stub (fn [callback]
                                                      (swap! scheduled conj callback)))]
-        (errors/flash-persistence (ex-info "File not found" {:type :not-found}))
+        (errors/flash-persistence (ex-info "Save failed" {:type :persistence
+                                                          :cause-type :not-found
+                                                          :code :object-not-found}))
         (doseq [callback @scheduled] (callback))
-        (t/is (= [:not-found] (mapv :type @events)))))))
+        (t/is (not-any? #(= :not-found (:type %)) @events) "no exception page")
+        (t/is (= [(i18n/tr "errors.save-failed")] (shown-notifications @events)))))))
+
+(t/deftest lost-edit-permission-tells-how-many-changes-were-not-saved
+  (let [events    (atom [])
+        scheduled (atom [])]
+    (with-redefs [st/emit!    (mock/stub (fn [& emitted] (swap! events into emitted)))
+                  tm/schedule (mock/stub (fn [callback] (swap! scheduled conj callback)))]
+      (errors/flash-persistence (ex-info "Edit permission was lost"
+                                         {:type :persistence
+                                          :code :save-permission-denied
+                                          :unsaved-commits 3}))
+      (doseq [callback @scheduled] (callback))
+      (t/is (= [(i18n/tr "errors.save-permission-lost" (i18n/c 3))] (shown-notifications @events))))))
 
 (t/deftest a-restored-version-during-save-reloads-the-file
   (t/testing "a version restored elsewhere reloads the file instead of notifying"

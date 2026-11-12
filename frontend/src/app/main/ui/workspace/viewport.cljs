@@ -538,7 +538,9 @@
           {:bounds vbox
            :selected-shapes selected-shapes
            :frame selected-frame
-           :hover-shape @measure-hover
+           ;; The current shape: a rollback may have removed or changed it
+           ;; since the pointer last moved
+           :hover-shape (some->> @measure-hover :id (get base-objects))
            :zoom zoom}])
 
        ;; Show distances during movement with ALT

@@ -4,8 +4,10 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+// refactor/ stays for the modal placeholders (%modal-*, to move with the
+// modals refactor) and the input placeholder (%input-with-label, with the inputs).
 @use "refactor/common-refactor.scss" as deprecated;
-@use "ds/typography.scss" as t;
+@use "ds/typography.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/z-index.scss" as *;
 
@@ -20,48 +22,34 @@
 }
 
 .modal-header {
-  margin-bottom: deprecated.$s-24;
+  margin-block-end: var(--sp-xxl);
 }
 
 .modal-title {
-  @include deprecated.uppercase-title-typography;
+  @include use-typography("headline-small");
 
-  color: var(--modal-title-foreground-color);
+  color: var(--color-foreground-primary);
 }
 
+// Tooltip wrapper of the close button: it places it in the corner.
 .modal-close-btn {
-  @extend %modal-close-btn-base;
+  position: absolute;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: var(--sp-xs);
 }
 
 .modal-content {
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
-  margin-bottom: deprecated.$s-24;
-}
-
-.input-wrapper {
-  @extend %input-with-label;
-  @include deprecated.body-small-typography;
+  margin-block-end: var(--sp-xxl);
 }
 
 .action-buttons {
   @extend %modal-action-btns;
 }
 
-.cancel-button {
-  @extend %modal-cancel-btn;
-}
-
-.accept-btn {
-  @extend %modal-accept-btn;
-
-  &.danger {
-    @extend %modal-danger-btn;
-  }
-}
-
 .modal-msg {
-  color: var(--modal-text-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
 .teams-container {
@@ -75,34 +63,34 @@
   display: grid;
   grid-template-columns: 1fr 2fr;
   align-items: center;
-  width: 100%;
+  inline-size: 100%;
 }
 
 .modal-organization-container {
   @extend %modal-container-base;
 
   overflow-y: auto;
-  max-height: $sz-512;
+  max-block-size: $sz-512;
 }
 
 .modal-organization-title {
-  @include t.use-typography("headline-large");
+  @include use-typography("headline-large");
 
-  color: var(--modal-title-foreground-color);
+  color: var(--color-foreground-primary);
 }
 
 .modal-organization-msg {
-  @include t.use-typography("body-large");
+  @include use-typography("body-large");
 
-  color: var(--modal-text-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
 .team-name {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
-  color: var(--modal-text-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
 .team-member {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 }

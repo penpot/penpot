@@ -6,17 +6,22 @@
 
 @use "ds/_sizes.scss" as *;
 @use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as *;
+
+// refactor/ stays for the dropdown placeholders (%dropdown-wrapper,
+// %dropdown-element-base), which move with the menus group.
 @use "refactor/common-refactor.scss" as deprecated;
 
 .comments-section {
   position: relative;
-  background-color: var(--panel-background-color);
+  background-color: var(--color-background-primary);
   display: grid;
-  grid-template-rows: deprecated.$s-40 deprecated.$s-48 1fr;
+  grid-template-rows: $sz-40 $sz-48 1fr;
 }
 
 .from-viewer {
-  padding: 0 deprecated.$s-8;
+  padding: 0 var(--sp-s);
 }
 
 .comments-title {
@@ -24,53 +29,60 @@
 }
 
 .mode-dropdown-wrapper {
-  @include deprecated.button-style;
-  @extend %asset-element;
+  @include use-typography("body-small");
 
-  background-color: var(--color-background-tertiary);
+  --mode-dropdown-bg-color: var(--color-background-tertiary);
+
+  border: none;
+  align-items: center;
+  color: var(--color-foreground-primary);
+  background-color: var(--mode-dropdown-bg-color);
   display: flex;
-  width: 100%;
-  max-width: deprecated.$s-256;
-  height: deprecated.$s-32;
-  padding: deprecated.$s-8;
-  border-radius: deprecated.$br-8;
-  margin: deprecated.$s-16 auto 0 auto;
+  inline-size: 100%;
+  max-inline-size: px2rem(256);
+  block-size: $sz-32;
+  padding: var(--sp-s);
+  border-radius: $br-8;
+  margin: var(--sp-l) auto 0 auto;
   cursor: pointer;
   position: relative;
+
+  &:hover {
+    --mode-dropdown-bg-color: var(--color-background-quaternary);
+  }
 }
 
 .mode-label {
-  padding-right: 8px;
+  padding-inline-end: var(--sp-s);
   flex-grow: 1;
   display: flex;
   justify-content: flex-start;
 }
 
 .arrow-icon {
-  @include deprecated.flex-center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  block-size: $sz-24;
+  inline-size: $sz-24;
 
-  height: deprecated.$s-24;
-  width: deprecated.$s-24;
-
-  svg {
-    @extend %button-icon-small;
-
-    transform: rotate(90deg);
-    stroke: var(--icon-foreground);
+  .arrow-svg {
+    flex-shrink: 0;
+    color: var(--color-foreground-secondary);
   }
 }
 
 .comment-mode-dropdown {
   @extend %dropdown-wrapper;
 
-  top: deprecated.$s-92;
-  left: deprecated.$s-12;
-  max-width: deprecated.$s-256;
-  width: 100%;
+  inset-block-start: px2rem(92);
+  inset-inline-start: var(--sp-m);
+  max-inline-size: px2rem(256);
+  inline-size: 100%;
 }
 
 .viewer-dropdown {
-  left: deprecated.$s-8;
+  inset-inline-start: var(--sp-s);
 }
 
 .dropdown-item {
@@ -79,35 +91,40 @@
   justify-content: space-between;
 
   .icon {
-    @include deprecated.flex-center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    block-size: $sz-24;
+    inline-size: $sz-24;
 
-    height: deprecated.$s-24;
-    width: deprecated.$s-24;
-
-    svg {
-      @extend %button-icon-small;
-
-      stroke: transparent;
+    // %dropdown-element-base styles any svg inside a span (12px box and a
+    // stroke color); the DS icon needs its 16px box and currentColor.
+    .tick-icon {
+      flex-shrink: 0;
+      inline-size: $sz-16;
+      block-size: $sz-16;
+      stroke: currentcolor;
+      color: transparent;
     }
   }
 
   .label {
-    @include deprecated.body-small-typography;
+    @include use-typography("body-small");
   }
 
   &:hover {
-    .icon svg {
-      stroke: transparent;
+    .tick-icon {
+      color: transparent;
     }
   }
 
   &.selected {
     .label {
-      color: var(--menu-foreground-color);
+      color: var(--color-foreground-primary);
     }
 
-    .icon svg {
-      stroke: var(--icon-foreground-hover);
+    .tick-icon {
+      color: var(--color-foreground-primary);
     }
   }
 }
@@ -116,13 +133,13 @@
   position: relative;
   block-size: var(--sp-xs);
   inline-size: calc(100% + var(--sp-s));
-  border-top: $b-1 solid var(--color-background-quaternary);
-  left: calc(-1 * var(--sp-xs));
-  margin-top: var(--sp-s);
+  border-block-start: $b-1 solid var(--color-background-quaternary);
+  inset-inline-start: calc(-1 * var(--sp-xs));
+  margin-block-start: var(--sp-s);
 }
 
 .comments-section-content {
-  height: 100%;
+  block-size: 100%;
   overflow-y: auto;
 }
 

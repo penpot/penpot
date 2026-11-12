@@ -104,6 +104,9 @@ Current tools in **local MCP**:
 * `penpot_api_info`
 * `export_shape`
 * `import_image`
+* `submit_feedback`, only when the server has `PENPOT_MCP_BACKEND_URI` set (see the [configuration guide](/technical-guide/configuration/#mcp))
+
+`submit_feedback` emails plain-text feedback about Penpot MCP to the team that runs your Penpot instance. The agent sends it only when you ask or approve, and the email includes your name and email address. It needs your MCP key: the remote setup already sends it, and in local MCP you add it to the server URL as `userToken`.
 
 Because **remote MCP** does not expose local file-system access:
 

@@ -65,8 +65,9 @@
                 [:process-image/global]]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id content] :as params}]
   (files/check-edition-permissions! pool profile-id file-id)
-  (media.v/validate-media-type! content)
-  (media.v/validate-media-size! content)
+  (media.v/check-upload-path content)
+  (media.v/check-media-type content)
+  (media.v/check-media-size content)
 
   (let [team-id (:team-id (db/exec-one! pool [sql:get-team-id-for-file file-id]))]
     ;; TEMPORARILY DISABLED (2026-10-19): media-storage-bytes-per-team
@@ -136,15 +137,7 @@
 
 (defn- process-main-image
   [info]
-  (let [path  (:path info)
-        mtype (:mtype info)
-        path  (if (= mtype "image/svg+xml")
-                (let [content   (slurp path)
-                      sanitized (svg/sanitize-svg content)
-                      temp-path (tmp/tempfile :prefix "penpot-svg-" :suffix ".svg" :min-age "5m")]
-                  (spit (str temp-path) sanitized)
-                  temp-path)
-                path)
+  (let [{:keys [path mtype]} (svg/sanitize-svg-upload info)
         hash  (sto/calculate-hash path)
         data  (-> (sto/content path)
                   (sto/wrap-with-hash hash))]
@@ -239,6 +232,8 @@
 (sv/defmethod ::create-file-media-object-from-url
   {::doc/added "1.17"
    ::doc/changes [["2.19" "The optional :id param is rejected with a params-validation error; the server always generates the identifier"]]
+   ::climit/id [[:process-image/by-profile ::rpc/profile-id]
+                [:process-image/global]]
    ::sm/params schema:create-file-media-object-from-url}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (files/check-edition-permissions! pool profile-id file-id)
@@ -262,16 +257,7 @@
                     (assoc :from-url? true)
                     (assoc :content content)
                     (assoc :name (d/nilv name "unknown")))]
-
-    ;; NOTE: we use the climit here in a dynamic invocation because we
-    ;; don't want saturate the process-image limit with IO (download
-    ;; of external image)
-
-    (-> cfg
-        (assoc ::climit/id [[:process-image/by-profile (:profile-id params)]
-                            [:process-image/global]])
-        (assoc ::climit/label "create-file-media-object-from-url")
-        (climit/invoke! #(db/run! %1 create-file-media-object %2) params))))
+    (db/run! cfg create-file-media-object params)))
 
 
 ;; --- Clone File Media object (Upload and create from url)
@@ -383,6 +369,7 @@
    ::sm/result schema:upload-chunk-result}
   [{:keys [::db/pool] :as cfg}
    {:keys [::rpc/profile-id session-id index content] :as _params}]
+  (media.v/check-upload-path content)
   (let [session (db/tx-run! cfg check-upload-chunk-slot session-id profile-id index content)]
     (l/trc :hint "upload-chunk"
            :session-id session-id
@@ -583,8 +570,8 @@
                       content (-> content
                                   (assoc :filename (str "upload:" name))
                                   (assoc :mtype mtype)
-                                  (media.v/validate-media-type!)
-                                  (media.v/validate-media-size!))
+                                  (media.v/check-media-type)
+                                  (media.v/check-media-size))
                       mobj    (create-file-media-object cfg (assoc params
                                                                    :from-chunks? true
                                                                    :content content))]

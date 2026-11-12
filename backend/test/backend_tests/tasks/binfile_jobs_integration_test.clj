@@ -249,11 +249,13 @@
     (with-redefs [jobs/heartbeat (fn [_cfg & {:as options}]
                                    (swap! calls conj options)
                                    1)]
-      (bfj/export-files th/*system*
-                        (jobs/make-context (jobs/get-job th/*system* job-id))
-                        {:ids         #{file-id}
-                         :export-type :detach-libraries
-                         :output      (tmp/tempfile* :suffix ".penpot")}))
+      (let [cfg (bfc/export-cfg th/*system*
+                                {:file-ids    #{file-id}
+                                 :export-type :detach-libraries
+                                 :output      (tmp/tempfile* :suffix ".penpot")})
+            context (jobs/make-context (jobs/get-job th/*system* job-id))]
+        (bfj/check-active cfg context)
+        (bfj/run cfg context v3/export-files!)))
 
     (let [reports (map :progress @calls)]
 

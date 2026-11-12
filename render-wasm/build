@@ -3,7 +3,9 @@
 # Usage: ./build [frontend|export] [extra cargo params...]
 #
 # With no target, builds both. Set BUILD_MODE=release (or NODE_ENV=production)
-# for an optimized build. See `_build_env` for what each target changes.
+# for an optimized build. Set PENPOT_WASM_PREPARED=1 when the pinned toolchain
+# and Node dependencies are prepared to skip their setup. See `_build_env` for
+# what each target changes.
 
 _SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 _RENDER_TARGET=${1:-}

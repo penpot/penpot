@@ -52,6 +52,12 @@ Each target keeps its own `CARGO_TARGET_DIR` (`target/<target>`), so switching
 between them does not invalidate the other's cache. Set `BUILD_MODE=release`
 (or `NODE_ENV=production`) for an optimized build; the default is `debug`.
 
+Set `PENPOT_WASM_PREPARED=1` when the pinned Rust toolchain is selected, its
+Emscripten target is installed, and this package's Node dependencies are
+installed. `./build`, `./test`, `./lint` and `./fmt` then skip `rustup` setup
+and `pnpm install`. Benchmark preparation sets this flag for each retained
+build.
+
 ### Serialize builds in one checkout
 
 All targets in one checkout share one `flock` lock stored at

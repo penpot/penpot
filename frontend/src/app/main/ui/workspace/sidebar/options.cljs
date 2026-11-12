@@ -262,6 +262,10 @@
         (mf/use-ctx ctx/permissions)
         render-context-lost? (mf/deref refs/render-context-lost?)
 
+        ;; While saves fail the workspace is locked and nothing may be edited
+        save-locked?
+        (some? (mf/deref refs/persistence-lock))
+
         options-mode
         (mf/deref refs/options-mode-global)
 
@@ -289,7 +293,7 @@
            (on-option-tab-change "design")))))
 
     [:div {:class (stl/css :tool-window)}
-     (if (and (:can-edit permissions) (not render-context-lost?))
+     (if (and (:can-edit permissions) (not render-context-lost?) (not save-locked?))
        [:> tab-switcher* {:tabs options-tabs
                           :on-change on-option-tab-change
                           :selected (name options-mode)

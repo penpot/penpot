@@ -36,7 +36,8 @@
                                      :button-destructive (= variant "destructive"))
         props (mf/spread-props props {:class [class internal-class]
                                       :href to
-                                      :type (d/nilv type "button")
+                                      ;; On an anchor, `type` is a MIME type hint.
+                                      :type (when-not to (d/nilv type "button"))
                                       :ref (fn [node]
                                              (when on-ref
                                                (on-ref node)))})]

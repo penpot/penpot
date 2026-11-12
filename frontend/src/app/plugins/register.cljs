@@ -25,7 +25,9 @@
 (def mcp-permissions
   #{"user:read" "library:read" "library:write"
     "comment:read" "comment:write" "content:read" "content:write"
-    "allow:global" "manage:projects" "manage:teams" "manage:delete"})
+    "allow:global" "manage:projects" "manage:teams" "manage:delete"
+    ;; Keeps the rollbacks not reported yet across reloads
+    "allow:localstorage"})
 
 ;; Promise that resolves when plugins runtime is initialized.
 ;; Lives here to avoid circular dependency: workspace.mcp -> app.plugins -> app.plugins.api -> workspace
@@ -270,13 +272,54 @@
                                               (.error js/console "Rollback install failed:" err2))))))
                          (.error js/console "Failed to remove plugin:" err))))))))
 
-(defn check-permission
+(defn has-permission?
+  "True when the plugin was granted `permission`."
   [plugin-id permission]
   (cond
     (= plugin-id "00000000-0000-0000-0000-000000000000") true
     (= plugin-id mcp-plugin-id) (contains? mcp-permissions permission)
     :else (let [{:keys [permissions]} (dm/get-in @registry [:data plugin-id])]
             (contains? permissions permission))))
+
+(defn- read-only-reason
+  "Why plugin writes must fail in `state`, or nil when they can go ahead.
+  The read-only flag alone is not a reason: the Inspect tab sets it too,
+  and it only hides the editing tools."
+  [state]
+  (let [wglobal (:workspace-global state)]
+    (cond
+      (some? (:persistence-lock wglobal))
+      "because changes cannot be saved right now"
+
+      (not (dm/get-in state [:permissions :can-edit]))
+      "because you cannot edit this file"
+
+      (some? (:preview-id wglobal))
+      "while a version is being previewed"
+
+      (dm/get-in state [:render-state :lost])
+      "because the canvas stopped rendering")))
+
+(defn check-writable
+  "Throws while saves are failing, the user cannot edit, a version is
+  being previewed or the render context is lost. A write made then would
+  be lost or edit the wrong data, so it fails whatever the plugin's
+  validation flag."
+  []
+  (when-let [reason (read-only-reason @st/state)]
+    (throw (ex-info (str "[PENPOT PLUGIN] The workspace is read-only " reason)
+                    {:type ::read-only}))))
+
+(def ^:private write-permissions
+  #{"content:write" "library:write"})
+
+(defn check-permission
+  "True when the plugin was granted `permission`. A write permission also
+  runs `check-writable`, which throws while the workspace is read-only."
+  [plugin-id permission]
+  (when (contains? write-permissions permission)
+    (check-writable))
+  (has-permission? plugin-id permission))
 
 (defn get-plugin-data
   [state plugin-id]

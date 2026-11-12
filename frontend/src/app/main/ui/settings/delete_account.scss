@@ -4,8 +4,10 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+// refactor/ stays for the modal placeholders (%modal-*), which move with
+// the modals refactor.
 @use "refactor/common-refactor.scss" as deprecated;
-@use "ds/typography.scss" as t;
+@use "ds/typography.scss" as *;
 @use "ds/spacing.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_utils.scss" as *;
@@ -19,54 +21,48 @@
 
   display: flex;
   flex-direction: column;
-  min-width: deprecated.$s-408;
+  min-inline-size: px2rem(408);
 }
 
 .modal-header {
-  margin-bottom: deprecated.$s-24;
+  margin-block-end: var(--sp-xxl);
 }
 
 .modal-title {
-  @include deprecated.uppercase-title-typography;
+  @include use-typography("headline-small");
 
-  color: var(--modal-title-foreground-color);
+  color: var(--color-foreground-primary);
 }
 
+// Tooltip wrapper of the close button: it places it in the corner.
 .modal-close-btn {
-  @extend %modal-close-btn-base;
+  position: absolute;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: var(--sp-xs);
 }
 
 .modal-content {
-  @include deprecated.flex-column;
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
+  display: flex;
+  flex-direction: column;
   flex: 1 1 auto;
-  min-height: 0;
-  gap: deprecated.$s-24;
-  margin-bottom: deprecated.$s-24;
+  min-block-size: 0;
+  gap: var(--sp-xxl);
+  margin-block-end: var(--sp-xxl);
 }
 
 .warning-notice {
   flex-shrink: 0;
 }
 
-.fields-row {
-  @include deprecated.flex-column;
-}
-
-.select-title {
-  @include deprecated.body-small-typography;
-
-  color: var(--modal-title-foreground-color);
-}
-
 .organizations-section {
-  @include t.use-typography("body-medium");
+  @include use-typography("body-medium");
 
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
-  min-height: 0;
+  min-block-size: 0;
   gap: var(--sp-l);
 }
 
@@ -98,7 +94,7 @@
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
-  min-height: 0;
+  min-block-size: 0;
   gap: var(--sp-l);
   margin: 0;
   padding: 0;
@@ -119,28 +115,16 @@
 }
 
 .organization-name {
-  color: var(--modal-title-foreground-color);
+  color: var(--color-foreground-primary);
 }
 
 .organization-counts {
   display: flex;
   flex-direction: row;
   gap: var(--sp-s);
-  color: var(--df-secondary);
+  color: var(--color-foreground-secondary);
 }
 
 .action-buttons {
   @extend %modal-action-btns;
-}
-
-.cancel-button {
-  @extend %modal-cancel-btn;
-}
-
-.accept-button {
-  @extend %modal-accept-btn;
-
-  &.danger {
-    @extend %modal-danger-btn;
-  }
 }

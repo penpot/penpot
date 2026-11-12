@@ -180,10 +180,12 @@
                                  :data-testid "team-members"}
          (tr "labels.members")]
 
-        [:> dropdown-menu-item* {:on-click on-invitations-click
-                                 :class (stl/css :options-item)
-                                 :data-testid "team-invitations"}
-         (tr "labels.invitations")]
+        ;; The pending invitations are an admin only list.
+        (when (:is-admin permissions)
+          [:> dropdown-menu-item* {:on-click on-invitations-click
+                                   :class (stl/css :options-item)
+                                   :data-testid "team-invitations"}
+           (tr "labels.invitations")])
 
         (when (contains? cf/flags :webhooks)
           [:> dropdown-menu-item* {:on-click on-webhooks-click

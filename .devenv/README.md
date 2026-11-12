@@ -85,6 +85,10 @@ target instance is running and its MCP config has been generated:
 # 'main', 'ws1' and similar spellings are rejected.
 ./manage.sh start-coding-agent claude --ws 1
 ./manage.sh start-coding-agent opencode --ws 2
+
+# Run a different executable (e.g. a wrapper script) with the same MCP
+# wiring. --ws and --bin may come in any order.
+./manage.sh start-coding-agent claude --bin claude-alt
 ```
 
 Equivalents by hand (run from inside the workspace directory):

@@ -8,7 +8,9 @@
   "The `:export-binfile` job: it produces the `.penpot` artifact of the
   set of files frozen in its params."
   (:require
+   [app.binfile.common :as bfc]
    [app.binfile.jobs :as bfj]
+   [app.binfile.v3 :as bf.v3]
    [app.common.schema :as sm]
    [app.db :as db]
    [app.jobs :as jobs]
@@ -64,14 +66,17 @@
     (doseq [file-id file-ids]
       (files/check-read-permissions! cfg profile-id file-id))
 
-    (let [output (tmp/tempfile* :suffix ".penpot")]
+    (let [output (tmp/tempfile* :suffix ".penpot")
+          cfg    (bfc/export-cfg cfg {:file-ids    file-ids
+                                      :export-type (:export-type params)
+                                      :output      output})]
       (try
-        (bfj/export-files cfg context {:ids         file-ids
-                                       :export-type (:export-type params)
-                                       :output      output})
-        (let [resource (js/put-resource cfg profile-id
-                                        (assoc artifact :content (sto/content output)))]
-          {:result      (check-result (dissoc resource :resource-id))
+        (bfj/check-active cfg context)
+        (bfj/run cfg context bf.v3/export-files!)
+        (let [resource (->> (assoc artifact :content (sto/content output))
+                            (js/put-resource cfg profile-id))
+              result   (check-result (dissoc resource :resource-id))]
+          {:result result
            :resource-id (:resource-id resource)})
         (finally
           (fs/delete output))))))

@@ -12,7 +12,7 @@
 
 - Co-located SCSS modules are preferred. Use `app.main.style/stl` helpers from CLJS and design-system SCSS tokens/mixins instead of legacy global selectors or high-specificity nesting.
 - Keep CSS specificity low. Avoid nested selectors unless they target elements the component owns; CSS Modules already prevent class-name collisions.
-- Prefer CSS logical properties for directional spacing/layout (`padding-inline-start`, etc.). Physical `width`/`height` are still acceptable where they are clearer.
+- Prefer CSS logical properties for directional spacing/layout (`padding-inline-start`, etc.). Physical `width`/`height` are still acceptable where they are clearer. Never mix: a stylesheet logical property (`inline-size`) and an inline physical `width` on the same element cascade separately, and the logical mapping wins — a dynamically driven width must be `width` on both sides (import modal progress bar hit this). And an inline style passed from CLJS must be a JS object (`#js {:width …}`): for plain `[:div …]` elements the Rumext macro does not convert the `:style` map at runtime — a plain CLJS map reaches React raw and React never finds the keys (static style literals are converted at compile time, which is why `:style` maps seem to work elsewhere).
 - Use named design-system variables/tokens for spacing, borders, fixed dimensions, colors, and typography. Avoid hardcoded px/rem values and deprecated `resources/styles/common/refactor/spacing.scss` variables.
 - Use component-local CSS custom properties for variants and theming instead of one-off Sass variables when a component has multiple visual states.
 - Prefer DS typography components (`heading*`, `text*`) and typography mixins instead of plain text wrappers or deprecated typography mixins.

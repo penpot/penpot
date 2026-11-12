@@ -15,8 +15,8 @@
    [app.main.features :as features]
    [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
-   [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
@@ -167,6 +167,10 @@
        :on-focus handle-focus-stop-color
        :on-blur handle-blur-stop-color}]]))
 
+(def ^:private gradient-type-options
+  [{:id "linear-gradient" :label "Linear"}
+   {:id "radial-gradient" :label "Radial"}])
+
 (mf/defc gradients*
   [{:keys [type
            stops
@@ -200,9 +204,9 @@
         handle-change-type
         (mf/use-callback
          (mf/deps on-change-type)
-         (fn [event]
+         (fn [type-id]
            (when on-change-type
-             (on-change-type event))))
+             (on-change-type (keyword type-id)))))
 
         handle-add-stop
         (mf/use-callback
@@ -336,12 +340,10 @@
                  :style {"--position" (dm/str (* offset 100) "%")}}]])]]
 
      [:div {:class (stl/css :gradient-options)}
-      [:& select
-       {:default-value type
-        :options [{:value :linear-gradient :label "Linear"}
-                  {:value :radial-gradient :label "Radial"}]
-        :on-change handle-change-type
-        :class (stl/css :gradient-options-select)}]
+      [:> select* {:default-selected (d/name (d/nilv type :linear-gradient))
+                   :options gradient-type-options
+                   :on-change handle-change-type
+                   :wrapper-class (stl/css :gradient-options-select)}]
 
       [:div {:class (stl/css :gradient-options-buttons)}
        [:> icon-button* {:variant "ghost"

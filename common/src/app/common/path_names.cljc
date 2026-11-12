@@ -55,6 +55,17 @@ Some naming conventions:
   (->> (split-path path)
        (join-path)))
 
+(defn normalize-path-name
+  "Trim and clean a path-style name. Returns nil when the name is not usable."
+  [name]
+  (let [name       (some-> name str/trim)
+        clean-name (when (string? name) (clean-path name))]
+    (when (and (string? name)
+               (not (str/ends-with? name "/"))
+               (string? clean-name)
+               (not (str/blank? clean-name)))
+      clean-name)))
+
 (defn merge-path-item
   "Put the item at the end of the path."
   [path name]

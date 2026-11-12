@@ -5,6 +5,7 @@ import { createTestCaseRemoteMainCopySyncNested } from "./cases/caseRemoteMainCo
 import { createTestCaseVariantSwitchPropagates } from "./cases/caseVariantSwitchPropagates.ts";
 import { createTestCaseCopySubheadDeletePreservesSlots } from "./cases/caseCopySubheadDeletePreservesSlots.ts";
 import { createTestCaseMainReorderKeepsCopySlots } from "./cases/caseMainReorderKeepsCopySlots.ts";
+import { createTestCaseMainChildMovedOutLeavesCopy } from "./cases/caseMainChildMovedOutLeavesCopy.ts";
 
 /**
  * All composable test cases currently defined. A factory (not a constant): each
@@ -19,5 +20,6 @@ export function allCases(): readonly TestCase[] {
         createTestCaseVariantSwitchPropagates(),
         createTestCaseCopySubheadDeletePreservesSlots(),
         createTestCaseMainReorderKeepsCopySlots(),
+        createTestCaseMainChildMovedOutLeavesCopy(),
     ];
 }

@@ -10,7 +10,8 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace.colors :as dwc]
    [app.main.ui.workspace.colorpicker.hsl :as hsl]
-   [clojure.test :as t]
+   [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as async]
    [potok.v2.core :as ptk]))
 
 (t/deftest build-change-fill-event
@@ -134,3 +135,26 @@
         (t/is (= "#406bbf" (:hex (hsl/update-color
                                   (get-in echoed [:colorpicker :current-color]) :hsl-s 0.5)))))
       (t/is (not (contains? (get-in changed [:colorpicker :stops 0]) :hsl))))))
+
+(t/deftest ^:async color-change-updates-the-shapes-of-a-property-in-one-event
+  ;; Changing a color in a selection of many shapes must not commit once per
+  ;; shape: each commit makes the page objects a new map, and everything that
+  ;; derives from them runs again.
+  (let [[a b c d e] (repeatedly 5 uuid/next)
+        color      {:color "#ff0000" :opacity 1}
+        old-color  {:color "#000000" :opacity 1}
+        operations [{:prop :fill :shape-id a :index 0}
+                    {:prop :fill :shape-id b :index 0}
+                    {:prop :fill :shape-id c :index 1}
+                    {:prop :stroke :shape-id a :index 0}
+                    {:prop :stroke :shape-id d :index 0}
+                    {:prop :stroke :shape-id e :index 0}]
+        types      (atom [])]
+    (await (async/observe (ptk/watch (dwc/change-color-in-selected operations color old-color) {} nil)
+                          :on-next #(swap! types conj (ptk/type %))))
+
+    (t/is (= {:app.main.data.workspace.undo/start-undo-transaction  1
+              :app.main.data.workspace.colors/change-fill           2
+              :app.main.data.workspace.colors/change-stroke-color   1
+              :app.main.data.workspace.undo/commit-undo-transaction 1}
+             (frequencies @types)))))

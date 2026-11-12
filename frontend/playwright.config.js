@@ -11,6 +11,13 @@ const userAgent = platform === 'darwin' ?
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" :
   undefined;
 
+// Default timeout of the retrying expects (toBeVisible and friends). CI
+// runners are slower and the first load of a page fetches its module, so
+// they get more time. A project that sets its own `expect` replaces the
+// top-level one instead of merging with it, so every such project has to
+// repeat this timeout or it falls back to Playwright's 5 seconds.
+const expectTimeout = process.env.CI ? 40000 : 5000;
+
 /**
  * @see https://playwright.dev/docs/test-configuration
  */
@@ -29,7 +36,7 @@ export default defineConfig({
 
   timeout: 80000,
   expect: {
-    timeout: process.env.CI ? 40000 : 5000,
+    timeout: expectTimeout,
   },
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
@@ -58,6 +65,7 @@ export default defineConfig({
       },
       snapshotPathTemplate: "{testDir}/{testFilePath}-snapshots/{arg}.png",
       expect: {
+        timeout: expectTimeout,
         toHaveScreenshot: {
           maxDiffPixelRatio: 0.001,
         },
@@ -65,9 +73,12 @@ export default defineConfig({
     },
     {
       name: "ds",
-      use: { ...devices["Desktop Chrome"] },
+      // Accounts without a theme follow the system one; keep the visual
+      // specs on the dark theme so their screenshots stay comparable.
+      use: { ...devices["Desktop Chrome"], colorScheme: "dark" },
       testDir: "./playwright/ui/visual-specs",
       expect: {
+        timeout: expectTimeout,
         toHaveScreenshot: { maxDiffPixelRatio: 0.005 },
       },
     },

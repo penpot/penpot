@@ -239,24 +239,30 @@
 
 (defn- migrate-file
   [{:keys [::db/conn] :as cfg} {:keys [read-only?]} {:keys [id] :as file}]
-  (binding [pmap/*load-fn* (partial fdata/load-pointer cfg id)
-            pmap/*tracked* (pmap/create-tracked)]
-    (let [libs (delay (get-resolved-file-libraries cfg file))
-          ;; For avoid unnecesary overhead of creating multiple
-          ;; pointers and handly internally with objects map in their
-          ;; worst case (when probably all shapes and all pointers
-          ;; will be readed in any case), we just realize/resolve them
-          ;; before applying the migration to the file.
-          file (-> (fdata/realize cfg file)
-                   (fmg/migrate-file libs))]
+  (fdata/with-tracked-pointers cfg id
+    (let [libs                (delay (get-resolved-file-libraries cfg file))
+          ;; Capture the pointer layout before realizing: the migration
+          ;; runs on plain data, and unchanged positions must keep their
+          ;; original fragment ids instead of being re-wrapped with new
+          ;; ones on persist.
+          original            (fdata/original-pointers (:data file))
+          objects-map-before? (contains? (:features file) "fdata/objects-map")
+          realized            (-> (fdata/realize cfg file)
+                                  (fmg/migrate-file libs))
+          objects-map-added?  (and (not objects-map-before?)
+                                   (contains? (:features realized) "fdata/objects-map"))]
 
       (if (or read-only? (db/read-only? conn))
-        file
-        (do ;; When file is migrated, we break the rule of no
-          ;; perform mutations on get operations and update the
-          ;; file with all migrations applied
+        realized
+        (let [file (if objects-map-added?
+                     realized
+                     (fdata/reattach-unchanged original realized))]
+          ;; When the file is migrated, we break the rule of not
+          ;; performing mutations on get operations and update the file
+          ;; with all migrations applied. The caller still receives the
+          ;; realized file: the read contract is plain data.
           (update-file! cfg file)
-          (fmigr/resolve-applied-migrations cfg file))))))
+          (fmigr/resolve-applied-migrations cfg realized))))))
 
 (defn- get-file*
   [{:keys [::db/conn] :as cfg} id
@@ -281,7 +287,7 @@
 
   (assert (db/connection? conn) "expected cfg with valid connection")
   (when (and (not load-data?)
-             (or lock-for-share? lock-for-share? skip-locked?))
+             (or lock-for-share? lock-for-update? skip-locked?))
     (throw (IllegalArgumentException. "locking is incompatible when `load-data?` is false")))
 
   (let [sql
@@ -472,6 +478,18 @@
             {:team-id team-id
              :deleted-at nil}))
 
+(def ^:private sql:get-files-rels
+  "SELECT flr.*,
+	      fls.synced_at
+    FROM file_library_rel AS flr
+    JOIN file AS l
+      ON flr.library_file_id = l.id
+    LEFT JOIN file_library_sync AS fls
+      ON fls.file_id = flr.file_id
+     AND fls.library_file_id = flr.library_file_id
+   WHERE flr.file_id = ANY(?)
+     AND l.deleted_at IS NULL;")
+
 (defn get-files-rels
   "Given a set of file-id's, return all matching relations with the libraries"
   [cfg ids]
@@ -480,18 +498,8 @@
   (assert (every? uuid? ids) "expected a set of uuids")
 
   (db/run! cfg (fn [{:keys [::db/conn]}]
-                 (let [ids (db/create-array conn "uuid" ids)
-                       sql (str "SELECT flr.*,"
-                                "	   fls.synced_at"
-                                "  FROM file_library_rel AS flr"
-                                "  JOIN file AS l"
-                                "    ON flr.library_file_id = l.id"
-                                "  LEFT JOIN file_library_sync AS fls"
-                                "    ON fls.file_id = flr.file_id"
-                                "   AND fls.library_file_id = flr.library_file_id"
-                                " WHERE flr.file_id = ANY(?)"
-                                "   AND l.deleted_at IS NULL;")]
-                   (db/exec! conn [sql ids])))))
+                 (let [ids (db/create-array conn "uuid" ids)]
+                   (db/exec! conn [sql:get-files-rels ids])))))
 
 (def ^:private sql:upsert-file-library-sync
   "INSERT INTO file_library_sync (file_id, library_file_id, synced_at)
@@ -683,7 +691,8 @@
   "Make the file its own tokens source when its tokens source is not one
   of the given library-ids, as happens when the library was deleted. The
   tokens lib of the source is copied while the library still exists, even
-  if deleted; otherwise the tokens source and status are removed."
+  if deleted; otherwise the tokens source is removed and the file gets back
+  the tokens status kept aside for its own tokens lib, if any."
   [cfg data library-ids]
   (let [source-id (cfo/get-tokens-source data)]
     (if (and (some? source-id)
@@ -692,7 +701,7 @@
                                  :include-deleted? true
                                  :throw-if-not-exists? false)]
         (cfo/absorb-tokens-lib data (:data library))
-        (dissoc data :tokens-source :tokens-status))
+        (cfo/detach-tokens-source data))
       data)))
 
 (defn embed-assets
@@ -943,7 +952,12 @@
   (let [library-ids (->> (get-file-libraries conn (:id file))
                          (map :id)
                          (cons (:id file)))
-        load-fn     #(get-file cfg % :migrate? false)]
+        ;; Fragment rows are file-local and callers bind the loader of
+        ;; the file they work on, so each library realizes its pointers
+        ;; here, with its own id, before anything walks its data.
+        load-fn     (fn [library-id]
+                      (->> (get-file cfg library-id :migrate? false)
+                           (fdata/realize-pointers cfg)))]
     (weak/loadable-weak-value-map library-ids load-fn {id file})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1079,12 +1093,13 @@
     :else                     :detach-libraries))
 
 (defn export-cfg
-  "The domain cfg of an export: the frozen set of files and how their
-  libraries are handled."
-  [cfg {:keys [ids export-type]}]
+  "The domain cfg of an export: the frozen set of files, how their
+  libraries are handled, and where the package is written."
+  [cfg {:keys [file-ids export-type output]}]
   (-> cfg
-      (assoc ::ids ids)
-      (assoc ::export-type export-type)))
+      (assoc ::file-ids file-ids)
+      (assoc ::export-type export-type)
+      (assoc ::output output)))
 
 (defn import-cfg
   "The domain cfg of an import: the destination team/profile/project, the

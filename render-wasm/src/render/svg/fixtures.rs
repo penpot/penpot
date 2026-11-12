@@ -15,7 +15,7 @@ use crate::state::ShapesPool;
 use crate::utils::uuid_from_u32_quartet;
 use crate::uuid::Uuid;
 
-use super::render_tree_to_svg;
+use super::{render_tree_to_svg, render_trees_to_svg};
 
 /// Font URL referenced in exported SVG `@font-face` rules.
 pub(super) const TEST_FONT_URL: &str = "fonts/sourcesanspro-regular.ttf";
@@ -605,6 +605,18 @@ pub(super) fn with_stable_clip_ids(svg: &str) -> String {
 
 pub(super) fn render(pool: &ShapesPool, root: Uuid) -> String {
     render_with(pool, root, |_resources| {})
+}
+
+/// Multi-root SVG export for tests (one document, joined viewBox).
+pub(super) fn render_multi(pool: &ShapesPool, roots: &[Uuid]) -> String {
+    let _serial = svg_export_test_lock()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    let mut resources = RenderResources::try_new_headless().expect("headless resources");
+    register_test_font_urls(&mut resources.fonts);
+    let _guard = TestRenderResourcesGuard::install(&mut resources);
+    let bytes = render_trees_to_svg(&mut resources, roots, pool, 1.0).expect("svg multi export");
+    String::from_utf8(bytes).expect("utf8 svg")
 }
 
 /// SVG export installs a process-wide resources pointer; serialize tests that

@@ -14,9 +14,13 @@
    [app.http.session :as session]
    [app.loggers.audit :as-alias audit]
    [app.redis :as rds]
+   [app.rpc.commands.auth :as auth]
    [app.rpc.commands.ldap :as ldap-cmd]
+   [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
+   [datoteka.io :as io]
+   [mockery.core :refer [with-mocks]]
    [yetti.response :as yres])
   (:import
    java.lang.AutoCloseable))
@@ -122,7 +126,7 @@
         (.close ^AutoCloseable conn)))))
 
 (t/deftest login-with-password-locks-after-max-attempts
-  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout])]
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout :disable-admin-console])]
     (let [profile (th/create-profile* 200 {:is-active true})]
       (cleanup-redis (:id profile))
       ;; 4 failed attempts — not yet locked
@@ -141,7 +145,7 @@
         (t/is (th/ex-of-code? (:error out) :account-locked))))))
 
 (t/deftest login-with-password-returns-rate-limit-when-locked
-  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout])]
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout :disable-admin-console])]
     (let [profile (th/create-profile* 201 {:is-active true})]
       (cleanup-redis (:id profile))
       ;; Trigger lockout
@@ -161,7 +165,7 @@
           (t/is (pos? ttl) "ttl should be a positive number"))))))
 
 (t/deftest successful-login-clears-failed-attempts
-  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout])]
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout :disable-admin-console])]
     (let [profile (th/create-profile* 202 {:is-active true})]
       (cleanup-redis (:id profile))
       ;; 3 failed attempts
@@ -184,7 +188,7 @@
           (t/is (th/ex-of-code? (:error out) :wrong-credentials)))))))
 
 (t/deftest lockout-does-not-apply-when-flag-disabled
-  (with-redefs [app.config/flags (flags/parse flags/default [])]
+  (with-redefs [app.config/flags (flags/parse flags/default [:disable-admin-console])]
     (let [profile (th/create-profile* 203 {:is-active true})]
       (cleanup-redis (:id profile))
       ;; 10 failed attempts — no lockout without the flag
@@ -199,7 +203,7 @@
   "Verify that login-with-ldap short-circuits when account is locked,
    without attempting LDAP authentication. Calls the actual command
    function with a mock provider to test the full flow."
-  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout :login-with-ldap])
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout :login-with-ldap :disable-admin-console])
                 ldap/authenticate (constantly nil)]
     (let [profile (th/create-profile* 204 {:is-active true})
           cfg (assoc th/*system* ::ldap/provider {})]
@@ -217,7 +221,7 @@
 
 (t/deftest recover-profile-clears-lockout
   "Verify that clearing attempts (e.g. after password reset) unlocks the account."
-  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout])]
+  (with-redefs [app.config/flags (flags/parse flags/default [:enable-account-lockout :disable-admin-console])]
     (let [profile (th/create-profile* 205 {:is-active true})
           cfg th/*system*]
       (cleanup-redis (:id profile))
@@ -253,3 +257,31 @@
               "session must not be bound to the typed-email profile")))))
 
 
+;; --- Profile picture import
+
+(def ^:private avatar-svg
+  "An SVG that smuggles a script element."
+  "<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>")
+
+(defn- mock-download
+  "Mock the http client so that any url answers with `body` and `mtype`."
+  [mtype body]
+  {:target 'app.http.client/req-with-redirects
+   :return {:status 200
+            :headers {"content-type" mtype
+                      "content-length" (str (alength ^bytes body))}
+            :body (java.io.ByteArrayInputStream. ^bytes body)}})
+
+(t/deftest import-profile-picture-rejects-svg
+  (t/testing "an svg profile picture is not imported"
+    (with-mocks [http-mock (mock-download "image/svg+xml"
+                                          (.getBytes ^String avatar-svg "UTF-8"))]
+      (let [result (auth/import-profile-picture th/*system* "https://example.com/avatar.svg")]
+        (t/is (nil? result)))))
+
+  (t/testing "a png profile picture is imported"
+    (let [body (io/read* (io/resource "backend_tests/test_files/sample.png"))]
+      (with-mocks [http-mock (mock-download "image/png" body)]
+        (let [result (auth/import-profile-picture th/*system* "https://example.com/avatar.png")]
+          (t/is (some? result))
+          (t/is (some? (sto/get-object (:app.storage/storage th/*system*) result))))))))

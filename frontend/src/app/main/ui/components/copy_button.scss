@@ -4,89 +4,93 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .copy-button {
-  @include deprecated.button-style;
-
-  width: 100%;
-  height: deprecated.$s-32;
-  border: deprecated.$s-1 solid transparent;
-  border-radius: deprecated.$br-8;
+  border: $b-1 solid transparent;
+  background: none;
+  cursor: pointer;
+  inline-size: 100%;
+  block-size: $sz-32;
+  border-radius: $br-8;
   background-color: transparent;
   box-sizing: border-box;
 
   .icon-btn {
-    @include deprecated.flex-center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    block-size: $sz-32;
+    min-inline-size: $sz-28;
+    inline-size: $sz-28;
 
-    height: deprecated.$s-32;
-    min-width: deprecated.$s-28;
-    width: deprecated.$s-28;
-
-    svg {
-      @extend %button-icon-small;
-
-      stroke: var(--icon-foreground);
+    .icon {
+      flex-shrink: 0;
+      color: var(--color-foreground-secondary);
     }
   }
 
   &:hover {
     background-color: var(--color-background-tertiary);
     color: var(--color-foreground-primary);
-    border: deprecated.$s-1 solid var(--color-background-tertiary);
+    border: $b-1 solid var(--color-background-tertiary);
 
-    .icon-btn {
-      svg {
-        stroke: var(--button-tertiary-foreground-color-active);
-      }
+    .icon-btn .icon {
+      color: var(--color-accent-primary);
     }
   }
 
   &:focus,
   &:focus-visible {
     outline: none;
-    border: deprecated.$s-1 solid var(--button-tertiary-border-color-focus);
+    border: $b-1 solid var(--color-accent-primary);
     background-color: transparent;
-    color: var(--button-tertiary-foreground-color-focus);
+    color: var(--color-foreground-primary);
 
-    .icon-btn svg {
-      stroke: var(--button-tertiary-foreground-color-active);
+    .icon-btn .icon {
+      color: var(--color-accent-primary);
     }
   }
 }
 
 .copy-wrapper {
-  @include deprecated.button-style;
-  @include deprecated.copy-wrapper-base;
-
-  width: 100%;
-  height: fit-content;
-  text-align: left;
-  border: deprecated.$s-1 solid transparent;
+  position: relative;
+  min-block-size: $sz-32;
+  inline-size: 100%;
+  block-size: fit-content;
+  padding: px2rem(7) 0 px2rem(7) px2rem(7);
+  border: $b-1 solid transparent;
+  border-radius: $br-8;
+  background: none;
+  box-sizing: border-box;
+  cursor: pointer;
+  text-align: start;
 
   .icon-btn {
-    @include deprecated.flex-center;
-
+    display: flex;
+    justify-content: center;
+    align-items: center;
     position: absolute;
-    top: 0;
-    right: 0;
-    height: deprecated.$s-32;
-    width: deprecated.$s-28;
+    inset-block-start: 0;
+    inset-inline-end: 0;
+    block-size: $sz-32;
+    inline-size: $sz-28;
 
-    svg {
-      @extend %button-icon-small;
-
-      stroke: var(--button-tertiary-foreground-color-focus);
+    .icon {
+      flex-shrink: 0;
+      color: var(--color-foreground-primary);
       display: none;
     }
   }
 
   &:hover {
-    background-color: var(--button-tertiary-background-color-focus);
-    color: var(--button-tertiary-foreground-color-focus);
-    border: deprecated.$s-1 solid var(--button-tertiary-background-color-focus);
+    background-color: var(--color-background-tertiary);
+    color: var(--color-foreground-primary);
+    border: $b-1 solid var(--color-background-tertiary);
 
-    .icon-btn svg {
+    .icon-btn .icon {
       display: flex;
     }
   }
@@ -94,8 +98,8 @@
   &:focus,
   &:focus-visible {
     outline: none;
-    border: deprecated.$s-1 solid var(--button-tertiary-border-color-focus);
+    border: $b-1 solid var(--color-accent-primary);
     background-color: transparent;
-    color: var(--button-tertiary-foreground-color-focus);
+    color: var(--color-foreground-primary);
   }
 }

@@ -131,9 +131,9 @@ test("Bug 9443, Admin can not demote owner", async ({ page }) => {
   await dashboardPage.goToSecondTeamMembersSection();
 
   await expect(page.getByRole("heading", { name: "Members" })).toBeVisible();
-  await expect(page.getByRole("combobox", { name: "Admin" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Admin" })).toBeVisible();
   await expect(page.getByText("Owner")).toBeVisible();
-  await expect(page.getByRole("combobox", { name: "Owner" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Owner" })).toHaveCount(0);
 });
 
 test("Bug 9927, Don't show the banner to invite team members if the user has dismissed it", async ({

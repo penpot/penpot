@@ -4,10 +4,14 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+// refactor/ stays for the modal placeholders (%modal-*), which move with
+// the modals refactor, and the input placeholder (%input-with-label).
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/mixins.scss" as *;
+@use "ds/typography.scss" as *;
 
 .group-title-wrapper {
-  width: 100%;
+  inline-size: 100%;
   display: flex;
   justify-content: space-between;
 
@@ -30,21 +34,21 @@
 }
 
 .group-title {
-  padding-left: deprecated.$s-4;
+  padding-inline-start: var(--sp-xs);
 }
 
 .pre-path {
-  margin-left: deprecated.$s-2;
+  margin-inline-start: var(--sp-xxs);
   text-transform: initial;
-  color: var(--title-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
 .path {
-  @include deprecated.text-ellipsis;
+  @include text-ellipsis;
 
-  margin-left: deprecated.$s-2;
+  margin-inline-start: var(--sp-xxs);
   text-transform: initial;
-  color: var(--title-foreground-color-hover);
+  color: var(--color-foreground-primary);
 }
 
 .modal-overlay {
@@ -56,44 +60,35 @@
 }
 
 .modal-header {
-  margin-bottom: deprecated.$s-24;
+  margin-block-end: var(--sp-xxl);
 }
 
 .modal-title {
-  @include deprecated.uppercase-title-typography;
+  @include use-typography("headline-small");
 
-  color: var(--modal-title-foreground-color);
+  color: var(--color-foreground-primary);
 }
 
+// Tooltip wrapper of the close button: it places it in the corner.
 .modal-close-btn {
-  @extend %modal-close-btn-base;
+  position: absolute;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: var(--sp-xs);
 }
 
 .modal-content {
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
-  margin-bottom: deprecated.$s-24;
+  margin-block-end: var(--sp-xxl);
 }
 
 .input-wrapper {
   @extend %input-with-label;
-  @include deprecated.body-small-typography;
+  @include use-typography("body-small");
 
-  margin-bottom: deprecated.$s-8;
+  margin-block-end: var(--sp-s);
 }
 
 .action-buttons {
   @extend %modal-action-btns;
-}
-
-.cancel-button {
-  @extend %modal-cancel-btn;
-}
-
-.accept-btn {
-  @extend %modal-accept-btn;
-
-  &.danger {
-    @extend %modal-danger-btn;
-  }
 }

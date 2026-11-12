@@ -6,6 +6,7 @@
 
 import * as React from "react";
 import Components from "@target/components";
+import { within, expect } from "storybook/test";
 
 const { Button } = Components;
 const { icons } = Components.meta;
@@ -65,5 +66,36 @@ export const Ghost = {
 export const Destructive = {
   args: {
     variant: "destructive",
+  },
+};
+
+// With `to`, the button renders an anchor: it keeps the button look but it is
+// a real link (href, open in a new tab, announced as a link).
+export const AsLink = {
+  args: {
+    variant: "secondary",
+    to: "https://penpot.app",
+    children: "Go to Penpot",
+  },
+};
+
+export const TestAsLinkRendersAnchor = {
+  args: AsLink.args,
+  play: async ({ canvasElement }) => {
+    const link = within(canvasElement).getByRole("link", {
+      name: "Go to Penpot",
+    });
+    await expect(link).toHaveAttribute("href", "https://penpot.app");
+    // `type` on an anchor is a MIME type hint, not a button type.
+    await expect(link).not.toHaveAttribute("type");
+  },
+};
+
+export const TestButtonDefaultsToTypeButton = {
+  play: async ({ canvasElement }) => {
+    const button = within(canvasElement).getByRole("button", {
+      name: "Lorem ipsum",
+    });
+    await expect(button).toHaveAttribute("type", "button");
   },
 };

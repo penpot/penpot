@@ -16,6 +16,7 @@
    [app.main.store :as st]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
+   [app.util.keyboard :as kbd]
    [app.util.storage :as storage]
    [app.util.timers :as ts]
    [app.util.webapi :as wapi]
@@ -597,3 +598,44 @@
            (rx/dispose! sub))))
 
      [rowref limit])))
+
+(defn use-escape-to-close
+  "Returns an `on-key-down` handler that closes a panel with Escape.
+
+  The panel only closes while the user is working in it: the latest
+  pointer press or focus change must have landed inside the element
+  that owns the handler, or that element must hold focus when it
+  mounts. Focus left behind in a panel after the user moved on to the
+  canvas does not count, so Escape keeps its usual meaning there.
+
+  The event is never stopped: the global Escape shortcut still runs
+  and finishes any in-progress operation.
+
+  `dismiss-nested`, when given, is called first; it returns true when
+  it consumed the Escape (an open menu, an inline rename), and then
+  the panel stays open."
+  ([on-close]
+   (use-escape-to-close on-close nil))
+  ([on-close dismiss-nested]
+   (let [last-target-ref (mf/use-ref nil)]
+     (mf/with-effect []
+       (let [track (fn [event]
+                     (mf/set-ref-val! last-target-ref (dom/get-target event)))]
+         ;; A panel that autofocuses its input on open has already
+         ;; received its `focusin` before this effect runs.
+         (mf/set-ref-val! last-target-ref (dom/get-active))
+         (.addEventListener js/document "pointerdown" track true)
+         (.addEventListener js/document "focusin" track true)
+         #(do (.removeEventListener js/document "pointerdown" track true)
+              (.removeEventListener js/document "focusin" track true))))
+
+     (mf/use-fn
+      (mf/deps on-close dismiss-nested)
+      (fn [event]
+        (let [panel       (dom/get-current-target event)
+              last-target (mf/ref-val last-target-ref)]
+          (when (and (kbd/esc? event)
+                     (dom/child? last-target panel)
+                     (not (and (fn? dismiss-nested) (dismiss-nested))))
+            (dom/blur! (dom/get-target event))
+            (on-close))))))))

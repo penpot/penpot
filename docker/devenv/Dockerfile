@@ -1,4 +1,4 @@
-FROM dhi.io/debian-base:trixie-debian13-dev@sha256:9b025768946856e44f9775005eb199f2e1820484ea27bb5c8bcbb187b80464dc AS base
+FROM dhi.io/debian-base:trixie-debian13-dev@sha256:94571f3dc07fbc7166f6f1cbf1fe068a7647198ee2554e6b90d59a68cc8b053c AS base
 
 ENV LANG='C.UTF-8' \
     LC_ALL='C.UTF-8' \
@@ -66,8 +66,8 @@ RUN set -ex; \
 
 FROM base AS setup-node
 
-ENV NODE_VERSION=v24.22.1 \
-    PNPM_VERSION=12.15.0 \
+ENV NODE_VERSION=v24.22.2 \
+    PNPM_VERSION=12.18.0 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -76,16 +76,16 @@ RUN set -eux; \
        aarch64|arm64) \
          OPENSSL_ARCH='linux-aarch64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
-         NODE_SHA256='33c37be234ba8bee041961047b19160f4d7d0f164e8e246f78bdd10feff148b3'; \
+         NODE_SHA256='95c264150aceb7f3437a29fd6984924f5f8d1511ea3cbd6c508b83f6c555dae2'; \
          PNPM_ARCH='arm64'; \
-         PNPM_SHA256='d7ce93a2c7d847d3a34bd3f559b60c14f578b1320c17cc352a2c5c5fdf956117'; \
+         PNPM_SHA256='700bd1aa4028465b80e62b7c5bec8455be60bbafaf53a3262a4ab8e2057712ac'; \
          ;; \
        amd64|x86_64) \
          OPENSSL_ARCH='linux-x86_64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
-         NODE_SHA256='eb6728e77c576a35162c122c45ccadf224d89ff00abc8dae46cc2897c6002d7c'; \
+         NODE_SHA256='361718c444e49af2ca5a110c83ba6a8901143f23ab285ebbef0341f391f482a9'; \
          PNPM_ARCH='x64'; \
-         PNPM_SHA256='55b5ed0092bd11176c1669598e231ae52e7cedac59de6efd0d415730f37d0598'; \
+         PNPM_SHA256='3726060e236c0db3e7124c0a5af123c840ba0cb76682149b63ea0baf290017c2'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -187,7 +187,7 @@ ENV PATH=/opt/cargo/bin:$PATH \
     RUSTUP_HOME=/opt/rustup \
     CARGO_HOME=/opt/cargo \
     RUSTUP_VERSION=1.28.2 \
-    RUST_VERSION=1.91.0 \
+    RUST_VERSION=1.99.0 \
     EMSCRIPTEN_VERSION=4.0.6
 
 WORKDIR /opt
@@ -236,7 +236,9 @@ ENV CLJKONDO_VERSION=2026.10.20 \
     UV_TOOL_DIR=/opt/uv/tools \
     UV_TOOL_BIN_DIR=/opt/utils/bin \
     UV_PYTHON_INSTALL_DIR=/opt/uv/python \
-    SERENA_VERSION=1.7.0
+    SERENA_VERSION=2.1.0
+# NOTE: When updating SERENA_VERSION, also update SERENA_UPDATE_VERSION in docker-compose.main.yml.
+#   The latter results in a dynamic update without rebuilding the image, so it must never be lower than SERENA_VERSION here.
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -429,6 +431,8 @@ RUN set -ex; \
       fontforge \
       \
       xvfb \
+      xauth \
+      libvulkan1 \
       fonts-noto-color-emoji \
       fonts-unifont \
       libfontconfig1 \

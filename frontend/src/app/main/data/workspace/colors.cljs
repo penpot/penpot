@@ -683,18 +683,23 @@
   (ptk/reify ::change-color-in-selected
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [undo-id (js/Symbol)]
+      (let [undo-id                         (js/Symbol)
+            {text-ops true style-ops false} (group-by #(= :content (:prop %)) operations)
+            style-groups                    (group-by (juxt :prop :index) style-ops)]
         (rx/concat
          (rx/of (dwu/start-undo-transaction undo-id))
-         (->> (rx/from operations)
-              (rx/map (fn [{:keys [shape-id index] :as operation}]
-                        (case (:prop operation)
-                          :fill    (change-fill [shape-id] new-color index)
-                          :stroke  (change-stroke-color [shape-id] new-color index)
-                          :shadow  (change-shadow [shape-id] new-color index)
-                          :content (dwt/update-text-with-function
-                                    shape-id
-                                    (partial change-text-color old-color new-color index))))))
+         (->> (rx/from style-groups)
+              (rx/map (fn [[[prop index] operations]]
+                        (let [ids (mapv :shape-id operations)]
+                          (case prop
+                            :fill   (change-fill ids new-color index)
+                            :stroke (change-stroke-color ids new-color index)
+                            :shadow (change-shadow ids new-color index))))))
+         (->> (rx/from text-ops)
+              (rx/map (fn [{:keys [shape-id index]}]
+                        (dwt/update-text-with-function
+                         shape-id
+                         (partial change-text-color old-color new-color index)))))
          (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
 (defn apply-color-from-palette

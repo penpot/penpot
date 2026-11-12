@@ -19,6 +19,9 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
@@ -169,10 +172,11 @@
       [:div {:class (stl/css :share-link-header)}
        [:h2 {:class (stl/css :share-link-title)}
         (tr "common.share-link.title")]
-       [:button {:class (stl/css :modal-close-button)
-                 :on-click on-close
-                 :title (tr "labels.close")}
-        deprecated-icon/close]]
+       [:> icon-button* {:variant "ghost"
+                         :tooltip-class (stl/css :modal-close-button)
+                         :aria-label (tr "labels.close")
+                         :icon i/close
+                         :on-click on-close}]]
       [:div {:class (stl/css :modal-content)}
        [:div {:class (stl/css :share-link-section)}
         (when (and (not confirm?) (some? current-link))
@@ -183,10 +187,10 @@
                     :placeholder (tr "common.share-link.placeholder")
                     :read-only true}]
 
-           [:button {:class (stl/css :copy-button)
-                     :title (tr "viewer.header.share.copy-link")
-                     :on-click copy-link}
-            deprecated-icon/clipboard]])
+           [:> icon-button* {:variant "secondary"
+                             :aria-label (tr "viewer.header.share.copy-link")
+                             :icon i/clipboard
+                             :on-click copy-link}]])
 
         [:div {:class (stl/css :hint-wrapper)}
          (when (not ^boolean confirm?)
@@ -197,37 +201,38 @@
             [:div {:class (stl/css :description)}
              (tr "common.share-link.confirm-deletion-link-description")]
             [:div {:class (stl/css :actions)}
-             [:input  {:type "button"
-                       :class (stl/css :button-cancel)
-                       :on-click #(reset! confirm* false)
-                       :value (tr "labels.cancel")}]
-             [:input {:type "button"
-                      :class (stl/css :button-danger)
-                      :on-click delete-link
-                      :value (tr "common.share-link.destroy-link")}]]]
+             [:> button* {:variant "secondary"
+                          :type "button"
+                          :on-click #(reset! confirm* false)}
+              (tr "labels.cancel")]
+             [:> button* {:variant "destructive"
+                          :type "button"
+                          :on-click delete-link}
+              (tr "common.share-link.destroy-link")]]]
 
            (some? current-link)
-           [:input
-            {:type "button"
-             :class (stl/css :button-danger)
-             :on-click try-delete-link
-             :value (tr "common.share-link.destroy-link")}]
+           [:> button* {:variant "destructive"
+                        :type "button"
+                        :on-click try-delete-link}
+            (tr "common.share-link.destroy-link")]
 
            :else
-           [:input
-            {:type "button"
-             :class (stl/css :button-active)
-             :on-click create-link
-             :value (tr "common.share-link.get-link")}])]]
+           [:> button* {:variant "primary"
+                        :type "button"
+                        :on-click create-link}
+            (tr "common.share-link.get-link")])]]
 
 
        (when (not ^boolean confirm?)
          [:div {:class (stl/css :permissions-section)}
           [:button {:class (stl/css :manage-permissions)
+                    :type "button"
+                    :aria-expanded perms-visible?
                     :on-click toggle-perms-visibility}
            [:span {:class (stl/css-case :icon true
                                         :rotated perms-visible?)}
-            deprecated-icon/arrow]
+            [:> icon* {:icon-id i/arrow
+                       :class (stl/css :arrow-icon)}]]
            (tr "common.share-link.manage-ops")]
 
           (when ^boolean perms-visible?
@@ -278,7 +283,7 @@
 
                     [:ul {:class (stl/css :pages-selection)}
                      (for [{:keys [id name]} pages]
-                       [:li {:class (stl/css :checkbox-wrapper)
+                       [:li {:class (stl/css :checkbox-wrapper :page-row)
                              :key (dm/str id)}
                         [:label {:for (dm/str "page-" id)}
                          [:span {:class (stl/css-case :global/checked (contains? selected id))}

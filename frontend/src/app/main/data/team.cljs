@@ -124,8 +124,7 @@
                   in-organization?      (and (contains? cf/flags :admin-console) organization)
                   can-create?  (if in-organization?
                                  (cto/allowed? :create-team
-                                               {:organization-perms {:owner-id    (:owner-id organization)
-                                                                     :permissions (:permissions organization)}
+                                               {:organization-perms organization
                                                 :profile-id profile-id
                                                 :team-perms (:permissions team)})
                                  true)]
@@ -150,8 +149,7 @@
                   in-organization?     (and (contains? cf/flags :admin-console) organization)
                   can-delete? (if in-organization?
                                 (cto/allowed? :delete-team
-                                              {:organization-perms {:owner-id    (:owner-id organization)
-                                                                    :permissions (:permissions organization)}
+                                              {:organization-perms organization
                                                :profile-id profile-id
                                                :team-perms (:permissions team)})
                                 (boolean (dm/get-in team [:permissions :is-owner])))
@@ -261,7 +259,20 @@
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
         (->> (rp/cmd! :get-team-invitations {:team-id team-id})
-             (rx/map (partial invitations-fetched team-id)))))))
+             (rx/map (partial invitations-fetched team-id))
+             (rx/catch (fn [cause]
+                         (let [{:keys [type code]} (ex-data cause)]
+                           (if (and (= :validation type)
+                                    (= :insufficient-permissions code))
+                             ;; The pending invitations are an admin only
+                             ;; list, so a denied refetch means the cached
+                             ;; copy is no longer valid: drop it instead of
+                             ;; leaving stale emails around.
+                             (do
+                               (log/warn :hint "fetch-invitations: no permission, clearing"
+                                         :team-id (str team-id))
+                               (rx/of (invitations-fetched team-id [])))
+                             (rx/throw cause))))))))))
 
 (defn- team-initialized
   [team-id]

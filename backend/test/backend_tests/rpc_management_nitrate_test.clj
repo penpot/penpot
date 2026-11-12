@@ -15,10 +15,12 @@
    [app.email :as eml]
    [app.http :as-alias http]
    [app.jobs :as jobs]
+   [app.media.svg :as svg]
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
+   [app.storage :as sto]
    [app.util.ssrf :as ssrf]
    [backend-tests.helpers :as th]
    [clojure.set :as set]
@@ -52,9 +54,16 @@
     (t/is (= :authentication (th/ex-type (:error out))))
     (t/is (= :authentication-required (th/ex-code (:error out))))))
 
+(t/deftest authenticate-rejects-a-key-it-does-not-declare
+  (let [out (th/management-command! {::th/type :authenticate
+                                     ::rpc/auth-key-id :exporter})]
+    (t/is (not (th/success? out)))
+    (t/is (= :authorization (th/ex-type (:error out))))
+    (t/is (= :shared-key-not-allowed (th/ex-code (:error out))))))
+
 (t/deftest create-and-update-organization-invitations-audit-props
   (let [owner-id-ref (atom nil)]
-    (with-mocks [email-mock {:target 'app.email/send :return nil}
+    (with-mocks [email-mock {:target 'app.email/send-template :return nil}
                  audit-mock {:target 'app.loggers.audit/submit :return nil}
                  nitrate-mock {:target 'app.nitrate/call
                                :return (fn [_cfg method params]
@@ -103,7 +112,7 @@
 
 (t/deftest invite-to-organization-rejects-non-owner
   (let [organization-summary-ref (atom nil)]
-    (with-mocks [email-mock {:target 'app.email/send :return nil}
+    (with-mocks [email-mock {:target 'app.email/send-template :return nil}
                  nitrate-mock {:target 'app.nitrate/call
                                :return (fn [_cfg method _params]
                                          (when (= method :get-organization-summary)
@@ -131,7 +140,7 @@
         (t/is (not (:called? @email-mock)))))))
 
 (t/deftest invite-to-organization-rejects-unknown-organization
-  (with-mocks [email-mock {:target 'app.email/send :return nil}
+  (with-mocks [email-mock {:target 'app.email/send-template :return nil}
                nitrate-mock {:target 'app.nitrate/call :return nil}]
     (let [profile         (th/create-profile* 105 {:is-active true})
           organization-id (uuid/random)
@@ -150,7 +159,7 @@
 
 (t/deftest invite-to-organization-uses-authoritative-branding
   (let [organization-summary-ref (atom nil)]
-    (with-mocks [email-mock {:target 'app.email/send :return nil}
+    (with-mocks [email-mock {:target 'app.email/send-template :return nil}
                  nitrate-mock {:target 'app.nitrate/call
                                :return (fn [_cfg method _params]
                                          (when (= method :get-organization-summary)
@@ -250,6 +259,95 @@
         (t/is (true? (get-in teams-by-id [(:id default-team) :is-default])))
         (t/is (false? (get-in teams-by-id [(:id owned-team) :is-default])))
         (t/is (false? (get-in teams-by-id [(:id member-team) :is-default])))))))
+
+(t/deftest get-organization-member-teams-returns-roles-within-given-teams
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile      (th/create-profile* 1 {:is-active true})
+          other        (th/create-profile* 2 {:is-active true})
+          owned-team   (th/create-team* 1 {:profile-id (:id profile)})
+          admin-team   (th/create-team* 2 {:profile-id (:id other)})
+          editor-team  (th/create-team* 3 {:profile-id (:id other)})
+          viewer-team  (th/create-team* 4 {:profile-id (:id other)})
+          foreign-team (th/create-team* 5 {:profile-id (:id other)})
+          not-member   (th/create-team* 6 {:profile-id (:id other)})
+          deleted-team (th/create-team* 7 {:profile-id (:id profile)})
+          _            (th/db-update! :team
+                                      {:deleted-at (ct/now)}
+                                      {:id (:id deleted-team)})
+          _            (doseq [[team role] [[admin-team :admin]
+                                            [editor-team :editor]
+                                            [viewer-team :viewer]
+                                            [foreign-team :editor]]]
+                         (th/create-team-role* {:team-id (:id team)
+                                                :profile-id (:id profile)
+                                                :role role}))
+          team-ids     (mapv :id [owned-team admin-team editor-team viewer-team
+                                  not-member deleted-team
+                                  {:id (:default-team-id profile)}])
+          out          (th/management-command! {::th/type :get-organization-member-teams
+                                                ::rpc/profile-id (:id other)
+                                                :profile-id (:id profile)
+                                                :team-ids team-ids})]
+      (t/is (th/success? out))
+      (t/is (= {(:id owned-team)  :owner
+                (:id admin-team)  :admin
+                (:id editor-team) :editor
+                (:id viewer-team) :viewer}
+               (->> out :result (map (juxt :id :role)) (into {}))))
+      (t/is (= (:name owned-team)
+               (->> out :result (d/seek #(= (:id owned-team) (:id %))) :name))))))
+
+(t/deftest get-organization-member-teams-empty-team-ids
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          out     (th/management-command! {::th/type :get-organization-member-teams
+                                           ::rpc/profile-id (:id profile)
+                                           :profile-id (:id profile)
+                                           :team-ids []})]
+      (t/is (th/success? out))
+      (t/is (= [] (:result out))))))
+
+(t/deftest get-organization-team-roles-returns-owners-and-admins-only
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [owner        (th/create-profile* 1 {:is-active true})
+          admin        (th/create-profile* 2 {:is-active true})
+          editor       (th/create-profile* 3 {:is-active true})
+          viewer       (th/create-profile* 4 {:is-active true})
+          deleted      (th/create-profile* 5 {:is-active true})
+          team         (th/create-team* 1 {:profile-id (:id owner)})
+          deleted-team (th/create-team* 2 {:profile-id (:id owner)})
+          _            (th/db-update! :team
+                                      {:deleted-at (ct/now)}
+                                      {:id (:id deleted-team)})
+          _            (doseq [[profile role] [[admin :admin]
+                                               [editor :editor]
+                                               [viewer :viewer]
+                                               [deleted :admin]]]
+                         (th/create-team-role* {:team-id (:id team)
+                                                :profile-id (:id profile)
+                                                :role role}))
+          _            (th/db-update! :profile
+                                      {:deleted-at (ct/now)}
+                                      {:id (:id deleted)})
+          team-ids     (mapv :id [team deleted-team {:id (:default-team-id owner)}])
+          out          (th/management-command! {::th/type :get-organization-team-roles
+                                                ::rpc/profile-id (:id owner)
+                                                :team-ids team-ids})]
+      (t/is (th/success? out))
+      (t/is (= {(:id owner) :owner
+                (:id admin) :admin}
+               (->> out :result (map (juxt :profile-id :role)) (into {}))))
+      (t/is (= #{(:id team)} (into #{} (map :team-id) (:result out))))
+      (t/is (= [(:name team)] (->> out :result (map :team-name) distinct))))))
+
+(t/deftest get-organization-team-roles-empty-team-ids
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          out     (th/management-command! {::th/type :get-organization-team-roles
+                                           ::rpc/profile-id (:id profile)
+                                           :team-ids []})]
+      (t/is (th/success? out))
+      (t/is (= [] (:result out))))))
 
 (t/deftest update-profile-theme-updates-only-theme
   (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
@@ -769,6 +867,34 @@
       (t/is (not (th/success? ko-out)))
       (t/is (= :not-found (th/ex-type (:error ko-out))))
       (t/is (= :profile-not-found (th/ex-code (:error ko-out)))))))
+
+(t/deftest get-profiles-by-ids-existing-only-deduped-and-empty
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile-a (th/create-profile* 1 {:is-active true
+                                           :fullname "Batch A"})
+          profile-b (th/create-profile* 2 {:is-active true
+                                           :fullname "Batch B"})
+          unknown   (uuid/random)
+          params    {::th/type :get-profiles-by-ids
+                     ::rpc/profile-id (:id profile-a)}
+          out       (th/management-command! (assoc params :ids [(:id profile-a)
+                                                                (:id profile-b)
+                                                                unknown]))
+          dup-out   (th/management-command! (assoc params :ids [(:id profile-a)
+                                                                (:id profile-a)]))
+          empty-out (th/management-command! (assoc params :ids []))]
+      (t/is (th/success? out))
+      (t/is (= #{(:id profile-a) (:id profile-b)}
+               (set (map :id (:result out)))))
+      (t/is (= #{"Batch A" "Batch B"}
+               (set (map :name (:result out)))))
+      (t/is (every? #(contains? % :email) (:result out)))
+
+      (t/is (th/success? dup-out))
+      (t/is (= 1 (count (:result dup-out))))
+
+      (t/is (th/success? empty-out))
+      (t/is (= [] (:result empty-out))))))
 
 (t/deftest get-organization-invitations-returns-valid-deduped-by-email
   ;; --- Deferred organization-summary: nil during setup, filled before RPC ---
@@ -1863,7 +1989,7 @@
                                      nil))
                                  nil))}
        ;; --- Email mock: capture sent emails ---
-       email-mock  {:target 'app.email/send
+       email-mock  {:target 'app.email/send-template
                     :return (fn [_cfg params] (swap! sent conj params) nil)}]
 
       ;; --- Setup: create profiles, team, organization-summary ---
@@ -1933,7 +2059,7 @@
                    emails))
           (doseq [email-params @sent]
             (t/is (= organization-name (:organization-name email-params)))
-            (t/is (= eml/organization-setup-sso (::eml/factory email-params)))))))))
+            (t/is (= "organization-setup-sso" (::eml/template email-params)))))))))
 
 (t/deftest notify-organization-sso-change-skips-email-when-not-active
   (let [sent   (atom [])
@@ -1941,7 +2067,7 @@
                 :organization-id (uuid/random)
                 :updated-props false
                 :announce-activation false}]
-    (with-redefs [eml/send (fn [_cfg params] (swap! sent conj params))]
+    (with-redefs [eml/send-template (fn [_cfg params] (swap! sent conj params))]
       (th/management-command! params))
     (t/is (empty? @sent))))
 
@@ -2143,7 +2269,7 @@
 (t/deftest send-renewal-email-falls-back-to-profile-fullname-when-name-is-nil
   ;; `nil` user-name means "no override": the RPC must look up the
   ;; account owner's real name instead of sending a blank greeting.
-  (with-mocks [email-mock {:target 'app.email/send :return nil}
+  (with-mocks [email-mock {:target 'app.email/send-template :return nil}
                nitrate-mock {:target 'app.nitrate/call :return nil}]
     (let [profile (th/create-profile* 1 {:is-active true :fullname "Nitrate User"})
           out     (th/management-command! (send-renewal-email-params profile nil))]
@@ -2154,7 +2280,7 @@
 (t/deftest send-renewal-email-keeps-explicit-empty-name
   ;; An explicit "" means the caller deliberately wants no name shown
   ;; and must not be replaced by the profile's fullname.
-  (with-mocks [email-mock {:target 'app.email/send :return nil}
+  (with-mocks [email-mock {:target 'app.email/send-template :return nil}
                nitrate-mock {:target 'app.nitrate/call :return nil}]
     (let [profile (th/create-profile* 1 {:is-active true :fullname "Nitrate User"})
           out     (th/management-command! (send-renewal-email-params profile ""))]
@@ -2165,7 +2291,7 @@
 (t/deftest send-renewal-email-treats-blank-name-as-empty
   ;; A blank name is trimmed and follows the same path as "": no name
   ;; is shown and the profile's fullname is not used.
-  (with-mocks [email-mock {:target 'app.email/send :return nil}
+  (with-mocks [email-mock {:target 'app.email/send-template :return nil}
                nitrate-mock {:target 'app.nitrate/call :return nil}]
     (let [profile (th/create-profile* 1 {:is-active true :fullname "Nitrate User"})
           out     (th/management-command! (send-renewal-email-params profile "   "))]
@@ -2187,3 +2313,44 @@
                              :size 123}}
           out     (th/management-command! params)]
       (t/is (th/ex-of-code? (:error out) :params-validation)))))
+
+(t/deftest upload-organization-logo-sanitizes-svg
+  ;; The logo lands in a public bucket, so an SVG with live markup must
+  ;; be sanitized before it is stored.
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          content "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\" id=\"x' onload='alert(1)\"><rect width=\"10\" height=\"10\"/></svg>"]
+      (th/with-temp-file [path content]
+        (let [params {::th/type :upload-organization-logo
+                      ::rpc/profile-id (:id profile)
+                      :organization-id (uuid/random)
+                      :content {:filename "evil.svg"
+                                :path path
+                                :mtype "image/svg+xml"
+                                :size (fs/size path)}}
+              out    (th/multipart-management-command! params)]
+          (t/is (th/success? out))
+          (let [storage (:app.storage/storage th/*system*)
+                sobject (sto/get-object storage (get-in out [:result :id]))
+                stored  (slurp (sto/get-object-data storage sobject))
+                parsed  (svg/parse-svg stored)]
+            (t/is (not (contains? (:attrs parsed) :onload)))
+            (t/is (= "x' onload='alert(1)" (get (:attrs parsed) :id)))))))))
+
+(t/deftest upload-organization-logo-rejects-oversized-file
+  ;; The sanitizer reads the whole logo, so the logo must honor the media
+  ;; size limit before it is read.
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})]
+      (th/with-temp-file [path "<svg xmlns=\"http://www.w3.org/2000/svg\"><rect/></svg>"]
+        (with-redefs [app.config/config (assoc app.config/config :media-max-file-size 1)]
+          (let [params {::th/type :upload-organization-logo
+                        ::rpc/profile-id (:id profile)
+                        :organization-id (uuid/random)
+                        :content {:filename "big.svg"
+                                  :path path
+                                  :mtype "image/svg+xml"
+                                  :size (fs/size path)}}
+                out    (th/multipart-management-command! params)]
+            (t/is (th/ex-of-type? (:error out) :restriction))
+            (t/is (th/ex-of-code? (:error out) :media-max-file-size-reached))))))))

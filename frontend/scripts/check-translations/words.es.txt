@@ -263,6 +263,7 @@ eliminarlo
 eliminarlos
 ella
 ellos
+ese
 eso
 esos
 este
@@ -271,6 +272,7 @@ estándar
 expirada
 funcionalidades
 granulares
+guardarlos
 hay
 hubo
 importada
@@ -281,7 +283,6 @@ lectores
 letras
 manifiesto
 menos
-navegadores
 nosotros
 otras
 pero
@@ -297,6 +298,7 @@ puesto
 regenerada
 restaurarlo
 restaurarlos
+sal
 seleccionada
 selector
 servidores

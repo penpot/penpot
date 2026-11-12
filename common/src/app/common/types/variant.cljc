@@ -55,18 +55,46 @@
   [value]
   (some-> value str/trim))
 
+(def ^:private forbidden-property-chars-re #"[,=]")
+
+(defn sanitize-property-text
+  "Remove `,` and `=` from property name/value text, then trim.
+   Non-strings (including nil) return nil — never call str/replace on them."
+  [value]
+  (when (string? value)
+    (-> value
+        (str/replace forbidden-property-chars-re "")
+        normalize-property-text)))
+
 (defn valid-property-name?
   [value]
   (let [value (normalize-property-text value)]
     (and (string? value)
          (not (str/blank? value))
+         (nil? (re-find forbidden-property-chars-re value))
          (<= (count value) property-max-length))))
 
 (defn valid-property-value?
   [value]
   (let [value (normalize-property-text value)]
     (and (string? value)
+         (nil? (re-find forbidden-property-chars-re value))
          (<= (count value) property-max-length))))
+
+(defn prepare-property-name
+  "Sanitize then validate a property name. Returns the cleaned string or nil."
+  [value]
+  (let [value (sanitize-property-text value)]
+    (when (valid-property-name? value)
+      value)))
+
+(defn prepare-property-value
+  "Sanitize then validate a property value. nil becomes \"\".
+   Other non-strings yield nil. Empty string remains valid."
+  [value]
+  (let [value (sanitize-property-text (if (nil? value) "" value))]
+    (when (valid-property-value? value)
+      value)))
 
 (defn can-remove-property?
   [properties]
@@ -112,7 +140,8 @@
   ([path properties]
    (path-to-properties path properties 0))
   ([path properties min-props]
-   (let [cpath          (cpn/split-path path)
+   (let [cpath          (->> (cpn/split-path path)
+                             (mapv #(or (sanitize-property-text %) "")))
          total-props    (max (count cpath) min-props)
          assigned       (mapv #(assoc % :value (nth cpath %2 "")) properties (range))
          ;; Add empty strings to the end of cpath to reach the minimum number of properties

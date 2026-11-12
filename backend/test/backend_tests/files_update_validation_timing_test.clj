@@ -14,6 +14,7 @@
    [app.metrics :as mtx]
    [app.metrics.definition :as-alias mdef]
    [app.rpc.commands.files-update :as files-update]
+   [app.util.pointer-map :as pmap]
    [clojure.test :as t]
    [integrant.core :as ig])
   (:import
@@ -61,11 +62,12 @@
 (t/deftest process-changes-and-validate-records-all-steps
   (let [metrics (ig/init-key :app.metrics/metrics {:default main/default-metrics})
         cfg (test-cfg metrics)]
-    (binding [cf/flags all-flags]
+    (binding [cf/flags all-flags
+              pmap/*tracked* (pmap/create-tracked)]
       (with-redefs [bfc/get-resolved-file-libraries (fn [_ _] {})
                     val/validate-file-affected! (fn [_ _ _] nil)
-                    val/validate-file-schema! (fn [_] nil)]
-        (let [file (@#'files-update/process-changes-and-validate cfg (test-file) [] nil)
+                    val/validate-file-schema-affected! (fn [_ _] nil)]
+        (let [file (@#'files-update/process-changes-and-validate cfg (test-file) [] nil nil)
               timings @(::files-update/validation-timings cfg)]
           (t/is (map? file))
           (t/is (number? (:resolve-libs-ms timings)))
@@ -84,15 +86,16 @@
 (t/deftest process-changes-and-validate-skips-when-skip-validate
   (let [metrics (ig/init-key :app.metrics/metrics {:default main/default-metrics})
         cfg (test-cfg metrics)]
-    (binding [cf/flags all-flags]
+    (binding [cf/flags all-flags
+              pmap/*tracked* (pmap/create-tracked)]
       (with-redefs [bfc/get-resolved-file-libraries (fn [_ _]
                                                       (throw (ex-info "must not resolve libs" {})))
                     val/validate-file-affected! (fn [_ _ _]
                                                   (throw (ex-info "must not validate" {})))
-                    val/validate-file-schema! (fn [_]
-                                                (throw (ex-info "must not validate schema" {})))]
+                    val/validate-file-schema-affected! (fn [_ _]
+                                                         (throw (ex-info "must not validate schema" {})))]
         ;; soft validations still run: they only check flags, not skip-validate
-        (let [file (@#'files-update/process-changes-and-validate cfg (test-file) [] true)
+        (let [file (@#'files-update/process-changes-and-validate cfg (test-file) [] nil true)
               timings @(::files-update/validation-timings cfg)]
           (t/is (map? file))
           (t/is (nil? (:resolve-libs-ms timings)))
@@ -107,14 +110,15 @@
 (t/deftest process-changes-and-validate-records-timing-on-error
   (let [metrics (ig/init-key :app.metrics/metrics {:default main/default-metrics})
         cfg (test-cfg metrics)]
-    (binding [cf/flags all-flags]
+    (binding [cf/flags all-flags
+              pmap/*tracked* (pmap/create-tracked)]
       (with-redefs [bfc/get-resolved-file-libraries (fn [_ _] {})
                     val/validate-file-affected! (fn [_ _ _]
                                                   (throw (ex-info "bad file" {:code :referential-integrity})))
-                    val/validate-file-schema! (fn [_] nil)]
+                    val/validate-file-schema-affected! (fn [_ _] nil)]
         (let [timings-atom (::files-update/validation-timings cfg)]
           (t/is (thrown? clojure.lang.ExceptionInfo
-                         (@#'files-update/process-changes-and-validate cfg (test-file) [] nil)))
+                         (@#'files-update/process-changes-and-validate cfg (test-file) [] nil nil)))
           ;; the failing step still recorded its timing via finally
           (t/is (number? (:validate-affected-ms @timings-atom)))
           (t/is (number? (:resolve-libs-ms @timings-atom)))
@@ -126,3 +130,31 @@
   (let [record @#'files-update/record-validation-timing]
     (t/is (nil? (record {} :resolve-libs-ms "resolve-libs" 12)))
     (t/is (nil? (record {::mtx/metrics nil} :resolve-libs-ms "resolve-libs" 12)))))
+
+(t/deftest retries-record-one-sample-per-step-and-one-retry-sample
+  (let [metrics (ig/init-key :app.metrics/metrics {:default main/default-metrics})
+        cfg     (test-cfg metrics)
+        commit  (fn [name]
+                  {:commit-id (uuid/next)
+                   :changes [{:type :mod-page :id (uuid/next) :name name}]})
+        commits [(commit "a") (commit "b") (commit "bad") (commit "c")]]
+    (binding [cf/flags all-flags
+              pmap/*tracked* (pmap/create-tracked)]
+      (with-redefs [bfc/get-resolved-file-libraries (fn [_ _] {})
+                    val/validate-file-affected! (fn [_ _ changes]
+                                                  (when (some #(= "bad" (:name %)) changes)
+                                                    (throw (ex-info "bad file" {:type :validation
+                                                                                :code :referential-integrity}))))
+                    val/validate-file-schema-affected! (fn [_ _] nil)]
+        (let [file    (@#'files-update/process-changes-and-validate
+                       cfg (test-file) (into [] (mapcat :changes) commits) commits nil)
+              timings @(::files-update/validation-timings cfg)]
+          (t/is (= (mapv :commit-id (subvec commits 2))
+                   (:commit-ids (::files-update/rejected file))))
+          (t/is (number? (:retry-ms timings)))
+          ;; The first pass fails at validate-affected, before validate-schema
+          (doseq [step ["process-changes" "soft-validate-affected" "soft-validate-schema"
+                        "validate-affected" "retry"]]
+            (t/is (= 1.0 (bucket-value metrics "penpot_rpc_update_file_validation_timing"
+                                       ["step"] [step] "60000.0"))
+                  (str "expected one sample for step " step))))))))

@@ -31,8 +31,8 @@
   []
   (let [state          (mf/deref refs/progress)
         profile        (mf/deref refs/profile)
-        theme          (get profile :theme theme/default)
-        default-theme? (= theme/default theme)
+        theme          (theme/use-theme profile)
+        dark-theme?    (= "dark" theme)
         error?         (:error state)
         healthy?       (:healthy state)
         visible?       (:visible state)
@@ -48,13 +48,13 @@
         color
         (cond
           error?         clr/new-danger
-          healthy?       (if default-theme?
+          healthy?       (if dark-theme?
                            clr/new-primary
                            clr/new-primary-light)
           (not healthy?) clr/new-warning)
 
         background-clr
-        (if default-theme?
+        (if dark-theme?
           clr/background-quaternary
           clr/background-quaternary-light)
 

@@ -57,14 +57,6 @@
                      :overwrite true
                      :fn #(st/emit! (drp/change-edit-mode :draw))}
 
-   :add-node        {:tooltip (ds/shift "+")
-                     :label (fn [] (tr "shortcuts.add-node"))
-                     :command ["shift++" "shift+="]
-                     :show-command "shift++"
-                     :subsections [:path-editor]
-                     :section [:workspace]
-                     :fn #(st/emit! (drp/add-node))}
-
    :delete-node     {:tooltip (ds/supr)
                      :label (fn [] (tr "shortcuts.delete-node"))
                      :command ["del" "backspace"]

@@ -22,6 +22,7 @@
    [app.http.debug :as-alias http.debug]
    [app.http.link-preview :as-alias http.link-preview]
    [app.http.management :as mgmt]
+   [app.http.mcp-oauth :as-alias http.mcp-oauth]
    [app.http.session :as session]
    [app.http.websocket :as http.ws]
    [app.jobs :as-alias jobs]
@@ -76,6 +77,12 @@
     ::mdef/labels ["step"]
     ::mdef/buckets mtx/default-request-histogram-buckets
     ::mdef/type :histogram}
+
+   :update-file-repair
+   {::mdef/name "penpot_rpc_update_file_repair_total"
+    ::mdef/help "update-file auto-repair attempts by outcome (repaired or unrepaired)."
+    ::mdef/labels ["outcome"]
+    ::mdef/type :counter}
 
    :rpc-main-timing
    {::mdef/name "penpot_rpc_main_timing"
@@ -534,8 +541,16 @@
     ::http.debug/routes  (ig/ref ::http.debug/routes)
     ::http.assets/routes (ig/ref ::http.assets/routes)
     ::http.link-preview/routes (ig/ref ::http.link-preview/routes)
+    ::http.mcp-oauth/routes (ig/ref ::http.mcp-oauth/routes)
     ::http.ws/routes     (ig/ref ::http.ws/routes)
     ::http.awsns/routes  (ig/ref ::http.awsns/routes)}
+
+   ::http.mcp-oauth/routes
+   {::db/pool (ig/ref ::db/pool)
+    ::rds/pool (ig/ref ::rds/pool)
+    ::setup/props (ig/ref ::setup/props)
+    ::session/manager (ig/ref ::session/manager)
+    ::http.client/client (ig/ref ::http.client/client)}
 
    ::http.link-preview/routes
    {::db/pool         (ig/ref ::db/pool)}
@@ -641,24 +656,25 @@
     ::setup/shared-keys      (ig/ref ::setup/shared-keys)}
 
    ::jobs/defs
-   {:sendmail                       (ig/ref ::email/job-def)
-    :delete-object                  (ig/ref :app.tasks.delete-object/job-def)
-    :demo-purge                     (ig/ref :app.tasks.demo-purge/job-def)
-    :run-webhook                    (ig/ref ::webhooks/run-webhook-job-def)
-    :process-webhook-event          (ig/ref ::webhooks/process-webhook-event-job-def)
-    :file-gc                        (ig/ref :app.tasks.file-gc/job-def)
-    :offload-file-data              (ig/ref :app.tasks.offload-file-data/job-def)
-    :objects-gc                     (ig/ref :app.tasks.objects-gc/job-def)
-    :export-binfile                 (ig/ref :app.tasks.export-binfile/job-def)
-    :import-binfile                 (ig/ref :app.tasks.import-binfile/job-def)
-    :storage-gc-deleted             (ig/ref ::sto.gc-deleted/job-def)
-    :storage-gc-touched             (ig/ref ::sto.gc-touched/job-def)
-    :storage-pending-gc             (ig/ref ::sto.pending-gc/job-def)
-    :jobs-gc                        (ig/ref :app.jobs.gc/job-def)
-    :telemetry                      (ig/ref :app.tasks.telemetry/job-def)
-    :session-gc                     (ig/ref ::session/job-def)
-    :file-gc-scheduler              (ig/ref :app.tasks.file-gc-scheduler/job-def)
-    :audit-log-consumer-nexus        (ig/ref :app.loggers.audit.consumer-task/nexus-job-def)
+   {:sendmail                         (ig/ref ::email/job-def)
+    :send-templated-mail              (ig/ref ::email/templated-job-def)
+    :delete-object                    (ig/ref :app.tasks.delete-object/job-def)
+    :demo-purge                       (ig/ref :app.tasks.demo-purge/job-def)
+    :run-webhook                      (ig/ref ::webhooks/run-webhook-job-def)
+    :process-webhook-event            (ig/ref ::webhooks/process-webhook-event-job-def)
+    :file-gc                          (ig/ref :app.tasks.file-gc/job-def)
+    :offload-file-data                (ig/ref :app.tasks.offload-file-data/job-def)
+    :objects-gc                       (ig/ref :app.tasks.objects-gc/job-def)
+    :export-binfile                   (ig/ref :app.tasks.export-binfile/job-def)
+    :import-binfile                   (ig/ref :app.tasks.import-binfile/job-def)
+    :storage-gc-deleted               (ig/ref ::sto.gc-deleted/job-def)
+    :storage-gc-touched               (ig/ref ::sto.gc-touched/job-def)
+    :storage-pending-gc               (ig/ref ::sto.pending-gc/job-def)
+    :jobs-gc                          (ig/ref :app.jobs.gc/job-def)
+    :telemetry                        (ig/ref :app.tasks.telemetry/job-def)
+    :session-gc                       (ig/ref ::session/job-def)
+    :file-gc-scheduler                (ig/ref :app.tasks.file-gc-scheduler/job-def)
+    :audit-log-consumer-nexus         (ig/ref :app.loggers.audit.consumer-task/nexus-job-def)
     :audit-log-consumer-admin-console (ig/ref :app.loggers.audit.consumer-task/admin-console-job-def)}
 
    ::jobs/request-pool
@@ -666,6 +682,10 @@
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.email/job-def
+   {::email/sendmail (ig/ref ::email/sendmail)
+    ::mtx/metrics   (ig/ref ::mtx/metrics)}
+
+   :app.email/templated-job-def
    {::email/sendmail (ig/ref ::email/sendmail)
     ::mtx/metrics   (ig/ref ::mtx/metrics)}
 

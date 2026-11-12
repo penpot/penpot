@@ -1,3 +1,5 @@
+import type { RollbackLog } from "./RollbackLog";
+
 /**
  * Represents a task received from the MCP server in the Penpot MCP plugin
  */
@@ -8,11 +10,13 @@ export class Task<TParams = any> {
      * @param requestId Unique identifier for the task request
      * @param taskType The type of the task to execute
      * @param params Task parameters/arguments
+     * @param rollbackLog Log whose pending rollbacks the response carries, if any
      */
     constructor(
         public requestId: string,
         public taskType: string,
-        public params: TParams
+        public params: TParams,
+        private readonly rollbackLog?: RollbackLog
     ) {}
 
     /**
@@ -24,6 +28,9 @@ export class Task<TParams = any> {
             return;
         }
 
+        // rollbacks the server has not been told about, whatever the task did
+        const rollbacks = this.rollbackLog?.pending() ?? [];
+
         // create response object
         const response = {
             type: "task-response",
@@ -33,6 +40,7 @@ export class Task<TParams = any> {
                 success: success,
                 data: data,
                 error: error,
+                ...(rollbacks.length > 0 ? { rollbacks } : {}),
             },
         };
 
@@ -60,6 +68,7 @@ export class Task<TParams = any> {
         }
         console.log("Sent task response:", response);
         this.isResponseSent = true;
+        this.rollbackLog?.acknowledge(rollbacks.length);
     }
 
     public sendSuccess(data: any = undefined): void {

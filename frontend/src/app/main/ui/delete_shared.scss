@@ -4,15 +4,13 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
+// refactor/ stays for the modal placeholders (%modal-*), which move with
+// the modals refactor.
 @use "refactor/basic-rules.scss" as *;
-@use "ds/typography.scss" as t;
+@use "ds/typography.scss" as *;
 
 .modal-overlay {
   @extend %modal-overlay-base;
-
-  &.transparent {
-    background-color: transparent;
-  }
 }
 
 .modal-container {
@@ -23,51 +21,36 @@
   grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
-.list-wrapper {
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  max-height: 100%;
-}
-
 .modal-title {
-  @include t.use-typography("headline-medium");
+  @include use-typography("headline-medium");
 
-  color: var(--modal-title-foreground-color);
+  color: var(--color-foreground-primary);
 }
 
+// Tooltip wrapper of the close button: it places it in the corner.
 .modal-close-btn {
-  @extend %modal-close-btn-base;
+  position: absolute;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: var(--sp-xs);
 }
 
 .modal-content {
-  @include t.use-typography("body-small");
+  @include use-typography("body-small");
 
   display: grid;
   gap: var(--sp-s);
 }
 
 .element-list {
-  @include t.use-typography("body-large");
+  @include use-typography("body-large");
 
-  color: var(--modal-text-foreground-color);
+  color: var(--color-foreground-secondary);
   overflow-y: auto;
   margin-block: 0;
 }
 
 .action-buttons {
   @extend %modal-action-btns;
-}
-
-.cancel-button {
-  @extend %modal-cancel-btn;
-}
-
-.accept-btn {
-  @extend %modal-accept-btn;
-
-  &.danger {
-    @extend %modal-danger-btn;
-  }
 }
 
 .modal-scd-msg {
@@ -77,8 +60,8 @@
 .modal-scd-msg,
 .modal-subtitle,
 .modal-msg {
-  @include t.use-typography("body-large");
+  @include use-typography("body-large");
 
-  color: var(--modal-text-foreground-color);
+  color: var(--color-foreground-secondary);
   line-height: 1.5;
 }
