@@ -1057,6 +1057,9 @@
                    (and laid?
                         (not (ctk/touched-group? shape-inst sizing))
                         (contains? #{:fill :auto} (get shape-main sizing))
+                        ;; no layout fills a shape the push leaves absolute
+                        (not (and (= :fill (get shape-main sizing))
+                                  (ctsl/position-absolute? shape-inst)))
                         (or turned?
                             (and (not (copy-sized? sizing))
                                  (not (mth/close? (get source size) (get shape-main size)))))))
