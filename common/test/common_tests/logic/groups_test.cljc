@@ -7,13 +7,17 @@
 (ns common-tests.logic.groups-test
   (:require
    [app.common.files.changes-builder :as pcb]
+   [app.common.geom.modifiers :as gm]
+   [app.common.geom.shapes :as gsh]
    [app.common.logic.bool :as clb]
    [app.common.logic.groups :as clg]
+   [app.common.math :as mth]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
@@ -127,3 +131,16 @@
     (t/is (= (thi/id :copy-root) (:parent-id rect)))
     (t/is (= 0.5 (:opacity rect)))
     (t/is (= #{:layer-effects-group} (:touched rect)))))
+
+(t/deftest resizing-a-bool-resizes-the-shapes-it-combines
+  (let [file    (-> (thf/sample-file :file1)
+                    (tho/add-frame :board :width 200 :height 200)
+                    (ths/add-sample-shape :rect :parent-label :board :width 50 :height 50
+                                          :constraints-h :left :constraints-v :top))
+        page    (thf/current-page file)
+        [shape changes] (clb/generate-create-bool nil (:id page) (:objects page) [(thi/id :rect)] :union nil)
+        objects (objects (thf/apply-changes file changes))
+        bool    (get objects (:id shape))
+        tree    (gm/set-objects-modifiers {(:id bool) {:modifiers (ctm/change-size bool 80 nil)}} objects)
+        rect    (gsh/transform-shape (get objects (thi/id :rect)) (get-in tree [(thi/id :rect) :modifiers]))]
+    (t/is (mth/close? 80 (-> rect :selrect :width)))))
