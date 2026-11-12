@@ -2316,6 +2316,10 @@
               (:shapes shape-copy))]
     (-> shape-copy
         (assoc :layout-grid-cells (-> shape-main (ctsl/remap-grid-cells ids-map) :layout-grid-cells))
+        ;; a copy with its own track lists keeps its main's cells within them
+        (cond-> (or (not= (count (:layout-grid-rows shape-copy)) (count (:layout-grid-rows shape-main)))
+                    (not= (count (:layout-grid-columns shape-copy)) (count (:layout-grid-columns shape-main))))
+          (ctsl/fit-cells-to-tracks))
         (ctsl/assign-cells objects))))
 
 (defn grid-direction-cells

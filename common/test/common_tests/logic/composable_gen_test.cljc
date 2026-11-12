@@ -2381,6 +2381,12 @@
                                     :layout-copies true :text true}]
                        :ops [[:nest 6 0 0 0] [:nest 9 0 0 0] [:style 2 29 1] [:detach 5 0 0 0]]}))))
 
+(t/deftest a-copy-with-its-own-columns-takes-its-main-cells-within-them
+  (t/is (map? (cg/run {:world [1 0 {:variants false :layout :grid :layout-item-margins false :grid-square false
+                                    :rich-variants false :layout-children false :grid-empty false
+                                    :layout-copies false :text false}]
+                       :ops [[:grid-track 10 5 0 11] [:grid-track 0 1] [:grid-cell 0 0 0 1]]}))))
+
 (t/deftest random-shape-structure-compositions
   (let [coverage (atom {})
         failure (atom nil)]
