@@ -244,6 +244,12 @@
    :viewer {:file file
             :pages (#'dv/build-viewer-pages file)}})
 
+(defn- viewer-frame-ids
+  "Ids of the boards of the first page in viewer order. The viewer sorts
+  them top-most first, the reverse of the order in the page."
+  [state]
+  (mapv :id (get-in state [:viewer :pages page-id :frames])))
+
 (defn- hide-board-change
   [frame-id]
   {:type :mod-obj
@@ -272,10 +278,10 @@
     (t/is (not (refresh-requested? (first events))))
     (t/is (= 6 (get-in updated [:viewer :file :revn])))
     (t/is (= 6 (get-in updated [:files file-id :revn])))
-    (t/is (= [f2] (mapv :id (get-in updated [:viewer :pages page-id :frames]))))
+    (t/is (= [f2] (viewer-frame-ids updated)))
 
     (t/testing "the board being viewed is remembered"
-      (t/is (= f1 (:viewer-sync-frame-id updated))))
+      (t/is (= (first (viewer-frame-ids state)) (:viewer-sync-frame-id updated))))
 
     (t/testing "pages not touched by the changes are not calculated again"
       (t/is (identical? (get-in state [:viewer :pages page-id-2])
@@ -342,18 +348,22 @@
         f2 (uuid/custom 1 5)]
 
     (t/testing "a board added before the current one does not change the board shown"
-      (let [file   (make-file {:frames-1 [f0 f1 f2] :frames-2 []})
-            state  (-> (live-state file 0)
+      ;; f0 is the top-most board, so it comes first in the viewer and
+      ;; pushes f1 one position down: f1 was at index 1, now at 2.
+      (let [file   (make-file {:frames-1 [f1 f2 f0] :frames-2 []})
+            state  (-> (live-state file 1)
                        (assoc :viewer-sync-frame-id f1))
             [nav :as navs] (navigations (watch-events @#'dv/after-file-updated state))]
+        (t/is (= [f0 f2 f1] (viewer-frame-ids state)))
         (t/is (= 1 (count navs)))
-        (t/is (= 1 (get-in nav [:params :index])))
+        (t/is (= 2 (get-in nav [:params :index])))
         (t/is (true? (::rt/replace (:options nav))))))
 
     (t/testing "the board is still in the same position"
       (let [file  (make-file {:frames-1 [f1 f2] :frames-2 []})
-            state (-> (live-state file 0)
+            state (-> (live-state file 1)
                       (assoc :viewer-sync-frame-id f1))]
+        (t/is (= [f2 f1] (viewer-frame-ids state)))
         (t/is (empty? (navigations (watch-events @#'dv/after-file-updated state))))))
 
     (t/testing "the current board was removed: stay in range"
