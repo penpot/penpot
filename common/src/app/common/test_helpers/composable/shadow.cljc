@@ -186,6 +186,12 @@
                         parent)
                placed (when (and objects (not (:sized? (::position (meta expected)))))
                         (authored-placement expected parent shape))
+               ;; a group or bool takes its corners from its children: at its
+               ;; expected corners, its turn and flips say nothing more
+               derived (and (#{:group :bool} (:type shape))
+                            (let [order (partial sort-by (juxt #(Math/round (* 100.0 (:x %)))
+                                                               #(Math/round (* 100.0 (:y %)))))]
+                              (gsh/close-attrs? :points (order (:points shape)) (order (:points expected)) 0.01)))
                ;; an unskewed transform carries the turn and the mirror: an
                ;; expected rotation and flips match when they decompose it,
                ;; whichever rotation and flips the shape stores for it
@@ -215,6 +221,7 @@
                           (let [actual (get shape key)]
                             (cond
                               (contains? sized key) true
+                              (and derived (#{:rotation :flip-x :flip-y} key)) true
                               (and (some? oriented) (#{:rotation :flip-x :flip-y} key)) true
                               ;; ordered corners fix the transform, whichever
                               ;; rotation the shape stores for it

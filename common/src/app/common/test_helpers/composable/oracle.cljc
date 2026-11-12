@@ -405,6 +405,13 @@
                                       (update (:id main) merge
                                               (d/without-nils (select-keys shape [:constraints-h :constraints-v]))))
                        main-parent (get main-objects (:parent-id main))
+                       ;; a group or bool takes its bounds and turn from its children,
+                       ;; so they take their place from the board around it
+                       board? (and (#{:group :bool} (:type parent)) main-parent
+                                   (#{:group :bool} (:type main-parent))
+                                   (not (ctl/any-layout? (get objects (:frame-id shape)))))
+                       parent (if board? (get objects (:frame-id shape)) parent)
+                       main-parent (if board? (get main-objects (:frame-id main)) main-parent)
                        ;; a reset refreshes its subtree from the loaded library while
                        ;; the parent keeps the version it accepted, which may lack a turn;
                        ;; a swapped parent holds the child in the main of its content
@@ -509,20 +516,26 @@
          same-corners? (gsh/close-attrs? :points (:points shape) (:points expected) 0.01)
          both-flipped (and (not= (boolean (:flip-x shape)) (boolean (:flip-x expected)))
                            (not= (boolean (:flip-y shape)) (boolean (:flip-y expected)))
-                           (geom/decomposes? shape))]
+                           (geom/decomposes? shape))
+         ;; a group or bool takes its corners from its children: at its
+         ;; expected corners, its turn and flips say nothing more
+         derived (and (#{:group :bool} (:type shape))
+                      (gsh/close-attrs? :points (sort-by corner-order (:points shape))
+                                        (sort-by corner-order (:points expected)) 0.01))]
      (cond-> #{}
        ;; Parents may store equivalent decompositions, so a rotation that
        ;; decomposes the shape's own transform is its expected turn too, as
        ;; is any rotation of a shape at its expected corners.
-       (not (or (same-turn? rotation exp-rotation)
+       (not (or derived
+                (same-turn? rotation exp-rotation)
                 (and mirrored (same-turn? rotation (- exp-rotation)))
                 (geom/decomposes? shape)
                 (gsh/close-attrs? :points (:points shape) (:points expected) 0.01))) (conj :rotation)
        ;; ordered corners that match fix the transform, so flags that decompose
        ;; it store the same transform otherwise
-       (and (not both-flipped) (not= (boolean (:flip-x shape)) (boolean (:flip-x expected)))
+       (and (not both-flipped) (not derived) (not= (boolean (:flip-x shape)) (boolean (:flip-x expected)))
             (not (and same-corners? (geom/decomposes? shape)))) (conj :flip-x)
-       (and (not both-flipped) (not= (boolean (:flip-y shape)) (boolean (:flip-y expected)))
+       (and (not both-flipped) (not derived) (not= (boolean (:flip-y shape)) (boolean (:flip-y expected)))
             (not (and same-corners? (geom/decomposes? shape)))) (conj :flip-y)
        (and (not width-owned) (not (mth/close? (:width shape) (:width expected) 0.01))) (conj :width)
        (and (not height-owned) (not (mth/close? (:height shape) (:height expected) 0.01))) (conj :height)

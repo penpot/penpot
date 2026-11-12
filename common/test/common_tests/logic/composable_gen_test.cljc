@@ -2449,6 +2449,24 @@
                        :ops [[:rotate 16 0 7 0] [:grid-direction 0 0 0 1] [:grid-cell 0 10 0 1] [:add-child 0]
                              [:structure 3 6 15] [:grid-direction 0 0 0 1] [:grid-cell 0 4 2 1]]}))))
 
+(t/deftest a-copy-group-whose-main-turns-matches-its-corners-whatever-its-flips
+  (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout nil
+                                    :layout-copies true :layout-children false}]
+                       :ops [[:transform 16 4 0 0] [:add-child 0] [:structure 2 0 0] [:rotate 0 0 0 0]]}))))
+
+(t/deftest a-copy-shape-in-a-bool-takes-its-place-from-its-board-when-the-main-flips
+  (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout nil
+                                    :layout-copies true :layout-children false}]
+                       :ops [[:resize 5 0 0 0] [:add-child 0] [:structure 0 0 0] [:add-child 0] [:structure 8 4 0]
+                             [:delete 8 0 0 0] [:delete 3] [:restore 3] [:transform 9 4 0 0]]}))))
+
+(t/deftest undoing-an-unmask-restores-a-turned-mask-within-the-bounds-tolerance
+  (t/is (map? (cg/run {:world [2 1 {:variants true :rich-variants true :text true :layout nil
+                                    :layout-copies true :layout-children false}]
+                       :ops [[:add-child 0 0 0 0] [:add-child 0] [:structure 0 0 0] [:add-child 0] [:structure 0 0 0]
+                             [:add-child 0 0 0 0] [:add-child 0] [:structure 14 1 0] [:rotate 15 0 0 0]
+                             [:add-child 0] [:structure 0 3 0]]}))))
+
 (t/deftest random-shape-structure-compositions
   (let [coverage (atom {})
         failure (atom nil)]

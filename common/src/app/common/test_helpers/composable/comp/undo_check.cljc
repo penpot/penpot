@@ -201,8 +201,8 @@
                                   (and (= :points key) (= :bool (:type expected)) (contains? expected :parent-id))
                                   corner-order)
                                 ;; a bool or path stores its segments in single precision, and
-                                ;; a bool computes them again from its children
-                                (if (and (contains? expected :parent-id) (#{:bool :path} (:type expected)))
+                                ;; a bool or group computes its bounds again from its children
+                                (if (and (contains? expected :parent-id) (#{:bool :path :group} (:type expected)))
                                   (max tolerance 1e-4)
                                   tolerance)
                                 (or geometry?
