@@ -2369,6 +2369,18 @@
                                     :layout-copies true :layout-children false}]
                        :ops [[:delete 0] [:restore 0] [:add-child 0] [:structure 0 4 0] [:rotate 0 0 0 0]]}))))
 
+(t/deftest detaching-after-a-main-adds-a-row-leaves-the-copy-boards-unauthored
+  (t/is (map? (cg/run {:world [1 1 {:variants true :layout :grid :layout-item-margins false :grid-square false
+                                    :rich-variants true :layout-children false :grid-empty false
+                                    :layout-copies true :text true}]
+                       :ops [[:nest 7] [:swap 7] [:grid-cell] [:grid-track 7] [:detach 1]]}))))
+
+(t/deftest detaching-keeps-unauthored-a-nested-copy-a-grid-fills
+  (t/is (map? (cg/run {:world [3 2 {:variants true :layout :grid :layout-item-margins false :grid-square false
+                                    :rich-variants true :layout-children false :grid-empty false
+                                    :layout-copies true :text true}]
+                       :ops [[:nest 6 0 0 0] [:nest 9 0 0 0] [:style 2 29 1] [:detach 5 0 0 0]]}))))
+
 (t/deftest random-shape-structure-compositions
   (let [coverage (atom {})
         failure (atom nil)]

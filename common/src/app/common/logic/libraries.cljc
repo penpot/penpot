@@ -2110,26 +2110,43 @@
 (defn- turned-like-parent?
   "Whether `shape` has the size of `main` and the orientation `main` takes
    when turned from `main-parent` to `parent`, wherever each one is. A
-   main at the root of its page has an unturned parent."
-  [shape main main-parent parent]
-  (let [main-parent (when-not (cfh/root? main-parent) main-parent)
-        flip?       (fn [key] (odd? (count (filter key [main main-parent parent]))))]
-    (and (mth/close? (-> shape :selrect :width) (-> main :selrect :width))
-         (mth/close? (-> shape :selrect :height) (-> main :selrect :height))
-         (gmt/close? (axes-matrix shape)
-                     (gmt/multiply (axes-matrix parent)
-                                   (gmt/inverse (axes-matrix main-parent))
-                                   (axes-matrix main)))
-         (= (boolean (:flip-x shape)) (flip? :flip-x))
-         (= (boolean (:flip-y shape)) (flip? :flip-y)))))
+   main at the root of its page has an unturned parent. The dimensions in
+   `sized`, which a layout gives the shape, are left out."
+  ([shape main main-parent parent] (turned-like-parent? shape main main-parent parent #{}))
+  ([shape main main-parent parent sized]
+   (let [main-parent (when-not (cfh/root? main-parent) main-parent)
+         flip?       (fn [key] (odd? (count (filter key [main main-parent parent]))))]
+     (and (or (contains? sized :width) (mth/close? (-> shape :selrect :width) (-> main :selrect :width)))
+          (or (contains? sized :height) (mth/close? (-> shape :selrect :height) (-> main :selrect :height)))
+          (gmt/close? (axes-matrix shape)
+                      (gmt/multiply (axes-matrix parent)
+                                    (gmt/inverse (axes-matrix main-parent))
+                                    (axes-matrix main)))
+          (= (boolean (:flip-x shape)) (flip? :flip-x))
+          (= (boolean (:flip-y shape)) (flip? :flip-y))))))
+
+(defn- layout-sized
+  "The dimensions a layout gives `shape`: those it fills in its layout
+   parent or hugs as a layout itself, and both once it is turned in a
+   layout parent, which resizes it along its own axes."
+  [objects shape]
+  (let [child? (and (ctsl/any-layout-immediate-child? objects shape)
+                    (not (ctsl/position-absolute? shape)))
+        owned? #(and (or child? (ctsl/any-layout? shape)) (#{:fill :auto} %))
+        sized  (cond-> #{}
+                 (owned? (:layout-item-h-sizing shape)) (conj :width)
+                 (owned? (:layout-item-v-sizing shape)) (conj :height))]
+    (if (and child? (seq sized) (not (mth/close? (mod (or (:rotation shape) 0) 360) 0)))
+      #{:width :height}
+      sized)))
 
 (defn generate-keep-advanced-placement
   "Make authored the geometry of the copy shapes `ids`, whose references
    advanced, when their next sync would place them elsewhere: their copy
    parent keeps overrides that the new main lacks. Under a plain parent a
    copy is placed freely, and only its orientation and size follow its
-   main, turned like that parent. Parents come before their children, so each child is checked in
-   its parent's settled frame."
+   main, turned like that parent, as does one a layout places. Parents come before their children,
+   so each child is checked in its parent's settled frame."
   [changes container libraries ids]
   (reduce
    (fn [changes id]
@@ -2140,15 +2157,19 @@
            main         (ctf/find-ref-shape nil container libraries shape
                                             :include-deleted? true :with-context? true)
            main-objects (:objects (:container (meta main)))
-           main-parent  (get main-objects (:parent-id main))]
+           main-parent  (get main-objects (:parent-id main))
+           ;; a layout places the shape, so only its size and orientation can be its own
+           layout-placed? (and (ctsl/any-layout-immediate-child? objects shape)
+                               (not (ctsl/position-absolute? shape)))]
        (if (and (some? main)
                 (not (ctk/touched-group? shape :geometry-group))
-                (if (some? (:shape-ref parent))
+                (if (and (some? (:shape-ref parent)) (not layout-placed?))
                   (and (some? main-parent)
                        (not (close-geometry? shape (get (placed-like main-objects main-parent parent
                                                                      (authored-constraints objects [id]))
                                                         (:id main)))))
-                  (not (turned-like-parent? shape main main-parent parent))))
+                  (not (turned-like-parent? shape main main-parent parent
+                                            (if layout-placed? (layout-sized objects shape) #{})))))
          (pcb/update-shapes changes [id] #(update % :touched ctk/set-touched-group :geometry-group)
                             {:ignore-touched true})
          changes)))
