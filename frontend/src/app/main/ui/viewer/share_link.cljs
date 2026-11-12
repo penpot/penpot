@@ -75,10 +75,10 @@
   [{:keys [class title children]}]
   (let [{:keys [expanded content-id toggle]} (use-collapsible)]
     [:div {:class class}
-     [:button {:class (stl/css :collapsible-title :collapsible-panel-toggle)
+     [:button {:class (stl/css :collapsible-title)
                :type "button"
                :aria-expanded expanded
-               :aria-controls content-id
+               :aria-controls (when expanded content-id)
                :on-click toggle}
       [:> icon* {:icon-id (if expanded i/arrow-down i/arrow-right)
                  :class (stl/css :collapsible-title-icon)}]
@@ -152,9 +152,11 @@
   {::mf/private true}
   [{:keys [file page link-options on-toggle-all on-checked-page
            on-comment-change on-inspect-change]}]
-  (let [selected    (:pages link-options)
-        permissions [{:id "team" :label (tr "common.share-link.team-members")}
-                     {:id "all"  :label (tr "common.share-link.all-users")}]]
+  (let [locale      (mf/deref i18n/locale)
+        selected    (:pages link-options)
+        permissions (mf/with-memo [locale]
+                      [{:id "team" :label (tr "common.share-link.team-members")}
+                       {:id "all"  :label (tr "common.share-link.all-users")}])]
 
     [:> collapsible-panel* {:class (stl/css :permissions-section)
                             :title (tr "common.share-link.manage-ops")}
@@ -304,6 +306,7 @@
                            :class (stl/css :share-link-url-input)
                            :value (or current-share-url "")
                            :placeholder (tr "common.share-link.placeholder")
+                           :aria-label (tr "common.share-link.placeholder")
                            :read-only true}]
          [:> icon-button* {:variant "secondary"
                            :class (stl/css :share-link-url-button)

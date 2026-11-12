@@ -241,7 +241,7 @@
                     :class (stl/css :share-btn)
                     :on-ref set-share-btn-ref
                     :aria-expanded share-open?
-                    :aria-pressed share-open?
+                    :aria-haspopup "dialog"
                     :data-allow-click-modal "share-link"
                     :on-click toggle-share-dialog}
         (tr "labels.share")])

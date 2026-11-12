@@ -16,6 +16,8 @@
 // --- Collapsible (shared)
 
 .collapsible-title {
+  @include use-typography("headline-small");
+
   border: none;
   background: none;
   color: var(--color-foreground-secondary);
@@ -24,24 +26,16 @@
   align-items: center;
   justify-content: flex-start;
   padding: 0;
+  cursor: pointer;
 
   &:focus-visible {
     outline: $b-1 solid var(--color-accent-primary);
-    outline-offset: 2px;
+    outline-offset: px2rem(2);
   }
 }
 
 .collapsible-title-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   margin-inline-end: px2rem(6);
-}
-
-// --- Collapsible panel
-
-.collapsible-panel-toggle {
-  @include use-typography("headline-small");
 }
 
 // --- Permissions section
@@ -176,12 +170,10 @@
 
 .share-link-url {
   display: flex;
-  padding: $sz-1;
+  padding: px2rem(1);
 }
 
 .share-link-url-input {
-  position: relative;
-  z-index: 1;
   border-end-end-radius: 0;
   border-start-end-radius: 0;
 }
