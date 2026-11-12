@@ -67,7 +67,8 @@
 
             child-ids (clg/ungrouped-children objects ids)
 
-            changes (clg/generate-ungroup-changes it page-id objects ids)
+            changes (clg/generate-ungroup-changes it page-id objects ids
+                                                  (:pages-index (dsh/lookup-file-data state)))
             undo-id (js/Symbol)]
 
         (when-not (empty? ids)
