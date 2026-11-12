@@ -122,10 +122,10 @@
   [track-list]
   (let [calc-tracks-total-frs
         (fn [acc {:keys [type value]}]
-          (let [value (max 1 value)]
-            (cond-> acc
-              (= type :flex)
-              (+ value))))]
+          ;; only a flex track counts its value, at least one fraction
+          (cond-> acc
+            (= type :flex)
+            (+ (max 1 (or value 0)))))]
     (->> track-list (reduce calc-tracks-total-frs 0))))
 
 (defn tracks-total-autos
