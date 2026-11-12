@@ -28,6 +28,18 @@
     type
     "professional"))
 
+(defn get-team-plan-type
+  [team]
+  (if (some? (dm/get-in team [:organization :id]))
+    "enterprise"
+    (get-subscription-type (:subscription team))))
+
+(defn show-team-plan?
+  [is-owner team]
+  (not (and is-owner
+            (nil? (dm/get-in team [:organization :id]))
+            (= "enterprise" (get-subscription-type (:subscription team))))))
+
 (mf/defc cta-power-up*
   [{:keys [top-title top-description bottom-description bottom-button bottom-button-href has-dropdown is-highlighted]}]
   (let [show-data* (mf/use-state false)
@@ -272,6 +284,7 @@
   [{:keys [is-owner team]}]
   (let [subscription          (:subscription team)
         subscription-type     (get-subscription-type subscription)
+        team-plan-type        (get-team-plan-type team)
         subscription-is-trial (= "trialing" (:status subscription))
 
         go-to-manage-subscription
@@ -286,22 +299,23 @@
                  href (str "payments/subscriptions/show?returnUrl=" href)]
              (st/emit! (rt/nav-raw :href href)))))]
 
-    [:div {:class (stl/css :team)}
-     [:div {:class (stl/css :team-label)}
-      (tr "subscription.dashboard.team-plan")]
-     [:span {:class (stl/css :team-text)}
-      (case subscription-type
-        "professional" (tr "subscription.settings.professional")
-        "unlimited" (if subscription-is-trial
-                      (tr "subscription.settings.unlimited-trial")
-                      (tr "subscription.settings.unlimited"))
+    (when (show-team-plan? is-owner team)
+      [:div {:class (stl/css :team)}
+       [:div {:class (stl/css :team-label)}
+        (tr "subscription.dashboard.team-plan")]
+       [:span {:class (stl/css :team-text)}
+        (case team-plan-type
+          "professional" (tr "subscription.settings.professional")
+          "unlimited" (if subscription-is-trial
+                        (tr "subscription.settings.unlimited-trial")
+                        (tr "subscription.settings.unlimited"))
 
-        "enterprise" (tr "subscription.settings.enterprise"))]
-     (when (and is-owner (not= subscription-type "professional"))
-       [:button {:class (stl/css :manage-subscription-link)
-                 :on-click go-to-manage-subscription
-                 :data-testid "manage-subscription-link"}
-        (tr "subscription.settings.manage-your-subscription")])]))
+          "enterprise" (tr "subscription.settings.enterprise"))]
+       (when (and is-owner (not= subscription-type "professional"))
+         [:button {:class (stl/css :manage-subscription-link)
+                   :on-click go-to-manage-subscription
+                   :data-testid "manage-subscription-link"}
+          (tr "subscription.settings.manage-your-subscription")])])))
 
 (mf/defc menu-team-icon*
   [{:keys [subscription-type]}]
