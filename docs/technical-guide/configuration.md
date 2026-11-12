@@ -431,7 +431,9 @@ instead. When a request carries an `Origin` header that matches one of the liste
 origins, the backend uses that origin as the base for the links it generates while
 serving the request (transactional emails, asset URLs, audit and webhook link fields,
 and redirects). Origins that are not listed, and requests without an `Origin` header,
-keep using `PENPOT_PUBLIC_URI`.
+keep using `PENPOT_PUBLIC_URI`. Removing an origin from the list does not
+invalidate OIDC states already signed with it; they keep using it until they
+expire (up to four hours).
 
 ```bash
 # Backend
@@ -449,6 +451,9 @@ PENPOT_TRUSTED_ORIGINS: https://alt.penpot.mycompany.com, https://staging.penpot
 - Notifications sent later by background workers keep the canonical `PENPOT_PUBLIC_URI`,
   because they run outside the request that triggered them. The same applies to
   server-to-server calls (for example the management API) that carry no `Origin`.
+- MCP OAuth endpoints (discovery metadata, the approval redirect and the
+  code-exchange `iss`) follow the stamped origin the same way; without a trusted
+  `Origin` they keep the canonical `PENPOT_PUBLIC_URI`.
 
 ## Email configuration
 

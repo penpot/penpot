@@ -145,7 +145,12 @@
                                  :challenge (:code_challenge params)
                                  :state (:state params)
                                  :resource (resource)
-                                 :scope "mcp"}
+                                 :scope "mcp"
+                                 ;; The trusted alternate origin stamped on
+                                 ;; this request (nil on the canonical base).
+                                 ;; Decision re-applies it so every step of
+                                 ;; the flow agrees on one base.
+                                 :origin (:app.http/trusted-origin request)}
                                 600)]
       (redirect (append-query (str (cf/get-public-uri))
                               {:screen "mcp-authorize" :request handle})))))
@@ -215,9 +220,12 @@
                                                   (assoc :token-id (str (:id token))))
                                               120)]
                      {:code code}))]
-      (response {:redirect-uri (append-query (:redirect-uri value)
-                                             (merge result {:state (:state value)
-                                                            :iss (issuer)}))}))))
+      (binding [cf/config (cf/with-public-uri (:origin value) cf/config)]
+        ;; Re-applied from the staged request so :iss matches the
+        ;; authorize-time base (nil keeps the canonical one).
+        (response {:redirect-uri (append-query (:redirect-uri value)
+                                               (merge result {:state (:state value)
+                                                              :iss (issuer)}))})))))
 
 (defn- client-authentication
   "Extract one OAuth client-authentication method, rejecting mixed credentials.
@@ -336,7 +344,10 @@
 ;; middleware. Only the approval UI endpoints require a Penpot login session.
 (defmethod ig/init-key ::routes
   [_ cfg]
-  [""
+  ;; Trusted-origin runs outermost so a listed request Origin is honored
+  ;; without inheriting the RPC transforms above (form parsing, protocol
+  ;; JSON names and session handling stay OAuth-specific below).
+  ["" {:middleware [[mw/trusted-origin]]}
    ["/.well-known/oauth-authorization-server/api/mcp/oauth"
     (endpoint cfg (fn [_ _] (response (authorization-metadata))) :get true)]
    ["/api/mcp/oauth"
