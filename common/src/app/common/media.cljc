@@ -115,14 +115,32 @@
 (def ^:private font-concatenated-style-re
   ;; Separate a style token glued to a weight token, e.g. "BoldItalic" ->
   ;; "Bold Italic". Only a known weight token followed by a style token is
-  ;; split, so families such as "OpenSans" are left untouched.
-  #"(?i)(black|bold|heavy|solid|medium|light|thin|hairline|regular|normal)(italic|oblique)\b")
+  ;; split, so families such as "OpenSans" are left untouched. The trailing
+  ;; boundary is a lookahead, so a glued style token followed by a technical
+  ;; suffix (e.g. "Italic_v2") is split too.
+  #"(?i)(black|bold|heavy|solid|medium|light|thin|hairline|regular|normal)(italic|oblique)(?=[-_\s]|$)")
+
+(def ^:private font-technical-suffix-re
+  ;; Trailing foundry/build suffixes, e.g. "Roboto-Bold-VF" or "Inter_v2".
+  ;; Requires a separator; stripped before token detection so the parsers
+  ;; interpret the name the same way.
+  #"(?i)[-_\s]+(?:vf|v[0-9]+)$")
+
+(defn- normalize-font-name
+  "Normalize a font name or variant string before token detection:
+  split a style token glued to a weight token, then strip a trailing
+  technical suffix. Applied by `parse-font-family`, `parse-font-weight`
+  and `parse-font-style` so all three interpret the name the same way."
+  [s]
+  (-> s
+      (str/replace font-concatenated-style-re "$1 $2")
+      (str/replace font-technical-suffix-re "")))
 
 (defn parse-font-family
   "Derive a font family name from a base name (a filename without its
   extension), stripping the known weight/style tokens."
   [base-name]
-  (let [normalized (str/replace base-name font-concatenated-style-re "$1 $2")
+  (let [normalized (normalize-font-name base-name)
         stripped   (-> normalized
                        (str/replace font-variant-tokens-re "$1")
                        (str/replace #"[-_\s]+" " ")
@@ -134,7 +152,7 @@
   A nil or non-string variant means the font carries no subfamily
   metadata, so it defaults to 400 (regular), the same as a blank string."
   [variant]
-  (let [variant (if (string? variant) variant "")]
+  (let [variant (normalize-font-name (if (string? variant) variant ""))]
     (cond
       (re-seq #"(?i)(?:^|[-_\s])(hairline|thin)(?=(?:[-_\s]|$|italic\b|oblique\b))" variant)               100
       (re-seq #"(?i)(?:^|[-_\s])(extra\s*light|ultra\s*light)(?=(?:[-_\s]|$|italic\b|oblique\b))" variant) 200
@@ -153,7 +171,7 @@
   A nil or non-string variant means the font carries no subfamily
   metadata, so it defaults to \"normal\"."
   [variant]
-  (let [variant (if (string? variant) variant "")]
+  (let [variant (normalize-font-name (if (string? variant) variant ""))]
     (if (or (re-seq #"(?i)(?:^|[-_\s])(italic|oblique)(?:[-_\s]|$)" variant)
             (re-seq #"(?i)(?:italic|oblique)$" variant))
       "italic"

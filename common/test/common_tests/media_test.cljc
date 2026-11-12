@@ -96,6 +96,30 @@
   (t/testing "falls back to the base name when everything is stripped"
     (t/is (= "BoldItalic" (media/parse-font-family "BoldItalic")))))
 
+(t/deftest test-font-glued-tokens
+  (t/testing "a glued style token is recognized consistently by all three parsers"
+    ;; From EvaMarco's review on #11951: without a shared interpretation of
+    ;; the name, the bold-italic face collided with the bold-only one and
+    ;; was silently overwritten on upload.
+    (t/is (= "opensans webfont" (media/parse-font-family "opensans-bolditalic-webfont")))
+    (t/is (= 700 (media/parse-font-weight "opensans-bolditalic-webfont")))
+    (t/is (= "italic" (media/parse-font-style "opensans-bolditalic-webfont"))))
+
+  (t/testing "a glued style token followed by a technical suffix"
+    (t/is (= "Roboto" (media/parse-font-family "Roboto-BoldItalic-VF")))
+    (t/is (= 700 (media/parse-font-weight "Roboto-BoldItalic-VF")))
+    (t/is (= "italic" (media/parse-font-style "Roboto-BoldItalic-VF"))))
+
+  (t/testing "numeric build suffix after a glued style token"
+    (t/is (= "Roboto" (media/parse-font-family "Roboto-LightItalic_v2")))
+    (t/is (= 300 (media/parse-font-weight "Roboto-LightItalic_v2")))
+    (t/is (= "italic" (media/parse-font-style "Roboto-LightItalic_v2"))))
+
+  (t/testing "the bold-only control case is unchanged"
+    (t/is (= "opensans webfont" (media/parse-font-family "opensans-bold-webfont")))
+    (t/is (= 700 (media/parse-font-weight "opensans-bold-webfont")))
+    (t/is (= "normal" (media/parse-font-style "opensans-bold-webfont")))))
+
 (t/deftest test-first-nonblank-string
   (t/testing "returns the first nonblank string"
     (t/is (= "Bold" (media/first-nonblank-string "  " "Bold")))

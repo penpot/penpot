@@ -351,3 +351,25 @@
       (t/is (= 700 (:font-weight entry)))
       (t/is (= "normal" (:font-style entry))))
     (t/is (empty? @emitted))))
+
+(t/deftest ^:async process-upload-keeps-bold-and-bolditalic-woff2
+  ;; Regression for the review on #11951: the bold-italic file resolved to
+  ;; style "normal", collided with the bold-only file on the (family,
+  ;; weight, style) join key and silently overwrote it.
+  (let [team-id (uuid/next)
+        blobs   [#js {:name "Inter-Bold.woff2"}
+                 #js {:name "Inter-BoldItalic.woff2"}]
+        emitted (atom [])
+        result  (atom nil)]
+    (await (mock/with-mocks*
+             {wa/read-file-as-array-buffer
+              (mock/stub (fn [_] (rx/of (bytes->buffer [119 79 70 50 0 0 0 0]))))
+              st/emit! (mock/stub (fn [& evts] (swap! emitted into evts) nil))}
+             (await (async/observe (df/process-upload blobs team-id)
+                                   :on-next #(reset! result %)))
+             (await (async/settle))))
+    (t/is (= 2 (count (vals @result))))
+    (t/is (every? #(= "Inter" (:font-family %)) (vals @result)))
+    (t/is (every? #(= 700 (:font-weight %)) (vals @result)))
+    (t/is (= #{"normal" "italic"} (set (map :font-style (vals @result)))))
+    (t/is (empty? @emitted))))
