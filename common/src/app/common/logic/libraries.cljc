@@ -2366,6 +2366,26 @@
                  :layout-grid-columns (:layout-grid-columns target))
           (ctsl/fit-cells-to-tracks)))))
 
+(defn- keep-cell-ids
+  "`shape` with the cells its tracks add, those its main `shape-main` lacks,
+   under the ids of the cells of `shape-copy` in the same place, so each sync
+   gives them the same ids."
+  [shape shape-copy shape-main]
+  (let [place      (juxt :row :column :row-span :column-span)
+        main-ids   (set (keys (:layout-grid-cells shape-main)))
+        previous   (into {}
+                         (comp (map val)
+                               (remove #(contains? main-ids (:id %)))
+                               (map (juxt place :id)))
+                         (:layout-grid-cells shape-copy))]
+    (update shape :layout-grid-cells
+            (fn [cells]
+              (into {}
+                    (map (fn [[id cell]]
+                           (let [id (if (contains? main-ids id) id (get previous (place cell) id))]
+                             [id (assoc cell :id id)])))
+                    cells)))))
+
 (defn copy-grid-cells
   "The grid copy `shape-copy` with the cells of its main `shape-main`, its
    own children in place of the main's, laid out in its own direction: the
@@ -2387,7 +2407,8 @@
         ;; a copy with its own track lists keeps its main's cells within them
         (cond-> (or (not= (count (:layout-grid-rows shape-copy)) (count (:layout-grid-rows shape-main)))
                     (not= (count (:layout-grid-columns shape-copy)) (count (:layout-grid-columns shape-main))))
-          (ctsl/fit-cells-to-tracks))
+          (-> (ctsl/fit-cells-to-tracks)
+              (keep-cell-ids shape-copy shape-main)))
         (ctsl/assign-cells objects))))
 
 (defn grid-direction-cells
