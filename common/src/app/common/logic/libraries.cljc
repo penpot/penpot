@@ -1497,11 +1497,12 @@
                 position-objects (get-in (meta position) [:container :objects])
                 ;; the head takes the place the replaced child authored
                 placement        (set/intersection (set (:touched replaced)) placement-groups)
-                ;; a plain copy of the position has its size, unless the replaced child authored its geometry
+                ;; a plain copy of the position has its size, unless the replaced child or the copy authored its geometry
                 sized?           (fn [shape]
                                    (and (= (:id shape) (:id new-head)) position
                                         (not (ctk/swapped? shape))
-                                        (not (contains? placement :geometry-group))))
+                                        (not (contains? placement :geometry-group))
+                                        (not (ctk/touched-group? shape :geometry-group))))
                 positioned       (mapv (fn [shape]
                                          (let [shape (take-position shape)]
                                            (cond-> shape (sized? shape) (sized-like position))))

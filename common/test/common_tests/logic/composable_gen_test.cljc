@@ -2393,6 +2393,12 @@
                                     :grid-empty false :layout-copies true :text false}]
                        :ops [[:style 8 35 1] [:style 0 29 1] [:update-main]]}))))
 
+(t/deftest updating-a-main-after-a-reset-keeps-the-size-a-switch-gave-the-copy
+  (t/is (map? (cg/run {:world [4 4 {:variants true :text-styles true :scale false :layout :flex :variant-diff false
+                                    :grid-square false :copies 6 :rich-variants true :layout-children false
+                                    :grid-empty false :layout-copies false :text false}]
+                       :ops [[:resize] [:combine 1] [:add-variant] [:switch 5] [:switch] [:reset] [:update-main]]}))))
+
 (t/deftest updating-a-main-keeps-the-max-width-override-a-switched-copy-holds
   (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles false :layout :grid :variant-diff false
                                     :layout-item-margins false :grid-square false :rich-variants true
