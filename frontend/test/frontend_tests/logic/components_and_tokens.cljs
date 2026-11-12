@@ -9,6 +9,7 @@
    [app.common.math :as mth]
    [app.common.test-helpers.components :as cthc]
    [app.common.test-helpers.compositions :as ctho]
+   [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
    [app.common.test-helpers.tokens :as ctht]
@@ -439,3 +440,64 @@
 
       (tohs/run-store-async
        store step2 events identity))))
+
+(defn- setup-file-with-stale-values
+  "Adds :frame2 (with a :rect1 child) and :frame3, whose stored radius
+  differs from the resolved token value."
+  []
+  (-> (setup-base-file)
+      (ctho/add-frame-with-child :frame2 :rect1)
+      (ctho/add-frame :frame3)
+      (ctht/apply-token-to-shape :frame2 "test-token-2" [:r1 :r2 :r3 :r4] [:r1 :r2 :r3 :r4] 10)
+      (ctht/apply-token-to-shape :rect1 "test-token-3" [:r1 :r2 :r3 :r4] [:r1 :r2 :r3 :r4] 10)
+      (ctht/apply-token-to-shape :frame3 "test-token-2" [:r1 :r2 :r3 :r4] [:r1 :r2 :r3 :r4] 10)))
+
+(t/deftest scoped-propagation-updates-only-the-scoped-tree
+  (t/async
+    done
+    (let [;; ==== Setup
+          file  (setup-file-with-stale-values)
+          store (ths/setup-store file)
+
+          ;; ==== Action
+          events [(dwtp/propagate-workspace-tokens
+                   {:page-id  (cthf/current-page-id file)
+                    :root-ids [(cthi/id :frame2)]})]]
+
+      (tohs/run-store-async
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'   (ths/get-file-from-state new-state)
+               frame2' (cths/get-shape file' :frame2)
+               rect1'  (cths/get-shape file' :rect1)
+               frame3' (cths/get-shape file' :frame3)]
+
+           ;; ==== Check
+           (t/is (= (:r1 frame2') 50))
+           (t/is (= (:r1 rect1') 75))
+           (t/is (= (:r1 frame3') 10))))))))
+
+(t/deftest unscoped-propagation-updates-every-shape
+  (t/async
+    done
+    (let [;; ==== Setup
+          file  (setup-file-with-stale-values)
+          store (ths/setup-store file)
+
+          ;; ==== Action
+          events [(dwtp/propagate-workspace-tokens)]]
+
+      (tohs/run-store-async
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'   (ths/get-file-from-state new-state)
+               frame2' (cths/get-shape file' :frame2)
+               rect1'  (cths/get-shape file' :rect1)
+               frame3' (cths/get-shape file' :frame3)]
+
+           ;; ==== Check
+           (t/is (= (:r1 frame2') 50))
+           (t/is (= (:r1 rect1') 75))
+           (t/is (= (:r1 frame3') 50))))))))
