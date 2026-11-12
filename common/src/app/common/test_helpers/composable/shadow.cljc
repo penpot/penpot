@@ -178,8 +178,14 @@
        (not (contains? (thtx/override-units (:content expected) (:content shape)) unit))
        (if (= group :geometry-group)
          (let [sized (if objects (layout-sized shape objects) #{})
+               parent (get objects (:parent-id shape))
+               ;; a group or bool takes its bounds from its children, which follow its board
+               parent (if (#{:group :bool} (:type parent))
+                        (let [frame (get objects (:frame-id shape))]
+                          (when-not (ctl/any-layout? frame) frame))
+                        parent)
                placed (when (and objects (not (:sized? (::position (meta expected)))))
-                        (authored-placement expected (get objects (:parent-id shape)) shape))
+                        (authored-placement expected parent shape))
                ;; an unskewed transform carries the turn and the mirror: an
                ;; expected rotation and flips match when they decompose it,
                ;; whichever rotation and flips the shape stores for it
@@ -199,7 +205,10 @@
                               (update :rotation + 180))
                           expected)]
            (and (if placed
-                  (gsh/close-attrs? :points (:points shape) (:points placed) 0.01)
+                  ;; a size the layout gives keeps the first corner
+                  (if (seq sized)
+                    (gsh/close-attrs? :points [(first (:points shape))] [(first (:points placed))] 0.01)
+                    (gsh/close-attrs? :points (:points shape) (:points placed) 0.01))
                   true)
                 (if (some? oriented) oriented true)
                 (every? (fn [[key value]]
@@ -343,7 +352,10 @@
                 (or (contains? groups :geometry-group) (contains? groups :swap-group) (nil? main))
                 groups
 
-                (nil? (:shape-ref parent))
+                ;; a layout places the shape, so only its size and orientation can be its own
+                (or (nil? (:shape-ref parent))
+                    (and (ctl/any-layout-immediate-child? after shape)
+                         (not (ctl/position-absolute? shape))))
                 (kept-orientation groups shape)
 
                 (or (nil? main-parent)
@@ -369,9 +381,12 @@
                              parent (in-orientation main-parent parent))]
               (cond-> groups
                 (and main
-                     (nil? (:shape-ref parent))
+                     (or (nil? (:shape-ref parent))
+                         ;; a layout places the shape and gives it the sizes it owns
+                         (and (ctl/any-layout-immediate-child? after shape)
+                              (not (ctl/position-absolute? shape))))
                      (not (contains? groups :geometry-group))
-                     (not (same-value? shape :geometry-group expected)))
+                     (not (same-value? shape :geometry-group expected after)))
                 (assoc :geometry-group (author-geometry shape nil)))))
           (visit [result id]
             (let [shape (get after id)
@@ -579,8 +594,9 @@
   topmost resized ancestor of the head: a sync resizes only a copy shape
   without authored geometry."
   [model before after]
-  (let [sized-alike? #(and (mth/close? (:width %1) (:width %2))
-                           (mth/close? (:height %1) (:height %2)))
+  (let [sized-alike? #(let [a (geom/boxed %1) b (geom/boxed %2)]
+                        (and (mth/close? (:width a) (:width b))
+                             (mth/close? (:height a) (:height b))))
         ;; whether `id` keeps its parent and has another size in `after`
         resized?     (fn [id]
                        (let [old (get before id) shape (get after id)]

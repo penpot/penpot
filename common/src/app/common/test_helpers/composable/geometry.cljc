@@ -112,18 +112,28 @@
         mirror?   #(not= (boolean (:flip-x %)) (boolean (:flip-y %)))]
     (mod (if (and (mirror? flips') (or (= sign -1) (not (mirror? values)))) (- turn) turn) 360)))
 
+(defn boxed
+  "`shape` with the box of its selrect when it has none of its own, as a bool
+   or a path keeps its geometry in its selrect and points only."
+  [shape]
+  (if (and (map? shape) (nil? (:width shape)) (:selrect shape))
+    (merge shape (select-keys (:selrect shape) [:x :y :width :height]))
+    shape))
+
 (defn child-placement
   "Place a main child against its expected copy parent. Only lower-level
    constraint and matrix math is shared with production, not sync code."
   [main main-parent parent objects]
-  (let [resized (if (and (mth/close? (:width main-parent) (:width parent) 0.01)
-                         (mth/close? (:height main-parent) (:height parent) 0.01))
+  (let [main-box (boxed main-parent)
+        box      (boxed parent)
+        resized (if (and (mth/close? (:width main-box) (:width box) 0.01)
+                         (mth/close? (:height main-box) (:height box) 0.01))
                   objects
                   ;; a layout owns a filling or hugging parent's size and would drop
                   ;; the resize, so the parent takes it as a fixed size
                   (let [tree (gm/set-objects-modifiers
                               {(:id main-parent)
-                               {:modifiers (ctm/change-size main-parent (:width parent) (:height parent))}}
+                               {:modifiers (ctm/change-size main-parent (:width box) (:height box))}}
                               (update objects (:id main-parent) assoc
                                       :layout-item-h-sizing :fix :layout-item-v-sizing :fix))]
                     (reduce-kv (fn [objects id {:keys [modifiers]}]

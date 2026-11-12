@@ -118,7 +118,9 @@
   "Matrix coefficients have no pixel unit. Compare their effect over the
    shape's local bounds. Keep the inputs for paired derived-axis comparison."
   [shape matrix derived]
-  (let [bounds (select-keys shape [:width :height])
+  (let [;; a bool or path has its size in its selrect only
+        bounds {:width (or (:width shape) (get-in shape [:selrect :width]) 0)
+                :height (or (:height shape) (get-in shape [:selrect :height]) 0)}
         half-width (/ (:width bounds) 2)
         half-height (/ (:height bounds) 2)]
     (with-meta
@@ -153,6 +155,11 @@
        node))
    content))
 
+;; the order of a bool's corners: by position, to the hundredth of a pixel,
+;; so noise in one coordinate does not swap two corners
+(def ^:private corner-order
+  (juxt #(Math/round (* 100.0 (:x %))) #(Math/round (* 100.0 (:y %)))))
+
 (defn design-snapshot
   "Design inputs without derived placement, dimensions and bookkeeping.
    Geometry remains unrounded; equivalent? applies its tolerance directly."
@@ -172,6 +179,13 @@
                              :flip-y false)
                       (update :fixed-scroll boolean))
             (= :text (:type value)) (update :content (comp thtx/view canonical-variants))
+            ;; path segments as plain data, so geometry tolerance reaches their points
+            (and (= :path (:type value)) (some? (:content value))) (update :content #(into [] %))
+            ;; a bool computes its segments from its children, which the design
+            ;; holds, in an order that depends on how it was computed
+            (= :bool (:type value)) (-> (dissoc :content)
+                                        ;; and its corners in their order
+                                        (update :points #(some->> % (sort-by corner-order) vec)))
             ;; the transform carries the turn, whichever rotation the shape
             ;; stores for it
             :always (dissoc :rotation))
@@ -185,8 +199,14 @@
                                      [id (-> (gsh/move shape
                                                        (gpt/negate
                                                         (or (get origins id)
-                                                            (gpt/point (get-in objects [(:parent-id shape) :x] 0)
-                                                                       (get-in objects [(:parent-id shape) :y] 0)))))
+                                                            ;; a group or bool takes its bounds from its
+                                                            ;; children, so they measure from its board
+                                                            (let [parent (get objects (:parent-id shape))
+                                                                  parent (if (#{:group :bool} (:type parent))
+                                                                           (get objects (:frame-id shape))
+                                                                           parent)]
+                                                              (gpt/point (or (:x parent) (get-in parent [:selrect :x]) 0)
+                                                                         (or (:y parent) (get-in parent [:selrect :y]) 0))))))
                                              (as-> moved (let [derived (derived-attributes objects shape)]
                                                            (assoc moved
                                                                   :transform (matrix-effect shape (:transform moved) derived)
@@ -311,7 +331,9 @@
    on the copy (`centred?`) assumed the main's size, so a derived resize keeps
    the shape's first corner, as a layout resize does."
   [objects shape expected centred?]
-  (let [derived (cond-> (derived-attributes objects shape)
+  (let [shape   (geom/boxed shape)
+        expected (geom/boxed expected)
+        derived (cond-> (derived-attributes objects shape)
                   centred? (into (constraint-derived-attributes shape)))
         width (if (contains? derived :width) (:width shape) (:width expected))
         height (if (contains? derived :height) (:height shape) (:height expected))
@@ -470,7 +492,9 @@
 (defn- geometry-differences
   ([objects shape expected] (geometry-differences objects shape expected shape))
   ([objects shape expected ownership]
-   (let [rotation     (or (:rotation shape) 0)
+   (let [shape        (geom/boxed shape)
+         expected     (geom/boxed expected)
+         rotation     (or (:rotation shape) 0)
          exp-rotation (or (:rotation expected) 0)
          ;; Under one flip, either order of turn and flip stores the opposite turn.
          mirrored     (not= (boolean (:flip-x shape)) (boolean (:flip-y shape)))
@@ -482,6 +506,7 @@
          width-owned  (contains? derived :width)
          height-owned (contains? derived :height)
          ;; Both flags and a half turn decompose the transform neither does.
+         same-corners? (gsh/close-attrs? :points (:points shape) (:points expected) 0.01)
          both-flipped (and (not= (boolean (:flip-x shape)) (boolean (:flip-x expected)))
                            (not= (boolean (:flip-y shape)) (boolean (:flip-y expected)))
                            (geom/decomposes? shape))]
@@ -493,15 +518,23 @@
                 (and mirrored (same-turn? rotation (- exp-rotation)))
                 (geom/decomposes? shape)
                 (gsh/close-attrs? :points (:points shape) (:points expected) 0.01))) (conj :rotation)
-       (and (not both-flipped) (not= (boolean (:flip-x shape)) (boolean (:flip-x expected)))) (conj :flip-x)
-       (and (not both-flipped) (not= (boolean (:flip-y shape)) (boolean (:flip-y expected)))) (conj :flip-y)
+       ;; ordered corners that match fix the transform, so flags that decompose
+       ;; it store the same transform otherwise
+       (and (not both-flipped) (not= (boolean (:flip-x shape)) (boolean (:flip-x expected)))
+            (not (and same-corners? (geom/decomposes? shape)))) (conj :flip-x)
+       (and (not both-flipped) (not= (boolean (:flip-y shape)) (boolean (:flip-y expected)))
+            (not (and same-corners? (geom/decomposes? shape)))) (conj :flip-y)
        (and (not width-owned) (not (mth/close? (:width shape) (:width expected) 0.01))) (conj :width)
        (and (not height-owned) (not (mth/close? (:height shape) (:height expected) 0.01))) (conj :height)
        (and (not layout-child) auto-height
             (not (gsh/close-attrs? :points [(first (:points shape))]
                                    [(first (:points expected))] 0.01))) (conj :position)
        (and (not layout-child) (not auto-width) (not auto-height)
-            (not (gsh/close-attrs? :points (:points shape) (:points expected) 0.01))) (conj :points)))))
+            ;; a bool computes its corners from its segments, in their order
+            (not (if (= :bool (:type shape))
+                   (gsh/close-attrs? :points (sort-by corner-order (:points shape))
+                                     (sort-by corner-order (:points expected)) 0.01)
+                   (gsh/close-attrs? :points (:points shape) (:points expected) 0.01)))) (conj :points)))))
 
 (defn check-requested-geometry
   [objects actual expected]

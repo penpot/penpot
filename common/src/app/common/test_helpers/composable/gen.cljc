@@ -10,6 +10,7 @@
    Traces contain tree paths, never random UUIDs, and can be replayed."
   (:refer-clojure :exclude [flush])
   (:require
+   [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
@@ -26,6 +27,7 @@
    [app.common.test-helpers.composable.comp.nodes :as n]
    [app.common.test-helpers.composable.comp.runner :as r]
    [app.common.test-helpers.composable.comp.setups :as setup]
+   [app.common.test-helpers.composable.comp.undo-check :as uc]
    [app.common.test-helpers.composable.core :as tm]
    [app.common.test-helpers.composable.grid :as grid]
    [app.common.test-helpers.composable.oracle :as oracle]
@@ -41,6 +43,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [clojure.string :as str]
    [clojure.test.check.generators :as gen]))
@@ -374,11 +377,17 @@
                                                 1 (and (nil? (:shape-ref shape))
                                                        (not (ctk/main-instance? shape))
                                                        (some ctk/main-instance? (cfh/get-parents objects (:id shape))))
-                                                2 (and (:shape-ref shape) (nil? (:component-id shape)))
+                                                ;; the model places the children of a group in a
+                                                ;; copy only as far as the group's board lets it
+                                                2 (and (:shape-ref shape) (nil? (:component-id shape))
+                                                       (not (#{:group :bool} (:type (get objects (:parent-id shape))))))
                                                 3 (and (copy-head shape) (not (top-copy shape)))
                                                 4 (top-copy shape)))
                               (:text :text-style) (= :text (:type shape))
                               :add-child (ctk/main-instance? shape)
+                              ;; a shape a main holds, other than its root
+                              :structure (and (nil? (:shape-ref shape)) (not (ctk/main-instance? shape))
+                                              (some ctk/main-instance? (cfh/get-parents objects (:id shape))))
                               :remove-child (and (= :rect (:type shape)) (nil? (:shape-ref shape))
                                                  (some ctk/main-instance? (cfh/get-parents-with-self objects (:id shape))))
                               :duplicate (and (top-copy shape) (< (count objects) (get situation :shape-budget 120))
@@ -593,6 +602,37 @@
   [{:align-self :end} {:justify-self :center} {:align-self :center :justify-self :end}
    {:align-self :auto :justify-self :auto}])
 
+(def structure-edits
+  "Structure actions: the action and, for a bool, its type."
+  [[:group] [:mask] [:ungroup] [:unmask] [:bool :union] [:bool :difference]
+   [:bool :intersection] [:bool :exclude] [:path]])
+
+(defn- structure-edit
+  "The structure edit `property` names on the shape of `entry`, and the
+   shapes it takes: with an odd `value`, its next sibling too when that is
+   one a main holds as well. Nil when the shape cannot take it."
+  [objects entry eligible property value]
+  (let [[action bool-type] (nth structure-edits (mod (or property 0) (count structure-edits)))
+        shape   (:shape entry)
+        parent  (get objects (:parent-id shape))
+        sibling (let [shapes (:shapes parent)
+                      index  (d/index-of (vec shapes) (:id shape))]
+                  (get shapes (inc index)))
+        pair    (cond-> [(:id shape)]
+                  (and (odd? (or value 0)) sibling (contains? eligible sibling)) (conj sibling))
+        ;; removing a shape a main holds leaves its copies referring to it
+        ;; until sync, so no edit removes one: no ungroup, and no grouping
+        ;; that takes every child out of a group
+        empties? (and (#{:group :bool} (:type parent)) (= (set pair) (set (:shapes parent))))
+        targets (case action
+                  (:group :mask) (when-not empties? pair)
+                  :bool    (when (not-any? #(= :text (:type (get objects %))) pair) pair)
+                  :ungroup nil
+                  :unmask  (when (:masked-group shape) [(:id shape)])
+                  :path    (when (#{:rect :circle} (:type shape)) [(:id shape)]))]
+    (when targets
+      {:action action :targets targets :bool-type bool-type})))
+
 (def grid-track-edits
   "Track editor actions: the action and the kind of track it edits."
   [[:add :row] [:add :column] [:remove :row] [:remove :column] [:resize :row] [:resize :column]
@@ -662,6 +702,14 @@
                         (when-let [edit (grid-track-edit shape property value scope)]
                           (when (or (nil? (:shape-ref shape)) (= :resize (:action edit)))
                             (assoc entry :grid-track edit)))))
+                (= :structure kind)
+                ((fn [items]
+                   (let [objects  (:objects (thf/current-page (tm/file situation)))
+                         eligible (into #{} (map (comp :id :shape)) items)]
+                     (keep (fn [entry]
+                             (when-let [edit (structure-edit objects entry eligible property value)]
+                               (assoc entry :structure edit)))
+                           items))))
                 (= :grid-cell kind)
                 (filter #(seq (get-in % [:shape :layout-grid-cells])))
                 (= kind :style)
@@ -723,6 +771,8 @@
                (case kind
                  (:edit :style) (n/change-property target property value)
                  :grid-direction (n/edit-grid target :direction (nth [:row :column] (mod (or (nth tuple 3 nil) 0) 2)))
+                 :structure (let [{:keys [action targets bool-type]} (:structure selected)]
+                              (n/edit-structure action (mapv constantly targets) :bool-type bool-type))
                  :grid-track (n/edit-grid-track target (get-in selected [:grid-track :action])
                                                 (get-in selected [:grid-track :value]))
                  :grid-cell (let [cells (grid/get-cells (:shape selected))
@@ -825,9 +875,10 @@
   [before after journal]
   (let [undone (r/step (restore-references after (:reference-before journal)) (n/undo))
         redone (r/step (restore-references undone (:reference-after journal)) (n/redo))]
-    (when-not (= before (oracle/history-snapshot undone))
+    ;; geometry a group derives from its children may differ in its last bits
+    (when-not (uc/same-state? before (oracle/history-snapshot undone))
       (oracle/fail :I7 {:phase :undo :diff (thn/diff before (oracle/history-snapshot undone))}))
-    (when-not (= (oracle/history-snapshot after) (oracle/history-snapshot redone))
+    (when-not (uc/same-state? (oracle/history-snapshot after) (oracle/history-snapshot redone))
       (oracle/fail :I7 {:phase :redo}))))
 
 (defn- synchronizable-components
@@ -1004,8 +1055,14 @@
             placed? (not (contains? (oracle/derived-attributes objects shape) :x))
             ;; a copy parent makes the shape's place an override
             position? (and (:shape-ref parent) placed?)
-            ;; a parent board's later resizes move and size the shape through its constraints
-            origin (when (and parent (not (cfh/root? parent)) placed?) parent)
+            ;; a parent board's later resizes move and size the shape through its
+            ;; constraints; a group or bool takes its bounds from its children, so its
+            ;; children follow the board around it
+            board  (if (#{:group :bool} (:type parent))
+                     (let [frame (get objects (:frame-id shape))]
+                       (when-not (ctl/any-layout? frame) frame))
+                     parent)
+            origin (when (and board (not (cfh/root? board)) placed?) board)
             changed? (or (not (shadow/same-value? shape-after group (shadow/values shape group)))
                          ;; a stored turn may read the same under one flip while the transform turns
                          (not (gmt/close? (or (:transform shape) (gmt/matrix)) (or (:transform shape-after) (gmt/matrix))))
@@ -1208,11 +1265,11 @@
     (when-not (= depth (count undo))
       (oracle/fail :I7 {:phase :history-depth :runner depth :model (count undo)}))
     (when-not (if (:accepted-libraries situation)
-                (= (get baseline (:id (tm/file situation)))
-                   (get (oracle/history-snapshot undone) (:id (tm/file situation))))
-                (= baseline (oracle/history-snapshot undone)))
+                (uc/same-state? (get baseline (:id (tm/file situation)))
+                                (get (oracle/history-snapshot undone) (:id (tm/file situation))))
+                (uc/same-state? baseline (oracle/history-snapshot undone)))
       (oracle/fail :I7 {:phase :sequence-undo}))
-    (when-not (= (oracle/history-snapshot situation) (oracle/history-snapshot redone))
+    (when-not (uc/same-state? (oracle/history-snapshot situation) (oracle/history-snapshot redone))
       (oracle/fail :I7 {:phase :sequence-redo}))))
 
 (defn- check-source-sequences
@@ -1353,6 +1410,10 @@
                     (conj [1 (gen/fmap (fn [index]
                                          [[:library-delete index] [:library-sync]
                                           [:library-restore index] [:library-sync]]) gen/nat)])
+                    (every? (set kinds) [:structure :add-child])
+                    (conj [6 (gen/fmap (fn [[parent index edit value]]
+                                         [[:add-child parent] [:structure index edit value]])
+                                       (gen/tuple gen/nat gen/nat (gen/choose 0 (dec (count structure-edits))) gen/nat))])
                     (contains? (set kinds) :grid-track)
                     (conj [6 (gen/fmap (fn [[index edit value scope]] [[:grid-track index edit value scope]])
                                        (gen/tuple gen/nat (gen/choose 0 (dec (count grid-track-edits))) gen/nat gen/nat))])
@@ -1473,6 +1534,24 @@
                                :rich-variants true :text true :text-styles true :layout layout
                                :layout-copies true :layout-children layout-children
                                :grid-square (= grid :square) :grid-empty (= grid :empty)}]
+     :ops ops}))
+
+(def shape-structure-kinds (into swap-kinds [:structure]))
+
+(def shape-structure-coverage-kinds
+  "The kinds the shape structure programs must cover: the structure edits,
+   the children they act on and the steps that carry them into copies."
+  [:structure :add-child :edit :update-main :sync :undo :redo])
+
+(def shape-structure-program-gen
+  "Histories that group, mask, combine and convert the shapes mains hold."
+  (gen/let [components (gen/choose 2 3)
+            depth (gen/choose 0 2)
+            layout (gen/elements [nil :flex :grid])
+            layout-children gen/boolean
+            ops (operation-gen shape-structure-kinds)]
+    {:world [components depth {:variants true :rich-variants true :text true :layout layout
+                               :layout-copies true :layout-children layout-children}]
      :ops ops}))
 
 (def grid-kinds (into swap-kinds [:grid-track]))

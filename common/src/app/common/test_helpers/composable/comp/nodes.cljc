@@ -19,7 +19,9 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.common.logic.bool :as clb]
    [app.common.logic.duplicate :as cld]
+   [app.common.logic.groups :as clg]
    [app.common.logic.instances :as cli]
    [app.common.logic.libraries :as cll]
    [app.common.logic.placement :as clp]
@@ -41,6 +43,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.path :as cpath]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.text :as txt]
@@ -476,10 +479,12 @@
    (let [objects   (:objects page)
          tree      (gm/set-objects-modifiers {(:id shape) {:modifiers modifiers}} objects)
          transform (clp/modifiers-transform tree)
-         changes   (cls/generate-update-shapes
-                    (pcb/empty-changes nil (:id page)) (keys tree) transform objects
-                    {:ignore-tree (clp/calculate-ignore-tree objects (keys tree) transform #{(:id shape)})
-                     :attrs clp/transform-attrs})]
+         changes   (-> (cls/generate-update-shapes
+                        (pcb/empty-changes nil (:id page)) (keys tree) transform objects
+                        {:ignore-tree (clp/calculate-ignore-tree objects (keys tree) transform #{(:id shape)})
+                         :attrs clp/transform-attrs})
+                       ;; as the frontend's transform, the groups around the shapes take their new bounds
+                       (pcb/resize-parents (keys tree)))]
      (cond-> changes
        file (cll/generate-sync-transformed-placement file libraries page objects (keys tree))))))
 
@@ -2256,6 +2261,62 @@
    the shape labelled `parent`."
   [parent new-label & {:as shape-params}]
   (tm/assign-id (->AddChild parent new-label shape-params)))
+
+
+;; ---------------------------------------------------------------------------
+;; edit-structure — group, ungroup, mask, unmask, combine or convert shapes
+;;
+;; The structure actions on the shapes labelled `targets`: `:group` and
+;; `:mask` put them in a new group, `:ungroup` and `:unmask` take apart or
+;; unmask the group `(first targets)`, `:bool` combines them by `:bool-type`
+;; of `params`, and `:path` converts them to paths, through the changes of
+;; `app.common.logic.groups` and `app.common.logic.bool` the workspace events
+;; commit, and the path conversion of the frontend without the WASM
+;; renderer. A group, mask or ungroup reflows the layouts of the parents it
+;; changes, as their events do.
+;; ---------------------------------------------------------------------------
+
+(defrecord EditStructure [action targets params]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [the-file (tm/file situation)
+          page     (thf/current-page the-file)
+          objects  (:objects page)
+          ids      (mapv #(tm/target-shape-id situation %) targets)
+          parents  (into #{} (keep #(:parent-id (get objects %))) ids)
+          changes
+          (case action
+            :group   (let [shapes (clg/shapes-for-group-or-mask objects ids)]
+                       (second (clg/prepare-create-group (pcb/empty-changes nil (:id page)) (uuid/next) objects
+                                                         (:id page) shapes "Group" false)))
+            :mask    (let [shapes (clg/shapes-for-group-or-mask objects ids)]
+                       (second (clg/generate-mask-changes nil (uuid/next) (:id page) objects shapes)))
+            :ungroup (clg/generate-ungroup-changes nil (:id page) objects (clg/ungroup-ids objects ids))
+            :unmask  (clg/generate-unmask-changes nil (:id page) objects ids)
+            :bool    (second (clb/generate-create-bool nil (:id page) objects ids (:bool-type params) nil))
+            :path    (-> (pcb/empty-changes nil (:id page))
+                         (pcb/with-objects objects)
+                         (pcb/update-shapes ids cpath/convert-to-path {:with-objects? true})
+                         (pcb/remove-objects (into #{} (mapcat #(cfh/get-children-ids objects %)) ids))))
+          ;; the action's changes on the page, applied before the reflow reads them;
+          ;; as the workspace events, only a group, mask or ungroup updates the layouts
+          changes  (cond-> (-> (pcb/empty-changes nil (:id page))
+                               (pcb/with-objects objects)
+                               (pcb/concat-changes changes)
+                               (pcb/apply-changes-local))
+                     (#{:group :mask :ungroup} action) (with-layouts-reflow parents))
+          file'    (thf/apply-changes the-file changes)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes changes)
+          (tm/record-application this {:action action :targets targets :params params})))))
+
+(defn edit-structure
+  [action targets & {:as params}]
+  (tm/assign-id (->EditStructure action targets params)))
 
 
 ;; ---------------------------------------------------------------------------

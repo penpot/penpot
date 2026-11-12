@@ -2353,6 +2353,34 @@
     (t/is (empty? (cg/coverage-errors @coverage cg/variant-coverage-kinds))
           (pr-str (cg/coverage-errors @coverage cg/variant-coverage-kinds)))))
 
+(t/deftest unmasking-in-a-flex-main-leaves-its-layout-as-the-unmask-event-does
+  (t/is (map? (cg/run {:world [2 0 {:variants false :rich-variants false :text true :layout :flex
+                                    :layout-copies false :layout-children true}]
+                       :ops [[:structure 11 1 13] [:structure 0 3]]}))))
+
+(t/deftest a-moved-copy-that-hugs-its-grid-keeps-its-first-corner
+  (t/is (map? (cg/run {:world [1 1 {:variants false :text-styles false :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square true :rich-variants false
+                                    :layout-children false :grid-empty false :layout-copies false :text false}]
+                       :ops [[:transform 0 0 0 13] [:style 0 29 14]]}))))
+
+(t/deftest turning-a-copy-whose-main-holds-a-bool-keeps-its-corners
+  (t/is (map? (cg/run {:world [2 0 {:variants true :rich-variants true :text true :layout nil
+                                    :layout-copies true :layout-children false}]
+                       :ops [[:delete 0] [:restore 0] [:add-child 0] [:structure 0 4 0] [:rotate 0 0 0 0]]}))))
+
+(t/deftest random-shape-structure-compositions
+  (let [coverage (atom {})
+        failure (atom nil)]
+    (smt/check!
+     (smt/for [program cg/shape-structure-program-gen]
+       (cg/check-program program coverage failure))
+     :max-size 30
+     :default-num coverage-programs)
+    (println "Shape structure operation coverage:" (pr-str @coverage))
+    (t/is (empty? (cg/coverage-errors @coverage cg/shape-structure-coverage-kinds))
+          (pr-str (cg/coverage-errors @coverage cg/shape-structure-coverage-kinds)))))
+
 (t/deftest random-grid-compositions
   (let [coverage (atom {})
         failure (atom nil)]
