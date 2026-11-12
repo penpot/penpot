@@ -166,6 +166,12 @@
     (t/is (mth/close? 5 (:column-gap result)))
     (t/is (mth/close? 7 (:row-gap result)))))
 
+(t/deftest grid-layout-data-takes-an-auto-track-without-a-value
+  ;; the track editor stores an auto track with no value
+  (let [frame  (make-grid-frame :layout-grid-rows [{:type :auto :value nil}])
+        result (gld/calc-layout-data frame (bounds-for frame) [] {} {})]
+    (t/is (= 1 (count (:row-tracks result))))))
+
 (t/deftest grid-column-gap-space-between
   (t/testing "justify-content :space-between increases column-gap correctly"
     ;; free = 100; num-cols = 2; formula: 100 / (2-1) = 100
