@@ -114,7 +114,7 @@
   (ptk/reify ::finalize
     ptk/UpdateEvent
     (update [_ state]
-      (dissoc state :viewer :viewer-sync-frame-id))
+      (dissoc state :viewer :viewer-sync-frame-id :viewer-missed-revn))
     ptk/EffectEvent
     (effect [_ _ _]
       (cf/set-current-share-id! nil))))
@@ -490,6 +490,15 @@
 (defn- handle-file-change
   [{:keys [file-id revn vern changes]}]
   (ptk/reify ::handle-file-change
+    ptk/UpdateEvent
+    (update [_ state]
+      ;; The bundle is still loading: it may have been built before this
+      ;; change was saved. Remember the newest revn seen to compare it
+      ;; with the bundle once it arrives (see `check-missed-changes`).
+      (if (and (nil? (dm/get-in state [:viewer :file])) (int? revn))
+        (update state :viewer-missed-revn (fnil max 0) revn)
+        state))
+
     ptk/WatchEvent
     (watch [_ state _]
       (let [file (dm/get-in state [:viewer :file])]
@@ -521,6 +530,21 @@
                 (if (some? file')
                   (rx/of (file-updated file'))
                   (rx/of refresh-requested))))))))))
+
+(def ^:private check-missed-changes
+  ;; Run after the bundle loads: the changes saved while it was loading
+  ;; were dropped, so fetch the file again if one is newer than it.
+  (ptk/reify ::check-missed-changes
+    ptk/UpdateEvent
+    (update [_ state]
+      (dissoc state :viewer-missed-revn))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [missed (:viewer-missed-revn state)
+            revn   (dm/get-in state [:viewer :file :revn])]
+        (when (and (int? missed) (int? revn) (> missed revn))
+          (rx/of refresh-requested))))))
 
 (defn- handle-file-restored
   [{:keys [file-id vern]}]
@@ -575,6 +599,10 @@
                     (rx/mapcat (fn [_]
                                  (rx/of (dws/send subscribe)
                                         socket-reopened))))
+
+               (->> stream
+                    (rx/filter (ptk/type? ::bundle-fetched))
+                    (rx/map (constantly check-missed-changes)))
 
                (->> stream
                     (rx/filter (ptk/type? ::dws/message))

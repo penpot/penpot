@@ -382,3 +382,31 @@
                   (assoc-in [:viewer-local :zoom-type] :fit))
         types (mapv ptk/type (remove fn? (watch-events @#'dv/after-file-updated state)))]
     (t/is (some #{::dv/zoom-to-fit} types))))
+
+;; --- Changes saved while the bundle loads
+
+(t/deftest changes-before-the-bundle-are-remembered
+  (let [change (fn [revn] (#'dv/handle-file-change {:file-id file-id :revn revn :vern 0 :changes []}))
+        state  (-> {}
+                   (as-> s (ptk/update (change 7) s))
+                   (as-> s (ptk/update (change 6) s)))]
+    (t/is (= 7 (:viewer-missed-revn state)))
+
+    (t/testing "nothing is remembered once the file is loaded"
+      (let [loaded (live-state (make-file {:frames-1 [] :frames-2 []}) 0)]
+        (t/is (nil? (:viewer-missed-revn (ptk/update (change 6) loaded))))))))
+
+(t/deftest bundle-older-than-a-missed-change-is-fetched-again
+  (let [state (live-state (make-file {:revn 5 :frames-1 [] :frames-2 []}) 0)
+        check @#'dv/check-missed-changes]
+    (t/testing "a change newer than the bundle refreshes the file"
+      (let [events (watch-events check (assoc state :viewer-missed-revn 6))]
+        (t/is (= 1 (count events)))
+        (t/is (refresh-requested? (first events)))))
+
+    (t/testing "changes already in the bundle are ignored"
+      (t/is (empty? (watch-events check (assoc state :viewer-missed-revn 5)))))
+
+    (t/testing "the remembered revn is cleared"
+      (t/is (nil? (:viewer-missed-revn
+                   (ptk/update check (assoc state :viewer-missed-revn 6))))))))
