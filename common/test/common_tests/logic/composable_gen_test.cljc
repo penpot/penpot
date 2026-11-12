@@ -2394,6 +2394,14 @@
                        :ops [[:delete] [:restore] [:combine 21] [:swap 24] [:switch 27] [:rotate 14] [:switch 11]
                              [:combine 11] [:switch 6] [:switch 5] [:edit 16] [:edit 0 0 0 1] [:update-main 24]]}))))
 
+(t/deftest switching-a-copy-takes-the-swap-of-a-nested-board-from-its-main
+  (t/is (map? (cg/run {:world [2 2 {:variants true :text-styles true :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:delete 0 0 0 0] [:combine 6 0 0 0] [:add-variant 0] [:switch 1] [:add-variant 9 0 0 0]
+                             [:combine 5] [:switch 0] [:variant-property 0 0 0 0] [:switch 1] [:combine 0] [:switch 4]
+                             [:combine 0] [:switch 0]]}))))
+
 (t/deftest random-shape-structure-compositions
   (let [coverage (atom {})
         failure (atom nil)]

@@ -475,7 +475,9 @@
   `position` is that shape, found with context, or nil when it cannot be
   reached. The head refers to it, and is swapped while its component differs
   from the one of `position`; otherwise it is a plain copy of `position`, and
-  its descendants refer to the descendants of `position`."
+  its descendants refer to the descendants of `position`. A swapped
+  descendant that comes to refer to a shape of its own component is a plain
+  copy of it."
   [file libraries objects head ref-id position]
   (let [swapped? (or (nil? position)
                      (not= (:component-id position) (:component-id head))
@@ -485,7 +487,12 @@
                          (keep #(:shape-ref (get objects %)))
                          (cfh/get-children-ids objects (:id head))))
         ref-map  (when (seq main-ids)
-                   (descendant-refs file libraries position main-ids))]
+                   (descendant-refs file libraries position main-ids))
+        ;; the shapes of the subtree of `position`
+        position-objects (:objects (:container (meta position)))
+        same-component?  (fn [shape ref]
+                           (and (= (:component-id ref) (:component-id shape))
+                                (= (:component-file ref) (:component-file shape))))]
     (fn [shape]
       (if (= (:id shape) (:id head))
         (if swapped?
@@ -493,7 +500,14 @@
               (update :touched (fnil conj #{}) :swap-group))
           (-> (assoc shape :shape-ref ref-id)
               (ctk/remove-swap-group)))
-        (d/update-when shape :shape-ref #(get ref-map % %))))))
+        (let [shape-ref (get ref-map (:shape-ref shape))]
+          (cond-> shape
+            (some? shape-ref)
+            (assoc :shape-ref shape-ref)
+
+            (and (some? shape-ref) (ctk/swapped? shape)
+                 (same-component? shape (get position-objects shape-ref)))
+            (ctk/remove-swap-group)))))))
 
 (defn ref-outside-near-main?
   "Whether `shape` refers to a main shape that is not a child of the main
