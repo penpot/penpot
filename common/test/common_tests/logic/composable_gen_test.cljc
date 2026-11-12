@@ -2497,6 +2497,11 @@
                                     :layout-copies false :layout-children false}]
                        :ops [[:add-child 1] [:structure 2] [:transform 2 2 0 2]]}))))
 
+(t/deftest undoing-an-update-main-that-turns-a-group-gives-the-group-its-size-back
+  (t/is (map? (cg/run {:world [2 0 {:variants true :rich-variants true :text false :layout :flex
+                                    :layout-copies false :layout-children true}]
+                       :ops [[:rotate] [:add-child] [:structure 17] [:update-main]]}))))
+
 (t/deftest settling-a-bool-in-a-grid-copy-twice-keeps-its-shapes-in-place
   (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies true :layout-children true}]
