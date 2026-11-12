@@ -2450,6 +2450,28 @@
                        :ops [[:add-variant] [:variant-property 0 9 25] [:make-variant 11] [:resize 19]
                              [:add-child] [:style 19 9 1] [:switch 9]]}))))
 
+(t/deftest undoing-an-edit-leaves-the-copies-an-undone-creation-stored
+  (t/is (map? (cg/run {:world [1 2 {:variants false :text-styles false :scale false :layout nil :variant-diff false
+                                    :grid-square false :copies 5 :rich-variants false :layout-children false
+                                    :grid-empty false :layout-copies false :text false}]
+                       :ops [[:make-variant] [:edit 0 0 0 :copy-head] [:make-variant 1] [:undo] [:undo]]}))))
+
+(t/deftest a-token-edit-sets-the-corners-of-a-flipped-copy-as-it-shows-them
+  (t/is (map? (cg/run {:world [1 0 {:tokens true :variants true :rich-variants false :text false :layout :flex
+                                    :layout-copies false}]
+                       :ops [[:transform 0 10 0 8] [:apply-token 12 11] [:style 12 3 0 1] [:token-value 0 2]]}))))
+
+(t/deftest switching-a-copy-carries-the-radius-tokens-it-applied
+  (t/is (map? (cg/run {:world [1 0 {:tokens true :variants true :rich-variants false :text false :layout :flex
+                                    :layout-copies false}]
+                       :ops [[:apply-token 11] [:switch 7]]}))))
+
+(t/deftest switching-a-copy-carries-each-corner-token-with-its-radius
+  (t/is (map? (cg/run {:world [1 0 {:tokens true :variants true :rich-variants false :text false :layout :grid
+                                    :layout-copies false}]
+                       :ops [[:remove-child 1] [:delete] [:apply-token 0 1] [:style 0 3 0 1] [:apply-token 1]
+                             [:token-value 0 1] [:switch]]}))))
+
 (t/deftest settling-a-bool-in-a-grid-copy-twice-keeps-its-shapes-in-place
   (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies true :layout-children true}]
@@ -2502,6 +2524,18 @@
     (println "Grid operation coverage:" (pr-str @coverage))
     (t/is (empty? (cg/coverage-errors @coverage cg/grid-coverage-kinds))
           (pr-str (cg/coverage-errors @coverage cg/grid-coverage-kinds)))))
+
+(t/deftest random-token-compositions
+  (let [coverage (atom {})
+        failure (atom nil)]
+    (smt/check!
+     (smt/for [program cg/token-program-gen]
+       (cg/check-program program coverage failure))
+     :max-size 30
+     :default-num coverage-programs)
+    (println "Token operation coverage:" (pr-str @coverage))
+    (t/is (empty? (cg/coverage-errors @coverage cg/token-coverage-kinds))
+          (pr-str (cg/coverage-errors @coverage cg/token-coverage-kinds)))))
 
 (t/deftest random-scale-compositions
   ;; scale programs run several times longer than the others; the gates draw more

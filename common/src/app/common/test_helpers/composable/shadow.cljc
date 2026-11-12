@@ -17,7 +17,8 @@
    [app.common.test-helpers.texts :as thtx]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
-   [app.common.types.shape.layout :as ctl]))
+   [app.common.types.shape.layout :as ctl]
+   [app.common.types.shape.radius :as ctsr]))
 
 ;; This table is a specification, deliberately not ctk/sync-attrs.
 (def groups
@@ -117,7 +118,10 @@
     (= group :layout-grid-cells) {:layout-grid-cells (grid/get-cells shape)}
     (contains? text-groups group)
     {:content (:content shape)}
-    :else (into {} (map #(vector % (get shape %))) (get attributes group))))
+    :else (cond-> (into {} (map #(vector % (get shape %))) (get attributes group))
+            ;; the tokens a shape applies to its corners go with their radius
+            (= group :radius-group)
+            (assoc :applied-tokens (not-empty (select-keys (:applied-tokens shape) n/radius-attrs))))))
 
 (defn author-geometry
   "The geometry `shape` authors, with the `parent` it is placed in, which
@@ -267,11 +271,45 @@
 
 (defn edit
   [model before property value]
-  (let [after (n/set-property before property value)
+  (let [after (cond-> (n/set-property before property value)
+                ;; a radius set by hand takes off the token its corner applied
+                (contains? n/radius-attrs property) (update :applied-tokens dissoc property))
         group (get groups property)]
     (if (and (:shape-ref before) (not= (get before property) (get after property)))
       (assoc-in model [(:id before) group] (values after group))
       model)))
+
+(defn apply-token
+  "A copy shape that applies the radius token `token-name` of `value`, or
+   with a nil `value` takes it off, authors its radius when that changes
+   the tokens of its corners."
+  [model before token-name value]
+  (let [after (if (some? value)
+                (-> (reduce #(assoc %1 %2 value) before n/radius-attrs)
+                    (update :applied-tokens merge (zipmap n/radius-attrs (repeat token-name))))
+                (update before :applied-tokens #(apply dissoc % (n/token-corners before token-name))))]
+    (if (and (:shape-ref before)
+             (not= (:applied-tokens (values before :radius-group))
+                   (:applied-tokens (values after :radius-group))))
+      (assoc-in model [(:id before) :radius-group] (values after :radius-group))
+      model)))
+
+(defn edit-token-value
+  "The authored corners that apply the token `token-name` take its new
+   `value`. A token names the corners as a flipped shape shows them, so
+   they are stored mirrored."
+  [model objects token-name value]
+  (into {}
+        (map (fn [[id groups]]
+               [id (cond-> groups
+                     (:radius-group groups)
+                     (update :radius-group
+                             (fn [radius]
+                               (let [shape   (merge (select-keys (get objects id) [:type :flip-x :flip-y]) radius)
+                                     corners (n/token-corners radius token-name)]
+                                 (merge radius (select-keys (ctsr/set-radius-for-corners shape corners value)
+                                                            n/radius-attrs))))))]))
+        model))
 
 (defn clear-subtree
   [model objects root-id]
@@ -901,6 +939,11 @@
                                                      (when (and root? (= :geometry-group group)) position-orientation)
                                                      ;; an attribute the copy leaves unset carries as unset
                                                      (into {} (map #(vector % (get old %))) carried))
+                                        ;; a corner carries its token, or its lack of one, with its radius
+                                        (= group :radius-group)
+                                        (assoc :applied-tokens
+                                               (not-empty (merge (apply dissoc (:applied-tokens placed) carried)
+                                                                 (select-keys (:applied-tokens old) carried))))
                                         ;; a carried geometry sits in the new parent, whose later
                                         ;; resizes move and size it through its constraints
                                         (and (= :geometry-group group) new-parent (not root?))

@@ -281,6 +281,14 @@
                              [(:id shape) source])))]
     (shadow/settle model (all-objects situation) references synced?)))
 
+(def token-names
+  "The border radius tokens of the token programs."
+  ["radius.s" "radius.m" "radius.l"])
+
+(def token-values
+  "The first values of `token-names`, and the values a token edit gives."
+  [4 12 24 8 16 32])
+
 (defn world
   [[components depth opts]]
   (thi/reset-idmap!)
@@ -335,6 +343,7 @@
     (and (= :grid (:layout opts)) (:grid-empty opts)) (with-empty-grid "random-0")
     ;; Files open with their layouts already computed.
     (:layout opts) (r/settle-layout)
+    (:tokens opts) (as-> s (tm/apply-to (n/add-tokens (mapv vector token-names token-values)) s))
     (:library opts) (with-library opts)
     (:stale-libraries opts) (cf/freeze-libraries)
     (:rich-variants opts) (as-> s (assoc s :shape-budget (+ 80 (count (tree s)))))
@@ -386,6 +395,9 @@
                                                 4 (top-copy shape)))
                               (:text :text-style) (= :text (:type shape))
                               :add-child (ctk/main-instance? shape)
+                              :apply-token (and (#{:rect :frame} (:type shape))
+                                                (not (ctk/is-variant-container? shape)))
+                              :unapply-token (some #(get-in shape [:applied-tokens %]) n/radius-attrs)
                               ;; a shape a main holds, other than its root
                               :structure (and (nil? (:shape-ref shape)) (not (ctk/main-instance? shape))
                                               (some ctk/main-instance? (cfh/get-parents objects (:id shape))))
@@ -750,6 +762,17 @@
                                                                       (tm/file situation))
                                                                     (get-in selected [:shape :id]))
                                            (or property 0) (or value 0) (or scope 0)))
+        token-name (case kind
+                     :unapply-token (when selected
+                                      (let [names (->> (select-keys (get-in selected [:shape :applied-tokens]) n/radius-attrs)
+                                                       vals distinct sort vec)]
+                                        (nth names (mod (or property 0) (count names)))))
+                     (:apply-token :token-value) (nth token-names (mod (or property 0) (count token-names)))
+                     nil)
+        token-value (case kind
+                      :apply-token (n/token-value (tm/file situation) token-name)
+                      :token-value (nth token-values (mod (or value 0) (count token-values)))
+                      nil)
         property (if (= kind :style) style-property
                      (nth [:fills :opacity :name] (mod (or property 0) 3)))
         value (if (= kind :style) (nth style-values (mod (or value 0) (count style-values)))
@@ -767,6 +790,14 @@
              :library-accept (when selected (n/sync-from-library (:source-id selected)))
              :library-undo (when selected (n/undo))
              :library-redo (when selected (n/redo))
+             ;; a token edit does not reach the shapes deleted components store
+             ;; (F506), so none is made while one of them applies the token
+             :token-value (when-not (some #(seq (n/token-corners % token-name))
+                                          (for [component (vals (get-in (tm/file situation) [:data :components]))
+                                                :when (:deleted component)
+                                                shape (vals (:objects component))]
+                                            shape))
+                            (n/edit-token-value token-name token-value))
              (when target
                (case kind
                  (:edit :style) (n/change-property target property value)
@@ -816,6 +847,8 @@
                                   {:typography {:id (thi/id :generated-typography) :file-id file-id}})))
                  :add-child (n/add-child target (keyword (str "generated-" (count (:applied situation))))
                                          :width 20 :height 20 :x 10 :y 10)
+                 :apply-token (n/apply-token target token-name token-value)
+                 :unapply-token (n/unapply-token target token-name)
                  :remove-child (n/remove-child target)
                  :duplicate (n/duplicate target)
                  :nest (n/nest-copy target (constantly (get-in selected [:parent :id])))
@@ -830,7 +863,7 @@
                  (:combine :library-combine) (n/combine-as-variants [target (constantly (get-in selected [:with :shape :id]))]))))]
     {:op op :library-id (:library-id selected) :shape (:shape selected)
      :destination (:shape (:destination selected)) :property property :value value :set-edit set-edit
-     :with (:shape (:with selected))
+     :with (:shape (:with selected)) :token-name token-name :token-value token-value
      :opportunities (if (seq items) (count items) (if (or op (= kind :sync)) 1 0))
      :trace (cond-> {:kind kind :tuple tuple
                      :status (if (or op (= kind :sync)) :executed :skip)}
@@ -840,6 +873,7 @@
               (= kind :switch) (assoc :property-pos (:variant-pos selected))
               set-edit (assoc :edit (:edit set-edit))
               (:with selected) (assoc :with (get-in selected [:with :path]))
+              token-name (assoc :token token-name)
               (and (nil? op) (not= kind :sync))
               (assoc :reason (str "No eligible " (name kind) " target")))}))
 
@@ -919,7 +953,8 @@
         all (into (set (synchronizable-components situation)) (r/pending-components situation))
         full-before (r/settle situation all)
         full (:situation (cf/sync-world settled all))
-        opts {:free-head-placement false}
+        ;; an undone creation keeps its stored copies as they were when it was undone
+        opts {:free-head-placement false :unreferenced-deleted-components false}
         settled-design (oracle/canonical settled opts)
         full-before-design (oracle/canonical full-before opts)
         full-design (oracle/canonical full opts)
@@ -1002,7 +1037,7 @@
   (if library-id (get (cf/all-files situation) library-id) (tm/file situation)))
 
 (defn- update-model
-  [model before after {:keys [shape property value op library-id]} kind]
+  [model before after {:keys [shape property value op library-id token-name token-value]} kind]
   (let [objects (all-objects before)
         id (:id shape)
         kind (get local-variant-kind kind kind)]
@@ -1039,6 +1074,9 @@
       (:grid-cell :grid-direction) (grid/edit model shape (:action op) (:value op))
       :grid-track (grid/edit-tracks model shape (:action op) (:value op))
       :reset (shadow/clear-subtree model objects id)
+      :apply-token (shadow/apply-token model shape token-name token-value)
+      :unapply-token (shadow/apply-token model shape token-name nil)
+      :token-value (shadow/edit-token-value model objects token-name token-value)
       :update-main (shadow/update-main model objects (all-objects after) id)
       :detach (shadow/detach model objects (all-objects after) id)
       :nest (let [parent (get objects (tm/target-shape-id before (:into op)))]
@@ -1236,6 +1274,16 @@
             :add-variant (check-requested-variant file-before file resolved)
             (:make-variant :combine) (check-requested-variant-set file-before file resolved variant-kind)
             nil))
+        (case kind
+          :apply-token (when-not (n/has-token? (tm/shape-by-id after (get-in resolved [:shape :id]))
+                                                (:token-name resolved) (:token-value resolved))
+                         (oracle/fail :I9 {:phase :requested-token :token (:token-name resolved)}))
+          :unapply-token (when (seq (n/token-corners (tm/shape-by-id after (get-in resolved [:shape :id]))
+                                                     (:token-name resolved)))
+                           (oracle/fail :I9 {:phase :requested-token-removal :token (:token-name resolved)}))
+          :token-value (when-not (= (:token-value resolved) (n/token-value (tm/file after) (:token-name resolved)))
+                         (oracle/fail :I9 {:phase :requested-token-value :token (:token-name resolved)}))
+          nil)
         (when (#{:swap :switch} kind)
           (let [head (tm/shape-by-id after (get-in resolved [:shape :id]))]
             (when-not (= (get-in resolved [:destination :component-id]) (:component-id head))
@@ -1431,6 +1479,15 @@
                     (conj [6 (gen/fmap (fn [[parent index edit value]]
                                          [[:add-child parent] [:structure index edit value]])
                                        (gen/tuple gen/nat gen/nat (gen/choose 0 (dec (count structure-edits))) gen/nat))])
+                    (every? (set kinds) [:apply-token :token-value])
+                    (conj [6 (gen/fmap (fn [[index token value]]
+                                         [[:apply-token index token] [:token-value 0 token value]])
+                                       (gen/tuple gen/nat gen/nat gen/nat))])
+                    (every? (set kinds) [:apply-token :style])
+                    (conj [3 (gen/fmap (fn [[index token value]]
+                                         ;; a copy that applies a token and then sets a radius by hand
+                                         [[:apply-token index token] [:style index 3 value 1]])
+                                       (gen/tuple gen/nat gen/nat gen/nat))])
                     (contains? (set kinds) :grid-track)
                     (conj [6 (gen/fmap (fn [[index edit value scope]] [[:grid-track index edit value scope]])
                                        (gen/tuple gen/nat (gen/choose 0 (dec (count grid-track-edits))) gen/nat gen/nat))])
@@ -1569,6 +1626,24 @@
             ops (operation-gen shape-structure-kinds)]
     {:world [components depth {:variants true :rich-variants true :text true :layout layout
                                :layout-copies true :layout-children layout-children}]
+     :ops ops}))
+
+(def token-kinds (into swap-kinds [:apply-token :unapply-token :token-value]))
+
+(def token-coverage-kinds
+  "The kinds the token programs must cover: applying, taking off and
+   editing tokens, and the steps that carry them into copies."
+  [:apply-token :unapply-token :token-value :style :update-main :reset :swap :sync :undo :redo])
+
+(def token-program-gen
+  "Histories that apply border radius tokens to mains and copies, take them
+   off, set radii by hand and edit the tokens' values."
+  (gen/let [components (gen/choose 2 3)
+            depth (gen/choose 0 2)
+            layout (gen/elements [nil :flex :grid])
+            ops (operation-gen token-kinds)]
+    {:world [components depth {:tokens true :variants true :rich-variants true :text true
+                               :layout layout :layout-copies true}]
      :ops ops}))
 
 (def grid-kinds (into swap-kinds [:grid-track]))
