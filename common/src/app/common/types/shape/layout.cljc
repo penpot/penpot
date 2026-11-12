@@ -1461,7 +1461,7 @@
                              (update-in $ [:layout-grid-cells (:id cell)] merge (sga/area->cell-props (first new-areas)))
                              (reduce (fn [parent area]
                                        (let [cell (merge (assoc grid-cell-defaults :id (uuid/next)) (sga/area->cell-props area))]
-                                         (assoc-in parent [:layout-grid-cells (:id cell)] cell))) $ new-areas))))
+                                         (assoc-in parent [:layout-grid-cells (:id cell)] cell))) $ (rest new-areas)))))
                        parent))]
       parent)
 
