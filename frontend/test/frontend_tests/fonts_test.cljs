@@ -281,28 +281,28 @@
   (t/is (nil? (#'df/parse-font-mtype nil)))
   (t/is (nil? (#'df/parse-font-mtype (bytes->buffer [0 1])))))
 
-(t/deftest prepare-font-defaults-missing-subfamily
+(t/deftest prepare-font-entry-defaults-missing-subfamily
   (let [font (fake-ot-font {:family "Satoshi"
                             :variant nil
                             :hhea #js {:ascender 1000 :descender 300}
                             :os2 #js {:usWinAscent 1000 :usWinDescent 300
                                       :sTypoAscender 800 :sTypoDescender 200
                                       :fsSelection 0}})
-        entry (#'df/prepare-font {:font font
-                                  :type "font/otf"
-                                  :name "Satoshi-Regular.otf"
-                                  :data (bytes->buffer [79 84 84 79 0 0 0 0])})]
+        entry (df/prepare-font-entry {:font font
+                                      :type "font/otf"
+                                      :name "Satoshi-Regular.otf"
+                                      :data (bytes->buffer [79 84 84 79 0 0 0 0])})]
     (t/is (= "Satoshi" (:font-family entry)))
     (t/is (= 400 (:font-weight entry)))
     (t/is (= "normal" (:font-style entry)))
     (t/is (false? (:height-warning? entry)))))
 
-(t/deftest prepare-font-tolerates-missing-tables
+(t/deftest prepare-font-entry-tolerates-missing-tables
   (let [font  (fake-ot-font {:family "Satoshi" :variant "Regular" :hhea nil :os2 nil})
-        entry (#'df/prepare-font {:font font
-                                  :type "font/ttf"
-                                  :name "Satoshi-Regular.ttf"
-                                  :data (bytes->buffer [0 1 0 0 0 0 0 0])})]
+        entry (df/prepare-font-entry {:font font
+                                      :type "font/ttf"
+                                      :name "Satoshi-Regular.ttf"
+                                      :data (bytes->buffer [0 1 0 0 0 0 0 0])})]
     (t/is (= "Satoshi" (:font-family entry)))
     (t/is (false? (:height-warning? entry)))))
 
@@ -350,4 +350,26 @@
       (t/is (= "Satoshi" (:font-family entry)))
       (t/is (= 700 (:font-weight entry)))
       (t/is (= "normal" (:font-style entry))))
+    (t/is (empty? @emitted))))
+
+(t/deftest ^:async process-upload-keeps-bold-and-bolditalic-woff2
+  ;; Regression for the review on #11951: the bold-italic file resolved to
+  ;; style "normal", collided with the bold-only file on the (family,
+  ;; weight, style) join key and silently overwrote it.
+  (let [team-id (uuid/next)
+        blobs   [#js {:name "Inter-Bold.woff2"}
+                 #js {:name "Inter-BoldItalic.woff2"}]
+        emitted (atom [])
+        result  (atom nil)]
+    (await (mock/with-mocks*
+             {wa/read-file-as-array-buffer
+              (mock/stub (fn [_] (rx/of (bytes->buffer [119 79 70 50 0 0 0 0]))))
+              st/emit! (mock/stub (fn [& evts] (swap! emitted into evts) nil))}
+             (await (async/observe (df/process-upload blobs team-id)
+                                   :on-next #(reset! result %)))
+             (await (async/settle))))
+    (t/is (= 2 (count (vals @result))))
+    (t/is (every? #(= "Inter" (:font-family %)) (vals @result)))
+    (t/is (every? #(= 700 (:font-weight %)) (vals @result)))
+    (t/is (= #{"normal" "italic"} (set (map :font-style (vals @result)))))
     (t/is (empty? @emitted))))
