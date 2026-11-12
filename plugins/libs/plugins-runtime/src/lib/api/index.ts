@@ -19,6 +19,7 @@ import type {
   Page,
   Path,
   Penpot,
+  PenpotLocation,
   PenpotMgmt,
   Rectangle,
   Shape,
@@ -266,6 +267,11 @@ export function createApi(
 
     get theme(): Theme {
       return plugin.context.theme;
+    },
+
+    get location(): PenpotLocation {
+      checkPermission('content:read', false);
+      return plugin.context.location;
     },
 
     get localStorage(): LocalStorage {

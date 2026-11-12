@@ -193,6 +193,9 @@ A key object for navigating the currently active Penpot file is the `penpot` obj
   * `penpot.root` provides the root shape of the currently active page.
   * Generation of CSS content for elements via `penpot.generateStyle`
   * Generation of HTML/SVG content for elements via `penpot.generateMarkup`
+  * `penpot.location` gives the Penpot instance URL (`baseUrl`), the link to what the user is viewing (`href`, e.g. the open file and page)
+    and the query params of that link (`params`, e.g. `params["file-id"]`). Use `href` when you need a link to the open file;
+    never guess the instance domain or build the link by hand.
 Members of `penpot` (e.g. `penpot.currentFile` and `penpot.root`) will be null no Penpot file is currently opened.
 You can use `penpotMgmt` to navigate to a file if needed (see below).
 
