@@ -2353,6 +2353,18 @@
     (t/is (empty? (cg/coverage-errors @coverage cg/variant-coverage-kinds))
           (pr-str (cg/coverage-errors @coverage cg/variant-coverage-kinds)))))
 
+(t/deftest random-grid-compositions
+  (let [coverage (atom {})
+        failure (atom nil)]
+    (smt/check!
+     (smt/for [program cg/grid-program-gen]
+       (cg/check-program program coverage failure))
+     :max-size 30
+     :default-num coverage-programs)
+    (println "Grid operation coverage:" (pr-str @coverage))
+    (t/is (empty? (cg/coverage-errors @coverage cg/grid-coverage-kinds))
+          (pr-str (cg/coverage-errors @coverage cg/grid-coverage-kinds)))))
+
 (t/deftest random-scale-compositions
   ;; scale programs run several times longer than the others; the gates draw more
   (let [coverage (atom {})

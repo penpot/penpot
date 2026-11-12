@@ -53,6 +53,28 @@
     (when-not (= expected actual)
       (fail :I9 {:phase :requested-grid :expected expected :actual actual}))))
 
+(defn check-requested-tracks
+  "The track edit `action` gave `shape` the rows and columns it asked for.
+   An edit that takes cells from children lets the grid grow default tracks
+   after its last along its flow, columns for rows and rows for columns, to
+   hold them again."
+  [shape before action value]
+  (let [expected (grid/intended-tracks before action value)
+        actual   {:layout-grid-rows (vec (:layout-grid-rows shape))
+                  :layout-grid-columns (vec (:layout-grid-columns shape))}
+        [growing fixed] (if (= :column (:layout-grid-dir before))
+                          [:layout-grid-rows :layout-grid-columns]
+                          [:layout-grid-columns :layout-grid-rows])
+        wanted   (get expected growing)
+        tracks   (get actual growing)
+        grown?   (and (= (get expected fixed) (get actual fixed))
+                      (> (count tracks) (count wanted))
+                      (= wanted (subvec tracks 0 (count wanted)))
+                      (every? #(= {:type :flex :value 1} %) (subvec tracks (count wanted))))]
+    (when-not (or (= expected actual) grown?)
+      (fail :I9 {:phase :requested-tracks :action action :value value
+                 :expected expected :actual actual}))))
+
 (defn snapshot
   ([situation] (snapshot situation {}))
   ([situation opts]

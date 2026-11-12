@@ -593,6 +593,42 @@
   [{:align-self :end} {:justify-self :center} {:align-self :center :justify-self :end}
    {:align-self :auto :justify-self :auto}])
 
+(def grid-track-edits
+  "Track editor actions: the action and the kind of track it edits."
+  [[:add :row] [:add :column] [:remove :row] [:remove :column] [:resize :row] [:resize :column]
+   [:reorder :row] [:reorder :column] [:merge nil]])
+
+(def grid-track-values
+  [{:type :flex :value 1} {:type :fixed :value 40} {:type :auto} {:type :percent :value 50}])
+
+(defn- grid-track-edit
+  "The track edit `property` names on the grid `shape`, with `value` and
+   `scope` choosing its track, its new value and where it goes; nil when the
+   grid has no track it can take."
+  [shape property value scope]
+  (let [[action type] (nth grid-track-edits (mod (or property 0) (count grid-track-edits)))
+        value  (or value 0)
+        scope  (or scope 0)
+        count* (count (get shape (if (= type :column) :layout-grid-columns :layout-grid-rows)))
+        track  (nth grid-track-values (mod scope (count grid-track-values)))]
+    (case action
+      :add     {:action :add :value {:type type :index (mod value (inc count*)) :track track}}
+      :remove  (when (> count* 1) {:action :remove :value {:type type :index (mod value count*)}})
+      :resize  (when (pos? count*) {:action :resize :value {:type type :index (mod value count*) :track track}})
+      :reorder (when (> count* 1) {:action :reorder
+                                   :value {:type type :index (mod value count*) :to (mod scope count*)
+                                           :move-content? (odd? (quot value count*))}})
+      :merge   (let [rows    (count (:layout-grid-rows shape))
+                     columns (count (:layout-grid-columns shape))
+                     cells   (filterv #(= 1 (:row-span %) (:column-span %)) (grid/get-cells shape))]
+                 (when (seq cells)
+                   (let [{:keys [row column]} (nth cells (mod value (count cells)))
+                         [row-span column-span] (nth [[1 2] [2 1] [2 2]] (mod scope 3))]
+                     {:action :merge
+                      :value {:row row :column column
+                              :row-span (min row-span (inc (- rows row)))
+                              :column-span (min column-span (inc (- columns column)))}}))))))
+
 (defn- edit-text-style
   [shape unit value]
   (let [[style values] (nth text-style-edits (mod (or unit 0) (count text-style-edits)))
@@ -615,9 +651,17 @@
         [style-property style-values] (nth style-edits (mod (or property 0) (count style-edits)))
         items (cond->> (if (contains? library-source-kinds kind)
                          (library-candidates situation kind scope)
-                         (candidates situation model (if (#{:style :grid-cell :grid-direction} kind) :edit kind) scope))
-                (#{:grid-cell :grid-direction} kind)
+                         (candidates situation model (if (#{:style :grid-cell :grid-direction :grid-track} kind) :edit kind)
+                                     (if (= kind :grid-track) true scope)))
+                (#{:grid-cell :grid-direction :grid-track} kind)
                 (filter #(= :grid (get-in % [:shape :layout])))
+                ;; a copy edits its tracks only by size; the edits that move its
+                ;; cells reach it from its main
+                (= :grid-track kind)
+                (keep (fn [{:keys [shape] :as entry}]
+                        (when-let [edit (grid-track-edit shape property value scope)]
+                          (when (or (nil? (:shape-ref shape)) (= :resize (:action edit)))
+                            (assoc entry :grid-track edit)))))
                 (= :grid-cell kind)
                 (filter #(seq (get-in % [:shape :layout-grid-cells])))
                 (= kind :style)
@@ -679,6 +723,8 @@
                (case kind
                  (:edit :style) (n/change-property target property value)
                  :grid-direction (n/edit-grid target :direction (nth [:row :column] (mod (or (nth tuple 3 nil) 0) 2)))
+                 :grid-track (n/edit-grid-track target (get-in selected [:grid-track :action])
+                                                (get-in selected [:grid-track :value]))
                  :grid-cell (let [cells (grid/get-cells (:shape selected))
                                   cell  (nth cells (mod (or (nth tuple 2 nil) 0) (count cells)))
                                   props (nth grid-cell-edits (mod (or (nth tuple 3 nil) 0) (count grid-cell-edits)))]
@@ -923,6 +969,7 @@
         (update-in [id :geometry-group] shadow/anchor-position (get (all-objects after) id shape)
                    (get (all-objects after) (:parent-id shape))))
       (:grid-cell :grid-direction) (grid/edit model shape (:action op) (:value op))
+      :grid-track (grid/edit-tracks model shape (:action op) (:value op))
       :reset (shadow/clear-subtree model objects id)
       :update-main (shadow/update-main model objects (all-objects after) id)
       :detach (shadow/detach model objects (all-objects after) id)
@@ -1104,6 +1151,9 @@
         (when (#{:grid-cell :grid-direction} kind)
           (oracle/check-requested-grid (tm/shape-by-id after (get-in resolved [:shape :id]))
                                        (:shape resolved) (:action op) (:value op)))
+        (when (= :grid-track kind)
+          (oracle/check-requested-tracks (tm/shape-by-id after (get-in resolved [:shape :id]))
+                                         (:shape resolved) (:action op) (:value op)))
         (let [variant-kind (get local-variant-kind kind kind)
               file-before (kind-file situation library-id)
               file (kind-file after library-id)]
@@ -1303,6 +1353,9 @@
                     (conj [1 (gen/fmap (fn [index]
                                          [[:library-delete index] [:library-sync]
                                           [:library-restore index] [:library-sync]]) gen/nat)])
+                    (contains? (set kinds) :grid-track)
+                    (conj [6 (gen/fmap (fn [[index edit value scope]] [[:grid-track index edit value scope]])
+                                       (gen/tuple gen/nat (gen/choose 0 (dec (count grid-track-edits))) gen/nat gen/nat))])
                     (every? (set kinds) [:grid-direction :grid-cell])
                     (conj [2 (gen/fmap (fn [[index cell props direction]]
                                          [[:grid-direction index 0 direction 1] [:grid-cell index cell props 1]])
@@ -1419,6 +1472,27 @@
     {:world [components depth {:scale true :copies copies :variants true :variant-diff differ?
                                :rich-variants true :text true :text-styles true :layout layout
                                :layout-copies true :layout-children layout-children
+                               :grid-square (= grid :square) :grid-empty (= grid :empty)}]
+     :ops ops}))
+
+(def grid-kinds (into swap-kinds [:grid-track]))
+
+(def grid-coverage-kinds
+  "The kinds the grid programs must cover: the grid edits and the steps that
+   carry them into copies."
+  [:grid-track :grid-cell :grid-direction :edit :update-main :sync :undo :redo])
+
+(def grid-program-gen
+  "Worlds whose first component is a grid, with copies in grids, and
+   histories that edit its tracks and cells."
+  (gen/let [components (gen/choose 2 3)
+            depth (gen/choose 1 2)
+            layout-children gen/boolean
+            layout-item-margins gen/boolean
+            grid (gen/elements [nil :square :empty])
+            ops (operation-gen grid-kinds)]
+    {:world [components depth {:variants true :rich-variants true :text true :layout :grid :layout-copies true
+                               :layout-children layout-children :layout-item-margins layout-item-margins
                                :grid-square (= grid :square) :grid-empty (= grid :empty)}]
      :ops ops}))
 
