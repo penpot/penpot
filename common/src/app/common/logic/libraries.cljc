@@ -1835,15 +1835,19 @@
 
 (defn add-update-attr-changes
   "Add to `changes` the operations of `attr-operations` on `dest-shape`, and
-  the update of its parents."
+  the update of its parents. The undo fits the shape itself too, when it is a
+  group or bool: its children are undone before it, while it keeps the
+  transform the change gave it."
   [changes dest-shape container roperations uoperations]
   (let [update-parents {:type :reg-objects
-                        :shapes (cfh/get-parent-ids (:objects container) (:id dest-shape))}]
+                        :shapes (cfh/get-parent-ids (:objects container) (:id dest-shape))}
+        update-self    {:type :reg-objects
+                        :shapes [(:id dest-shape)]}]
     (pcb/add-changes changes container
                      [{:type :mod-obj :id (:id dest-shape) :operations roperations}
                       update-parents]
-                     ;; undone as the shape first, then its parents
-                     [update-parents
+                     ;; undone as the shape first, then itself and its parents
+                     [update-self
                       {:type :mod-obj :id (:id dest-shape) :operations (vec uoperations)}])))
 
 
