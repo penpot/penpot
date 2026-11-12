@@ -733,6 +733,8 @@
                                                         (all-attrs-appliable-for-token? attributes (:type token)))))))
                             shape-ids (d/nilv (keys shapes)  [])
                             any-variant? (->> shapes vals (some ctk/is-variant?) boolean)
+                            file-data    (dsh/lookup-file-data state)
+                            from-library (not (cfo/effective-tokens-source? file-data (:id file-data)))
 
                             resolved-value (get-in resolved-tokens [(:name token) :resolved-value])
                             resolved-value (if (contains? cf/flags :tokenscript)
@@ -746,7 +748,8 @@
                                      (-> {::ev/name "apply-tokens"
                                           :type type
                                           :applied-to attributes
-                                          :applied-to-variant any-variant?}
+                                          :applied-to-variant any-variant?
+                                          :from-library from-library}
                                          (merge (meta it)))))
                           (dwu/start-undo-transaction undo-id)
                           (dwsh/update-shapes shape-ids (fn [shape]
