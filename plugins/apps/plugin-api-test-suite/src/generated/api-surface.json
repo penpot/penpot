@@ -104,6 +104,7 @@
       "history",
       "library",
       "localStorage",
+      "location",
       "openPage",
       "openViewer",
       "replaceColor",
@@ -376,6 +377,7 @@
     "Path": ["commands", "d", "fills", "type"],
     "PathCommand": ["command", "params"],
     "Penpot": ["closePlugin", "off", "on", "ui", "utils"],
+    "PenpotLocation": ["baseUrl", "href", "params"],
     "PenpotMgmt": [
       "createTeam",
       "getFile",
@@ -2251,6 +2253,12 @@
         "decl": "Context",
         "kind": "get",
         "type": "Theme",
+        "array": false
+      },
+      "location": {
+        "decl": "Context",
+        "kind": "get",
+        "type": "PenpotLocation",
         "array": false
       },
       "localStorage": {
@@ -6711,6 +6719,12 @@
         "type": "Theme",
         "array": false
       },
+      "location": {
+        "decl": "Context",
+        "kind": "get",
+        "type": "PenpotLocation",
+        "array": false
+      },
       "localStorage": {
         "decl": "Context",
         "kind": "get",
@@ -6888,6 +6902,26 @@
       "waitForSave": {
         "decl": "Context",
         "kind": "method",
+        "type": null,
+        "array": false
+      }
+    },
+    "PenpotLocation": {
+      "baseUrl": {
+        "decl": "PenpotLocation",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "href": {
+        "decl": "PenpotLocation",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "params": {
+        "decl": "PenpotLocation",
+        "kind": "get",
         "type": null,
         "array": false
       }
