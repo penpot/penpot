@@ -7,7 +7,6 @@
 (ns app.worker.thumbnails
   (:require
    ["react-dom/server" :as rds]
-   [app.common.data.macros :as dm]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.logging :as log]
@@ -107,37 +106,6 @@
 ;; WASM RENDERING
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(mf/defc svg-wrapper*
-  {::mf/private true}
-  [{:keys [uri background width height]}]
-  [:svg {:version "1.1"
-         :xmlns "http://www.w3.org/2000/svg"
-         :xmlnsXlink "http://www.w3.org/1999/xlink"
-
-         :style {:width "100%"
-                 :height "100%"
-                 :background background}
-         :fill "none"
-         :viewBox (dm/str "0 0 " width " " height)}
-   [:image {:xlinkHref uri
-            :width width
-            :height height}]])
-
-(defn- blob->uri
-  [blob]
-  (.readAsDataURL (js/FileReaderSync.) blob))
-
-(defn- render-canvas-blob
-  [canvas width height background]
-  (->> (.convertToBlob ^js canvas)
-       (p/fmap (fn [blob]
-                 (rds/renderToStaticMarkup
-                  (mf/element svg-wrapper*
-                              #js {:uri (blob->uri blob)
-                                   :width width
-                                   :height height
-                                   :background background}))))))
-
 (defn- render-thumbnail-with-wasm
   [{:keys [file-id revn width] :as _message}]
   (->> (rx/from @wwasm/module)
@@ -170,13 +138,13 @@
                         (wasm.api/render-sync-shape (:id frame))
                         (wasm.api/render-sync))
 
-                      (->> (render-canvas-blob canvas width height bgcolor)
-                           (p/fnly (fn [data cause]
+                      (->> (.convertToBlob ^js canvas #js {:type "image/png"})
+                           (p/fnly (fn [blob cause]
                                      (wasm.api/clear-canvas)
                                      (if cause
                                        (rx/error! subs cause)
                                        (rx/push! subs
-                                                 {:data data
+                                                 {:blob blob
                                                   :file-id file-id
                                                   :revn revn}))
                                      (rx/end! subs)))))))
