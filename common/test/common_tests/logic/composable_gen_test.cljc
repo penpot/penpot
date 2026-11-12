@@ -2467,6 +2467,11 @@
                              [:add-child 0 0 0 0] [:add-child 0] [:structure 14 1 0] [:rotate 15 0 0 0]
                              [:add-child 0] [:structure 0 3 0]]}))))
 
+(t/deftest a-bool-made-in-a-main-group-gives-the-copy-groups-its-bounds
+  (t/is (map? (cg/run {:world [1 0 {:variants true :rich-variants true :text false :layout :flex
+                                    :layout-copies false :layout-children false}]
+                       :ops [[:delete] [:swap] [:add-child 1] [:structure] [:structure 4 0 1] [:structure 2 5 3]]}))))
+
 (t/deftest random-shape-structure-compositions
   (let [coverage (atom {})
         failure (atom nil)]
