@@ -188,11 +188,18 @@
 
          (and (map? expected) (map? actual) (= (set (keys expected)) (set (keys actual))))
          (every? (fn [key]
-                   (same-state? (get expected key) (get actual key) tolerance
+                   (same-state? (get expected key) (get actual key)
+                                ;; a bool or path stores its segments in single precision, and
+                                ;; a bool computes them again from its children
+                                (if (and (contains? expected :parent-id) (#{:bool :path} (:type expected)))
+                                  (max tolerance 1e-4)
+                                  tolerance)
                                 (or geometry?
                                     (and (contains? expected :parent-id)
-                                         (contains? #{:x :y :width :height :rotation :points
-                                                      :selrect :transform :transform-inverse} key)))))
+                                         (or (contains? #{:x :y :width :height :rotation :points
+                                                          :selrect :transform :transform-inverse} key)
+                                             ;; the segments of a bool or path are its geometry
+                                             (and (= :content key) (#{:bool :path} (:type expected))))))))
                  (keys expected))
 
          (and (sequential? expected) (sequential? actual) (= (count expected) (count actual)))
