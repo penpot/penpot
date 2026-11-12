@@ -620,14 +620,13 @@
                   (get shapes (inc index)))
         pair    (cond-> [(:id shape)]
                   (and (odd? (or value 0)) sibling (contains? eligible sibling)) (conj sibling))
-        ;; removing a shape a main holds leaves its copies referring to it
-        ;; until sync, so no edit removes one: no ungroup, and no grouping
-        ;; that takes every child out of a group
+        ;; a grouping that takes every child out of a group removes it
+        ;; and leaves its copies referring to it until sync
         empties? (and (#{:group :bool} (:type parent)) (= (set pair) (set (:shapes parent))))
         targets (case action
                   (:group :mask) (when-not empties? pair)
                   :bool    (when (not-any? #(= :text (:type (get objects %))) pair) pair)
-                  :ungroup nil
+                  :ungroup (when (#{:group :bool :frame} (:type shape)) [(:id shape)])
                   :unmask  (when (:masked-group shape) [(:id shape)])
                   :path    (when (#{:rect :circle} (:type shape)) [(:id shape)]))]
     (when targets
