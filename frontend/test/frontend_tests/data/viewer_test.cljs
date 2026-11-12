@@ -9,9 +9,13 @@
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.viewer :as dv]
+   [app.main.data.websocket :as dws]
+   [app.main.repo :as rp]
    [app.main.router :as rt]
    [beicon.v2.core :as rx]
-   [cljs.test :as t]
+   [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as async]
+   [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
 (def ^:private page-id
@@ -410,3 +414,51 @@
     (t/testing "the remembered revn is cleared"
       (t/is (nil? (:viewer-missed-revn
                    (ptk/update check (assoc state :viewer-missed-revn 6))))))))
+
+;; --- Subscription lifecycle
+
+(defn- sent
+  "The websocket messages among the events, in order."
+  [events]
+  (into [] (keep ::sent) events))
+
+(t/deftest ^:async watch-file-changes-subscribes-refreshes-and-unsubscribes
+  (let [stream  (rx/subject)
+        events  (atom [])
+        fetches (atom 0)
+        bundle  {:file (make-file {:revn 9 :frames-1 [] :frames-2 []})}
+        types   #(into [] (comp (remove ::sent) (map ptk/type)) @events)]
+    (await
+     (mock/with-mocks*
+       {dws/send (mock/stub (fn [message] {::sent message}))
+        rp/cmd!  (mock/stub (fn [cmd _]
+                              (when (= cmd :get-view-only-bundle)
+                                (swap! fetches inc))
+                              (rx/observe-on :async (rx/of bundle))))}
+       (let [done (async/observe (ptk/watch (#'dv/watch-file-changes {:file-id file-id})
+                                            {} stream)
+                                 :on-next #(swap! events conj %))]
+
+         (await (async/wait-for #(= 1 (count (sent @events))) "subscribed on start"))
+         (t/is (= [{:type :subscribe-file :file-id file-id}] (sent @events)))
+
+         (t/testing "a reconnection subscribes again and asks for a resync"
+           (rx/push! stream (ptk/data-event ::dws/opened {}))
+           (await (async/wait-for #(= 2 (count (sent @events))) "subscribed again"))
+           (t/is (some #{::dv/socket-reopened} (types))))
+
+         (t/testing "a burst of refresh requests fetches the file once"
+           (dotimes [_ 3]
+             (rx/push! stream @#'dv/refresh-requested))
+           (await (async/wait-for #(some #{::dv/bundle-refreshed} (types))
+                                  "bundle refreshed" {:max-ticks 400}))
+           (t/is (= 1 @fetches)))
+
+         (t/testing "finalize unsubscribes and stops handling messages"
+           (rx/push! stream (dv/finalize {}))
+           (await done)
+           (t/is (= {:type :unsubscribe-file :file-id file-id} (last (sent @events))))
+           (rx/push! stream (ptk/data-event ::dws/opened {}))
+           (await (async/settle))
+           (t/is (= 3 (count (sent @events))))))))))
+
