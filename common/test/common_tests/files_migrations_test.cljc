@@ -17,6 +17,7 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.variants :as thv]
    [app.common.types.file :as ctf]
+   [app.common.types.objects-map :as omap]
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.token :as ctt]
@@ -888,7 +889,20 @@
         data'        (cfm/migrate-data data migration-id)]
 
     (t/is (identical? (get-in data [:pages-index page-id :objects])
-                      (get-in data' [:pages-index page-id :objects])))))
+                      (get-in data' [:pages-index page-id :objects]))))
+
+  ;; Same property through the objects-map wrapper the backend uses on the
+  ;; unrealized save path, whose `assoc` marks the page as modified.
+  (let [migration-id "0036-fix-shape-children-ids"
+        file         (-> (thf/sample-file :file1)
+                         (tho/add-frame-with-child :frame1 :child1))
+        page-id      (thf/current-page-id file)
+        objects      (omap/wrap (get-in (ctf/file-data file) [:pages-index page-id :objects]))
+        data         (assoc-in (ctf/file-data file) [:pages-index page-id :objects] objects)
+        data'        (cfm/migrate-data data migration-id)]
+
+    (t/is (omap/objects-map? objects) "wrapped in an ObjectsMap")
+    (t/is (identical? objects (get-in data' [:pages-index page-id :objects])))))
 
 (t/deftest migration-0033-v2-runs-on-files-that-applied-the-original-id
   ;; Files that applied the original migration before it repaired children
@@ -909,6 +923,21 @@
     (t/is (contains? (:migrations file') "0033-normalize-main-instance-names")
           "the old id is kept")
     (t/is (= [child1-id] (:shapes (ths/get-shape file' :frame1))))))
+
+(t/deftest migrations-leave-shapes-without-the-shapes-key-untouched
+  ;; Only containers have a :shapes key; other shapes come out of the
+  ;; repair unchanged, without a :shapes key being added.
+  (doseq [migration-id ["0033-normalize-main-instance-names"
+                        "0036-fix-shape-children-ids"]]
+    (let [file   (-> (thf/sample-file :file1)
+                     (tho/add-frame-with-child :frame1 :child1))
+          child  (ths/get-shape file :child1)
+          data'  (cfm/migrate-data (ctf/file-data file) migration-id)
+          child' (ths/get-shape (assoc file :data data') :child1)]
+
+      (t/is (not (contains? child :shapes)) "the fixture shape has no :shapes key")
+      (t/is (not (contains? child' :shapes)) (str migration-id))
+      (t/is (= child child') migration-id))))
 
 (t/deftest migration-0033-fixes-children-ids-through-file-migration
   ;; 0032 adds the uuid of a child listed as a string, so the child is

@@ -616,6 +616,8 @@
             (let [file (get-file-with-summary cfg id)]
               (assoc file :library-file-ids (db/decode-pgarray library-file-ids #{})))
             (catch Throwable cause
+              (when (instance? InterruptedException cause)
+                (.interrupt (Thread/currentThread)))
               (l/error :hint "unable to load shared file"
                        :file-id (str id)
                        :team-id (str team-id)
