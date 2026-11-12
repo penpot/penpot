@@ -681,8 +681,10 @@
 (defn- keep-moved-placement
   "A swap keeps the place of the copy shape `original-shape` it replaces.
    Inside a copy, a first corner that the position of `new-shape` would not
-   give it needs a geometry override to survive later sync."
-  [changes original-shape new-shape page libraries]
+   give it needs a geometry override to survive later sync. With
+   `keep-touched?`, the constraints `original-shape` authors carry, and
+   later sync places the new head through them."
+  [changes original-shape new-shape page libraries keep-touched?]
   (let [objects          (pcb/get-objects changes)
         shape            (get objects (:id new-shape))
         parent           (get objects (:parent-id shape))
@@ -693,8 +695,11 @@
                                                :include-deleted? true :with-context? true))
         position-objects (:objects (:container (meta position)))
         position-parent  (get position-objects (:parent-id position))
+        ;; the constraints the new head carries as its own, by its position
+        authored         (when (and keep-touched? (ctk/touched-group? original-shape :constraints-group))
+                           {(:id position) (d/without-nils (select-keys shape [:constraints-h :constraints-v]))})
         placed           (when position-parent
-                           (get (cll/placed-like position-objects position-parent parent {}) (:id position)))]
+                           (get (cll/placed-like position-objects position-parent parent authored) (:id position)))]
     (cond-> changes
       (and placed (not (gpt/close? (first (:points shape)) (first (:points placed)))))
       (pcb/update-shapes [(:id shape)] #(update % :touched ctk/set-touched-group :geometry-group)
@@ -786,7 +791,7 @@
 
         changes (sync-restored-position changes page libraries (:id new-shape))
 
-        changes (cond-> (keep-moved-placement changes shape new-shape page libraries)
+        changes (cond-> (keep-moved-placement changes shape new-shape page libraries keep-touched?)
                   keep-touched?
                   (keep-placement-overrides shape new-shape))
 
