@@ -101,6 +101,7 @@
     [:article {:class (stl/css :layers-tab)}
      [:> sitemap* {:layout layout
                    :height sitemap-height
+                   :scroll-store scroll-store
                    :collapsed sitemap-collapsed?
                    :on-toggle-collapsed on-toggle-sitemap-collapsed}]
 
@@ -118,11 +119,10 @@
 
 (mf/defc left-sidebar*
   {::mf/memo true}
-  [{:keys [layout file tokens-lib tokens-status active-tokens resolved-active-tokens]}]
+  [{:keys [layout file tokens-lib tokens-status active-tokens resolved-active-tokens scroll-store]}]
   (let [options-mode   (mf/deref refs/options-mode-global)
         project        (mf/deref refs/project)
         file-id        (get file :id)
-        scroll-store*  (mf/use-var {})
 
         design-tokens? (features/use-feature "design-tokens/v1")
         mode-inspect?  (= options-mode :inspect)
@@ -216,7 +216,7 @@
             :assets
             [:> assets-toolbox* {:size (- width  58)
                                  :file-id file-id
-                                 :scroll-store scroll-store*}]
+                                 :scroll-store scroll-store}]
 
             :tokens
             [:> tokens-sidebar-tab*
@@ -224,12 +224,12 @@
               :tokens-status tokens-status
               :active-tokens active-tokens
               :resolved-active-tokens resolved-active-tokens
-              :scroll-store scroll-store*}]
+              :scroll-store scroll-store}]
 
             :layers
             [:> layers-content* {:layout layout
                                  :width width
-                                 :scroll-store scroll-store*}])]])]]))
+                                 :scroll-store scroll-store}])]])]]))
 
 ;; --- Right Sidebar (Component)
 
@@ -362,7 +362,7 @@
             [:> options-toolbox* props]))]]]]))
 
 (mf/defc sidebar*
-  [{:keys [layout file file-id page-id section drawing-tool selected]}]
+  [{:keys [layout file file-id page-id section drawing-tool selected scroll-store]}]
   (let [tokens-lib
         (mf/deref refs/tokens-lib)
 
@@ -407,6 +407,7 @@
         [:> left-sidebar* {:layout layout
                            :file file
                            :page-id page-id
+                           :scroll-store scroll-store
                            :tokens-lib tokens-lib
                            :tokens-status tokens-status
                            :active-tokens active-tokens-force-set
