@@ -99,10 +99,30 @@
             (create-bool-shape force-shape-id type name (reverse shapes) objects)
 
             shape-id
-            (get shape :id)]
+            (get shape :id)
+
+            ;; the bool takes the grid cell of the shape whose place it takes
+            head-id
+            (:id (if (= type :difference) (last shapes) (first shapes)))
+
+            parent-id
+            (:parent-id shape)
+
+            target-cell
+            (when (ctl/grid-layout? objects parent-id)
+              (ctl/get-cell-by-shape-id (get objects parent-id) head-id))
+
+            grid-parents
+            (into #{} (comp (map :parent-id) (filter (partial ctl/grid-layout? objects))) shapes)]
         [shape
          (-> (pcb/empty-changes it page-id)
              (pcb/with-objects objects)
              (pcb/add-object shape {:index (inc index)})
              (pcb/update-shapes (map :id shapes) ctl/remove-layout-item-data)
-             (pcb/change-parent shape-id shapes))]))))
+             (pcb/change-parent shape-id shapes)
+             (cond-> target-cell
+               (pcb/update-shapes
+                [parent-id]
+                (fn [parent]
+                  (assoc-in parent [:layout-grid-cells (:id target-cell) :shapes] [shape-id]))))
+             (pcb/update-shapes grid-parents ctl/assign-cells {:with-objects? true}))]))))
