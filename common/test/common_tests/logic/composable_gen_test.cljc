@@ -2387,6 +2387,13 @@
                                     :layout-copies false :text false}]
                        :ops [[:grid-track 10 5 0 11] [:grid-track 0 1] [:grid-cell 0 0 0 1]]}))))
 
+(t/deftest updating-a-main-pushes-a-swapped-shape-nested-in-a-swap-with-its-children
+  (t/is (map? (cg/run {:world [3 3 {:variants true :text-styles true :scale true :layout :flex :variant-diff true
+                                    :grid-square false :copies 5 :rich-variants true :layout-children true
+                                    :grid-empty false :layout-copies false :text true}]
+                       :ops [[:delete] [:restore] [:combine 21] [:swap 24] [:switch 27] [:rotate 14] [:switch 11]
+                             [:combine 11] [:switch 6] [:switch 5] [:edit 16] [:edit 0 0 0 1] [:update-main 24]]}))))
+
 (t/deftest random-shape-structure-compositions
   (let [coverage (atom {})
         failure (atom nil)]
