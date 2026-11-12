@@ -15,6 +15,7 @@
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
    [app.common.logic.duplicate :as cld]
+   [app.common.logic.groups :as clg]
    [app.common.logic.instances :as cli]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
@@ -41,7 +42,6 @@
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
    [app.main.data.workspace :as-alias dw]
-   [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.notifications :as-alias dwn]
    [app.main.data.workspace.pages :as-alias dwpg]
    [app.main.data.workspace.reflow :as wrf]
@@ -354,7 +354,7 @@
        (let [file-id  (:current-file-id state)
              page-id  (:current-page-id state)
              objects  (dsh/lookup-page-objects state file-id page-id)
-             shapes   (dwg/shapes-for-grouping objects selected)
+             shapes   (clg/shapes-for-grouping objects selected)
              parents  (into #{} (map :parent-id) shapes)]
          (when-not (empty? shapes)
            (let [[root component-id changes]

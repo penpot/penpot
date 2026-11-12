@@ -14,13 +14,13 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.duplicate :as cld]
+   [app.common.logic.groups :as clg]
    [app.common.logic.instances :as cli]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.clipboard :as dwc]
-   [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.layout :as layout]))
 
 ;; ---- Helpers to manage pages and objects
@@ -102,11 +102,11 @@
   ([state label ids] (group-shapes state label ids "Group"))
   ([state label ids prefix]
    (let [page  (current-page state)
-         shapes (dwg/shapes-for-grouping (:objects page) ids)]
+         shapes (clg/shapes-for-grouping (:objects page) ids)]
      (if (empty? shapes)
        state
        (let [[group changes]
-             (dwg/prepare-create-group (pcb/empty-changes) nil (:objects page) (:id page) shapes prefix true)]
+             (clg/prepare-create-group (pcb/empty-changes) nil (:objects page) (:id page) shapes prefix true)]
 
          (swap! idmap assoc label (:id group))
          (apply-changes state (:redo-changes changes)))))))
@@ -115,7 +115,7 @@
   ([state label ids] (frame-shapes state label ids "Board"))
   ([state label ids frame-name]
    (let [page    (current-page state)
-         shapes  (dwg/shapes-for-grouping (:objects page) ids)
+         shapes  (clg/shapes-for-grouping (:objects page) ids)
          changes (pcb/empty-changes nil (:id page))]
      (if (empty? shapes)
        state
@@ -136,7 +136,7 @@
   [state instance-label component-label shape-ids]
   (let [page    (current-page state)
         objects (dsh/lookup-page-objects state (:id page))
-        shapes  (dwg/shapes-for-grouping objects shape-ids)
+        shapes  (clg/shapes-for-grouping objects shape-ids)
 
         [group component-id changes]
         (cli/generate-add-component (pcb/empty-changes nil)
