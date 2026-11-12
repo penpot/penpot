@@ -223,6 +223,7 @@
 (def ^:icon-id padding-top "padding-top")
 (def ^:icon-id padding-top-bottom "padding-top-bottom")
 (def ^:icon-id path "path")
+(def ^:icon-id pencil "pencil")
 (def ^:icon-id pentool "pentool")
 (def ^:icon-id percentage "percentage")
 (def ^:icon-id picker "picker")

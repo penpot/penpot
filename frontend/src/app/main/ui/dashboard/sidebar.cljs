@@ -656,7 +656,7 @@
     [:*
      (if (contains? cf/flags :admin-console)
        [:*
-        [:> nitrate-sidebar* {:profile profile :teams teams}]
+        [:> nitrate-sidebar* {:profile profile :teams teams :team team}]
         [:> nitrate-current-plan* {:profile profile}]]
        (when (contains? cf/flags :subscriptions)
          (if (show-subscription-dashboard-banner? profile)
