@@ -2430,6 +2430,12 @@
                                     :grid-empty false :layout-copies false :text false}]
                        :ops [[:transform 0 2 0 7] [:delete] [:switch] [:transform 1 1]]}))))
 
+(t/deftest settling-a-bool-in-a-grid-copy-twice-keeps-its-shapes-in-place
+  (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
+                                    :layout-copies true :layout-children true}]
+                       :ops [[:rotate 16 0 7 0] [:grid-direction 0 0 0 1] [:grid-cell 0 10 0 1] [:add-child 0]
+                             [:structure 3 6 15] [:grid-direction 0 0 0 1] [:grid-cell 0 4 2 1]]}))))
+
 (t/deftest random-shape-structure-compositions
   (let [coverage (atom {})
         failure (atom nil)]

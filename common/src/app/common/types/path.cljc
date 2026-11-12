@@ -178,9 +178,12 @@
          base-content
          (segment/transform-content content (gmt/transform-in center transform-inverse))
 
-         ;; Calculates the new selrect with points given the old center
+         ;; Calculates the new selrect with points given the old center; an
+         ;; empty content keeps the shape at that center
          points
-         (-> (segment/content->selrect base-content)
+         (-> (if (pos? (count base-content))
+               (segment/content->selrect base-content)
+               (grc/center->rect center 0.01))
              (grc/rect->points)
              (gco/transform-points center transform))
 
