@@ -52,6 +52,9 @@
   Evaluated once at module load time; cf/flags is immutable after startup."
   (contains? cf/flags :token-typography-row))
 
+(def ^:private text-lists-flag-enabled?
+  (contains? cf/flags :text-editor-wasm-v1-lists))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Sub-components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -230,6 +233,37 @@
                          :allow-empty  true
                          :options      options}]]))
 
+(mf/defc list-options*
+  [{:keys [values on-change on-blur]}]
+  (let [list-style-type (:list-style-type values)
+        ;; Mixed selections leave no option selected
+        selected        (if (= list-style-type :multiple)
+                          nil
+                          (d/nilv list-style-type "none"))
+        options
+        (mf/with-memo []
+          [{:value "none"
+            :id    "list-style-none"
+            :label (tr "workspace.options.text-options.list-none")
+            :icon  i/remove}
+           {:value "disc"
+            :id    "list-style-disc"
+            :label (tr "workspace.options.text-options.list-bullets")
+            :icon  i/view-as-list}])
+
+        handle-change
+        (mf/use-fn
+         (mf/deps on-change on-blur)
+         (fn [value]
+           (on-change {:list-style-type value})
+           (when (some? on-blur) (on-blur))))]
+
+    [:div {:class (stl/css :list-options)}
+     [:> radio-buttons* {:selected  selected
+                         :on-change handle-change
+                         :name      "list-options"
+                         :options   options}]]))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -276,6 +310,8 @@
                      (get n-values :grow-type))
          (identical? (get o-values :letter-spacing)
                      (get n-values :letter-spacing))
+         (identical? (get o-values :list-style-type)
+                     (get n-values :list-style-type))
          (identical? (get o-values :line-height)
                      (get n-values :line-height))
          (identical? (get o-values :text-align)
@@ -359,6 +395,10 @@
 
         ;; --- Helpers
         multiple?       (->> values vals (d/seek #(= % :multiple)))
+
+        ;; v3 can be toggled at runtime, so it is read on render
+        text-editor-v3?      (features/use-feature "text-editor-wasm/v1")
+        text-lists-enabled?  (and text-lists-flag-enabled? text-editor-v3?)
 
         apply-token!
         (mf/use-fn
@@ -596,4 +636,7 @@
           [:div {:class (stl/css :text-decoration-options)}
            [:> vertical-align* common-props]
            [:> text-decoration-options* (mf/spread-props common-props {:token-applied current-token-name})]
-           [:> text-direction-options* common-props]])])]))
+           [:> text-direction-options* common-props]])
+
+        (when (and more-options-open? text-lists-enabled?)
+          [:> list-options* common-props])])]))

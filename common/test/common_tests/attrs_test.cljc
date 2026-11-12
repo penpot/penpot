@@ -149,3 +149,25 @@
           result (attrs/get-attrs-multi objs [:x])]
       (t/is (= {:x :multiple} result)
             "Different positions should be :multiple"))))
+(defn- text-shape-with-paragraphs
+  [& paragraphs]
+  {:content {:type "root"
+             :children [{:type "paragraph-set"
+                         :children (mapv #(merge {:type "paragraph"
+                                                  :children [{:text "item"}]}
+                                                 %)
+                                         paragraphs)}]}})
+
+(t/deftest get-text-attrs-multi-list-style-type
+  (t/testing "paragraphs with the same list style return it"
+    (let [shape (text-shape-with-paragraphs {:list-style-type "disc"}
+                                            {:list-style-type "disc"})]
+      (t/is (= "disc" (:list-style-type (attrs/get-text-attrs-multi shape {} [:list-style-type]))))))
+
+  (t/testing "a paragraph without list style counts as no list"
+    (let [shape (text-shape-with-paragraphs {})]
+      (t/is (= "none" (:list-style-type (attrs/get-text-attrs-multi shape {} [:list-style-type]))))))
+
+  (t/testing "a bullet paragraph next to one without list style is mixed"
+    (let [shape (text-shape-with-paragraphs {:list-style-type "disc"} {})]
+      (t/is (= :multiple (:list-style-type (attrs/get-text-attrs-multi shape {} [:list-style-type])))))))

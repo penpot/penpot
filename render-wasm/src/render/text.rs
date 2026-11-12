@@ -1,11 +1,13 @@
 use super::{filters, RenderState, Shape, SurfaceId, DEFAULT_EMOJI_FONT};
 use crate::{
     error::Result,
-    math::Rect,
+    math::{Point, Rect},
     shapes::{
         add_text_with_tabs, calculate_text_layout_data, set_paint_fill, vertical_align_offset,
-        Paragraph as TextParagraph, ParagraphBuilderGroup, ParagraphLayout, Stroke, StrokeKind,
-        TextContent, TextDecorationSegment,
+        ListMarker, ListStyleType, Paragraph as TextParagraph, ParagraphBuilderGroup,
+        ParagraphLayout, Stroke, StrokeKind, TextContent, TextDecorationSegment, TextDirection,
+        LIST_MARKER_CENTER_FACTOR, LIST_MARKER_GAP_FACTOR, LIST_MARKER_MIN_RADIUS,
+        LIST_MARKER_RADIUS_FACTOR,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
@@ -371,6 +373,7 @@ fn paint_from_cached_layout(canvas: &Canvas, shape: &Shape, text_content: &TextC
 
     let x = anchor.x;
     let base_y = anchor.y;
+    let layout_width = text_content.get_width(selrect.width());
     let paragraphs = &text_content.layout.paragraphs;
     let draw_decorations = text_content.has_text_decorations();
 
@@ -382,7 +385,8 @@ fn paint_from_cached_layout(canvas: &Canvas, shape: &Shape, text_content: &TextC
     let vertical_offset =
         vertical_align_offset(selrect.height(), total_text_height, shape.vertical_align());
 
-    let mut y_accum = base_y + vertical_offset;
+    let top = base_y + vertical_offset;
+    let mut y_accum = top;
     for (index, group) in paragraphs.iter().enumerate() {
         let Some(paragraph) = group.first() else {
             continue;
@@ -396,6 +400,16 @@ fn paint_from_cached_layout(canvas: &Canvas, shape: &Shape, text_content: &TextC
             }
         }
         y_accum += paragraph.height();
+    }
+
+    for marker in list_markers(
+        paragraphs.iter().map(|group| group.first()),
+        text_content.paragraphs(),
+        x,
+        top,
+        layout_width,
+    ) {
+        draw_list_marker(canvas, &marker);
     }
 
     if needs_translate {
@@ -531,6 +545,10 @@ fn paint_text_with_emoji_overlay(
 
         if overlay_emoji {
             paint_emoji_overlay(canvas, para);
+        }
+
+        if let Some(marker) = &para.marker {
+            draw_list_marker(canvas, marker);
         }
 
         for deco in &para.decorations {
@@ -1069,6 +1087,90 @@ pub fn render_outer_stroke(
     )
 }
 
+fn draw_list_marker(canvas: &Canvas, marker: &ListMarker) {
+    canvas.draw_circle(marker.center, marker.radius, &marker.paint);
+}
+
+/// Bullets of paragraphs laid out one under another, from `top` down. `None`
+/// stands for a paragraph with no laid-out Skia paragraph; it keeps the
+/// paragraphs in step with `text_paragraphs`.
+pub fn list_markers<'a>(
+    skia_paragraphs: impl IntoIterator<Item = Option<&'a skia::textlayout::Paragraph>>,
+    text_paragraphs: &[TextParagraph],
+    x: f32,
+    top: f32,
+    layout_width: f32,
+) -> Vec<ListMarker> {
+    let mut markers: Vec<ListMarker> = Vec::new();
+    let mut y = top;
+    for (skia_paragraph, text_paragraph) in skia_paragraphs.into_iter().zip(text_paragraphs) {
+        let Some(skia_paragraph) = skia_paragraph else {
+            continue;
+        };
+        if let Some(marker) = list_marker(
+            skia_paragraph,
+            text_paragraph,
+            x,
+            y,
+            layout_width,
+            markers.last(),
+        ) {
+            markers.push(marker);
+        }
+        y += skia_paragraph.height();
+    }
+    markers
+}
+
+/// The bullet of a list paragraph, in shape coordinates. It hangs before the
+/// text box's start edge, level with the first line, a gap away that grows
+/// with the font size.
+///
+/// An empty paragraph has no style run, so it takes the paint of `previous`
+/// (the last list item painted in the same pass) and its own span's size.
+pub fn list_marker(
+    skia_paragraph: &skia::textlayout::Paragraph,
+    text_paragraph: &TextParagraph,
+    x: f32,
+    y_accum: f32,
+    layout_width: f32,
+    previous: Option<&ListMarker>,
+) -> Option<ListMarker> {
+    if text_paragraph.list_style_type() == ListStyleType::None {
+        return None;
+    }
+
+    let line_metrics = skia_paragraph.get_line_metrics();
+    let line = line_metrics.first()?;
+    let style_metrics = line.get_style_metrics(line.start_index..line.end_index);
+    let (paint, font_size) = match style_metrics.first() {
+        Some((_, metrics)) => {
+            let mut paint = metrics.text_style.foreground();
+            paint.set_anti_alias(true);
+            (paint, metrics.text_style.font_size())
+        }
+        None => {
+            let font_size = text_paragraph.children().first()?.font_size;
+            (previous?.paint.clone(), font_size)
+        }
+    };
+
+    let radius = (font_size * LIST_MARKER_RADIUS_FACTOR).max(LIST_MARKER_MIN_RADIUS);
+    let offset = radius + font_size * LIST_MARKER_GAP_FACTOR;
+    let center_x = if text_paragraph.text_direction() == TextDirection::RTL {
+        x + layout_width + offset
+    } else {
+        x - offset
+    };
+    let baseline = y_accum + line.baseline as f32;
+
+    Some(ListMarker {
+        paint,
+        center: Point::new(center_x, baseline - font_size * LIST_MARKER_CENTER_FACTOR),
+        radius,
+    })
+}
+
 fn draw_decoration_segment(canvas: &Canvas, deco: &TextDecorationSegment) {
     let mut decoration_paint = deco.text_style.foreground();
     decoration_paint.set_anti_alias(true);
@@ -1235,7 +1337,12 @@ fn calculate_decoration_metrics(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::shapes::{FontFamily, FontStyle, TextAlign, TextDirection, TextSpan, TextTransform};
+    use crate::globals::TestRenderResourcesGuard;
+    use crate::render::RenderResources;
+    use crate::shapes::{
+        Fill, FontFamily, FontStyle, GrowType, ListStyleType, SolidColor, TextAlign, TextDirection,
+        TextSpan, TextTransform, Type,
+    };
     use crate::uuid::Uuid;
 
     fn span(
@@ -1318,5 +1425,321 @@ mod tests {
         ]);
 
         assert!(decorated_span_ranges(&para).is_empty());
+    }
+
+    fn sized_span(text: &str, font_size: f32, fills: Vec<Fill>) -> TextSpan {
+        TextSpan::new(
+            text.to_string(),
+            FontFamily::new(Uuid::nil(), 400, FontStyle::Normal),
+            font_size,
+            1.2,
+            0.0,
+            None,
+            None,
+            TextDirection::LTR,
+            400,
+            Uuid::nil(),
+            fills,
+        )
+    }
+
+    fn list_paragraph(
+        text: &str,
+        font_size: f32,
+        direction: TextDirection,
+        list_style_type: ListStyleType,
+    ) -> TextParagraph {
+        TextParagraph::new(
+            TextAlign::Left,
+            direction,
+            None,
+            None,
+            1.2,
+            0.0,
+            vec![sized_span(text, font_size, vec![])],
+        )
+        .with_list_style_type(list_style_type)
+    }
+
+    fn filled_list_item(text: &str, font_size: f32, color: skia::Color) -> TextParagraph {
+        TextParagraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.2,
+            0.0,
+            vec![sized_span(
+                text,
+                font_size,
+                vec![Fill::Solid(SolidColor(color))],
+            )],
+        )
+        .with_list_style_type(ListStyleType::Disc)
+    }
+
+    /// A fixed text at (10, 20), `width` wide, laid out into paragraph layouts.
+    fn layout_paragraphs(paragraphs: Vec<TextParagraph>, width: f32) -> Vec<ParagraphLayout> {
+        let selrect = crate::math::Rect::from_xywh(10.0, 20.0, width, 200.0);
+        let mut content = TextContent::new(selrect, GrowType::Fixed);
+        for paragraph in paragraphs {
+            content.add_paragraph(paragraph);
+        }
+        let mut shape = Shape::new(Uuid::nil());
+        shape.set_shape_type(Type::Text(content.clone()));
+        shape.set_selrect(10.0, 20.0, 10.0 + width, 220.0);
+
+        let mut builders = content.paragraph_builder_group_from_text(None);
+        calculate_text_layout_data(&shape, &content, &mut builders, true).paragraphs
+    }
+
+    fn first_baseline(layout: &ParagraphLayout) -> f32 {
+        layout.y + layout.paragraph.get_line_metrics()[0].baseline as f32
+    }
+
+    #[test]
+    fn list_marker_hangs_before_the_first_line() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let layouts = layout_paragraphs(
+            vec![list_paragraph(
+                "item",
+                20.0,
+                TextDirection::LTR,
+                ListStyleType::Disc,
+            )],
+            300.0,
+        );
+
+        let marker = layouts[0]
+            .marker
+            .as_ref()
+            .expect("disc paragraph has a marker");
+        // Font size 20: radius 3.2, gap 6.6, center 6.4 above the baseline.
+        assert!((marker.center.x - (10.0 - 9.8)).abs() < 0.01, "{marker:?}");
+        assert!(
+            (marker.center.y - (first_baseline(&layouts[0]) - 6.4)).abs() < 0.01,
+            "{marker:?}"
+        );
+        assert!((marker.radius - 3.2).abs() < 0.01, "{marker:?}");
+    }
+
+    #[test]
+    fn rtl_list_marker_hangs_after_the_text_box() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let layouts = layout_paragraphs(
+            vec![list_paragraph(
+                "item",
+                20.0,
+                TextDirection::RTL,
+                ListStyleType::Disc,
+            )],
+            300.0,
+        );
+
+        let marker = layouts[0]
+            .marker
+            .as_ref()
+            .expect("disc paragraph has a marker");
+        assert!(
+            (marker.center.x - (10.0 + 300.0 + 9.8)).abs() < 0.01,
+            "{marker:?}"
+        );
+    }
+
+    #[test]
+    fn wrapped_list_paragraph_has_one_marker_on_its_first_line() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let layouts = layout_paragraphs(
+            vec![list_paragraph(
+                "one two three four five six",
+                20.0,
+                TextDirection::LTR,
+                ListStyleType::Disc,
+            )],
+            60.0,
+        );
+
+        assert!(layouts[0].paragraph.get_line_metrics().len() > 1);
+        let marker = layouts[0]
+            .marker
+            .as_ref()
+            .expect("disc paragraph has a marker");
+        assert!(
+            (marker.center.y - (first_baseline(&layouts[0]) - 6.4)).abs() < 0.01,
+            "{marker:?}"
+        );
+    }
+
+    #[test]
+    fn list_marker_keeps_a_gap_before_the_text_at_any_size() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        for font_size in [4.0, 14.0, 72.0, 300.0] {
+            let layouts = layout_paragraphs(
+                vec![list_paragraph(
+                    "item",
+                    font_size,
+                    TextDirection::LTR,
+                    ListStyleType::Disc,
+                )],
+                2000.0,
+            );
+
+            let marker = layouts[0]
+                .marker
+                .as_ref()
+                .expect("disc paragraph has a marker");
+            // The text starts at x = 10; the gap grows with the font size.
+            assert!(
+                marker.rect().right() <= 10.0 - font_size * 0.32,
+                "font size {font_size}: {marker:?}"
+            );
+        }
+    }
+
+    /// The color painted at `point` when `paragraph` is painted through the
+    /// cached layout of a 200x100 text at (40, 40).
+    fn cached_paint_color_at(
+        paragraph: TextParagraph,
+        point: impl Fn(&ParagraphLayout) -> Point,
+    ) -> skia::Color {
+        let selrect = crate::math::Rect::from_xywh(40.0, 40.0, 200.0, 100.0);
+        let mut content = TextContent::new(selrect, GrowType::Fixed);
+        content.add_paragraph(paragraph);
+        let mut shape = Shape::new(Uuid::nil());
+        shape.set_shape_type(Type::Text(content));
+        shape.set_selrect(40.0, 40.0, 240.0, 140.0);
+
+        let content = shape.get_text_content().clone();
+        let mut builders = content.paragraph_builder_group_from_text(None);
+        let layouts = calculate_text_layout_data(&shape, &content, &mut builders, true);
+        let at = point(&layouts.paragraphs[0]);
+
+        let mut surface = skia::surfaces::raster_n32_premul((300, 200)).expect("raster surface");
+        surface.canvas().clear(skia::Color::TRANSPARENT);
+        let painted =
+            try_paint_from_layout_cache(None, Some(surface.canvas()), &shape, None, false)
+                .expect("cached paint");
+        assert!(painted, "the layout cache should be usable");
+
+        let info = skia::ImageInfo::new(
+            (1, 1),
+            skia::ColorType::RGBA8888,
+            skia::AlphaType::Unpremul,
+            None,
+        );
+        let mut px = [0u8; 4];
+        assert!(surface.image_snapshot().read_pixels(
+            &info,
+            &mut px,
+            4,
+            (at.x as i32, at.y as i32),
+            skia::image::CachingHint::Disallow
+        ));
+        skia::Color::from_argb(px[3], px[0], px[1], px[2])
+    }
+
+    #[test]
+    fn cached_paint_draws_the_list_marker() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let color =
+            cached_paint_color_at(filled_list_item("item", 30.0, skia::Color::RED), |layout| {
+                layout
+                    .marker
+                    .as_ref()
+                    .expect("disc paragraph has a marker")
+                    .center
+            });
+        assert_eq!(color, skia::Color::RED);
+    }
+
+    #[test]
+    fn cached_paint_draws_no_marker_for_plain_text() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        // Where a 30px bullet would be: radius 4.8 plus a 9.9 gap before x = 40.
+        let paragraph = filled_list_item("item", 30.0, skia::Color::RED)
+            .with_list_style_type(ListStyleType::None);
+        let color = cached_paint_color_at(paragraph, |layout| {
+            Point::new(40.0 - 14.7, first_baseline(layout) - 9.6)
+        });
+        assert_eq!(color.a(), 0, "{color:?}");
+    }
+
+    #[test]
+    fn plain_paragraph_has_no_marker() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let layouts = layout_paragraphs(
+            vec![list_paragraph(
+                "item",
+                20.0,
+                TextDirection::LTR,
+                ListStyleType::None,
+            )],
+            300.0,
+        );
+
+        assert!(layouts[0].marker.is_none());
+    }
+
+    #[test]
+    fn small_text_marker_keeps_a_minimum_radius() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let layouts = layout_paragraphs(
+            vec![list_paragraph(
+                "item",
+                4.0,
+                TextDirection::LTR,
+                ListStyleType::Disc,
+            )],
+            300.0,
+        );
+
+        let marker = layouts[0]
+            .marker
+            .as_ref()
+            .expect("disc paragraph has a marker");
+        assert!((marker.radius - 1.5).abs() < 0.01, "{marker:?}");
+    }
+
+    #[test]
+    fn empty_list_paragraph_borrows_the_previous_item_paint() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let layouts = layout_paragraphs(
+            vec![
+                filled_list_item("item", 20.0, skia::Color::RED),
+                filled_list_item("", 10.0, skia::Color::BLUE),
+            ],
+            300.0,
+        );
+
+        let empty = layouts[1].marker.as_ref().expect("empty item has a marker");
+        // Its own size, the previous item's paint.
+        assert!((empty.radius - 1.6).abs() < 0.01, "{empty:?}");
+        assert_eq!(empty.paint.color(), skia::Color::RED);
+    }
+
+    #[test]
+    fn empty_first_list_paragraph_has_no_marker() {
+        let mut resources = RenderResources::try_new_headless().expect("headless resources");
+        let _guard = TestRenderResourcesGuard::install(&mut resources);
+        let layouts = layout_paragraphs(
+            vec![list_paragraph(
+                "",
+                20.0,
+                TextDirection::LTR,
+                ListStyleType::Disc,
+            )],
+            300.0,
+        );
+
+        assert!(layouts[0].marker.is_none());
     }
 }

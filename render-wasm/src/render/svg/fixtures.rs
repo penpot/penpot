@@ -7,9 +7,9 @@ use skia_safe as skia;
 use crate::globals::TestRenderResourcesGuard;
 use crate::render::{FontStore, RenderResources};
 use crate::shapes::{
-    make_corners, Fill, FontFamily, FontStyle, Frame, Group, GrowType, ImageFill, Paragraph, Path,
-    Rect, Segment, SolidColor, Stroke, StrokeKind, StrokeStyle, TextAlign, TextContent,
-    TextDirection, TextSpan, Type,
+    make_corners, Fill, FontFamily, FontStyle, Frame, Group, GrowType, ImageFill, ListStyleType,
+    Paragraph, Path, Rect, Segment, SolidColor, Stroke, StrokeKind, StrokeStyle, TextAlign,
+    TextContent, TextDirection, TextSpan, Type,
 };
 use crate::state::ShapesPool;
 use crate::utils::uuid_from_u32_quartet;
@@ -377,6 +377,52 @@ pub(super) fn add_text_with_spans(
         0.0,
         spans,
     ));
+
+    let shape = pool.add_shape(id);
+    shape.set_parent(Uuid::nil());
+    shape.set_selrect(l, t, r, b);
+    shape.set_shape_type(Type::Text(content));
+}
+
+/// Fixed text with one solid-filled paragraph per `(text, list style)` entry.
+pub(super) fn add_text_with_list_paragraphs(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    font_size: f32,
+    fill: skia::Color,
+    paragraphs: Vec<(&str, ListStyleType)>,
+) {
+    let bounds = skia::Rect::from_ltrb(l, t, r, b);
+    let mut content = TextContent::new(bounds, GrowType::Fixed);
+    let line_height = 1.2;
+    for (text, list_style_type) in paragraphs {
+        let span = TextSpan::new(
+            text.to_string(),
+            FontFamily::new(Uuid::nil(), 400, FontStyle::Normal),
+            font_size,
+            line_height,
+            0.0,
+            None,
+            None,
+            TextDirection::LTR,
+            400,
+            Uuid::nil(),
+            vec![Fill::Solid(SolidColor(fill))],
+        );
+        content.add_paragraph(
+            Paragraph::new(
+                TextAlign::Left,
+                TextDirection::LTR,
+                None,
+                None,
+                line_height,
+                0.0,
+                vec![span],
+            )
+            .with_list_style_type(list_style_type),
+        );
+    }
 
     let shape = pool.add_shape(id);
     shape.set_parent(Uuid::nil());

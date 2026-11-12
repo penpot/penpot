@@ -11,7 +11,8 @@ use crate::utils::uuid_to_u32_quartet;
 use crate::uuid::Uuid;
 use crate::wasm::fills::RawFillData;
 use crate::wasm::text::{
-    helpers as text_helpers, RawTextAlign, RawTextDecoration, RawTextDirection, RawTextTransform,
+    helpers as text_helpers, RawListStyleType, RawTextAlign, RawTextDecoration, RawTextDirection,
+    RawTextTransform,
 };
 use crate::with_state;
 use skia_safe::Color;
@@ -741,6 +742,13 @@ pub extern "C" fn text_editor_get_current_styles() -> *mut u8 {
             })
             .unwrap_or(RawTextTransform::None as u32);
 
+        let list_style_type = styles
+            .list_style_type
+            .value()
+            .as_ref()
+            .map(|value| RawListStyleType::from(*value) as u32)
+            .unwrap_or(RawListStyleType::None as u32);
+
         let font_family_id = styles
             .font_family_id
             .value()
@@ -817,7 +825,9 @@ pub extern "C" fn text_editor_get_current_styles() -> *mut u8 {
         bytes.extend_from_slice(&font_variant_id[3].to_le_bytes()); // 112    // 28
         bytes.extend_from_slice(&line_height.to_le_bytes()); // 116    // 29
         bytes.extend_from_slice(&letter_spacing.to_le_bytes()); // 120    // 30
-        bytes.extend_from_slice(&fill_bytes); // 124
+        bytes.extend_from_slice(&(*styles.list_style_type.state() as u32).to_le_bytes()); // 124    // 31
+        bytes.extend_from_slice(&list_style_type.to_le_bytes()); // 128    // 32
+        bytes.extend_from_slice(&fill_bytes); // 132
 
         mem::write_bytes(bytes)
     })

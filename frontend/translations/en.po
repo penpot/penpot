@@ -2408,7 +2408,10 @@ msgstr "Letter Spacing"
 msgid "inspect.attributes.typography.line-height"
 msgstr "Line Height"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:638
+msgid "inspect.attributes.typography.list-style-type.disc"
+msgstr "Disc"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:594
 msgid "inspect.attributes.typography.mixed-font-family"
 msgstr "Mixed Font Families"
 
@@ -8419,6 +8422,14 @@ msgstr "Letter Spacing"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:713
 msgid "workspace.options.text-options.line-height"
 msgstr "Line height"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:251
+msgid "workspace.options.text-options.list-bullets"
+msgstr "Bullet list"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:247
+msgid "workspace.options.text-options.list-none"
+msgstr "No list"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:212
 msgid "workspace.options.text-options.strikethrough"

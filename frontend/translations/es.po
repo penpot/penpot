@@ -2458,7 +2458,10 @@ msgstr "Espaciado de letras"
 msgid "inspect.attributes.typography.line-height"
 msgstr "Interlineado"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:638
+msgid "inspect.attributes.typography.list-style-type.disc"
+msgstr "Disco"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:594
 msgid "inspect.attributes.typography.mixed-font-family"
 msgstr "Varias Familias tipográficas"
 
@@ -8496,6 +8499,14 @@ msgstr "Espaciado entre letras"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:713
 msgid "workspace.options.text-options.line-height"
 msgstr "Altura de línea"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:251
+msgid "workspace.options.text-options.list-bullets"
+msgstr "Lista con viñetas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:247
+msgid "workspace.options.text-options.list-none"
+msgstr "Sin lista"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:212
 msgid "workspace.options.text-options.strikethrough"
