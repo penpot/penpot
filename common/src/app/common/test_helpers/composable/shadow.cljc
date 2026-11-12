@@ -930,6 +930,11 @@
                                   (not= (boolean (:flip-y old-root)) (flip :flip-y)))
         ;; a swap keeps the old head's layout item values, and their overrides
         layout-items (into {} (filter #(.startsWith (name (key %)) "layout-item-")) (get model root-id))
+        ;; the position as the head's constraints place it, when the head
+        ;; carries its own
+        placing (cond-> after
+                  (and position (contains? (get result root-id) :constraints-group))
+                  (update (:id position) merge (select-keys root [:constraints-h :constraints-v])))
         ;; a swap in a copy keeps an authored place its position does not give,
         ;; unless a layout places the head
         kept-place? (and (:shape-ref parent) position
@@ -938,7 +943,7 @@
                          (contains? (get model root-id) :geometry-group)
                          (not (gpt/close? (first (:points root))
                                           (first (:points (geom/child-placement position (get after (:parent-id position))
-                                                                                parent after))))))]
+                                                                                parent placing))))))]
     (cond-> result
       retained-orientation?
       (assoc-in [root-id :geometry-group]

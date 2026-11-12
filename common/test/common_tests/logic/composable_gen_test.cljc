@@ -2443,6 +2443,13 @@
                                     :grid-empty false :layout-copies false :text false}]
                        :ops [[:transform 0 2 0 7] [:delete] [:switch] [:transform 1 1]]}))))
 
+(t/deftest switching-a-copy-head-keeps-the-place-its-own-constraint-kept
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles false :layout nil :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies false :text true}]
+                       :ops [[:add-variant] [:variant-property 0 9 25] [:make-variant 11] [:resize 19]
+                             [:add-child] [:style 19 9 1] [:switch 9]]}))))
+
 (t/deftest settling-a-bool-in-a-grid-copy-twice-keeps-its-shapes-in-place
   (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies true :layout-children true}]
