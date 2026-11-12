@@ -169,6 +169,12 @@
           (into (entities-signature :component (:components ed) (:components ad)
                                     #{} (constantly nil)))))))
 
+(defn- corner-order
+  "The corners of a bool by their rounded position: a bool computes them
+   again from its children, in any order."
+  [points]
+  (sort-by (juxt #(Math/round (* 100.0 (:x %))) #(Math/round (* 100.0 (:y %)))) points))
+
 (defn same-state?
   "Compare exact data with an absolute tolerance only in shape geometry.
    Undo defaults to 1e-10; design equivalence can supply its own tolerance."
@@ -188,7 +194,12 @@
 
          (and (map? expected) (map? actual) (= (set (keys expected)) (set (keys actual))))
          (every? (fn [key]
-                   (same-state? (get expected key) (get actual key)
+                   (same-state? (cond-> (get expected key)
+                                  (and (= :points key) (= :bool (:type expected)) (contains? expected :parent-id))
+                                  corner-order)
+                                (cond-> (get actual key)
+                                  (and (= :points key) (= :bool (:type expected)) (contains? expected :parent-id))
+                                  corner-order)
                                 ;; a bool or path stores its segments in single precision, and
                                 ;; a bool computes them again from its children
                                 (if (and (contains? expected :parent-id) (#{:bool :path} (:type expected)))
