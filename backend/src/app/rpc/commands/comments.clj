@@ -22,6 +22,7 @@
    [app.features.fdata :as feat.fdata]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
+   [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
@@ -174,10 +175,12 @@
             :comment-url comment-url}))))))
 
 (defn- decode-row
-  [{:keys [participants position mentions] :as row}]
+  [{:keys [participants position mentions area anchor-type] :as row}]
   (cond-> row
     (db/pgpoint? position) (assoc :position (db/decode-pgpoint position))
     (db/pgobject? participants) (assoc :participants (db/decode-transit-pgobject participants))
+    (db/pgobject? area) (assoc :area (db/decode-transit-pgobject area))
+    (string? anchor-type) (assoc :anchor-type (keyword anchor-type))
     (db/pgarray? mentions) (assoc :mentions (db/decode-pgarray mentions #{}))))
 
 (def xf-decode-row
@@ -267,6 +270,8 @@
            p.team_id AS team_id,
            f.name AS file_name,
            f.project_id AS project_id,
+           fpr.title AS pull_request_title,
+           fpr.status AS pull_request_status,
            first_value(c.content) OVER w AS content,
            (SELECT count(1)
               FROM comment AS c
@@ -281,6 +286,7 @@
      INNER JOIN project AS p ON (p.id = f.project_id)
       LEFT JOIN comment_thread_status AS cts ON (cts.thread_id = ct.id AND cts.profile_id = ?)
       LEFT JOIN profile AS pf ON (ct.owner_id = pf.id)
+      LEFT JOIN file_pull_request AS fpr ON (fpr.id = ct.pull_request_id)
      WHERE f.deleted_at IS NULL
        AND p.deleted_at IS NULL
        %1
@@ -468,9 +474,29 @@
 ;; MUTATION COMMANDS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare ^:private create-comment-thread)
+(declare ^:private insert-comment-thread)
 
 ;; --- COMMAND: Create Comment Thread
+
+(def schema:area
+  "A rectangle of the canvas a thread points at, in canvas coordinates."
+  [:map {:title "CommentThreadArea"}
+   [:x ::sm/safe-number]
+   [:y ::sm/safe-number]
+   [:width ::sm/safe-number]
+   [:height ::sm/safe-number]])
+
+(def ^:private schema:anchor
+  "What a thread points at: a spot of a board (`:canvas`, the default),
+  a layer or a rectangle."
+  [:multi {:dispatch :type :title "CommentThreadAnchor"}
+   [:canvas [:map [:type [:= :canvas]]]]
+   [:layer [:map
+            [:type [:= :layer]]
+            [:shape-id ::sm/uuid]]]
+   [:area [:map
+           [:type [:= :area]]
+           [:area schema:area]]]])
 
 (def ^:private
   schema:create-comment-thread
@@ -481,7 +507,28 @@
    [:page-id ::sm/uuid]
    [:frame-id ::sm/uuid]
    [:share-id {:optional true} [:maybe ::sm/uuid]]
-   [:mentions {:optional true} [::sm/set ::sm/uuid]]])
+   [:mentions {:optional true} [::sm/set ::sm/uuid]]
+   ;; the design review the thread is written in: an open pull request
+   ;; of this file (the branch file it reviews)
+   [:pull-request-id {:optional true} ::sm/uuid]
+   [:anchor {:optional true} schema:anchor]])
+
+(def ^:private sql:get-open-pull-request-of-file
+  "SELECT id FROM file_pull_request
+    WHERE id = ?
+      AND source_file_id = ?
+      AND status = 'open'
+      AND deleted_at IS NULL")
+
+(defn- check-review-of-file
+  "Refuse a thread for a design review that is not an open review of the
+  file the thread is written on."
+  [conn pull-request-id file-id]
+  (when-not (db/exec-one! conn [sql:get-open-pull-request-of-file pull-request-id file-id])
+    (ex/raise :type :validation
+              :code :pull-request-not-open
+              :hint "the thread names a design review that is not open on this file"
+              :pull-request-id pull-request-id)))
 
 (defn- update-thread-seqn
   [conn file-id seqn]
@@ -497,6 +544,26 @@
       (assoc :owner-email (:email profile))
       (assoc :owner-photo-id (:photo-id profile))))
 
+(defn create-comment-thread
+  "Create a thread with its first message on the page `page-id` of
+  `file-id`, once the quotes of threads and comments allow it. It joins
+  the transaction of `cfg` when there is one: a task created on the canvas
+  gets its thread this way (`app.rpc.commands.files-task`). The caller
+  checks the permissions. Returns the thread with the id of its first
+  message (`:comment-id`)."
+  [cfg {:keys [::rpc/profile-id file-id page-id] :as params}]
+  (let [{:keys [team-id project-id] :as file} (get-file cfg file-id page-id)]
+    (-> cfg
+        (assoc ::quotes/profile-id profile-id)
+        (assoc ::quotes/team-id team-id)
+        (assoc ::quotes/project-id project-id)
+        (assoc ::quotes/file-id file-id)
+        (quotes/check! {::quotes/id ::quotes/comment-threads-per-file}
+                       {::quotes/id ::quotes/comments-per-file}))
+
+    (let [thread (db/tx-run! cfg insert-comment-thread (assoc params ::file file))]
+      (vary-meta thread assoc ::audit/props (assoc thread :team-id team-id)))))
+
 (sv/defmethod ::create-comment-thread
   {::doc/added "1.15"
    ::webhooks/event? true
@@ -506,24 +573,12 @@
   [cfg {:keys [::rpc/profile-id file-id page-id share-id] :as params}]
   (let [perms (files/check-comment-permissions! cfg profile-id file-id share-id)]
     (check-page-scope perms page-id)
+    (create-comment-thread cfg params)))
 
-    (let [{:keys [team-id project-id] :as file} (get-file cfg file-id page-id)]
-      (-> cfg
-          (assoc ::quotes/profile-id profile-id)
-          (assoc ::quotes/team-id team-id)
-          (assoc ::quotes/project-id project-id)
-          (assoc ::quotes/file-id file-id)
-          (quotes/check! {::quotes/id ::quotes/comment-threads-per-file}
-                         {::quotes/id ::quotes/comments-per-file}))
-
-      (let [params (assoc params ::file file)
-            thread (db/tx-run! cfg create-comment-thread params)]
-
-        (vary-meta thread assoc ::audit/props (assoc thread :team-id team-id))))))
-
-(defn- create-comment-thread
+(defn- insert-comment-thread
   [{:keys [::db/conn] :as cfg}
-   {:keys [::rpc/profile-id ::rpc/request-at ::file position content mentions frame-id] :as params}]
+   {:keys [::rpc/profile-id ::rpc/request-at ::file position content mentions frame-id
+           pull-request-id anchor]}]
 
   (let [;; NOTE: we take the next seq number from a separate query
         ;; because we need to lock the file for avoid race conditions
@@ -533,6 +588,9 @@
         ;; the sequence state management to a different table or
         ;; different storage (example: redis) for alivate the update
         ;; pression on the file table
+
+        _         (when pull-request-id
+                    (check-review-of-file conn pull-request-id (:id file)))
 
         profile   (profile/get-profile conn profile-id)
         seqn      (get-next-seqn conn (:id file))
@@ -552,7 +610,11 @@
                                    :seqn seqn
                                    :frame-id frame-id
                                    :position (db/pgpoint position)
-                                   :mentions (db/encode-pgarray mentions conn "uuid")})
+                                   :mentions (db/encode-pgarray mentions conn "uuid")
+                                   :pull-request-id pull-request-id
+                                   :anchor-type (d/name (get anchor :type :canvas))
+                                   :shape-id (:shape-id anchor)
+                                   :area (some-> (:area anchor) db/tjson)})
                       (decode-row))
         comment   (-> (db/insert! conn :comment
                                   {:id (uuid/next)
@@ -747,7 +809,37 @@
    [:id ::sm/uuid]
    [:share-id {:optional true} [:maybe ::sm/uuid]]])
 
+;; The thread delete that follows clears `thread_id` and `comment_id` of
+;; the task rows through two ON DELETE SET NULL actions, whose order
+;; Postgres picks by trigger name. A row this statement already updated
+;; gets its FK rechecked by the first of them, and when that is the
+;; `thread_id` one, `comment_id` still names a message the cascade has
+;; deleted. Clearing both here leaves the delete no referencing row.
+(def ^:private sql:delete-thread-tasks
+  "UPDATE file_task
+      SET deleted_at = ?,
+          updated_at = ?,
+          thread_id = NULL,
+          comment_id = NULL
+    WHERE thread_id = ?
+      AND deleted_at IS NULL")
+
+(defn- delete-thread-tasks
+  "Delete the tasks of the thread `thread-id`, which live in its messages,
+  and tell the open clients of `file-id` once the transaction commits."
+  [{:keys [::db/conn ::mbus/msgbus]} profile-id file-id thread-id]
+  (let [ts     (ct/now)
+        result (db/exec-one! conn [sql:delete-thread-tasks ts ts thread-id])]
+    (when (pos? (db/get-update-count result))
+      (db/after-commit
+       #(mbus/pub! msgbus
+                   :topic file-id
+                   :message {:type :file-tasks-change
+                             :file-id file-id
+                             :profile-id profile-id})))))
+
 (sv/defmethod ::delete-comment-thread
+  "Delete a thread with its messages and the tasks they hold."
   {::doc/added "1.15"
    ::sm/params schema:delete-comment-thread
    ::db/transaction true}
@@ -763,6 +855,7 @@
       (ex/raise :type :validation
                 :code :not-allowed))
 
+    (delete-thread-tasks cfg profile-id file-id id)
     (db/delete! conn :comment-thread {:id id}
                 {::db/return-keys false})
     nil))

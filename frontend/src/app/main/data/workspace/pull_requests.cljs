@@ -15,9 +15,12 @@
   `app.main.data.workspace.branches`."
   (:require
    [app.config :as cf]
+   [app.main.data.comments :as dcmt]
    [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dwp]
+   [app.main.data.workspace.drawing.common :as dwdc]
+   [app.main.data.workspace.layout :as dwl]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.util.i18n :refer [tr]]
@@ -159,7 +162,8 @@
 (defn update-pull-request-snapshot
   "Publish the branch's current state to the reviewers (repositions the
   review snapshot). When the branch is the currently open file, pending
-  local changes are force-persisted first."
+  local changes are force-persisted first. Once published, the review
+  open in the workspace learns it is up to date."
   [id]
   (assert (uuid? id) "expected valid uuid for `id`")
   (ptk/reify ::update-pull-request-snapshot
@@ -178,7 +182,8 @@
                  (rx/of (if updated
                           (ntf/success (tr "workspace.pull-requests.publish.success"))
                           (ntf/info (tr "workspace.pull-requests.publish.up-to-date")))
-                        (fetch-pull-requests))))
+                        (fetch-pull-requests)
+                        (refresh-pull-request-preview-info id))))
               (rx/catch
                (fn [_]
                  (rx/of (ntf/error (tr "workspace.pull-requests.lifecycle.error")))))))))))
@@ -311,13 +316,15 @@
   (ptk/reify ::exit-pull-request-preview
     ptk/UpdateEvent
     (update [_ state]
-      (dissoc state :workspace-pr-preview))
+      (dissoc state :workspace-pr-preview :workspace-review-local :workspace-review-activity))
 
     ptk/WatchEvent
     (watch [_ state _]
       (let [params (-> (rt/get-params state)
                        (dissoc :pr-id))]
-        (rx/of (rt/nav :workspace params))))))
+        (rx/of (dwdc/clear-drawing)
+               (dcmt/close-thread)
+               (rt/nav :workspace params))))))
 
 (defn- enter-pull-request-preview
   "Worker for `initialize-pull-request-preview`: load the pull request
@@ -353,7 +360,12 @@
                   (rx/of (exit-pull-request-preview))
 
                   :else
-                  (rx/of (set-pull-request-preview {:status :loaded :info info})))))
+                  (rx/of (set-pull-request-preview {:status :loaded :info info})
+                         ;; the review opens on the inspect of the selection:
+                         ;; the move tool picks layers, and the comments and
+                         ;; tasks show on the canvas
+                         (dwdc/clear-drawing)
+                         (dwl/toggle-layout-flag :display-comments :force? true)))))
              (rx/catch
               (fn [_]
                 (rx/of (ntf/warn (tr "workspace.pull-requests.preview.unavailable"))

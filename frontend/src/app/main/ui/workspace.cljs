@@ -13,7 +13,9 @@
    [app.main.data.persistence :as dps]
    [app.main.data.plugins :as dpl]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.pull-requests :as dwpr]
+   [app.main.data.workspace.tasks :as dwtk]
    [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
@@ -33,6 +35,7 @@
    [app.main.ui.workspace.nudge]
    [app.main.ui.workspace.palette :refer [palette*]]
    [app.main.ui.workspace.plugins]
+   [app.main.ui.workspace.review.details]
    [app.main.ui.workspace.sidebar :refer [sidebar*]]
    [app.main.ui.workspace.sidebar.branches :refer [branch-context-banner*]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox*]]
@@ -76,6 +79,7 @@
         colorpalette?  (:colorpalette layout)
         textpalette?   (:textpalette layout)
         hide-ui?       (:hide-ui layout)
+        bottom-bar     (mf/deref refs/bottom-bar)
 
         on-resize
         (mf/use-fn
@@ -127,8 +131,12 @@
          :selected selected
          :layout layout
          :palete-size
-         (when (and (or colorpalette? textpalette?) (not hide-ui?))
-           @palete-size)}]]]
+         (when (and (or colorpalette? textpalette?)
+                    (not hide-ui?)
+                    (contains? #{nil :palette} bottom-bar))
+           ;; on a branch the palettes sit higher, at the level of its bar
+           (cond-> @palete-size
+             (some? bottom-bar) (+ 8)))}]]]
 
      (when-not hide-ui?
        [:> sidebar* {:layout layout
@@ -202,7 +210,7 @@
 
 (mf/defc workspace*
   {::mf/wrap [mf/memo]}
-  [{:keys [team-id project-id file-id page-id pr-id layout-name]}]
+  [{:keys [team-id project-id file-id page-id pr-id task-id layout-name]}]
 
   (let [layout           (mf/deref refs/workspace-layout)
         wglobal          (mf/deref refs/workspace-global)
@@ -263,6 +271,12 @@
     (mf/with-effect [file-id page-id pr-id file-loaded?]
       (when (and file-loaded? page-id pr-id)
         (st/emit! (dwpr/initialize-pull-request-preview pr-id))))
+
+    ;; a link to a task (the email that assigns it) opens the task
+    (mf/with-effect [file-id task-id file-loaded?]
+      (when (and file-loaded? task-id)
+        (st/emit! (dwd/select-for-drawing :comments)
+                  (dwtk/open-task-link task-id))))
 
     (mf/with-effect [file-id page-id]
       (reset! first-frame-rendered? false))

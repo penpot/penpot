@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.reviews
   "The reviews dialog: the merges into main, each with who made it, when
@@ -20,8 +20,11 @@
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.buttons.link-button :refer [link-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.layout.menu :refer [menu* menu-item*]]
    [app.main.ui.ds.layout.modal :refer [modal* modal-header* modal-content*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
@@ -83,10 +86,9 @@
                                :is-folded (not expanded?))}
       text]
      (when (or overflow? expanded?)
-       [:button {:type "button"
-                 :class (stl/css :see-more)
-                 :aria-expanded expanded?
-                 :on-click on-toggle}
+       [:> link-button* {:class (stl/css :see-more)
+                         :aria-expanded expanded?
+                         :on-click on-toggle}
         (if expanded?
           (tr "workspace.branches.reviews.see-less")
           (tr "workspace.branches.reviews.see-more"))])]))
@@ -151,7 +153,7 @@
          [:span {:class (stl/css :entry-review-title)}
           (tr "workspace.branches.reviews.from-review" title)]])
       (if (str/blank? (:comment merge))
-        [:p {:class (stl/css :entry-no-comment)}
+        [:> text* {:as "p" :typography t/body-medium :class (stl/css :entry-no-comment)}
          (tr "workspace.branches.reviews.no-comment")]
         [:> clamped-text* {:text (:comment merge)}])]]))
 

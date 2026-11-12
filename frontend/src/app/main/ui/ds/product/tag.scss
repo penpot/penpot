@@ -27,6 +27,8 @@
   border-radius: $br-4;
   background-color: var(--tag-bg-color);
   color: var(--tag-fg-color);
+
+  // TODO: 10px is not a size of the DS typographies.
   font-size: px2rem(10);
   white-space: nowrap;
 

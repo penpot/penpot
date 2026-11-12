@@ -1,0 +1,32 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as TaskStatus from "./task_status.stories";
+
+<Meta title="Product/Review/TaskStatus" />
+
+# TaskStatus
+
+The state of a task: a word in the colour of the state.
+
+<Canvas of={TaskStatus.AllStatuses} />
+
+## Technical notes
+
+`status` is one of `open`, `done`, `reopened`, `verified` and `wont-do`;
+`label` is the translated name the caller shows.
+
+```clj
+[:> task-status* {:status (:status task)
+                  :label (tr "workspace.tasks.status.open")}]
+```
+
+## Usage guidelines (design)
+
+Open is blue: the task needs work. Done is green: it waits for someone to
+verify it. Reopened is orange: it needs work again. Verified is purple and
+closes the task. Won't do is red and drops it.

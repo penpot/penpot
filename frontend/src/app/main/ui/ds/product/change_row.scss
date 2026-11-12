@@ -24,11 +24,9 @@
   }
 
   &:focus-visible {
-    outline: none;
-  }
+    --row-card-outline: #{$b-1} solid var(--color-accent-primary);
 
-  &:focus-visible .card {
-    outline: $b-1 solid var(--color-accent-primary);
+    outline: none;
   }
 
   &.is-muted {
@@ -69,6 +67,7 @@
 }
 
 .card {
+  outline: var(--row-card-outline, none);
   display: flex;
   flex: 1;
   align-items: center;

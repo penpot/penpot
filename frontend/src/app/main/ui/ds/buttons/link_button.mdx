@@ -1,0 +1,30 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as LinkButton from "./link_button.stories";
+
+<Meta title="Buttons/LinkButton" />
+
+# LinkButton
+
+An action that reads as a link inside a line of text.
+
+<Canvas of={LinkButton.AllTones} />
+
+## Variants
+
+`tone` is `accent` (default), `info` or `neutral`.
+
+## Technical notes
+
+It renders a `button`, so use it for actions; a link that navigates is an
+`a`. `icon` goes before the text.
+
+```clj
+[:> link-button* {:icon i/add :on-click on-add}
+ (tr "workspace.tasks.new-task")]
+```

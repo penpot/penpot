@@ -1,0 +1,89 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+
+.marker {
+  position: absolute;
+
+  // the mark is centered on its point
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+
+  // the card of a hovered mark goes over the other marks
+  &.is-hovered {
+    z-index: var(--z-index-panels);
+  }
+
+  // what stays under marks that fan out
+  &.is-ghost {
+    opacity: 0.6;
+    pointer-events: none;
+    animation: marker-ghost-appear 0.18s ease-out;
+  }
+
+  &.is-expanded {
+    // TODO: no DS z-index token for 2.
+    z-index: 2;
+    animation: marker-fan-out 0.18s ease-out;
+  }
+
+  &.is-expanded.is-hovered {
+    z-index: var(--z-index-panels);
+  }
+}
+
+// the marks start under the pointer that fanned them out: they ignore it until
+// they arrive, or the first one would take the hover and show its card
+@keyframes marker-fan-out {
+  0% {
+    translate: var(--marker-ring-x, 0) var(--marker-ring-y, 0);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  99% {
+    pointer-events: none;
+  }
+
+  100% {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+
+@keyframes marker-ghost-appear {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 0.6;
+  }
+}
+
+.preview-more {
+  color: var(--color-foreground-secondary);
+}
+
+// the area a thread points at: the review blue at a tenth of its strength,
+// with a dashed outline
+.area-box {
+  position: absolute;
+  border: $b-1 dashed var(--color-accent-info);
+  border-radius: $br-4;
+
+  // TODO: no DS token for this tint of the review blue.
+  background-color: color-mix(in srgb, var(--color-accent-info) 10%, transparent);
+  pointer-events: none;
+}
+
+.area-drawer {
+  position: absolute;
+  inset: 0;
+  cursor: crosshair;
+  pointer-events: auto;
+}

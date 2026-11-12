@@ -1,0 +1,9 @@
+Hello {{name|abbreviate:25}}!
+
+{{ source-user }} assigned you a task:
+
+{{ task-title }}
+
+{{ task-url }}
+
+The Penpot team.

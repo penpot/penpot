@@ -32,6 +32,7 @@
     :draw-path (cur/get-static "draw")
     :edit-path (cur/get-static "move")
     :create-shape (cur/get-static "create-shape")
+    :create-task (cur/get-static "create-task")
     :duplicate (cur/get-static "duplicate")
     :zoom (cur/get-static "zoom")
     :zoom-in (cur/get-static "zoom-in")

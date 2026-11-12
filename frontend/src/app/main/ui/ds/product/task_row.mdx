@@ -1,0 +1,46 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as TaskRow from "./task_row.stories";
+
+<Meta title="Product/Review/TaskRow" />
+
+# TaskRow
+
+One task of a list: its title over its state and the layer it points at.
+
+<Canvas of={TaskRow.Default} />
+
+## Variants
+
+`is-selected` outlines the task open on the canvas, in the review colour
+with `is-review`. `review` shows the name of the design review it belongs to.
+
+<Canvas of={TaskRow.Selected} />
+<Canvas of={TaskRow.InAReview} />
+
+`is-layer-lost` marks a task whose layer was deleted: the chip of the
+layer turns orange and shows a warning.
+
+<Canvas of={TaskRow.LostLayer} />
+
+## Technical notes
+
+The row is a `role="button"` that reacts to Enter and Space while the focus
+is on the row itself. Two slots
+take elements: `assignee` (an avatar, at the end of the second line)
+and `actions` (a menu trigger, at the end of the title). A click inside
+a slot must stop its propagation when it should not open the task.
+
+```clj
+[:> task-row* {:title (:title task)
+               :status (:status task)
+               :status-label (tr "workspace.tasks.status.open")
+               :layer "Card form"
+               :assignee (mf/html [:> avatar* {:profile assignee :variant "S"}])
+               :on-click on-open}]
+```

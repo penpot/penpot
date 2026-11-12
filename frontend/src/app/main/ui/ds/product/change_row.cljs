@@ -25,6 +25,8 @@
    [:tone {:optional true} [:maybe (into [:enum] tag/tones)]]
    [:is-selected {:optional true} [:maybe :boolean]]
    [:is-muted {:optional true} [:maybe :boolean]]
+   [:start {:optional true} [:maybe :any]]
+   [:end {:optional true} [:maybe :any]]
    [:on-click {:optional true} [:maybe fn?]]])
 
 (mf/defc change-row*

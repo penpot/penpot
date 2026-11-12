@@ -1,0 +1,40 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
+
+.layer-chip {
+  --layer-chip-bg-color: var(--color-background-quaternary);
+  --layer-chip-fg-color: var(--color-foreground-secondary);
+
+  @include use-typography("body-small");
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  padding: var(--sp-xxs) var(--sp-s);
+  border-radius: $br-4;
+  background-color: var(--layer-chip-bg-color);
+  color: var(--layer-chip-fg-color);
+
+  &.is-lost {
+    --layer-chip-bg-color: var(--color-background-warning);
+    --layer-chip-fg-color: var(--color-accent-warning);
+  }
+}
+
+.label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.is-struck {
+  text-decoration: line-through;
+}

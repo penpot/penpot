@@ -2,7 +2,7 @@
 ;; License v. 2.0. If a copy of the MPL was not distributed with this
 ;; file You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.branch-review.facts
   "What the detail pane says about an entry that has no before and after:
@@ -85,11 +85,11 @@
         (when (and deleted? (pos? layers))
           [:> brl/notice* {:level :warning
                            :title (tr "workspace.branches.review.facts.page-goes")}
-           (tr (if incoming
-                 "workspace.branches.review.facts.page-goes-update"
-                 "workspace.branches.review.facts.page-goes-merge")
-               (tr "workspace.branches.review.facts.boards" (i18n/c (count boards)))
-               (tr "workspace.branches.review.facts.layers" (i18n/c layers)))])]
+           (let [boards (tr "workspace.branches.review.facts.boards" (i18n/c (count boards)))
+                 layers (tr "workspace.branches.review.facts.layers" (i18n/c layers))]
+             (if incoming
+               (tr "workspace.branches.review.facts.page-goes-update" boards layers)
+               (tr "workspace.branches.review.facts.page-goes-merge" boards layers)))])]
 
        [:> preview-card* {:label (brc/side-label (if (= open-side :main) :branch :main))
                           :side (if (= open-side :main) "branch" "main")}
@@ -149,7 +149,7 @@
   of its other layers move."
   [{:keys [name layout from to moved]}]
   [(tr "workspace.branches.review.category.layout")
-   (dm/str name " (" (tr (if (= :grid layout) "labels.grid-layout" "labels.flex-layout")) ") - "
+   (dm/str name " (" (if (= :grid layout) (tr "labels.grid-layout") (tr "labels.flex-layout")) ") - "
            (if moved
              (tr "workspace.branches.review.effects.moved" (i18n/c moved))
              (dm/str (size-line from) " → " (size-line to))))])
@@ -172,9 +172,9 @@
     (when (or (seq interactions) (seq flows) (seq rows))
       [:div {:class (stl/css :section)}
        [:> section-title* {}
-        (tr (if deleted?
-              "workspace.branches.review.effects.title-deleted"
-              "workspace.branches.review.effects.title-added"))]
+        (if deleted?
+          (tr "workspace.branches.review.effects.title-deleted")
+          (tr "workspace.branches.review.effects.title-added"))]
        (when (seq interactions)
          [:> brl/notice* {:level :warning
                           :title (tr "workspace.branches.review.effects.interactions"
@@ -207,24 +207,23 @@
         shape    (get objects (:id item))
         page     (get-in data [:pages-index (:page-id item) :name])
         deleted? (= :deleted (:status item))
-        type-lbl (some-> (brc/type-label-key item) tr)
+        type-lbl (brc/type-label item)
         copies   (when (and deleted? shape (:main-instance shape))
                    (brc/component-copies data (:component-id shape)))]
     (when shape
       [:*
        [:> fact-list*
-        {:rows (into [[(tr (if deleted?
-                             "workspace.branches.review.facts.where-was"
-                             "workspace.branches.review.facts.where-lands"))
+        {:rows (into [[(if deleted?
+                         (tr "workspace.branches.review.facts.where-was")
+                         (tr "workspace.branches.review.facts.where-lands"))
                        (str/join " › " (cons page (brc/shape-path objects (:id item))))]]
                      (shape-rows shape data type-lbl))}]
        (when (and copies (pos? copies))
          [:> brl/notice* {:level :warning
                           :title (tr "workspace.branches.review.facts.copies-orphaned-title")}
-          (tr (if incoming
-                "workspace.branches.review.facts.copies-orphaned-update"
-                "workspace.branches.review.facts.copies-orphaned-merge")
-              (i18n/c copies))])
+          (if incoming
+            (tr "workspace.branches.review.facts.copies-orphaned-update" (i18n/c copies))
+            (tr "workspace.branches.review.facts.copies-orphaned-merge" (i18n/c copies)))])
        [:> effects* {:item item :items items :objects objects
                      :inner inner :incoming incoming}]])))
 
@@ -252,10 +251,9 @@
         (and deleted? (pos? n))
         [:> brl/notice* {:level :warning
                          :title (tr "workspace.branches.review.facts.used-title" (i18n/c n))}
-         (tr (if (= kind :component)
-               "workspace.branches.review.facts.deleted-component-used"
-               "workspace.branches.review.facts.deleted-used")
-             (i18n/c n))]
+         (if (= kind :component)
+           (tr "workspace.branches.review.facts.deleted-component-used" (i18n/c n))
+           (tr "workspace.branches.review.facts.deleted-used" (i18n/c n)))]
 
         deleted?
         [:> brl/notice* {:level :success
@@ -265,10 +263,9 @@
         :else
         [:> fact-list*
          {:rows [[(tr "workspace.branches.review.facts.used-by")
-                  (tr (if (= kind :component)
-                        "workspace.branches.review.facts.copies"
-                        "workspace.branches.review.facts.layers")
-                      (i18n/c n))]]}]))))
+                  (if (= kind :component)
+                    (tr "workspace.branches.review.facts.copies" (i18n/c n))
+                    (tr "workspace.branches.review.facts.layers" (i18n/c n)))]]}]))))
 
 ;; --- Component copies
 

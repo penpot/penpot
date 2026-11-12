@@ -7,6 +7,7 @@
 @use "ds/typography.scss" as t;
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 
 @mixin text-ellipsis {
   display: block;
@@ -23,6 +24,17 @@
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+}
+
+// The checkerboard of a transparent background, the same in both themes, so
+// white, black and grey shapes all stand out from it.
+@mixin transparency-checkerboard {
+  background-color: var(--color-static-white);
+  background-image: repeating-conic-gradient(
+    color-mix(in srgb, var(--color-canvas) 70%, var(--color-static-white)) 0% 25%,
+    transparent 0% 50%
+  );
+  background-size: px2rem(20) px2rem(20);
 }
 
 /// Custom Scrollbar Mixin

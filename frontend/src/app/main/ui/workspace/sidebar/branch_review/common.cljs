@@ -2,7 +2,7 @@
 ;; License v. 2.0. If a copy of the MPL was not distributed with this
 ;; file You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.branch-review.common
   "What the compare and conflict dialogs say about a diff entry, kept free
@@ -97,55 +97,51 @@
     (shape-icon-id item)
     (get kind->icon (:kind item) i/git-branch)))
 
-(def ^:private kind->type-label
-  {:shape               "workspace.branches.compare.type.shape"
-   :component           "workspace.branches.compare.type.component"
-   :color               "workspace.branches.compare.type.color"
-   :typography          "workspace.branches.compare.type.typography"
-   :media               "workspace.branches.compare.type.media"
-   :token               "workspace.branches.compare.type.token"
-   :page                "workspace.branches.review.type.page"
-   :page-attrs          "workspace.branches.review.type.page-settings"
-   :page-order          "workspace.branches.review.type.page-order"
-   :page-guide          "workspace.branches.review.type.guides"
-   :page-flow           "workspace.branches.review.type.flows"
-   :page-grid           "workspace.branches.review.type.grids"
-   :page-plugin         "workspace.branches.review.type.plugin-data"
-   :file-plugin         "workspace.branches.review.type.plugin-data"
-   :file-option         "workspace.branches.review.type.file-options"
-   :token-set           "workspace.branches.review.type.token-set"
-   :token-set-rename    "workspace.branches.review.type.token-set"
-   :token-set-order     "workspace.branches.review.type.token-set-order"
-   :token-theme         "workspace.branches.review.type.theme"
-   :token-active-themes "workspace.branches.review.type.active-themes"
-   :token-active-sets   "workspace.branches.review.type.active-sets"
-   :tokens-source       "workspace.branches.review.type.tokens-source"})
+(defn- shape-type-label
+  [shape-type]
+  (case shape-type
+    :frame            (tr "workspace.branches.compare.shape.board")
+    (:rect :line)     (tr "workspace.branches.compare.shape.rect")
+    :circle           (tr "workspace.branches.compare.shape.ellipse")
+    :path             (tr "workspace.branches.compare.shape.path")
+    :text             (tr "workspace.branches.compare.shape.text")
+    (:image :svg-raw) (tr "workspace.branches.compare.shape.image")
+    :group            (tr "workspace.branches.compare.shape.group")
+    :bool             (tr "workspace.branches.compare.shape.bool")
+    (tr "workspace.branches.compare.type.shape")))
 
-(def ^:private shape-type->label
-  {:frame "workspace.branches.compare.shape.board"
-   :rect "workspace.branches.compare.shape.rect"
-   :line "workspace.branches.compare.shape.rect"
-   :circle "workspace.branches.compare.shape.ellipse"
-   :path "workspace.branches.compare.shape.path"
-   :text "workspace.branches.compare.shape.text"
-   :image "workspace.branches.compare.shape.image"
-   :svg-raw "workspace.branches.compare.shape.image"
-   :group "workspace.branches.compare.shape.group"
-   :bool "workspace.branches.compare.shape.bool"})
-
-(defn type-label-key
-  "i18n key for an item's specific type — type-accurate for shapes
-  (board/text/rectangle/component/…), generic for other kinds."
+(defn type-label
+  "The name of an item's specific type: type-accurate for shapes
+  (board/text/rectangle/component/...), generic for other kinds, nil for a
+  kind with no name."
   [item]
-  (if (= :shape (:kind item))
-    (let [{:keys [component? component-copy? variant? shape-type]} item]
-      (cond
-        variant?        "workspace.branches.compare.shape.variant"
-        component?      "workspace.branches.compare.shape.component"
-        component-copy? "workspace.branches.compare.shape.component-copy"
-        :else           (get shape-type->label shape-type
-                             "workspace.branches.compare.type.shape")))
-    (get kind->type-label (:kind item))))
+  (case (:kind item)
+    :shape (let [{:keys [component? component-copy? variant? shape-type]} item]
+             (cond
+               variant?        (tr "workspace.branches.compare.shape.variant")
+               component?      (tr "workspace.branches.compare.shape.component")
+               component-copy? (tr "workspace.branches.compare.shape.component-copy")
+               :else           (shape-type-label shape-type)))
+    :component           (tr "workspace.branches.compare.type.component")
+    :color               (tr "workspace.branches.compare.type.color")
+    :typography          (tr "workspace.branches.compare.type.typography")
+    :media               (tr "workspace.branches.compare.type.media")
+    :token               (tr "workspace.branches.compare.type.token")
+    :page                (tr "workspace.branches.review.type.page")
+    :page-attrs          (tr "workspace.branches.review.type.page-settings")
+    :page-order          (tr "workspace.branches.review.type.page-order")
+    :page-guide          (tr "workspace.branches.review.type.guides")
+    :page-flow           (tr "workspace.branches.review.type.flows")
+    :page-grid           (tr "workspace.branches.review.type.grids")
+    (:page-plugin :file-plugin) (tr "workspace.branches.review.type.plugin-data")
+    :file-option         (tr "workspace.branches.review.type.file-options")
+    (:token-set :token-set-rename) (tr "workspace.branches.review.type.token-set")
+    :token-set-order     (tr "workspace.branches.review.type.token-set-order")
+    :token-theme         (tr "workspace.branches.review.type.theme")
+    :token-active-themes (tr "workspace.branches.review.type.active-themes")
+    :token-active-sets   (tr "workspace.branches.review.type.active-sets")
+    :tokens-source       (tr "workspace.branches.review.type.tokens-source")
+    nil))
 
 ;; --- Property labels and values
 
@@ -277,27 +273,36 @@
                               :constraints-v})
 
 (def categories
-  "Category order, the tone, label key and icon of each one. Colour is
+  "Category order, the tone and icon of each one. Colour is
   kept for what happened to an entry (added, modified, deleted, in
   conflict), so the categories are neutral and told apart by their icon;
   decisions alone stay in the conflict colour, as they are conflicts."
-  [[:decisions  "warning" "workspace.branches.review.category.decisions"  i/triangle-alert]
-   [:copy       "neutral" "workspace.branches.review.category.copy"       i/text]
-   [:colour     "neutral" "workspace.branches.review.category.colour"     i/swatches]
-   [:layout     "neutral" "workspace.branches.review.category.layout"     i/flex]
-   [:components "neutral" "workspace.branches.review.category.components" i/component]
-   [:variants   "neutral" "workspace.branches.review.category.variants"   i/variant]
-   [:tokens     "neutral" "workspace.branches.review.category.tokens"     i/tokens]
-   [:other      "neutral" "workspace.branches.review.category.other"      i/layers]])
+  [[:decisions  "warning" i/triangle-alert]
+   [:copy       "neutral" i/text]
+   [:colour     "neutral" i/swatches]
+   [:layout     "neutral" i/flex]
+   [:components "neutral" i/component]
+   [:variants   "neutral" i/variant]
+   [:tokens     "neutral" i/tokens]
+   [:other      "neutral" i/layers]])
 
 (def category->tone
-  (into {} (map (fn [[k tone _ _]] [k tone])) categories))
+  (into {} (map (fn [[k tone _]] [k tone])) categories))
 
-(def category->label
-  (into {} (map (fn [[k _ label _]] [k label])) categories))
+(defn category-label
+  [cat]
+  (case cat
+    :decisions  (tr "workspace.branches.review.category.decisions")
+    :copy       (tr "workspace.branches.review.category.copy")
+    :colour     (tr "workspace.branches.review.category.colour")
+    :layout     (tr "workspace.branches.review.category.layout")
+    :components (tr "workspace.branches.review.category.components")
+    :variants   (tr "workspace.branches.review.category.variants")
+    :tokens     (tr "workspace.branches.review.category.tokens")
+    :other      (tr "workspace.branches.review.category.other")))
 
 (def category->icon
-  (into {} (map (fn [[k _ _ icon]] [k icon])) categories))
+  (into {} (map (fn [[k _ icon]] [k icon])) categories))
 
 (defn category
   "The one category a diff entry falls under, most specific first: a
@@ -363,7 +368,7 @@
   [item]
   (let [status  (:status item)
         attrs   (visible-attrs (:changed-attrs item))
-        lbl     (some-> (type-label-key item) tr)
+        lbl     (type-label item)
         phrases (into [] (comp (map (comp change-phrase first)) (distinct)) attrs)
         shown   (take 2 phrases)
         more    (- (count phrases) (count shown))]

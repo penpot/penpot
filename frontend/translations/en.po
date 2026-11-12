@@ -3295,6 +3295,14 @@ msgstr "Login"
 msgid "labels.logout"
 msgstr "Logout"
 
+#: src/app/main/ui/comments.cljs
+msgid "labels.mark-as-resolved"
+msgstr "Mark as resolved"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.mark-as-unresolved"
+msgstr "Mark as unresolved"
+
 #: src/app/main/ui/onboarding/questions.cljs:88
 msgid "labels.marketing"
 msgstr "Marketing"
@@ -4014,6 +4022,18 @@ msgstr[1] "Are you sure you want to delete these %s assets?"
 msgid "modals.delete-asset-group.title"
 msgstr "Delete group"
 
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment.accept"
+msgstr "Delete comment"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment.message"
+msgstr "Are you sure you want to delete this comment?"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment.title"
+msgstr "Delete comment"
+
 #: src/app/main/ui/comments.cljs:941
 msgid "modals.delete-comment-thread.accept"
 msgstr "Delete conversation"
@@ -4023,6 +4043,12 @@ msgid "modals.delete-comment-thread.message"
 msgstr ""
 "Are you sure you want to delete this conversation? All comments in this "
 "thread will be deleted."
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.message-tasks"
+msgstr ""
+"Are you sure you want to delete this conversation? All comments in this "
+"thread and the tasks they hold will be deleted."
 
 #: src/app/main/ui/comments.cljs:939
 msgid "modals.delete-comment-thread.title"
@@ -4083,6 +4109,18 @@ msgstr "Deleting font"
 #: src/app/main/data/team.cljs:159
 msgid "modals.delete-organization-team-confirm.message"
 msgstr "Are you sure you want to delete this team that is part of %s org?"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "modals.delete-task.accept"
+msgstr "Delete task"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "modals.delete-task.message"
+msgstr "Are you sure you want to delete this task?"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "modals.delete-task.title"
+msgstr "Delete task"
 
 #: src/app/main/ui/workspace/context_menu.cljs:816, src/app/main/ui/workspace/sidebar/sitemap.cljs:125
 msgid "modals.delete-page.body"
@@ -6685,7 +6723,7 @@ msgstr[1] "%s conflicts with main"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:1847
 msgid "workspace.branches.banner.status.in-review"
-msgstr "In review · %s of %s approved"
+msgstr "In review - %s of %s approved"
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs:1858
 msgid "workspace.branches.banner.status.up-to-date"
@@ -7698,7 +7736,7 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/branches.cljs:439
 #, unused
 msgid "workspace.branches.you-editing"
-msgstr "%s · editing now"
+msgstr "%s - editing now"
 
 #: src/app/main/data/workspace/clipboard.cljs:1242
 msgid "workspace.clipboard.copying"
@@ -9821,7 +9859,12 @@ msgstr "%s conflicts"
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:356, src/app/main/ui/workspace/sidebar/pull_requests.cljs:534, src/app/main/ui/workspace/sidebar/pull_requests.cljs:719
 msgid "workspace.pull-requests.badge.outdated"
-msgstr "New changes on branch"
+msgstr "Unpublished changes"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
+msgid "workspace.pull-requests.badge.outdated-hint"
+msgstr ""
+"The branch has changes the reviewers can't see yet. Merging includes them."
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:623
 msgid "workspace.pull-requests.banner.cancel"
@@ -9834,6 +9877,12 @@ msgstr "Exit review"
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:742
 msgid "workspace.pull-requests.banner.publish"
 msgstr "Publish latest changes"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
+msgid "workspace.pull-requests.banner.publish-hint"
+msgstr ""
+"Reviewers will see the latest changes of the branch. Approvals given so far "
+"will have to be renewed."
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:748
 msgid "workspace.pull-requests.banner.review"
@@ -12224,3 +12273,672 @@ msgstr[1] "Choosing a side here also decides %s copies."
 #: src/app/main/ui/workspace/sidebar/branch_review/facts.cljs
 msgid "workspace.branches.review.copies.via"
 msgstr "%s follows the change through its copy of %s"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.merge.confirm-anyway"
+msgstr "Merge anyway"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.merge.notify-assignees"
+msgstr "Tell the assignees their tasks moved to main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.merge.open-tasks-title"
+msgstr "Open tasks"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.activity.all"
+msgstr "All"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.activity.click-to-show"
+msgstr "Click to show it on the canvas"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.activity.empty"
+msgstr "Nothing has changed since the review opened."
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.activity.error"
+msgstr "The activity of the review could not be loaded."
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.activity.now-points-to"
+msgstr "Now points to %s"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.activity.open-task-to-relink"
+msgstr "Open the task to re-link it"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.activity.opened"
+msgstr "%s opened the review - %s"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.activity.show-on-canvas"
+msgstr "Show on canvas"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.activity.summary"
+msgstr "%s changes by %s people since the review opened"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.activity.today"
+msgstr "Today"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.activity.yesterday"
+msgstr "Yesterday"
+
+#: src/app/main/ui/workspace/review/common.cljs
+msgid "workspace.review.anchor.area"
+msgstr "Area - %s × %s"
+
+#: src/app/main/ui/workspace/review/common.cljs
+msgid "workspace.review.anchor.deleted-layer"
+msgstr "Deleted layer"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.review.approved-of"
+msgstr "%s of %s approved"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
+msgid "workspace.review.bar.details"
+msgstr "Details"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
+msgid "workspace.review.bar.label"
+msgstr "Design review"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
+msgid "workspace.review.bar.tasks"
+msgstr "%s/%s tasks"
+
+#: src/app/main/ui/workspace/review/overlays.cljs
+msgid "workspace.review.change.added"
+msgstr "Added"
+
+#: src/app/main/ui/workspace/review/common.cljs
+msgid "workspace.review.change.added-lower"
+msgstr "added"
+
+#: src/app/main/ui/workspace/review/overlays.cljs
+msgid "workspace.review.change.deleted"
+msgstr "Deleted"
+
+#: src/app/main/ui/workspace/review/common.cljs
+msgid "workspace.review.change.deleted-lower"
+msgstr "deleted"
+
+#: src/app/main/ui/workspace/review/overlays.cljs
+msgid "workspace.review.change.modified"
+msgstr "Modified"
+
+#: src/app/main/ui/workspace/review/common.cljs
+msgid "workspace.review.change.modified-lower"
+msgstr "modified"
+
+#: src/app/main/ui/workspace/review/overlays.cljs
+msgid "workspace.review.changes.back"
+msgstr "Back to details"
+
+#: src/app/main/ui/workspace/review/overlays.cljs
+msgid "workspace.review.changes.by"
+msgstr "%s by %s - %s"
+
+#: src/app/main/ui/workspace/review/overlays.cljs
+msgid "workspace.review.changes.label"
+msgstr "Changes of the review"
+
+#: src/app/main/ui/workspace/review/overlays.cljs
+msgid "workspace.review.changes.next"
+msgstr "Next change"
+
+#: src/app/main/ui/workspace/review/overlays.cljs
+msgid "workspace.review.changes.none"
+msgstr "No changes to show"
+
+#: src/app/main/ui/workspace/review/overlays.cljs
+msgid "workspace.review.changes.position"
+msgstr "%s / %s"
+
+#: src/app/main/ui/workspace/review/overlays.cljs
+msgid "workspace.review.changes.previous"
+msgstr "Previous change"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.review.comment-number"
+msgstr "#%s"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.review.comments.empty"
+msgstr "No comments here yet."
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.review.comments.no-replies"
+msgstr "No replies"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.review.comments.one-reply"
+msgstr "1 reply"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.review.comments.replies"
+msgstr "%s replies"
+
+#: src/app/main/ui/comments.cljs
+msgid "workspace.review.design-review"
+msgstr "Design review"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.activity"
+msgstr "Activity (%s)"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.add-reviewer"
+msgstr "Add reviewer"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.branch"
+msgstr "Branch"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.close-review"
+msgstr "Close review"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.closed"
+msgstr "Closed (%s)"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.comments"
+msgstr "Comments"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.comments-open"
+msgstr "%s open"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.comments-resolved"
+msgstr "%s resolved"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.last-change"
+msgstr "Last change"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.last-change-by"
+msgstr "%s by %s"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.no-description"
+msgstr "No description."
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.no-reviewers"
+msgstr "Nobody has been asked to review it yet."
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.opened"
+msgstr "Opened"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.opened-by"
+msgstr "Opened %s by %s"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.overview"
+msgstr "Overview"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.pick-reviewer"
+msgstr "Pick a reviewer"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.quoted-comment"
+msgstr "“%s”"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.up-to-date"
+msgstr "Up to date"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.x-of-y"
+msgstr "%s of %s"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.label-count"
+msgstr "%s %s"
+
+#: src/app/main/ui/workspace/review/markers.cljs
+msgid "workspace.review.marker.comment"
+msgstr "Comment %s"
+
+#: src/app/main/ui/workspace/review/markers.cljs
+msgid "workspace.review.marker.comments"
+msgstr "%s comments"
+
+#: src/app/main/ui/workspace/review/markers.cljs
+msgid "workspace.review.marker.items"
+msgstr "%s comments and tasks"
+
+#: src/app/main/ui/workspace/review/markers.cljs
+msgid "workspace.review.marker.more"
+msgstr "%s more"
+
+#: src/app/main/ui/workspace/review/markers.cljs
+msgid "workspace.review.marker.task"
+msgstr "Task: %s"
+
+#: src/app/main/ui/workspace/review/markers.cljs
+msgid "workspace.review.marker.tasks"
+msgstr "%s tasks"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.review.route"
+msgstr "%s → %s"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs
+msgid "workspace.review.submit"
+msgstr "Submit review"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.review.tab.comments"
+msgstr "Comments (%s)"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.review.tab.tasks"
+msgstr "Tasks (%s)"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.tab.tasks-plain"
+msgstr "Tasks"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.review.text-and-detail"
+msgstr "%s - %s"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs
+msgid "workspace.review.toolbar.comment"
+msgstr "Comment"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs
+msgid "workspace.review.toolbar.comment-area"
+msgstr "Comment an area"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs
+msgid "workspace.review.toolbar.label"
+msgstr "Review tools"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs
+msgid "workspace.review.toolbar.move"
+msgstr "Move"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs
+msgid "workspace.review.toolbar.show-changes"
+msgstr "Show changes"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs
+msgid "workspace.review.toolbar.task"
+msgstr "Create a task"
+
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.actions.assign"
+msgstr "Assign to"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.actions.delete"
+msgstr "Delete task"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.actions.mark-done"
+msgstr "Mark as done"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.actions.relink"
+msgstr "Link to another layer"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.actions.relink-short"
+msgstr "Re-link"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.actions.reopen"
+msgstr "Reopen"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.actions.restore-layer"
+msgstr "Restore layer"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.actions.show-change"
+msgstr "Show change"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.actions.verify"
+msgstr "Verify"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.actions.wont-do"
+msgstr "Won't do"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.assigned-to"
+msgstr "Assigned to %s"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.change-assignee"
+msgstr "Change assignee. Now: %s"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.assignee"
+msgstr "Assignee"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.assignee-me"
+msgstr "%s (you)"
+
+#: src/app/main/ui/workspace/review/common.cljs
+msgid "workspace.tasks.canvas"
+msgstr "Canvas"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.closed-of"
+msgstr "%s of %s closed"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.create"
+msgstr "Create task"
+
+#: src/app/main/data/workspace/tasks.cljs
+msgid "workspace.tasks.created"
+msgstr "Task created"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.tasks.empty"
+msgstr "No tasks here."
+
+#: src/app/main/data/workspace/tasks.cljs
+msgid "workspace.tasks.error.generic"
+msgstr "The task could not be changed. Try again."
+
+#: src/app/main/data/workspace/tasks.cljs
+msgid "workspace.tasks.error.comment-has-task"
+msgstr "This comment is a task already."
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.assigned"
+msgstr "%s assigned it to %s"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.assigned-to-you"
+msgstr "%s made this a task for you"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.done"
+msgstr "%s marked it as done"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.layer-deleted"
+msgstr "%s deleted %s"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.layer-restored"
+msgstr "%s restored %s"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.moved-to-main"
+msgstr "Moved to main with the merge of %s"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.relinked"
+msgstr "%s linked it to %s"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.renamed"
+msgstr "%s renamed it"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.reopened"
+msgstr "%s reopened it"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.status"
+msgstr "%s changed its state"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.unassigned"
+msgstr "%s left it without assignee"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.verified"
+msgstr "%s verified it"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.event.wont-do"
+msgstr "%s marked it as won't do"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.for-you"
+msgstr "For you"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.from"
+msgstr "from"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.tasks.group.other"
+msgstr "Other tasks"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.tasks.group.review"
+msgstr "From review - %s"
+
+#: src/app/main/data/workspace/tasks.cljs
+msgid "workspace.tasks.layer-deleted.many"
+msgstr "%s open tasks moved to the board of their deleted layer."
+
+#: src/app/main/data/workspace/tasks.cljs
+msgid "workspace.tasks.layer-deleted.one"
+msgstr "%s had an open task. Moved to %s."
+
+#: src/app/main/data/workspace/tasks.cljs
+msgid "workspace.tasks.layer-deleted.undo"
+msgstr "Undo"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.linked-to"
+msgstr "Linked to"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.lost.message"
+msgstr "This task now points to %s. Link it to another layer, or mark it as done if deleting was the fix."
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.make-task"
+msgstr "Make it a task"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.make-task.hint"
+msgstr "Title taken from the comment. The thread stays attached to the task."
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.new-task"
+msgstr "New task"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.new-task.hint"
+msgstr "The title is the first message of its thread, where anyone can go on commenting."
+
+#: src/app/main/ui/workspace/review/overlays.cljs
+msgid "workspace.tasks.relink.link-to"
+msgstr "Link to %s"
+
+#: src/app/main/ui/workspace/review/overlays.cljs
+msgid "workspace.tasks.relink.pick"
+msgstr "Pick a layer for"
+
+#: src/app/main/ui/workspace/review/common.cljs
+msgid "workspace.tasks.status.done"
+msgstr "Done"
+
+#: src/app/main/ui/workspace/review/common.cljs
+msgid "workspace.tasks.status.open"
+msgstr "Open"
+
+#: src/app/main/ui/workspace/review/common.cljs
+msgid "workspace.tasks.status.reopened"
+msgstr "Reopened"
+
+#: src/app/main/ui/workspace/review/common.cljs
+msgid "workspace.tasks.status.verified"
+msgstr "Verified"
+
+#: src/app/main/ui/workspace/review/common.cljs
+msgid "workspace.tasks.status.wont-do"
+msgstr "Won't do"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.task"
+msgstr "Task"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.title"
+msgstr "Task title"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.title-placeholder"
+msgstr "What needs to be done?"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.to-verify"
+msgstr "%s to verify"
+
+#: src/app/main/data/workspace/tasks.cljs
+msgid "workspace.tasks.toast.done"
+msgstr "Marked as done."
+
+#: src/app/main/data/workspace/tasks.cljs
+msgid "workspace.tasks.toast.done-verify"
+msgstr "Marked as done. %s will verify it."
+
+#: src/app/main/data/workspace/tasks.cljs
+msgid "workspace.tasks.toast.layer-restored"
+msgstr "%s is back and the task points to it again."
+
+#: src/app/main/data/workspace/tasks.cljs
+msgid "workspace.tasks.toast.relinked"
+msgstr "The task now points to %s."
+
+#: src/app/main/data/workspace/tasks.cljs
+msgid "workspace.tasks.toast.reopened"
+msgstr "Task reopened."
+
+#: src/app/main/data/workspace/tasks.cljs
+msgid "workspace.tasks.toast.verified"
+msgstr "Task verified and closed."
+
+#: src/app/main/data/workspace/tasks.cljs
+msgid "workspace.tasks.toast.wont-do"
+msgstr "Task closed as won't do."
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.unassigned"
+msgstr "Unassigned"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.verify.message"
+msgstr "Does the change fix it? Verify to close the task, or reopen it for %s."
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.verify.message-unassigned"
+msgstr "Does the change fix it? Verify to close the task, or reopen it."
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.tasks.view.all"
+msgstr "Show all tasks"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.tasks.view.hide-closed"
+msgstr "Hide closed tasks"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.tasks.view.mine"
+msgstr "Show only your tasks"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.tasks.view.open"
+msgstr "Show only open tasks"
+
+#: src/app/main/ui/workspace/review/panel.cljs
+msgid "workspace.tasks.view.to-verify"
+msgstr "Show only tasks to verify"
+
+#: src/app/main/ui/workspace/review/tasks.cljs
+msgid "workspace.tasks.you"
+msgstr "You"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.tasks.for-you-count"
+msgid_plural "workspace.tasks.for-you-count"
+msgstr[0] "1 task for you"
+msgstr[1] "%s tasks for you"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.merge.open-tasks"
+msgid_plural "workspace.branches.merge.open-tasks"
+msgstr[0] "1 task is still open. It will move to main as it is."
+msgstr[1] "%s tasks are still open. They will move to main as they are."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs
+msgid "workspace.branches.merge.more-open-tasks"
+msgid_plural "workspace.branches.merge.more-open-tasks"
+msgstr[0] "+ 1 more open task"
+msgstr[1] "+ %s more open tasks"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.activity.changed"
+msgid_plural "workspace.review.activity.changed"
+msgstr[0] "changed 1 element"
+msgstr[1] "changed %s elements"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.activity.more"
+msgid_plural "workspace.review.activity.more"
+msgstr[0] "+1 more"
+msgstr[1] "+%s more"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.needs-approvals"
+msgid_plural "workspace.review.details.needs-approvals"
+msgstr[0] "Needs 1 more approval."
+msgstr[1] "Needs %s more approvals."
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.open-tasks-dont-block"
+msgid_plural "workspace.review.details.open-tasks-dont-block"
+msgstr[0] "1 open task won't block the merge."
+msgstr[1] "%s open tasks won't block the merge."
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.activity.linked-tasks"
+msgid_plural "workspace.review.activity.linked-tasks"
+msgstr[0] "1 linked task"
+msgstr[1] "%s linked tasks"
+
+#: src/app/main/ui/workspace/review/details.cljs
+msgid "workspace.review.details.behind"
+msgid_plural "workspace.review.details.behind"
+msgstr[0] "1 change behind main"
+msgstr[1] "%s changes behind main"
+
+#: src/app/main/ui/workspace/review/common.cljs
+msgid "workspace.review.unknown-name"
+msgstr "—"
+
+#: src/app/main/ui/workspace/sidebar/layer_item.cljs
+msgid "workspace.sidebar.layers.comments"
+msgid_plural "workspace.sidebar.layers.comments"
+msgstr[0] "1 open comment"
+msgstr[1] "%s open comments"

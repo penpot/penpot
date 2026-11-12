@@ -1,0 +1,25 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.progress-bar {
+  display: block;
+  block-size: px2rem(4);
+  border-radius: $br-4;
+  background-color: var(--color-background-quaternary);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  block-size: 100%;
+
+  // a caller may round the end of the fill
+  border-radius: var(--progress-bar-fill-radius, 0);
+  background-color: var(--color-accent-info);
+}

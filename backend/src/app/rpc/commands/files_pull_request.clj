@@ -36,11 +36,13 @@
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files-branch :as fbranch]
+   [app.rpc.commands.files-task :as ftask]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.permissions :as perms]
    [app.rpc.quotes :as quotes]
+   [app.util.blob :as blob]
    [app.util.services :as sv]
    [clojure.string :as str]))
 
@@ -169,9 +171,9 @@
   the branches listing uses, so ten open pull requests on one file cost
   one computation per branch and nothing at all once that panel has been
   opened."
-  [cfg main-data reviews-map {:keys [id status file-branch-id source-file-id target-file-id
-                                     review-revn branch-revn]
-                              :as row}]
+  [cfg main-data reviews-map counts-map {:keys [id status file-branch-id source-file-id target-file-id
+                                                review-revn branch-revn]
+                                         :as row}]
   (let [reviews (get reviews-map id [])
         open?   (= "open" status)
         [ahead behind conflicts]
@@ -187,6 +189,8 @@
         (assoc :review-state (review-state reviews))
         (assoc :outdated (and open? (> branch-revn review-revn)))
         (assoc :ahead ahead :behind behind :conflicts conflicts)
+        ;; the comments and tasks of the review, for its overview
+        (assoc :counts (get counts-map id {:tasks {} :comments-open 0 :comments-resolved 0}))
         (dissoc :branch-revn :source-revn :base-snapshot-id
                 :base-revn :base-branch-revn :review-snapshot-id))))
 
@@ -454,8 +458,9 @@
                                                     (let [[a b] (fbranch/revn-deltas r)]
                                                       (or (pos? a) (pos? b)))))
                                        rows)
-                     main-data   (when need? (:data (bfc/get-file cfg target-id :realize? true)))]
-                 (mapv (partial decorate-pull-request cfg main-data reviews-map) rows))))))
+                     main-data   (when need? (:data (bfc/get-file cfg target-id :realize? true)))
+                     counts-map  (ftask/get-review-counts conn (mapv :id rows))]
+                 (mapv (partial decorate-pull-request cfg main-data reviews-map counts-map) rows))))))
 
 ;; --- COMMAND QUERY: get-pull-request
 
@@ -508,7 +513,45 @@
                            :code :pull-request-not-found
                            :pull-request-id id))
                (files/check-read-permissions! cfg profile-id (:target-file-id row))
-               (decorate-pull-request cfg nil (get-reviews-map cfg [row]) row)))))
+               (decorate-pull-request cfg nil
+                                      (get-reviews-map cfg [row])
+                                      (ftask/get-review-counts conn [id])
+                                      row)))))
+
+;; --- COMMAND QUERY: get-pull-request-activity
+
+(def ^:private schema:get-pull-request-activity
+  [:map {:title "get-pull-request-activity"}
+   [:id ::sm/uuid]])
+
+(def ^:private max-activity-rows
+  "The newest saves the activity of a review reads. A review that runs
+  for months keeps its history; the list shows the recent part of it."
+  2000)
+
+(def ^:private sql:get-pull-request-activity
+  "SELECT a.id, a.profile_id, a.revn, a.entries, a.created_at
+     FROM file_pull_request_activity AS a
+    WHERE a.pull_request_id = ?
+    ORDER BY a.created_at DESC
+    LIMIT ?")
+
+(sv/defmethod ::get-pull-request-activity
+  "What the saves of the branch did to its layers since the design review
+  opened: one row per save, newest first, each with who saved and its
+  entries (`app.common.files.review-activity/entries`). The client folds
+  them into the activity list."
+  {::doc/added "2.16"
+   ::sm/params schema:get-pull-request-activity}
+  [cfg {:keys [::rpc/profile-id id]}]
+  (check-pull-requests-enabled!)
+  (db/run! cfg
+           (fn [{:keys [::db/conn] :as cfg}]
+             (let [pr (get-pull-request* conn id)]
+               (files/check-read-permissions! cfg profile-id (:target-file-id pr))
+               (into []
+                     (map (fn [row] (update row :entries blob/decode)))
+                     (db/exec! conn [sql:get-pull-request-activity id max-activity-rows]))))))
 
 ;; --- COMMAND QUERY: get-pull-request-bundle
 

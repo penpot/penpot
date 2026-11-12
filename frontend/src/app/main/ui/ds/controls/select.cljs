@@ -312,7 +312,9 @@
                                   :empty-to-end empty-to-end
                                   :ref set-option-ref
                                   :wrapper-ref dropdown-wrapper-ref}])
-          container)
+          ;; a modal makes everything outside it inert: its dropdown stays inside
+          (or (some-> (mf/ref-val select-ref) (.closest "[role='dialog']"))
+              container))
          [:> options-dropdown* {:on-click on-option-click
                                 :id listbox-id
                                 :options options

@@ -54,7 +54,13 @@
   [{:keys [layout on-change-size]}]
   (let [color-palette?   (:colorpalette layout)
         text-palette?    (:textpalette layout)
-        hide-palettes?   (:hide-palettes layout)
+        bottom-bar       (mf/deref refs/bottom-bar)
+        on-branch?       (some? bottom-bar)
+        ;; on a branch it shares its level with the bar of the branch, and is
+        ;; open only when that one is not (see `layout/open-bottom-bar`)
+        hide-palettes?   (if on-branch?
+                           (not= :palette bottom-bar)
+                           (:hide-palettes layout))
 
         custom-shortcuts (mf/deref refs/custom-shortcuts)
         get-tt           #(sc/get-effective-tooltip % custom-shortcuts)
@@ -121,11 +127,14 @@
 
         toggle-palettes
         (mf/use-fn
+         (mf/deps on-branch?)
          (fn [_]
            (r/set-resize-type! :top)
            (dom/add-class! (dom/get-element-by-class "color-palette") "fade-out-down")
-           (st/emit! (-> (dw/toggle-layout-flag :hide-palettes)
-                         (vary-meta assoc ::ev/origin "workspace-left-toolbar")))))
+           (if on-branch?
+             (st/emit! (dw/toggle-bottom-bar :palette))
+             (st/emit! (-> (dw/toggle-layout-flag :hide-palettes)
+                           (vary-meta assoc ::ev/origin "workspace-left-toolbar"))))))
 
         on-select-color-palette
         (mf/use-fn
@@ -169,7 +178,8 @@
             width (obj/get dom "clientWidth")]
         (swap! state* assoc :width width)))
 
-    [:section {:class (stl/css :palette-wrapper)
+    [:section {:class (stl/css-case :palette-wrapper true
+                                    :on-branch on-branch?)
                :id "palette-wrapper"
                :style  (calculate-palette-style rulers?)
                :aria-label (tr "workspace.toolbar.palette-bar")
@@ -177,7 +187,7 @@
      (when-not ^boolean read-only?
        [:div {:ref parent-ref
               :class (dm/str size-classname " " (stl/css-case :palettes true
-                                                              :wide any-palette?
+                                                              :wide (and any-palette? (not hide-palettes?))
                                                               :hidden-bts hide-palettes?))
               :style #js {"--height" (dm/str size "px")}}
 
@@ -204,7 +214,7 @@
                             :on-click on-select-text-palette}]]]
 
 
-        (if any-palette?
+        (if (and any-palette? (not hide-palettes?))
           [:*
            [:> icon-button* {:variant "ghost"
                              :class (stl/css :palette-actions)

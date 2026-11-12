@@ -57,6 +57,7 @@
 
 .author-identity {
   flex-grow: 1;
+  min-inline-size: 0;
 }
 
 .author-fullname {
@@ -144,6 +145,14 @@
   white-space: pre-wrap;
 }
 
+// a message of a thread sits in a box, apart from its author and what comes
+// after it
+.message {
+  padding: var(--sp-s) var(--sp-m);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+}
+
 .replies {
   @include use-typography("body-small");
 
@@ -160,6 +169,7 @@
 }
 
 .floating-preview-wrapper {
+  // TODO: no DS z-index token for 1.
   z-index: 1;
   position: absolute;
   user-select: none;
@@ -179,6 +189,7 @@
 }
 
 .floating-preview-expanded {
+  // TODO: no DS z-index token for 2.
   z-index: 2;
   animation: comment-bubble-fan-out 0.18s ease-out;
 }
@@ -196,10 +207,12 @@
 }
 
 .floating-preview-hovered {
+  // TODO: no DS z-index token for 10.
   z-index: 10;
 }
 
 .floating-preview-ghost {
+  // TODO: no DS z-index token for 1.
   z-index: 1;
   opacity: 0.6;
   pointer-events: none;
@@ -297,12 +310,19 @@
 .floating-thread-header-left {
   @include use-typography("body-small");
 
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  min-inline-size: 0;
   color: var(--color-foreground-primary);
 }
 
+// the same gap as the author of a message, so the checkbox and the menu
+// line up with its buttons
 .floating-thread-header-right {
   display: flex;
   align-items: center;
+  gap: var(--sp-s);
 }
 
 .floating-thread-main {
@@ -325,9 +345,17 @@
   gap: var(--sp-s);
 }
 
-// .checkbox-wrapper {
-//   margin-inline-end: var(--sp-s);
-// }
+// the resolve checkbox takes the box of an icon button, so it lines up
+// with the buttons of the messages under it. The DS checkbox keeps an
+// empty column for its label after the box: centering the whole would move
+// the box to the left, so the box sits at the middle from the start.
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  inline-size: $sz-32;
+  block-size: $sz-32;
+  padding-inline-start: calc(($sz-32 - $sz-16) / 2);
+}
 
 .dropdown-menu {
   position: absolute;
@@ -338,8 +366,8 @@
   border-radius: $br-8;
   z-index: var(--z-index-dropdown);
   overflow: hidden auto;
-  background-color: var(--menu-background-color);
-  color: var(--menu-foreground-color);
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
   border: $b-2 solid var(--color-background-quaternary);
   box-shadow: 0 0 var(--sp-m) 0 var(--color-shadow-dark);
   max-inline-size: $sz-200;
@@ -350,6 +378,10 @@
 }
 
 .dropdown-menu-option {
+  --dropdown-menu-option-bg-color: transparent;
+  --dropdown-menu-option-fg-color: var(--color-foreground-secondary);
+  --dropdown-menu-option-icon-color: var(--color-foreground-secondary);
+
   @include use-typography("body-small");
 
   display: flex;
@@ -358,9 +390,11 @@
   block-size: $sz-32;
   padding: 0 var(--sp-s);
   border-radius: $br-6;
+  background-color: var(--dropdown-menu-option-bg-color);
   cursor: pointer;
-  color: var(--menu-foreground-color-rest);
+  color: var(--dropdown-menu-option-fg-color);
 
+  // span: the text of an option has no class in comments.cljs
   span {
     justify-content: center;
     align-items: center;
@@ -370,24 +404,22 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 
+    // svg: the icon of an option has no class in comments.cljs
     svg {
       display: flex;
       justify-content: center;
       align-items: center;
       block-size: $sz-12;
       inline-size: $sz-12;
-      stroke-width: 1.33px;
-      stroke: var(--icon-foreground);
+      stroke-width: px2rem(1.33);
+      stroke: var(--dropdown-menu-option-icon-color);
     }
   }
 
   &:hover {
-    background-color: var(--menu-background-color-hover);
-    color: var(--menu-foreground-color);
-
-    svg {
-      stroke: var(--menu-foreground-color-hover);
-    }
+    --dropdown-menu-option-bg-color: var(--color-background-quaternary);
+    --dropdown-menu-option-fg-color: var(--color-foreground-primary);
+    --dropdown-menu-option-icon-color: var(--color-foreground-primary);
   }
 }
 
@@ -465,7 +497,7 @@
 }
 
 .comments-mentions-entry.is-selected {
-  border: 1px solid var(--color-accent-primary-muted);
+  border: $b-1 solid var(--color-accent-primary-muted);
   background: var(--color-background-quaternary);
 }
 

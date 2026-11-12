@@ -174,7 +174,7 @@
              "request-file-access" "request-file-access-yourpenpot"
              "request-file-access-yourpenpot-view" "request-team-access"
              "comment-mention" "comment-thread" "comment-notification"
-             "review-request"}
+             "review-request" "task-assigned" "tasks-moved"}
            (set (keys emails/templates)))))
 
 (t/deftest send-template-validation

@@ -577,6 +577,35 @@
    :id ::review-request
    :schema schema:review-request))
 
+(def ^:private schema:task-assigned
+  [:map
+   [:name ::sm/text]
+   [:source-user ::sm/text]
+   [:task-title ::sm/text]
+   [:task-url ::sm/text]])
+
+(def task-assigned
+  "Email sent to the person a task is assigned to."
+  (template-factory
+   :id ::task-assigned
+   :schema schema:task-assigned))
+
+(def ^:private schema:tasks-moved
+  [:map
+   [:name ::sm/text]
+   [:source-user ::sm/text]
+   [:branch-name ::sm/text]
+   [:file-name ::sm/text]
+   [:task-titles ::sm/text]
+   [:file-url ::sm/text]])
+
+(def tasks-moved
+  "Email sent to the assignees of the open tasks of a branch when the
+  merge of the branch moves them into main."
+  (template-factory
+   :id ::tasks-moved
+   :schema schema:tasks-moved))
+
 (def ^:private schema:comment-mention
   [:map
    [:name ::sm/text]
@@ -656,7 +685,9 @@
    "comment-mention"                     (template-entry comment-mention schema:comment-mention)
    "comment-thread"                      (template-entry comment-thread schema:comment-thread)
    "comment-notification"                (template-entry comment-notification schema:comment-notification)
-   "review-request"                      (template-entry review-request schema:review-request)})
+   "review-request"                      (template-entry review-request schema:review-request)
+   "task-assigned"                       (template-entry task-assigned schema:task-assigned)
+   "tasks-moved"                         (template-entry tasks-moved schema:tasks-moved)})
 
 (defn render-template
   "Render the templated email `template-id` from its JSON-decoded data,

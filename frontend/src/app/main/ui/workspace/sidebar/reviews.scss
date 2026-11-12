@@ -2,10 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 @use "ds/mixins.scss" as *;
 @use "ds/typography.scss" as *;
 
@@ -53,6 +54,7 @@
   // the card of the comment or the description: a step lighter than the
   // row, also while a clickable row is hovered
   --entry-card-bg-color: var(--color-background-tertiary);
+  --entry-bg-color: transparent;
 
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -60,14 +62,14 @@
   gap: var(--sp-m);
   padding: var(--sp-m) var(--sp-s);
   border-radius: $br-8;
+  background-color: var(--entry-bg-color);
 
   &.is-clickable {
     cursor: pointer;
 
     &:hover {
+      --entry-bg-color: var(--color-background-tertiary);
       --entry-card-bg-color: var(--color-background-quaternary);
-
-      background-color: var(--color-background-tertiary);
     }
 
     &:focus-visible {
@@ -178,13 +180,13 @@
 
 // the empty card of the branch info dialog's description
 .entry-no-comment {
-  @include use-typography("body-medium");
-
   margin: 0;
   margin-block-start: var(--sp-xs);
   padding: var(--sp-s);
   border: $b-1 dashed var(--color-background-quaternary);
   border-radius: $br-8;
+
+  // TODO: the DS typographies have no italic.
   font-style: italic;
   color: var(--color-foreground-secondary);
 }
@@ -208,33 +210,23 @@
   background-color: var(--entry-card-bg-color);
 }
 
+// unfolded, the text grows up to 400px and scrolls inside past it, as the
+// descriptions of the dialogs do
 .clamped-text {
   @include use-typography("body-medium");
 
+  max-block-size: px2rem(400);
   margin: 0;
   color: var(--color-foreground-primary);
   white-space: pre-line;
   overflow-wrap: anywhere;
+  overflow-y: auto;
 }
 
 .is-folded {
   @include two-line-text-ellipsis;
 }
 
-.see-more {
-  @include use-typography("body-small");
-
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--color-accent-primary);
-  cursor: pointer;
-
-  &:hover {
-    text-decoration: underline;
-  }
-
-  &:focus-visible {
-    outline: $b-1 solid var(--color-accent-primary);
-  }
+.see-more:focus-visible {
+  outline: $b-1 solid var(--color-accent-primary);
 }

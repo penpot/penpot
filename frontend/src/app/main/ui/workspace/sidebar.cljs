@@ -31,6 +31,7 @@
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.workspace.comments :refer [comments-sidebar*]]
    [app.main.ui.workspace.left-header :refer [left-header*]]
+   [app.main.ui.workspace.review.panel :refer [review-panel*]]
    [app.main.ui.workspace.right-header :refer [right-header*]]
    [app.main.ui.workspace.sidebar.assets :refer [assets-toolbox*]]
    [app.main.ui.workspace.sidebar.debug :refer [debug-panel*]]
@@ -125,7 +126,9 @@
         scroll-store*  (mf/use-var {})
 
         design-tokens? (features/use-feature "design-tokens/v1")
-        mode-inspect?  (= options-mode :inspect)
+        ;; a design review is read-only: it shows the pages and layers alone
+        reviewing?     (some? (mf/deref refs/pull-request-preview))
+        mode-inspect?  (or reviewing? (= options-mode :inspect))
         shortcuts?     (contains? layout :shortcuts)
         show-debug?    (contains? layout :debug-panel)
 
@@ -201,6 +204,12 @@
 
         (true? show-debug?)
         [:> debug-panel* {:class (stl/css :left-sidebar-content)}]
+
+        ^boolean reviewing?
+        [:div {:class (stl/css :left-sidebar-content)}
+         [:> layers-content* {:layout layout
+                              :width width
+                              :scroll-store scroll-store*}]]
 
         :else
         [:div {:class (stl/css  :left-sidebar-content)}
@@ -284,7 +293,8 @@
 
 (mf/defc right-sidebar*
   [{:keys [layout section file-id page-id drawing-tool active-tokens] :as props}]
-  (let [is-comments?     (= drawing-tool :comments)
+  (let [reviewing?       (some? (mf/deref refs/pull-request-preview))
+        is-comments?     (and (not reviewing?) (= drawing-tool :comments))
         is-history?      (contains? layout :document-history)
         is-inspect?      (= section :inspect)
         is-debug?        (= section :debug)
@@ -349,6 +359,17 @@
 
        [:div {:class (stl/css :right-sidebar-content)}
         (cond
+          ;; inside a design review the panel shows the inspect of the
+          ;; selection (the same one the workspace has) and the comments and
+          ;; tasks of the review
+          (and reviewing? (not is-history?))
+          [:> review-panel* {:inspect
+                             (mf/html
+                              [:> options-toolbox*
+                               (mf/spread-props props
+                                                {:on-change-section on-change-section
+                                                 :on-expand on-expand})])}]
+
           is-comments?
           [:> comments-sidebar* {}]
 

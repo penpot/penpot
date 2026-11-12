@@ -1,0 +1,51 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
+
+.task-status {
+  --task-status-fg-color: var(--color-foreground-secondary);
+  --task-status-bg-color: var(--color-background-quaternary);
+
+  @include use-typography("body-small");
+
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  padding: var(--sp-xxs) var(--sp-s);
+  border-radius: $br-4;
+  background-color: var(--task-status-bg-color);
+  color: var(--task-status-fg-color);
+  white-space: nowrap;
+
+  &.is-open {
+    --task-status-fg-color: var(--color-accent-info);
+    --task-status-bg-color: var(--color-background-info);
+  }
+
+  &.is-done {
+    --task-status-fg-color: var(--color-accent-success);
+    --task-status-bg-color: var(--color-background-success);
+  }
+
+  &.is-reopened {
+    --task-status-fg-color: var(--color-accent-warning);
+    --task-status-bg-color: var(--color-background-warning);
+  }
+
+  &.is-verified {
+    --task-status-fg-color: var(--color-accent-secondary);
+
+    // TODO: no DS background token pairs with the secondary accent
+    --task-status-bg-color: color-mix(in srgb, var(--color-accent-secondary) 18%, transparent);
+  }
+
+  &.is-wont-do {
+    --task-status-fg-color: var(--color-accent-error);
+    --task-status-bg-color: var(--color-background-error);
+  }
+}

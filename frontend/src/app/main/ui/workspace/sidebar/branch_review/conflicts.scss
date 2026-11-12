@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
@@ -130,6 +130,9 @@
   @include text-ellipsis;
 
   color: var(--color-foreground-primary);
+
+  // TODO: No exact DS typography match found.
+  // Closest match: body-small (weight 500 vs 400).
   font-weight: 500;
 }
 
@@ -235,18 +238,23 @@
 }
 
 .option-radio {
+  --option-radio-border-color: var(--color-foreground-secondary);
+  --option-radio-border-width: #{$b-2};
+
   flex-shrink: 0;
   inline-size: $sz-16;
   block-size: $sz-16;
-  border: $b-2 solid var(--color-foreground-secondary);
+  border: var(--option-radio-border-width) solid var(--option-radio-border-color);
   border-radius: $br-circle;
 
   &.is-chosen {
-    border: px2rem(4) solid var(--color-accent-primary);
+    --option-radio-border-color: var(--color-accent-primary);
+    --option-radio-border-width: #{px2rem(4)};
   }
 }
 
 .option-label {
+  // TODO: 600 is not a weight of the DS typographies.
   font-weight: 600;
 }
 
@@ -257,10 +265,12 @@
 }
 
 .option-side-label {
-  color: var(--color-accent-primary);
+  --option-side-label-color: var(--color-accent-primary);
+
+  color: var(--option-side-label-color);
 
   &.is-main {
-    color: var(--color-accent-secondary);
+    --option-side-label-color: var(--color-accent-secondary);
   }
 }
 
@@ -269,20 +279,14 @@
 }
 
 .option-stage {
+  @include transparency-checkerboard;
+
   display: flex;
   align-items: center;
   justify-content: center;
   block-size: var(--preview-card-stage-block-size, #{px2rem(100)});
   padding: var(--sp-s);
   border-radius: $br-6;
-
-  // the same checkerboard as `preview-card*`
-  background-color: var(--color-static-white);
-  background-image: repeating-conic-gradient(
-    color-mix(in srgb, var(--color-canvas) 70%, var(--color-static-white)) 0% 25%,
-    transparent 0% 50%
-  );
-  background-size: px2rem(20) px2rem(20);
 }
 
 .option-warning {

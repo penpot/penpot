@@ -1,0 +1,68 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+
+.task-row {
+  --task-row-bg-color: var(--color-background-tertiary);
+  --task-row-border-color: transparent;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  padding: var(--sp-m);
+  border: $b-1 solid var(--task-row-border-color);
+  border-radius: $br-8;
+  background-color: var(--task-row-bg-color);
+  color: var(--color-foreground-primary);
+  cursor: pointer;
+
+  &:hover {
+    --task-row-bg-color: var(--color-background-quaternary);
+  }
+
+  &:focus-visible {
+    outline: $b-1 solid var(--color-accent-primary);
+  }
+
+  &.is-selected {
+    --task-row-border-color: var(--color-accent-primary);
+  }
+
+  &.is-selected.is-review {
+    --task-row-border-color: var(--color-accent-info);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-s);
+}
+
+.title {
+  flex: 1;
+  min-inline-size: 0;
+  color: var(--color-foreground-primary);
+}
+
+.actions {
+  flex-shrink: 0;
+  margin-block: calc(var(--sp-xs) * -1);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  min-inline-size: 0;
+}
+
+.assignee {
+  display: flex;
+  flex-shrink: 0;
+  margin-inline-start: auto;
+}

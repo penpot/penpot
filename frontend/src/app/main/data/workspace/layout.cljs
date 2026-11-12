@@ -122,6 +122,45 @@
       (let [flags (:workspace-layout state)]
         (persist-layout-flags! flags)))))
 
+;; --- The bars at the bottom of the canvas of a branch
+
+;; A branch has two bars at the same level, the one of the branch and the
+;; palettes, and only one of them is open at a time. `:bottom-bar` says which:
+;; `:branch`, `:palette` or `:none`. It only exists while the bar of the branch
+;; is there: without it the palettes follow their own layout flags.
+
+(defn mount-bottom-bars
+  "The bar of the branch is there, and comes open."
+  []
+  (ptk/reify ::mount-bottom-bars
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-global :bottom-bar] :branch))))
+
+(defn unmount-bottom-bars
+  []
+  (ptk/reify ::unmount-bottom-bars
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-global dissoc :bottom-bar))))
+
+(defn open-bottom-bar
+  "Open `bar`, which folds the other one."
+  [bar]
+  (ptk/reify ::open-bottom-bar
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/update-in-when state [:workspace-global :bottom-bar] (constantly bar)))))
+
+(defn toggle-bottom-bar
+  "Open `bar`, or fold it when it is open and leave both folded."
+  [bar]
+  (ptk/reify ::toggle-bottom-bar
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/update-in-when state [:workspace-global :bottom-bar]
+                        #(if (= bar %) :none bar)))))
+
 (defn set-options-mode
   [mode]
   (dm/assert!

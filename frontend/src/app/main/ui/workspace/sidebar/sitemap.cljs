@@ -304,7 +304,9 @@
                           (-> event dom/get-current-target dom/blur!)))
 
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
-        permissions    (mf/use-ctx ctx/permissions)]
+        permissions    (mf/use-ctx ctx/permissions)
+        ;; a design review is read-only for everybody, editors included
+        reviewing?     (some? (mf/deref refs/pull-request-preview))]
 
     [:div {:class (stl/css :sitemap)
            :style {:--height (dm/str height "px")}}
@@ -316,7 +318,7 @@
                      :class         (stl/css :sitemap-title)}
 
       (if ^boolean read-only?
-        (when ^boolean (:can-edit permissions)
+        (when (or ^boolean (:can-edit permissions) ^boolean reviewing?)
           [:& badge-notification {:is-focus true
                                   :size :small
                                   :content (tr "labels.view-only")}])

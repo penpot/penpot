@@ -14,6 +14,7 @@
 (def ^:cursor create-polygon (cursor-ref :create-polygon))
 (def ^:cursor create-rectangle (cursor-ref :create-rectangle))
 (def ^:cursor create-shape (cursor-ref :create-shape))
+(def ^:cursor create-task (cursor-ref :create-task 0 2 20))
 (def ^:cursor draw (cursor-ref :draw 0 0 0))
 (def ^:cursor draw-add (cursor-ref :draw-add 0 0 0 25 25))
 (def ^:cursor draw-node (cursor-ref :draw-node 0 0 0 25 25))

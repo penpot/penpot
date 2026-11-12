@@ -26,6 +26,7 @@
    [app.main.ui.hooks :as ui-hooks]
    [app.main.ui.measurements :as msr]
    [app.main.ui.shapes.export :as use]
+   [app.main.ui.workspace.review.overlays :refer [review-overlays*]]
    [app.main.ui.workspace.shapes :as shapes]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor*]]
    [app.main.ui.workspace.shapes.text.editor :as editor-v1]
@@ -238,8 +239,13 @@
 
         disable-events?          (contains? layout :comments)
         comments-mode?           (= drawing-tool :comments)
-        show-comments?           (or comments-mode?
-                                     (contains? layout :display-comments))
+        reviewing?               (some? (mf/deref refs/pull-request-preview))
+        ;; inside a design review the global "show comments" option
+        ;; decides alone: it shows or hides comments and tasks
+        show-comments?           (if reviewing?
+                                   (contains? layout :display-comments)
+                                   (or comments-mode?
+                                       (contains? layout :display-comments)))
         show-cursor-tooltip?     tooltip
         show-draw-area?          drawing-obj
         show-gradient-handlers?  (= (count selected) 1)
@@ -382,6 +388,12 @@
                                       :vport vport
                                       :zoom zoom
                                       :show-rulers show-rulers?}])
+
+      ;; the changes of a design review and the layer picker of a task
+      [:> review-overlays* {:vbox vbox
+                            :vport vport
+                            :zoom zoom
+                            :page-id page-id}]
 
       (when picking-color?
         [:> pixel-overlay/pixel-overlay* {:vport vport
