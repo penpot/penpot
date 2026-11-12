@@ -266,10 +266,20 @@
     (first
      (reduce
       (fn [[changes used-values] shape]
-        (let [component (ctcl/get-component data (:component-id shape) true)]
-          (if (or (zero? num-shapes)                      ;; do nothing if there are no shapes
-                  (and (= variant-id (:variant-id shape)) ;; or we are only moving the shape inside its parent (it is
-                       (not (:deleted component))))       ;; the same parent and the component isn't deleted)
+        (let [component     (ctcl/get-component data (:component-id shape) true)
+              already-here? (= variant-id (:variant-id shape))
+              prop-names    (cfv/extract-properties-names shape data)
+              base-names    (map :name base-props)
+              props-ok?     (= prop-names base-names)
+              names-ok?     (= (cpn/merge-path-item (:path component) (:name component))
+                               container-name)
+              variant-ok?   (= (:variant-name shape)
+                               (ctv/properties-to-name (:variant-properties component)))
+              aligned?      (and props-ok? names-ok? variant-ok?)]
+          (if (or (zero? num-shapes) ;; do nothing if there are no shapes
+                  (and already-here? ;; or already a fully aligned child of this container
+                       aligned?
+                       (not (:deleted component))))
             [changes used-values]
             (let [props               (-> (create-new-properties shape total-props)
                                           (fill-blank-properties used-values))
