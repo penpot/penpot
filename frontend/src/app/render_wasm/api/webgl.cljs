@@ -370,13 +370,10 @@ void main() {
 
 (defn remember-gpu-info
   "Keep the GPU details of `gl`, a context the renderer just created, so
-  later events can send them after that context is lost. Reads the context
-  only the first time."
+  later events can send them after that context is lost."
   [gl]
-  (when (nil? @gpu-info)
-    (try
-      (vreset! gpu-info (read-gpu-info gl))
-      (catch :default _ nil))))
+  (when-let [info (try (read-gpu-info gl) (catch :default _ nil))]
+    (vreset! gpu-info info)))
 
 (defn- probe-gpu-info
   "GPU details from a throwaway WebGL context, or nil when the browser

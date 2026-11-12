@@ -87,9 +87,10 @@
 
 (defn get-active-renderer
   "Name of the renderer active in `state`, for telemetry: `wasm` (WebGL) or
-  `svg`."
+  `svg`, or nil before the features are initialized."
   [state]
-  (if (active-feature? state "render-wasm/v1") "wasm" "svg"))
+  (when (contains? state :features)
+    (if (active-feature? state "render-wasm/v1") "wasm" "svg")))
 
 (defn active-features?
   "Given a state and a set of features, check if the features are all enabled."
