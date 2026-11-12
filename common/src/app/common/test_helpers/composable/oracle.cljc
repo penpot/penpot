@@ -433,12 +433,17 @@
                                               (d/without-nils (select-keys shape [:constraints-h :constraints-v]))))
                        main-parent (get main-objects (:parent-id main))
                        ;; a group or bool takes its bounds and turn from its children,
-                       ;; so they take their place from the board around it
-                       board? (and (#{:group :bool} (:type parent)) main-parent
-                                   (#{:group :bool} (:type main-parent))
-                                   (not (ctl/any-layout? (get objects (:frame-id shape)))))
-                       parent (if board? (get objects (:frame-id shape)) parent)
-                       main-parent (if board? (get main-objects (:frame-id main)) main-parent)
+                       ;; so they take their place from the board around it, or from
+                       ;; the nearest group or bool on the way that authors its geometry
+                       [parent main-parent]
+                       (if (ctl/any-layout? (get objects (:frame-id shape)))
+                         [parent main-parent]
+                         (loop [parent parent main-parent main-parent]
+                           (if (and (#{:group :bool} (:type parent))
+                                    (#{:group :bool} (:type main-parent))
+                                    (not (contains? (:touched parent) :geometry-group)))
+                             (recur (get objects (:parent-id parent)) (get main-objects (:parent-id main-parent)))
+                             [parent main-parent])))
                        ;; a reset refreshes its subtree from the loaded library while
                        ;; the parent keeps the version it accepted, which may lack a turn;
                        ;; a swapped parent holds the child in the main of its content
@@ -838,7 +843,8 @@
                        :let [group (some (fn [[group candidate]] (when (= unit candidate) group)) shadow/text-groups)]
                        :when (not (contains? touched group))]
                  (fail :I4 {:shape (:name shape) :group group :unit unit})))))
-         (when-not (contains? touched :geometry-group)
+         ;; a group or bool takes its bounds from its children, which are checked
+         (when-not (or (contains? touched :geometry-group) (#{:group :bool} (:type shape)))
            (let [expected (expected-geometry file container libraries shape
                                              #(cf/reference-libraries situation %))
                  attrs (cond-> (geometry-differences (:objects page) shape expected)
