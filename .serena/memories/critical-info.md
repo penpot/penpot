@@ -6,6 +6,7 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
 - A section's top-level memory is `<section>/core`. When a section is relevant, read the core memory before focused memories.
 - Edits/stale refs/duplication cleanup: `mem:memory-maintenance`.
 - Cross-cutting testing principles, TDD workflow, and anti-patterns: `mem:testing`.
+- Structured logging conventions (`:hint` casing and fields, log levels): `mem:clojure/logging` — read before adding or changing any log call.
 - Verified Clojure language behaviors that contradict common assumptions (e.g. `int?` covers `Long`; `integer?` is the general predicate): `mem:clojure/idioms` — read before assuming stdlib predicate semantics.
 - Read `mem:clojure/design-rules` (function shape, boundary checks, naming) before writing or modifying Clojure/ClojureScript code — not only when designing a solution or an API.
 
