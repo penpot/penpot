@@ -2353,6 +2353,13 @@
     (t/is (empty? (cg/coverage-errors @coverage cg/variant-coverage-kinds))
           (pr-str (cg/coverage-errors @coverage cg/variant-coverage-kinds)))))
 
+(t/deftest centring-a-nested-copy-after-its-copy-resized-keeps-its-children-in-place
+  (t/is (map? (cg/run {:world [1 0 {:variants true :text-styles false :library-variants false :stale-libraries false
+                                    :layout :grid :layout-item-margins false :grid-square false :library-depth 1
+                                    :library false :rich-variants true :layout-children false :library-text false
+                                    :grid-empty false :layout-copies false :text false}]
+                       :ops [[:nest 4] [:resize 1] [:style 15 9 3]]}))))
+
 (t/deftest unmasking-in-a-flex-main-leaves-its-layout-as-the-unmask-event-does
   (t/is (map? (cg/run {:world [2 0 {:variants false :rich-variants false :text true :layout :flex
                                     :layout-copies false :layout-children true}]

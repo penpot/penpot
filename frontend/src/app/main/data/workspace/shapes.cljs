@@ -254,6 +254,12 @@
                                                 :with-objects? with-objects?
                                                 :translation? translation?
                                                 :skip-grid-reassignment? skip-grid-reassignment?})
+                   ;; a copy shape keeps the place its old constraint gave it
+                   (cond-> (not ignore-touched)
+                     (cll/generate-author-constraint-places
+                      (ctn/make-container (dsh/lookup-page state page-id) :page)
+                      (dsh/lookup-libraries state)
+                      objects ids))
                    (cond-> undo-group
                      (pcb/set-undo-group undo-group))
                    (pcb/set-translation? translation?)

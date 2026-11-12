@@ -21,6 +21,7 @@
    [app.common.logic.placement :as clp]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variants :as clv]
+   [app.common.math :as mth]
    [app.common.schema.test :as smt]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.composable.comp.files :as cf]
@@ -1013,6 +1014,23 @@
         (and (= property :layout-item-absolute) (true? value)
              (:shape-ref shape) (not (:layout-item-absolute shape)))
         (assoc-in [id :geometry-group] (shadow/author-geometry (get (all-objects after) id shape) nil))
+
+        ;; a copy shape keeps the place its old constraint gave it in a board
+        ;; whose size differs from its main's along that axis
+        (and (#{:constraints-h :constraints-v} property)
+             (:shape-ref shape)
+             (not (get-in model [id :geometry-group]))
+             (not= (get shape property) (get (get (all-objects after) id) property))
+             (not (and (ctl/any-layout-immediate-child? objects shape)
+                       (not (ctl/position-absolute? shape))))
+             (let [frame      (get objects (:frame-id shape))
+                   main-frame (get objects (:shape-ref frame))
+                   size       (if (= property :constraints-h) :width :height)]
+               (and (:shape-ref frame) main-frame
+                    (not (mth/close? (get frame size) (get main-frame size) 0.01)))))
+        (assoc-in [id :geometry-group]
+                  (shadow/author-geometry (get (all-objects after) id shape)
+                                          (get (all-objects after) (:frame-id shape))))
 
         ;; a constraint resizes the shape only with its parent's later resizes
         (and (#{:constraints-h :constraints-v} property) (get-in model [id :geometry-group]))
