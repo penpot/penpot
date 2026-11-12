@@ -71,7 +71,11 @@
   [:map
    [:id         ::sm/uuid]
    [:name       :string]
-   [:candidates [:vector schema:candidate]]])
+   [:candidates [:vector schema:candidate]]
+   [:tokens-source? {:optional true} :boolean]
+   [:tokens-status-names {:optional true} bf.v3/schema:tokens-status-names]
+   [:tokens-source-fallback {:optional true}
+    [:enum :tokens-source-fallback-local :tokens-source-deactivated]]])
 
 (def schema:resolution-entry
   "The libraries one imported file uses, split in the ones already linked
