@@ -157,24 +157,30 @@
     (when (mtx/metrics? metrics)
       (mtx/run! metrics params))))
 
-(defn- refusal-code
-  "Bounded label for the error that refused a save: the `:code` of its
-  ex-data, the `:type` when it carries no code, or `unknown`.
+(defn- data-code
+  "Bounded label for the error described by the ex-data `data`: its
+  `:code`, the `:type` when it carries no code, or `unknown`.
 
   Both are keywords written in this codebase, so the label set stays
   bounded by the source."
-  [cause]
-  (let [data (ex-data cause)
-        code (or (:code data) (:type data))]
+  [data]
+  (let [code (or (:code data) (:type data))]
     (if (keyword? code) (name code) "unknown")))
 
+(defn- refusal-code
+  "Bounded label for the error that refused a save; see `data-code`."
+  [cause]
+  (data-code (ex-data cause)))
+
 (defn- refusal-stage
-  "Bounded label for the stage a refused save had reached, read from the
-  step timings that `apply-changes` and `validate-file` record in
-  `finally` forms: a step's timing is present whether it completed or
-  raised, so the furthest step present is the one that raised, or the
-  last one before the failing step. Only the first attempt, with all the
-  changes, records timings: the retries of `apply-commits` do not.
+  "Bounded label for the stage a refused save, or a save whose tail was
+  rejected, had reached. Read from the step timings that `apply-changes`
+  and `validate-file` record in `finally` forms: a step's timing is
+  present whether it completed or raised, so the furthest step present
+  is the one that raised, or the last one before the failing step. Only
+  the first attempt, with all the changes, records timings: the retries
+  of `apply-commits` do not, so a partial rejection reports the stage of
+  the attempt over the whole change set.
 
   `changes` covers the change-application step, the change schema
   checks included. A failing file version check comes before it and
@@ -187,6 +193,33 @@
     (nil? (:validate-affected-ms timings)) "changes"
     (nil? (:validate-schema-ms timings))   "referential"
     :else                                  "schema"))
+
+(defn- record-rejection!
+  "Record a save whose `rejected` commits, out of `total`, were not
+  stored.
+
+  `apply-commits` keeps the valid prefix of the commits and rejects the
+  rest without raising, so the refusal counter in the error handler of
+  `update-file` never sees such a save. It is counted here, where the
+  decision is made, in the same family as a whole refusal: the `outcome`
+  label tells a save that stored nothing (`refused`, which is also what
+  a save of a single rejected commit reports) from one that stored the
+  commits before the first rejected one (`partial`).
+
+  The rejected commits are counted once each, all under the code of the
+  first rejected commit, because the retries report only that error."
+  [cfg rejected total]
+  (let [code    (data-code (:error rejected))
+        stage   (refusal-stage @(::validation-timings cfg))
+        outcome (if (= (count (:commit-ids rejected)) total)
+                  "refused"
+                  "partial")]
+    (record-metric! cfg {:id :update-file-refused
+                         :labels [stage code outcome]
+                         :inc 1})
+    (record-metric! cfg {:id :update-file-rejected-commits
+                         :labels [code]
+                         :inc (count (:commit-ids rejected))})))
 
 ;; Not a real editor session: file-change messages with this id are
 ;; delivered to every connected session, including the saver.
@@ -331,9 +364,12 @@
           ;; (`handle-response`), so timings collected before a hard
           ;; validation failure would be lost without this inline log.
           (let [timings @(::validation-timings cfg)]
+            ;; Nothing of a refused save is stored, whatever the number
+            ;; of commits it carried: the outcome is `refused`.
             (record-metric! cfg {:id :update-file-refused
                                  :labels [(refusal-stage timings)
-                                          (refusal-code cause)]
+                                          (refusal-code cause)
+                                          "refused"]
                                  :inc 1})
             (l/dbg :hint "update-file"
                    :file-id (str (:id file))
@@ -1015,6 +1051,11 @@
             (catch Throwable cause
               (repair-or-reject cfg original file libs changes commits
                                 skip-validate tracked cause))))]
+
+    ;; A save whose tail was rejected never raises, so this is the only
+    ;; place that sees it.
+    (when-let [rejected (::rejected file)]
+      (record-rejection! cfg rejected (count commits)))
 
     (if-let [media-refs (-> @state :media-refs not-empty)]
       (bfc/update-media-references! cfg file media-refs)

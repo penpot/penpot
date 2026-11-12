@@ -127,6 +127,25 @@
     :id uuid/zero
     :operations []}])
 
+(defn- invalid-type-commit
+  "A commit group whose fold leaves a shape invalid."
+  [file]
+  {:commit-id (uuid/next)
+   :changes [{:type :mod-obj
+              :page-id (first (:pages (:data file)))
+              :id uuid/zero
+              :operations [{:type :set
+                            :attr :type
+                            :val :not-a-shape}]}]})
+
+(defn- page-name-commit
+  "A commit group that applies and validates."
+  [file name]
+  {:commit-id (uuid/next)
+   :changes [{:type :mod-page
+              :id (first (:pages (:data file)))
+              :name name}]})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -135,10 +154,15 @@
   ;; A counter whose declared labels differ from the ones the recorder
   ;; passes fails inside `run!`, which swallows the error: every sample
   ;; would be dropped silently.
-  (t/is (= ["stage" "code"]
+  (t/is (= ["stage" "code" "outcome"]
            (get-in main/default-metrics [:update-file-refused ::mdef/labels])))
   (t/is (= :counter
            (get-in main/default-metrics [:update-file-refused ::mdef/type])))
+
+  (t/is (= ["code"]
+           (get-in main/default-metrics [:update-file-rejected-commits ::mdef/labels])))
+  (t/is (= :counter
+           (get-in main/default-metrics [:update-file-rejected-commits ::mdef/type])))
 
   (t/is (= ["check" "reason"]
            (get-in main/default-metrics [:update-file-soft-failure ::mdef/labels])))
@@ -232,7 +256,8 @@
         page-id (first (:pages (:data file)))
         metrics (:app.metrics/metrics th/*system*)
         before  (counter metrics "penpot_rpc_update_file_refused_total"
-                         ["stage" "code"] ["changes" "data-validation"])
+                         ["stage" "code" "outcome"]
+                         ["changes" "data-validation" "refused"])
         ;; The operation passes the params schema (`:val` is untyped) and
         ;; leaves the shape invalid, so the fold itself refuses it.
         out     (th/command! {::th/type :update-file
@@ -251,7 +276,63 @@
     (t/is (some? (:error out)))
     (t/is (= (inc before)
              (counter metrics "penpot_rpc_update_file_refused_total"
-                      ["stage" "code"] ["changes" "data-validation"])))))
+                      ["stage" "code" "outcome"]
+                      ["changes" "data-validation" "refused"])))))
+
+(t/deftest partial-rejection-is-counted-with-its-outcome-and-rejected-commits
+  ;; A save that carries commit groups keeps the commits before the first
+  ;; invalid one and answers normally, so nothing raises out of
+  ;; `update-file` and the refusal counter in its error handler never
+  ;; sees the rejection.
+  (let [metrics  (metrics)
+        cfg      (validation-cfg metrics)
+        file     (valid-file)
+        commits  [(page-name-commit file "a")
+                  (page-name-commit file "b")
+                  (invalid-type-commit file)
+                  (page-name-commit file "c")]
+        before   (counter metrics "penpot_rpc_update_file_refused_total"
+                          ["stage" "code" "outcome"]
+                          ["changes" "data-validation" "partial"])
+        rejected-before (counter metrics "penpot_rpc_update_file_rejected_commits_total"
+                                 ["code"] ["data-validation"])]
+    (binding [cf/flags #{}
+              pmap/*tracked* (pmap/create-tracked)]
+      (let [saved (@#'files-update/process-changes-and-validate
+                   cfg file (into [] (mapcat :changes) commits) commits nil)]
+        ;; The two commits before the invalid one apply and validate
+        (t/is (= (mapv :commit-id (subvec commits 2))
+                 (:commit-ids (::files-update/rejected saved))))))
+
+    (t/is (= (inc before)
+             (counter metrics "penpot_rpc_update_file_refused_total"
+                      ["stage" "code" "outcome"]
+                      ["changes" "data-validation" "partial"])))
+    (t/is (= (+ 2 rejected-before)
+             (counter metrics "penpot_rpc_update_file_rejected_commits_total"
+                      ["code"] ["data-validation"])))))
+
+(t/deftest a-save-that-rejects-every-commit-is-counted-as-a-refusal
+  ;; The request answers normally and stores nothing, so `refused` is
+  ;; the only outcome that separates it from a save that went through.
+  (let [metrics (metrics)
+        cfg     (validation-cfg metrics)
+        file    (valid-file)
+        commits [(invalid-type-commit file)]
+        before  (counter metrics "penpot_rpc_update_file_refused_total"
+                         ["stage" "code" "outcome"]
+                         ["changes" "data-validation" "refused"])]
+    (binding [cf/flags #{}
+              pmap/*tracked* (pmap/create-tracked)]
+      (let [saved (@#'files-update/process-changes-and-validate
+                   cfg file (into [] (mapcat :changes) commits) commits nil)]
+        (t/is (= (mapv :commit-id commits)
+                 (:commit-ids (::files-update/rejected saved))))))
+
+    (t/is (= (inc before)
+             (counter metrics "penpot_rpc_update_file_refused_total"
+                      ["stage" "code" "outcome"]
+                      ["changes" "data-validation" "refused"])))))
 
 (t/deftest lagged-save-is-counted
   (let [profile (th/create-profile* 1 {:is-active true})
