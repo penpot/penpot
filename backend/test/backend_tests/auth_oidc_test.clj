@@ -447,6 +447,33 @@
               loc    (redirect-location result)]
           (t/is (.contains loc "error=registration-disabled")))))))
 
+(t/deftest callback-with-invitation-and-no-flags-redirects-to-register
+  ;; Review of #12974: an invitation token in state acts as a
+  ;; substitute for the SSO registration flags, so the user reaches
+  ;; the register screen instead of the registration-disabled error.
+  ;; The presence check is enough here: the invitation row is
+  ;; revalidated under a row lock in `register-profile`.
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        state   (make-state-token cfg {:invitation-token "inv-123"})
+        request (default-request cfg :state state)]
+    (binding [cf/config {:public-uri "http://localhost:3449"}
+              cf/flags #{}]
+      (with-redefs [app.auth.oidc/resolve-provider (constantly {:type "oidc" :id "oidc"})
+                    app.auth.oidc/get-info         (constantly {:email "u@e.com" :fullname "U"
+                                                                :backend "oidc" :email-verified false
+                                                                :invitation-token "inv-123"
+                                                                :props {}})
+                    app.auth.oidc/get-profile      (constantly nil)]
+        (let [result (#'oidc/callback-handler cfg request)
+              loc    (redirect-location result)
+              claims (tokens/decode cfg (location-token loc))]
+          (t/is (.contains loc "screen=auth-register-validate"))
+          (t/is (.contains loc "token="))
+          (t/is (= :prepared-register (:iss claims))
+                "the redirect token must be a :prepared-register token")
+          (t/is (= "inv-123" (:invitation-token claims))
+                "the invitation token must travel inside the prepared-register claims"))))))
+
 (t/deftest callback-profile-blocked
   (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
         state   (make-state-token cfg {})

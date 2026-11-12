@@ -1062,6 +1062,11 @@
             :organization-id organization-id
             :organization-name organization-name}))))))
 
+(def oidc-provider-types
+  "Backends authenticating through an OIDC-compatible provider.
+  Only these backends take the SSO registration gate."
+  #{"oidc" "google" "github" "gitlab"})
+
 (defn sso-registration-allowed?
   "SSO registration is allowed when public registration or explicit
   OIDC registration is enabled. Shared by the callback gate and the
@@ -1102,7 +1107,8 @@
                 (redirect-with-error "email-domain-not-allowed")
 
                 :else
-                (if (sso-registration-allowed?)
+                (if (or (sso-registration-allowed?)
+                        (some? (:invitation-token info)))
                   (redirect-to-register cfg info provider)
                   (redirect-with-error "registration-disabled")))
 

@@ -232,10 +232,12 @@
 
 (defn- check-registration-flags
   "The `:backend` is the one embedded in the verified
-  `:prepared-register` token: the password flow backend or the
-  provider type (`\"oidc\"`, `\"google\"`, ...) for SSO flows."
+  `:prepared-register` token: the password flow backend, one of the
+  `oidc/oidc-provider-types` backends for SSO flows, or any other
+  value, which is rejected loudly."
   [backend invitation]
-  (if (= backend penpot-backend)
+  (cond
+    (= backend penpot-backend)
     (do
       (when-not (contains? cf/flags :login-with-password)
         (ex/raise :type :restriction
@@ -247,28 +249,47 @@
         (ex/raise :type :restriction
                   :code :registration-disabled
                   :hint "registration disabled")))
+
+    (contains? oidc/oidc-provider-types backend)
     ;; SSO backends share the OIDC callback gate
     ;; (`oidc/sso-registration-allowed?`): registration is allowed with
     ;; `:registration` or `:oidc-registration`, without requiring
-    ;; password login.
-    (when-not (oidc/sso-registration-allowed?)
+    ;; password login. An invitation token is a substitute for the
+    ;; flags, as in the password flow.
+    (when-not (or (oidc/sso-registration-allowed?)
+                  (some? invitation))
       (ex/raise :type :restriction
                 :code :registration-disabled
-                :hint "registration disabled"))))
+                :hint "registration disabled"))
+
+    :else
+    (ex/raise :type :validation
+              :code :invalid-token
+              :hint "unsupported registration backend")))
 
 (defn- check-registration-invitation
   "Verifies that the invitation is still active. No-op unless a live
-  invitation is required: password backend with public registration
-  disabled and an invitation at hand."
+  invitation is required: a backend whose registration flags do not
+  allow public registration, with an invitation at hand."
   [cfg backend invitation lock-invitation?]
-  (when (and (= backend penpot-backend)
-             (some? invitation)
-             (not (contains? cf/flags :registration)))
-    (let [opts (when lock-invitation? {::db/for-update true})]
-      (when (nil? (teams-invitations/active-invitation cfg invitation opts))
-        (ex/raise :type :validation
-                  :code :invalid-token
-                  :hint "no active invitation associated with the token")))))
+  (let [flag-allows? (if (= backend penpot-backend)
+                       (contains? cf/flags :registration)
+                       (oidc/sso-registration-allowed?))]
+    (when (and (some? invitation)
+               (not flag-allows?))
+      (let [opts (when lock-invitation? {::db/for-update true})]
+        (when (nil? (teams-invitations/active-invitation cfg invitation opts))
+          (ex/raise :type :validation
+                    :code :invalid-token
+                    :hint "no active invitation associated with the token"))))))
+
+(defn- check-registration
+  "Register-profile gate: validates the flags and the team invitation in
+  order. The prepare command inlines the same pair so it can interleave
+  the email-mismatch check."
+  [cfg backend invitation lock-invitation?]
+  (check-registration-flags backend invitation)
+  (check-registration-invitation cfg backend invitation lock-invitation?))
 
 (defn- validate-register-attempt!
   [cfg params]
@@ -431,7 +452,7 @@
         locale    (when (and (string? locale) (not (str/blank? locale)))
                     locale)
 
-        backend   (:backend params "penpot")
+        backend   (:backend params penpot-backend)
         is-demo   (:is-demo params false)
         is-muted  (:is-muted params false)
         is-active (:is-active params false)
@@ -517,12 +538,12 @@
                  :token vtoken
                  :extra-data ptoken}))))
 
-(def schema:prepared-register-claims
+(def ^:private schema:prepared-register-claims
   [:map {:title "PreparedRegisterClaims"}
    [:backend ::sm/text]
    [:email ::sm/email]])
 
-(def valid-prepared-register-claims?
+(def ^:private valid-prepared-register-claims?
   (sm/lazy-validator schema:prepared-register-claims))
 
 (defn register-profile
@@ -535,8 +556,7 @@
         backend    (:backend claims)
         invitation (when-let [token (:invitation-token claims)]
                      (tokens/verify cfg {:token token :iss :team-invitation}))
-        _          (do (check-registration-flags backend invitation)
-                       (check-registration-invitation cfg backend invitation true))
+        _          (check-registration cfg backend invitation true)
         params     (cond-> claims
                      (:accept-newsletter-updates params)
                      (update :props assoc :newsletter-updates true))

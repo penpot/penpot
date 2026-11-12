@@ -272,7 +272,9 @@ __Since version 2.1.2__
 Allows users to register and login with oidc without having to previously
 register with another method. It also works with password login disabled
 (`disable-login-with-password`): OIDC registration only needs this flag,
-not password login.
+not password login. An invitation link also works as a substitute for
+this flag: an invited user can register with OIDC even with both
+registration flags disabled.
 
 ```bash
 PENPOT_FLAGS: [...] enable-oidc-registration
