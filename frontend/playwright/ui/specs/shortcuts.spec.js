@@ -8,23 +8,41 @@ import ShortcutsPage from "../pages/ShortcutsPage";
 // the wiring only a browser proves: the file input, the diff modal, the RPC
 // write, the download, the alert, the reload and the reset flows.
 //
-// Removed tests and what carries their rule now:
+// Removed tests, in the order the old file had them, and what carries their
+// rule now:
 // - "Shortcuts page loads correctly" -> goToShortcuts() in every test below.
-// - "Tabs are visible and clickable" -> the reset test's empty-tab step.
+// - "Tabs are visible and clickable" -> the reset test's "Empty tabs show
+//   their placeholders" step.
 // - "User can edit a shortcut" -> the persistence and conflict tests.
-// - "Import invalid JSON syntax" -> the invalid-file test, first step.
-// - "Import valid JSON with invalid schema" -> the invalid-file test,
-//   second step. The data rule is validate-imported-shortcuts (unit).
+// - "Import invalid JSON syntax" -> the invalid-file test's "Broken JSON
+//   does not parse" step.
+// - "Import valid JSON with invalid schema" -> the invalid-file test's "A
+//   parsed file with no applicable entry is rejected" step, which sends an
+//   unknown action key.
 // - "Import JSON without workspace context accepted" -> the
-//   accepts-missing-workspace unit test plus the positive import test.
-// - "Import JSON with unsupported shortcut format" -> the same gate as the
-//   invalid-file test. The data rule is validate-imported-shortcuts (unit).
+//   validate-imported-shortcuts-accepts-missing-workspace unit test. The
+//   positive import test only covers the accepted-import wiring for a
+//   workspace context.
+// - "Import JSON with unsupported shortcut format" -> the same step, which
+//   also sends a non-string command on a customizable key. Both entries are
+//   skipped by sanitize-imported-shortcuts
+//   (sanitize-imported-shortcuts-skips-unknown-action-keys and
+//   sanitize-imported-shortcuts-skips-non-string-commands, unit) and the page
+//   rejects a file with nothing applicable.
 // - "Import conflicting shortcuts" -> the conflict test plus
 //   import-custom-shortcuts-disables-conflicting-default (unit).
-// - "Export includes disabled shortcuts" -> the export test, which imports
-//   one bound and one empty entry.
-// - "Reset button shows pending message..." -> the reset test's last step.
-// - "Cancel editing does not save changes" -> the persistence test.
+// - "Export customized shortcuts" -> the export test, which imports a bound
+//   entry and checks the downloaded payload.
+// - "Export includes disabled shortcuts" -> the export test, which also
+//   imports an empty entry.
+// - "Reset after import restores defaults" -> the reset test's "Reset all
+//   restores the defaults" step.
+// - "Reset button shows pending message..." -> the reset test's "A single
+//   reset waits for the save" step.
+// - "Custom shortcuts persist after reload" -> the persistence test's "A
+//   saved edit survives the reload" step.
+// - "Cancel editing does not save changes" -> the persistence test's "A
+//   cancelled edit is not saved" step.
 // - "Assigning same shortcut to two actions..." -> the conflict test.
 // - "Export, reset, import restores configuration" -> the export, reset and
 //   import tests, one behavior each.
@@ -61,11 +79,17 @@ test("A file with nothing to apply shows the alert", async ({ page }) => {
   await test.step("Broken JSON does not parse", async () => {
     await shortcutsPage.importShortcutsRaw("{invalid");
     await expect(alert).toBeVisible();
+
+    // The error toast carries no timeout: it stays until another
+    // notification replaces it or the route changes, so it has to go before
+    // the next import can prove anything.
+    await alert.getByRole("button", { name: "Close" }).click();
+    await expect(alert).toBeHidden();
   });
 
   await test.step("A parsed file with no applicable entry is rejected", async () => {
     await shortcutsPage.importShortcuts({
-      workspace: { "unknown-shortcut": "ctrl+y" },
+      workspace: { "unknown-shortcut": "ctrl+y", "align-bottom": 123 },
     });
     await expect(alert).toBeVisible();
   });
