@@ -2891,3 +2891,18 @@
     (t/testing "nil equals an empty content, but not a non-empty one"
       (t/is (path.segment/content-close? nil []))
       (t/is (not (path.segment/content-close? nil content))))))
+
+(t/deftest an-empty-turned-shape-keeps-its-place-when-its-geometry-updates
+  (let [center    (gpt/point 135 197)
+        transform (gmt/rotate-matrix 180)
+        shape     {:type :bool
+                   :content []
+                   :selrect (grc/center->rect center 0.01)
+                   :transform transform
+                   :transform-inverse (gmt/inverse transform)}
+        updated   (path/update-geometry shape)
+        twice     (path/update-geometry updated)]
+    (t/is (mth/close? 135 (:x (grc/rect->center (:selrect updated))) 0.01))
+    (t/is (mth/close? 197 (:y (grc/rect->center (:selrect updated))) 0.01))
+    (t/is (mth/close? 135 (:x (grc/rect->center (:selrect twice))) 0.01))
+    (t/is (mth/close? 197 (:y (grc/rect->center (:selrect twice))) 0.01))))
