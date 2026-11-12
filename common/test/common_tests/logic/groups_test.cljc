@@ -13,6 +13,7 @@
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
@@ -79,3 +80,23 @@
     (t/is (= :bool (:type (get (objects file) (:id shape)))))
     (t/is (= #{(thi/id :rect-a) (thi/id :rect-b)} (set (:shapes (get (objects file) (:id shape))))))
     (t/is (nil? (clb/generate-create-bool nil (:id page) (:objects page) [(thi/id :board)] :union nil)))))
+
+(t/deftest a-bool-in-a-grid-takes-the-cell-of-its-last-shape
+  (let [file   (-> (thf/sample-file :file1)
+                   (tho/add-frame :grid :layout :grid
+                                  :layout-grid-rows [{:type :flex :value 1}]
+                                  :layout-grid-columns [{:type :flex :value 1} {:type :flex :value 1}])
+                   (ths/add-sample-shape :rect-a :parent-label :grid)
+                   (ths/add-sample-shape :rect-b :parent-label :grid)
+                   (ths/update-shape :grid :layout-grid-cells {})
+                   (as-> file (let [page (thf/current-page file)]
+                                (ths/update-shape file :grid :layout-grid-cells
+                                                  (:layout-grid-cells
+                                                   (ctl/assign-cells (get (:objects page) (thi/id :grid))
+                                                                     (:objects page)))))))
+        page   (thf/current-page file)
+        ids    (map thi/id [:rect-a :rect-b])
+        [shape changes] (clb/generate-create-bool nil (:id page) (:objects page) ids :union nil)
+        file   (thf/apply-changes file changes)
+        grid   (get (objects file) (thi/id :grid))]
+    (t/is (some #(= [(:id shape)] (:shapes %)) (vals (:layout-grid-cells grid))))))
