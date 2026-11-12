@@ -445,9 +445,11 @@
         (t/is (thrown? clojure.lang.ExceptionInfo
                        (invoke! cfg (fn [_ _] :never) {}))))
 
-      ;; the count came back down instead of staying up for good
+      ;; the count came back down instead of staying up for good. The
+      ;; republisher daemon thread can add publications inside the window,
+      ;; so what is asserted is the last value, not the whole sequence.
       (t/is (= 0 (waiting-count climit name)))
-      (t/is (= [0] (waiting-value-of name)))
+      (t/is (= 0 (waiting-last name)))
 
       ;; and the thread dropped the mark: with it left behind, this call would
       ;; run inline instead of waiting for the permit another thread holds.
