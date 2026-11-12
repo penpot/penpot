@@ -102,7 +102,7 @@
         handle-render-change
         (mf/use-fn
          (fn [enabled?]
-           (st/emit! (ev/event (assoc (webgl/get-environment)
+           (st/emit! (ev/event (assoc (webgl/detect-environment)
                                       ::ev/name (if enabled?
                                                   "enable-webgl-rendering"
                                                   "disable-webgl-rendering")

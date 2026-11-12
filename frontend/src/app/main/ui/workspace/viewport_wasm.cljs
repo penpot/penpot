@@ -474,7 +474,7 @@
                   (vreset! modal-shown? true)
                   (reset! canvas-init? false)
                   (st/emit! (modal/show {:type :webgl-unavailable})
-                            (ev/event (assoc (webgl/get-environment)
+                            (ev/event (assoc (webgl/detect-environment)
                                              ::ev/name "webgl-unavailable"
                                              ::ev/origin "workspace"
                                              :hint (or @init-error "no webgl2 context"))))))

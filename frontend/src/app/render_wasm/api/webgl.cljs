@@ -392,19 +392,25 @@ void main() {
           info)))
     (catch :default _ nil)))
 
-(defn- get-gpu-info
-  []
-  (or @gpu-info
-      (when-let [info (probe-gpu-info)]
-        (vreset! gpu-info info))))
+(defonce ^:private probe-attempted?
+  (volatile! false))
 
 (defn get-environment
   "Environment details for WebGL telemetry: GPU family, GPU backend and max
-  texture size when the browser exposes them, device memory, CPU cores and
-  whether the app runs inside Electron."
+  texture size when already remembered, device memory, CPU cores and
+  whether the app runs inside Electron. Never creates a WebGL context."
   []
   (let [^js navigator js/navigator]
-    (assoc (get-gpu-info)
+    (assoc @gpu-info
            :device-memory (.-deviceMemory navigator)
            :cpu-cores     (.-hardwareConcurrency navigator)
            :electron      (str/includes? (.-userAgent navigator) "Electron/"))))
+
+(defn detect-environment
+  "Like `get-environment`, but when no GPU details are remembered yet, reads
+  them from a throwaway WebGL context. Creates that context at most once."
+  []
+  (when-not (or @gpu-info @probe-attempted?)
+    (vreset! probe-attempted? true)
+    (vreset! gpu-info (probe-gpu-info)))
+  (get-environment))
