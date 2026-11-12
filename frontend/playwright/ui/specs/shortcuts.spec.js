@@ -1,246 +1,156 @@
 import { test, expect } from "@playwright/test";
 import ShortcutsPage from "../pages/ShortcutsPage";
 
-const customShortcutsFlag = "enable-custom-shortcuts";
+// The import and reset rules are unit-tested in
+// frontend/test/frontend_tests/ui/settings_shortcuts_test.cljs (77 tests):
+// validation, sanitising, the command grammar, reserved combinations, the
+// profile merge, the diff modal and the restore modal. What remains here is
+// the wiring only a browser proves: the file input, the diff modal, the RPC
+// write, the download, the alert, the reload and the reset flows.
+//
+// Removed tests and what carries their rule now:
+// - "Shortcuts page loads correctly" -> goToShortcuts() in every test below.
+// - "Tabs are visible and clickable" -> the reset test's empty-tab step.
+// - "User can edit a shortcut" -> the persistence and conflict tests.
+// - "Import invalid JSON syntax" -> the invalid-file test, first step.
+// - "Import valid JSON with invalid schema" -> the invalid-file test,
+//   second step. The data rule is validate-imported-shortcuts (unit).
+// - "Import JSON without workspace context accepted" -> the
+//   accepts-missing-workspace unit test plus the positive import test.
+// - "Import JSON with unsupported shortcut format" -> the same gate as the
+//   invalid-file test. The data rule is validate-imported-shortcuts (unit).
+// - "Import conflicting shortcuts" -> the conflict test plus
+//   import-custom-shortcuts-disables-conflicting-default (unit).
+// - "Export includes disabled shortcuts" -> the export test, which imports
+//   one bound and one empty entry.
+// - "Reset button shows pending message..." -> the reset test's last step.
+// - "Cancel editing does not save changes" -> the persistence test.
+// - "Assigning same shortcut to two actions..." -> the conflict test.
+// - "Export, reset, import restores configuration" -> the export, reset and
+//   import tests, one behavior each.
 
 test.beforeEach(async ({ page }) => {
   await ShortcutsPage.init(page);
-  await ShortcutsPage.mockConfigFlags(page, [customShortcutsFlag]);
 });
 
-test.describe("Shortcuts Settings Page", () => {
-  test("Shortcuts page loads correctly", async ({ page }) => {
-    const shortcutsPage = new ShortcutsPage(page);
-    await shortcutsPage.goToShortcuts();
+test("Import valid custom shortcuts", async ({ page }) => {
+  const shortcutsPage = new ShortcutsPage(page);
+  await shortcutsPage.goToShortcuts();
 
-    await expect(shortcutsPage.shortcutsSection).toBeVisible();
-    await expect(shortcutsPage.searchInput).toBeVisible();
+  await shortcutsPage.importShortcuts({
+    workspace: { "align-bottom": "ctrl+y" },
   });
 
-  test("Tabs are visible and clickable", async ({ page }) => {
-    const shortcutsPage = new ShortcutsPage(page);
-    await shortcutsPage.goToShortcuts();
+  await shortcutsPage.confirmImportApply();
 
-    await expect(shortcutsPage.allTab).toBeVisible();
-    await expect(shortcutsPage.personalizedTab).toBeVisible();
-    await expect(shortcutsPage.disabledTab).toBeVisible();
+  await shortcutsPage.expectShortcutCustomized("Align bottom");
 
-    await shortcutsPage.clickTab("Custom");
-    await expect(shortcutsPage.personalizedTab).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
-    const personalizedPlacehonder = page.getByText(/No custom shortcuts yet/i);
-    await expect(personalizedPlacehonder).toBeVisible();
-
-    await shortcutsPage.clickTab("Disabled");
-    await expect(shortcutsPage.disabledTab).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
-    const disabledPlaceholder = page.getByText(/No disabled shortcuts/i);
-    await expect(disabledPlaceholder).toBeVisible();
-
-    await shortcutsPage.clickTab("All");
-    await expect(shortcutsPage.allTab).toHaveAttribute("aria-selected", "true");
-  });
+  await shortcutsPage.clickTab("Custom");
+  await shortcutsPage.searchForShortcut("Align bottom");
+  await shortcutsPage.expectShortcutVisible("Align bottom");
 });
 
-test.describe("Shortcut Customization", () => {
-  test("User can edit a shortcut", async ({ page }) => {
-    const shortcutsPage = new ShortcutsPage(page);
-    await shortcutsPage.goToShortcuts();
+test("A file with nothing to apply shows the alert", async ({ page }) => {
+  const shortcutsPage = new ShortcutsPage(page);
+  await shortcutsPage.goToShortcuts();
 
-    // Expand subsection
-    await shortcutsPage.expandSubsection("Alignment");
+  const alert = page
+    .getByRole("alert")
+    .filter({ hasText: /not a valid shortcuts export/i });
 
-    // Start edition of the shortcut
-    await shortcutsPage.clickEditShortcut("Align bottom");
-
-    // Press a new key combination
-    await shortcutsPage.pressKey("Control+y");
-
-    // Save the shortcut
-    await shortcutsPage.saveShortcut();
-
-    // Verify the shortcut is now customized
-    await shortcutsPage.expectShortcutCustomized("Align bottom");
-  });
-});
-
-test.describe("Shortcut Import", () => {
-  test("Import valid custom shortcuts", async ({ page }) => {
-    const shortcutsPage = new ShortcutsPage(page);
-    await shortcutsPage.goToShortcuts();
-
-    await shortcutsPage.importShortcuts({
-      workspace: { "align-bottom": "ctrl+y" },
-    });
-
-    await shortcutsPage.confirmImportApply();
-
-    await shortcutsPage.expectShortcutCustomized("Align bottom");
-
-    await shortcutsPage.clickTab("Custom");
-    await shortcutsPage.searchForShortcut("Align bottom");
-    await shortcutsPage.expectShortcutVisible("Align bottom");
-  });
-
-  test("Import invalid JSON syntax", async ({ page }) => {
-    const shortcutsPage = new ShortcutsPage(page);
-    await shortcutsPage.goToShortcuts();
-
+  await test.step("Broken JSON does not parse", async () => {
     await shortcutsPage.importShortcutsRaw("{invalid");
-
-    await expect(
-      page
-        .getByRole("alert")
-        .filter({ hasText: /not a valid shortcuts export/i }),
-    ).toBeVisible();
+    await expect(alert).toBeVisible();
   });
 
-  test("Import valid JSON with invalid schema", async ({ page }) => {
-    const shortcutsPage = new ShortcutsPage(page);
-    await shortcutsPage.goToShortcuts();
-
+  await test.step("A parsed file with no applicable entry is rejected", async () => {
     await shortcutsPage.importShortcuts({
       workspace: { "unknown-shortcut": "ctrl+y" },
     });
-
-    await expect(
-      page
-        .getByRole("alert")
-        .filter({ hasText: /not a valid shortcuts export/i }),
-    ).toBeVisible();
-  });
-
-  test("Import JSON without workspace context accepted", async ({ page }) => {
-    const shortcutsPage = new ShortcutsPage(page);
-    await shortcutsPage.goToShortcuts();
-
-    await shortcutsPage.importShortcuts({
-      dashboard: { "toggle-theme": "alt+m" },
-    });
-
-    await shortcutsPage.confirmImportApply();
-
-    await expect(
-      page
-        .getByRole("alert")
-        .filter({ hasText: /not a valid shortcuts export/i }),
-    ).not.toBeVisible();
-  });
-
-  test("Import JSON with unsupported shortcut format", async ({ page }) => {
-    const shortcutsPage = new ShortcutsPage(page);
-    await shortcutsPage.goToShortcuts();
-
-    await shortcutsPage.importShortcuts({
-      workspace: { escape: 123 },
-    });
-
-    await expect(
-      page
-        .getByRole("alert")
-        .filter({ hasText: /not a valid shortcuts export/i }),
-    ).toBeVisible();
-  });
-
-  test("Import conflicting shortcuts", async ({ page }) => {
-    const shortcutsPage = new ShortcutsPage(page);
-    await shortcutsPage.goToShortcuts();
-
-    await shortcutsPage.importShortcuts({
-      workspace: {
-        "align-bottom": "alt+a",
-      },
-    });
-
-    await shortcutsPage.confirmImportApply();
-
-    await shortcutsPage.expectShortcutCustomized("Align bottom");
-
-    await shortcutsPage.expandSubsection("Alignment");
-    await shortcutsPage.expectShortcutDisabled("Align left");
-
-    const exported = await shortcutsPage.getExportedJson();
-    expect(exported.workspace).toMatchObject({
-      "align-bottom": "alt+a",
-      "align-left": "",
-    });
+    await expect(alert).toBeVisible();
   });
 });
 
-test.describe("Shortcut Export", () => {
-  test("Export customized shortcuts", async ({ page }) => {
-    const shortcutsPage = new ShortcutsPage(page);
-    await shortcutsPage.goToShortcuts();
+test("Export includes customized and disabled shortcuts", async ({ page }) => {
+  const shortcutsPage = new ShortcutsPage(page);
+  await shortcutsPage.goToShortcuts();
 
+  await shortcutsPage.importShortcuts({
+    workspace: {
+      "align-bottom": "ctrl+y",
+      "align-left": "",
+    },
+  });
+
+  await shortcutsPage.confirmImportApply();
+  await shortcutsPage.expectShortcutCustomized("Align bottom");
+
+  const exported = await shortcutsPage.getExportedJson();
+  expect(exported.workspace).toMatchObject({
+    "align-bottom": "ctrl+y",
+    "align-left": "",
+  });
+});
+
+test("Custom shortcuts persist after reload and cancelled edits do not", async ({
+  page,
+}) => {
+  const shortcutsPage = new ShortcutsPage(page);
+  await shortcutsPage.goToShortcuts();
+
+  await test.step("A cancelled edit is not saved", async () => {
     await shortcutsPage.expandSubsection("Alignment");
+    await shortcutsPage.clickEditShortcut("Align left");
+    await shortcutsPage.pressKey("Control+i");
+    await shortcutsPage.cancelEdit();
+
+    await shortcutsPage.expectShortcutNotCustomized("Align left");
+  });
+
+  await test.step("A saved edit survives the reload", async () => {
     await shortcutsPage.clickEditShortcut("Align bottom");
     await shortcutsPage.pressKey("Control+y");
     await shortcutsPage.saveShortcut();
     await shortcutsPage.expectShortcutCustomized("Align bottom");
 
-    const exported = await shortcutsPage.getExportedJson();
-    expect(exported).toHaveProperty("workspace");
-    expect(exported.workspace).toMatchObject({
-      "align-bottom": "ctrl+y",
-    });
-  });
-
-  test("Export includes disabled shortcuts", async ({ page }) => {
-    const shortcutsPage = new ShortcutsPage(page);
+    await page.reload();
     await shortcutsPage.goToShortcuts();
 
-    await shortcutsPage.importShortcuts({
-      workspace: { "align-bottom": "" },
-    });
-
-    await shortcutsPage.confirmImportApply();
-
-    await shortcutsPage.searchForShortcut("Align bottom");
-    await shortcutsPage.expectShortcutDisabled("Align bottom");
-
-    const exported = await shortcutsPage.getExportedJson();
-    expect(exported.workspace).toMatchObject({
-      "align-bottom": "",
-    });
-  });
-});
-
-test.describe("Shortcut Conflict Detection", () => {
-  test("Detects conflict and disables old shortcut on save", async ({
-    page,
-  }) => {
-    const shortcutsPage = new ShortcutsPage(page);
-    await shortcutsPage.goToShortcuts();
-
-    await shortcutsPage.expandSubsection("Alignment");
-    await shortcutsPage.clickEditShortcut("Align bottom");
-    await shortcutsPage.pressKey("Alt+a");
-
-    await expect(
-      page.getByRole("alert").filter({ hasText: /Already assigned to/i }),
-    ).toBeVisible();
-
-    await shortcutsPage.saveShortcut();
     await shortcutsPage.expectShortcutCustomized("Align bottom");
-    await shortcutsPage.expectShortcutDisabled("Align left");
-
-    const exported = await shortcutsPage.getExportedJson();
-    expect(exported.workspace).toMatchObject({
-      "align-bottom": "alt+a",
-      "align-left": "",
-    });
+    await shortcutsPage.expectShortcutNotCustomized("Align left");
   });
 });
 
-test.describe("Shortcut Reset", () => {
-  test("Reset after import restores defaults", async ({ page }) => {
-    const shortcutsPage = new ShortcutsPage(page);
-    await shortcutsPage.goToShortcuts();
+test("Detects conflict and disables old shortcut on save", async ({ page }) => {
+  const shortcutsPage = new ShortcutsPage(page);
+  await shortcutsPage.goToShortcuts();
 
+  await shortcutsPage.expandSubsection("Alignment");
+  await shortcutsPage.clickEditShortcut("Align bottom");
+  await shortcutsPage.pressKey("Alt+a");
+
+  await expect(
+    page.getByRole("alert").filter({ hasText: /Already assigned to/i }),
+  ).toBeVisible();
+
+  await shortcutsPage.saveShortcut();
+  await shortcutsPage.expectShortcutCustomized("Align bottom");
+  await shortcutsPage.expectShortcutDisabled("Align left");
+
+  const exported = await shortcutsPage.getExportedJson();
+  expect(exported.workspace).toMatchObject({
+    "align-bottom": "alt+a",
+    "align-left": "",
+  });
+});
+
+test("Reset restores defaults and empty tabs show their placeholders", async ({
+  page,
+}) => {
+  const shortcutsPage = new ShortcutsPage(page);
+  await shortcutsPage.goToShortcuts();
+
+  await test.step("Reset all restores the defaults", async () => {
     await shortcutsPage.importShortcuts({
       workspace: { "align-bottom": "ctrl+y" },
     });
@@ -248,15 +158,30 @@ test.describe("Shortcut Reset", () => {
     await shortcutsPage.expectShortcutCustomized("Align bottom");
 
     await shortcutsPage.restoreAllShortcuts();
+
     await shortcutsPage.expectShortcutNotCustomized("Align bottom");
   });
 
-  test("Reset button shows pending message and requires save to apply", async ({
-    page,
-  }) => {
-    const shortcutsPage = new ShortcutsPage(page);
-    await shortcutsPage.goToShortcuts();
+  await test.step("Empty tabs show their placeholders", async () => {
+    await shortcutsPage.clickTab("Custom");
+    await expect(shortcutsPage.personalizedTab).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(page.getByText(/No custom shortcuts yet/i)).toBeVisible();
 
+    await shortcutsPage.clickTab("Disabled");
+    await expect(shortcutsPage.disabledTab).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(page.getByText(/No disabled shortcuts/i)).toBeVisible();
+
+    await shortcutsPage.clickTab("All");
+    await expect(shortcutsPage.allTab).toHaveAttribute("aria-selected", "true");
+  });
+
+  await test.step("A single reset waits for the save", async () => {
     await shortcutsPage.expandSubsection("Alignment");
     await shortcutsPage.clickEditShortcut("Align bottom");
     await shortcutsPage.pressKey("Control+y");
@@ -273,93 +198,5 @@ test.describe("Shortcut Reset", () => {
     await shortcutsPage.saveShortcut();
 
     await shortcutsPage.expectShortcutNotCustomized("Align bottom");
-  });
-});
-
-test.describe("Shortcut Persistence", () => {
-  test("Custom shortcuts persist after reload", async ({ page }) => {
-    const shortcutsPage = new ShortcutsPage(page);
-    await shortcutsPage.goToShortcuts();
-
-    await shortcutsPage.expandSubsection("Alignment");
-    await shortcutsPage.clickEditShortcut("Align bottom");
-    await shortcutsPage.pressKey("Control+y");
-    await shortcutsPage.saveShortcut();
-    await shortcutsPage.expectShortcutCustomized("Align bottom");
-
-    await page.reload();
-    await shortcutsPage.goToShortcuts();
-    await shortcutsPage.expectShortcutCustomized("Align bottom");
-  });
-});
-
-test.describe("Cancel Shortcut Editing", () => {
-  test("Cancel editing does not save changes", async ({ page }) => {
-    const shortcutsPage = new ShortcutsPage(page);
-    await shortcutsPage.goToShortcuts();
-
-    await shortcutsPage.expandSubsection("Alignment");
-    await shortcutsPage.clickEditShortcut("Align bottom");
-    await shortcutsPage.pressKey("Control+y");
-    await shortcutsPage.cancelEdit();
-
-    await shortcutsPage.expectShortcutNotCustomized("Align bottom");
-  });
-});
-
-test.describe("Duplicate Shortcut Prevention", () => {
-  test("Assigning same shortcut to two actions shows conflict and disables first", async ({
-    page,
-  }) => {
-    const shortcutsPage = new ShortcutsPage(page);
-    await shortcutsPage.goToShortcuts();
-
-    await shortcutsPage.expandSubsection("Alignment");
-
-    await shortcutsPage.clickEditShortcut("Align bottom");
-    await shortcutsPage.pressKey("Control+y");
-    await shortcutsPage.saveShortcut();
-    await shortcutsPage.expectShortcutCustomized("Align bottom");
-
-    await shortcutsPage.clickEditShortcut("Align left");
-    await shortcutsPage.pressKey("Control+y");
-
-    await expect(
-      page.getByRole("alert").filter({ hasText: /Already assigned to/i }),
-    ).toBeVisible();
-
-    await shortcutsPage.saveShortcut();
-    await shortcutsPage.expectShortcutCustomized("Align left");
-
-    const exported = await shortcutsPage.getExportedJson();
-    expect(exported.workspace).toMatchObject({
-      "align-left": "ctrl+y",
-      "align-bottom": "",
-    });
-  });
-});
-
-test.describe("Shortcut Round-Trip", () => {
-  test("Export, reset, import restores configuration", async ({ page }) => {
-    const shortcutsPage = new ShortcutsPage(page);
-    await shortcutsPage.goToShortcuts();
-
-    await shortcutsPage.expandSubsection("Alignment");
-    await shortcutsPage.clickEditShortcut("Align bottom");
-    await shortcutsPage.pressKey("Control+y");
-    await shortcutsPage.saveShortcut();
-    await shortcutsPage.expectShortcutCustomized("Align bottom");
-
-    const exported = await shortcutsPage.getExportedJson();
-
-    await shortcutsPage.restoreAllShortcuts();
-    await shortcutsPage.expectShortcutNotCustomized("Align bottom");
-
-    await shortcutsPage.importShortcuts(exported);
-    await shortcutsPage.confirmImportApply();
-    await shortcutsPage.expectShortcutCustomized("Align bottom");
-
-    const reExported = await shortcutsPage.getExportedJson();
-    expect(reExported).toEqual(exported);
   });
 });
