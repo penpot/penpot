@@ -14,6 +14,9 @@
        change, undo and redo included;
      - a linked file's `:synced-at`, the server sync status rather than
        authored design data;
+     - the modification times in the tokens library, bumped by every change
+       of a token, undo and redo included: the library becomes its exported
+       content;
      - with `{:position-data? false}`, the shapes' `:position-data`, the text
        layout that WASM measurement regenerates;
      - with `{:deleted-components? false}`, the deleted components, which an
@@ -24,6 +27,7 @@
    Everything else is kept, `:touched` and `:remote-synced` included."
   (:require
    [app.common.data :as d]
+   [app.common.types.tokens-lib :as ctob]
    [clojure.data :as data]))
 
 (defn- map-vals
@@ -62,6 +66,7 @@
          (update :data
                  (fn [data]
                    (-> data
+                       (d/update-when :tokens-lib ctob/export-dtcg-json)
                        (d/update-when :pages-index
                                       (partial map-vals #(normalize-page % opts)))
                        (d/update-when :components

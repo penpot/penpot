@@ -160,12 +160,38 @@
 (def ^:private corner-order
   (juxt #(Math/round (* 100.0 (:x %))) #(Math/round (* 100.0 (:y %)))))
 
+(defn- without-unreferenced-deleted
+  "The snapshot `files` without the deleted components no shape outside
+   their own objects refers to, as an undone creation: only redo brings one
+   back, so no sync reaches its stored copies."
+  [files]
+  (let [referenced (into #{}
+                         (for [[_ file] files
+                               [owner objects] (concat (map (fn [page] [nil (:objects page)])
+                                                            (vals (get-in file [:data :pages-index])))
+                                                       (keep (fn [[id component]]
+                                                               (when (:objects component) [id (:objects component)]))
+                                                             (get-in file [:data :components])))
+                               shape (vals objects)
+                               :let [id (:component-id shape)]
+                               :when (and id (not= id owner))]
+                           id))]
+    (update-vals files
+                 (fn [file]
+                   (d/update-in-when file [:data :components]
+                                     (fn [components]
+                                       (into {} (remove (fn [[id component]]
+                                                          (and (:deleted component) (not (contains? referenced id)))))
+                                             components)))))))
+
 (defn design-snapshot
   "Design inputs without derived placement, dimensions and bookkeeping.
-   Geometry remains unrounded; equivalent? applies its tolerance directly."
+   Geometry remains unrounded; equivalent? applies its tolerance directly.
+   With `:unreferenced-deleted-components false`, the deleted components
+   nothing refers to are left out."
   ([situation] (design-snapshot situation {}))
-  ([situation {:keys [free-head-placement relative-free-head-placement]
-               :or {free-head-placement true}}]
+  ([situation {:keys [free-head-placement relative-free-head-placement unreferenced-deleted-components]
+               :or {free-head-placement true unreferenced-deleted-components true}}]
    (let [origins (when (and free-head-placement relative-free-head-placement)
                    (get-derived-reference-origins situation))]
      (walk/postwalk
@@ -236,7 +262,8 @@
                                                                 (cons (:id shape) (cfh/get-parent-ids objects (:id shape)))))
                                                (dissoc :x :y :width :height :points :selrect :transform :transform-inverse)))])) objects)))
            value))
-       (snapshot situation))))))
+       (cond-> (snapshot situation)
+         (not unreferenced-deleted-components) without-unreferenced-deleted))))))
 
 (defn canonical
   "Design data with shape, component and grid-cell IDs named by tree path.

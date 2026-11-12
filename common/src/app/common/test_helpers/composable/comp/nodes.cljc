@@ -2528,6 +2528,64 @@
   [target token-name]
   (tm/assign-id (->UnapplyToken target token-name)))
 
+(defn token-value
+  "The value of the border radius token `token-name` in the active set of
+   `file`, nil when it has none."
+  [file token-name]
+  (some-> (cfo/get-tokens-lib (:data file))
+          (ctob/get-token-by-name "composable" token-name)
+          :value))
+
+(defn token-corners
+  "The corners of `shape` that apply the token `token-name`."
+  [shape token-name]
+  (into #{} (filter #(= token-name (get-in shape [:applied-tokens %]))) radius-attrs))
+
+(defrecord EditTokenValue [token-name value]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    ;; as the token editor commits it: the token's new value, and its
+    ;; propagation to the corners of every shape that applies it, without
+    ;; touching
+    (let [the-file (tm/file situation)
+          lib      (cfo/get-tokens-lib (:data the-file))
+          set-id   (ctob/get-id (ctob/get-set-by-name lib "composable"))
+          token    (ctob/get-token-by-name lib "composable" token-name)
+          changes  (-> (pcb/empty-changes nil)
+                       (pcb/with-library-data (:data the-file))
+                       (pcb/set-token set-id (:id token) (assoc token :value value)))
+          changes  (reduce (fn [changes page]
+                             (let [objects (:objects page)
+                                   ids     (into #{}
+                                                 (comp (filter #(seq (token-corners % token-name)))
+                                                       (map :id))
+                                                 (vals objects))]
+                               (cond-> changes
+                                 (seq ids)
+                                 (-> (pcb/with-page page)
+                                     (pcb/with-objects objects)
+                                     (cls/generate-update-shapes
+                                      ids
+                                      #(ctsr/set-radius-for-corners % (token-corners % token-name) value)
+                                      objects
+                                      {:ignore-touched true :attrs radius-attrs})))))
+                           changes
+                           (vals (get-in the-file [:data :pages-index])))
+          file'    (thf/apply-changes the-file changes)]
+      (-> situation
+          (tm/with-file file')
+          (record-changes changes)
+          (tm/record-application this {:token-name token-name :value value})))))
+
+(defn edit-token-value
+  "Give the border radius token `token-name` the value `value` and set it
+   on the shapes that apply it (token edit and propagation on the frontend)."
+  [token-name value]
+  (tm/assign-id (->EditTokenValue token-name value)))
+
 (defn has-token?
   "Whether `shape` has the border radius token `token-name` on every corner,
    with radius `value`."
