@@ -1446,18 +1446,32 @@
                         (assoc :id (:id parent-main)
                                :shape-ref (:shape-ref parent-main)))))
 
+        ;; the layout child groups the copy authored under a parent with no
+        ;; layout, which stay with the copy as an update of a pair keeps them
+        kept-items (fn [shape]
+                     (let [layout? (if (= (:id shape) (:id child-inst))
+                                     (ctsl/any-layout? parent-main)
+                                     (ctsl/any-layout? (:objects container) (:parent-id shape)))]
+                       (when-not (or layout? (= (:id shape) (:id root-inst)))
+                         (set/intersection (set (:touched shape))
+                                           (into #{} (map #(ctk/resolve-sync-group (:type shape) %))
+                                                 layout-child-attrs)))))
+
         update-new-shape (fn [new-shape original-shape]
                            (cond-> (in-main new-shape)
                              (and (= (:id original-shape) (:id child-inst))
                                   (ctk/swapped? child-inst)
                                   (not swap-in-copy?))
-                             (rehead-pushed-swap content-main placement-container)))
+                             (rehead-pushed-swap content-main placement-container)
+
+                             (seq (kept-items original-shape))
+                             (update :touched #(not-empty (set/difference % (kept-items original-shape))))))
 
         ;; the copy now follows the main, swap included
         update-original-shape (fn [original-shape new-shape]
                                 (-> original-shape
                                     (assoc :shape-ref (:id new-shape))
-                                    (dissoc :touched)))
+                                    (assoc :touched (not-empty (kept-items original-shape)))))
 
         [new-head new-shapes updated-shapes]
         (ctst/clone-shape child-inst
