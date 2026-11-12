@@ -285,6 +285,57 @@
   [target action value]
   (tm/assign-id (->EditGrid target action value)))
 
+;; ---------------------------------------------------------------------------
+;; edit-grid-track — edit the rows and columns of a grid
+;;
+;; The track editor of a grid board bound to `target`: `:add` a track of
+;; `:type` (`:row` or `:column`) with value `:track` at `:index`, `:remove`
+;; the track at `:index`, `:resize` it to `:track`, `:reorder` it to `:to`
+;; (with its content when `:move-content?`), or `:merge` the cell at `:row`
+;; and `:column` into an area of `:row-span` by `:column-span`. As the
+;; frontend's `add-layout-track`, `remove-layout-track`,
+;; `change-layout-track`, `reorder-layout-track` and `merge-cells`: one
+;; update of the board, which reassigns its cells, then a layout reflow.
+;; ---------------------------------------------------------------------------
+
+(defrecord EditGridTrack [target action value]
+  IComponentOperation
+  (op-kind [_] :user)
+
+  tm/IOperation
+  (apply-to [this situation]
+    (let [file    (tm/file situation)
+          page    (thf/current-page file)
+          id      (tm/target-shape-id situation target)
+          {:keys [type index track to move-content? row column row-span column-span]} value
+          column? (= type :column)
+          edit    (fn [shape objects]
+                    (case action
+                      :add     (ctl/add-grid-track type shape track index)
+                      :remove  (if column?
+                                 (ctl/remove-grid-column shape index objects)
+                                 (ctl/remove-grid-row shape index objects))
+                      :resize  (update-in shape [(if column? :layout-grid-columns :layout-grid-rows) index]
+                                          merge track)
+                      :reorder (if column?
+                                 (ctl/reorder-grid-column shape index to move-content?)
+                                 (ctl/reorder-grid-row shape index to move-content?))
+                      :merge   (-> shape
+                                   (ctl/resize-cell-area row column row column row-span column-span)
+                                   (ctl/assign-cells objects))))
+          changes (-> (cls/generate-update-shapes (pcb/empty-changes nil (:id page)) [id]
+                                                  edit (:objects page) {:with-objects? true})
+                      (with-layout-reflow id)
+                      (assoc ::layout-reflow? true))]
+      (-> situation
+          (tm/with-file (thf/apply-changes file changes))
+          (record-changes changes)
+          (tm/record-application this {:target target :action action :value value})))))
+
+(defn edit-grid-track
+  [target action value]
+  (tm/assign-id (->EditGridTrack target action value)))
+
 (defprotocol IPropertyCheck
   "The check dual of an operation that changes a property: whether a shape the
    test supplies holds the value the operation set."

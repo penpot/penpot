@@ -115,6 +115,40 @@
                  model (cond-> intended derived? (dissoc :layout-grid-cells))))
     model))
 
+(defn- move-track
+  "`tracks` with the one at `from` moved after the track at `to`, as a drop
+   on that track puts it; a track dropped on itself stays."
+  [tracks from to]
+  (let [track (nth tracks from)
+        rest  (into (subvec tracks 0 from) (subvec tracks (inc from)))
+        at    (cond (< from to) to (= from to) from :else (inc to))]
+    (into (conj (subvec rest 0 at) track) (subvec rest at))))
+
+(defn intended-tracks
+  "The rows and columns the track edit `action` with `value` gives `shape`."
+  [shape action {:keys [type index track to]}]
+  (let [key    (if (= type :column) :layout-grid-columns :layout-grid-rows)
+        tracks (vec (get shape key))
+        result {:layout-grid-rows (vec (:layout-grid-rows shape))
+                :layout-grid-columns (vec (:layout-grid-columns shape))}]
+    (case action
+      :add     (assoc result key (into (conj (subvec tracks 0 index) track) (subvec tracks index)))
+      :remove  (assoc result key (into (subvec tracks 0 index) (subvec tracks (inc index))))
+      :resize  (assoc result key (update tracks index merge track))
+      :reorder (assoc result key (move-track tracks index to))
+      :merge   result)))
+
+(defn edit-tracks
+  "A copy authors the tracks a track edit gives it another value."
+  [model shape action value]
+  (if (:shape-ref shape)
+    (reduce-kv (fn [model key tracks]
+                 (if (= tracks (vec (get shape key)))
+                   model
+                   (assoc-in model [(:id shape) key] {key tracks})))
+               model (intended-tracks shape action value))
+    model))
+
 (defn- extend-cells
   [cells before after]
   (into cells
@@ -125,6 +159,67 @@
                                     (<= (:column %) column (+ (:column %) (:column-span %) -1))) cells)]
           {:row row :column column :row-span 1 :column-span 1 :position :auto
            :align-self :auto :justify-self :auto :shapes []})))
+
+(def ^:private default-cell
+  {:row-span 1 :column-span 1 :position :auto :align-self :auto :justify-self :auto :shapes []})
+
+(defn- fit-cells
+  "`cells` placed within a grid of `rows` by `columns` that flows in
+   `direction`, as the contract keeps a copy's cells when its inherited
+   tracks shrink: cells with children first, then authored empty ones, then
+   default ones, each where it fits, else in the first free slot, else in
+   one track; children left without a slot join the cell where theirs
+   would start. Free slots take default cells."
+  [cells rows columns direction]
+  (if (or (zero? rows) (zero? columns))
+    []
+    (let [coords    (sort-by (flow-order direction)
+                             (for [row (range 1 (inc rows)) column (range 1 (inc columns))]
+                               {:row row :column column}))
+          area      (fn [{:keys [row column row-span column-span]}]
+                      (for [row (range row (+ row row-span)) column (range column (+ column column-span))]
+                        [row column]))
+          fits?     (fn [{:keys [row column row-span column-span]}]
+                      (and (<= 1 row (+ row row-span -1) rows) (<= 1 column (+ column column-span -1) columns)))
+          authored? (fn [cell] (not= (dissoc default-cell :shapes)
+                                     (select-keys (merge default-cell cell) (keys (dissoc default-cell :shapes)))))
+          ordered   (sort-by (juxt #(cond (seq (:shapes %)) 0 (authored? %) 1 :else 2)
+                                   #(if (fits? %) 0 1) :row :column)
+                             cells)
+          [placed covered]
+          (reduce
+           (fn [[placed covered :as result] cell]
+             (let [row     (min rows (:row cell))
+                   column  (min columns (:column cell))
+                   bounded (assoc cell :row row :column column
+                                  :row-span (min (:row-span cell) (inc (- rows row)))
+                                  :column-span (min (:column-span cell) (inc (- columns column))))
+                   free?   #(and (fits? %) (not-any? covered (area %)))
+                   places  (fn [cell] (cons cell (map #(merge cell %) coords)))
+                   spot    (if (or (seq (:shapes cell)) (authored? cell))
+                             (or (first (filter free? (places bounded)))
+                                 (first (filter free? (places (assoc bounded :row-span 1 :column-span 1)))))
+                             (when (and (<= (:row cell) rows) (<= (:column cell) columns) (free? bounded))
+                               bounded))]
+               (cond
+                 spot
+                 [(conj placed spot) (into covered (area spot))]
+
+                 (seq (:shapes cell))
+                 [(mapv (fn [other]
+                          (if (some #{[row column]} (area other))
+                            (cond-> (update other :shapes into (:shapes cell))
+                              (= :auto (:position other)) (assoc :position :manual))
+                            other))
+                        placed)
+                  covered]
+
+                 :else result)))
+           [[] #{}] ordered)]
+      (into placed
+            (for [{:keys [row column]} coords
+                  :when (not (contains? covered [row column]))]
+              (assoc default-cell :row row :column column))))))
 
 (defn flow-shapes
   "The children of the grid `shape` as `:shapes` lists a grid that orders
@@ -172,7 +267,14 @@
                                 (or (not= prior (get-context shape))
                                     (> (count missing) (count (filter #(empty? (:shapes %)) trimmed)))))
                          reference prior)
-         cells         (if context (extend-cells trimmed prior context) trimmed)
+         ;; inherited tracks that shrink move or shorten the cells
+         shrunk?       (and prior context
+                            (or (< (:rows context) (:rows prior)) (< (:columns context) (:columns prior))))
+         cells         (cond
+                         shrunk? (fit-cells trimmed (:rows context) (:columns context)
+                                            (or (:direction context) (:layout-grid-dir shape) :row))
+                         context (extend-cells trimmed prior context)
+                         :else   trimmed)
          order         (flow-order (or (:direction context) (:layout-grid-dir shape)))
          cells         (->> cells (sort-by order) fix-after-gap)
          assigned      (set (mapcat :shapes cells))
