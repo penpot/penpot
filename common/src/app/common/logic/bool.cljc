@@ -118,6 +118,12 @@
          (-> (pcb/empty-changes it page-id)
              (pcb/with-objects objects)
              (pcb/add-object shape {:index (inc index)})
+             ;; as a group's, the shapes of a bool scale with it
+             (pcb/update-shapes (map :id shapes)
+                                (fn [shape]
+                                  (-> shape
+                                      (d/assoc-when :constraints-h :scale)
+                                      (d/assoc-when :constraints-v :scale))))
              (pcb/update-shapes (map :id shapes) ctl/remove-layout-item-data)
              (pcb/change-parent shape-id shapes)
              (cond-> target-cell
