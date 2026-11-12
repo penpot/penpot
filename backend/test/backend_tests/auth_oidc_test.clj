@@ -986,6 +986,44 @@
             (t/is (.contains (redirect-location result)
                              "https://alt.example.com?screen=auth-verify-token&"))))))))
 
+(t/deftest callback-token-exchange-keeps-stored-origin-after-removal
+  ;; Mirror of callback-token-exchange-uses-stored-trusted-origin with the
+  ;; origin removed from :trusted-origins: the signed state was trusted when
+  ;; the flow started, so the token exchange still uses it (up to its
+  ;; expiry), matching the documented operator contract.
+  (let [cfg      (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        bodies   (atom [])
+        provider {:type "oidc" :id "oidc"
+                  :user-info-source "userinfo"
+                  :token-uri "https://idp.example.com/token"
+                  :user-uri "https://idp.example.com/userinfo"}
+        state    (make-state-token cfg {:origin "https://alt.example.com"})
+        request  (default-request cfg :state state)]
+    (binding [cf/config {:public-uri "http://localhost:3449"
+                         :trusted-origins #{}}]
+      (with-redefs [app.auth.oidc/resolve-provider        (constantly provider)
+                    app.auth.oidc/get-profile             (constantly test-profile)
+                    app.auth.oidc/update-profile-with-info (fn [_ profile _] profile)
+                    app.loggers.audit/submit              (constantly nil)]
+        (with-mocks [http-mock {:target 'app.http.client/req
+                                :return (fn [_ request & _]
+                                          (swap! bodies conj request)
+                                          (if (= (:uri request) (:token-uri provider))
+                                            {:status 200
+                                             :body "{\"access_token\":\"at\",\"token_type\":\"Bearer\"}"}
+                                            {:status 200
+                                             :body "{\"email\":\"u@e.com\",\"name\":\"U\"}"}))}]
+          (let [result     (#'oidc/callback-handler cfg request)
+                token-body (->> @bodies
+                                (filter #(= (:uri %) (:token-uri provider)))
+                                (first)
+                                (:body)
+                                (u/query-string->map))]
+            (t/is (= "https://alt.example.com/api/auth/oidc/callback"
+                     (:redirect_uri token-body)))
+            (t/is (.contains (redirect-location result)
+                             "https://alt.example.com?screen=auth-verify-token&"))))))))
+
 (t/deftest callback-error-uses-stored-trusted-origin
   (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
         state   (make-state-token cfg {:origin "https://alt.example.com"})
