@@ -26,6 +26,9 @@
   @include use-typography("headline-large");
 
   color: var(--color-foreground-primary);
+  max-inline-size: 100%;
+  padding-inline-end: var(--sp-xxl);
+  overflow-wrap: anywhere;
 }
 
 // Tooltip wrapper of the close button: it places it in the corner.

@@ -382,6 +382,10 @@ msgstr "Crear nueva organización"
 msgid "dashboard.create-new-team"
 msgstr "Crear nuevo equipo"
 
+#: src/app/main/ui/dashboard/team_form.cljs:122
+msgid "dashboard.create-team-in-organization"
+msgstr "Crea un nuevo equipo en %s"
+
 #: src/app/main/ui/workspace/main_menu.cljs:712
 msgid "dashboard.create-version-menu"
 msgstr "Guardar esta versión"
