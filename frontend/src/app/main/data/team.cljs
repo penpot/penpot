@@ -19,6 +19,7 @@
    [app.main.data.media :as di]
    [app.main.data.modal :as modal]
    [app.main.data.nitrate-audit :as nitrate-audit]
+   [app.main.data.notifications :as ntf]
    [app.main.data.profile :as dp]
    [app.main.features :as features]
    [app.main.repo :as rp]
@@ -695,11 +696,17 @@
         (->> (rp/cmd! :get-team-invitation-token params)
              (rx/map (fn [params]
                        (rt/resolve-uri router :auth-verify-token params)))
-             (rx/tap (fn [uri]
-                       (clipboard/to-clipboard uri)))
+             (rx/mapcat (fn [uri]
+                          (rx/from (clipboard/to-clipboard uri))))
              (rx/tap on-success)
              (rx/ignore)
-             (rx/catch on-error))))))
+             (rx/catch (fn [cause]
+                         (if-let [message (clipboard/error-message cause)]
+                           (rx/of (ntf/show {:content message
+                                             :type :toast
+                                             :level :warning
+                                             :timeout 5000}))
+                           (on-error cause)))))))))
 
 (defn update-invitation-role
   [{:keys [email team-id role] :as params}]

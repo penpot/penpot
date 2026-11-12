@@ -107,6 +107,17 @@
                      %
                      heads))))
 
+(defn- on-copy-error
+  [cause]
+  (if-let [message (clipboard/error-message cause)]
+    (rx/of (ntf/show {:content message
+                      :type :toast
+                      :level :warning
+                      :timeout 5000}))
+    (do
+      (js/console.error "clipboard blocked:" cause)
+      (rx/empty))))
+
 (defn copy-selected
   []
   (letfn [(sort-selected [state data]
@@ -194,21 +205,16 @@
                             ;; FIXME
                             (dsh/lookup-page state)
                             selected
-                            data))
-
-          (on-copy-error [error]
-            (js/console.error "clipboard blocked:" error)
-            (rx/empty))]
+                            data))]
 
     (ptk/reify ::copy-selected
       ptk/WatchEvent
       (watch [_ state _]
         (let [text (wapi/get-current-selected-text)]
           (if-not (str/empty? text)
-            (try
-              (clipboard/to-clipboard text)
-              (catch :default e
-                (on-copy-error e)))
+            (->> (rx/from (clipboard/to-clipboard text))
+                 (rx/ignore)
+                 (rx/catch on-copy-error))
 
             (let [objects  (dsh/lookup-page-objects state)
                   selected (->> (dsh/lookup-selected state)
@@ -256,8 +262,8 @@
                               (rx/map #(wapi/create-blob % "text/plain"))
                               (rx/subs! resolve reject))))]
                   (->> (rx/from (clipboard/to-clipboard-promise "text/plain" resolve-data-promise))
-                       (rx/catch on-copy-error)
-                       (rx/ignore)))
+                       (rx/ignore)
+                       (rx/catch on-copy-error)))
 
                 ;; FIXME: this is to support Firefox versions below 116 that don't support
                 ;; `ClipboardItem` after the version 116 is less common we could remove this.
@@ -268,9 +274,9 @@
                      (rx/map (partial sort-selected state))
                      (rx/map (partial advance-copies-from-state state selected))
                      (rx/map #(t/encode-str % {:type :json-verbose}))
-                     (rx/map clipboard/to-clipboard)
-                     (rx/catch on-copy-error)
-                     (rx/ignore))))))))))
+                     (rx/mapcat clipboard/to-clipboard)
+                     (rx/ignore)
+                     (rx/catch on-copy-error))))))))))
 
 (declare ^:private paste-transit-shapes)
 (declare ^:private paste-transit-props)
@@ -401,7 +407,12 @@
              {"image/svg+xml" svg-formatted
               "text/plain"    svg-formatted})
             (p/catch (fn [cause]
-                       (js/console.error "clipboard error:" cause))))))))
+                       (if-let [message (clipboard/error-message cause)]
+                         (st/emit! (ntf/show {:content message
+                                              :type :toast
+                                              :level :warning
+                                              :timeout 5000}))
+                         (js/console.error "clipboard error:" cause)))))))))
 
 (defn copy-selected-css
   []
@@ -411,7 +422,14 @@
       (let [objects (dsh/lookup-page-objects state)
             selected (->> (dsh/lookup-selected state) (mapv (d/getf objects)))
             css (css/generate-style objects selected selected {:with-prelude? false})]
-        (clipboard/to-clipboard css)))))
+        (-> (clipboard/to-clipboard css)
+            (p/catch (fn [cause]
+                       (if-let [message (clipboard/error-message cause)]
+                         (st/emit! (ntf/show {:content message
+                                              :type :toast
+                                              :level :warning
+                                              :timeout 5000}))
+                         (js/console.error "clipboard blocked:" cause)))))))))
 
 (defn copy-selected-css-nested
   []
@@ -423,7 +441,14 @@
                           (cfh/selected-with-children objects)
                           (mapv (d/getf objects)))
             css (css/generate-style objects selected selected {:with-prelude? false})]
-        (clipboard/to-clipboard css)))))
+        (-> (clipboard/to-clipboard css)
+            (p/catch (fn [cause]
+                       (if-let [message (clipboard/error-message cause)]
+                         (st/emit! (ntf/show {:content message
+                                              :type :toast
+                                              :level :warning
+                                              :timeout 5000}))
+                         (js/console.error "clipboard blocked:" cause)))))))))
 
 (defn copy-selected-text
   []
@@ -454,7 +479,14 @@
                       (-> shape :content txt/content->text))))
                  (str/join "\n"))]
 
-        (clipboard/to-clipboard text)))))
+        (-> (clipboard/to-clipboard text)
+            (p/catch (fn [cause]
+                       (if-let [message (clipboard/error-message cause)]
+                         (st/emit! (ntf/show {:content message
+                                              :type :toast
+                                              :level :warning
+                                              :timeout 5000}))
+                         (js/console.error "clipboard blocked:" cause)))))))))
 
 (defn copy-selected-props
   []
@@ -481,11 +513,7 @@
                          (rx/mapcat fetch-image)
                          (rx/reduce conj #{})
                          (rx/map #(assoc data :images %)))
-                    (rx/of data))))
-
-              (on-copy-error [error]
-                (js/console.error "clipboard blocked:" error)
-                (rx/empty))]
+                    (rx/of data))))]
 
         (let [selected (dsh/lookup-selected state)]
           (if (> (count selected) 1)
@@ -524,16 +552,16 @@
                                   (rx/subs! resolve reject))))]
 
                       (->> (rx/from (clipboard/to-clipboard-promise "text/plain" resolve-data-promise))
-                           (rx/catch on-copy-error)
-                           (rx/ignore)))
+                           (rx/ignore)
+                           (rx/catch on-copy-error)))
                     ;; FIXME: this is to support Firefox versions below 116 that don't support
                     ;; `ClipboardItem` after the version 116 is less common we could remove this.
                     ;; https://caniuse.com/?search=ClipboardItem
                     (->> (rx/of copy-data)
                          (rx/mapcat resolve-images)
-                         (rx/map #(clipboard/to-clipboard (t/encode-str % {:type :json-verbose})))
-                         (rx/catch on-copy-error)
-                         (rx/ignore))))))))))))
+                         (rx/mapcat #(clipboard/to-clipboard (t/encode-str % {:type :json-verbose})))
+                         (rx/ignore)
+                         (rx/catch on-copy-error))))))))))))
 
 (defn paste-selected-props
   []
@@ -1197,7 +1225,9 @@
   (ptk/reify ::copy-link-to-clipboard
     ptk/WatchEvent
     (watch [_ _ _]
-      (clipboard/to-clipboard (rt/get-current-href)))))
+      (->> (rx/from (clipboard/to-clipboard (rt/get-current-href)))
+           (rx/ignore)
+           (rx/catch on-clipboard-permission-error)))))
 
 (defn copy-id-to-clipboard
   [id]
@@ -1206,7 +1236,8 @@
     (watch [_ _ _]
       (->> (rx/from (clipboard/to-clipboard id))
            (rx/map (fn [_]
-                     (ntf/info "The id has been copied to the clipboard")))))))
+                     (ntf/info "The id has been copied to the clipboard")))
+           (rx/catch on-clipboard-permission-error)))))
 
 (defn copy-as-image
   []

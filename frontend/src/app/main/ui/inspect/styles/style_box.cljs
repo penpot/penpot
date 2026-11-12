@@ -9,7 +9,9 @@
   (:require
    [app.common.data :as d]
    [app.config :as cf]
+   [app.main.data.notifications :as ntf]
    [app.main.features :as features]
+   [app.main.store :as st]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.clipboard :as clipboard]
@@ -57,7 +59,10 @@
         (mf/use-fn
          (mf/deps shorthand)
          (fn []
-           (clipboard/to-clipboard (str shorthand))))]
+           (-> (clipboard/to-clipboard (str shorthand))
+               (.catch (fn [cause]
+                         (st/emit! (ntf/error (or (clipboard/error-message cause)
+                                                  (tr "errors.clipboard-api-unavailable")))))))))]
     [:article {:class (stl/css :style-box)}
      [:header {:class (stl/css :disclosure-header)}
       [:button {:class (stl/css :disclosure-button)

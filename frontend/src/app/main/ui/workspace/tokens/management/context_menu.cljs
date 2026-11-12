@@ -13,6 +13,7 @@
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.token :as ctt]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
@@ -408,7 +409,12 @@
         can-edit-tokens?
         (mf/use-ctx ctx/can-edit-tokens?)
 
-        on-copy-name #(clipboard/to-clipboard (:name token))
+        on-copy-name
+        (fn []
+          (-> (clipboard/to-clipboard (:name token))
+              (.catch (fn [cause]
+                        (st/emit! (ntf/error (or (clipboard/error-message cause)
+                                                 (tr "errors.clipboard-api-unavailable"))))))))
         on-duplicate-token #(st/emit! (dwtl/duplicate-token (:id token)))]
     (concat
      []

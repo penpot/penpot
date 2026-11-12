@@ -472,13 +472,17 @@
          (mf/deps url)
          (fn [event]
            (dom/prevent-default event)
-           (clipboard/to-clipboard url)
-           (st/emit! (ntf/show {:level :info
-                                :type :toast
-                                :content (tr "integrations.notification.success.copied-link")
-                                :timeout notification-timeout})
-                     (ev/event {::ev/name "copy-mcp-url"
-                                ::ev/origin "integrations"}))))]
+           (-> (clipboard/to-clipboard url)
+               (.then (fn [_]
+                        (st/emit! (ntf/show {:level :info
+                                             :type :toast
+                                             :content (tr "integrations.notification.success.copied-link")
+                                             :timeout notification-timeout})
+                                  (ev/event {::ev/name "copy-mcp-url"
+                                             ::ev/origin "integrations"}))))
+               (.catch (fn [cause]
+                         (st/emit! (ntf/error (or (clipboard/error-message cause)
+                                                  (tr "errors.clipboard-api-unavailable")))))))))]
 
     [:section {:class (stl/css :mcp-server-section)}
      [:div

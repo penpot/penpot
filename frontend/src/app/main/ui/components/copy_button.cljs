@@ -9,6 +9,8 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.event :as-alias ev]
+   [app.main.data.notifications :as ntf]
+   [app.main.store :as st]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
@@ -28,14 +30,18 @@
 
         on-click
         (mf/use-fn
-         (mf/deps data)
+         (mf/deps data on-copied)
          (fn [event]
            (when-not (dom/get-boolean-data event "active")
-             (reset! active* true)
-             (tm/schedule 1000 #(reset! active* false))
-             (when (fn? on-copied) (on-copied event))
-             (clipboard/to-clipboard
-              (if (fn? data) (data) data)))))]
+             (-> (clipboard/to-clipboard
+                  (if (fn? data) (data) data))
+                 (.then (fn [_]
+                          (reset! active* true)
+                          (tm/schedule 1000 #(reset! active* false))
+                          (when (fn? on-copied) (on-copied event))))
+                 (.catch (fn [cause]
+                           (st/emit! (ntf/error (or (clipboard/error-message cause)
+                                                    (tr "errors.clipboard-api-unavailable"))))))))))]
 
     [:button {:class class
               :aria-label (or aria-label (tr "labels.copy"))
