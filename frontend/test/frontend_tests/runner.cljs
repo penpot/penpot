@@ -34,6 +34,7 @@
    [frontend-tests.data.team-test]
    [frontend-tests.data.uploads-test]
    [frontend-tests.data.viewer-test]
+   [frontend-tests.data.wait-for-save-test]
    [frontend-tests.data.workspace-colors-test]
    [frontend-tests.data.workspace-comments-test]
    [frontend-tests.data.workspace-context-menu-test]
@@ -220,6 +221,7 @@
    'frontend-tests.data.persistence-retry-test
    'frontend-tests.data.persistence-rollback-test
    'frontend-tests.data.persistence-test
+   'frontend-tests.data.wait-for-save-test
    'frontend-tests.data.pointer-map-test
    'frontend-tests.data.profile-test
    'frontend-tests.data.repo-test
