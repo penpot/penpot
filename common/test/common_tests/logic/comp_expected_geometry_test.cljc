@@ -517,7 +517,7 @@
 
 (t/deftest a-constraint-a-copy-sets-after-a-resize-moves-nothing-at-sync
   ;; A constraint the copy sets on a child applies to later resizes, so the
-  ;; next sync keeps the child as the earlier resize left it.
+  ;; child keeps the place the earlier resize left it, as an override.
   (let [file     (-> (thf/sample-file :file1)
                      (tho/add-simple-component :c :c-root :c-child
                                                :root-params {:width 100 :height 100}
@@ -532,7 +532,7 @@
     (t/is (mth/close? 20 (:height (tm/resolve-shape resized :copy-child))))
     (t/is (= "#dc2626" (get-in child [:fills 0 :fill-color])))
     (t/is (mth/close? 20 (:height child)))
-    (t/is (not (contains? (:touched child) :geometry-group)))))
+    (t/is (contains? (:touched child) :geometry-group))))
 
 (t/deftest generated-constraint-a-copy-sets-after-a-resize-moves-nothing
   ;; a copy resized from its 0.01 main sets a child's vertical constraint to

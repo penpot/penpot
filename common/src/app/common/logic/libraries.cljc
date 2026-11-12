@@ -863,6 +863,38 @@
     (contains? (ctn/held-component-ids (cfh/get-children (:objects container) shape-id) libraries)
                component-id)))
 
+(defn generate-author-constraint-places
+  "A copy shape of `ids` whose constraint an update changed, from the shapes
+   `before` to those of `changes`, keeps its place as an override where its
+   board has another size than its main's along the changed axis: its place
+   came through the old constraint, and the new one applies only to the
+   resizes after it. A sync would otherwise place it through the new one."
+  [changes container libraries before ids]
+  (let [after (pcb/get-objects changes)
+        authored
+        (filter
+         (fn [id]
+           (let [old   (get before id)
+                 shape (get after id)
+                 frame (get after (:frame-id shape))
+                 h?    (not= (:constraints-h old) (:constraints-h shape))
+                 v?    (not= (:constraints-v old) (:constraints-v shape))]
+             (when (and (or h? v?)
+                        (:shape-ref shape)
+                        (:shape-ref frame)
+                        (not (ctk/touched-group? shape :geometry-group))
+                        (not (and (ctsl/any-layout-immediate-child? after shape)
+                                  (not (ctsl/position-absolute? shape)))))
+               (when-let [main-frame (ctf/find-ref-shape nil (assoc container :objects after) libraries frame
+                                                         :include-deleted? true)]
+                 (or (and h? (not (mth/close? (:width frame) (:width main-frame) 0.01)))
+                     (and v? (not (mth/close? (:height frame) (:height main-frame) 0.01))))))))
+         ids)]
+    (cond-> changes
+      (seq authored)
+      (pcb/update-shapes authored #(update % :touched ctk/set-touched-group :geometry-group)
+                         {:ignore-touched true}))))
+
 (defn generate-sync-shape-inverse
   "Generate changes to update the component a shape is linked to, from
   the values in the shape and all its children. An update that would nest

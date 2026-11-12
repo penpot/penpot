@@ -221,6 +221,12 @@
                              (fn [shape] (set-property shape property value'))
                              (:objects page)
                              {})
+                      ;; as the frontend's update-shapes: a copy shape keeps the place
+                      ;; its old constraint gave it
+                      :always
+                      (cll/generate-author-constraint-places (ctn/make-container page :page)
+                                                             (cf/libraries situation)
+                                                             (:objects page) #{shape-id})
                       (and (= :layout-item-absolute property)
                            (ctl/grid-layout? (get-in page [:objects layout-id])))
                       (pcb/update-shapes [layout-id] ctl/assign-cells
