@@ -1,11 +1,8 @@
 import { test, expect } from "@playwright/test";
 import ShortcutsPage from "../pages/ShortcutsPage";
 
-const customShortcutsFlag = "enable-custom-shortcuts";
-
 test.beforeEach(async ({ page }) => {
   await ShortcutsPage.init(page);
-  await ShortcutsPage.mockConfigFlags(page, [customShortcutsFlag]);
 });
 
 test.describe("Shortcuts Settings Page", () => {
