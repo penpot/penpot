@@ -2360,6 +2360,12 @@
                                     :grid-empty false :layout-copies false :text false}]
                        :ops [[:nest 4] [:resize 1] [:style 15 9 3]]}))))
 
+(t/deftest undoing-an-edit-compares-the-corners-of-a-copy-bool-in-any-order
+  (t/is (map? (cg/run {:world [3 1 {:variants true :rich-variants true :text true :layout nil
+                                    :layout-copies true :layout-children false}]
+                       :ops [[:detach 0 0 0 0] [:detach 14 0 0 0] [:add-child 0] [:structure 9 4 0]
+                             [:transform 7 16 0 4] [:edit 21 0 1 1] [:update-main 21]]}))))
+
 (t/deftest unmasking-in-a-flex-main-leaves-its-layout-as-the-unmask-event-does
   (t/is (map? (cg/run {:world [2 0 {:variants false :rich-variants false :text true :layout :flex
                                     :layout-copies false :layout-children true}]
