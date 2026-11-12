@@ -1,4 +1,4 @@
-FROM dhi.io/node:24.22.2-debian13-dev@sha256:f6ba5e2f381fd46ef88e15ea0827025bbcc95128120211efcffa7860c0a4599c AS build
+FROM dhi.io/node:24.22.2-debian13-dev@sha256:8a0d16bac79b130bcc81b372fe3481733fc6089b3ff613ad1f9c6a45e63d0675 AS build
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -42,7 +42,7 @@ RUN set -eux; \
 RUN ./setup
 
 
-FROM dhi.io/node:24.22.2-debian13@sha256:7f8db65bead5b4ad1bdb62e689e6ccd3c5ad9c9f03fd56db530ade0e3d3ea982 AS image
+FROM dhi.io/node:24.22.2-debian13@sha256:fb9c8a59080071be6f0845f25cf348c3cea469d9fe2e6c8586dbce5cae5ad641 AS image
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG=en_US.UTF-8 \
