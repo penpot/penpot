@@ -29,6 +29,7 @@
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
    [app.common.types.shape :as cts]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.workspace :as dw]
@@ -40,6 +41,8 @@
    [app.main.data.workspace.texts :as dwtx]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.variants :as dwv]
@@ -256,6 +259,15 @@
                           :attributes      n/radius-attrs
                           :token           token
                           :on-update-shape dwta/update-shape-radius})])
+
+    (instance? n/EditTokenValue op)
+    ;; as the token form commits an edit: the token, then its propagation
+    (let [data  (:data (current-file))
+          lib   (cfo/get-tokens-lib data)
+          token-set (ctob/get-set-by-name lib "composable")
+          token (ctob/get-token-by-name lib "composable" (:token-name op))]
+      [(dwtl/update-token (ctob/get-id token-set) (:id token) {:value (:value op)})
+       (dwtp/propagate-workspace-tokens)])
 
     (instance? n/UnapplyToken op)
     [(dwta/unapply-token {:shape-ids  [(tm/target-shape-id situation (:target op))]

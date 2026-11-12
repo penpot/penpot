@@ -388,9 +388,11 @@
                                                        (not (ctk/main-instance? shape))
                                                        (some ctk/main-instance? (cfh/get-parents objects (:id shape))))
                                                 ;; the model places the children of a group in a
-                                                ;; copy only as far as the group's board lets it
+                                                ;; copy through the board around it, and only when
+                                                ;; no layout places that group
                                                 2 (and (:shape-ref shape) (nil? (:component-id shape))
-                                                       (not (#{:group :bool} (:type (get objects (:parent-id shape))))))
+                                                       (or (not (#{:group :bool} (:type (get objects (:parent-id shape)))))
+                                                           (not (ctl/any-layout? (get objects (:frame-id shape))))))
                                                 3 (and (copy-head shape) (not (top-copy shape)))
                                                 4 (top-copy shape)))
                               (:text :text-style) (= :text (:type shape))
