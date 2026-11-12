@@ -131,4 +131,6 @@
                 [parent-id]
                 (fn [parent]
                   (assoc-in parent [:layout-grid-cells (:id target-cell) :shapes] [shape-id]))))
-             (pcb/update-shapes grid-parents ctl/assign-cells {:with-objects? true}))]))))
+             (pcb/update-shapes grid-parents ctl/assign-cells {:with-objects? true})
+             ;; the groups around the bool take the bounds of its result
+             (pcb/resize-parents [shape-id]))]))))

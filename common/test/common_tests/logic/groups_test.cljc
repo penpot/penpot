@@ -144,3 +144,15 @@
         tree    (gm/set-objects-modifiers {(:id bool) {:modifiers (ctm/change-size bool 80 nil)}} objects)
         rect    (gsh/transform-shape (get objects (thi/id :rect)) (get-in tree [(thi/id :rect) :modifiers]))]
     (t/is (mth/close? 80 (-> rect :selrect :width)))))
+
+(t/deftest a-bool-made-in-a-group-gives-the-group-its-bounds
+  (let [file    (-> (thf/sample-file :file1)
+                    (ths/add-sample-shape :badge :width 12 :height 12)
+                    (ths/add-sample-shape :rect :x 10 :y 10 :width 20 :height 20))
+        [id file] (group file [:badge :rect])
+        page    (thf/current-page file)
+        [shape changes] (clb/generate-create-bool nil (:id page) (:objects page)
+                                                  [(thi/id :badge) (thi/id :rect)] :difference nil)
+        objects (objects (thf/apply-changes file changes))]
+    (t/is (= (-> (get objects (:id shape)) :selrect ((juxt :x :y :width :height)))
+             (-> (get objects id) :selrect ((juxt :x :y :width :height)))))))
