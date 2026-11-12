@@ -4,6 +4,8 @@ import { MockWebSocketHelper } from "../../helpers/MockWebSocketHelper";
 import { BaseWebSocketPage } from "./BaseWebSocketPage";
 import { Transit } from "../../helpers/Transit";
 
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 export class WorkspacePage extends BaseWebSocketPage {
   static TextEditor = class TextEditor {
     constructor(workspacePage) {
@@ -564,6 +566,25 @@ export class WorkspacePage extends BaseWebSocketPage {
     ).toBeVisible();
   }
 
+  // Layer rows print the name verbatim, so an anchored text match tells
+  // "shape - text" from "shape - text - token - composite". It assumes the
+  // row shows only the name: the :show-ids and :show-touched debug flags
+  // append text to the same node. Matching by accessible name is not an
+  // option: a selected row shows its hide and lock buttons, whose titles
+  // join the name.
+  layerRow(name) {
+    return this.layers
+      .getByTestId("layer-row")
+      .filter({ hasText: new RegExp(`^${escapeRegExp(name)}$`, "i") })
+      .first();
+  }
+
+  async selectLayer(name, clickOptions = {}) {
+    const row = this.layerRow(name);
+    await row.click(clickOptions);
+    await expect(row).toHaveAttribute("aria-checked", "true");
+  }
+
   async getSelectedShapeName() {
     const selectedLayer = this.layers
       .getByRole("checkbox", { checked: true })
@@ -572,11 +593,11 @@ export class WorkspacePage extends BaseWebSocketPage {
     return (await selectedLayer.innerText()).trim();
   }
 
-  async waitForSelectedShapeName(expectedName) {
+  async waitForSelectedShapeName(expectedName, options = {}) {
     const selectedLayer = this.layers
       .getByRole("checkbox", { checked: true })
       .first();
-    await expect(selectedLayer).toHaveText(expectedName);
+    await expect(selectedLayer).toHaveText(expectedName, options);
   }
 
   async expectHiddenToolbarOptions() {

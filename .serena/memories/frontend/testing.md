@@ -72,6 +72,8 @@ Integration tests fake backend behavior by intercepting network/websocket traffi
 
 Locator priority should follow user-facing semantics: `getByRole`, `getByLabel`, `getByPlaceholder`, `getByText`, then semantic alternatives such as alt/title, with `getByTestId` as the last resort. Name tests from the user's perspective and prefer positive, single-purpose assertions.
 
+Layer rows are the exception: a selected row's hide and lock button titles join its accessible name, so role-plus-name matching breaks on selected rows. Use `WorkspacePage.layerRow`, which anchors on the `layer-row` test id's text, and `selectLayer`, which waits for `aria-checked`.
+
 ## CI (E2E)
 
 `.github/workflows/tests-e2e.yml` runs the integration specs, the composable component suite, and the mocked Plugin API suite from one workflow that builds the frontend bundle once per SHA. Before adding a job that needs the bundle, read `mem:frontend/e2e-ci-workflow` (build-once contract, cache key, stable check names).
