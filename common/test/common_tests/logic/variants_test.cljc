@@ -7,6 +7,7 @@
 (ns common-tests.logic.variants-test
   (:require
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.variant :as cfv]
    [app.common.geom.point :as gpt]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
@@ -722,3 +723,16 @@
              (cpn/merge-path-item (:path comp2') (:name comp2'))))
     (t/is (some? (:variant-id comp1')))
     (t/is (some? (:variant-id comp2')))))
+
+(t/deftest test-extract-properties-values-preserves-order-past-eight
+  (let [names  (mapv #(str "Property " %) (range 1 10))
+        props1 (mapv (fn [n] {:name n :value (str n "-a")}) names)
+        props2 (mapv (fn [n] {:name n :value (str n "-b")}) names)
+        file   (-> (thf/sample-file :file1)
+                   (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                   (thc/update-component :c01 {:variant-properties props1})
+                   (thc/update-component :c02 {:variant-properties props2}))
+        page   (thf/current-page file)
+        v-id   (:id (ths/get-shape file :v01))
+        result (cfv/extract-properties-values (:data file) (:objects page) v-id)]
+    (t/is (= names (mapv :name result)))))
