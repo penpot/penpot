@@ -1762,3 +1762,16 @@
       (t/is (= [e] (:shapes (get-in result [:layout-grid-cells (:id auto-c)]))))
       (t/is (= (set before) (set after)))
       (t/is (= (count after) (count (distinct after)))))))
+
+(t/deftest resizing-a-cell-over-part-of-a-span-leaves-the-rest-of-the-span-one-cell
+  (let [child  (uuid/next)
+        a      (make-cell :row 1 :column 1)
+        b      (make-cell :row 1 :column 2 :column-span 2 :position :manual :shapes [child])
+        shape  (make-grid-frame :layout-grid-rows [layout/default-track-value]
+                                :layout-grid-columns (vec (repeat 3 layout/default-track-value))
+                                :layout-grid-cells {(:id a) a (:id b) b})
+        after  (layout/resize-cell-area shape 1 1 1 1 1 2)
+        cells  (vals (:layout-grid-cells after))]
+    (t/is (empty? (layout/overlapping-cells after)))
+    (t/is (= #{[1 1 2] [1 3 1]} (set (map (juxt :row :column :column-span) cells))))
+    (t/is (= (assoc b :column 3 :column-span 1) (get-in after [:layout-grid-cells (:id b)])))))
