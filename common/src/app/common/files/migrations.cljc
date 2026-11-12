@@ -14,6 +14,7 @@
    [app.common.files.defaults :as cfd]
    [app.common.files.helpers :as cfh]
    [app.common.files.tokens :as cfo]
+   [app.common.files.variant :as cfv]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -2368,6 +2369,111 @@
         (update :pages-index d/update-vals migrate-container)
         (d/update-when :components d/update-vals migrate-container))))
 
+;; Property names and values used to accept `,` and `=`. The formula
+;; editor treats those as separators, and a later edit strips them.
+;; Files saved before that strip can also hold two identical names, two
+;; identical value combinations, or a label that was not saved with the
+;; values. Rewrite the text in place and refresh the label.
+(defn- write-variant-member
+  [data component props]
+  (let [variant-name (ctv/properties-to-name props)
+        component-id (:id component)
+        main-id      (:main-instance-id component)
+        page-id      (:main-instance-page component)
+        label?       (cfv/variant-main-label-changed? data component props)
+        same-props?  (= (vec (or (:variant-properties component) []))
+                        (vec props))
+        data         (if same-props?
+                       data
+                       (assoc-in data [:components component-id :variant-properties] props))]
+    (cond
+      (not label?)
+      data
+
+      (and (:deleted component) main-id)
+      (assoc-in data [:components component-id :objects main-id :variant-name] variant-name)
+
+      (and page-id main-id)
+      (assoc-in data [:pages-index page-id :objects main-id :variant-name] variant-name)
+
+      :else
+      data)))
+
+(defn- variant-container-entries
+  [data]
+  (concat
+   (for [page  (vals (:pages-index data))
+         shape (vals (:objects page))
+         :when (ctk/is-variant-container? shape)]
+     {:objects   (:objects page)
+      :container shape})
+   (for [component (vals (:components data))
+         shape     (vals (:objects component))
+         :when     (ctk/is-variant-container? shape)]
+     {:objects   (:objects component)
+      :container shape})))
+
+(defmethod migrate-data "0036-sanitize-variant-property-text"
+  [data _]
+  (let [[data used-ids]
+        (reduce (fn [[data used-ids] {:keys [objects container]}]
+                  (let [members (cfv/qualifying-variant-members data objects container)]
+                    [(reduce (fn [data member]
+                               (write-variant-member data (:component member) (:props member)))
+                             data
+                             (cfv/repair-variant-members members))
+                     (into used-ids (map :component-id) members)]))
+                [data #{}]
+                (variant-container-entries data))
+
+        solos
+        (remove (fn [component]
+                  (or (contains? used-ids (:id component))
+                      (not (ctk/is-variant? component))))
+                (vals (:components data)))]
+
+    (reduce (fn [data component]
+              (write-variant-member data
+                                    component
+                                    (cfv/prepare-variant-properties (:variant-properties component))))
+            data
+            solos)))
+
+;; The board name and each main's layer name are already normalized.
+;; The library entry could still carry the previous path. Point every
+;; member of the board at that board name.
+(defmethod migrate-data "0037-align-variant-component-names"
+  [data _]
+  (letfn [(align-container [data objects container]
+            (let [board-name         (or (:name container) "")
+                  [path item-name]   (cpn/split-group-name board-name)]
+              (reduce (fn [data child-id]
+                        (let [child     (get objects child-id)
+                              component (when child
+                                          (get-in data [:components (:component-id child)]))]
+                          (if (and (ctk/is-variant? child)
+                                   (= (:id container) (:variant-id child))
+                                   (some? component)
+                                   (= (:id container) (:variant-id component))
+                                   (not= board-name
+                                         (cpn/merge-path-item (:path component) (:name component))))
+                            (update-in data [:components (:id component)]
+                                       assoc :path path :name item-name)
+                            data)))
+                      data
+                      (:shapes container))))
+
+          (containers-in [objects]
+            (filter ctk/is-variant-container? (vals objects)))]
+
+    (reduce (fn [data objects]
+              (reduce #(align-container %1 objects %2)
+                      data
+                      (containers-in objects)))
+            data
+            (concat (map :objects (vals (:pages-index data)))
+                    (map :objects (vals (:components data)))))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2459,4 +2565,6 @@
          "0032-fix-children-not-in-parent"
          "0033-normalize-main-instance-names"
          "0034-fix-path-content-offset"
-         "0035-fix-shape-svg-attrs-and-defs"]))
+         "0035-fix-shape-svg-attrs-and-defs"
+         "0036-sanitize-variant-property-text"
+         "0037-align-variant-component-names"]))
