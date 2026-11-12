@@ -84,7 +84,7 @@
          on-lost-pointer-capture :on-lost-pointer-capture
          on-pointer-move :on-pointer-move
          height :size}
-        (use-resize-hook :sitemap 200 38 "0.6" :y false nil)
+        (use-resize-hook :sitemap 200 70 "0.6" :y false nil)
 
         sitemap-collapsed*
         (hooks/use-persisted-state ::sitemap-collapsed false)
