@@ -673,7 +673,19 @@
                           (not= (boolean (:flip-x before)) (boolean (:flip-x after)))
                           (not= (boolean (:flip-y before)) (boolean (:flip-y after)))))
         ids      (when changed? (cfh/get-children-ids (:objects container) (:id before)))]
-    (if (seq ids)
+    (cond
+      ;; a group or bool takes its bounds from its children, which sync places
+      ;; one by one: a move or resize of its bounds carries nothing, and it
+      ;; fits them again
+      (and (seq ids) (or moved? resized?)
+           (mth/close? (or (:rotation before) 0) (or (:rotation after) 0) 1e-10)
+           (= (boolean (:flip-x before)) (boolean (:flip-x after)))
+           (= (boolean (:flip-y before)) (boolean (:flip-y after)))
+           (#{:group :bool} (:type before)))
+      (let [refit {:type :reg-objects :shapes [(:id before)]}]
+        (pcb/add-changes changes container [refit] [refit]))
+
+      (seq ids)
       (let [orientation (fn [shape]
                           (let [matrix (axes-matrix shape)]
                             (assoc shape :transform matrix :transform-inverse (gmt/inverse matrix))))
@@ -704,6 +716,8 @@
                                 (update :touched ctk/set-touched-group :geometry-group))
                              #(cond-> % (some? turn) turn :always (gsh/move delta)))
                            {:ignore-touched true}))
+
+      :else
       changes)))
 
 (defn- constraint-sized-main

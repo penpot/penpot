@@ -2477,6 +2477,21 @@
                                     :layout-copies false :layout-children true}]
                        :ops [[:add-child 5] [:structure 12] [:transform 12 10 0 12]]}))))
 
+(t/deftest syncing-a-copy-group-keeps-the-place-its-shape-authors
+  (t/is (map? (cg/run {:world [1 0 {:variants true :rich-variants false :text false :layout :grid
+                                    :layout-copies false :layout-children false}]
+                       :ops [[:add-child 1] [:structure 2] [:transform 2 0 0 2]]}))))
+
+(t/deftest syncing-a-copy-group-keeps-the-size-its-shape-authors
+  (t/is (map? (cg/run {:world [1 0 {:variants true :rich-variants false :text false :layout :grid
+                                    :layout-copies false :layout-children false}]
+                       :ops [[:add-child 1] [:structure 2] [:transform 2 2 0 2]]}))))
+
+(t/deftest undoing-a-turn-of-a-copy-group-gives-the-groups-of-its-copies-their-bounds-back
+  (t/is (map? (cg/run {:world [2 2 {:variants true :rich-variants true :text true :layout nil
+                                    :layout-copies false :layout-children false}]
+                       :ops [[:add-child 7] [:add-child 7] [:structure 13] [:transform 10 15 0 12]]}))))
+
 (t/deftest settling-a-bool-in-a-grid-copy-twice-keeps-its-shapes-in-place
   (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies true :layout-children true}]
