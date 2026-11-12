@@ -2508,6 +2508,12 @@
                                     :layout-copies true :text false}]
                        :ops [[:grid-track 3 5 0 2] [:grid-track 0 3] [:grid-cell 3 0 0 1]]}))))
 
+(t/deftest detaching-keeps-a-shape-of-a-copy-bool-unauthored-where-its-main-places-it
+  (t/is (map? (cg/run {:world [2 2 {:variants true :rich-variants true :text true :layout :flex
+                                    :layout-copies false :layout-children false}]
+                       :ops [[:delete 11] [:detach 5] [:swap 10] [:add-child] [:structure 0 6 3] [:nest 11]
+                             [:transform 2 0 0 7] [:detach 13]]}))))
+
 (t/deftest settling-a-bool-in-a-grid-copy-twice-keeps-its-shapes-in-place
   (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies true :layout-children true}]

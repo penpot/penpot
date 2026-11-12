@@ -389,12 +389,20 @@
             (let [parent      (get after (:parent-id shape))
                   main        (get after (:shape-ref shape))
                   main-parent (get after (:parent-id main))
+                  ;; a group or bool takes its bounds from its children, so they
+                  ;; measure from the board around it
+                  board?      (and (#{:group :bool} (:type parent)) (#{:group :bool} (:type main-parent))
+                                   (not (ctl/any-layout? (get after (:frame-id shape)))))
+                  parent      (if board? (get after (:frame-id shape)) parent)
+                  main-parent (if board? (get after (:frame-id main)) main-parent)
                   objects     (cond-> after
                                 (and main (contains? groups :constraints-group))
                                 (update (:id main) merge
                                         (into {} (filter val) (select-keys shape [:constraints-h :constraints-v]))))]
               (cond
-                (or (contains? groups :geometry-group) (contains? groups :swap-group) (nil? main))
+                ;; the bounds of a group or bool follow its children's places
+                (or (contains? groups :geometry-group) (contains? groups :swap-group) (nil? main)
+                    (#{:group :bool} (:type shape)))
                 groups
 
                 ;; a layout places the shape, so only its size and orientation can be its own
