@@ -9,7 +9,8 @@
   app.common.data.macros/get-in clojure.core/get-in
   app.common.data.macros/with-open clojure.core/with-open
   app.common.data.macros/select-keys clojure.core/select-keys
-  app.common.logging/with-context clojure.core/do}
+  app.common.logging/with-context clojure.core/do
+  benches.render-wasm.errors/attempt clojure.core/do}
 
  :hooks
  {:analyze-call
@@ -24,7 +25,11 @@
    shadow.lazy/loadable hooks.export/rumext-lazycomponent
    app.util.i18n/tr hooks.i18n/tr-dynamic
    app.common.i18n/tr hooks.i18n/tr-dynamic
-   }}
+   benches.render-wasm.declarations/defscene hooks.benches/defscene
+   benches.render-wasm.declarations/defcase hooks.benches/defcase
+   benches.render-wasm.runtime.commands/defcommand hooks.benches/defcommand
+   benches.render-wasm.runtime.protocol/resolve-or-reject hooks.benches/resolve-or-reject
+   benches.render-wasm.runtime.protocol/resolve-or-reject-with hooks.benches/resolve-or-reject-with}}
 
  :output
  {:exclude-files
@@ -36,7 +41,7 @@
    "^(?:backend|frontend|exporter|common)/deps.edn"
    "^(?:backend|frontend|exporter|common)/scripts/"
    "^(?:backend|frontend|exporter|common)/dev/"
-   "^(?:backend|frontend|exporter|common)/test/"]
+   "^(?:backend|frontend|exporter|common)/test/(?!performance_tests/)"]
 
   :linter-name true}
 
@@ -101,6 +106,4 @@
 
   :unused-binding
   {:exclude-destructured-as true
-   :exclude-destructured-keys-in-fn-args false
-   }
-  }}
+   :exclude-destructured-keys-in-fn-args false}}}

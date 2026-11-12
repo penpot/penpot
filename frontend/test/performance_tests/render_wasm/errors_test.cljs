@@ -1,0 +1,248 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
+
+(ns performance-tests.render-wasm.errors-test
+  (:require
+   [app.common.schema :as sm]
+   [app.common.transit :as transit]
+   [benches.render-wasm.errors :as errors :refer [attempt failure?]]
+   [cljs.test :as t :include-macros true]
+   [clojure.string :as str]))
+
+(t/deftest attempt-returns-the-value-of-its-body
+  (t/is (= 3 (attempt 1 2 3)))
+  (t/is (nil? (attempt nil)))
+  (t/is (= {:error :not-a-failure} (attempt {:error :not-a-failure}))))
+
+(t/deftest composed-failures-retain-occurrence-order-and-fatal-propagation
+  (let [upload   (js/Error. "upload failed")
+        end      (js/Error. "ending load failed")
+        close    (js/Error. "browser disposal failed")
+        save     (js/Error. "saving evidence failed")
+        initial  (errors/combine [{:phase "upload" :operation :serialize-shapes :error upload}
+                                  {:phase "upload" :operation :end-loading :error end}])
+        wrapped  (errors/fatal-error "preparation failed"
+                                     {::errors/stale true :partial {:setup {:upload-ms 7}}}
+                                     (errors/with-context initial "preparation failed"
+                                       {:phase "preparation" :path "scene.transit"}))
+        later    (errors/combine [{:phase "cleanup" :operation :close-browser :error close}
+                                  {:phase "storage" :operation :save-evidence :error save}])
+        later    (errors/fatal-error "cleanup failed"
+                                     {:partial {:setup {:upload-ms 9}}
+                                      :command "/bin/chromium" :exit-code 17}
+                                     (errors/with-data later {:partial {:render {:frames 2}}}))
+        combined (errors/combine [{:error wrapped} {:error later}])
+        entries  (errors/get-errors combined)
+        deep     (nth (iterate #(ex-info "wrapped" {} %) combined) 12)
+        wire     (-> (errors/evidence :runner deep)
+                     transit/encode-str transit/decode-str errors/project-diagnostic)]
+    (t/is (= [upload end close save] (mapv :error entries)))
+    (t/is (= [:serialize-shapes :end-loading :close-browser :save-evidence]
+             (mapv :operation entries)))
+    (t/is (= "scene.transit" (:path (first entries))))
+    (t/is (= {:setup {:upload-ms 7}} (:partial (first entries))))
+    (t/is (errors/stale? combined))
+    (t/is (= (mapv errors/message-of [upload end close save]) (mapv :message (:errors wire))))
+    (t/is (= {:command "/bin/chromium" :exit-code 17
+              :partial {:setup {:upload-ms 9} :render {:frames 2}}}
+             (select-keys (nth (:errors wire) 2) [:command :exit-code :partial])))
+    (t/is (sm/validate errors/schema:diagnostic wire))
+    (t/is (errors/fatal? deep))
+    (t/is (errors/fatal? (errors/combine [{:error upload} {:error later}])))
+    (t/is (try
+            (attempt (throw combined))
+            false
+            (catch :default cause
+              (= [upload end close save] (mapv :error (errors/get-errors cause))))))))
+
+(t/deftest ordinary-failures-project-operation-and-path-context
+  (let [cause (ex-info "record unavailable" {:operation :read-record :path "saved/run.transit"})
+        wire  (-> (errors/evidence :storage cause) transit/encode-str transit/decode-str)]
+    (t/is (= {:operation :read-record :path "saved/run.transit"}
+             (select-keys wire [:operation :path])))
+    (t/is (sm/validate errors/schema:diagnostic wire))))
+
+(t/deftest attempt-returns-the-error-its-body-throws
+  (let [cause  (ex-info "boom" {:a 1})
+        result (attempt (throw cause))]
+    (t/is (failure? result))
+    (t/is (identical? cause result))))
+
+(t/deftest attempt-turns-a-thrown-value-into-an-error-that-keeps-its-text
+  (let [text   (attempt (throw "device disconnected"))
+        object (attempt (throw #js {:code 7}))]
+    (t/is (failure? text))
+    (t/is (= "device disconnected" (ex-message text)))
+    (t/is (failure? object))
+    (t/is (str/includes? (ex-message object) "code"))))
+
+(t/deftest attempt-throws-fatal-failures-again
+  (let [cause (errors/fatal-error "write failed" {:path "a"} (js/Error. "disk"))]
+    (t/is (thrown-with-msg? js/Error #"write failed"
+                            (attempt (throw cause))))
+    (t/is (identical? cause (attempt :catch-fatal (throw cause))))))
+
+(t/deftest attempt-treats-a-fatal-cause-deep-in-the-chain-as-fatal
+  (let [fatal (errors/fatal-error "write failed" {} nil)
+        outer (ex-info "outer" {} (ex-info "middle" {} fatal))]
+    (t/is (true? (errors/fatal? outer)))
+    (t/is (thrown-with-msg? js/Error #"outer" (attempt (throw outer))))))
+
+(t/deftest fatal-marker-is-not-assumed-from-other-data
+  (t/is (false? (errors/fatal? (ex-info "x" {:type :anything}))))
+  (t/is (false? (errors/fatal? nil)))
+  (t/is (false? (errors/fatal? "text"))))
+
+(t/deftest ^:async attempt-awaits-promises-in-an-async-function
+  (let [value   (attempt (await (js/Promise.resolve 7)))
+        failure (attempt (await (js/Promise.reject (ex-info "rejected" {}))))
+        bound   (let [x (attempt :catch-fatal (await (js/Promise.resolve 1)) 2)] x)]
+    (t/is (= 7 value))
+    (t/is (= "rejected" (ex-message failure)))
+    (t/is (= 2 bound))))
+
+(t/deftest ^:async attempt-keeps-fatal-rejections-fatal
+  (let [cause (errors/fatal-error "write failed" {} nil)
+        outer (try
+                (attempt (await (js/Promise.reject cause)))
+                nil
+                (catch :default thrown thrown))]
+    (t/is (identical? cause outer))))
+
+(t/deftest with-data-passes-non-failures-through
+  (t/is (= 1 (errors/with-data 1 {:a 1})))
+  (t/is (nil? (errors/with-data nil {:a 1})))
+  (t/is (= {:a 1} (errors/with-data {:a 1} {:a 2}))))
+
+(t/deftest with-data-adds-keys-under-the-failure-data
+  (let [cause  (ex-info "boom" {:log-path "inner"})
+        result (errors/with-data cause {:log-path "outer" :build-id "b"})]
+    (t/is (= "boom" (ex-message result)))
+    (t/is (= {:log-path "inner" :build-id "b"} (ex-data result)))
+    (t/is (identical? cause (ex-cause result)))))
+
+(t/deftest message-of-falls-back-to-the-string-form
+  (t/is (= "boom" (errors/message-of (ex-info "boom" {}))))
+  (t/is (= "text" (errors/message-of "text"))))
+
+(t/deftest context-keeps-deeper-measurements-and-native-cause-details
+  (let [native (ex-info "render failed" {:fn "_render" :code 17})
+        cause  (ex-info "interact failed" {:phase "interact" :partial {:slices [1 2]}} native)
+        error  (errors/with-context cause "setup failed"
+                 {:phase "setup" :partial {:slices [1] :setup {:upload-ms 3}}})
+        result (errors/evidence :setup error)]
+    (t/is (= {:phase "setup" :partial {:slices [1 2] :setup {:upload-ms 3}}}
+             (ex-data error)))
+    (t/is (= "setup failed" (:message result)))
+    (t/is (some #(= {:message "render failed" :fn "_render" :code 17} %)
+                (:cause result)))))
+
+(t/deftest context-keeps-native-errors-as-diagnostic-causes
+  (let [error (errors/with-context (js/Error. "device lost") "restore failed" {:phase "restore"})]
+    (t/is (some #(= "device lost" (:message %)) (errors/describe-cause error)))))
+
+(t/deftest hostile-cause-renders-plain-data
+  (let [hostile (ex-info "boom"
+                         {:fn (fn [] 1) :code #js {:evil 1} :type :wasm-error
+                          :hint (str (apply str (repeat 499 "x")) "😀")}
+                         (js/Error. "inner boom"))
+        result  (errors/evidence :aborted hostile)
+        decoded (-> result transit/encode-str transit/decode-str)
+        outer   (first (:cause decoded))]
+    (t/is (= "aborted" (:phase decoded)))
+    (t/is (= "boom" (:message decoded)))
+    (t/is (string? (:fn outer)))
+    (t/is (string? (:code outer)))
+    (t/is (= (apply str (repeat 499 "x")) (:hint outer)))
+    (t/is (some #(= "inner boom" (:message %)) (:cause decoded)))))
+
+(t/deftest diagnostics-retain-bounded-identity-and-process-details
+  (let [long-text (str (apply str (repeat 1023 "x")) "😀")
+        context   {:expected-id long-text :actual-id "other-build"
+                   :command "compiler" :exit-code 23 :signal "SIGTERM"
+                   :endpoint "ws://127.0.0.1/devtools/browser/owner"}
+        cause     (ex-info "failed" context)
+        decoded   (-> (errors/evidence :identity cause)
+                      errors/project-diagnostic
+                      transit/encode-str
+                      transit/decode-str)]
+    (t/is (= (assoc context :expected-id (apply str (repeat 1023 "x")))
+             (select-keys decoded (keys context))))))
+
+(t/deftest unprintable-values-produce-portable-diagnostics
+  (let [evil (js-obj)]
+    (js/Object.defineProperty evil "evil"
+                              #js {:enumerable true
+                                   :get (fn [] (throw (js/Error. "evil")))})
+    (let [data    (errors/evidence :upload (ex-info "evil boom" {:fn evil}))
+          cause   (errors/evidence :upload evil)
+          decoded (-> [data cause] transit/encode-str transit/decode-str)]
+      (t/is (= "unrenderable value" (get-in decoded [0 :cause 0 :fn])))
+      (t/is (= "unrenderable cause" (get-in decoded [1 :cause 0 :message]))))))
+
+(t/deftest diagnostic-text-is-bounded-without-splitting-surrogate-pairs
+  (let [message (str (apply str (repeat 1023 "x")) "😀" "tail")
+        cause   (ex-info message {:command message})
+        data    (-> (errors/evidence :main cause) transit/encode-str transit/decode-str)
+        hostile (js/Error.)]
+    (set! (.-message hostile) #js {:toString #(throw (js/Error. "cannot print"))})
+    (t/is (= (apply str (repeat 1023 "x")) (:message data)))
+    (t/is (<= (count (:command data)) 1024))
+    (t/is (sm/validate errors/schema:diagnostic (errors/evidence :main hostile)))))
+
+(t/deftest malformed-partial-data-retains-the-failure-and-representable-evidence
+  (let [cycle #js {}]
+    (aset cycle "self" cycle)
+    (doseq [invalid [(fn [] nil) cycle (js/AbortController.)]
+            composed? [false true]]
+      (let [failure (ex-info "phase failed" {:partial {:safe {:elapsed [0 js/Infinity js/NaN]}
+                                                       :handle invalid}})
+            failure (if composed?
+                      (errors/combine [{:error failure} {:error (js/Error. "cleanup failed")}])
+                      failure)
+            data    (errors/evidence :main failure)
+            wire    (try
+                      (-> data transit/encode-str transit/decode-str)
+                      (catch :default _ nil))]
+        (t/is (= "phase failed" (:message wire)))
+        (t/is (= "phase failed" (get-in wire [:cause 0 :message])))
+        (t/is (= 0 (get-in wire [:partial :safe :elapsed 0])))
+        (t/is (= js/Infinity (get-in wire [:partial :safe :elapsed 1])))
+        (t/is (js/Number.isNaN (get-in wire [:partial :safe :elapsed 2])))
+        (t/is (= 1 (count (filter #(= :encode-diagnostic (:operation %)) (:errors wire)))))))))
+
+(t/deftest unbounded-partial-data-produces-an-encoding-diagnostic
+  (let [data (errors/evidence :main (ex-info "phase failed" {:partial {:trace (repeat 0)}}))
+        wire (-> data transit/encode-str transit/decode-str)]
+    (t/is (= "phase failed" (:message wire)))
+    (t/is (some #(= :encode-diagnostic (:operation %)) (:errors wire)))))
+
+(t/deftest malformed-partial-shapes-and-cyclic-causes-produce-portable-diagnostics
+  (doseq [partial [nil false 42 "partial"]]
+    (let [data (errors/evidence :main (ex-info "phase failed" {:partial partial}))]
+      (t/is (sm/validate errors/schema:diagnostic data))
+      (t/is (some #(= :encode-diagnostic (:operation %)) (:errors data)))))
+  (let [cycle (js/Error. "cyclic failure")]
+    (set! (.-cause cycle) cycle)
+    (let [data (-> (errors/evidence :main cycle) transit/encode-str transit/decode-str)]
+      (t/is (= "cyclic failure" (:message data)))
+      (t/is (<= (count (:cause data)) 3)))))
+
+(t/deftest malformed-optional-metadata-retains-a-valid-failure-diagnostic
+  (doseq [flag [42 (fn [] nil)]]
+    (let [cause (errors/combine [{:error (ex-info "main failed" {:deadline-exceeded flag})}])
+          data  (errors/evidence :main cause)
+          wire  (try (-> data transit/encode-str transit/decode-str) (catch :default _ nil))]
+      (t/is (= "main failed" (:message wire)))
+      (t/is (sm/validate errors/schema:diagnostic wire)))))
+
+(t/deftest non-finite-failure-details-cross-transit-as-numbers
+  (let [failure (ex-info "bad measurement" {:code js/NaN :hint js/Infinity :type js/-Infinity})
+        decoded (-> (errors/evidence :render failure) transit/encode-str transit/decode-str)
+        detail  (first (:cause decoded))]
+    (t/is (js/Number.isNaN (:code detail)))
+    (t/is (= js/Infinity (:hint detail)))
+    (t/is (= js/-Infinity (:type detail)))))

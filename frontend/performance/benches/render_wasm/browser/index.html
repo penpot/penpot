@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Renderer benchmarks</title>
+    <style>
+      /* The canvas is the page: kill the UA body margin (8px) that would
+         leave a gutter around the scene in screenshots. */
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Same one-liner as frontend/resources/polyfills/dynamicImport.js:
+         the bench bundle is plain ESM and must not depend on app boot. -->
+    <script>
+      globalThis.dynamicImport = function (u) {
+        return import(u);
+      };
+    </script>
+    <script type="module">
+      import bridge from "/browser/browser.js";
+      window.__benchBridge = bridge;
+      window.__benchReady = true;
+    </script>
+  </body>
+</html>
