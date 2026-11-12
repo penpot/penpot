@@ -138,6 +138,14 @@
   (let [fullscreen?    (mf/deref fullscreen-ref)
         share-open?    (mf/deref share-modal-open-ref)
 
+        share-btn-ref   (mf/use-ref nil)
+        share-was-open* (mf/use-ref false)
+
+        set-share-btn-ref
+        (mf/use-fn
+         (fn [node]
+           (mf/set-ref-val! share-btn-ref node)))
+
         toggle-fullscreen
         (mf/use-fn
          (fn [] (st/emit! dv/toggle-fullscreen)))
@@ -182,6 +190,12 @@
         handle-zoom-fit
         (mf/use-fn
          #(st/emit! dv/zoom-to-fit))]
+    (mf/with-effect [share-open?]
+      (let [was-open? (mf/ref-val share-was-open*)]
+        (when (and was-open? (not share-open?))
+          (some-> (mf/ref-val share-btn-ref) dom/focus!))
+        (mf/set-ref-val! share-was-open* share-open?)))
+
     (mf/with-effect [permissions share]
       (when (and
              (:in-team permissions)
@@ -225,6 +239,7 @@
      (when (:in-team permissions)
        [:> button* {:variant "primary"
                     :class (stl/css :share-btn)
+                    :on-ref set-share-btn-ref
                     :aria-expanded share-open?
                     :aria-pressed share-open?
                     :data-allow-click-modal "share-link"

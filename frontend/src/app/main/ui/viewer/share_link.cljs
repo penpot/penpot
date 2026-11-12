@@ -178,11 +178,21 @@
 (mf/defc destroy-link-confirmation*
   {::mf/private true}
   [{:keys [on-cancel on-destroy]}]
-  (let [on-key-down
+  (let [cancel-ref (mf/use-ref nil)
+
+        on-cancel-ref
+        (mf/use-fn
+         (fn [node]
+           (mf/set-ref-val! cancel-ref node)))
+
+        on-key-down
         (fn [event]
           (when (kbd/esc? event)
             (dom/stop-propagation event)
             (on-cancel event)))]
+
+    (mf/with-effect []
+      (some-> (mf/ref-val cancel-ref) dom/focus!))
 
     [:div {:class (stl/css :share-link-confirm)
            :role "alertdialog"
@@ -197,6 +207,7 @@
      [:div {:class (stl/css :share-link-confirm-actions)}
       [:> button* {:variant "secondary"
                    :type "button"
+                   :on-ref on-cancel-ref
                    :on-click on-cancel}
        (tr "labels.cancel")]
       [:> button* {:variant "destructive"
@@ -206,7 +217,7 @@
 
 (mf/defc share-link-content*
   {::mf/private true}
-  [{:keys [file page on-request-destroy]}]
+  [{:keys [file page on-request-destroy on-destroy-ref]}]
   (let [share-links      (mf/deref refs/share-links)
         router           (mf/deref refs/router)
         route            (mf/deref refs/route)
@@ -305,6 +316,7 @@
        (if (some? current-share-link)
          [:> button* {:variant "destructive"
                       :type "button"
+                      :on-ref on-destroy-ref
                       :on-click on-destroy-current-share-link}
           (tr "common.share-link.destroy-link")]
          [:> button* {:variant "primary"
@@ -328,6 +340,10 @@
   (let [link-to-destroy* (mf/use-state nil)
         link-to-destroy  (deref link-to-destroy*)
 
+        dialog-ref       (mf/use-ref nil)
+        destroy-btn-ref  (mf/use-ref nil)
+        focus-target*    (mf/use-ref nil)
+
         on-close
         (mf/use-fn
          (fn [event]
@@ -339,18 +355,40 @@
          (fn [link]
            (reset! link-to-destroy* link)))
 
+        on-destroy-ref
+        (mf/use-fn
+         (fn [node]
+           (mf/set-ref-val! destroy-btn-ref node)))
+
         on-destroy-link
         (fn [_]
           (let [link link-to-destroy]
+            (mf/set-ref-val! focus-target* :dialog)
             (reset! link-to-destroy* nil)
             (st/emit! (dc/delete-share-link link))))
 
         on-cancel-destroy
         (fn [_]
+          (mf/set-ref-val! focus-target* :destroy-button)
           (reset! link-to-destroy* nil))]
 
+    (mf/with-effect []
+      (some-> (mf/ref-val dialog-ref) dom/focus!))
+
+    (mf/with-effect [link-to-destroy]
+      (when (nil? link-to-destroy)
+        (when-let [target (mf/ref-val focus-target*)]
+          (mf/set-ref-val! focus-target* nil)
+          (case target
+            :destroy-button
+            (some-> (mf/ref-val destroy-btn-ref) dom/focus!)
+
+            :dialog
+            (some-> (mf/ref-val dialog-ref) dom/focus!)))))
+
     [:div {:class (stl/css :share-link-modal)}
-     [:div {:class (stl/css :share-link-dialog)
+     [:div {:ref dialog-ref
+            :class (stl/css :share-link-dialog)
             :role "dialog"
             :aria-modal true
             :aria-labelledby "share-link-title"
@@ -369,7 +407,8 @@
              :hidden (some? link-to-destroy)}
        [:> share-link-content* {:file file
                                 :page page
-                                :on-request-destroy on-request-destroy}]]
+                                :on-request-destroy on-request-destroy
+                                :on-destroy-ref on-destroy-ref}]]
 
       (when (some? link-to-destroy)
         [:> destroy-link-confirmation* {:on-cancel on-cancel-destroy
