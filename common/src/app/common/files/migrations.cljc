@@ -2223,6 +2223,43 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defn- repair-shape-children
+  [objects shape]
+  (if-let [shapes (:shapes shape)]
+    (let [shapes' (into []
+                        (comp (keep uuid/coerce)
+                              (filter #(contains? objects %))
+                              (distinct))
+                        shapes)]
+      (if (and (vector? shapes) (= shapes shapes'))
+        shape
+        (assoc shape :shapes shapes')))
+    shape))
+
+(defn- repair-container-children
+  [container]
+  (d/update-when container :objects
+                 (fn [objects]
+                   ;; Only assoc the shapes that change, so an ObjectsMap is
+                   ;; not marked as modified when nothing is repaired.
+                   (reduce-kv (fn [result id shape]
+                                (let [shape' (repair-shape-children objects shape)]
+                                  (if (identical? shape shape')
+                                    result
+                                    (assoc result id shape'))))
+                              objects
+                              objects))))
+
+(defn- repair-children-ids
+  "Old files may list in :shapes child ids stored as strings, nil, or ids
+  that point to no shape. They fail the shape schema and the uuid assert of
+  get-shape, so parse the strings into uuids and drop the rest. This also
+  removes the duplicate that 0032 adds when a child is listed as a string."
+  [data]
+  (-> data
+      (update :pages-index d/update-vals repair-container-children)
+      (d/update-when :components d/update-vals repair-container-children)))
+
 (defmethod migrate-data "0033-normalize-main-instance-names"
   [data _]
   ;; In penpot shape names always have "/" characters normalized with one space between and after,
@@ -2232,6 +2269,8 @@
   ;; Here we normalize the names of all main instances, and a new file integrity validation has
   ;; been added to enforce this from now on.
   ;; Main instances in variants are a special case because they need to match the variant name.
+  ;; Invalid child ids in :shapes would break the walk below, so they are repaired first (see
+  ;; `repair-children-ids`, also run by 0036 for files that already applied this migration).
   (letfn [(update-shape [container shape-id]
             (let [shape (ctn/get-shape container shape-id)
 
@@ -2274,7 +2313,8 @@
 
           (update-container
             [container]
-            (let [root (ctn/get-container-root container)]
+            (let [container (repair-container-children container)
+                  root      (ctn/get-container-root container)]
               (if root
                 (update-shape container (:id root))
                 container)))]
@@ -2368,6 +2408,12 @@
         (update :pages-index d/update-vals migrate-container)
         (d/update-when :components d/update-vals migrate-container))))
 
+(defmethod migrate-data "0036-fix-shape-children-ids"
+  [data _]
+  ;; 0033 repairs invalid child ids, but files that applied 0033 before the
+  ;; repair was added never run it again, so it runs once more here.
+  (repair-children-ids data))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2459,4 +2505,5 @@
          "0032-fix-children-not-in-parent"
          "0033-normalize-main-instance-names"
          "0034-fix-path-content-offset"
-         "0035-fix-shape-svg-attrs-and-defs"]))
+         "0035-fix-shape-svg-attrs-and-defs"
+         "0036-fix-shape-children-ids"]))
