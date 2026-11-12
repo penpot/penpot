@@ -890,10 +890,14 @@
                           (cond-> result
                             (seq carried)
                             (assoc-in [(:id shape) group]
-                                      (merge placed
-                                             (when (and root? (= :geometry-group group)) position-orientation)
-                                             ;; an attribute the copy leaves unset carries as unset
-                                             (into {} (map #(vector % (get old %))) carried)))))))
+                                      (cond-> (merge placed
+                                                     (when (and root? (= :geometry-group group)) position-orientation)
+                                                     ;; an attribute the copy leaves unset carries as unset
+                                                     (into {} (map #(vector % (get old %))) carried))
+                                        ;; a carried geometry sits in the new parent, whose later
+                                        ;; resizes move and size it through its constraints
+                                        (and (= :geometry-group group) new-parent (not root?))
+                                        (vary-meta assoc ::position {:shape shape :parent new-parent :sized? false})))))))
                     result (cond->> (dissoc groups :swap-group)
                              ;; the head carries only its own layout item overrides
                              (= root-id (:id shape))

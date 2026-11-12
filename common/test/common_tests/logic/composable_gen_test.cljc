@@ -2423,6 +2423,13 @@
                              [:combine 5] [:switch 0] [:variant-property 0 0 0 0] [:switch 1] [:combine 0] [:switch 4]
                              [:combine 0] [:switch 0]]}))))
 
+(t/deftest resizing-a-variant-main-resizes-a-switched-copy-child-through-its-constraint
+  (t/is (map? (cg/run {:world [1 0 {:variants true :text-styles false :library-variants false :stale-libraries false
+                                    :layout :grid :layout-item-margins false :grid-square false :library-depth 2
+                                    :library false :rich-variants true :layout-children false :library-text false
+                                    :grid-empty false :layout-copies false :text false}]
+                       :ops [[:transform 0 2 0 7] [:delete] [:switch] [:transform 1 1]]}))))
+
 (t/deftest random-shape-structure-compositions
   (let [coverage (atom {})
         failure (atom nil)]
