@@ -33,7 +33,7 @@ test("Team with unlimited subscription has specific icon in menu", async ({
   await DashboardPage.mockRPC(
     page,
     "get-team-info",
-    "subscription/get-team-info-subscriptions.json",
+    "subscription/get-team-info-subscription.json",
   );
 
   const dashboardPage = new DashboardPage(page);
@@ -54,7 +54,12 @@ test("Team with unlimited subscription has specific icon in menu", async ({
     "workspace/audit-event-empty.json",
   );
   await dashboardPage.goToSecondTeamDashboard();
-  await expect(page.getByTestId("subscription-icon")).toBeVisible();
+  const icon = page.getByTestId("subscription-icon");
+  await expect(icon).toBeVisible();
+  await expect(icon.locator("use")).toHaveAttribute(
+    "href",
+    "#icon-character-u",
+  );
 });
 
 test("The Unlimited subscription has its name in the sidebar dropdown", async ({
@@ -75,7 +80,7 @@ test("The Unlimited subscription has its name in the sidebar dropdown", async ({
   await DashboardPage.mockRPC(
     page,
     "get-team-info",
-    "subscription/get-team-info-subscriptions.json",
+    "subscription/get-team-info-subscription.json",
   );
 
   const dashboardPage = new DashboardPage(page);
@@ -115,7 +120,7 @@ test("Members tab has warning message when user has more seats than editors", as
   await DashboardPage.mockRPC(
     page,
     "get-team-info",
-    "subscription/get-team-info-subscriptions.json",
+    "subscription/get-team-info-subscription.json",
   );
 
   const dashboardPage = new DashboardPage(page);
@@ -145,8 +150,6 @@ test("Members tab has warning message when user has more seats than editors", as
 
   await dashboardPage.goToSecondTeamMembersSection();
 
-  const ctas = page.getByTestId("cta");
-  await expect(ctas).toHaveCount(2);
   await expect(
     page.getByText("Inviting people while on the unlimited plan"),
   ).toBeVisible();

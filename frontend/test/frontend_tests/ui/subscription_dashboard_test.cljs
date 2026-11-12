@@ -70,6 +70,11 @@
   (t/is (false? (subscription/show-subscription-dashboard-banner?
                  (profile {:type "professional" :status "active"} 8)))))
 
+(t/deftest a-professional-plan-without-usage-data-does-not-show-the-banner
+  ;; The editors arrive with the usage call; until then the count is zero.
+  (t/is (false? (subscription/show-subscription-dashboard-banner?
+                 (profile {:type "professional" :status "active"})))))
+
 (t/deftest an-unlimited-plan-with-four-editors-over-the-seats-shows-the-banner
   (t/is (true? (subscription/show-subscription-dashboard-banner?
                 (profile {:type "unlimited" :status "active" :quantity 20} 24)))))
@@ -98,6 +103,10 @@
   (t/is (false? (subscription/show-subscription-dashboard-banner?
                  (profile {:type "unlimited" :status "canceled" :quantity 2} 8)))))
 
+(t/deftest an-unpaid-unlimited-plan-with-two-editors-does-not-show-the-banner
+  (t/is (false? (subscription/show-subscription-dashboard-banner?
+                 (profile {:type "unlimited" :status "unpaid" :quantity 2} 2)))))
+
 (t/deftest an-enterprise-plan-does-not-show-the-banner
   (t/is (false? (subscription/show-subscription-dashboard-banner?
                  (profile {:type "enterprise" :status "active" :quantity 30} 30)))))
@@ -113,6 +122,12 @@
                  {:permissions {:is-owner false}
                   :subscription {:type "unlimited" :status "active" :seats 2}}
                  (profile {:type "unlimited"} 8)))))
+
+(t/deftest the-owner-with-four-editors-over-the-seats-shows-the-members-banner
+  (t/is (true? (subscription/show-subscription-members-banner?
+                {:permissions {:is-owner true}
+                 :subscription {:type "unlimited" :status "active" :seats 20}}
+                (profile {:type "unlimited"} 24)))))
 
 (t/deftest the-owner-with-three-editors-over-the-seats-does-not-show-the-members-banner
   (t/is (false? (subscription/show-subscription-members-banner?
