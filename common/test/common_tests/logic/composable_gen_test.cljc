@@ -2393,6 +2393,15 @@
                                     :grid-empty false :layout-copies true :text false}]
                        :ops [[:style 8 35 1] [:style 0 29 1] [:update-main]]}))))
 
+(t/deftest updating-a-main-keeps-the-max-width-override-a-switched-copy-holds
+  (t/is (map? (cg/run {:world [3 2 {:variants true :text-styles false :layout :grid :variant-diff false
+                                    :layout-item-margins false :grid-square false :rich-variants true
+                                    :layout-children false :grid-empty false :layout-copies true :text true}]
+                       :ops [[:nest 1 0 0 6] [:text 2] [:combine 3 0 0 16] [:style 14 32] [:delete] [:restore]
+                             [:add-variant 20 0] [:add-variant 20] [:update-main 3 0 0] [:grid-cell 11 6]
+                             [:add-variant 0 0 0 16] [:variant-property 0 19 12] [:switch 20] [:edit 6 0 0 1]
+                             [:update-main 6]]}))))
+
 (t/deftest updating-a-main-pushes-a-swapped-shape-nested-in-a-swap-with-its-children
   (t/is (map? (cg/run {:world [3 3 {:variants true :text-styles true :scale true :layout :flex :variant-diff true
                                     :grid-square false :copies 5 :rich-variants true :layout-children true
