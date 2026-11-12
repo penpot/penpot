@@ -2472,6 +2472,11 @@
                        :ops [[:remove-child 1] [:delete] [:apply-token 0 1] [:style 0 3 0 1] [:apply-token 1]
                              [:token-value 0 1] [:switch]]}))))
 
+(t/deftest syncing-the-shapes-of-a-flipped-copy-group-keeps-them-flipped
+  (t/is (map? (cg/run {:world [1 0 {:variants true :rich-variants true :text true :layout :flex
+                                    :layout-copies false :layout-children true}]
+                       :ops [[:add-child 5] [:structure 12] [:transform 12 10 0 12]]}))))
+
 (t/deftest settling-a-bool-in-a-grid-copy-twice-keeps-its-shapes-in-place
   (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies true :layout-children true}]
