@@ -284,11 +284,18 @@
                     :hint "no active invitation associated with the token"))))))
 
 (defn- check-registration
-  "Register-profile gate: validates the flags and the team invitation in
-  order. The prepare command inlines the same pair so it can interleave
+  "Register-profile gate: validates the flags, the invitation email and
+  the team invitation in order, mirroring `validate-register-attempt!`.
+  The prepare command inlines the same trio so it can interleave
   the email-mismatch check."
-  [cfg backend invitation lock-invitation?]
+  [cfg backend invitation email lock-invitation?]
   (check-registration-flags backend invitation)
+  (when (and (some? invitation)
+             (not= (profile/clean-email (:member-email invitation))
+                   (profile/clean-email email)))
+    (ex/raise :type :restriction
+              :code :email-does-not-match-invitation
+              :hint "email should match the invitation"))
   (check-registration-invitation cfg backend invitation lock-invitation?))
 
 (defn- validate-register-attempt!
@@ -556,7 +563,7 @@
         backend    (:backend claims)
         invitation (when-let [token (:invitation-token claims)]
                      (tokens/verify cfg {:token token :iss :team-invitation}))
-        _          (check-registration cfg backend invitation true)
+        _          (check-registration cfg backend invitation (:email claims) true)
         params     (cond-> claims
                      (:accept-newsletter-updates params)
                      (update :props assoc :newsletter-updates true))

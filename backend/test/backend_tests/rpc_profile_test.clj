@@ -1189,6 +1189,24 @@
           (t/is (some? profile))
           (t/is (= "oidc" (:auth-backend profile))))))))
 
+(t/deftest register-profile-rejects-oidc-invitation-email-mismatch-with-no-registration-flags
+  ;; Review of #12974: the invitation is a substitute for the SSO
+  ;; registration flags only when it was issued for the registering
+  ;; email. A forwarded invitation for another email must not unlock
+  ;; registration with closed registration.
+  (let [invited-email "oidc-invited-other@example.com"
+        attacker-mail "oidc-attacker-noflags@example.com"
+        fixture       (create-invitation-fixture invited-email (ct/in-future "48h"))]
+    (with-redefs [app.config/flags #{:login-with-oidc}]
+      (let [itoken (create-test-invitation-token fixture invited-email)
+            token  (create-oidc-register-token attacker-mail {:invitation-token itoken})
+            out    (th/command! {::th/type :register-profile
+                                 :token token})]
+        (t/is (not (th/success? out)))
+        (t/is (= :restriction (-> out :error ex-data :type)))
+        (t/is (= :email-does-not-match-invitation (-> out :error ex-data :code)))
+        (t/is (nil? (th/db-get :profile {:email attacker-mail})))))))
+
 (t/deftest register-profile-rejects-oidc-with-canceled-invitation-and-no-registration-flags
   ;; Review of #12974: with no registration flag set, the invitation
   ;; row is revalidated under a row lock before creating the profile.
