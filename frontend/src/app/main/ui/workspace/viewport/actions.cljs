@@ -160,7 +160,7 @@
      (reset! frame-hover nil))))
 
 (defn on-click
-  [hover selected edition drawing-path? drawing-tool space? selrect z?]
+  [hover selected edition drawing-path? drawing-tool space? selrect z? just-finished-move-ref]
   (mf/use-callback
    (mf/deps @hover selected edition drawing-path? drawing-tool @space? selrect @z?)
    (fn [event]
@@ -173,13 +173,22 @@
              alt? (kbd/alt? event)
              meta? (kbd/meta? event)
              hovering? (some? @hover)
+             ;; The browser fires a compatibility `click` right after the
+             ;; pointer-up that ends a MOVE transform. `@hover` may then point
+             ;; at a STALE shape: hover hit-tests run against committed
+             ;; (pre-reflow) geometry, so after a layout reorder the shape
+             ;; under the cursor is a sibling's old bounds — reselecting it
+             ;; here would steal the selection from the dragged shape.
+             just-finished-move? (mf/ref-val just-finished-move-ref)
              raw-pt (dom/get-client-position event)
              pt     (uwvv/point->viewport raw-pt)]
+         (mf/set-ref-val! just-finished-move-ref false)
          (st/emit! (mse/->MouseEvent :click ctrl? shift? alt? meta?))
 
          ;; FIXME: Maybe we can transform this into a cond instead
          ;; of multiple (when)s.
          (when (and hovering?
+                    (not just-finished-move?)
                     (not @space?)
                     (not edition)
                     (not drawing-path?)
@@ -278,8 +287,9 @@
          (st/emit! (dw/show-shape-context-menu {:position position :hover-ids @hover-ids})))))))
 
 (defn on-pointer-up
-  [disable-paste-ref]
+  [disable-paste-ref just-finished-move-ref transform]
   (mf/use-callback
+   (mf/deps transform)
    (fn [event]
      (dom/stop-propagation event)
 
@@ -297,6 +307,13 @@
            middle-click? (= 2 (.-which native-event))]
 
        (when left-click?
+         ;; This pointer-up ends a MOVE transform: flag it so the trailing
+         ;; browser `click` doesn't reselect the (stale) hover shape — same
+         ;; pattern as `disable-paste-ref` below. The scheduled reset covers
+         ;; the case where no click event follows.
+         (when (= :move transform)
+           (mf/set-ref-val! just-finished-move-ref true)
+           (ts/schedule #(mf/set-ref-val! just-finished-move-ref false)))
          (st/emit! (mse/->MouseEvent :up ctrl? shift? alt? meta?)))
 
        (when middle-click?
