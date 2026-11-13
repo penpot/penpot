@@ -8,10 +8,10 @@
 -- others.
 --
 -- The pending-queue step that sat between them never shipped and is gone:
--- released versions never created `audit_log_pending`, so neither the
--- table nor the `(created_at, id)` index it added is part of this
--- migration. The foreign key of the table is still dropped below, for a
--- pre-release database that happens to have it.
+-- released versions never created `audit_log_pending`, so this migration
+-- creates neither the table nor the `(created_at, id)` index it added. The
+-- table itself is dropped below, for a pre-release database that happens
+-- to have it.
 --
 -- The legacy mark (`archived_at`) and the indexes that served it stay in
 -- place on purpose: the old archiver may still be running during the
@@ -135,17 +135,13 @@ CREATE TABLE IF NOT EXISTS audit_log_consumer_cursor (
 -- The old pending queue never shipped: this release's producer does not
 -- fill it, and no released version ever created the table. Only a
 -- pre-release database that ran the pending-queue step has it, and that
--- one may keep rows left behind. Dropping its foreign key keeps those
--- rows inert: after the rollout nobody drains the queue, so a pending row
--- would make the new GC fail on every pass when it deletes the row it
--- references.
---
--- The table itself stays for a manual cleanup (the runbook mentions it);
--- a released database does not have it.
+-- one may keep rows left behind. Drop the table: after the rollout nobody
+-- drains the queue, so a pending row would make the new GC fail on every
+-- pass when it deletes the row it references. A released database does
+-- not have it, so this is a no-op there.
 -- ---------------------------------------------------------------------
 
-ALTER TABLE IF EXISTS audit_log_pending
-    DROP CONSTRAINT IF EXISTS audit_log_pending_audit_log_id_fkey;
+DROP TABLE IF EXISTS audit_log_pending;
 
 -- ---------------------------------------------------------------------
 -- Jobs: at most one live exclusive job and at most one not-started

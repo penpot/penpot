@@ -180,26 +180,20 @@
                                         WHERE schemaname = 'public'
                                           AND tablename = 'audit_log'"]))))))
 
-(t/deftest the-migration-drops-the-old-queue-fk-on-a-pre-release-db
+(t/deftest the-migration-drops-the-old-queue-table-on-a-pre-release-db
   ;; The release never creates `audit_log_pending`: the pending queue never
   ;; shipped. A pre-release database that ran its step does have it, and it
-  ;; may still have rows; its FK has to go, or the leftover rows would block
-  ;; the new GC when it deletes the rows they reference. Recreate the table
-  ;; and run the migration again to pin it.
+  ;; may still have rows; the table has to go, or the leftover rows would
+  ;; block the new GC when it deletes the rows they reference. Recreate the
+  ;; table and run the migration again to pin it.
   (th/db-exec! ["CREATE TABLE IF NOT EXISTS audit_log_pending (
                    audit_log_id uuid NOT NULL REFERENCES audit_log(id) DEFERRABLE,
                    consumer smallint NOT NULL CHECK (consumer BETWEEN 1 AND 20),
                    PRIMARY KEY (consumer, audit_log_id))"])
-  (th/db-exec! ["ALTER TABLE audit_log_pending
-                   DROP CONSTRAINT IF EXISTS audit_log_pending_audit_log_id_fkey"])
-  (th/db-exec! ["ALTER TABLE audit_log_pending
-                   ADD CONSTRAINT audit_log_pending_audit_log_id_fkey
-                   FOREIGN KEY (audit_log_id) REFERENCES audit_log(id) DEFERRABLE"])
-  (t/is (seq (table-foreign-keys "audit_log_pending")))
+  (t/is (contains? (table-columns "audit_log_pending") "consumer"))
   (let [apply! (mg/resource "app/migrations/sql/0159-consumer-generalization.sql")]
     (t/is (true? (apply! th/*pool*))))
-  (t/is (contains? (table-columns "audit_log_pending") "consumer"))
-  (t/is (empty? (table-foreign-keys "audit_log_pending"))))
+  (t/is (empty? (table-columns "audit_log_pending"))))
 
 (t/deftest the-migration-does-not-seed-consumer-cursors
   ;; The migration cannot know which consumers are enabled, so the cursor
