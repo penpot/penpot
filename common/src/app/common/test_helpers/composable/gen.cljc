@@ -1140,9 +1140,21 @@
                 model))
       (:text :text-style) (shadow/edit-text model shape (:content (n/text-edit-commit shape (:edit op) (:value op)))
                                             (some? (:typography op)))
-      (:duplicate :paste) (shadow/duplicate model objects id
-                                            (:objects (thf/current-page (tm/file after)))
-                                            (:new-head (n/applied-result op (tm/file before) (tm/file after))))
+      (:duplicate :paste)
+      (let [after-objects (all-objects after)
+            new-head (:new-head (n/applied-result op (tm/file before) (tm/file after)))
+            head (get after-objects new-head)
+            main (get after-objects (:shape-ref head))
+            model (shadow/duplicate model objects id (:objects (thf/current-page (tm/file after))) new-head)]
+        ;; a copy pasted on the page keeps the orientation and size it showed,
+        ;; which its main's need not be
+        (cond-> model
+          (and (= kind :paste) head main (:shape-ref head)
+               (not (get-in model [new-head :geometry-group]))
+               (or (not (gmt/close? (or (:transform head) (gmt/matrix)) (or (:transform main) (gmt/matrix))))
+                   (not (mth/close? (:width (:selrect head)) (:width (:selrect main)) 0.01))
+                   (not (mth/close? (:height (:selrect head)) (:height (:selrect main)) 0.01))))
+          (assoc-in [new-head :geometry-group] (shadow/author-geometry head nil))))
       (:swap :switch)
       (let [after-objects (all-objects after)
             old-main (get-in (cf/libraries before) [(:component-file shape) :data :components

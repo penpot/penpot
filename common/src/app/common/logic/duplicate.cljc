@@ -568,9 +568,20 @@
               (comp
                (filter #(= :add-obj (:type %)))
                (map #(vector (:old-id %) (-> % :obj :id))))
-              (:redo-changes changes))]
+              (:redo-changes changes))
+
+        objects (pcb/get-objects changes)
+
+        ;; the new copies that no other copy holds
+        heads (filterv (fn [id]
+                         (let [shape (get objects id)]
+                           (and (ctk/instance-head? shape)
+                                (= 1 (count (ctn/get-parent-copy-heads objects shape))))))
+                       (keep ids-map ids))]
 
     (-> changes
+        ;; a copy laid out under another parent keeps the orientation it showed
+        (cll/generate-keep-advanced-placement (ctn/make-container (assoc page :objects objects) :page) libraries heads)
         (generate-duplicate-flows shapes page ids-map)
         (generate-duplicate-guides shapes page ids-map delta))))
 
