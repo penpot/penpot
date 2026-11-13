@@ -1127,7 +1127,11 @@
             changed? (or (not (shadow/same-value? shape-after group (shadow/values shape group)))
                          ;; a stored turn may read the same under one flip while the transform turns
                          (not (gmt/close? (or (:transform shape) (gmt/matrix)) (or (:transform shape-after) (gmt/matrix))))
-                         (and position? (not (gsh/close-attrs? :points (:points shape) (:points shape-after) 1e-10))))]
+                         (and position? (not (gsh/close-attrs? :points (:points shape) (:points shape-after) 1e-10)))
+                         ;; a path stores no width or height: its size is that of its bounds
+                         (and (nil? (:width shape))
+                              (not (and (mth/close? (:width (:selrect shape)) (:width (:selrect shape-after)) 1e-10)
+                                        (mth/close? (:height (:selrect shape)) (:height (:selrect shape-after)) 1e-10)))))]
         (if (and (:shape-ref shape) changed?)
           (assoc-in model [id group] (shadow/author-geometry shape-after origin (not position?)))
           model))

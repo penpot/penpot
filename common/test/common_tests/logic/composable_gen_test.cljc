@@ -2624,6 +2624,12 @@
                                     :layout-children false :grid-empty false :layout-copies true :text true}]
                        :ops [[:rotate 7 0 0 0] [:update-main 0 0 0 0] [:make-variant 19 0 0 0] [:style 0 29 4 0]]}))))
 
+(t/deftest the-shapes-of-a-copy-bool-a-grid-fills-are-sized-with-it
+  (t/is (map? (cg/run {:world [1 1 {:variants true :rich-variants true :text false :layout :grid
+                                    :layout-copies false :layout-children true}]
+                       :ops [[:add-child] [:structure] [:swap 5] [:add-child] [:add-child] [:structure 6 4 5]
+                             [:style 0 29 1]]}))))
+
 (t/deftest settling-a-bool-in-a-grid-copy-twice-keeps-its-shapes-in-place
   (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies true :layout-children true}]
@@ -4189,3 +4195,17 @@
                        :ops [[:detach 1 0 0 0] [:resize 0 0 0 0] [:nest 0 0 0 0] [:duplicate 0 0 0 0]
                              [:duplicate 0 0 0 0] [:detach 2 0 0 0] [:style 3 9 1] [:rotate 6 0 0 0]
                              [:detach 12 0 0 0]]}))))
+
+(t/deftest generated-undo-compares-the-corners-of-a-bool-masked-group-in-any-order
+  ;; a masked group takes the corners of its mask, which a bool computes
+  ;; again from its children in any order when a sync refits it
+  (t/is (map? (cg/run {:world [1 0 {:variants true :rich-variants true :text false :layout :flex
+                                    :layout-copies false :layout-children false}]
+                       :ops [[:transform 0 4 0 3] [:structure] [:add-child 1] [:structure] [:structure 4 4]
+                             [:add-child] [:structure 4 1] [:delete] [:structure 2 7 5]]}))))
+
+(t/deftest generated-resizing-a-copy-path-a-layout-places-authors-its-size
+  ;; a path stores no width or height, so its size is read from its bounds
+  (t/is (map? (cg/run {:world [1 1 {:variants true :rich-variants true :text false :layout :flex
+                                    :layout-copies false :layout-children true}]
+                       :ops [[:add-child] [:add-child] [:structure 7 8] [:transform 10 20 0 17]]}))))
