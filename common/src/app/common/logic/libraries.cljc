@@ -1842,22 +1842,35 @@
         (seq applied-tokens)
         (update-tokens container dest-shape origin-shape applied-tokens)))))
 
+(def ^:private derived-geometry-attrs
+  "The geometry a group or bool takes from its children."
+  [:x :y :width :height :selrect :points :transform :transform-inverse
+   :rotation :flip-x :flip-y])
+
 (defn add-update-attr-changes
   "Add to `changes` the operations of `attr-operations` on `dest-shape`, and
-  the update of its parents. The undo fits the shape itself too, when it is a
-  group or bool: its children are undone before it, while it keeps the
-  transform the change gave it."
+  the update of its parents. The undo of a group or bool whose geometry
+  changes restores all of it: its children are undone before it, and fitting
+  it to them meanwhile, while it keeps the transform the change gave it,
+  rewrites geometry the change did not touch."
   [changes dest-shape container roperations uoperations]
   (let [update-parents {:type :reg-objects
                         :shapes (cfh/get-parent-ids (:objects container) (:id dest-shape))}
-        update-self    {:type :reg-objects
-                        :shapes [(:id dest-shape)]}]
+        undone         (into #{} (map :attr) uoperations)
+        uoperations    (cond-> (vec uoperations)
+                         (and (#{:group :bool} (:type dest-shape))
+                              (some (set derived-geometry-attrs) undone))
+                         (into (comp (remove undone)
+                                     (map (fn [attr]
+                                            {:type :set :attr attr :val (get dest-shape attr)
+                                             :ignore-touched true})))
+                               derived-geometry-attrs))]
     (pcb/add-changes changes container
                      [{:type :mod-obj :id (:id dest-shape) :operations roperations}
                       update-parents]
-                     ;; undone as the shape first, then itself and its parents
-                     [update-self
-                      {:type :mod-obj :id (:id dest-shape) :operations (vec uoperations)}])))
+                     ;; undone as the shape first, then its parents
+                     [update-parents
+                      {:type :mod-obj :id (:id dest-shape) :operations uoperations}])))
 
 
 (defn- add-update-attr-operations
