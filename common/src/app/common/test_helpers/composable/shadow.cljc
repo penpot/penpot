@@ -188,7 +188,10 @@
                         (let [frame (get objects (:frame-id shape))]
                           (when-not (ctl/any-layout? frame) frame))
                         parent)
-               placed (when (and objects (not (:sized? (::position (meta expected)))))
+               ;; a layout places the shape, whatever place it authored before
+               laid-out (and objects (ctl/any-layout-immediate-child? objects shape)
+                             (not (ctl/position-absolute? shape)))
+               placed (when (and objects (not laid-out) (not (:sized? (::position (meta expected)))))
                         (authored-placement expected parent shape))
                ;; an authored size follows its parent's later resizes through its
                ;; constraints too, though its place is not authored
