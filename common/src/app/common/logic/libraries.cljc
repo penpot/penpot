@@ -461,6 +461,57 @@
          (every? (fn [point] (some #(gpt/close? point %) corners)) (:points shape))
          (every? #(mth/close? (get transform %) (get other-tf %)) [:a :b :c :d]))))
 
+(defn- laid-group
+  "The outermost group or bool around `shape` of `objects` that a layout
+   places, nil when the groups around it lead to no layout."
+  [objects shape]
+  (loop [parent (get objects (:parent-id shape)) found nil]
+    (if (#{:group :bool} (:type parent))
+      (recur (get objects (:parent-id parent))
+             (if (and (ctsl/any-layout-immediate-child? objects parent)
+                      (not (ctsl/position-absolute? parent)))
+               parent
+               found))
+      found)))
+
+(defn- author-laid-group-arrangement
+  "Make authored the geometry of the copy shapes of a group a layout
+   places, when a transform changes one of them: the transform changes the
+   group's bounds and the layout moves the group back, moving every shape in
+   it, so the arrangement only survives sync as their own geometry. The
+   groups and bools take their bounds from them."
+  [changes before ids]
+  (let [objects (pcb/get-objects changes)
+        groups  (into #{}
+                      (keep (fn [id]
+                              (let [shape (get objects id)
+                                    old   (get before id)]
+                                (when (and (:shape-ref shape) old
+                                           (not (gsh/close-attrs? :points (:points old) (:points shape))))
+                                  (when-let [group (laid-group objects shape)]
+                                    ;; the arrangement changes when some of its shapes move and
+                                    ;; others stay; a transform of the whole group, or of the
+                                    ;; board that holds it, carries them all
+                                    (let [moved? (fn [id]
+                                                   (not (gsh/close-attrs? :points (:points (get before id))
+                                                                          (:points (get objects id)))))
+                                          shapes (remove #(#{:group :bool} (:type (get objects %)))
+                                                         (cfh/get-children-ids objects (:id group)))]
+                                      (when (and (some moved? shapes) (not-every? moved? shapes))
+                                        (:id group))))))))
+                      ids)
+        authored (into []
+                       (comp (mapcat #(cfh/get-children-ids objects %))
+                             (filter #(let [shape (get objects %)]
+                                        (and (:shape-ref shape)
+                                             (not (#{:group :bool} (:type shape)))
+                                             (not (ctk/touched-group? shape :geometry-group))))))
+                       groups)]
+    (cond-> changes
+      (seq authored)
+      (pcb/update-shapes authored #(update % :touched ctk/set-touched-group :geometry-group)
+                         {:ignore-touched true}))))
+
 (defn generate-sync-transformed-placement
   "Settle copy descendants after a reflection and untouched swapped heads
    after a parent turn, in the transform's change group. Reflection can
@@ -497,27 +548,28 @@
                                         reflected?
                                         [(:id root) false])))
                                   ids))]
-    (reduce (fn [changes [id resize?]]
-              (let [objects   (pcb/get-objects changes)
-                    page      (assoc page :objects objects)
-                    file      (assoc-in file [:data :pages-index (:id page) :objects] objects)
-                    container (ctn/make-container page :page)
-                    changes   (pcb/with-container changes container)
-                    proposal  (generate-sync-shape-direct changes file (assoc libraries (:id file) file)
-                                                          container id false)
-                    placed    (pcb/get-objects proposal)]
-                (pcb/update-shapes
-                 changes (cfh/get-children-ids-with-self objects id)
-                 (fn [shape]
-                   (let [expected (get placed (:id shape))
-                         attrs (cond-> placement-geometry-attrs
-                                 (= :path (:type shape)) (conj :content))]
-                     (if (and (= (:type shape) (:type expected))
-                              (or resize? (same-placement? shape expected)))
-                       (merge shape (select-keys expected attrs))
-                       shape)))
-                 {:ignore-touched true})))
-            changes roots)))
+    (-> (reduce (fn [changes [id resize?]]
+                  (let [objects   (pcb/get-objects changes)
+                        page      (assoc page :objects objects)
+                        file      (assoc-in file [:data :pages-index (:id page) :objects] objects)
+                        container (ctn/make-container page :page)
+                        changes   (pcb/with-container changes container)
+                        proposal  (generate-sync-shape-direct changes file (assoc libraries (:id file) file)
+                                                              container id false)
+                        placed    (pcb/get-objects proposal)]
+                    (pcb/update-shapes
+                     changes (cfh/get-children-ids-with-self objects id)
+                     (fn [shape]
+                       (let [expected (get placed (:id shape))
+                             attrs (cond-> placement-geometry-attrs
+                                     (= :path (:type shape)) (conj :content))]
+                         (if (and (= (:type shape) (:type expected))
+                                  (or resize? (same-placement? shape expected)))
+                           (merge shape (select-keys expected attrs))
+                           shape)))
+                     {:ignore-touched true})))
+                changes roots)
+        (author-laid-group-arrangement before ids))))
 
 (defn- sync-copy-shape
   "Sync the copy shape `shape-inst` from `shape-main`, the main shape it
