@@ -80,9 +80,8 @@
   "Set `library` as tokens source and wait for the canvas to use it."
   [store library]
   (ptk/emit! store (dwtl/set-tokens-source (:id library)))
-  (await (async/wait-for #(= "#00ff00" (fill-color store))
-                         "the fill uses the library value of `red`"
-                         {:max-ticks 200})))
+  (await (async/wait-for-store store #(= "#00ff00" (fill-color store))
+                               "the fill uses the library value of `red`")))
 
 (t/deftest ^:async switching-tokens-source-updates-the-canvas
   (let [library (setup-library)
@@ -92,9 +91,8 @@
     (t/is (= "#7b2222" (fill-color store)))
 
     (ptk/emit! store (dwtl/set-tokens-source (:id library)))
-    (await (async/wait-for #(= "#00ff00" (fill-color store))
-                           "the fill uses the library value of `red`"
-                           {:max-ticks 200}))
+    (await (async/wait-for-store store #(= "#00ff00" (fill-color store))
+                                 "the fill uses the library value of `red`"))
     (t/is (= "#00ff00" (fill-color store))
           "Setting the library as tokens source resolves `red` from the library")
 
@@ -102,9 +100,8 @@
     (await (async/settle))
     (t/is (contains? (active-set-ids store) (cthi/id :local-set))
           "Going back to the local tokens keeps the local set active")
-    (await (async/wait-for #(= "#7b2222" (fill-color store))
-                           "the fill uses the local value of `red` again"
-                           {:max-ticks 200}))
+    (await (async/wait-for-store store #(= "#7b2222" (fill-color store))
+                                 "the fill uses the local value of `red` again"))
     (t/is (= "#7b2222" (fill-color store))
           "Going back to the local tokens resolves `red` from the file again")
 
@@ -116,16 +113,26 @@
         store   (ths/setup-store file {:libraries [library]})]
     (await (use-library-tokens store library))
 
-    (await
-     (mock/with-mocks*
-       {rp/cmd! (mock/stub (fn [_ _] (rx/observe-on :async (rx/of []))))}
-       ;; The same events the libraries dialog emits on unlink
-       (ptk/emit! store
-                  (dwl/unlink-file-from-library (:id file) (:id library))
-                  (dwtl/set-tokens-source (:id file)))
-       (await (async/wait-for #(= "#7b2222" (fill-color store))
-                              "the fill uses the local value of `red` again"
-                              {:max-ticks 200}))))
+    (let [calls  (atom [])
+          calls$ (rx/subject)]
+      (await
+       (mock/with-mocks*
+         {rp/cmd! (mock/stub (fn [cmd _]
+                               (swap! calls conj cmd)
+                               (rx/push! calls$ cmd)
+                               (rx/observe-on :async (rx/of []))))}
+         ;; The same events the libraries dialog emits on unlink
+         (ptk/emit! store
+                    (dwl/unlink-file-from-library (:id file) (:id library))
+                    (dwtl/set-tokens-source (:id file)))
+         ;; The unlink event dissocs the library before its watch runs, so the
+         ;; store cannot tell when the chain ended. The chain's second call
+         ;; (`get-file-libraries`) is the proof that it ran inside the mock;
+         ;; wait for it, and keep the store signal for the token resolution.
+         (await (async/wait-for #(and (= "#7b2222" (fill-color store))
+                                      (some #{:get-file-libraries} @calls))
+                                "the unlink flow completes and the local tokens resolve"
+                                {:signal (rx/merge calls$ (ptk/input-stream store))})))))
 
     (t/is (nil? (tokens-source store)))
     (t/is (contains? (active-set-ids store) (cthi/id :local-set))

@@ -79,7 +79,7 @@
                                      context
                                      "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\"><image href=\"https://example.com/image.png\" width=\"10\" height=\"20\"/></svg>")))
                id      (obj/get created "$id")]
-           (await (async/wait-for #(some? (get-in @store (conj path id))) "created shape committed"))
+           (await (async/wait-for-store store #(some? (get-in @store (conj path id))) "created shape committed"))
            (let [created-shape (get-in @store (conj path id))]
              (t/is (= uuid/zero (:parent-id created-shape)) (str creation " / " layout))
              (t/is (= uuid/zero (:frame-id created-shape)) (str creation " / " layout))
@@ -90,19 +90,19 @@
              (t/is (= 1 (count (filter #{:create-file-media-object-from-url}
                                        (map first @uploads))))))
            (ptk/emit! store dwu/undo)
-           (await (async/wait-for #(nil? (get-in @store (conj path id))) "creation undone"))
+           (await (async/wait-for-store store #(nil? (get-in @store (conj path id))) "creation undone"))
            (t/is (nil? (get-in @store (conj path id))))
            (t/is (empty? (get-in @store (into path [(thi/id :board) :shapes]))))
            (ptk/emit! store dwu/redo)
-           (await (async/wait-for #(some? (get-in @store (conj path id))) "creation redone"))
+           (await (async/wait-for-store store #(some? (get-in @store (conj path id))) "creation redone"))
            (set! (.-x created) 1000)
            (set! (.-y created) 1200)
-           (await (async/wait-for #(= [1000 1200] ((juxt :x :y) (get-in @store (conj path id)))) "position updated"))
+           (await (async/wait-for-store store #(= [1000 1200] ((juxt :x :y) (get-in @store (conj path id)))) "position updated"))
            (t/is (= [1000 1200] ((juxt :x :y) (get-in @store (conj path id)))))
            (let [^js page (.-currentPage context)
                  ^js board (.getShapeById page (str (thi/id :board)))]
              (.appendChild board created))
-           (await (async/wait-for #(= (thi/id :board) (get-in @store (into path [id :parent-id]))) "explicit parent applied"))
+           (await (async/wait-for-store store #(= (thi/id :board) (get-in @store (into path [id :parent-id]))) "explicit parent applied"))
            (t/is (= (thi/id :board) (get-in @store (into path [id :parent-id]))))))))))
 
 (t/deftest ^:async interactive-creation-keeps-coordinate-based-parents
@@ -143,16 +143,16 @@
                                                   position nil)}]
            (ptk/emit! store (get events creation)))
          (let [id (if (= creation :component) @id-ref svg-id)]
-           (await (async/wait-for #(some? (get-in @store (conj path id))) "interactive shape committed"))
+           (await (async/wait-for-store store #(some? (get-in @store (conj path id))) "interactive shape committed"))
            (t/is (= parent (get-in @store (into path [id :parent-id]))))
            (t/is (= parent (get-in @store (into path [id :frame-id]))))
            (t/is (= #{id} (set (get-in @store [:workspace-local :selected]))))
            (when (= creation :component)
-             (await (async/wait-for #(= :move (get-in @store [:workspace-local :transform])) "interactive move started"))
+             (await (async/wait-for-store store #(= :move (get-in @store [:workspace-local :transform])) "interactive move started"))
              (t/is (= :move (get-in @store [:workspace-local :transform])))
              (rx/push! ms/mouse-position position)
              (await (async/settle))
              (ptk/emit! store :interrupt)
-             (await (async/wait-for #(nil? (get-in @store [:workspace-local :transform])) "interactive move finished"))
+             (await (async/wait-for-store store #(nil? (get-in @store [:workspace-local :transform])) "interactive move finished"))
              (t/is (nil? (get-in @store [:workspace-local :transform])))
              (t/is (= parent (get-in @store (into path [id :parent-id])))))))))))

@@ -87,8 +87,8 @@
                                       #(assoc % :fills [{:fill-color "#ff0000"
                                                          :fill-opacity 1}])))
 
-       (await (async/wait-for #(empty? (copy-children store))
-                              "the copy to lose its rect"))
+       (await (async/wait-for-store store #(empty? (copy-children store))
+                                    "the copy to lose its rect"))
 
        (let [file' (ths/get-file-from-state @store)]
          (t/is (= (cthi/id :outside)
