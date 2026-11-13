@@ -4209,3 +4209,11 @@
   (t/is (map? (cg/run {:world [1 1 {:variants true :rich-variants true :text false :layout :flex
                                     :layout-copies false :layout-children true}]
                        :ops [[:add-child] [:add-child] [:structure 7 8] [:transform 10 20 0 17]]}))))
+
+(t/deftest generated-updating-a-main-grid-copy-with-its-own-cells-orders-it-by-their-flow
+  ;; an update main that turns the direction of a nested grid copy with its
+  ;; own cells orders that copy's children as they flow in the new direction
+  (t/is (map? (cg/run {:world [3 2 {:variants false :layout :grid :layout-item-margins false :grid-square true
+                                    :rich-variants false :layout-children true :grid-empty false
+                                    :layout-copies false :text false}]
+                       :ops [[:remove-child 7] [:grid-direction 13 0 7 1] [:grid-cell 0 0 0 1] [:update-main 17]]}))))
