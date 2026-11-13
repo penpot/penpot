@@ -659,6 +659,32 @@
   (when-let [parent (get objects parent-id)]
     (or (d/index-of (:shapes parent) shape-id) 0)))
 
+(defn- place-restored-in-parent
+  "Move the swapped-back copy shape `shape-id`, with its subtree, to where
+   its position sits in the shape's parent. Sync places it from the copy's
+   root, which misses the move a layout gave a parent the sync leaves; its
+   own authored geometry keeps it where it is."
+  [changes page libraries shape-id]
+  (let [objects          (pcb/get-objects changes)
+        shape            (get objects shape-id)
+        parent           (get objects (:parent-id shape))
+        ;; a layout places the shape itself
+        position         (when-not (or (ctk/touched-group? shape :geometry-group)
+                                       (and (ctsl/any-layout-immediate-child? objects shape)
+                                            (not (ctsl/position-absolute? shape))))
+                           (ctf/find-ref-shape nil (assoc page :objects objects) libraries shape
+                                               :include-deleted? true :with-context? true))
+        position-objects (:objects (:container (meta position)))
+        position-parent  (get position-objects (:parent-id position))
+        placed           (when (and position-parent (= :frame (:type parent)) (= :frame (:type position-parent)))
+                           (get (cll/placed-like position-objects position-parent parent nil) (:id position)))
+        delta            (when placed
+                           (gpt/subtract (first (:points placed)) (first (:points shape))))]
+    (cond-> changes
+      (and delta (not (gpt/almost-zero? delta)))
+      (pcb/update-shapes (cfh/get-children-ids-with-self objects shape-id) #(gsh/move % delta)
+                         {:ignore-touched true}))))
+
 (defn- sync-restored-position
   "A swap back is an ordinary copy of its position, including that
    position's content overrides. Sync it through the head that owns its
@@ -674,7 +700,9 @@
             head      (d/seek #(= (:id component) (:component-id %))
                               (ctn/get-parent-copy-heads objects parent))]
         (if head
-          (cll/generate-sync-shape-direct changes nil libraries container (:id head) false shape-id)
+          (-> changes
+              (cll/generate-sync-shape-direct nil libraries container (:id head) false shape-id)
+              (place-restored-in-parent page libraries shape-id))
           changes))
       changes)))
 

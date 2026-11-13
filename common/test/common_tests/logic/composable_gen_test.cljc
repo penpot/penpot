@@ -4278,3 +4278,11 @@
   (t/is (map? (cg/run {:world [2 0 {:tokens false :variants true :rich-variants true :text true :layout :flex
                                     :layout-copies false}]
                        :ops [[:rotate 3] [:nest 7] [:update-main] [:paste 9]]}))))
+
+(t/deftest generated-a-head-switched-back-sits-in-the-parent-a-grid-moved
+  ;; a swapped head switched back to its main's variant is placed in its
+  ;; parent, which the grid of its copy moved by the gap it overrides
+  (t/is (map? (cg/run {:world [1 2 {:variants true :layout :grid :layout-item-margins false :grid-square false
+                                    :rich-variants true :layout-children false :grid-empty false
+                                    :layout-copies true :text true}]
+                       :ops [[:style 14 11 1] [:text-style 14 0 1] [:nest 7] [:switch 9] [:switch 9]]}))))
