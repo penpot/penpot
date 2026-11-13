@@ -4260,3 +4260,11 @@
   (t/is (map? (cg/run {:world [1 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies false :layout-children true}]
                        :ops [[:add-child] [:style 0 35 1] [:add-child] [:add-child 8] [:structure 12 0 3]]}))))
+
+(t/deftest generated-pastes-carry-a-copy-and-its-overrides-to-the-page
+  ;; a pasted top copy keeps the overrides of the copy it came from; a
+  ;; pasted shape a main holds is a plain shape
+  (t/is (map? (cg/run {:world [2 1 {:text true :layout nil}]
+                       :ops [[:edit 1 1 1 :copy-head] [:paste 2] [:paste 0] [:sync] [:undo] [:redo]]})))
+  (t/is (map? (cg/run {:world [2 1 {:text true :layout :flex :layout-children true}]
+                       :ops [[:paste 1] [:paste 5] [:edit 0 0 1] [:sync]]}))))
