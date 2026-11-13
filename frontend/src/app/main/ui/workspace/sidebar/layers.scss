@@ -19,6 +19,12 @@
   position: relative;
 }
 
+.sticky-row {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 4;
+}
+
 .tool-window-bar {
   display: flex;
   align-items: center;
