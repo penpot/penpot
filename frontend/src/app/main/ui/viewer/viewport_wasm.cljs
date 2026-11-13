@@ -97,6 +97,9 @@
         fixed-wasm-ref       (mf/use-ref nil)
 
         objects  (:objects page)
+        ;; Identity of the page objects as they come from the file data, used
+        ;; by the renderer to know when the loaded shapes are outdated.
+        objects-key objects
         frame-id (:id frame)
         scale    (vpc/viewer-scale size)
         page-id  (:id page)
@@ -149,7 +152,7 @@
                    :shape-filter #(contains? fixed-mask-set %)})]
 
     (rwv/use-viewer-wasm-viewport!
-     page-id objects size scale frame-id
+     page-id objects objects-key size scale frame-id
      not-fixed-wasm-ref fixed-wasm-ref
      (when has-fixed? fixed-layer-ref)
      not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids
