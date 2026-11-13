@@ -103,6 +103,19 @@ const getPanelByTitle = async (workspacePage, title) => {
   return panel;
 };
 
+/**
+ * Waits for a style panel to render and checks how many property rows it
+ * shows. Polling keeps the count honest while the panel fills.
+ * @param {object} panel - The style panel locator
+ * @param {number} minimum - The minimum number of property rows
+ */
+const expectPanelRows = async (panel, minimum) => {
+  await expect(panel).toBeVisible();
+  await expect
+    .poll(() => panel.getByTestId("property-row").count())
+    .toBeGreaterThanOrEqual(minimum);
+};
+
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
@@ -192,71 +205,108 @@ const selectColorSpace = async (workspacePage, colorSpace) => {
 };
 
 test.describe("Inspect tab - Styles", () => {
-  test.skip("Open Inspect tab", async ({ page }) => {
+  test("Layout and size", async ({ page }) => {
     const workspacePage = new WasmWorkspacePage(page);
     await setupFile(workspacePage);
 
-    await selectLayer(workspacePage, shapeToLayerName.flex);
-    await openInspectTab(workspacePage);
-
-    const switcherLabel = workspacePage.page.getByText("Layer info", {
-      exact: true,
-    });
-    await expect(switcherLabel).toBeVisible();
-    await expect(switcherLabel).toHaveText("Layer info");
-  });
-  test.describe("Inspect tab - Flex", () => {
-    test("Shape Layout Flex ", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
+    await test.step("Flex container", async () => {
       await selectLayer(workspacePage, shapeToLayerName.flex);
       await openInspectTab(workspacePage);
 
+      // The deleted "Open Inspect tab" test only asserted this switcher, and
+      // this step is the first one to open the tab.
+      await expect(page.getByText("Layer info", { exact: true })).toBeVisible();
+
       const panel = await getPanelByTitle(workspacePage, "Layout");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
+      await expectPanelRows(panel, 1);
     });
 
-    test("Shape Layout Flex Element", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
+    await test.step("Flex element", async () => {
       await selectLayer(
         workspacePage,
         shapeToLayerName.flexElement,
         shapeToLayerName.flex,
       );
-      await openInspectTab(workspacePage);
 
       const panel = await getPanelByTitle(workspacePage, "Flex Element");
-      await expect(panel).toBeVisible();
+      await expectPanelRows(panel, 1);
+    });
+
+    await test.step("Grid", async () => {
+      await selectLayer(workspacePage, shapeToLayerName.grid);
+
+      const panel = await getPanelByTitle(workspacePage, "Layout");
+      await expectPanelRows(panel, 1);
+    });
+
+    await test.step("Border radius - individual", async () => {
+      await selectLayer(
+        workspacePage,
+        shapeToLayerName.borderRadius.individual,
+        shapeToLayerName.borderRadius.main,
+      );
+
+      const panel = await getPanelByTitle(workspacePage, "Size and position");
+      await expectPanelRows(panel, 2);
 
       const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(1);
+      await expect(
+        propertyRow.filter({ hasText: "Border start start radius" }),
+      ).toBeVisible();
+      await expect(
+        propertyRow.filter({ hasText: "Border end end radius" }),
+      ).toBeVisible();
     });
-  });
 
-  test("Shape Layout Grid", async ({ page }) => {
-    const workspacePage = new WasmWorkspacePage(page);
-    await setupFile(workspacePage);
+    await test.step("Border radius - multiple", async () => {
+      await selectLayer(
+        workspacePage,
+        shapeToLayerName.borderRadius.multiple,
+        shapeToLayerName.borderRadius.main,
+      );
 
-    await selectLayer(workspacePage, shapeToLayerName.grid);
-    await openInspectTab(workspacePage);
+      const panel = await getPanelByTitle(workspacePage, "Size and position");
+      await expectPanelRows(panel, 4);
 
-    const panel = await getPanelByTitle(workspacePage, "Layout");
-    await expect(panel).toBeVisible();
+      const propertyRow = panel.getByTestId("property-row");
+      await expect(
+        propertyRow.filter({ hasText: "Border start start radius" }),
+      ).toBeVisible();
+      await expect(
+        propertyRow.filter({ hasText: "Border start end radius" }),
+      ).toBeVisible();
+      await expect(
+        propertyRow.filter({ hasText: "Border end end radius" }),
+      ).toBeVisible();
+      await expect(
+        propertyRow.filter({ hasText: "Border end start radius" }),
+      ).toBeVisible();
+    });
 
-    const propertyRow = panel.getByTestId("property-row");
-    const propertyRowCount = await propertyRow.count();
+    await test.step("Border radius - token", async () => {
+      await selectLayer(
+        workspacePage,
+        shapeToLayerName.borderRadius.token,
+        shapeToLayerName.borderRadius.main,
+      );
 
-    expect(propertyRowCount).toBeGreaterThanOrEqual(1);
+      const panel = await getPanelByTitle(workspacePage, "Size and position");
+      await expectPanelRows(panel, 4);
+
+      const propertyRow = panel.getByTestId("property-row");
+
+      const borderStartEndRadius = propertyRow.filter({
+        hasText: "Border start end radius",
+      });
+      await expect(borderStartEndRadius).toBeVisible();
+      await expect(borderStartEndRadius).toContainText("radius");
+
+      const borderEndStartRadius = propertyRow.filter({
+        hasText: "Border end start radius",
+      });
+      await expect(borderEndStartRadius).toBeVisible();
+      await expect(borderEndStartRadius).toContainText("radius");
+    });
   });
 
   test.describe("Inspect tab - Shadow", () => {
@@ -387,110 +437,6 @@ test.describe("Inspect tab - Styles", () => {
     const propertyRowCount = await propertyRow.count();
 
     expect(propertyRowCount).toBeGreaterThanOrEqual(1);
-  });
-
-  test.describe("Inspect tab - Border radius", () => {
-    test("Shape - Border radius - individual", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(
-        workspacePage,
-        shapeToLayerName.borderRadius.individual,
-        shapeToLayerName.borderRadius.main,
-      );
-      await openInspectTab(workspacePage);
-
-      const panel = await getPanelByTitle(workspacePage, "Size and position");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(2);
-
-      const borderStartStartRadius = propertyRow.filter({
-        hasText: "Border start start radius",
-      });
-      await expect(borderStartStartRadius).toBeVisible();
-
-      const borderEndEndRadius = propertyRow.filter({
-        hasText: "Border end end radius",
-      });
-      await expect(borderEndEndRadius).toBeVisible();
-    });
-
-    test("Shape - Border radius - multiple", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(
-        workspacePage,
-        shapeToLayerName.borderRadius.multiple,
-        shapeToLayerName.borderRadius.main,
-      );
-      await openInspectTab(workspacePage);
-
-      const panel = await getPanelByTitle(workspacePage, "Size and position");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(4);
-
-      const borderStartStartRadius = propertyRow.filter({
-        hasText: "Border start start radius",
-      });
-      await expect(borderStartStartRadius).toBeVisible();
-
-      const borderStartEndRadius = propertyRow.filter({
-        hasText: "Border start end radius",
-      });
-      await expect(borderStartEndRadius).toBeVisible();
-
-      const borderEndEndRadius = propertyRow.filter({
-        hasText: "Border end end radius",
-      });
-      await expect(borderEndEndRadius).toBeVisible();
-
-      const borderEndStartRadius = propertyRow.filter({
-        hasText: "Border end start radius",
-      });
-      await expect(borderEndStartRadius).toBeVisible();
-    });
-
-    test("Shape - Border radius - token", async ({ page }) => {
-      const workspacePage = new WasmWorkspacePage(page);
-      await setupFile(workspacePage);
-
-      await selectLayer(
-        workspacePage,
-        shapeToLayerName.borderRadius.token,
-        shapeToLayerName.borderRadius.main,
-      );
-      await openInspectTab(workspacePage);
-
-      const panel = await getPanelByTitle(workspacePage, "Size and position");
-      await expect(panel).toBeVisible();
-
-      const propertyRow = panel.getByTestId("property-row");
-      const propertyRowCount = await propertyRow.count();
-
-      expect(propertyRowCount).toBeGreaterThanOrEqual(4);
-
-      const borderStartEndRadius = propertyRow.filter({
-        hasText: "Border start end radius",
-      });
-      await expect(borderStartEndRadius).toBeVisible();
-      expect(borderStartEndRadius).toContainText("radius");
-
-      const borderEndStartRadius = propertyRow.filter({
-        hasText: "Border end start radius",
-      });
-      expect(borderEndStartRadius).toContainText("radius");
-      await expect(borderEndStartRadius).toBeVisible();
-    });
   });
 
   test.describe("Inspect tab - Fill", () => {
