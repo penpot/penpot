@@ -180,9 +180,9 @@
              ;; ClojureScript that is -1 and throws (see penpot#7064).
              current-index  (some-> sibling-ids (d/index-of first-selected))
              sibling        (when (some? current-index)
-                              (if (= (dec (count sibling-ids)) current-index)
-                                (first sibling-ids)
-                                (nth sibling-ids (inc current-index) nil)))]
+                              (if (= 0 current-index)
+                                (last sibling-ids)
+                                (nth sibling-ids (dec current-index) nil)))]
 
          (cond
            (and (= 1 count-selected) (some? sibling))
@@ -197,24 +197,37 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [selected       (dsh/lookup-selected state)
-             count-selected (count selected)
-             first-selected (first selected)
-             page-id        (:current-page-id state)
-             objects        (dsh/lookup-page-objects state page-id)
-             current        (get objects first-selected)
-             parent         (get objects (:parent-id current))
-             sibling-ids    (:shapes parent)
-             current-index  (some-> sibling-ids (d/index-of first-selected))
-             sibling        (when (some? current-index)
-                              (if (= 0 current-index)
-                                (last sibling-ids)
-                                (nth sibling-ids (dec current-index) nil)))]
-         (cond
-           (and (= 1 count-selected) (some? sibling))
-           (rx/of (select-shape sibling))
+             count-selected (count selected)]
+         (if (zero? count-selected)
+           (let [page-id (:current-page-id state)
+                 objects (dsh/lookup-page-objects state page-id)
+                 first    (->> (cfh/get-immediate-children objects uuid/zero)
+                               (remove :hidden)
+                               (remove :blocked)
+                               first
+                               :id)]
+             (if (some? first)
+               (rx/of (select-shape first))
+               (rx/empty)))
+           (let [first-selected (first selected)
+                 page-id        (:current-page-id state)
+                 objects        (dsh/lookup-page-objects state page-id)
+                 current        (get objects first-selected)
+                 parent         (get objects (:parent-id current))
+                 sibling-ids    (:shapes parent)
+                 current-index  (some-> sibling-ids (d/index-of first-selected))
+                 sibling        (when (some? current-index)
+                                (if (= (dec (count sibling-ids)) current-index)
+                                (first sibling-ids)
+                                (nth sibling-ids (inc current-index) nil)))]
+             (cond
+               (and (= 1 count-selected) (some? sibling))
+               (rx/of (select-shape sibling))
 
-           (> count-selected 1)
-           (rx/of (select-shape first-selected))))))))
+               (> count-selected 1)
+               (rx/of (select-shape first-selected))
+               :else
+               (rx/empty)))))))))
 
 (defn deselect-shape
   [id]
