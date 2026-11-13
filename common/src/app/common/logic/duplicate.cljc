@@ -552,11 +552,14 @@
 
         objects (pcb/get-objects changes)
 
-        ;; the new copies that no other copy holds
+        ;; the new copies that no other copy holds, under a parent other than
+        ;; the one their source has on the page
         heads (filterv (fn [id]
-                         (let [shape (get objects id)]
+                         (let [shape  (get objects id)
+                               source (some (fn [[old new]] (when (= new id) old)) ids-map)]
                            (and (ctk/instance-head? shape)
-                                (= 1 (count (ctn/get-parent-copy-heads objects shape))))))
+                                (= 1 (count (ctn/get-parent-copy-heads objects shape)))
+                                (not= (:parent-id shape) (get-in page [:objects source :parent-id])))))
                        (keep ids-map ids))]
 
     (-> changes

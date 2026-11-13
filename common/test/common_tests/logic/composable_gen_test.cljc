@@ -4294,3 +4294,16 @@
                                     :layout-copies true :layout-children false}]
                        :ops [[:transform 7 0 0 8] [:detach 6 0 0 0] [:add-child 0] [:structure 0 2 0]
                              [:sync 0 0 0 0]]}))))
+
+(t/deftest generated-a-duplicate-in-place-or-a-paste-marks-only-the-geometry-it-moves
+  ;; a stale copy duplicated in place marks nothing; a pasted copy keeps what
+  ;; it authored where it lands
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles false :library-variants false :stale-libraries true
+                                    :layout nil :layout-item-margins false :grid-square false :library-depth 2
+                                    :library true :rich-variants false :layout-children false :library-text false
+                                    :grid-empty false :layout-copies false :text false}]
+                       :ops [[:library-delete 1] [:library-restore] [:library-transform 11 5] [:duplicate 11]]})))
+  (t/is (map? (cg/run {:world [2 0 {:variants true :text-styles false :layout :grid :layout-item-margins false
+                                    :grid-square false :library true :rich-variants true :layout-children false
+                                    :grid-empty false :layout-copies false :text true}]
+                       :ops [[:switch 11] [:switch 5] [:nest 17] [:add-child 15] [:rotate 15] [:style 12 9 1] [:paste 12]]}))))
