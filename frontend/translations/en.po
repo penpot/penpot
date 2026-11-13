@@ -7101,6 +7101,10 @@ msgstr "Add a shared library"
 msgid "workspace.libraries.assets-in-this-file"
 msgstr "ASSETS IN THIS FILE"
 
+#: src/app/main/data/workspace/libraries.cljs:1963
+msgid "workspace.libraries.broken-library-disconnected"
+msgstr "The library \"%s\" couldn't be loaded and has been disconnected from this file. Components and colors already used in the file aren't affected but will be orphan until the library is fixed and connected again."
+
 #: src/app/main/ui/workspace/libraries.cljs:178, src/app/main/ui/workspace/libraries.cljs:207, src/app/main/ui/workspace/libraries.cljs:251
 msgid "workspace.libraries.colors"
 msgid_plural "workspace.libraries.colors"

@@ -7173,6 +7173,10 @@ msgstr "Añadir una biblioteca compartida"
 msgid "workspace.libraries.assets-in-this-file"
 msgstr "RECURSOS EN ESTE ARCHIVO"
 
+#: src/app/main/data/workspace/libraries.cljs:1963
+msgid "workspace.libraries.broken-library-disconnected"
+msgstr "No se ha podido cargar la biblioteca \"%s\" y se ha desconectado de este archivo. Los componentes y colores que ya usa el archivo no se ven afectados, pero quedarán huérfanos hasta que la biblioteca se arregle y se vuelva a conectar."
+
 #: src/app/main/ui/workspace/libraries.cljs:178, src/app/main/ui/workspace/libraries.cljs:207, src/app/main/ui/workspace/libraries.cljs:251
 msgid "workspace.libraries.colors"
 msgid_plural "workspace.libraries.colors"
