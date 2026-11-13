@@ -30,7 +30,6 @@ const shapeToLayerName = {
   flex: "shape - layout - flex",
   flexElement: "shape - layout - flex - element",
   grid: "shape - layout - grid",
-  gridElement: "shape - layout - grid - element",
   shadow: "shape - shadow - single",
   shadowMultiple: "shape - shadow - multiple",
   shadowComposite: "shape - shadow - composite",
@@ -46,7 +45,6 @@ const shapeToLayerName = {
     gradient: "shape - fill - single - gradient",
     image: "shape - fill - single - image",
     multiple: "shape - fill - multiple",
-    style: "shape - fill - style",
     token: "shape - fill - token",
   },
   stroke: {
@@ -54,7 +52,6 @@ const shapeToLayerName = {
     gradient: "shape - stroke - single - gradient",
     image: "shape - stroke - single - image",
     multiple: "shape - stroke - multiple",
-    style: "shape - stroke - style",
     token: "shape - stroke - token",
   },
   text: {
@@ -122,7 +119,9 @@ const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
  * Finds a layer row by its exact name. `getByText` matches substrings, and
  * the fixture has names that are prefixes of others ("shape - text" and
  * "shape - text - token - composite"), so the match has to be anchored.
- * The tree capitalises the first letter, hence the case-insensitive pattern.
+ * The case-insensitive pattern is for the fixture, not the UI: it names the
+ * layout frames "Shape - layout - flex" while these keys are lowercase, and
+ * the tree renders the name verbatim.
  * @param {WasmWorkspacePage} workspacePage - The workspace page instance
  * @param {string} layerName - The exact name of the layer row
  */
@@ -166,8 +165,7 @@ const selectLayer = async (workspacePage, layerName, parentLayerName) => {
 
   await getLayerRow(workspacePage, layerName).click();
 
-  const selectedLayer = workspacePage.page
-    .getByTestId("layer-tree")
+  const selectedLayer = workspacePage.layers
     .getByRole("checkbox", { checked: true })
     .first();
   await expect(selectedLayer).toHaveText(layerName, { ignoreCase: true });
