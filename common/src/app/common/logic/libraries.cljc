@@ -2372,6 +2372,30 @@
                 (ctsl/create-cells shape [column row 1 1])))
             shape added)))
 
+(defn- default-cell?
+  "Whether `cell` has nothing of its own: automatic, single and aligned by
+   default."
+  [cell]
+  (and (= :auto (:position cell))
+       (= 1 (:row-span cell) (:column-span cell))
+       (contains? #{nil :auto} (:align-self cell))
+       (contains? #{nil :auto} (:justify-self cell))))
+
+(defn- without-default-cells-beyond-tracks
+  "`shape` without its default cells past its tracks: their children take a
+   free slot again, or a track the grid grows for them, as when they first
+   came; the cells with something of their own there are fitted instead."
+  [shape]
+  (let [rows (count (:layout-grid-rows shape))
+        cols (count (:layout-grid-columns shape))]
+    (update shape :layout-grid-cells
+            (fn [cells]
+              (into {}
+                    (remove (fn [[_ cell]]
+                              (and (default-cell? cell)
+                                   (or (> (:row cell) rows) (> (:column cell) cols)))))
+                    cells)))))
+
 (defn- assign-inherited-grid-cells
   [shape before objects]
   (if-not (or (< (count (:layout-grid-rows shape)) (count (:layout-grid-rows before)))
@@ -2387,14 +2411,11 @@
                     (and active? (empty? (:layout-grid-columns shape)))
                     (assoc :layout-grid-columns [ctsl/default-track-value]))]
       (-> target
+          (without-default-cells-beyond-tracks)
           (ctsl/check-deassigned-cells objects)
           (ctsl/fit-cells-to-tracks)
-          (ctsl/assign-cells objects)
-          ;; New children can exhaust the remaining slots. Fit any overflow
-          ;; back into inherited tracks instead of deriving extra tracks.
-          (assoc :layout-grid-rows (:layout-grid-rows target)
-                 :layout-grid-columns (:layout-grid-columns target))
-          (ctsl/fit-cells-to-tracks)))))
+          ;; a child without a free slot grows a default track to hold it
+          (ctsl/assign-cells objects)))))
 
 (defn- keep-cell-ids
   "`shape` with the cells its tracks add, those its main `shape-main` lacks,

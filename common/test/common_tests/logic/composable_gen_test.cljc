@@ -2573,6 +2573,25 @@
                                     :layout-copies true :layout-children false}]
                        :ops [[:style 8 29 1] [:nest 6] [:switch 9]]}))))
 
+(t/deftest a-grid-copy-with-its-own-cells-grows-a-column-for-a-new-child-for-good
+  (t/is (map? (cg/run {:world [2 2 {:variants true :layout :grid :layout-item-margins false :grid-square false
+                                    :rich-variants true :layout-children false :grid-empty true
+                                    :layout-copies true :text true}]
+                       :ops [[:detach 0] [:grid-cell 0 0 0 1] [:grid-track 4 4 0 9] [:swap 7] [:grid-track 0 3]
+                             [:grid-track 7] [:nest 18]]}))))
+
+(t/deftest a-grid-copy-keeps-an-aligned-cell-its-main-takes-a-column-from
+  (t/is (map? (cg/run {:world [1 1 {:variants false :layout :grid :layout-item-margins false :grid-square false
+                                    :rich-variants false :layout-children false :grid-empty true
+                                    :layout-copies true :text false}]
+                       :ops [[:grid-cell 4 25] [:grid-track 3] [:grid-track 0 3]]}))))
+
+(t/deftest a-grid-copy-keeps-its-aligned-cell-when-its-main-adds-a-row
+  (t/is (map? (cg/run {:world [1 0 {:variants false :layout :grid :layout-item-margins false :grid-square true
+                                    :rich-variants false :layout-children true :grid-empty false
+                                    :layout-copies false :text false}]
+                       :ops [[:grid-cell 0 15 0 1] [:grid-track 0 2]]}))))
+
 (t/deftest settling-a-bool-in-a-grid-copy-twice-keeps-its-shapes-in-place
   (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies true :layout-children true}]
