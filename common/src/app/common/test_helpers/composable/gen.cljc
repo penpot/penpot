@@ -1415,10 +1415,16 @@
           (throw error)
           :else true)))))
 
+(def ^:private world-dependent-kinds
+  "Kinds that only grid worlds offer, a share of the programs: they must
+   change state, but need no share of the changes."
+  #{:grid-cell :grid-direction})
+
 (defn coverage-errors
   "Coverage comes only from random steps. Stable syncs count as checks;
    mutations must change state and each required kind must supply at least
-   0.5% of meaningful changes. Setup, skips and no-ops cannot satisfy it."
+   0.5% of meaningful changes, but those only some worlds offer. Setup,
+   skips and no-ops cannot satisfy it."
   ([coverage kinds] (coverage-errors coverage kinds #{:sync :library-sync}))
   ([coverage kinds checks]
    (let [random (:random coverage)
@@ -1431,7 +1437,8 @@
                              (when (if (contains? checks kind)
                                      (zero? (+ changed no-op))
                                      (or (zero? changed)
-                                         (< changed (* 0.005 total-changed))))
+                                         (and (not (contains? world-dependent-kinds kind))
+                                              (< changed (* 0.005 total-changed)))))
                                {:kind kind :reason :insufficient-random-coverage
                                 :counts (get random kind)}))))
                    kinds)
