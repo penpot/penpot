@@ -31,6 +31,7 @@
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
+   [app.rpc.notifications :as ntf]
    [app.rpc.permissions :as perms]
    [app.rpc.quotes :as quotes]
    [app.setup :as-alias setup]
@@ -268,13 +269,14 @@
   [cfg profile-id default-team-id params]
   (when-let [team-id (perms/resolve-team-id cfg params)]
     (when (nitrate/organization-owner-of-team? cfg profile-id team-id)
+      ;; resolve-team-id already proved the team row live; the guard
+      ;; that used to live here (when-not is-row-deleted?) was dead.
       (when-let [team (db/get* cfg :team {:id team-id})]
-        (when-not (db/is-row-deleted? team)
-          (-> team
-              (decode-row)
-              (merge perms/viewer-role-flags)
-              (assoc :is-default (= team-id default-team-id))
-              (process-permissions)))))))
+        (-> team
+            (decode-row)
+            (merge perms/viewer-role-flags)
+            (assoc :is-default (= team-id default-team-id))
+            (process-permissions))))))
 
 (defn get-team
   [cfg & {:keys [profile-id team-id project-id file-id] :as params}]
@@ -822,9 +824,10 @@
                                       :team-id team-id}))
 
 (defn leave-team
-  [{:keys [::db/conn ::mbus/msgbus]} {:keys [profile-id id reassign-to]}]
+  [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [profile-id id reassign-to]}]
   (let [perms   (get-permissions conn profile-id id)
-        members (get-team-members conn id)]
+        members (get-team-members conn id)
+        team    (db/get conn :team {:id id})]
 
     (cond
       ;; we can only proceed if there are more members in the team
@@ -872,6 +875,16 @@
                 :hint "releasing owner before leave"))
 
     (delete-team-rels conn profile-id id)
+
+    ;; The leaver is told so, exactly as a removed member is, so the
+    ;; session stops asking for content it can no longer read.
+    (mbus/pub! msgbus
+               :topic profile-id
+               :message {:type :team-membership-change
+                         :change :removed
+                         :team-id id
+                         :team-name (:name team)})
+    (ntf/notify-permissions-changed cfg profile-id)
 
     nil))
 
@@ -938,6 +951,10 @@
                     ::jobs/params {:object :team
                                    :deleted-at (:deleted-at team)
                                    :id team-id}})
+      ;; The team is soft-deleted, so every subscription its members hold
+      ;; loses its authorization at once. One event: the watcher resolves
+      ;; the members itself.
+      (ntf/notify-team-permissions-changed cfg team-id)
       (rph/with-meta (rph/wrap team)
         {::audit/props {:organization-id organization-id
                         :team-id team-id
@@ -970,7 +987,7 @@
 ;; --- Mutation: Team Update Role
 
 (defn update-team-member-role
-  [{:keys [::db/conn ::mbus/msgbus]} {:keys [profile-id team-id member-id role] :as params}]
+  [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [profile-id team-id member-id role] :as params}]
   ;; We retrieve all team members instead of query the
   ;; database for a single member. This is just for
   ;; convenience, if this becomes a bottleneck or problematic,
@@ -1020,6 +1037,12 @@
                   params
                   {:team-id team-id
                    :profile-id member-id})
+
+      ;; A role change never removes read access on its own, but the open
+      ;; subscriptions are re-checked rather than assumed: the watcher
+      ;; decides from fresh data, which is also what keeps a downgrade to
+      ;; viewer from being mistaken for a revocation.
+      (ntf/notify-permissions-changed cfg member-id)
       nil)))
 
 (def ^:private schema:update-team-member-role
@@ -1092,6 +1115,11 @@
                            :change :removed
                            :team-id team-id
                            :team-name (:name team)}))
+
+    ;; Whatever this member may still read through another path (an
+    ;; organization owner keeps read-only access), the subscriptions they
+    ;; already hold have to be re-checked, not trusted from here on.
+    (ntf/notify-permissions-changed cfg member-id)
 
     nil))
 
