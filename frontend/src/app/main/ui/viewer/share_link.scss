@@ -16,8 +16,6 @@
 // --- Collapsible (shared)
 
 .collapsible-title {
-  @include use-typography("headline-small");
-
   border: none;
   background: none;
   color: var(--color-foreground-secondary);
@@ -26,7 +24,6 @@
   align-items: center;
   justify-content: flex-start;
   padding: 0;
-  cursor: pointer;
 
   &:focus-visible {
     outline: $b-1 solid var(--color-accent-primary);
@@ -38,12 +35,65 @@
   margin-inline-end: px2rem(6);
 }
 
+.collapsible-title-panel {
+  @include use-typography("headline-small");
+}
+
+.collapsible-title-link {
+  @include use-typography("body-small");
+
+  flex-grow: 1;
+  flex-shrink: 1;
+  min-inline-size: 0;
+}
+
+// --- Collapsible link
+
+.collapsible-link {
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+}
+
+.collapsible-link-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  padding: var(--sp-m) var(--sp-l);
+}
+
+.collapsible-link-url {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  color: var(--color-foreground-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collapsible-link-details {
+  display: grid;
+  grid-template-columns: minmax(px2rem(136), max-content) 1fr;
+  gap: var(--sp-xxs) var(--sp-xs);
+  padding: 0 var(--sp-l) var(--sp-m);
+}
+
+.collapsible-link-label {
+  color: var(--color-foreground-secondary);
+}
+
+.collapsible-link-value {
+  min-inline-size: 0;
+  color: var(--color-foreground-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 // --- Permissions section
 
 .permissions-section {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-s);
 }
 
 .permissions-content {
@@ -112,89 +162,59 @@
   margin: 0;
 }
 
-// --- Share link dialog
+// --- Links section
 
-.share-link-modal {
-  position: absolute;
-  inset-block-start: px2rem(52);
-  inset-inline: calc(100vw - #{$sz-512}) var(--sp-m);
-  z-index: var(--z-index-set);
+.links-section {
+  padding-block-start: var(--sp-xl);
+  border-block-start: var(--share-link-divider);
 }
 
-.share-link-dialog {
-  @extend %modal-container-base;
-
+.links-content {
   display: flex;
   flex-direction: column;
-  min-block-size: unset;
-
-  &:focus {
-    outline: none;
-  }
+  gap: var(--sp-m);
+  margin: var(--sp-m) 0 0 0;
+  padding: 0;
+  list-style: none;
 }
 
-.share-link-scroll {
-  min-block-size: 0;
-  overflow-y: auto;
-}
+// --- Main section
 
-.share-link-header {
-  margin-block-end: var(--sp-xxl);
-}
-
-.share-link-title {
-  @include use-typography("headline-small");
-
-  color: var(--color-foreground-primary);
-}
-
-.share-link-close-button {
-  position: absolute;
-  inset-block-start: var(--sp-s);
-  inset-inline-end: var(--sp-xs);
-}
-
-.share-link-content {
-  @include use-typography("body-small");
-
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-xxl);
-}
-
-.share-link-form {
+.main-section {
   display: flex;
   flex-direction: column;
   gap: var(--sp-s);
 }
 
-.share-link-url {
+.main-url {
   display: flex;
   padding: px2rem(1);
 }
 
-.share-link-url-input {
+.main-url-input {
   border-end-end-radius: 0;
   border-start-end-radius: 0;
 }
 
-.share-link-url-button {
+.main-url-button {
   border-start-start-radius: 0;
   border-end-start-radius: 0;
 }
 
-.share-link-hint-row {
+.main-sub-row {
   display: flex;
   align-items: center;
   gap: var(--sp-xs);
 }
 
-.share-link-hint {
+.main-hint {
   flex-grow: 1;
   color: var(--color-foreground-secondary);
 }
 
-.share-link-confirm {
+// --- Confirm dialog
+
+.confirm {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
@@ -207,16 +227,73 @@
   }
 }
 
-.share-link-confirm-description {
+.confirm-description {
   @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
   margin-block-end: var(--sp-xxl);
 }
 
-.share-link-confirm-actions {
+.confirm-actions {
   display: flex;
   align-items: center;
   gap: var(--sp-xs);
   justify-content: flex-end;
+}
+
+// --- Modal
+
+.modal {
+  position: absolute;
+  inset-block-start: px2rem(52);
+  inset-inline: calc(100vw - #{$sz-512}) var(--sp-m);
+  z-index: var(--z-index-set);
+}
+
+.modal-inner {
+  @extend %modal-container-base;
+
+  --share-link-divider: #{$b-1} solid var(--color-background-quaternary);
+
+  display: flex;
+  flex-direction: column;
+  min-block-size: unset;
+
+  // The file's link list can push the content past the base 512px cap;
+  // let the dialog use the viewport and scroll instead of overflowing.
+  max-block-size: calc(100vh - #{$sz-64});
+  overflow: hidden;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.modal-scroll {
+  min-block-size: 0;
+  overflow-y: auto;
+}
+
+.modal-header {
+  margin-block-end: var(--sp-xxl);
+}
+
+.modal-title {
+  @include use-typography("headline-small");
+
+  color: var(--color-foreground-primary);
+}
+
+.modal-close-button {
+  position: absolute;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: var(--sp-xs);
+}
+
+.modal-content {
+  @include use-typography("body-small");
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxl);
 }
