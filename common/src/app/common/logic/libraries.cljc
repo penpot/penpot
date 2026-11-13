@@ -2396,11 +2396,22 @@
                                    (or (> (:row cell) rows) (> (:column cell) cols)))))
                     cells)))))
 
+(defn- assign-in-main-order
+  "`shape` with its children without a cell assigned free cells in the order
+   of the main shapes they refer to in `shape-main`, as sync adds them."
+  [shape objects shape-main]
+  (let [rank (into {} (map-indexed (fn [index id] [id index])) (:shapes shape-main))
+        main-order (vec (sort-by #(get rank (:shape-ref (get objects %)) ##Inf) (:shapes shape)))]
+    (-> shape
+        (assoc :shapes main-order)
+        (ctsl/assign-cells objects)
+        (assoc :shapes (:shapes shape)))))
+
 (defn- assign-inherited-grid-cells
-  [shape before objects]
+  [shape before objects shape-main]
   (if-not (or (< (count (:layout-grid-rows shape)) (count (:layout-grid-rows before)))
               (< (count (:layout-grid-columns shape)) (count (:layout-grid-columns before))))
-    (ctsl/assign-cells shape objects)
+    (assign-in-main-order shape objects shape-main)
     (let [active? (some #(not (ctsl/position-absolute? objects %)) (:shapes shape))
           ;; Like assign-cells, a grid with participating children needs at
           ;; least one track per axis, including an initially empty grid.
@@ -2415,7 +2426,7 @@
           (ctsl/check-deassigned-cells objects)
           (ctsl/fit-cells-to-tracks)
           ;; a child without a free slot grows a default track to hold it
-          (ctsl/assign-cells objects)))))
+          (assign-in-main-order objects shape-main)))))
 
 (defn- keep-cell-ids
   "`shape` with the cells its tracks add, those its main `shape-main` lacks,
@@ -2513,7 +2524,7 @@
              (-> shape-copy
                  (assoc :layout-grid-cells copy-cells)
                  (add-inherited-grid-cells shape-before)
-                 (assign-inherited-grid-cells shape-before objects))
+                 (assign-inherited-grid-cells shape-before objects shape-main))
              ;; Take cells from main and remap the shapes to assign it to the copy
              (copy-grid-cells shape-copy shape-main objects))))
        {:ignore-touched true :with-objects? true})))

@@ -2592,6 +2592,12 @@
                                     :layout-copies false :text false}]
                        :ops [[:grid-cell 0 15 0 1] [:grid-track 0 2]]}))))
 
+(t/deftest a-grid-copy-gives-free-cells-to-children-in-their-main-order
+  (t/is (map? (cg/run {:world [3 1 {:variants false :layout :grid :layout-item-margins false :grid-square false
+                                    :rich-variants false :layout-children true :grid-empty false
+                                    :layout-copies false :text true}]
+                       :ops [[:grid-cell 13] [:grid-track 0 0 11] [:grid-track 0 3] [:add-child 8] [:grid-track 0 2]]}))))
+
 (t/deftest settling-a-bool-in-a-grid-copy-twice-keeps-its-shapes-in-place
   (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies true :layout-children true}]
