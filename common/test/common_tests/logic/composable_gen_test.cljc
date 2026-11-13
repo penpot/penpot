@@ -2519,6 +2519,11 @@
                                     :layout-copies false :layout-children false}]
                        :ops [[:structure 1 1 1] [:remove-child 1]]}))))
 
+(t/deftest syncing-the-shapes-of-a-flipped-copy-bool-keeps-them-flipped
+  (t/is (map? (cg/run {:world [1 0 {:variants false :rich-variants false :text false :layout :grid
+                                    :layout-copies false :layout-children false}]
+                       :ops [[:structure 0 4] [:transform 0 4 0 2]]}))))
+
 (t/deftest settling-a-bool-in-a-grid-copy-twice-keeps-its-shapes-in-place
   (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies true :layout-children true}]
