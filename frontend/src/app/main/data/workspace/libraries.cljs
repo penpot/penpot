@@ -542,7 +542,11 @@
 
         (rx/of (dch/commit-changes changes)
                (when local?
-                 (ptk/data-event :layout/update {:page-id page-id :ids frames})))))))
+                 (ptk/data-event :layout/update {:page-id page-id :ids frames}))
+               ;; the restored main takes the current values of the tokens it
+               ;; applies, which no token edit reached while it was deleted
+               (when local?
+                 (dwtp/propagate-workspace-tokens)))))))
 
 (defn restore-components
   "Restore multiple deleted component definded by a map with the component id as key and the component library as value"
