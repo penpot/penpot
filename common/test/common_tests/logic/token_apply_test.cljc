@@ -364,6 +364,21 @@
     (t/is (= (count applied-tokens-text') 0))
     (t/is (= (count applied-tokens-circle') 0))))
 
+(t/deftest unapply-the-token-of-the-corner-a-flipped-shape-shows
+  (let [file    (-> (thf/sample-file :file1)
+                    (ths/add-sample-shape :rect :type :rect :flip-x true
+                                          :applied-tokens {:r1 "radius.s"}))
+        page    (thf/current-page file)
+        rect    (ths/get-shape file :rect)
+        ;; the stored corner a flipped shape shows as its first one
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page page)
+                    (pcb/with-objects (:objects page))
+                    (cls/generate-update-shapes [(:id rect)] #(assoc % :r2 8) (:objects page) {}))
+        rect'   (ths/get-shape (thf/apply-changes file changes) :rect)]
+    (t/is (= 8 (:r2 rect')))
+    (t/is (empty? (:applied-tokens rect')))))
+
 (t/deftest unapply-only-changed-per-side-token
   (let [file    (-> (setup-file)
                     (tht/apply-token-to-shape :frame1 "token-stroke-width"

@@ -272,8 +272,10 @@
 (defn edit
   [model before property value]
   (let [after (cond-> (n/set-property before property value)
-                ;; a radius set by hand takes off the token its corner applied
-                (contains? n/radius-attrs property) (update :applied-tokens dissoc property))
+                ;; a radius set by hand takes off the token of its corner, which a
+                ;; token names as the shape shows it
+                (contains? n/radius-attrs property)
+                (update :applied-tokens dissoc (ctsr/shown-corner before property)))
         group (get groups property)]
     (if (and (:shape-ref before) (not= (get before property) (get after property)))
       (assoc-in model [(:id before) group] (values after group))
