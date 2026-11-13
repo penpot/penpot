@@ -2535,6 +2535,44 @@
                                     :layout-copies false :layout-children false}]
                        :ops [[:transform 0 5 0 3] [:structure 0 5] [:update-main]]}))))
 
+(t/deftest an-empty-bool-in-a-copy-keeps-its-corners-in-one-order
+  (t/is (map? (cg/run {:world [3 1 {:variants true :rich-variants true :text true :layout nil
+                                    :layout-copies true :layout-children false}]
+                       :ops [[:add-child 7] [:structure 0 0 0] [:add-child 7] [:structure 3 4 3] [:add-child 0]
+                             [:structure 3 0 0] [:add-child 7] [:structure 7 5 7]]}))))
+
+(t/deftest a-copy-bool-and-its-shapes-are-compared-by-their-corners
+  (t/is (map? (cg/run {:world [2 1 {:variants true :rich-variants true :text true :layout :flex
+                                    :layout-copies false :layout-children true}]
+                       :ops [[:transform 6 17 0 9] [:add-child 16] [:structure] [:remove-child 11] [:structure 6 6]
+                             [:update-main] [:transform 0 13 0 17]]}))))
+
+(t/deftest undoing-a-text-style-refits-a-flipped-group-to-the-same-corners
+  (t/is (map? (cg/run {:world [1 0 {:variants true :rich-variants true :text false :layout nil
+                                    :layout-copies false :layout-children false}]
+                       :ops [[:delete] [:transform 0 22 0 18] [:structure 0 0 5] [:text-style 0 0 1]]}))))
+
+(t/deftest a-turned-copy-shape-in-a-group-orders-a-corner-level-with-its-centre-once
+  (t/is (map? (cg/run {:world [1 1 {:variants true :rich-variants true :text true :layout :grid
+                                    :layout-copies true :layout-children true}]
+                       :ops [[:add-child] [:structure 11 4 5] [:swap 6] [:rotate] [:style 8 11]]}))))
+
+(t/deftest updating-a-main-from-a-shape-in-a-copy-bool-reads-the-bool-size
+  (t/is (map? (cg/run {:world [3 1 {:variants true :rich-variants false :text true :layout nil
+                                    :layout-copies false :layout-children false}]
+                       :ops [[:add-child 5] [:remove-child] [:undo] [:add-child] [:structure 17] [:structure 16 7]
+                             [:transform 18 0 0 17] [:update-main]]}))))
+
+(t/deftest a-bool-made-in-a-variant-main-orders-the-corners-of-its-turned-copies
+  (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout nil
+                                    :layout-copies false :layout-children false}]
+                       :ops [[:rotate 12] [:swap 2] [:swap 19] [:add-child] [:structure] [:structure 3 5 21]]}))))
+
+(t/deftest switching-a-head-a-grid-places-authors-no-size-when-the-grid-grows
+  (t/is (map? (cg/run {:world [1 1 {:variants true :rich-variants true :text true :layout :grid
+                                    :layout-copies true :layout-children false}]
+                       :ops [[:style 8 29 1] [:nest 6] [:switch 9]]}))))
+
 (t/deftest settling-a-bool-in-a-grid-copy-twice-keeps-its-shapes-in-place
   (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies true :layout-children true}]

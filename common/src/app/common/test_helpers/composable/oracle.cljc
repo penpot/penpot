@@ -155,11 +155,6 @@
        node))
    content))
 
-;; the order of a bool's corners: by position, to the hundredth of a pixel,
-;; so noise in one coordinate does not swap two corners
-(def ^:private corner-order
-  (juxt #(Math/round (* 100.0 (:x %))) #(Math/round (* 100.0 (:y %)))))
-
 (defn- without-unreferenced-deleted
   "The snapshot `files` without the deleted components no shape outside
    their own objects refers to, as an undone creation: only redo brings one
@@ -209,9 +204,9 @@
             (and (= :path (:type value)) (some? (:content value))) (update :content #(into [] %))
             ;; a bool computes its segments from its children, which the design
             ;; holds, in an order that depends on how it was computed
-            (= :bool (:type value)) (-> (dissoc :content)
-                                        ;; and its corners in their order
-                                        (update :points #(some->> % (sort-by corner-order) vec)))
+            (= :bool (:type value)) (dissoc :content)
+            ;; a group or bool takes its corners from its children, in any order
+            (#{:group :bool} (:type value)) (update :points #(some-> % geom/ordered-corners vec))
             ;; the transform carries the turn, whichever rotation the shape
             ;; stores for it
             :always (dissoc :rotation))
@@ -550,10 +545,12 @@
                            (not= (boolean (:flip-y shape)) (boolean (:flip-y expected)))
                            (geom/decomposes? shape))
          ;; a group or bool takes its corners from its children: at its
-         ;; expected corners, its turn and flips say nothing more
-         derived (and (#{:group :bool} (:type shape))
-                      (gsh/close-attrs? :points (sort-by corner-order (:points shape))
-                                        (sort-by corner-order (:points expected)) 0.01))]
+         ;; expected corners, its turn and flips say nothing more; nor do those
+         ;; of its children, whose orientation it stores unreliably
+         in-group? (#{:group :bool} (:type (get objects (:parent-id ownership))))
+         derived (and (or (#{:group :bool} (:type shape)) in-group?)
+                      (gsh/close-attrs? :points (geom/ordered-corners (:points shape))
+                                        (geom/ordered-corners (:points expected)) 0.01))]
      (cond-> #{}
        ;; Parents may store equivalent decompositions, so a rotation that
        ;; decomposes the shape's own transform is its expected turn too, as
@@ -576,9 +573,9 @@
                                    [(first (:points expected))] 0.01))) (conj :position)
        (and (not layout-child) (not auto-width) (not auto-height)
             ;; a bool computes its corners from its segments, in their order
-            (not (if (= :bool (:type shape))
-                   (gsh/close-attrs? :points (sort-by corner-order (:points shape))
-                                     (sort-by corner-order (:points expected)) 0.01)
+            (not (if (or (= :bool (:type shape)) in-group?)
+                   (gsh/close-attrs? :points (geom/ordered-corners (:points shape))
+                                     (geom/ordered-corners (:points expected)) 0.01)
                    (gsh/close-attrs? :points (:points shape) (:points expected) 0.01)))) (conj :points)))))
 
 (defn check-requested-geometry
@@ -631,8 +628,9 @@
               source        (cond-> source
                               (and source-parent kept-parent
                                    (= (:id source-parent) (:id kept-parent))
-                                   (mth/close? (:width source-parent) (:width kept-parent) 0.01)
-                                   (mth/close? (:height source-parent) (:height kept-parent) 0.01))
+                                   ;; a bool has no size but its selrect's
+                                   (mth/close? (-> source-parent :selrect :width) (-> kept-parent :selrect :width) 0.01)
+                                   (mth/close? (-> source-parent :selrect :height) (-> kept-parent :selrect :height) 0.01))
                               (gsh/move (gpt/subtract (first (:points kept-parent))
                                                       (first (:points source-parent)))))
               attrs         (geometry-differences source-objects kept source source)]
