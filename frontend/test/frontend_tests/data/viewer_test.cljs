@@ -201,3 +201,31 @@
                                (route-without-page-id))
           navigations (filter #(= :app.main.router/navigate (ptk/type %)) events)]
       (t/is (empty? navigations)))))
+
+;; --- Frame navigation ------------------------------------------------------
+;; The viewer arrows emit `close-thread` and a navigation to the next or
+;; previous index, and nothing at the ends of the sequence.
+
+(t/deftest select-next-frame-navigates-to-the-next-frame
+  (let [events (watch-events dv/select-next-frame
+                             (base-state {:frames [{} {} {}] :index 1}))
+        {:keys [id params]} (some-> (second events) deref)]
+    (t/is (= 2 (count events)))
+    (t/is (= :viewer id))
+    (t/is (= 2 (:index params)))))
+
+(t/deftest select-next-frame-stays-on-the-last-frame
+  (t/is (empty? (watch-events dv/select-next-frame
+                              (base-state {:frames [{} {} {}] :index 2})))))
+
+(t/deftest select-prev-frame-navigates-to-the-previous-frame
+  (let [events (watch-events dv/select-prev-frame
+                             (base-state {:frames [{} {} {}] :index 1}))
+        {:keys [id params]} (some-> (second events) deref)]
+    (t/is (= 2 (count events)))
+    (t/is (= :viewer id))
+    (t/is (= 0 (:index params)))))
+
+(t/deftest select-prev-frame-stays-on-the-first-frame
+  (t/is (empty? (watch-events dv/select-prev-frame
+                              (base-state {:frames [{} {} {}] :index 0})))))
