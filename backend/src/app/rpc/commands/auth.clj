@@ -284,10 +284,9 @@
                     :hint "no active invitation associated with the token"))))))
 
 (defn- check-registration
-  "Register-profile gate: validates the flags, the invitation email and
-  the team invitation in order, mirroring `validate-register-attempt!`.
-  The prepare command inlines the same trio so it can interleave
-  the email-mismatch check."
+  "Shared registration gate (register-profile and prepare-register):
+  validates the flags, the invitation email and the team invitation
+  row in order."
   [cfg backend invitation email lock-invitation?]
   (check-registration-flags backend invitation)
   (when (and (some? invitation)
@@ -306,16 +305,7 @@
                                     {:token (:invitation-token params)
                                      :iss :team-invitation}))]
 
-    (check-registration-flags penpot-backend invitation)
-
-    (when (and invitation?
-               (not= (profile/clean-email (:email params))
-                     (profile/clean-email (:member-email invitation))))
-      (ex/raise :type :restriction
-                :code :email-does-not-match-invitation
-                :hint "email should match the invitation"))
-
-    (check-registration-invitation cfg penpot-backend invitation false))
+    (check-registration cfg penpot-backend invitation (:email params) false))
 
   (when (and (email.blacklist/enabled? cfg)
              (email.blacklist/contains? cfg (:email params)))
