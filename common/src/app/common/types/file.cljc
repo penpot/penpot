@@ -616,16 +616,28 @@
   ([file-data component]
    (load-component-objects file-data component (gpt/point 0 0)))
   ([file-data component delta]
-   (if (and component (empty? (:objects component))) ;; This operation may be called twice, e.g. in an idempotent change
+   ;; nil? not empty?: a missing-main soft-delete stores {}, which must
+   ;; still count as already loaded so render/library callers do not re-enter.
+   (if (and component (nil? (:objects component))) ;; This operation may be called twice, e.g. in an idempotent change
      (let [component-page (get-component-page file-data component)
            page-objects   (:objects component-page)
-           objects        (->> (cons (:main-instance-id component)
-                                     (cfh/get-children-ids page-objects (:main-instance-id component)))
-                               (map #(get page-objects %))
+           ids            (into []
+                                (cons (:main-instance-id component)
+                                      (cfh/get-children-ids page-objects (:main-instance-id component))))
+           ;; Skip ids already gone from the page. Calling gsh/move on nil
+           ;; builds {:selrect nil :points []} and index-by :id stores it
+           ;; under nil, which later fails duplicate-file schema checks.
+           shapes         (into [] (keep #(get page-objects %)) ids)
+           objects        (->> shapes
                                ;; when it is an undo of a cut-paste, we need to undo the movement
                                ;; of the shapes so we need to move them delta
                                (map #(gsh/move % delta))
                                (d/index-by :id))]
+       (when (not= (count shapes) (count ids))
+         (l/wrn :hint "skipping missing shapes when loading component objects"
+                :component-id (str (:id component))
+                :main-instance-id (str (:main-instance-id component))
+                :file-id (str (:id file-data))))
        (assoc component :objects objects))
      component)))
 
