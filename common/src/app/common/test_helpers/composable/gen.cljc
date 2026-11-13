@@ -387,12 +387,7 @@
                                                 1 (and (nil? (:shape-ref shape))
                                                        (not (ctk/main-instance? shape))
                                                        (some ctk/main-instance? (cfh/get-parents objects (:id shape))))
-                                                ;; the model places the children of a group in a
-                                                ;; copy through the board around it, and only when
-                                                ;; no layout places that group
-                                                2 (and (:shape-ref shape) (nil? (:component-id shape))
-                                                       (or (not (#{:group :bool} (:type (get objects (:parent-id shape)))))
-                                                           (not (ctl/any-layout? (get objects (:frame-id shape))))))
+                                                2 (and (:shape-ref shape) (nil? (:component-id shape)))
                                                 3 (and (copy-head shape) (not (top-copy shape)))
                                                 4 (top-copy shape)))
                               (:text :text-style) (= :text (:type shape))
@@ -1131,9 +1126,44 @@
                          ;; a path stores no width or height: its size is that of its bounds
                          (and (nil? (:width shape))
                               (not (and (mth/close? (:width (:selrect shape)) (:width (:selrect shape-after)) 1e-10)
-                                        (mth/close? (:height (:selrect shape)) (:height (:selrect shape-after)) 1e-10)))))]
-        (if (and (:shape-ref shape) changed?)
+                                        (mth/close? (:height (:selrect shape)) (:height (:selrect shape-after)) 1e-10)))))
+            ;; the outermost group or bool around the shape that a layout places
+            laid (loop [parent parent found nil]
+                   (if (#{:group :bool} (:type parent))
+                     (recur (get objects (:parent-id parent))
+                            (if (and (ctl/any-layout-immediate-child? objects parent)
+                                     (not (ctl/position-absolute? parent)))
+                              parent
+                              found))
+                     found))
+            after-objects (all-objects after)]
+        (cond
+          ;; moving some shapes of a group a layout places authors all its shapes
+          (and (:shape-ref shape) laid
+               ;; the group holds shapes the move leaves where they are
+               (let [moved (set (cfh/get-children-ids-with-self objects id))]
+                 (some #(and (not (contains? moved %))
+                             (not (#{:group :bool} (:type (get objects %)))))
+                       (cfh/get-children-ids objects (:id laid))))
+               (let [modifiers (case kind
+                                 :resize (ctm/change-size shape nil (:value op))
+                                 :rotate (n/geometry-modifiers shape :rotate (:angle op))
+                                 (n/geometry-modifiers shape (:action op) (:value op)))]
+                 (not (gsh/close-attrs? :points (:points shape)
+                                        (:points (gsh/transform-shape shape modifiers)) 1e-10))))
+          (reduce (fn [model child-id]
+                    (let [child (get after-objects child-id)]
+                      (if (and (:shape-ref child) (not (#{:group :bool} (:type child)))
+                               (or (= child-id id) (not (get-in model [child-id group]))))
+                        (assoc-in model [child-id group] (shadow/author-geometry child nil))
+                        model)))
+                  model
+                  (cfh/get-children-ids objects (:id laid)))
+
+          (and (:shape-ref shape) changed?)
           (assoc-in model [id group] (shadow/author-geometry shape-after origin (not position?)))
+
+          :else
           model))
       model)))
 

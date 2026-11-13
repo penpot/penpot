@@ -2630,6 +2630,16 @@
                        :ops [[:add-child] [:structure] [:swap 5] [:add-child] [:add-child] [:structure 6 4 5]
                              [:style 0 29 1]]}))))
 
+(t/deftest moving-a-shape-of-a-copy-group-a-layout-places-keeps-the-arrangement
+  (t/is (map? (cg/run {:world [1 0 {:variants false :rich-variants false :text false :layout :flex
+                                    :layout-copies false :layout-children true}]
+                       :ops [[:structure 0 0 19] [:transform 10 0 0 12]]}))))
+
+(t/deftest turning-a-whole-copy-authors-nothing-in-its-laid-out-groups
+  (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants false :text true :layout :grid
+                                    :layout-copies false :layout-children false}]
+                       :ops [[:remove-child] [:structure 9] [:rotate 6]]}))))
+
 (t/deftest settling-a-bool-in-a-grid-copy-twice-keeps-its-shapes-in-place
   (t/is (map? (cg/run {:world [3 0 {:variants true :rich-variants true :text true :layout :grid
                                     :layout-copies true :layout-children true}]
