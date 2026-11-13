@@ -1062,6 +1062,32 @@
             :organization-id organization-id
             :organization-name organization-name}))))))
 
+(def oidc-provider-types
+  "Backends authenticating through an OIDC-compatible provider.
+  Only these backends take the SSO registration gate."
+  #{"oidc" "google" "github" "gitlab"})
+
+(defn sso-registration-allowed?
+  "SSO registration is allowed when public registration or explicit
+  OIDC registration is enabled. Shared by the callback gate and the
+  `register-profile` token gate — keep one definition."
+  []
+  (or (contains? cf/flags :registration)
+      (contains? cf/flags :oidc-registration)))
+
+(defn- valid-invitation-for?
+  "Returns true when `invitation-token` is a verifiable
+  `:team-invitation` JWT issued for `email`. Never throws: a garbage
+  token means there is no valid invitation."
+  [cfg invitation-token email]
+  (try
+    (boolean
+     (when (and (some? invitation-token) (some? email))
+       (let [invitation (tokens/verify cfg {:token invitation-token :iss :team-invitation})]
+         (= (profile/clean-email (:member-email invitation))
+            (profile/clean-email email)))))
+    (catch Throwable _ false)))
+
 (defn- callback-handler
   [cfg {:keys [params] :as request}]
   (if-let [error (get params :error)]
@@ -1094,8 +1120,8 @@
                 (redirect-with-error "email-domain-not-allowed")
 
                 :else
-                (if (or (contains? cf/flags :registration)
-                        (contains? cf/flags :oidc-registration))
+                (if (or (sso-registration-allowed?)
+                        (valid-invitation-for? cfg (:invitation-token info) (:email info)))
                   (redirect-to-register cfg info provider)
                   (redirect-with-error "registration-disabled")))
 
